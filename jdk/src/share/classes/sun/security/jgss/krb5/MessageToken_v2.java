@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,42 +26,40 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
-import sun.security.jgss.*;
-import sun.security.krb5.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.security.GeneralSecurityException;
+import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 /**
  * This class is a base class for new GSS token definitions, as defined
- * in draft-ietf-krb-wg-gssapi-cfx-07.txt, that pertain to per-message
- * GSS-API calls. Conceptually GSS-API has two types of per-message tokens:
- * WrapToken and MicToken. They differ in the respect that a WrapToken
- * carries additional plaintext or ciphertext application data besides
- * just the sequence number and checksum. This class encapsulates the
- * commonality in the structure of the WrapToken and the MicToken.
- * This structure can be represented as:
+ * in RFC 4121, that pertain to per-message GSS-API calls. Conceptually
+ * GSS-API has two types of per-message tokens: WrapToken and MicToken.
+ * They differ in the respect that a WrapToken carries additional plaintext
+ * or ciphertext application data besides just the sequence number and
+ * checksum. This class encapsulates the commonality in the structure of
+ * the WrapToken and the MicToken. This structure can be represented as:
  * <p>
  * <pre>
- *  Wrap Tokens
+ * Wrap Tokens
  *
  *     Octet no   Name        Description
  *    ---------------------------------------------------------------
  *      0..1     TOK_ID     Identification field.  Tokens emitted by
- *                          GSS_Wrap() contain the the hex value 05 04
- *                          expressed in big endian order in this field.
+ *                          GSS_Wrap() contain the hex value 05 04
+ *                          expressed in big-endian order in this field.
  *      2        Flags      Attributes field, as described in section
  *                          4.2.2.
  *      3        Filler     Contains the hex value FF.
- *      4..5     EC         Contains the "extra count" field, in big
+ *      4..5     EC         Contains the "extra count" field, in big-
  *                          endian order as described in section 4.2.3.
  *      6..7     RRC        Contains the "right rotation count" in big
  *                          endian order, as described in section 4.2.5.
  *      8..15    SND_SEQ    Sequence number field in clear text,
- *                          expressed in big endian order.
+ *                          expressed in big-endian order.
  *      16..last Data       Encrypted data for Wrap tokens with
  *                          confidentiality, or plaintext data followed
  *                          by the checksum for Wrap tokens without
@@ -73,67 +71,82 @@ import java.security.MessageDigest;
  *     -----------------------------------------------------------------
  *      0..1     TOK_ID     Identification field.  Tokens emitted by
  *                          GSS_GetMIC() contain the hex value 04 04
- *                          expressed in big endian order in this field.
+ *                          expressed in big-endian order in this field.
  *      2        Flags      Attributes field, as described in section
  *                          4.2.2.
  *      3..7     Filler     Contains five octets of hex value FF.
  *      8..15    SND_SEQ    Sequence number field in clear text,
- *                          expressed in big endian order.
+ *                          expressed in big-endian order.
  *      16..last SGN_CKSUM  Checksum of the "to-be-signed" data and
  *                          octet 0..15, as described in section 4.2.4.
  *
  * </pre>
  * <p>
+ * This class is the super class of WrapToken_v2 and MicToken_v2. The token's
+ * header (bytes[0..15]) and data (byte[16..]) are saved in tokenHeader and
+ * tokenData fields. Since there is no easy way to find out the exact length
+ * of a WrapToken_v2 token from any header info, in the case of reading from
+ * stream, we read all available() bytes into the token.
+ * <p>
+ * All read actions are performed in this super class. On the write part, the
+ * super class only write the tokenHeader, and the content writing is inside
+ * child classes.
  *
  * @author Seema Malkani
  */
 
 abstract class MessageToken_v2 extends Krb5Token {
 
+    protected static final int TOKEN_HEADER_SIZE = 16;
     private static final int TOKEN_ID_POS = 0;
     private static final int TOKEN_FLAG_POS = 2;
     private static final int TOKEN_EC_POS = 4;
     private static final int TOKEN_RRC_POS = 6;
 
-    // token header size
-    static final int TOKEN_HEADER_SIZE = 16;
+    /**
+     * The size of the random confounder used in a WrapToken.
+     */
+    protected static final int CONFOUNDER_SIZE = 16;
 
-    private int tokenId = 0;
-    private int seqNumber;
-
-    // EC and RRC fields
-    private int ec = 0;
-    private int rrc = 0;
-
-    private boolean confState = true;
-    private boolean initiator = true;
-
-    byte[] confounder = null;
-    byte[] checksum = null;
-
-    private int key_usage = 0;
-    private byte[] seqNumberData = null;
-
-    private MessageTokenHeader tokenHeader = null;
-
-    /* cipher instance used by the corresponding GSSContext */
-    CipherHelper cipherHelper = null;
-
-    // draft-ietf-krb-wg-gssapi-cfx-07
+    // RFC 4121, key usage values
     static final int KG_USAGE_ACCEPTOR_SEAL = 22;
     static final int KG_USAGE_ACCEPTOR_SIGN = 23;
     static final int KG_USAGE_INITIATOR_SEAL = 24;
     static final int KG_USAGE_INITIATOR_SIGN = 25;
 
-    // draft-ietf-krb-wg-gssapi-cfx-07
+    // RFC 4121, Flags Field
     private static final int FLAG_SENDER_IS_ACCEPTOR = 1;
     private static final int FLAG_WRAP_CONFIDENTIAL  = 2;
     private static final int FLAG_ACCEPTOR_SUBKEY    = 4;
     private static final int FILLER = 0xff;
 
+    private MessageTokenHeader tokenHeader = null;
+
+    // Common field
+    private int tokenId = 0;
+    private int seqNumber;
+    protected byte[] tokenData; // content of token, without the header
+    protected int tokenDataLen;
+
+    // Key usage number for crypto action
+    private int key_usage = 0;
+
+    // EC and RRC fields, WrapToken only
+    private int ec = 0;
+    private int rrc = 0;
+
+    // Checksum. Always in MicToken, might be in WrapToken
+    byte[] checksum = null;
+
+    // Context properties
+    private boolean confState = true;
+    private boolean initiator = true;
+
+    /* cipher instance used by the corresponding GSSContext */
+    CipherHelper cipherHelper = null;
+
     /**
-     * Constructs a MessageToken from a byte array. If there are more bytes
-     * in the array than needed, the extra bytes are simply ignroed.
+     * Constructs a MessageToken from a byte array.
      *
      * @param tokenId the token id that should be contained in this token as
      * it is read.
@@ -156,7 +169,9 @@ abstract class MessageToken_v2 extends Krb5Token {
     /**
      * Constructs a MessageToken from an InputStream. Bytes will be read on
      * demand and the thread might block if there are not enough bytes to
-     * complete the token.
+     * complete the token. Please note there is no accurate way to find out
+     * the size of a token, but we try our best to make sure there is
+     * enough bytes to construct one.
      *
      * @param tokenId the token id that should be contained in this token as
      * it is read.
@@ -186,25 +201,58 @@ abstract class MessageToken_v2 extends Krb5Token {
                                 : KG_USAGE_ACCEPTOR_SIGN);
             }
 
-            // Read checksum
-            int tokenLen = is.available();
-            byte[] data = new byte[tokenLen];
-            readFully(is, data);
-            checksum = new byte[cipherHelper.getChecksumLength()];
-            System.arraycopy(data, tokenLen-cipherHelper.getChecksumLength(),
-                        checksum, 0, cipherHelper.getChecksumLength());
-            // debug("\nLeaving MessageToken.Cons\n");
+            int minSize = 0;    // minimal size for token data
+            if (tokenId == Krb5Token.WRAP_ID_v2 && prop.getPrivacy()) {
+                minSize = CONFOUNDER_SIZE +
+                        TOKEN_HEADER_SIZE + cipherHelper.getChecksumLength();
+            } else {
+                minSize = cipherHelper.getChecksumLength();
+            }
 
-            // validate EC for Wrap tokens without confidentiality
-            if (!prop.getPrivacy() &&
-                (tokenId == Krb5Token.WRAP_ID_v2)) {
-                if (checksum.length != ec) {
-                    throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
-                        getTokenName(tokenId) + ":" + "EC incorrect!");
+            // Read token data
+            if (tokenId == Krb5Token.MIC_ID_v2) {
+                // The only case we can precisely predict the token data length
+                tokenDataLen = minSize;
+                tokenData = new byte[minSize];
+                readFully(is, tokenData);
+            } else {
+                tokenDataLen = is.available();
+                if (tokenDataLen >= minSize) {  // read in one shot
+                    tokenData = new byte[tokenDataLen];
+                    readFully(is, tokenData);
+                } else {
+                    byte[] tmp = new byte[minSize];
+                    readFully(is, tmp);
+                    // Hope while blocked in the read above, more data would
+                    // come and is.available() below contains the whole token.
+                    int more = is.available();
+                    tokenDataLen = minSize + more;
+                    tokenData = Arrays.copyOf(tmp, tokenDataLen);
+                    readFully(is, tokenData, minSize, more);
                 }
             }
 
+            if (tokenId == Krb5Token.WRAP_ID_v2) {
+                // Does non-confidential data needs a rotate?
+                rotate();
+            }
 
+            if (tokenId == Krb5Token.MIC_ID_v2 ||
+                    (tokenId == Krb5Token.WRAP_ID_v2 && !prop.getPrivacy())) {
+                // Read checksum
+                int chkLen = cipherHelper.getChecksumLength();
+                checksum = new byte[chkLen];
+                System.arraycopy(tokenData, tokenDataLen-chkLen,
+                        checksum, 0, chkLen);
+
+                // validate EC for Wrap tokens without confidentiality
+                if (tokenId == Krb5Token.WRAP_ID_v2 && !prop.getPrivacy()) {
+                    if (chkLen != ec) {
+                        throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
+                            getTokenName(tokenId) + ":" + "EC incorrect!");
+                    }
+                }
+            }
         } catch (IOException e) {
             throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
                 getTokenName(tokenId) + ":" + e.getMessage());
@@ -263,8 +311,7 @@ abstract class MessageToken_v2 extends Krb5Token {
             prop.setPrivacy(false);
         }
 
-        // Create a new gss token header as defined in
-        // draft-ietf-krb-wg-gssapi-cfx-07
+        // Create a new gss token header as defined in RFC 4121
         tokenHeader = new MessageTokenHeader(tokenId,
                                 prop.getPrivacy(), true);
         // debug("\n\t Message Header = " +
@@ -326,50 +373,21 @@ abstract class MessageToken_v2 extends Krb5Token {
      * Rotate bytes as per the "RRC" (Right Rotation Count) received.
      * Our implementation does not do any rotates when sending, only
      * when receiving, we rotate left as per the RRC count, to revert it.
-     *
-     * @return true if bytes are rotated
      */
-    public boolean rotate_left(byte[] in_bytes, int tokenOffset,
-        byte[] out_bytes, int bufsize) {
+    private void rotate() {
+        if (rrc % tokenDataLen != 0) {
+           rrc = rrc % tokenDataLen;
+           byte[] newBytes = new byte[tokenDataLen];
 
-        int offset = 0;
-        // debug("\nRotate left: (before rotation) in_bytes = [ " +
-        //              getHexBytes(in_bytes, tokenOffset, bufsize) + "]");
-        if (rrc > 0) {
-           if (bufsize == 0) {
-                return false;
-           }
-           rrc = rrc % (bufsize - TOKEN_HEADER_SIZE);
-           if (rrc == 0) {
-                return false;
-           }
+           System.arraycopy(tokenData, rrc, newBytes, 0, tokenDataLen-rrc);
+           System.arraycopy(tokenData, 0, newBytes, tokenDataLen-rrc, rrc);
 
-           // if offset is not zero
-           if (tokenOffset > 0) {
-                offset += tokenOffset;
-           }
-
-           // copy the header
-           System.arraycopy(in_bytes, offset, out_bytes, 0, TOKEN_HEADER_SIZE);
-           offset += TOKEN_HEADER_SIZE;
-
-           // copy rest of the bytes
-           System.arraycopy(in_bytes, offset+rrc, out_bytes,
-                        TOKEN_HEADER_SIZE, bufsize-TOKEN_HEADER_SIZE-rrc);
-
-           // copy the bytes specified by rrc count
-           System.arraycopy(in_bytes, offset, out_bytes,
-                        bufsize-TOKEN_HEADER_SIZE-rrc, rrc);
-
-           // debug("\nRotate left: (after rotation) out_bytes = [ " +
-           //           getHexBytes(out_bytes, 0, bufsize) + "]");
-           return true;
+           tokenData = newBytes;
         }
-        return false;
     }
 
     public final int getSequenceNumber() {
-        return (readBigEndian(seqNumberData, 0, 4));
+        return seqNumber;
     }
 
     /**
@@ -444,44 +462,25 @@ abstract class MessageToken_v2 extends Krb5Token {
 
         this.cipherHelper = context.getCipherHelper(null);
         //    debug("In MessageToken.Cons");
-
-        // draft-ietf-krb-wg-gssapi-cfx-07
-        this.tokenId = tokenId;
     }
 
     /**
-     * Encodes a GSSHeader and this token onto an OutputStream.
+     * Encodes a MessageTokenHeader onto an OutputStream.
      *
      * @param os the OutputStream to which this should be written
-     * @throws GSSException if an error occurs while writing to the OutputStream
+     * @throws IOException is an error occurs while writing to the OutputStream
      */
-    public void encode(OutputStream os) throws IOException, GSSException {
-        // debug("Writing tokenHeader " + getHexBytes(tokenHeader.getBytes());
-        // (16 bytes of token header that includes sequence Number)
+    protected void encodeHeader(OutputStream os) throws IOException {
         tokenHeader.encode(os);
-        // debug("Writing checksum: " + getHexBytes(checksum));
-        if (tokenId == MIC_ID_v2) {
-           os.write(checksum);
-        }
     }
 
     /**
-     * Obtains the size of this token. Note that this excludes the size of
-     * the GSSHeader.
-     * @return token size
+     * Encodes a MessageToken_v2 onto an OutputStream.
+     *
+     * @param os the OutputStream to which this should be written
+     * @throws IOException is an error occurs while encoding the token
      */
-    protected int getKrb5TokenSize() throws GSSException {
-        return getTokenSize();
-    }
-
-    protected final int getTokenSize() throws GSSException {
-        return (TOKEN_HEADER_SIZE + cipherHelper.getChecksumLength());
-    }
-
-    protected static final int getTokenSize(CipherHelper ch)
-        throws GSSException {
-        return (TOKEN_HEADER_SIZE + ch.getChecksumLength());
-    }
+    public abstract void encode(OutputStream os) throws IOException;
 
     protected final byte[] getTokenHeader() {
         return (tokenHeader.getBytes());
@@ -493,45 +492,14 @@ abstract class MessageToken_v2 extends Krb5Token {
 
     /**
      * This inner class represents the initial portion of the message token.
-     * It constitutes the first 16 bytes of the message token:
-     * <pre>
-     *  Wrap Tokens
-     *
-     *     Octet no   Name        Description
-     *    ---------------------------------------------------------------
-     *      0..1     TOK_ID     Identification field.  Tokens emitted by
-     *                          GSS_Wrap() contain the the hex value 05 04
-     *                          expressed in big endian order in this field.
-     *      2        Flags      Attributes field, as described in section
-     *                          4.2.2.
-     *      3        Filler     Contains the hex value FF.
-     *      4..5     EC         Contains the "extra count" field, in big
-     *                          endian order as described in section 4.2.3.
-     *      6..7     RRC        Contains the "right rotation count" in big
-     *                          endian order, as described in section 4.2.5.
-     *      8..15    SND_SEQ    Sequence number field in clear text,
-     *                          expressed in big endian order.
-     *
-     * MIC Tokens
-     *
-     *     Octet no   Name        Description
-     *     -----------------------------------------------------------------
-     *      0..1     TOK_ID     Identification field.  Tokens emitted by
-     *                          GSS_GetMIC() contain the hex value 04 04
-     *                          expressed in big endian order in this field.
-     *      2        Flags      Attributes field, as described in section
-     *                          4.2.2.
-     *      3..7     Filler     Contains five octets of hex value FF.
-     *      8..15    SND_SEQ    Sequence number field in clear text,
-     *                          expressed in big endian order.
-     * </pre>
+     * It constitutes the first 16 bytes of the message token.
      */
     class MessageTokenHeader {
 
          private int tokenId;
          private byte[] bytes = new byte[TOKEN_HEADER_SIZE];
 
-         // new token header draft-ietf-krb-wg-gssapi-cfx-07
+         // Writes a new token header
          public MessageTokenHeader(int tokenId, boolean conf,
                 boolean have_acceptor_subkey) throws GSSException {
 
@@ -542,16 +510,15 @@ abstract class MessageToken_v2 extends Krb5Token {
 
             // Flags (Note: MIT impl requires subkey)
             int flags = 0;
-            flags = ((initiator ? 0 : FLAG_SENDER_IS_ACCEPTOR) |
+            flags = (initiator ? 0 : FLAG_SENDER_IS_ACCEPTOR) |
                      ((conf && tokenId != MIC_ID_v2) ?
                                 FLAG_WRAP_CONFIDENTIAL : 0) |
-                     (have_acceptor_subkey ? FLAG_ACCEPTOR_SUBKEY : 0));
+                     (have_acceptor_subkey ? FLAG_ACCEPTOR_SUBKEY : 0);
             bytes[2] = (byte) flags;
 
             // filler
             bytes[3] = (byte) FILLER;
 
-            // EC and RRC fields
             if (tokenId == WRAP_ID_v2) {
                 // EC field
                 bytes[4] = (byte) 0;
@@ -560,21 +527,19 @@ abstract class MessageToken_v2 extends Krb5Token {
                 bytes[6] = (byte) 0;
                 bytes[7] = (byte) 0;
             } else if (tokenId == MIC_ID_v2) {
-                // octets of filler FF
+                // more filler for MicToken
                 for (int i = 4; i < 8; i++) {
                     bytes[i] = (byte) FILLER;
                 }
             }
 
-            // Calculate SND_SEQ
-            seqNumberData = new byte[8];
-            writeBigEndian(seqNumber, seqNumberData, 4);
-            System.arraycopy(seqNumberData, 0, bytes, 8, 8);
+            // Calculate SND_SEQ, only write 4 bytes from the 12th position
+            writeBigEndian(seqNumber, bytes, 12);
         }
 
         /**
-         * Constructs a MessageTokenHeader by reading it from an InputStream
-         * and sets the appropriate confidentiality and quality of protection
+         * Reads a MessageTokenHeader from an InputStream and sets the
+         * appropriate confidentiality and quality of protection
          * values in a MessageProp structure.
          *
          * @param is the InputStream to read from
@@ -588,15 +553,23 @@ abstract class MessageToken_v2 extends Krb5Token {
             readFully(is, bytes, 0, TOKEN_HEADER_SIZE);
             tokenId = readInt(bytes, TOKEN_ID_POS);
 
+            // validate Token ID
+            if (tokenId != tokId) {
+                throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
+                    getTokenName(tokenId) + ":" + "Defective Token ID!");
+            }
+
             /*
              * Validate new GSS TokenHeader
              */
-            // valid acceptor_flag is set
+
+            // valid acceptor_flag
+            // If I am initiator, the received token should have ACCEPTOR on
             int acceptor_flag = (initiator ? FLAG_SENDER_IS_ACCEPTOR : 0);
             int flag = bytes[TOKEN_FLAG_POS] & FLAG_SENDER_IS_ACCEPTOR;
-            if (!(flag == acceptor_flag)) {
+            if (flag != acceptor_flag) {
                 throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
-                        getTokenName(tokenId) + ":" + "Acceptor Flag Missing!");
+                        getTokenName(tokenId) + ":" + "Acceptor Flag Error!");
             }
 
             // check for confidentiality
@@ -608,21 +581,20 @@ abstract class MessageToken_v2 extends Krb5Token {
                 prop.setPrivacy(false);
             }
 
-            // validate Token ID
-            if (tokenId != tokId) {
-                throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
-                    getTokenName(tokenId) + ":" + "Defective Token ID!");
-            }
+            if (tokenId == WRAP_ID_v2) {
+                // validate filler
+                if ((bytes[3] & 0xff) != FILLER) {
+                    throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
+                        getTokenName(tokenId) + ":" + "Defective Token Filler!");
+                }
 
-            // validate filler
-            if ((bytes[3] & 0xff) != FILLER) {
-                throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
-                    getTokenName(tokenId) + ":" + "Defective Token Filler!");
-            }
+                // read EC field
+                ec = readBigEndian(bytes, TOKEN_EC_POS, 2);
 
-            // validate next 4 bytes of filler for MIC tokens
-            if (tokenId == MIC_ID_v2) {
-                for (int i = 4; i < 8; i++) {
+                // read RRC field
+                rrc = readBigEndian(bytes, TOKEN_RRC_POS, 2);
+            } else if (tokenId == MIC_ID_v2) {
+                for (int i = 3; i < 8; i++) {
                     if ((bytes[i] & 0xff) != FILLER) {
                         throw new GSSException(GSSException.DEFECTIVE_TOKEN,
                                 -1, getTokenName(tokenId) + ":" +
@@ -631,18 +603,11 @@ abstract class MessageToken_v2 extends Krb5Token {
                 }
             }
 
-            // read EC field
-            ec = readBigEndian(bytes, TOKEN_EC_POS, 2);
-
-            // read RRC field
-            rrc = readBigEndian(bytes, TOKEN_RRC_POS, 2);
-
             // set default QOP
             prop.setQOP(0);
 
             // sequence number
-            seqNumberData = new byte[8];
-            System.arraycopy(bytes, 8, seqNumberData, 0, 8);
+            seqNumber = readBigEndian(bytes, 0, 8);
         }
 
         /**

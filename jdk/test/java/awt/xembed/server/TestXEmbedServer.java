@@ -31,6 +31,9 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 
 public abstract class TestXEmbedServer {
+    // vertical position of server AND client windows
+    private static final int VERTICAL_POSITION = 200;
+
     private static final Logger log = Logger.getLogger("test.xembed");
     Frame f;
     Canvas client;
@@ -161,10 +164,10 @@ public abstract class TestXEmbedServer {
         dummy = new JFrame("Dummy");
         dummy.getContentPane().add(new JButton("Button"));
         dummy.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        dummy.setBounds(0, 0, 100, 100);
+        dummy.setBounds(0, VERTICAL_POSITION, 100, 100);
         dummy.setVisible(true);
 
-        f.setBounds(300, 0, 800, 300);
+        f.setBounds(300, VERTICAL_POSITION, 800, 300);
         f.setVisible(true);
     }
 

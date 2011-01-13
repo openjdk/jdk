@@ -381,8 +381,7 @@ final class ClientHandshaker extends Handshaker {
                     mesgVersion);
         }
 
-        handshakeHash.protocolDetermined(
-            mesgVersion.v >= ProtocolVersion.TLS12.v);
+        handshakeHash.protocolDetermined(mesgVersion);
 
         // Set protocolVersion and propagate to SSLSocket and the
         // Handshake streams
@@ -1223,7 +1222,7 @@ final class ClientHandshaker extends Handshaker {
         // not follow the spec that HandshakeHash.reset() can be only be
         // called before protocolDetermined.
         // if (maxProtocolVersion.v < ProtocolVersion.TLS12.v) {
-        //     handshakeHash.protocolDetermined(false);
+        //     handshakeHash.protocolDetermined(maxProtocolVersion);
         // }
 
         // create the ClientHello message
