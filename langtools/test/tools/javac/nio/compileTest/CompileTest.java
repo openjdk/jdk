@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6906175 6915476 6915497
+ * @bug 6906175 6915476 6915497 7006564
  * @summary Path-based JavaFileManager
  * @compile -g HelloPathWorld.java
  * @run main CompileTest
