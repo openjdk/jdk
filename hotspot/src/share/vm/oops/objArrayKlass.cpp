@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,8 +235,9 @@ klassOop objArrayKlass::array_klass_impl(objArrayKlassHandle this_oop, bool or_n
           objArrayKlassKlass::cast(Universe::objArrayKlassKlassObj())->
           allocate_objArray_klass(dimension + 1, this_oop, CHECK_NULL);
         ak = objArrayKlassHandle(THREAD, new_klass);
-        this_oop->set_higher_dimension(ak());
         ak->set_lower_dimension(this_oop());
+        OrderAccess::storestore();
+        this_oop->set_higher_dimension(ak());
         assert(ak->oop_is_objArray(), "incorrect initialization of objArrayKlass");
       }
     }

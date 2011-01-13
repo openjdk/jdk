@@ -1665,16 +1665,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     if (ProfileInterpreter) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method), rsi);
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
       __ load_unsigned_byte(rbx, Address(rsi, 0));  // restore target bytecode
-      __ movptr(rcx, Address(rbp, method_offset));
-      __ movptr(rcx, Address(rcx, in_bytes(methodOopDesc::method_data_offset())));
-      __ movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), rcx);
-      __ test_method_data_pointer(rcx, dispatch);
-      // offset non-null mdp by MDO::data_offset() + IR::profile_method()
-      __ addptr(rcx, in_bytes(methodDataOopDesc::data_offset()));
-      __ addptr(rcx, rax);
-      __ movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), rcx);
+      __ set_method_data_pointer_for_bcp();
       __ jmp(dispatch);
     }
 
