@@ -3196,10 +3196,12 @@ void TemplateTable::_new() {
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc() && !CMSIncrementalMode;
 
-  if (UseTLAB) {
-    const Register thread = rcx;
-
+  const Register thread = rcx;
+  if (UseTLAB || allow_shared_alloc) {
     __ get_thread(thread);
+  }
+
+  if (UseTLAB) {
     __ movptr(rax, Address(thread, in_bytes(JavaThread::tlab_top_offset())));
     __ lea(rbx, Address(rax, rdx, Address::times_1));
     __ cmpptr(rbx, Address(thread, in_bytes(JavaThread::tlab_end_offset())));
@@ -3240,6 +3242,8 @@ void TemplateTable::_new() {
 
     // if someone beat us on the allocation, try again, otherwise continue
     __ jcc(Assembler::notEqual, retry);
+
+    __ incr_allocated_bytes(thread, rdx, 0);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
@@ -3249,12 +3253,12 @@ void TemplateTable::_new() {
     __ decrement(rdx, sizeof(oopDesc));
     __ jcc(Assembler::zero, initialize_header);
 
-  // Initialize topmost object field, divide rdx by 8, check if odd and
-  // test if zero.
+    // Initialize topmost object field, divide rdx by 8, check if odd and
+    // test if zero.
     __ xorl(rcx, rcx);    // use zero reg to clear memory (shorter code)
     __ shrl(rdx, LogBytesPerLong); // divide by 2*oopSize and set carry flag if odd
 
-  // rdx must have been multiple of 8
+    // rdx must have been multiple of 8
 #ifdef ASSERT
     // make sure rdx was multiple of 8
     Label L;

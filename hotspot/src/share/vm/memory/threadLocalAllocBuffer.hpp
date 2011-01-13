@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,8 @@ public:
   HeapWord* top() const                          { return _top; }
   HeapWord* pf_top() const                       { return _pf_top; }
   size_t desired_size() const                    { return _desired_size; }
+  size_t used() const                            { return pointer_delta(top(), start()); }
+  size_t used_bytes() const                      { return pointer_delta(top(), start(), 1); }
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }

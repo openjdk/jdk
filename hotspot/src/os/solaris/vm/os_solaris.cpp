@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ Thread* ThreadLocalStorage::get_thread_via_cache_slowly(uintptr_t raw_id,
                is_error_reported(),
               "sp must be inside of selected thread stack");
 
-    thread->_self_raw_id = raw_id;  // mark for quick retrieval
+    thread->set_self_raw_id(raw_id);  // mark for quick retrieval
     _get_thread_cache[ index ] = thread;
   }
   return thread;
@@ -5197,7 +5197,7 @@ int os::open(const char *path, int oflag, int mode) {
   int o_delete = (oflag & O_DELETE);
   oflag = oflag & ~O_DELETE;
 
-  fd = ::open(path, oflag, mode);
+  fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
 
   //If the open succeeded, the file might still be a directory
