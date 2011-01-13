@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -884,7 +884,7 @@ IRT_LEAF(jint, InterpreterRuntime::bcp_to_di(methodOopDesc* method, address cur_
   return mdo->bci_to_di(bci);
 IRT_END
 
-IRT_ENTRY(jint, InterpreterRuntime::profile_method(JavaThread* thread, address cur_bcp))
+IRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
   UnlockFlagSaver fs(thread);
@@ -893,16 +893,12 @@ IRT_ENTRY(jint, InterpreterRuntime::profile_method(JavaThread* thread, address c
   frame fr = thread->last_frame();
   assert(fr.is_interpreted_frame(), "must come from interpreter");
   methodHandle method(thread, fr.interpreter_frame_method());
-  int bci = method->bci_from(cur_bcp);
   methodOopDesc::build_interpreter_method_data(method, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
     // and fall through...
   }
-  methodDataOop mdo = method->method_data();
-  if (mdo == NULL)  return 0;
-  return mdo->bci_to_di(bci);
 IRT_END
 
 

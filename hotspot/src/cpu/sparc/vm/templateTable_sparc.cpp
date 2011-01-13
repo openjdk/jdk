@@ -1689,7 +1689,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Register G4_invoke_ctr = G4;
       __ increment_backedge_counter(G4_invoke_ctr, G1_scratch);
       if (ProfileInterpreter) {
-        __ test_invocation_counter_for_mdp(G4_invoke_ctr, Lbcp, G3_scratch, Lforward);
+        __ test_invocation_counter_for_mdp(G4_invoke_ctr, G3_scratch, Lforward);
         if (UseOnStackReplacement) {
           __ test_backedge_count_for_osr(O2_bumped_count, O0_cur_bcp, G3_scratch);
         }
