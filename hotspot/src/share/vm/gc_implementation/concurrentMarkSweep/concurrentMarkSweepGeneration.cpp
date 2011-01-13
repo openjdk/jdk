@@ -8119,8 +8119,10 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
         // if the next chunk is a free block that can't be coalesced
         // it doesn't make sense to remove this chunk from the free lists
         FreeChunk* nextChunk = (FreeChunk*)(addr + size);
-        if (nextChunk->isFree()    &&            // The next chunk is free...
-            nextChunk->cantCoalesce()) {         // ... but cant be coalesced
+        assert((HeapWord*)nextChunk <= _sp->end(), "Chunk size out of bounds?");
+        if ((HeapWord*)nextChunk < _sp->end() &&     // There is another free chunk to the right ...
+            nextChunk->isFree()               &&     // ... which is free...
+            nextChunk->cantCoalesce()) {             // ... but can't be coalesced
           // nothing to do
         } else {
           // Potentially the start of a new free range:
