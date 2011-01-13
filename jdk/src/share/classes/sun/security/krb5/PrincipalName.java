@@ -244,7 +244,7 @@ public class PrincipalName
             if (subDer.getTag() != DerValue.tag_SequenceOf) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
             }
-            Vector<String> v = new Vector<String> ();
+            Vector<String> v = new Vector<>();
             DerValue subSubDer;
             while(subDer.getData().available() > 0) {
                 subSubDer = subDer.getData().getDerValue();
@@ -299,7 +299,7 @@ public class PrincipalName
     // Code repetition, realm parsed again by class Realm
     protected static String[] parseName(String name) {
 
-        Vector<String> tempStrings = new Vector<String> ();
+        Vector<String> tempStrings = new Vector<>();
         String temp = name;
         int i = 0;
         int componentStart = 0;

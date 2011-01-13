@@ -179,7 +179,7 @@ public class HostAddresses implements Cloneable {
     */
     public HostAddresses(DerValue encoding)
         throws  Asn1Exception, IOException {
-        Vector<HostAddress> tempAddresses = new Vector<HostAddress> ();
+        Vector<HostAddress> tempAddresses = new Vector<>();
         DerValue der = null;
         while (encoding.getData().available() > 0) {
             der = encoding.getData().getDerValue();
@@ -265,8 +265,7 @@ public class HostAddresses implements Cloneable {
         if (addresses == null || addresses.length == 0)
             return null;
 
-        ArrayList<InetAddress> ipAddrs =
-                new ArrayList<InetAddress> (addresses.length);
+        ArrayList<InetAddress> ipAddrs = new ArrayList<>(addresses.length);
 
         for (int i = 0; i < addresses.length; i++) {
             try {

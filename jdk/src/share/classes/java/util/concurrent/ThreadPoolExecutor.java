@@ -1841,6 +1841,43 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         }
     }
 
+    /**
+     * Returns a string identifying this pool, as well as its state,
+     * including indications of run state and estimated worker and
+     * task counts.
+     *
+     * @return a string identifying this pool, as well as its state
+     */
+    public String toString() {
+        long ncompleted;
+        int nworkers, nactive;
+        final ReentrantLock mainLock = this.mainLock;
+        mainLock.lock();
+        try {
+            ncompleted = completedTaskCount;
+            nactive = 0;
+            nworkers = workers.size();
+            for (Worker w : workers) {
+                ncompleted += w.completedTasks;
+                if (w.isLocked())
+                    ++nactive;
+            }
+        } finally {
+            mainLock.unlock();
+        }
+        int c = ctl.get();
+        String rs = (runStateLessThan(c, SHUTDOWN) ? "Running" :
+                     (runStateAtLeast(c, TERMINATED) ? "Terminated" :
+                      "Shutting down"));
+        return super.toString() +
+            "[" + rs +
+            ", pool size = " + nworkers +
+            ", active threads = " + nactive +
+            ", queued tasks = " + workQueue.size() +
+            ", completed tasks = " + ncompleted +
+            "]";
+    }
+
     /* Extension hooks */
 
     /**
@@ -1961,7 +1998,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * @throws RejectedExecutionException always.
          */
         public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
-            throw new RejectedExecutionException();
+            throw new RejectedExecutionException("Task " + r.toString() +
+                                                 " rejected from " +
+                                                 e.toString());
         }
     }
 

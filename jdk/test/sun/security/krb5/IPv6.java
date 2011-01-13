@@ -78,8 +78,8 @@ public class IPv6 {
         try {
             Subject subject = new Subject();
             Krb5LoginModule krb5 = new Krb5LoginModule();
-            Map<String, String> map = new HashMap<String, String>();
-            Map<String, Object> shared = new HashMap<String, Object>();
+            Map<String, String> map = new HashMap<>();
+            Map<String, Object> shared = new HashMap<>();
 
             map.put("debug", "true");
             map.put("doNotPrompt", "true");

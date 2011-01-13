@@ -308,18 +308,21 @@ public interface Condition {
      * condition still does not hold. Typical uses of this method take
      * the following form:
      *
-     * <pre>
-     * synchronized boolean aMethod(long timeout, TimeUnit unit) {
-     *   long nanosTimeout = unit.toNanos(timeout);
-     *   while (!conditionBeingWaitedFor) {
-     *     if (nanosTimeout &gt; 0)
-     *         nanosTimeout = theCondition.awaitNanos(nanosTimeout);
-     *      else
-     *        return false;
+     *  <pre> {@code
+     * boolean aMethod(long timeout, TimeUnit unit) {
+     *   long nanos = unit.toNanos(timeout);
+     *   lock.lock();
+     *   try {
+     *     while (!conditionBeingWaitedFor()) {
+     *       if (nanos <= 0L)
+     *         return false;
+     *       nanos = theCondition.awaitNanos(nanos);
+     *     }
+     *     // ...
+     *   } finally {
+     *     lock.unlock();
      *   }
-     *   // ...
-     * }
-     * </pre>
+     * }}</pre>
      *
      * <p> Design note: This method requires a nanosecond argument so
      * as to avoid truncation errors in reporting remaining times.
@@ -408,18 +411,21 @@ public interface Condition {
      *
      * <p>The return value indicates whether the deadline has elapsed,
      * which can be used as follows:
-     * <pre>
-     * synchronized boolean aMethod(Date deadline) {
+     *  <pre> {@code
+     * boolean aMethod(Date deadline) {
      *   boolean stillWaiting = true;
-     *   while (!conditionBeingWaitedFor) {
-     *     if (stillWaiting)
-     *         stillWaiting = theCondition.awaitUntil(deadline);
-     *      else
-     *        return false;
+     *   lock.lock();
+     *   try {
+     *     while (!conditionBeingWaitedFor()) {
+     *       if (!stillWaiting)
+     *         return false;
+     *       stillWaiting = theCondition.awaitUntil(deadline);
+     *     }
+     *     // ...
+     *   } finally {
+     *     lock.unlock();
      *   }
-     *   // ...
-     * }
-     * </pre>
+     * }}</pre>
      *
      * <p><b>Implementation Considerations</b>
      *
@@ -450,6 +456,15 @@ public interface Condition {
      * <p>If any threads are waiting on this condition then one
      * is selected for waking up. That thread must then re-acquire the
      * lock before returning from {@code await}.
+     *
+     * <p><b>Implementation Considerations</b>
+     *
+     * <p>An implementation may (and typically does) require that the
+     * current thread hold the lock associated with this {@code
+     * Condition} when this method is called. Implementations must
+     * document this precondition and any actions taken if the lock is
+     * not held. Typically, an exception such as {@link
+     * IllegalMonitorStateException} will be thrown.
      */
     void signal();
 
@@ -459,6 +474,15 @@ public interface Condition {
      * <p>If any threads are waiting on this condition then they are
      * all woken up. Each thread must re-acquire the lock before it can
      * return from {@code await}.
+     *
+     * <p><b>Implementation Considerations</b>
+     *
+     * <p>An implementation may (and typically does) require that the
+     * current thread hold the lock associated with this {@code
+     * Condition} when this method is called. Implementations must
+     * document this precondition and any actions taken if the lock is
+     * not held. Typically, an exception such as {@link
+     * IllegalMonitorStateException} will be thrown.
      */
     void signalAll();
 }

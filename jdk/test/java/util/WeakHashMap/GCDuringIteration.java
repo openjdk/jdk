@@ -33,18 +33,17 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 public class GCDuringIteration {
-    static void finalizeTillYouDrop() {
-        System.gc();              // Enqueue all finalizables
+    private static void waitForFinalizersToRun() {
+        for (int i = 0; i < 2; i++)
+            tryWaitForFinalizersToRun();
+    }
 
-        System.runFinalization(); // Drain finalizer queue
-
-        // There may be a straggler finalizable object still being
-        // finalized by the dedicated finalizer thread.  Enqueue one
-        // more finalizable object, and wait for it to be finalized.
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Object() { protected void finalize() { latch.countDown(); }};
+    private static void tryWaitForFinalizersToRun() {
         System.gc();
-        try { latch.await(); }
+        final CountDownLatch fin = new CountDownLatch(1);
+        new Object() { protected void finalize() { fin.countDown(); }};
+        System.gc();
+        try { fin.await(); }
         catch (InterruptedException ie) { throw new Error(ie); }
     }
 
@@ -101,7 +100,9 @@ public class GCDuringIteration {
         {
             int first = firstValue(map);
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
-            foos[first] = null; finalizeTillYouDrop();
+            foos[first] = null;
+            for (int i = 0; i < 10 && map.size() != first; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first);
             checkIterator(it, first-1);
             equal(map.size(), first);
@@ -113,11 +114,14 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.next();          // protects first entry
             System.out.println(map.values());
-            foos[first] = null; finalizeTillYouDrop();
+            foos[first] = null;
+            tryWaitForFinalizersToRun()
             equal(map.size(), first+1);
             System.out.println(map.values());
             checkIterator(it, first-1);
-            finalizeTillYouDrop(); // first entry no longer protected
+            // first entry no longer protected
+            for (int i = 0; i < 10 && map.size() != first; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first);
             equal(firstValue(map), first-1);
         }
@@ -127,12 +131,15 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.next();          // protects first entry
             System.out.println(map.values());
-            foos[first] = foos[first-1] = null; finalizeTillYouDrop();
+            foos[first] = foos[first-1] = null;
+            tryWaitForFinalizersToRun();
             equal(map.size(), first);
             equal(firstValue(map), first);
             System.out.println(map.values());
             checkIterator(it, first-2);
-            finalizeTillYouDrop(); // first entry no longer protected
+            // first entry no longer protected
+            for (int i = 0; i < 10 && map.size() != first-1; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first-1);
             equal(firstValue(map), first-2);
         }
@@ -143,12 +150,15 @@ public class GCDuringIteration {
             it.next();          // protects first entry
             it.hasNext();       // protects second entry
             System.out.println(map.values());
-            foos[first] = foos[first-1] = null; finalizeTillYouDrop();
+            foos[first] = foos[first-1] = null;
+            tryWaitForFinalizersToRun();
             equal(firstValue(map), first);
             equal(map.size(), first+1);
             System.out.println(map.values());
             checkIterator(it, first-1);
-            finalizeTillYouDrop(); // first entry no longer protected
+            // first entry no longer protected
+            for (int i = 0; i < 10 && map.size() != first-1; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first-1);
             equal(firstValue(map), first-2);
         }
@@ -158,13 +168,16 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.next();          // protects first entry
             System.out.println(map.values());
-            foos[first] = foos[first-1] = null; finalizeTillYouDrop();
+            foos[first] = foos[first-1] = null;
+            tryWaitForFinalizersToRun();
             it.remove();
             equal(firstValue(map), first-2);
             equal(map.size(), first-1);
             System.out.println(map.values());
             checkIterator(it, first-2);
-            finalizeTillYouDrop();
+            // first entry no longer protected
+            for (int i = 0; i < 10 && map.size() != first-1; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first-1);
             equal(firstValue(map), first-2);
         }
@@ -176,12 +189,14 @@ public class GCDuringIteration {
             it.remove();
             it.hasNext();       // protects second entry
             System.out.println(map.values());
-            foos[first] = foos[first-1] = null; finalizeTillYouDrop();
+            foos[first] = foos[first-1] = null;
+            tryWaitForFinalizersToRun();
             equal(firstValue(map), first-1);
             equal(map.size(), first);
             System.out.println(map.values());
             checkIterator(it, first-1);
-            finalizeTillYouDrop();
+            for (int i = 0; i < 10 && map.size() != first-1; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), first-1);
             equal(firstValue(map), first-2);
         }
@@ -191,12 +206,13 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.hasNext();       // protects first entry
             Arrays.fill(foos, null);
-            finalizeTillYouDrop();
+            tryWaitForFinalizersToRun();
             equal(map.size(), 1);
             System.out.println(map.values());
             equal(it.next().getValue(), first);
             check(! it.hasNext());
-            finalizeTillYouDrop();
+            for (int i = 0; i < 10 && map.size() != 0; i++)
+                tryWaitForFinalizersToRun();
             equal(map.size(), 0);
             check(map.isEmpty());
         }
