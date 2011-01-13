@@ -286,9 +286,8 @@ public class Paths {
         }
 
         public void addFile(File file, boolean warn) {
-            File canonFile = fsInfo.getCanonicalFile(file);
-            if (contains(file) || canonicalValues.contains(canonFile)) {
-                /* Discard duplicates and avoid infinite recursion */
+            if (contains(file)) {
+                // discard duplicates
                 return;
             }
 
@@ -298,7 +297,17 @@ public class Paths {
                     log.warning(Lint.LintCategory.PATH,
                             "path.element.not.found", file);
                 }
-            } else if (fsInfo.isFile(file)) {
+                super.add(file);
+                return;
+            }
+
+            File canonFile = fsInfo.getCanonicalFile(file);
+            if (canonicalValues.contains(canonFile)) {
+                /* Discard duplicates and avoid infinite recursion */
+                return;
+            }
+
+            if (fsInfo.isFile(file)) {
                 /* File is an ordinary file. */
                 if (!isArchive(file)) {
                     /* Not a recognized extension; open it to see if
@@ -322,11 +331,11 @@ public class Paths {
             }
 
             /* Now what we have left is either a directory or a file name
-               confirming to archive naming convention */
+               conforming to archive naming convention */
             super.add(file);
             canonicalValues.add(canonFile);
 
-            if (expandJarClassPaths && fsInfo.exists(file) && fsInfo.isFile(file))
+            if (expandJarClassPaths && fsInfo.isFile(file))
                 addJarClassPath(file, warn);
         }
 
