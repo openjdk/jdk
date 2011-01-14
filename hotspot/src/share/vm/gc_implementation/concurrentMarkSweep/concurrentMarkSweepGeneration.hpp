@@ -1701,7 +1701,9 @@ class SweepClosure: public BlkClosureCareful {
   CMSCollector*                  _collector;  // collector doing the work
   ConcurrentMarkSweepGeneration* _g;    // Generation being swept
   CompactibleFreeListSpace*      _sp;   // Space being swept
-  HeapWord*                      _limit;
+  HeapWord*                      _limit;// the address at which the sweep should stop because
+                                        // we do not expect blocks eligible for sweeping past
+                                        // that address.
   Mutex*                         _freelistLock; // Free list lock (in space)
   CMSBitMap*                     _bitMap;       // Marking bit map (in
                                                 // generation)
@@ -1745,14 +1747,13 @@ class SweepClosure: public BlkClosureCareful {
  private:
   // Code that is common to a free chunk or garbage when
   // encountered during sweeping.
-  void doPostIsFreeOrGarbageChunk(FreeChunk *fc,
-                                  size_t chunkSize);
+  void do_post_free_or_garbage_chunk(FreeChunk *fc, size_t chunkSize);
   // Process a free chunk during sweeping.
-  void doAlreadyFreeChunk(FreeChunk *fc);
+  void do_already_free_chunk(FreeChunk *fc);
   // Process a garbage chunk during sweeping.
-  size_t doGarbageChunk(FreeChunk *fc);
+  size_t do_garbage_chunk(FreeChunk *fc);
   // Process a live chunk during sweeping.
-  size_t doLiveChunk(FreeChunk* fc);
+  size_t do_live_chunk(FreeChunk* fc);
 
   // Accessors.
   HeapWord* freeFinger() const          { return _freeFinger; }
@@ -1769,7 +1770,7 @@ class SweepClosure: public BlkClosureCareful {
   // Initialize a free range.
   void initialize_free_range(HeapWord* freeFinger, bool freeRangeInFreeLists);
   // Return this chunk to the free lists.
-  void flushCurFreeChunk(HeapWord* chunk, size_t size);
+  void flush_cur_free_chunk(HeapWord* chunk, size_t size);
 
   // Check if we should yield and do so when necessary.
   inline void do_yield_check(HeapWord* addr);

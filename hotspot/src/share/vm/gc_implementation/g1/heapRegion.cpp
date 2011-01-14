@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,26 +386,27 @@ void HeapRegion::calc_gc_efficiency() {
 }
 // </PREDICTION>
 
-void HeapRegion::set_startsHumongous(HeapWord* new_end) {
+void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
   assert(end() == _orig_end,
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
+  assert(bottom() <= new_top && new_top <= new_end, "pre-condition");
 
   _humongous_type = StartsHumongous;
   _humongous_start_region = this;
 
   set_end(new_end);
-  _offsets.set_for_starts_humongous(new_end);
+  _offsets.set_for_starts_humongous(new_top);
 }
 
-void HeapRegion::set_continuesHumongous(HeapRegion* start) {
+void HeapRegion::set_continuesHumongous(HeapRegion* first_hr) {
   assert(end() == _orig_end,
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
-  assert(start->startsHumongous(), "pre-condition");
+  assert(first_hr->startsHumongous(), "pre-condition");
 
   _humongous_type = ContinuesHumongous;
-  _humongous_start_region = start;
+  _humongous_start_region = first_hr;
 }
 
 bool HeapRegion::claimHeapRegion(jint claimValue) {
@@ -782,9 +783,6 @@ void HeapRegion::verify(bool allow_dirty) const {
   verify(allow_dirty, /* use_prev_marking */ true, /* failures */ &dummy);
 }
 
-#define OBJ_SAMPLE_INTERVAL 0
-#define BLOCK_SAMPLE_INTERVAL 100
-
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
@@ -795,83 +793,125 @@ void HeapRegion::verify(bool allow_dirty,
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  int objs = 0;
-  int blocks = 0;
   VerifyLiveClosure vl_cl(g1, use_prev_marking);
   bool is_humongous = isHumongous();
+  bool do_bot_verify = !is_young();
   size_t object_num = 0;
   while (p < top()) {
-    size_t size = oop(p)->size();
-    if (is_humongous != g1->isHumongous(size)) {
+    oop obj = oop(p);
+    size_t obj_size = obj->size();
+    object_num += 1;
+
+    if (is_humongous != g1->isHumongous(obj_size)) {
       gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
                              SIZE_FORMAT" words) in a %shumongous region",
-                             p, g1->isHumongous(size) ? "" : "non-",
-                             size, is_humongous ? "" : "non-");
+                             p, g1->isHumongous(obj_size) ? "" : "non-",
+                             obj_size, is_humongous ? "" : "non-");
        *failures = true;
+       return;
     }
-    object_num += 1;
-    if (blocks == BLOCK_SAMPLE_INTERVAL) {
-      HeapWord* res = block_start_const(p + (size/2));
-      if (p != res) {
-        gclog_or_tty->print_cr("offset computation 1 for "PTR_FORMAT" and "
-                               SIZE_FORMAT" returned "PTR_FORMAT,
-                               p, size, res);
-        *failures = true;
-        return;
-      }
-      blocks = 0;
-    } else {
-      blocks++;
+
+    // If it returns false, verify_for_object() will output the
+    // appropriate messasge.
+    if (do_bot_verify && !_offsets.verify_for_object(p, obj_size)) {
+      *failures = true;
+      return;
     }
-    if (objs == OBJ_SAMPLE_INTERVAL) {
-      oop obj = oop(p);
-      if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
-        if (obj->is_oop()) {
-          klassOop klass = obj->klass();
-          if (!klass->is_perm()) {
-            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                   "not in perm", klass, obj);
-            *failures = true;
-            return;
-          } else if (!klass->is_klass()) {
-            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                   "not a klass", klass, obj);
-            *failures = true;
-            return;
-          } else {
-            vl_cl.set_containing_obj(obj);
-            obj->oop_iterate(&vl_cl);
-            if (vl_cl.failures()) {
-              *failures = true;
-            }
-            if (G1MaxVerifyFailures >= 0 &&
-                vl_cl.n_failures() >= G1MaxVerifyFailures) {
-              return;
-            }
-          }
-        } else {
-          gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
+
+    if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
+      if (obj->is_oop()) {
+        klassOop klass = obj->klass();
+        if (!klass->is_perm()) {
+          gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                 "not in perm", klass, obj);
           *failures = true;
           return;
+        } else if (!klass->is_klass()) {
+          gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                 "not a klass", klass, obj);
+          *failures = true;
+          return;
+        } else {
+          vl_cl.set_containing_obj(obj);
+          obj->oop_iterate(&vl_cl);
+          if (vl_cl.failures()) {
+            *failures = true;
+          }
+          if (G1MaxVerifyFailures >= 0 &&
+              vl_cl.n_failures() >= G1MaxVerifyFailures) {
+            return;
+          }
         }
-      }
-      objs = 0;
-    } else {
-      objs++;
-    }
-    prev_p = p;
-    p += size;
-  }
-  HeapWord* rend = end();
-  HeapWord* rtop = top();
-  if (rtop < rend) {
-    HeapWord* res = block_start_const(rtop + (rend - rtop) / 2);
-    if (res != rtop) {
-        gclog_or_tty->print_cr("offset computation 2 for "PTR_FORMAT" and "
-                               PTR_FORMAT" returned "PTR_FORMAT,
-                               rtop, rend, res);
+      } else {
+        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
         *failures = true;
         return;
+      }
+    }
+    prev_p = p;
+    p += obj_size;
+  }
+
+  if (p != top()) {
+    gclog_or_tty->print_cr("end of last object "PTR_FORMAT" "
+                           "does not match top "PTR_FORMAT, p, top());
+    *failures = true;
+    return;
+  }
+
+  HeapWord* the_end = end();
+  assert(p == top(), "it should still hold");
+  // Do some extra BOT consistency checking for addresses in the
+  // range [top, end). BOT look-ups in this range should yield
+  // top. No point in doing that if top == end (there's nothing there).
+  if (p < the_end) {
+    // Look up top
+    HeapWord* addr_1 = p;
+    HeapWord* b_start_1 = _offsets.block_start_const(addr_1);
+    if (b_start_1 != p) {
+      gclog_or_tty->print_cr("BOT look up for top: "PTR_FORMAT" "
+                             " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                             addr_1, b_start_1, p);
+      *failures = true;
+      return;
+    }
+
+    // Look up top + 1
+    HeapWord* addr_2 = p + 1;
+    if (addr_2 < the_end) {
+      HeapWord* b_start_2 = _offsets.block_start_const(addr_2);
+      if (b_start_2 != p) {
+        gclog_or_tty->print_cr("BOT look up for top + 1: "PTR_FORMAT" "
+                               " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                               addr_2, b_start_2, p);
+        *failures = true;
+        return;
+      }
+    }
+
+    // Look up an address between top and end
+    size_t diff = pointer_delta(the_end, p) / 2;
+    HeapWord* addr_3 = p + diff;
+    if (addr_3 < the_end) {
+      HeapWord* b_start_3 = _offsets.block_start_const(addr_3);
+      if (b_start_3 != p) {
+        gclog_or_tty->print_cr("BOT look up for top + diff: "PTR_FORMAT" "
+                               " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                               addr_3, b_start_3, p);
+        *failures = true;
+        return;
+      }
+    }
+
+    // Loook up end - 1
+    HeapWord* addr_4 = the_end - 1;
+    HeapWord* b_start_4 = _offsets.block_start_const(addr_4);
+    if (b_start_4 != p) {
+      gclog_or_tty->print_cr("BOT look up for end - 1: "PTR_FORMAT" "
+                             " yielded "PTR_FORMAT", expecting "PTR_FORMAT,
+                             addr_4, b_start_4, p);
+      *failures = true;
+      return;
     }
   }
 
@@ -879,12 +919,6 @@ void HeapRegion::verify(bool allow_dirty,
     gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
                            "but has "SIZE_FORMAT", objects",
                            bottom(), end(), object_num);
-    *failures = true;
-  }
-
-  if (p != top()) {
-    gclog_or_tty->print_cr("end of last object "PTR_FORMAT" "
-                           "does not match top "PTR_FORMAT, p, top());
     *failures = true;
     return;
   }

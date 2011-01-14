@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,8 @@ protected:
                                  bool*  gc_overhead_limit_was_exceeded);
 
   // The following methods, allocate_from_cur_allocation_region(),
-  // attempt_allocation(), replace_cur_alloc_region_and_allocate(),
+  // attempt_allocation(), attempt_allocation_locked(),
+  // replace_cur_alloc_region_and_allocate(),
   // attempt_allocation_slow(), and attempt_allocation_humongous()
   // have very awkward pre- and post-conditions with respect to
   // locking:
@@ -481,19 +482,29 @@ protected:
   // successfully manage to allocate it, or NULL.
 
   // It tries to satisfy an allocation request out of the current
-  // allocating region, which is passed as a parameter. It assumes
-  // that the caller has checked that the current allocating region is
-  // not NULL. Given that the caller has to check the current
-  // allocating region for at least NULL, it might as well pass it as
-  // the first parameter so that the method doesn't have to read it
-  // from the _cur_alloc_region field again.
+  // alloc region, which is passed as a parameter. It assumes that the
+  // caller has checked that the current alloc region is not NULL.
+  // Given that the caller has to check the current alloc region for
+  // at least NULL, it might as well pass it as the first parameter so
+  // that the method doesn't have to read it from the
+  // _cur_alloc_region field again. It is called from both
+  // attempt_allocation() and attempt_allocation_locked() and the
+  // with_heap_lock parameter indicates whether the caller was holding
+  // the heap lock when it called it or not.
   inline HeapWord* allocate_from_cur_alloc_region(HeapRegion* cur_alloc_region,
-                                                  size_t word_size);
+                                                  size_t word_size,
+                                                  bool with_heap_lock);
 
-  // It attempts to allocate out of the current alloc region. If that
-  // fails, it retires the current alloc region (if there is one),
-  // tries to get a new one and retries the allocation.
+  // First-level of allocation slow path: it attempts to allocate out
+  // of the current alloc region in a lock-free manner using a CAS. If
+  // that fails it takes the Heap_lock and calls
+  // attempt_allocation_locked() for the second-level slow path.
   inline HeapWord* attempt_allocation(size_t word_size);
+
+  // Second-level of allocation slow path: while holding the Heap_lock
+  // it tries to allocate out of the current alloc region and, if that
+  // fails, tries to allocate out of a new current alloc region.
+  inline HeapWord* attempt_allocation_locked(size_t word_size);
 
   // It assumes that the current alloc region has been retired and
   // tries to allocate a new one. If it's successful, it performs the
@@ -506,11 +517,11 @@ protected:
                                                   bool do_dirtying,
                                                   bool can_expand);
 
-  // The slow path when we are unable to allocate a new current alloc
-  // region to satisfy an allocation request (i.e., when
-  // attempt_allocation() fails). It will try to do an evacuation
-  // pause, which might stall due to the GC locker, and retry the
-  // allocation attempt when appropriate.
+  // Third-level of allocation slow path: when we are unable to
+  // allocate a new current alloc region to satisfy an allocation
+  // request (i.e., when attempt_allocation_locked() fails). It will
+  // try to do an evacuation pause, which might stall due to the GC
+  // locker, and retry the allocation attempt when appropriate.
   HeapWord* attempt_allocation_slow(size_t word_size);
 
   // The method that tries to satisfy a humongous allocation
@@ -826,7 +837,6 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  void handle_evacuation_failure(oop obj);
   oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
