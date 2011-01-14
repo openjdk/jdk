@@ -284,13 +284,6 @@ public class Main {
             }
         }
 
-        // phase this out with JSR 292 PFD
-        if ("no".equals(options.get("allowTransitionalJSR292"))) {
-            options.put("allowTransitionalJSR292", null);
-        } else if (target.hasInvokedynamic() && options.isUnset("allowTransitionalJSR292")) {
-            options.put("allowTransitionalJSR292", "allowTransitionalJSR292");
-        }
-
         // handle this here so it works even if no other options given
         String showClass = options.get("showClass");
         if (showClass != null) {

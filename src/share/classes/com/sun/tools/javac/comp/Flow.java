@@ -1375,8 +1375,9 @@ public class Flow extends TreeScanner {
     //where
         private boolean is292targetTypeCast(JCTypeCast tree) {
             boolean is292targetTypeCast = false;
-            if (tree.expr.getTag() == JCTree.APPLY) {
-                JCMethodInvocation apply = (JCMethodInvocation)tree.expr;
+            JCExpression expr = TreeInfo.skipParens(tree.expr);
+            if (expr.getTag() == JCTree.APPLY) {
+                JCMethodInvocation apply = (JCMethodInvocation)expr;
                 Symbol sym = TreeInfo.symbol(apply.meth);
                 is292targetTypeCast = sym != null &&
                     sym.kind == MTH &&
