@@ -93,10 +93,6 @@ ifeq ($(PLATFORM), windows)
 
 IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
 
-# NOTE: These might actually come from BUILDDIR, depends on the settings.
-$(BINDIR)/msvcrt.dll: $(MSVCRT_DLL_PATH)/msvcrt.dll
-	$(install-import-file)
-	$(call chmod-file, a+x)
 $(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 	$(install-import-file)
 	$(call chmod-file, a+x)

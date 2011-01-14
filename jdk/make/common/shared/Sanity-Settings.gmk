@@ -96,7 +96,6 @@ ifeq ($(PLATFORM),solaris)
   endif
 endif
 ifeq ($(PLATFORM),windows)
-  ALL_SETTINGS+=$(call addAltSetting,MSVCRT_DLL_PATH)
   ifneq ($(MSVCRNN_DLL),)
     ALL_SETTINGS+=$(call addAltSetting,MSVCRNN_DLL_PATH)
   endif
