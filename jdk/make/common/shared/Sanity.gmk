@@ -879,13 +879,6 @@ sane-devtools_path:
 ######################################################
 sane-msvcrt_path:
 ifeq ($(PLATFORM), windows)
-	@if [ ! -r "$(MSVCRT_DLL_PATH)/msvcrt.dll" ]; then \
-	  $(ECHO) "ERROR: You do not have access to msvcrt.dll. \n" \
-	    "      Please check your access to \n" \
-	    "          $(MSVCRT_DLL_PATH) \n" \
-	    "      and/or check your value of ALT_MSVCRT_DLL_PATH. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
   ifneq ($(MSVCRNN_DLL),)
 	@if [ ! -r "$(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)" ]; then \
 	  $(ECHO) "ERROR: You do not have access to $(MSVCRNN_DLL). \n" \

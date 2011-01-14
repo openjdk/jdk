@@ -551,18 +551,6 @@ ifndef ALT_BOOTDIR
   _BOOTDIR3  =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
-# 32 bit always needs 2 runtimes, 64 bit usually does too
-
-# MSVCRT_DLL_PATH: location of msvcrt.dll that will be re-distributed
-ifdef ALT_MSVCRT_DLL_PATH
-  xALT_MSVCRT_DLL_PATH :="$(subst \,/,$(ALT_MSVCRT_DLL_PATH))"
-  MSVCRT_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRT_DLL_PATH))
-else
-  MSVCRT_DLL_PATH :=$(call FullPath,$(_system_root)/system32/)
-endif
-MSVCRT_DLL_PATH:=$(call AltCheckSpaces,MSVCRT_DLL_PATH)
-MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
-
 # 32bit always needs the MSVCRNN runtime, 64bit does when using VS2008
 ifeq ($(ARCH_DATA_MODEL), 32)
   _NEEDS_MSVCRNN = true
