@@ -212,14 +212,7 @@ void GrowableCache::oops_do(OopClosure* f) {
   for (int i=0; i<len; i++) {
     GrowableElement *e = _elements->at(i);
     e->oops_do(f);
-  }
-}
-
-void GrowableCache::gc_epilogue() {
-  int len = _elements->length();
-  // recompute the new cache value after GC
-  for (int i=0; i<len; i++) {
-    _cache[i] = _elements->at(i)->getCacheValue();
+    _cache[i] = e->getCacheValue();
   }
 }
 
@@ -401,10 +394,6 @@ void  JvmtiBreakpoints::oops_do(OopClosure* f) {
   _bps.oops_do(f);
 }
 
-void  JvmtiBreakpoints::gc_epilogue() {
-  _bps.gc_epilogue();
-}
-
 void  JvmtiBreakpoints::print() {
 #ifndef PRODUCT
   ResourceMark rm;
@@ -533,13 +522,6 @@ void JvmtiCurrentBreakpoints::oops_do(OopClosure* f) {
     _jvmti_breakpoints->oops_do(f);
   }
 }
-
-void JvmtiCurrentBreakpoints::gc_epilogue() {
-  if (_jvmti_breakpoints != NULL) {
-    _jvmti_breakpoints->gc_epilogue();
-  }
-}
-
 
 ///////////////////////////////////////////////////////////////
 //

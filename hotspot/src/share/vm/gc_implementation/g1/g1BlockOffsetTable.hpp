@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,11 +352,6 @@ public:
   // The following methods are useful and optimized for a
   // general, non-contiguous space.
 
-  // The given arguments are required to be the starts of adjacent ("blk1"
-  // before "blk2") well-formed blocks covered by "this".  After this call,
-  // they should be considered to form one block.
-  virtual void join_blocks(HeapWord* blk1, HeapWord* blk2);
-
   // Given a block [blk_start, blk_start + full_blk_size), and
   // a left_blk_size < full_blk_size, adjust the BOT to show two
   // blocks [blk_start, blk_start + left_blk_size) and
@@ -429,6 +424,12 @@ public:
     verify_single_block(blk, blk + size);
   }
 
+  // Used by region verification. Checks that the contents of the
+  // BOT reflect that there's a single object that spans the address
+  // range [obj_start, obj_start + word_size); returns true if this is
+  // the case, returns false if it's not.
+  bool verify_for_object(HeapWord* obj_start, size_t word_size) const;
+
   // Verify that the given block is before _unallocated_block
   inline void verify_not_unallocated(HeapWord* blk_start,
                                      HeapWord* blk_end) const {
@@ -444,7 +445,7 @@ public:
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
-  virtual void set_for_starts_humongous(HeapWord* new_end);
+  virtual void print_on(outputStream* out) PRODUCT_RETURN;
 };
 
 // A subtype of BlockOffsetArray that takes advantage of the fact
@@ -494,7 +495,9 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   HeapWord* block_start_unsafe(const void* addr);
   HeapWord* block_start_unsafe_const(const void* addr) const;
 
-  virtual void set_for_starts_humongous(HeapWord* new_end);
+  void set_for_starts_humongous(HeapWord* new_top);
+
+  virtual void print_on(outputStream* out) PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP

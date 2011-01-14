@@ -3478,6 +3478,7 @@ void CMSCollector::checkpointRootsInitial(bool asynch) {
   assert(_collectorState == InitialMarking, "Wrong collector state");
   check_correct_thread_executing();
   TraceCMSMemoryManagerStats tms(_collectorState);
+
   ReferenceProcessor* rp = ref_processor();
   SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
@@ -5940,11 +5941,6 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   }
   rp->verify_no_references_recorded();
   assert(!rp->discovery_enabled(), "should have been disabled");
-
-  // JVMTI object tagging is based on JNI weak refs. If any of these
-  // refs were cleared then JVMTI needs to update its maps and
-  // maybe post ObjectFrees to agents.
-  JvmtiExport::cms_ref_processing_epilogue();
 }
 
 #ifndef PRODUCT
@@ -6305,6 +6301,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op) {
 
   switch (op) {
     case CMS_op_checkpointRootsInitial: {
+      SvcGCMarker sgcm(SvcGCMarker::OTHER);
       checkpointRootsInitial(true);       // asynch
       if (PrintGC) {
         _cmsGen->printOccupancy("initial-mark");
@@ -6312,6 +6309,7 @@ void CMSCollector::do_CMS_operation(CMS_op_type op) {
       break;
     }
     case CMS_op_checkpointRootsFinal: {
+      SvcGCMarker sgcm(SvcGCMarker::OTHER);
       checkpointRootsFinal(true,    // asynch
                            false,   // !clear_all_soft_refs
                            false);  // !init_mark_was_synchronous
@@ -7881,25 +7879,23 @@ SweepClosure::SweepClosure(CMSCollector* collector,
 }
 
 // We need this destructor to reclaim any space at the end
-// of the space, which do_blk below may not have added back to
-// the free lists. [basically dealing with the "fringe effect"]
+// of the space, which do_blk below may not yet have added back to
+// the free lists.
 SweepClosure::~SweepClosure() {
   assert_lock_strong(_freelistLock);
-  // this should be treated as the end of a free run if any
-  // The current free range should be returned to the free lists
-  // as one coalesced chunk.
+  assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
+         "sweep _limit out of bounds");
+  // Flush any remaining coterminal free run as a single
+  // coalesced chunk to the appropriate free list.
   if (inFreeRange()) {
-    flushCurFreeChunk(freeFinger(),
-      pointer_delta(_limit, freeFinger()));
-    assert(freeFinger() < _limit, "the finger pointeth off base");
+    assert(freeFinger() < _limit, "freeFinger points too high");
+    flush_cur_free_chunk(freeFinger(), pointer_delta(_limit, freeFinger()));
     if (CMSTraceSweeper) {
-      gclog_or_tty->print("destructor:");
-      gclog_or_tty->print("Sweep:put_free_blk 0x%x ("SIZE_FORMAT") "
-                 "[coalesced:"SIZE_FORMAT"]\n",
-                 freeFinger(), pointer_delta(_limit, freeFinger()),
-                 lastFreeRangeCoalesced());
+      gclog_or_tty->print("Sweep: last chunk: ");
+      gclog_or_tty->print("put_free_blk 0x%x ("SIZE_FORMAT") [coalesced:"SIZE_FORMAT"]\n",
+                          freeFinger(), pointer_delta(_limit, freeFinger()), lastFreeRangeCoalesced());
     }
-  }
+  } // else nothing to flush
   NOT_PRODUCT(
     if (Verbose && PrintGC) {
       gclog_or_tty->print("Collected "SIZE_FORMAT" objects, "
@@ -7936,9 +7932,8 @@ SweepClosure::~SweepClosure() {
 void SweepClosure::initialize_free_range(HeapWord* freeFinger,
     bool freeRangeInFreeLists) {
   if (CMSTraceSweeper) {
-    gclog_or_tty->print("---- Start free range 0x%x with free block [%d] (%d)\n",
-               freeFinger, _sp->block_size(freeFinger),
-               freeRangeInFreeLists);
+    gclog_or_tty->print("---- Start free range at 0x%x with free block (%d)\n",
+               freeFinger, freeRangeInFreeLists);
   }
   assert(!inFreeRange(), "Trampling existing free range");
   set_inFreeRange(true);
@@ -7993,21 +7988,36 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
   // may have caused us to coalesce the block ending at the address _limit
   // with a newly expanded chunk (this happens when _limit was set to the
   // previous _end of the space), so we may have stepped past _limit; see CR 6977970.
-  if (addr >= _limit) { // we have swept up to or past the limit, do nothing more
+  if (addr >= _limit) { // we have swept up to or past the limit: finish up
     assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
            "sweep _limit out of bounds");
     assert(addr < _sp->end(), "addr out of bounds");
-    // help the closure application finish
+    // Flush any remaining coterminal free run as a single
+    // coalesced chunk to the appropriate free list.
+    if (inFreeRange()) {
+      assert(freeFinger() < _limit, "finger points too high");
+      flush_cur_free_chunk(freeFinger(),
+                           pointer_delta(addr, freeFinger()));
+      if (CMSTraceSweeper) {
+        gclog_or_tty->print("Sweep: last chunk: ");
+        gclog_or_tty->print("put_free_blk 0x%x ("SIZE_FORMAT") "
+                   "[coalesced:"SIZE_FORMAT"]\n",
+                   freeFinger(), pointer_delta(addr, freeFinger()),
+                   lastFreeRangeCoalesced());
+      }
+    }
+
+    // help the iterator loop finish
     return pointer_delta(_sp->end(), addr);
   }
-  assert(addr < _limit, "sweep invariant");
 
+  assert(addr < _limit, "sweep invariant");
   // check if we should yield
   do_yield_check(addr);
   if (fc->isFree()) {
     // Chunk that is already free
     res = fc->size();
-    doAlreadyFreeChunk(fc);
+    do_already_free_chunk(fc);
     debug_only(_sp->verifyFreeLists());
     assert(res == fc->size(), "Don't expect the size to change");
     NOT_PRODUCT(
@@ -8017,7 +8027,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
     NOT_PRODUCT(_last_fc = fc;)
   } else if (!_bitMap->isMarked(addr)) {
     // Chunk is fresh garbage
-    res = doGarbageChunk(fc);
+    res = do_garbage_chunk(fc);
     debug_only(_sp->verifyFreeLists());
     NOT_PRODUCT(
       _numObjectsFreed++;
@@ -8025,7 +8035,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
     )
   } else {
     // Chunk that is alive.
-    res = doLiveChunk(fc);
+    res = do_live_chunk(fc);
     debug_only(_sp->verifyFreeLists());
     NOT_PRODUCT(
         _numObjectsLive++;
@@ -8078,7 +8088,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
 // to a free list which may be overpopulated.
 //
 
-void SweepClosure::doAlreadyFreeChunk(FreeChunk* fc) {
+void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
   size_t size = fc->size();
   // Chunks that cannot be coalesced are not in the
   // free lists.
@@ -8094,23 +8104,23 @@ void SweepClosure::doAlreadyFreeChunk(FreeChunk* fc) {
   // addr and purported end of this block.
   _bitMap->verifyNoOneBitsInRange(addr + 1, addr + size);
 
-  // Some chunks cannot be coalesced in under any circumstances.
+  // Some chunks cannot be coalesced under any circumstances.
   // See the definition of cantCoalesce().
   if (!fc->cantCoalesce()) {
     // This chunk can potentially be coalesced.
     if (_sp->adaptive_freelists()) {
       // All the work is done in
-      doPostIsFreeOrGarbageChunk(fc, size);
+      do_post_free_or_garbage_chunk(fc, size);
     } else {  // Not adaptive free lists
       // this is a free chunk that can potentially be coalesced by the sweeper;
       if (!inFreeRange()) {
         // if the next chunk is a free block that can't be coalesced
         // it doesn't make sense to remove this chunk from the free lists
         FreeChunk* nextChunk = (FreeChunk*)(addr + size);
-        assert((HeapWord*)nextChunk <= _limit, "sweep invariant");
-        if ((HeapWord*)nextChunk < _limit  &&    // there's a next chunk...
-            nextChunk->isFree()    &&            // which is free...
-            nextChunk->cantCoalesce()) {         // ... but cant be coalesced
+        assert((HeapWord*)nextChunk <= _sp->end(), "Chunk size out of bounds?");
+        if ((HeapWord*)nextChunk < _sp->end() &&     // There is another free chunk to the right ...
+            nextChunk->isFree()               &&     // ... which is free...
+            nextChunk->cantCoalesce()) {             // ... but can't be coalesced
           // nothing to do
         } else {
           // Potentially the start of a new free range:
@@ -8156,14 +8166,14 @@ void SweepClosure::doAlreadyFreeChunk(FreeChunk* fc) {
     // as the end of a free run if any
     if (inFreeRange()) {
       // we kicked some butt; time to pick up the garbage
-      assert(freeFinger() < addr, "the finger pointeth off base");
-      flushCurFreeChunk(freeFinger(), pointer_delta(addr, freeFinger()));
+      assert(freeFinger() < addr, "freeFinger points too high");
+      flush_cur_free_chunk(freeFinger(), pointer_delta(addr, freeFinger()));
     }
     // else, nothing to do, just continue
   }
 }
 
-size_t SweepClosure::doGarbageChunk(FreeChunk* fc) {
+size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
   // This is a chunk of garbage.  It is not in any free list.
   // Add it to a free list or let it possibly be coalesced into
   // a larger chunk.
@@ -8175,7 +8185,7 @@ size_t SweepClosure::doGarbageChunk(FreeChunk* fc) {
     // addr and purported end of just dead object.
     _bitMap->verifyNoOneBitsInRange(addr + 1, addr + size);
 
-    doPostIsFreeOrGarbageChunk(fc, size);
+    do_post_free_or_garbage_chunk(fc, size);
   } else {
     if (!inFreeRange()) {
       // start of a new free range
@@ -8214,35 +8224,16 @@ size_t SweepClosure::doGarbageChunk(FreeChunk* fc) {
   return size;
 }
 
-size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
+size_t SweepClosure::do_live_chunk(FreeChunk* fc) {
   HeapWord* addr = (HeapWord*) fc;
   // The sweeper has just found a live object. Return any accumulated
   // left hand chunk to the free lists.
   if (inFreeRange()) {
-    if (_sp->adaptive_freelists()) {
-      flushCurFreeChunk(freeFinger(),
-                        pointer_delta(addr, freeFinger()));
-    } else { // not adaptive freelists
-      set_inFreeRange(false);
-      // Add the free range back to the free list if it is not already
-      // there.
-      if (!freeRangeInFreeLists()) {
-        assert(freeFinger() < addr, "the finger pointeth off base");
-        if (CMSTraceSweeper) {
-          gclog_or_tty->print("Sweep:put_free_blk 0x%x (%d) "
-            "[coalesced:%d]\n",
-            freeFinger(), pointer_delta(addr, freeFinger()),
-            lastFreeRangeCoalesced());
-        }
-        _sp->addChunkAndRepairOffsetTable(freeFinger(),
-          pointer_delta(addr, freeFinger()), lastFreeRangeCoalesced());
-      }
-    }
+    assert(freeFinger() < addr, "freeFinger points too high");
+    flush_cur_free_chunk(freeFinger(), pointer_delta(addr, freeFinger()));
   }
 
-  // Common code path for original and adaptive free lists.
-
-  // this object is live: we'd normally expect this to be
+  // This object is live: we'd normally expect this to be
   // an oop, and like to assert the following:
   // assert(oop(addr)->is_oop(), "live block should be an oop");
   // However, as we commented above, this may be an object whose
@@ -8257,7 +8248,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
     assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
            "alignment problem");
 
-    #ifdef DEBUG
+#ifdef DEBUG
       if (oop(addr)->klass_or_null() != NULL &&
           (   !_collector->should_unload_classes()
            || (oop(addr)->is_parsable()) &&
@@ -8271,7 +8262,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
                CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size()),
                "P-mark and computed size do not agree");
       }
-    #endif
+#endif
 
   } else {
     // This should be an initialized object that's alive.
@@ -8298,18 +8289,16 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
   return size;
 }
 
-void SweepClosure::doPostIsFreeOrGarbageChunk(FreeChunk* fc,
-                                            size_t chunkSize) {
-  // doPostIsFreeOrGarbageChunk() should only be called in the smart allocation
-  // scheme.
+void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
+                                                 size_t chunkSize) {
+  // do_post_free_or_garbage_chunk() should only be called in the case
+  // of the adaptive free list allocator.
   bool fcInFreeLists = fc->isFree();
   assert(_sp->adaptive_freelists(), "Should only be used in this case.");
   assert((HeapWord*)fc <= _limit, "sweep invariant");
   if (CMSTestInFreeList && fcInFreeLists) {
-    assert(_sp->verifyChunkInFreeLists(fc),
-      "free chunk is not in free lists");
+    assert(_sp->verifyChunkInFreeLists(fc), "free chunk is not in free lists");
   }
-
 
   if (CMSTraceSweeper) {
     gclog_or_tty->print_cr("  -- pick up another chunk at 0x%x (%d)", fc, chunkSize);
@@ -8382,20 +8371,21 @@ void SweepClosure::doPostIsFreeOrGarbageChunk(FreeChunk* fc,
     if (inFreeRange()) {
       // In a free range but cannot coalesce with the right hand chunk.
       // Put the current free range into the free lists.
-      flushCurFreeChunk(freeFinger(),
-        pointer_delta(addr, freeFinger()));
+      flush_cur_free_chunk(freeFinger(),
+                           pointer_delta(addr, freeFinger()));
     }
     // Set up for new free range.  Pass along whether the right hand
     // chunk is in the free lists.
     initialize_free_range((HeapWord*)fc, fcInFreeLists);
   }
 }
-void SweepClosure::flushCurFreeChunk(HeapWord* chunk, size_t size) {
+
+void SweepClosure::flush_cur_free_chunk(HeapWord* chunk, size_t size) {
   assert(inFreeRange(), "Should only be called if currently in a free range.");
   assert(size > 0,
     "A zero sized chunk cannot be added to the free lists.");
   if (!freeRangeInFreeLists()) {
-    if(CMSTestInFreeList) {
+    if (CMSTestInFreeList) {
       FreeChunk* fc = (FreeChunk*) chunk;
       fc->setSize(size);
       assert(!_sp->verifyChunkInFreeLists(fc),
@@ -8430,7 +8420,7 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
   // chunk just flushed, they will need to wait for the next
   // sweep to be coalesced.
   if (inFreeRange()) {
-    flushCurFreeChunk(freeFinger(), pointer_delta(addr, freeFinger()));
+    flush_cur_free_chunk(freeFinger(), pointer_delta(addr, freeFinger()));
   }
 
   // First give up the locks, then yield, then re-lock.

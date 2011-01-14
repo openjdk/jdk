@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,7 @@ klassOop typeArrayKlass::array_klass_impl(typeArrayKlassHandle h_this, bool or_n
           dimension + 1, h_this, CHECK_NULL);
         h_ak = objArrayKlassHandle(THREAD, oak);
         h_ak->set_lower_dimension(h_this());
+        OrderAccess::storestore();
         h_this->set_higher_dimension(h_ak());
         assert(h_ak->oop_is_objArray(), "incorrect initialization of objArrayKlass");
       }

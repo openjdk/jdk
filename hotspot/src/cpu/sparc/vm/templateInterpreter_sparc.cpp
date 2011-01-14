@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1364,15 +1364,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
       // We have decided to profile this method in the interpreter
       __ bind(profile_method);
 
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method), Lbcp, true);
-
-#ifdef ASSERT
-      __ tst(O0);
-      __ breakpoint_trap(Assembler::notEqual);
-#endif
-
-      __ set_method_data_pointer();
-
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
+      __ set_method_data_pointer_for_bcp();
       __ ba(false, profile_method_continue);
       __ delayed()->nop();
     }

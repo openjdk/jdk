@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1295,16 +1295,13 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 // Get the method data pointer from the methodOop and set the
 // specified register to its value.
 
-void InterpreterMacroAssembler::set_method_data_pointer_offset(Register Roff) {
+void InterpreterMacroAssembler::set_method_data_pointer() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label get_continue;
 
   ld_ptr(Lmethod, in_bytes(methodOopDesc::method_data_offset()), ImethodDataPtr);
   test_method_data_pointer(get_continue);
   add(ImethodDataPtr, in_bytes(methodDataOopDesc::data_offset()), ImethodDataPtr);
-  if (Roff != noreg)
-    // Roff contains a method data index ("mdi").  It defaults to zero.
-    add(ImethodDataPtr, Roff, ImethodDataPtr);
   bind(get_continue);
 }
 
@@ -1315,10 +1312,11 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   Label zero_continue;
 
   // Test MDO to avoid the call if it is NULL.
-  ld_ptr(Lmethod, methodOopDesc::method_data_offset(), ImethodDataPtr);
+  ld_ptr(Lmethod, in_bytes(methodOopDesc::method_data_offset()), ImethodDataPtr);
   test_method_data_pointer(zero_continue);
   call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), Lmethod, Lbcp);
-  set_method_data_pointer_offset(O0);
+  add(ImethodDataPtr, in_bytes(methodDataOopDesc::data_offset()), ImethodDataPtr);
+  add(ImethodDataPtr, O0, ImethodDataPtr);
   bind(zero_continue);
 }
 
@@ -1369,7 +1367,6 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 }
 
 void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocation_count,
-                                                                Register cur_bcp,
                                                                 Register Rtmp,
                                                                 Label &profile_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
@@ -1400,8 +1397,8 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
   delayed()->nop();
 
   // Build it now.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method), cur_bcp);
-  set_method_data_pointer_offset(O0);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
+  set_method_data_pointer_for_bcp();
   ba(false, profile_continue);
   delayed()->nop();
   bind(done);

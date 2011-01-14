@@ -1044,9 +1044,9 @@ os::closedir(DIR *dirp)
     return 0;
 }
 
+// This must be hard coded because it's the system's temporary
+// directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() {
-  const char *prop = Arguments::get_property("java.io.tmpdir");
-  if (prop != 0) return prop;
   static char path_buf[MAX_PATH];
   if (GetTempPath(MAX_PATH, path_buf)>0)
     return path_buf;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,7 +663,8 @@ void JDK_Version::initialize() {
     }
     _current = JDK_Version(major, minor, micro, info.update_version,
                            info.special_update_version, build,
-                           info.thread_park_blocker == 1);
+                           info.thread_park_blocker == 1,
+                           info.post_vm_init_hook_enabled == 1);
   }
 }
 

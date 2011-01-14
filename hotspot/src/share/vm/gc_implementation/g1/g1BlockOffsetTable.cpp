@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ void G1BlockOffsetArray::split_block(HeapWord* blk, size_t blk_size,
 
 // Action_mark - update the BOT for the block [blk_start, blk_end).
 //               Current typical use is for splitting a block.
-// Action_single - udpate the BOT for an allocation.
+// Action_single - update the BOT for an allocation.
 // Action_verify - BOT verification.
 void G1BlockOffsetArray::do_block_internal(HeapWord* blk_start,
                                            HeapWord* blk_end,
@@ -329,47 +329,6 @@ G1BlockOffsetArray::single_block(HeapWord* blk_start, HeapWord* blk_end) {
 void
 G1BlockOffsetArray::mark_block(HeapWord* blk_start, HeapWord* blk_end) {
   do_block_internal(blk_start, blk_end, Action_mark);
-}
-
-void G1BlockOffsetArray::join_blocks(HeapWord* blk1, HeapWord* blk2) {
-  HeapWord* blk1_start = Universe::heap()->block_start(blk1);
-  HeapWord* blk2_start = Universe::heap()->block_start(blk2);
-  assert(blk1 == blk1_start && blk2 == blk2_start,
-         "Must be block starts.");
-  assert(blk1 + _sp->block_size(blk1) == blk2, "Must be contiguous.");
-  size_t blk1_start_index = _array->index_for(blk1);
-  size_t blk2_start_index = _array->index_for(blk2);
-  assert(blk1_start_index <= blk2_start_index, "sanity");
-  HeapWord* blk2_card_start = _array->address_for_index(blk2_start_index);
-  if (blk2 == blk2_card_start) {
-    // blk2 starts a card.  Does blk1 start on the prevous card, or futher
-    // back?
-    assert(blk1_start_index < blk2_start_index, "must be lower card.");
-    if (blk1_start_index + 1 == blk2_start_index) {
-      // previous card; new value for blk2 card is size of blk1.
-      _array->set_offset_array(blk2_start_index, (u_char) _sp->block_size(blk1));
-    } else {
-      // Earlier card; go back a card.
-      _array->set_offset_array(blk2_start_index, N_words);
-    }
-  } else {
-    // blk2 does not start a card.  Does it cross a card?  If not, nothing
-    // to do.
-    size_t blk2_end_index =
-      _array->index_for(blk2 + _sp->block_size(blk2) - 1);
-    assert(blk2_end_index >= blk2_start_index, "sanity");
-    if (blk2_end_index > blk2_start_index) {
-      // Yes, it crosses a card.  The value for the next card must change.
-      if (blk1_start_index + 1 == blk2_start_index) {
-        // previous card; new value for second blk2 card is size of blk1.
-        _array->set_offset_array(blk2_start_index + 1,
-                                 (u_char) _sp->block_size(blk1));
-      } else {
-        // Earlier card; go back a card.
-        _array->set_offset_array(blk2_start_index + 1, N_words);
-      }
-    }
-  }
 }
 
 HeapWord* G1BlockOffsetArray::block_start_unsafe(const void* addr) {
@@ -580,15 +539,50 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
 #endif
 }
 
-void
-G1BlockOffsetArray::set_for_starts_humongous(HeapWord* new_end) {
-  assert(_end ==  new_end, "_end should have already been updated");
-
-  // The first BOT entry should have offset 0.
-  _array->set_offset_array(_array->index_for(_bottom), 0);
-  // The rest should point to the first one.
-  set_remainder_to_point_to_start(_bottom + N_words, new_end);
+bool
+G1BlockOffsetArray::verify_for_object(HeapWord* obj_start,
+                                      size_t word_size) const {
+  size_t first_card = _array->index_for(obj_start);
+  size_t last_card = _array->index_for(obj_start + word_size - 1);
+  if (!_array->is_card_boundary(obj_start)) {
+    // If the object is not on a card boundary the BOT entry of the
+    // first card should point to another object so we should not
+    // check that one.
+    first_card += 1;
+  }
+  for (size_t card = first_card; card <= last_card; card += 1) {
+    HeapWord* card_addr = _array->address_for_index(card);
+    HeapWord* block_start = block_start_const(card_addr);
+    if (block_start != obj_start) {
+      gclog_or_tty->print_cr("block start: "PTR_FORMAT" is incorrect - "
+                             "card index: "SIZE_FORMAT" "
+                             "card addr: "PTR_FORMAT" BOT entry: %u "
+                             "obj: "PTR_FORMAT" word size: "SIZE_FORMAT" "
+                             "cards: ["SIZE_FORMAT","SIZE_FORMAT"]",
+                             block_start, card, card_addr,
+                             _array->offset_array(card),
+                             obj_start, word_size, first_card, last_card);
+      return false;
+    }
+  }
+  return true;
 }
+
+#ifndef PRODUCT
+void
+G1BlockOffsetArray::print_on(outputStream* out) {
+  size_t from_index = _array->index_for(_bottom);
+  size_t to_index = _array->index_for(_end);
+  out->print_cr(">> BOT for area ["PTR_FORMAT","PTR_FORMAT") "
+                "cards ["SIZE_FORMAT","SIZE_FORMAT")",
+                _bottom, _end, from_index, to_index);
+  for (size_t i = from_index; i < to_index; ++i) {
+    out->print_cr("  entry "SIZE_FORMAT_W(8)" | "PTR_FORMAT" : %3u",
+                  i, _array->address_for_index(i),
+                  (uint) _array->offset_array(i));
+  }
+}
+#endif // !PRODUCT
 
 //////////////////////////////////////////////////////////////////////
 // G1BlockOffsetArrayContigSpace
@@ -641,10 +635,20 @@ void G1BlockOffsetArrayContigSpace::zero_bottom_entry() {
 }
 
 void
-G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_end) {
-  G1BlockOffsetArray::set_for_starts_humongous(new_end);
+G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_top) {
+  assert(new_top <= _end, "_end should have already been updated");
 
-  // Make sure _next_offset_threshold and _next_offset_index point to new_end.
-  _next_offset_threshold = new_end;
-  _next_offset_index     = _array->index_for(new_end);
+  // The first BOT entry should have offset 0.
+  zero_bottom_entry();
+  initialize_threshold();
+  alloc_block(_bottom, new_top);
+ }
+
+#ifndef PRODUCT
+void
+G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {
+  G1BlockOffsetArray::print_on(out);
+  out->print_cr("  next offset threshold: "PTR_FORMAT, _next_offset_threshold);
+  out->print_cr("  next offset index:     "SIZE_FORMAT, _next_offset_index);
 }
+#endif // !PRODUCT

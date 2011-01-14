@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -428,6 +429,12 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
       break;
     }
   }
+
+  /*
+   * JvmtiTagMap may also contain weak oops.  The iteration of it is placed
+   * here so that we don't need to add it to each of the collectors.
+   */
+  JvmtiTagMap::weak_oops_do(is_alive, f);
 }
 
 
