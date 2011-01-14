@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package java.lang;
  */
 public interface AutoCloseable {
     /**
-     * Close this resource, relinquishing any underlying resources.
+     * Closes this resource, relinquishing any underlying resources.
      * This method is invoked automatically by the {@code
      * try}-with-resources statement.
      *
@@ -47,6 +47,10 @@ public interface AutoCloseable {
      * calling this {@code close} method more than once may have some
      * visible side effect, unlike {@code Closeable.close} which is
      * required to have no effect if called more than once.
+     *
+     * However, while not required to be idempotent, implementers of
+     * this interface are strongly encouraged to make their {@code
+     * close} methods idempotent.
      *
      * @throws Exception if this resource cannot be closed
      */
