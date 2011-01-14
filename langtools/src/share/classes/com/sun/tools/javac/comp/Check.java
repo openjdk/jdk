@@ -506,43 +506,18 @@ public class Check {
      *  @param a             The type that should be bounded by bs.
      *  @param bs            The bound.
      */
-    private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
+    private boolean checkExtends(Type a, TypeVar bs) {
          if (a.isUnbound()) {
-             return;
+             return true;
          } else if (a.tag != WILDCARD) {
              a = types.upperBound(a);
-             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
-                 if (!types.isSubtype(a, l.head)) {
-                     log.error(pos, "not.within.bounds", a);
-                     return;
-                 }
-             }
+             return types.isSubtype(a, bs.bound);
          } else if (a.isExtendsBound()) {
-             if (!types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings))
-                 log.error(pos, "not.within.bounds", a);
+             return types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings);
          } else if (a.isSuperBound()) {
-             if (types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound()))
-                 log.error(pos, "not.within.bounds", a);
+             return !types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound());
          }
-     }
-
-    /** Check that a type is within some bounds.
-     *
-     *  Used in TypeApply to verify that, e.g., X in V<X> is a valid
-     *  type argument.
-     *  @param pos           Position to be used for error reporting.
-     *  @param a             The type that should be bounded by bs.
-     *  @param bs            The bound.
-     */
-    private void checkCapture(JCTypeApply tree) {
-        List<JCExpression> args = tree.getTypeArguments();
-        for (Type arg : types.capture(tree.type).getTypeArguments()) {
-            if (arg.tag == TYPEVAR && arg.getUpperBound().isErroneous()) {
-                log.error(args.head.pos, "not.within.bounds", args.head.type);
-                break;
-            }
-            args = args.tail;
-        }
+         return true;
      }
 
     /** Check that type is different from 'void'.
@@ -775,6 +750,74 @@ public class Check {
         }
     }
 
+    /**
+     * Check that type 't' is a valid instantiation of a generic class
+     * (see JLS 4.5)
+     *
+     * @param t class type to be checked
+     * @return true if 't' is well-formed
+     */
+    public boolean checkValidGenericType(Type t) {
+        return firstIncompatibleTypeArg(t) == null;
+    }
+    //WHERE
+        private Type firstIncompatibleTypeArg(Type type) {
+            List<Type> formals = type.tsym.type.allparams();
+            List<Type> actuals = type.allparams();
+            List<Type> args = type.getTypeArguments();
+            List<Type> forms = type.tsym.type.getTypeArguments();
+            ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
+
+            // For matching pairs of actual argument types `a' and
+            // formal type parameters with declared bound `b' ...
+            while (args.nonEmpty() && forms.nonEmpty()) {
+                // exact type arguments needs to know their
+                // bounds (for upper and lower bound
+                // calculations).  So we create new TypeVars with
+                // bounds substed with actuals.
+                tvars_buf.append(types.substBound(((TypeVar)forms.head),
+                                                  formals,
+                                                  actuals));
+                args = args.tail;
+                forms = forms.tail;
+            }
+
+            args = type.getTypeArguments();
+            List<Type> tvars_cap = types.substBounds(formals,
+                                      formals,
+                                      types.capture(type).allparams());
+            while (args.nonEmpty() && tvars_cap.nonEmpty()) {
+                // Let the actual arguments know their bound
+                args.head.withTypeVar((TypeVar)tvars_cap.head);
+                args = args.tail;
+                tvars_cap = tvars_cap.tail;
+            }
+
+            args = type.getTypeArguments();
+            List<Type> tvars = tvars_buf.toList();
+
+            while (args.nonEmpty() && tvars.nonEmpty()) {
+                Type actual = types.subst(args.head,
+                    type.tsym.type.getTypeArguments(),
+                    tvars_buf.toList());
+                if (!checkExtends(actual, (TypeVar)tvars.head)) {
+                    return args.head;
+                }
+                args = args.tail;
+                tvars = tvars.tail;
+            }
+
+            args = type.getTypeArguments();
+
+            for (Type arg : types.capture(type).getTypeArguments()) {
+                if (arg.tag == TYPEVAR && arg.getUpperBound().isErroneous()) {
+                    return args.head;
+                }
+            }
+
+            return null;
+        }
+
     /** Check that given modifiers are legal for given symbol and
      *  return modifiers together with any implicit modififiers for that symbol.
      *  Warning: we can't use flags() here since this method
@@ -987,11 +1030,17 @@ public class Check {
         @Override
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
-                List<Type> formals = tree.type.tsym.type.allparams();
-                List<Type> actuals = tree.type.allparams();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
-                ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
+
+                Type incompatibleArg = firstIncompatibleTypeArg(tree.type);
+                if (incompatibleArg != null) {
+                    for (JCTree arg : tree.arguments) {
+                        if (arg.type == incompatibleArg) {
+                            log.error(arg, "not.within.bounds", incompatibleArg);
+                        }
+                    }
+                }
 
                 boolean is_java_lang_Class = tree.type.tsym.flatName() == names.java_lang_Class;
 
@@ -1001,45 +1050,9 @@ public class Check {
                     validateTree(args.head,
                             !(isOuter && is_java_lang_Class),
                             false);
-
-                    // exact type arguments needs to know their
-                    // bounds (for upper and lower bound
-                    // calculations).  So we create new TypeVars with
-                    // bounds substed with actuals.
-                    tvars_buf.append(types.substBound(((TypeVar)forms.head),
-                                                      formals,
-                                                      actuals));
-
                     args = args.tail;
                     forms = forms.tail;
                 }
-
-                args = tree.arguments;
-                List<Type> tvars_cap = types.substBounds(formals,
-                                          formals,
-                                          types.capture(tree.type).allparams());
-                while (args.nonEmpty() && tvars_cap.nonEmpty()) {
-                    // Let the actual arguments know their bound
-                    args.head.type.withTypeVar((TypeVar)tvars_cap.head);
-                    args = args.tail;
-                    tvars_cap = tvars_cap.tail;
-                }
-
-                args = tree.arguments;
-                List<Type> tvars = tvars_buf.toList();
-
-                while (args.nonEmpty() && tvars.nonEmpty()) {
-                    Type actual = types.subst(args.head.type,
-                        tree.type.tsym.type.getTypeArguments(),
-                        tvars_buf.toList());
-                    checkExtends(args.head.pos(),
-                                 actual,
-                                 (TypeVar)tvars.head);
-                    args = args.tail;
-                    tvars = tvars.tail;
-                }
-
-                checkCapture(tree);
 
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
