@@ -566,10 +566,44 @@ public class FileFontStrike extends PhysicalStrike {
         if (glyphCode >= INVISIBLE_GLYPHS) {
             return 0f;
         }
+
+        /* Notes on the (getUserAdv == false) case.
+         *
+         * Setting getUserAdv == false is internal to this class.
+         * If there's no graphics transform we can let
+         * getGlyphAdvance take its course, and potentially caching in
+         * advances arrays, except for signalling that
+         * getUserAdv == false means there is no need to create an image.
+         * It is possible that code already calculated the user advance,
+         * and it is desirable to take advantage of that work.
+         * But, if there's a transform and we want device advance, we
+         * can't use any values cached in the advances arrays - unless
+         * first re-transform them into device space using 'desc.devTx'.
+         * invertDevTx is null if the graphics transform is identity,
+         * a translate, or non-invertible. The latter case should
+         * not ever occur in the getUserAdv == false path.
+         * In other words its either null, or the inversion of a
+         * simple uniform scale. If its null, we can populate and
+         * use the advance caches as normal.
+         *
+         * If we don't find a cached value, obtain the device advance and
+         * return it. This will get stashed on the image by the caller and any
+         * subsequent metrics calls will be able to use it as is the case
+         * whenever an image is what is initially requested.
+         *
+         * Don't query if there's a value cached on the image, since this
+         * getUserAdv==false code path is entered solely when none exists.
+         */
         if (horizontalAdvances != null) {
             advance = horizontalAdvances[glyphCode];
             if (advance != Float.MAX_VALUE) {
-                return advance;
+                if (!getUserAdv && invertDevTx != null) {
+                    Point2D.Float metrics = new Point2D.Float(advance, 0f);
+                    desc.devTx.deltaTransform(metrics, metrics);
+                    return metrics.x;
+                } else {
+                    return advance;
+                }
             }
         } else if (segmentedCache && segHorizontalAdvances != null) {
             int segIndex = glyphCode >> SEGSHIFT;
@@ -577,9 +611,21 @@ public class FileFontStrike extends PhysicalStrike {
             if (subArray != null) {
                 advance = subArray[glyphCode % SEGSIZE];
                 if (advance != Float.MAX_VALUE) {
-                    return advance;
+                    if (!getUserAdv && invertDevTx != null) {
+                        Point2D.Float metrics = new Point2D.Float(advance, 0f);
+                        desc.devTx.deltaTransform(metrics, metrics);
+                        return metrics.x;
+                    } else {
+                        return advance;
+                    }
                 }
             }
+        }
+
+        if (!getUserAdv && invertDevTx != null) {
+            Point2D.Float metrics = new Point2D.Float();
+            fileFont.getGlyphMetrics(pScalerContext, glyphCode, metrics);
+            return metrics.x;
         }
 
         if (invertDevTx != null || !getUserAdv) {
@@ -725,7 +771,7 @@ public class FileFontStrike extends PhysicalStrike {
         return getGlyphMetrics(glyphCode, true);
     }
 
-    private Point2D.Float getGlyphMetrics(int glyphCode, boolean getUserAdv) {
+    private Point2D.Float getGlyphMetrics(int glyphCode, boolean getImage) {
         Point2D.Float metrics = new Point2D.Float();
 
         // !!! or do we force sgv user glyphs?
@@ -733,7 +779,7 @@ public class FileFontStrike extends PhysicalStrike {
             return metrics;
         }
         long glyphPtr;
-        if (getImageWithAdvance && getUserAdv) {
+        if (getImageWithAdvance && getImage) {
             /* A heuristic optimisation says that for most cases its
              * worthwhile retrieving the image at the same time as the
              * metrics. So here we get the image data even if its not
@@ -750,9 +796,9 @@ public class FileFontStrike extends PhysicalStrike {
             metrics.y = StrikeCache.unsafe.getFloat
                 (glyphPtr + StrikeCache.yAdvanceOffset);
             /* advance is currently in device space, need to convert back
-             * into user space, unless getUserAdv == false.
+             * into user space.
              * This must not include the translation component. */
-            if (invertDevTx != null && getUserAdv) {
+            if (invertDevTx != null) {
                 invertDevTx.deltaTransform(metrics, metrics);
             }
         } else {
@@ -781,9 +827,9 @@ public class FileFontStrike extends PhysicalStrike {
             if (value == null) {
                 fileFont.getGlyphMetrics(pScalerContext, glyphCode, metrics);
                 /* advance is currently in device space, need to convert back
-                 * into user space, unless getUserAdv == false.
+                 * into user space.
                  */
-                if (invertDevTx != null && getUserAdv) {
+                if (invertDevTx != null) {
                     invertDevTx.deltaTransform(metrics, metrics);
                 }
                 value = new Point2D.Float(metrics.x, metrics.y);
