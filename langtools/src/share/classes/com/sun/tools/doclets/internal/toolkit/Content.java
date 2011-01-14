@@ -99,8 +99,24 @@ public abstract class Content {
      * @param contentBuilder content to test for newline character at the end
      * @return true if the content ends with newline.
      */
-    public boolean endsWithNewLine(StringBuilder contentBuilder) {
-        return ((contentBuilder.length() == 0) ||
-                (contentBuilder.toString().endsWith(DocletConstants.NL)));
+    protected boolean endsWithNewLine(StringBuilder contentBuilder) {
+        int contentLength = contentBuilder.length();
+        if (contentLength == 0) {
+            return true;
+        }
+        int nlLength = DocletConstants.NL.length();
+        if (contentLength < nlLength) {
+            return false;
+        }
+        int contentIndex = contentLength - 1;
+        int nlIndex = nlLength - 1;
+        while (nlIndex >= 0) {
+            if (contentBuilder.charAt(contentIndex) != DocletConstants.NL.charAt(nlIndex)) {
+                return false;
+            }
+            contentIndex--;
+            nlIndex--;
+        }
+        return true;
     }
 }
