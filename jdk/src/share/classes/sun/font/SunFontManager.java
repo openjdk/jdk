@@ -1576,7 +1576,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                                    .info("Trying to resolve file " + fullPath);
                 }
                 do {
-                    ttf = new TrueTypeFont(fullPath, null, fn++, true);
+                    ttf = new TrueTypeFont(fullPath, null, fn++, false);
                     //  prefer the font's locale name.
                     String fontName = ttf.getFontName(l).toLowerCase();
                     if (unmappedFonts.contains(fontName)) {
