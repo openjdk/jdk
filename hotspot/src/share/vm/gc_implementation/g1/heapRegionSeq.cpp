@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ HeapRegionSeq::alloc_obj_from_region_index(int ind, size_t word_size) {
     // will also update the BOT covering all the regions to reflect
     // that there is a single object that starts at the bottom of the
     // first region.
-    first_hr->set_startsHumongous(new_end);
+    first_hr->set_startsHumongous(new_top, new_end);
 
     // Then, if there are any, we will set up the "continues
     // humongous" regions.
