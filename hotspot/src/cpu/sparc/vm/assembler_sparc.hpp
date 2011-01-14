@@ -823,15 +823,23 @@ class Assembler : public AbstractAssembler  {
   };
 
   // test if x is within signed immediate range for nbits
-  static bool is_simm(int x, int nbits) { return -( 1 << nbits-1 )  <= x   &&   x  <  ( 1 << nbits-1 ); }
+  static bool is_simm(intptr_t x, int nbits) { return -( intptr_t(1) << nbits-1 )  <= x   &&   x  <  ( intptr_t(1) << nbits-1 ); }
 
   // test if -4096 <= x <= 4095
-  static bool is_simm13(int x) { return is_simm(x, 13); }
+  static bool is_simm13(intptr_t x) { return is_simm(x, 13); }
+
+  static bool is_in_wdisp_range(address a, address b, int nbits) {
+    intptr_t d = intptr_t(b) - intptr_t(a);
+    return is_simm(d, nbits + 2);
+  }
 
   // test if label is in simm16 range in words (wdisp16).
   bool is_in_wdisp16_range(Label& L) {
-    intptr_t d = intptr_t(pc()) - intptr_t(target(L));
-    return is_simm(d, 18);
+    return is_in_wdisp_range(target(L), pc(), 16);
+  }
+  // test if the distance between two addresses fits in simm30 range in words
+  static bool is_in_wdisp30_range(address a, address b) {
+    return is_in_wdisp_range(a, b, 30);
   }
 
   enum ASIs { // page 72, v9
@@ -1843,6 +1851,8 @@ class MacroAssembler: public Assembler {
   inline void jmp( Register s1, Register s2 );
   inline void jmp( Register s1, int simm13a, RelocationHolder const& rspec = RelocationHolder() );
 
+  // Check if the call target is out of wdisp30 range (relative to the code cache)
+  static inline bool is_far_target(address d);
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
   inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
   inline void callr( Register s1, Register s2 );
@@ -2389,7 +2399,8 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
-  void incr_allocated_bytes(Register var_size_in_bytes, int con_size_in_bytes, Register t1);
+  void incr_allocated_bytes(RegisterOrConstant size_in_bytes,
+                            Register t1, Register t2);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,

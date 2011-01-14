@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,19 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
 
   virtual void print() const;
+
+  void reset_bot() {
+    _offsets.zero_bottom_entry();
+    _offsets.initialize_threshold();
+  }
+
+  void update_bot_for_object(HeapWord* start, size_t word_size) {
+    _offsets.alloc_block(start, word_size);
+  }
+
+  void print_bot_on(outputStream* out) {
+    _offsets.print_on(out);
+  }
 };
 
 class HeapRegion: public G1OffsetTableContigSpace {
@@ -359,6 +372,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
     Allocated
   };
 
+  inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
+    assert(is_young(), "we can only skip BOT updates on young regions");
+    return ContiguousSpace::par_allocate(word_size);
+  }
+  inline HeapWord* allocate_no_bot_updates(size_t word_size) {
+    assert(is_young(), "we can only skip BOT updates on young regions");
+    return ContiguousSpace::allocate(word_size);
+  }
+
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
   int hrs_index() const { return _hrs_index; }
@@ -404,13 +426,35 @@ class HeapRegion: public G1OffsetTableContigSpace {
     return _humongous_start_region;
   }
 
-  // Causes the current region to represent a humongous object spanning "n"
-  // regions.
-  void set_startsHumongous(HeapWord* new_end);
+  // Makes the current region be a "starts humongous" region, i.e.,
+  // the first region in a series of one or more contiguous regions
+  // that will contain a single "humongous" object. The two parameters
+  // are as follows:
+  //
+  // new_top : The new value of the top field of this region which
+  // points to the end of the humongous object that's being
+  // allocated. If there is more than one region in the series, top
+  // will lie beyond this region's original end field and on the last
+  // region in the series.
+  //
+  // new_end : The new value of the end field of this region which
+  // points to the end of the last region in the series. If there is
+  // one region in the series (namely: this one) end will be the same
+  // as the original end of this region.
+  //
+  // Updating top and end as described above makes this region look as
+  // if it spans the entire space taken up by all the regions in the
+  // series and an single allocation moved its top to new_top. This
+  // ensures that the space (capacity / allocated) taken up by all
+  // humongous regions can be calculated by just looking at the
+  // "starts humongous" regions and by ignoring the "continues
+  // humongous" regions.
+  void set_startsHumongous(HeapWord* new_top, HeapWord* new_end);
 
-  // The regions that continue a humongous sequence should be added using
-  // this method, in increasing address order.
-  void set_continuesHumongous(HeapRegion* start);
+  // Makes the current region be a "continues humongous'
+  // region. first_hr is the "start humongous" region of the series
+  // which this region will be part of.
+  void set_continuesHumongous(HeapRegion* first_hr);
 
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {

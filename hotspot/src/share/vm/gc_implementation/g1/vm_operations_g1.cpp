@@ -38,7 +38,6 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(
 }
 
 void VM_G1CollectForAllocation::doit() {
-  JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
   assert(_result == NULL || _pause_succeeded,
@@ -46,7 +45,6 @@ void VM_G1CollectForAllocation::doit() {
 }
 
 void VM_G1CollectFull::doit() {
-  JvmtiGCFullMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
   g1h->do_full_collection(false /* clear_all_soft_refs */);
@@ -72,7 +70,6 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(
 }
 
 void VM_G1IncCollectionPause::doit() {
-  JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(!_should_initiate_conc_mark ||
   ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||

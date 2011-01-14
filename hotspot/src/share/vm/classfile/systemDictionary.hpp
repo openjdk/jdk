@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,8 @@ class SymbolPropertyTable;
   template(sun_misc_AtomicLongCSImpl_klass, sun_misc_AtomicLongCSImpl,   Opt) \
                                                                               \
   template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
+                                                                              \
+  template(sun_misc_PostVMInitHook_klass, sun_misc_PostVMInitHook, Opt)       \
                                                                               \
   /* Preload boxing klasses */                                                \
   template(Boolean_klass,                java_lang_Boolean,              Pre) \

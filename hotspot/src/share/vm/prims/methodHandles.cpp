@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ bool MethodHandles::spot_check_entry_names() {
 //------------------------------------------------------------------------------
 // MethodHandles::generate_adapters
 //
-void MethodHandles::generate_adapters(TRAPS) {
+void MethodHandles::generate_adapters() {
   if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
@@ -123,20 +123,20 @@ void MethodHandles::generate_adapters(TRAPS) {
     vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
-  g.generate(CHECK);
+  g.generate();
 }
 
 
 //------------------------------------------------------------------------------
 // MethodHandlesAdapterGenerator::generate
 //
-void MethodHandlesAdapterGenerator::generate(TRAPS) {
+void MethodHandlesAdapterGenerator::generate() {
   // Generate generic method handle adapters.
   for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
        ek < MethodHandles::_EK_LIMIT;
        ek = MethodHandles::EntryKind(1 + (int)ek)) {
     StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-    MethodHandles::generate_method_handle_stub(_masm, ek, CHECK);
+    MethodHandles::generate_method_handle_stub(_masm, ek);
   }
 }
 
@@ -2621,10 +2621,20 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
         warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
         enable_MH = false;
       }
+    } else {
+      enable_MH = false;
     }
   }
 
   if (enable_MH) {
+    // We need to link the MethodHandleImpl klass before we generate
+    // the method handle adapters as the _raise_exception adapter uses
+    // one of its methods (and its c2i-adapter).
+    KlassHandle    k  = SystemDictionaryHandles::MethodHandleImpl_klass();
+    instanceKlass* ik = instanceKlass::cast(k());
+    ik->link_class(CHECK);
+
+    MethodHandles::generate_adapters();
     MethodHandles::set_enabled(true);
   }
 
@@ -2644,11 +2654,6 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     } else {
       MethodHandles::set_enabled(true);
     }
-  }
-
-  // Generate method handles adapters if enabled.
-  if (MethodHandles::enabled()) {
-    MethodHandles::generate_adapters(CHECK);
   }
 }
 JVM_END

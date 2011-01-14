@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,6 +610,39 @@ G1CollectedHeap::retire_cur_alloc_region(HeapRegion* cur_alloc_region) {
   // of the free region list is revamped as part of CR 6977804.
   wait_for_cleanup_complete();
 
+  // Other threads might still be trying to allocate using CASes out
+  // of the region we are retiring, as they can do so without holding
+  // the Heap_lock. So we first have to make sure that noone else can
+  // allocate in it by doing a maximal allocation. Even if our CAS
+  // attempt fails a few times, we'll succeed sooner or later given
+  // that a failed CAS attempt mean that the region is getting closed
+  // to being full (someone else succeeded in allocating into it).
+  size_t free_word_size = cur_alloc_region->free() / HeapWordSize;
+
+  // This is the minimum free chunk we can turn into a dummy
+  // object. If the free space falls below this, then noone can
+  // allocate in this region anyway (all allocation requests will be
+  // of a size larger than this) so we won't have to perform the dummy
+  // allocation.
+  size_t min_word_size_to_fill = CollectedHeap::min_fill_size();
+
+  while (free_word_size >= min_word_size_to_fill) {
+    HeapWord* dummy =
+      cur_alloc_region->par_allocate_no_bot_updates(free_word_size);
+    if (dummy != NULL) {
+      // If the allocation was successful we should fill in the space.
+      CollectedHeap::fill_with_object(dummy, free_word_size);
+      break;
+    }
+
+    free_word_size = cur_alloc_region->free() / HeapWordSize;
+    // It's also possible that someone else beats us to the
+    // allocation and they fill up the region. In that case, we can
+    // just get out of the loop
+  }
+  assert(cur_alloc_region->free() / HeapWordSize < min_word_size_to_fill,
+         "sanity");
+
   retire_cur_alloc_region_common(cur_alloc_region);
   assert(_cur_alloc_region == NULL, "post-condition");
 }
@@ -661,27 +694,29 @@ G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
       // young type.
       OrderAccess::storestore();
 
-      // Now allocate out of the new current alloc region. We could
-      // have re-used allocate_from_cur_alloc_region() but its
-      // operation is slightly different to what we need here. First,
-      // allocate_from_cur_alloc_region() is only called outside a
-      // safepoint and will always unlock the Heap_lock if it returns
-      // a non-NULL result. Second, it assumes that the current alloc
-      // region is what's already assigned in _cur_alloc_region. What
-      // we want here is to actually do the allocation first before we
-      // assign the new region to _cur_alloc_region. This ordering is
-      // not currently important, but it will be essential when we
-      // change the code to support CAS allocation in the future (see
-      // CR 6994297).
-      //
-      // This allocate method does BOT updates and we don't need them in
-      // the young generation. This will be fixed in the near future by
-      // CR 6994297.
-      HeapWord* result = new_cur_alloc_region->allocate(word_size);
+      // Now, perform the allocation out of the region we just
+      // allocated. Note that noone else can access that region at
+      // this point (as _cur_alloc_region has not been updated yet),
+      // so we can just go ahead and do the allocation without any
+      // atomics (and we expect this allocation attempt to
+      // suceeded). Given that other threads can attempt an allocation
+      // with a CAS and without needing the Heap_lock, if we assigned
+      // the new region to _cur_alloc_region before first allocating
+      // into it other threads might have filled up the new region
+      // before we got a chance to do the allocation ourselves. In
+      // that case, we would have needed to retire the region, grab a
+      // new one, and go through all this again. Allocating out of the
+      // new region before assigning it to _cur_alloc_region avoids
+      // all this.
+      HeapWord* result =
+                     new_cur_alloc_region->allocate_no_bot_updates(word_size);
       assert(result != NULL, "we just allocate out of an empty region "
              "so allocation should have been successful");
       assert(is_in(result), "result should be in the heap");
 
+      // Now make sure that the store to _cur_alloc_region does not
+      // float above the store to top.
+      OrderAccess::storestore();
       _cur_alloc_region = new_cur_alloc_region;
 
       if (!at_safepoint) {
@@ -718,6 +753,9 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   for (int try_count = 1; /* we'll return or break */; try_count += 1) {
     bool succeeded = true;
 
+    // Every time we go round the loop we should be holding the Heap_lock.
+    assert_heap_locked();
+
     {
       // We may have concurrent cleanup working at the time. Wait for
       // it to complete. In the future we would probably want to make
@@ -734,7 +772,8 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       // attempt as it's redundant (we only reach here after an
       // allocation attempt has been unsuccessful).
       wait_for_cleanup_complete();
-      HeapWord* result = attempt_allocation(word_size);
+
+      HeapWord* result = attempt_allocation_locked(word_size);
       if (result != NULL) {
         assert_heap_not_locked();
         return result;
@@ -748,7 +787,6 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       if (g1_policy()->can_expand_young_list()) {
         // Yes, we are allowed to expand the young gen. Let's try to
         // allocate a new current alloc region.
-
         HeapWord* result =
           replace_cur_alloc_region_and_allocate(word_size,
                                                 false, /* at_safepoint */
@@ -771,20 +809,23 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       // rather than causing more, now probably unnecessary, GC attempts.
       JavaThread* jthr = JavaThread::current();
       assert(jthr != NULL, "sanity");
-      if (!jthr->in_critical()) {
-        MutexUnlocker mul(Heap_lock);
-        GC_locker::stall_until_clear();
-
-        // We'll then fall off the end of the ("if GC locker active")
-        // if-statement and retry the allocation further down in the
-        // loop.
-      } else {
+      if (jthr->in_critical()) {
         if (CheckJNICalls) {
           fatal("Possible deadlock due to allocating while"
                 " in jni critical section");
         }
+        // We are returning NULL so the protocol is that we're still
+        // holding the Heap_lock.
+        assert_heap_locked();
         return NULL;
       }
+
+      Heap_lock->unlock();
+      GC_locker::stall_until_clear();
+
+      // No need to relock the Heap_lock. We'll fall off to the code
+      // below the else-statement which assumes that we are not
+      // holding the Heap_lock.
     } else {
       // We are not locked out. So, let's try to do a GC. The VM op
       // will retry the allocation before it completes.
@@ -805,11 +846,10 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
         dirty_young_block(result, word_size);
         return result;
       }
-
-      Heap_lock->lock();
     }
 
-    assert_heap_locked();
+    // Both paths that get us here from above unlock the Heap_lock.
+    assert_heap_not_locked();
 
     // We can reach here when we were unsuccessful in doing a GC,
     // because another thread beat us to it, or because we were locked
@@ -948,10 +988,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
     if (!expect_null_cur_alloc_region) {
       HeapRegion* cur_alloc_region = _cur_alloc_region;
       if (cur_alloc_region != NULL) {
-        // This allocate method does BOT updates and we don't need them in
-        // the young generation. This will be fixed in the near future by
-        // CR 6994297.
-        HeapWord* result = cur_alloc_region->allocate(word_size);
+        // We are at a safepoint so no reason to use the MT-safe version.
+        HeapWord* result = cur_alloc_region->allocate_no_bot_updates(word_size);
         if (result != NULL) {
           assert(is_in(result), "result should be in the heap");
 
@@ -983,20 +1021,17 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!isHumongous(word_size), "we do not allow TLABs of humongous size");
 
-  Heap_lock->lock();
-
-  // First attempt: try allocating out of the current alloc region or
-  // after replacing the current alloc region.
+  // First attempt: Try allocating out of the current alloc region
+  // using a CAS. If that fails, take the Heap_lock and retry the
+  // allocation, potentially replacing the current alloc region.
   HeapWord* result = attempt_allocation(word_size);
   if (result != NULL) {
     assert_heap_not_locked();
     return result;
   }
 
-  assert_heap_locked();
-
-  // Second attempt: go into the even slower path where we might
-  // try to schedule a collection.
+  // Second attempt: Go to the slower path where we might try to
+  // schedule a collection.
   result = attempt_allocation_slow(word_size);
   if (result != NULL) {
     assert_heap_not_locked();
@@ -1004,6 +1039,7 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
   }
 
   assert_heap_locked();
+  // Need to unlock the Heap_lock before returning.
   Heap_lock->unlock();
   return NULL;
 }
@@ -1022,11 +1058,10 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   for (int try_count = 1; /* we'll return */; try_count += 1) {
     unsigned int gc_count_before;
     {
-      Heap_lock->lock();
-
       if (!isHumongous(word_size)) {
-        // First attempt: try allocating out of the current alloc
-        // region or after replacing the current alloc region.
+        // First attempt: Try allocating out of the current alloc region
+        // using a CAS. If that fails, take the Heap_lock and retry the
+        // allocation, potentially replacing the current alloc region.
         HeapWord* result = attempt_allocation(word_size);
         if (result != NULL) {
           assert_heap_not_locked();
@@ -1035,14 +1070,17 @@ G1CollectedHeap::mem_allocate(size_t word_size,
 
         assert_heap_locked();
 
-        // Second attempt: go into the even slower path where we might
-        // try to schedule a collection.
+        // Second attempt: Go to the slower path where we might try to
+        // schedule a collection.
         result = attempt_allocation_slow(word_size);
         if (result != NULL) {
           assert_heap_not_locked();
           return result;
         }
       } else {
+        // attempt_allocation_humongous() requires the Heap_lock to be held.
+        Heap_lock->lock();
+
         HeapWord* result = attempt_allocation_humongous(word_size,
                                                      false /* at_safepoint */);
         if (result != NULL) {
@@ -1054,7 +1092,8 @@ G1CollectedHeap::mem_allocate(size_t word_size,
       assert_heap_locked();
       // Read the gc count while the heap lock is held.
       gc_count_before = SharedHeap::heap()->total_collections();
-      // We cannot be at a safepoint, so it is safe to unlock the Heap_lock
+
+      // Release the Heap_lock before attempting the collection.
       Heap_lock->unlock();
     }
 
@@ -1192,7 +1231,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     return false;
   }
 
-  DTraceGCProbeMarker gc_probe_marker(true /* full */);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -1868,7 +1907,7 @@ jint G1CollectedHeap::initialize() {
 
   ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
                         HeapRegion::GrainBytes,
-                        false /*ism*/, addr);
+                        UseLargePages, addr);
 
   if (UseCompressedOops) {
     if (addr != NULL && !heap_rs.is_reserved()) {
@@ -1877,13 +1916,13 @@ jint G1CollectedHeap::initialize() {
       // Try again to reserver heap higher.
       addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
       ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
-                             false /*ism*/, addr);
+                             UseLargePages, addr);
       if (addr != NULL && !heap_rs0.is_reserved()) {
         // Failed to reserve at specified address again - give up.
         addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
         assert(addr == NULL, "");
         ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
-                               false /*ism*/, addr);
+                               UseLargePages, addr);
         heap_rs = heap_rs1;
       } else {
         heap_rs = heap_rs0;
@@ -3214,7 +3253,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     return false;
   }
 
-  DTraceGCProbeMarker gc_probe_marker(false /* full */);
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -3856,13 +3895,15 @@ private:
   size_t _next_marked_bytes;
   OopsInHeapRegionClosure *_cl;
 public:
-  RemoveSelfPointerClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* cl) :
-    _g1(g1), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
+  RemoveSelfPointerClosure(G1CollectedHeap* g1, HeapRegion* hr,
+                           OopsInHeapRegionClosure* cl) :
+    _g1(g1), _hr(hr), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
     _next_marked_bytes(0), _cl(cl) {}
 
   size_t prev_marked_bytes() { return _prev_marked_bytes; }
   size_t next_marked_bytes() { return _next_marked_bytes; }
 
+  // <original comment>
   // The original idea here was to coalesce evacuated and dead objects.
   // However that caused complications with the block offset table (BOT).
   // In particular if there were two TLABs, one of them partially refined.
@@ -3871,15 +3912,24 @@ public:
   // of TLAB_2. If the last object of the TLAB_1 and the first object
   // of TLAB_2 are coalesced, then the cards of the unrefined part
   // would point into middle of the filler object.
-  //
   // The current approach is to not coalesce and leave the BOT contents intact.
+  // </original comment>
+  //
+  // We now reset the BOT when we start the object iteration over the
+  // region and refine its entries for every object we come across. So
+  // the above comment is not really relevant and we should be able
+  // to coalesce dead objects if we want to.
   void do_object(oop obj) {
+    HeapWord* obj_addr = (HeapWord*) obj;
+    assert(_hr->is_in(obj_addr), "sanity");
+    size_t obj_size = obj->size();
+    _hr->update_bot_for_object(obj_addr, obj_size);
     if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
       assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
       _cm->markPrev(obj);
       assert(_cm->isPrevMarked(obj), "Should be marked!");
-      _prev_marked_bytes += (obj->size() * HeapWordSize);
+      _prev_marked_bytes += (obj_size * HeapWordSize);
       if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
         _cm->markAndGrayObjectIfNecessary(obj);
       }
@@ -3901,7 +3951,7 @@ public:
     } else {
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
-      MemRegion mr((HeapWord*)obj, obj->size());
+      MemRegion mr((HeapWord*)obj, obj_size);
       CollectedHeap::fill_with_object(mr);
       _cm->clearRangeBothMaps(mr);
     }
@@ -3921,10 +3971,13 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   HeapRegion* cur = g1_policy()->collection_set();
   while (cur != NULL) {
     assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
+    assert(!cur->isHumongous(), "sanity");
 
-    RemoveSelfPointerClosure rspc(_g1h, cl);
     if (cur->evacuation_failed()) {
       assert(cur->in_collection_set(), "bad CS");
+      RemoveSelfPointerClosure rspc(_g1h, cur, cl);
+
+      cur->reset_bot();
       cl->set_region(cur);
       cur->object_iterate(&rspc);
 
@@ -3987,15 +4040,6 @@ void G1CollectedHeap::drain_evac_failure_scan_stack() {
      _evac_failure_closure->set_region(heap_region_containing(obj));
      obj->oop_iterate_backwards(_evac_failure_closure);
   }
-}
-
-void G1CollectedHeap::handle_evacuation_failure(oop old) {
-  markOop m = old->mark();
-  // forward to self
-  assert(!old->is_forwarded(), "precondition");
-
-  old->forward_to(old);
-  handle_evacuation_failure_common(old, m);
 }
 
 oop
