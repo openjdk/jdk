@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,9 +132,9 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
          bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
   ResourceMark rm(thread);
   methodHandle m (thread, method(thread));
-  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(m, bci(thread));
-  oop result = ldc->resolve_constant(THREAD);
-  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc->cache_index()));
+  Bytecode_loadconstant ldc(m, bci(thread));
+  oop result = ldc.resolve_constant(THREAD);
+  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc.cache_index()));
   assert(result == cpce->f1(), "expected result for assembly code");
 }
 IRT_END
@@ -672,8 +672,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
-    Bytecode_invoke* call = Bytecode_invoke_at(m, bci(thread));
-    symbolHandle signature (thread, call->signature());
+    Bytecode_invoke call(m, bci(thread));
+    symbolHandle signature (thread, call.signature());
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
     assert(Universe::heap()->is_in_reserved_or_null(receiver()),
@@ -756,7 +756,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     caller_bci = caller_method->bci_from(caller_bcp);
     site_index = Bytes::get_native_u4(caller_bcp+1);
   }
-  assert(site_index == InterpreterRuntime::bytecode(thread)->get_index_u4(bytecode), "");
+  assert(site_index == InterpreterRuntime::bytecode(thread).get_index_u4(bytecode), "");
   assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
@@ -1245,9 +1245,9 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   assert(fr.is_interpreted_frame(), "");
   jint bci = fr.interpreter_frame_bci();
   methodHandle mh(thread, fr.interpreter_frame_method());
-  Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
-  ArgumentSizeComputer asc(invoke->signature());
-  int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
+  Bytecode_invoke invoke(mh, bci);
+  ArgumentSizeComputer asc(invoke.signature());
+  int size_of_arguments = (asc.size() + (invoke.has_receiver() ? 1 : 0)); // receiver
   Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
