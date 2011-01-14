@@ -755,22 +755,30 @@ public class HtmlTree extends Content {
         if (!isInline() && !endsWithNewLine(contentBuilder))
             contentBuilder.append(DocletConstants.NL);
         String tagString = htmlTag.toString();
-        contentBuilder.append("<" + tagString);
+        contentBuilder.append("<");
+        contentBuilder.append(tagString);
         Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
         HtmlAttr key;
         String value = "";
         while (iterator.hasNext()) {
             key = iterator.next();
             value = attrs.get(key);
-            contentBuilder.append(" " + key.toString());
-            if (!value.isEmpty())
-                contentBuilder.append("=\"" + value + "\"");
+            contentBuilder.append(" ");
+            contentBuilder.append(key.toString());
+            if (!value.isEmpty()) {
+                contentBuilder.append("=\"");
+                contentBuilder.append(value);
+                contentBuilder.append("\"");
+            }
         }
         contentBuilder.append(">");
         for (Content c : content)
             c.write(contentBuilder);
-        if (htmlTag.endTagRequired())
-            contentBuilder.append("</" + tagString + ">");
+        if (htmlTag.endTagRequired()) {
+            contentBuilder.append("</");
+            contentBuilder.append(tagString);
+            contentBuilder.append(">");
+        }
         if (!isInline())
             contentBuilder.append(DocletConstants.NL);
     }
