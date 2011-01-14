@@ -1334,7 +1334,6 @@ public class Attr extends JCTree.Visitor {
 
         // The types of the actual method type arguments.
         List<Type> typeargtypes = null;
-        boolean typeargtypesNonRefOK = false;
 
         Name methName = TreeInfo.name(tree.meth);
 
@@ -1463,21 +1462,7 @@ public class Attr extends JCTree.Visitor {
                               restype.tsym);
             }
 
-            // Special case logic for JSR 292 types.
-            if (rs.allowTransitionalJSR292 &&
-                    tree.meth.getTag() == JCTree.SELECT &&
-                    !typeargtypes.isEmpty()) {
-                JCFieldAccess mfield = (JCFieldAccess) tree.meth;
-                // MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
-                // has type <T>, and T can be a primitive type.
-                if (mfield.sym != null &&
-                        mfield.sym.isPolymorphicSignatureInstance())
-                    typeargtypesNonRefOK = true;
-            }
-
-            if (!(rs.allowTransitionalJSR292 && typeargtypesNonRefOK)) {
-                chk.checkRefTypes(tree.typeargs, typeargtypes);
-            }
+            chk.checkRefTypes(tree.typeargs, typeargtypes);
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type

@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -538,43 +539,39 @@ public class Infer {
 
     /**
      * Compute a synthetic method type corresponding to the requested polymorphic
-     * method signature. If no explicit return type is supplied, a provisional
-     * return type is computed (just Object in case of non-transitional 292)
+     * method signature. The target return type is computed from the immediately
+     * enclosing scope surrounding the polymorphic-signature call.
      */
     Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
                                             Name name,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
-                                            List<Type> argtypes,
-                                            List<Type> typeargtypes) {
+                                            List<Type> argtypes) {
         final Type restype;
-        if (rs.allowTransitionalJSR292 && typeargtypes.nonEmpty()) {
-            restype = typeargtypes.head;
-        } else {
-            //The return type for a polymorphic signature call is computed from
-            //the enclosing tree E, as follows: if E is a cast, then use the
-            //target type of the cast expression as a return type; if E is an
-            //expression statement, the return type is 'void' - otherwise the
-            //return type is simply 'Object'. A correctness check ensures that
-            //env.next refers to the lexically enclosing environment in which
-            //the polymorphic signature call environment is nested.
 
-            switch (env.next.tree.getTag()) {
-                case JCTree.TYPECAST:
-                    JCTypeCast castTree = (JCTypeCast)env.next.tree;
-                    restype = (castTree.expr == env.tree) ?
-                        castTree.clazz.type :
-                        syms.objectType;
-                    break;
-                case JCTree.EXEC:
-                    JCTree.JCExpressionStatement execTree =
-                            (JCTree.JCExpressionStatement)env.next.tree;
-                    restype = (execTree.expr == env.tree) ?
-                        syms.voidType :
-                        syms.objectType;
-                    break;
-                default:
-                    restype = syms.objectType;
-            }
+        //The return type for a polymorphic signature call is computed from
+        //the enclosing tree E, as follows: if E is a cast, then use the
+        //target type of the cast expression as a return type; if E is an
+        //expression statement, the return type is 'void' - otherwise the
+        //return type is simply 'Object'. A correctness check ensures that
+        //env.next refers to the lexically enclosing environment in which
+        //the polymorphic signature call environment is nested.
+
+        switch (env.next.tree.getTag()) {
+            case JCTree.TYPECAST:
+                JCTypeCast castTree = (JCTypeCast)env.next.tree;
+                restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
+                    castTree.clazz.type :
+                    syms.objectType;
+                break;
+            case JCTree.EXEC:
+                JCTree.JCExpressionStatement execTree =
+                        (JCTree.JCExpressionStatement)env.next.tree;
+                restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?
+                    syms.voidType :
+                    syms.objectType;
+                break;
+            default:
+                restype = syms.objectType;
         }
 
         List<Type> paramtypes = Type.map(argtypes, implicitArgType);
