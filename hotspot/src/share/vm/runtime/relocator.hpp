@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ class Relocator : public ResourceObj {
   // get the address of in the code_array
   inline char* addr_at(int bci) const             { return (char*) &code_array()[bci]; }
 
-  int  instruction_length_at(int bci)             { return Bytecodes::length_at(code_array() + bci); }
+  int  instruction_length_at(int bci)             { return Bytecodes::length_at(_method(), code_array() + bci); }
 
   // Helper methods
   int  align(int n) const                          { return (n+3) & ~3; }
