@@ -781,8 +781,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     types.isSameType(c.type, syms.polymorphicSignatureType)) {
                 if (!target.hasMethodHandles()) {
                     // Somebody is compiling JDK7 source code to a JDK6 target.
-                    // Make it a strict warning, since it is unlikely but important.
-                    log.strictWarning(env.tree.pos(),
+                    // Make it an error, since it is unlikely but important.
+                    log.error(env.tree.pos(),
                             "wrong.target.for.polymorphic.signature.definition",
                             target.name);
                 }
