@@ -29,6 +29,7 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -68,6 +69,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 public class TypeHarness {
 
     protected Types types;
+    protected Check chk;
     protected Symtab predef;
     protected Names names;
     protected Factory fac;
@@ -76,6 +78,7 @@ public class TypeHarness {
         Context ctx = new Context();
         JavacFileManager.preRegister(ctx);
         types = Types.instance(ctx);
+        chk = Check.instance(ctx);
         predef = Symtab.instance(ctx);
         names = Names.instance(ctx);
         fac = new Factory();
@@ -155,6 +158,21 @@ public class TypeHarness {
                 " is not assignable to " :
                 " is assignable to ";
             error(s + msg + t);
+        }
+    }
+
+    /** assert that generic type 't' is well-formed */
+    public void assertValidGenericType(Type t) {
+        assertValidGenericType(t, true);
+    }
+
+    /** assert that 's' is/is not assignable to 't' */
+    public void assertValidGenericType(Type t, boolean expected) {
+        if (chk.checkValidGenericType(t) != expected) {
+            String msg = expected ?
+                " is not a valid generic type" :
+                " is a valid generic type";
+            error(t + msg + "   " + t.tsym.type);
         }
     }
     // </editor-fold>
