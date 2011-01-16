@@ -93,10 +93,6 @@ ifeq ($(PLATFORM), windows)
 
 IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
 
-# NOTE: These might actually come from BUILDDIR, depends on the settings.
-$(BINDIR)/msvcrt.dll: $(MSVCRT_DLL_PATH)/msvcrt.dll
-	$(install-import-file)
-	$(call chmod-file, a+x)
 $(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 	$(install-import-file)
 	$(call chmod-file, a+x)
@@ -223,12 +219,15 @@ endif # PLATFORM
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME): $(HOTSPOT_KERNEL_PATH)/$(JVM_NAME)
 	$(install-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(LIBJSIG_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
@@ -237,30 +236,39 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDB_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDTRACE_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_NAME)
 	$(install-import-file)
+	@$(call binary_file_verification,$@)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt : $(HOTSPOT_SERVER_PATH)/Xusage.txt
 	$(install-import-file)
