@@ -434,7 +434,11 @@ public class ClassReader implements Completer {
             }
             case CONSTANT_Class:
             case CONSTANT_String:
+            case CONSTANT_MethodType:
                 bp = bp + 2;
+                break;
+            case CONSTANT_MethodHandle:
+                bp = bp + 3;
                 break;
             case CONSTANT_Fieldref:
             case CONSTANT_Methodref:
@@ -442,6 +446,7 @@ public class ClassReader implements Completer {
             case CONSTANT_NameandType:
             case CONSTANT_Integer:
             case CONSTANT_Float:
+            case CONSTANT_InvokeDynamic:
                 bp = bp + 4;
                 break;
             case CONSTANT_Long:
@@ -509,6 +514,15 @@ public class ClassReader implements Completer {
             break;
         case CONSTANT_Double:
             poolObj[i] = new Double(getDouble(index + 1));
+            break;
+        case CONSTANT_MethodHandle:
+            skipBytes(4);
+            break;
+        case CONSTANT_MethodType:
+            skipBytes(3);
+            break;
+        case CONSTANT_InvokeDynamic:
+            skipBytes(5);
             break;
         default:
             throw badClassFile("bad.const.pool.tag", Byte.toString(tag));
@@ -1819,6 +1833,13 @@ public class ClassReader implements Completer {
             index += Code.width(t);
         }
         sym.savedParameterNames = paramNames.reverse();
+    }
+
+    /**
+     * skip n bytes
+     */
+    void skipBytes(int n) {
+        bp = bp + n;
     }
 
     /** Skip a field or method
