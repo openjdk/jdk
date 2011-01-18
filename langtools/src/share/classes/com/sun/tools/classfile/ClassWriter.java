@@ -267,6 +267,12 @@ public class ClassWriter {
             return 1;
         }
 
+        public Integer visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, ClassOutputStream out) {
+            out.writeShort(info.bootstrap_method_attr_index);
+            out.writeShort(info.name_and_type_index);
+            return 1;
+        }
+
         public Integer visitLong(CONSTANT_Long_info info, ClassOutputStream out) {
             out.writeLong(info.value);
             return 2;
@@ -275,6 +281,17 @@ public class ClassWriter {
         public Integer visitNameAndType(CONSTANT_NameAndType_info info, ClassOutputStream out) {
             out.writeShort(info.name_index);
             out.writeShort(info.type_index);
+            return 1;
+        }
+
+        public Integer visitMethodHandle(CONSTANT_MethodHandle_info info, ClassOutputStream out) {
+            out.writeByte(info.reference_kind.tag);
+            out.writeShort(info.reference_index);
+            return 1;
+        }
+
+        public Integer visitMethodType(CONSTANT_MethodType_info info, ClassOutputStream out) {
+            out.writeShort(info.descriptor_index);
             return 1;
         }
 
@@ -329,6 +346,19 @@ public class ClassWriter {
 
         public Void visitAnnotationDefault(AnnotationDefault_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.default_value, out);
+            return null;
+        }
+
+        public Void visitBootstrapMethods(BootstrapMethods_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.bootstrap_method_specifiers.length);
+            for (BootstrapMethods_attribute.BootstrapMethodSpecifier bsm : attr.bootstrap_method_specifiers) {
+                out.writeShort(bsm.bootstrap_method_ref);
+                int bsm_args_count = bsm.bootstrap_arguments.length;
+                out.writeShort(bsm_args_count);
+                for (int i : bsm.bootstrap_arguments) {
+                    out.writeShort(i);
+                }
+            }
             return null;
         }
 
