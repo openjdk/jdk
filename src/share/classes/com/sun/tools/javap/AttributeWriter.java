@@ -31,6 +31,7 @@ import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.AnnotationDefault_attribute;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.BootstrapMethods_attribute;
 import com.sun.tools.classfile.CharacterRangeTable_attribute;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.CompilationID_attribute;
@@ -148,6 +149,25 @@ public class AttributeWriter extends BasicWriter
         print("default_value: ");
         annotationWriter.write(attr.default_value);
         indent(-1);
+        return null;
+    }
+
+    public Void visitBootstrapMethods(BootstrapMethods_attribute attr, Void p) {
+        println(Attribute.BootstrapMethods + ":");
+        for (int i = 0; i < attr.bootstrap_method_specifiers.length ; i++) {
+            BootstrapMethods_attribute.BootstrapMethodSpecifier bsm = attr.bootstrap_method_specifiers[i];
+            indent(+1);
+            print(i + ": #" + bsm.bootstrap_method_ref + " ");
+            println(constantWriter.stringValue(bsm.bootstrap_method_ref));
+            indent(+1);
+            println("Method arguments:");
+            indent(+1);
+            for (int j = 0; j < bsm.bootstrap_arguments.length; j++) {
+                print("#" + bsm.bootstrap_arguments[j] + " ");
+                println(constantWriter.stringValue(bsm.bootstrap_arguments[j]));
+            }
+            indent(-3);
+        }
         return null;
     }
 

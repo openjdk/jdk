@@ -39,6 +39,7 @@ import java.util.Map;
 
 public abstract class Attribute {
     public static final String AnnotationDefault        = "AnnotationDefault";
+    public static final String BootstrapMethods         = "BootstrapMethods";
     public static final String CharacterRangeTable      = "CharacterRangeTable";
     public static final String Code                     = "Code";
     public static final String ConstantValue            = "ConstantValue";
@@ -99,6 +100,7 @@ public abstract class Attribute {
         protected void init() {
             standardAttributes = new HashMap<String,Class<? extends Attribute>>();
             standardAttributes.put(AnnotationDefault, AnnotationDefault_attribute.class);
+            standardAttributes.put(BootstrapMethods, BootstrapMethods_attribute.class);
             standardAttributes.put(CharacterRangeTable, CharacterRangeTable_attribute.class);
             standardAttributes.put(Code,              Code_attribute.class);
             standardAttributes.put(ConstantValue,     ConstantValue_attribute.class);
@@ -155,6 +157,7 @@ public abstract class Attribute {
 
 
     public interface Visitor<R,P> {
+        R visitBootstrapMethods(BootstrapMethods_attribute attr, P p);
         R visitDefault(DefaultAttribute attr, P p);
         R visitAnnotationDefault(AnnotationDefault_attribute attr, P p);
         R visitCharacterRangeTable(CharacterRangeTable_attribute attr, P p);
