@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
-#include "gc_implementation/g1/heapRegionSeq.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 // Inline functions for G1CollectedHeap

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ class HeapRegionSeq: public CHeapObj {
 
   // If "addr" falls within a region in the sequence, return that region,
   // or else NULL.
-  HeapRegion* addr_to_region(const void* addr);
+  inline HeapRegion* addr_to_region(const void* addr);
 
   void print();
 

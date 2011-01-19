@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,13 @@
                                                                             \
   develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
           "Number of completed buffers that triggers log processing.")      \
+                                                                            \
+  product(uintx, G1SATBBufferEnqueueingThresholdPercent, 60,                \
+          "Before enqueueing them, each mutator thread tries to do some "   \
+          "filtering on the SATB buffers it generates. If post-filtering "  \
+          "the percentage of retained entries is over this threshold "      \
+          "the buffer will be enqueued for processing. A value of 0 "       \
+          "specifies that mutator threads should not do such filtering.")   \
                                                                             \
   develop(intx, G1ExtraRegionSurvRate, 33,                                  \
           "If the young survival rate is S, and there's room left in "      \
