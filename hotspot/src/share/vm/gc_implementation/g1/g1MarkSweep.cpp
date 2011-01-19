@@ -113,6 +113,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();
+  JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate
   GenMarkSweep::_ref_processor = NULL;
