@@ -106,7 +106,7 @@ class Relocator : public ResourceObj {
   // get the address of in the code_array
   inline char* addr_at(int bci) const             { return (char*) &code_array()[bci]; }
 
-  int  instruction_length_at(int bci)             { return Bytecodes::length_at(_method(), code_array() + bci); }
+  int  instruction_length_at(int bci)             { return Bytecodes::length_at(NULL, code_array() + bci); }
 
   // Helper methods
   int  align(int n) const                          { return (n+3) & ~3; }
