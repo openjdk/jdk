@@ -81,6 +81,10 @@ public class Win32FontManager extends SunFontManager {
      */
     private static native String getEUDCFontFile();
 
+    public TrueTypeFont getEUDCFont() {
+        return eudcFont;
+    }
+
     public Win32FontManager() {
         super();
         AccessController.doPrivileged(new PrivilegedAction() {
@@ -198,7 +202,7 @@ public class Win32FontManager extends SunFontManager {
                                      familyToFontListMap,
                                  Locale locale);
 
-    public synchronized native String getFontPath(boolean noType1Fonts);
+    protected synchronized native String getFontPath(boolean noType1Fonts);
 
     public String[] getDefaultPlatformFont() {
 
