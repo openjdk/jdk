@@ -1602,20 +1602,32 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
         if (w <= 0 || h <= 0) {
             return false;
         }
-        // Assertion: Cubic curves closed by connecting their
-        // endpoints form either one or two convex halves with
-        // the closing line segment as an edge of both sides.
-        if (!(contains(x, y) &&
-              contains(x + w, y) &&
-              contains(x + w, y + h) &&
-              contains(x, y + h))) {
-            return false;
+
+        int numCrossings = rectCrossings(x, y, w, h);
+        return !(numCrossings == 0 || numCrossings == Curve.RECT_INTERSECTS);
+    }
+
+    private int rectCrossings(double x, double y, double w, double h) {
+        int crossings = 0;
+        if (!(getX1() == getX2() && getY1() == getY2())) {
+            crossings = Curve.rectCrossingsForLine(crossings,
+                                                   x, y,
+                                                   x+w, y+h,
+                                                   getX1(), getY1(),
+                                                   getX2(), getY2());
+            if (crossings == Curve.RECT_INTERSECTS) {
+                return crossings;
+            }
         }
-        // Either the rectangle is entirely inside one of the convex
-        // halves or it crosses from one to the other, in which case
-        // it must intersect the closing line segment.
-        Rectangle2D rect = new Rectangle2D.Double(x, y, w, h);
-        return !rect.intersectsLine(getX1(), getY1(), getX2(), getY2());
+        // we call this with the curve's direction reversed, because we wanted
+        // to call rectCrossingsForLine first, because it's cheaper.
+        return Curve.rectCrossingsForCubic(crossings,
+                                           x, y,
+                                           x+w, y+h,
+                                           getX2(), getY2(),
+                                           getCtrlX2(), getCtrlY2(),
+                                           getCtrlX1(), getCtrlY1(),
+                                           getX1(), getY1(), 0);
     }
 
     /**
