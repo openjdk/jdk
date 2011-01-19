@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1171,12 +1171,12 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     if (G1TraceMarkStackOverflow)
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
   } else {
+    SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of  the marking cycle, we're expected all
     // threads to have SATB queues with active set to true.
-    JavaThread::satb_mark_queue_set().set_active_all_threads(
-                                                  false, /* new active value */
-                                                  true /* expected_active */);
+    satb_mq_set.set_active_all_threads(false, /* new active value */
+                                       true /* expected_active */);
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
