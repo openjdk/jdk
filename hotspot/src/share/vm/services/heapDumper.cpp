@@ -453,7 +453,7 @@ DumpWriter::DumpWriter(const char* path) {
 
 DumpWriter::~DumpWriter() {
   // flush and close dump file
-  if (file_descriptor() >= 0) {
+  if (is_open()) {
     close();
   }
   if (_buffer != NULL) os::free(_buffer);
@@ -463,9 +463,10 @@ DumpWriter::~DumpWriter() {
 // closes dump file (if open)
 void DumpWriter::close() {
   // flush and close dump file
-  if (file_descriptor() >= 0) {
+  if (is_open()) {
     flush();
     ::close(file_descriptor());
+    set_file_descriptor(-1);
   }
 }
 
@@ -1935,18 +1936,32 @@ void HeapDumper::dump_heap() {
 void HeapDumper::dump_heap(bool oome) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
-  char   my_path[JVM_MAXPATHLEN] = {'\0'};
+  char* my_path;
+  const int max_digit_chars = 20;
+
+  const char* dump_file_name = "java_pid";
+  const char* dump_file_ext  = ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
   // dump file name or a directory where dump file is created.
   if (dump_file_seq == 0) { // first time in, we initialize base_path
+    // Calculate potentially longest base path and check if we have enough
+    // allocated statically.
+    const size_t total_length =
+                      (HeapDumpPath == NULL ? 0 : strlen(HeapDumpPath)) +
+                      strlen(os::file_separator()) + max_digit_chars +
+                      strlen(dump_file_name) + strlen(dump_file_ext) + 1;
+    if (total_length > sizeof(base_path)) {
+      warning("Cannot create heap dump file.  HeapDumpPath is too long.");
+      return;
+    }
+
     bool use_default_filename = true;
     if (HeapDumpPath == NULL || HeapDumpPath[0] == '\0') {
       // HeapDumpPath=<file> not specified
     } else {
-      assert(strlen(HeapDumpPath) < sizeof(base_path), "HeapDumpPath too long");
-      strcpy(base_path, HeapDumpPath);
+      strncpy(base_path, HeapDumpPath, sizeof(base_path));
       // check if the path is a directory (must exist)
       DIR* dir = os::opendir(base_path);
       if (dir == NULL) {
@@ -1960,8 +1975,6 @@ void HeapDumper::dump_heap(bool oome) {
           char* end = base_path;
           end += (strlen(base_path) - fs_len);
           if (strcmp(end, os::file_separator()) != 0) {
-            assert(strlen(base_path) + strlen(os::file_separator()) < sizeof(base_path),
-              "HeapDumpPath too long");
             strcat(base_path, os::file_separator());
           }
         }
@@ -1969,21 +1982,26 @@ void HeapDumper::dump_heap(bool oome) {
     }
     // If HeapDumpPath wasn't a file name then we append the default name
     if (use_default_filename) {
-      char fn[32];
-      sprintf(fn, "java_pid%d", os::current_process_id());
-      assert(strlen(base_path) + strlen(fn) + strlen(".hprof") < sizeof(base_path), "HeapDumpPath too long");
-      strcat(base_path, fn);
-      strcat(base_path, ".hprof");
+      const size_t dlen = strlen(base_path);  // if heap dump dir specified
+      jio_snprintf(&base_path[dlen], sizeof(base_path)-dlen, "%s%d%s",
+                   dump_file_name, os::current_process_id(), dump_file_ext);
     }
-    assert(strlen(base_path) < sizeof(my_path), "Buffer too small");
-    strcpy(my_path, base_path);
+    const size_t len = strlen(base_path) + 1;
+    my_path = (char*)os::malloc(len);
+    if (my_path == NULL) {
+      warning("Cannot create heap dump file.  Out of system memory.");
+      return;
+    }
+    strncpy(my_path, base_path, len);
   } else {
     // Append a sequence number id for dumps following the first
-    char fn[33];
-    sprintf(fn, ".%d", dump_file_seq);
-    assert(strlen(base_path) + strlen(fn) < sizeof(my_path), "HeapDumpPath too long");
-    strcpy(my_path, base_path);
-    strcat(my_path, fn);
+    const size_t len = strlen(base_path) + max_digit_chars + 2; // for '.' and \0
+    my_path = (char*)os::malloc(len);
+    if (my_path == NULL) {
+      warning("Cannot create heap dump file.  Out of system memory.");
+      return;
+    }
+    jio_snprintf(my_path, len, "%s.%d", base_path, dump_file_seq);
   }
   dump_file_seq++;   // increment seq number for next time we dump
 
@@ -1991,4 +2009,5 @@ void HeapDumper::dump_heap(bool oome) {
                     true  /* send to tty */,
                     oome  /* pass along out-of-memory-error flag */);
   dumper.dump(my_path);
+  os::free(my_path);
 }
