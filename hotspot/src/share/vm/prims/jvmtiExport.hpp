@@ -346,6 +346,8 @@ class JvmtiExport : public AllStatic {
   static void cleanup_thread             (JavaThread* thread) KERNEL_RETURN;
 
   static void oops_do(OopClosure* f) KERNEL_RETURN;
+  static void weak_oops_do(BoolObjectClosure* b, OopClosure* f) KERNEL_RETURN;
+  static void gc_epilogue() KERNEL_RETURN;
 
   static void transition_pending_onload_raw_monitors() KERNEL_RETURN;
 

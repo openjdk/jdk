@@ -4979,6 +4979,7 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   if (should_unload_classes()) {
     CodeCache::gc_epilogue();
   }
+  JvmtiExport::gc_epilogue();
 
   // If we encountered any (marking stack / work queue) overflow
   // events during the current CMS cycle, take appropriate
