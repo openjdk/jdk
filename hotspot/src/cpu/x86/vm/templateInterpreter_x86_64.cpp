@@ -1385,6 +1385,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
       __ bind(profile_method);
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
       __ set_method_data_pointer_for_bcp();
+      __ get_method(rbx);
       __ jmp(profile_method_continue);
     }
     // Handle overflow of counter and compile method
