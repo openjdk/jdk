@@ -663,13 +663,15 @@ public class AppletClassLoader extends URLClassLoader {
                     // set the context class loader to the AppletClassLoader.
                     creatorThread.setContextClassLoader(AppletClassLoader.this);
 
-                    synchronized(creatorThread.syncObject)  {
-                        creatorThread.start();
-                        try {
-                            creatorThread.syncObject.wait();
-                        } catch (InterruptedException e) { }
-                        appContext = creatorThread.appContext;
-                    }
+                    creatorThread.start();
+                    try {
+                        synchronized(creatorThread.syncObject) {
+                            while (!creatorThread.created) {
+                                creatorThread.syncObject.wait();
+                            }
+                        }
+                    } catch (InterruptedException e) { }
+                    appContext = creatorThread.appContext;
                     return null;
                 }
             });
@@ -854,14 +856,16 @@ public     void grab() {
 class AppContextCreator extends Thread  {
     Object syncObject = new Object();
     AppContext appContext = null;
+    volatile boolean created = false;
 
     AppContextCreator(ThreadGroup group)  {
         super(group, "AppContextCreator");
     }
 
     public void run()  {
-        synchronized(syncObject)  {
-            appContext = SunToolkit.createNewAppContext();
+        appContext = SunToolkit.createNewAppContext();
+        created = true;
+        synchronized(syncObject) {
             syncObject.notifyAll();
         }
     } // run()
