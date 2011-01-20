@@ -45,15 +45,18 @@ import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Locale.Category;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -73,11 +76,6 @@ public enum LauncherHelper {
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
 
-    private static final long K = 1024;
-    private static final long M = K * K;
-    private static final long G = M * K;
-    private static final long T = G * K;
-
     private static synchronized ResourceBundle getLauncherResourceBundle() {
         if (javarb == null) {
             javarb = ResourceBundle.getBundle(defaultBundleName);
@@ -96,14 +94,20 @@ public enum LauncherHelper {
      * optionFlag: specifies which options to print default is all other
      *    possible values are vm, properties, locale.
      *
+     * initialHeapSize: in bytes, as set by the launcher, a zero-value indicates
+     *    this code should determine this value, using a suitable method or
+     *    the line could be omitted.
+     *
      * maxHeapSize: in bytes, as set by the launcher, a zero-value indicates
      *    this code should determine this value, using a suitable method.
      *
      * stackSize: in bytes, as set by the launcher, a zero-value indicates
-     * this code determine this value, using a suitable method.
+     *    this code determine this value, using a suitable method or omit the
+     *    line entirely.
      */
     static void showSettings(boolean printToStderr, String optionFlag,
-            long maxHeapSize, long stackSize, boolean isServer) {
+            long initialHeapSize, long maxHeapSize, long stackSize,
+            boolean isServer) {
 
         PrintStream ostream = (printToStderr) ? System.err : System.out;
         String opts[] = optionFlag.split(":");
@@ -112,7 +116,8 @@ public enum LauncherHelper {
                 : "all";
         switch (optStr) {
             case "vm":
-                printVmSettings(ostream, maxHeapSize, stackSize, isServer);
+                printVmSettings(ostream, initialHeapSize, maxHeapSize,
+                        stackSize, isServer);
                 break;
             case "properties":
                 printProperties(ostream);
@@ -121,7 +126,8 @@ public enum LauncherHelper {
                 printLocale(ostream);
                 break;
             default:
-                printVmSettings(ostream, maxHeapSize, stackSize, isServer);
+                printVmSettings(ostream, initialHeapSize, maxHeapSize,
+                        stackSize, isServer);
                 printProperties(ostream);
                 printLocale(ostream);
                 break;
@@ -131,46 +137,31 @@ public enum LauncherHelper {
     /*
      * prints the main vm settings subopt/section
      */
-    private static void printVmSettings(PrintStream ostream, long maxHeapSize,
+    private static void printVmSettings(PrintStream ostream,
+            long initialHeapSize, long maxHeapSize,
             long stackSize, boolean isServer) {
 
         ostream.println(VM_SETTINGS);
         if (stackSize != 0L) {
-            ostream.println(INDENT + "Stack Size: " + scaleValue(stackSize));
+            ostream.println(INDENT + "Stack Size: " +
+                    SizePrefix.scaleValue(stackSize));
+        }
+        if (initialHeapSize != 0L) {
+             ostream.println(INDENT + "Min. Heap Size: " +
+                    SizePrefix.scaleValue(initialHeapSize));
         }
         if (maxHeapSize != 0L) {
-            ostream.println(INDENT + "Max. Heap Size: " + scaleValue(maxHeapSize));
+            ostream.println(INDENT + "Max. Heap Size: " +
+                    SizePrefix.scaleValue(maxHeapSize));
         } else {
             ostream.println(INDENT + "Max. Heap Size (Estimated): "
-                    + scaleValue(Runtime.getRuntime().maxMemory()));
+                    + SizePrefix.scaleValue(Runtime.getRuntime().maxMemory()));
         }
         ostream.println(INDENT + "Ergonomics Machine Class: "
                 + ((isServer) ? "server" : "client"));
         ostream.println(INDENT + "Using VM: "
                 + System.getProperty("java.vm.name"));
         ostream.println();
-    }
-
-    /*
-     * scale the incoming values to a human readable form, represented as
-     * K, M, G and T, see java.c parse_size for the scaled values and
-     * suffixes.
-     */
-
-    private static String scaleValue(double v) {
-        MathContext mc2 = new MathContext(3, RoundingMode.HALF_EVEN);
-
-        if (v >= K && v < M) {
-            return (new BigDecimal(v / K, mc2)).toPlainString() + "K";
-        } else if (v >= M && v < G) {
-            return (new BigDecimal(v / M, mc2)).toPlainString() + "M";
-        } else if (v >= G && v < T) {
-            return (new BigDecimal(v / G, mc2)).toPlainString() + "G";
-        } else if (v >= T) {
-            return (new BigDecimal(v / T, mc2)).toPlainString() + "T";
-        } else {
-            return String.format("%.0f", v);
-        }
     }
 
     /*
@@ -196,16 +187,17 @@ public enum LauncherHelper {
             String key, String value) {
         ostream.print(INDENT + key + " = ");
         if (key.equals("line.separator")) {
-            byte[] bytes = value.getBytes();
-            for (byte b : bytes) {
+            for (byte b : value.getBytes()) {
                 switch (b) {
                     case 0xd:
-                        ostream.print("CR ");
+                        ostream.print("\\r ");
                         break;
                     case 0xa:
-                        ostream.print("LF ");
+                        ostream.print("\\n ");
                         break;
                     default:
+                        // print any bizzare line separators in hex, but really
+                        // shouldn't happen.
                         ostream.printf("0x%02X", b & 0xff);
                         break;
                 }
@@ -217,15 +209,14 @@ public enum LauncherHelper {
             ostream.println(value);
             return;
         }
-        // pretty print the path values as a list
         String[] values = value.split(System.getProperty("path.separator"));
-        int len = values.length;
-        for (int i = 0 ; i < len ; i++) {
-            if (i == 0) { // first line treated specially
-                ostream.println(values[i]);
+        boolean first = true;
+        for (String s : values) {
+            if (first) { // first line treated specially
+                ostream.println(s);
+                first = false;
             } else { // following lines prefix with indents
-                ostream.print(INDENT + INDENT);
-                ostream.println(values[i]);
+                ostream.println(INDENT + INDENT + s);
             }
         }
     }
@@ -236,21 +227,35 @@ public enum LauncherHelper {
     private static void printLocale(PrintStream ostream) {
         Locale locale = Locale.getDefault();
         ostream.println(LOCALE_SETTINGS);
-        ostream.println(INDENT + "default locale = " + locale.getDisplayLanguage());
+        ostream.println(INDENT + "default locale = " +
+                locale.getDisplayLanguage());
+        ostream.println(INDENT + "default display locale = " +
+                Locale.getDefault(Category.DISPLAY).getDisplayName());
+        ostream.println(INDENT + "default format locale = " +
+                Locale.getDefault(Category.FORMAT).getDisplayName());
         printLocales(ostream);
         ostream.println();
     }
 
     private static void printLocales(PrintStream ostream) {
-        Locale[] locales = Locale.getAvailableLocales();
-        final int len = locales == null ? 0 : locales.length;
+        Locale[] tlocales = Locale.getAvailableLocales();
+        final int len = tlocales == null ? 0 : tlocales.length;
         if (len < 1 ) {
             return;
         }
+        // Locale does not implement Comparable so we convert it to String
+        // and sort it for pretty printing.
+        Set<String> sortedSet = new TreeSet<>();
+        for (Locale l : tlocales) {
+            sortedSet.add(l.toString());
+        }
+
         ostream.print(INDENT + "available locales = ");
-        final int last = len - 1 ;
-        for (int i = 0; i < last ; i++) {
-            ostream.print(locales[i]);
+        Iterator<String> iter = sortedSet.iterator();
+        final int last = len - 1;
+        for (int i = 0 ; iter.hasNext() ; i++) {
+            String s = iter.next();
+            ostream.print(s);
             if (i != last) {
                 ostream.print(", ");
             }
@@ -260,7 +265,42 @@ public enum LauncherHelper {
                 ostream.print(INDENT + INDENT);
             }
         }
-        ostream.println(locales[last]);
+    }
+
+    private enum SizePrefix {
+
+        KILO(1024, "K"),
+        MEGA(1024 * 1024, "M"),
+        GIGA(1024 * 1024 * 1024, "G"),
+        TERA(1024L * 1024L * 1024L * 1024L, "T");
+        long size;
+        String abbrev;
+
+        SizePrefix(long size, String abbrev) {
+            this.size = size;
+            this.abbrev = abbrev;
+        }
+
+        private static String scale(long v, SizePrefix prefix) {
+            return BigDecimal.valueOf(v).divide(BigDecimal.valueOf(prefix.size),
+                    2, RoundingMode.HALF_EVEN).toPlainString() + prefix.abbrev;
+        }
+        /*
+         * scale the incoming values to a human readable form, represented as
+         * K, M, G and T, see java.c parse_size for the scaled values and
+         * suffixes. The lowest possible scaled value is Kilo.
+         */
+        static String scaleValue(long v) {
+            if (v < MEGA.size) {
+                return scale(v, KILO);
+            } else if (v < GIGA.size) {
+                return scale(v, MEGA);
+            } else if (v < TERA.size) {
+                return scale(v, GIGA);
+            } else {
+                return scale(v, TERA);
+            }
+        }
     }
 
     /**

@@ -40,7 +40,8 @@ import java.beans.*;
 
 /**
  * A component that lets the user graphically select a value by sliding
- * a knob within a bounded interval.
+ * a knob within a bounded interval. The knob is always positioned
+ * at the points that match integer values within the specified interval.
  * <p>
  * The slider can show both
  * major tick marks, and minor tick marks between the major ones.  The number of
