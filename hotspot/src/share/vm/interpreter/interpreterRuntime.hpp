@@ -58,16 +58,16 @@ class InterpreterRuntime: AllStatic {
   static void      set_bcp_and_mdp(address bcp, JavaThread*thread);
   static Bytecodes::Code code(JavaThread *thread)    {
     // pass method to avoid calling unsafe bcp_to_method (partial fix 4926272)
-    return Bytecodes::code_at(bcp(thread), method(thread));
+    return Bytecodes::code_at(method(thread), bcp(thread));
   }
   static bool      already_resolved(JavaThread *thread) { return cache_entry(thread)->is_resolved(code(thread)); }
-  static Bytecode* bytecode(JavaThread *thread)      { return Bytecode_at(bcp(thread)); }
+  static Bytecode  bytecode(JavaThread *thread)      { return Bytecode(method(thread), bcp(thread)); }
   static int       get_index_u1(JavaThread *thread, Bytecodes::Code bc)
-                                                        { return bytecode(thread)->get_index_u1(bc); }
+                                                        { return bytecode(thread).get_index_u1(bc); }
   static int       get_index_u2(JavaThread *thread, Bytecodes::Code bc)
-                                                        { return bytecode(thread)->get_index_u2(bc); }
+                                                        { return bytecode(thread).get_index_u2(bc); }
   static int       get_index_u2_cpcache(JavaThread *thread, Bytecodes::Code bc)
-                                                        { return bytecode(thread)->get_index_u2_cpcache(bc); }
+                                                        { return bytecode(thread).get_index_u2_cpcache(bc); }
   static int       number_of_dimensions(JavaThread *thread)  { return bcp(thread)[3]; }
 
   static ConstantPoolCacheEntry* cache_entry_at(JavaThread *thread, int i)  { return method(thread)->constants()->cache()->entry_at(i); }
