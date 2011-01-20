@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,6 @@
 #!/bin/sh
 #
 # @test
-# @bug 4052440
+# @bug 4052440 7003643
 # @summary NumberFormatProvider tests
 # @run shell ExecTest.sh foo NumberFormatProviderTest true

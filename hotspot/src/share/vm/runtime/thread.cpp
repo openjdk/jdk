@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,20 +177,19 @@ void Thread::operator delete(void* p) {
 
 
 Thread::Thread() {
-  // stack
-  _stack_base   = NULL;
-  _stack_size   = 0;
-  _self_raw_id  = 0;
-  _lgrp_id      = -1;
-  _osthread     = NULL;
+  // stack and get_thread
+  set_stack_base(NULL);
+  set_stack_size(0);
+  set_self_raw_id(0);
+  set_lgrp_id(-1);
 
   // allocated data structures
+  set_osthread(NULL);
   set_resource_area(new ResourceArea());
   set_handle_area(new HandleArea(NULL));
   set_active_handles(NULL);
   set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
-  set_osthread(NULL);
 
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
@@ -205,6 +204,7 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
   _jvmti_env_iteration_count = 0;
+  set_allocated_bytes(0);
   _vm_operation_started_count = 0;
   _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
@@ -3231,7 +3231,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
     }
-  }
+    }
 
   // See        : bugid 4211085.
   // Background : the static initializer of java.lang.Compiler tries to read

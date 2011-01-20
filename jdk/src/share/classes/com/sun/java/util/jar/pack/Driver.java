@@ -59,12 +59,11 @@ class Driver {
                 ResourceBundle.getBundle("com.sun.java.util.jar.pack.DriverResource");
 
     public static void main(String[] ava) throws IOException {
-        ArrayList<String> av = new ArrayList<>(Arrays.asList(ava));
+        List<String> av = new ArrayList<>(Arrays.asList(ava));
 
         boolean doPack   = true;
         boolean doUnpack = false;
         boolean doRepack = false;
-        boolean doForceRepack = false;
         boolean doZip = true;
         String logFile = null;
         String verboseProp = Utils.DEBUG_VERBOSE;
@@ -72,17 +71,20 @@ class Driver {
         {
             // Non-standard, undocumented "--unpack" switch enables unpack mode.
             String arg0 = av.isEmpty() ? "" : av.get(0);
-            if (arg0.equals("--pack")) {
+            switch (arg0) {
+                case "--pack":
                 av.remove(0);
-            } else if (arg0.equals("--unpack")) {
+                    break;
+                case "--unpack":
                 av.remove(0);
                 doPack = false;
                 doUnpack = true;
+                    break;
             }
         }
 
         // Collect engine properties here:
-        HashMap<String,String> engProps = new HashMap<>();
+        Map<String,String> engProps = new HashMap<>();
         engProps.put(verboseProp, System.getProperty(verboseProp));
 
         String optionMap;
@@ -96,7 +98,7 @@ class Driver {
         }
 
         // Collect argument properties here:
-        HashMap<String,String> avProps = new HashMap<>();
+        Map<String,String> avProps = new HashMap<>();
         try {
             for (;;) {
                 String state = parseCommandOptions(av, optionMap, avProps);
@@ -146,7 +148,7 @@ class Driver {
                 }
 
                 // See if there is any other action to take.
-                if (state == "--config-file=") {
+                if ("--config-file=".equals(state)) {
                     String propFile = av.remove(0);
                     InputStream propIn = new FileInputStream(propFile);
                     Properties fileProps = new Properties();
@@ -157,10 +159,10 @@ class Driver {
                     for (Map.Entry<Object,Object> me : fileProps.entrySet()) {
                         engProps.put((String) me.getKey(), (String) me.getValue());
                     }
-                } else if (state == "--version") {
+                } else if ("--version".equals(state)) {
                         System.out.println(MessageFormat.format(RESOURCE.getString(DriverResource.VERSION), Driver.class.getName(), "1.31, 07/05/05"));
                     return;
-                } else if (state == "--help") {
+                } else if ("--help".equals(state)) {
                     printUsage(doPack, true, System.out);
                     System.exit(1);
                     return;
@@ -178,14 +180,20 @@ class Driver {
         // Deal with remaining non-engine properties:
         for (String opt : avProps.keySet()) {
             String val = avProps.get(opt);
-            if (opt == "--repack") {
-                doRepack = true;
-            } else if (opt == "--no-gzip") {
-                doZip = (val == null);
-            } else if (opt == "--log-file=") {
-                logFile = val;
-            } else {
-            throw new InternalError(MessageFormat.format(RESOURCE.getString(DriverResource.BAD_OPTION), opt, avProps.get(opt)));
+            switch (opt) {
+                case "--repack":
+                    doRepack = true;
+                    break;
+                case "--no-gzip":
+                    doZip = (val == null);
+                    break;
+                case "--log-file=":
+                    logFile = val;
+                    break;
+                default:
+                    throw new InternalError(MessageFormat.format(
+                            RESOURCE.getString(DriverResource.BAD_OPTION),
+                            opt, avProps.get(opt)));
             }
         }
 
@@ -219,7 +227,9 @@ class Driver {
             if (packfile.toLowerCase().endsWith(".pack") ||
                 packfile.toLowerCase().endsWith(".pac") ||
                 packfile.toLowerCase().endsWith(".gz")) {
-            System.err.println(MessageFormat.format(RESOURCE.getString(DriverResource.BAD_REPACK_OUTPUT),packfile));
+                System.err.println(MessageFormat.format(
+                        RESOURCE.getString(DriverResource.BAD_REPACK_OUTPUT),
+                        packfile));
                 printUsage(doPack, false, System.err);
                 System.exit(2);
             }

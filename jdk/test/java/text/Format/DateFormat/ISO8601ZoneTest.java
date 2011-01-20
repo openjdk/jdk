@@ -60,48 +60,51 @@ public class ISO8601ZoneTest {
         "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
     };
 
+    // badData[][0] - format
+    // badData[][1] - (bad) text to be parsed
+    // badData[][2] - subtext at the end of which a parse error is detected
     static final String[][] badData = {
-        { "X", "1" },
-        { "X", "+1" },
-        { "X", "-2" },
-        { "X", "-24" },
-        { "X", "+24" },
+        { "X", "1", "1" },
+        { "X", "+1", "+1" },
+        { "X", "-2", "-2" },
+        { "X", "-24", "-2" },
+        { "X", "+24", "+2" },
 
-        { "XX", "9" },
-        { "XX", "23" },
-        { "XX", "234" },
-        { "XX", "3456" },
-        { "XX", "23456" },
-        { "XX", "+1" },
-        { "XX", "-12" },
-        { "XX", "+123" },
-        { "XX", "-12:34" },
-        { "XX", "+12:34" },
-        { "XX", "-2423" },
-        { "XX", "+2423" },
-        { "XX", "-1260" },
-        { "XX", "+1260" },
+        { "XX", "9", "9" },
+        { "XX", "23", "2" },
+        { "XX", "234", "2" },
+        { "XX", "3456", "3" },
+        { "XX", "23456", "2" },
+        { "XX", "+1", "+1" },
+        { "XX", "-12", "-12" },
+        { "XX", "+123", "+123" },
+        { "XX", "-12:34", "-12" },
+        { "XX", "+12:34", "+12" },
+        { "XX", "-2423", "-2" },
+        { "XX", "+2423", "+2" },
+        { "XX", "-1260", "-126" },
+        { "XX", "+1260", "+126" },
 
-        { "XXX", "9" },
-        { "XXX", "23" },
-        { "XXX", "234" },
-        { "XXX", "3456" },
-        { "XXX", "23456" },
-        { "XXX", "2:34" },
-        { "XXX", "12:4" },
-        { "XXX", "12:34" },
-        { "XXX", "-1" },
-        { "XXX", "+1" },
-        { "XXX", "-12" },
-        { "XXX", "+12" },
-        { "XXX", "-123" },
-        { "XXX", "+123" },
-        { "XXX", "-1234" },
-        { "XXX", "+1234" },
-        { "XXX", "+24:23" },
-        { "XXX", "+12:60" },
-        { "XXX", "+1:23" },
-        { "XXX", "+12:3" },
+        { "XXX", "9", "9" },
+        { "XXX", "23", "2" },
+        { "XXX", "234", "2" },
+        { "XXX", "3456", "3" },
+        { "XXX", "23456", "2" },
+        { "XXX", "2:34", "2" },
+        { "XXX", "12:4", "1" },
+        { "XXX", "12:34", "1" },
+        { "XXX", "-1", "-1" },
+        { "XXX", "+1", "+1" },
+        { "XXX", "-12", "-12" },
+        { "XXX", "+12", "+12" },
+        { "XXX", "-123", "-12" },
+        { "XXX", "+123", "+12" },
+        { "XXX", "-1234", "-12" },
+        { "XXX", "+1234", "+12" },
+        { "XXX", "+24:23", "+2" },
+        { "XXX", "+12:60", "+12:6" },
+        { "XXX", "+1:23", "+1" },
+        { "XXX", "+12:3", "+12:3" },
     };
 
     static String[] badFormats = {
@@ -110,6 +113,8 @@ public class ISO8601ZoneTest {
 
     public static void main(String[] args) throws Exception {
         TimeZone tz = TimeZone.getDefault();
+        Locale loc = Locale.getDefault();
+        Locale.setDefault(Locale.US);
 
         try {
             for (int i = 0; i < formatData.length; i++) {
@@ -128,7 +133,7 @@ public class ISO8601ZoneTest {
             }
 
             for (String[] d : badData) {
-                badDataParsing(d[0], d[1]);
+                badDataParsing(d[0], d[1], d[2].length());
             }
 
             for (String fmt : badFormats) {
@@ -136,6 +141,7 @@ public class ISO8601ZoneTest {
             }
         } finally {
             TimeZone.setDefault(tz);
+            Locale.setDefault(loc);
         }
 
     }
@@ -188,14 +194,23 @@ public class ISO8601ZoneTest {
     }
 
 
-    static void badDataParsing(String fmt, String text) {
+    static void badDataParsing(String fmt, String text, int expectedErrorIndex) {
+        SimpleDateFormat sdf = new SimpleDateFormat(fmt);
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(fmt);
             sdf.parse(text);
             throw new RuntimeException("didn't throw an exception: fmt=" + fmt
                                        + ", text=" + text);
         } catch (ParseException e) {
             // OK
+        }
+
+        ParsePosition pos = new ParsePosition(0);
+        Date d = sdf.parse(text, pos);
+        int errorIndex = pos.getErrorIndex();
+        if (d != null || errorIndex != expectedErrorIndex) {
+            throw new RuntimeException("Bad error index=" + errorIndex
+                                       + ", expected=" + expectedErrorIndex
+                                       + ", fmt=" + fmt + ", text=" + text);
         }
     }
 

@@ -1609,10 +1609,11 @@ bool ConnectionGraph::compute_escape() {
   //
   // Normally only 1-3 passes needed to build
   // Connection Graph depending on graph complexity.
-  // Set limit to 10 to catch situation when something
+  // Observed 8 passes in jvm2008 compiler.compiler.
+  // Set limit to 20 to catch situation when something
   // did go wrong and recompile the method without EA.
 
-#define CG_BUILD_ITER_LIMIT 10
+#define CG_BUILD_ITER_LIMIT 20
 
   uint length = worklist.length();
   int iterations = 0;

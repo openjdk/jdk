@@ -482,8 +482,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      */
     public List<E> subList(int fromIndex, int toIndex) {
         return (this instanceof RandomAccess ?
-                new RandomAccessSubList<E>(this, fromIndex, toIndex) :
-                new SubList<E>(this, fromIndex, toIndex));
+                new RandomAccessSubList<>(this, fromIndex, toIndex) :
+                new SubList<>(this, fromIndex, toIndex));
     }
 
     // Comparison and hashing
@@ -747,7 +747,7 @@ class SubList<E> extends AbstractList<E> {
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        return new SubList<E>(this, fromIndex, toIndex);
+        return new SubList<>(this, fromIndex, toIndex);
     }
 
     private void rangeCheck(int index) {
@@ -776,6 +776,6 @@ class RandomAccessSubList<E> extends SubList<E> implements RandomAccess {
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        return new RandomAccessSubList<E>(this, fromIndex, toIndex);
+        return new RandomAccessSubList<>(this, fromIndex, toIndex);
     }
 }

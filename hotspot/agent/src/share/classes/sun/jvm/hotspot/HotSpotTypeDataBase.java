@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,15 +99,8 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     long typeEntrySizeOffset;
     long typeEntryArrayStride;
 
-    typeEntryTypeNameOffset       = getLongValueFromProcess("gHotSpotVMTypeEntryTypeNameOffset");
-    typeEntrySuperclassNameOffset = getLongValueFromProcess("gHotSpotVMTypeEntrySuperclassNameOffset");
-    typeEntryIsOopTypeOffset      = getLongValueFromProcess("gHotSpotVMTypeEntryIsOopTypeOffset");
-    typeEntryIsIntegerTypeOffset  = getLongValueFromProcess("gHotSpotVMTypeEntryIsIntegerTypeOffset");
-    typeEntryIsUnsignedOffset     = getLongValueFromProcess("gHotSpotVMTypeEntryIsUnsignedOffset");
-    typeEntrySizeOffset           = getLongValueFromProcess("gHotSpotVMTypeEntrySizeOffset");
-    typeEntryArrayStride          = getLongValueFromProcess("gHotSpotVMTypeEntryArrayStride");
-
-    // Fetch the address of the VMTypeEntry*
+    // Fetch the address of the VMTypeEntry*. We get this symbol first
+    // and try to use it to make sure that symbol lookup is working.
     Address entryAddr = lookupInProcess("gHotSpotVMTypes");
     //    System.err.println("gHotSpotVMTypes address = " + entryAddr);
     // Dereference this once to get the pointer to the first VMTypeEntry
@@ -117,6 +110,14 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     if (entryAddr == null) {
       throw new RuntimeException("gHotSpotVMTypes was not initialized properly in the remote process; can not continue");
     }
+
+    typeEntryTypeNameOffset       = getLongValueFromProcess("gHotSpotVMTypeEntryTypeNameOffset");
+    typeEntrySuperclassNameOffset = getLongValueFromProcess("gHotSpotVMTypeEntrySuperclassNameOffset");
+    typeEntryIsOopTypeOffset      = getLongValueFromProcess("gHotSpotVMTypeEntryIsOopTypeOffset");
+    typeEntryIsIntegerTypeOffset  = getLongValueFromProcess("gHotSpotVMTypeEntryIsIntegerTypeOffset");
+    typeEntryIsUnsignedOffset     = getLongValueFromProcess("gHotSpotVMTypeEntryIsUnsignedOffset");
+    typeEntrySizeOffset           = getLongValueFromProcess("gHotSpotVMTypeEntrySizeOffset");
+    typeEntryArrayStride          = getLongValueFromProcess("gHotSpotVMTypeEntryArrayStride");
 
     // Start iterating down it until we find an entry with no name
     Address typeNameAddr = null;
