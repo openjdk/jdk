@@ -1068,7 +1068,7 @@ public final class Pattern
     public String[] split(CharSequence input, int limit) {
         int index = 0;
         boolean matchLimited = limit > 0;
-        ArrayList<String> matchList = new ArrayList<String>();
+        ArrayList<String> matchList = new ArrayList<>();
         Matcher m = matcher(input);
 
         // Add segments before each match found
@@ -1566,7 +1566,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
     Map<String, Integer> namedGroups() {
         if (namedGroups == null)
-            namedGroups = new HashMap<String, Integer>(2);
+            namedGroups = new HashMap<>(2);
         return namedGroups;
     }
 
@@ -5309,7 +5309,7 @@ NEXT:       while (i <= last) {
         }
 
         private static final HashMap<String, CharPropertyFactory> map
-            = new HashMap<String, CharPropertyFactory>();
+            = new HashMap<>();
 
         static {
             // Unicode character property aliases, defined in

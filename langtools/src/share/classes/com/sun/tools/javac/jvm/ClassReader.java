@@ -77,6 +77,8 @@ public class ClassReader implements Completer {
     protected static final Context.Key<ClassReader> classReaderKey =
         new Context.Key<ClassReader>();
 
+    public static final int INITIAL_BUFFER_SIZE = 0x0fff0;
+
     Annotate annotate;
 
     /** Switch: verbose output.
@@ -185,7 +187,7 @@ public class ClassReader implements Completer {
 
     /** The buffer containing the currently read class file.
      */
-    byte[] buf = new byte[0x0fff0];
+    byte[] buf = new byte[INITIAL_BUFFER_SIZE];
 
     /** The current input pointer.
      */
@@ -2419,8 +2421,14 @@ public class ClassReader implements Completer {
                 }
             }
         }
+        /*
+         * ensureCapacity will increase the buffer as needed, taking note that
+         * the new buffer will always be greater than the needed and never
+         * exactly equal to the needed size or bp. If equal then the read (above)
+         * will infinitely loop as buf.length - bp == 0.
+         */
         private static byte[] ensureCapacity(byte[] buf, int needed) {
-            if (buf.length < needed) {
+            if (buf.length <= needed) {
                 byte[] old = buf;
                 buf = new byte[Integer.highestOneBit(needed) << 1];
                 System.arraycopy(old, 0, buf, 0, old.length);

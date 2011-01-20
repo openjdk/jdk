@@ -100,7 +100,7 @@ public class HashSet<E>
      * default initial capacity (16) and load factor (0.75).
      */
     public HashSet() {
-        map = new HashMap<E,Object>();
+        map = new HashMap<>();
     }
 
     /**
@@ -113,7 +113,7 @@ public class HashSet<E>
      * @throws NullPointerException if the specified collection is null
      */
     public HashSet(Collection<? extends E> c) {
-        map = new HashMap<E,Object>(Math.max((int) (c.size()/.75f) + 1, 16));
+        map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));
         addAll(c);
     }
 
@@ -127,7 +127,7 @@ public class HashSet<E>
      *             than zero, or if the load factor is nonpositive
      */
     public HashSet(int initialCapacity, float loadFactor) {
-        map = new HashMap<E,Object>(initialCapacity, loadFactor);
+        map = new HashMap<>(initialCapacity, loadFactor);
     }
 
     /**
@@ -139,7 +139,7 @@ public class HashSet<E>
      *             than zero
      */
     public HashSet(int initialCapacity) {
-        map = new HashMap<E,Object>(initialCapacity);
+        map = new HashMap<>(initialCapacity);
     }
 
     /**
@@ -156,7 +156,7 @@ public class HashSet<E>
      *             than zero, or if the load factor is nonpositive
      */
     HashSet(int initialCapacity, float loadFactor, boolean dummy) {
-        map = new LinkedHashMap<E,Object>(initialCapacity, loadFactor);
+        map = new LinkedHashMap<>(initialCapacity, loadFactor);
     }
 
     /**

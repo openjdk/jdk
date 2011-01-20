@@ -119,7 +119,8 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 PtrCoord(srcInfo.rasBase,
                          srcInfo.bounds.x1, srcInfo.pixelStride,
                          srcInfo.bounds.y1, srcInfo.scanStride);
-            unsigned char *pMask =
+            unsigned char *pMask, *pMaskAlloc;
+            pMask = pMaskAlloc =
                 (*env)->GetPrimitiveArrayCritical(env, maskArray, 0);
             if (pMask == NULL) {
                 J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -274,7 +275,7 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
             bpos += width * height * sizeof(jint);
 
             (*env)->ReleasePrimitiveArrayCritical(env, maskArray,
-                                                  pMask, JNI_ABORT);
+                                                  pMaskAlloc, JNI_ABORT);
         }
         SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
     }

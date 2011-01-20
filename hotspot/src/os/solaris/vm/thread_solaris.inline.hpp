@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ inline Thread* ThreadLocalStorage::thread()  {
 
   uintptr_t raw = pd_raw_thread_id();
   int ix = pd_cache_index(raw);
-  Thread *Candidate = ThreadLocalStorage::_get_thread_cache[ix];
-  if (Candidate->_self_raw_id == raw) {
+  Thread* candidate = ThreadLocalStorage::_get_thread_cache[ix];
+  if (candidate->self_raw_id() == raw) {
     // hit
-    return Candidate;
+    return candidate;
   } else {
     return ThreadLocalStorage::get_thread_via_cache_slowly(raw, ix);
   }

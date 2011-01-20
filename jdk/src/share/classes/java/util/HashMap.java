@@ -763,7 +763,7 @@ public class HashMap<K,V>
      */
     void addEntry(int hash, K key, V value, int bucketIndex) {
         Entry<K,V> e = table[bucketIndex];
-        table[bucketIndex] = new Entry<K,V>(hash, key, value, e);
+        table[bucketIndex] = new Entry<>(hash, key, value, e);
         if (size++ >= threshold)
             resize(2 * table.length);
     }
@@ -778,7 +778,7 @@ public class HashMap<K,V>
      */
     void createEntry(int hash, K key, V value, int bucketIndex) {
         Entry<K,V> e = table[bucketIndex];
-        table[bucketIndex] = new Entry<K,V>(hash, key, value, e);
+        table[bucketIndex] = new Entry<>(hash, key, value, e);
         size++;
     }
 
