@@ -1663,6 +1663,81 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
+     * Parses numeric forms of time zone offset, such as "hh:mm", and
+     * sets calb to the parsed value.
+     *
+     * @param text  the text to be parsed
+     * @param start the character position to start parsing
+     * @param sign  1: positive; -1: negative
+     * @param count 0: 'Z' or "GMT+hh:mm" parsing; 1 - 3: the number of 'X's
+     * @param colon true - colon required between hh and mm; false - no colon required
+     * @param calb  a CalendarBuilder in which the parsed value is stored
+     * @return updated parsed position, or its negative value to indicate a parsing error
+     */
+    private int subParseNumericZone(String text, int start, int sign, int count,
+                                    boolean colon, CalendarBuilder calb) {
+        int index = start;
+
+      parse:
+        try {
+            char c = text.charAt(index++);
+            // Parse hh
+            int hours;
+            if (!isDigit(c)) {
+                break parse;
+            }
+            hours = c - '0';
+            c = text.charAt(index++);
+            if (isDigit(c)) {
+                hours = hours * 10 + (c - '0');
+            } else {
+                // If no colon in RFC 822 or 'X' (ISO), two digits are
+                // required.
+                if (count > 0 || !colon) {
+                    break parse;
+                }
+                --index;
+            }
+            if (hours > 23) {
+                break parse;
+            }
+            int minutes = 0;
+            if (count != 1) {
+                // Proceed with parsing mm
+                c = text.charAt(index++);
+                if (colon) {
+                    if (c != ':') {
+                        break parse;
+                    }
+                    c = text.charAt(index++);
+                }
+                if (!isDigit(c)) {
+                    break parse;
+                }
+                minutes = c - '0';
+                c = text.charAt(index++);
+                if (!isDigit(c)) {
+                    break parse;
+                }
+                minutes = minutes * 10 + (c - '0');
+                if (minutes > 59) {
+                    break parse;
+                }
+            }
+            minutes += hours * 60;
+            calb.set(Calendar.ZONE_OFFSET, minutes * MILLIS_PER_MINUTE * sign)
+                .set(Calendar.DST_OFFSET, 0);
+            return index;
+        } catch (IndexOutOfBoundsException e) {
+        }
+        return  1 - index; // -(index - 1)
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    /**
      * Private member function that converts the parsed date strings into
      * timeFields. Returns -start (for ParsePosition) if failed.
      * @param text the time text to be parsed.
@@ -1907,248 +1982,95 @@ public class SimpleDateFormat extends DateFormat {
 
             case PATTERN_ZONE_NAME:  // 'z'
             case PATTERN_ZONE_VALUE: // 'Z'
-                // First try to parse generic forms such as GMT-07:00. Do this first
-                // in case localized TimeZoneNames contains the string "GMT"
-                // for a zone; in that case, we don't want to match the first three
-                // characters of GMT+/-hh:mm etc.
                 {
                     int sign = 0;
-                    int offset;
-
-                    // For time zones that have no known names, look for strings
-                    // of the form:
-                    //    GMT[+-]hours:minutes or
-                    //    GMT.
-                    if ((text.length() - start) >= GMT.length() &&
-                        text.regionMatches(true, start, GMT, 0, GMT.length())) {
-                        int num;
-                        calb.set(Calendar.DST_OFFSET, 0);
-                        pos.index = start + GMT.length();
-
-                        try { // try-catch for "GMT" only time zone string
-                            char c = text.charAt(pos.index);
-                            if (c == '+') {
-                                sign = 1;
-                            } else if (c == '-') {
-                                sign = -1;
-                            }
+                    try {
+                        char c = text.charAt(pos.index);
+                        if (c == '+') {
+                            sign = 1;
+                        } else if (c == '-') {
+                            sign = -1;
                         }
-                        catch(StringIndexOutOfBoundsException e) {}
+                        if (sign == 0) {
+                            // Try parsing a custom time zone "GMT+hh:mm" or "GMT".
+                            if ((c == 'G' || c == 'g')
+                                && (text.length() - start) >= GMT.length()
+                                && text.regionMatches(true, start, GMT, 0, GMT.length())) {
+                                pos.index = start + GMT.length();
 
-                        if (sign == 0) {    /* "GMT" without offset */
-                            calb.set(Calendar.ZONE_OFFSET, 0);
-                            return pos.index;
-                        }
-
-                        // Look for hours.
-                        try {
-                            char c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            num = c - '0';
-
-                            if (text.charAt(++pos.index) != ':') {
-                                c = text.charAt(pos.index);
-                                if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                    break parsing;
+                                if ((text.length() - pos.index) > 0) {
+                                    c = text.charAt(pos.index);
+                                    if (c == '+') {
+                                        sign = 1;
+                                    } else if (c == '-') {
+                                        sign = -1;
+                                    }
                                 }
-                                num *= 10;
-                                num += c - '0';
-                                pos.index++;
-                            }
-                            if (num > 23) {
-                                --pos.index;
-                                break parsing;
-                            }
-                            if  (text.charAt(pos.index) != ':') {
-                                break parsing;
-                            }
 
-                            // Look for minutes.
-                            offset = num * 60;
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            num = c - '0';
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            num *= 10;
-                            num += c - '0';
+                                if (sign == 0) {    /* "GMT" without offset */
+                                    calb.set(Calendar.ZONE_OFFSET, 0)
+                                        .set(Calendar.DST_OFFSET, 0);
+                                    return pos.index;
+                                }
 
-                            if (num > 59) {
-                                break parsing;
-                            }
-                        } catch (StringIndexOutOfBoundsException e) {
-                            break parsing;
-                        }
-                        offset += num;
-                        // Fall through for final processing below of 'offset' and 'sign'.
-                    } else {
-                        // If the first character is a sign, look for numeric timezones of
-                        // the form [+-]hhmm as specified by RFC 822. Otherwise, check
-                        // for named time zones by looking through the locale data from
-                        // the TimeZoneNames strings.
-                        try {
-                            char c = text.charAt(pos.index);
-                            if (c == '+') {
-                                sign = 1;
-                            } else if (c == '-') {
-                                sign = -1;
-                            } else {
-                                // Try parsing the text as a time zone name (abbr).
-                                int i = subParseZoneString(text, pos.index, calb);
-                                if (i != 0) {
+                                // Parse the rest as "hh:mm"
+                                int i = subParseNumericZone(text, ++pos.index,
+                                                            sign, 0, true, calb);
+                                if (i > 0) {
                                     return i;
                                 }
-                                break parsing;
+                                pos.index = -i;
+                            } else {
+                                // Try parsing the text as a time zone
+                                // name or abbreviation.
+                                int i = subParseZoneString(text, pos.index, calb);
+                                if (i > 0) {
+                                    return i;
+                                }
+                                pos.index = -i;
                             }
-
-                            // Parse the text as an RFC 822 time zone string. This code is
-                            // actually a little more permissive than RFC 822.  It will
-                            // try to do its best with numbers that aren't strictly 4
-                            // digits long.
-
-                            // Look for hh.
-                            int hours = 0;
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
+                        } else {
+                            // Parse the rest as "hhmm" (RFC 822)
+                            int i = subParseNumericZone(text, ++pos.index,
+                                                        sign, 0, false, calb);
+                            if (i > 0) {
+                                return i;
                             }
-                            hours = c - '0';
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            hours *= 10;
-                            hours += c - '0';
-
-                            if (hours > 23) {
-                                break parsing;
-                            }
-
-                            // Look for mm.
-                            int minutes = 0;
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            minutes = c - '0';
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            minutes *= 10;
-                            minutes += c - '0';
-
-                            if (minutes > 59) {
-                                break parsing;
-                            }
-
-                            offset = hours * 60 + minutes;
-                        } catch (StringIndexOutOfBoundsException e) {
-                            break parsing;
+                            pos.index = -i;
                         }
-                    }
-
-                    // Do the final processing for both of the above cases.  We only
-                    // arrive here if the form GMT+/-... or an RFC 822 form was seen.
-                    if (sign != 0) {
-                        offset *= MILLIS_PER_MINUTE * sign;
-                        calb.set(Calendar.ZONE_OFFSET, offset).set(Calendar.DST_OFFSET, 0);
-                        return ++pos.index;
+                    } catch (IndexOutOfBoundsException e) {
                     }
                 }
                 break parsing;
 
             case PATTERN_ISO_ZONE:   // 'X'
                 {
-                    int sign = 0;
-                    int offset = 0;
-
-                    iso8601: {
-                        try {
-                            char c = text.charAt(pos.index);
-                            if (c == 'Z') {
-                                calb.set(Calendar.ZONE_OFFSET, 0).set(Calendar.DST_OFFSET, 0);
-                                return ++pos.index;
-                            }
-
-                            // parse text as "+/-hh[[:]mm]" based on count
-                            if (c == '+') {
-                                sign = 1;
-                            } else if (c == '-') {
-                                sign = -1;
-                            }
-                            // Look for hh.
-                            int hours = 0;
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            hours = c - '0';
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            hours *= 10;
-                            hours += c - '0';
-                            if (hours > 23) {
-                                break parsing;
-                            }
-
-                            if (count == 1) { // "X"
-                                offset = hours * 60;
-                                break iso8601;
-                            }
-
-                            c = text.charAt(++pos.index);
-                            // Skip ':' if "XXX"
-                            if (c == ':') {
-                                if (count == 2) {
-                                    break parsing;
-                                }
-                                c = text.charAt(++pos.index);
-                            } else {
-                                if (count == 3) {
-                                    // missing ':'
-                                    break parsing;
-                                }
-                            }
-
-                            // Look for mm.
-                            int minutes = 0;
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            minutes = c - '0';
-                            c = text.charAt(++pos.index);
-                            if (c < '0' || c > '9') { /* must be from '0' to '9'. */
-                                break parsing;
-                            }
-                            minutes *= 10;
-                            minutes += c - '0';
-
-                            if (minutes > 59) {
-                                break parsing;
-                            }
-
-                            offset = hours * 60 + minutes;
-                        } catch (StringIndexOutOfBoundsException e) {
-                            break parsing;
-                        }
+                    if ((text.length() - pos.index) <= 0) {
+                        break parsing;
                     }
 
-                    // Do the final processing for both of the above cases.  We only
-                    // arrive here if the form GMT+/-... or an RFC 822 form was seen.
-                    if (sign != 0) {
-                        offset *= MILLIS_PER_MINUTE * sign;
-                        calb.set(Calendar.ZONE_OFFSET, offset).set(Calendar.DST_OFFSET, 0);
+                    int sign = 0;
+                    char c = text.charAt(pos.index);
+                    if (c == 'Z') {
+                        calb.set(Calendar.ZONE_OFFSET, 0).set(Calendar.DST_OFFSET, 0);
                         return ++pos.index;
                     }
+
+                    // parse text as "+/-hh[[:]mm]" based on count
+                    if (c == '+') {
+                        sign = 1;
+                    } else if (c == '-') {
+                        sign = -1;
+                    } else {
+                        ++pos.index;
+                        break parsing;
+                    }
+                    int i = subParseNumericZone(text, ++pos.index, sign, count,
+                                                count == 3, calb);
+                    if (i > 0) {
+                        return i;
+                    }
+                    pos.index = -i;
                 }
                 break parsing;
 

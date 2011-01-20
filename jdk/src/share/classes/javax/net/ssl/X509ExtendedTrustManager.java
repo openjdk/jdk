@@ -63,7 +63,7 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * should be "RSA". Checking is case-sensitive.
      * <p>
      * If the <code>socket</code> parameter is an instance of
-     * {@link javax.net.SSLSocket}, and the endpoint identification
+     * {@link javax.net.ssl.SSLSocket}, and the endpoint identification
      * algorithm of the <code>SSLParameters</code> is non-empty, to prevent
      * man-in-the-middle attacks, the address that the <code>socket</code>
      * connected to should be checked against the peer's identity presented
@@ -71,7 +71,7 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * identification algorithm.
      * <p>
      * If the <code>socket</code> parameter is an instance of
-     * {@link javax.net.SSLSocket}, and the algorithm constraints of the
+     * {@link javax.net.ssl.SSLSocket}, and the algorithm constraints of the
      * <code>SSLParameters</code> is non-null, for every certificate in the
      * certification path, fields such as subject public key, the signature
      * algorithm, key usage, extended key usage, etc. need to conform to the
@@ -88,8 +88,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
-     * @see SSLParameters#getEndpointIdentificationProtocol
-     * @see SSLParameters#setEndpointIdentificationProtocol(String)
+     * @see SSLParameters#getEndpointIdentificationAlgorithm
+     * @see SSLParameters#setEndpointIdentificationAlgorithm(String)
      * @see SSLParameters#getAlgorithmConstraints
      * @see SSLParameters#setAlgorithmConstraints(AlgorithmConstraints)
      */
@@ -111,7 +111,7 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * certificate is used. Checking is case-sensitive.
      * <p>
      * If the <code>socket</code> parameter is an instance of
-     * {@link javax.net.SSLSocket}, and the endpoint identification
+     * {@link javax.net.ssl.SSLSocket}, and the endpoint identification
      * algorithm of the <code>SSLParameters</code> is non-empty, to prevent
      * man-in-the-middle attacks, the address that the <code>socket</code>
      * connected to should be checked against the peer's identity presented
@@ -119,7 +119,7 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * identification algorithm.
      * <p>
      * If the <code>socket</code> parameter is an instance of
-     * {@link javax.net.SSLSocket}, and the algorithm constraints of the
+     * {@link javax.net.ssl.SSLSocket}, and the algorithm constraints of the
      *  <code>SSLParameters</code> is non-null, for every certificate in the
      * certification path, fields such as subject public key, the signature
      * algorithm, key usage, extended key usage, etc. need to conform to the
@@ -136,8 +136,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
-     * @see SSLParameters#getEndpointIdentificationProtocol
-     * @see SSLParameters#setEndpointIdentificationProtocol(String)
+     * @see SSLParameters#getEndpointIdentificationAlgorithm
+     * @see SSLParameters#setEndpointIdentificationAlgorithm(String)
      * @see SSLParameters#getAlgorithmConstraints
      * @see SSLParameters#setAlgorithmConstraints(AlgorithmConstraints)
      */
@@ -177,8 +177,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
-     * @see SSLParameters#getEndpointIdentificationProtocol
-     * @see SSLParameters#setEndpointIdentificationProtocol(String)
+     * @see SSLParameters#getEndpointIdentificationAlgorithm
+     * @see SSLParameters#setEndpointIdentificationAlgorithm(String)
      * @see SSLParameters#getAlgorithmConstraints
      * @see SSLParameters#setAlgorithmConstraints(AlgorithmConstraints)
      */
@@ -223,8 +223,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
-     * @see SSLParameters#getEndpointIdentificationProtocol
-     * @see SSLParameters#setEndpointIdentificationProtocol(String)
+     * @see SSLParameters#getEndpointIdentificationAlgorithm
+     * @see SSLParameters#setEndpointIdentificationAlgorithm(String)
      * @see SSLParameters#getAlgorithmConstraints
      * @see SSLParameters#setAlgorithmConstraints(AlgorithmConstraints)
      */

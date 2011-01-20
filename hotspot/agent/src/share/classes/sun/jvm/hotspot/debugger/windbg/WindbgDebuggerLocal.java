@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,7 +506,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     throw new DebuggerException("Unimplemented");
   }
 
-  private static String  DTFWHome;
   private static String  imagePath;
   private static String  symbolPath;
   private static boolean useNativeLookup;
@@ -514,81 +513,143 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     static {
 
      /*
-      * sawindbg.dll depends on dbgeng.dll which
-      * itself depends on dbghelp.dll. dbgeng.dll and dbghelp.dll.
-      * On systems newer than Windows 2000, these two .dlls are
-      * in the standard system directory so we will find them there.
-      * On Windows 2000 and earlier, these files do not exist.
-      * The user must download Debugging Tools For Windows (DTFW)
-      * and install it in order to use SA.
+      * sawindbg.dll depends on dbgeng.dll which itself depends on
+      * dbghelp.dll. We have to make sure that the dbgeng.dll and
+      * dbghelp.dll that we load are compatible with each other. We
+      * load both of those libraries from the same directory based
+      * on the theory that co-located libraries are compatible.
       *
-      * We have to make sure we use the two files from the same directory
-      * in case there are more than one copy on the system because
-      * one version of dbgeng.dll might not be compatible with a
-      * different version of dbghelp.dll.
-      * We first look for them in the directory pointed at by
-      * env. var. DEBUGGINGTOOLSFORWINDOWS, next in the default
-      * installation dir for DTFW, and lastly in the standard
-      * system directory.  We expect that that we will find
-      * them in the standard system directory on all systems
-      * newer than Windows 2000.
+      * On Windows 2000 and earlier, dbgeng.dll and dbghelp.dll were
+      * not included as part of the standard system directory. On
+      * systems newer than Windows 2000, dbgeng.dll and dbghelp.dll
+      * are included in the standard system directory. However, the
+      * versions included in the standard system directory may not
+      * be able to handle symbol information for the newer compilers.
+      *
+      * We search for and explicitly load the libraries using the
+      * following directory search order:
+      *
+      * - java.home/bin (same as $JAVA_HOME/jre/bin)
+      * - dir named by DEBUGGINGTOOLSFORWINDOWS environment variable
+      * - various "Debugging Tools For Windows" program directories
+      * - the system directory ($SYSROOT/system32)
+      *
+      * If SA is invoked with -Dsun.jvm.hotspot.loadLibrary.DEBUG=1,
+      * then debug messages about library loading are printed to
+      * System.err.
       */
-    String dirName = null;
-    DTFWHome = System.getenv("DEBUGGINGTOOLSFORWINDOWS");
 
-    if (DTFWHome == null) {
-      // See if we have the files in the default location.
-      String sysRoot = System.getenv("SYSTEMROOT");
-      DTFWHome = sysRoot + File.separator +
-          ".." + File.separator + "Program Files" +
-          File.separator + "Debugging Tools For Windows";
-    }
+    String dbgengPath   = null;
+    String dbghelpPath  = null;
+    String sawindbgPath = null;
+    List   searchList   = new ArrayList();
+
+    boolean loadLibraryDEBUG =
+        System.getProperty("sun.jvm.hotspot.loadLibrary.DEBUG") != null;
 
     {
-      String dbghelp = DTFWHome + File.separator + "dbghelp.dll";
-      String dbgeng = DTFWHome + File.separator + "dbgeng.dll";
-      File fhelp = new File(dbghelp);
-      File feng = new File(dbgeng);
-      if (fhelp.exists() && feng.exists()) {
-        // found both, we are happy.
-        // NOTE: The order of loads is important! If we load dbgeng.dll
-        // first, then the dependency - dbghelp.dll - will be loaded
-        // from usual DLL search thereby defeating the purpose!
-        System.load(dbghelp);
-        System.load(dbgeng);
-      } else if (! fhelp.exists() && ! feng.exists()) {
-        // neither exist. We will ignore this dir and assume
-        // they are in the system dir.
-        DTFWHome = null;
-      } else {
-        // one exists but not the other
-        //System.err.println("Error: Both files dbghelp.dll and dbgeng.dll "
-        //                   "must exist in directory " + DTFWHome);
-        throw new UnsatisfiedLinkError("Both files dbghelp.dll and " +
-                                       "dbgeng.dll must exist in " +
-                                       "directory " + DTFWHome);
-      }
-    }
-    if (DTFWHome == null) {
-      // The files better be in the system dir.
-      String sysDir = System.getenv("SYSTEMROOT") +
-          File.separator + "system32";
+      // First place to search is co-located with sawindbg.dll in
+      // $JAVA_HOME/jre/bin (java.home property is set to $JAVA_HOME/jre):
+      searchList.add(System.getProperty("java.home") + File.separator + "bin");
+      sawindbgPath = (String) searchList.get(0) + File.separator +
+          "sawindbg.dll";
 
-      File feng = new File(sysDir + File.separator + "dbgeng.dll");
-      if (!feng.exists()) {
-        throw new UnsatisfiedLinkError("File dbgeng.dll does not exist in " +
-                                        sysDir + ".  Please search microsoft.com " +
-                                       "for Debugging Tools For Windows, and " +
-                                       "either download it to the default " +
-                                       "location, or download it to a custom " +
-                                       "location and set environment variable " +
-                                       "   DEBUGGINGTOOLSFORWINDOWS  "  +
-                                       "to the pathname of that location.");
+      // second place to search is specified by an environment variable:
+      String DTFWHome = System.getenv("DEBUGGINGTOOLSFORWINDOWS");
+      if (DTFWHome != null) {
+        searchList.add(DTFWHome);
       }
+
+      // The third place to search is the install directory for the
+      // "Debugging Tools For Windows" package; so far there are three
+      // name variations that we know of:
+      String sysRoot = System.getenv("SYSTEMROOT");
+      DTFWHome = sysRoot + File.separator + ".." + File.separator +
+          "Program Files" + File.separator + "Debugging Tools For Windows";
+      searchList.add(DTFWHome);
+      searchList.add(DTFWHome + " (x86)");
+      searchList.add(DTFWHome + " (x64)");
+
+      // The last place to search is the system directory:
+      searchList.add(sysRoot + File.separator + "system32");
     }
+
+    for (int i = 0; i < searchList.size(); i++) {
+      File dir = new File((String) searchList.get(i));
+      if (!dir.exists()) {
+        if (loadLibraryDEBUG) {
+          System.err.println("DEBUG: '" + searchList.get(i) +
+              "': directory does not exist.");
+        }
+        // this search directory doesn't exist so skip it
+        continue;
+      }
+
+      dbgengPath = (String) searchList.get(i) + File.separator + "dbgeng.dll";
+      dbghelpPath = (String) searchList.get(i) + File.separator + "dbghelp.dll";
+
+      File feng = new File(dbgengPath);
+      File fhelp = new File(dbghelpPath);
+      if (feng.exists() && fhelp.exists()) {
+        // both files exist so we have a match
+        break;
+      }
+
+      // At least one of the files does not exist; no warning if both
+      // don't exist. If just one doesn't exist then we don't check
+      // loadLibraryDEBUG because we have a mis-configured system.
+      if (feng.exists()) {
+        System.err.println("WARNING: found '" + dbgengPath +
+            "' but did not find '" + dbghelpPath + "'; ignoring '" +
+            dbgengPath + "'.");
+      } else if (fhelp.exists()) {
+        System.err.println("WARNING: found '" + dbghelpPath +
+            "' but did not find '" + dbgengPath + "'; ignoring '" +
+            dbghelpPath + "'.");
+      } else if (loadLibraryDEBUG) {
+        System.err.println("DEBUG: searched '" + searchList.get(i) +
+          "': dbgeng.dll and dbghelp.dll were not found.");
+      }
+      dbgengPath = null;
+      dbghelpPath = null;
+    }
+
+    if (dbgengPath == null || dbghelpPath == null) {
+      // at least one of the files wasn't found anywhere we searched
+      String mesg = null;
+
+      if (dbgengPath == null && dbghelpPath == null) {
+        mesg = "dbgeng.dll and dbghelp.dll cannot be found. ";
+      } else if (dbgengPath == null) {
+        mesg = "dbgeng.dll cannot be found (dbghelp.dll was found). ";
+      } else {
+        mesg = "dbghelp.dll cannot be found (dbgeng.dll was found). ";
+      }
+      throw new UnsatisfiedLinkError(mesg +
+          "Please search microsoft.com for 'Debugging Tools For Windows', " +
+          "and either download it to the default location, or download it " +
+          "to a custom location and set environment variable " +
+          "'DEBUGGINGTOOLSFORWINDOWS' to the pathname of that location.");
+    }
+
+    // NOTE: The order of loads is important! If we load dbgeng.dll
+    // first, then the dependency - dbghelp.dll - will be loaded
+    // from usual DLL search thereby defeating the purpose!
+    if (loadLibraryDEBUG) {
+      System.err.println("DEBUG: loading '" + dbghelpPath + "'.");
+    }
+    System.load(dbghelpPath);
+    if (loadLibraryDEBUG) {
+      System.err.println("DEBUG: loading '" + dbgengPath + "'.");
+    }
+    System.load(dbgengPath);
 
     // Now, load sawindbg.dll
-    System.loadLibrary("sawindbg");
+    if (loadLibraryDEBUG) {
+      System.err.println("DEBUG: loading '" + sawindbgPath + "'.");
+    }
+    System.load(sawindbgPath);
+
     // where do I find '.exe', '.dll' files?
     imagePath = System.getProperty("sun.jvm.hotspot.debugger.windbg.imagePath");
     if (imagePath == null) {

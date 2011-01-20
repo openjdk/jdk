@@ -2386,19 +2386,21 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(constantPoolHa
       valid_cp_range(bootstrap_method_index, cp_size) &&
       cp->tag_at(bootstrap_method_index).is_method_handle(),
       "bootstrap_method_index %u has bad constant type in class file %s",
+      bootstrap_method_index,
       CHECK);
     operands->short_at_put(operand_fill_index++, bootstrap_method_index);
     operands->short_at_put(operand_fill_index++, argument_count);
 
     cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
     for (int j = 0; j < argument_count; j++) {
-      u2 arg_index = cfs->get_u2_fast();
+      u2 argument_index = cfs->get_u2_fast();
       check_property(
-        valid_cp_range(arg_index, cp_size) &&
-        cp->tag_at(arg_index).is_loadable_constant(),
+        valid_cp_range(argument_index, cp_size) &&
+        cp->tag_at(argument_index).is_loadable_constant(),
         "argument_index %u has bad constant type in class file %s",
+        argument_index,
         CHECK);
-      operands->short_at_put(operand_fill_index++, arg_index);
+      operands->short_at_put(operand_fill_index++, argument_index);
     }
   }
 
