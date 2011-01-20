@@ -662,7 +662,7 @@ void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
 
   // generate conditional move of boolean result
   LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
+  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result, T_LONG);
 }
 
 
@@ -699,10 +699,10 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   else {
     ShouldNotReachHere();
   }
-
   // generate conditional move of boolean result
   LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
+  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
+           result, as_BasicType(type));
   if (type == objectType) {  // Write-barrier needed for Object fields.
     // Precise card mark since could either be object or array
     post_barrier(addr, val.result());

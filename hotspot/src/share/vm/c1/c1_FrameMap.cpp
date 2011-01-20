@@ -92,7 +92,7 @@ CallingConvention* FrameMap::java_calling_convention(const BasicTypeArray* signa
     if (opr->is_address()) {
       LIR_Address* addr = opr->as_address_ptr();
       assert(addr->disp() == (int)addr->disp(), "out of range value");
-      out_preserve = MAX2(out_preserve, (intptr_t)addr->disp() / 4);
+      out_preserve = MAX2(out_preserve, (intptr_t)(addr->disp() - STACK_BIAS) / 4);
     }
     i += type2size[t];
   }
@@ -143,7 +143,7 @@ CallingConvention* FrameMap::c_calling_convention(const BasicTypeArray* signatur
     args->append(opr);
     if (opr->is_address()) {
       LIR_Address* addr = opr->as_address_ptr();
-      out_preserve = MAX2(out_preserve, (intptr_t)addr->disp() / 4);
+      out_preserve = MAX2(out_preserve, (intptr_t)(addr->disp() - STACK_BIAS) / 4);
     }
     i += type2size[t];
   }

@@ -30,6 +30,7 @@ import sun.jvm.hotspot.asm.*;
 import sun.jvm.hotspot.asm.sparc.*;
 import sun.jvm.hotspot.asm.x86.*;
 import sun.jvm.hotspot.asm.ia64.*;
+import sun.jvm.hotspot.asm.amd64.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
@@ -198,6 +199,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          cpuHelper = new SPARCHelper();
       } else if (cpu.equals("x86")) {
          cpuHelper = new X86Helper();
+      } else if (cpu.equals("amd64")) {
+         cpuHelper = new AMD64Helper();
       } else if (cpu.equals("ia64")) {
          cpuHelper = new IA64Helper();
       } else {

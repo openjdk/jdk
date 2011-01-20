@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,35 +37,48 @@ public class DumpExports {
 
     String filename = args[0];
     COFFFile file   = COFFFileParser.getParser().parse(filename);
-    ExportDirectoryTable exports =
-      file.getHeader().
-        getOptionalHeader().
-          getDataDirectories().
-            getExportDirectoryTable();
+
+    // get common point for both things we want to dump
+    OptionalHeaderDataDirectories dataDirs = file.getHeader().getOptionalHeader().
+        getDataDirectories();
+
+    // dump the header data directory for the Export Table:
+    DataDirectory dir = dataDirs.getExportTable();
+    System.out.println("Export table: RVA = " + dir.getRVA() + "/0x" +
+        Integer.toHexString(dir.getRVA()) + ", size = " + dir.getSize() + "/0x" +
+        Integer.toHexString(dir.getSize()));
+
+    System.out.println(file.getHeader().getNumberOfSections() + " sections in file");
+    for (int i = 1; i <= file.getHeader().getNumberOfSections(); i++) {
+      SectionHeader sec = file.getHeader().getSectionHeader(i);
+      System.out.println("  Section " + i + ":");
+      System.out.println("    Name = '" + sec.getName() + "'");
+      System.out.println("    VirtualSize = " + sec.getSize() + "/0x" +
+          Integer.toHexString(sec.getSize()));
+      System.out.println("    VirtualAddress = " + sec.getVirtualAddress() + "/0x" +
+          Integer.toHexString(sec.getVirtualAddress()));
+      System.out.println("    SizeOfRawData = " + sec.getSizeOfRawData() + "/0x" +
+          Integer.toHexString(sec.getSizeOfRawData()));
+      System.out.println("    PointerToRawData = " + sec.getPointerToRawData() + "/0x" +
+          Integer.toHexString(sec.getPointerToRawData()));
+    }
+
+    ExportDirectoryTable exports = dataDirs.getExportDirectoryTable();
     if (exports == null) {
       System.out.println("No exports found.");
     } else {
-      System.out.println(file.getHeader().getNumberOfSections() + " sections in file");
-      for (int i = 0; i < file.getHeader().getNumberOfSections(); i++) {
-        System.out.println("  Section " + i + ": " + file.getHeader().getSectionHeader(1 + i).getName());
-      }
-
-      DataDirectory dir = file.getHeader().getOptionalHeader().getDataDirectories().getExportTable();
-      System.out.println("Export table: RVA = 0x" + Integer.toHexString(dir.getRVA()) +
-                         ", size = 0x" + Integer.toHexString(dir.getSize()));
-
       System.out.println("DLL name: " + exports.getDLLName());
       System.out.println("Time/date stamp 0x" + Integer.toHexString(exports.getTimeDateStamp()));
       System.out.println("Major version 0x" + Integer.toHexString(exports.getMajorVersion() & 0xFFFF));
       System.out.println("Minor version 0x" + Integer.toHexString(exports.getMinorVersion() & 0xFFFF));
-      System.out.println(exports.getNumberOfNamePointers() + " functions found");
+      System.out.println(exports.getNumberOfNamePointers() + " exports found");
       for (int i = 0; i < exports.getNumberOfNamePointers(); i++) {
-        System.out.println("  0x" +
-                           Integer.toHexString(exports.getExportAddress(exports.getExportOrdinal(i))) +
-                           "  " +
-                           (exports.isExportAddressForwarder(exports.getExportOrdinal(i))  ?
-                            ("Forwarded to " + exports.getExportAddressForwarder(exports.getExportOrdinal(i))) :
-                            exports.getExportName(i)));
+        short ordinal = exports.getExportOrdinal(i);
+        System.out.print("[" + i + "] '" + exports.getExportName(i) + "': [" +
+            ordinal + "] = 0x" + Integer.toHexString(exports.getExportAddress(ordinal)));
+        System.out.println(exports.isExportAddressForwarder(ordinal)
+            ? "  Forwarded to '" + exports.getExportAddressForwarder(ordinal) + "'"
+            : "");
       }
     }
   }
