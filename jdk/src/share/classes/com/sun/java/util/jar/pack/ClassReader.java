@@ -38,19 +38,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Reader for a class file that is being incorporated into a package.
  * @author John Rose
  */
-class ClassReader implements Constants {
+class ClassReader {
     int verbose;
 
     Package pkg;
     Class cls;
     long inPos;
     DataInputStream in;
-    Map attrDefs;
+    Map<Attribute.Layout, Attribute> attrDefs;
     Map attrCommands;
     String unknownAttrCommand = "error";;
 
@@ -77,7 +78,7 @@ class ClassReader implements Constants {
         });
     }
 
-    public void setAttrDefs(Map attrDefs) {
+    public void setAttrDefs(Map<Attribute.Layout, Attribute> attrDefs) {
         this.attrDefs = attrDefs;
     }
 
@@ -211,27 +212,23 @@ class ClassReader implements Constants {
                     break;
                 case CONSTANT_Integer:
                     {
-                        Comparable val = new Integer(in.readInt());
-                        cpMap[i] = ConstantPool.getLiteralEntry(val);
+                        cpMap[i] = ConstantPool.getLiteralEntry(in.readInt());
                     }
                     break;
                 case CONSTANT_Float:
                     {
-                        Comparable val = new Float(in.readFloat());
-                        cpMap[i] = ConstantPool.getLiteralEntry(val);
+                        cpMap[i] = ConstantPool.getLiteralEntry(in.readFloat());
                     }
                     break;
                 case CONSTANT_Long:
                     {
-                        Comparable val = new Long(in.readLong());
-                        cpMap[i] = ConstantPool.getLiteralEntry(val);
+                        cpMap[i] = ConstantPool.getLiteralEntry(in.readLong());
                         cpMap[++i] = null;
                     }
                     break;
                 case CONSTANT_Double:
                     {
-                        Comparable val = new Double(in.readDouble());
-                        cpMap[i] = ConstantPool.getLiteralEntry(val);
+                        cpMap[i] = ConstantPool.getLiteralEntry(in.readDouble());
                         cpMap[++i] = null;
                     }
                     break;
@@ -353,17 +350,18 @@ class ClassReader implements Constants {
             if (attrCommands != null) {
                 Object lkey = Attribute.keyForLookup(ctype, name);
                 String cmd = (String) attrCommands.get(lkey);
-                if (cmd == "pass") {
-                    String message = "passing attribute bitwise in "+h;
-                    throw new Attribute.FormatException(message, ctype, name,
-                                                        cmd);
-                } else if (cmd == "error") {
-                    String message = "attribute not allowed in "+h;
-                    throw new Attribute.FormatException(message, ctype, name,
-                                                        cmd);
-                } else if (cmd == "strip") {
-                    skip(length, name+" attribute in "+h);
-                    continue;
+                if (cmd != null) {
+                    switch (cmd) {
+                        case "pass":
+                            String message1 = "passing attribute bitwise in " + h;
+                            throw new Attribute.FormatException(message1, ctype, name, cmd);
+                        case "error":
+                            String message2 = "attribute not allowed in " + h;
+                            throw new Attribute.FormatException(message2, ctype, name, cmd);
+                        case "strip":
+                            skip(length, name + " attribute in " + h);
+                            continue;
+                    }
                 }
             }
             // Find canonical instance of the requested attribute.
@@ -408,7 +406,7 @@ class ClassReader implements Constants {
                     String message = "unsupported StackMap variant in "+h;
                     throw new Attribute.FormatException(message, ctype, name,
                                                         "pass");
-                } else if (unknownAttrCommand == "strip") {
+                } else if ("strip".equals(unknownAttrCommand)) {
                     // Skip the unknown attribute.
                     skip(length, "unknown "+name+" attribute in "+h);
                     continue;
@@ -422,7 +420,7 @@ class ClassReader implements Constants {
                 a.layout() == Package.attrInnerClassesEmpty) {
                 // These are hardwired.
                 long pos0 = inPos;
-                if (a.name() == "Code") {
+                if ("Code".equals(a.name())) {
                     Class.Method m = (Class.Method) h;
                     m.code = new Code(m);
                     try {
@@ -471,7 +469,7 @@ class ClassReader implements Constants {
 
     void readInnerClasses(Class cls) throws IOException {
         int nc = readUnsignedShort();
-        ArrayList ics = new ArrayList(nc);
+        ArrayList<InnerClass> ics = new ArrayList<>(nc);
         for (int i = 0; i < nc; i++) {
             InnerClass ic =
                 new InnerClass(readClassRef(),

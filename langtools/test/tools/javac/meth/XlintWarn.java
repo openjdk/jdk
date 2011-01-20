@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6999067
+ * @bug 6999067 7010194
  * @summary cast for invokeExact call gets redundant cast to <type> warnings
  * @author mcimadamore
  *
@@ -34,9 +34,7 @@ import java.dyn.*;
 
 class XlintWarn {
     void test(MethodHandle mh) throws Throwable {
-        int i1 = (int)mh.invoke();
-        int i2 = (int)mh.invokeExact();
-        int i3 = (int)mh.invokeVarargs();
-        int i4 = (int)InvokeDynamic.test();
+        int i1 = (int)mh.invokeExact();
+        int i2 = (int)mh.invokeVarargs();
     }
 }

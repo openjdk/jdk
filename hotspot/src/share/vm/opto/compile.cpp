@@ -444,34 +444,37 @@ void Compile::print_compile_messages() {
 }
 
 
+//-----------------------init_scratch_buffer_blob------------------------------
+// Construct a temporary BufferBlob and cache it for this compile.
 void Compile::init_scratch_buffer_blob(int const_size) {
-  if (scratch_buffer_blob() != NULL)  return;
+  // If there is already a scratch buffer blob allocated and the
+  // constant section is big enough, use it.  Otherwise free the
+  // current and allocate a new one.
+  BufferBlob* blob = scratch_buffer_blob();
+  if ((blob != NULL) && (const_size <= _scratch_const_size)) {
+    // Use the current blob.
+  } else {
+    if (blob != NULL) {
+      BufferBlob::free(blob);
+    }
 
-  // Construct a temporary CodeBuffer to have it construct a BufferBlob
-  // Cache this BufferBlob for this compile.
-  ResourceMark rm;
-  _scratch_const_size = const_size;
-  int size = (MAX_inst_size + MAX_stubs_size + _scratch_const_size);
-  BufferBlob* blob = BufferBlob::create("Compile::scratch_buffer", size);
-  // Record the buffer blob for next time.
-  set_scratch_buffer_blob(blob);
-  // Have we run out of code space?
-  if (scratch_buffer_blob() == NULL) {
-    // Let CompilerBroker disable further compilations.
-    record_failure("Not enough space for scratch buffer in CodeCache");
-    return;
+    ResourceMark rm;
+    _scratch_const_size = const_size;
+    int size = (MAX_inst_size + MAX_stubs_size + _scratch_const_size);
+    blob = BufferBlob::create("Compile::scratch_buffer", size);
+    // Record the buffer blob for next time.
+    set_scratch_buffer_blob(blob);
+    // Have we run out of code space?
+    if (scratch_buffer_blob() == NULL) {
+      // Let CompilerBroker disable further compilations.
+      record_failure("Not enough space for scratch buffer in CodeCache");
+      return;
+    }
   }
 
   // Initialize the relocation buffers
   relocInfo* locs_buf = (relocInfo*) blob->content_end() - MAX_locs_size;
   set_scratch_locs_memory(locs_buf);
-}
-
-
-void Compile::clear_scratch_buffer_blob() {
-  assert(scratch_buffer_blob(), "no BufferBlob set");
-  set_scratch_buffer_blob(NULL);
-  set_scratch_locs_memory(NULL);
 }
 
 
