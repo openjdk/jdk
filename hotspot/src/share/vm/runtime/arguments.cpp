@@ -3029,15 +3029,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     ScavengeRootsInCode = 1;
   }
-#ifdef COMPILER2
-  if (EnableInvokeDynamic && DoEscapeAnalysis) {
-    // TODO: We need to find rules for invokedynamic and EA.  For now,
-    // simply disable EA by default.
-    if (FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
-      DoEscapeAnalysis = false;
-    }
-  }
-#endif
 
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well

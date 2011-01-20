@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +233,10 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
   // compute size of arguments
   int arg_size = target->arg_size();
+  if (code == Bytecodes::_invokedynamic) {
+    assert(!target->is_static(), "receiver explicit in method");
+    arg_size--;  // implicit, not really on stack
+  }
   if (!target->is_loaded() && code == Bytecodes::_invokestatic) {
     arg_size--;
   }
@@ -249,6 +253,10 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   for (i = state._stack_height - 1; i >= arg_base && skip_callee; i--) {
     ArgumentMap arg = state._stack[i];
     skip_callee = !is_argument(arg) || !is_arg_stack(arg) || (directly_recursive && arg.is_singleton(i - arg_base));
+  }
+  // For now we conservatively skip invokedynamic.
+  if (code == Bytecodes::_invokedynamic) {
+    skip_callee = true;
   }
   if (skip_callee) {
     TRACE_BCEA(3, tty->print_cr("[EA] skipping method %s::%s", holder->name()->as_utf8(), target->name()->as_utf8()));
