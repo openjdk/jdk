@@ -2221,7 +2221,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return FontUtilities.getFont2D(font).supportsEncoding(encoding);
     }
 
-    public abstract String getFontPath(boolean noType1Fonts);
+    protected abstract String getFontPath(boolean noType1Fonts);
 
     private Thread fileCloser = null;
     Vector<File> tmpFontFiles = null;
@@ -2935,7 +2935,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     }
 
     protected String[] getPlatformFontDirs(boolean noType1Fonts) {
-        String path = getFontPath(true);
+        String path = getPlatformFontPath(noType1Fonts);
         StringTokenizer parser =
             new StringTokenizer(path, File.pathSeparator);
         ArrayList<String> pathList = new ArrayList<String>();
@@ -3047,7 +3047,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     /* A call to this method should be followed by a call to
      * registerFontDirs(..)
      */
-    protected String getPlatformFontPath(boolean noType1Font) {
+    public String getPlatformFontPath(boolean noType1Font) {
         if (fontPath == null) {
             fontPath = getFontPath(noType1Font);
         }

@@ -763,7 +763,7 @@ public class X11FontManager extends SunFontManager {
 
     public synchronized native String getFontPathNative(boolean noType1Fonts);
 
-    public synchronized String getFontPath(boolean noType1Fonts) {
+    protected synchronized String getFontPath(boolean noType1Fonts) {
         isHeadless(); // make sure GE is inited, as its the X11 lock.
         return getFontPathNative(noType1Fonts);
     }
