@@ -28,7 +28,6 @@
 #include "gc_implementation/g1/concurrentG1Refine.hpp"
 #include "gc_implementation/g1/concurrentG1RefineThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
-#include "gc_implementation/g1/concurrentZFThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
@@ -425,10 +424,8 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
 
 void G1CollectedHeap::stop_conc_gc_threads() {
   _cg1r->stop();
-  _czft->stop();
   _cmThread->stop();
 }
-
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -481,49 +478,92 @@ G1CollectedHeap* G1CollectedHeap::_g1h;
 
 // Private methods.
 
-// Finds a HeapRegion that can be used to allocate a given size of block.
+HeapRegion*
+G1CollectedHeap::new_region_try_secondary_free_list(size_t word_size) {
+  MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
+  while (!_secondary_free_list.is_empty() || free_regions_coming()) {
+    if (!_secondary_free_list.is_empty()) {
+      if (G1ConcRegionFreeingVerbose) {
+        gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
+                               "secondary_free_list has "SIZE_FORMAT" entries",
+                               _secondary_free_list.length());
+      }
+      // It looks as if there are free regions available on the
+      // secondary_free_list. Let's move them to the free_list and try
+      // again to allocate from it.
+      append_secondary_free_list();
 
+      assert(!_free_list.is_empty(), "if the secondary_free_list was not "
+             "empty we should have moved at least one entry to the free_list");
+      HeapRegion* res = _free_list.remove_head();
+      if (G1ConcRegionFreeingVerbose) {
+        gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
+                               "allocated "HR_FORMAT" from secondary_free_list",
+                               HR_FORMAT_PARAMS(res));
+      }
+      return res;
+    }
 
-HeapRegion* G1CollectedHeap::newAllocRegion_work(size_t word_size,
-                                                 bool do_expand,
-                                                 bool zero_filled) {
-  ConcurrentZFThread::note_region_alloc();
-  HeapRegion* res = alloc_free_region_from_lists(zero_filled);
+    // Wait here until we get notifed either when (a) there are no
+    // more free regions coming or (b) some regions have been moved on
+    // the secondary_free_list.
+    SecondaryFreeList_lock->wait(Mutex::_no_safepoint_check_flag);
+  }
+
+  if (G1ConcRegionFreeingVerbose) {
+    gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
+                           "could not allocate from secondary_free_list");
+  }
+  return NULL;
+}
+
+HeapRegion* G1CollectedHeap::new_region_work(size_t word_size,
+                                             bool do_expand) {
+  assert(!isHumongous(word_size) ||
+                                  word_size <= (size_t) HeapRegion::GrainWords,
+         "the only time we use this to allocate a humongous region is "
+         "when we are allocating a single humongous region");
+
+  HeapRegion* res;
+  if (G1StressConcRegionFreeing) {
+    if (!_secondary_free_list.is_empty()) {
+      if (G1ConcRegionFreeingVerbose) {
+        gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
+                               "forced to look at the secondary_free_list");
+      }
+      res = new_region_try_secondary_free_list(word_size);
+      if (res != NULL) {
+        return res;
+      }
+    }
+  }
+  res = _free_list.remove_head_or_null();
+  if (res == NULL) {
+    if (G1ConcRegionFreeingVerbose) {
+      gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
+                             "res == NULL, trying the secondary_free_list");
+    }
+    res = new_region_try_secondary_free_list(word_size);
+  }
   if (res == NULL && do_expand) {
     expand(word_size * HeapWordSize);
-    res = alloc_free_region_from_lists(zero_filled);
-    assert(res == NULL ||
-           (!res->isHumongous() &&
-            (!zero_filled ||
-             res->zero_fill_state() == HeapRegion::Allocated)),
-           "Alloc Regions must be zero filled (and non-H)");
+    res = _free_list.remove_head_or_null();
   }
   if (res != NULL) {
-    if (res->is_empty()) {
-      _free_regions--;
-    }
-    assert(!res->isHumongous() &&
-           (!zero_filled || res->zero_fill_state() == HeapRegion::Allocated),
-           err_msg("Non-young alloc Regions must be zero filled (and non-H):"
-                   " res->isHumongous()=%d, zero_filled=%d, res->zero_fill_state()=%d",
-                   res->isHumongous(), zero_filled, res->zero_fill_state()));
-    assert(!res->is_on_unclean_list(),
-           "Alloc Regions must not be on the unclean list");
     if (G1PrintHeapRegions) {
-      gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
-                             "top "PTR_FORMAT,
-                             res->hrs_index(), res->bottom(), res->end(), res->top());
+      gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT","PTR_FORMAT"], "
+                             "top "PTR_FORMAT, res->hrs_index(),
+                             res->bottom(), res->end(), res->top());
     }
   }
   return res;
 }
 
-HeapRegion* G1CollectedHeap::newAllocRegionWithExpansion(int purpose,
-                                                         size_t word_size,
-                                                         bool zero_filled) {
+HeapRegion* G1CollectedHeap::new_gc_alloc_region(int purpose,
+                                                 size_t word_size) {
   HeapRegion* alloc_region = NULL;
   if (_gc_alloc_region_counts[purpose] < g1_policy()->max_regions(purpose)) {
-    alloc_region = newAllocRegion_work(word_size, true, zero_filled);
+    alloc_region = new_region_work(word_size, true /* do_expand */);
     if (purpose == GCAllocForSurvived && alloc_region != NULL) {
       alloc_region->set_survivor();
     }
@@ -534,82 +574,188 @@ HeapRegion* G1CollectedHeap::newAllocRegionWithExpansion(int purpose,
   return alloc_region;
 }
 
+int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
+                                                       size_t word_size) {
+  int first = -1;
+  if (num_regions == 1) {
+    // Only one region to allocate, no need to go through the slower
+    // path. The caller will attempt the expasion if this fails, so
+    // let's not try to expand here too.
+    HeapRegion* hr = new_region_work(word_size, false /* do_expand */);
+    if (hr != NULL) {
+      first = hr->hrs_index();
+    } else {
+      first = -1;
+    }
+  } else {
+    // We can't allocate humongous regions while cleanupComplete() is
+    // running, since some of the regions we find to be empty might not
+    // yet be added to the free list and it is not straightforward to
+    // know which list they are on so that we can remove them. Note
+    // that we only need to do this if we need to allocate more than
+    // one region to satisfy the current humongous allocation
+    // request. If we are only allocating one region we use the common
+    // region allocation code (see above).
+    wait_while_free_regions_coming();
+    append_secondary_free_list_if_not_empty();
+
+    if (free_regions() >= num_regions) {
+      first = _hrs->find_contiguous(num_regions);
+      if (first != -1) {
+        for (int i = first; i < first + (int) num_regions; ++i) {
+          HeapRegion* hr = _hrs->at(i);
+          assert(hr->is_empty(), "sanity");
+          assert(is_on_free_list(hr), "sanity");
+          hr->set_pending_removal(true);
+        }
+        _free_list.remove_all_pending(num_regions);
+      }
+    }
+  }
+  return first;
+}
+
 // If could fit into free regions w/o expansion, try.
 // Otherwise, if can expand, do so.
 // Otherwise, if using ex regions might help, try with ex given back.
 HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
-  assert_heap_locked_or_at_safepoint();
-  assert(regions_accounted_for(), "Region leakage!");
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
-  // We can't allocate humongous regions while cleanupComplete is
-  // running, since some of the regions we find to be empty might not
-  // yet be added to the unclean list. If we're already at a
-  // safepoint, this call is unnecessary, not to mention wrong.
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    wait_for_cleanup_complete();
-  }
+  verify_region_sets_optional();
 
   size_t num_regions =
          round_to(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
-
-  // Special case if < one region???
-
-  // Remember the ft size.
   size_t x_size = expansion_regions();
-
-  HeapWord* res = NULL;
-  bool eliminated_allocated_from_lists = false;
-
-  // Can the allocation potentially fit in the free regions?
-  if (free_regions() >= num_regions) {
-    res = _hrs->obj_allocate(word_size);
-  }
-  if (res == NULL) {
-    // Try expansion.
-    size_t fs = _hrs->free_suffix();
+  size_t fs = _hrs->free_suffix();
+  int first = humongous_obj_allocate_find_first(num_regions, word_size);
+  if (first == -1) {
+    // The only thing we can do now is attempt expansion.
     if (fs + x_size >= num_regions) {
       expand((num_regions - fs) * HeapRegion::GrainBytes);
-      res = _hrs->obj_allocate(word_size);
-      assert(res != NULL, "This should have worked.");
-    } else {
-      // Expansion won't help.  Are there enough free regions if we get rid
-      // of reservations?
-      size_t avail = free_regions();
-      if (avail >= num_regions) {
-        res = _hrs->obj_allocate(word_size);
-        if (res != NULL) {
-          remove_allocated_regions_from_lists();
-          eliminated_allocated_from_lists = true;
-        }
-      }
+      first = humongous_obj_allocate_find_first(num_regions, word_size);
+      assert(first != -1, "this should have worked");
     }
   }
-  if (res != NULL) {
-    // Increment by the number of regions allocated.
-    // FIXME: Assumes regions all of size GrainBytes.
-#ifndef PRODUCT
-    mr_bs()->verify_clean_region(MemRegion(res, res + num_regions *
-                                           HeapRegion::GrainWords));
-#endif
-    if (!eliminated_allocated_from_lists)
-      remove_allocated_regions_from_lists();
-    _summary_bytes_used += word_size * HeapWordSize;
-    _free_regions -= num_regions;
-    _num_humongous_regions += (int) num_regions;
+
+  if (first != -1) {
+    // Index of last region in the series + 1.
+    int last = first + (int) num_regions;
+
+    // We need to initialize the region(s) we just discovered. This is
+    // a bit tricky given that it can happen concurrently with
+    // refinement threads refining cards on these regions and
+    // potentially wanting to refine the BOT as they are scanning
+    // those cards (this can happen shortly after a cleanup; see CR
+    // 6991377). So we have to set up the region(s) carefully and in
+    // a specific order.
+
+    // The word size sum of all the regions we will allocate.
+    size_t word_size_sum = num_regions * HeapRegion::GrainWords;
+    assert(word_size <= word_size_sum, "sanity");
+
+    // This will be the "starts humongous" region.
+    HeapRegion* first_hr = _hrs->at(first);
+    // The header of the new object will be placed at the bottom of
+    // the first region.
+    HeapWord* new_obj = first_hr->bottom();
+    // This will be the new end of the first region in the series that
+    // should also match the end of the last region in the seriers.
+    HeapWord* new_end = new_obj + word_size_sum;
+    // This will be the new top of the first region that will reflect
+    // this allocation.
+    HeapWord* new_top = new_obj + word_size;
+
+    // First, we need to zero the header of the space that we will be
+    // allocating. When we update top further down, some refinement
+    // threads might try to scan the region. By zeroing the header we
+    // ensure that any thread that will try to scan the region will
+    // come across the zero klass word and bail out.
+    //
+    // NOTE: It would not have been correct to have used
+    // CollectedHeap::fill_with_object() and make the space look like
+    // an int array. The thread that is doing the allocation will
+    // later update the object header to a potentially different array
+    // type and, for a very short period of time, the klass and length
+    // fields will be inconsistent. This could cause a refinement
+    // thread to calculate the object size incorrectly.
+    Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
+
+    // We will set up the first region as "starts humongous". This
+    // will also update the BOT covering all the regions to reflect
+    // that there is a single object that starts at the bottom of the
+    // first region.
+    first_hr->set_startsHumongous(new_top, new_end);
+
+    // Then, if there are any, we will set up the "continues
+    // humongous" regions.
+    HeapRegion* hr = NULL;
+    for (int i = first + 1; i < last; ++i) {
+      hr = _hrs->at(i);
+      hr->set_continuesHumongous(first_hr);
+    }
+    // If we have "continues humongous" regions (hr != NULL), then the
+    // end of the last one should match new_end.
+    assert(hr == NULL || hr->end() == new_end, "sanity");
+
+    // Up to this point no concurrent thread would have been able to
+    // do any scanning on any region in this series. All the top
+    // fields still point to bottom, so the intersection between
+    // [bottom,top] and [card_start,card_end] will be empty. Before we
+    // update the top fields, we'll do a storestore to make sure that
+    // no thread sees the update to top before the zeroing of the
+    // object header and the BOT initialization.
+    OrderAccess::storestore();
+
+    // Now that the BOT and the object header have been initialized,
+    // we can update top of the "starts humongous" region.
+    assert(first_hr->bottom() < new_top && new_top <= first_hr->end(),
+           "new_top should be in this region");
+    first_hr->set_top(new_top);
+
+    // Now, we will update the top fields of the "continues humongous"
+    // regions. The reason we need to do this is that, otherwise,
+    // these regions would look empty and this will confuse parts of
+    // G1. For example, the code that looks for a consecutive number
+    // of empty regions will consider them empty and try to
+    // re-allocate them. We can extend is_empty() to also include
+    // !continuesHumongous(), but it is easier to just update the top
+    // fields here. The way we set top for all regions (i.e., top ==
+    // end for all regions but the last one, top == new_top for the
+    // last one) is actually used when we will free up the humongous
+    // region in free_humongous_region().
+    hr = NULL;
+    for (int i = first + 1; i < last; ++i) {
+      hr = _hrs->at(i);
+      if ((i + 1) == last) {
+        // last continues humongous region
+        assert(hr->bottom() < new_top && new_top <= hr->end(),
+               "new_top should fall on this region");
+        hr->set_top(new_top);
+      } else {
+        // not last one
+        assert(new_top > hr->end(), "new_top should be above this region");
+        hr->set_top(hr->end());
+      }
+    }
+    // If we have continues humongous regions (hr != NULL), then the
+    // end of the last one should match new_end and its top should
+    // match new_top.
+    assert(hr == NULL ||
+           (hr->end() == new_end && hr->top() == new_top), "sanity");
+
+    assert(first_hr->used() == word_size * HeapWordSize, "invariant");
+    _summary_bytes_used += first_hr->used();
+    _humongous_set.add(first_hr);
+
+    return new_obj;
   }
-  assert(regions_accounted_for(), "Region Leakage");
-  return res;
+
+  verify_region_sets_optional();
+  return NULL;
 }
 
 void
 G1CollectedHeap::retire_cur_alloc_region(HeapRegion* cur_alloc_region) {
-  // The cleanup operation might update _summary_bytes_used
-  // concurrently with this method. So, right now, if we don't wait
-  // for it to complete, updates to _summary_bytes_used might get
-  // lost. This will be resolved in the near future when the operation
-  // of the free region list is revamped as part of CR 6977804.
-  wait_for_cleanup_complete();
-
   // Other threads might still be trying to allocate using CASes out
   // of the region we are retiring, as they can do so without holding
   // the Heap_lock. So we first have to make sure that noone else can
@@ -654,7 +800,7 @@ G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
                                                        bool at_safepoint,
                                                        bool do_dirtying,
                                                        bool can_expand) {
-  assert_heap_locked_or_at_safepoint();
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(_cur_alloc_region == NULL,
          "replace_cur_alloc_region_and_allocate() should only be called "
          "after retiring the previous current alloc region");
@@ -665,25 +811,12 @@ G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
          "we are not allowed to expand the young gen");
 
   if (can_expand || !g1_policy()->is_young_list_full()) {
-    if (!at_safepoint) {
-      // The cleanup operation might update _summary_bytes_used
-      // concurrently with this method. So, right now, if we don't
-      // wait for it to complete, updates to _summary_bytes_used might
-      // get lost. This will be resolved in the near future when the
-      // operation of the free region list is revamped as part of
-      // CR 6977804. If we're already at a safepoint, this call is
-      // unnecessary, not to mention wrong.
-      wait_for_cleanup_complete();
-    }
-
-    HeapRegion* new_cur_alloc_region = newAllocRegion(word_size,
-                                                      false /* zero_filled */);
+    HeapRegion* new_cur_alloc_region = new_alloc_region(word_size);
     if (new_cur_alloc_region != NULL) {
       assert(new_cur_alloc_region->is_empty(),
              "the newly-allocated region should be empty, "
              "as right now we only allocate new regions out of the free list");
       g1_policy()->update_region_num(true /* next_is_young */);
-      _summary_bytes_used -= new_cur_alloc_region->used();
       set_region_short_lived_locked(new_cur_alloc_region);
 
       assert(!new_cur_alloc_region->isHumongous(),
@@ -733,7 +866,7 @@ G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
 
   assert(_cur_alloc_region == NULL, "we failed to allocate a new current "
          "alloc region, it should still be NULL");
-  assert_heap_locked_or_at_safepoint();
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   return NULL;
 }
 
@@ -745,6 +878,10 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   assert(!isHumongous(word_size), "attempt_allocation_slow() should not be "
          "used for humongous allocations");
 
+  // We should only reach here when we were unable to allocate
+  // otherwise. So, we should have not active current alloc region.
+  assert(_cur_alloc_region == NULL, "current alloc region should be NULL");
+
   // We will loop while succeeded is false, which means that we tried
   // to do a collection, but the VM op did not succeed. So, when we
   // exit the loop, either one of the allocation attempts was
@@ -755,30 +892,6 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
     // Every time we go round the loop we should be holding the Heap_lock.
     assert_heap_locked();
-
-    {
-      // We may have concurrent cleanup working at the time. Wait for
-      // it to complete. In the future we would probably want to make
-      // the concurrent cleanup truly concurrent by decoupling it from
-      // the allocation. This will happen in the near future as part
-      // of CR 6977804 which will revamp the operation of the free
-      // region list. The fact that wait_for_cleanup_complete() will
-      // do a wait() means that we'll give up the Heap_lock. So, it's
-      // possible that when we exit wait_for_cleanup_complete() we
-      // might be able to allocate successfully (since somebody else
-      // might have done a collection meanwhile). So, we'll attempt to
-      // allocate again, just in case. When we make cleanup truly
-      // concurrent with allocation, we should remove this allocation
-      // attempt as it's redundant (we only reach here after an
-      // allocation attempt has been unsuccessful).
-      wait_for_cleanup_complete();
-
-      HeapWord* result = attempt_allocation_locked(word_size);
-      if (result != NULL) {
-        assert_heap_not_locked();
-        return result;
-      }
-    }
 
     if (GC_locker::is_active_and_needs_gc()) {
       // We are locked out of GC because of the GC locker. We can
@@ -894,7 +1007,7 @@ G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
   // allocation paths that attempt to allocate a humongous object
   // should eventually reach here. Currently, the only paths are from
   // mem_allocate() and attempt_allocation_at_safepoint().
-  assert_heap_locked_or_at_safepoint();
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(isHumongous(word_size), "attempt_allocation_humongous() "
          "should only be used for humongous allocations");
   assert(SafepointSynchronize::is_at_safepoint() == at_safepoint,
@@ -971,13 +1084,13 @@ G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
     }
   }
 
-  assert_heap_locked_or_at_safepoint();
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   return NULL;
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
                                            bool expect_null_cur_alloc_region) {
-  assert_at_safepoint();
+  assert_at_safepoint(true /* should_be_vm_thread */);
   assert(_cur_alloc_region == NULL || !expect_null_cur_alloc_region,
          err_msg("the current alloc region was unexpectedly found "
                  "to be non-NULL, cur alloc region: "PTR_FORMAT" "
@@ -1131,22 +1244,18 @@ G1CollectedHeap::mem_allocate(size_t word_size,
 }
 
 void G1CollectedHeap::abandon_cur_alloc_region() {
-  if (_cur_alloc_region != NULL) {
-    // We're finished with the _cur_alloc_region.
-    if (_cur_alloc_region->is_empty()) {
-      _free_regions++;
-      free_region(_cur_alloc_region);
-    } else {
-      // As we're builing (at least the young portion) of the collection
-      // set incrementally we'll add the current allocation region to
-      // the collection set here.
-      if (_cur_alloc_region->is_young()) {
-        g1_policy()->add_region_to_incremental_cset_lhs(_cur_alloc_region);
-      }
-      _summary_bytes_used += _cur_alloc_region->used();
-    }
-    _cur_alloc_region = NULL;
+  assert_at_safepoint(true /* should_be_vm_thread */);
+
+  HeapRegion* cur_alloc_region = _cur_alloc_region;
+  if (cur_alloc_region != NULL) {
+    assert(!cur_alloc_region->is_empty(),
+           "the current alloc region can never be empty");
+    assert(cur_alloc_region->is_young(),
+           "the current alloc region should be young");
+
+    retire_cur_alloc_region_common(cur_alloc_region);
   }
+  assert(_cur_alloc_region == NULL, "post-condition");
 }
 
 void G1CollectedHeap::abandon_gc_alloc_regions() {
@@ -1227,6 +1336,8 @@ public:
 bool G1CollectedHeap::do_collection(bool explicit_gc,
                                     bool clear_all_soft_refs,
                                     size_t word_size) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+
   if (GC_locker::check_active_before_gc()) {
     return false;
   }
@@ -1238,8 +1349,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     Universe::print_heap_before_gc();
   }
 
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
+  verify_region_sets_optional();
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
                            collector_policy()->should_clear_all_soft_refs();
@@ -1262,6 +1372,9 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     double start = os::elapsedTime();
     g1_policy()->record_full_collection_start();
 
+    wait_while_free_regions_coming();
+    append_secondary_free_list_if_not_empty();
+
     gc_prologue(true);
     increment_total_collections(true /* full gc */);
 
@@ -1274,7 +1387,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       gclog_or_tty->print(" VerifyBeforeGC:");
       Universe::verify(true);
     }
-    assert(regions_accounted_for(), "Region leakage!");
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -1298,7 +1410,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     assert(_cur_alloc_region == NULL, "Invariant.");
     g1_rem_set()->cleanupHRRS();
     tear_down_region_lists();
-    set_used_regions_to_need_zero_fill();
 
     // We may have added regions to the current incremental collection
     // set between the last GC or pause and now. We need to clear the
@@ -1333,9 +1444,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during gc
       G1MarkSweep::invoke_at_safepoint(ref_processor(), do_clear_all_soft_refs);
     }
-    // Because freeing humongous regions may have added some unclean
-    // regions, it is necessary to tear down again before rebuilding.
-    tear_down_region_lists();
+    assert(free_regions() == 0, "we should not have added any free regions");
     rebuild_region_lists();
 
     _summary_bytes_used = recalculate_used();
@@ -1417,7 +1526,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     JavaThread::dirty_card_queue_set().abandon_logs();
     assert(!G1DeferredRSUpdate
            || (G1DeferredRSUpdate && (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
-    assert(regions_accounted_for(), "Region leakage!");
   }
 
   if (g1_policy()->in_young_gc_mode()) {
@@ -1430,6 +1538,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
   // Update the number of full collections that have been completed.
   increment_full_collections_completed(false /* concurrent */);
+
+  verify_region_sets_optional();
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
@@ -1571,10 +1681,7 @@ resize_if_necessary_after_full_collection(size_t word_size) {
 HeapWord*
 G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
                                            bool* succeeded) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "satisfy_failed_allocation() should only be called at a safepoint");
-  assert(Thread::current()->is_VM_thread(),
-         "satisfy_failed_allocation() should only be called by the VM thread");
+  assert_at_safepoint(true /* should_be_vm_thread */);
 
   *succeeded = true;
   // Let's attempt the allocation first.
@@ -1646,51 +1753,20 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 // allocated block, or else "NULL".
 
 HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-         "expand_and_allocate() should only be called at a safepoint");
-  assert(Thread::current()->is_VM_thread(),
-         "expand_and_allocate() should only be called by the VM thread");
+  assert_at_safepoint(true /* should_be_vm_thread */);
+
+  verify_region_sets_optional();
 
   size_t expand_bytes = word_size * HeapWordSize;
   if (expand_bytes < MinHeapDeltaBytes) {
     expand_bytes = MinHeapDeltaBytes;
   }
   expand(expand_bytes);
-  assert(regions_accounted_for(), "Region leakage!");
+
+  verify_region_sets_optional();
 
   return attempt_allocation_at_safepoint(word_size,
                                      false /* expect_null_cur_alloc_region */);
-}
-
-size_t G1CollectedHeap::free_region_if_totally_empty(HeapRegion* hr) {
-  size_t pre_used = 0;
-  size_t cleared_h_regions = 0;
-  size_t freed_regions = 0;
-  UncleanRegionList local_list;
-  free_region_if_totally_empty_work(hr, pre_used, cleared_h_regions,
-                                    freed_regions, &local_list);
-
-  finish_free_region_work(pre_used, cleared_h_regions, freed_regions,
-                          &local_list);
-  return pre_used;
-}
-
-void
-G1CollectedHeap::free_region_if_totally_empty_work(HeapRegion* hr,
-                                                   size_t& pre_used,
-                                                   size_t& cleared_h,
-                                                   size_t& freed_regions,
-                                                   UncleanRegionList* list,
-                                                   bool par) {
-  assert(!hr->continuesHumongous(), "should have filtered these out");
-  size_t res = 0;
-  if (hr->used() > 0 && hr->garbage_bytes() == hr->used() &&
-      !hr->is_young()) {
-    if (G1PolicyVerbose > 0)
-      gclog_or_tty->print_cr("Freeing empty region "PTR_FORMAT "(" SIZE_FORMAT " bytes)"
-                                                                               " during cleanup", hr, hr->used());
-    free_region_work(hr, pre_used, cleared_h, freed_regions, list, par);
-  }
 }
 
 // FIXME: both this and shrink could probably be more efficient by
@@ -1725,19 +1801,7 @@ void G1CollectedHeap::expand(size_t expand_bytes) {
 
       // Add it to the HeapRegionSeq.
       _hrs->insert(hr);
-      // Set the zero-fill state, according to whether it's already
-      // zeroed.
-      {
-        MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-        if (is_zeroed) {
-          hr->set_zero_fill_complete();
-          put_free_region_on_list_locked(hr);
-        } else {
-          hr->set_zero_fill_needed();
-          put_region_on_unclean_list_locked(hr);
-        }
-      }
-      _free_regions++;
+      _free_list.add_as_tail(hr);
       // And we used up an expansion region to create it.
       _expansion_regions--;
       // Tell the cardtable about it.
@@ -1746,6 +1810,7 @@ void G1CollectedHeap::expand(size_t expand_bytes) {
       _bot_shared->resize(_g1_committed.word_size());
     }
   }
+
   if (Verbose && PrintGC) {
     size_t new_mem_size = _g1_storage.committed_size();
     gclog_or_tty->print_cr("Expanding garbage-first heap from %ldK by %ldK to %ldK",
@@ -1770,7 +1835,6 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes)
   assert(mr.start() == (HeapWord*)_g1_storage.high(), "Bad shrink!");
 
   _g1_committed.set_end(mr.start());
-  _free_regions -= num_regions_deleted;
   _expansion_regions += num_regions_deleted;
 
   // Tell the cardtable about it.
@@ -1790,10 +1854,17 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes)
 }
 
 void G1CollectedHeap::shrink(size_t shrink_bytes) {
+  verify_region_sets_optional();
+
   release_gc_alloc_regions(true /* totally */);
+  // Instead of tearing down / rebuilding the free lists here, we
+  // could instead use the remove_all_pending() method on free_list to
+  // remove only the ones that we need to remove.
   tear_down_region_lists();  // We will rebuild them in a moment.
   shrink_helper(shrink_bytes);
   rebuild_region_lists();
+
+  verify_region_sets_optional();
 }
 
 // Public methods.
@@ -1812,18 +1883,17 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
-  _par_alloc_during_gc_lock(Mutex::leaf, "par alloc during GC lock"),
   _objs_with_preserved_marks(NULL), _preserved_marks_of_objs(NULL),
   _evac_failure_scan_stack(NULL) ,
   _mark_in_progress(false),
-  _cg1r(NULL), _czft(NULL), _summary_bytes_used(0),
+  _cg1r(NULL), _summary_bytes_used(0),
   _cur_alloc_region(NULL),
   _refine_cte_cl(NULL),
-  _free_region_list(NULL), _free_region_list_size(0),
-  _free_regions(0),
   _full_collection(false),
-  _unclean_region_list(),
-  _unclean_regions_coming(false),
+  _free_list("Master Free List"),
+  _secondary_free_list("Secondary Free List"),
+  _humongous_set("Master Humongous Set"),
+  _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _surviving_young_words(NULL),
@@ -1944,8 +2014,6 @@ jint G1CollectedHeap::initialize() {
 
   _expansion_regions = max_byte_size/HeapRegion::GrainBytes;
 
-  _num_humongous_regions = 0;
-
   // Create the gen rem set (and barrier set) for the entire reserved region.
   _rem_set = collector_policy()->create_rem_set(_reserved, 2);
   set_barrier_set(rem_set()->bs());
@@ -1990,6 +2058,8 @@ jint G1CollectedHeap::initialize() {
   guarantee((size_t) HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
+  HeapRegionSet::set_unrealistically_long_length(max_regions() + 1);
+
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));
 
@@ -2013,11 +2083,6 @@ jint G1CollectedHeap::initialize() {
   // (Must do this late, so that "max_regions" is defined.)
   _cm       = new ConcurrentMark(heap_rs, (int) max_regions());
   _cmThread = _cm->cmThread();
-
-  // ...and the concurrent zero-fill thread, if necessary.
-  if (G1ConcZeroFill) {
-    _czft = new ConcurrentZFThread();
-  }
 
   // Initialize the from_card cache structure of HeapRegionRemSet.
   HeapRegionRemSet::init_heap(max_regions());
@@ -2192,7 +2257,7 @@ size_t G1CollectedHeap::recalculate_used_regions() const {
 #endif // PRODUCT
 
 size_t G1CollectedHeap::unsafe_max_alloc() {
-  if (_free_regions > 0) return HeapRegion::GrainBytes;
+  if (free_regions() > 0) return HeapRegion::GrainBytes;
   // otherwise, is there space in the current allocation region?
 
   // We need to store the current allocation region in a local variable
@@ -2272,8 +2337,7 @@ void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
 }
 
 void G1CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
-  assert(Thread::current()->is_VM_thread(), "Precondition#1");
-  assert(Heap_lock->is_locked(), "Precondition#2");
+  assert_at_safepoint(true /* should_be_vm_thread */);
   GCCauseSetter gcs(this, cause);
   switch (cause) {
     case GCCause::_heap_inspection:
@@ -2295,12 +2359,6 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
   unsigned int full_gc_count_before;
   {
     MutexLocker ml(Heap_lock);
-
-    // Don't want to do a GC until cleanup is completed. This
-    // limitation will be removed in the near future when the
-    // operation of the free region list is revamped as part of
-    // CR 6977804.
-    wait_for_cleanup_complete();
 
     // Read the GC count while holding the Heap_lock
     gc_count_before = SharedHeap::heap()->total_collections();
@@ -2680,10 +2738,6 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   }
 }
 
-bool G1CollectedHeap::allocs_are_zero_filled() {
-  return false;
-}
-
 size_t G1CollectedHeap::large_typearray_limit() {
   // FIXME
   return HeapRegion::GrainBytes/HeapWordSize;
@@ -2697,7 +2751,6 @@ jlong G1CollectedHeap::millis_since_last_gc() {
   // assert(false, "NYI");
   return 0;
 }
-
 
 void G1CollectedHeap::prepare_for_verify() {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
@@ -2909,7 +2962,9 @@ void G1CollectedHeap::verify(bool allow_dirty,
                          &rootsCl);
     bool failures = rootsCl.failures();
     rem_set()->invalidate(perm_gen()->used_region(), false);
-    if (!silent) { gclog_or_tty->print("heapRegions "); }
+    if (!silent) { gclog_or_tty->print("HeapRegionSets "); }
+    verify_region_sets();
+    if (!silent) { gclog_or_tty->print("HeapRegions "); }
     if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
@@ -2937,7 +2992,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
         failures = true;
       }
     }
-    if (!silent) gclog_or_tty->print("remset ");
+    if (!silent) gclog_or_tty->print("RemSet ");
     rem_set()->verify();
 
     if (failures) {
@@ -3008,15 +3063,10 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     workers()->print_worker_threads_on(st);
   }
-
   _cmThread->print_on(st);
   st->cr();
-
   _cm->print_worker_threads_on(st);
-
   _cg1r->print_worker_threads_on(st);
-
-  _czft->print_on(st);
   st->cr();
 }
 
@@ -3026,7 +3076,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   }
   tc->do_thread(_cmThread);
   _cg1r->threads_do(tc);
-  tc->do_thread(_czft);
 }
 
 void G1CollectedHeap::print_tracing_info() const {
@@ -3042,14 +3091,9 @@ void G1CollectedHeap::print_tracing_info() const {
   if (G1SummarizeConcMark) {
     concurrent_mark()->print_summary_info();
   }
-  if (G1SummarizeZFStats) {
-    ConcurrentZFThread::print_summary_info();
-  }
   g1_policy()->print_yg_surv_rate_info();
-
   SpecializationStats::print();
 }
-
 
 int G1CollectedHeap::addr_to_arena_id(void* addr) const {
   HeapRegion* hr = heap_region_containing(addr);
@@ -3249,6 +3293,9 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 
 bool
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+  guarantee(!is_gc_active(), "collection is not reentrant");
+
   if (GC_locker::check_active_before_gc()) {
     return false;
   }
@@ -3259,6 +3306,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
+
+  verify_region_sets_optional();
 
   {
     // This call will decide whether this pause is an initial-mark
@@ -3290,10 +3339,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceMemoryManagerStats tms(false /* fullGC */);
 
-    assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-    assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
-    guarantee(!is_gc_active(), "collection is not reentrant");
-    assert(regions_accounted_for(), "Region leakage!");
+    // If there are any free regions available on the secondary_free_list
+    // make sure we append them to the free_list. However, we don't
+    // have to wait for the rest of the cleanup operation to
+    // finish. If it's still going on that's OK. If we run out of
+    // regions, the region allocation code will check the
+    // secondary_free_list and potentially wait if more free regions
+    // are coming (see new_region_try_secondary_free_list()).
+    if (!G1StressConcRegionFreeing) {
+      append_secondary_free_list_if_not_empty();
+    }
 
     increment_gc_time_stamp();
 
@@ -3372,8 +3427,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // stack, doing more exposes race conditions.)  If no mark is in
       // progress, this will be zero.
       _cm->set_oops_do_bound();
-
-      assert(regions_accounted_for(), "Region leakage.");
 
       if (mark_in_progress())
         concurrent_mark()->newCSet();
@@ -3470,8 +3523,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       g1_policy()->record_pause_time_ms(pause_time_ms);
       g1_policy()->record_collection_pause_end();
 
-      assert(regions_accounted_for(), "Region leakage.");
-
       MemoryService::track_memory_usage();
 
       if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
@@ -3502,14 +3553,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       gc_epilogue(false);
     }
 
-    assert(verify_region_lists(), "Bad region lists.");
-
     if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
       gclog_or_tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
       print_tracing_info();
       vm_exit(-1);
     }
   }
+
+  verify_region_sets_optional();
 
   TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
@@ -3617,7 +3668,7 @@ void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
 
 void G1CollectedHeap::push_gc_alloc_region(HeapRegion* hr) {
   assert(Thread::current()->is_VM_thread() ||
-         par_alloc_during_gc_lock()->owned_by_self(), "Precondition");
+         FreeList_lock->owned_by_self(), "Precondition");
   assert(!hr->is_gc_alloc_region() && !hr->in_collection_set(),
          "Precondition.");
   hr->set_is_gc_alloc_region(true);
@@ -3639,7 +3690,7 @@ public:
 #endif // G1_DEBUG
 
 void G1CollectedHeap::forget_alloc_region_list() {
-  assert(Thread::current()->is_VM_thread(), "Precondition");
+  assert_at_safepoint(true /* should_be_vm_thread */);
   while (_gc_alloc_region_list != NULL) {
     HeapRegion* r = _gc_alloc_region_list;
     assert(r->is_gc_alloc_region(), "Invariant.");
@@ -3658,9 +3709,6 @@ void G1CollectedHeap::forget_alloc_region_list() {
       } else {
         _young_list->add_survivor_region(r);
       }
-    }
-    if (r->is_empty()) {
-      ++_free_regions;
     }
   }
 #ifdef G1_DEBUG
@@ -3714,7 +3762,7 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
     if (alloc_region == NULL) {
       // we will get a new GC alloc region
-      alloc_region = newAllocRegionWithExpansion(ap, 0);
+      alloc_region = new_gc_alloc_region(ap, 0);
     } else {
       // the region was retained from the last collection
       ++_gc_alloc_region_counts[ap];
@@ -3769,11 +3817,9 @@ void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
       set_gc_alloc_region(ap, NULL);
 
       if (r->is_empty()) {
-        // we didn't actually allocate anything in it; let's just put
-        // it on the free list
-        MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-        r->set_zero_fill_complete();
-        put_free_region_on_list_locked(r);
+        // We didn't actually allocate anything in it; let's just put
+        // it back on the free list.
+        _free_list.add_as_tail(r);
       } else if (_retain_gc_alloc_region[ap] && !totally) {
         // retain it so that we can use it at the beginning of the next GC
         _retained_gc_alloc_regions[ap] = r;
@@ -4128,8 +4174,6 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
 
   HeapWord* block = alloc_region->par_allocate(word_size);
   if (block == NULL) {
-    MutexLockerEx x(par_alloc_during_gc_lock(),
-                    Mutex::_no_safepoint_check_flag);
     block = allocate_during_gc_slow(purpose, alloc_region, true, word_size);
   }
   return block;
@@ -4157,6 +4201,12 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
   assert(!isHumongous(word_size),
          err_msg("we should not be seeing humongous allocation requests "
                  "during GC, word_size = "SIZE_FORMAT, word_size));
+
+  // We need to make sure we serialize calls to this method. Given
+  // that the FreeList_lock guards accesses to the free_list anyway,
+  // and we need to potentially remove a region from it, we'll use it
+  // to protect the whole call.
+  MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
 
   HeapWord* block = NULL;
   // In the parallel case, a previous thread to obtain the lock may have
@@ -4203,7 +4253,7 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
   }
 
   // Now allocate a new region for allocation.
-  alloc_region = newAllocRegionWithExpansion(purpose, word_size, false /*zero_filled*/);
+  alloc_region = new_gc_alloc_region(purpose, word_size);
 
   // let the caller handle alloc failure
   if (alloc_region != NULL) {
@@ -4211,9 +4261,6 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
     assert(check_gc_alloc_regions(), "alloc regions messed up");
     assert(alloc_region->saved_mark_at_top(),
            "Mark should have been saved already.");
-    // We used to assert that the region was zero-filled here, but no
-    // longer.
-
     // This must be done last: once it's installed, other regions may
     // allocate in it (without holding the lock.)
     set_gc_alloc_region(purpose, alloc_region);
@@ -4878,90 +4925,90 @@ void G1CollectedHeap::evacuate_collection_set() {
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
-void G1CollectedHeap::free_region(HeapRegion* hr) {
-  size_t pre_used = 0;
-  size_t cleared_h_regions = 0;
-  size_t freed_regions = 0;
-  UncleanRegionList local_list;
-
-  HeapWord* start = hr->bottom();
-  HeapWord* end   = hr->prev_top_at_mark_start();
-  size_t used_bytes = hr->used();
-  size_t live_bytes = hr->max_live_bytes();
-  if (used_bytes > 0) {
-    guarantee( live_bytes <= used_bytes, "invariant" );
-  } else {
-    guarantee( live_bytes == 0, "invariant" );
-  }
-
-  size_t garbage_bytes = used_bytes - live_bytes;
-  if (garbage_bytes > 0)
-    g1_policy()->decrease_known_garbage_bytes(garbage_bytes);
-
-  free_region_work(hr, pre_used, cleared_h_regions, freed_regions,
-                   &local_list);
-  finish_free_region_work(pre_used, cleared_h_regions, freed_regions,
-                          &local_list);
-}
-
-void
-G1CollectedHeap::free_region_work(HeapRegion* hr,
-                                  size_t& pre_used,
-                                  size_t& cleared_h_regions,
-                                  size_t& freed_regions,
-                                  UncleanRegionList* list,
-                                  bool par) {
-  pre_used += hr->used();
-  if (hr->isHumongous()) {
-    assert(hr->startsHumongous(),
-           "Only the start of a humongous region should be freed.");
-    int ind = _hrs->find(hr);
-    assert(ind != -1, "Should have an index.");
-    // Clear the start region.
-    hr->hr_clear(par, true /*clear_space*/);
-    list->insert_before_head(hr);
-    cleared_h_regions++;
-    freed_regions++;
-    // Clear any continued regions.
-    ind++;
-    while ((size_t)ind < n_regions()) {
-      HeapRegion* hrc = _hrs->at(ind);
-      if (!hrc->continuesHumongous()) break;
-      // Otherwise, does continue the H region.
-      assert(hrc->humongous_start_region() == hr, "Huh?");
-      hrc->hr_clear(par, true /*clear_space*/);
-      cleared_h_regions++;
-      freed_regions++;
-      list->insert_before_head(hrc);
-      ind++;
+void G1CollectedHeap::free_region_if_totally_empty(HeapRegion* hr,
+                                     size_t* pre_used,
+                                     FreeRegionList* free_list,
+                                     HumongousRegionSet* humongous_proxy_set,
+                                     bool par) {
+  if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
+    if (hr->isHumongous()) {
+      assert(hr->startsHumongous(), "we should only see starts humongous");
+      free_humongous_region(hr, pre_used, free_list, humongous_proxy_set, par);
+    } else {
+      free_region(hr, pre_used, free_list, par);
     }
-  } else {
-    hr->hr_clear(par, true /*clear_space*/);
-    list->insert_before_head(hr);
-    freed_regions++;
-    // If we're using clear2, this should not be enabled.
-    // assert(!hr->in_cohort(), "Can't be both free and in a cohort.");
   }
 }
 
-void G1CollectedHeap::finish_free_region_work(size_t pre_used,
-                                              size_t cleared_h_regions,
-                                              size_t freed_regions,
-                                              UncleanRegionList* list) {
-  if (list != NULL && list->sz() > 0) {
-    prepend_region_list_on_unclean_list(list);
+void G1CollectedHeap::free_region(HeapRegion* hr,
+                                  size_t* pre_used,
+                                  FreeRegionList* free_list,
+                                  bool par) {
+  assert(!hr->isHumongous(), "this is only for non-humongous regions");
+  assert(!hr->is_empty(), "the region should not be empty");
+  assert(free_list != NULL, "pre-condition");
+
+  *pre_used += hr->used();
+  hr->hr_clear(par, true /* clear_space */);
+  free_list->add_as_tail(hr);
+}
+
+void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
+                                     size_t* pre_used,
+                                     FreeRegionList* free_list,
+                                     HumongousRegionSet* humongous_proxy_set,
+                                     bool par) {
+  assert(hr->startsHumongous(), "this is only for starts humongous regions");
+  assert(free_list != NULL, "pre-condition");
+  assert(humongous_proxy_set != NULL, "pre-condition");
+
+  size_t hr_used = hr->used();
+  size_t hr_capacity = hr->capacity();
+  size_t hr_pre_used = 0;
+  _humongous_set.remove_with_proxy(hr, humongous_proxy_set);
+  hr->set_notHumongous();
+  free_region(hr, &hr_pre_used, free_list, par);
+
+  int i = hr->hrs_index() + 1;
+  size_t num = 1;
+  while ((size_t) i < n_regions()) {
+    HeapRegion* curr_hr = _hrs->at(i);
+    if (!curr_hr->continuesHumongous()) {
+      break;
+    }
+    curr_hr->set_notHumongous();
+    free_region(curr_hr, &hr_pre_used, free_list, par);
+    num += 1;
+    i += 1;
   }
-  // Acquire a lock, if we're parallel, to update possibly-shared
-  // variables.
-  Mutex* lock = (n_par_threads() > 0) ? ParGCRareEvent_lock : NULL;
-  {
+  assert(hr_pre_used == hr_used,
+         err_msg("hr_pre_used: "SIZE_FORMAT" and hr_used: "SIZE_FORMAT" "
+                 "should be the same", hr_pre_used, hr_used));
+  *pre_used += hr_pre_used;
+}
+
+void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
+                                       FreeRegionList* free_list,
+                                       HumongousRegionSet* humongous_proxy_set,
+                                       bool par) {
+  if (pre_used > 0) {
+    Mutex* lock = (par) ? ParGCRareEvent_lock : NULL;
     MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
+    assert(_summary_bytes_used >= pre_used,
+           err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" "
+                   "should be >= pre_used: "SIZE_FORMAT,
+                   _summary_bytes_used, pre_used));
     _summary_bytes_used -= pre_used;
-    _num_humongous_regions -= (int) cleared_h_regions;
-    _free_regions += freed_regions;
+  }
+  if (free_list != NULL && !free_list->is_empty()) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    _free_list.add_as_tail(free_list);
+  }
+  if (humongous_proxy_set != NULL && !humongous_proxy_set->is_empty()) {
+    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    _humongous_set.update_from_proxy(humongous_proxy_set);
   }
 }
-
 
 void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRegion* list) {
   while (list != NULL) {
@@ -5085,6 +5132,9 @@ void G1CollectedHeap::cleanUpCardTable() {
 }
 
 void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
+  size_t pre_used = 0;
+  FreeRegionList local_free_list("Local List for CSet Freeing");
+
   double young_time_ms     = 0.0;
   double non_young_time_ms = 0.0;
 
@@ -5103,6 +5153,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
   size_t rs_lengths = 0;
 
   while (cur != NULL) {
+    assert(!is_on_free_list(cur), "sanity");
+
     if (non_young) {
       if (cur->is_young()) {
         double end_sec = os::elapsedTime();
@@ -5113,14 +5165,12 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
         non_young = false;
       }
     } else {
-      if (!cur->is_on_free_list()) {
-        double end_sec = os::elapsedTime();
-        double elapsed_ms = (end_sec - start_sec) * 1000.0;
-        young_time_ms += elapsed_ms;
+      double end_sec = os::elapsedTime();
+      double elapsed_ms = (end_sec - start_sec) * 1000.0;
+      young_time_ms += elapsed_ms;
 
-        start_sec = os::elapsedTime();
-        non_young = true;
-      }
+      start_sec = os::elapsedTime();
+      non_young = true;
     }
 
     rs_lengths += cur->rem_set()->occupied();
@@ -5153,9 +5203,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
     if (!cur->evacuation_failed()) {
       // And the region is empty.
-      assert(!cur->is_empty(),
-             "Should not have empty regions in a CS.");
-      free_region(cur);
+      assert(!cur->is_empty(), "Should not have empty regions in a CS.");
+      free_region(cur, &pre_used, &local_free_list, false /* par */);
     } else {
       cur->uninstall_surv_rate_group();
       if (cur->is_young())
@@ -5176,6 +5225,9 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
   else
     young_time_ms += elapsed_ms;
 
+  update_sets_after_freeing_regions(pre_used, &local_free_list,
+                                    NULL /* humongous_proxy_set */,
+                                    false /* par */);
   policy->record_young_free_cset_time_ms(young_time_ms);
   policy->record_non_young_free_cset_time_ms(non_young_time_ms);
 }
@@ -5201,291 +5253,53 @@ void G1CollectedHeap::abandon_collection_set(HeapRegion* cs_head) {
   }
 }
 
-HeapRegion*
-G1CollectedHeap::alloc_region_from_unclean_list_locked(bool zero_filled) {
-  assert(ZF_mon->owned_by_self(), "Precondition");
-  HeapRegion* res = pop_unclean_region_list_locked();
-  if (res != NULL) {
-    assert(!res->continuesHumongous() &&
-           res->zero_fill_state() != HeapRegion::Allocated,
-           "Only free regions on unclean list.");
-    if (zero_filled) {
-      res->ensure_zero_filled_locked();
-      res->set_zero_fill_allocated();
-    }
+void G1CollectedHeap::set_free_regions_coming() {
+  if (G1ConcRegionFreeingVerbose) {
+    gclog_or_tty->print_cr("G1ConcRegionFreeing [cm thread] : "
+                           "setting free regions coming");
   }
-  return res;
+
+  assert(!free_regions_coming(), "pre-condition");
+  _free_regions_coming = true;
 }
 
-HeapRegion* G1CollectedHeap::alloc_region_from_unclean_list(bool zero_filled) {
-  MutexLockerEx zx(ZF_mon, Mutex::_no_safepoint_check_flag);
-  return alloc_region_from_unclean_list_locked(zero_filled);
-}
-
-void G1CollectedHeap::put_region_on_unclean_list(HeapRegion* r) {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  put_region_on_unclean_list_locked(r);
-  if (should_zf()) ZF_mon->notify_all(); // Wake up ZF thread.
-}
-
-void G1CollectedHeap::set_unclean_regions_coming(bool b) {
-  MutexLockerEx x(Cleanup_mon);
-  set_unclean_regions_coming_locked(b);
-}
-
-void G1CollectedHeap::set_unclean_regions_coming_locked(bool b) {
-  assert(Cleanup_mon->owned_by_self(), "Precondition");
-  _unclean_regions_coming = b;
-  // Wake up mutator threads that might be waiting for completeCleanup to
-  // finish.
-  if (!b) Cleanup_mon->notify_all();
-}
-
-void G1CollectedHeap::wait_for_cleanup_complete() {
-  assert_not_at_safepoint();
-  MutexLockerEx x(Cleanup_mon);
-  wait_for_cleanup_complete_locked();
-}
-
-void G1CollectedHeap::wait_for_cleanup_complete_locked() {
-  assert(Cleanup_mon->owned_by_self(), "precondition");
-  while (_unclean_regions_coming) {
-    Cleanup_mon->wait();
-  }
-}
-
-void
-G1CollectedHeap::put_region_on_unclean_list_locked(HeapRegion* r) {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-#ifdef ASSERT
-  if (r->is_gc_alloc_region()) {
-    ResourceMark rm;
-    stringStream region_str;
-    print_on(&region_str);
-    assert(!r->is_gc_alloc_region(), err_msg("Unexpected GC allocation region: %s",
-                                             region_str.as_string()));
-  }
-#endif
-  _unclean_region_list.insert_before_head(r);
-}
-
-void
-G1CollectedHeap::prepend_region_list_on_unclean_list(UncleanRegionList* list) {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  prepend_region_list_on_unclean_list_locked(list);
-  if (should_zf()) ZF_mon->notify_all(); // Wake up ZF thread.
-}
-
-void
-G1CollectedHeap::
-prepend_region_list_on_unclean_list_locked(UncleanRegionList* list) {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  _unclean_region_list.prepend_list(list);
-}
-
-HeapRegion* G1CollectedHeap::pop_unclean_region_list_locked() {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  HeapRegion* res = _unclean_region_list.pop();
-  if (res != NULL) {
-    // Inform ZF thread that there's a new unclean head.
-    if (_unclean_region_list.hd() != NULL && should_zf())
-      ZF_mon->notify_all();
-  }
-  return res;
-}
-
-HeapRegion* G1CollectedHeap::peek_unclean_region_list_locked() {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  return _unclean_region_list.hd();
-}
-
-
-bool G1CollectedHeap::move_cleaned_region_to_free_list_locked() {
-  assert(ZF_mon->owned_by_self(), "Precondition");
-  HeapRegion* r = peek_unclean_region_list_locked();
-  if (r != NULL && r->zero_fill_state() == HeapRegion::ZeroFilled) {
-    // Result of below must be equal to "r", since we hold the lock.
-    (void)pop_unclean_region_list_locked();
-    put_free_region_on_list_locked(r);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool G1CollectedHeap::move_cleaned_region_to_free_list() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  return move_cleaned_region_to_free_list_locked();
-}
-
-
-void G1CollectedHeap::put_free_region_on_list_locked(HeapRegion* r) {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  assert(_free_region_list_size == free_region_list_length(), "Inv");
-  assert(r->zero_fill_state() == HeapRegion::ZeroFilled,
-        "Regions on free list must be zero filled");
-  assert(!r->isHumongous(), "Must not be humongous.");
-  assert(r->is_empty(), "Better be empty");
-  assert(!r->is_on_free_list(),
-         "Better not already be on free list");
-  assert(!r->is_on_unclean_list(),
-         "Better not already be on unclean list");
-  r->set_on_free_list(true);
-  r->set_next_on_free_list(_free_region_list);
-  _free_region_list = r;
-  _free_region_list_size++;
-  assert(_free_region_list_size == free_region_list_length(), "Inv");
-}
-
-void G1CollectedHeap::put_free_region_on_list(HeapRegion* r) {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  put_free_region_on_list_locked(r);
-}
-
-HeapRegion* G1CollectedHeap::pop_free_region_list_locked() {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  assert(_free_region_list_size == free_region_list_length(), "Inv");
-  HeapRegion* res = _free_region_list;
-  if (res != NULL) {
-    _free_region_list = res->next_from_free_list();
-    _free_region_list_size--;
-    res->set_on_free_list(false);
-    res->set_next_on_free_list(NULL);
-    assert(_free_region_list_size == free_region_list_length(), "Inv");
-  }
-  return res;
-}
-
-
-HeapRegion* G1CollectedHeap::alloc_free_region_from_lists(bool zero_filled) {
-  // By self, or on behalf of self.
-  assert(Heap_lock->is_locked(), "Precondition");
-  HeapRegion* res = NULL;
-  bool first = true;
-  while (res == NULL) {
-    if (zero_filled || !first) {
-      MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-      res = pop_free_region_list_locked();
-      if (res != NULL) {
-        assert(!res->zero_fill_is_allocated(),
-               "No allocated regions on free list.");
-        res->set_zero_fill_allocated();
-      } else if (!first) {
-        break;  // We tried both, time to return NULL.
-      }
-    }
-
-    if (res == NULL) {
-      res = alloc_region_from_unclean_list(zero_filled);
-    }
-    assert(res == NULL ||
-           !zero_filled ||
-           res->zero_fill_is_allocated(),
-           "We must have allocated the region we're returning");
-    first = false;
-  }
-  return res;
-}
-
-void G1CollectedHeap::remove_allocated_regions_from_lists() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
+void G1CollectedHeap::reset_free_regions_coming() {
   {
-    HeapRegion* prev = NULL;
-    HeapRegion* cur = _unclean_region_list.hd();
-    while (cur != NULL) {
-      HeapRegion* next = cur->next_from_unclean_list();
-      if (cur->zero_fill_is_allocated()) {
-        // Remove from the list.
-        if (prev == NULL) {
-          (void)_unclean_region_list.pop();
-        } else {
-          _unclean_region_list.delete_after(prev);
-        }
-        cur->set_on_unclean_list(false);
-        cur->set_next_on_unclean_list(NULL);
-      } else {
-        prev = cur;
-      }
-      cur = next;
-    }
-    assert(_unclean_region_list.sz() == unclean_region_list_length(),
-           "Inv");
+    assert(free_regions_coming(), "pre-condition");
+    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
+    _free_regions_coming = false;
+    SecondaryFreeList_lock->notify_all();
+  }
+
+  if (G1ConcRegionFreeingVerbose) {
+    gclog_or_tty->print_cr("G1ConcRegionFreeing [cm thread] : "
+                           "reset free regions coming");
+  }
+}
+
+void G1CollectedHeap::wait_while_free_regions_coming() {
+  // Most of the time we won't have to wait, so let's do a quick test
+  // first before we take the lock.
+  if (!free_regions_coming()) {
+    return;
+  }
+
+  if (G1ConcRegionFreeingVerbose) {
+    gclog_or_tty->print_cr("G1ConcRegionFreeing [other] : "
+                           "waiting for free regions");
   }
 
   {
-    HeapRegion* prev = NULL;
-    HeapRegion* cur = _free_region_list;
-    while (cur != NULL) {
-      HeapRegion* next = cur->next_from_free_list();
-      if (cur->zero_fill_is_allocated()) {
-        // Remove from the list.
-        if (prev == NULL) {
-          _free_region_list = cur->next_from_free_list();
-        } else {
-          prev->set_next_on_free_list(cur->next_from_free_list());
-        }
-        cur->set_on_free_list(false);
-        cur->set_next_on_free_list(NULL);
-        _free_region_list_size--;
-      } else {
-        prev = cur;
-      }
-      cur = next;
+    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
+    while (free_regions_coming()) {
+      SecondaryFreeList_lock->wait(Mutex::_no_safepoint_check_flag);
     }
-    assert(_free_region_list_size == free_region_list_length(), "Inv");
   }
-}
 
-bool G1CollectedHeap::verify_region_lists() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  return verify_region_lists_locked();
-}
-
-bool G1CollectedHeap::verify_region_lists_locked() {
-  HeapRegion* unclean = _unclean_region_list.hd();
-  while (unclean != NULL) {
-    guarantee(unclean->is_on_unclean_list(), "Well, it is!");
-    guarantee(!unclean->is_on_free_list(), "Well, it shouldn't be!");
-    guarantee(unclean->zero_fill_state() != HeapRegion::Allocated,
-              "Everything else is possible.");
-    unclean = unclean->next_from_unclean_list();
+  if (G1ConcRegionFreeingVerbose) {
+    gclog_or_tty->print_cr("G1ConcRegionFreeing [other] : "
+                           "done waiting for free regions");
   }
-  guarantee(_unclean_region_list.sz() == unclean_region_list_length(), "Inv");
-
-  HeapRegion* free_r = _free_region_list;
-  while (free_r != NULL) {
-    assert(free_r->is_on_free_list(), "Well, it is!");
-    assert(!free_r->is_on_unclean_list(), "Well, it shouldn't be!");
-    switch (free_r->zero_fill_state()) {
-    case HeapRegion::NotZeroFilled:
-    case HeapRegion::ZeroFilling:
-      guarantee(false, "Should not be on free list.");
-      break;
-    default:
-      // Everything else is possible.
-      break;
-    }
-    free_r = free_r->next_from_free_list();
-  }
-  guarantee(_free_region_list_size == free_region_list_length(), "Inv");
-  // If we didn't do an assertion...
-  return true;
-}
-
-size_t G1CollectedHeap::free_region_list_length() {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  size_t len = 0;
-  HeapRegion* cur = _free_region_list;
-  while (cur != NULL) {
-    len++;
-    cur = cur->next_from_free_list();
-  }
-  return len;
-}
-
-size_t G1CollectedHeap::unclean_region_list_length() {
-  assert(ZF_mon->owned_by_self(), "precondition.");
-  return _unclean_region_list.length();
 }
 
 size_t G1CollectedHeap::n_regions() {
@@ -5496,55 +5310,6 @@ size_t G1CollectedHeap::max_regions() {
   return
     (size_t)align_size_up(g1_reserved_obj_bytes(), HeapRegion::GrainBytes) /
     HeapRegion::GrainBytes;
-}
-
-size_t G1CollectedHeap::free_regions() {
-  /* Possibly-expensive assert.
-  assert(_free_regions == count_free_regions(),
-         "_free_regions is off.");
-  */
-  return _free_regions;
-}
-
-bool G1CollectedHeap::should_zf() {
-  return _free_region_list_size < (size_t) G1ConcZFMaxRegions;
-}
-
-class RegionCounter: public HeapRegionClosure {
-  size_t _n;
-public:
-  RegionCounter() : _n(0) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->is_empty()) {
-      assert(!r->isHumongous(), "H regions should not be empty.");
-      _n++;
-    }
-    return false;
-  }
-  int res() { return (int) _n; }
-};
-
-size_t G1CollectedHeap::count_free_regions() {
-  RegionCounter rc;
-  heap_region_iterate(&rc);
-  size_t n = rc.res();
-  if (_cur_alloc_region != NULL && _cur_alloc_region->is_empty())
-    n--;
-  return n;
-}
-
-size_t G1CollectedHeap::count_free_regions_list() {
-  size_t n = 0;
-  size_t o = 0;
-  ZF_mon->lock_without_safepoint_check();
-  HeapRegion* cur = _free_region_list;
-  while (cur != NULL) {
-    cur = cur->next_from_free_list();
-    n++;
-  }
-  size_t m = unclean_region_list_length();
-  ZF_mon->unlock();
-  return n + m;
 }
 
 void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
@@ -5618,28 +5383,19 @@ void G1CollectedHeap::retire_all_alloc_regions() {
   }
 }
 
-
 // Done at the start of full GC.
 void G1CollectedHeap::tear_down_region_lists() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  while (pop_unclean_region_list_locked() != NULL) ;
-  assert(_unclean_region_list.hd() == NULL && _unclean_region_list.sz() == 0,
-         "Postconditions of loop.");
-  while (pop_free_region_list_locked() != NULL) ;
-  assert(_free_region_list == NULL, "Postcondition of loop.");
-  if (_free_region_list_size != 0) {
-    gclog_or_tty->print_cr("Size is %d.", _free_region_list_size);
-    print_on(gclog_or_tty, true /* extended */);
-  }
-  assert(_free_region_list_size == 0, "Postconditions of loop.");
+  _free_list.remove_all();
 }
 
-
 class RegionResetter: public HeapRegionClosure {
-  G1CollectedHeap* _g1;
-  int _n;
+  G1CollectedHeap* _g1h;
+  FreeRegionList _local_free_list;
+
 public:
-  RegionResetter() : _g1(G1CollectedHeap::heap()), _n(0) {}
+  RegionResetter() : _g1h(G1CollectedHeap::heap()),
+                     _local_free_list("Local Free List for RegionResetter") { }
+
   bool doHeapRegion(HeapRegion* r) {
     if (r->continuesHumongous()) return false;
     if (r->top() > r->bottom()) {
@@ -5647,152 +5403,32 @@ public:
         Copy::fill_to_words(r->top(),
                           pointer_delta(r->end(), r->top()));
       }
-      r->set_zero_fill_allocated();
     } else {
       assert(r->is_empty(), "tautology");
-      _n++;
-      switch (r->zero_fill_state()) {
-        case HeapRegion::NotZeroFilled:
-        case HeapRegion::ZeroFilling:
-          _g1->put_region_on_unclean_list_locked(r);
-          break;
-        case HeapRegion::Allocated:
-          r->set_zero_fill_complete();
-          // no break; go on to put on free list.
-        case HeapRegion::ZeroFilled:
-          _g1->put_free_region_on_list_locked(r);
-          break;
-      }
+      _local_free_list.add_as_tail(r);
     }
     return false;
   }
 
-  int getFreeRegionCount() {return _n;}
+  void update_free_lists() {
+    _g1h->update_sets_after_freeing_regions(0, &_local_free_list, NULL,
+                                            false /* par */);
+  }
 };
 
 // Done at the end of full GC.
 void G1CollectedHeap::rebuild_region_lists() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
   // This needs to go at the end of the full GC.
   RegionResetter rs;
   heap_region_iterate(&rs);
-  _free_regions = rs.getFreeRegionCount();
-  // Tell the ZF thread it may have work to do.
-  if (should_zf()) ZF_mon->notify_all();
-}
-
-class UsedRegionsNeedZeroFillSetter: public HeapRegionClosure {
-  G1CollectedHeap* _g1;
-  int _n;
-public:
-  UsedRegionsNeedZeroFillSetter() : _g1(G1CollectedHeap::heap()), _n(0) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->continuesHumongous()) return false;
-    if (r->top() > r->bottom()) {
-      // There are assertions in "set_zero_fill_needed()" below that
-      // require top() == bottom(), so this is technically illegal.
-      // We'll skirt the law here, by making that true temporarily.
-      DEBUG_ONLY(HeapWord* save_top = r->top();
-                 r->set_top(r->bottom()));
-      r->set_zero_fill_needed();
-      DEBUG_ONLY(r->set_top(save_top));
-    }
-    return false;
-  }
-};
-
-// Done at the start of full GC.
-void G1CollectedHeap::set_used_regions_to_need_zero_fill() {
-  MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
-  // This needs to go at the end of the full GC.
-  UsedRegionsNeedZeroFillSetter rs;
-  heap_region_iterate(&rs);
+  rs.update_free_lists();
 }
 
 void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
   _refine_cte_cl->set_concurrent(concurrent);
 }
 
-#ifndef PRODUCT
-
-class PrintHeapRegionClosure: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion *r) {
-    gclog_or_tty->print("Region: "PTR_FORMAT":", r);
-    if (r != NULL) {
-      if (r->is_on_free_list())
-        gclog_or_tty->print("Free ");
-      if (r->is_young())
-        gclog_or_tty->print("Young ");
-      if (r->isHumongous())
-        gclog_or_tty->print("Is Humongous ");
-      r->print();
-    }
-    return false;
-  }
-};
-
-class SortHeapRegionClosure : public HeapRegionClosure {
-  size_t young_regions,free_regions, unclean_regions;
-  size_t hum_regions, count;
-  size_t unaccounted, cur_unclean, cur_alloc;
-  size_t total_free;
-  HeapRegion* cur;
-public:
-  SortHeapRegionClosure(HeapRegion *_cur) : cur(_cur), young_regions(0),
-    free_regions(0), unclean_regions(0),
-    hum_regions(0),
-    count(0), unaccounted(0),
-    cur_alloc(0), total_free(0)
-  {}
-  bool doHeapRegion(HeapRegion *r) {
-    count++;
-    if (r->is_on_free_list()) free_regions++;
-    else if (r->is_on_unclean_list()) unclean_regions++;
-    else if (r->isHumongous())  hum_regions++;
-    else if (r->is_young()) young_regions++;
-    else if (r == cur) cur_alloc++;
-    else unaccounted++;
-    return false;
-  }
-  void print() {
-    total_free = free_regions + unclean_regions;
-    gclog_or_tty->print("%d regions\n", count);
-    gclog_or_tty->print("%d free: free_list = %d unclean = %d\n",
-                        total_free, free_regions, unclean_regions);
-    gclog_or_tty->print("%d humongous %d young\n",
-                        hum_regions, young_regions);
-    gclog_or_tty->print("%d cur_alloc\n", cur_alloc);
-    gclog_or_tty->print("UHOH unaccounted = %d\n", unaccounted);
-  }
-};
-
-void G1CollectedHeap::print_region_counts() {
-  SortHeapRegionClosure sc(_cur_alloc_region);
-  PrintHeapRegionClosure cl;
-  heap_region_iterate(&cl);
-  heap_region_iterate(&sc);
-  sc.print();
-  print_region_accounting_info();
-};
-
-bool G1CollectedHeap::regions_accounted_for() {
-  // TODO: regions accounting for young/survivor/tenured
-  return true;
-}
-
-bool G1CollectedHeap::print_region_accounting_info() {
-  gclog_or_tty->print_cr("Free regions: %d (count: %d count list %d) (clean: %d unclean: %d).",
-                         free_regions(),
-                         count_free_regions(), count_free_regions_list(),
-                         _free_region_list_size, _unclean_region_list.sz());
-  gclog_or_tty->print_cr("cur_alloc: %d.",
-                         (_cur_alloc_region == NULL ? 0 : 1));
-  gclog_or_tty->print_cr("H regions: %d.", _num_humongous_regions);
-
-  // TODO: check regions accounting for young/survivor/tenured
-  return true;
-}
+#ifdef ASSERT
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   HeapRegion* hr = heap_region_containing(p);
@@ -5802,8 +5438,84 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
     return hr->is_in(p);
   }
 }
-#endif // !PRODUCT
+#endif // ASSERT
 
-void G1CollectedHeap::g1_unimplemented() {
-  // Unimplemented();
+class VerifyRegionListsClosure : public HeapRegionClosure {
+private:
+  HumongousRegionSet* _humongous_set;
+  FreeRegionList*     _free_list;
+  size_t              _region_count;
+
+public:
+  VerifyRegionListsClosure(HumongousRegionSet* humongous_set,
+                           FreeRegionList* free_list) :
+    _humongous_set(humongous_set), _free_list(free_list),
+    _region_count(0) { }
+
+  size_t region_count()      { return _region_count;      }
+
+  bool doHeapRegion(HeapRegion* hr) {
+    _region_count += 1;
+
+    if (hr->continuesHumongous()) {
+      return false;
+    }
+
+    if (hr->is_young()) {
+      // TODO
+    } else if (hr->startsHumongous()) {
+      _humongous_set->verify_next_region(hr);
+    } else if (hr->is_empty()) {
+      _free_list->verify_next_region(hr);
+    }
+    return false;
+  }
+};
+
+void G1CollectedHeap::verify_region_sets() {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
+
+  // First, check the explicit lists.
+  _free_list.verify();
+  {
+    // Given that a concurrent operation might be adding regions to
+    // the secondary free list we have to take the lock before
+    // verifying it.
+    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
+    _secondary_free_list.verify();
+  }
+  _humongous_set.verify();
+
+  // If a concurrent region freeing operation is in progress it will
+  // be difficult to correctly attributed any free regions we come
+  // across to the correct free list given that they might belong to
+  // one of several (free_list, secondary_free_list, any local lists,
+  // etc.). So, if that's the case we will skip the rest of the
+  // verification operation. Alternatively, waiting for the concurrent
+  // operation to complete will have a non-trivial effect on the GC's
+  // operation (no concurrent operation will last longer than the
+  // interval between two calls to verification) and it might hide
+  // any issues that we would like to catch during testing.
+  if (free_regions_coming()) {
+    return;
+  }
+
+  {
+    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
+    // Make sure we append the secondary_free_list on the free_list so
+    // that all free regions we will come across can be safely
+    // attributed to the free_list.
+    append_secondary_free_list();
+  }
+
+  // Finally, make sure that the region accounting in the lists is
+  // consistent with what we see in the heap.
+  _humongous_set.verify_start();
+  _free_list.verify_start();
+
+  VerifyRegionListsClosure cl(&_humongous_set, &_free_list);
+  heap_region_iterate(&cl);
+
+  _humongous_set.verify_end();
+  _free_list.verify_end();
 }

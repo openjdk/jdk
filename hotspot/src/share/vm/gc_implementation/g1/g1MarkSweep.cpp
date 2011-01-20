@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,26 +180,46 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 }
 
 class G1PrepareCompactClosure: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
   ModRefBarrierSet* _mrbs;
   CompactPoint _cp;
+  size_t _pre_used;
+  FreeRegionList _free_list;
+  HumongousRegionSet _humongous_proxy_set;
 
   void free_humongous_region(HeapRegion* hr) {
-    HeapWord* bot = hr->bottom();
     HeapWord* end = hr->end();
     assert(hr->startsHumongous(),
            "Only the start of a humongous region should be freed.");
-    G1CollectedHeap::heap()->free_region(hr);
+    _g1h->free_humongous_region(hr, &_pre_used, &_free_list,
+                                &_humongous_proxy_set, false /* par */);
+    // Do we also need to do this for the continues humongous regions
+    // we just collapsed?
     hr->prepare_for_compaction(&_cp);
     // Also clear the part of the card table that will be unused after
     // compaction.
-    _mrbs->clear(MemRegion(hr->compaction_top(), hr->end()));
+    _mrbs->clear(MemRegion(hr->compaction_top(), end));
   }
 
 public:
-  G1PrepareCompactClosure(CompactibleSpace* cs) :
+  G1PrepareCompactClosure(CompactibleSpace* cs)
+  : _g1h(G1CollectedHeap::heap()),
+    _mrbs(G1CollectedHeap::heap()->mr_bs()),
     _cp(NULL, cs, cs->initialize_threshold()),
-    _mrbs(G1CollectedHeap::heap()->mr_bs())
-  {}
+    _pre_used(0),
+    _free_list("Local Free List for G1MarkSweep"),
+    _humongous_proxy_set("G1MarkSweep Humongous Proxy Set") { }
+
+  void update_sets() {
+    // We'll recalculate total used bytes and recreate the free list
+    // at the end of the GC, so no point in updating those values here.
+    _g1h->update_sets_after_freeing_regions(0, /* pre_used */
+                                            NULL, /* free_list */
+                                            &_humongous_proxy_set,
+                                            false /* par */);
+    _free_list.remove_all();
+  }
+
   bool doHeapRegion(HeapRegion* hr) {
     if (hr->isHumongous()) {
       if (hr->startsHumongous()) {
@@ -265,6 +285,7 @@ void G1MarkSweep::mark_sweep_phase2() {
 
   G1PrepareCompactClosure blk(sp);
   g1h->heap_region_iterate(&blk);
+  blk.update_sets();
 
   CompactPoint perm_cp(pg, NULL, NULL);
   pg->prepare_for_compaction(&perm_cp);
