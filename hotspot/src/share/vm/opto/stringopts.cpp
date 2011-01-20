@@ -59,7 +59,8 @@ class StringConcat : public ResourceObj {
   enum {
     StringMode,
     IntMode,
-    CharMode
+    CharMode,
+    StringNullCheckMode
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
@@ -113,6 +114,9 @@ class StringConcat : public ResourceObj {
   }
   void push_string(Node* value) {
     push(value, StringMode);
+  }
+  void push_string_null_check(Node* value) {
+    push(value, StringNullCheckMode);
   }
   void push_int(Node* value) {
     push(value, IntMode);
@@ -416,7 +420,19 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             if (sig == ciSymbol::string_void_signature()) {
               // StringBuilder(String) so pick this up as the first argument
               assert(use->in(TypeFunc::Parms + 1) != NULL, "what?");
-              sc->push_string(use->in(TypeFunc::Parms + 1));
+              const Type* type = _gvn->type(use->in(TypeFunc::Parms + 1));
+              if (type == TypePtr::NULL_PTR) {
+                // StringBuilder(null) throws exception.
+#ifndef PRODUCT
+                if (PrintOptimizeStringConcat) {
+                  tty->print("giving up because StringBuilder(null) throws exception");
+                  alloc->jvms()->dump_spec(tty); tty->cr();
+                }
+#endif
+                return NULL;
+              }
+              // StringBuilder(str) argument needs null check.
+              sc->push_string_null_check(use->in(TypeFunc::Parms + 1));
             }
             // The int variant takes an initial size for the backing
             // array so just treat it like the void version.
@@ -436,7 +452,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
           tty->print("giving up because couldn't find constructor ");
-          alloc->jvms()->dump_spec(tty);
+          alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
         break;
@@ -1269,6 +1285,25 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         string_sizes->init_req(argi, string_size);
         break;
       }
+      case StringConcat::StringNullCheckMode: {
+        const Type* type = kit.gvn().type(arg);
+        assert(type != TypePtr::NULL_PTR, "missing check");
+        if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
+          // Null check with uncommont trap since
+          // StringBuilder(null) throws exception.
+          // Use special uncommon trap instead of
+          // calling normal do_null_check().
+          Node* p = __ Bool(__ CmpP(arg, kit.null()), BoolTest::ne);
+          IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
+          overflow->add_req(__ IfFalse(iff));
+          Node* notnull = __ IfTrue(iff);
+          kit.set_control(notnull); // set control for the cast_not_null
+          arg = kit.cast_not_null(arg, false);
+          sc->set_argument(argi, arg);
+        }
+        assert(kit.gvn().type(arg)->higher_equal(TypeInstPtr::NOTNULL), "sanity");
+        // Fallthrough to add string length.
+      }
       case StringConcat::StringMode: {
         const Type* type = kit.gvn().type(arg);
         if (type == TypePtr::NULL_PTR) {
@@ -1328,6 +1363,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Hook
     PreserveJVMState pjvms(&kit);
     kit.set_control(overflow);
+    C->record_for_igvn(overflow);
     kit.uncommon_trap(Deoptimization::Reason_intrinsic,
                       Deoptimization::Action_make_not_entrant);
   }
@@ -1363,6 +1399,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         start = end;
         break;
       }
+      case StringConcat::StringNullCheckMode:
       case StringConcat::StringMode: {
         start = copy_string(kit, arg, char_array, start);
         break;

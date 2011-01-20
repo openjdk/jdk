@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,7 +372,7 @@ INT32 openMidiDevice(snd_rawmidi_stream_t direction, INT32 deviceIndex,
     snd_rawmidi_t* native_handle;
     snd_midi_event_t* event_parser = NULL;
     int err;
-    UINT32 deviceID;
+    UINT32 deviceID = 0;
     char devicename[100];
 #ifdef ALSA_MIDI_USE_PLUGHW
     int usePlugHw = 1;
