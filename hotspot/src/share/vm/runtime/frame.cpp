@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -930,10 +930,10 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   // This is used sometimes for calling into the VM, not for another
   // interpreted or compiled frame.
   if (!m->is_native()) {
-    Bytecode_invoke *call = Bytecode_invoke_at_check(m, bci);
-    if (call != NULL) {
-      signature = symbolHandle(thread, call->signature());
-      has_receiver = call->has_receiver();
+    Bytecode_invoke call = Bytecode_invoke_check(m, bci);
+    if (call.is_valid()) {
+      signature = symbolHandle(thread, call.signature());
+      has_receiver = call.has_receiver();
       if (map->include_argument_oops() &&
           interpreter_frame_expression_stack_size() > 0) {
         ResourceMark rm(thread);  // is this right ???

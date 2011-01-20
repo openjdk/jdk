@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,14 +105,14 @@ class BaseBytecodeStream: StackObj {
   bool            is_last_bytecode() const       { return _next_bci >= _end_bci; }
 
   address         bcp() const                    { return method()->code_base() + _bci; }
-  Bytecode*       bytecode() const               { return Bytecode_at(bcp()); }
+  Bytecode        bytecode() const               { return Bytecode(_method(), bcp()); }
 
   // State changes
   void            set_next_bci(int bci)          { assert(0 <= bci && bci <= method()->code_size(), "illegal bci"); _next_bci = bci; }
 
   // Bytecode-specific attributes
-  int             dest() const                   { return bci() + bytecode()->get_offset_s2(raw_code()); }
-  int             dest_w() const                 { return bci() + bytecode()->get_offset_s4(raw_code()); }
+  int             dest() const                   { return bci() + bytecode().get_offset_s2(raw_code()); }
+  int             dest_w() const                 { return bci() + bytecode().get_offset_s4(raw_code()); }
 
   // One-byte indices.
   int             get_index_u1() const           { assert_raw_index_size(1); return *(jubyte*)(bcp()+1); }
@@ -189,7 +189,7 @@ class BytecodeStream: public BaseBytecodeStream {
     } else {
       // get bytecode
       address bcp = this->bcp();
-      raw_code = Bytecodes::code_at(bcp);
+      raw_code = Bytecodes::code_at(_method(), bcp);
       code = Bytecodes::java_code(raw_code);
       // set next bytecode position
       //
@@ -197,7 +197,7 @@ class BytecodeStream: public BaseBytecodeStream {
       // tty bytecode otherwise the stepping is wrong!
       // (carefull: length_for(...) must be used first!)
       int l = Bytecodes::length_for(code);
-      if (l == 0) l = Bytecodes::length_at(bcp);
+      if (l == 0) l = Bytecodes::length_at(_method(), bcp);
       _next_bci  += l;
       assert(_bci < _next_bci, "length must be > 0");
       // set attributes
@@ -219,16 +219,16 @@ class BytecodeStream: public BaseBytecodeStream {
   Bytecodes::Code code() const                   { return _code; }
 
   // Unsigned indices, widening
-  int             get_index() const              { return is_wide() ? bytecode()->get_index_u2(raw_code(), true) : get_index_u1(); }
+  int             get_index() const              { return is_wide() ? bytecode().get_index_u2(raw_code(), true) : get_index_u1(); }
   // Get an unsigned 2-byte index, swapping the bytes if necessary.
   int             get_index_u2() const           { assert_raw_stream(false);
-                                                   return bytecode()->get_index_u2(raw_code(), false); }
+                                                   return bytecode().get_index_u2(raw_code(), false); }
   // Get an unsigned 2-byte index in native order.
   int             get_index_u2_cpcache() const   { assert_raw_stream(false);
-                                                   return bytecode()->get_index_u2_cpcache(raw_code()); }
+                                                   return bytecode().get_index_u2_cpcache(raw_code()); }
   int             get_index_u4() const           { assert_raw_stream(false);
-                                                   return bytecode()->get_index_u4(raw_code()); }
-  bool            has_index_u4() const           { return bytecode()->has_index_u4(raw_code()); }
+                                                   return bytecode().get_index_u4(raw_code()); }
+  bool            has_index_u4() const           { return bytecode().has_index_u4(raw_code()); }
 };
 
 #endif // SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
