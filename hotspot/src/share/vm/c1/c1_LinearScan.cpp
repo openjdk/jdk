@@ -90,6 +90,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _intervals(0)   // initialized later with correct length
  , _new_intervals_from_allocation(new IntervalList())
  , _sorted_intervals(NULL)
+ , _needs_full_resort(false)
  , _lir_ops(0)     // initialized later with correct length
  , _block_of_op(0) // initialized later with correct length
  , _has_info(0)
@@ -1520,6 +1521,14 @@ void LinearScan::create_unhandled_lists(Interval** list1, Interval** list2, bool
 void LinearScan::sort_intervals_before_allocation() {
   TIME_LINEAR_SCAN(timer_sort_intervals_before);
 
+  if (_needs_full_resort) {
+    // There is no known reason why this should occur but just in case...
+    assert(false, "should never occur");
+    // Re-sort existing interval list because an Interval::from() has changed
+    _sorted_intervals->sort(interval_cmp);
+    _needs_full_resort = false;
+  }
+
   IntervalList* unsorted_list = &_intervals;
   int unsorted_len = unsorted_list->length();
   int sorted_len = 0;
@@ -1559,10 +1568,17 @@ void LinearScan::sort_intervals_before_allocation() {
     }
   }
   _sorted_intervals = sorted_list;
+  assert(is_sorted(_sorted_intervals), "intervals unsorted");
 }
 
 void LinearScan::sort_intervals_after_allocation() {
   TIME_LINEAR_SCAN(timer_sort_intervals_after);
+
+  if (_needs_full_resort) {
+    // Re-sort existing interval list because an Interval::from() has changed
+    _sorted_intervals->sort(interval_cmp);
+    _needs_full_resort = false;
+  }
 
   IntervalArray* old_list      = _sorted_intervals;
   IntervalList*  new_list      = _new_intervals_from_allocation;
@@ -1571,6 +1587,7 @@ void LinearScan::sort_intervals_after_allocation() {
 
   if (new_len == 0) {
     // no intervals have been added during allocation, so sorted list is already up to date
+    assert(is_sorted(_sorted_intervals), "intervals unsorted");
     return;
   }
 
@@ -1593,6 +1610,7 @@ void LinearScan::sort_intervals_after_allocation() {
   }
 
   _sorted_intervals = combined_list;
+  assert(is_sorted(_sorted_intervals), "intervals unsorted");
 }
 
 
@@ -1825,6 +1843,8 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveRes
       interval = interval->split(from_op_id);
       interval->assign_reg(reg, regHi);
       append_interval(interval);
+    } else {
+      _needs_full_resort = true;
     }
     assert(interval->from() == from_op_id, "must be true now");
 
@@ -4492,7 +4512,8 @@ void Interval::print(outputStream* out) const {
     }
   } else {
     type_name = type2name(type());
-    if (assigned_reg() != -1) {
+    if (assigned_reg() != -1 &&
+        (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
       opr = LinearScan::calc_operand_for_interval(this);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,11 @@ package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.*;
-import java.security.GeneralSecurityException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import sun.security.krb5.Confounder;
-import sun.security.krb5.KrbException;
 
 /**
  * This class represents a token emitted by the GSSContext.wrap()
@@ -336,24 +333,29 @@ class WrapToken extends MessageToken {
                 // debug("\t\tNo encryption was performed by peer.\n");
                 readFully(is, confounder);
 
-                // Data is always a multiple of 8 with this GSS Mech
-                // Copy all but last block as they are
-                int numBlocks = (dataSize - CONFOUNDER_SIZE)/8 - 1;
-                int offset = dataBufOffset;
-                for (int i = 0; i < numBlocks; i++) {
-                    readFully(is, dataBuf, offset, 8);
-                    offset += 8;
+                if (cipherHelper.isArcFour()) {
+                    padding = pads[1];
+                    readFully(is, dataBuf, dataBufOffset, dataSize-CONFOUNDER_SIZE-1);
+                } else {
+                    // Data is always a multiple of 8 with this GSS Mech
+                    // Copy all but last block as they are
+                    int numBlocks = (dataSize - CONFOUNDER_SIZE)/8 - 1;
+                    int offset = dataBufOffset;
+                    for (int i = 0; i < numBlocks; i++) {
+                        readFully(is, dataBuf, offset, 8);
+                        offset += 8;
+                    }
+
+                    byte[] finalBlock = new byte[8];
+                    readFully(is, finalBlock);
+
+                    int padSize = finalBlock[7];
+                    padding = pads[padSize];
+
+                    // debug("\t\tPadding applied was: " + padSize + "\n");
+                    System.arraycopy(finalBlock, 0, dataBuf, offset,
+                                     finalBlock.length - padSize);
                 }
-
-                byte[] finalBlock = new byte[8];
-                readFully(is, finalBlock);
-
-                int padSize = finalBlock[7];
-                padding = pads[padSize];
-
-                // debug("\t\tPadding applied was: " + padSize + "\n");
-                System.arraycopy(finalBlock, 0, dataBuf, offset,
-                                 finalBlock.length - padSize);
             }
         } catch (IOException e) {
             throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,

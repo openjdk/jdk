@@ -794,7 +794,7 @@ public class ManagementFactory {
      */
     public static List<Class<? extends PlatformManagedObject>> getAllPlatformMXBeanInterfaces() {
         List<Class<? extends PlatformManagedObject>> result =
-            new ArrayList<Class<? extends PlatformManagedObject>>();
+            new ArrayList<>();
         for (PlatformComponent component: PlatformComponent.values()) {
             result.add(component.getMXBeanInterface());
         }

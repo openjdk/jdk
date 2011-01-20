@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,10 +122,14 @@ public class COFFFileParser {
       private MemoizedObject[] sectionHeaders;
       private MemoizedObject[] symbols;
 
+      // Init stringTable at decl time since other fields init'ed in the
+      // constructor need the String Table.
       private MemoizedObject stringTable = new MemoizedObject() {
           public Object computeValue() {
+            // the String Table follows the Symbol Table
             int ptr = getPointerToSymbolTable();
             if (ptr == 0) {
+              // no Symbol Table so no String Table
               return new StringTable(0);
             } else {
               return new StringTable(ptr + SYMBOL_SIZE * getNumberOfSymbols());
@@ -140,6 +144,8 @@ public class COFFFileParser {
         timeDateStamp = readInt();
         pointerToSymbolTable = readInt();
         numberOfSymbols = readInt();
+        // String Table can be accessed at this point because
+        // pointerToSymbolTable and numberOfSymbols fields are set.
         sizeOfOptionalHeader = readShort();
         characteristics = readShort();
 
@@ -222,6 +228,8 @@ public class COFFFileParser {
         private MemoizedObject windowsSpecificFields;
         private MemoizedObject dataDirectories;
 
+        // We use an offset of 2 because OptionalHeaderStandardFieldsImpl doesn't
+        // include the 'magic' field.
         private static final int STANDARD_FIELDS_OFFSET = 2;
         private static final int PE32_WINDOWS_SPECIFIC_FIELDS_OFFSET = 28;
         private static final int PE32_DATA_DIRECTORIES_OFFSET = 96;
@@ -288,7 +296,7 @@ public class COFFFileParser {
         private int sizeOfUninitializedData;
         private int addressOfEntryPoint;
         private int baseOfCode;
-        private int baseOfData;
+        private int baseOfData;  // only set in PE32
 
         OptionalHeaderStandardFieldsImpl(int offset,
                                          boolean isPE32Plus) {
@@ -301,7 +309,8 @@ public class COFFFileParser {
           sizeOfUninitializedData = readInt();
           addressOfEntryPoint = readInt();
           baseOfCode = readInt();
-          if (isPE32Plus) {
+          if (!isPE32Plus) {
+            // only available in PE32
             baseOfData = readInt();
           }
         }
@@ -433,7 +442,10 @@ public class COFFFileParser {
                 if (dir.getRVA() == 0 || dir.getSize() == 0) {
                   return null;
                 }
-                return new ExportDirectoryTableImpl(rvaToFileOffset(dir.getRVA()), dir.getSize());
+                // ExportDirectoryTableImpl needs both the RVA and the
+                // RVA converted to a file offset.
+                return new
+                    ExportDirectoryTableImpl(dir.getRVA(), dir.getSize());
               }
             };
 
@@ -526,6 +538,7 @@ public class COFFFileParser {
       }
 
       class ExportDirectoryTableImpl implements ExportDirectoryTable {
+        private int exportDataDirRVA;
         private int offset;
         private int size;
 
@@ -548,8 +561,9 @@ public class COFFFileParser {
         private MemoizedObject exportOrdinalTable;
         private MemoizedObject exportAddressTable;
 
-        ExportDirectoryTableImpl(int offset, int size) {
-          this.offset = offset;
+        ExportDirectoryTableImpl(int exportDataDirRVA, int size) {
+          this.exportDataDirRVA = exportDataDirRVA;
+          offset = rvaToFileOffset(exportDataDirRVA);
           this.size   = size;
           seek(offset);
           exportFlags = readInt();
@@ -595,6 +609,7 @@ public class COFFFileParser {
 
           exportOrdinalTable = new MemoizedObject() {
               public Object computeValue() {
+                // number of ordinals is same as the number of name pointers
                 short[] ordinals = new short[getNumberOfNamePointers()];
                 seek(rvaToFileOffset(getOrdinalTableRVA()));
                 for (int i = 0; i < ordinals.length; i++) {
@@ -608,13 +623,17 @@ public class COFFFileParser {
               public Object computeValue() {
                 int[] addresses = new int[getNumberOfAddressTableEntries()];
                 seek(rvaToFileOffset(getExportAddressTableRVA()));
-                // Must make two passes to avoid rvaToFileOffset
-                // destroying seek() position
+                // The Export Address Table values are a union of two
+                // possible values:
+                //   Export RVA - The address of the exported symbol when
+                //       loaded into memory, relative to the image base.
+                //       This value doesn't get converted into a file offset.
+                //   Forwarder RVA - The pointer to a null-terminated ASCII
+                //       string in the export section. This value gets
+                //       converted into a file offset because we have to
+                //       fetch the string.
                 for (int i = 0; i < addresses.length; i++) {
                   addresses[i] = readInt();
-                }
-                for (int i = 0; i < addresses.length; i++) {
-                  addresses[i] = rvaToFileOffset(addresses[i]);
                 }
                 return addresses;
               }
@@ -648,11 +667,12 @@ public class COFFFileParser {
 
         public boolean isExportAddressForwarder(short ordinal) {
           int addr = getExportAddress(ordinal);
-          return ((offset <= addr) && (addr < (offset + size)));
+          return ((exportDataDirRVA <= addr) &&
+              (addr < (exportDataDirRVA + size)));
         }
 
         public String getExportAddressForwarder(short ordinal) {
-          seek(getExportAddress(ordinal));
+          seek(rvaToFileOffset(getExportAddress(ordinal)));
           return readCString();
         }
 
@@ -3371,10 +3391,17 @@ public class COFFFileParser {
               throw new COFFException(e);
             }
             // Look up in string table
+            // FIXME: this index value is assumed to be in the valid range
             name = getStringTable().get(index);
           } else {
             try {
-              name = new String(tmpName, US_ASCII);
+              int length = 0;
+              // find last non-NULL
+              for (; length < tmpName.length && tmpName[length] != '\0';) {
+                length++;
+              }
+              // don't include NULL chars in returned name String
+              name = new String(tmpName, 0, length, US_ASCII);
             } catch (UnsupportedEncodingException e) {
               throw new COFFException(e);
             }
@@ -3487,6 +3514,7 @@ public class COFFFileParser {
                                 tmpName[5] << 16 |
                                 tmpName[6] <<  8 |
                                 tmpName[7]);
+            // FIXME: stringOffset is assumed to be in the valid range
             name = getStringTable().getAtOffset(stringOffset);
           }
 
@@ -3698,12 +3726,13 @@ public class COFFFileParser {
 
         StringTable(int offset) {
           if (offset == 0) {
+            // no String Table
             strings = new COFFString[0];
             return;
           }
 
           seek(offset);
-          int length = readInt();
+          int length = readInt();  // length includes itself
           byte[] data = new byte[length - 4];
           int numBytesRead = readBytes(data);
           if (numBytesRead != data.length) {
