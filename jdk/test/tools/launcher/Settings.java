@@ -74,8 +74,15 @@ public class Settings {
 
     static void runTestOptionDefault() throws IOException {
         TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xmx512m", "-Xss128k",
-                "-XshowSettings", "-jar", testJar.getAbsolutePath());
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xms64m", "-Xmx512m",
+                "-Xss128k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+        containsAllOptions(tr);
+        if (!tr.isOK()) {
+            System.out.println(tr.status);
+            throw new RuntimeException("test fails");
+        }
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xms65536k", "-Xmx712m",
+                "-Xss122880", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr.status);

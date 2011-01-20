@@ -247,7 +247,7 @@ public abstract class ClassLoader {
 
     // The classes loaded by this class loader. The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private final Vector<Class<?>> classes = new Vector<Class<?>>();
+    private final Vector<Class<?>> classes = new Vector<>();
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
@@ -266,8 +266,7 @@ public abstract class ClassLoader {
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
     // @GuardedBy("itself")
-    private final HashMap<String, Package> packages =
-        new HashMap<String, Package>();
+    private final HashMap<String, Package> packages = new HashMap<>();
 
     private static Void checkCreateClassLoader() {
         SecurityManager security = System.getSecurityManager();
@@ -280,16 +279,16 @@ public abstract class ClassLoader {
     private ClassLoader(Void unused, ClassLoader parent) {
         this.parent = parent;
         if (ParallelLoaders.isRegistered(this.getClass())) {
-            parallelLockMap = new ConcurrentHashMap<String, Object>();
-            package2certs = new ConcurrentHashMap<String, Certificate[]>();
+            parallelLockMap = new ConcurrentHashMap<>();
+            package2certs = new ConcurrentHashMap<>();
             domains =
                 Collections.synchronizedSet(new HashSet<ProtectionDomain>());
             assertionLock = new Object();
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
-            package2certs = new Hashtable<String, Certificate[]>();
-            domains = new HashSet<ProtectionDomain>();
+            package2certs = new Hashtable<>();
+            domains = new HashSet<>();
             assertionLock = this;
         }
     }
@@ -1182,7 +1181,7 @@ public abstract class ClassLoader {
         }
         tmp[1] = findResources(name);
 
-        return new CompoundEnumeration<URL>(tmp);
+        return new CompoundEnumeration<>(tmp);
     }
 
     /**
@@ -1657,7 +1656,7 @@ public abstract class ClassLoader {
     protected Package[] getPackages() {
         Map<String, Package> map;
         synchronized (packages) {
-            map = new HashMap<String, Package>(packages);
+            map = new HashMap<>(packages);
         }
         Package[] pkgs;
         if (parent != null) {
@@ -1764,20 +1763,17 @@ public abstract class ClassLoader {
     }
 
     // All native library names we've loaded.
-    private static Vector<String> loadedLibraryNames
-        = new Vector<String>();
+    private static Vector<String> loadedLibraryNames = new Vector<>();
 
     // Native libraries belonging to system classes.
     private static Vector<NativeLibrary> systemNativeLibraries
-        = new Vector<NativeLibrary>();
+        = new Vector<>();
 
     // Native libraries associated with the class loader.
-    private Vector<NativeLibrary> nativeLibraries
-        = new Vector<NativeLibrary>();
+    private Vector<NativeLibrary> nativeLibraries = new Vector<>();
 
     // native libraries being loaded/unloaded.
-    private static Stack<NativeLibrary> nativeLibraryContext
-        = new Stack<NativeLibrary>();
+    private static Stack<NativeLibrary> nativeLibraryContext = new Stack<>();
 
     // The paths searched for libraries
     private static String usr_paths[];
@@ -2101,8 +2097,8 @@ public abstract class ClassLoader {
          * them to empty maps, effectively ignoring any present settings.
          */
         synchronized (assertionLock) {
-            classAssertionStatus = new HashMap<String, Boolean>();
-            packageAssertionStatus = new HashMap<String, Boolean>();
+            classAssertionStatus = new HashMap<>();
+            packageAssertionStatus = new HashMap<>();
             defaultAssertionStatus = false;
         }
     }
@@ -2164,8 +2160,8 @@ public abstract class ClassLoader {
     private void initializeJavaAssertionMaps() {
         // assert Thread.holdsLock(assertionLock);
 
-        classAssertionStatus = new HashMap<String, Boolean>();
-        packageAssertionStatus = new HashMap<String, Boolean>();
+        classAssertionStatus = new HashMap<>();
+        packageAssertionStatus = new HashMap<>();
         AssertionStatusDirectives directives = retrieveDirectives();
 
         for(int i = 0; i < directives.classes.length; i++)
