@@ -56,7 +56,7 @@ class Logging implements LoggingMXBean {
 
     public List<String> getLoggerNames() {
         Enumeration loggers = logManager.getLoggerNames();
-        ArrayList<String> array = new ArrayList<String>();
+        ArrayList<String> array = new ArrayList<>();
 
         for (; loggers.hasMoreElements();) {
             array.add((String) loggers.nextElement());

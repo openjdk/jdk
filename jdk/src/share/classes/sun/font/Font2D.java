@@ -343,7 +343,21 @@ public abstract class Font2D {
             }
             strike = createStrike(desc);
             //StrikeCache.addStrike();
-            strikeRef = StrikeCache.getStrikeRef(strike);
+            /* If we are creating many strikes on this font which
+             * involve non-quadrant rotations, or more general
+             * transforms which include shears, then force the use
+             * of weak references rather than soft references.
+             * This means that it won't live much beyond the next GC,
+             * which is what we want for what is likely a transient strike.
+             */
+            int txType = desc.glyphTx.getType();
+            if (txType == AffineTransform.TYPE_GENERAL_TRANSFORM ||
+                (txType & AffineTransform.TYPE_GENERAL_ROTATION) != 0 &&
+                strikeCache.size() > 10) {
+                strikeRef = StrikeCache.getStrikeRef(strike, true);
+            } else {
+                strikeRef = StrikeCache.getStrikeRef(strike);
+            }
             strikeCache.put(desc, strikeRef);
             //strike.lastlookupTime = System.currentTimeMillis();
             lastFontStrike = new SoftReference(strike);

@@ -934,7 +934,8 @@ jint Universe::initialize_heap() {
     // See needs_explicit_null_check.
     // Only set the heap base for compressed oops because it indicates
     // compressed oops for pstack code.
-    if (PrintCompressedOopsMode) {
+    bool verbose = PrintCompressedOopsMode || (PrintMiscellaneous && Verbose);
+    if (verbose) {
       tty->cr();
       tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
                  Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
@@ -943,12 +944,12 @@ jint Universe::initialize_heap() {
       // Can't reserve heap below 32Gb.
       Universe::set_narrow_oop_base(Universe::heap()->base() - os::vm_page_size());
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-      if (PrintCompressedOopsMode) {
+      if (verbose) {
         tty->print(", Compressed Oops with base: "PTR_FORMAT, Universe::narrow_oop_base());
       }
     } else {
       Universe::set_narrow_oop_base(0);
-      if (PrintCompressedOopsMode) {
+      if (verbose) {
         tty->print(", zero based Compressed Oops");
       }
 #ifdef _WIN64
@@ -963,12 +964,12 @@ jint Universe::initialize_heap() {
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       } else {
         Universe::set_narrow_oop_shift(0);
-        if (PrintCompressedOopsMode) {
+        if (verbose) {
           tty->print(", 32-bits Oops");
         }
       }
     }
-    if (PrintCompressedOopsMode) {
+    if (verbose) {
       tty->cr();
       tty->cr();
     }

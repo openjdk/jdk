@@ -59,7 +59,7 @@ import java.util.ResourceBundle;
  */
 
 public class Level implements java.io.Serializable {
-    private static java.util.ArrayList<Level> known = new java.util.ArrayList<Level>();
+    private static java.util.ArrayList<Level> known = new java.util.ArrayList<>();
     private static String defaultBundle = "sun.util.logging.resources.logging";
 
     /**

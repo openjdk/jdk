@@ -89,7 +89,7 @@ public class ClassLoaderLeakTest {
 
          MyClassLoader appClassLoader = new MyClassLoader(urls, "test0");
          WeakReference<MyClassLoader> ref =
-                 new WeakReference<MyClassLoader>(appClassLoader);
+                 new WeakReference<>(appClassLoader);
 
 
          Thread appThread = new Thread(appsThreadGroup, launcher, "AppThread-0");
