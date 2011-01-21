@@ -439,6 +439,9 @@ java/rmi/reliability/benchmark/runRmiBench.sh			generic-all
 java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java generic-all
 java/rmi/activation/rmidViaInheritedChannel/RmidViaInheritedChannel.java generic-all
 
+java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java         generic-all
+java/rmi/transport/dgcDeadLock/TestImpl_Stub.java                       generic-all
+
 # Address already in use, othervm mode, solaris
 java/rmi/activation/Activatable/elucidateNoSuchMethod/ElucidateNoSuchMethod.java	generic-all
 java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java	generic-all
