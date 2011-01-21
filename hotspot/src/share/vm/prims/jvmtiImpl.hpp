@@ -117,6 +117,8 @@ public:
   void clear();
   // apply f to every element and update the cache
   void oops_do(OopClosure* f);
+  // update the cache after a full gc
+  void gc_epilogue();
 };
 
 
@@ -148,6 +150,7 @@ public:
   void remove (int index)               { _cache.remove(index); }
   void clear()                          { _cache.clear(); }
   void oops_do(OopClosure* f)           { _cache.oops_do(f); }
+  void gc_epilogue()                    { _cache.gc_epilogue(); }
 };
 
 
@@ -282,6 +285,7 @@ public:
   int  clear(JvmtiBreakpoint& bp);
   void clearall_in_class_at_safepoint(klassOop klass);
   void clearall();
+  void gc_epilogue();
 };
 
 
@@ -325,6 +329,7 @@ public:
   static inline bool is_breakpoint(address bcp);
 
   static void oops_do(OopClosure* f);
+  static void gc_epilogue();
 };
 
 // quickly test whether the bcp matches a cached breakpoint in the list

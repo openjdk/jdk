@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,6 @@ extern Monitor* SLT_lock;                        // used in CMS GC for acquiring
 extern Monitor* iCMS_lock;                       // CMS incremental mode start/stop notification
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* CMark_lock;                      // used for concurrent mark thread coordination
-extern Monitor* ZF_mon;                          // used for G1 conc zero-fill.
-extern Monitor* Cleanup_mon;                     // used for G1 conc cleanup.
 extern Mutex*   CMRegionStack_lock;              // used for protecting accesses to the CM region stack
 extern Mutex*   SATB_Q_FL_lock;                  // Protects SATB Q
                                                  // buffer free list.
@@ -125,6 +123,9 @@ extern Mutex*   PerfDataManager_lock;            // a long on access to PerfData
 extern Mutex*   ParkerFreeList_lock;
 extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
+extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
+extern Monitor* SecondaryFreeList_lock;          // protects the secondary free region list
+extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Mutex*   MMUTracker_lock;                 // protects the MMU
                                                  // tracker data structures
 extern Mutex*   HotCardCache_lock;               // protects the hot card cache

@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
-#include "gc_implementation/g1/heapRegionSeq.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 // Inline functions for G1CollectedHeap
@@ -135,7 +135,7 @@ G1CollectedHeap::attempt_allocation(size_t word_size) {
 
 inline void
 G1CollectedHeap::retire_cur_alloc_region_common(HeapRegion* cur_alloc_region) {
-  assert_heap_locked_or_at_safepoint();
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(cur_alloc_region != NULL && cur_alloc_region == _cur_alloc_region,
          "pre-condition of the call");
   assert(cur_alloc_region->is_young(),
