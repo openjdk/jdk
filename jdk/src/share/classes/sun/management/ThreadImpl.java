@@ -259,7 +259,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
                 if (id == Thread.currentThread().getId()) {
                     id = 0;
                 }
-                getThreadTotalCpuTime0(id);
+                times[0] = getThreadTotalCpuTime0(id);
             } else {
                 getThreadTotalCpuTime1(ids, times);
             }
