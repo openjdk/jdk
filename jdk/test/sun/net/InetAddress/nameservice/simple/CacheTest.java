@@ -26,8 +26,8 @@
  * @summary Check that InetAddress doesn't continue to throw UHE
  *          after the name service has recovered and the negative ttl
  *          on the initial lookup has expired.
- *
- * @build CacheTest SimpleNameService SimpleNameServiceDescriptor
+ * @compile -XDignore.symbol.file=true SimpleNameService.java
+ *                                     SimpleNameServiceDescriptor.java
  * @run main/othervm/timeout=200 -Dsun.net.spi.nameservice.provider.1=simple,sun CacheTest
  */
 import java.net.InetAddress;

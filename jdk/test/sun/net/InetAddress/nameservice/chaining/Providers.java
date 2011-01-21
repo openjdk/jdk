@@ -25,15 +25,17 @@
  * @test
  * @bug 4762344
  * @summary 2nd nameservice provider is non functional
- * @build B4762344 SimpleNameService Simple1NameServiceDescriptor Simple2NameServiceDescriptor
- * @run main/othervm -Dsun.net.spi.nameservice.provider.1=simple1,sun -Dsun.net.spi.nameservice.provider.2=simple2,sun B4762344
+ * @compile -XDignore.symbol.file=true SimpleNameService.java
+ *                                     Simple1NameServiceDescriptor.java
+ *                                     Simple2NameServiceDescriptor.java
+ * @run main/othervm -Dsun.net.spi.nameservice.provider.1=simple1,sun -Dsun.net.spi.nameservice.provider.2=simple2,sun Providers
  */
 
 import java.net.*;
 import java.util.*;
 
 
-public class B4762344 {
+public class Providers {
     private static String[][] hostnames = new String[][] {
             // both providers know this host, but with different address
             new String[] {"blade", "10.0.0.1"},
