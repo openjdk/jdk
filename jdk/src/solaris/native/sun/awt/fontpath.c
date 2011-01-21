@@ -1120,6 +1120,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         }
         pattern = (*FcNameParse)((FcChar8 *)fcName);
         if (pattern == NULL) {
+            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1136,6 +1137,8 @@ Java_sun_font_FontConfigManager_getFontConfig
         (*FcDefaultSubstitute)(pattern);
         fontset = (*FcFontSort)(NULL, pattern, FcTrue, NULL, &result);
         if (fontset == NULL) {
+            (*FcPatternDestroy)(pattern);
+            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1153,6 +1156,21 @@ Java_sun_font_FontConfigManager_getFontConfig
         file     = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
         if (family == NULL || styleStr == NULL ||
             fullname == NULL || file == NULL) {
+            if (family != NULL) {
+                free(family);
+            }
+            if (styleStr != NULL) {
+                free(styleStr);
+            }
+            if (fullname != NULL) {
+                free(fullname);
+            }
+            if (file != NULL) {
+                free(file);
+            }
+            (*FcPatternDestroy)(pattern);
+            (*FcFontSetDestroy)(fontset);
+            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1179,6 +1197,14 @@ Java_sun_font_FontConfigManager_getFontConfig
             result = (*FcPatternGetCharSet)(fontPattern,
                                             FC_CHARSET, 0, &charset);
             if (result != FcResultMatch) {
+                free(family);
+                free(family);
+                free(styleStr);
+                free(file);
+                (*FcPatternDestroy)(pattern);
+                (*FcFontSetDestroy)(fontset);
+                (*env)->ReleaseStringUTFChars(env,
+                                              fcNameStr, (const char*)fcName);
                 closeFontConfig(libfontconfig, JNI_FALSE);
                 return;
             }
