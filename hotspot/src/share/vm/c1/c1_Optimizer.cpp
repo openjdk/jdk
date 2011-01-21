@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,6 +496,7 @@ public:
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
+  void do_RuntimeCall    (RuntimeCall*     x);
 };
 
 
@@ -664,6 +665,7 @@ void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check(); }
 void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
+void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
 
 
 void NullCheckEliminator::visit(Value* p) {
