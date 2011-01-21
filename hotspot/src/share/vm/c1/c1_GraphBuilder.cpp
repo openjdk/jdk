@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1395,6 +1395,13 @@ void GraphBuilder::method_return(Value x) {
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
     assert(!method()->is_synchronized() || InlineSynchronizedMethods, "can not inline synchronized methods yet");
+
+    if (compilation()->env()->dtrace_method_probes()) {
+      // Report exit from inline methods
+      Values* args = new Values(1);
+      args->push(append(new Constant(new ObjectConstant(method()))));
+      append(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args));
+    }
 
     // If the inlined method is synchronized, the monitor must be
     // released before we jump to the continuation block.
@@ -3301,6 +3308,13 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
   Value exception = append_with_bci(new ExceptionObject(), SynchronizationEntryBCI);
   assert(exception->is_pinned(), "must be");
 
+  if (compilation()->env()->dtrace_method_probes()) {
+    // Report exit from inline methods
+    Values* args = new Values(1);
+    args->push(append(new Constant(new ObjectConstant(method()))));
+    append(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args));
+  }
+
   int bci = SynchronizationEntryBCI;
   if (lock) {
     assert(state()->locks_size() > 0 && state()->lock_at(state()->locks_size() - 1) == lock, "lock is missing");
@@ -3486,6 +3500,11 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
     inline_sync_entry(lock, sync_handler);
   }
 
+  if (compilation()->env()->dtrace_method_probes()) {
+    Values* args = new Values(1);
+    args->push(append(new Constant(new ObjectConstant(method()))));
+    append(new RuntimeCall(voidType, "dtrace_method_entry", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), args));
+  }
 
   BlockBegin* callee_start_block = block_at(0);
   if (callee_start_block != NULL) {

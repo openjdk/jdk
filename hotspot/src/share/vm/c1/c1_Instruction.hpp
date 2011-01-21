@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
 class   ProfileCall;
 class   ProfileInvoke;
+class   RuntimeCall;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
@@ -202,6 +203,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
+  virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
 };
 
 
@@ -2265,6 +2267,38 @@ LEAF(ProfileCall, Instruction)
   ciKlass* known_holder() { return _known_holder; }
 
   virtual void input_values_do(ValueVisitor* f)   { if (_recv != NULL) f->visit(&_recv); }
+};
+
+
+// Call some C runtime function that doesn't safepoint,
+// optionally passing the current thread as the first argument.
+LEAF(RuntimeCall, Instruction)
+ private:
+  const char* _entry_name;
+  address     _entry;
+  Values*     _args;
+  bool        _pass_thread;  // Pass the JavaThread* as an implicit first argument
+
+ public:
+  RuntimeCall(ValueType* type, const char* entry_name, address entry, Values* args, bool pass_thread = true)
+    : Instruction(type)
+    , _entry(entry)
+    , _args(args)
+    , _entry_name(entry_name)
+    , _pass_thread(pass_thread) {
+    ASSERT_VALUES
+    pin();
+  }
+
+  const char* entry_name() const  { return _entry_name; }
+  address entry() const           { return _entry; }
+  int number_of_arguments() const { return _args->length(); }
+  Value argument_at(int i) const  { return _args->at(i); }
+  bool pass_thread() const        { return _pass_thread; }
+
+  virtual void input_values_do(ValueVisitor* f)   {
+    for (int i = 0; i < _args->length(); i++) f->visit(_args->adr_at(i));
+  }
 };
 
 // Use to trip invocation counter of an inlined method
