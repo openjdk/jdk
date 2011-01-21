@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,14 +70,18 @@ SUNWprivate_1.1 {
 	    Java_sun_management_ThreadImpl_dumpThreads0;
 	    Java_sun_management_ThreadImpl_findDeadlockedThreads0;
 	    Java_sun_management_ThreadImpl_findMonitorDeadlockedThreads0;
-	    Java_sun_management_ThreadImpl_getThreadInfo0;
+	    Java_sun_management_ThreadImpl_getThreadInfo1;
 	    Java_sun_management_ThreadImpl_getThreads;
 	    Java_sun_management_ThreadImpl_getThreadTotalCpuTime0;
+	    Java_sun_management_ThreadImpl_getThreadTotalCpuTime1;
 	    Java_sun_management_ThreadImpl_getThreadUserCpuTime0;
+	    Java_sun_management_ThreadImpl_getThreadUserCpuTime1;
+	    Java_sun_management_ThreadImpl_getThreadAllocatedMemory1;
 	    Java_sun_management_ThreadImpl_resetContentionTimes0;
 	    Java_sun_management_ThreadImpl_resetPeakThreadCount0;
 	    Java_sun_management_ThreadImpl_setThreadContentionMonitoringEnabled0;
 	    Java_sun_management_ThreadImpl_setThreadCpuTimeEnabled0;
+	    Java_sun_management_ThreadImpl_setThreadAllocatedMemoryEnabled0;
 	    Java_sun_management_VMManagementImpl_getAvailableProcessors;
 	    Java_sun_management_VMManagementImpl_getClassInitializationTime;
 	    Java_sun_management_VMManagementImpl_getClassLoadingTime;
@@ -106,6 +110,7 @@ SUNWprivate_1.1 {
 	    Java_sun_management_VMManagementImpl_initOptionalSupportFields;
 	    Java_sun_management_VMManagementImpl_isThreadContentionMonitoringEnabled;
 	    Java_sun_management_VMManagementImpl_isThreadCpuTimeEnabled;
+	    Java_sun_management_VMManagementImpl_isThreadAllocatedMemoryEnabled;
             JNI_OnLoad;
 	local:
 	    *;
