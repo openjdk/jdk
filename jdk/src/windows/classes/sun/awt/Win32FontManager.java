@@ -282,4 +282,79 @@ public class Win32FontManager extends SunFontManager {
 
     protected static native void deRegisterFontWithPlatform(String fontName);
 
+    /**
+     * populate the map with the most common windows fonts.
+     */
+    @Override
+    public HashMap<String, FamilyDescription> populateHardcodedFileNameMap() {
+        HashMap<String, FamilyDescription> platformFontMap
+            = new HashMap<String, FamilyDescription>();
+        FamilyDescription fd;
+
+        /* Segoe UI is the default UI font for Vista and later, and
+         * is used by the Win L&F which is used by FX too.
+         * Tahoma is used for the Win L&F on XP.
+         * Verdana is used in some FX UI controls.
+         */
+        fd = new FamilyDescription();
+        fd.familyName = "Segoe UI";
+        fd.plainFullName = "Segoe UI";
+        fd.plainFileName = "segoeui.ttf";
+        fd.boldFullName = "Segoe UI Bold";
+        fd.boldFileName = "segoeuib.ttf";
+        fd.italicFullName = "Segoe UI Italic";
+        fd.italicFileName = "segoeuii.ttf";
+        fd.boldItalicFullName = "Segoe UI Bold Italic";
+        fd.boldItalicFileName = "segoeuiz.ttf";
+        platformFontMap.put("segoe", fd);
+
+        fd = new FamilyDescription();
+        fd.familyName = "Tahoma";
+        fd.plainFullName = "Tahoma";
+        fd.plainFileName = "tahoma.ttf";
+        fd.boldFullName = "Tahoma Bold";
+        fd.boldFileName = "tahomabd.ttf";
+        platformFontMap.put("tahoma", fd);
+
+        fd = new FamilyDescription();
+        fd.familyName = "Verdana";
+        fd.plainFullName = "Verdana";
+        fd.plainFileName = "verdana.TTF";
+        fd.boldFullName = "Verdana Bold";
+        fd.boldFileName = "verdanab.TTF";
+        fd.italicFullName = "Verdana Italic";
+        fd.italicFileName = "verdanai.TTF";
+        fd.boldItalicFullName = "Verdana Bold Italic";
+        fd.boldItalicFileName = "verdanaz.TTF";
+        platformFontMap.put("verdana", fd);
+
+        /* The following are important because they are the core
+         * members of the default "Dialog" font.
+         */
+        fd = new FamilyDescription();
+        fd.familyName = "Arial";
+        fd.plainFullName = "Arial";
+        fd.plainFileName = "ARIAL.TTF";
+        fd.boldFullName = "Arial Bold";
+        fd.boldFileName = "ARIALBD.TTF";
+        fd.italicFullName = "Arial Italic";
+        fd.italicFileName = "ARIALI.TTF";
+        fd.boldItalicFullName = "Arial Bold Italic";
+        fd.boldItalicFileName = "ARIALBI.TTF";
+        platformFontMap.put("arial", fd);
+
+        fd = new FamilyDescription();
+        fd.familyName = "Symbol";
+        fd.plainFullName = "Symbol";
+        fd.plainFileName = "Symbol.TTF";
+        platformFontMap.put("symbol", fd);
+
+        fd = new FamilyDescription();
+        fd.familyName = "WingDings";
+        fd.plainFullName = "WingDings";
+        fd.plainFileName = "WINGDING.TTF";
+        platformFontMap.put("wingdings", fd);
+
+        return platformFontMap;
+    }
 }
