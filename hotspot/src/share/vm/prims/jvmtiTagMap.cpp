@@ -3290,7 +3290,11 @@ void JvmtiTagMap::follow_references(jint heap_filter,
 
 
 void JvmtiTagMap::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  assert(SafepointSynchronize::is_at_safepoint(),
+  // No locks during VM bring-up (0 threads) and no safepoints after main
+  // thread creation and before VMThread creation (1 thread); initial GC
+  // verification can happen in that window which gets to here.
+  assert(Threads::number_of_threads() <= 1 ||
+         SafepointSynchronize::is_at_safepoint(),
          "must be executed at a safepoint");
   if (JvmtiEnv::environments_might_exist()) {
     JvmtiEnvIterator it;

@@ -2268,6 +2268,14 @@ void JvmtiExport::oops_do(OopClosure* f) {
   JvmtiVMObjectAllocEventCollector::oops_do_for_all_threads(f);
 }
 
+void JvmtiExport::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
+  JvmtiTagMap::weak_oops_do(is_alive, f);
+}
+
+void JvmtiExport::gc_epilogue() {
+  JvmtiCurrentBreakpoints::gc_epilogue();
+}
+
 // Onload raw monitor transition.
 void JvmtiExport::transition_pending_onload_raw_monitors() {
   JvmtiPendingMonitors::transition_raw_monitors();

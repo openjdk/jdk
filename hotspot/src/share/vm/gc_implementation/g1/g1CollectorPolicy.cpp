@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2874,8 +2874,6 @@ G1CollectorPolicy_BestRegionsFirst::choose_collection_set(
 
   // Adjust for expansion and slop.
   max_live_bytes = max_live_bytes + expansion_bytes;
-
-  assert(_g1->regions_accounted_for(), "Region leakage!");
 
   HeapRegion* hr;
   if (in_young_gc_mode()) {
