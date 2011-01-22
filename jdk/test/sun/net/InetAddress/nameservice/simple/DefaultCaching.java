@@ -25,15 +25,15 @@
  * @bug 6442088
  * @summary Change default DNS caching behavior for code not running under
  *          security manager.
- *
- * @build B6442088 SimpleNameService SimpleNameServiceDescriptor
- * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20 -Dsun.net.spi.nameservice.provider.1=simple,sun B6442088
+ * @compile -XDignore.symbol.file=true SimpleNameService.java
+ *                                     SimpleNameServiceDescriptor.java
+ * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20 -Dsun.net.spi.nameservice.provider.1=simple,sun DefaultCaching
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Security;
 
-public class B6442088 {
+public class DefaultCaching {
 
     public static void main(String args[]) throws Exception {
 
