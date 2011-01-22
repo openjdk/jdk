@@ -251,7 +251,8 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         boolean verified = verifyThreadCpuTime(ids);
 
         int length = ids.length;
-        long[] times = java.util.Arrays.fill(new long[length], -1);
+        long[] times = new long[length];
+        java.util.Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -285,7 +286,8 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         boolean verified = verifyThreadCpuTime(ids);
 
         int length = ids.length;
-        long[] times = java.util.Arrays.fill(new long[length], -1);
+        long[] times = new long[length];
+        java.util.Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -340,7 +342,8 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
     public long[] getThreadAllocatedBytes(long[] ids) {
         boolean verified = verifyThreadAllocatedMemory(ids);
 
-        long[] times = java.util.Arrays.fill(new long[length], -1);
+        long[] sizes = new long[ids.length];
+        java.util.Arrays.fill(sizes, -1);
 
         if (verified) {
             getThreadAllocatedMemory1(ids, sizes);
