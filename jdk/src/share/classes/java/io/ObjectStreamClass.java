@@ -329,7 +329,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             if (future.set(entry)) {
-                Caches.localDescs.put(key, new SoftReference<>(entry));
+                Caches.localDescs.put(key, new SoftReference<Object>(entry));
             } else {
                 // nested lookup call already set future
                 entry = future.get();
@@ -2118,7 +2118,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             future.set(entry);
-            Caches.reflectors.put(key, new SoftReference<>(entry));
+            Caches.reflectors.put(key, new SoftReference<Object>(entry));
         }
 
         if (entry instanceof FieldReflector) {
