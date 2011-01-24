@@ -24,7 +24,6 @@ compiler.err.no.annotation.member
 compiler.err.no.encl.instance.of.type.in.scope          # cannot occur; always followed by assert false;
 compiler.err.no.match.entry                             # UNUSED?
 compiler.err.not.annotation.type                        # cannot occur given preceding checkType
-compiler.err.not.within.bounds.explain                  # UNUSED?
 compiler.err.prob.found.req.1                           # Check: DEAD, in unused method
 compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
 compiler.err.proc.cant.access                           # completion failure
