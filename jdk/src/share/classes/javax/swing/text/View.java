@@ -497,6 +497,10 @@ public abstract class View implements SwingConstants {
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
       throws BadLocationException {
+        if (pos < -1) {
+            // -1 is a reserved value, see the code below
+            throw new BadLocationException("Invalid position", pos);
+        }
 
         biasRet[0] = Position.Bias.Forward;
         switch (direction) {
