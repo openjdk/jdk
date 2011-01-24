@@ -3156,7 +3156,7 @@ public class Attr extends JCTree.Visitor {
                 if (sym == null ||
                     sym.kind != VAR ||
                     ((VarSymbol) sym).getConstValue() == null)
-                    log.error(l.head.pos(), "icls.cant.have.static.decl");
+                    log.error(l.head.pos(), "icls.cant.have.static.decl", sym.location());
             }
         }
 
