@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,20 @@ import sun.security.jca.GetInstance.Instance;
  * referred to as HMAC. HMAC can be used with any cryptographic hash function,
  * e.g., MD5 or SHA-1, in combination with a secret shared key. HMAC is
  * specified in RFC 2104.
+ *
+ * <p> Every implementation of the Java platform is required to support
+ * the following standard <code>Mac</code> algorithms:
+ * <ul>
+ * <li><tt>HmacMD5</tt></li>
+ * <li><tt>HmacSHA1</tt></li>
+ * <li><tt>HmacSHA256</tt></li>
+ * </ul>
+ * These algorithms are described in the
+ * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
+ * Mac section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
  * @author Jan Luehe
  *
@@ -134,9 +148,9 @@ public class Mac implements Cloneable {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the standard name of the requested MAC algorithm.
-     * See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Mac section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new <code>Mac</code> object.
@@ -176,9 +190,9 @@ public class Mac implements Cloneable {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the standard name of the requested MAC algorithm.
-     * See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Mac section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -214,9 +228,9 @@ public class Mac implements Cloneable {
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested MAC algorithm.
-     * See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Mac section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

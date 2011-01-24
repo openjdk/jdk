@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,10 +277,11 @@ public final class Security {
 
     /**
      * Gets a specified property for an algorithm. The algorithm name
-     * should be a standard name. See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * should be a standard name. See the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
+     *
      * One possible use is by specialized algorithm parsers, which may map
      * classes to algorithms which they understand (much like Key parsers
      * do).
@@ -513,9 +514,9 @@ public final class Security {
      *
      * </ul>
      *
-     * <p> See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * <p> See the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
@@ -582,9 +583,9 @@ public final class Security {
      * constraint expressed by the specified attribute name/value pair.
      * </ul>
      *
-     * <p> See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * <p> See the <a href=
+     * "../../../technotes/guides/security/StandardNames.html">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
