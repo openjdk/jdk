@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,12 @@ public class AuthorDD
 
              // Test single @since tag:
 
-            { "<DT><STRONG>Since:</STRONG></DT>"+NL+"  <DD>JDK 1.0</DD>",
+            { "<dt><span class=\"strong\">Since:</span></dt>"+NL+"  <dd>JDK 1.0</dd>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
             // Test multiple @author tags:
 
-            { "<DT><STRONG>Author:</STRONG></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>",
+            { "<dt><span class=\"strong\">Author:</span></dt>"+NL+"  <dd>Doug Kramer, Jamie, Neal</dd>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
         };

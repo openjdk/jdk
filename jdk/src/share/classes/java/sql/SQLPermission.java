@@ -84,7 +84,7 @@ import java.security.*;
  *   {@code setJNDIContext} and {@code setLogger}</td>
  *   <td>Permits an application to specify the JNDI context from which the
  *   {@code SyncProvider} implementations can be retrieved from and the logging
- *   object to be used by the{@codeSyncProvider} implementation.</td>
+ *   object to be used by the {@code SyncProvider} implementation.</td>
  * </tr>
  *
  * <tr>

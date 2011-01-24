@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIRGenerator_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciArray.hpp"
+#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "vmreg_sparc.inline.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -311,7 +323,7 @@ void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp)
 
 
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   bool needs_range_check = true;
   bool use_length = x->length() != NULL;
   bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
@@ -386,7 +398,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
 
 void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   LIRItem obj(x->obj(), this);
   obj.load_item();
 
@@ -398,7 +410,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
-    info_for_exception = state_for(x, x->lock_stack_before());
+    info_for_exception = state_for(x);
   }
 
   // this CodeEmitInfo must not have the xhandlers because here the
@@ -409,7 +421,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
 
 void LIRGenerator::do_MonitorExit(MonitorExit* x) {
-  assert(x->is_root(),"");
+  assert(x->is_pinned(),"");
   LIRItem obj(x->obj(), this);
   obj.dont_load_item();
 
@@ -650,7 +662,7 @@ void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
 
   // generate conditional move of boolean result
   LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
+  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result, T_LONG);
 }
 
 
@@ -687,10 +699,10 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   else {
     ShouldNotReachHere();
   }
-
   // generate conditional move of boolean result
   LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
+  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
+           result, as_BasicType(type));
   if (type == objectType) {  // Write-barrier needed for Object fields.
     // Precise card mark since could either be object or array
     post_barrier(addr, val.result());
@@ -871,10 +883,11 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
   const LIR_Opr reg = result_register_for(x->type());
-
+#ifndef PRODUCT
   if (PrintNotLoaded && !x->klass()->is_loaded()) {
-    tty->print_cr("   ###class not loaded at new bci %d", x->bci());
+    tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
+#endif
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr tmp1 = FrameMap::G1_oop_opr;
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
@@ -1018,7 +1031,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
   LIR_Opr out_reg = rlock_result(x);
   CodeStub* stub;
-  CodeEmitInfo* info_for_exception = state_for(x, x->state()->copy_locks());
+  CodeEmitInfo* info_for_exception = state_for(x);
 
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == NULL, "can't patch this");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ class UTF_32Coder {
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();
-            if (!doneBOM) {
+            if (!doneBOM && src.hasRemaining()) {
                 if (dst.remaining() < 4)
                     return CoderResult.OVERFLOW;
                 put(BOM_BIG, dst);

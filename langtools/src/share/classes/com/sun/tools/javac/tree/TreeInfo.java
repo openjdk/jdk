@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class TreeInfo {
     }
 
     public static boolean isMultiCatch(JCCatch catchClause) {
-        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJOINT;
+        return catchClause.param.vartype.getTag() == JCTree.TYPEDISJUNCTION;
     }
 
     /** Is statement an initializer for a synthetic field?
@@ -502,7 +502,7 @@ public class TreeInfo {
                 else super.visitVarDef(that);
             }
             public void visitTypeParameter(JCTypeParameter that) {
-                if (that.type.tsym == sym) result = that;
+                if (that.type != null && that.type.tsym == sym) result = that;
                 else super.visitTypeParameter(that);
             }
         }

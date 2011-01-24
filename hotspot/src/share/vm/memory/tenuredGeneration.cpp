@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_tenuredGeneration.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/space.hpp"
+#include "memory/tenuredGeneration.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size, int level,
@@ -419,29 +428,16 @@ void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
 void TenuredGeneration::verify_alloc_buffers_clean() {}
 #endif // SERIALGC
 
-bool TenuredGeneration::promotion_attempt_is_safe(
-    size_t max_promotion_in_bytes,
-    bool younger_handles_promotion_failure) const {
-
-  bool result = max_contiguous_available() >= max_promotion_in_bytes;
-
-  if (younger_handles_promotion_failure && !result) {
-    result = max_contiguous_available() >=
-      (size_t) gc_stats()->avg_promoted()->padded_average();
-    if (PrintGC && Verbose && result) {
-      gclog_or_tty->print_cr("TenuredGeneration::promotion_attempt_is_safe"
-                  " contiguous_available: " SIZE_FORMAT
-                  " avg_promoted: " SIZE_FORMAT,
-                  max_contiguous_available(),
-                  gc_stats()->avg_promoted()->padded_average());
-    }
-  } else {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::promotion_attempt_is_safe"
-                  " contiguous_available: " SIZE_FORMAT
-                  " promotion_in_bytes: " SIZE_FORMAT,
-                  max_contiguous_available(), max_promotion_in_bytes);
-    }
+bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
+  size_t available = max_contiguous_available();
+  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
+  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+  if (PrintGC && Verbose) {
+    gclog_or_tty->print_cr(
+      "Tenured: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
+      "max_promo("SIZE_FORMAT")",
+      res? "":" not", available, res? ">=":"<",
+      av_promo, max_promotion_in_bytes);
   }
-  return result;
+  return res;
 }

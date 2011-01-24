@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_ASSEMBLER_X86_HPP
+#define CPU_X86_VM_ASSEMBLER_X86_HPP
 
 class BiasedLockingCounters;
 
@@ -132,6 +135,7 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 // Using noreg ensures if the dead code is incorrectly live and executed it
 // will cause an assertion failure
 #define rscratch1 noreg
+#define rscratch2 noreg
 
 #endif // _LP64
 
@@ -670,12 +674,14 @@ private:
   // Utilities
 
 #ifdef _LP64
- static bool is_simm(int64_t x, int nbits) { return -( CONST64(1) << (nbits-1) )  <= x   &&   x  <  ( CONST64(1) << (nbits-1) ); }
+ static bool is_simm(int64_t x, int nbits) { return -(CONST64(1) << (nbits-1)) <= x &&
+                                                    x < (CONST64(1) << (nbits-1)); }
  static bool is_simm32(int64_t x) { return x == (int64_t)(int32_t)x; }
 #else
- static bool is_simm(int32_t x, int nbits) { return -( 1 << (nbits-1) )  <= x   &&   x  <  ( 1 << (nbits-1) ); }
+ static bool is_simm(int32_t x, int nbits) { return -(1 << (nbits-1)) <= x &&
+                                                    x < (1 << (nbits-1)); }
  static bool is_simm32(int32_t x) { return true; }
-#endif // LP64
+#endif // _LP64
 
   // Generic instructions
   // Does 32bit or 64bit as needed for the platform. In some sense these
@@ -701,7 +707,6 @@ private:
   void push(void* v);
   void pop(void* v);
 
-
   // These do register sized moves/scans
   void rep_mov();
   void rep_set();
@@ -712,6 +717,8 @@ private:
 
   // Vanilla instructions in lexical order
 
+  void adcl(Address dst, int32_t imm32);
+  void adcl(Address dst, Register src);
   void adcl(Register dst, int32_t imm32);
   void adcl(Register dst, Address src);
   void adcl(Register dst, Register src);
@@ -719,7 +726,6 @@ private:
   void adcq(Register dst, int32_t imm32);
   void adcq(Register dst, Address src);
   void adcq(Register dst, Register src);
-
 
   void addl(Address dst, int32_t imm32);
   void addl(Address dst, Register src);
@@ -732,7 +738,6 @@ private:
   void addq(Register dst, int32_t imm32);
   void addq(Register dst, Address src);
   void addq(Register dst, Register src);
-
 
   void addr_nop_4();
   void addr_nop_5();
@@ -754,7 +759,6 @@ private:
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
-
 
   // Bitwise Logical AND of Packed Double-Precision Floating-Point Values
   void andpd(XMMRegister dst, Address src);
@@ -1011,6 +1015,7 @@ private:
   void hlt();
 
   void idivl(Register src);
+  void divl(Register src); // Unsigned division
 
   void idivq(Register src);
 
@@ -1146,7 +1151,7 @@ private:
 #ifdef _LP64
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
-  void movq(Address dst, Register src);
+  void movq(Address  dst, Register src);
 #endif
 
   void movq(Address     dst, MMXRegister src );
@@ -1172,7 +1177,7 @@ private:
   void movsbq(Register dst, Register src);
 
   // Move signed 32bit immediate to 64bit extending sign
-  void movslq(Address dst, int32_t imm64);
+  void movslq(Address  dst, int32_t imm64);
   void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
@@ -1347,6 +1352,10 @@ private:
   // Compute Square Root of Scalar Double-Precision Floating-Point Value
   void sqrtsd(XMMRegister dst, Address src);
   void sqrtsd(XMMRegister dst, XMMRegister src);
+
+  // Compute Square Root of Scalar Single-Precision Floating-Point Value
+  void sqrtss(XMMRegister dst, Address src);
+  void sqrtss(XMMRegister dst, XMMRegister src);
 
   void std() { emit_byte(0xfd); }
 
@@ -1682,23 +1691,23 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
 
+  void load_heap_oop(Register dst, Address src);
+  void store_heap_oop(Address dst, Register src);
+
+  // Used for storing NULL. All other oop constants should be
+  // stored using routines that take a jobject.
+  void store_heap_oop_null(Address dst);
+
   void load_prototype_header(Register dst, Register src);
 
 #ifdef _LP64
   void store_klass_gap(Register dst, Register src);
-
-  void load_heap_oop(Register dst, Address src);
-  void store_heap_oop(Address dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
   // converting a zero (like NULL) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
-
-  // Used for storing NULL. All other oop constants should be
-  // stored using routines that take a jobject.
-  void store_heap_oop_null(Address dst);
 
   void encode_heap_oop(Register r);
   void decode_heap_oop(Register r);
@@ -1848,7 +1857,10 @@ class MacroAssembler: public Assembler {
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
+  void incr_allocated_bytes(Register thread,
+                            Register var_size_in_bytes, int con_size_in_bytes,
+                            Register t1 = noreg);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1927,7 +1939,7 @@ class MacroAssembler: public Assembler {
 
   void untested()                                { stop("untested"); }
 
-  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, sizeof(b), "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
@@ -2120,6 +2132,9 @@ class MacroAssembler: public Assembler {
   void comisd(XMMRegister dst, Address src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src);
 
+  void fadd_s(Address src)        { Assembler::fadd_s(src); }
+  void fadd_s(AddressLiteral src) { Assembler::fadd_s(as_Address(src)); }
+
   void fldcw(Address src) { Assembler::fldcw(src); }
   void fldcw(AddressLiteral src);
 
@@ -2132,6 +2147,9 @@ class MacroAssembler: public Assembler {
 
   void fld_x(Address src) { Assembler::fld_x(src); }
   void fld_x(AddressLiteral src);
+
+  void fmul_s(Address src)        { Assembler::fmul_s(src); }
+  void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
@@ -2149,10 +2167,50 @@ private:
 
 public:
 
+  void addsd(XMMRegister dst, XMMRegister src)    { Assembler::addsd(dst, src); }
+  void addsd(XMMRegister dst, Address src)        { Assembler::addsd(dst, src); }
+  void addsd(XMMRegister dst, AddressLiteral src) { Assembler::addsd(dst, as_Address(src)); }
+
+  void addss(XMMRegister dst, XMMRegister src)    { Assembler::addss(dst, src); }
+  void addss(XMMRegister dst, Address src)        { Assembler::addss(dst, src); }
+  void addss(XMMRegister dst, AddressLiteral src) { Assembler::addss(dst, as_Address(src)); }
+
+  void divsd(XMMRegister dst, XMMRegister src)    { Assembler::divsd(dst, src); }
+  void divsd(XMMRegister dst, Address src)        { Assembler::divsd(dst, src); }
+  void divsd(XMMRegister dst, AddressLiteral src) { Assembler::divsd(dst, as_Address(src)); }
+
+  void divss(XMMRegister dst, XMMRegister src)    { Assembler::divss(dst, src); }
+  void divss(XMMRegister dst, Address src)        { Assembler::divss(dst, src); }
+  void divss(XMMRegister dst, AddressLiteral src) { Assembler::divss(dst, as_Address(src)); }
+
   void movsd(XMMRegister dst, XMMRegister src) { Assembler::movsd(dst, src); }
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
-  void movsd(XMMRegister dst, AddressLiteral src);
+  void movsd(XMMRegister dst, AddressLiteral src) { Assembler::movsd(dst, as_Address(src)); }
+
+  void mulsd(XMMRegister dst, XMMRegister src)    { Assembler::mulsd(dst, src); }
+  void mulsd(XMMRegister dst, Address src)        { Assembler::mulsd(dst, src); }
+  void mulsd(XMMRegister dst, AddressLiteral src) { Assembler::mulsd(dst, as_Address(src)); }
+
+  void mulss(XMMRegister dst, XMMRegister src)    { Assembler::mulss(dst, src); }
+  void mulss(XMMRegister dst, Address src)        { Assembler::mulss(dst, src); }
+  void mulss(XMMRegister dst, AddressLiteral src) { Assembler::mulss(dst, as_Address(src)); }
+
+  void sqrtsd(XMMRegister dst, XMMRegister src)    { Assembler::sqrtsd(dst, src); }
+  void sqrtsd(XMMRegister dst, Address src)        { Assembler::sqrtsd(dst, src); }
+  void sqrtsd(XMMRegister dst, AddressLiteral src) { Assembler::sqrtsd(dst, as_Address(src)); }
+
+  void sqrtss(XMMRegister dst, XMMRegister src)    { Assembler::sqrtss(dst, src); }
+  void sqrtss(XMMRegister dst, Address src)        { Assembler::sqrtss(dst, src); }
+  void sqrtss(XMMRegister dst, AddressLiteral src) { Assembler::sqrtss(dst, as_Address(src)); }
+
+  void subsd(XMMRegister dst, XMMRegister src)    { Assembler::subsd(dst, src); }
+  void subsd(XMMRegister dst, Address src)        { Assembler::subsd(dst, src); }
+  void subsd(XMMRegister dst, AddressLiteral src) { Assembler::subsd(dst, as_Address(src)); }
+
+  void subss(XMMRegister dst, XMMRegister src)    { Assembler::subss(dst, src); }
+  void subss(XMMRegister dst, Address src)        { Assembler::subss(dst, src); }
+  void subss(XMMRegister dst, AddressLiteral src) { Assembler::subss(dst, as_Address(src)); }
 
   void ucomiss(XMMRegister dst, XMMRegister src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address src) { Assembler::ucomiss(dst, src); }
@@ -2272,3 +2330,5 @@ class SkipIfEqual {
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return true; }
 #endif
+
+#endif // CPU_X86_VM_ASSEMBLER_X86_HPP

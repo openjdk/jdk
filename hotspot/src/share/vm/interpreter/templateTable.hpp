@@ -22,6 +22,25 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_TEMPLATETABLE_HPP
+#define SHARE_VM_INTERPRETER_TEMPLATETABLE_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/frame.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "interp_masm_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "interp_masm_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "interp_masm_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "interp_masm_zero.hpp"
+#endif
+
 #ifndef CC_INTERP
 // All the necessary definitions used for (bytecode) template generation. Instead of
 // spreading the implementation functionality for each bytecode in the interpreter
@@ -333,6 +352,20 @@ class TemplateTable: AllStatic {
   static Template* template_for_wide(Bytecodes::Code code)  { Bytecodes::wide_check(code); return &_template_table_wide[code]; }
 
   // Platform specifics
-  #include "incls/_templateTable_pd.hpp.incl"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "templateTable_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "templateTable_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "templateTable_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "templateTable_zero.hpp"
+#endif
+
 };
 #endif /* !CC_INTERP */
+
+#endif // SHARE_VM_INTERPRETER_TEMPLATETABLE_HPP

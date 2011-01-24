@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 CFLAGS += -DVM_LITTLE_ENDIAN
 
 # TLS helper, assembled from .s file
-# Not included in includeDB because it has no dependencies
-Obj_Files += solaris_x86_32.o
 
 #
 # Special case flags for compilers and compiler versions on i486.

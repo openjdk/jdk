@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_VM_OPERATIONS_HPP
+#define SHARE_VM_RUNTIME_VM_OPERATIONS_HPP
+
+#include "classfile/javaClasses.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oop.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/top.hpp"
 
 // The following classes are used for operations
 // initiated by a Java thread but that must
@@ -231,12 +240,18 @@ class VM_Deoptimize: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
 };
 
+
+// Deopt helper that can deoptimize frames in threads other than the
+// current thread.  Only used through Deoptimization::deoptimize_frame.
 class VM_DeoptimizeFrame: public VM_Operation {
+  friend class Deoptimization;
+
  private:
   JavaThread* _thread;
   intptr_t*   _id;
- public:
   VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id);
+
+ public:
   VMOp_Type type() const                         { return VMOp_DeoptimizeFrame; }
   void doit();
   bool allow_nested_vm_operations() const        { return true;  }
@@ -380,3 +395,5 @@ class VM_Exit: public VM_Operation {
   VMOp_Type type() const { return VMOp_Exit; }
   void doit();
 };
+
+#endif // SHARE_VM_RUNTIME_VM_OPERATIONS_HPP

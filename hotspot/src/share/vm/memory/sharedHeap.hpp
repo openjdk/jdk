@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_SHAREDHEAP_HPP
+#define SHARE_VM_MEMORY_SHAREDHEAP_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/permGen.hpp"
+
 // A "SharedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
@@ -38,6 +45,7 @@ class OopsInGenClosure;
 class ObjectClosure;
 class SubTasksDone;
 class WorkGang;
+class FlexibleWorkGang;
 class CollectorPolicy;
 class KlassHandle;
 
@@ -74,7 +82,7 @@ protected:
   int _strong_roots_parity;
 
   // If we're doing parallel GC, use this gang of threads.
-  WorkGang* _workers;
+  FlexibleWorkGang* _workers;
 
   // Number of parallel threads currently working on GC tasks.
   // O indicates use sequential code; 1 means use parallel code even with
@@ -189,7 +197,7 @@ public:
     SO_CodeCache           = 0x10
   };
 
-  WorkGang* workers() const { return _workers; }
+  FlexibleWorkGang* workers() const { return _workers; }
 
   // Sets the number of parallel threads that will be doing tasks
   // (such as process strong roots) subsequently.
@@ -284,3 +292,5 @@ public:
                              size_t bytes_after,
                              size_t capacity);
 };
+
+#endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

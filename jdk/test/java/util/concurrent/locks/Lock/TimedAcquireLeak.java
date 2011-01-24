@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class TimedAcquireLeak {
         return outputOf(new InputStreamReader(is, "UTF-8"));
     }
 
-    final static ExecutorService drainers = Executors.newFixedThreadPool(12);
+    static final ExecutorService drainers = Executors.newFixedThreadPool(12);
     static Future<String> futureOutputOf(final InputStream is) {
         return drainers.submit(
             new Callable<String>() { public String call() throws IOException {

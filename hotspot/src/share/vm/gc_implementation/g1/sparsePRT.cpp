@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sparsePRT.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/sparsePRT.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/space.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 
 #define SPARSE_PRT_VERBOSE 0
 
@@ -308,7 +314,7 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
   assert(e2->num_valid_cards() > 0, "Postcondition.");
 }
 
-CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
+CardIdx_t RSHashTableIter::find_first_card_in_list() {
   CardIdx_t res;
   while (_bl_ind != RSHashTable::NullEntry) {
     res = _rsht->entry(_bl_ind)->card(0);
@@ -322,14 +328,11 @@ CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
   return SparsePRTEntry::NullEntry;
 }
 
-size_t /* RSHashTable:: */ RSHashTableIter::compute_card_ind(CardIdx_t ci) {
-  return
-    _heap_bot_card_ind
-    + (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion)
-    + ci;
+size_t RSHashTableIter::compute_card_ind(CardIdx_t ci) {
+  return (_rsht->entry(_bl_ind)->r_ind() * HeapRegion::CardsPerRegion) + ci;
 }
 
-bool /* RSHashTable:: */ RSHashTableIter::has_next(size_t& card_index) {
+bool RSHashTableIter::has_next(size_t& card_index) {
   _card_ind++;
   CardIdx_t ci;
   if (_card_ind < SparsePRTEntry::cards_num() &&

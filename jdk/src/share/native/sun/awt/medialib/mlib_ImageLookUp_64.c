@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,10 +558,11 @@ void mlib_ImageLookUp_S32_D64(const mlib_s32 *src,
                               const mlib_d64 **table)
 {
   const mlib_d64 *table_base[4];
+  mlib_u32 shift = TABLE_SHIFT_S32;
   mlib_s32 c;
 
   for (c = 0; c < csize; c++) {
-    table_base[c] = &table[c][TABLE_SHIFT_S32];
+    table_base[c] = &table[c][shift];
   }
 
   MLIB_C_IMAGELOOKUP(mlib_d64, mlib_s32, table_base);
@@ -1039,10 +1040,11 @@ void mlib_ImageLookUpSI_S32_D64(const mlib_s32 *src,
                                 const mlib_d64 **table)
 {
   const mlib_d64 *table_base[4];
+  mlib_u32 shift = TABLE_SHIFT_S32;
   mlib_s32 c;
 
   for (c = 0; c < csize; c++) {
-    table_base[c] = &table[c][TABLE_SHIFT_S32];
+    table_base[c] = &table[c][shift];
   }
 
   MLIB_C_IMAGELOOKUPSI(mlib_d64, mlib_s32, table_base);

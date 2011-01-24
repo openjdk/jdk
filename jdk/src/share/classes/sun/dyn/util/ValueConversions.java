@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 import sun.dyn.Access;
 import sun.dyn.AdapterMethodHandle;
 import sun.dyn.MethodHandleImpl;
+import static sun.dyn.MemberName.uncaughtException;
 
 public class ValueConversions {
     private static final Access IMPL_TOKEN = Access.getToken();
@@ -148,11 +149,16 @@ public class ValueConversions {
         // look up the method
         String name = "unbox" + wrap.simpleName() + (raw ? "Raw" : "");
         MethodType type = unboxType(wrap, raw);
-        if (!exact)
-            // actually, type is wrong; the Java method takes Object
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type.erase());
-        else
+        if (!exact) {
+            try {
+                // actually, type is wrong; the Java method takes Object
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type.erase());
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(type, unbox(wrap, !exact, raw));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -280,10 +286,15 @@ public class ValueConversions {
         // look up the method
         String name = "box" + wrap.simpleName() + (raw ? "Raw" : "");
         MethodType type = boxType(wrap, raw);
-        if (exact)
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-        else
+        if (exact) {
+            try {
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(type.erase(), box(wrap, !exact, raw));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -366,7 +377,7 @@ public class ValueConversions {
             REBOX_CONVERSIONS = newWrapperCaches(2);
 
     /**
-     * Becase we normalize primitive types to reduce the number of signatures,
+     * Because we normalize primitive types to reduce the number of signatures,
      * primitives are sometimes manipulated under an "erased" type,
      * either int (for types other than long/double) or long (for all types).
      * When the erased primitive value is then boxed into an Integer or Long,
@@ -394,10 +405,15 @@ public class ValueConversions {
         // look up the method
         String name = "reboxRaw" + wrap.simpleName();
         MethodType type = reboxType(wrap);
-        if (exact)
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-        else
+        if (exact) {
+            try {
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(IDENTITY.type(), rebox(wrap, !exact));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -459,10 +475,10 @@ public class ValueConversions {
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
-            ZERO_CONSTANT_FUNCTIONS = newWrapperCaches(1);
+            CONSTANT_FUNCTIONS = newWrapperCaches(2);
 
     public static MethodHandle zeroConstantFunction(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = ZERO_CONSTANT_FUNCTIONS[0];
+        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[0];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -474,7 +490,11 @@ public class ValueConversions {
                 mh = EMPTY;
                 break;
             case INT: case LONG: case FLOAT: case DOUBLE:
-                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "zero"+wrap.simpleName(), type);
+                try {
+                    mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "zero"+wrap.simpleName(), type);
+                } catch (NoAccessException ex) {
+                    mh = null;
+                }
                 break;
         }
         if (mh != null) {
@@ -524,6 +544,24 @@ public class ValueConversions {
     }
 
     /**
+     * Identity function on ints.
+     * @param x an arbitrary int value
+     * @return the same value x
+     */
+    static int identity(int x) {
+        return x;
+    }
+
+    /**
+     * Identity function on longs.
+     * @param x an arbitrary long value
+     * @return the same value x
+     */
+    static long identity(long x) {
+        return x;
+    }
+
+    /**
      * Identity function, with reference cast.
      * @param t an arbitrary reference type
      * @param x an arbitrary reference value
@@ -533,7 +571,7 @@ public class ValueConversions {
         return t.cast(x);
     }
 
-    private static final MethodHandle IDENTITY, CAST_REFERENCE, ALWAYS_NULL, ALWAYS_ZERO, ZERO_OBJECT, IGNORE, EMPTY;
+    private static final MethodHandle IDENTITY, IDENTITY_I, IDENTITY_J, CAST_REFERENCE, ALWAYS_NULL, ALWAYS_ZERO, ZERO_OBJECT, IGNORE, EMPTY;
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
@@ -542,6 +580,8 @@ public class ValueConversions {
             MethodType ignoreType = idType.changeReturnType(void.class);
             MethodType zeroObjectType = MethodType.genericMethodType(0);
             IDENTITY = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", idType);
+            IDENTITY_I = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", MethodType.methodType(int.class, int.class));
+            IDENTITY_J = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", MethodType.methodType(long.class, long.class));
             //CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findStatic(ValueConversions.class, "castReference", castType);
             ALWAYS_NULL = IMPL_LOOKUP.findStatic(ValueConversions.class, "alwaysNull", idType);
@@ -549,8 +589,8 @@ public class ValueConversions {
             ZERO_OBJECT = IMPL_LOOKUP.findStatic(ValueConversions.class, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(ValueConversions.class, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(ValueConversions.class, "empty", ignoreType.dropParameterTypes(0, 1));
-        } catch (RuntimeException ex) {
-            throw ex;
+        } catch (Exception ex) {
+            throw uncaughtException(ex);
         }
     }
 
@@ -593,8 +633,53 @@ public class ValueConversions {
         return IDENTITY;
     }
 
+    public static MethodHandle identity(Class<?> type) {
+        if (type == Object.class)
+            return IDENTITY;
+        else if (!type.isPrimitive())
+            return retype(MethodType.methodType(type, type), IDENTITY);
+        else
+            return identity(Wrapper.forPrimitiveType(type));
+    }
+
+    static MethodHandle identity(Wrapper wrap) {
+        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[1];
+        MethodHandle mh = cache.get(wrap);
+        if (mh != null) {
+            return mh;
+        }
+        // slow path
+        MethodType type = MethodType.methodType(wrap.primitiveType());
+        if (wrap != Wrapper.VOID)
+            type = type.appendParameterTypes(wrap.primitiveType());
+        try {
+            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", type);
+        } catch (NoAccessException ex) {
+            mh = null;
+        }
+        if (mh == null && wrap == Wrapper.VOID) {
+            mh = EMPTY;  // #(){} : #()void
+        }
+        if (mh != null) {
+            cache.put(wrap, mh);
+            return mh;
+        }
+
+        // use a raw conversion
+        if (wrap.isSingleWord() && wrap != Wrapper.INT) {
+            mh = retype(type, identity(Wrapper.INT));
+        } else if (wrap.isDoubleWord() && wrap != Wrapper.LONG) {
+            mh = retype(type, identity(Wrapper.LONG));
+        }
+        if (mh != null) {
+            cache.put(wrap, mh);
+            return mh;
+        }
+        throw new IllegalArgumentException("cannot find identity for " + wrap);
+    }
+
     private static MethodHandle retype(MethodType type, MethodHandle mh) {
-        return AdapterMethodHandle.makeRetypeOnly(IMPL_TOKEN, type, mh);
+        return AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, type, mh);
     }
 
     private static final Object[] NO_ARGS_ARRAY = {};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_macro.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "libadt/vectset.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
+#include "opto/connode.hpp"
+#include "opto/locknode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/macro.hpp"
+#include "opto/memnode.hpp"
+#include "opto/node.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 
 //
@@ -1141,7 +1158,7 @@ void PhaseMacroExpand::expand_allocate_common(
     // Note: We set the control input on "eden_end" and "old_eden_top" when using
     //       a TLAB to work around a bug where these values were being moved across
     //       a safepoint.  These are not oops, so they cannot be include in the oop
-    //       map, but the can be changed by a GC.   The proper way to fix this would
+    //       map, but they can be changed by a GC.   The proper way to fix this would
     //       be to set the raw memory state when generating a  SafepointNode.  However
     //       this will require extensive changes to the loop optimization in order to
     //       prevent a degradation of the optimization.
@@ -1150,24 +1167,24 @@ void PhaseMacroExpand::expand_allocate_common(
 
     // allocate the Region and Phi nodes for the result
     result_region = new (C, 3) RegionNode(3);
-    result_phi_rawmem = new (C, 3) PhiNode( result_region, Type::MEMORY, TypeRawPtr::BOTTOM );
-    result_phi_rawoop = new (C, 3) PhiNode( result_region, TypeRawPtr::BOTTOM );
-    result_phi_i_o    = new (C, 3) PhiNode( result_region, Type::ABIO ); // I/O is used for Prefetch
+    result_phi_rawmem = new (C, 3) PhiNode(result_region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    result_phi_rawoop = new (C, 3) PhiNode(result_region, TypeRawPtr::BOTTOM);
+    result_phi_i_o    = new (C, 3) PhiNode(result_region, Type::ABIO); // I/O is used for Prefetch
 
     // We need a Region for the loop-back contended case.
     enum { fall_in_path = 1, contended_loopback_path = 2 };
     Node *contended_region;
     Node *contended_phi_rawmem;
-    if( UseTLAB ) {
+    if (UseTLAB) {
       contended_region = toobig_false;
       contended_phi_rawmem = mem;
     } else {
       contended_region = new (C, 3) RegionNode(3);
-      contended_phi_rawmem = new (C, 3) PhiNode( contended_region, Type::MEMORY, TypeRawPtr::BOTTOM);
+      contended_phi_rawmem = new (C, 3) PhiNode(contended_region, Type::MEMORY, TypeRawPtr::BOTTOM);
       // Now handle the passing-too-big test.  We fall into the contended
       // loop-back merge point.
-      contended_region    ->init_req( fall_in_path, toobig_false );
-      contended_phi_rawmem->init_req( fall_in_path, mem );
+      contended_region    ->init_req(fall_in_path, toobig_false);
+      contended_phi_rawmem->init_req(fall_in_path, mem);
       transform_later(contended_region);
       transform_later(contended_phi_rawmem);
     }
@@ -1175,78 +1192,101 @@ void PhaseMacroExpand::expand_allocate_common(
     // Load(-locked) the heap top.
     // See note above concerning the control input when using a TLAB
     Node *old_eden_top = UseTLAB
-      ? new (C, 3) LoadPNode     ( ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM )
-      : new (C, 3) LoadPLockedNode( contended_region, contended_phi_rawmem, eden_top_adr );
+      ? new (C, 3) LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM)
+      : new (C, 3) LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr);
 
     transform_later(old_eden_top);
     // Add to heap top to get a new heap top
-    Node *new_eden_top = new (C, 4) AddPNode( top(), old_eden_top, size_in_bytes );
+    Node *new_eden_top = new (C, 4) AddPNode(top(), old_eden_top, size_in_bytes);
     transform_later(new_eden_top);
     // Check for needing a GC; compare against heap end
-    Node *needgc_cmp = new (C, 3) CmpPNode( new_eden_top, eden_end );
+    Node *needgc_cmp = new (C, 3) CmpPNode(new_eden_top, eden_end);
     transform_later(needgc_cmp);
-    Node *needgc_bol = new (C, 2) BoolNode( needgc_cmp, BoolTest::ge );
+    Node *needgc_bol = new (C, 2) BoolNode(needgc_cmp, BoolTest::ge);
     transform_later(needgc_bol);
-    IfNode *needgc_iff = new (C, 2) IfNode(contended_region, needgc_bol, PROB_UNLIKELY_MAG(4), COUNT_UNKNOWN );
+    IfNode *needgc_iff = new (C, 2) IfNode(contended_region, needgc_bol, PROB_UNLIKELY_MAG(4), COUNT_UNKNOWN);
     transform_later(needgc_iff);
 
     // Plug the failing-heap-space-need-gc test into the slow-path region
-    Node *needgc_true = new (C, 1) IfTrueNode( needgc_iff );
+    Node *needgc_true = new (C, 1) IfTrueNode(needgc_iff);
     transform_later(needgc_true);
-    if( initial_slow_test ) {
-      slow_region    ->init_req( need_gc_path, needgc_true );
+    if (initial_slow_test) {
+      slow_region->init_req(need_gc_path, needgc_true);
       // This completes all paths into the slow merge point
       transform_later(slow_region);
     } else {                      // No initial slow path needed!
       // Just fall from the need-GC path straight into the VM call.
-      slow_region    = needgc_true;
+      slow_region = needgc_true;
     }
     // No need for a GC.  Setup for the Store-Conditional
-    Node *needgc_false = new (C, 1) IfFalseNode( needgc_iff );
+    Node *needgc_false = new (C, 1) IfFalseNode(needgc_iff);
     transform_later(needgc_false);
 
     // Grab regular I/O before optional prefetch may change it.
     // Slow-path does no I/O so just set it to the original I/O.
-    result_phi_i_o->init_req( slow_result_path, i_o );
+    result_phi_i_o->init_req(slow_result_path, i_o);
 
     i_o = prefetch_allocation(i_o, needgc_false, contended_phi_rawmem,
                               old_eden_top, new_eden_top, length);
 
+    // Name successful fast-path variables
+    Node* fast_oop = old_eden_top;
+    Node* fast_oop_ctrl;
+    Node* fast_oop_rawmem;
+
     // Store (-conditional) the modified eden top back down.
     // StorePConditional produces flags for a test PLUS a modified raw
     // memory state.
-    Node *store_eden_top;
-    Node *fast_oop_ctrl;
-    if( UseTLAB ) {
-      store_eden_top = new (C, 4) StorePNode( needgc_false, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, new_eden_top );
+    if (UseTLAB) {
+      Node* store_eden_top =
+        new (C, 4) StorePNode(needgc_false, contended_phi_rawmem, eden_top_adr,
+                              TypeRawPtr::BOTTOM, new_eden_top);
       transform_later(store_eden_top);
       fast_oop_ctrl = needgc_false; // No contention, so this is the fast path
+      fast_oop_rawmem = store_eden_top;
     } else {
-      store_eden_top = new (C, 5) StorePConditionalNode( needgc_false, contended_phi_rawmem, eden_top_adr, new_eden_top, old_eden_top );
+      Node* store_eden_top =
+        new (C, 5) StorePConditionalNode(needgc_false, contended_phi_rawmem, eden_top_adr,
+                                         new_eden_top, fast_oop/*old_eden_top*/);
       transform_later(store_eden_top);
-      Node *contention_check = new (C, 2) BoolNode( store_eden_top, BoolTest::ne );
+      Node *contention_check = new (C, 2) BoolNode(store_eden_top, BoolTest::ne);
       transform_later(contention_check);
       store_eden_top = new (C, 1) SCMemProjNode(store_eden_top);
       transform_later(store_eden_top);
 
       // If not using TLABs, check to see if there was contention.
-      IfNode *contention_iff = new (C, 2) IfNode ( needgc_false, contention_check, PROB_MIN, COUNT_UNKNOWN );
+      IfNode *contention_iff = new (C, 2) IfNode (needgc_false, contention_check, PROB_MIN, COUNT_UNKNOWN);
       transform_later(contention_iff);
-      Node *contention_true = new (C, 1) IfTrueNode( contention_iff );
+      Node *contention_true = new (C, 1) IfTrueNode(contention_iff);
       transform_later(contention_true);
       // If contention, loopback and try again.
-      contended_region->init_req( contended_loopback_path, contention_true );
-      contended_phi_rawmem->init_req( contended_loopback_path, store_eden_top );
+      contended_region->init_req(contended_loopback_path, contention_true);
+      contended_phi_rawmem->init_req(contended_loopback_path, store_eden_top);
 
       // Fast-path succeeded with no contention!
-      Node *contention_false = new (C, 1) IfFalseNode( contention_iff );
+      Node *contention_false = new (C, 1) IfFalseNode(contention_iff);
       transform_later(contention_false);
       fast_oop_ctrl = contention_false;
+
+      // Bump total allocated bytes for this thread
+      Node* thread = new (C, 1) ThreadLocalNode();
+      transform_later(thread);
+      Node* alloc_bytes_adr = basic_plus_adr(top()/*not oop*/, thread,
+                                             in_bytes(JavaThread::allocated_bytes_offset()));
+      Node* alloc_bytes = make_load(fast_oop_ctrl, store_eden_top, alloc_bytes_adr,
+                                    0, TypeLong::LONG, T_LONG);
+#ifdef _LP64
+      Node* alloc_size = size_in_bytes;
+#else
+      Node* alloc_size = new (C, 2) ConvI2LNode(size_in_bytes);
+      transform_later(alloc_size);
+#endif
+      Node* new_alloc_bytes = new (C, 3) AddLNode(alloc_bytes, alloc_size);
+      transform_later(new_alloc_bytes);
+      fast_oop_rawmem = make_store(fast_oop_ctrl, store_eden_top, alloc_bytes_adr,
+                                   0, new_alloc_bytes, T_LONG);
     }
 
-    // Rename successful fast-path variables to make meaning more obvious
-    Node* fast_oop        = old_eden_top;
-    Node* fast_oop_rawmem = store_eden_top;
     fast_oop_rawmem = initialize_object(alloc,
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
                                         klass_node, length, size_in_bytes);
@@ -1265,11 +1305,11 @@ void PhaseMacroExpand::expand_allocate_common(
 
       call->init_req(TypeFunc::Parms+0, thread);
       call->init_req(TypeFunc::Parms+1, fast_oop);
-      call->init_req( TypeFunc::Control, fast_oop_ctrl );
-      call->init_req( TypeFunc::I_O    , top() )        ;   // does no i/o
-      call->init_req( TypeFunc::Memory , fast_oop_rawmem );
-      call->init_req( TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr) );
-      call->init_req( TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr) );
+      call->init_req(TypeFunc::Control, fast_oop_ctrl);
+      call->init_req(TypeFunc::I_O    , top()); // does no i/o
+      call->init_req(TypeFunc::Memory , fast_oop_rawmem);
+      call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
+      call->init_req(TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr));
       transform_later(call);
       fast_oop_ctrl = new (C, 1) ProjNode(call,TypeFunc::Control);
       transform_later(fast_oop_ctrl);
@@ -1278,10 +1318,10 @@ void PhaseMacroExpand::expand_allocate_common(
     }
 
     // Plug in the successful fast-path into the result merge point
-    result_region    ->init_req( fast_result_path, fast_oop_ctrl );
-    result_phi_rawoop->init_req( fast_result_path, fast_oop );
-    result_phi_i_o   ->init_req( fast_result_path, i_o );
-    result_phi_rawmem->init_req( fast_result_path, fast_oop_rawmem );
+    result_region    ->init_req(fast_result_path, fast_oop_ctrl);
+    result_phi_rawoop->init_req(fast_result_path, fast_oop);
+    result_phi_i_o   ->init_req(fast_result_path, i_o);
+    result_phi_rawmem->init_req(fast_result_path, fast_oop_rawmem);
   } else {
     slow_region = ctrl;
   }

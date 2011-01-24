@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,17 +97,22 @@ public class TestMasterSecret extends Utils {
                 System.out.print(".");
                 n++;
 
-                KeyGenerator kg = KeyGenerator.getInstance("SunTlsMasterSecret", provider);
-                SecretKey premasterKey = new SecretKeySpec(premaster, algorithm);
-                TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec
-                    (premasterKey, protoMajor, protoMinor, clientRandom, serverRandom);
+                KeyGenerator kg =
+                    KeyGenerator.getInstance("SunTlsMasterSecret", provider);
+                SecretKey premasterKey =
+                    new SecretKeySpec(premaster, algorithm);
+                TlsMasterSecretParameterSpec spec =
+                    new TlsMasterSecretParameterSpec(premasterKey, protoMajor,
+                        protoMinor, clientRandom, serverRandom,
+                        null, -1, -1);
                 kg.init(spec);
                 TlsMasterSecret key = (TlsMasterSecret)kg.generateKey();
                 byte[] enc = key.getEncoded();
                 if (Arrays.equals(master, enc) == false) {
                     throw new Exception("mismatch line: " + lineNumber);
                 }
-                if ((preMajor != key.getMajorVersion()) || (preMinor != key.getMinorVersion())) {
+                if ((preMajor != key.getMajorVersion()) ||
+                        (preMinor != key.getMinorVersion())) {
                     throw new Exception("version mismatch line: " + lineNumber);
                 }
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_CFGPrinter.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_ValueStack.hpp"
 
 #ifndef PRODUCT
 
@@ -174,31 +179,6 @@ void CFGPrinterOutput::print_state(BlockBegin* block) {
   int index;
   Value value;
 
-  if (state->stack_size() > 0) {
-    print_begin("stack");
-    print("size %d", state->stack_size());
-
-    for_each_stack_value(state, index, value) {
-      ip.print_phi(index, value, block);
-      print_operand(value);
-      output()->cr();
-    }
-
-    print_end("stack");
-  }
-
-  if (state->locks_size() > 0) {
-    print_begin("locks");
-    print("size %d", state->locks_size());
-
-    for_each_lock_value(state, index, value) {
-      ip.print_phi(index, value, block);
-      print_operand(value);
-      output()->cr();
-    }
-    print_end("locks");
-  }
-
   for_each_state(state) {
     print_begin("locals");
     print("size %d", state->locals_size());
@@ -210,6 +190,33 @@ void CFGPrinterOutput::print_state(BlockBegin* block) {
       output()->cr();
     }
     print_end("locals");
+
+    if (state->stack_size() > 0) {
+      print_begin("stack");
+      print("size %d", state->stack_size());
+      print("method \"%s\"", method_name(state->scope()->method()));
+
+      for_each_stack_value(state, index, value) {
+        ip.print_phi(index, value, block);
+        print_operand(value);
+        output()->cr();
+      }
+
+      print_end("stack");
+    }
+
+    if (state->locks_size() > 0) {
+      print_begin("locks");
+      print("size %d", state->locks_size());
+      print("method \"%s\"", method_name(state->scope()->method()));
+
+      for_each_lock_value(state, index, value) {
+        ip.print_phi(index, value, block);
+        print_operand(value);
+        output()->cr();
+      }
+      print_end("locks");
+    }
   }
 
   print_end("states");
@@ -230,7 +237,8 @@ void CFGPrinterOutput::print_HIR(Value instr) {
   if (instr->is_pinned()) {
     output()->put('.');
   }
-  output()->print("%d %d ", instr->bci(), instr->use_count());
+
+  output()->print("%d %d ", instr->printable_bci(), instr->use_count());
 
   print_operand(instr);
 
@@ -271,7 +279,7 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   print("name \"B%d\"", block->block_id());
 
   print("from_bci %d", block->bci());
-  print("to_bci %d", (block->end() == NULL ? -1 : block->end()->bci()));
+  print("to_bci %d", (block->end() == NULL ? -1 : block->end()->printable_bci()));
 
   output()->indent();
   output()->print("predecessors ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENOOPCLOSURES_INLINE_HPP
+#define SHARE_VM_MEMORY_GENOOPCLOSURES_INLINE_HPP
+
+#include "memory/cardTableRS.hpp"
+#include "memory/defNewGeneration.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genOopClosures.hpp"
+#include "memory/genRemSet.hpp"
+#include "memory/generation.hpp"
+#include "memory/sharedHeap.hpp"
+#include "memory/space.hpp"
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
   OopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
@@ -122,3 +134,5 @@ template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
 
 inline void ScanWeakRefClosure::do_oop_nv(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
 inline void ScanWeakRefClosure::do_oop_nv(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
+
+#endif // SHARE_VM_MEMORY_GENOOPCLOSURES_INLINE_HPP

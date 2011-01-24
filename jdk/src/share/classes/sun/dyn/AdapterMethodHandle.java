@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,6 +476,39 @@ public class AdapterMethodHandle extends BoundMethodHandle {
             return null;
         // TO DO:  clone the target guy, whatever he is, with new type.
         return new AdapterMethodHandle(target, newType, makeConv(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY));
+    }
+
+    static MethodHandle makeTypeHandler(Access token,
+                MethodHandle target, MethodHandle typeHandler) {
+        Access.check(token);
+        return new WithTypeHandler(target, typeHandler);
+    }
+
+    static class WithTypeHandler extends AdapterMethodHandle {
+        final MethodHandle target, typeHandler;
+        WithTypeHandler(MethodHandle target, MethodHandle typeHandler) {
+            super(target, target.type(), makeConv(OP_RETYPE_ONLY));
+            this.target = target;
+            this.typeHandler = typeHandler.asType(TYPE_HANDLER_TYPE);
+        }
+
+        public MethodHandle asType(MethodType newType) {
+            if (this.type() == newType)
+                return this;
+            try {
+                MethodHandle retyped = (MethodHandle) typeHandler.invokeExact(target, newType);
+                // Contract:  Must return the desired type, or throw WMT
+                if (retyped.type() != newType)
+                    throw new WrongMethodTypeException(retyped.toString());
+                return retyped;
+            } catch (Throwable ex) {
+                if (ex instanceof Error)  throw (Error)ex;
+                if (ex instanceof RuntimeException)  throw (RuntimeException)ex;
+                throw new RuntimeException(ex);
+            }
+        }
+        private static final MethodType TYPE_HANDLER_TYPE
+            = MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class);
     }
 
     /** Can a checkcast adapter validly convert the target to newType?

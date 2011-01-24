@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,20 +159,8 @@ extern int lastL;
 #endif /* DEBUG_AWT_LOCK && !XAWT */
 
 #ifndef HEADLESS
-extern Display         *awt_display;            /* awt_GraphicsEnv.c */
-extern XtAppContext     awt_appContext;         /* awt_MToolkit.c */
-extern Widget           awt_root_shell;
-extern Pixel            awt_defaultBg;
-extern Pixel            awt_defaultFg;
-extern int              awt_multiclick_time;    /* awt_MToolkit.c */
-extern int              awt_multiclick_smudge;  /* canvas.c */
-extern unsigned int     awt_MetaMask;           /* awt_MToolkit.c */
-extern unsigned int     awt_AltMask;
-extern unsigned int     awt_NumLockMask;
-extern unsigned int     awt_ModeSwitchMask;
-extern Cursor           awt_scrollCursor;       /* awt_MToolkit.c */
-extern Boolean          awt_ModLockIsShiftLock;
-
+extern Display         *awt_display; /* awt_GraphicsEnv.c */
+extern Boolean          awt_ModLockIsShiftLock; /* XToolkit.c */
 #endif /* !HEADLESS */
 
 #endif /* ! _AWT_ */

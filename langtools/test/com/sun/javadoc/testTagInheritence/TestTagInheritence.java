@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ public class TestTagInheritence extends JavadocTester {
         //First sentence test (6253614)
         tests[tests.length - 2][0] =BUG_ID + FS + "firstSentence" + FS +
             "B.html";
-        tests[tests.length - 2][1] =  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;First sentence.</TD>";
+        tests[tests.length - 2][1] =  "<div class=\"block\">First sentence.</div>";
 
         //Another first sentence test (6253604)
         tests[tests.length - 1][0] =BUG_ID + FS + "firstSentence2" + FS +
             "C.html";
-        tests[tests.length - 1][1] =  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;First sentence.</TD>";
+        tests[tests.length - 1][1] =  "<div class=\"block\">First sentence.</div>";
 
         TestTagInheritence tester = new TestTagInheritence();
         run(tester, ARGS, tests, NO_TEST);

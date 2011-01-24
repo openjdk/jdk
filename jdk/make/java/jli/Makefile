@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -148,14 +148,9 @@ include $(BUILDDIR)/common/Library.gmk
 #
 ifeq ($(PLATFORM), windows)
 
-STATIC_LIBRARY_DIR = $(OBJDIR)/static
-STATIC_LIBRARY_NAME = $(LIBPREFIX)$(LIBRARY).lib
-STATIC_LIBRARY = $(STATIC_LIBRARY_DIR)/$(STATIC_LIBRARY_NAME)
+STATIC_LIBRARY = $(OBJDIR)/static/$(LIBPREFIX)$(LIBRARY).lib
 
-$(STATIC_LIBRARY_DIR): $(OBJDIR)
-	@$(MKDIR) $(STATIC_LIBRARY_DIR)
-
-$(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR)
+$(STATIC_LIBRARY): $(FILES_o)
 	@$(prep-target)
 	$(LIBEXE) -nologo -out:$@ $(FILES_o)
 

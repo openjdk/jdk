@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -691,11 +691,11 @@ public class MinimalHTMLWriter extends AbstractWriter {
         if (styleNameMapping == null) {
             return style;
         }
-        StringBuffer sb = null;
+        StringBuilder sb = null;
         for (int counter = style.length() - 1; counter >= 0; counter--) {
             if (!isValidCharacter(style.charAt(counter))) {
                 if (sb == null) {
-                    sb = new StringBuffer(style);
+                    sb = new StringBuilder(style);
                 }
                 sb.setCharAt(counter, 'a');
             }

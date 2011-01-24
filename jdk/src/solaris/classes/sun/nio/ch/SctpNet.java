@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class SctpNet {
 
     /* -- Miscellaneous SCTP utilities -- */
 
-    static boolean bindxIPv4MappedAddresses() {
+    private static boolean IPv4MappedAddresses() {
         if ("SunOS".equals(osName)) {
             /* Solaris supports IPv4Mapped Addresses with bindx */
             return true;
@@ -87,7 +87,7 @@ public class SctpNet {
     static void bindx(int fd, InetAddress[] addrs, int port, boolean add)
             throws IOException {
         bindx(fd, addrs, port, addrs.length, add,
-                bindxIPv4MappedAddresses());
+                IPv4MappedAddresses());
     }
 
     static Set<SocketAddress> getLocalAddresses(int fd)
@@ -145,11 +145,16 @@ public class SctpNet {
             InetSocketAddress netAddr = (InetSocketAddress)addr;
 
             if (name.equals(SCTP_PRIMARY_ADDR)) {
-                setPrimAddrOption0(fd, assocId,
-                        netAddr.getAddress(), netAddr.getPort());
+                setPrimAddrOption0(fd,
+                                   assocId,
+                                   netAddr.getAddress(),
+                                   netAddr.getPort());
             } else {
-                setPeerPrimAddrOption0(fd, assocId,
-                        netAddr.getAddress(), netAddr.getPort());
+                setPeerPrimAddrOption0(fd,
+                                       assocId,
+                                       netAddr.getAddress(),
+                                       netAddr.getPort(),
+                                       IPv4MappedAddresses());
             }
         } else if (name.equals(SCTP_DISABLE_FRAGMENTS) ||
             name.equals(SCTP_EXPLICIT_COMPLETE) ||
@@ -290,7 +295,7 @@ public class SctpNet {
             int port) throws IOException;
 
     static native void setPeerPrimAddrOption0(int fd, int assocId,
-            InetAddress ia, int port) throws IOException;
+            InetAddress ia, int port, boolean preferIPv6) throws IOException;
 
     static native SocketAddress getPrimAddrOption0(int fd, int assocId)
             throws IOException;

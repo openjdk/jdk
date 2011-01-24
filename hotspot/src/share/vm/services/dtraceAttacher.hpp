@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_DTRACEATTACHER_HPP
+#define SHARE_VM_SERVICES_DTRACEATTACHER_HPP
 
 #define DTRACE_ALLOC_PROBES    0x1
 #define DTRACE_METHOD_PROBES   0x2
@@ -44,3 +47,5 @@ class DTrace : public AllStatic {
   // set DTraceMonitorProbes flag
   static void set_monitor_dprobes(bool value);
 };
+
+#endif // SHARE_VM_SERVICES_DTRACEATTACHER_HPP

@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_codeCache.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
+#include "code/dependencies.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/xmlstream.hpp"
 
 // Helper class for printing in CodeCache
 
@@ -914,3 +932,16 @@ void CodeCache::print() {
 }
 
 #endif // PRODUCT
+
+void CodeCache::print_bounds(outputStream* st) {
+  st->print_cr("Code Cache  [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+               _heap->low_boundary(),
+               _heap->high(),
+               _heap->high_boundary());
+  st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
+               " adapters=" UINT32_FORMAT " free_code_cache=" SIZE_FORMAT
+               " largest_free_block=" SIZE_FORMAT,
+               CodeCache::nof_blobs(), CodeCache::nof_nmethods(),
+               CodeCache::nof_adapters(), CodeCache::unallocated_capacity(),
+               CodeCache::largest_free_block());
+}

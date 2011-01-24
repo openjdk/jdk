@@ -515,7 +515,7 @@ implements java.io.Serializable
 
         // Copy perms into a Hashtable
         Hashtable<String, Permission> permissions =
-                new Hashtable<String, Permission>(perms.size()*2);
+                new Hashtable<>(perms.size()*2);
 
         synchronized (this) {
             permissions.putAll(perms);

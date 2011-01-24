@@ -1,6 +1,4 @@
 T6467183a.java:16:26: compiler.warn.prob.found.req: (compiler.misc.unchecked.cast.to.type), T6467183a<T>.B, T6467183a<T>.A<T>
-T6467183a.java:24:41: compiler.warn.prob.found.req: (compiler.misc.unchecked.cast.to.type), T6467183a<T>.A<java.lang.Integer>, T6467183a<T>.C<? extends java.lang.Number>
-T6467183a.java:28:42: compiler.warn.prob.found.req: (compiler.misc.unchecked.cast.to.type), T6467183a<T>.A<java.lang.Integer>, T6467183a<T>.C<? extends java.lang.Integer>
 - compiler.err.warnings.and.werror
 1 error
-3 warnings
+1 warning

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-#ifndef _DICT_
-#define _DICT_
+#ifndef SHARE_VM_LIBADT_DICT_HPP
+#define SHARE_VM_LIBADT_DICT_HPP
+
+#include "libadt/port.hpp"
+
 // Dictionaries - An Abstract Data Type
 //INTERFACE
 class ostream;
@@ -114,4 +117,4 @@ class DictI {
   int test(void) { return _i<_d->_size;} // Test for end of iteration
 };
 
-#endif // _DICT_
+#endif // SHARE_VM_LIBADT_DICT_HPP

@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_X86_VM_VM_VERSION_X86_HPP
+#define CPU_X86_VM_VM_VERSION_X86_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version : public Abstract_VM_Version {
 public:
   // cpuid result register layouts.  These are all unions of a uint32_t
@@ -446,6 +452,10 @@ public:
   static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
 
+  // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
+  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+                                           supports_sse3() && _model != 0x1C; }
+
   static bool supports_compare_and_exchange() { return true; }
 
   static const char* cpu_features()           { return _features_str; }
@@ -516,3 +526,5 @@ public:
     return count >= 0 ? count : 1;
   }
 };
+
+#endif // CPU_X86_VM_VM_VERSION_X86_HPP

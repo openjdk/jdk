@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,8 @@ public class Popup {
 
             component.setLocation(ownerX, ownerY);
             component.getContentPane().add(contents, BorderLayout.CENTER);
-            contents.invalidate();
+            component.invalidate();
+            component.validate();
             if(component.isVisible()) {
                 // Do not call pack() if window is not visible to
                 // avoid early native peer creation

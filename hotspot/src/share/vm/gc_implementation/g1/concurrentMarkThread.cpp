@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_concurrentMarkThread.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1MMUTracker.hpp"
+#include "gc_implementation/g1/vm_operations_g1.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/vmThread.hpp"
 
 // ======= Concurrent Mark Thread ========
 
@@ -271,7 +277,9 @@ void ConcurrentMarkThread::run() {
     // completed. This will also notify the FullGCCount_lock in case a
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
-    g1->increment_full_collections_completed(true /* outer */);
+    _sts.join();
+    g1->increment_full_collections_completed(true /* concurrent */);
+    _sts.leave();
   }
   assert(_should_terminate, "just checking");
 
@@ -303,9 +311,10 @@ void ConcurrentMarkThread::print_on(outputStream* st) const {
 }
 
 void ConcurrentMarkThread::sleepBeforeNextCycle() {
-  clear_in_progress();
   // We join here because we don't want to do the "shouldConcurrentMark()"
   // below while the world is otherwise stopped.
+  assert(!in_progress(), "should have been cleared");
+
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!started()) {
     CGC_lock->wait(Mutex::_no_safepoint_check_flag);

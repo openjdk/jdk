@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,50 @@ DEFINE_XOR_SPANS(XorSpans, Any4Byte, 4)
 DEFINE_XOR_SPANS(XorSpans, AnyByte,  1)
 DEFINE_XOR_SPANS(XorSpans, AnyInt,   1)
 DEFINE_XOR_SPANS(XorSpans, AnyShort, 1)
+
+/***************************************************************/
+
+#define DEFINE_SET_PGRAM(FUNC, ANYTYPE, NCHAN)                      \
+void ADD_SUFF(ANYTYPE##FUNC)(SurfaceDataRasInfo *pRasInfo,          \
+                             jint lox, jint loy,                    \
+                             jint hix, jint hiy,                    \
+                             jlong leftx, jlong dleftx,             \
+                             jlong rightx, jlong drightx,           \
+                             jint pixel, NativePrimitive * pPrim,   \
+                             CompositeInfo * pCompInfo)             \
+{                                                                   \
+    mlib_image dst[1];                                              \
+    mlib_s32 dstScan = pRasInfo->scanStride;                        \
+    mlib_u8  *dstBase = (mlib_u8*)(pRasInfo->rasBase), *pdst;       \
+    mlib_s32 c_arr[4];                                              \
+                                                                    \
+    STORE_CONST_##NCHAN(c_arr, pixel);                              \
+    pdst = dstBase + loy*dstScan;                                   \
+                                                                    \
+    while (loy < hiy) {                                             \
+        jint lx = WholeOfLong(leftx);                               \
+        jint rx = WholeOfLong(rightx);                              \
+        if (lx < lox) lx = lox;                                     \
+        if (rx > hix) rx = hix;                                     \
+                                                                    \
+        MLIB_IMAGE_SET(dst, MLIB_##ANYTYPE, NCHAN_##ANYTYPE,        \
+                       rx-lx, 1, dstScan,                           \
+                       pdst + lx*ANYTYPE##PixelStride);             \
+                                                                    \
+        mlib_ImageClear(dst, c_arr);                                \
+                                                                    \
+        pdst = PtrAddBytes(pdst, dstScan);                          \
+        leftx += dleftx;                                            \
+        rightx += drightx;                                          \
+        loy++;                                                      \
+    }                                                               \
+}
+
+DEFINE_SET_PGRAM(SetParallelogram, Any3Byte, 3)
+DEFINE_SET_PGRAM(SetParallelogram, Any4Byte, 4)
+DEFINE_SET_PGRAM(SetParallelogram, AnyByte,  1)
+DEFINE_SET_PGRAM(SetParallelogram, AnyInt,   1)
+DEFINE_SET_PGRAM(SetParallelogram, AnyShort, 1)
 
 /***************************************************************/
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.javac.util;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Locale;
+import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
@@ -62,7 +63,7 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     //provide common default formats
     public String formatDiagnostic(JCDiagnostic d, Locale l) {
         try {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             if (d.getPosition() != Position.NOPOS) {
                 buf.append(formatSource(d, false, null));
                 buf.append(':');
@@ -71,16 +72,22 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 buf.append(formatPosition(d, COLUMN, null));
                 buf.append(':');
             }
+            else if (d.getSource() != null && d.getSource().getKind() == JavaFileObject.Kind.CLASS) {
+                buf.append(formatSource(d, false, null));
+                buf.append(":-:-:");
+            }
             else
                 buf.append('-');
             buf.append(' ');
             buf.append(formatMessage(d, null));
-            if (displaySource(d))
-                buf.append("\n" + formatSourceLine(d, 0));
+            if (displaySource(d)) {
+                buf.append("\n");
+                buf.append(formatSourceLine(d, 0));
+            }
             return buf.toString();
         }
         catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -96,7 +103,9 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 buf.append(",{");
                 for (String sub : formatSubdiagnostics(d, null)) {
                     buf.append(sep);
-                    buf.append("(" + sub + ")");
+                    buf.append("(");
+                    buf.append(sub);
+                    buf.append(")");
                     sep = ",";
                 }
                 buf.append('}');

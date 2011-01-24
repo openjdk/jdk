@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ AwtWindow::AwtWindow() {
 
     ::InitializeCriticalSection(&contentBitmapCS);
 
-    m_windowType = Type::NORMAL;
+    m_windowType = NORMAL;
     m_alwaysOnTop = false;
 }
 
@@ -1016,9 +1016,9 @@ void AwtWindow::InitType(JNIEnv *env, jobject peer)
     }
 
     if (strcmp(valueNative, "UTILITY") == 0) {
-        m_windowType = Type::UTILITY;
+        m_windowType = UTILITY;
     } else if (strcmp(valueNative, "POPUP") == 0) {
-        m_windowType = Type::POPUP;
+        m_windowType = POPUP;
     }
 
     env->ReleaseStringUTFChars(value, valueNative);
@@ -1029,10 +1029,10 @@ void AwtWindow::InitType(JNIEnv *env, jobject peer)
 void AwtWindow::TweakStyle(DWORD & style, DWORD & exStyle)
 {
     switch (GetType()) {
-        case Type::UTILITY:
+        case UTILITY:
             exStyle |= WS_EX_TOOLWINDOW;
             break;
-        case Type::POPUP:
+        case POPUP:
             style &= ~WS_OVERLAPPED;
             style |= WS_POPUP;
             break;

@@ -57,7 +57,7 @@ JLS3_URL = http://java.sun.com/docs/books/jls/
 
 # Common Java trademark line
 JAVA_TRADEMARK_LINE = Java is a trademark or registered trademark of \
-$(COMPANY_NAME) in the US and other countries.
+$(FULL_COMPANY_NAME) in the US and other countries.
 
 #
 # Definitions for imported components
@@ -190,7 +190,6 @@ $(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
 # Common javadoc options used by all
 COMMON_JAVADOCFLAGS =					\
                 $(NO_PROPRIETARY_API_WARNINGS)          \
-		-source 1.5				\
 		-quiet					\
                 -use					\
                 -keywords				\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vmPSOperations.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "gc_implementation/parallelScavenge/vmPSOperations.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "utilities/dtrace.hpp"
 
 // The following methods are used by the parallel scavenge collector
 VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t size,

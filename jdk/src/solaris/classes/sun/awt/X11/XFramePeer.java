@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,8 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
 
     void updateChildrenSizes() {
         super.updateChildrenSizes();
+        int height = getMenuBarHeight();
+
         // XWindow.reshape calls XBaseWindow.xSetBounds, which acquires
         // the AWT lock, so we have to acquire the AWT lock here
         // before getStateLock() to avoid a deadlock with the Toolkit thread
@@ -159,7 +161,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             synchronized(getStateLock()) {
                 int width = dimensions.getClientSize().width;
                 if (menubarPeer != null) {
-                    menubarPeer.reshape(0, 0, width, getMenuBarHeight());
+                    menubarPeer.reshape(0, 0, width, height);
                 }
             }
         } finally {

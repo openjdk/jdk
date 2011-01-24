@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -998,7 +998,7 @@ public class StyleSheet extends StyleContext {
     void addRule(String[] selector, AttributeSet declaration,
                  boolean isLinked) {
         int n = selector.length;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(selector[0]);
         for (int counter = 1; counter < n; counter++) {
             sb.append(' ');

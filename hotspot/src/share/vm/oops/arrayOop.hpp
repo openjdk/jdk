@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_ARRAYOOP_HPP
+#define SHARE_VM_OOPS_ARRAYOOP_HPP
+
+#include "memory/universe.inline.hpp"
+#include "oops/oop.hpp"
 
 // arrayOopDesc is the abstract baseclass for all arrays.  It doesn't
 // declare pure virtual to enforce this because that would allocate a vtbl
@@ -113,3 +119,5 @@ class arrayOopDesc : public oopDesc {
     return max_element_words / words_per_element;
   }
 };
+
+#endif // SHARE_VM_OOPS_ARRAYOOP_HPP

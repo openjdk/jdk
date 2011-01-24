@@ -1,31 +1,41 @@
 README:
-  This file should be located at the top of the OpenJDK Mercurial repository
-  forest. This top or enclosing repository will include a "make" directory,
-  and a Makefile at the very top of the repository.
-  It should also include the 6 repositories: "jdk", "hotspot", "langtools",
-  "corba", "jaxws"  and "jaxp".
+  This file should be located at the top of the OpenJDK Mercurial root
+  repository. This root repository will include a "make" directory,
+  and a Makefile for building the entire OpenJDK.
+  A full OpenJDK repository set (forest) should also include the following
+  6 nested repositories:
+    "jdk", "hotspot", "langtools", "corba", "jaxws"  and "jaxp".
+  There are also several source downloads for the jax* repositories that
+  will be needed.
+
+  This one root repository can be obtained with something like:
+    hg clone http://hg.openjdk.java.net/jdk7/jdk7 openjdk7
+  To make sure you have all the nested repositories, you can run:
+    cd openjdk7 && sh ./get_source.sh
+  (This is identical to using the Mercurial Forest Extension command 
+   'hg fclone http://hg.openjdk.java.net/jdk7/jdk7 openjdk7').
+  People unfamiliar with Mercurial should read the first few chapters of
+  the Mercurial book: http://hgbook.red-bean.com/read/
 
   See http://openjdk.java.net/ for more information about the OpenJDK.
 
 Simple Build Instructions:
+  
+  0. Get the necessary system software/packages installed on your system, see
+     http://hg.openjdk.java.net/jdk7/build/raw-file/tip/README-builds.html
 
-  1. Download and install a JDK 6 from
+  1. If you don't have a jdk6 installed, download and install a JDK 6 from
      http://java.sun.com/javase/downloads/index.jsp
-     Set the environment variable ALT_BOOTDIR to the location of this JDK 6.
+     Set the environment variable ALT_BOOTDIR to the location of JDK 6.
 
-  2. Download and install the Binary Plugs for the most recent JDK7 from
-     http://download.java.net/openjdk/jdk7/
-     Set the environment variable ALT_BINARY_PLUGS_PATH to the location of
-     these binary plugs.
-     
-  3. Check the sanity of doing a build with the current machine:
+  2. Check the sanity of doing a build with your current system:
        gnumake sanity
      See README-builds.html if you run into problems.
   
-  4. Do a complete build of the jdk:
+  3. Do a complete build of the OpenJDK:
        gnumake all
      The resulting JDK image should be found in build/*/j2sdk-image
 
-where gnumake is GNU make 3.78.1 or newer, /usr/bin/make on Linux and
+where gnumake is GNU make 3.81 or newer, /usr/bin/make on Linux and
 /usr/sfw/bin/gmake or /opt/sfw/bin/gmake on Solaris.
 

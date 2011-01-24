@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class MethodTypeImpl {
     final long primCounts;              // packed prim & double counts
     final int vmslots;                  // total number of parameter slots
     final MethodType erasedType;        // the canonical erasure
+
     /*lazy*/ MethodType primsAsBoxes;   // replace prims by wrappers
     /*lazy*/ MethodType primArgsAsBoxes; // wrap args only; make raw return
     /*lazy*/ MethodType primsAsInts;    // replace prims by int/long
@@ -59,6 +60,7 @@ public class MethodTypeImpl {
     /*lazy*/ FromGeneric fromGeneric;   // convert cs. w/o prims to with
     /*lazy*/ SpreadGeneric[] spreadGeneric; // expand one argument to many
     /*lazy*/ FilterGeneric filterGeneric; // convert argument(s) on the fly
+    /*lazy*/ MethodHandle genericInvoker; // hook for invokeGeneric
 
     public MethodType erasedType() {
         return erasedType;

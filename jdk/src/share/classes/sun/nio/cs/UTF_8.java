@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@ class UTF_8 extends Unicode
     private static class Encoder extends CharsetEncoder {
 
         private Encoder(Charset cs) {
-            super(cs, 1.1f, 4.0f);
+            super(cs, 1.1f, 3.0f);
         }
 
         public boolean canEncode(char c) {

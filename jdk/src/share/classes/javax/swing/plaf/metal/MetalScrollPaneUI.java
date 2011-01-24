@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,17 +81,26 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-
     public void installListeners(JScrollPane scrollPane) {
         super.installListeners(scrollPane);
         scrollBarSwapListener = createScrollBarSwapListener();
         scrollPane.addPropertyChangeListener(scrollBarSwapListener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    protected void uninstallListeners(JComponent c) {
+        super.uninstallListeners(c);
+        c.removePropertyChangeListener(scrollBarSwapListener);
+    }
 
+    /**
+     * @deprecated - Replaced by {@link #uninstallListeners(JComponent)}
+     */
+    @Deprecated
     public void uninstallListeners(JScrollPane scrollPane) {
         super.uninstallListeners(scrollPane);
-
         scrollPane.removePropertyChangeListener(scrollBarSwapListener);
     }
 

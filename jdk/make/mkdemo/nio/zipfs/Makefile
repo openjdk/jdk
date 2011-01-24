@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ DEMONAME = zipfs
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/nio/$(DEMONAME)
-DEMO_TOPFILES   = ./README.txt
-DEMO_SRCDIR     = $(DEMO_ROOT)
+DEMO_TOPFILES   = README.txt Demo.java
+DEMO_SRCDIR     = $(DEMO_ROOT)/src
 DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 
 #
@@ -42,3 +42,10 @@ DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 #
 include $(BUILDDIR)/common/Demo.gmk
 
+EXTJAR = $(EXTDIR)/$(DEMONAME).jar
+
+all : build $(EXTJAR)
+
+$(EXTJAR) : $(DEMO_JAR)
+	$(prep-target)
+	$(CP) $(DEMO_JAR) $(EXTJAR)

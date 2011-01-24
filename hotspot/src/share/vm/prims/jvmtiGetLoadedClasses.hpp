@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP
+#define SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP
+
+#include "jvmtifiles/jvmtiEnv.hpp"
+
 class JvmtiGetLoadedClasses : AllStatic {
 public:
   static jvmtiError getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jclass** classesPtr);
   static jvmtiError getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLoader,
                                           jint* classCountPtr, jclass** classesPtr);
 };
+
+#endif // SHARE_VM_PRIMS_JVMTIGETLOADEDCLASSES_HPP

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ FILES_export = \
 	sun/java2d/loops/TransformBlit.java \
 	sun/java2d/loops/FillRect.java \
 	sun/java2d/loops/FillSpans.java \
+	sun/java2d/loops/FillParallelogram.java \
+	sun/java2d/loops/DrawParallelogram.java \
         sun/java2d/loops/DrawGlyphList.java \
         sun/java2d/loops/DrawGlyphListAA.java \
         sun/java2d/loops/DrawGlyphListLCD.java \

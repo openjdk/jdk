@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class PlatformLogger {
 
     // Table of known loggers.  Maps names to PlatformLoggers.
     private static Map<String,WeakReference<PlatformLogger>> loggers =
-        new HashMap<String,WeakReference<PlatformLogger>>();
+        new HashMap<>();
 
     /**
      * Returns a PlatformLogger of a given name.
@@ -126,7 +126,7 @@ public class PlatformLogger {
         }
         if (log == null) {
             log = new PlatformLogger(name);
-            loggers.put(name, new WeakReference<PlatformLogger>(log));
+            loggers.put(name, new WeakReference<>(log));
         }
         return log;
     }
@@ -488,7 +488,7 @@ public class PlatformLogger {
      */
     static class JavaLogger extends LoggerProxy {
         private static final Map<Integer, Object> levelObjects =
-            new HashMap<Integer, Object>();
+            new HashMap<>();
 
         static {
             if (LoggingSupport.isAvailable()) {
@@ -535,10 +535,6 @@ public class PlatformLogger {
         }
 
         void doLog(int level, String msg, Object... params) {
-            int paramsNumber = (params != null) ? params.length : 0;
-            for (int i = 0; i < paramsNumber; i++) {
-                params[i] = String.valueOf(params[i]);
-            }
             LoggingSupport.log(javaLogger, levelObjects.get(level), msg, params);
         }
 

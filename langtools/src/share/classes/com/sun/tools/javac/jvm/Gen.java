@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1456,7 +1456,7 @@ public class Gen extends JCTree.Visitor {
                       List<Integer> gaps) {
             if (startpc != endpc) {
                 List<JCExpression> subClauses = TreeInfo.isMultiCatch(tree) ?
-                        ((JCTypeDisjoint)tree.param.vartype).components :
+                        ((JCTypeDisjunction)tree.param.vartype).alternatives :
                         List.of(tree.param.vartype);
                 while (gaps.nonEmpty()) {
                     for (JCExpression subCatch : subClauses) {
@@ -1802,7 +1802,7 @@ public class Gen extends JCTree.Visitor {
          */
         Item makeNewArray(DiagnosticPosition pos, Type type, int ndims) {
             Type elemtype = types.elemtype(type);
-            if (types.dimensions(elemtype) + ndims > ClassFile.MAX_DIMENSIONS) {
+            if (types.dimensions(type) > ClassFile.MAX_DIMENSIONS) {
                 log.error(pos, "limit.dimensions");
                 nerrs++;
             }

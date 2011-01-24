@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,20 @@
  */
 
 import com.sun.net.httpserver.*;
+import java.util.logging.*;
 
 public class Test {
+
+    static Logger logger;
+
+    static void enableLogging() {
+        logger = Logger.getLogger("com.sun.net.httpserver");
+        Handler h = new ConsoleHandler();
+        h.setLevel(Level.ALL);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(h);
+    }
+
     static void delay () {
         try {
             Thread.sleep (1000);

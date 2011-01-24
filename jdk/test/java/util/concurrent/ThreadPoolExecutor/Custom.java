@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class Custom {
 
 
     private static class CustomTask<V> extends FutureTask<V> {
-        public final static AtomicInteger births = new AtomicInteger(0);
+        public static final AtomicInteger births = new AtomicInteger(0);
         CustomTask(Callable<V> c) { super(c); births.getAndIncrement(); }
         CustomTask(Runnable r, V v) { super(r, v); births.getAndIncrement(); }
     }
@@ -63,7 +63,7 @@ public class Custom {
     }
 
     private static class CustomSTPE extends ScheduledThreadPoolExecutor {
-        public final static AtomicInteger decorations = new AtomicInteger(0);
+        public static final AtomicInteger decorations = new AtomicInteger(0);
         CustomSTPE() {
             super(threadCount);
         }
@@ -89,7 +89,7 @@ public class Custom {
         return count;
     }
 
-    private final static int threadCount = 10;
+    private static final int threadCount = 10;
 
     public static void main(String[] args) throws Throwable {
         CustomTPE tpe = new CustomTPE();

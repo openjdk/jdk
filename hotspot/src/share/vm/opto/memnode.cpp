@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,26 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
+#include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_memnode.cpp.incl"
 
 static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st);
 
@@ -193,14 +207,15 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
     }
   }
 #endif
-  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // TypeOopPtr::NOTNULL+any is an OOP with unknown offset - generally
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
-  const TypeOopPtr *tinst = tp->isa_oopptr();
+  const TypeOopPtr *toop = tp->isa_oopptr();
   if( tp->base() != Type::AnyPtr &&
-      !(tinst &&
-        tinst->klass()->is_java_lang_Object() &&
-        tinst->offset() == Type::OffsetBot) ) {
+      !(toop &&
+        toop->klass() != NULL &&
+        toop->klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot) ) {
     // compress paths and change unreachable cycles to TOP
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
@@ -255,7 +270,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
   if( can_reshape && igvn != NULL &&
-      (igvn->_worklist.member(address) || phase->type(address) != adr_type()) ) {
+      (igvn->_worklist.member(address) ||
+       igvn->_worklist.size() > 0 && (phase->type(address) != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
@@ -3583,10 +3599,12 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
     intptr_t size_limit = phase->find_intptr_t_con(size_in_bytes, max_jint);
     if (zeroes_done + BytesPerLong >= size_limit) {
       assert(allocation() != NULL, "");
-      Node* klass_node = allocation()->in(AllocateNode::KlassNode);
-      ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
-      if (zeroes_done == k->layout_helper())
-        zeroes_done = size_limit;
+      if (allocation()->Opcode() == Op_Allocate) {
+        Node* klass_node = allocation()->in(AllocateNode::KlassNode);
+        ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
+        if (zeroes_done == k->layout_helper())
+          zeroes_done = size_limit;
+      }
     }
     if (zeroes_done < size_limit) {
       rawmem = ClearArrayNode::clear_memory(rawctl, rawmem, rawptr,

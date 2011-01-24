@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_RELOCINFO_HPP
+#define SHARE_VM_CODE_RELOCINFO_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/top.hpp"
+
 // Types in this file:
 //    relocInfo
 //      One element of an array of halfwords encoding compressed relocations.
@@ -415,7 +421,16 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
   static void remove_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type);
 
   // Machine dependent stuff
-  #include "incls/_relocInfo_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "relocInfo_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "relocInfo_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "relocInfo_zero.hpp"
+#endif
+
 
  protected:
   // Derived constant, based on format_width which is PD:
@@ -1325,3 +1340,5 @@ class PatchingRelocIterator : public RelocIterator {
 
   ~PatchingRelocIterator()                           { postpass(); }
 };
+
+#endif // SHARE_VM_CODE_RELOCINFO_HPP

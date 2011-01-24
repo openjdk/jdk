@@ -22,8 +22,57 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_deoptimization.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "utilities/events.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.inline.hpp"
+#endif
+#ifdef COMPILER2
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
+#endif
 
 bool DeoptimizationMarker::_is_active = false;
 
@@ -124,6 +173,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   RegisterMap dummy_map(thread, false);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  // Set the deoptee nmethod
+  assert(thread->deopt_nmethod() == NULL, "Pending deopt!");
+  thread->set_deopt_nmethod(deoptee.cb()->as_nmethod_or_null());
 
   // Create a growable array of VFrames where each VFrame represents an inlined
   // Java frame.  This storage is allocated with the usual system arena.
@@ -445,6 +497,7 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
 
   delete thread->deopt_mark();
   thread->set_deopt_mark(NULL);
+  thread->set_deopt_nmethod(NULL);
 
 
   if (JvmtiExport::can_pop_frame()) {
@@ -1061,7 +1114,9 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, RegisterMap *map) 
 }
 
 
-void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
+void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id) {
+  assert(thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
+         "can only deoptimize other thread at a safepoint");
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread, UseBiasedLocking);
   frame fr = thread->last_frame();
@@ -1069,6 +1124,16 @@ void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
     fr = fr.sender(&reg_map);
   }
   deoptimize(thread, fr, &reg_map);
+}
+
+
+void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
+  if (thread == Thread::current()) {
+    Deoptimization::deoptimize_frame_internal(thread, id);
+  } else {
+    VM_DeoptimizeFrame deopt(thread, id);
+    VMThread::execute(&deopt);
+  }
 }
 
 

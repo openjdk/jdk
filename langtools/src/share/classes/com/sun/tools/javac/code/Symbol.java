@@ -1103,18 +1103,24 @@ public abstract class Symbol implements Element {
                  impl == null && is.nonEmpty();
                  is = is.tail) {
                 TypeSymbol i = is.head.tsym;
-                for (Scope.Entry e = i.members().lookup(name);
-                     impl == null && e.scope != null;
-                     e = e.next()) {
-                    if (this.overrides(e.sym, (TypeSymbol)owner, types, true) &&
-                        // FIXME: I suspect the following requires a
-                        // subst() for a parametric return type.
-                        types.isSameType(type.getReturnType(),
-                                         types.memberType(owner.type, e.sym).getReturnType())) {
-                        impl = e.sym;
-                    }
-                    if (impl == null)
-                        impl = implemented(i, types);
+                impl = implementedIn(i, types);
+                if (impl == null)
+                    impl = implemented(i, types);
+            }
+            return impl;
+        }
+
+        public Symbol implementedIn(TypeSymbol c, Types types) {
+            Symbol impl = null;
+            for (Scope.Entry e = c.members().lookup(name);
+                 impl == null && e.scope != null;
+                 e = e.next()) {
+                if (this.overrides(e.sym, (TypeSymbol)owner, types, true) &&
+                    // FIXME: I suspect the following requires a
+                    // subst() for a parametric return type.
+                    types.isSameType(type.getReturnType(),
+                                     types.memberType(owner.type, e.sym).getReturnType())) {
+                    impl = e.sym;
                 }
             }
             return impl;

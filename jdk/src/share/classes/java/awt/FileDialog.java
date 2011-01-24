@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class FileDialog extends Dialog {
      * Contains the File instances for all the files that the user selects.
      *
      * @serial
-     * @see getFiles
+     * @see #getFiles
      * @since 1.7
      */
     private File[] files;

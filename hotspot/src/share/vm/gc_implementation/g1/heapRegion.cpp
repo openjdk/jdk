@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_heapRegion.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentZFThread.hpp"
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
 
 int HeapRegion::LogOfHRGrainBytes = 0;
 int HeapRegion::LogOfHRGrainWords = 0;
@@ -377,10 +386,26 @@ void HeapRegion::calc_gc_efficiency() {
 }
 // </PREDICTION>
 
-void HeapRegion::set_startsHumongous() {
+void HeapRegion::set_startsHumongous(HeapWord* new_end) {
+  assert(end() == _orig_end,
+         "Should be normal before the humongous object allocation");
+  assert(top() == bottom(), "should be empty");
+
   _humongous_type = StartsHumongous;
   _humongous_start_region = this;
-  assert(end() == _orig_end, "Should be normal before alloc.");
+
+  set_end(new_end);
+  _offsets.set_for_starts_humongous(new_end);
+}
+
+void HeapRegion::set_continuesHumongous(HeapRegion* start) {
+  assert(end() == _orig_end,
+         "Should be normal before the humongous object allocation");
+  assert(top() == bottom(), "should be empty");
+  assert(start->startsHumongous(), "pre-condition");
+
+  _humongous_type = ContinuesHumongous;
+  _humongous_start_region = start;
 }
 
 bool HeapRegion::claimHeapRegion(jint claimValue) {
@@ -498,23 +523,6 @@ CompactibleSpace* HeapRegion::next_compaction_space() const {
   NextCompactionHeapRegionClosure blk(r);
   g1h->heap_region_iterate_from(r, &blk);
   return blk.result();
-}
-
-void HeapRegion::set_continuesHumongous(HeapRegion* start) {
-  // The order is important here.
-  start->add_continuingHumongousRegion(this);
-  _humongous_type = ContinuesHumongous;
-  _humongous_start_region = start;
-}
-
-void HeapRegion::add_continuingHumongousRegion(HeapRegion* cont) {
-  // Must join the blocks of the current H region seq with the block of the
-  // added region.
-  offsets()->join_blocks(bottom(), cont->bottom());
-  arrayOop obj = (arrayOop)(bottom());
-  obj->set_length((int) (obj->length() + cont->capacity()/jintSize));
-  set_end(cont->end());
-  set_top(cont->end());
 }
 
 void HeapRegion::save_marks() {

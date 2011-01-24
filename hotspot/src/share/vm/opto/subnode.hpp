@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_SUBNODE_HPP
+#define SHARE_VM_OPTO_SUBNODE_HPP
+
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/type.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 //------------------------------SUBNode----------------------------------------
@@ -529,3 +536,5 @@ public:
   const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
+
+#endif // SHARE_VM_OPTO_SUBNODE_HPP

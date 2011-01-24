@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP
+
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "memory/permGen.hpp"
+
 class CardTableRS;   // fwd decl
 class ConcurrentMarkSweepGeneration;
 
@@ -32,6 +38,10 @@ class CMSPermGen:  public PermGen {
  protected:
   // The "generation" view.
   ConcurrentMarkSweepGeneration* _gen;
+
+  // Override default implementation from PermGen
+  virtual HeapWord* request_expand_and_allocate(Generation* gen, size_t size,
+                                                GCCause::Cause prev_cause);
 
  public:
   CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
@@ -71,3 +81,5 @@ public:
   bool must_be_youngest() const { return false; }
   bool must_be_oldest() const { return false; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSPERMGEN_HPP

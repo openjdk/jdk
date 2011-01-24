@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,10 @@ import java.awt.Component;
  * <p>To listen for this event, install AWTEventListener with {@value sun.awt.SunToolkit#GRAB_EVENT_MASK}
  */
 public class UngrabEvent extends AWTEvent {
+    private final static int UNGRAB_EVENT_ID = 1998;
+
     public UngrabEvent(Component source) {
-        super(source, 0xffff);
+        super(source, UNGRAB_EVENT_ID);
     }
 
     public String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,12 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP
+#define OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP
+
+#include "runtime/orderAccess.hpp"
+#include "vm_version_zero.hpp"
 
 #ifdef ARM
 
@@ -165,3 +171,5 @@ inline void     OrderAccess::release_store_fence(volatile jdouble* p, jdouble v)
 
 inline void     OrderAccess::release_store_ptr_fence(volatile intptr_t* p, intptr_t v) { release_store_ptr(p, v); fence(); }
 inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*    v) { release_store_ptr(p, v); fence(); }
+
+#endif // OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP

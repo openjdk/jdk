@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /* @test
  * @bug 4462336 6799037
  * @summary Simple MappedByteBuffer tests
- * @run main/othervm Basic
  */
 
 import java.io.*;
@@ -76,5 +75,10 @@ public class Basic {
             throw new RuntimeException("Incorrect isReadOnly");
         fc.close();
         raf.close();
+
+        // clean-up
+        mbb = null;
+        System.gc();
+        Thread.sleep(500);
     }
 }

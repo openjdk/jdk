@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,8 @@ final class ProcessImpl {
                 else if (redirects[1] == Redirect.INHERIT)
                     std_fds[1] = 1;
                 else {
-                    f1 = redirects[1].toFileOutputStream();
+                    f1 = new FileOutputStream(redirects[1].file(),
+                                              redirects[1].append());
                     std_fds[1] = fdAccess.get(f1.getFD());
                 }
 
@@ -120,7 +121,8 @@ final class ProcessImpl {
                 else if (redirects[2] == Redirect.INHERIT)
                     std_fds[2] = 2;
                 else {
-                    f2 = redirects[2].toFileOutputStream();
+                    f2 = new FileOutputStream(redirects[2].file(),
+                                              redirects[2].append());
                     std_fds[2] = fdAccess.get(f2.getFD());
                 }
             }

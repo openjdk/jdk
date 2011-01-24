@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_VFRAME_HPP
+#define SHARE_VM_RUNTIME_VFRAME_HPP
+
+#include "code/debugInfo.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/location.hpp"
+#include "oops/oop.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/stackValue.hpp"
+#include "runtime/stackValueCollection.hpp"
+#include "utilities/growableArray.hpp"
 
 // vframes are virtual stack frames representing source level activations.
 // A single frame may hold several source level activations in the case of
@@ -508,3 +521,5 @@ inline void vframeStreamCommon::fill_from_interpreter_frame() {
   _method = method;
   _bci    = bci;
 }
+
+#endif // SHARE_VM_RUNTIME_VFRAME_HPP

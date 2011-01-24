@@ -8,9 +8,4 @@ T6881115.java:17:8: compiler.err.annotation.missing.default.value: B, b1
 T6881115.java:18:13: compiler.err.annotation.missing.default.value.1: B, b1,b2
 T6881115.java:18:30: compiler.err.duplicate.annotation.member.value: b2, B
 T6881115.java:18:19: compiler.err.annotation.missing.default.value: B, b1
-T6881115.java:19:34: compiler.err.duplicate.annotation.member.value: b2, B
-T6881115.java:19:23: compiler.err.annotation.missing.default.value: B, b1
-T6881115.java:20:28: compiler.err.annotation.missing.default.value.1: B, b1,b2
-T6881115.java:20:45: compiler.err.duplicate.annotation.member.value: b2, B
-T6881115.java:20:34: compiler.err.annotation.missing.default.value: B, b1
-15 errors
+10 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,9 @@ public class ObjectStreamClass implements java.io.Serializable {
     private static Class noTypesList[] = {};
 
     private static Hashtable translatedFields;
+
+    /** true if represents enum type */
+    private boolean isEnum;
 
     private static final Bridge bridge =
         (Bridge)AccessController.doPrivileged(
@@ -359,6 +362,7 @@ public class ObjectStreamClass implements java.io.Serializable {
         }
 
         name = cl.getName();
+        isEnum = Enum.class.isAssignableFrom(cl);
         superclass = superdesc;
         serializable = serial;
         if (!forProxyClass) {
@@ -401,7 +405,8 @@ public class ObjectStreamClass implements java.io.Serializable {
         if (!serializable ||
             externalizable ||
             forProxyClass ||
-            name.equals("java.lang.String")) {
+            name.equals("java.lang.String") ||
+            isEnum) {
             fields = NO_FIELDS;
         } else if (serializable) {
             /* Ask for permission to override field access checks.
@@ -502,7 +507,7 @@ public class ObjectStreamClass implements java.io.Serializable {
          *
          * NonSerializable classes have a serialVerisonUID of 0L.
          */
-         if (isNonSerializable()) {
+         if (isNonSerializable() || isEnum) {
              suid = 0L;
          } else {
              // Lookup special Serializable members using reflection.

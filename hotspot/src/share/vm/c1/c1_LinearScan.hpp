@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_C1_C1_LINEARSCAN_HPP
+#define SHARE_VM_C1_C1_LINEARSCAN_HPP
+
+#include "c1/c1_FpuStackSim.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 
 class DebugInfoCache;
 class FpuStackAllocator;
@@ -138,6 +148,7 @@ class LinearScan : public CompilationResourceObj {
   IntervalList              _intervals;         // mapping from register number to interval
   IntervalList*             _new_intervals_from_allocation; // list with all intervals created during allocation when an existing interval is split
   IntervalArray*            _sorted_intervals;  // intervals sorted by Interval::from()
+  bool                      _needs_full_resort; // set to true if an Interval::from() is changed and _sorted_intervals must be resorted
 
   LIR_OpArray               _lir_ops;           // mapping from LIR_Op id to LIR_Op node
   BlockBeginArray           _block_of_op;       // mapping from LIR_Op id to the BlockBegin containing this instruction
@@ -346,7 +357,7 @@ class LinearScan : public CompilationResourceObj {
   int append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeValue*>* scope_values);
   int append_scope_value(int op_id, Value value, GrowableArray<ScopeValue*>* scope_values);
 
-  IRScopeDebugInfo* compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state, int cur_bci, int stack_end, int locks_end);
+  IRScopeDebugInfo* compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state);
   void compute_debug_info(CodeEmitInfo* info, int op_id);
 
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
@@ -955,4 +966,12 @@ class LinearScanTimers : public StackObj {
 
 
 // Pick up platform-dependent implementation details
-# include "incls/_c1_LinearScan_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_LinearScan_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_LinearScan_sparc.hpp"
+#endif
+
+
+#endif // SHARE_VM_C1_C1_LINEARSCAN_HPP

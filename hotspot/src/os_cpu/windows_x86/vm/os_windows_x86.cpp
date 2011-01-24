@@ -22,8 +22,43 @@
  *
  */
 
-// do not include  precompiled  header file
-# include "incls/_os_windows_x86.cpp.incl"
+// no precompiled headers
+#include "assembler_x86.inline.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_windows.h"
+#include "memory/allocation.inline.hpp"
+#include "mutex_windows.inline.hpp"
+#include "nativeInst_x86.hpp"
+#include "os_share_windows.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "thread_windows.inline.hpp"
+#include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
+
 # include "unwind_windows_x86.hpp"
 #undef REG_SP
 #undef REG_FP
@@ -387,8 +422,8 @@ void os::print_context(outputStream *st, void *context) {
   st->print(", RSI=" INTPTR_FORMAT, uc->Rsi);
   st->print(", RDI=" INTPTR_FORMAT, uc->Rdi);
   st->cr();
-  st->print(  "R8=" INTPTR_FORMAT,  uc->R8);
-  st->print(", R9=" INTPTR_FORMAT,  uc->R9);
+  st->print(  "R8 =" INTPTR_FORMAT, uc->R8);
+  st->print(", R9 =" INTPTR_FORMAT, uc->R9);
   st->print(", R10=" INTPTR_FORMAT, uc->R10);
   st->print(", R11=" INTPTR_FORMAT, uc->R11);
   st->cr();
@@ -399,62 +434,6 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->Rip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("RAX=" INTPTR_FORMAT, uc->Rax);
-  print_location(st, uc->Rax);
-  st->cr();
-  st->print_cr("RBX=" INTPTR_FORMAT, uc->Rbx);
-  print_location(st, uc->Rbx);
-  st->cr();
-  st->print_cr("RCX=" INTPTR_FORMAT, uc->Rcx);
-  print_location(st, uc->Rcx);
-  st->cr();
-  st->print_cr("RDX=" INTPTR_FORMAT, uc->Rdx);
-  print_location(st, uc->Rdx);
-  st->cr();
-  st->print_cr("RSP=" INTPTR_FORMAT, uc->Rsp);
-  print_location(st, uc->Rsp);
-  st->cr();
-  st->print_cr("RBP=" INTPTR_FORMAT, uc->Rbp);
-  print_location(st, uc->Rbp);
-  st->cr();
-  st->print_cr("RSI=" INTPTR_FORMAT, uc->Rsi);
-  print_location(st, uc->Rsi);
-  st->cr();
-  st->print_cr("RDI=" INTPTR_FORMAT, uc->Rdi);
-  print_location(st, uc->Rdi);
-  st->cr();
-  st->print_cr("R8 =" INTPTR_FORMAT, uc->R8);
-  print_location(st, uc->R8);
-  st->cr();
-  st->print_cr("R9 =" INTPTR_FORMAT, uc->R9);
-  print_location(st, uc->R9);
-  st->cr();
-  st->print_cr("R10=" INTPTR_FORMAT, uc->R10);
-  print_location(st, uc->R10);
-  st->cr();
-  st->print_cr("R11=" INTPTR_FORMAT, uc->R11);
-  print_location(st, uc->R11);
-  st->cr();
-  st->print_cr("R12=" INTPTR_FORMAT, uc->R12);
-  print_location(st, uc->R12);
-  st->cr();
-  st->print_cr("R13=" INTPTR_FORMAT, uc->R13);
-  print_location(st, uc->R13);
-  st->cr();
-  st->print_cr("R14=" INTPTR_FORMAT, uc->R14);
-  print_location(st, uc->R14);
-  st->cr();
-  st->print_cr("R15=" INTPTR_FORMAT, uc->R15);
-  print_location(st, uc->R15);
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->Eax);
   st->print(", EBX=" INTPTR_FORMAT, uc->Ebx);
@@ -468,38 +447,6 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->Eip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("EAX=" INTPTR_FORMAT, uc->Eax);
-  print_location(st, uc->Eax);
-  st->cr();
-  st->print_cr("EBX=" INTPTR_FORMAT, uc->Ebx);
-  print_location(st, uc->Ebx);
-  st->cr();
-  st->print_cr("ECX=" INTPTR_FORMAT, uc->Ecx);
-  print_location(st, uc->Ecx);
-  st->cr();
-  st->print_cr("EDX=" INTPTR_FORMAT, uc->Edx);
-  print_location(st, uc->Edx);
-  st->cr();
-  st->print_cr("ESP=" INTPTR_FORMAT, uc->Esp);
-  print_location(st, uc->Esp);
-  st->cr();
-  st->print_cr("EBP=" INTPTR_FORMAT, uc->Ebp);
-  print_location(st, uc->Ebp);
-  st->cr();
-  st->print_cr("ESI=" INTPTR_FORMAT, uc->Esi);
-  print_location(st, uc->Esi);
-  st->cr();
-  st->print_cr("EDI=" INTPTR_FORMAT, uc->Edi);
-  print_location(st, uc->Edi);
 #endif // AMD64
   st->cr();
   st->cr();
@@ -514,7 +461,49 @@ void os::print_context(outputStream *st, void *context) {
   // this at the end, and hope for the best.
   address pc = (address)uc->REG_PC;
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 16, pc + 16, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+  st->cr();
+}
+
+
+void os::print_register_info(outputStream *st, void *context) {
+  if (context == NULL) return;
+
+  CONTEXT* uc = (CONTEXT*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+
+#ifdef AMD64
+  st->print("RAX="); print_location(st, uc->Rax);
+  st->print("RBX="); print_location(st, uc->Rbx);
+  st->print("RCX="); print_location(st, uc->Rcx);
+  st->print("RDX="); print_location(st, uc->Rdx);
+  st->print("RSP="); print_location(st, uc->Rsp);
+  st->print("RBP="); print_location(st, uc->Rbp);
+  st->print("RSI="); print_location(st, uc->Rsi);
+  st->print("RDI="); print_location(st, uc->Rdi);
+  st->print("R8 ="); print_location(st, uc->R8);
+  st->print("R9 ="); print_location(st, uc->R9);
+  st->print("R10="); print_location(st, uc->R10);
+  st->print("R11="); print_location(st, uc->R11);
+  st->print("R12="); print_location(st, uc->R12);
+  st->print("R13="); print_location(st, uc->R13);
+  st->print("R14="); print_location(st, uc->R14);
+  st->print("R15="); print_location(st, uc->R15);
+#else
+  st->print("EAX="); print_location(st, uc->Eax);
+  st->print("EBX="); print_location(st, uc->Ebx);
+  st->print("ECX="); print_location(st, uc->Ecx);
+  st->print("EDX="); print_location(st, uc->Edx);
+  st->print("ESP="); print_location(st, uc->Esp);
+  st->print("EBP="); print_location(st, uc->Ebp);
+  st->print("ESI="); print_location(st, uc->Esi);
+  st->print("EDI="); print_location(st, uc->Edi);
+#endif
+
   st->cr();
 }
 

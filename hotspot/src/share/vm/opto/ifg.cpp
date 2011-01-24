@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ifg.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/coalesce.hpp"
+#include "opto/connode.hpp"
+#include "opto/indexSet.hpp"
+#include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/opcodes.hpp"
 
 #define EXACT_PRESSURE 1
 

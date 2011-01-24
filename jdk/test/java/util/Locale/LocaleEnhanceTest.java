@@ -614,6 +614,55 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
         assertEquals("hans DE", "Simplified Han", hansLocale.getDisplayScript(Locale.GERMANY));
     }
 
+    public void testGetDisplayName() {
+        final Locale[] testLocales = {
+                Locale.ROOT,
+                new Locale("en"),
+                new Locale("en", "US"),
+                new Locale("", "US"),
+                new Locale("no", "NO", "NY"),
+                new Locale("", "", "NY"),
+                Locale.forLanguageTag("zh-Hans"),
+                Locale.forLanguageTag("zh-Hant"),
+                Locale.forLanguageTag("zh-Hans-CN"),
+                Locale.forLanguageTag("und-Hans"),
+        };
+
+        final String[] displayNameEnglish = {
+                "",
+                "English",
+                "English (United States)",
+                "United States",
+                "Norwegian (Norway,Nynorsk)",
+                "Nynorsk",
+                "Chinese (Simplified Han)",
+                "Chinese (Traditional Han)",
+                "Chinese (Simplified Han,China)",
+                "Simplified Han",
+        };
+
+        final String[] displayNameSimplifiedChinese = {
+                "",
+                "\u82f1\u6587",
+                "\u82f1\u6587 (\u7f8e\u56fd)",
+                "\u7f8e\u56fd",
+                "\u632a\u5a01\u6587 (\u632a\u5a01,Nynorsk)",
+                "Nynorsk",
+                "\u4e2d\u6587 (\u7b80\u4f53\u4e2d\u6587)",
+                "\u4e2d\u6587 (\u7e41\u4f53\u4e2d\u6587)",
+                "\u4e2d\u6587 (\u7b80\u4f53\u4e2d\u6587,\u4e2d\u56fd)",
+                "\u7b80\u4f53\u4e2d\u6587",
+        };
+
+        for (int i = 0; i < testLocales.length; i++) {
+            Locale loc = testLocales[i];
+            assertEquals("English display name for " + loc.toLanguageTag(),
+                    displayNameEnglish[i], loc.getDisplayName(Locale.ENGLISH));
+            assertEquals("Simplified Chinese display name for " + loc.toLanguageTag(),
+                    displayNameSimplifiedChinese[i], loc.getDisplayName(Locale.CHINA));
+        }
+    }
+
     ///
     /// Builder tests
     ///
@@ -1149,6 +1198,49 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             } catch (Exception e) {
                 errln("Exception while reading " + testfile.getAbsolutePath() + " - " + e.getMessage());
             }
+        }
+    }
+
+    public void testBug7002320() {
+        // forLanguageTag() and Builder.setLanguageTag(String)
+        // should add a location extension for following two cases.
+        //
+        // 1. language/country are "ja"/"JP" and the resolved variant (x-lvariant-*)
+        //    is exactly "JP" and no BCP 47 extensions are available, then add
+        //    a Unicode locale extension "ca-japanese".
+        // 2. language/country are "th"/"TH" and the resolved variant is exactly
+        //    "TH" and no BCP 47 extensions are available, then add a Unicode locale
+        //    extension "nu-thai".
+        //
+        String[][] testdata = {
+            {"ja-JP-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"},   // special case 1
+            {"ja-JP-x-lvariant-JP-XXX"},
+            {"ja-JP-u-ca-japanese-x-lvariant-JP"},
+            {"ja-JP-u-ca-gregory-x-lvariant-JP"},
+            {"ja-JP-u-cu-jpy-x-lvariant-JP"},
+            {"ja-x-lvariant-JP"},
+            {"th-TH-x-lvariant-TH", "th-TH-u-nu-thai-x-lvariant-TH"},   // special case 2
+            {"th-TH-u-nu-thai-x-lvariant-TH"},
+            {"en-US-x-lvariant-JP"},
+        };
+
+        Builder bldr = new Builder();
+
+        for (String[] data : testdata) {
+            String in = data[0];
+            String expected = (data.length == 1) ? data[0] : data[1];
+
+            // forLanguageTag
+            Locale loc = Locale.forLanguageTag(in);
+            String out = loc.toLanguageTag();
+            assertEquals("Language tag roundtrip by forLanguageTag with input: " + in, expected, out);
+
+            // setLanguageTag
+            bldr.clear();
+            bldr.setLanguageTag(in);
+            loc = bldr.build();
+            out = loc.toLanguageTag();
+            assertEquals("Language tag roundtrip by Builder.setLanguageTag with input: " + in, expected, out);
         }
     }
 

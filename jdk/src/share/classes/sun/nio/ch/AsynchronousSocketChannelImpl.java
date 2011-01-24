@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,8 +235,6 @@ abstract class AsynchronousSocketChannelImpl
 
         if (remoteAddress == null)
             throw new NotYetConnectedException();
-        if (timeout < 0L)
-            throw new IllegalArgumentException("Negative timeout");
 
         boolean hasSpaceToRead = isScatteringRead || dst.hasRemaining();
         boolean shutdown = false;
@@ -342,8 +340,6 @@ abstract class AsynchronousSocketChannelImpl
         if (isOpen()) {
             if (remoteAddress == null)
                 throw new NotYetConnectedException();
-             if (timeout < 0L)
-                throw new IllegalArgumentException("Negative timeout");
             // check and update state
             synchronized (writeLock) {
                 if (writeKilled)

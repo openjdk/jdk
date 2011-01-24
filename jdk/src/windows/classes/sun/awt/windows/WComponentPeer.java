@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,6 +999,8 @@ public abstract class WComponentPeer extends WObjectPeer
     public void setBoundsOperation(int operation) {
     }
 
+    private volatile boolean isAccelCapable = true;
+
     /**
      * Returns whether this component is capable of being hw accelerated.
      * More specifically, whether rendering to this component or a
@@ -1009,17 +1011,36 @@ public abstract class WComponentPeer extends WObjectPeer
      * {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      * PERPIXEL_TRANSLUCENT}.
      *
+     * Another condition is if Xor paint mode was detected when rendering
+     * to an on-screen accelerated surface associated with this peer.
+     * in this case both on- and off-screen acceleration for this peer is
+     * disabled.
+     *
      * @return {@code true} if this component is capable of being hw
      * accelerated, {@code false} otherwise
      * @see GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      */
     public boolean isAccelCapable() {
+        if (!isAccelCapable ||
+            !isContainingTopLevelAccelCapable((Component)target))
+        {
+            return false;
+        }
+
         boolean isTranslucent =
             SunToolkit.isContainingTopLevelTranslucent((Component)target);
         // D3D/OGL and translucent windows interacted poorly in Windows XP;
         // these problems are no longer present in Vista
         return !isTranslucent || Win32GraphicsEnvironment.isVistaOS();
     }
+
+    /**
+     * Disables acceleration for this peer.
+     */
+    public void disableAcceleration() {
+        isAccelCapable = false;
+    }
+
 
     native void setRectangularShape(int lox, int loy, int hix, int hiy,
                      Region region);

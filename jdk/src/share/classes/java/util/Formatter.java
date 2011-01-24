@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -1581,6 +1583,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     instance of the Java virtual machine.
  *
  * <tr><td valign="top">{@code 'Z'}
+ *     <td valign="top"> <tt>'&#92;u005a'</tt>
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
@@ -1837,22 +1840,53 @@ import sun.misc.FormattedFloatingDecimal;
  */
 public final class Formatter implements Closeable, Flushable {
     private Appendable a;
-    private Locale l;
+    private final Locale l;
 
     private IOException lastException;
 
-    private char zero = '0';
+    private final char zero;
     private static double scaleUp;
 
     // 1 (sign) + 19 (max # sig digits) + 1 ('.') + 1 ('e') + 1 (sign)
     // + 3 (max # exp digits) + 4 (error) = 30
     private static final int MAX_FD_CHARS = 30;
 
-    // Initialize internal data.
-    private void init(Appendable a, Locale l) {
+    /**
+     * Returns a charset object for the given charset name.
+     * @throws NullPointerException          is csn is null
+     * @throws UnsupportedEncodingException  if the charset is not supported
+     */
+    private static Charset toCharset(String csn)
+        throws UnsupportedEncodingException
+    {
+        Objects.nonNull(csn, "charsetName");
+        try {
+            return Charset.forName(csn);
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
+            // UnsupportedEncodingException should be thrown
+            throw new UnsupportedEncodingException(csn);
+        }
+    }
+
+    private static final Appendable nonNullAppendable(Appendable a) {
+        if (a == null)
+            return new StringBuilder();
+
+        return a;
+    }
+
+    /* Private constructors */
+    private Formatter(Locale l, Appendable a) {
         this.a = a;
         this.l = l;
-        setZero();
+        this.zero = getZero(l);
+    }
+
+    private Formatter(Charset charset, Locale l, File file)
+        throws FileNotFoundException
+    {
+        this(l,
+             new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset)));
     }
 
     /**
@@ -1866,7 +1900,7 @@ public final class Formatter implements Closeable, Flushable {
      * virtual machine.
      */
     public Formatter() {
-        init(new StringBuilder(), Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT), new StringBuilder());
     }
 
     /**
@@ -1880,9 +1914,7 @@ public final class Formatter implements Closeable, Flushable {
      *         {@code null} then a {@link StringBuilder} will be created.
      */
     public Formatter(Appendable a) {
-        if (a == null)
-            a = new StringBuilder();
-        init(a, Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT), nonNullAppendable(a));
     }
 
     /**
@@ -1899,7 +1931,7 @@ public final class Formatter implements Closeable, Flushable {
      *         is applied.
      */
     public Formatter(Locale l) {
-        init(new StringBuilder(), l);
+        this(l, new StringBuilder());
     }
 
     /**
@@ -1915,9 +1947,7 @@ public final class Formatter implements Closeable, Flushable {
      *         is applied.
      */
     public Formatter(Appendable a, Locale l) {
-        if (a == null)
-            a = new StringBuilder();
-        init(a, l);
+        this(l, nonNullAppendable(a));
     }
 
     /**
@@ -1948,8 +1978,8 @@ public final class Formatter implements Closeable, Flushable {
      *          creating the file
      */
     public Formatter(String fileName) throws FileNotFoundException {
-        init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName))),
-             Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT),
+             new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName))));
     }
 
     /**
@@ -2024,8 +2054,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(String fileName, String csn, Locale l)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), csn)),
-             l);
+        this(toCharset(csn), l, new File(fileName));
     }
 
     /**
@@ -2056,8 +2085,8 @@ public final class Formatter implements Closeable, Flushable {
      *          creating the file
      */
     public Formatter(File file) throws FileNotFoundException {
-        init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file))),
-             Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT),
+             new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file))));
     }
 
     /**
@@ -2132,8 +2161,7 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(File file, String csn, Locale l)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        init(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), csn)),
-             l);
+        this(toCharset(csn), l, file);
     }
 
     /**
@@ -2150,9 +2178,8 @@ public final class Formatter implements Closeable, Flushable {
      *         The stream to use as the destination of this formatter.
      */
     public Formatter(PrintStream ps) {
-        if (ps == null)
-            throw new NullPointerException();
-        init((Appendable)ps, Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT),
+             (Appendable)Objects.nonNull(ps));
     }
 
     /**
@@ -2170,8 +2197,8 @@ public final class Formatter implements Closeable, Flushable {
      *         The output will be buffered.
      */
     public Formatter(OutputStream os) {
-        init(new BufferedWriter(new OutputStreamWriter(os)),
-             Locale.getDefault(Locale.Category.FORMAT));
+        this(Locale.getDefault(Locale.Category.FORMAT),
+             new BufferedWriter(new OutputStreamWriter(os)));
     }
 
     /**
@@ -2221,13 +2248,15 @@ public final class Formatter implements Closeable, Flushable {
     public Formatter(OutputStream os, String csn, Locale l)
         throws UnsupportedEncodingException
     {
-        init(new BufferedWriter(new OutputStreamWriter(os, csn)), l);
+        this(l, new BufferedWriter(new OutputStreamWriter(os, csn)));
     }
 
-    private void setZero() {
+    private static char getZero(Locale l) {
         if ((l != null) && !l.equals(Locale.US)) {
             DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-            zero = dfs.getZeroDigit();
+            return dfs.getZeroDigit();
+        } else {
+            return '0';
         }
     }
 
@@ -2489,7 +2518,7 @@ public final class Formatter implements Closeable, Flushable {
      * Finds format specifiers in the format string.
      */
     private FormatString[] parse(String s) {
-        ArrayList<FormatString> al = new ArrayList<FormatString>();
+        ArrayList<FormatString> al = new ArrayList<>();
         Matcher m = fsPattern.matcher(s);
         for (int i = 0, len = s.length(); i < len; ) {
             if (m.find(i)) {

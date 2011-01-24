@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import javax.accessibility.*;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
 import sun.awt.CausedFocusEvent;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
@@ -247,6 +248,13 @@ public class Container extends Component {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+
+        AWTAccessor.setContainerAccessor(new AWTAccessor.ContainerAccessor() {
+            @Override
+            public void validateUnconditionally(Container cont) {
+                cont.validateUnconditionally();
+            }
+        });
     }
 
     /**
@@ -1231,6 +1239,7 @@ public class Container extends Component {
      * reflect the changes.
      *
      * @param comp the component to be removed
+     * @throws NullPointerException if {@code comp} is {@code null}
      * @see #add
      * @see #invalidate
      * @see #validate
@@ -2154,6 +2163,7 @@ public class Container extends Component {
      * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
+     * @exception NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getContainerListeners
      *
@@ -2705,6 +2715,7 @@ public class Container extends Component {
      * If there is no child component at the requested point and the
      * point is within the bounds of the container the container itself
      * is returned.
+     * @throws NullPointerException if {@code p} is {@code null}
      * @see Component#contains
      * @see #getComponentAt
      * @since 1.2
@@ -2969,6 +2980,7 @@ public class Container extends Component {
      *
      * @param    out      a print stream
      * @param    indent   the number of spaces to indent
+     * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintStream, int)
      * @since    JDK1.0
      */
@@ -2995,6 +3007,7 @@ public class Container extends Component {
      *
      * @param    out      a print writer
      * @param    indent   the number of spaces to indent
+     * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintWriter, int)
      * @since    JDK1.1
      */
@@ -4187,7 +4200,7 @@ public class Container extends Component {
             return true;
         }
 
-        for (Container cont = getContainer();
+        for (Container cont = this;
                 cont != null && cont.isLightweight();
                 cont = cont.getContainer())
         {

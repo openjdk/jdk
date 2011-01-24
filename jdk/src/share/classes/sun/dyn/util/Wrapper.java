@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 package sun.dyn.util;
 
 public enum Wrapper {
-    INT(Integer.class, int.class, 'I', (Integer)(int)0, Format.signed(32)),
-    LONG(Long.class, long.class, 'J', (Long)(long)0, Format.signed(64)),
+    BOOLEAN(Boolean.class, boolean.class, 'Z', (Boolean)false, Format.unsigned(1)),
+    // These must be in the order defined for widening primitive conversions in JLS 5.1.2
     BYTE(Byte.class, byte.class, 'B', (Byte)(byte)0, Format.signed(8)),
     SHORT(Short.class, short.class, 'S', (Short)(short)0, Format.signed(16)),
     CHAR(Character.class, char.class, 'C', (Character)(char)0, Format.unsigned(16)),
-    BOOLEAN(Boolean.class, boolean.class, 'Z', (Boolean)false, Format.unsigned(1)),
+    INT(Integer.class, int.class, 'I', (Integer)(int)0, Format.signed(32)),
+    LONG(Long.class, long.class, 'J', (Long)(long)0, Format.signed(64)),
     FLOAT(Float.class, float.class, 'F', (Float)(float)0, Format.floating(32)),
     DOUBLE(Double.class, double.class, 'D', (Double)(double)0, Format.floating(64)),
-    VOID(Void.class, void.class, 'V', null, Format.other(0)),
     //NULL(Null.class, null.class, 'N', null, Format.other(1)),
     OBJECT(Object.class, Object.class, 'L', null, Format.other(1)),
+    // VOID must be the last type, since it is "assignable" from any other type:
+    VOID(Void.class, void.class, 'V', null, Format.other(0)),
     ;
 
     private final Class<?> wrapperType;
@@ -76,9 +78,11 @@ public enum Wrapper {
                    false);
             return kind | (size << SIZE_SHIFT) | (slots << SLOT_SHIFT);
         }
-        static int
+        static final int
                 INT      = SIGNED   | (32 << SIZE_SHIFT) | (1 << SLOT_SHIFT),
+                SHORT    = SIGNED   | (16 << SIZE_SHIFT) | (1 << SLOT_SHIFT),
                 BOOLEAN  = UNSIGNED | (1  << SIZE_SHIFT) | (1 << SLOT_SHIFT),
+                CHAR     = UNSIGNED | (16 << SIZE_SHIFT) | (1 << SLOT_SHIFT),
                 FLOAT    = FLOATING | (32 << SIZE_SHIFT) | (1 << SLOT_SHIFT),
                 VOID     = UNSIGNED | (0  << SIZE_SHIFT) | (0 << SLOT_SHIFT),
                 NUM_MASK = (-1) << SIZE_SHIFT;
@@ -111,6 +115,29 @@ public enum Wrapper {
     /** Is the wrapped type either float or double? */
     public boolean isFloating()    { return format >= Format.FLOAT; }
 
+    /** Does the JVM verifier allow a variable of this wrapper's
+     *  primitive type to be assigned from a value of the given wrapper's primitive type?
+     *  Cases:
+     *  <ul>
+     *  <li>unboxing followed by widening primitive conversion
+     *  <li>any type converted to {@code void}
+     *  <li>boxing conversion followed by widening reference conversion to {@code Object}
+     *  <li>conversion of {@code boolean} to any type
+     *  </ul>
+     */
+    public boolean isConvertibleFrom(Wrapper source) {
+        if (this == source)  return true;
+        if (this.compareTo(source) < 0) {
+            // At best, this is a narrowing conversion.
+            return false;
+        }
+        if ((this.format ^ source.format) == (Format.SHORT ^ Format.CHAR)) {
+            assert (this == SHORT && source == CHAR) || (this == CHAR && source == SHORT);
+            return false;
+        }
+        return true;
+    }
+
     /** Produce a zero value for the given wrapper type.
      *  This will be a numeric zero for a number or character,
      *  false for a boolean, and null for a reference or void.
@@ -122,10 +149,10 @@ public enum Wrapper {
     public Object zero() { return zero; }
 
     /** Produce a zero value for the given wrapper type T.
-     *  The optinoal argument must a type compatible with this wrapper.
+     *  The optional argument must a type compatible with this wrapper.
      *  Equivalent to {@code this.cast(this.zero(), type)}.
      */
-    public <T> T zero(Class<T> type) { return cast(zero, type); }
+    public <T> T zero(Class<T> type) { return convert(zero, type); }
 
 //    /** Produce a wrapper for the given wrapper or primitive type. */
 //    public static Wrapper valueOf(Class<?> type) {
@@ -264,7 +291,11 @@ public enum Wrapper {
                    exampleType.isInterface()) {
             return forceType(wrapperType, exampleType);
         }
-        throw new ClassCastException(exampleType + " not <:" + wrapperType);
+        throw newClassCastException(exampleType, primitiveType);
+    }
+
+    private static ClassCastException newClassCastException(Class<?> actual, Class<?> expected) {
+        return new ClassCastException(actual + " is not compatible with " + expected);
     }
 
     /** If {@code type} is a primitive type, return the corresponding
@@ -325,17 +356,55 @@ public enum Wrapper {
 //    }
 
     /** Cast a wrapped value to the given type, which may be either a primitive or wrapper type.
+     *  The given target type must be this wrapper's primitive or wrapper type.
+     *  If this wrapper is OBJECT, the target type may also be an interface, perform no runtime check.
      *  Performs standard primitive conversions, including truncation and float conversions.
      *  The given type must be compatible with this wrapper.  That is, it must either
      *  be the wrapper type (or a subtype, in the case of {@code OBJECT}) or else
      *  it must be the wrapper's primitive type.
+     *  Primitive conversions are only performed if the given type is itself a primitive.
      *  @throws ClassCastException if the given type is not compatible with this wrapper
      */
     public <T> T cast(Object x, Class<T> type) {
+        return convert(x, type, true);
+    }
+
+    /** Convert a wrapped value to the given type.
+     *  The given target type must be this wrapper's primitive or wrapper type.
+     *  This is equivalent to {@link #cast}, except that it refuses to perform
+     *  narrowing primitive conversions.
+     */
+    public <T> T convert(Object x, Class<T> type) {
+        return convert(x, type, false);
+    }
+
+    private <T> T convert(Object x, Class<T> type, boolean isCast) {
+        if (this == OBJECT) {
+            // If the target wrapper is OBJECT, just do a reference cast.
+            // If the target type is an interface, perform no runtime check.
+            // (This loophole is safe, and is allowed by the JVM verifier.)
+            // If the target type is a primitive, change it to a wrapper.
+            @SuppressWarnings("unchecked")
+            T result = (T) x;  // unchecked warning is expected here
+            return result;
+        }
         Class<T> wtype = wrapperType(type);
-        if (wtype.isInstance(x))
-            return wtype.cast(x);
-        return wtype.cast(wrap(x));
+        if (wtype.isInstance(x)) {
+            @SuppressWarnings("unchecked")
+            T result = (T) x;  // unchecked warning is expected here
+            return result;
+        }
+        Class<?> sourceType = x.getClass();  // throw NPE if x is null
+        if (!isCast) {
+            Wrapper source = findWrapperType(sourceType);
+            if (source == null || !this.isConvertibleFrom(source)) {
+                throw newClassCastException(wtype, sourceType);
+            }
+        }
+        @SuppressWarnings("unchecked")
+        T result = (T) wrap(x);  // unchecked warning is expected here
+        assert result.getClass() == wtype;
+        return result;
     }
 
     /** Cast a reference type to another reference type.

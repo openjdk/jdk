@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4329114
  * @summary Need better way of reflecting the reason when a chain is
  *      rejected as untrusted.
+ * @ignore JSSE supports algorithm constraints with CR 6916074,
+ *     need to update this test case in JDK 7 soon
  * This is a serious hack job!
  * @author Brad Wetmore
  */

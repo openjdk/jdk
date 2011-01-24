@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.generics.not.supported.in.source
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 class GenericsNotSupported<T> { }

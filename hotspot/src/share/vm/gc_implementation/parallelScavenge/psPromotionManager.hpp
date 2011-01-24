@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_HPP
+
+#include "gc_implementation/parallelScavenge/psPromotionLAB.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/taskqueue.hpp"
+
 //
 // psPromotionManager is used by a single thread to manage object survival
 // during a scavenge. The promotion manager contains thread local data only.
@@ -191,3 +198,5 @@ class PSPromotionManager : public CHeapObj {
 
   TASKQUEUE_STATS_ONLY(inline void record_steal(StarTask& p);)
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_HPP

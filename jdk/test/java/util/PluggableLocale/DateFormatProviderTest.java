@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class DateFormatProviderTest extends ProviderTest {
         availableLocalesTest();
         objectValidityTest();
         extendedVariantTest();
+        messageFormatTest();
     }
 
     void availableLocalesTest() {
@@ -115,6 +116,50 @@ public class DateFormatProviderTest extends ProviderTest {
             DateFormat provider = dfp.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, test);
             if (!df.equals(provider)) {
                 throw new RuntimeException("variant fallback failed. test locale: "+test);
+            }
+        }
+    }
+
+
+    private static final String[] TYPES = {
+        "date",
+        "time"
+    };
+    private static final String[] MODIFIERS = {
+        "",
+        "short",
+        "medium", // Same as DEFAULT
+        "long",
+        "full"
+    };
+
+    void messageFormatTest() {
+        for (Locale target : providerloc) {
+            for (String type : TYPES) {
+                for (String modifier : MODIFIERS) {
+                    String pattern, expected;
+                    if (modifier.equals("")) {
+                        pattern = String.format("%s={0,%s}", type, type);
+                    } else {
+                        pattern = String.format("%s={0,%s,%s}", type, type, modifier);
+                    }
+                    if (modifier.equals("medium")) {
+                        // medium is default.
+                        expected = String.format("%s={0,%s}", type, type);
+                    } else {
+                        expected = pattern;
+                    }
+                    MessageFormat mf = new MessageFormat(pattern, target);
+                    Format[] fmts = mf.getFormats();
+                    if (fmts[0] instanceof SimpleDateFormat) {
+                        continue;
+                    }
+                    String toPattern = mf.toPattern();
+                    if (!toPattern.equals(expected)) {
+                        throw new RuntimeException("messageFormatTest: got '" + toPattern
+                                                   + "', expected '" + expected + "'");
+                    }
+                }
             }
         }
     }

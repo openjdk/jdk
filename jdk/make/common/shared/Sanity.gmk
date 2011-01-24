@@ -99,12 +99,16 @@ ifeq ($(PLATFORM), linux)
       echo "RedHat"; \
     elif [ -f /etc/SuSE-release ] ; then \
       echo "SuSE"; \
+    elif [ -f /etc/lsb-release ] ; then \
+      $(EGREP) DISTRIB_ID /etc/lsb-release | $(SED) -e 's@.*DISTRIB_ID=\(.*\)@\1@'; \
     else \
       echo "Unknown"; \
     fi)
   OS_VARIANT_VERSION := $(shell \
     if [ "$(OS_VARIANT_NAME)" = "Fedora" ] ; then \
       $(CAT) /etc/fedora-release | $(HEAD) -1 | $(NAWK) '{ print $$3; }' ; \
+    elif [ -f /etc/lsb-release ] ; then \
+      $(EGREP) DISTRIB_RELEASE /etc/lsb-release | $(SED) -e 's@.*DISTRIB_RELEASE=\(.*\)@\1@'; \
     fi)
   ALSA_INCLUDE=/usr/include/alsa/version.h
   ALSA_LIBRARY=/usr/lib/libasound.so
@@ -183,7 +187,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-classpath \
 	sane-java_home \
 	sane-fonts \
-	sane-binary-plugs \
 	sane-variant \
 	sane-ld_library_path \
 	sane-ld_library_path_64 \
@@ -279,7 +282,7 @@ sane-arch_data_model:
 	fi
 
 ######################################################
-# Check the OS version (windows and linus have release name checks)
+# Check the OS version (windows and linux have release name checks)
 #   NOTE: OPENJDK explicitly does not check for OS release information.
 #         Unless we know for sure that it will not build somewhere, we cannot
 #         generate a fatal sanity error, and a warning about the official
@@ -496,23 +499,6 @@ ifndef OPENJDK
 	   "" >> $(ERROR_FILE); \
 	fi \
 	fi
-endif
-
-######################################################
-# If building OPENJDK check pre-built binaries are
-# available for binary plug source components.
-######################################################
-ifdef OPENJDK
-sane-binary-plugs:
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-	@if [ ! -d "$(BINARY_PLUGS_PATH)" ]; then \
-	  $(ECHO) "WARNING: Can't locate pre-built libraries. \n" \
-	    "      Please check your access to \n" \
-	    "          $(BINARY_PLUGS_PATH) \n" \
-	    "      and/or check your value of ALT_BINARY_PLUGS_PATH. \n" \
-	   "" >> $(WARNING_FILE); \
-	fi
-  endif
 endif
 
 ######################################################
@@ -1020,10 +1006,11 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 ######################################################
-# Check for existence of MSDEVTOOLS_PATH on windows
+# Check for existence of the extra tools on windows
 ######################################################
 sane-msdevtools_path:
 ifeq ($(PLATFORM), windows)
+  ifneq ($(COMPILER_VERSION), VS2010)
 	@if [ "$(MSDEVTOOLS_PATH)" != "" -a ! -r "$(MSDEVTOOLS_PATH)" ]; then \
 	  $(ECHO) "ERROR: You do not have a valid MSDEVTOOLS_PATH setting. \n" \
 	    "      Please check your access to \n" \
@@ -1031,6 +1018,7 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  endif
 endif
 
 ######################################################
@@ -1389,20 +1377,21 @@ ifdef REQUIRED_ALSA_VERSION
 endif
 sane-alsa-headers:
 ifdef REQUIRED_ALSA_VERSION
-        if [ "$(ALSA_CHECK)" != "same" -a "$(ALSA_CHECK)" != "newer"  ] ; then \
-	    $(ECHO) "ERROR: The ALSA version must be $(REQUIRED_ALSA_VERSION) or higher. \n" \
-	      "      You have the following ALSA version installed: $${alsa_version) \n" \
-	      "      Please reinstall ALSA (drivers and lib). You can download \n" \
-	      "      the source distribution from http://www.alsa-project.org \n" \
-	      "      or go to http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
-	      "" >> $(ERROR_FILE) ; \
-	  fi \
+	@if [ "$(ALSA_CHECK)" != "missing" ] ; then \
+	    if [ "$(ALSA_CHECK)" != "same" -a "$(ALSA_CHECK)" != "newer"  ] ; then \
+		$(ECHO) "ERROR: The ALSA version must be $(REQUIRED_ALSA_VERSION) or higher. \n" \
+		"      You have the following ALSA version installed: $${alsa_version} \n" \
+		"      Please reinstall ALSA (drivers and lib). You can download \n" \
+		"      the source distribution from http://www.alsa-project.org \n" \
+		"      or go to http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
+		"" >> $(ERROR_FILE) ; \
+	    fi ; \
 	else \
-	  $(ECHO) "ERROR: You seem to not have installed ALSA $(REQUIRED_ALSA_VERSION) or higher. \n" \
-	  "      Please install ALSA (drivers and lib). You can download the \n" \
-	  "      source distribution from http://www.alsa-project.org or go to \n" \
-	  "      http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
-	  "" >> $(ERROR_FILE) ; \
+	    $(ECHO) "ERROR: You seem to not have installed ALSA $(REQUIRED_ALSA_VERSION) or higher. \n" \
+	    "      Please install ALSA (drivers and lib). You can download the \n" \
+	    "      source distribution from http://www.alsa-project.org or go to \n" \
+	    "      http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
+	    "" >> $(ERROR_FILE) ; \
 	fi
 endif
 
@@ -1438,10 +1427,24 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check for existence of INSTALL_MSSDK on windows
+# Check for existence of the MSSDK on windows
 ######################################################
 sane-install-mssdk_path:
 ifeq ($(PLATFORM), windows)
+  ifeq ($(COMPILER_VERSION), VS2010)
+	@if [ -z "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "WARNING: Your WINDOWSSDKDIR setting is empty.\n" \
+	    "        It is recommended to set ALT_WINDOWSSDKDIR.\n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+	@if [ ! -r "$(WINDOWSSDKDIR)" ]; then \
+	  $(ECHO) "ERROR: You do not have a valid WINDOWSSDKDIR setting. \n" \
+	    "      Please check your access to \n" \
+	    "          $(WINDOWSSDKDIR) \n" \
+	    "      and/or check your value of ALT_WINDOWSSDKDIR. \n" \
+	    "" >> $(ERROR_FILE) ; \
+	fi
+  endif
 	@if [ -z "$(INSTALL_MSSDK)" ]; then \
 	  $(ECHO) "WARNING: Your INSTALL_MSSDK setting is empty.\n" \
 	    "        It is recommended to set ALT_INSTALL_MSSDK.\n" \
@@ -1476,20 +1479,20 @@ ifeq ($(PLATFORM), windows)
 endif
 
 ######################################################
-# Check the Solaris GNU c++ compiler for solaris plugin
+# Check the GNU C++ compiler for OJI plugin
 ######################################################
 sane-gcc-compiler:
-ifeq ($(PLATFORM), solaris)
-  ifndef OPENJDK
-    @if [ -r $(GCC_COMPILER_PATH) ]; then \
-	  if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VERSION) ]; then \
-	    $(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VERSION). \n" \
+ifndef OPENJDK
+  ifeq ($(PLATFORM), solaris)
+	@if [ -r $(GCC_COMPILER_PATH) ]; then \
+	  if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VER) ]; then \
+	    $(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VER). \n" \
 	      "      You are using the following compiler version: $(GCC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(GCC_COMPILER_PATH) \n" \
 	      "      Please change your compiler. \n" \
 	      "" >> $(ERROR_FILE) ; \
-    fi \
+	fi \
 	else \
 	  $(ECHO) "ERROR: You do not have a valid GCC_COMPILER_PATH setting. \n" \
 	    "      Please check your access to \n" \
@@ -1501,15 +1504,16 @@ ifeq ($(PLATFORM), solaris)
   endif
 
   ifeq ($(PLATFORM), linux)
+    ifeq ($(ARCH_DATA_MODEL), 32)
     ifdef ALT_GCC29_COMPILER_PATH
 	@if [ ! -x $(ALT_GCC29_COMPILER_PATH)/bin/gcc ]; then \
- 	    $(ECHO) "ERROR: You do not have a valid ALT_GCC29_COMPILER_PATH setting. \n" \
+	    $(ECHO) "ERROR: You do not have a valid ALT_GCC29_COMPILER_PATH setting. \n" \
 	         "      Please check your access to \n" \
 	         "      $(ALT_GCC29_COMPILER_PATH)/bin/gcc \n" \
 	         "      This will affect you if you build the plugin target. \n" \
 	         "" >> $(ERROR_FILE) ; \
     fi
-    endif
+      else
     ifdef ALT_GCC29_PLUGIN_LIB_PATH
 	@if [ ! -r $(ALT_GCC29_PLUGIN_LIB_PATH)/libjavaplugin_oji.so ]; then \
 	    $(ECHO) "Error: You do not have a valid ALT_GCC29_PLUGIN_LIB_PATH setting. \n" \
@@ -1523,13 +1527,15 @@ ifeq ($(PLATFORM), solaris)
 	    $(ECHO) "ERROR: You do not have a valid GCC29_COMPILER_PATH setting. \n" \
 	    	    " Please check your access to \n" \
 	    	    " $(GCC29_COMPILER_PATH) \n" \
-	    	    " and/or check your value of ALT_GCC29_COMPILER_PATH. \n" \
+	      " and/or check your value of ALT_GCC29_COMPILER_PATH or ALT_GCC29_PLUGIN_LIB_PATH \n" \
 	    	    " This will affect you if you build the plugin target. \n" \
 	    	    "" >> $(ERROR_FILE) ; \
 	fi
-    endif
-  endif
-endif
+        endif # ALT_GCC29_PLUGIN_LIB_PATH
+      endif # ALT_GCC29_COMPILER_PATH 
+    endif # ARCH_DATA_MODEL, 32
+  endif # LINUX
+endif  # OPEN_JDK
 
 
 ######################################################

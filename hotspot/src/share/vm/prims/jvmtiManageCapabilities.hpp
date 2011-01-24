@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-#ifndef _JAVA_JVMTI_MANAGE_CAPABILITIES_H_
-#define _JAVA_JVMTI_MANAGE_CAPABILITIES_H_
+#ifndef SHARE_VM_PRIMS_JVMTIMANAGECAPABILITIES_HPP
+#define SHARE_VM_PRIMS_JVMTIMANAGECAPABILITIES_HPP
 
-
+#include "jvmtifiles/jvmti.h"
+#include "memory/allocation.hpp"
 
 class JvmtiManageCapabilities : public AllStatic {
 
@@ -84,4 +85,4 @@ public:
 #endif
 };
 
-#endif   /* _JAVA_JVMTI_MANAGE_CAPABILITIES_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIMANAGECAPABILITIES_HPP

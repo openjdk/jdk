@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CIUTILITIES_HPP
+#define SHARE_VM_CI_CIUTILITIES_HPP
+
+#include "ci/ciEnv.hpp"
+#include "runtime/interfaceSupport.hpp"
 
 // The following routines and definitions are used internally in the
 // compiler interface.
@@ -104,3 +110,5 @@ inline const char* bool_to_str(bool b) {
 
 const char* basictype_to_str(BasicType t);
 const char  basictype_to_char(BasicType t);
+
+#endif // SHARE_VM_CI_CIUTILITIES_HPP

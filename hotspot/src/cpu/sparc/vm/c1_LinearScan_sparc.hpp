@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_C1_LINEARSCAN_SPARC_HPP
+#define CPU_SPARC_VM_C1_LINEARSCAN_SPARC_HPP
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
   return reg_num < 26 || reg_num > 31;
@@ -64,10 +67,12 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     _first_reg = pd_first_callee_saved_reg;
     _last_reg = pd_last_callee_saved_reg;
     return true;
-  } else if (cur->type() == T_INT || cur->type() == T_LONG || cur->type() == T_OBJECT) {
+  } else if (cur->type() == T_INT || cur->type() == T_LONG || cur->type() == T_OBJECT || cur->type() == T_ADDRESS) {
     _first_reg = pd_first_cpu_reg;
     _last_reg = pd_last_allocatable_cpu_reg;
     return true;
   }
   return false;
 }
+
+#endif // CPU_SPARC_VM_C1_LINEARSCAN_SPARC_HPP

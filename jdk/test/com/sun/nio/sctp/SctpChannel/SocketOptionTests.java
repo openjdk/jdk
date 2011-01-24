@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,7 @@ public class SocketOptionTests {
             }
             check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
 
+            System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
             sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
             System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
             primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);

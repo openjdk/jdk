@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_HPP
+
+#include "gc_implementation/shared/concurrentGCThread.hpp"
 
 // The Concurrent Mark GC Thread (could be several in the future).
 // This is copied from the Concurrent Mark Sweep GC Thread
@@ -69,12 +74,12 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
   ConcurrentMark* cm()     { return _cm; }
 
-  void set_started()       { _started = true;  }
-  void clear_started()     { _started = false; }
+  void set_started()       { assert(!_in_progress, "cycle in progress"); _started = true;  }
+  void clear_started()     { assert(_in_progress, "must be starting a cycle"); _started = false; }
   bool started()           { return _started;  }
 
-  void set_in_progress()   { _in_progress = true;  }
-  void clear_in_progress() { _in_progress = false; }
+  void set_in_progress()   { assert(_started, "must be starting a cycle"); _in_progress = true;  }
+  void clear_in_progress() { assert(!_started, "must not be starting a new cycle"); _in_progress = false; }
   bool in_progress()       { return _in_progress;  }
 
   // This flag returns true from the moment a marking cycle is
@@ -93,3 +98,5 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // shutdown
   void stop();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARKTHREAD_HPP

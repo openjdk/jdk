@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
+
+#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
+#include "gc_implementation/shared/gSpaceCounters.hpp"
+#include "gc_implementation/shared/gcStats.hpp"
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/generation.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/virtualspace.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.hpp"
+#include "utilities/yieldingWorkgroup.hpp"
+
 // ConcurrentMarkSweepGeneration is in support of a concurrent
 // mark-sweep old generation in the Detlefs-Printezis--Boehm-Demers-Schenker
 // style. We assume, for now, that this generation is always the
@@ -537,8 +553,8 @@ class CMSCollector: public CHeapObj {
   // The following array-pair keeps track of mark words
   // displaced for accomodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  GrowableArray<oop>*     _preserved_oop_stack;
-  GrowableArray<markOop>* _preserved_mark_stack;
+  Stack<oop>     _preserved_oop_stack;
+  Stack<markOop> _preserved_mark_stack;
 
   int*             _hash_seed;
 
@@ -729,7 +745,9 @@ class CMSCollector: public CHeapObj {
 
   // Support for marking stack overflow handling
   bool take_from_overflow_list(size_t num, CMSMarkStack* to_stack);
-  bool par_take_from_overflow_list(size_t num, OopTaskQueue* to_work_q);
+  bool par_take_from_overflow_list(size_t num,
+                                   OopTaskQueue* to_work_q,
+                                   int no_of_gc_threads);
   void push_on_overflow_list(oop p);
   void par_push_on_overflow_list(oop p);
   // the following is, obviously, not, in general, "MT-stable"
@@ -768,7 +786,7 @@ class CMSCollector: public CHeapObj {
   void abortable_preclean(); // Preclean while looking for possible abort
   void initialize_sequential_subtasks_for_young_gen_rescan(int i);
   // Helper function for above; merge-sorts the per-thread plab samples
-  void merge_survivor_plab_arrays(ContiguousSpace* surv);
+  void merge_survivor_plab_arrays(ContiguousSpace* surv, int no_of_gc_threads);
   // Resets (i.e. clears) the per-thread plab sample vectors
   void reset_survivor_plab_arrays();
 
@@ -1183,8 +1201,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 
-  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes) const;
 
   // Inform this (non-young) generation that a promotion failure was
   // encountered during a collection of a younger generation that
@@ -1881,3 +1898,5 @@ class TraceCMSMemoryManagerStats : public TraceMemoryManagerStats {
   TraceCMSMemoryManagerStats();
 };
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP

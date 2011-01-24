@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_exceptionHandlerTable.cpp.incl"
+#include "precompiled.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "code/nmethod.hpp"
+#include "memory/allocation.inline.hpp"
 
 void ExceptionHandlerTable::add_entry(HandlerTableEntry entry) {
   _nesting.check();

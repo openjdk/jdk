@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_templateTable_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateTable.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 
 #ifndef CC_INTERP
 #define __ _masm->
@@ -341,6 +351,26 @@ void TemplateTable::fast_aldc(bool wide) {
   resolve_cache_and_index(f1_oop, Otos_i, Rcache, Rscratch, wide ? sizeof(u2) : sizeof(u1));
 
   __ verify_oop(Otos_i);
+
+  Label L_done;
+  const Register Rcon_klass = G3_scratch;  // same as Rcache
+  const Register Rarray_klass = G4_scratch;  // same as Rscratch
+  __ load_klass(Otos_i, Rcon_klass);
+  AddressLiteral array_klass_addr((address)Universe::systemObjArrayKlassObj_addr());
+  __ load_contents(array_klass_addr, Rarray_klass);
+  __ cmp(Rarray_klass, Rcon_klass);
+  __ brx(Assembler::notEqual, false, Assembler::pt, L_done);
+  __ delayed()->nop();
+  __ ld(Address(Otos_i, arrayOopDesc::length_offset_in_bytes()), Rcon_klass);
+  __ tst(Rcon_klass);
+  __ brx(Assembler::zero, true, Assembler::pt, L_done);
+  __ delayed()->clr(Otos_i);    // executed only if branch is taken
+
+  // Load the exception from the system-array which wraps it:
+  __ load_heap_oop(Otos_i, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i);
+  __ throw_if_not_x(Assembler::never, Interpreter::throw_exception_entry(), G3_scratch);
+
+  __ bind(L_done);
 }
 
 void TemplateTable::ldc2_w() {
@@ -3273,7 +3303,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ sll(Rret, LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);  // get return address
 
-  __ ld_ptr(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
+  __ load_heap_oop(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
   __ null_check(G3_method_handle);
 
   // Adjust Rret first so Llast_SP can be same as Rret
@@ -3363,21 +3393,21 @@ void TemplateTable::_new() {
     __ delayed()->st_ptr(RnewTopValue, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
 
     if (allow_shared_alloc) {
-    // Check if tlab should be discarded (refill_waste_limit >= free)
-    __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
-    __ sub(RendValue, RoldTopValue, RfreeValue);
+      // Check if tlab should be discarded (refill_waste_limit >= free)
+      __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
+      __ sub(RendValue, RoldTopValue, RfreeValue);
 #ifdef _LP64
-    __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
+      __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
 #else
-    __ srl(RfreeValue, LogHeapWordSize, RfreeValue);
+      __ srl(RfreeValue, LogHeapWordSize, RfreeValue);
 #endif
-    __ cmp(RtlabWasteLimitValue, RfreeValue);
-    __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, slow_case); // tlab waste is small
-    __ delayed()->nop();
+      __ cmp(RtlabWasteLimitValue, RfreeValue);
+      __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, slow_case); // tlab waste is small
+      __ delayed()->nop();
 
-    // increment waste limit to prevent getting stuck on this slow path
-    __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
-    __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
+      // increment waste limit to prevent getting stuck on this slow path
+      __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
+      __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
     } else {
       // No allocation in the shared eden.
       __ br(Assembler::always, false, Assembler::pt, slow_case);
@@ -3415,6 +3445,9 @@ void TemplateTable::_new() {
     __ cmp(RoldTopValue, RnewTopValue);
     __ brx(Assembler::notEqual, false, Assembler::pn, retry);
     __ delayed()->nop();
+
+    // bump total bytes allocated by this thread
+    __ incr_allocated_bytes(Roffset, 0, G1_scratch);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {

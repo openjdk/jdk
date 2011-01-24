@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ endif
 # Get compiler version
 _CC_VER :=$(shell $(CC) -V 2>&1 | $(HEAD) -n 1)
 CC_VER  :=$(call GetVersion,"$(_CC_VER)")
+CC_MAJORVER  :=$(call MajorVersion,$(CC_VER))
 CC_MINORVER  :=$(call MinorVersion,$(CC_VER))
 
 # Name of compilers being used

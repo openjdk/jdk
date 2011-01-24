@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_verifier.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/stackMapTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "prims/jvm.h"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION 51
 
@@ -41,11 +68,11 @@ static volatile jint _is_new_verify_byte_codes_fn = (jint) true;
 static void* verify_byte_codes_fn() {
   if (_verify_byte_codes_fn == NULL) {
     void *lib_handle = os::native_java_library();
-    void *func = hpi::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
+    void *func = os::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
     OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     if (func == NULL) {
       OrderAccess::release_store(&_is_new_verify_byte_codes_fn, false);
-      func = hpi::dll_lookup(lib_handle, "VerifyClassCodes");
+      func = os::dll_lookup(lib_handle, "VerifyClassCodes");
       OrderAccess::release_store_ptr(&_verify_byte_codes_fn, func);
     }
   }
@@ -245,6 +272,10 @@ ClassVerifier::ClassVerifier(
 }
 
 ClassVerifier::~ClassVerifier() {
+}
+
+VerificationType ClassVerifier::object_type() const {
+  return VerificationType::reference_type(vmSymbols::java_lang_Object());
 }
 
 void ClassVerifier::verify_class(TRAPS) {
@@ -726,8 +757,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           }
           no_control_flow = false; break;
         case Bytecodes::_aastore :
-          type = current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          type = current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           type2 = current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
           atype = current_frame.pop_stack(
@@ -1232,8 +1262,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         {
           index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
-          current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           VerificationType klass_type = cp_index_to_type(
             index, cp, CHECK_VERIFY(this));
           current_frame.push_stack(klass_type, CHECK_VERIFY(this));
@@ -1242,8 +1271,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_instanceof : {
           index = bcs.get_index_u2();
           verify_cp_class_type(index, cp, CHECK_VERIFY(this));
-          current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+          current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           current_frame.push_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
           no_control_flow = false; break;
@@ -1610,9 +1638,7 @@ void ClassVerifier::verify_ldc(
     verify_cp_type(index, cp, types, CHECK_VERIFY(this));
   }
   if (tag.is_string() && cp->is_pseudo_string_at(index)) {
-    current_frame->push_stack(
-      VerificationType::reference_type(
-        vmSymbols::java_lang_Object()), CHECK_VERIFY(this));
+    current_frame->push_stack(object_type(), CHECK_VERIFY(this));
   } else if (tag.is_string() || tag.is_unresolved_string()) {
     current_frame->push_stack(
       VerificationType::reference_type(
@@ -1909,7 +1935,7 @@ void ClassVerifier::verify_invoke_instructions(
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic
-                                ? (1 << JVM_CONSTANT_NameAndType
+                                ? ((AllowTransitionalJSR292 ? 1 << JVM_CONSTANT_NameAndType : 0)
                                   |1 << JVM_CONSTANT_InvokeDynamic)
                                 : 1 << JVM_CONSTANT_Methodref);
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));

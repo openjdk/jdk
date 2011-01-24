@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stringopts.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callGenerator.hpp"
+#include "opto/callnode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/idealKit.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/stringopts.hpp"
+#include "opto/subnode.hpp"
 
 #define __ kit.
 
@@ -49,7 +59,8 @@ class StringConcat : public ResourceObj {
   enum {
     StringMode,
     IntMode,
-    CharMode
+    CharMode,
+    StringNullCheckMode
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
@@ -75,8 +86,7 @@ class StringConcat : public ResourceObj {
       for (SimpleDUIterator i(endprojs.resproj); i.has_next(); i.next()) {
         CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
         if (use != NULL && use->method() != NULL &&
-            use->method()->holder() == C->env()->String_klass() &&
-            use->method()->name() == ciSymbol::object_initializer_name() &&
+            use->method()->intrinsic_id() == vmIntrinsics::_String_String &&
             use->in(TypeFunc::Parms + 1) == endprojs.resproj) {
           // Found useless new String(sb.toString()) so reuse the newly allocated String
           // when creating the result instead of allocating a new one.
@@ -104,6 +114,9 @@ class StringConcat : public ResourceObj {
   }
   void push_string(Node* value) {
     push(value, StringMode);
+  }
+  void push_string_null_check(Node* value) {
+    push(value, StringNullCheckMode);
   }
   void push_int(Node* value) {
     push(value, IntMode);
@@ -394,7 +407,9 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       Node* constructor = NULL;
       for (SimpleDUIterator i(result); i.has_next(); i.next()) {
         CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
-        if (use != NULL && use->method() != NULL &&
+        if (use != NULL &&
+            use->method() != NULL &&
+            !use->method()->is_static() &&
             use->method()->name() == ciSymbol::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
@@ -405,7 +420,19 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             if (sig == ciSymbol::string_void_signature()) {
               // StringBuilder(String) so pick this up as the first argument
               assert(use->in(TypeFunc::Parms + 1) != NULL, "what?");
-              sc->push_string(use->in(TypeFunc::Parms + 1));
+              const Type* type = _gvn->type(use->in(TypeFunc::Parms + 1));
+              if (type == TypePtr::NULL_PTR) {
+                // StringBuilder(null) throws exception.
+#ifndef PRODUCT
+                if (PrintOptimizeStringConcat) {
+                  tty->print("giving up because StringBuilder(null) throws exception");
+                  alloc->jvms()->dump_spec(tty); tty->cr();
+                }
+#endif
+                return NULL;
+              }
+              // StringBuilder(str) argument needs null check.
+              sc->push_string_null_check(use->in(TypeFunc::Parms + 1));
             }
             // The int variant takes an initial size for the backing
             // array so just treat it like the void version.
@@ -425,7 +452,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
           tty->print("giving up because couldn't find constructor ");
-          alloc->jvms()->dump_spec(tty);
+          alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
         break;
@@ -444,7 +471,8 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
     } else if (cnode->method() == NULL) {
       break;
-    } else if (cnode->method()->holder() == m->holder() &&
+    } else if (!cnode->method()->is_static() &&
+               cnode->method()->holder() == m->holder() &&
                cnode->method()->name() == ciSymbol::append_name() &&
                (cnode->method()->signature()->as_symbol() == string_sig ||
                 cnode->method()->signature()->as_symbol() == char_sig ||
@@ -459,8 +487,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
           CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
           if (csj->method() != NULL &&
-              csj->method()->holder() == C->env()->Integer_klass() &&
-              csj->method()->name() == ciSymbol::toString_name()) {
+              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString) {
             sc->add_control(csj);
             sc->push_int(csj->in(TypeFunc::Parms));
             continue;
@@ -537,9 +564,8 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
       if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
         CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
         if (csj->method() != NULL &&
-            (csj->method()->holder() == C->env()->StringBuffer_klass() ||
-             csj->method()->holder() == C->env()->StringBuilder_klass()) &&
-            csj->method()->name() == ciSymbol::toString_name()) {
+            (csj->method()->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
+             csj->method()->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
           for (int o = 0; o < concats.length(); o++) {
             if (c == o) continue;
             StringConcat* other = concats.at(o);
@@ -1259,6 +1285,25 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         string_sizes->init_req(argi, string_size);
         break;
       }
+      case StringConcat::StringNullCheckMode: {
+        const Type* type = kit.gvn().type(arg);
+        assert(type != TypePtr::NULL_PTR, "missing check");
+        if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
+          // Null check with uncommont trap since
+          // StringBuilder(null) throws exception.
+          // Use special uncommon trap instead of
+          // calling normal do_null_check().
+          Node* p = __ Bool(__ CmpP(arg, kit.null()), BoolTest::ne);
+          IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
+          overflow->add_req(__ IfFalse(iff));
+          Node* notnull = __ IfTrue(iff);
+          kit.set_control(notnull); // set control for the cast_not_null
+          arg = kit.cast_not_null(arg, false);
+          sc->set_argument(argi, arg);
+        }
+        assert(kit.gvn().type(arg)->higher_equal(TypeInstPtr::NOTNULL), "sanity");
+        // Fallthrough to add string length.
+      }
       case StringConcat::StringMode: {
         const Type* type = kit.gvn().type(arg);
         if (type == TypePtr::NULL_PTR) {
@@ -1318,6 +1363,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Hook
     PreserveJVMState pjvms(&kit);
     kit.set_control(overflow);
+    C->record_for_igvn(overflow);
     kit.uncommon_trap(Deoptimization::Reason_intrinsic,
                       Deoptimization::Action_make_not_entrant);
   }
@@ -1353,6 +1399,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         start = end;
         break;
       }
+      case StringConcat::StringNullCheckMode:
       case StringConcat::StringMode: {
         start = copy_string(kit, arg, char_array, start);
         break;

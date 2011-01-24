@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/markOop.hpp"
+#include "oops/oop.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/stack.hpp"
+#include "utilities/taskqueue.hpp"
 
 class ReferenceProcessor;
 class DataLayout;
@@ -104,23 +116,22 @@ class MarkSweep : AllStatic {
   friend class KeepAliveClosure;
   friend class VM_MarkSweep;
   friend void marksweep_init();
-  friend class DataLayout;
 
   //
   // Vars
   //
  protected:
   // Traversal stacks used during phase1
-  static GrowableArray<oop>*             _marking_stack;
-  static GrowableArray<ObjArrayTask>*    _objarray_stack;
+  static Stack<oop>                      _marking_stack;
+  static Stack<ObjArrayTask>             _objarray_stack;
   // Stack for live klasses to revisit at end of marking phase
-  static GrowableArray<Klass*>*          _revisit_klass_stack;
+  static Stack<Klass*>                   _revisit_klass_stack;
   // Set (stack) of MDO's to revisit at end of marking phase
-  static GrowableArray<DataLayout*>*    _revisit_mdo_stack;
+  static Stack<DataLayout*>              _revisit_mdo_stack;
 
   // Space for storing/restoring mark word
-  static GrowableArray<markOop>*         _preserved_mark_stack;
-  static GrowableArray<oop>*             _preserved_oop_stack;
+  static Stack<markOop>                  _preserved_mark_stack;
+  static Stack<oop>                      _preserved_oop_stack;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
@@ -249,3 +260,5 @@ public:
     _obj->set_mark(_mark);
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP

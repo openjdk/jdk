@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,22 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
                         f.getWidth()-1, f.getHeight()-1);
               }
               g.drawRect( newX, newY, f.getWidth()-1, f.getHeight()-1);
-              currentLoc = new Point (newX, newY);
+              /* Work around for 6635462: XOR mode may cause a SurfaceLost on first use.
+              * Swing doesn't expect that its XOR drawRect did
+              * not complete, so believes that on re-entering at
+              * the next update location, that there is an XOR rect
+              * to draw out at "currentLoc". But in fact
+              * its now got a new clean surface without that rect,
+              * so drawing it "out" in fact draws it on, leaving garbage.
+              * So only update/set currentLoc if the draw completed.
+              */
+              sun.java2d.SurfaceData sData =
+                  ((sun.java2d.SunGraphics2D)g).getSurfaceData();
+
+              if (!sData.isSurfaceLost()) {
+                  currentLoc = new Point (newX, newY);
+              }
+;
               g.dispose();
             }
         } else if (dragMode == FASTER_DRAG_MODE) {
@@ -412,7 +427,14 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
                 g.drawRect( currentBounds.x, currentBounds.y, currentBounds.width-1, currentBounds.height-1);
               }
               g.drawRect( newX, newY, newWidth-1, newHeight-1);
-              currentBounds = new Rectangle (newX, newY, newWidth, newHeight);
+
+              // Work around for 6635462, see comment in dragFrame()
+              sun.java2d.SurfaceData sData =
+                  ((sun.java2d.SunGraphics2D)g).getSurfaceData();
+              if (!sData.isSurfaceLost()) {
+                  currentBounds = new Rectangle (newX, newY, newWidth, newHeight);
+              }
+
               g.setPaintMode();
               g.dispose();
             }

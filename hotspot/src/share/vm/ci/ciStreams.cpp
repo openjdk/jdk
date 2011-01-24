@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciStreams.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciCallSite.hpp"
+#include "ci/ciConstant.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciStreams.hpp"
+#include "ci/ciUtilities.hpp"
 
 // ciExceptionHandlerStream
 //

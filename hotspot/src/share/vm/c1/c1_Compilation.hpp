@@ -22,7 +22,13 @@
  *
  */
 
-class BlockBegin;
+#ifndef SHARE_VM_C1_C1_COMPILATION_HPP
+#define SHARE_VM_C1_C1_COMPILATION_HPP
+
+#include "ci/ciEnv.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "memory/resourceArea.hpp"
+
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;
@@ -179,18 +185,14 @@ class Compilation: public StackObj {
     return (int) NMethodSizeLimit;  // default 256K or 512K
 #else
     // conditional branches on PPC are restricted to 16 bit signed
-    return MAX2((unsigned int)NMethodSizeLimit,32*K);
+    return MIN2((unsigned int)NMethodSizeLimit,32*K);
 #endif
   }
   static int desired_max_constant_size() {
-#ifndef PPC
-    return (int) NMethodSizeLimit / 10;  // about 25K
-#else
-    return (MAX2((unsigned int)NMethodSizeLimit, 32*K)) / 10;
-#endif
+    return desired_max_code_buffer_size() / 10;
   }
 
-  static void setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
+  static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 
   // timers
   static void print_timers();
@@ -290,3 +292,5 @@ class ExceptionInfo: public CompilationResourceObj {
   int pco()                                      { return _pco; }
   XHandlers* exception_handlers()                { return _exception_handlers; }
 };
+
+#endif // SHARE_VM_C1_C1_COMPILATION_HPP

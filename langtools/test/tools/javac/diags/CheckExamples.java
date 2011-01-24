@@ -40,7 +40,7 @@ import java.util.*;
  *      compiler.properties bundle. A list of exceptions may be given in the
  *      not-yet.txt file. Entries on the not-yet.txt list should not be
  *      covered by examples.
- * When new keys are added to the resource buncle, it is strongly recommended
+ * When new keys are added to the resource bundle, it is strongly recommended
  * that corresponding new examples be added here, if at all practical, instead
  * of simply and lazily being added to the not-yet.txt list.
  */
@@ -129,10 +129,15 @@ public class CheckExamples {
         File testSrc = new File(System.getProperty("test.src"));
         File examples = new File(testSrc, "examples");
         for (File f: examples.listFiles()) {
-            if (f.isDirectory() || f.isFile() && f.getName().endsWith(".java"))
+            if (isValidExample(f))
                 results.add(new Example(f));
         }
         return results;
+    }
+
+    boolean isValidExample(File f) {
+        return (f.isDirectory() && f.list().length > 0) ||
+                (f.isFile() && f.getName().endsWith(".java"));
     }
 
     /**

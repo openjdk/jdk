@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_perfMemory_linux.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "os_linux.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/perfMemory.hpp"
+#include "utilities/exceptions.hpp"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -628,7 +635,29 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     return -1;
   }
 
-  return fd;
+  // Verify that we have enough disk space for this file.
+  // We'll get random SIGBUS crashes on memory accesses if
+  // we don't.
+
+  for (size_t seekpos = 0; seekpos < size; seekpos += os::vm_page_size()) {
+    int zero_int = 0;
+    result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
+    if (result == -1 ) break;
+    RESTARTABLE(::write(fd, &zero_int, 1), result);
+    if (result != 1) {
+      if (errno == ENOSPC) {
+        warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
+      }
+      break;
+    }
+  }
+
+  if (result != -1) {
+    return fd;
+  } else {
+    RESTARTABLE(::close(fd), result);
+    return -1;
+  }
 }
 
 // open the shared memory file for the given user and vmid. returns

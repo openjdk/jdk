@@ -22,6 +22,23 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
+#define SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
+
+#include "oops/arrayOop.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "utilities/constantTag.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
+
 // A constantPool is an array containing class constants as described in the
 // class file.
 //
@@ -41,6 +58,7 @@ class constantPoolOopDesc : public oopDesc {
   typeArrayOop         _tags; // the tag array describing the constant pool's contents
   constantPoolCacheOop _cache;         // the cache holding interpreter runtime information
   klassOop             _pool_holder;   // the corresponding class
+  typeArrayOop         _operands;      // for variable-sized (InvokeDynamic) nodes, usually empty
   int                  _flags;         // a few header bits to describe contents for GC
   int                  _length; // number of elements in the array
   volatile bool        _is_conc_safe; // if true, safe for concurrent
@@ -51,6 +69,8 @@ class constantPoolOopDesc : public oopDesc {
   void set_tags(typeArrayOop tags)             { oop_store_without_check((oop*)&_tags, tags); }
   void tag_at_put(int which, jbyte t)          { tags()->byte_at_put(which, t); }
   void release_tag_at_put(int which, jbyte t)  { tags()->release_byte_at_put(which, t); }
+
+  void set_operands(typeArrayOop operands)     { oop_store_without_check((oop*)&_operands, operands); }
 
   enum FlagBit {
     FB_has_invokedynamic = 1,
@@ -67,6 +87,7 @@ class constantPoolOopDesc : public oopDesc {
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(constantPoolOopDesc)); }
   oop* tags_addr()       { return (oop*)&_tags; }
   oop* cache_addr()      { return (oop*)&_cache; }
+  oop* operands_addr()   { return (oop*)&_operands; }
 
   oop* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
@@ -95,6 +116,7 @@ class constantPoolOopDesc : public oopDesc {
 
  public:
   typeArrayOop tags() const                 { return _tags; }
+  typeArrayOop operands() const             { return _operands; }
 
   bool has_pseudo_string() const            { return flag_at(FB_has_pseudo_string); }
   bool has_invokedynamic() const            { return flag_at(FB_has_invokedynamic); }
@@ -113,6 +135,7 @@ class constantPoolOopDesc : public oopDesc {
   // Assembly code support
   static int tags_offset_in_bytes()         { return offset_of(constantPoolOopDesc, _tags); }
   static int cache_offset_in_bytes()        { return offset_of(constantPoolOopDesc, _cache); }
+  static int operands_offset_in_bytes()     { return offset_of(constantPoolOopDesc, _operands); }
   static int pool_holder_offset_in_bytes()  { return offset_of(constantPoolOopDesc, _pool_holder); }
 
   // Storing constants
@@ -156,9 +179,15 @@ class constantPoolOopDesc : public oopDesc {
     *int_at_addr(which) = ref_index;
   }
 
-  void invoke_dynamic_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+  void invoke_dynamic_at_put(int which, int bootstrap_specifier_index, int name_and_type_index) {
     tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
+    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_specifier_index;
+  }
+
+  void invoke_dynamic_trans_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+    tag_at_put(which, JVM_CONSTANT_InvokeDynamicTrans);
     *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
+    assert(AllowTransitionalJSR292, "");
   }
 
   // Temporary until actual use
@@ -401,26 +430,107 @@ class constantPoolOopDesc : public oopDesc {
     int sym = method_type_index_at(which);
     return symbol_at(sym);
   }
-  int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
-    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    jint ref_index = *int_at_addr(which);
-    return extract_low_short_from_int(ref_index);
-  }
+
   int invoke_dynamic_name_and_type_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    jint ref_index = *int_at_addr(which);
-    return extract_high_short_from_int(ref_index);
+    return extract_high_short_from_int(*int_at_addr(which));
+  }
+  int invoke_dynamic_bootstrap_specifier_index(int which) {
+    assert(tag_at(which).value() == JVM_CONSTANT_InvokeDynamic, "Corrupted constant pool");
+    return extract_low_short_from_int(*int_at_addr(which));
+  }
+  int invoke_dynamic_operand_base(int which) {
+    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
+    return operand_offset_at(operands(), bootstrap_specifier_index);
+  }
+  // The first part of the operands array consists of an index into the second part.
+  // Extract a 32-bit index value from the first part.
+  static int operand_offset_at(typeArrayOop operands, int bootstrap_specifier_index) {
+    int n = (bootstrap_specifier_index * 2);
+    assert(n >= 0 && n+2 <= operands->length(), "oob");
+    // The first 32-bit index points to the beginning of the second part
+    // of the operands array.  Make sure this index is in the first part.
+    DEBUG_ONLY(int second_part = build_int_from_shorts(operands->short_at(0),
+                                                       operands->short_at(1)));
+    assert(second_part == 0 || n+2 <= second_part, "oob (2)");
+    int offset = build_int_from_shorts(operands->short_at(n+0),
+                                       operands->short_at(n+1));
+    // The offset itself must point into the second part of the array.
+    assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
+    return offset;
+  }
+  static void operand_offset_at_put(typeArrayOop operands, int bootstrap_specifier_index, int offset) {
+    int n = bootstrap_specifier_index * 2;
+    assert(n >= 0 && n+2 <= operands->length(), "oob");
+    operands->short_at_put(n+0, extract_low_short_from_int(offset));
+    operands->short_at_put(n+1, extract_high_short_from_int(offset));
+  }
+  static int operand_array_length(typeArrayOop operands) {
+    if (operands == NULL || operands->length() == 0)  return 0;
+    int second_part = operand_offset_at(operands, 0);
+    return (second_part / 2);
+  }
+
+#ifdef ASSERT
+  // operand tuples fit together exactly, end to end
+  static int operand_limit_at(typeArrayOop operands, int bootstrap_specifier_index) {
+    int nextidx = bootstrap_specifier_index + 1;
+    if (nextidx == operand_array_length(operands))
+      return operands->length();
+    else
+      return operand_offset_at(operands, nextidx);
+  }
+  int invoke_dynamic_operand_limit(int which) {
+    int bootstrap_specifier_index = invoke_dynamic_bootstrap_specifier_index(which);
+    return operand_limit_at(operands(), bootstrap_specifier_index);
+  }
+#endif //ASSERT
+
+  // layout of InvokeDynamic bootstrap method specifier (in second part of operands array):
+  enum {
+         _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
+         _indy_argc_offset = 1,  // u2 argc
+         _indy_argv_offset = 2   // u2 argv[argc]
+  };
+  int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
+      return extract_low_short_from_int(*int_at_addr(which));
+    int op_base = invoke_dynamic_operand_base(which);
+    return operands()->short_at(op_base + _indy_bsm_offset);
+  }
+  int invoke_dynamic_argument_count_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
+      return 0;
+    int op_base = invoke_dynamic_operand_base(which);
+    int argc = operands()->short_at(op_base + _indy_argc_offset);
+    DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
+               int next_offset = invoke_dynamic_operand_limit(which));
+    assert(end_offset == next_offset, "matched ending");
+    return argc;
+  }
+  int invoke_dynamic_argument_index_at(int which, int j) {
+    int op_base = invoke_dynamic_operand_base(which);
+    DEBUG_ONLY(int argc = operands()->short_at(op_base + _indy_argc_offset));
+    assert((uint)j < (uint)argc, "oob");
+    return operands()->short_at(op_base + _indy_argv_offset + j);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
   // name_and_type_ref_index_at) all expect to be passed indices obtained
-  // directly from the bytecode, and extracted according to java byte order.
+  // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
-  // actually potentially byte-swapped, rewritten constant pool cache indices.
+  // actually rewritten constant pool cache indices.
   // The routine remap_instruction_operand_from_cache manages the adjustment
   // of these values back to constant pool indices.
 
   // There are also "uncached" versions which do not adjust the operand index; see below.
+
+  // FIXME: Consider renaming these with a prefix "cached_" to make the distinction clear.
+  // In a few cases (the verifier) there are uses before a cpcache has been built,
+  // which are handled by a dynamic check in remap_instruction_operand_from_cache.
+  // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   klassOop klass_ref_at(int which, TRAPS);
@@ -443,15 +553,24 @@ class constantPoolOopDesc : public oopDesc {
     resolve_string_constants_impl(h_this, CHECK);
   }
 
+ private:
+  enum { _no_index_sentinel = -1, _possible_index_sentinel = -2 };
+ public:
+
   // Resolve late bound constants.
   oop resolve_constant_at(int index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, -1, THREAD);
+    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, -1, cache_index, THREAD);
+    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, THREAD);
+  }
+
+  oop resolve_possibly_cached_constant_at(int pool_index, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, THREAD);
   }
 
   // Klass name matches name at offset
@@ -484,7 +603,7 @@ class constantPoolOopDesc : public oopDesc {
   static klassOop klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int which, TRAPS);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
-  // future by other Java code. These take constant pool indices rather than possibly-byte-swapped
+  // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   symbolOop uncached_klass_ref_at_noresolve(int which);
   symbolOop uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
@@ -543,9 +662,12 @@ class constantPoolOopDesc : public oopDesc {
  public:
   // Merging constantPoolOop support:
   bool compare_entry_to(int index1, constantPoolHandle cp2, int index2, TRAPS);
-  void copy_cp_to(int start_i, int end_i, constantPoolHandle to_cp, int to_i,
-    TRAPS);
-  void copy_entry_to(int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  void copy_cp_to(int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    copy_cp_to_impl(h_this, start_i, end_i, to_cp, to_i, THREAD);
+  }
+  static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
   int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
   int  orig_length() const                { return _orig_length; }
   void set_orig_length(int orig_length)   { _orig_length = orig_length; }
@@ -666,3 +788,5 @@ class SymbolHashMap: public CHeapObj {
     delete _buckets;
   }
 }; // End SymbolHashMap class
+
+#endif // SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP

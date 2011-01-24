@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_UNIVERSE_HPP
+#define SHARE_VM_MEMORY_UNIVERSE_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
 // Universe is a name space holding known system classes and objects in the VM.
 //
@@ -340,6 +346,7 @@ class Universe: AllStatic {
   static klassOop* longArrayKlassObj_addr()           { return &_longArrayKlassObj;   }
   static klassOop* singleArrayKlassObj_addr()         { return &_singleArrayKlassObj; }
   static klassOop* doubleArrayKlassObj_addr()         { return &_doubleArrayKlassObj; }
+  static klassOop* systemObjArrayKlassObj_addr()      { return &_systemObjArrayKlassObj; }
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
@@ -460,3 +467,5 @@ class DeferredObjAllocEvent : public CHeapObj {
     size_t bytesize() { return _bytesize; }
     oop    get_oop()  { return _oop; }
 };
+
+#endif // SHARE_VM_MEMORY_UNIVERSE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import javax.tools.JavaFileObject.Kind;
  * There are no references here to file-system specific objects such as
  * java.io.File or java.nio.file.Path.
  */
-public class BaseFileManager {
+public abstract class BaseFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
@@ -163,6 +163,9 @@ public class BaseFileManager {
         }
         return -1;
     }
+
+    public abstract boolean isDefaultBootClassPath();
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Encoding">

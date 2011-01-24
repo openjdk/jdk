@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ RegisterFunc RegisterAnyShort;
 
 DECLARE_SOLID_FILLRECT(AnyShort);
 DECLARE_SOLID_FILLSPANS(AnyShort);
+DECLARE_SOLID_PARALLELOGRAM(AnyShort);
 DECLARE_SOLID_DRAWLINE(AnyShort);
 DECLARE_XOR_FILLRECT(AnyShort);
 DECLARE_XOR_FILLSPANS(AnyShort);
@@ -48,6 +49,7 @@ DECLARE_XOR_DRAWGLYPHLIST(AnyShort);
 NativePrimitive AnyShortPrimitives[] = {
     REGISTER_SOLID_FILLRECT(AnyShort),
     REGISTER_SOLID_FILLSPANS(AnyShort),
+    REGISTER_SOLID_PARALLELOGRAM(AnyShort),
     REGISTER_SOLID_LINE_PRIMITIVES(AnyShort),
     REGISTER_XOR_FILLRECT(AnyShort),
     REGISTER_XOR_FILLSPANS(AnyShort),
@@ -71,6 +73,8 @@ DEFINE_ISOXOR_BLIT(AnyShort)
 DEFINE_SOLID_FILLRECT(AnyShort)
 
 DEFINE_SOLID_FILLSPANS(AnyShort)
+
+DEFINE_SOLID_PARALLELOGRAM(AnyShort)
 
 DEFINE_SOLID_DRAWLINE(AnyShort)
 

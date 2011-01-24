@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_CPCACHEOOP_HPP
+#define SHARE_VM_OOPS_CPCACHEOOP_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
+#include "oops/arrayOop.hpp"
+#include "utilities/array.hpp"
 
 // A ConstantPoolCacheEntry describes an individual entry of the constant
 // pool cache. There's 2 principal kinds of entries: field entries for in-
@@ -130,6 +138,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     assert(existing_f1 == NULL || existing_f1 == f1, "illegal field change");
     oop_store(&_f1, f1);
   }
+  void set_f1_if_null_atomic(oop f1);
   void set_f2(intx f2)                           { assert(_f2 == 0    || _f2 == f2, "illegal field change"); _f2 = f2; }
   int as_flags(TosState state, bool is_final, bool is_vfinal, bool is_volatile,
                bool is_method_interface, bool is_method);
@@ -318,7 +327,9 @@ class constantPoolCacheOopDesc: public oopDesc {
 
   // Sizing
   debug_only(friend class ClassVerifier;)
+ public:
   int length() const                             { return _length; }
+ private:
   void set_length(int length)                    { _length = length; }
 
   static int header_size()                       { return sizeof(constantPoolCacheOopDesc) / HeapWordSize; }
@@ -403,3 +414,5 @@ class constantPoolCacheOopDesc: public oopDesc {
   void adjust_method_entries(methodOop* old_methods, methodOop* new_methods,
                              int methods_length, bool * trace_name_printed);
 };
+
+#endif // SHARE_VM_OOPS_CPCACHEOOP_HPP

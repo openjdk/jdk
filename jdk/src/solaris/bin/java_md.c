@@ -868,7 +868,7 @@ LocateJRE(manifest_info* info)
     while (dp != NULL) {
         cp = JLI_StrChr(dp, (int)':');
         if (cp != NULL)
-            *cp = (char)NULL;
+            *cp = '\0';
         if ((target = ProcessDir(info, dp)) != NULL)
             break;
         dp = cp;

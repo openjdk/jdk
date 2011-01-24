@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6945418
+ * @bug     6945418 6993978
  * @summary Project Coin: Simplified Varargs Method Invocation
  * @author  mcimadamore
  * @run main Warn4
@@ -48,96 +48,95 @@ public class Warn4 {
     final static Warning[] both = new Warning[] { Warning.VARARGS, Warning.UNCHECKED };
 
     enum Warning {
-        UNCHECKED("unchecked"),
-        VARARGS("varargs");
+        UNCHECKED("generic.array.creation"),
+        VARARGS("varargs.non.reifiable.type");
 
-        String category;
+        String key;
 
-        Warning(String category) {
-            this.category = category;
+        Warning(String key) {
+            this.key = key;
         }
 
-        boolean isEnabled(XlintOption xlint, SuppressLevel suppressLevel) {
-            return Arrays.asList(xlint.enabledWarnings).contains(this);
-        }
+        boolean isSuppressed(TrustMe trustMe, SourceLevel source, SuppressLevel suppressLevelClient,
+                SuppressLevel suppressLevelDecl, ModifierKind modKind) {
+            switch(this) {
+                case VARARGS:
+                    return source == SourceLevel.JDK_6 ||
+                            suppressLevelDecl == SuppressLevel.UNCHECKED ||
+                            trustMe == TrustMe.TRUST;
+                case UNCHECKED:
+                    return suppressLevelClient == SuppressLevel.UNCHECKED ||
+                        (trustMe == TrustMe.TRUST && modKind != ModifierKind.NONE && source == SourceLevel.JDK_7);
+            }
 
-        boolean isSuppressed(SuppressLevel suppressLevel) {
-            return Arrays.asList(suppressLevel.suppressedWarnings).contains(VARARGS);
+            SuppressLevel supLev = this == VARARGS ?
+                suppressLevelDecl :
+                suppressLevelClient;
+            return supLev == SuppressLevel.UNCHECKED ||
+                    (trustMe == TrustMe.TRUST && modKind != ModifierKind.NONE);
         }
     }
 
-    enum XlintOption {
-        NONE(),
-        UNCHECKED(Warning.UNCHECKED),
-        VARARGS(Warning.VARARGS),
-        ALL(Warning.UNCHECKED, Warning.VARARGS);
+    enum SourceLevel {
+        JDK_6("6"),
+        JDK_7("7");
 
-        Warning[] enabledWarnings;
+        String sourceKey;
 
-        XlintOption(Warning... enabledWarnings) {
-            this.enabledWarnings = enabledWarnings;
+        SourceLevel(String sourceKey) {
+            this.sourceKey = sourceKey;
         }
+    }
 
-        String getXlintOption() {
-            StringBuilder buf = new StringBuilder();
-            String sep = "";
-            for (Warning w : enabledWarnings) {
-                buf.append(sep);
-                buf.append(w.category);
-                sep=",";
-            }
-            return "-Xlint:" +
-                    (this == NONE ? "none" : buf.toString());
+    enum TrustMe {
+        DONT_TRUST(""),
+        TRUST("@java.lang.SafeVarargs");
+
+        String anno;
+
+        TrustMe(String anno) {
+            this.anno = anno;
+        }
+    }
+
+    enum ModifierKind {
+        NONE(" "),
+        FINAL("final "),
+        STATIC("static ");
+
+        String mod;
+
+        ModifierKind(String mod) {
+            this.mod = mod;
         }
     }
 
     enum SuppressLevel {
-        NONE(),
-        UNCHECKED(Warning.UNCHECKED),
-        VARARGS(Warning.VARARGS),
-        ALL(Warning.UNCHECKED, Warning.VARARGS);
+        NONE(""),
+        UNCHECKED("unchecked");
 
-        Warning[] suppressedWarnings;
+        String lint;
 
-        SuppressLevel(Warning... suppressedWarnings) {
-            this.suppressedWarnings = suppressedWarnings;
+        SuppressLevel(String lint) {
+            this.lint = lint;
         }
 
-        String getSuppressAnnotation() {
-            StringBuilder buf = new StringBuilder();
-            String sep = "";
-            for (Warning w : suppressedWarnings) {
-                buf.append(sep);
-                buf.append("\"");
-                buf.append(w.category);
-                buf.append("\"");
-                sep=",";
-            }
-            return this == NONE ? "" :
-                "@SuppressWarnings({" + buf.toString() + "})";
+        String getSuppressAnno() {
+            return "@SuppressWarnings(\"" + lint + "\")";
         }
     }
 
     enum Signature {
-
-        EXTENDS_TVAR("<Z> void #name(List<? extends Z>#arity arg) { #body }",
-            new Warning[][] {both, both, both, both, error, both, both, both, error}),
-        SUPER_TVAR("<Z> void #name(List<? super Z>#arity arg) { #body }",
-            new Warning[][] {error, both, error, both, error, error, both, both, error}),
         UNBOUND("void #name(List<?>#arity arg) { #body }",
-            new Warning[][] {none, none, none, none, none, none, none, none, error}),
+            new Warning[][] {none, none, none, none, error}),
         INVARIANT_TVAR("<Z> void #name(List<Z>#arity arg) { #body }",
-            new Warning[][] {both, both, both, both, error, both, both, both, error}),
+            new Warning[][] {both, both, error, both, error}),
         TVAR("<Z> void #name(Z#arity arg) { #body }",
-            new Warning[][] {both, both, both, both, both, both, both, both, vararg}),
-        EXTENDS("void #name(List<? extends String>#arity arg) { #body }",
-            new Warning[][] {error, error, error, error, error, both, error, both, error}),
-        SUPER("void #name(List<? super String>#arity arg) { #body }",
-            new Warning[][] {error, error, error, error, error, error, both, both, error}),
+            new Warning[][] {both, both, both, both, vararg}),
         INVARIANT("void #name(List<String>#arity arg) { #body }",
-            new Warning[][] {error, error, error, error, error, error, error, both, error}),
+            new Warning[][] {error, error, error, both, error}),
         UNPARAMETERIZED("void #name(String#arity arg) { #body }",
-            new Warning[][] {error, error, error, error, error, error, error, error, none});
+            new Warning[][] {error, error, error, error, none});
 
         String template;
         Warning[][] warnings;
@@ -163,15 +162,24 @@ public class Warn4 {
     }
 
     public static void main(String... args) throws Exception {
-        for (XlintOption xlint : XlintOption.values()) {
-            for (SuppressLevel suppressLevel : SuppressLevel.values()) {
-                for (Signature vararg_meth : Signature.values()) {
-                    for (Signature client_meth : Signature.values()) {
-                        if (vararg_meth.isApplicableTo(client_meth)) {
-                            test(xlint,
-                                    suppressLevel,
-                                    vararg_meth,
-                                    client_meth);
+        for (SourceLevel sourceLevel : SourceLevel.values()) {
+            for (TrustMe trustMe : TrustMe.values()) {
+                for (SuppressLevel suppressLevelClient : SuppressLevel.values()) {
+                    for (SuppressLevel suppressLevelDecl : SuppressLevel.values()) {
+                        for (ModifierKind modKind : ModifierKind.values()) {
+                            for (Signature vararg_meth : Signature.values()) {
+                                for (Signature client_meth : Signature.values()) {
+                                    if (vararg_meth.isApplicableTo(client_meth)) {
+                                        test(sourceLevel,
+                                                trustMe,
+                                                suppressLevelClient,
+                                                suppressLevelDecl,
+                                                modKind,
+                                                vararg_meth,
+                                                client_meth);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -179,37 +187,37 @@ public class Warn4 {
         }
     }
 
-    static void test(XlintOption xlint, SuppressLevel suppressLevel,
-            Signature vararg_meth, Signature client_meth) throws Exception {
+    static void test(SourceLevel sourceLevel, TrustMe trustMe, SuppressLevel suppressLevelClient,
+            SuppressLevel suppressLevelDecl, ModifierKind modKind, Signature vararg_meth, Signature client_meth) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(suppressLevel, vararg_meth, client_meth);
+        JavaSource source = new JavaSource(trustMe, suppressLevelClient, suppressLevelDecl, modKind, vararg_meth, client_meth);
         DiagnosticChecker dc = new DiagnosticChecker();
         JavacTask ct = (JavacTask)tool.getTask(null, null, dc,
-                Arrays.asList(xlint.getXlintOption()), null, Arrays.asList(source));
+                Arrays.asList("-Xlint:unchecked", "-source", sourceLevel.sourceKey),
+                null, Arrays.asList(source));
         ct.generate(); //to get mandatory notes
-        check(dc.warnings,
-                dc.notes,
+        check(dc.warnings, sourceLevel,
                 new boolean[] {vararg_meth.giveUnchecked(client_meth),
                                vararg_meth.giveVarargs(client_meth)},
-                source, xlint, suppressLevel);
+                source, trustMe, suppressLevelClient, suppressLevelDecl, modKind);
     }
 
-    static void check(Set<Warning> warnings, Set<Warning> notes, boolean[] warnArr, JavaSource source, XlintOption xlint, SuppressLevel suppressLevel) {
+    static void check(Set<Warning> warnings, SourceLevel sourceLevel, boolean[] warnArr, JavaSource source,
+            TrustMe trustMe, SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl, ModifierKind modKind) {
         boolean badOutput = false;
         for (Warning wkind : Warning.values()) {
-            badOutput |= (warnArr[wkind.ordinal()] && !wkind.isSuppressed(suppressLevel)) !=
-                    (wkind.isEnabled(xlint, suppressLevel) ?
-                        warnings.contains(wkind) :
-                        notes.contains(wkind));
+            boolean isSuppressed = wkind.isSuppressed(trustMe, sourceLevel,
+                    suppressLevelClient, suppressLevelDecl, modKind);
+            System.out.println("SUPPRESSED = " + isSuppressed);
+            badOutput |= (warnArr[wkind.ordinal()] && !isSuppressed) != warnings.contains(wkind);
         }
         if (badOutput) {
             throw new Error("invalid diagnostics for source:\n" +
                     source.getCharContent(true) +
-                    "\nOptions: " + xlint.getXlintOption() +
                     "\nExpected unchecked warning: " + warnArr[0] +
                     "\nExpected unsafe vararg warning: " + warnArr[1] +
                     "\nWarnings: " + warnings +
-                    "\nNotes: " + notes);
+                    "\nSource level: " + sourceLevel);
         }
     }
 
@@ -217,18 +225,20 @@ public class Warn4 {
 
         String source;
 
-        public JavaSource(SuppressLevel suppressLevel, Signature vararg_meth, Signature client_meth) {
+        public JavaSource(TrustMe trustMe, SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl,
+                ModifierKind modKind, Signature vararg_meth, Signature client_meth) {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
             String meth1 = vararg_meth.template.replace("#arity", "...");
             meth1 = meth1.replace("#name", "m");
             meth1 = meth1.replace("#body", "");
-            meth1 = suppressLevel.getSuppressAnnotation() + meth1;
+            meth1 = trustMe.anno + "\n" + suppressLevelDecl.getSuppressAnno() + modKind.mod + meth1;
             String meth2 = client_meth.template.replace("#arity", "");
             meth2 = meth2.replace("#name", "test");
             meth2 = meth2.replace("#body", "m(arg);");
+            meth2 = suppressLevelClient.getSuppressAnno() + meth2;
             source = "import java.util.List;\n" +
-               "class Test {\n" + meth1 +
-               "\n" + meth2 + "\n}\n";
+                     "class Test {\n" + meth1 +
+                     "\n" + meth2 + "\n}\n";
         }
 
         @Override
@@ -240,19 +250,15 @@ public class Warn4 {
     static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         Set<Warning> warnings = new HashSet<>();
-        Set<Warning> notes = new HashSet<>();
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.MANDATORY_WARNING ||
                     diagnostic.getKind() == Diagnostic.Kind.WARNING) {
-                warnings.add(diagnostic.getCode().contains("varargs") ?
-                    Warning.VARARGS :
-                    Warning.UNCHECKED);
-            }
-            else if (diagnostic.getKind() == Diagnostic.Kind.NOTE) {
-                notes.add(diagnostic.getCode().contains("varargs") ?
-                    Warning.VARARGS :
-                    Warning.UNCHECKED);
+                if (diagnostic.getCode().contains(Warning.VARARGS.key)) {
+                    warnings.add(Warning.VARARGS);
+                } else if(diagnostic.getCode().contains(Warning.UNCHECKED.key)) {
+                    warnings.add(Warning.UNCHECKED);
+                }
             }
         }
     }

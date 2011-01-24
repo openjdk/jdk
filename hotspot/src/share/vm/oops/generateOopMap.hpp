@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_GENERATEOOPMAP_HPP
+#define SHARE_VM_OOPS_GENERATEOOPMAP_HPP
+
+#include "interpreter/bytecodeStream.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/signature.hpp"
 
 // Forward definition
 class MethodOopMap;
@@ -389,7 +399,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   void  pp                                  (CellTypeState *in, CellTypeState *out);
   void  pp_new_ref                          (CellTypeState *in, int bci);
   void  ppdupswap                           (int poplen, const char *out);
-  void  do_ldc                              (int idx, int bci);
+  void  do_ldc                              (int bci);
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
   void  do_field                            (int is_get, int is_static, int idx, int bci);
@@ -557,3 +567,5 @@ class GeneratePairingInfo: public GenerateOopMap {
 
   // Call compute_map(CHECK) to generate info.
 };
+
+#endif // SHARE_VM_OOPS_GENERATEOOPMAP_HPP

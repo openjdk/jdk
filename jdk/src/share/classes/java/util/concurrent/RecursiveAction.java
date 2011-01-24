@@ -159,7 +159,9 @@ public abstract class RecursiveAction extends ForkJoinTask<Void> {
     protected abstract void compute();
 
     /**
-     * Always returns null.
+     * Always returns {@code null}.
+     *
+     * @return {@code null} always
      */
     public final Void getRawResult() { return null; }
 

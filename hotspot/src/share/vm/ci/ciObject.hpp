@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CIOBJECT_HPP
+#define SHARE_VM_CI_CIOBJECT_HPP
+
+#include "ci/ciClassList.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/jniHandles.hpp"
 
 // ciObject
 //
@@ -291,3 +299,5 @@ public:
   // Print debugging output about the oop this ciObject represents.
   void print_oop(outputStream* st = tty);
 };
+
+#endif // SHARE_VM_CI_CIOBJECT_HPP

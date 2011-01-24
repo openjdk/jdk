@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,9 @@
 #define THIS_FD(obj) (*env)->GetIntField(env, obj, IO_fd_fdID)
 
 /*
- * Route the routines through HPI
+ * Route the routines through VM
  */
+#define IO_Append JVM_Write
 #define IO_Write JVM_Write
 #define IO_Sync JVM_Sync
 #define IO_Read JVM_Read

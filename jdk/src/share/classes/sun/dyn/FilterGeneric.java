@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodType;
-import java.dyn.NoAccessException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.dyn.*;
+import java.lang.reflect.*;
 import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
@@ -229,13 +225,13 @@ class FilterGeneric {
      * The invoker is kept separate from the target because it can be
      * generated once per type erasure family, and reused across adapters.
      */
-    static abstract class Adapter extends JavaMethodHandle {
+    static abstract class Adapter extends BoundMethodHandle {
         protected final MethodHandle filter; // transforms one or more arguments
         protected final MethodHandle target; // ultimate target
 
         @Override
         public String toString() {
-            return target.toString();
+            return MethodHandleImpl.addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -250,7 +246,7 @@ class FilterGeneric {
 
         protected Adapter(MethodHandle entryPoint,
                           MethodHandle filter, MethodHandle target) {
-            super(entryPoint);
+            super(Access.TOKEN, entryPoint);
             this.filter = filter;
             this.target = target;
         }
@@ -307,7 +303,7 @@ class FilterGeneric {
         protected Object invoke_C0(Object a0) { return target.invokeExact(filter.invokeExact(a0)); }
         protected Object invoke_C1(Object a0) { return target.invokeExact(a0, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0) { Object[] av = { a0 };
-                       filter.<void>invokeExact(av); return target.invokeExact(av[0]); }
+                       filter.invokeExact(av); return target.invokeExact(av[0]); }
     }
     static class F2X extends Adapter {
         protected F2X(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -324,7 +320,7 @@ class FilterGeneric {
         protected Object invoke_C1(Object a0, Object a1) { return target.invokeExact(a0, filter.invokeExact(a1)); }
         protected Object invoke_C2(Object a0, Object a1) { return target.invokeExact(a0, a1, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0, Object a1) { Object[] av = { a0, a1 };
-                       filter.<void>invokeExact(av); return target.invokeExact(av[0], av[1]); }
+                       filter.invokeExact(av); return target.invokeExact(av[0], av[1]); }
     }
     // */
 
@@ -341,7 +337,7 @@ class FilterGeneric {
             return target.invokeExact(filter.invokeExact()); }
         static final Object[] NO_ARGS = { };
         protected Object invoke_Y0() throws Throwable {
-            filter.<void>invokeExact(NO_ARGS); // make the flyby
+            filter.invokeExact(NO_ARGS); // make the flyby
             return target.invokeExact(); }
     }
 
@@ -379,7 +375,7 @@ class genclasses {
         "            return target.invokeExact(@av@, filter.invokeExact()); }",
         "        protected Object invoke_Y0(@Tvav@) throws Throwable {",
         "            Object[] av = { @av@ };",
-        "            filter.<void>invokeExact(av); // make the flyby",
+        "            filter.invokeExact(av); // make the flyby",
         "            return target.invokeExact(@av[i]@); }",
         "    }",
     } };
@@ -522,7 +518,7 @@ class genclasses {
             return target.invokeExact(a0, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0) throws Throwable {
             Object[] av = { a0 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0]); }
     }
     static class F2 extends Adapter {
@@ -552,7 +548,7 @@ class genclasses {
             return target.invokeExact(a0, a1, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0, Object a1) throws Throwable {
             Object[] av = { a0, a1 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1]); }
     }
     static class F3 extends Adapter {
@@ -589,7 +585,7 @@ class genclasses {
             return target.invokeExact(a0, a1, a2, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0, Object a1, Object a2) throws Throwable {
             Object[] av = { a0, a1, a2 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2]); }
     }
     static class F4 extends Adapter {
@@ -633,7 +629,7 @@ class genclasses {
             return target.invokeExact(a0, a1, a2, a3, filter.invokeExact()); }
         protected Object invoke_Y0(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             Object[] av = { a0, a1, a2, a3 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3]); }
     }
     static class F5 extends Adapter {
@@ -702,7 +698,7 @@ class genclasses {
         protected Object invoke_Y0(Object a0, Object a1, Object a2, Object a3,
                                    Object a4) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4]); }
     }
     static class F6 extends Adapter {
@@ -781,7 +777,7 @@ class genclasses {
         protected Object invoke_Y0(Object a0, Object a1, Object a2, Object a3,
                                    Object a4, Object a5) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5]); }
     }
     static class F7 extends Adapter {
@@ -870,7 +866,7 @@ class genclasses {
         protected Object invoke_Y0(Object a0, Object a1, Object a2, Object a3,
                                    Object a4, Object a5, Object a6) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6]); }
     }
     static class F8 extends Adapter {
@@ -969,7 +965,7 @@ class genclasses {
         protected Object invoke_Y0(Object a0, Object a1, Object a2, Object a3,
                                    Object a4, Object a5, Object a6, Object a7) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7]); }
     }
     static class F9 extends Adapter {
@@ -1108,7 +1104,7 @@ class genclasses {
                                    Object a4, Object a5, Object a6, Object a7,
                                    Object a8) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8]); }
     }
     static class F10 extends Adapter {
@@ -1260,7 +1256,7 @@ class genclasses {
                                    Object a4, Object a5, Object a6, Object a7,
                                    Object a8, Object a9) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9]); }
     }
     static class F11 extends Adapter {
@@ -1446,7 +1442,7 @@ class genclasses {
                                    Object a4, Object a5, Object a6, Object a7,
                                    Object a8, Object a9, Object a10) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10]); }
     }
     static class F12 extends Adapter {
@@ -1648,7 +1644,7 @@ class genclasses {
                                    Object a4, Object a5, Object a6, Object a7,
                                    Object a8, Object a9, Object a10, Object a11) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11]); }
     }
     static class F13 extends Adapter {
@@ -1908,7 +1904,7 @@ class genclasses {
                                    Object a8, Object a9, Object a10, Object a11,
                                    Object a12) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12]); }
     }
     static class F14 extends Adapter {
@@ -2187,7 +2183,7 @@ class genclasses {
                                    Object a8, Object a9, Object a10, Object a11,
                                    Object a12, Object a13) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13]); }
     }
     static class F15 extends Adapter {
@@ -2485,7 +2481,7 @@ class genclasses {
                                    Object a8, Object a9, Object a10, Object a11,
                                    Object a12, Object a13, Object a14) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14]); }
     }
     static class F16 extends Adapter {
@@ -2802,7 +2798,7 @@ class genclasses {
                                    Object a8, Object a9, Object a10, Object a11,
                                    Object a12, Object a13, Object a14, Object a15) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14], av[15]); }
     }
     static class F17 extends Adapter {
@@ -3192,7 +3188,7 @@ class genclasses {
                                    Object a12, Object a13, Object a14, Object a15,
                                    Object a16) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14], av[15], av[16]); }
     }
     static class F18 extends Adapter {
@@ -3604,7 +3600,7 @@ class genclasses {
                                    Object a12, Object a13, Object a14, Object a15,
                                    Object a16, Object a17) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14], av[15], av[16], av[17]); }
     }
     static class F19 extends Adapter {
@@ -4038,7 +4034,7 @@ class genclasses {
                                    Object a12, Object a13, Object a14, Object a15,
                                    Object a16, Object a17, Object a18) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14], av[15], av[16], av[17], av[18]); }
     }
     static class F20 extends Adapter {
@@ -4494,7 +4490,7 @@ class genclasses {
                                    Object a12, Object a13, Object a14, Object a15,
                                    Object a16, Object a17, Object a18, Object a19) throws Throwable {
             Object[] av = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19 };
-            filter.<void>invokeExact(av); // make the flyby
+            filter.invokeExact(av); // make the flyby
             return target.invokeExact(av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7], av[8], av[9], av[10], av[11], av[12], av[13], av[14], av[15], av[16], av[17], av[18], av[19]); }
     }
 }

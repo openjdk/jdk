@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_ZERO_VM_GLOBALS_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_VM_GLOBALS_LINUX_ZERO_HPP
+
 //
 // Set the default values for platform dependent flags used by the
 // runtime system.  See globals.hpp for details of what they do.
@@ -42,3 +45,5 @@ define_pd_global(uintx, JVMInvokeMethodSlack,    8192);
 define_pd_global(bool,  UseVectoredExceptions,   false);
 // Only used on 64 bit platforms
 define_pd_global(uintx, HeapBaseMinAddress,      2*G);
+
+#endif // OS_CPU_LINUX_ZERO_VM_GLOBALS_LINUX_ZERO_HPP

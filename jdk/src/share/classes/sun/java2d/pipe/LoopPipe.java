@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,14 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.FontInfo;
 import sun.java2d.loops.DrawPolygons;
+import sun.java2d.loops.FillParallelogram;
+import sun.java2d.loops.DrawParallelogram;
 import sun.awt.SunHints;
 
 public class LoopPipe
     implements PixelDrawPipe,
                PixelFillPipe,
+               ParallelogramPipe,
                ShapeDrawPipe,
                LoopBasedPipe
 {
@@ -346,5 +349,26 @@ public class LoopPipe
             int h = spanbox[3] - y;
             sg2d.loops.fillRectLoop.FillRect(sg2d, sd, x, y, w, h);
         }
+    }
+
+    public void fillParallelogram(SunGraphics2D sg2d,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2)
+    {
+        FillParallelogram fp = sg2d.loops.fillParallelogramLoop;
+        fp.FillParallelogram(sg2d, sg2d.getSurfaceData(),
+                             x, y, dx1, dy1, dx2, dy2);
+    }
+
+    public void drawParallelogram(SunGraphics2D sg2d,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2,
+                                  double lw1, double lw2)
+    {
+        DrawParallelogram dp = sg2d.loops.drawParallelogramLoop;
+        dp.DrawParallelogram(sg2d, sg2d.getSurfaceData(),
+                             x, y, dx1, dy1, dx2, dy2, lw1, lw2);
     }
 }

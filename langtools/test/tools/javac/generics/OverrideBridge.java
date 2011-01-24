@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 6337171
+ * @bug 6337171 6996415
+ * @ignore fix has been disabled as a consequence of 6996415
  * @summary  javac should create bridge methods when type variable bounds restricted
  * @run main OverrideBridge
  */

@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_BLOCKOFFSETTABLE_INLINE_HPP
+#define SHARE_VM_MEMORY_BLOCKOFFSETTABLE_INLINE_HPP
+
+#include "memory/blockOffsetTable.hpp"
+#include "memory/space.hpp"
+#include "runtime/safepoint.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // BlockOffsetTable inlines
 //////////////////////////////////////////////////////////////////////////
@@ -88,3 +98,5 @@ inline void BlockOffsetArrayNonContigSpace::freed(HeapWord* blk_start,
     }
   }
 }
+
+#endif // SHARE_VM_MEMORY_BLOCKOFFSETTABLE_INLINE_HPP

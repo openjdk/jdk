@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,14 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP
+#define OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP
+
+#include "orderAccess_linux_zero.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "vm_version_zero.hpp"
 
 // Implementation of class atomic
 
@@ -291,3 +299,5 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value,
                               (volatile intptr_t*) dest,
                               (intptr_t) compare_value);
 }
+
+#endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP

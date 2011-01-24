@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,6 @@ public class SerializationTest {
 
         JLayer newLayer = (JLayer) inputStream.readObject();
 
-        if (newLayer.getLayout() == null) {
-            throw new RuntimeException("JLayer's layout is null");
-        }
         if (newLayer.getGlassPane() == null) {
             throw new RuntimeException("JLayer's glassPane is null");
         }

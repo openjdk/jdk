@@ -22,8 +22,34 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodOop.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/debugInfoRec.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/generation.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/methodHandleWalk.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/relocator.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "utilities/xmlstream.hpp"
 
 
 // Implementation of methodOopDesc
@@ -283,6 +309,12 @@ void methodOopDesc::print_invocation_count() {
 // Build a methodDataOop object to hold information about this method
 // collected in the interpreter.
 void methodOopDesc::build_interpreter_method_data(methodHandle method, TRAPS) {
+  // Do not profile method if current thread holds the pending list lock,
+  // which avoids deadlock for acquiring the MethodData_lock.
+  if (instanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
+    return;
+  }
+
   // Grab a lock here to prevent multiple
   // methodDataOops from being created.
   MutexLocker ml(MethodData_lock, THREAD);
@@ -758,7 +790,7 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
 
   OrderAccess::storestore();
 #ifdef SHARK
-  mh->_from_interpreted_entry = code->instructions_begin();
+  mh->_from_interpreted_entry = code->insts_begin();
 #else
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();

@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.diamond.not.supported.in.source
-// options: -source 6
+// options: -source 6 -Xlint:-options
 
 import java.util.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_SYMBOLOOP_HPP
+#define SHARE_VM_OOPS_SYMBOLOOP_HPP
+
+#include "oops/typeArrayOop.hpp"
+#include "utilities/utf8.hpp"
 
 // A symbolOop is a canonicalized string.
 // All symbolOops reside in global symbolTable.
@@ -129,3 +135,5 @@ int symbolOopDesc::fast_compare(symbolOop other) const {
  return (((uintptr_t)this < (uintptr_t)other) ? -1
    : ((uintptr_t)this == (uintptr_t) other) ? 0 : 1);
 }
+
+#endif // SHARE_VM_OOPS_SYMBOLOOP_HPP

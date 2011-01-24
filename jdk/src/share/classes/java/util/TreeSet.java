@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class TreeSet<E> extends AbstractSet<E>
      *        ordering} of the elements will be used.
      */
     public TreeSet(Comparator<? super E> comparator) {
-        this(new TreeMap<E,Object>(comparator));
+        this(new TreeMap<>(comparator));
     }
 
     /**
@@ -195,7 +195,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * @since 1.6
      */
     public NavigableSet<E> descendingSet() {
-        return new TreeSet<E>(m.descendingMap());
+        return new TreeSet<>(m.descendingMap());
     }
 
     /**
@@ -322,7 +322,7 @@ public class TreeSet<E> extends AbstractSet<E>
      */
     public NavigableSet<E> subSet(E fromElement, boolean fromInclusive,
                                   E toElement,   boolean toInclusive) {
-        return new TreeSet<E>(m.subMap(fromElement, fromInclusive,
+        return new TreeSet<>(m.subMap(fromElement, fromInclusive,
                                        toElement,   toInclusive));
     }
 
@@ -335,7 +335,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * @since 1.6
      */
     public NavigableSet<E> headSet(E toElement, boolean inclusive) {
-        return new TreeSet<E>(m.headMap(toElement, inclusive));
+        return new TreeSet<>(m.headMap(toElement, inclusive));
     }
 
     /**
@@ -347,7 +347,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * @since 1.6
      */
     public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
-        return new TreeSet<E>(m.tailMap(fromElement, inclusive));
+        return new TreeSet<>(m.tailMap(fromElement, inclusive));
     }
 
     /**
@@ -452,7 +452,7 @@ public class TreeSet<E> extends AbstractSet<E>
      */
     public E pollFirst() {
         Map.Entry<E,?> e = m.pollFirstEntry();
-        return (e == null)? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
     /**
@@ -460,7 +460,7 @@ public class TreeSet<E> extends AbstractSet<E>
      */
     public E pollLast() {
         Map.Entry<E,?> e = m.pollLastEntry();
-        return (e == null)? null : e.getKey();
+        return (e == null) ? null : e.getKey();
     }
 
     /**
@@ -477,7 +477,7 @@ public class TreeSet<E> extends AbstractSet<E>
             throw new InternalError();
         }
 
-        clone.m = new TreeMap<E,Object>(m);
+        clone.m = new TreeMap<>(m);
         return clone;
     }
 
@@ -524,9 +524,9 @@ public class TreeSet<E> extends AbstractSet<E>
         // Create backing TreeMap
         TreeMap<E,Object> tm;
         if (c==null)
-            tm = new TreeMap<E,Object>();
+            tm = new TreeMap<>();
         else
-            tm = new TreeMap<E,Object>(c);
+            tm = new TreeMap<>(c);
         m = tm;
 
         // Read in size

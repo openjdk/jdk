@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_DIRTYCARDQUEUE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_DIRTYCARDQUEUE_HPP
+
+#include "gc_implementation/g1/ptrQueue.hpp"
+#include "memory/allocation.hpp"
+
 class FreeIdSet;
 
 // A closure class for processing card table entries.  Note that we don't
@@ -37,11 +43,10 @@ public:
 class DirtyCardQueue: public PtrQueue {
 public:
   DirtyCardQueue(PtrQueueSet* qset_, bool perm = false) :
-    PtrQueue(qset_, perm)
-  {
-    // Dirty card queues are always active.
-    _active = true;
-  }
+    // Dirty card queues are always active, so we create them with their
+    // active field set to true.
+    PtrQueue(qset_, perm, true /* active */) { }
+
   // Apply the closure to all elements, and reset the index to make the
   // buffer empty.  If a closure application returns "false", return
   // "false" immediately, halting the iteration.  If "consume" is true,
@@ -169,3 +174,5 @@ public:
   }
 
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_DIRTYCARDQUEUE_HPP

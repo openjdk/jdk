@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,9 +79,13 @@ import sun.text.normalizer.NormalizerBase;
  * <pre>
  *
  *  String testString = "This is a test";
- *  RuleBasedCollator ruleBasedCollator = (RuleBasedCollator)Collator.getInstance();
- *  CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
- *  int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
+ *  Collator col = Collator.getInstance();
+ *  if (col instanceof RuleBasedCollator) {
+ *      RuleBasedCollator ruleBasedCollator = (RuleBasedCollator)col;
+ *      CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
+ *      int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
+ *          :
+ *  }
  * </pre>
  * </blockquote>
  *
@@ -92,6 +96,10 @@ import sun.text.normalizer.NormalizerBase;
  * order is <strong>int</strong>. The first 16 bits of a collation order
  * is its primary order; the next 8 bits is the secondary order and the
  * last 8 bits is the tertiary order.
+ *
+ * <p><b>Note:</b> <code>CollationElementIterator</code> is a part of
+ * <code>RuleBasedCollator</code> implementation. It is only usable
+ * with <code>RuleBasedCollator</code> instances.
  *
  * @see                Collator
  * @see                RuleBasedCollator

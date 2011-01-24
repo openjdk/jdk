@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,6 @@ JRE_DOCFILES  += $(JRE_NAMECHANGE_DOCLIST:%=$(JRE_IMAGE_DIR)/%$(TEXT_SUFFIX))
 # absolute directory names: note, these must exist prior to build
 # time - they are created in the main Makefile.
 JRE_IMAGE_BINDIR   = $(JRE_IMAGE_DIR)/bin
-JRE_IMAGE_THREADIR = $(JRE_IMAGE_DIR)/bin/*/native_threads
 
 MAINMANIFEST  = $(JDK_TOPDIR)/make/tools/manifest.mf
 BEANMANIFEST  = $(JDK_TOPDIR)/make/javax/swing/beaninfo/manifest
@@ -249,18 +248,8 @@ compare-image \
 sec-files sec-files-win jgss-files ::
 	@$(ECHO) ">>>Making "$@" @ `$(DATE)` ..."
 
-#
-# Export binary plugs if not building OPENJDK
-#
-ifdef OPENJDK
-  EXPORT_BINARY_PLUGS =
-else # !OPENJDK
-  EXPORT_BINARY_PLUGS = export-binary-plugs test-binary-plugs
-endif # OPENJDK
-
 # Order is important here, trim jre after jdk image is created
 images:: sanity-images post-sanity-images  \
-         $(EXPORT_BINARY_PLUGS) \
 	 $(INITIAL_IMAGE_JRE) $(INITIAL_IMAGE_JDK) \
 	 trim-image-jre trim-image-jdk \
 	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files
@@ -812,7 +801,7 @@ ifeq ($(PLATFORM), windows)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
-                  hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+                  awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@# The Java Kernel JRE image ships with a special VM.  It is not included
 	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
@@ -1099,8 +1088,7 @@ endif # !windows
 trim-image-jdk::
 	@# Remove tools that should not be part of SDK.
 	for t in $(NOTJDKTOOLS); do \
-	    $(RM) $(JDK_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX) \
-		  $(JDK_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
+	    $(RM) $(JDK_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX); \
 	done
 
 # Get list of Elf files in the jdk

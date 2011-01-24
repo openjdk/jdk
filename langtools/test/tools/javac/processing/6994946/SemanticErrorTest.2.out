@@ -1,0 +1,4 @@
+SemanticErrorTest.java:11:46: compiler.err.repeated.interface
+- compiler.err.proc.messager: Deliberate Error
+SemanticErrorTest.java:11:46: compiler.err.repeated.interface
+1 error

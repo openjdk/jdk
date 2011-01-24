@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
 
 /**
  * BasicAuthenticator provides an implementation of HTTP Basic
@@ -57,7 +54,6 @@ public abstract class BasicAuthenticator extends Authenticator {
 
     public Result authenticate (HttpExchange t)
     {
-        HttpContext context = t.getHttpContext();
         Headers rmap = (Headers) t.getRequestHeaders();
         /*
          * look for auth token

@@ -22,8 +22,64 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_runtime.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/compiledIC.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/preserveException.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
 
 
 // For debugging purposes:
@@ -646,12 +702,14 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
 
 
 const TypeFunc* OptoRuntime::array_fill_Type() {
-  // create input type (domain)
-  const Type** fields = TypeTuple::fields(3);
-  fields[TypeFunc::Parms+0] = TypePtr::NOTNULL;
-  fields[TypeFunc::Parms+1] = TypeInt::INT;
-  fields[TypeFunc::Parms+2] = TypeInt::INT;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  // create input type (domain): pointer, int, size_t
+  const Type** fields = TypeTuple::fields(3 LP64_ONLY( + 1));
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;
+  fields[argp++] = TypeInt::INT;
+  fields[argp++] = TypeX_X;               // size in whatevers (size_t)
+  LP64_ONLY(fields[argp++] = Type::HALF); // other half of long length
+  const TypeTuple *domain = TypeTuple::make(argp, fields);
 
   // create result type
   fields = TypeTuple::fields(1);

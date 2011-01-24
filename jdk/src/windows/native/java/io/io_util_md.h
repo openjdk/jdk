@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ JNIEXPORT int handleSync(jlong fd);
 int handleSetLength(jlong fd, jlong length);
 JNIEXPORT size_t handleRead(jlong fd, void *buf, jint len);
 JNIEXPORT size_t handleWrite(jlong fd, const void *buf, jint len);
+JNIEXPORT size_t handleAppend(jlong fd, const void *buf, jint len);
 jint handleClose(JNIEnv *env, jobject this, jfieldID fid);
 jlong handleLseek(jlong fd, jlong offset, jint whence);
 
@@ -74,8 +75,9 @@ jlong winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 #define THIS_FD(obj) (*env)->GetLongField(env, obj, IO_handle_fdID)
 
 /*
- * Route the routines away from HPI layer
+ * Route the routines away from VM
  */
+#define IO_Append handleAppend
 #define IO_Write handleWrite
 #define IO_Sync handleSync
 #define IO_Read handleRead

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.source.tree.*;
 
@@ -236,13 +236,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int TYPEAPPLY = TYPEARRAY + 1;
 
-    /** Disjunctive types, of type TypeDisjoint.
+    /** Disjunction types, of type TypeDisjunction
      */
-    public static final int TYPEDISJOINT = TYPEAPPLY + 1;
+    public static final int TYPEDISJUNCTION = TYPEAPPLY + 1;
 
     /** Formal type parameters, of type TypeParameter.
      */
-    public static final int TYPEPARAMETER = TYPEDISJOINT + 1;
+    public static final int TYPEPARAMETER = TYPEDISJUNCTION + 1;
 
     /** Type argument.
      */
@@ -434,8 +434,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCTree> defs;
         public JavaFileObject sourcefile;
         public PackageSymbol packge;
-        public Scope namedImportScope;
-        public Scope starImportScope;
+        public ImportScope namedImportScope;
+        public StarImportScope starImportScope;
         public long flags;
         public Position.LineMap lineMap = null;
         public Map<JCTree, String> docComments = null;
@@ -445,8 +445,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         List<JCTree> defs,
                         JavaFileObject sourcefile,
                         PackageSymbol packge,
-                        Scope namedImportScope,
-                        Scope starImportScope) {
+                        ImportScope namedImportScope,
+                        StarImportScope starImportScope) {
             this.packageAnnotations = packageAnnotations;
             this.pid = pid;
             this.defs = defs;
@@ -1888,30 +1888,30 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A disjoint type, T1 | T2 | ... Tn (used in multicatch statements)
+     * A disjunction type, T1 | T2 | ... Tn (used in multicatch statements)
      */
-    public static class JCTypeDisjoint extends JCExpression implements DisjointTypeTree {
+    public static class JCTypeDisjunction extends JCExpression implements DisjunctiveTypeTree {
 
-        public List<JCExpression> components;
+        public List<JCExpression> alternatives;
 
-        protected JCTypeDisjoint(List<JCExpression> components) {
-            this.components = components;
+        protected JCTypeDisjunction(List<JCExpression> components) {
+            this.alternatives = components;
         }
         @Override
-        public void accept(Visitor v) { v.visitTypeDisjoint(this); }
+        public void accept(Visitor v) { v.visitTypeDisjunction(this); }
 
-        public Kind getKind() { return Kind.DISJOINT_TYPE; }
+        public Kind getKind() { return Kind.DISJUNCTIVE_TYPE; }
 
-        public List<JCExpression> getTypeComponents() {
-            return components;
+        public List<JCExpression> getTypeAlternatives() {
+            return alternatives;
         }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitDisjointType(this, d);
+            return v.visitDisjunctiveType(this, d);
         }
         @Override
         public int getTag() {
-            return TYPEDISJOINT;
+            return TYPEDISJUNCTION;
         }
     }
 
@@ -2067,17 +2067,23 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
-    public static class JCAnnotatedType extends JCExpression implements com.sun.source.tree.AnnotatedTypeTree {
+    public static class JCAnnotatedType extends JCExpression
+//308            implements com.sun.source.tree.AnnotatedTypeTree
+    {
         public List<JCTypeAnnotation> annotations;
         public JCExpression underlyingType;
         protected JCAnnotatedType(List<JCTypeAnnotation> annotations, JCExpression underlyingType) {
-            this.annotations = annotations;
-            this.underlyingType = underlyingType;
+            throw new UnsupportedOperationException();
+//308            this.annotations = annotations;
+//308            this.underlyingType = underlyingType;
         }
         @Override
         public void accept(Visitor v) { v.visitAnnotatedType(this); }
 
-        public Kind getKind() { return Kind.ANNOTATED_TYPE; }
+        public Kind getKind() {
+            throw new UnsupportedOperationException();
+//308            return Kind.ANNOTATED_TYPE;
+        }
         public List<JCTypeAnnotation> getAnnotations() {
             return annotations;
         }
@@ -2086,7 +2092,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitAnnotatedType(this, d);
+            throw new UnsupportedOperationException();
+//308            return v.visitAnnotatedType(this, d);
         }
         @Override
         public int getTag() {
@@ -2277,7 +2284,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
-        public void visitTypeDisjoint(JCTypeDisjoint that)   { visitTree(that); }
+        public void visitTypeDisjunction(JCTypeDisjunction that)   { visitTree(that); }
         public void visitTypeParameter(JCTypeParameter that) { visitTree(that); }
         public void visitWildcard(JCWildcard that)           { visitTree(that); }
         public void visitTypeBoundKind(TypeBoundKind that)   { visitTree(that); }

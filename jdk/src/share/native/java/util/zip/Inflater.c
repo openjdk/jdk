@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,8 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
 
     in_buf = (jbyte *) malloc(in_len);
     if (in_buf == 0) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        if (in_len != 0)
+            JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
     (*env)->GetByteArrayRegion(env, this_buf, this_off, in_len, in_buf);
@@ -143,7 +144,8 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
     out_buf = (jbyte *) malloc(len);
     if (out_buf == 0) {
         free(in_buf);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        if (len != 0)
+            JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
 

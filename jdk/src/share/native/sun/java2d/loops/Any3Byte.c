@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ RegisterFunc RegisterAny3Byte;
 
 DECLARE_SOLID_FILLRECT(Any3Byte);
 DECLARE_SOLID_FILLSPANS(Any3Byte);
+DECLARE_SOLID_PARALLELOGRAM(Any3Byte);
 DECLARE_SOLID_DRAWLINE(Any3Byte);
 DECLARE_XOR_FILLRECT(Any3Byte);
 DECLARE_XOR_FILLSPANS(Any3Byte);
@@ -48,6 +49,7 @@ DECLARE_XOR_DRAWGLYPHLIST(Any3Byte);
 NativePrimitive Any3BytePrimitives[] = {
     REGISTER_SOLID_FILLRECT(Any3Byte),
     REGISTER_SOLID_FILLSPANS(Any3Byte),
+    REGISTER_SOLID_PARALLELOGRAM(Any3Byte),
     REGISTER_SOLID_LINE_PRIMITIVES(Any3Byte),
     REGISTER_XOR_FILLRECT(Any3Byte),
     REGISTER_XOR_FILLSPANS(Any3Byte),
@@ -71,6 +73,8 @@ DEFINE_ISOXOR_BLIT(Any3Byte)
 DEFINE_SOLID_FILLRECT(Any3Byte)
 
 DEFINE_SOLID_FILLSPANS(Any3Byte)
+
+DEFINE_SOLID_PARALLELOGRAM(Any3Byte)
 
 DEFINE_SOLID_DRAWLINE(Any3Byte)
 

@@ -22,8 +22,42 @@
  *
  */
 
-// do not include  precompiled  header file
-# include "incls/_os_solaris_x86.cpp.incl"
+// no precompiled headers
+#include "assembler_x86.inline.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvm_solaris.h"
+#include "memory/allocation.inline.hpp"
+#include "mutex_solaris.inline.hpp"
+#include "nativeInst_x86.hpp"
+#include "os_share_solaris.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm.h"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/extendedPC.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
+#include "thread_solaris.inline.hpp"
+#include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 // put OS-includes here
 # include <sys/types.h>
@@ -708,6 +742,13 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
 
+  // Determine which sort of error to throw.  Out of swap may signal
+  // on the thread stack, which could get a mapping error when touched.
+  address addr = (address) info->si_addr;
+  if (sig == SIGBUS && info->si_code == BUS_OBJERR && info->si_errno == ENOMEM) {
+    vm_exit_out_of_memory(0, "Out of swap space to map in thread stack.");
+  }
+
   VMError err(t, sig, pc, info, ucVoid);
   err.report_and_die();
 
@@ -719,11 +760,6 @@ void os::print_context(outputStream *st, void *context) {
 
   ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
 #ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
   st->print(", RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
@@ -735,8 +771,8 @@ void os::print_context(outputStream *st, void *context) {
   st->print(", RSI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSI]);
   st->print(", RDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDI]);
   st->cr();
-  st->print(  "R8=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
-  st->print(", R9=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
+  st->print(  "R8 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
+  st->print(", R9 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
   st->print(", R10=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R10]);
   st->print(", R11=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R11]);
   st->cr();
@@ -747,63 +783,6 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RIP]);
   st->print(", RFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RFL]);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
-  st->cr();
-  st->print_cr("RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
-  st->cr();
-  st->print_cr("RCX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RCX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
-  st->cr();
-  st->print_cr("RDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
-  st->cr();
-  st->print_cr("RSP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
-  st->cr();
-  st->print_cr("RBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
-  st->cr();
-  st->print_cr("RSI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
-  st->cr();
-  st->print_cr("RDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
-  st->cr();
-  st->print_cr("R8 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R8]);
-  st->cr();
-  st->print_cr("R9 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R9]);
-  st->cr();
-  st->print_cr("R10=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R10]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R10]);
-  st->cr();
-  st->print_cr("R11=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R11]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R11]);
-  st->cr();
-  st->print_cr("R12=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R12]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R12]);
-  st->cr();
-  st->print_cr("R13=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R13]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R13]);
-  st->cr();
-  st->print_cr("R14=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R14]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R14]);
-  st->cr();
-  st->print_cr("R15=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R15]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R15]);
-
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBX]);
@@ -817,39 +796,6 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EIP]);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EFL]);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EAX]);
-  print_location(st, uc->uc_mcontext.gregs[EAX]);
-  st->cr();
-  st->print_cr("EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBX]);
-  print_location(st, uc->uc_mcontext.gregs[EBX]);
-  st->cr();
-  st->print_cr("ECX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[ECX]);
-  print_location(st, uc->uc_mcontext.gregs[ECX]);
-  st->cr();
-  st->print_cr("EDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EDX]);
-  print_location(st, uc->uc_mcontext.gregs[EDX]);
-  st->cr();
-  st->print_cr("ESP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[UESP]);
-  print_location(st, uc->uc_mcontext.gregs[UESP]);
-  st->cr();
-  st->print_cr("EBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EBP]);
-  print_location(st, uc->uc_mcontext.gregs[EBP]);
-  st->cr();
-  st->print_cr("ESI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[ESI]);
-  print_location(st, uc->uc_mcontext.gregs[ESI]);
-  st->cr();
-  st->print_cr("EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[EDI]);
-  print_location(st, uc->uc_mcontext.gregs[EDI]);
-
 #endif // AMD64
   st->cr();
   st->cr();
@@ -865,7 +811,52 @@ void os::print_context(outputStream *st, void *context) {
   ExtendedPC epc = os::Solaris::ucontext_get_ExtendedPC(uc);
   address pc = epc.pc();
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 16, pc + 16, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+}
+
+void os::print_register_info(outputStream *st, void *context) {
+  if (context == NULL) return;
+
+  ucontext_t *uc = (ucontext_t*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is horrendously verbose but the layout of the registers in the
+  // context does not match how we defined our abstract Register set, so
+  // we can't just iterate through the gregs area
+
+  // this is only for the "general purpose" registers
+
+#ifdef AMD64
+  st->print("RAX="); print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
+  st->print("RBX="); print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
+  st->print("RCX="); print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
+  st->print("RDX="); print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
+  st->print("RSP="); print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
+  st->print("RBP="); print_location(st, uc->uc_mcontext.gregs[REG_RBP]);
+  st->print("RSI="); print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
+  st->print("RDI="); print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
+  st->print("R8 ="); print_location(st, uc->uc_mcontext.gregs[REG_R8]);
+  st->print("R9 ="); print_location(st, uc->uc_mcontext.gregs[REG_R9]);
+  st->print("R10="); print_location(st, uc->uc_mcontext.gregs[REG_R10]);
+  st->print("R11="); print_location(st, uc->uc_mcontext.gregs[REG_R11]);
+  st->print("R12="); print_location(st, uc->uc_mcontext.gregs[REG_R12]);
+  st->print("R13="); print_location(st, uc->uc_mcontext.gregs[REG_R13]);
+  st->print("R14="); print_location(st, uc->uc_mcontext.gregs[REG_R14]);
+  st->print("R15="); print_location(st, uc->uc_mcontext.gregs[REG_R15]);
+#else
+  st->print("EAX="); print_location(st, uc->uc_mcontext.gregs[EAX]);
+  st->print("EBX="); print_location(st, uc->uc_mcontext.gregs[EBX]);
+  st->print("ECX="); print_location(st, uc->uc_mcontext.gregs[ECX]);
+  st->print("EDX="); print_location(st, uc->uc_mcontext.gregs[EDX]);
+  st->print("ESP="); print_location(st, uc->uc_mcontext.gregs[UESP]);
+  st->print("EBP="); print_location(st, uc->uc_mcontext.gregs[EBP]);
+  st->print("ESI="); print_location(st, uc->uc_mcontext.gregs[ESI]);
+  st->print("EDI="); print_location(st, uc->uc_mcontext.gregs[EDI]);
+#endif
+
+  st->cr();
 }
 
 

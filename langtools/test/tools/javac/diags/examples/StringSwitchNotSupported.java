@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.string.switch.not.supported.in.source
-// options: -source 6
+// options: -source 6 -Xlint:-options
 
 class StringSwitchNotSupported {
     int m(String s) {

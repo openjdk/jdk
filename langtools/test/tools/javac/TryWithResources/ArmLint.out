@@ -1,3 +1,0 @@
-ArmLint.java:14:15: compiler.warn.twr.explicit.close.call
-ArmLint.java:13:13: compiler.warn.automatic.resource.not.referenced: r3
-2 warnings

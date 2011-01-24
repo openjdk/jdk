@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,22 @@ public class BasicFileChooserUI extends FileChooserUI {
     private JPanel accessoryPanel = null;
     private Handler handler;
 
+    /**
+     * Creates a {@code BasicFileChooserUI} implementation
+     * for the specified component. By default
+     * the {@code BasicLookAndFeel} class uses
+     * {@code createUI} methods of all basic UIs classes
+     * to instantiate UIs.
+     *
+     * @param c the {@code JFileChooser} which needs a UI
+     * @return the {@code BasicFileChooserUI} object
+     *
+     * @see UIDefaults#getUI(JComponent)
+     * @since 1.7
+     */
+    public static ComponentUI createUI(JComponent c) {
+        return new BasicFileChooserUI((JFileChooser) c);
+    }
 
     public BasicFileChooserUI(JFileChooser b) {
     }

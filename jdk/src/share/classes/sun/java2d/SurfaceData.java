@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,15 @@ import sun.java2d.loops.DrawPolygons;
 import sun.java2d.loops.DrawPath;
 import sun.java2d.loops.FillPath;
 import sun.java2d.loops.FillSpans;
+import sun.java2d.loops.FillParallelogram;
+import sun.java2d.loops.DrawParallelogram;
 import sun.java2d.loops.FontInfo;
 import sun.java2d.loops.DrawGlyphList;
 import sun.java2d.loops.DrawGlyphListAA;
 import sun.java2d.loops.DrawGlyphListLCD;
 import sun.java2d.pipe.LoopPipe;
+import sun.java2d.pipe.ShapeDrawPipe;
+import sun.java2d.pipe.ParallelogramPipe;
 import sun.java2d.pipe.CompositePipe;
 import sun.java2d.pipe.GeneralCompositePipe;
 import sun.java2d.pipe.SpanClipRenderer;
@@ -59,6 +63,7 @@ import sun.java2d.pipe.AAShapePipe;
 import sun.java2d.pipe.AlphaPaintPipe;
 import sun.java2d.pipe.AlphaColorPipe;
 import sun.java2d.pipe.PixelToShapeConverter;
+import sun.java2d.pipe.PixelToParallelogramConverter;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.TextRenderer;
 import sun.java2d.pipe.AATextRenderer;
@@ -362,15 +367,17 @@ public abstract class SurfaceData
     public static final TextPipe aaTextRenderer;
     public static final TextPipe lcdTextRenderer;
 
-    protected static final CompositePipe colorPipe;
+    protected static final AlphaColorPipe colorPipe;
     protected static final PixelToShapeConverter colorViaShape;
+    protected static final PixelToParallelogramConverter colorViaPgram;
     protected static final TextPipe colorText;
     protected static final CompositePipe clipColorPipe;
     protected static final TextPipe clipColorText;
     protected static final AAShapePipe AAColorShape;
-    protected static final PixelToShapeConverter AAColorViaShape;
+    protected static final PixelToParallelogramConverter AAColorViaShape;
+    protected static final PixelToParallelogramConverter AAColorViaPgram;
     protected static final AAShapePipe AAClipColorShape;
-    protected static final PixelToShapeConverter AAClipColorViaShape;
+    protected static final PixelToParallelogramConverter AAClipColorViaShape;
 
     protected static final CompositePipe paintPipe;
     protected static final SpanShapeRenderer paintShape;
@@ -379,9 +386,9 @@ public abstract class SurfaceData
     protected static final CompositePipe clipPaintPipe;
     protected static final TextPipe clipPaintText;
     protected static final AAShapePipe AAPaintShape;
-    protected static final PixelToShapeConverter AAPaintViaShape;
+    protected static final PixelToParallelogramConverter AAPaintViaShape;
     protected static final AAShapePipe AAClipPaintShape;
-    protected static final PixelToShapeConverter AAClipPaintViaShape;
+    protected static final PixelToParallelogramConverter AAClipPaintViaShape;
 
     protected static final CompositePipe compPipe;
     protected static final SpanShapeRenderer compShape;
@@ -390,11 +397,52 @@ public abstract class SurfaceData
     protected static final CompositePipe clipCompPipe;
     protected static final TextPipe clipCompText;
     protected static final AAShapePipe AACompShape;
-    protected static final PixelToShapeConverter AACompViaShape;
+    protected static final PixelToParallelogramConverter AACompViaShape;
     protected static final AAShapePipe AAClipCompShape;
-    protected static final PixelToShapeConverter AAClipCompViaShape;
+    protected static final PixelToParallelogramConverter AAClipCompViaShape;
 
     protected static final DrawImagePipe imagepipe;
+
+    // Utility subclass to add the LoopBasedPipe tagging interface
+    static class PixelToShapeLoopConverter
+        extends PixelToShapeConverter
+        implements LoopBasedPipe
+    {
+        public PixelToShapeLoopConverter(ShapeDrawPipe pipe) {
+            super(pipe);
+        }
+    }
+
+    // Utility subclass to add the LoopBasedPipe tagging interface
+    static class PixelToPgramLoopConverter
+        extends PixelToParallelogramConverter
+        implements LoopBasedPipe
+    {
+        public PixelToPgramLoopConverter(ShapeDrawPipe shapepipe,
+                                         ParallelogramPipe pgrampipe,
+                                         double minPenSize,
+                                         double normPosition,
+                                         boolean adjustfill)
+        {
+            super(shapepipe, pgrampipe, minPenSize, normPosition, adjustfill);
+        }
+    }
+
+    private static PixelToParallelogramConverter
+        makeConverter(AAShapePipe renderer,
+                      ParallelogramPipe pgrampipe)
+    {
+        return new PixelToParallelogramConverter(renderer,
+                                                 pgrampipe,
+                                                 1.0/8.0, 0.499,
+                                                 false);
+    }
+
+    private static PixelToParallelogramConverter
+        makeConverter(AAShapePipe renderer)
+    {
+        return makeConverter(renderer, renderer);
+    }
 
     static {
         colorPrimitives = new LoopPipe();
@@ -406,14 +454,18 @@ public abstract class SurfaceData
 
         colorPipe = new AlphaColorPipe();
         // colorShape = colorPrimitives;
-        colorViaShape = new PixelToShapeConverter(colorPrimitives);
+        colorViaShape = new PixelToShapeLoopConverter(colorPrimitives);
+        colorViaPgram = new PixelToPgramLoopConverter(colorPrimitives,
+                                                      colorPrimitives,
+                                                      1.0, 0.25, true);
         colorText = new TextRenderer(colorPipe);
         clipColorPipe = new SpanClipRenderer(colorPipe);
         clipColorText = new TextRenderer(clipColorPipe);
         AAColorShape = new AAShapePipe(colorPipe);
-        AAColorViaShape = new PixelToShapeConverter(AAColorShape);
+        AAColorViaShape = makeConverter(AAColorShape);
+        AAColorViaPgram = makeConverter(AAColorShape, colorPipe);
         AAClipColorShape = new AAShapePipe(clipColorPipe);
-        AAClipColorViaShape = new PixelToShapeConverter(AAClipColorShape);
+        AAClipColorViaShape = makeConverter(AAClipColorShape);
 
         paintPipe = new AlphaPaintPipe();
         paintShape = new SpanShapeRenderer.Composite(paintPipe);
@@ -422,9 +474,9 @@ public abstract class SurfaceData
         clipPaintPipe = new SpanClipRenderer(paintPipe);
         clipPaintText = new TextRenderer(clipPaintPipe);
         AAPaintShape = new AAShapePipe(paintPipe);
-        AAPaintViaShape = new PixelToShapeConverter(AAPaintShape);
+        AAPaintViaShape = makeConverter(AAPaintShape);
         AAClipPaintShape = new AAShapePipe(clipPaintPipe);
-        AAClipPaintViaShape = new PixelToShapeConverter(AAClipPaintShape);
+        AAClipPaintViaShape = makeConverter(AAClipPaintShape);
 
         compPipe = new GeneralCompositePipe();
         compShape = new SpanShapeRenderer.Composite(compPipe);
@@ -433,18 +485,20 @@ public abstract class SurfaceData
         clipCompPipe = new SpanClipRenderer(compPipe);
         clipCompText = new TextRenderer(clipCompPipe);
         AACompShape = new AAShapePipe(compPipe);
-        AACompViaShape = new PixelToShapeConverter(AACompShape);
+        AACompViaShape = makeConverter(AACompShape);
         AAClipCompShape = new AAShapePipe(clipCompPipe);
-        AAClipCompViaShape = new PixelToShapeConverter(AAClipCompShape);
+        AAClipCompViaShape = makeConverter(AAClipCompShape);
 
         imagepipe = new DrawImage();
     }
 
     /* Not all surfaces and rendering mode combinations support LCD text. */
-    static final int LCDLOOP_UNKNOWN = 0;
-    static final int LCDLOOP_FOUND = 1;
-    static final int LCDLOOP_NOTFOUND = 2;
+    static final int LOOP_UNKNOWN = 0;
+    static final int LOOP_FOUND = 1;
+    static final int LOOP_NOTFOUND = 2;
     int haveLCDLoop;
+    int havePgramXORLoop;
+    int havePgramSolidLoop;
 
     public boolean canRenderLCDText(SunGraphics2D sg2d) {
         // For now the answer can only be true in the following cases:
@@ -453,16 +507,46 @@ public abstract class SurfaceData
             sg2d.clipState <= SunGraphics2D.CLIP_RECTANGULAR &&
             sg2d.surfaceData.getTransparency() == Transparency.OPAQUE)
         {
-            if (haveLCDLoop == LCDLOOP_UNKNOWN) {
+            if (haveLCDLoop == LOOP_UNKNOWN) {
                 DrawGlyphListLCD loop =
                     DrawGlyphListLCD.locate(SurfaceType.AnyColor,
                                             CompositeType.SrcNoEa,
                                             getSurfaceType());
-                haveLCDLoop = (loop!= null) ? LCDLOOP_FOUND : LCDLOOP_NOTFOUND;
+                haveLCDLoop = (loop != null) ? LOOP_FOUND : LOOP_NOTFOUND;
             }
-            return haveLCDLoop == LCDLOOP_FOUND;
+            return haveLCDLoop == LOOP_FOUND;
         }
         return false; /* for now - in the future we may want to search */
+    }
+
+    public boolean canRenderParallelograms(SunGraphics2D sg2d) {
+        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
+            if (sg2d.compositeState == sg2d.COMP_XOR) {
+                if (havePgramXORLoop == LOOP_UNKNOWN) {
+                    FillParallelogram loop =
+                        FillParallelogram.locate(SurfaceType.AnyColor,
+                                                 CompositeType.Xor,
+                                                 getSurfaceType());
+                    havePgramXORLoop =
+                        (loop != null) ? LOOP_FOUND : LOOP_NOTFOUND;
+                }
+                return havePgramXORLoop == LOOP_FOUND;
+            } else if (sg2d.compositeState <= sg2d.COMP_ISCOPY &&
+                       sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON &&
+                       sg2d.clipState != sg2d.CLIP_SHAPE)
+            {
+                if (havePgramSolidLoop == LOOP_UNKNOWN) {
+                    FillParallelogram loop =
+                        FillParallelogram.locate(SurfaceType.AnyColor,
+                                                 CompositeType.SrcNoEa,
+                                                 getSurfaceType());
+                    havePgramSolidLoop =
+                        (loop != null) ? LOOP_FOUND : LOOP_NOTFOUND;
+                }
+                return havePgramSolidLoop == LOOP_FOUND;
+            }
+        }
+        return false;
     }
 
     public void validatePipe(SunGraphics2D sg2d) {
@@ -480,9 +564,21 @@ public abstract class SurfaceData
                 // text drawn in XOR mode with a Paint object.
                 sg2d.textpipe = outlineTextRenderer;
             } else {
+                PixelToShapeConverter converter;
+                if (canRenderParallelograms(sg2d)) {
+                    converter = colorViaPgram;
+                    // Note that we use the transforming pipe here because it
+                    // will examine the shape and possibly perform an optimized
+                    // operation if it can be simplified.  The simplifications
+                    // will be valid for all STROKE and TRANSFORM types.
+                    sg2d.shapepipe = colorViaPgram;
+                } else {
+                    converter = colorViaShape;
+                    sg2d.shapepipe = colorPrimitives;
+                }
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
-                    sg2d.drawpipe = colorViaShape;
-                    sg2d.fillpipe = colorViaShape;
+                    sg2d.drawpipe = converter;
+                    sg2d.fillpipe = converter;
                     // REMIND: We should not be changing text strategies
                     // between outline and glyph rendering based upon the
                     // presence of a complex clip as that could cause a
@@ -494,11 +590,11 @@ public abstract class SurfaceData
                     sg2d.textpipe = outlineTextRenderer;
                 } else {
                     if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
-                        sg2d.drawpipe = colorViaShape;
-                        sg2d.fillpipe = colorViaShape;
+                        sg2d.drawpipe = converter;
+                        sg2d.fillpipe = converter;
                     } else {
                         if (sg2d.strokeState != sg2d.STROKE_THIN) {
-                            sg2d.drawpipe = colorViaShape;
+                            sg2d.drawpipe = converter;
                         } else {
                             sg2d.drawpipe = colorPrimitives;
                         }
@@ -506,7 +602,6 @@ public abstract class SurfaceData
                     }
                     sg2d.textpipe = solidTextRenderer;
                 }
-                sg2d.shapepipe = colorPrimitives;
                 // assert(sg2d.surfaceData == this);
             }
         } else if (sg2d.compositeState == sg2d.COMP_CUSTOM) {
@@ -514,12 +609,12 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipCompViaShape;
                     sg2d.fillpipe = AAClipCompViaShape;
-                    sg2d.shapepipe = AAClipCompShape;
+                    sg2d.shapepipe = AAClipCompViaShape;
                     sg2d.textpipe = clipCompText;
                 } else {
                     sg2d.drawpipe = AACompViaShape;
                     sg2d.fillpipe = AACompViaShape;
-                    sg2d.shapepipe = AACompShape;
+                    sg2d.shapepipe = AACompViaShape;
                     sg2d.textpipe = compText;
                 }
             } else {
@@ -539,13 +634,17 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipColorViaShape;
                     sg2d.fillpipe = AAClipColorViaShape;
-                    sg2d.shapepipe = AAClipColorShape;
+                    sg2d.shapepipe = AAClipColorViaShape;
                     sg2d.textpipe = clipColorText;
                 } else {
-                    sg2d.drawpipe = AAColorViaShape;
-                    sg2d.fillpipe = AAColorViaShape;
-                    sg2d.shapepipe = AAColorShape;
-                    if (sg2d.paintState > sg2d.PAINT_OPAQUECOLOR ||
+                    PixelToParallelogramConverter converter =
+                        (sg2d.alphafill.canDoParallelograms()
+                         ? AAColorViaPgram
+                         : AAColorViaShape);
+                    sg2d.drawpipe = converter;
+                    sg2d.fillpipe = converter;
+                    sg2d.shapepipe = converter;
+                    if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR ||
                         sg2d.compositeState > sg2d.COMP_ISCOPY)
                     {
                         sg2d.textpipe = colorText;
@@ -557,12 +656,12 @@ public abstract class SurfaceData
                 if (sg2d.clipState == sg2d.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipPaintViaShape;
                     sg2d.fillpipe = AAClipPaintViaShape;
-                    sg2d.shapepipe = AAClipPaintShape;
+                    sg2d.shapepipe = AAClipPaintViaShape;
                     sg2d.textpipe = clipPaintText;
                 } else {
                     sg2d.drawpipe = AAPaintViaShape;
                     sg2d.fillpipe = AAPaintViaShape;
-                    sg2d.shapepipe = AAPaintShape;
+                    sg2d.shapepipe = AAPaintViaShape;
                     sg2d.textpipe = paintText;
                 }
             }
@@ -589,12 +688,24 @@ public abstract class SurfaceData
                 }
             }
         } else {
+            PixelToShapeConverter converter;
+            if (canRenderParallelograms(sg2d)) {
+                converter = colorViaPgram;
+                // Note that we use the transforming pipe here because it
+                // will examine the shape and possibly perform an optimized
+                // operation if it can be simplified.  The simplifications
+                // will be valid for all STROKE and TRANSFORM types.
+                sg2d.shapepipe = colorViaPgram;
+            } else {
+                converter = colorViaShape;
+                sg2d.shapepipe = colorPrimitives;
+            }
             if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
-                sg2d.drawpipe = colorViaShape;
-                sg2d.fillpipe = colorViaShape;
+                sg2d.drawpipe = converter;
+                sg2d.fillpipe = converter;
             } else {
                 if (sg2d.strokeState != sg2d.STROKE_THIN) {
-                    sg2d.drawpipe = colorViaShape;
+                    sg2d.drawpipe = converter;
                 } else {
                     sg2d.drawpipe = colorPrimitives;
                 }
@@ -602,7 +713,6 @@ public abstract class SurfaceData
             }
 
             sg2d.textpipe = getTextPipe(sg2d, false /* AA==OFF */);
-            sg2d.shapepipe = colorPrimitives;
             // assert(sg2d.surfaceData == this);
         }
 
@@ -705,6 +815,18 @@ public abstract class SurfaceData
         }
     }
 
+    private static CompositeType getFillCompositeType(SunGraphics2D sg2d) {
+        CompositeType compType = sg2d.imageComp;
+        if (sg2d.compositeState == sg2d.COMP_ISCOPY) {
+            if (compType == CompositeType.SrcOverNoEa) {
+                compType = CompositeType.OpaqueSrcOverNoEa;
+            } else {
+                compType = CompositeType.SrcNoEa;
+            }
+        }
+        return compType;
+    }
+
     /**
      * Returns a MaskFill object that can be used on this destination
      * with the source (paint) and composite types determined by the given
@@ -714,9 +836,10 @@ public abstract class SurfaceData
      * surface) before returning a specific MaskFill object.
      */
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
-        return MaskFill.getFromCache(getPaintSurfaceType(sg2d),
-                                     sg2d.imageComp,
-                                     getSurfaceType());
+        SurfaceType src = getPaintSurfaceType(sg2d);
+        CompositeType comp = getFillCompositeType(sg2d);
+        SurfaceType dst = getSurfaceType();
+        return MaskFill.getFromCache(src, comp, dst);
     }
 
     private static RenderCache loopcache = new RenderCache(30);
@@ -728,9 +851,7 @@ public abstract class SurfaceData
      */
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
         SurfaceType src = getPaintSurfaceType(sg2d);
-        CompositeType comp = (sg2d.compositeState == sg2d.COMP_ISCOPY
-                              ? CompositeType.SrcNoEa
-                              : sg2d.imageComp);
+        CompositeType comp = getFillCompositeType(sg2d);
         SurfaceType dst = sg2d.getSurfaceData().getSurfaceType();
 
         Object o = loopcache.get(src, comp, dst);
@@ -761,6 +882,8 @@ public abstract class SurfaceData
         loops.drawPathLoop = DrawPath.locate(src, comp, dst);
         loops.fillPathLoop = FillPath.locate(src, comp, dst);
         loops.fillSpansLoop = FillSpans.locate(src, comp, dst);
+        loops.fillParallelogramLoop = FillParallelogram.locate(src, comp, dst);
+        loops.drawParallelogramLoop = DrawParallelogram.locate(src, comp, dst);
         loops.drawGlyphListLoop = DrawGlyphList.locate(src, comp, dst);
         loops.drawGlyphListAALoop = DrawGlyphListAA.locate(src, comp, dst);
         loops.drawGlyphListLCDLoop = DrawGlyphListLCD.locate(src, comp, dst);

@@ -303,12 +303,12 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_MethodHandle: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);
-                     short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
-                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
-                     dos.writeShort(bootstrapMethodIndex);
-                     dos.writeShort(nameAndTypeIndex);
-                     if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " +
-                           bootstrapMethodIndex + ", N&T = " + nameAndTypeIndex);
+                     byte refKind = (byte) extractLowShortFromInt(value);
+                     short memberIndex = (short) extractHighShortFromInt(value);
+                     dos.writeByte(refKind);
+                     dos.writeShort(memberIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = MH kind = " +
+                           refKind + ", mem = " + memberIndex);
                      break;
                 }
 
@@ -321,12 +321,16 @@ public class ClassWriter implements /* imports */ ClassConstants
                      break;
                 }
 
+                case JVM_CONSTANT_InvokeDynamicTrans:
                 case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);
-                     short refIndex = (short) value;
-                     dos.writeShort(refIndex);
-                     if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
+                     short bsmIndex = (short) extractLowShortFromInt(value);
+                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                     dos.writeShort(bsmIndex);
+                     dos.writeShort(nameAndTypeIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = INDY bsm = " +
+                           bsmIndex + ", N&T = " + nameAndTypeIndex);
                      break;
                 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,7 +523,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
             sb.append(value == this ? "(this Map)" : value);
             if (! i.hasNext())
                 return sb.append('}').toString();
-            sb.append(", ");
+            sb.append(',').append(' ');
         }
     }
 

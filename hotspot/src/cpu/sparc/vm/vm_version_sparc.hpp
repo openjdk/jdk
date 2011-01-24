@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_VM_VERSION_SPARC_HPP
+#define CPU_SPARC_VM_VM_VERSION_SPARC_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
@@ -33,7 +39,14 @@ protected:
     v9_instructions    = 5,
     vis1_instructions  = 6,
     vis2_instructions  = 7,
-    sun4v_instructions = 8
+    sun4v_instructions = 8,
+    blk_init_instructions = 9,
+    fmaf_instructions  = 10,
+    fmau_instructions  = 11,
+    vis3_instructions  = 12,
+    sparc64_family     = 13,
+    T_family           = 14,
+    T1_model           = 15
   };
 
   enum Feature_Flag_Set {
@@ -49,6 +62,13 @@ protected:
     vis1_instructions_m = 1 << vis1_instructions,
     vis2_instructions_m = 1 << vis2_instructions,
     sun4v_m             = 1 << sun4v_instructions,
+    blk_init_instructions_m = 1 << blk_init_instructions,
+    fmaf_instructions_m = 1 << fmaf_instructions,
+    fmau_instructions_m = 1 << fmau_instructions,
+    vis3_instructions_m = 1 << vis3_instructions,
+    sparc64_family_m    = 1 << sparc64_family,
+    T_family_m          = 1 << T_family,
+    T1_model_m          = 1 << T1_model,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -66,12 +86,15 @@ protected:
   static int  determine_features();
   static int  platform_features(int features);
 
-  static bool is_niagara1(int features) { return (features & sun4v_m) != 0; }
+  // Returns true if the platform is in the niagara line (T series)
+  static bool is_T_family(int features) { return (features & T_family_m) != 0; }
+  static bool is_niagara() { return is_T_family(_features); }
+  DEBUG_ONLY( static bool is_niagara(int features)  { return (features & sun4v_m) != 0; } )
+
+  // Returns true if it is niagara1 (T1).
+  static bool is_T1_model(int features) { return is_T_family(features) && ((features & T1_model_m) != 0); }
 
   static int maximum_niagara1_processor_count() { return 32; }
-  // Returns true if the platform is in the niagara line and
-  // newer than the niagara1.
-  static bool is_niagara1_plus();
 
 public:
   // Initialization
@@ -86,15 +109,22 @@ public:
   static bool has_hardware_popc()       { return (_features & hardware_popc_m) != 0; }
   static bool has_vis1()                { return (_features & vis1_instructions_m) != 0; }
   static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
+  static bool has_vis3()                { return (_features & vis3_instructions_m) != 0; }
+  static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }
 
   static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m; }
   static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
-  static bool is_niagara1()             { return is_niagara1(_features); }
+  // Returns true if the platform is in the niagara line (T series)
+  // and newer than the niagara1.
+  static bool is_niagara_plus()         { return is_T_family(_features) && !is_T1_model(_features); }
+  // Fujitsu SPARC64
+  static bool is_sparc64()              { return (_features & sparc64_family_m) != 0; }
 
-  static bool has_fast_fxtof()          { return has_v9() && !is_ultra3(); }
+  static bool has_fast_fxtof()          { return is_niagara() || is_sparc64() || has_v9() && !is_ultra3(); }
+  static bool has_fast_idiv()           { return is_niagara_plus() || is_sparc64(); }
 
   static const char* cpu_features()     { return _features_str; }
 
@@ -144,3 +174,5 @@ public:
   // Calculates the number of parallel threads
   static unsigned int calc_parallel_worker_threads();
 };
+
+#endif // CPU_SPARC_VM_VM_VERSION_SPARC_HPP

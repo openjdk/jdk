@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,15 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
 
     static String[] patterns = {
         "#,##0.###{0};-#,##0.###{1}", // decimal pattern
+        "#{0};(#){1}", // integer pattern
         "\u00A4#,##0{0};-\u00A4#,##0{1}", // currency pattern
         "#,##0%{0}" // percent pattern
     };
     // Constants used by factory methods to specify a style of format.
     static final int NUMBERSTYLE = 0;
-    static final int CURRENCYSTYLE = 1;
-    static final int PERCENTSTYLE = 2;
+    static final int INTEGERSTYLE = 1;
+    static final int CURRENCYSTYLE = 2;
+    static final int PERCENTSTYLE = 3;
 
     public Locale[] getAvailableLocales() {
         return avail;
@@ -68,10 +70,10 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
                     MessageFormat.format(patterns[CURRENCYSTYLE],
                                          dialect[i],
                                          dialect[i]);
-                DecimalFormat df = new DecimalFormat(pattern,
+                FooNumberFormat nf = new FooNumberFormat(pattern,
                     DecimalFormatSymbols.getInstance(locale));
-                adjustForCurrencyDefaultFractionDigits(df);
-                return df;
+                adjustForCurrencyDefaultFractionDigits(nf);
+                return nf;
             }
         }
         throw new IllegalArgumentException("locale is not supported: "+locale);
@@ -81,15 +83,15 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
         for (int i = 0; i < avail.length; i ++) {
             if (Utils.supportsLocale(avail[i], locale)) {
                 String pattern =
-                    MessageFormat.format(patterns[NUMBERSTYLE],
+                    MessageFormat.format(patterns[INTEGERSTYLE],
                                          dialect[i],
                                          dialect[i]);
-                DecimalFormat df = new DecimalFormat(pattern,
+                FooNumberFormat nf = new FooNumberFormat(pattern,
                     DecimalFormatSymbols.getInstance(locale));
-                df.setMaximumFractionDigits(0);
-                df.setDecimalSeparatorAlwaysShown(false);
-                df.setParseIntegerOnly(true);
-                return df;
+                nf.setMaximumFractionDigits(0);
+                nf.setDecimalSeparatorAlwaysShown(false);
+                nf.setParseIntegerOnly(true);
+                return nf;
             }
         }
         throw new IllegalArgumentException("locale is not supported: "+locale);
@@ -102,7 +104,7 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
                     MessageFormat.format(patterns[NUMBERSTYLE],
                                          dialect[i],
                                          dialect[i]);
-                return new DecimalFormat(pattern,
+                return new FooNumberFormat(pattern,
                     DecimalFormatSymbols.getInstance(locale));
             }
         }
@@ -115,7 +117,7 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
                 String pattern =
                     MessageFormat.format(patterns[PERCENTSTYLE],
                                          dialect[i]);
-                return new DecimalFormat(pattern,
+                return new FooNumberFormat(pattern,
                     DecimalFormatSymbols.getInstance(locale));
             }
         }
@@ -126,8 +128,8 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
      * Adjusts the minimum and maximum fraction digits to values that
      * are reasonable for the currency's default fraction digits.
      */
-    void adjustForCurrencyDefaultFractionDigits(DecimalFormat df) {
-        DecimalFormatSymbols dfs = df.getDecimalFormatSymbols();
+    void adjustForCurrencyDefaultFractionDigits(FooNumberFormat nf) {
+        DecimalFormatSymbols dfs = nf.getDecimalFormatSymbols();
         Currency currency = dfs.getCurrency();
         if (currency == null) {
             try {
@@ -138,15 +140,15 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
         if (currency != null) {
             int digits = currency.getDefaultFractionDigits();
             if (digits != -1) {
-                int oldMinDigits = df.getMinimumFractionDigits();
+                int oldMinDigits = nf.getMinimumFractionDigits();
                 // Common patterns are "#.##", "#.00", "#".
                 // Try to adjust all of them in a reasonable way.
-                if (oldMinDigits == df.getMaximumFractionDigits()) {
-                    df.setMinimumFractionDigits(digits);
-                    df.setMaximumFractionDigits(digits);
+                if (oldMinDigits == nf.getMaximumFractionDigits()) {
+                    nf.setMinimumFractionDigits(digits);
+                    nf.setMaximumFractionDigits(digits);
                 } else {
-                    df.setMinimumFractionDigits(Math.min(digits, oldMinDigits));
-                    df.setMaximumFractionDigits(digits);
+                    nf.setMinimumFractionDigits(Math.min(digits, oldMinDigits));
+                    nf.setMaximumFractionDigits(digits);
                 }
             }
         }

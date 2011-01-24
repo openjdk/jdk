@@ -22,7 +22,7 @@
  */
 
 // key: compiler.warn.assert.as.identifier
-// options: -source 1.3
+// options: -source 1.3 -Xlint:-options
 
 class AssertAsIdentifier {
     int assert;

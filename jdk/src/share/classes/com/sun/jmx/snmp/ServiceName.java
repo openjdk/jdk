@@ -27,7 +27,7 @@ package com.sun.jmx.snmp;
 
 /**
  * Used for storing default values used by SNMP Runtime services.
- * <p><b>This API is a Sun Microsystems internal API  and is subject
+ * <p><b>This API is an Oracle Corporation internal API  and is subject
  * to change without notice.</b></p>
  */
 public class ServiceName {
@@ -144,16 +144,16 @@ public class ServiceName {
     /**
      * The vendor of the JMX specification implemented by this product.
      * <BR>
-     * The value is <CODE>Sun Microsystems</CODE>.
+     * The value is <CODE>Oracle Corporation</CODE>.
      */
-    public static final String JMX_SPEC_VENDOR = "Sun Microsystems";
+    public static final String JMX_SPEC_VENDOR = "Oracle Corporation";
 
     /**
      * The name of the vendor of this product implementing the  JMX specification.
      * <BR>
-     * The value is <CODE>Sun Microsystems</CODE>.
+     * The value is <CODE>Oracle Corporation</CODE>.
      */
-    public static final String JMX_IMPL_VENDOR = "Sun Microsystems";
+    public static final String JMX_IMPL_VENDOR = "Oracle Corporation";
 
     /**
       * The build number of the current product version, of the form <CODE>rXX</CODE>.

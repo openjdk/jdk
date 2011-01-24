@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,11 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         }
 
         return getClassLoader(lb.toArray(new URL[lb.size()]));
+    }
+
+    @Override
+    public boolean isDefaultBootClassPath() {
+        return searchPaths.isDefaultBootClassPath();
     }
 
     // <editor-fold defaultstate="collapsed" desc="Location handling">
@@ -371,7 +376,8 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
                 new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                if (SourceVersion.isIdentifier(dir.getName().toString())) // JSR 292?
+                Path name = dir.getName();
+                if (name == null || SourceVersion.isIdentifier(name.toString())) // JSR 292?
                     return FileVisitResult.CONTINUE;
                 else
                     return FileVisitResult.SKIP_SUBTREE;

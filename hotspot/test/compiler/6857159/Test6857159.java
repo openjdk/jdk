@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class Test6857159 extends Thread {
     }
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 20000; i++) {
             Thread t = null;
             switch (i % 3) {
               case 0: t = new ct0(); break;

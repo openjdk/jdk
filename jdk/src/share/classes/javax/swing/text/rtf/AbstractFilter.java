@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ abstract class AbstractFilter extends OutputStream
     public void write(byte[] buf, int off, int len)
       throws IOException
     {
-      StringBuffer accumulator = null;
+      StringBuilder accumulator = null;
       while (len > 0) {
         short b = (short)buf[off];
 
@@ -178,7 +178,7 @@ abstract class AbstractFilter extends OutputStream
           char ch = translationTable[b];
           if (ch != (char)0) {
             if (accumulator == null)
-              accumulator = new StringBuffer();
+              accumulator = new StringBuilder();
             accumulator.append(ch);
           }
         }

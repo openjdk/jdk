@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -928,7 +928,9 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             throw new IOException("Cannot get data: drag source property atom unavailable");
         }
 
-        long time_stamp = MotifDnDConstants.Swapper.getInt(data + 4, eventByteOrder);
+        long time_stamp = MotifDnDConstants.Swapper.getInt(data + 4, eventByteOrder) & 0xffffffffL;
+                          // with correction of (32-bit unsigned to 64-bit signed) implicit conversion.
+
         XAtom selectionAtom = XAtom.get(selatom);
 
         XSelection selection = XSelection.getSelection(selectionAtom);
@@ -962,7 +964,9 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             return false;
         }
 
-        long time_stamp = MotifDnDConstants.Swapper.getInt(data + 4, eventByteOrder);
+        long time_stamp = MotifDnDConstants.Swapper.getInt(data + 4, eventByteOrder) & 0xffffffffL;
+                          // with correction of (32-bit unsigned to 64-bit signed) implicit conversion.
+
         long sel_atom = MotifDnDConstants.Swapper.getInt(data + 12, eventByteOrder);
 
         long status_atom = 0;

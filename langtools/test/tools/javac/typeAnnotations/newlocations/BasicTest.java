@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6843077
  * @summary random tests for new locations
  * @author Matt Papi
- * @compile -source 1.7 BasicTest.java
+ * @compile/fail/ref=BasicTest.out -XDrawDiagnostics BasicTest.java
  */
 
 import java.util.*;
@@ -37,6 +37,8 @@ import java.io.*;
 @interface B {}
 @interface C {}
 @interface D {}
+
+//308: Test inverted to verify that type annotations can not be parsed yet.
 
 /**
  * Tests basic JSR 308 parser functionality. We don't really care about what

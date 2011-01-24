@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSADAPTIVESIZEPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSADAPTIVESIZEPOLICY_HPP
+
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/gcStats.hpp"
+#include "gc_implementation/shared/gcUtil.hpp"
+#include "gc_interface/gcCause.hpp"
+
 // This class keeps statistical information and computes the
 // optimal free space for both the young and old generation
 // based on current application characteristics (based on gc cost
@@ -384,3 +392,5 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSADAPTIVESIZEPOLICY_HPP

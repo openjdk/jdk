@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.Security;
 public class Providers {
 
     private static final ThreadLocal<ProviderList> threadLists =
-        new InheritableThreadLocal<ProviderList>();
+        new InheritableThreadLocal<>();
 
     // number of threads currently using thread-local provider lists
     // tracked to allow an optimization if == 0

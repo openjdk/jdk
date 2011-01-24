@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1509,17 +1509,17 @@ public class Lower extends TreeTranslator {
     }
 
     private JCBlock makeArmFinallyClause(Symbol primaryException, JCExpression resource) {
-        // primaryException.addSuppressedException(catchException);
+        // primaryException.addSuppressed(catchException);
         VarSymbol catchException =
             new VarSymbol(0, make.paramName(2),
                           syms.throwableType,
                           currentMethodSym);
         JCStatement addSuppressionStatement =
             make.Exec(makeCall(make.Ident(primaryException),
-                               names.fromString("addSuppressedException"),
+                               names.addSuppressed,
                                List.<JCExpression>of(make.Ident(catchException))));
 
-        // try { resource.close(); } catch (e) { primaryException.addSuppressedException(e); }
+        // try { resource.close(); } catch (e) { primaryException.addSuppressed(e); }
         JCBlock tryBlock =
             make.Block(0L, List.<JCStatement>of(makeResourceCloseInvocation(resource)));
         JCVariableDecl catchExceptionDecl = make.VarDef(catchException, null);

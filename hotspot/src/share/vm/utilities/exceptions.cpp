@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,26 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_exceptions.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/threadCritical.hpp"
+#include "utilities/events.hpp"
+#include "utilities/exceptions.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 
 // Implementation of ThreadShadow
@@ -61,6 +79,18 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
    ShouldNotReachHere();
   }
 
+#ifdef ASSERT
+  // Check for trying to throw stack overflow before initialization is complete
+  // to prevent infinite recursion trying to initialize stack overflow without
+  // adequate stack space.
+  // This can happen with stress testing a large value of StackShadowPages
+  if (h_exception()->klass() == SystemDictionary::StackOverflowError_klass()) {
+    instanceKlass* ik = instanceKlass::cast(h_exception->klass());
+    assert(ik->is_initialized(),
+           "need to increase min_stack_allowed calculation");
+  }
+#endif // ASSERT
+
   if (thread->is_VM_thread()
       || thread->is_Compiler_thread() ) {
     // We do not care what kind of exception we get for the vm-thread or a thread which
@@ -91,7 +121,6 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, s
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
   }
-
   return false;
 }
 
@@ -193,6 +222,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     klassOop k = SystemDictionary::StackOverflowError_klass();
     oop e = instanceKlass::cast(k)->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
+    assert(instanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception);
     }

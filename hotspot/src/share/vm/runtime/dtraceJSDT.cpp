@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_dtraceJSDT.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "code/codeBlob.hpp"
+#include "memory/allocation.hpp"
+#include "prims/jvm.h"
+#include "runtime/dtraceJSDT.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/os.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/utf8.hpp"
 
 #ifdef HAVE_DTRACE_H
 

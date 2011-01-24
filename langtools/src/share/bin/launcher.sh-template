@@ -26,6 +26,12 @@
 #
 
 mydir="`dirname $0`"
+case `uname -s` in
+    CYGWIN*)
+      mydir=`cygpath -m $mydir`
+      ;;
+esac
+
 mylib="`dirname $mydir`"/lib
 
 # By default, put the jar file and its dependencies on the bootclasspath.

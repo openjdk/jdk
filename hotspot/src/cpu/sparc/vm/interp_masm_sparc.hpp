@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_INTERP_MASM_SPARC_HPP
+#define CPU_SPARC_VM_INTERP_MASM_SPARC_HPP
+
+#include "assembler_sparc.inline.hpp"
+#include "interpreter/invocationCounter.hpp"
+
 // This file specializes the assember with interpreter-specific macros
 
 REGISTER_DECLARATION(     Register, Otos_i , O0); // tos for ints, etc
@@ -327,3 +333,5 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_return_value(TosState state, bool is_native_call);
 
 };
+
+#endif // CPU_SPARC_VM_INTERP_MASM_SPARC_HPP

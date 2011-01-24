@@ -59,6 +59,8 @@ le_uint32 CursiveAttachmentSubtable::process(GlyphIterator *glyphIterator, const
 
         entryAnchorTable->getAnchor(glyphID, fontInstance, entryAnchor);
         glyphIterator->setCursiveEntryPoint(entryAnchor);
+    } else {
+        //glyphIterator->clearCursiveEntryPoint();
     }
 
     if (exitOffset != 0) {
@@ -66,6 +68,8 @@ le_uint32 CursiveAttachmentSubtable::process(GlyphIterator *glyphIterator, const
 
         exitAnchorTable->getAnchor(glyphID, fontInstance, exitAnchor);
         glyphIterator->setCursiveExitPoint(exitAnchor);
+    } else {
+        //glyphIterator->clearCursiveExitPoint();
     }
 
     return 1;

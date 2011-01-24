@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,18 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_forte.cpp.incl"
+#include "precompiled.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/pcDesc.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/space.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "prims/forte.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
 
 // These name match the names reported by the forte quality kit
 enum {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,12 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         int mark = src.position();
 
-        if (needsMark) {
+        if (needsMark && src.hasRemaining()) {
             if (dst.remaining() < 2)
                 return CoderResult.OVERFLOW;
             put(BYTE_ORDER_MARK, dst);
             needsMark = false;
         }
-
         try {
             while (src.hasRemaining()) {
                 char c = src.get();

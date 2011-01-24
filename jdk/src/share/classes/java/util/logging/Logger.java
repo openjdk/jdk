@@ -170,7 +170,7 @@ public class Logger {
     private LogManager manager;
     private String name;
     private final CopyOnWriteArrayList<Handler> handlers =
-        new CopyOnWriteArrayList<Handler>();
+        new CopyOnWriteArrayList<>();
     private String resourceBundleName;
     private volatile boolean useParentHandlers = true;
     private volatile Filter filter;
@@ -1420,7 +1420,7 @@ public class Logger {
             // Set our new parent.
             parent = newParent;
             if (parent.kids == null) {
-                parent.kids = new ArrayList<LogManager.LoggerWeakRef>(2);
+                parent.kids = new ArrayList<>(2);
             }
             if (ref == null) {
                 // we didn't have a previous parent

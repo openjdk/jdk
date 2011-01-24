@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+#define CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+
   static void prepare_invoke(Register method, Register index, int byte_no);
   static void invokevirtual_helper(Register index, Register recv,
                                    Register flags);
@@ -30,3 +33,5 @@
   // Helpers
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);
+
+#endif // CPU_X86_VM_TEMPLATETABLE_X86_64_HPP

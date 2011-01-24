@@ -22,8 +22,46 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_debug.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/disassembler.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/privilegedStack.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/java.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vframe.hpp"
+#include "services/heapDumper.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/events.hpp"
+#include "utilities/top.hpp"
+#include "utilities/vmError.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -51,14 +89,16 @@
 
 
 void warning(const char* format, ...) {
-  // In case error happens before init or during shutdown
-  if (tty == NULL) ostream_init();
+  if (PrintWarnings) {
+    // In case error happens before init or during shutdown
+    if (tty == NULL) ostream_init();
 
-  tty->print("%s warning: ", VM_Version::vm_name());
-  va_list ap;
-  va_start(ap, format);
-  tty->vprint_cr(format, ap);
-  va_end(ap);
+    tty->print("%s warning: ", VM_Version::vm_name());
+    va_list ap;
+    va_start(ap, format);
+    tty->vprint_cr(format, ap);
+    va_end(ap);
+  }
   if (BreakAtWarning) BREAKPOINT;
 }
 
@@ -186,7 +226,7 @@ static jint _exiting_out_of_mem = 0;
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              const char* message) {
-  if (Debugging || error_is_suppressed(file, line)) return;
+  if (Debugging) return;
 
   // We try to gather additional information for the first out of memory
   // error only; gathering additional data might cause an allocation and a
@@ -359,8 +399,14 @@ extern "C" void nm(intptr_t p) {
 extern "C" void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  cb->print();
-  Disassembler::decode(cb);
+  nmethod* nm = cb->as_nmethod_or_null();
+  if (nm) {
+    nm->print();
+    Disassembler::decode(nm);
+  } else {
+    cb->print();
+    Disassembler::decode(cb);
+  }
 }
 
 

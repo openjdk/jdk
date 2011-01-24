@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,18 +617,18 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPrimAddrOption0
  * Signature: (IILjava/net/InetAddress;I)V
  */
 JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPeerPrimAddrOption0
-  (JNIEnv *env, jclass klass, jint fd, jint assocId, jobject iaObj, jint port) {
+  (JNIEnv *env, jclass klass, jint fd, jint assocId,
+   jobject iaObj, jint port, jboolean preferIPv6) {
     struct sctp_setpeerprim prim;
-    struct sockaddr_storage ss;
-    int ss_len = sizeof(ss);
+    struct sockaddr* sap = (struct sockaddr*)&prim.sspp_addr;
+    int sap_len;
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&ss,
-                                  &ss_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sap,
+                                  &sap_len, preferIPv6) != 0) {
         return;
     }
 
     prim.sspp_assoc_id = assocId;
-    prim.sspp_addr = ss;
 
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_SET_PEER_PRIMARY_ADDR, &prim,
             sizeof(prim)) < 0) {

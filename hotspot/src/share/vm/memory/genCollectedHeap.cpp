@@ -22,8 +22,41 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_genCollectedHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/filemap.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/permGen.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/sharedHeap.hpp"
+#include "memory/space.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/vmError.hpp"
+#include "utilities/workgroup.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
+#endif
 
 GenCollectedHeap* GenCollectedHeap::_gch;
 NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
@@ -142,8 +175,7 @@ jint GenCollectedHeap::initialize() {
   }
   _perm_gen = perm_gen_spec->init(heap_rs, PermSize, rem_set());
 
-  clear_incremental_collection_will_fail();
-  clear_last_incremental_collection_failed();
+  clear_incremental_collection_failed();
 
 #ifndef SERIALGC
   // If we are running CMS, create the collector responsible
@@ -676,7 +708,7 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 
 void GenCollectedHeap::set_par_threads(int t) {
   SharedHeap::set_par_threads(t);
-  _gen_process_strong_tasks->set_par_threads(t);
+  _gen_process_strong_tasks->set_n_threads(t);
 }
 
 class AssertIsPermClosure: public OopClosure {
@@ -903,7 +935,7 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                           int max_level) {
   int local_max_level;
-  if (!incremental_collection_will_fail() &&
+  if (!incremental_collection_will_fail(false /* don't consult_young */) &&
       gc_cause() == GCCause::_gc_locker) {
     local_max_level = 0;
   } else {
@@ -919,7 +951,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   // A scavenge may not have been attempted, or may have
   // been attempted and failed, because the old gen was too full
   if (local_max_level == 0 && gc_cause() == GCCause::_gc_locker &&
-      incremental_collection_will_fail()) {
+      incremental_collection_will_fail(false /* don't consult_young */)) {
     if (PrintGCDetails) {
       gclog_or_tty->print_cr("GC locker: Trying a full collection "
                              "because scavenge failed");
@@ -1347,17 +1379,6 @@ class GenGCEpilogueClosure: public GenCollectedHeap::GenClosure {
 };
 
 void GenCollectedHeap::gc_epilogue(bool full) {
-  // Remember if a partial collection of the heap failed, and
-  // we did a complete collection.
-  if (full && incremental_collection_will_fail()) {
-    set_last_incremental_collection_failed();
-  } else {
-    clear_last_incremental_collection_failed();
-  }
-  // Clear the flag, if set; the generation gc_epilogues will set the
-  // flag again if the condition persists despite the collection.
-  clear_incremental_collection_will_fail();
-
 #ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));

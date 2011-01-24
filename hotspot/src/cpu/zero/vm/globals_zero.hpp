@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,12 @@
  *
  */
 
+#ifndef CPU_ZERO_VM_GLOBALS_ZERO_HPP
+#define CPU_ZERO_VM_GLOBALS_ZERO_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 // Set the default values for platform dependent flags used by the
 // runtime system.  See globals.hpp for details of what they do.
 
@@ -45,3 +51,7 @@ define_pd_global(intx,  StackShadowPages,     5 LP64_ONLY(+1) DEBUG_ONLY(+3));
 
 define_pd_global(bool,  RewriteBytecodes,     true);
 define_pd_global(bool,  RewriteFrequentPairs, true);
+
+define_pd_global(bool,  UseMembar,            false);
+
+#endif // CPU_ZERO_VM_GLOBALS_ZERO_HPP

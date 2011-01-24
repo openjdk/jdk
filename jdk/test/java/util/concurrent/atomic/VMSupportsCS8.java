@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4992443 4994819
+ * @compile -source 1.5 VMSupportsCS8.java
+ * @run main VMSupportsCS8
  * @summary Checks that the value of VMSupportsCS8 matches system properties.
  */
 

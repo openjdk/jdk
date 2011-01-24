@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_ESCAPE_HPP
+#define SHARE_VM_OPTO_ESCAPE_HPP
+
+#include "opto/addnode.hpp"
+#include "opto/node.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // Adaptation for C2 of the escape analysis algorithm described in:
@@ -219,6 +226,9 @@ private:
                                        // is still being collected. If false,
                                        // no new nodes will be processed.
 
+  bool                    _progress;   // Indicates whether new Graph's edges
+                                       // were created.
+
   uint                _phantom_object; // Index of globally escaping object
                                        // that pointer values loaded from
                                        // a field which has not been set
@@ -266,6 +276,13 @@ private:
   void add_deferred_edge(uint from_i, uint to_i);
   void add_field_edge(uint from_i, uint to_i, int offs);
 
+  // Add an edge of the specified type pointing to the specified target.
+  // Set _progress if new edge is added.
+  void add_edge(PointsToNode *f, uint to_i, PointsToNode::EdgeType et) {
+    uint e_cnt = f->edge_count();
+    f->add_edge(to_i, et);
+    _progress |= (f->edge_count() != e_cnt);
+  }
 
   // Add an edge to node given by "to_i" from any field of adr_i whose offset
   // matches "offset"  A deferred edge is added if to_i is a LocalVar, and
@@ -354,3 +371,5 @@ public:
   void dump();
 #endif
 };
+
+#endif // SHARE_VM_OPTO_ESCAPE_HPP

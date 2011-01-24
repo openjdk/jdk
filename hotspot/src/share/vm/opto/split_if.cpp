@@ -22,8 +22,11 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_split_if.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/callnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
 
 
 //------------------------------split_thru_region------------------------------

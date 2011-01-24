@@ -49,6 +49,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
@@ -227,10 +228,21 @@ public class JavacTrees extends Trees {
         return new JavacScope(getAttrContext(path));
     }
 
+    public String getDocComment(TreePath path) {
+        CompilationUnitTree t = path.getCompilationUnit();
+        if (t instanceof JCTree.JCCompilationUnit) {
+            JCCompilationUnit cu = (JCCompilationUnit) t;
+            if (cu.docComments != null) {
+                return cu.docComments.get(path.getLeaf());
+            }
+        }
+        return null;
+    }
+
     public boolean isAccessible(Scope scope, TypeElement type) {
         if (scope instanceof JavacScope && type instanceof ClassSymbol) {
             Env<AttrContext> env = ((JavacScope) scope).env;
-            return resolve.isAccessible(env, (ClassSymbol)type);
+            return resolve.isAccessible(env, (ClassSymbol)type, true);
         } else
             return false;
     }
@@ -240,7 +252,7 @@ public class JavacTrees extends Trees {
                 && member instanceof Symbol
                 && type instanceof com.sun.tools.javac.code.Type) {
             Env<AttrContext> env = ((JavacScope) scope).env;
-            return resolve.isAccessible(env, (com.sun.tools.javac.code.Type)type, (Symbol)member);
+            return resolve.isAccessible(env, (com.sun.tools.javac.code.Type)type, (Symbol)member, true);
         } else
             return false;
     }
@@ -282,9 +294,10 @@ public class JavacTrees extends Trees {
 //                    System.err.println("COMP: " + ((JCCompilationUnit)tree).sourcefile);
                     env = enter.getTopLevelEnv((JCCompilationUnit)tree);
                     break;
+                case ANNOTATION_TYPE:
                 case CLASS:
-                case INTERFACE:
                 case ENUM:
+                case INTERFACE:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
                     break;

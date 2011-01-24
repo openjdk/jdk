@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
-import java.dyn.MethodType;
-
+import java.dyn.*;
+import sun.dyn.empty.Empty;
 
 /**
  * Construction and caching of often-used invokers.
@@ -41,11 +39,18 @@ public class Invokers {
     // exact invoker for the outgoing call
     private /*lazy*/ MethodHandle exactInvoker;
 
+    // erased (partially untyped but with primitives) invoker for the outgoing call
+    private /*lazy*/ MethodHandle erasedInvoker;
+    /*lazy*/ MethodHandle erasedInvokerWithDrops;  // for InvokeGeneric
+
     // generic (untyped) invoker for the outgoing call
     private /*lazy*/ MethodHandle genericInvoker;
 
     // generic (untyped) invoker for the outgoing call; accepts a single Object[]
     private final /*lazy*/ MethodHandle[] varargsInvokers;
+
+    // invoker for an unbound callsite
+    private /*lazy*/ MethodHandle uninitializedCallSite;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
@@ -63,8 +68,11 @@ public class Invokers {
     public MethodHandle exactInvoker() {
         MethodHandle invoker = exactInvoker;
         if (invoker != null)  return invoker;
-        invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invoke", targetType);
-        if (invoker == null)  throw new InternalError("JVM cannot find invoker for "+targetType);
+        try {
+            invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invoke", targetType);
+        } catch (NoAccessException ex) {
+            throw new InternalError("JVM cannot find invoker for "+targetType);
+        }
         assert(invokerType(targetType) == invoker.type());
         exactInvoker = invoker;
         return invoker;
@@ -80,6 +88,19 @@ public class Invokers {
         return invoker;
     }
 
+    public MethodHandle erasedInvoker() {
+        MethodHandle invoker1 = exactInvoker();
+        MethodHandle invoker = erasedInvoker;
+        if (invoker != null)  return invoker;
+        MethodType erasedType = targetType.erase();
+        if (erasedType == targetType.generic())
+            invoker = genericInvoker();
+        else
+            invoker = MethodHandles.convertArguments(invoker1, invokerType(erasedType));
+        erasedInvoker = invoker;
+        return invoker;
+    }
+
     public MethodHandle varargsInvoker(int objectArgCount) {
         MethodHandle vaInvoker = varargsInvokers[objectArgCount];
         if (vaInvoker != null)  return vaInvoker;
@@ -88,6 +109,35 @@ public class Invokers {
         vaInvoker = MethodHandles.spreadArguments(gInvoker, invokerType(vaType));
         varargsInvokers[objectArgCount] = vaInvoker;
         return vaInvoker;
+    }
+
+    private static MethodHandle THROW_UCS = null;
+
+    public MethodHandle uninitializedCallSite() {
+        MethodHandle invoker = uninitializedCallSite;
+        if (invoker != null)  return invoker;
+        if (targetType.parameterCount() > 0) {
+            MethodType type0 = targetType.dropParameterTypes(0, targetType.parameterCount());
+            Invokers invokers0 = MethodTypeImpl.invokers(Access.TOKEN, type0);
+            invoker = MethodHandles.dropArguments(invokers0.uninitializedCallSite(),
+                                                  0, targetType.parameterList());
+            assert(invoker.type().equals(targetType));
+            uninitializedCallSite = invoker;
+            return invoker;
+        }
+        if (THROW_UCS == null) {
+            try {
+                THROW_UCS = MethodHandleImpl.IMPL_LOOKUP
+                    .findStatic(CallSite.class, "uninitializedCallSite",
+                                MethodType.methodType(Empty.class));
+            } catch (NoAccessException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        invoker = AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, targetType, THROW_UCS);
+        assert(invoker.type().equals(targetType));
+        uninitializedCallSite = invoker;
+        return invoker;
     }
 
     public String toString() {

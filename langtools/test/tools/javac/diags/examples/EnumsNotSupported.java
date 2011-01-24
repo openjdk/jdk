@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.enums.not.supported.in.source
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 enum EnumsNotSupported { A, B, C }

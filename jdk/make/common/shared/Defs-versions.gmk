@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,22 @@
 # WARNING: This file is shared with other workspaces.
 #
 
-# This file needs these set: CC_VERSION, PLATFORM, ARCH_FAMILY, and ARCH_DATA_MODEL.
+# This file needs these set: PLATFORM, ARCH_FAMILY, and ARCH_DATA_MODEL.
+
+# Windows uses Microsoft compilers by default
+ifeq ($(PLATFORM), windows)
+  override CC_VERSION = msvc
+endif
+
+# Solaris uses Sun Studio compilers by default
+ifeq ($(PLATFORM), solaris)
+  override CC_VERSION = sun
+endif
+
+# Linux uses GNU compilers by default
+ifeq ($(PLATFORM), linux)
+  override CC_VERSION = gcc
+endif
 
 ##########################################################################
 #
@@ -65,7 +80,7 @@
 #   If we are using freetype, the freetype version expected.
 #
 # REQUIRED_GCC_VER
-#   Solaris and Linux only. The required version of gcc/g++ for the plugin.
+#   Solaris and Linux only. The required version of gcc/g++ for the legacy OJI plugin.
 #
 # REQUIRED_LINK_VER
 #   Windows only: The version of link.exe expected.
@@ -193,7 +208,7 @@ endif
 REQUIRED_ANT_VER          = 1.6.3
 REQUIRED_BOOT_VER         = 1.6
 REQUIRED_FREETYPE_VERSION = 2.3.0
-REQUIRED_MAKE_VER         = 3.78
+REQUIRED_MAKE_VER         = 3.81
 REQUIRED_UNZIP_VER        = 5.12
 REQUIRED_ZIP_VER          = 2.2
 

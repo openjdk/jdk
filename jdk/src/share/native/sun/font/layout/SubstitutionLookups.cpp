@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
@@ -53,18 +53,23 @@ void SubstitutionLookup::applySubstitutionLookups(
         le_uint16 substCount,
         GlyphIterator *glyphIterator,
         const LEFontInstance *fontInstance,
-        le_int32 position)
+        le_int32 position,
+        LEErrorCode& success)
 {
+    if (LE_FAILURE(success)) {
+        return;
+    }
+
     GlyphIterator tempIterator(*glyphIterator);
 
-    for (le_uint16 subst = 0; subst < substCount; subst += 1) {
+    for (le_uint16 subst = 0; subst < substCount && LE_SUCCESS(success); subst += 1) {
         le_uint16 sequenceIndex = SWAPW(substLookupRecordArray[subst].sequenceIndex);
         le_uint16 lookupListIndex = SWAPW(substLookupRecordArray[subst].lookupListIndex);
 
         tempIterator.setCurrStreamPosition(position);
         tempIterator.next(sequenceIndex);
 
-        lookupProcessor->applySingleLookup(lookupListIndex, &tempIterator, fontInstance);
+        lookupProcessor->applySingleLookup(lookupListIndex, &tempIterator, fontInstance, success);
     }
 }
 
