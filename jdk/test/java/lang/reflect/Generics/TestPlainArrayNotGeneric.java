@@ -103,7 +103,7 @@ public class TestPlainArrayNotGeneric {
         }
     }
 
-    private static final Set<Type> checking = new HashSet<Type>();
+    private static final Set<Type> checking = new HashSet<>();
 
     private static void check(Type t, String what) {
         if (t == null || !checking.add(t))

@@ -635,6 +635,88 @@ public class DuctusRenderingEngine extends RenderingEngine {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AATileGenerator getAATileGenerator(double x, double y,
+                                              double dx1, double dy1,
+                                              double dx2, double dy2,
+                                              double lw1, double lw2,
+                                              Region clip,
+                                              int bbox[])
+    {
+        // REMIND: Deal with large coordinates!
+        double ldx1, ldy1, ldx2, ldy2;
+        boolean innerpgram = (lw1 > 0 && lw2 > 0);
+
+        if (innerpgram) {
+            ldx1 = dx1 * lw1;
+            ldy1 = dy1 * lw1;
+            ldx2 = dx2 * lw2;
+            ldy2 = dy2 * lw2;
+            x -= (ldx1 + ldx2) / 2.0;
+            y -= (ldy1 + ldy2) / 2.0;
+            dx1 += ldx1;
+            dy1 += ldy1;
+            dx2 += ldx2;
+            dy2 += ldy2;
+            if (lw1 > 1 && lw2 > 1) {
+                // Inner parallelogram was entirely consumed by stroke...
+                innerpgram = false;
+            }
+        } else {
+            ldx1 = ldy1 = ldx2 = ldy2 = 0;
+        }
+
+        Rasterizer r = getRasterizer();
+
+        r.setUsage(Rasterizer.EOFILL);
+
+        r.beginPath();
+        r.beginSubpath((float) x, (float) y);
+        r.appendLine((float) (x+dx1), (float) (y+dy1));
+        r.appendLine((float) (x+dx1+dx2), (float) (y+dy1+dy2));
+        r.appendLine((float) (x+dx2), (float) (y+dy2));
+        r.closedSubpath();
+        if (innerpgram) {
+            x += ldx1 + ldx2;
+            y += ldy1 + ldy2;
+            dx1 -= 2.0 * ldx1;
+            dy1 -= 2.0 * ldy1;
+            dx2 -= 2.0 * ldx2;
+            dy2 -= 2.0 * ldy2;
+            r.beginSubpath((float) x, (float) y);
+            r.appendLine((float) (x+dx1), (float) (y+dy1));
+            r.appendLine((float) (x+dx1+dx2), (float) (y+dy1+dy2));
+            r.appendLine((float) (x+dx2), (float) (y+dy2));
+            r.closedSubpath();
+        }
+
+        try {
+            r.endPath();
+            r.getAlphaBox(bbox);
+            clip.clipBoxToBounds(bbox);
+            if (bbox[0] >= bbox[2] || bbox[1] >= bbox[3]) {
+                dropRasterizer(r);
+                return null;
+            }
+            r.setOutputArea(bbox[0], bbox[1],
+                            bbox[2] - bbox[0],
+                            bbox[3] - bbox[1]);
+        } catch (PRException e) {
+            /*
+             * This exeption is thrown from the native part of the Ductus
+             * (only in case of a debug build) to indicate that some
+             * segments of the path have very large coordinates.
+             * See 4485298 for more info.
+             */
+            System.err.println("DuctusRenderingEngine.getAATileGenerator: "+e);
+        }
+
+        return r;
+    }
+
     private void feedConsumer(PathConsumer consumer, PathIterator pi) {
         try {
             consumer.beginPath();

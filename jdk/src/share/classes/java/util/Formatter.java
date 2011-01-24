@@ -2490,7 +2490,7 @@ public final class Formatter implements Closeable, Flushable {
      * Finds format specifiers in the format string.
      */
     private FormatString[] parse(String s) {
-        ArrayList<FormatString> al = new ArrayList<FormatString>();
+        ArrayList<FormatString> al = new ArrayList<>();
         Matcher m = fsPattern.matcher(s);
         for (int i = 0, len = s.length(); i < len; ) {
             if (m.find(i)) {

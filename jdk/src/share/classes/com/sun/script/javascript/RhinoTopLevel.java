@@ -37,15 +37,6 @@ import javax.script.*;
  * @since 1.6
  */
 public final class RhinoTopLevel extends ImporterTopLevel {
-
-    // variables defined always to help Java access from JavaScript
-    private static final String builtinVariables =
-                "var com = Packages.com;                   \n" +
-                "var edu = Packages.edu;                   \n" +
-                "var javax = Packages.javax;               \n" +
-                "var net = Packages.net;                   \n" +
-                "var org = Packages.org;                   \n";
-
     RhinoTopLevel(Context cx, RhinoScriptEngine engine) {
         super(cx);
         this.engine = engine;
@@ -67,9 +58,6 @@ public final class RhinoTopLevel extends ImporterTopLevel {
         String names[] = { "bindings", "scope", "sync"  };
         defineFunctionProperties(names, RhinoTopLevel.class,
                 ScriptableObject.DONTENUM);
-
-        // define built-in variables
-        cx.evaluateString(this, builtinVariables, "<builtin>", 1, null);
     }
 
     /**

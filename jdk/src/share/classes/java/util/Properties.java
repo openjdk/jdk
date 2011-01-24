@@ -1011,7 +1011,7 @@ class Properties extends Hashtable<Object,Object> {
      * @since   1.6
      */
     public Set<String> stringPropertyNames() {
-        Hashtable<String, String> h = new Hashtable<String, String>();
+        Hashtable<String, String> h = new Hashtable<>();
         enumerateStringProperties(h);
         return h.keySet();
     }
