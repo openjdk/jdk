@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,8 +581,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCVariableDecl lastParam = null;
         for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
             JCVariableDecl param = lastParam = l.head;
-            assert param.sym != null;
-            params.append(param.sym);
+            params.append(Assert.checkNonNull(param.sym));
         }
         m.params = params.toList();
 
@@ -699,7 +698,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
  *********************************************************************/
 
     Type attribImportType(JCTree tree, Env<AttrContext> env) {
-        assert completionEnabled;
+        Assert.check(completionEnabled);
         try {
             // To prevent deep recursion, suppress completion of some
             // types.
@@ -725,7 +724,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     return "annotate " + annotations + " onto " + s + " in " + s.owner;
                 }
                 public void enterAnnotation() {
-                    assert s.kind == PCK || s.attributes_field == null;
+                    Assert.check(s.kind == PCK || s.attributes_field == null);
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
                         if (s.attributes_field != null &&
@@ -782,8 +781,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     types.isSameType(c.type, syms.polymorphicSignatureType)) {
                 if (!target.hasMethodHandles()) {
                     // Somebody is compiling JDK7 source code to a JDK6 target.
-                    // Make it a strict warning, since it is unlikely but important.
-                    log.strictWarning(env.tree.pos(),
+                    // Make it an error, since it is unlikely but important.
+                    log.error(env.tree.pos(),
                             "wrong.target.for.polymorphic.signature.definition",
                             target.name);
                 }
@@ -836,7 +835,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // Suppress some (recursive) MemberEnter invocations
         if (!completionEnabled) {
             // Re-install same completer for next time around and return.
-            assert (sym.flags() & Flags.COMPOUND) == 0;
+            Assert.check((sym.flags() & Flags.COMPOUND) == 0);
             sym.completer = this;
             return;
         }
@@ -928,10 +927,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             if (hasDeprecatedAnnotation(tree.mods.annotations))
                 c.flags_field |= DEPRECATED;
             annotateLater(tree.mods.annotations, baseEnv, c);
-            // class type parameters use baseEnv but everything uses env
-            for (JCTypeParameter tp : tree.typarams)
-                tp.accept(new TypeAnnotate(baseEnv));
-            tree.accept(new TypeAnnotate(env));
 
             chk.checkNonCyclicDecl(tree);
 
@@ -989,7 +984,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 c.owner.kind == PCK && c.owner != syms.unnamedPackage &&
                 reader.packageExists(c.fullname))
                 {
-                    log.error(tree.pos, "clash.with.pkg.of.same.name", c);
+                    log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
                 }
 
         } catch (CompletionFailure ex) {
@@ -1013,86 +1008,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             annotate.flush();
         }
     }
-
-    // A sub-phase that "compiles" annotations in annotated types.
-    private class TypeAnnotate extends TreeScanner {
-        private Env<AttrContext> env;
-        public TypeAnnotate(Env<AttrContext> env) { this.env = env; }
-
-        private void enterTypeAnnotations(List<JCTypeAnnotation> annotations) {
-            Set<TypeSymbol> annotated = new HashSet<TypeSymbol>();
-            if (!skipAnnotations)
-                for (List<JCTypeAnnotation> al = annotations; al.nonEmpty(); al = al.tail) {
-                    JCTypeAnnotation a = al.head;
-                    Attribute.Compound c = annotate.enterAnnotation(a,
-                            syms.annotationType,
-                            env);
-                    if (c == null) continue;
-                    Attribute.TypeCompound tc = new Attribute.TypeCompound(c.type, c.values, a.annotation_position);
-                    a.attribute_field = tc;
-                    // Note: @Deprecated has no effect on local variables and parameters
-                    if (!annotated.add(a.type.tsym))
-                        log.error(a.pos, "duplicate.annotation");
-                }
-        }
-
-        // each class (including enclosed inner classes) should be visited
-        // separately through MemberEnter.complete(Symbol)
-        // this flag is used to prevent from visiting inner classes.
-        private boolean isEnclosingClass = false;
-        @Override
-        public void visitClassDef(final JCClassDecl tree) {
-            if (isEnclosingClass)
-                return;
-            isEnclosingClass = true;
-            scan(tree.mods);
-            // type parameter need to be visited with a separate env
-            // scan(tree.typarams);
-            scan(tree.extending);
-            scan(tree.implementing);
-            scan(tree.defs);
-        }
-
-        private void annotate(final JCTree tree, final List<JCTypeAnnotation> annotations) {
-            annotate.later(new Annotate.Annotator() {
-                public String toString() {
-                    return "annotate " + annotations + " onto " + tree;
-                }
-                public void enterAnnotation() {
-                    JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                    try {
-                        enterTypeAnnotations(annotations);
-                    } finally {
-                        log.useSource(prev);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void visitAnnotatedType(final JCAnnotatedType tree) {
-            annotate(tree, tree.annotations);
-            super.visitAnnotatedType(tree);
-        }
-        @Override
-        public void visitTypeParameter(final JCTypeParameter tree) {
-            annotate(tree, tree.annotations);
-            super.visitTypeParameter(tree);
-        }
-        @Override
-        public void visitNewArray(final JCNewArray tree) {
-            annotate(tree, tree.annotations);
-            for (List<JCTypeAnnotation> dimAnnos : tree.dimAnnotations)
-                annotate(tree, dimAnnos);
-            super.visitNewArray(tree);
-        }
-        @Override
-        public void visitMethodDef(JCMethodDecl tree) {
-            annotate(tree, tree.receiverAnnotations);
-            super.visitMethodDef(tree);
-        }
-    }
-
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
         Scope baseScope = new Scope.ClassScope(tree.sym, scopeCounter);
