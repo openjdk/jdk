@@ -984,7 +984,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 c.owner.kind == PCK && c.owner != syms.unnamedPackage &&
                 reader.packageExists(c.fullname))
                 {
-                    log.error(tree.pos, "clash.with.pkg.of.same.name", c);
+                    log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
                 }
 
         } catch (CompletionFailure ex) {

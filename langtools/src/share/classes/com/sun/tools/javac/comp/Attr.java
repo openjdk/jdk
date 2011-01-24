@@ -905,7 +905,10 @@ public class Attr extends JCTree.Visitor {
             // or perhaps expr implements Iterable<T>?
             Type base = types.asSuper(exprType, syms.iterableType.tsym);
             if (base == null) {
-                log.error(tree.expr.pos(), "foreach.not.applicable.to.type");
+                log.error(tree.expr.pos(),
+                        "foreach.not.applicable.to.type",
+                        exprType,
+                        diags.fragment("type.req.array.or.iterable"));
                 elemtype = types.createErrorType(exprType);
             } else {
                 List<Type> iterableParams = base.allparams();
@@ -970,7 +973,7 @@ public class Attr extends JCTree.Visitor {
                 if (enumSwitch) {
                     Symbol sym = enumConstant(c.pat, seltype);
                     if (sym == null) {
-                        log.error(c.pat.pos(), "enum.const.req");
+                        log.error(c.pat.pos(), "enum.label.must.be.unqualified.enum");
                     } else if (!labels.add(sym)) {
                         log.error(c.pos(), "duplicate.case.label");
                     }
@@ -2228,10 +2231,10 @@ public class Attr extends JCTree.Visitor {
 
         // Determine the symbol represented by the selection.
         env.info.varArgs = false;
-        Symbol sym = selectSym(tree, site, env, pt, pkind);
+        Symbol sym = selectSym(tree, sitesym, site, env, pt, pkind);
         if (sym.exists() && !isType(sym) && (pkind & (PCK | TYP)) != 0) {
             site = capture(site);
-            sym = selectSym(tree, site, env, pt, pkind);
+            sym = selectSym(tree, sitesym, site, env, pt, pkind);
         }
         boolean varArgs = env.info.varArgs;
         tree.sym = sym;
@@ -2320,6 +2323,14 @@ public class Attr extends JCTree.Visitor {
          *  @param pkind  The expected kind(s) of the Select expression.
          */
         private Symbol selectSym(JCFieldAccess tree,
+                                     Type site,
+                                     Env<AttrContext> env,
+                                     Type pt,
+                                     int pkind) {
+            return selectSym(tree, site.tsym, site, env, pt, pkind);
+        }
+        private Symbol selectSym(JCFieldAccess tree,
+                                 Symbol location,
                                  Type site,
                                  Env<AttrContext> env,
                                  Type pt,
@@ -2331,12 +2342,12 @@ public class Attr extends JCTree.Visitor {
             case PACKAGE:
                 return rs.access(
                     rs.findIdentInPackage(env, site.tsym, name, pkind),
-                    pos, site, name, true);
+                    pos, location, site, name, true);
             case ARRAY:
             case CLASS:
                 if (pt.tag == METHOD || pt.tag == FORALL) {
                     return rs.resolveQualifiedMethod(
-                        pos, env, site, name, pt.getParameterTypes(), pt.getTypeArguments());
+                        pos, env, location, site, name, pt.getParameterTypes(), pt.getTypeArguments());
                 } else if (name == names._this || name == names._super) {
                     return rs.resolveSelf(pos, env, site.tsym, name);
                 } else if (name == names._class) {
@@ -2353,7 +2364,7 @@ public class Attr extends JCTree.Visitor {
                     // We are seeing a plain identifier as selector.
                     Symbol sym = rs.findIdentInType(env, site, name, pkind);
                     if ((pkind & ERRONEOUS) == 0)
-                        sym = rs.access(sym, pos, site, name, true);
+                        sym = rs.access(sym, pos, location, site, name, true);
                     return sym;
                 }
             case WILDCARD:
@@ -2361,12 +2372,12 @@ public class Attr extends JCTree.Visitor {
             case TYPEVAR:
                 // Normally, site.getUpperBound() shouldn't be null.
                 // It should only happen during memberEnter/attribBase
-                // when determining the super type which *must* be
+                // when determining the super type which *must* beac
                 // done before attributing the type variables.  In
                 // other words, we are seeing this illegal program:
                 // class B<T> extends A<T.foo> {}
                 Symbol sym = (site.getUpperBound() != null)
-                    ? selectSym(tree, capture(site.getUpperBound()), env, pt, pkind)
+                    ? selectSym(tree, location, capture(site.getUpperBound()), env, pt, pkind)
                     : null;
                 if (sym == null) {
                     log.error(pos, "type.var.cant.be.deref");
@@ -2375,7 +2386,7 @@ public class Attr extends JCTree.Visitor {
                     Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
                         rs.new AccessError(env, site, sym) :
                                 sym;
-                    rs.access(sym2, pos, site, name, true);
+                    rs.access(sym2, pos, location, site, name, true);
                     return sym;
                 }
             case ERROR:
