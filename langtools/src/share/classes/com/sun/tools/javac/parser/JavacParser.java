@@ -2168,8 +2168,11 @@ public class JavacParser implements Parser {
     JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
         int pos = S.pos();
         Name name = ident();
-        if ((mods.flags & Flags.VARARGS) == 0)
-            type = bracketsOpt(type);
+        if ((mods.flags & Flags.VARARGS) != 0 &&
+                S.token() == LBRACKET) {
+            log.error(S.pos(), "varargs.and.old.array.syntax");
+        }
+        type = bracketsOpt(type);
         return toP(F.at(pos).VarDef(mods, name, type, null));
     }
 
