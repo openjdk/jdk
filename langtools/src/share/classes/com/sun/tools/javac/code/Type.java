@@ -365,6 +365,16 @@ public class Type implements PrimitiveType {
         return false;
     }
 
+    public static List<Type> filter(List<Type> ts, Filter<Type> tf) {
+        ListBuffer<Type> buf = ListBuffer.lb();
+        for (Type t : ts) {
+            if (tf.accepts(t)) {
+                buf.append(t);
+            }
+        }
+        return buf.toList();
+    }
+
     public boolean isSuperBound() { return false; }
     public boolean isExtendsBound() { return false; }
     public boolean isUnbound() { return false; }

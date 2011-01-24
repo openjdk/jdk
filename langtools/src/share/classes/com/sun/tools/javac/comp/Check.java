@@ -800,7 +800,8 @@ public class Check {
                 Type actual = types.subst(args.head,
                     type.tsym.type.getTypeArguments(),
                     tvars_buf.toList());
-                if (!checkExtends(actual, (TypeVar)tvars.head)) {
+                if (!checkExtends(actual, (TypeVar)tvars.head) &&
+                        !tvars.head.getUpperBound().isErroneous()) {
                     return args.head;
                 }
                 args = args.tail;
@@ -808,11 +809,15 @@ public class Check {
             }
 
             args = type.getTypeArguments();
+            tvars = tvars_buf.toList();
 
             for (Type arg : types.capture(type).getTypeArguments()) {
-                if (arg.tag == TYPEVAR && arg.getUpperBound().isErroneous()) {
+                if (arg.tag == TYPEVAR &&
+                        arg.getUpperBound().isErroneous() &&
+                        !tvars.head.getUpperBound().isErroneous()) {
                     return args.head;
                 }
+                tvars = tvars.tail;
             }
 
             return null;
