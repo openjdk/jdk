@@ -365,10 +365,6 @@ ifeq ($(CC_VERSION),msvc)
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no
-ifdef MT
-    # VS2005, VS2008, and beyond: ask LINK to generate manifests for .dll & .exe
-    BASELFLAGS += /manifest
-endif
 
   LFLAGS = $(BASELFLAGS) $(LDEBUG) $(EXTRA_LFLAGS) $(LFLAGS_$(COMPILER_VERSION))
   LDDFLAGS += $(LFLAGS_$(COMPILER_VERSION))
