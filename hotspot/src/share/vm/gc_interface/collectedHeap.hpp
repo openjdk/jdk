@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP
+#define SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP
+
+#include "gc_interface/gcCause.hpp"
+#include "memory/allocation.hpp"
+#include "memory/barrierSet.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/safepoint.hpp"
+
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
@@ -59,6 +69,8 @@ class CollectedHeap : public CHeapObj {
   MemRegion _reserved;
   BarrierSet* _barrier_set;
   bool _is_gc_active;
+  int _n_par_threads;
+
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
@@ -292,6 +304,12 @@ class CollectedHeap : public CHeapObj {
     _gc_cause = v;
   }
   GCCause::Cause gc_cause() { return _gc_cause; }
+
+  // Number of threads currently working on GC tasks.
+  int n_par_threads() { return _n_par_threads; }
+
+  // May be overridden to set additional parallelism.
+  virtual void set_par_threads(int t) { _n_par_threads = t; };
 
   // Preload classes into the shared portion of the heap, and then dump
   // that data to a file so that it can be loaded directly by another
@@ -606,6 +624,14 @@ class CollectedHeap : public CHeapObj {
     return (CIFireOOMAt > 1 && _fire_out_of_memory_count >= CIFireOOMAt);
   }
 #endif
+
+ public:
+  // This is a convenience method that is used in cases where
+  // the actual number of GC worker threads is not pertinent but
+  // only whether there more than 0.  Use of this method helps
+  // reduce the occurrence of ParallelGCThreads to uses where the
+  // actual number may be germane.
+  static bool use_parallel_gc_threads() { return ParallelGCThreads > 0; }
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.
@@ -628,3 +654,5 @@ class GCCauseSetter : StackObj {
     _heap->set_gc_cause(_previous_cause);
   }
 };
+
+#endif // SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP

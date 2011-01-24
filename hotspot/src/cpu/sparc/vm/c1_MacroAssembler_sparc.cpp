@@ -22,15 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_MacroAssembler_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label L;
   const Register temp_reg = G3_scratch;
   // Note: needs more testing of out-of-line vs. inline slow case
   verify_oop(receiver);
-  ld_ptr(receiver, oopDesc::klass_offset_in_bytes(), temp_reg);
+  load_klass(receiver, temp_reg);
   cmp(temp_reg, iCache);
   brx(Assembler::equal, true, Assembler::pt, L);
   delayed()->nop();
@@ -156,7 +166,7 @@ void C1_MacroAssembler::try_allocate(
   Register obj,                        // result: pointer to object after successful allocation
   Register var_size_in_bytes,          // object size in bytes if unknown at compile time; invalid otherwise
   int      con_size_in_bytes,          // object size in bytes if   known at compile time
-  Register t1,                         // temp register
+  Register t1,                         // temp register, must be global register for incr_allocated_bytes
   Register t2,                         // temp register
   Label&   slow_case                   // continuation point if fast allocation fails
 ) {
@@ -164,6 +174,7 @@ void C1_MacroAssembler::try_allocate(
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
   } else {
     eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+    incr_allocated_bytes(var_size_in_bytes, con_size_in_bytes, t1);
   }
 }
 
@@ -175,9 +186,19 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   } else {
     set((intx)markOopDesc::prototype(), t1);
   }
-  st_ptr(t1  , obj, oopDesc::mark_offset_in_bytes       ());
-  st_ptr(klass, obj, oopDesc::klass_offset_in_bytes      ());
-  if (len->is_valid()) st(len  , obj, arrayOopDesc::length_offset_in_bytes());
+  st_ptr(t1, obj, oopDesc::mark_offset_in_bytes());
+  if (UseCompressedOops) {
+    // Save klass
+    mov(klass, t1);
+    encode_heap_oop_not_null(t1);
+    stw(t1, obj, oopDesc::klass_offset_in_bytes());
+  } else {
+    st_ptr(klass, obj, oopDesc::klass_offset_in_bytes());
+  }
+  if (len->is_valid()) st(len, obj, arrayOopDesc::length_offset_in_bytes());
+  else if (UseCompressedOops) {
+    store_klass_gap(G0, obj);
+  }
 }
 
 
@@ -194,7 +215,7 @@ void C1_MacroAssembler::initialize_body(Register base, Register index) {
 void C1_MacroAssembler::allocate_object(
   Register obj,                        // result: pointer to object after successful allocation
   Register t1,                         // temp register
-  Register t2,                         // temp register
+  Register t2,                         // temp register, must be a global register for try_allocate
   Register t3,                         // temp register
   int      hdr_size,                   // object header size in words
   int      obj_size,                   // object size in words
@@ -225,7 +246,7 @@ void C1_MacroAssembler::initialize_object(
   Register t1,                         // temp register
   Register t2                          // temp register
   ) {
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, t1, t2);
 

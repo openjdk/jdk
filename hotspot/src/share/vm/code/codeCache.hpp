@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_CODECACHE_HPP
+#define SHARE_VM_CODE_CODECACHE_HPP
+
+#include "code/codeBlob.hpp"
+#include "memory/allocation.hpp"
+#include "memory/heap.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oopsHierarchy.hpp"
+
 // The CodeCache implements the code cache for various pieces of generated
 // code, e.g., compiled java methods, runtime stubs, transition frames, etc.
 // The entries in the CodeCache are all CodeBlob's.
@@ -137,6 +146,7 @@ class CodeCache : AllStatic {
   static void print_internals();
   static void verify();                          // verifies the code cache
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
+  static void print_bounds(outputStream* st);    // Prints a summary of the bounds of the code cache
 
   // The full limits of the codeCache
   static address  low_bound()                    { return (address) _heap->low_boundary(); }
@@ -148,6 +158,7 @@ class CodeCache : AllStatic {
   static size_t  capacity()                      { return _heap->capacity(); }
   static size_t  max_capacity()                  { return _heap->max_capacity(); }
   static size_t  unallocated_capacity()          { return _heap->unallocated_capacity(); }
+  static size_t  largest_free_block()            { return _heap->largest_free_block(); }
   static bool    needs_flushing()                { return unallocated_capacity() < CodeCacheFlushingMinimumFreeSpace; }
 
   static bool needs_cache_clean()                { return _needs_cache_clean; }
@@ -172,3 +183,5 @@ class CodeCache : AllStatic {
     // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
 };
+
+#endif // SHARE_VM_CODE_CODECACHE_HPP

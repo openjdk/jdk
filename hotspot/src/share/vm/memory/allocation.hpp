@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_ALLOCATION_HPP
+#define SHARE_VM_MEMORY_ALLOCATION_HPP
+
+#include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
@@ -289,16 +301,17 @@ private:
 
 // One of the following macros must be used when allocating
 // an array or object from an arena
-#define NEW_ARENA_ARRAY(arena, type, size)\
-  (type*) arena->Amalloc((size) * sizeof(type))
+#define NEW_ARENA_ARRAY(arena, type, size) \
+  (type*) (arena)->Amalloc((size) * sizeof(type))
 
-#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)\
-  (type*) arena->Arealloc((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type) )
+#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)    \
+  (type*) (arena)->Arealloc((char*)(old), (old_size) * sizeof(type), \
+                            (new_size) * sizeof(type) )
 
-#define FREE_ARENA_ARRAY(arena, type, old, size)\
-  arena->Afree((char*)(old), (size) * sizeof(type))
+#define FREE_ARENA_ARRAY(arena, type, old, size) \
+  (arena)->Afree((char*)(old), (size) * sizeof(type))
 
-#define NEW_ARENA_OBJ(arena, type)\
+#define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)
 
 
@@ -324,7 +337,9 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   // When this object is allocated on stack the new() operator is not
   // called but garbage on stack may look like a valid allocation_type.
   // Store negated 'this' pointer when new() is called to distinguish cases.
-  uintptr_t _allocation;
+  // Use second array's element for verification value to distinguish garbage.
+  uintptr_t _allocation_t[2];
+  bool is_type_set() const;
  public:
   allocation_type get_allocation_type() const;
   bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
@@ -418,3 +433,5 @@ public:
   ReallocMark()   PRODUCT_RETURN;
   void check()    PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_MEMORY_ALLOCATION_HPP

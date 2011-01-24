@@ -25,11 +25,25 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.*;
-import java.io.*;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TimeZone;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Pack200;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedOutputStream;
+import java.util.zip.ZipEntry;
 
 /*
  * Implementation of the Pack provider.
@@ -67,7 +81,8 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
      * Get the set of options for the pack and unpack engines.
      * @return A sorted association of option key strings to option values.
      */
-    public SortedMap<String, String> properties() {
+    @SuppressWarnings("unchecked")
+    public SortedMap properties() {
         return props;
     }
 
@@ -92,7 +107,13 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
      * @param out a JarOutputStream.
      * @exception IOException if an error is encountered.
      */
-    public void unpack(InputStream in0, JarOutputStream out) throws IOException {
+    public void unpack(InputStream in, JarOutputStream out) throws IOException {
+        if (in == null) {
+            throw new NullPointerException("null input");
+        }
+        if (out == null) {
+            throw new NullPointerException("null output");
+        }
         assert(Utils.currentInstance.get() == null);
         TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE))
                       ? null
@@ -102,18 +123,18 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
             Utils.currentInstance.set(this);
             if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             final int verbose = props.getInteger(Utils.DEBUG_VERBOSE);
-            BufferedInputStream in = new BufferedInputStream(in0);
-            if (Utils.isJarMagic(Utils.readMagic(in))) {
+            BufferedInputStream in0 = new BufferedInputStream(in);
+            if (Utils.isJarMagic(Utils.readMagic(in0))) {
                 if (verbose > 0)
                     Utils.log.info("Copying unpacked JAR file...");
-                Utils.copyJarFile(new JarInputStream(in), out);
+                Utils.copyJarFile(new JarInputStream(in0), out);
             } else if (props.getBoolean(Utils.DEBUG_DISABLE_NATIVE)) {
-                (new DoUnpack()).run(in, out);
-                in.close();
+                (new DoUnpack()).run(in0, out);
+                in0.close();
                 Utils.markJarFile(out);
             } else {
-                (new NativeUnpack(this)).run(in, out);
-                in.close();
+                (new NativeUnpack(this)).run(in0, out);
+                in0.close();
                 Utils.markJarFile(out);
             }
         } finally {
@@ -132,6 +153,12 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
      * @exception IOException if an error is encountered.
      */
     public void unpack(File in, JarOutputStream out) throws IOException {
+        if (in == null) {
+            throw new NullPointerException("null input");
+        }
+        if (out == null) {
+            throw new NullPointerException("null output");
+        }
         // Use the stream-based implementation.
         // %%% Reconsider if native unpacker learns to memory-map the file.
         FileInputStream instr = new FileInputStream(in);
@@ -199,9 +226,8 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
             props.setProperty(java.util.jar.Pack200.Unpacker.PROGRESS,"50");
             pkg.ensureAllClassFiles();
             // Now write out the files.
-            HashSet<Package.Class> classesToWrite = new HashSet<>(pkg.getClasses());
-            for (Iterator i = pkg.getFiles().iterator(); i.hasNext(); ) {
-                Package.File file = (Package.File) i.next();
+            Set<Package.Class> classesToWrite = new HashSet<>(pkg.getClasses());
+            for (Package.File file : pkg.getFiles()) {
                 String name = file.nameString;
                 JarEntry je = new JarEntry(Utils.getJarEntryName(name));
                 boolean deflate;

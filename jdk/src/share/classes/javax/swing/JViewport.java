@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,14 +637,14 @@ public class JViewport extends JComponent implements Accessible
     }
 
     /**
-     * Returns true if scroll mode is a BACKINGSTORE_SCROLL_MODE to cause
-     * painting to originate from <code>JViewport</code>, or one of its
-     * ancestors. Otherwise returns false.
+     * Returns true if scroll mode is a {@code BACKINGSTORE_SCROLL_MODE} to cause
+     * painting to originate from {@code JViewport}, or one of its
+     * ancestors. Otherwise returns {@code false}.
      *
-     * @return true if if scroll mode is a BACKINGSTORE_SCROLL_MODE.
+     * @return true if if scroll mode is a {@code BACKINGSTORE_SCROLL_MODE}.
      * @see JComponent#isPaintingOrigin()
      */
-    boolean isPaintingOrigin() {
+    protected boolean isPaintingOrigin() {
         return scrollMode == BACKINGSTORE_SCROLL_MODE;
     }
 

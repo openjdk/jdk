@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ public class FormattableFlags {
      * <pre>
      *     out.toUpperCase() </pre>
      *
-     * <p> This flag corresponds to <tt>'^'</tt> (<tt>'&#92;u005e'</tt>) in
+     * <p> This flag corresponds to <tt>'S'</tt> (<tt>'&#92;u0053'</tt>) in
      * the format specifier.
      */
-    public static final int UPPERCASE = 1<<1;    // '^'
+    public static final int UPPERCASE = 1<<1;    // 'S'
 
     /**
      * Requires the output to use an alternate form.  The definition of the

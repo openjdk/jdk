@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,7 @@ public class LogRecord implements java.io.Serializable {
     private static final AtomicInteger nextThreadId
         = new AtomicInteger(MIN_SEQUENTIAL_THREAD_ID);
 
-    private static final ThreadLocal<Integer> threadIds
-        = new ThreadLocal<Integer>();
+    private static final ThreadLocal<Integer> threadIds = new ThreadLocal<>();
 
     /**
      * @serial Logging message level
@@ -529,8 +528,6 @@ public class LogRecord implements java.io.Serializable {
         Throwable throwable = new Throwable();
         int depth = access.getStackTraceDepth(throwable);
 
-        String logClassName = "java.util.logging.Logger";
-        String plogClassName = "sun.util.logging.PlatformLogger";
         boolean lookingForLogger = true;
         for (int ix = 0; ix < depth; ix++) {
             // Calling getStackTraceElement directly prevents the VM
@@ -538,13 +535,14 @@ public class LogRecord implements java.io.Serializable {
             StackTraceElement frame =
                 access.getStackTraceElement(throwable, ix);
             String cname = frame.getClassName();
+            boolean isLoggerImpl = isLoggerImplFrame(cname);
             if (lookingForLogger) {
                 // Skip all frames until we have found the first logger frame.
-                if (cname.equals(logClassName) || cname.startsWith(plogClassName)) {
+                if (isLoggerImpl) {
                     lookingForLogger = false;
                 }
             } else {
-                if (!cname.equals(logClassName) && !cname.startsWith(plogClassName)) {
+                if (!isLoggerImpl) {
                     // skip reflection call
                     if (!cname.startsWith("java.lang.reflect.") && !cname.startsWith("sun.reflect.")) {
                        // We've found the relevant frame.
@@ -557,5 +555,12 @@ public class LogRecord implements java.io.Serializable {
         }
         // We haven't found a suitable frame, so just punt.  This is
         // OK as we are only committed to making a "best effort" here.
+    }
+
+    private boolean isLoggerImplFrame(String cname) {
+        // the log record could be created for a platform logger
+        return (cname.equals("java.util.logging.Logger") ||
+                cname.startsWith("java.util.logging.LoggingProxyImpl") ||
+                cname.startsWith("sun.util.logging."));
     }
 }

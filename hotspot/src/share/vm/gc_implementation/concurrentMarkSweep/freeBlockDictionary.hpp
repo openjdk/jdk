@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREEBLOCKDICTIONARY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREEBLOCKDICTIONARY_HPP
+
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // A FreeBlockDictionary is an abstract superclass that will allow
 // a number of alternative implementations in the future.
@@ -88,3 +99,5 @@ class FreeBlockDictionary: public CHeapObj {
   void   set_par_lock(Mutex* lock)       PRODUCT_RETURN;
   void   verify_par_locked()       const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREEBLOCKDICTIONARY_HPP

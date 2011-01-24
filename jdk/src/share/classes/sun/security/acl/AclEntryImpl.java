@@ -37,7 +37,7 @@ import java.security.acl.*;
  */
 public class AclEntryImpl implements AclEntry {
     private Principal user = null;
-    private Vector<Permission> permissionSet = new Vector<Permission>(10, 10);
+    private Vector<Permission> permissionSet = new Vector<>(10, 10);
     private boolean negative = false;
 
     /**

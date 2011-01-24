@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vframeArray.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/monitorChunk.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "utilities/events.hpp"
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
@@ -179,9 +196,11 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   // in which case bcp should point to the monitorenter since it is within the exception's range.
 
   assert(*bcp != Bytecodes::_monitorenter || is_top_frame, "a _monitorenter must be a top frame");
-  // TIERED Must know the compiler of the deoptee QQQ
-  COMPILER2_PRESENT(guarantee(*bcp != Bytecodes::_monitorenter || exec_mode != Deoptimization::Unpack_exception,
-                              "shouldn't get exception during monitorenter");)
+  assert(thread->deopt_nmethod() != NULL, "nmethod should be known");
+  guarantee(!(thread->deopt_nmethod()->is_compiled_by_c2() &&
+              *bcp == Bytecodes::_monitorenter             &&
+              exec_mode == Deoptimization::Unpack_exception),
+            "shouldn't get exception during monitorenter");
 
   int popframe_preserved_args_size_in_bytes = 0;
   int popframe_preserved_args_size_in_words = 0;

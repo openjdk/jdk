@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     /** Construct a list consisting of given elements.
      */
-    @SuppressWarnings("varargs")
+    @SuppressWarnings({"varargs", "unchecked"})
     public static <A> List<A> of(A x1, A x2, A x3, A... rest) {
         return new List<A>(x1, new List<A>(x2, new List<A>(x3, from(rest))));
     }

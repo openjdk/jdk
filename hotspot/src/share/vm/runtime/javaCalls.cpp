@@ -22,8 +22,32 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_javaCalls.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/nmethod.hpp"
+#include "compiler/compileBroker.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jniCheck.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper

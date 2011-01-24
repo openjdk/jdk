@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,37 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_THREAD_HPP
+#define SHARE_VM_RUNTIME_THREAD_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/threadLocalAllocBuffer.hpp"
+#include "oops/oop.hpp"
+#include "prims/jni.h"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/park.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "runtime/unhandledOops.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/top.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/dirtyCardQueue.hpp"
+#include "gc_implementation/g1/satbQueue.hpp"
+#endif
+#ifdef ZERO
+#ifdef TARGET_ARCH_zero
+# include "stack_zero.hpp"
+#endif
+#endif
+
 class ThreadSafepointState;
 class ThreadProfiler;
 
@@ -29,7 +60,8 @@ class JvmtiThreadState;
 class JvmtiGetLoadedClassesClosure;
 class ThreadStatistics;
 class ConcurrentLocksDump;
-class ParkEvent ;
+class ParkEvent;
+class Parker;
 
 class ciEnv;
 class CompileThread;
@@ -45,6 +77,8 @@ class jvmtiDeferredLocalVariableSet;
 class GCTaskQueue;
 class ThreadClosure;
 class IdealGraphPrinter;
+
+class WorkerThread;
 
 // Class hierarchy
 // - Thread
@@ -136,7 +170,7 @@ class Thread: public ThreadShadow {
   //
 
   // suspend/resume lock: used for self-suspend
-  Monitor*    _SR_lock;
+  Monitor* _SR_lock;
 
  protected:
   enum SuspendFlags {
@@ -160,7 +194,7 @@ class Thread: public ThreadShadow {
  public:
   void enter_signal_handler() { _num_nested_signal++; }
   void leave_signal_handler() { _num_nested_signal--; }
-  bool is_inside_signal_handler() const  { return _num_nested_signal > 0; }
+  bool is_inside_signal_handler() const { return _num_nested_signal > 0; }
 
  private:
   // Debug tracing
@@ -181,7 +215,7 @@ class Thread: public ThreadShadow {
 
   public:
    void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
-    HandleMark* last_handle_mark() const          { return _last_handle_mark; }
+   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
   private:
 
   // debug support for checking if code does allow safepoints or not
@@ -193,11 +227,11 @@ class Thread: public ThreadShadow {
   //
   // The two classes No_Safepoint_Verifier and No_Allocation_Verifier are used to set these counters.
   //
-  NOT_PRODUCT(int _allow_safepoint_count;)       // If 0, thread allow a safepoint to happen
-  debug_only (int _allow_allocation_count;)      // If 0, the thread is allowed to allocate oops.
+  NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
+  debug_only (int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
 
   // Used by SkipGCALot class.
-  NOT_PRODUCT(bool _skip_gcalot;)                // Should we elide gc-a-lot?
+  NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
   // Record when GC is locked out via the GC_locker mechanism
   CHECK_UNHANDLED_OOPS_ONLY(int _gc_locked_out_count;)
@@ -208,24 +242,26 @@ class Thread: public ThreadShadow {
   friend class ThreadLocalStorage;
   friend class GC_locker;
 
-  ThreadLocalAllocBuffer _tlab;                  // Thread-local eden
+  ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
+  jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
+                                                // the Java heap
 
-  int   _vm_operation_started_count;             // VM_Operation support
-  int   _vm_operation_completed_count;           // VM_Operation support
+  int   _vm_operation_started_count;            // VM_Operation support
+  int   _vm_operation_completed_count;          // VM_Operation support
 
-  ObjectMonitor* _current_pending_monitor;       // ObjectMonitor this thread
-                                                 // is waiting to lock
-  bool _current_pending_monitor_is_from_java;    // locking is from Java code
+  ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
+                                                // is waiting to lock
+  bool _current_pending_monitor_is_from_java;   // locking is from Java code
 
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
   // Private thread-local objectmonitor list - a simple cache organized as a SLL.
  public:
-  ObjectMonitor * omFreeList ;
-  int omFreeCount ;                             // length of omFreeList
-  int omFreeProvision ;                         // reload chunk size
-  ObjectMonitor * omInUseList;                  // SLL to track monitors in circulation
+  ObjectMonitor* omFreeList;
+  int omFreeCount;                              // length of omFreeList
+  int omFreeProvision;                          // reload chunk size
+  ObjectMonitor* omInUseList;                   // SLL to track monitors in circulation
   int omInUseCount;                             // length of omInUseList
 
  public:
@@ -246,7 +282,6 @@ class Thread: public ThreadShadow {
   // Testers
   virtual bool is_VM_thread()       const            { return false; }
   virtual bool is_Java_thread()     const            { return false; }
-  // Remove this ifdef when C1 is ported to the compiler interface.
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
@@ -257,6 +292,10 @@ class Thread: public ThreadShadow {
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
+  virtual bool is_Worker_thread() const              { return false; }
+
+  // Casts
+  virtual WorkerThread* as_Worker_thread() const     { return NULL; }
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
@@ -306,15 +345,15 @@ class Thread: public ThreadShadow {
   // Support for Unhandled Oop detection
 #ifdef CHECK_UNHANDLED_OOPS
  private:
-  UnhandledOops *_unhandled_oops;
+  UnhandledOops* _unhandled_oops;
  public:
-  UnhandledOops* unhandled_oops()               { return _unhandled_oops; }
+  UnhandledOops* unhandled_oops() { return _unhandled_oops; }
   // Mark oop safe for gc.  It may be stack allocated but won't move.
-  void allow_unhandled_oop(oop *op)              {
+  void allow_unhandled_oop(oop *op) {
     if (CheckUnhandledOops) unhandled_oops()->allow_unhandled_oop(op);
   }
   // Clear oops at safepoint so crashes point to unhandled oop violator
-  void clear_unhandled_oops()                   {
+  void clear_unhandled_oops() {
     if (CheckUnhandledOops) unhandled_oops()->clear_unhandled_oops();
   }
   bool is_gc_locked_out() { return _gc_locked_out_count > 0; }
@@ -352,6 +391,22 @@ class Thread: public ThreadShadow {
     if (UseTLAB) {
       tlab().initialize();
     }
+  }
+
+  jlong allocated_bytes()               { return _allocated_bytes; }
+  void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
+  void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
+  jlong cooked_allocated_bytes() {
+    jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
+    if (UseTLAB) {
+      size_t used_bytes = tlab().used_bytes();
+      if ((ssize_t)used_bytes > 0) {
+        // More-or-less valid tlab.  The load_acquire above should ensure
+        // that the result of the add is <= the instantaneous value
+        return allocated_bytes + used_bytes;
+      }
+    }
+    return allocated_bytes;
   }
 
   // VM operation support
@@ -451,8 +506,11 @@ public:
     return (_stack_base >= adr && adr >= (_stack_base - _stack_size));
   }
 
-  int     lgrp_id() const                 { return _lgrp_id; }
-  void    set_lgrp_id(int value)          { _lgrp_id = value; }
+  uintptr_t self_raw_id()                    { return _self_raw_id; }
+  void      set_self_raw_id(uintptr_t value) { _self_raw_id = value; }
+
+  int     lgrp_id() const        { return _lgrp_id; }
+  void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
   void print_on(outputStream* st) const;
@@ -464,7 +522,7 @@ public:
 #ifdef ASSERT
  private:
   // Deadlock detection support for Mutex locks. List of locks own by thread.
-  Monitor *_owned_locks;
+  Monitor* _owned_locks;
   // Mutex::set_owner_implementation is the only place where _owned_locks is modified,
   // thus the friendship
   friend class Mutex;
@@ -473,7 +531,7 @@ public:
  public:
   void print_owned_locks_on(outputStream* st) const;
   void print_owned_locks() const                 { print_owned_locks_on(tty);    }
-  Monitor * owned_locks() const                  { return _owned_locks;          }
+  Monitor* owned_locks() const                   { return _owned_locks;          }
   bool owns_locks() const                        { return owned_locks() != NULL; }
   bool owns_locks_but_compiled_lock() const;
 
@@ -500,7 +558,7 @@ public:
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size ); }
 
 #define TLAB_FIELD_OFFSET(name) \
-  static ByteSize tlab_##name##_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
+  static ByteSize tlab_##name##_offset()         { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
 
   TLAB_FIELD_OFFSET(start)
   TLAB_FIELD_OFFSET(end)
@@ -513,6 +571,8 @@ public:
   TLAB_FIELD_OFFSET(slow_allocations)
 
 #undef TLAB_FIELD_OFFSET
+
+  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes ); }
 
  public:
   volatile intptr_t _Stalled ;
@@ -544,7 +604,6 @@ public:
   static void muxAcquire  (volatile intptr_t * Lock, const char * Name) ;
   static void muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) ;
   static void muxRelease  (volatile intptr_t * Lock) ;
-
 };
 
 // Inline implementation of Thread::current()
@@ -597,9 +656,16 @@ class WorkerThread: public NamedThread {
 private:
   uint _id;
 public:
-  WorkerThread() : _id(0) { }
-  void set_id(uint work_id) { _id = work_id; }
-  uint id() const { return _id; }
+  WorkerThread() : _id(0)               { }
+  virtual bool is_Worker_thread() const { return true; }
+
+  virtual WorkerThread* as_Worker_thread() const {
+    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
+    return (WorkerThread*) this;
+  }
+
+  void set_id(uint work_id)             { _id = work_id; }
+  uint id() const                       { return _id; }
 };
 
 // A single WatcherThread is used for simulating timer interrupts.
@@ -680,7 +746,7 @@ class JavaThread: public Thread {
 
   intptr_t*      _must_deopt_id;                 // id of frame that needs to be deopted once we
                                                  // transition out of native
-
+  nmethod*       _deopt_nmethod;                 // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Because deoptimization is lazy we must save jvmti requests to set locals
@@ -1098,6 +1164,9 @@ class JavaThread: public Thread {
   void     set_must_deopt_id(intptr_t* id)       { _must_deopt_id = id; }
   void     clear_must_deopt_id()                 { _must_deopt_id = NULL; }
 
+  void set_deopt_nmethod(nmethod* nm)            { _deopt_nmethod = nm;   }
+  nmethod* deopt_nmethod()                       { return _deopt_nmethod; }
+
   methodOop  callee_target() const               { return _callee_target; }
   void set_callee_target  (methodOop x)          { _callee_target   = x; }
 
@@ -1487,8 +1556,49 @@ public:
   }
 #endif // !SERIALGC
 
+  // This method initializes the SATB and dirty card queues before a
+  // JavaThread is added to the Java thread list. Right now, we don't
+  // have to do anything to the dirty card queue (it should have been
+  // activated when the thread was created), but we have to activate
+  // the SATB queue if the thread is created while a marking cycle is
+  // in progress. The activation / de-activation of the SATB queues at
+  // the beginning / end of a marking cycle is done during safepoints
+  // so we have to make sure this method is called outside one to be
+  // able to safely read the active field of the SATB queue set. Right
+  // now, it is called just before the thread is added to the Java
+  // thread list in the Threads::add() method. That method is holding
+  // the Threads_lock which ensures we are outside a safepoint. We
+  // cannot do the obvious and set the active field of the SATB queue
+  // when the thread is created given that, in some cases, safepoints
+  // might happen between the JavaThread constructor being called and the
+  // thread being added to the Java thread list (an example of this is
+  // when the structure for the DestroyJavaVM thread is created).
+#ifndef SERIALGC
+  void initialize_queues();
+#else // !SERIALGC
+  void initialize_queues() { }
+#endif // !SERIALGC
+
   // Machine dependent stuff
-  #include "incls/_thread_pd.hpp.incl"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "thread_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "thread_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "thread_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "thread_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "thread_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "thread_windows_x86.hpp"
+#endif
+
 
  public:
   void set_blocked_on_compilation(bool value) {
@@ -1743,100 +1853,5 @@ public:
   }
 };
 
-// ParkEvents are type-stable and immortal.
-//
-// Lifecycle: Once a ParkEvent is associated with a thread that ParkEvent remains
-// associated with the thread for the thread's entire lifetime - the relationship is
-// stable. A thread will be associated at most one ParkEvent.  When the thread
-// expires, the ParkEvent moves to the EventFreeList.  New threads attempt to allocate from
-// the EventFreeList before creating a new Event.  Type-stability frees us from
-// worrying about stale Event or Thread references in the objectMonitor subsystem.
-// (A reference to ParkEvent is always valid, even though the event may no longer be associated
-// with the desired or expected thread.  A key aspect of this design is that the callers of
-// park, unpark, etc must tolerate stale references and spurious wakeups).
-//
-// Only the "associated" thread can block (park) on the ParkEvent, although
-// any other thread can unpark a reachable parkevent.  Park() is allowed to
-// return spuriously.  In fact park-unpark a really just an optimization to
-// avoid unbounded spinning and surrender the CPU to be a polite system citizen.
-// A degenerate albeit "impolite" park-unpark implementation could simply return.
-// See http://blogs.sun.com/dave for more details.
-//
-// Eventually I'd like to eliminate Events and ObjectWaiters, both of which serve as
-// thread proxies, and simply make the THREAD structure type-stable and persistent.
-// Currently, we unpark events associated with threads, but ideally we'd just
-// unpark threads.
-//
-// The base-class, PlatformEvent, is platform-specific while the ParkEvent is
-// platform-independent.  PlatformEvent provides park(), unpark(), etc., and
-// is abstract -- that is, a PlatformEvent should never be instantiated except
-// as part of a ParkEvent.
-// Equivalently we could have defined a platform-independent base-class that
-// exported Allocate(), Release(), etc.  The platform-specific class would extend
-// that base-class, adding park(), unpark(), etc.
-//
-// A word of caution: The JVM uses 2 very similar constructs:
-// 1. ParkEvent are used for Java-level "monitor" synchronization.
-// 2. Parkers are used by JSR166-JUC park-unpark.
-//
-// We'll want to eventually merge these redundant facilities and use ParkEvent.
 
-
-class ParkEvent : public os::PlatformEvent {
-  private:
-    ParkEvent * FreeNext ;
-
-    // Current association
-    Thread * AssociatedWith ;
-    intptr_t RawThreadIdentity ;        // LWPID etc
-    volatile int Incarnation ;
-
-    // diagnostic : keep track of last thread to wake this thread.
-    // this is useful for construction of dependency graphs.
-    void * LastWaker ;
-
-  public:
-    // MCS-CLH list linkage and Native Mutex/Monitor
-    ParkEvent * volatile ListNext ;
-    ParkEvent * volatile ListPrev ;
-    volatile intptr_t OnList ;
-    volatile int TState ;
-    volatile int Notified ;             // for native monitor construct
-    volatile int IsWaiting ;            // Enqueued on WaitSet
-
-
-  private:
-    static ParkEvent * volatile FreeList ;
-    static volatile int ListLock ;
-
-    // It's prudent to mark the dtor as "private"
-    // ensuring that it's not visible outside the package.
-    // Unfortunately gcc warns about such usage, so
-    // we revert to the less desirable "protected" visibility.
-    // The other compilers accept private dtors.
-
-  protected:        // Ensure dtor is never invoked
-    ~ParkEvent() { guarantee (0, "invariant") ; }
-
-    ParkEvent() : PlatformEvent() {
-       AssociatedWith = NULL ;
-       FreeNext       = NULL ;
-       ListNext       = NULL ;
-       ListPrev       = NULL ;
-       OnList         = 0 ;
-       TState         = 0 ;
-       Notified       = 0 ;
-       IsWaiting      = 0 ;
-    }
-
-    // We use placement-new to force ParkEvent instances to be
-    // aligned on 256-byte address boundaries.  This ensures that the least
-    // significant byte of a ParkEvent address is always 0.
-
-    void * operator new (size_t sz) ;
-    void operator delete (void * a) ;
-
-  public:
-    static ParkEvent * Allocate (Thread * t) ;
-    static void Release (ParkEvent * e) ;
-} ;
+#endif // SHARE_VM_RUNTIME_THREAD_HPP

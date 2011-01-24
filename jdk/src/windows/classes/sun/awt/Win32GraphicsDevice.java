@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.DisplayMode;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.Window;
@@ -610,11 +611,18 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      *
      * @param w full-screen window
      */
-    protected void addFSWindowListener(Window w) {
+    protected void addFSWindowListener(final Window w) {
         // Note: even though we create a listener for Window instances of
         // fs windows they will not receive window events.
         fsWindowListener = new Win32FSWindowAdapter(this);
-        w.addWindowListener(fsWindowListener);
+
+        // Fix for 6709453. Using invokeLater to avoid listening
+        // for the events already posted to the queue.
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                w.addWindowListener(fsWindowListener);
+            }
+        });
     }
 
     /**

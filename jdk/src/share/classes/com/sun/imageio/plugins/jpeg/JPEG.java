@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class JPEG {
     public static final int ADOBE_YCCK = 2;
 
     // Spi initialization stuff
-    public static final String vendor = "Sun Microsystems, Inc.";
+    public static final String vendor = "Oracle Corporation";
     public static final String version = "0.5";
     // Names of the formats we can read or write
     public static final String [] names = {"JPEG", "jpeg", "JPG", "jpg"};

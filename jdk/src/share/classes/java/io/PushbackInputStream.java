@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,11 @@ class PushbackInputStream extends FilterInputStream {
      */
     public int available() throws IOException {
         ensureOpen();
-        return (buf.length - pos) + super.available();
+        int n = buf.length - pos;
+        int avail = super.available();
+        return n > (Integer.MAX_VALUE - avail)
+                    ? Integer.MAX_VALUE
+                    : n + avail;
     }
 
     /**

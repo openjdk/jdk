@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,9 @@ class Stack<E> extends Vector<E> {
      * Removes the object at the top of this stack and returns that
      * object as the value of this function.
      *
-     * @return     The object at the top of this stack (the last item
-     *             of the <tt>Vector</tt> object).
-     * @exception  EmptyStackException  if this stack is empty.
+     * @return  The object at the top of this stack (the last item
+     *          of the <tt>Vector</tt> object).
+     * @throws  EmptyStackException  if this stack is empty.
      */
     public synchronized E pop() {
         E       obj;
@@ -91,9 +91,9 @@ class Stack<E> extends Vector<E> {
      * Looks at the object at the top of this stack without removing it
      * from the stack.
      *
-     * @return     the object at the top of this stack (the last item
-     *             of the <tt>Vector</tt> object).
-     * @exception  EmptyStackException  if this stack is empty.
+     * @return  the object at the top of this stack (the last item
+     *          of the <tt>Vector</tt> object).
+     * @throws  EmptyStackException  if this stack is empty.
      */
     public synchronized E peek() {
         int     len = size();

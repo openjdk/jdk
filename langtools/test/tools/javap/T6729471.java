@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ public class T6729471
     }
 
     void run() {
+        File testClasses = new File(System.getProperty("test.classes"));
+
         // simple class
         verify("java.util.Map",
                 "public abstract boolean containsKey(java.lang.Object)");
@@ -48,11 +50,11 @@ public class T6729471
                 "public abstract K getKey()");
 
         // file name
-        verify("../classes/tools/javap/T6729471.class",
+        verify(new File(testClasses, "T6729471.class").getPath(),
                 "public static void main(java.lang.String...)");
 
         // file url
-        verify("file:../classes/tools/javap/T6729471.class",
+        verify(new File(testClasses, "T6729471.class").toURI().toString(),
                 "public static void main(java.lang.String...)");
 
         // jar url: rt.jar

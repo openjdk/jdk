@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_ASSEMBLER_SPARC_HPP
+#define CPU_SPARC_VM_ASSEMBLER_SPARC_HPP
 
 class BiasedLockingCounters;
 
@@ -825,6 +828,12 @@ class Assembler : public AbstractAssembler  {
   // test if -4096 <= x <= 4095
   static bool is_simm13(int x) { return is_simm(x, 13); }
 
+  // test if label is in simm16 range in words (wdisp16).
+  bool is_in_wdisp16_range(Label& L) {
+    intptr_t d = intptr_t(pc()) - intptr_t(target(L));
+    return is_simm(d, 18);
+  }
+
   enum ASIs { // page 72, v9
     ASI_PRIMARY        = 0x80,
     ASI_PRIMARY_LITTLE = 0x88
@@ -1120,7 +1129,7 @@ public:
   inline void add(Register s1, int simm13a, Register d, relocInfo::relocType rtype = relocInfo::none);
   inline void add(Register s1, int simm13a, Register d, RelocationHolder const& rspec);
   inline void add(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
-  inline void add(const Address& a, Register d, int offset = 0) { add( a.base(), a.disp() + offset, d, a.rspec(offset)); }
+  inline void add(const Address& a, Register d, int offset = 0);
 
   void addcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
@@ -1612,6 +1621,10 @@ public:
 
   void sub(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | rs2(s2) ); }
   void sub(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+
+  // Note: offset is added to s2.
+  inline void sub(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
+
   void subcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | rs2(s2) ); }
   void subcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
   void subc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | rs2(s2) ); }
@@ -1789,6 +1802,7 @@ class MacroAssembler: public Assembler {
   // branches that use right instruction for v8 vs. v9
   inline void br( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void br( Condition c, bool a, Predict p, Label& L );
+
   inline void fb( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fb( Condition c, bool a, Predict p, Label& L );
 
@@ -1870,20 +1884,24 @@ public:
   void sethi(const AddressLiteral& addrlit, Register d);
   void patchable_sethi(const AddressLiteral& addrlit, Register d);
 
-  // compute the size of a sethi/set
-  static int  size_of_sethi( address a, bool worst_case = false );
-  static int  worst_case_size_of_set();
+  // compute the number of instructions for a sethi/set
+  static int  insts_for_sethi( address a, bool worst_case = false );
+  static int  worst_case_insts_for_set();
 
   // set may be either setsw or setuw (high 32 bits may be zero or sign)
 private:
   void internal_set(const AddressLiteral& al, Register d, bool ForceRelocatable);
+  static int insts_for_internal_set(intptr_t value);
 public:
   void set(const AddressLiteral& addrlit, Register d);
   void set(intptr_t value, Register d);
   void set(address addr, Register d, RelocationHolder const& rspec);
+  static int insts_for_set(intptr_t value) { return insts_for_internal_set(value); }
+
   void patchable_set(const AddressLiteral& addrlit, Register d);
   void patchable_set(intptr_t value, Register d);
   void set64(jlong value, Register d, Register tmp);
+  static int insts_for_set64(jlong value);
 
   // sign-extend 32 to 64
   inline void signx( Register s, Register d ) { sra( s, G0, d); }
@@ -2103,6 +2121,7 @@ public:
   void load_heap_oop(const Address& s, Register d);
   void load_heap_oop(Register s1, Register s2, Register d);
   void load_heap_oop(Register s1, int simm13a, Register d);
+  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d);
   void store_heap_oop(Register d, Register s1, Register s2);
   void store_heap_oop(Register d, Register s1, int simm13a);
   void store_heap_oop(Register d, const Address& a, int offset = 0);
@@ -2225,7 +2244,7 @@ public:
   void stop(const char* msg);                          // prints msg, dumps registers and stops execution
   void warn(const char* msg);                          // prints msg, but don't stop
   void untested(const char* what = "");
-  void unimplemented(const char* what = "")              { char* b = new char[1024];  sprintf(b, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
   void should_not_reach_here()                   { stop("should not reach here"); }
   void print_CPU_state();
 
@@ -2370,6 +2389,7 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  void incr_allocated_bytes(Register var_size_in_bytes, int con_size_in_bytes, Register t1);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -2493,3 +2513,5 @@ class SkipIfEqual : public StackObj {
 // On RISC, there's no benefit to verifying instruction boundaries.
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
+
+#endif // CPU_SPARC_VM_ASSEMBLER_SPARC_HPP

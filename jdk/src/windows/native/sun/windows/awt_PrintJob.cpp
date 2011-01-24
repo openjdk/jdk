@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1050,7 +1050,7 @@ static LPTSTR GetPrinterPort(JNIEnv *env, LPTSTR printer) {
     return NULL;
   }
 
-  LPTSTR port = wcsdup(info2->pPortName);
+  LPTSTR port = _wcsdup(info2->pPortName);
   ::GlobalFree(info2);
   return port;
 }

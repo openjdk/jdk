@@ -171,7 +171,7 @@ public class WeakHashMap<K,V>
     /**
      * Reference queue for cleared WeakEntries
      */
-    private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
+    private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
 
     /**
      * The number of times this WeakHashMap has been structurally modified.
@@ -439,7 +439,7 @@ public class WeakHashMap<K,V>
 
         modCount++;
         Entry<K,V> e = tab[i];
-        tab[i] = new Entry<K,V>(k, value, queue, h, e);
+        tab[i] = new Entry<>(k, value, queue, h, e);
         if (++size >= threshold)
             resize(tab.length * 2);
         return null;
@@ -955,10 +955,9 @@ public class WeakHashMap<K,V>
         }
 
         private List<Map.Entry<K,V>> deepCopy() {
-            List<Map.Entry<K,V>> list =
-                new ArrayList<Map.Entry<K,V>>(size());
+            List<Map.Entry<K,V>> list = new ArrayList<>(size());
             for (Map.Entry<K,V> e : this)
-                list.add(new AbstractMap.SimpleEntry<K,V>(e));
+                list.add(new AbstractMap.SimpleEntry<>(e));
             return list;
         }
 

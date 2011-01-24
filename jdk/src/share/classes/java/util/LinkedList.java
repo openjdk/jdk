@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package java.util;
 
 /**
- * Linked list implementation of the {@link List} and {@link Deque} interfaces.
- * Implements all optional operations, and permits all elements (including
- * {@code null}).
+ * Doubly-linked list implementation of the {@code List} and {@code Deque}
+ * interfaces.  Implements all optional list operations, and permits all
+ * elements (including {@code null}).
  *
  * <p>All of the operations perform as could be expected for a doubly-linked
  * list.  Operations that index into the list will traverse the list from
@@ -122,7 +122,7 @@ public class LinkedList<E>
      */
     private void linkFirst(E e) {
         final Node<E> f = first;
-        final Node<E> newNode = new Node<E>(null, e, f);
+        final Node<E> newNode = new Node<>(null, e, f);
         first = newNode;
         if (f == null)
             last = newNode;
@@ -137,7 +137,7 @@ public class LinkedList<E>
      */
     void linkLast(E e) {
         final Node<E> l = last;
-        final Node<E> newNode = new Node<E>(l, e, null);
+        final Node<E> newNode = new Node<>(l, e, null);
         last = newNode;
         if (l == null)
             first = newNode;
@@ -153,7 +153,7 @@ public class LinkedList<E>
     void linkBefore(E e, Node<E> succ) {
         // assert succ != null;
         final Node<E> pred = succ.prev;
-        final Node<E> newNode = new Node<E>(pred, e, succ);
+        final Node<E> newNode = new Node<>(pred, e, succ);
         succ.prev = newNode;
         if (pred == null)
             first = newNode;
@@ -249,7 +249,7 @@ public class LinkedList<E>
      * @return the last element in this list
      * @throws NoSuchElementException if this list is empty
      */
-    public E getLast()  {
+    public E getLast() {
         final Node<E> l = last;
         if (l == null)
             throw new NoSuchElementException();
@@ -419,7 +419,7 @@ public class LinkedList<E>
 
         for (Object o : a) {
             @SuppressWarnings("unchecked") E e = (E) o;
-            Node<E> newNode = new Node<E>(pred, e, null);
+            Node<E> newNode = new Node<>(pred, e, null);
             if (pred == null)
                 first = newNode;
             else

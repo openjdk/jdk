@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,6 +476,7 @@ DS_StartBufferHelper::Data::~Data() {
 
 DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
 {
+    ::CoInitialize(NULL);
     while (1) {
         // wait for something to do
         ::WaitForSingleObject(data.startEvent, INFINITE);
@@ -492,6 +493,7 @@ DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
         }
         ::SetEvent(data.startedEvent);
     }
+    ::CoUninitialize();
     return 0;
 }
 

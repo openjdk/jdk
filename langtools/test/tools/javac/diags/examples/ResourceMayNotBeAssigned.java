@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.twr.resource.may.not.be.assigned
+// key: compiler.err.try.resource.may.not.be.assigned
 
 import java.io.*;
 

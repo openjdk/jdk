@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,7 +547,7 @@ public class CopyOnWriteArrayList<E>
      * @param fromIndex index of first element to be removed
      * @param toIndex index after last element to be removed
      * @throws IndexOutOfBoundsException if fromIndex or toIndex out of range
-     *         (@code{fromIndex < 0 || toIndex > size() || toIndex < fromIndex})
+     *         ({@code{fromIndex < 0 || toIndex > size() || toIndex < fromIndex})
      */
     private void removeRange(int fromIndex, int toIndex) {
         final ReentrantLock lock = this.lock;
@@ -832,7 +832,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
-     * Save the state of the list to a stream (i.e., serialize it).
+     * Saves the state of the list to a stream (that is, serializes it).
      *
      * @serialData The length of the array backing the list is emitted
      *               (int), followed by all of its elements (each an Object)
@@ -842,27 +842,25 @@ public class CopyOnWriteArrayList<E>
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException{
 
-        // Write out element count, and any hidden stuff
         s.defaultWriteObject();
 
         Object[] elements = getArray();
-        int len = elements.length;
         // Write out array length
-        s.writeInt(len);
+        s.writeInt(elements.length);
 
         // Write out all elements in the proper order.
-        for (int i = 0; i < len; i++)
-            s.writeObject(elements[i]);
+        for (Object element : elements)
+            s.writeObject(element);
     }
 
     /**
-     * Reconstitute the list from a stream (i.e., deserialize it).
+     * Reconstitutes the list from a stream (that is, deserializes it).
+     *
      * @param s the stream
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
 
-        // Read in size, and any hidden stuff
         s.defaultReadObject();
 
         // bind to new lock
@@ -989,7 +987,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     private static class COWIterator<E> implements ListIterator<E> {
-        /** Snapshot of the array **/
+        /** Snapshot of the array */
         private final Object[] snapshot;
         /** Index of element to be returned by subsequent call to next.  */
         private int cursor;

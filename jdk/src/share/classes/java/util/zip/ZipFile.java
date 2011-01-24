@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,7 @@ class ZipFile implements ZipConstants, Closeable {
     private static native void freeEntry(long jzfile, long jzentry);
 
     // the outstanding inputstreams that need to be closed.
-    private Set<ZipFileInputStream> streams = new HashSet<ZipFileInputStream>();
+    private Set<InputStream> streams = new HashSet<>();
 
     /**
      * Returns an input stream for reading the contents of the specified
@@ -348,55 +348,58 @@ class ZipFile implements ZipConstants, Closeable {
                 return null;
             }
             in = new ZipFileInputStream(jzentry);
-            streams.add(in);
-        }
-        final ZipFileInputStream zfin = in;
-        switch (getEntryMethod(jzentry)) {
-        case STORED:
-            return zfin;
-        case DEFLATED:
-            // MORE: Compute good size for inflater stream:
-            long size = getEntrySize(jzentry) + 2; // Inflater likes a bit of slack
-            if (size > 65536) size = 8192;
-            if (size <= 0) size = 4096;
-            return new InflaterInputStream(zfin, getInflater(), (int)size) {
-                private boolean isClosed = false;
 
-                public void close() throws IOException {
-                    if (!isClosed) {
-                        releaseInflater(inf);
-                        this.in.close();
-                        isClosed = true;
-                    }
-                }
-                // Override fill() method to provide an extra "dummy" byte
-                // at the end of the input stream. This is required when
-                // using the "nowrap" Inflater option.
-                protected void fill() throws IOException {
-                    if (eof) {
-                        throw new EOFException(
-                            "Unexpected end of ZLIB input stream");
-                    }
-                    len = this.in.read(buf, 0, buf.length);
-                    if (len == -1) {
-                        buf[0] = 0;
-                        len = 1;
-                        eof = true;
-                    }
-                    inf.setInput(buf, 0, len);
-                }
-                private boolean eof;
+            switch (getEntryMethod(jzentry)) {
+            case STORED:
+                streams.add(in);
+                return in;
+            case DEFLATED:
+                final ZipFileInputStream zfin = in;
+                // MORE: Compute good size for inflater stream:
+                long size = getEntrySize(jzentry) + 2; // Inflater likes a bit of slack
+                if (size > 65536) size = 8192;
+                if (size <= 0) size = 4096;
+                InputStream is = new InflaterInputStream(zfin, getInflater(), (int)size) {
+                    private boolean isClosed = false;
 
-                public int available() throws IOException {
-                    if (isClosed)
-                        return 0;
-                    long avail = zfin.size() - inf.getBytesWritten();
-                    return avail > (long) Integer.MAX_VALUE ?
-                        Integer.MAX_VALUE : (int) avail;
-                }
-            };
-        default:
-            throw new ZipException("invalid compression method");
+                    public void close() throws IOException {
+                        if (!isClosed) {
+                            super.close();
+                            releaseInflater(inf);
+                            isClosed = true;
+                        }
+                    }
+                    // Override fill() method to provide an extra "dummy" byte
+                    // at the end of the input stream. This is required when
+                    // using the "nowrap" Inflater option.
+                    protected void fill() throws IOException {
+                        if (eof) {
+                            throw new EOFException(
+                                "Unexpected end of ZLIB input stream");
+                        }
+                        len = this.in.read(buf, 0, buf.length);
+                        if (len == -1) {
+                            buf[0] = 0;
+                            len = 1;
+                            eof = true;
+                        }
+                        inf.setInput(buf, 0, len);
+                    }
+                    private boolean eof;
+
+                    public int available() throws IOException {
+                        if (isClosed)
+                            return 0;
+                        long avail = zfin.size() - inf.getBytesWritten();
+                        return avail > (long) Integer.MAX_VALUE ?
+                            Integer.MAX_VALUE : (int) avail;
+                    }
+                };
+                streams.add(is);
+                return is;
+            default:
+                throw new ZipException("invalid compression method");
+            }
         }
     }
 
@@ -421,6 +424,8 @@ class ZipFile implements ZipConstants, Closeable {
      */
     private void releaseInflater(Inflater inf) {
         synchronized (inflaters) {
+            if (inf.ended())
+                return;
             inf.reset();
             inflaters.add(inf);
         }
@@ -539,9 +544,9 @@ class ZipFile implements ZipConstants, Closeable {
             closeRequested = true;
 
             if (streams.size() !=0) {
-                Set<ZipFileInputStream> copy = streams;
-                streams = new HashSet<ZipFileInputStream>();
-                for (ZipFileInputStream is: copy)
+                Set<InputStream> copy = streams;
+                streams = new HashSet<>();
+                for (InputStream is: copy)
                     is.close();
             }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ ifdef LANGTOOLS_DIST
 		"-Xbootclasspath/p:$(JAVAC_JAR)" \
 		-jar $(JAVAC_JAR) $(JAVACFLAGS)
   JAVAH_CMD   = $(BOOT_JAVA_CMD) \
-		"-Xbootclasspath/p:$(JAVAH_JAR)$(CLASSPATH_SEPARATOR)$(JAVADOC_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)"  \
+		"-Xbootclasspath/p:$(JAVAH_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)"  \
 		-jar $(JAVAH_JAR) $(JAVAHFLAGS)
   JAVADOC_CMD = $(BOOT_JAVA_CMD) \
 		"-Xbootclasspath/p:$(JAVADOC_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)$(CLASSPATH_SEPARATOR)$(DOCLETS_JAR)" \

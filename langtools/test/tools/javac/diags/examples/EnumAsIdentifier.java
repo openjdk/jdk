@@ -22,7 +22,7 @@
  */
 
 // key: compiler.warn.enum.as.identifier
-// options: -source 1.3
+// options: -source 1.3 -Xlint:-options
 
 class EnumAsIdentifier {
     int enum;

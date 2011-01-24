@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1189,7 +1189,7 @@ LONG AwtFontCache::DecRefCount(Item* item){
 
 AwtFontCache::Item::Item(const WCHAR* s, HFONT f, AwtFontCache::Item* n )
 {
-    name = wcsdup(s);
+    name = _wcsdup(s);
     font = f;
     next = n;
     refCount = 1;
@@ -1237,7 +1237,7 @@ void CSegTableComponent::Create(LPCWSTR name)
         free(m_lpszFontName);
         m_lpszFontName = NULL;
     }
-    m_lpszFontName = wcsdup(name);
+    m_lpszFontName = _wcsdup(name);
     DASSERT(m_lpszFontName);
 }
 

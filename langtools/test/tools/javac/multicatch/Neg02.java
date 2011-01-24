@@ -20,6 +20,8 @@ class Neg02 {
             else {
                 throw new B();
             }
-        } catch (A | B ex) {  }
+        } catch (final A | B ex) {
+            ex = new B();
+        }
     }
 }

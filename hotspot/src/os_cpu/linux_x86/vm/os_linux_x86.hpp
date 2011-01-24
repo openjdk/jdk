@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+
   static void setup_fpu();
   static bool supports_sse();
 
@@ -30,3 +33,5 @@
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
+
+#endif // OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP

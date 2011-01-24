@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiImpl.cpp.incl"
-
-GrowableArray<JvmtiRawMonitor*> *JvmtiPendingMonitors::_monitors = new (ResourceObj::C_HEAP) GrowableArray<JvmtiRawMonitor*>(1,true);
-
-void JvmtiPendingMonitors::transition_raw_monitors() {
-  assert((Threads::number_of_threads()==1),
-         "Java thread has not created yet or more than one java thread \
-is running. Raw monitor transition will not work");
-  JavaThread *current_java_thread = JavaThread::current();
-  assert(current_java_thread->thread_state() == _thread_in_vm, "Must be in vm");
-  {
-    ThreadBlockInVM __tbivm(current_java_thread);
-    for(int i=0; i< count(); i++) {
-      JvmtiRawMonitor *rmonitor = monitors()->at(i);
-      int r = rmonitor->raw_enter(current_java_thread);
-      assert(r == ObjectMonitor::OM_OK, "raw_enter should have worked");
-    }
-  }
-  // pending monitors are converted to real monitor so delete them all.
-  dispose();
-}
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "prims/jvmtiAgentThread.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframe_hp.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/exceptions.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 //
 // class JvmtiAgentThread
@@ -215,57 +222,6 @@ void GrowableCache::gc_epilogue() {
     _cache[i] = _elements->at(i)->getCacheValue();
   }
 }
-
-
-//
-// class JvmtiRawMonitor
-//
-
-JvmtiRawMonitor::JvmtiRawMonitor(const char *name) {
-#ifdef ASSERT
-  _name = strcpy(NEW_C_HEAP_ARRAY(char, strlen(name) + 1), name);
-#else
-  _name = NULL;
-#endif
-  _magic = JVMTI_RM_MAGIC;
-}
-
-JvmtiRawMonitor::~JvmtiRawMonitor() {
-#ifdef ASSERT
-  FreeHeap(_name);
-#endif
-  _magic = 0;
-}
-
-
-bool
-JvmtiRawMonitor::is_valid() {
-  int value = 0;
-
-  // This object might not be a JvmtiRawMonitor so we can't assume
-  // the _magic field is properly aligned. Get the value in a safe
-  // way and then check against JVMTI_RM_MAGIC.
-
-  switch (sizeof(_magic)) {
-  case 2:
-    value = Bytes::get_native_u2((address)&_magic);
-    break;
-
-  case 4:
-    value = Bytes::get_native_u4((address)&_magic);
-    break;
-
-  case 8:
-    value = Bytes::get_native_u8((address)&_magic);
-    break;
-
-  default:
-    guarantee(false, "_magic field is an unexpected size");
-  }
-
-  return value == JVMTI_RM_MAGIC;
-}
-
 
 //
 // class JvmtiBreakpoint
@@ -630,7 +586,6 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
 {
 }
 
-
 vframe *VM_GetOrSetLocal::get_vframe() {
   if (!_thread->has_last_Java_frame()) {
     return NULL;
@@ -653,7 +608,7 @@ javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   }
   javaVFrame *jvf = (javaVFrame*)vf;
 
-  if (!vf->is_java_frame() || jvf->method()->is_native()) {
+  if (!vf->is_java_frame()) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
     return NULL;
   }
@@ -784,6 +739,15 @@ bool VM_GetOrSetLocal::doit_prologue() {
   _jvf = get_java_vframe();
   NULL_CHECK(_jvf, false);
 
+  if (_jvf->method()->is_native()) {
+    if (getting_receiver() && !_jvf->method()->is_static()) {
+      return true;
+    } else {
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return false;
+    }
+  }
+
   if (!check_slot_type(_jvf)) {
     return false;
   }
@@ -799,8 +763,7 @@ void VM_GetOrSetLocal::doit() {
 
       // Schedule deoptimization so that eventually the local
       // update will be written to an interpreter frame.
-      VM_DeoptimizeFrame deopt(_jvf->thread(), _jvf->fr().id());
-      VMThread::execute(&deopt);
+      Deoptimization::deoptimize_frame(_jvf->thread(), _jvf->fr().id());
 
       // Now store a new value for the local which will be applied
       // once deoptimization occurs. Note however that while this
@@ -826,40 +789,46 @@ void VM_GetOrSetLocal::doit() {
     HandleMark hm;
 
     switch (_type) {
-    case T_INT:    locals->set_int_at   (_index, _value.i); break;
-    case T_LONG:   locals->set_long_at  (_index, _value.j); break;
-    case T_FLOAT:  locals->set_float_at (_index, _value.f); break;
-    case T_DOUBLE: locals->set_double_at(_index, _value.d); break;
-    case T_OBJECT: {
-      Handle ob_h(JNIHandles::resolve_external_guard(_value.l));
-      locals->set_obj_at (_index, ob_h);
-      break;
-    }
-    default: ShouldNotReachHere();
+      case T_INT:    locals->set_int_at   (_index, _value.i); break;
+      case T_LONG:   locals->set_long_at  (_index, _value.j); break;
+      case T_FLOAT:  locals->set_float_at (_index, _value.f); break;
+      case T_DOUBLE: locals->set_double_at(_index, _value.d); break;
+      case T_OBJECT: {
+        Handle ob_h(JNIHandles::resolve_external_guard(_value.l));
+        locals->set_obj_at (_index, ob_h);
+        break;
+      }
+      default: ShouldNotReachHere();
     }
     _jvf->set_locals(locals);
   } else {
-    StackValueCollection *locals = _jvf->locals();
+    if (_jvf->method()->is_native() && _jvf->is_compiled_frame()) {
+      assert(getting_receiver(), "Can only get here when getting receiver");
+      oop receiver = _jvf->fr().get_native_receiver();
+      _value.l = JNIHandles::make_local(_calling_thread, receiver);
+    } else {
+      StackValueCollection *locals = _jvf->locals();
 
-    if (locals->at(_index)->type() == T_CONFLICT) {
-      memset(&_value, 0, sizeof(_value));
-      _value.l = NULL;
-      return;
-    }
+      if (locals->at(_index)->type() == T_CONFLICT) {
+        memset(&_value, 0, sizeof(_value));
+        _value.l = NULL;
+        return;
+      }
 
-    switch (_type) {
-    case T_INT:    _value.i = locals->int_at   (_index);   break;
-    case T_LONG:   _value.j = locals->long_at  (_index);   break;
-    case T_FLOAT:  _value.f = locals->float_at (_index);   break;
-    case T_DOUBLE: _value.d = locals->double_at(_index);   break;
-    case T_OBJECT: {
-      // Wrap the oop to be returned in a local JNI handle since
-      // oops_do() no longer applies after doit() is finished.
-      oop obj = locals->obj_at(_index)();
-      _value.l = JNIHandles::make_local(_calling_thread, obj);
-      break;
-    }
-    default: ShouldNotReachHere();
+      switch (_type) {
+        case T_INT:    _value.i = locals->int_at   (_index);   break;
+        case T_LONG:   _value.j = locals->long_at  (_index);   break;
+        case T_FLOAT:  _value.f = locals->float_at (_index);   break;
+        case T_DOUBLE: _value.d = locals->double_at(_index);   break;
+        case T_OBJECT: {
+          // Wrap the oop to be returned in a local JNI handle since
+          // oops_do() no longer applies after doit() is finished.
+          oop obj = locals->obj_at(_index)();
+          _value.l = JNIHandles::make_local(_calling_thread, obj);
+          break;
+        }
+        default: ShouldNotReachHere();
+      }
     }
   }
 }
@@ -869,6 +838,10 @@ bool VM_GetOrSetLocal::allow_nested_vm_operations() const {
   return true; // May need to deoptimize
 }
 
+
+VM_GetReceiver::VM_GetReceiver(
+    JavaThread* thread, JavaThread* caller_thread, jint depth)
+    : VM_GetOrSetLocal(thread, caller_thread, depth, 0) {}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

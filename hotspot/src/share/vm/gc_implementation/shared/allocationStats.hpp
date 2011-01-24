@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_ALLOCATIONSTATS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_ALLOCATIONSTATS_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/shared/gcUtil.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#endif
 
 class AllocationStats VALUE_OBJ_CLASS_SPEC {
   // A duration threshold (in ms) used to filter
@@ -157,3 +166,5 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
     void set_returnedBytes(size_t v) { _returnedBytes = v; }
   )
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_ALLOCATIONSTATS_HPP

@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_parallelScavengeHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/adjoiningGenerations.hpp"
+#include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
+#include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
+#include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
+#include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/vmPSOperations.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/vmError.hpp"
 
 PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
 PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
@@ -805,7 +822,8 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
-    if (Debugging)  return NULL;  // called from find() in debug.cpp
+    // called from os::print_location by find or VMError
+    if (Debugging || VMError::fatal_error_in_progress())  return NULL;
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),

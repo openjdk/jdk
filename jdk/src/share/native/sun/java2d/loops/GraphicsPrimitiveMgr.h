@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,6 +334,26 @@ typedef void (TransformInterpFunc)(jint *pRGBbase, jint numpix,
                                    jint yfract, jint dyfract);
 
 /*
+ * The signature of the inner loop function for a "FillParallelogram"
+ * Note that this same inner loop is used for native DrawParallelogram
+ * primitives.
+ * Note that these functions are paired with equivalent DrawLine
+ * inner loop functions to facilitate nicer looking and faster thin
+ * transformed drawrect calls.
+ */
+typedef void (FillParallelogramFunc)(SurfaceDataRasInfo *pRasInfo,
+                                     jint lox, jint loy, jint hix, jint hiy,
+                                     jlong leftx, jlong dleftx,
+                                     jlong rightx, jlong drightx,
+                                     jint pixel, struct _NativePrimitive *pPrim,
+                                     CompositeInfo *pCompInfo);
+
+typedef struct {
+    FillParallelogramFunc       *fillpgram;
+    DrawLineFunc                *drawline;
+} DrawParallelogramFuncs;
+
+/*
  * This structure contains all information for defining a single
  * native GraphicsPrimitive, including:
  * - The information about the type of the GraphicsPrimitive subclass.
@@ -363,6 +383,8 @@ typedef struct _NativePrimitive {
         ScaleBlitFunc           *scaledblit;
         FillRectFunc            *fillrect;
         FillSpansFunc           *fillspans;
+        FillParallelogramFunc   *fillparallelogram;
+        DrawParallelogramFuncs  *drawparallelogram;
         DrawLineFunc            *drawline;
         MaskFillFunc            *maskfill;
         MaskBlitFunc            *maskblit;
@@ -393,6 +415,8 @@ extern struct _PrimitiveTypes {
     PrimitiveType       ScaledBlit;
     PrimitiveType       FillRect;
     PrimitiveType       FillSpans;
+    PrimitiveType       FillParallelogram;
+    PrimitiveType       DrawParallelogram;
     PrimitiveType       DrawLine;
     PrimitiveType       DrawRect;
     PrimitiveType       DrawPolygons;
@@ -536,6 +560,7 @@ extern jint sunHints_INTVAL_STROKE_PURE;
 #define LongOneHalf     (((jlong) 1) << 31)
 #define IntToLong(i)    (((jlong) (i)) << 32)
 #define DblToLong(d)    ((jlong) ((d) * IntToLong(1)))
+#define LongToDbl(l)    (((jdouble) l) / IntToLong(1))
 #define WholeOfLong(l)  ((jint) ((l) >> 32))
 #define FractOfLong(l)  ((jint) (l))
 #define URShift(i, n)   (((juint) (i)) >> (n))
@@ -594,6 +619,10 @@ extern jint sunHints_INTVAL_STROKE_PURE;
 
 #define REGISTER_FILLSPANS(SRC, COMP, DST, FUNC) \
     REGISTER_PRIMITIVE(FillSpans, SRC, COMP, DST, FUNC)
+
+#define REGISTER_FILLPGRAM(SRC, COMP, DST, FUNC) \
+    REGISTER_PRIMITIVE(FillParallelogram, SRC, COMP, DST, FUNC), \
+    REGISTER_PRIMITIVE(DrawParallelogram, SRC, COMP, DST, FUNC)
 
 #define REGISTER_LINE_PRIMITIVES(SRC, COMP, DST, FUNC) \
     REGISTER_PRIMITIVE(DrawLine, SRC, COMP, DST, FUNC), \

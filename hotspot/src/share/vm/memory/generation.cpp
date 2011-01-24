@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,24 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_generation.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/genMarkSweep.hpp"
+#include "memory/genOopClosures.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/generation.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/space.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
   _level(level),
@@ -165,15 +181,16 @@ size_t Generation::max_contiguous_available() const {
   return max;
 }
 
-bool Generation::promotion_attempt_is_safe(size_t promotion_in_bytes,
-                                           bool not_used) const {
+bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
+  size_t available = max_contiguous_available();
+  bool   res = (available >= max_promotion_in_bytes);
   if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("Generation::promotion_attempt_is_safe"
-                " contiguous_available: " SIZE_FORMAT
-                " promotion_in_bytes: " SIZE_FORMAT,
-                max_contiguous_available(), promotion_in_bytes);
+    gclog_or_tty->print_cr(
+      "Generation: promo attempt is%s safe: available("SIZE_FORMAT") %s max_promo("SIZE_FORMAT")",
+      res? "":" not", available, res? ">=":"<",
+      max_promotion_in_bytes);
   }
-  return max_contiguous_available() >= promotion_in_bytes;
+  return res;
 }
 
 // Ignores "ref" and calls allocate().

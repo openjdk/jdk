@@ -78,7 +78,7 @@ public class TestAnonClassNames {
         @Nesting(LOCAL)
         class LocalClass{};
 
-        Object o =  new @Nesting(ANONYMOUS) Object() { // An anonymous annotated class
+        Object o =  new /*@Nesting(ANONYMOUS)*/ Object() { // An anonymous annotated class
                 public String toString() {
                     return "I have no name!";
                 }
@@ -95,9 +95,10 @@ public class TestAnonClassNames {
 
         for(Class<?> clazz : classes) {
             String name = clazz.getName();
+            Nesting anno = clazz.getAnnotation(Nesting.class);
             System.out.format("%s is %s%n",
                               clazz.getName(),
-                              clazz.getAnnotation(Nesting.class).value());
+                              anno == null ? "(unset/ANONYMOUS)" : anno.value());
             testClassName(name);
         }
     }
@@ -161,8 +162,8 @@ class ClassNameProber extends JavacTestingAbstractProcessor {
                                   typeElt.getQualifiedName().toString(),
                                   typeElt.getKind().toString(),
                                   nestingKind.toString());
-
-                if (typeElt.getAnnotation(Nesting.class).value() != nestingKind) {
+                Nesting anno = typeElt.getAnnotation(Nesting.class);
+                if ((anno == null ? NestingKind.ANONYMOUS : anno.value()) != nestingKind) {
                     throw new RuntimeException("Mismatch of expected and reported nesting kind.");
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENERATION_HPP
+#define SHARE_VM_MEMORY_GENERATION_HPP
+
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/universe.hpp"
+#include "memory/watermark.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/virtualspace.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -173,15 +186,11 @@ class Generation: public CHeapObj {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if promotions of the specified amount can
-  // be attempted safely (without a vm failure).
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
   // Promotion of the full amount is not guaranteed but
-  // can be attempted.
-  //   younger_handles_promotion_failure
-  // is true if the younger generation handles a promotion
-  // failure.
-  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  // might be attempted in the worst case.
+  virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
 
   // For a non-young generation, this interface can be used to inform a
   // generation that a promotion attempt into that generation failed.
@@ -356,6 +365,16 @@ class Generation: public CHeapObj {
                               size_t word_size,
                               bool   is_tlab) {
     return (full || should_allocate(word_size, is_tlab));
+  }
+
+  // Returns true if the collection is likely to be safely
+  // completed. Even if this method returns true, a collection
+  // may not be guaranteed to succeed, and the system should be
+  // able to safely unwind and recover from that failure, albeit
+  // at some additional cost.
+  virtual bool collection_attempt_is_safe() {
+    guarantee(false, "Are you sure you want to call this method?");
+    return true;
   }
 
   // Perform a garbage collection.
@@ -734,3 +753,5 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   virtual void verify(bool allow_dirty);
   virtual void print_on(outputStream* st) const;
 };
+
+#endif // SHARE_VM_MEMORY_GENERATION_HPP

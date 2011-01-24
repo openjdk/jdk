@@ -22,8 +22,41 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Runtime1.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeBlob.hpp"
+#include "code/compiledIC.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/disassembler.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/barrierSet.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 
 // Implementation of StubAssembler
@@ -107,7 +140,6 @@ static void deopt_caller() {
     RegisterMap reg_map(thread, false);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
-    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
     assert(caller_is_deopted(), "Must be deoptimized");
   }
@@ -368,8 +400,7 @@ JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* thread, int bci,
     if (osr_nm != NULL) {
       RegisterMap map(thread, false);
       frame fr =  thread->last_frame().sender(&map);
-      VM_DeoptimizeFrame deopt(thread, fr.id());
-      VMThread::execute(&deopt);
+      Deoptimization::deoptimize_frame(thread, fr.id());
     }
   JRT_BLOCK_END
   return NULL;
@@ -441,8 +472,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // We don't really want to deoptimize the nmethod itself since we
     // can actually continue in the exception handler ourselves but I
     // don't see an easy way to have the desired effect.
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
+    assert(caller_is_deopted(), "Must be deoptimized");
 
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
@@ -835,8 +866,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       nm->make_not_entrant();
     }
 
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
 
     // Return to the now deoptimized frame.
   }
@@ -1144,7 +1174,7 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
     memmove(dst_addr, src_addr, length << l2es);
     return ac_ok;
   } else if (src->is_objArray() && dst->is_objArray()) {
-    if (UseCompressedOops) {  // will need for tiered
+    if (UseCompressedOops) {
       narrowOop *src_addr  = objArrayOop(src)->obj_at_addr<narrowOop>(src_pos);
       narrowOop *dst_addr  = objArrayOop(dst)->obj_at_addr<narrowOop>(dst_pos);
       return obj_arraycopy_work(src, src_addr, dst, dst_addr, length);
@@ -1180,10 +1210,11 @@ JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
   assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (UseCompressedOops) {
     bs->write_ref_array_pre((narrowOop*)dst, num);
+    Copy::conjoint_oops_atomic((narrowOop*) src, (narrowOop*) dst, num);
   } else {
     bs->write_ref_array_pre((oop*)dst, num);
+    Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   }
-  Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   bs->write_ref_array(dst, num);
 JRT_END
 

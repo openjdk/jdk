@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,8 +276,8 @@ public class TreeScanner extends Visitor {
         scan(tree.arguments);
     }
 
-    public void visitTypeDisjoint(JCTypeDisjoint tree) {
-        scan(tree.components);
+    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+        scan(tree.alternatives);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class TestSuperClassInSerialForm extends JavadocTester {
 
     private static final String[][] TEST = {
         {BUG_ID + FS + "serialized-form.html",
-         "<A HREF=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</A> extends <A HREF=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</A>"}
+         "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a> extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>"}
     };
 
     private static final String[][] NEGATED_TEST = NO_TEST;

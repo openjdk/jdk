@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,14 @@
  * <p>During annotation processing, operating on incomplete or
  * erroneous programs is necessary; however, there are fewer
  * guarantees about the nature of the resulting model.  If the source
- * code is not syntactically well-formed, a model may or may not be
- * provided as a quality of implementation issue.  If a program is
- * syntactically valid but erroneous in some other fashion, the
- * returned model must have no less information than if all the method
- * bodies in the program were replaced by {@code "throw new
- * RuntimeException();"}.  If a program refers to a missing type XYZ,
+ * code is not syntactically well-formed or has some other
+ * irrecoverable error that could not be removed by the generation of
+ * new types, a model may or may not be provided as a quality of
+ * implementation issue.
+ * If a program is syntactically valid but erroneous in some other
+ * fashion, any returned model must have no less information than if
+ * all the method bodies in the program were replaced by {@code "throw
+ * new RuntimeException();"}.  If a program refers to a missing type XYZ,
  * the returned model must contain no less information than if the
  * declaration of type XYZ were assumed to be {@code "class XYZ {}"},
  * {@code "interface XYZ {}"}, {@code "enum XYZ {}"}, or {@code

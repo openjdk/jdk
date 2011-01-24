@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vm_version_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/java.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "vm_version_sparc.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
 
 int VM_Version::_features = VM_Version::unknown_m;
 const char* VM_Version::_features_str = "";
-
-bool VM_Version::is_niagara1_plus() {
-  // This is a placeholder until the real test is determined.
-  return is_niagara1() &&
-    (os::processor_count() > maximum_niagara1_processor_count());
-}
 
 void VM_Version::initialize() {
   _features = determine_features();
@@ -59,10 +63,20 @@ void VM_Version::initialize() {
 
   _supports_cx8               = has_v9();
 
-  if (is_niagara1()) {
+  if (is_niagara()) {
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseInlineCaches)) {
       FLAG_SET_DEFAULT(UseInlineCaches, false);
+    }
+    // Align loops on a single instruction boundary.
+    if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
+      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
+    }
+    // When using CMS, we cannot use memset() in BOT updates because
+    // the sun4v/CMT version in libc_psr uses BIS which exposes
+    // "phantom zeros" to concurrent readers. See 6948537.
+    if (FLAG_IS_DEFAULT(UseMemSetInBOT) && UseConcMarkSweepGC) {
+      FLAG_SET_DEFAULT(UseMemSetInBOT, false);
     }
 #ifdef _LP64
     // 32-bit oops don't make sense for the 64-bit VM on sparc
@@ -79,8 +93,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
-    if (is_niagara1_plus()) {
-      if (AllocatePrefetchStyle > 0 && FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+    if (is_niagara_plus()) {
+      if (has_blk_init() && AllocatePrefetchStyle > 0 &&
+          FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
         // Use BIS instruction for allocation prefetch.
         FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
         if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
@@ -94,15 +109,6 @@ void VM_Version::initialize() {
       }
     }
 #endif
-    if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
-      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
-    }
-    // When using CMS, we cannot use memset() in BOT updates because
-    // the sun4v/CMT version in libc_psr uses BIS which exposes
-    // "phantom zeros" to concurrent readers. See 6948537.
-    if (FLAG_IS_DEFAULT(UseMemSetInBOT) && UseConcMarkSweepGC) {
-      FLAG_SET_DEFAULT(UseMemSetInBOT, false);
-    }
   }
 
   // Use hardware population count instruction if available.
@@ -118,16 +124,19 @@ void VM_Version::initialize() {
 #endif
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
                (has_v9() ? ", has_v9" : ""),
                (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", has_vis1" : ""),
                (has_vis2() ? ", has_vis2" : ""),
+               (has_vis3() ? ", has_vis3" : ""),
+               (has_blk_init() ? ", has_blk_init" : ""),
                (is_ultra3() ? ", is_ultra3" : ""),
                (is_sun4v() ? ", is_sun4v" : ""),
-               (is_niagara1() ? ", is_niagara1" : ""),
-               (is_niagara1_plus() ? ", is_niagara1_plus" : ""),
+               (is_niagara() ? ", is_niagara" : ""),
+               (is_niagara_plus() ? ", is_niagara_plus" : ""),
+               (is_sparc64() ? ", is_sparc64" : ""),
                (!has_hardware_mul32() ? ", no-mul32" : ""),
                (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
@@ -177,17 +186,18 @@ int VM_Version::determine_features() {
     warning("Cannot recognize SPARC version. Default to V9");
   }
 
-  if (UseNiagaraInstrs) {
-    if (is_niagara1(features)) {
+  assert(is_T_family(features) == is_niagara(features), "Niagara should be T series");
+  if (UseNiagaraInstrs) { // Force code generation for Niagara
+    if (is_T_family(features)) {
       // Happy to accomodate...
     } else {
       NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Niagara");)
-      features = niagara1_m;
+      features |= T_family_m;
     }
   } else {
-    if (is_niagara1(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
+    if (is_T_family(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
       NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Not-Niagara");)
-      features &= ~niagara1_unique_m;
+      features &= ~(T_family_m | T1_model_m);
     } else {
       // Happy to accomodate...
     }
@@ -209,7 +219,7 @@ void VM_Version::revert() {
 
 unsigned int VM_Version::calc_parallel_worker_threads() {
   unsigned int result;
-  if (is_niagara1_plus()) {
+  if (is_niagara_plus()) {
     result = nof_parallel_worker_threads(5, 16, 8);
   } else {
     result = nof_parallel_worker_threads(5, 8, 8);

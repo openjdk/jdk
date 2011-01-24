@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -738,7 +738,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                     // columnValue now need to be reset to the empty string
                     columnValue = "";
                 } catch (SQLException ex) {
-                    throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsert").toString(), ex.getMessage()));
+                    throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsertval").toString(), ex.getMessage()));
                 }
                 break;
             case RowTag:

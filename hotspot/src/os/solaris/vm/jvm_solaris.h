@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_VM_JVM_SOLARIS_H
+#define OS_SOLARIS_VM_JVM_SOLARIS_H
 
 /*
 // HotSpot integration note:
@@ -98,3 +101,5 @@
 #define JSIG_VERSION_1_4_1   0x30140100
 
 #endif /* JVM_MD_H */
+
+#endif // OS_SOLARIS_VM_JVM_SOLARIS_H

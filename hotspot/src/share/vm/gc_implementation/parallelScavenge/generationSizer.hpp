@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+
+#include "memory/collectorPolicy.hpp"
 
 // There is a nice batch of tested generation sizing code in
 // TwoGenerationCollectorPolicy. Lets reuse it!
@@ -67,3 +72,5 @@ class GenerationSizer : public TwoGenerationCollectorPolicy {
   size_t perm_gen_size()      { return PermSize; }
   size_t max_perm_gen_size()  { return MaxPermSize; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,45 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * returned by a method handle, or the arguments and return type passed
  * and expected  by a method handle caller.  Method types must be properly
  * matched between a method handle and all its callers,
- * and the JVM's operations enforce this matching at all times.
+ * and the JVM's operations enforce this matching at, specifically
+ * during calls to {@link MethodHandle#invokeExact}
+ * and {@link MethodHandle#invokeGeneric}, and during execution
+ * of {@code invokedynamic} instructions.
  * <p>
  * The structure is a return type accompanied by any number of parameter types.
- * The types (primitive, void, and reference) are represented by Class objects.
+ * The types (primitive, {@code void}, and reference) are represented by {@link Class} objects.
+ * (For ease of exposition, we treat {@code void} as if it were a type.
+ * In fact, it denotes the absence of a return type.)
  * <p>
- * All instances of <code>MethodType</code> are immutable.
+ * All instances of {@code MethodType} are immutable.
  * Two instances are completely interchangeable if they compare equal.
  * Equality depends on pairwise correspondence of the return and parameter types and on nothing else.
  * <p>
  * This type can be created only by factory methods.
  * All factory methods may cache values, though caching is not guaranteed.
+ * Some factory methods are static, while others are virtual methods which
+ * modify precursor method types, e.g., by changing a selected parameter.
  * <p>
- * Note: Like classes and strings, method types can be represented directly
- * as constants to be loaded by {@code ldc} bytecodes.
+ * Factory methods which operate on groups of parameter types
+ * are systematically presented in two versions, so that both Java arrays and
+ * Java lists can be used to work with groups of parameter types.
+ * The query methods {@code parameterArray} and {@code parameterList}
+ * also provide a choice between arrays and lists.
+ * <p>
+ * {@code MethodType} objects are sometimes derived from bytecode instructions
+ * such as {@code invokedynamic}, specifically from the type descriptor strings associated
+ * with the instructions in a class file's constant pool.
+ * <p>
+ * Like classes and strings, method types can also be represented directly
+ * in a class file's constant pool as constants. The may be loaded by an {@code ldc}
+ * instruction which refers to a suitable {@code CONSTANT_MethodType} constant pool entry.
+ * The entry refers to a {@code CONSTANT_Utf8} spelling for the descriptor string.
+ * For more details, see the <a href="package-summary.html#mtcon">package summary</a>.
+ * <p>
+ * When the JVM materializes a {@code MethodType} from a descriptor string,
+ * all classes named in the descriptor must be accessible, and will be loaded.
+ * (But the classes need not be initialized, as is the case with a {@code CONSTANT_Class}.)
+ * This loading may occur at any time before the {@code MethodType} object is first derived.
  * @author John Rose, JSR 292 EG
  */
 public final
@@ -106,7 +131,7 @@ class MethodType {
         for (Class<?> ptype : ptypes) {
             ptype.equals(ptype);  // null check
             if (ptype == void.class)
-                throw newIllegalArgumentException("void parameter: "+this);
+                throw newIllegalArgumentException("parameter type cannot be void");
         }
     }
 
@@ -126,20 +151,12 @@ class MethodType {
     MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
         return makeImpl(rtype, ptypes, false);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?>[] ptypes) {
-        return methodType(rtype, ptypes);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}. */
     public static
     MethodType methodType(Class<?> rtype, List<? extends Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
         return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, List<? extends Class<?>> ptypes) {
-        return methodType(rtype, ptypes);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -152,10 +169,6 @@ class MethodType {
         System.arraycopy(ptypes, 0, ptypes1, 1, ptypes.length);
         return makeImpl(rtype, ptypes1, true);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
-        return methodType(rtype, ptype0, ptypes);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has no parameter types.
@@ -163,10 +176,6 @@ class MethodType {
     public static
     MethodType methodType(Class<?> rtype) {
         return makeImpl(rtype, NO_PTYPES, true);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype) {
-        return methodType(rtype);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -176,10 +185,6 @@ class MethodType {
     MethodType methodType(Class<?> rtype, Class<?> ptype0) {
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, Class<?> ptype0) {
-        return methodType(rtype, ptype0);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has the same parameter types as {@code ptypes},
@@ -188,10 +193,6 @@ class MethodType {
     public static
     MethodType methodType(Class<?> rtype, MethodType ptypes) {
         return makeImpl(rtype, ptypes.ptypes, true);
-    }
-    @Deprecated public static
-    MethodType make(Class<?> rtype, MethodType ptypes) {
-        return methodType(rtype, ptypes);
     }
 
     /**
@@ -262,10 +263,6 @@ class MethodType {
         }
         return mt;
     }
-    @Deprecated public static
-    MethodType makeGeneric(int objectArgCount, boolean varargs) {
-        return genericMethodType(objectArgCount, varargs);
-    }
 
     /**
      * All parameters and the return type will be Object.
@@ -277,10 +274,6 @@ class MethodType {
     MethodType genericMethodType(int objectArgCount) {
         return genericMethodType(objectArgCount, false);
     }
-    @Deprecated public static
-    MethodType makeGeneric(int objectArgCount) {
-        return genericMethodType(objectArgCount);
-    }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * @param num    the index (zero-based) of the parameter type to change
@@ -290,18 +283,6 @@ class MethodType {
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
         Class<?>[] nptypes = ptypes.clone();
-        nptypes[num] = nptype;
-        return makeImpl(rtype, nptypes, true);
-    }
-
-    /** Convenience method for {@link #insertParameterTypes}.
-     * @deprecated Use {@link #insertParameterTypes} instead.
-     */
-    @Deprecated
-    public MethodType insertParameterType(int num, Class<?> nptype) {
-        int len = ptypes.length;
-        Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+1);
-        System.arraycopy(nptypes, num, nptypes, num+1, len-num);
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
     }
@@ -321,6 +302,22 @@ class MethodType {
         System.arraycopy(nptypes, num, nptypes, num+ilen, len-num);
         System.arraycopy(ptypesToInsert, 0, nptypes, num, ilen);
         return makeImpl(rtype, nptypes, true);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param ptypesToInsert zero or more a new parameter types to insert after the end of the parameter list
+     * @return the same type, except with the selected parameter(s) appended
+     */
+    public MethodType appendParameterTypes(Class<?>... ptypesToInsert) {
+        return insertParameterTypes(parameterCount(), ptypesToInsert);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param ptypesToInsert zero or more a new parameter types to insert after the end of the parameter list
+     * @return the same type, except with the selected parameter(s) appended
+     */
+    public MethodType appendParameterTypes(List<Class<?>> ptypesToInsert) {
+        return insertParameterTypes(parameterCount(), ptypesToInsert);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -362,14 +359,6 @@ class MethodType {
             }
         }
         return makeImpl(rtype, nptypes, true);
-    }
-
-    /** Convenience method for {@link #dropParameterTypes}.
-     * @deprecated Use {@link #dropParameterTypes} instead.
-     */
-    @Deprecated
-    public MethodType dropParameterType(int num) {
-        return dropParameterTypes(num, num+1);
     }
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
@@ -539,7 +528,9 @@ class MethodType {
      * parenthesis enclosed, comma separated list of type names,
      * followed immediately by the return type.
      * <p>
-     * If a type name is array, it the base type followed
+     * Each type is represented by its
+     * {@link java.lang.Class#getSimpleName simple name}.
+     * If a type name name is array, it the base type followed
      * by [], rather than the Class.getName of the array type.
      */
     @Override
@@ -548,33 +539,11 @@ class MethodType {
         sb.append("(");
         for (int i = 0; i < ptypes.length; i++) {
             if (i > 0)  sb.append(",");
-            putName(sb, ptypes[i]);
+            sb.append(ptypes[i].getSimpleName());
         }
         sb.append(")");
-        putName(sb, rtype);
+        sb.append(rtype.getSimpleName());
         return sb.toString();
-    }
-
-    static void putName(StringBuilder sb, Class<?> cls) {
-        int brackets = 0;
-        while (cls.isArray()) {
-            cls = cls.getComponentType();
-            brackets++;
-        }
-        String n = cls.getName();
-        /*
-        if (n.startsWith("java.lang.")) {
-            String nb = n.substring("java.lang.".length());
-            if (nb.indexOf('.') < 0)  n = nb;
-        } else if (n.indexOf('.') < 0) {
-            n = "."+n;          // anonymous package
-        }
-        */
-        sb.append(n);
-        while (brackets > 0) {
-            sb.append("[]");
-            brackets--;
-        }
     }
 
     /// Queries which have to do with the bytecode architecture
@@ -636,11 +605,11 @@ class MethodType {
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * Find or create an instance of the given method type.
-     * Any class or interface name embedded in the signature string
+     * Any class or interface name embedded in the descriptor string
      * will be resolved by calling {@link ClassLoader#loadClass(java.lang.String)}
      * on the given loader (or if it is null, on the system class loader).
      * <p>
-     * Note that it is possible to build method types which cannot be
+     * Note that it is possible to encounter method types which cannot be
      * constructed by this method, because their component types are
      * not all reachable from a common class loader.
      * <p>
@@ -662,8 +631,11 @@ class MethodType {
     }
 
     /**
-     * Create a bytecode signature representation of the type.
-     * Note that this is not a strict inverse of
+     * Create a bytecode descriptor representation of the method type.
+     * <p>
+     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString}.
+     * Two distinct classes which share a common name but have different class loaders
+     * will appear identical when viewed within descriptor strings.
      * <p>
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
@@ -673,15 +645,5 @@ class MethodType {
      */
     public String toMethodDescriptorString() {
         return BytecodeDescriptor.unparse(this);
-    }
-
-    /** Temporary alias for toMethodDescriptorString; delete after M3. */
-    public String toBytecodeString() {
-        return toMethodDescriptorString();
-    }
-    /** Temporary alias for fromMethodDescriptorString; delete after M3. */
-    public static MethodType fromBytecodeString(String descriptor, ClassLoader loader)
-        throws IllegalArgumentException, TypeNotPresentException {
-        return fromMethodDescriptorString(descriptor, loader);
     }
 }

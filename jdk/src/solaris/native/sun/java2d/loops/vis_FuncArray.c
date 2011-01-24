@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ DEF_FUNC(AnyByteIsomorphicXorCopy)
 DEF_FUNC(AnyByteSetLine)
 DEF_FUNC(AnyByteSetRect)
 DEF_FUNC(AnyByteSetSpans)
+DEF_FUNC(AnyByteSetParallelogram)
 DEF_FUNC(AnyByteXorLine)
 DEF_FUNC(AnyByteXorRect)
 DEF_FUNC(AnyByteXorSpans)
@@ -62,6 +63,7 @@ DEF_FUNC(AnyShortIsomorphicXorCopy)
 DEF_FUNC(AnyShortSetLine)
 DEF_FUNC(AnyShortSetRect)
 DEF_FUNC(AnyShortSetSpans)
+DEF_FUNC(AnyShortSetParallelogram)
 DEF_FUNC(AnyShortXorLine)
 DEF_FUNC(AnyShortXorRect)
 DEF_FUNC(AnyShortXorSpans)
@@ -73,6 +75,7 @@ DEF_FUNC(Any3ByteIsomorphicXorCopy)
 DEF_FUNC(Any3ByteSetLine)
 DEF_FUNC(Any3ByteSetRect)
 DEF_FUNC(Any3ByteSetSpans)
+DEF_FUNC(Any3ByteSetParallelogram)
 DEF_FUNC(Any3ByteXorLine)
 DEF_FUNC(Any3ByteXorRect)
 DEF_FUNC(Any3ByteXorSpans)
@@ -84,6 +87,7 @@ DEF_FUNC(Any4ByteIsomorphicXorCopy)
 DEF_FUNC(Any4ByteSetLine)
 DEF_FUNC(Any4ByteSetRect)
 DEF_FUNC(Any4ByteSetSpans)
+DEF_FUNC(Any4ByteSetParallelogram)
 DEF_FUNC(Any4ByteXorLine)
 DEF_FUNC(Any4ByteXorRect)
 DEF_FUNC(Any4ByteXorSpans)
@@ -95,6 +99,7 @@ DEF_FUNC(AnyIntIsomorphicXorCopy)
 DEF_FUNC(AnyIntSetLine)
 DEF_FUNC(AnyIntSetRect)
 DEF_FUNC(AnyIntSetSpans)
+DEF_FUNC(AnyIntSetParallelogram)
 DEF_FUNC(AnyIntXorLine)
 DEF_FUNC(AnyIntXorRect)
 DEF_FUNC(AnyIntXorSpans)
@@ -513,6 +518,7 @@ static AnyFunc_pair vis_func_pair_array[] = {
     ADD_FUNC(AnyByteSetLine),
     ADD_FUNC(AnyByteSetRect),
     ADD_FUNC(AnyByteSetSpans),
+    ADD_FUNC(AnyByteSetParallelogram),
     ADD_FUNC(AnyByteXorLine),
     ADD_FUNC(AnyByteXorRect),
     ADD_FUNC(AnyByteXorSpans),
@@ -524,6 +530,7 @@ static AnyFunc_pair vis_func_pair_array[] = {
     ADD_FUNC(AnyShortSetLine),
     ADD_FUNC(AnyShortSetRect),
     ADD_FUNC(AnyShortSetSpans),
+    ADD_FUNC(AnyShortSetParallelogram),
     ADD_FUNC(AnyShortXorLine),
     ADD_FUNC(AnyShortXorRect),
     ADD_FUNC(AnyShortXorSpans),
@@ -533,6 +540,7 @@ static AnyFunc_pair vis_func_pair_array[] = {
     ADD_FUNC(Any3ByteSetLine),
     ADD_FUNC(Any3ByteSetRect),
     ADD_FUNC(Any3ByteSetSpans),
+    ADD_FUNC(Any3ByteSetParallelogram),
     ADD_FUNC(Any3ByteXorLine),
     ADD_FUNC(Any3ByteXorRect),
     ADD_FUNC(Any3ByteXorSpans),
@@ -544,6 +552,7 @@ static AnyFunc_pair vis_func_pair_array[] = {
     ADD_FUNC(Any4ByteSetLine),
     ADD_FUNC(Any4ByteSetRect),
     ADD_FUNC(Any4ByteSetSpans),
+    ADD_FUNC(Any4ByteSetParallelogram),
     ADD_FUNC(Any4ByteXorLine),
     ADD_FUNC(Any4ByteXorRect),
     ADD_FUNC(Any4ByteXorSpans),
@@ -555,6 +564,7 @@ static AnyFunc_pair vis_func_pair_array[] = {
     ADD_FUNC(AnyIntSetLine),
     ADD_FUNC(AnyIntSetRect),
     ADD_FUNC(AnyIntSetSpans),
+    ADD_FUNC(AnyIntSetParallelogram),
     ADD_FUNC(AnyIntXorLine),
     ADD_FUNC(AnyIntXorRect),
     ADD_FUNC(AnyIntXorSpans),

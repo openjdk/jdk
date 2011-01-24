@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_STUBROUTINES_X86_64_HPP
+#define CPU_X86_VM_STUBROUTINES_X86_64_HPP
+
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
@@ -35,7 +38,7 @@ enum platform_dependent_constants {
 
 // MethodHandles adapters
 enum method_handles_platform_dependent_constants {
-  method_handles_adapters_code_size = 26000
+  method_handles_adapters_code_size = 40000
 };
 
 class x86 {
@@ -113,3 +116,5 @@ class x86 {
     return _mxcsr_std;
   }
 };
+
+#endif // CPU_X86_VM_STUBROUTINES_X86_64_HPP

@@ -22,8 +22,15 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_psPromotionManager.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.psgc.inline.hpp"
 
 PSPromotionManager**         PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*         PSPromotionManager::_stack_array_depth = NULL;
@@ -185,7 +192,6 @@ void PSPromotionManager::reset() {
 
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  assert(claimed_stack_depth()->overflow_stack() != NULL, "invariant");
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class WInputMethod extends InputMethodAdapter
                     locale.equals(Locale.JAPAN) && lang.equals(Locale.JAPANESE) ||
                     locale.equals(Locale.KOREA) && lang.equals(Locale.KOREAN)) {
                 if (isActive) {
-                    setNativeLocale(locale.toString(), onActivate);
+                    setNativeLocale(locale.toLanguageTag(), onActivate);
                 }
                 currentLocale = locale;
                 return true;

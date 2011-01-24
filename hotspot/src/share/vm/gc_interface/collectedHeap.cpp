@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_collectedHeap.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/init.hpp"
+#include "services/heapDumper.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 
 #ifdef ASSERT
@@ -34,7 +49,9 @@ size_t CollectedHeap::_filler_array_max_size = 0;
 
 // Memory state functions.
 
-CollectedHeap::CollectedHeap()
+
+CollectedHeap::CollectedHeap() : _n_par_threads(0)
+
 {
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);

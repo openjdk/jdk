@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.dyn;
 
 import java.dyn.*;
+import static sun.dyn.MemberName.uncaughtException;
 
 /**
  * Parts of CallSite known to the JVM.
@@ -40,28 +41,45 @@ public class CallSiteImpl {
                              Object info,
                              // Caller information:
                              MemberName callerMethod, int callerBCI) {
-        Class<?> caller = callerMethod.getDeclaringClass();
+        Class<?> callerClass = callerMethod.getDeclaringClass();
+        Object caller;
+        if (bootstrapMethod.type().parameterType(0) == Class.class)
+            caller = callerClass;  // remove for PFD
+        else
+            caller = MethodHandleImpl.IMPL_LOOKUP.in(callerClass);
         if (bootstrapMethod == null) {
             // If there is no bootstrap method, throw IncompatibleClassChangeError.
             // This is a valid generic error type for resolution (JLS 12.3.3).
             throw new IncompatibleClassChangeError
-                ("Class "+caller.getName()+" has not declared a bootstrap method for invokedynamic");
+                ("Class "+callerClass.getName()+" has not declared a bootstrap method for invokedynamic");
         }
         CallSite site;
         try {
-            if (bootstrapMethod.type().parameterCount() == 3)
-                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type);
-            else if (bootstrapMethod.type().parameterCount() == 4)
-                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type,
-                                                             !(info instanceof java.lang.annotation.Annotation[]) ? null
-                                                             : (java.lang.annotation.Annotation[]) info);
-            else
-                throw new InternalError("bad BSM: "+bootstrapMethod);
-            if (!(site instanceof CallSite))
-                throw new InvokeDynamicBootstrapError("class bootstrap method failed to create a call site: "+caller);
-            PRIVATE_INITIALIZE_CALL_SITE.<void>invokeExact(site,
-                                                           name, type,
-                                                           callerMethod, callerBCI);
+            Object binding;
+            if (info == null) {
+                if (false)  // switch when invokeGeneric works
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type);
+                else
+                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type });
+            } else {
+                info = maybeReBox(info);
+                if (false)  // switch when invokeGeneric works
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
+                else
+                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type, info });
+            }
+            //System.out.println("BSM for "+name+type+" => "+binding);
+            if (binding instanceof CallSite) {
+                site = (CallSite) binding;
+            } else if (binding instanceof MethodHandle) {
+                // Transitional!
+                MethodHandle target = (MethodHandle) binding;
+                site = new ConstantCallSite(target);
+            } else {
+                throw new ClassCastException("bootstrap method failed to produce a MethodHandle or CallSite");
+            }
+            PRIVATE_INITIALIZE_CALL_SITE.invokeExact(site, name, type,
+                                                     callerMethod, callerBCI);
             assert(site.getTarget() != null);
             assert(site.getTarget().type().equals(type));
         } catch (Throwable ex) {
@@ -75,13 +93,38 @@ public class CallSiteImpl {
         return site;
     }
 
+    private static Object maybeReBox(Object x) {
+        if (x instanceof Integer) {
+            int xi = (int) x;
+            if (xi == (byte) xi)
+                x = xi;  // must rebox; see JLS 5.1.7
+            return x;
+        } else if (x instanceof Object[]) {
+            Object[] xa = (Object[]) x;
+            for (int i = 0; i < xa.length; i++) {
+                if (xa[i] instanceof Integer)
+                    xa[i] = maybeReBox(xa[i]);
+            }
+            return xa;
+        } else {
+            return x;
+        }
+    }
+
     // This method is private in CallSite because it touches private fields in CallSite.
     // These private fields (vmmethod, vmindex) are specific to the JVM.
-    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE =
+    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE;
+    static {
+        try {
+            PRIVATE_INITIALIZE_CALL_SITE =
             MethodHandleImpl.IMPL_LOOKUP.findVirtual(CallSite.class, "initializeFromJVM",
                 MethodType.methodType(void.class,
                                       String.class, MethodType.class,
                                       MemberName.class, int.class));
+        } catch (NoAccessException ex) {
+            throw uncaughtException(ex);
+        }
+    }
 
     public static void setCallSiteTarget(Access token, CallSite site, MethodHandle target) {
         Access.check(token);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP
+
+#include "memory/memRegion.hpp"
+#include "runtime/virtualspace.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // The CollectedHeap type requires subtypes to implement a method
 // "block_start".  For some subtypes, notably generational
@@ -436,6 +443,8 @@ public:
   }
 
   void check_all_cards(size_t left_card, size_t right_card) const;
+
+  virtual void set_for_starts_humongous(HeapWord* new_end);
 };
 
 // A subtype of BlockOffsetArray that takes advantage of the fact
@@ -484,4 +493,8 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
 
   HeapWord* block_start_unsafe(const void* addr);
   HeapWord* block_start_unsafe_const(const void* addr) const;
+
+  virtual void set_for_starts_humongous(HeapWord* new_end);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP

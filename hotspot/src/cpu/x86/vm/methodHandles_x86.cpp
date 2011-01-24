@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandles_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "prims/methodHandles.hpp"
 
 #define __ _masm->
 
@@ -123,11 +125,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   // given the MethodType, find out where the MH argument is buried
-  __ movptr(rdx_temp, Address(rax_mtype,
-                              __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
+  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
   Register rdx_vmslots = rdx_temp;
-  __ movl(rdx_vmslots, Address(rdx_temp,
-                               __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, rdi_temp)));
+  __ movl(rdx_vmslots, Address(rdx_temp, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, rdi_temp)));
   __ movptr(rcx_recv, __ argument_address(rdx_vmslots));
 
   trace_method_handle(_masm, "invokeExact");
@@ -154,20 +154,18 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
                    rcx_argslot, rbx_temp, rdx_temp);
 
   // load up an adapter from the calling type (Java weaves this)
-  __ movptr(rdx_temp, Address(rax_mtype,
-                              __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
+  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
   Register rdx_adapter = rdx_temp;
-  // movptr(rdx_adapter, Address(rdx_temp, java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes()));
+  // __ load_heap_oop(rdx_adapter, Address(rdx_temp, java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes()));
   // deal with old JDK versions:
-  __ lea(rdi_temp, Address(rdx_temp,
-                           __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
+  __ lea(rdi_temp, Address(rdx_temp, __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
   __ cmpptr(rdi_temp, rdx_temp);
   Label sorry_no_invoke_generic;
-  __ jccb(Assembler::below, sorry_no_invoke_generic);
+  __ jcc(Assembler::below, sorry_no_invoke_generic);
 
-  __ movptr(rdx_adapter, Address(rdi_temp, 0));
+  __ load_heap_oop(rdx_adapter, Address(rdi_temp, 0));
   __ testptr(rdx_adapter, rdx_adapter);
-  __ jccb(Assembler::zero, sorry_no_invoke_generic);
+  __ jcc(Assembler::zero, sorry_no_invoke_generic);
   __ movptr(Address(rcx_argslot, 1 * Interpreter::stackElementSize), rdx_adapter);
   // As a trusted first argument, pass the type being called, so the adapter knows
   // the actual types of the arguments and return values.
@@ -346,7 +344,7 @@ void trace_method_handle_stub(const char* adaptername,
     if (stack_dump_count > 64)  stack_dump_count = 48;
     for (i = 0; i < stack_dump_count; i += 4) {
       printf(" dump at SP[%d] "INTPTR_FORMAT": "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT"\n",
-             i, &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
+             i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
     }
     print_method_handle(mh);
   }
@@ -387,9 +385,12 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
   // FIXME: MethodHandlesTest gets a crash if we enable OP_SPREAD_ARGS.
 }
 
+//------------------------------------------------------------------------------
+// MethodHandles::generate_method_handle_stub
+//
 // Generate an "entry" field for a method handle.
 // This determines how the method handle will respond to calls.
-void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek) {
+void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek, TRAPS) {
   // Here is the register state during an interpreted call,
   // as set up by generate_method_handle_interpreter_entry():
   // - rbx: garbage temp (was MethodHandle.invoke methodOop, unused)
@@ -398,14 +399,21 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   // - rsi/r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // - rdx: garbage temp, can blow away
 
-  Register rcx_recv    = rcx;
-  Register rax_argslot = rax;
-  Register rbx_temp    = rbx;
-  Register rdx_temp    = rdx;
+  const Register rcx_recv    = rcx;
+  const Register rax_argslot = rax;
+  const Register rbx_temp    = rbx;
+  const Register rdx_temp    = rdx;
 
   // This guy is set up by prepare_to_jump_from_interpreted (from interpreted calls)
   // and gen_c2i_adapter (from compiled calls):
-  Register saved_last_sp = LP64_ONLY(r13) NOT_LP64(rsi);
+  const Register saved_last_sp = LP64_ONLY(r13) NOT_LP64(rsi);
+
+  // Argument registers for _raise_exception.
+  // 32-bit: Pass first two oop/int args in registers ECX and EDX.
+  const Register rarg0_code     = LP64_ONLY(j_rarg0) NOT_LP64(rcx);
+  const Register rarg1_actual   = LP64_ONLY(j_rarg1) NOT_LP64(rdx);
+  const Register rarg2_required = LP64_ONLY(j_rarg2) NOT_LP64(rdi);
+  assert_different_registers(rarg0_code, rarg1_actual, rarg2_required, saved_last_sp);
 
   guarantee(java_dyn_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
@@ -431,7 +439,6 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   }
 
   address interp_entry = __ pc();
-  if (UseCompressedOops)  __ unimplemented("UseCompressedOops");
 
   trace_method_handle(_masm, entry_name(ek));
 
@@ -440,47 +447,41 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   switch ((int) ek) {
   case _raise_exception:
     {
-      // Not a real MH entry, but rather shared code for raising an exception.
-      // Extra local arguments are pushed on stack, as required type at TOS+8,
-      // failing object (or NULL) at TOS+4, failing bytecode type at TOS.
-      // Beyond those local arguments are the PC, of course.
-      Register rdx_code = rdx_temp;
-      Register rcx_fail = rcx_recv;
-      Register rax_want = rax_argslot;
-      Register rdi_pc   = rdi;
-      __ pop(rdx_code);  // TOS+0
-      __ pop(rcx_fail);  // TOS+4
-      __ pop(rax_want);  // TOS+8
-      __ pop(rdi_pc);    // caller PC
+      // Not a real MH entry, but rather shared code for raising an
+      // exception.  Since we use a C2I adapter to set up the
+      // interpreter state, arguments are expected in compiler
+      // argument registers.
+      methodHandle mh(raise_exception_method());
+      address c2i_entry = methodOopDesc::make_adapters(mh, CHECK);
 
-      __ mov(rsp, rsi);   // cut the stack back to where the caller started
-
-      // Repush the arguments as if coming from the interpreter.
-      __ push(rdx_code);
-      __ push(rcx_fail);
-      __ push(rax_want);
+      const Register rdi_pc = rax;
+      __ pop(rdi_pc);  // caller PC
+      __ mov(rsp, saved_last_sp);  // cut the stack back to where the caller started
 
       Register rbx_method = rbx_temp;
-      Label no_method;
+      Label L_no_method;
       // FIXME: fill in _raise_exception_method with a suitable sun.dyn method
       __ movptr(rbx_method, ExternalAddress((address) &_raise_exception_method));
       __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, no_method);
-      int jobject_oop_offset = 0;
+      __ jccb(Assembler::zero, L_no_method);
+
+      const int jobject_oop_offset = 0;
       __ movptr(rbx_method, Address(rbx_method, jobject_oop_offset));  // dereference the jobject
       __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, no_method);
+      __ jccb(Assembler::zero, L_no_method);
       __ verify_oop(rbx_method);
-      __ push(rdi_pc);          // and restore caller PC
-      __ jmp(rbx_method_fie);
+
+      // 32-bit: push remaining arguments as if coming from the compiler.
+      NOT_LP64(__ push(rarg2_required));
+
+      __ push(rdi_pc);  // restore caller PC
+      __ jump(ExternalAddress(c2i_entry));  // do C2I transition
 
       // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
-      __ bind(no_method);
-      __ pop(rax_want);
-      __ pop(rcx_fail);
-      __ push(rax_want);
-      __ push(rcx_fail);
+      __ bind(L_no_method);
+      __ push(rarg2_required);
+      __ push(rarg1_actual);
       __ jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
     }
     break;
@@ -489,7 +490,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _invokespecial_mh:
     {
       Register rbx_method = rbx_temp;
-      __ movptr(rbx_method, rcx_mh_vmtarget); // target is a methodOop
+      __ load_heap_oop(rbx_method, rcx_mh_vmtarget); // target is a methodOop
       __ verify_oop(rbx_method);
       // same as TemplateTable::invokestatic or invokespecial,
       // minus the CP setup and profiling:
@@ -546,8 +547,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ load_method_handle_vmslots(rax_argslot, rcx_recv, rdx_temp);
       Register rdx_intf  = rdx_temp;
       Register rbx_index = rbx_temp;
-      __ movptr(rdx_intf,  rcx_mh_vmtarget);
-      __ movl(rbx_index,   rcx_dmh_vmindex);
+      __ load_heap_oop(rdx_intf, rcx_mh_vmtarget);
+      __ movl(rbx_index, rcx_dmh_vmindex);
       __ movptr(rcx_recv, __ argument_address(rax_argslot, -1));
       __ null_check(rcx_recv, oopDesc::klass_offset_in_bytes());
 
@@ -575,9 +576,11 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ bind(no_such_interface);
       // Throw an exception.
       // For historical reasons, it will be IncompatibleClassChangeError.
-      __ pushptr(Address(rdx_intf, java_mirror_offset));  // required interface
-      __ push(rcx_recv);        // bad receiver
-      __ push((int)Bytecodes::_invokeinterface);  // who is complaining?
+      __ mov(rbx_temp, rcx_recv);  // rarg2_required might be RCX
+      assert_different_registers(rarg2_required, rbx_temp);
+      __ movptr(rarg2_required, Address(rdx_intf, java_mirror_offset));  // required interface
+      __ mov(   rarg1_actual,   rbx_temp);                               // bad receiver
+      __ movl(  rarg0_code,     (int) Bytecodes::_invokeinterface);      // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
     }
     break;
@@ -602,7 +605,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                        rax_argslot, rbx_temp, rdx_temp);
 
       // store bound argument into the new stack slot:
-      __ movptr(rbx_temp, rcx_bmh_argument);
+      __ load_heap_oop(rbx_temp, rcx_bmh_argument);
       Address prim_value_addr(rbx_temp, java_lang_boxing_object::value_offset_in_bytes(arg_type));
       if (arg_type == T_OBJECT) {
         __ movptr(Address(rax_argslot, 0), rbx_temp);
@@ -620,11 +623,11 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       if (direct_to_method) {
         Register rbx_method = rbx_temp;
-        __ movptr(rbx_method, rcx_mh_vmtarget);
+        __ load_heap_oop(rbx_method, rcx_mh_vmtarget);
         __ verify_oop(rbx_method);
         __ jmp(rbx_method_fie);
       } else {
-        __ movptr(rcx_recv, rcx_mh_vmtarget);
+        __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
         __ verify_oop(rcx_recv);
         __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
       }
@@ -634,7 +637,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _adapter_retype_only:
   case _adapter_retype_raw:
     // immediately jump to the next MH layer:
-    __ movptr(rcx_recv, rcx_mh_vmtarget);
+    __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
     __ verify_oop(rcx_recv);
     __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     // This is OK when all parameter types widen.
@@ -651,13 +654,13 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       vmarg = __ argument_address(rax_argslot);
 
       // What class are we casting to?
-      __ movptr(rbx_klass, rcx_amh_argument); // this is a Class object!
-      __ movptr(rbx_klass, Address(rbx_klass, java_lang_Class::klass_offset_in_bytes()));
+      __ load_heap_oop(rbx_klass, rcx_amh_argument); // this is a Class object!
+      __ load_heap_oop(rbx_klass, Address(rbx_klass, java_lang_Class::klass_offset_in_bytes()));
 
       Label done;
       __ movptr(rdx_temp, vmarg);
       __ testptr(rdx_temp, rdx_temp);
-      __ jccb(Assembler::zero, done);         // no cast if null
+      __ jcc(Assembler::zero, done);         // no cast if null
       __ load_klass(rdx_temp, rdx_temp);
 
       // live at this point:
@@ -672,14 +675,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ movl(rax_argslot, rcx_amh_vmargslot);  // reload argslot field
       __ movptr(rdx_temp, vmarg);
 
-      __ pushptr(rcx_amh_argument); // required class
-      __ push(rdx_temp);            // bad object
-      __ push((int)Bytecodes::_checkcast);  // who is complaining?
+      assert_different_registers(rarg2_required, rdx_temp);
+      __ load_heap_oop(rarg2_required, rcx_amh_argument);             // required class
+      __ mov(          rarg1_actual,   rdx_temp);                     // bad object
+      __ movl(         rarg0_code,     (int) Bytecodes::_checkcast);  // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
       __ bind(done);
       // get the new MH:
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -741,7 +745,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       assert(CONV_VMINFO_SHIFT == 0, "preshifted");
 
       // get the new MH:
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       // (now we are done with the old MH)
 
       // original 32-bit vmdata word must be of this form:
@@ -816,7 +820,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         ShouldNotReachHere();
       }
 
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -858,7 +862,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                          rax_argslot, rbx_temp, rdx_temp);
       }
 
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -969,7 +973,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         }
       }
 
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -1029,7 +1033,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       __ pop(rdi);              // restore temp
 
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -1052,7 +1056,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       __ pop(rdi);              // restore temp
 
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
     }
     break;
@@ -1103,8 +1107,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // Check the array type.
       Register rbx_klass = rbx_temp;
-      __ movptr(rbx_klass, rcx_amh_argument); // this is a Class object!
-      __ movptr(rbx_klass, Address(rbx_klass, java_lang_Class::klass_offset_in_bytes()));
+      __ load_heap_oop(rbx_klass, rcx_amh_argument); // this is a Class object!
+      __ load_heap_oop(rbx_klass, Address(rbx_klass, java_lang_Class::klass_offset_in_bytes()));
 
       Label ok_array_klass, bad_array_klass, bad_array_length;
       __ check_klass_subtype(rdx_array_klass, rbx_klass, rdi, ok_array_klass);
@@ -1186,21 +1190,23 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // Arguments are spread.  Move to next method handle.
       UNPUSH_RSI_RDI;
-      __ movptr(rcx_recv, rcx_mh_vmtarget);
+      __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
       __ jump_to_method_handle_entry(rcx_recv, rdx_temp);
 
       __ bind(bad_array_klass);
       UNPUSH_RSI_RDI;
-      __ pushptr(Address(rdx_array_klass, java_mirror_offset)); // required type
-      __ pushptr(vmarg);                // bad array
-      __ push((int)Bytecodes::_aaload); // who is complaining?
+      assert(!vmarg.uses(rarg2_required), "must be different registers");
+      __ movptr(rarg2_required, Address(rdx_array_klass, java_mirror_offset));  // required type
+      __ movptr(rarg1_actual,   vmarg);                                         // bad array
+      __ movl(  rarg0_code,     (int) Bytecodes::_aaload);                      // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
       __ bind(bad_array_length);
       UNPUSH_RSI_RDI;
-      __ push(rcx_recv);        // AMH requiring a certain length
-      __ pushptr(vmarg);        // bad array
-      __ push((int)Bytecodes::_arraylength); // who is complaining?
+      assert(!vmarg.uses(rarg2_required), "must be different registers");
+      __ mov   (rarg2_required, rcx_recv);                       // AMH requiring a certain length
+      __ movptr(rarg1_actual,   vmarg);                          // bad array
+      __ movl(  rarg0_code,     (int) Bytecodes::_arraylength);  // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
 #undef UNPUSH_RSI_RDI

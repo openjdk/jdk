@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,10 @@ public class FlakyMutex implements Lock {
                             catch (Throwable t) { checkThrowable(t); }
                         }
 
-                        try { check (! m.tryLock()); }
+                        try { check(! m.tryLock()); }
                         catch (Throwable t) { checkThrowable(t); }
 
-                        try { check (! m.tryLock(1, TimeUnit.MICROSECONDS)); }
+                        try { check(! m.tryLock(1, TimeUnit.MICROSECONDS)); }
                         catch (Throwable t) { checkThrowable(t); }
 
                         m.unlock();

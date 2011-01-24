@@ -22,8 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_taskqueue.cpp.incl"
+#include "precompiled.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 #ifdef TRACESPINNING
 uint ParallelTaskTerminator::_total_yields = 0;
@@ -144,6 +157,7 @@ void ParallelTaskTerminator::sleep(uint millis) {
 
 bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
+  assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
   Atomic::inc(&_offered_termination);
 
@@ -255,3 +269,9 @@ bool ObjArrayTask::is_valid() const {
     _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT
+
+void ParallelTaskTerminator::reset_for_reuse(int n_threads) {
+  reset_for_reuse();
+  _n_threads = n_threads;
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,6 +777,13 @@ public class ExtendedCharsets
                     "ebcdic-cp-bh",
                     "csIBM500"
                 });
+
+        charset("x-IBM833", "IBM833",
+                new String[] {
+                     "cp833",
+                     "ibm833",
+                     "ibm-833"
+                 });
 
         //EBCDIC DBCS-only Korean
         charset("x-IBM834", "IBM834",

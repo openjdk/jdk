@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ public class Main {
                          processors);
 
             if (log.expectDiagKeys != null) {
-                if (log.expectDiagKeys.size() == 0) {
+                if (log.expectDiagKeys.isEmpty()) {
                     Log.printLines(log.noticeWriter, "all expected diagnostics found");
                     return EXIT_OK;
                 } else {
@@ -506,7 +506,7 @@ public class Main {
     void apMessage(AnnotationProcessingError ex) {
         Log.printLines(out,
                        getLocalizedString("msg.proc.annotation.uncaught.exception"));
-        ex.getCause().printStackTrace();
+        ex.getCause().printStackTrace(out);
     }
 
     /** Display the location and checksum of a class. */
@@ -563,6 +563,7 @@ public class Main {
     public static void useRawMessages(boolean enable) {
         if (enable) {
             messages = new JavacMessages(javacBundleName) {
+                    @Override
                     public String getLocalizedString(String key, Object... args) {
                         return key;
                     }

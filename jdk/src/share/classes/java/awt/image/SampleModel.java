@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public abstract class SampleModel
      */
     public SampleModel(int dataType, int w, int h, int numBands)
     {
-        float size = (float)w*h;
+        long size = (long)w * h;
         if (w <= 0 || h <= 0) {
             throw new IllegalArgumentException("Width ("+w+") and height ("+
                                                h+") must be > 0");
@@ -358,6 +358,15 @@ public abstract class SampleModel
         int cnt = 0;
         Object o = null;
 
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x1 < x || x1 > width ||
+            y < 0 || y1 < y || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
         switch(type) {
 
         case DataBuffer.TYPE_BYTE:
@@ -370,8 +379,8 @@ public abstract class SampleModel
             else
                 bdata = (byte[])obj;
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     o = getDataElements(j, i, o, data);
                     btemp = (byte[])o;
                     for (int k=0; k<numDataElems; k++) {
@@ -393,8 +402,8 @@ public abstract class SampleModel
             else
                 sdata = (short[])obj;
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     o = getDataElements(j, i, o, data);
                     stemp = (short[])o;
                     for (int k=0; k<numDataElems; k++) {
@@ -416,8 +425,8 @@ public abstract class SampleModel
             else
                 idata = (int[])obj;
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     o = getDataElements(j, i, o, data);
                     itemp = (int[])o;
                     for (int k=0; k<numDataElems; k++) {
@@ -439,8 +448,8 @@ public abstract class SampleModel
             else
                 fdata = (float[])obj;
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     o = getDataElements(j, i, o, data);
                     ftemp = (float[])o;
                     for (int k=0; k<numDataElems; k++) {
@@ -462,8 +471,8 @@ public abstract class SampleModel
             else
                 ddata = (double[])obj;
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     o = getDataElements(j, i, o, data);
                     dtemp = (double[])o;
                     for (int k=0; k<numDataElems; k++) {

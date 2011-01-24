@@ -30,9 +30,6 @@ import java.io.OutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 
 
@@ -224,6 +221,10 @@ public abstract class Pack200 {
      * the case for archives that have no class files.
      *    If the input JAR-files contains a 1.6 class file, then the pack file
      * version will be set to 1.6.
+     * <p>
+     * Note: Unless otherwise noted, passing a <tt>null</tt> argument to a
+     * constructor or method in this class will cause a {@link NullPointerException}
+     * to be thrown.
      * <p>
      * @since 1.5
      */
@@ -599,6 +600,10 @@ public abstract class Pack200 {
      * "<tt>PACK200</tt>" as a zip file comment.
      * This allows a deployer to detect if a JAR archive was packed and unpacked.
      * <p>
+     * Note: Unless otherwise noted, passing a <tt>null</tt> argument to a
+     * constructor or method in this class will cause a {@link NullPointerException}
+     * to be thrown.
+     * <p>
      * This version of the unpacker is compatible with all previous versions.
      * @since 1.5
      */
@@ -727,14 +732,14 @@ public abstract class Pack200 {
     private synchronized static Object newInstance(String prop) {
         String implName = "(unknown)";
         try {
-            Class impl = (prop == PACK_PROVIDER)? packerImpl: unpackerImpl;
+            Class impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
             if (impl == null) {
                 // The first time, we must decide which class to use.
                 implName = java.security.AccessController.doPrivileged(
                     new sun.security.action.GetPropertyAction(prop,""));
                 if (implName != null && !implName.equals(""))
                     impl = Class.forName(implName);
-                else if (prop == PACK_PROVIDER)
+                else if (PACK_PROVIDER.equals(prop))
                     impl = com.sun.java.util.jar.pack.PackerImpl.class;
                 else
                     impl = com.sun.java.util.jar.pack.UnpackerImpl.class;

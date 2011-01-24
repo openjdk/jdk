@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
 
         // new configuration
         HashMap<String, LinkedList<AppConfigurationEntry>> newConfig =
-                new HashMap<String, LinkedList<AppConfigurationEntry>>();
+                new HashMap<>();
 
         if (url != null) {
 
@@ -190,7 +190,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 } catch (PropertyExpander.ExpandException peee) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                                ("Unable to properly expand config",
+                                ("Unable.to.properly.expand.config",
                                 "sun.security.util.AuthResources"));
                     Object[] source = {extra_config};
                     throw new IOException(form.format(source));
@@ -206,7 +206,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                     } else {
                         MessageFormat form = new MessageFormat
                             (ResourcesMgr.getString
-                                ("extra_config (No such file or directory)",
+                                ("extra.config.No.such.file.or.directory.",
                                 "sun.security.util.AuthResources"));
                         Object[] source = {extra_config};
                         throw new IOException(form.format(source));
@@ -243,7 +243,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
             } catch (PropertyExpander.ExpandException peee) {
                 MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                                ("Unable to properly expand config",
+                                ("Unable.to.properly.expand.config",
                                 "sun.security.util.AuthResources"));
                 Object[] source = {config_url};
                 throw new IOException(form.format(source));
@@ -286,7 +286,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 debugConfig.println(fnfe.toString());
             }
             throw new IOException(ResourcesMgr.getString
-                    ("Configuration Error:\n\tNo such file or directory",
+                    ("Configuration.Error.No.such.file.or.directory",
                     "sun.security.util.AuthResources"));
         } finally {
             if (isr != null) {
@@ -392,8 +392,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
         String moduleClass;
         String sflag;
         AppConfigurationEntry.LoginModuleControlFlag controlFlag;
-        LinkedList<AppConfigurationEntry> configEntries =
-                                new LinkedList<AppConfigurationEntry>();
+        LinkedList<AppConfigurationEntry> configEntries = new LinkedList<>();
 
         // application name
         appName = st.sval;
@@ -426,14 +425,14 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                         AppConfigurationEntry.LoginModuleControlFlag.OPTIONAL;
             else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tInvalid control flag, flag",
+                        ("Configuration.Error.Invalid.control.flag.flag",
                         "sun.security.util.AuthResources"));
                 Object[] source = {sflag};
                 throw new IOException(form.format(source));
             }
 
             // get the args
-            HashMap<String, String> options = new HashMap<String, String>();
+            HashMap<String, String> options = new HashMap<>();
             String key;
             String value;
             while (peek(";") == false) {
@@ -474,8 +473,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
         // add this configuration entry
         if (newConfig.containsKey(appName)) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                ("Configuration Error:\n\t" +
-                        "Can not specify multiple entries for appName",
+                ("Configuration.Error.Can.not.specify.multiple.entries.for.appName",
                 "sun.security.util.AuthResources"));
             Object[] source = {appName};
             throw new IOException(form.format(source));
@@ -491,8 +489,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
         case StreamTokenizer.TT_EOF:
 
             MessageFormat form1 = new MessageFormat(ResourcesMgr.getString
-                ("Configuration Error:\n\texpected [expect], " +
-                        "read [end of file]",
+                ("Configuration.Error.expected.expect.read.end.of.file.",
                 "sun.security.util.AuthResources"));
             Object[] source1 = {expect};
             throw new IOException(form1.format(source1));
@@ -508,8 +505,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 lookahead = nextToken();
             } else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: " +
-                                "expected [expect], found [value]",
+                        ("Configuration.Error.Line.line.expected.expect.found.value.",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), expect, st.sval};
                 throw new IOException(form.format(source));
@@ -522,7 +518,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 lookahead = nextToken();
             } else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: expected [expect]",
+                        ("Configuration.Error.Line.line.expected.expect.",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), expect, st.sval};
                 throw new IOException(form.format(source));
@@ -535,7 +531,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 lookahead = nextToken();
             } else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: expected [expect]",
+                        ("Configuration.Error.Line.line.expected.expect.",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), expect, st.sval};
                 throw new IOException(form.format(source));
@@ -548,7 +544,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 lookahead = nextToken();
             } else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: expected [expect]",
+                        ("Configuration.Error.Line.line.expected.expect.",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), expect, st.sval};
                 throw new IOException(form.format(source));
@@ -561,7 +557,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
                 lookahead = nextToken();
             } else {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: expected [expect]",
+                        ("Configuration.Error.Line.line.expected.expect.",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), expect, st.sval};
                 throw new IOException(form.format(source));
@@ -570,8 +566,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
 
         default:
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: " +
-                                "expected [expect], found [value]",
+                        ("Configuration.Error.Line.line.expected.expect.found.value.",
                         "sun.security.util.AuthResources"));
             Object[] source = {new Integer(linenum), expect, st.sval};
             throw new IOException(form.format(source));
@@ -667,8 +662,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
 
             if (s == null || s.length() == 0) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("Configuration Error:\n\tLine line: " +
-                        "system property [value] expanded to empty value",
+                        ("Configuration.Error.Line.line.system.property.value.expanded.to.empty.value",
                         "sun.security.util.AuthResources"));
                 Object[] source = {new Integer(linenum), value};
                 throw new IOException(form.format(source));

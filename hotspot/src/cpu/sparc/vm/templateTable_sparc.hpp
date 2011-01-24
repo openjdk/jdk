@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_TEMPLATETABLE_SPARC_HPP
+#define CPU_SPARC_VM_TEMPLATETABLE_SPARC_HPP
+
   // helper function
   static void invokevfinal_helper(Register Rcache, Register Rret);
   static void invokeinterface_object_method(Register RklassOop, Register Rcall,
@@ -29,3 +32,5 @@
                                             Register Rflags);
   static void generate_vtable_call(Register Rrecv, Register Rindex, Register Rret);
   static void volatile_barrier(Assembler::Membar_mask_bits order_constraint);
+
+#endif // CPU_SPARC_VM_TEMPLATETABLE_SPARC_HPP

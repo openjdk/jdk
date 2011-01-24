@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,11 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
     protected int                     dropStatus   = STATUS_NONE;
     protected boolean                 dropComplete = false;
+
+    // The flag is used to monitor whether the drop action is
+    // handled by a user. That allows to distinct during
+    // which operation getTransferData() method is invoked.
+    boolean                           dropInProcess = false;
 
     /*
      * global lock
@@ -220,7 +225,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         SecurityManager sm = System.getSecurityManager();
         try {
-            if (!dropComplete && sm != null) {
+            if (!dropInProcess && sm != null) {
                 sm.checkSystemClipboardAccess();
             }
         } catch (Exception e) {
@@ -526,6 +531,8 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
                     setCurrentJVMLocalSourceTransferable(null);
             }
 
+            dropInProcess = true;
+
             try {
                 ((DropTargetListener)dt).drop(new DropTargetDropEvent(dtc,
                                                                       hots,
@@ -538,6 +545,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
                 } else if (dropComplete == false) {
                     dropComplete(false);
                 }
+                dropInProcess = false;
             }
         } else {
             rejectDrop();

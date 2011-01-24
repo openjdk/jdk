@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,18 @@ import com.sun.javadoc.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 
 public interface AnnotationTypeOptionalMemberWriter extends
-    AnnotationTypeRequiredMemberWriter {
+        AnnotationTypeRequiredMemberWriter {
 
     /**
-     * Write the default value documentation.
+     * Add the the default value documentation.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the default value will be added
      */
-    public void writeDefaultValueInfo(MemberDoc member);
+    public void addDefaultValueInfo(MemberDoc member, Content annotationDocTree);
 }

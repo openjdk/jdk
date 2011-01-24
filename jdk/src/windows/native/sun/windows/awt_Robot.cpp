@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,9 +194,9 @@ inline jint AwtRobot::WinToJavaPixel(USHORT r, USHORT g, USHORT b)
 
 jint AwtRobot::GetRGBPixel( jint x, jint y)
 {
-    HDC hdc = GetDC(NULL);
+    HDC hdc = ::CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
     COLORREF ref = ::GetPixel( hdc, x, y );
-    ReleaseDC(NULL,hdc);
+    ::DeleteDC(hdc);
     jint value = WinToJavaPixel(GetRValue(ref), GetGValue(ref), GetBValue(ref));
     return value;
 }

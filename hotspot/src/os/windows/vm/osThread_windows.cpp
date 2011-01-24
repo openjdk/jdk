@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,17 @@
  *
  */
 
-#include "incls/_osThread_windows.cpp.incl"
+// no precompiled headers
+#include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vmThread.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+#endif
 
 void OSThread::pd_initialize() {
   set_thread_handle(NULL);

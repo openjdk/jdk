@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.FileDescriptor;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.lang.ProcessBuilder.Redirect;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -46,6 +48,35 @@ import java.lang.ProcessBuilder.Redirect;
 final class ProcessImpl extends Process {
     private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
         = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    /**
+     * Open a file for writing. If {@code append} is {@code true} then the file
+     * is opened for atomic append directly and a FileOutputStream constructed
+     * with the resulting handle. This is because a FileOutputStream created
+     * to append to a file does not open the file in a manner that guarantees
+     * that writes by the child process will be atomic.
+     */
+    private static FileOutputStream newFileOutputStream(File f, boolean append)
+        throws IOException
+    {
+        if (append) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkWrite(f.getPath());
+            long handle = openForAtomicAppend(f.getPath());
+            final FileDescriptor fd = new FileDescriptor();
+            fdAccess.setHandle(fd, handle);
+            return AccessController.doPrivileged(
+                new PrivilegedAction<FileOutputStream>() {
+                    public FileOutputStream run() {
+                        return new FileOutputStream(fd);
+                    }
+                }
+            );
+        } else {
+            return new FileOutputStream(f);
+        }
+    }
 
     // System-dependent portion of ProcessBuilder.start()
     static Process start(String cmdarray[],
@@ -82,7 +113,8 @@ final class ProcessImpl extends Process {
                 else if (redirects[1] == Redirect.INHERIT)
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
                 else {
-                    f1 = redirects[1].toFileOutputStream();
+                    f1 = newFileOutputStream(redirects[1].file(),
+                                             redirects[1].append());
                     stdHandles[1] = fdAccess.getHandle(f1.getFD());
                 }
 
@@ -91,7 +123,8 @@ final class ProcessImpl extends Process {
                 else if (redirects[2] == Redirect.INHERIT)
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
                 else {
-                    f2 = redirects[2].toFileOutputStream();
+                    f2 = newFileOutputStream(redirects[2].file(),
+                                             redirects[2].append());
                     stdHandles[2] = fdAccess.getHandle(f2.getFD());
                 }
             }
@@ -249,6 +282,16 @@ final class ProcessImpl extends Process {
                                       String dir,
                                       long[] stdHandles,
                                       boolean redirectErrorStream)
+        throws IOException;
+
+    /**
+     * Opens a file for atomic append. The file is created if it doesn't
+     * already exist.
+     *
+     * @param file the file to open or create
+     * @return the native HANDLE
+     */
+    private static native long openForAtomicAppend(String path)
         throws IOException;
 
     private static native boolean closeHandle(long handle);

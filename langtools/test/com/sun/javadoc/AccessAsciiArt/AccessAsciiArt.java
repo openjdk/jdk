@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,17 +84,17 @@ public class AccessAsciiArt {
 
             // Test the top line of the class tree
             {
-"  <IMG SRC=\"../../resources/inherit.gif\" ALT=\"extended by \"><A HREF=\"../../p1/C.html\" title=\"class in p1\">p1.C</A>",
+"<li><a href=\"../../p1/C.html\" title=\"class in p1\">p1.C</a></li>",
                      TMPDEST_DIR1 + "p1" + FS + "subpkg" + FS + "SSC.html" },
 
             // Test the second line of the class tree
             {
-"      <IMG SRC=\"../../resources/inherit.gif\" ALT=\"extended by \"><A HREF=\"../../p1/SC.html\" title=\"class in p1\">p1.SC</A>",
+"<li><a href=\"../../p1/SC.html\" title=\"class in p1\">p1.SC</a></li>",
                      TMPDEST_DIR1 + "p1" + FS + "subpkg" + FS + "SSC.html" },
 
             // Test the third line of the class tree
             {
-"          <IMG SRC=\"../../resources/inherit.gif\" ALT=\"extended by \"><STRONG>p1.subpkg.SSC</STRONG>",
+"<li>p1.subpkg.SSC</li>",
                      TMPDEST_DIR1 + "p1" + FS + "subpkg" + FS +"SSC.html" },
 
         };

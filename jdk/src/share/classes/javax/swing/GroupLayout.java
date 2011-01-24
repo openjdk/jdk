@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,6 +653,10 @@ public class GroupLayout implements LayoutManager2 {
      */
     public ParallelGroup createParallelGroup(Alignment alignment,
             boolean resizable){
+        if (alignment == null) {
+            throw new IllegalArgumentException("alignment must be non null");
+        }
+
         if (alignment == Alignment.BASELINE) {
             return new BaselineGroup(resizable);
         }

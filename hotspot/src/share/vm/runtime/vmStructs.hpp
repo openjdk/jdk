@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_VMSTRUCTS_HPP
+#define SHARE_VM_RUNTIME_VMSTRUCTS_HPP
+
+#ifndef VM_STRUCTS_KERNEL
+#include "utilities/debug.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 // This table encapsulates the debugging information required by the
 // serviceability agent in order to run. Specifically, we need to
@@ -119,3 +129,5 @@ private:
   //  debug_only(static int findType(const char* typeName);)
   static int findType(const char* typeName);
 };
+
+#endif // SHARE_VM_RUNTIME_VMSTRUCTS_HPP

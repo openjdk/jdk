@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import java.awt.Event;
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
-import sun.util.logging.PlatformLogger;
 import java.util.Arrays;
+
+import sun.awt.AWTAccessor;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The root event class for all component-level input events.
@@ -54,6 +56,7 @@ import java.util.Arrays;
  * @since 1.1
  */
 public abstract class InputEvent extends ComponentEvent {
+
     private static final PlatformLogger logger = PlatformLogger.getLogger("java.awt.event.InputEvent");
 
     /**
@@ -288,6 +291,12 @@ public abstract class InputEvent extends ComponentEvent {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        AWTAccessor.setInputEventAccessor(
+            new AWTAccessor.InputEventAccessor() {
+                public int[] getButtonDownMasks() {
+                    return InputEvent.getButtonDownMasks();
+                }
+            });
     }
 
     /**

@@ -90,7 +90,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed");
                 }
@@ -112,7 +112,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed");
                 }
@@ -134,7 +134,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -158,7 +158,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -181,7 +181,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -207,7 +207,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -231,7 +231,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -259,7 +259,7 @@ public class TwrTests {
                 } catch (Resource.CreateFailException e) {
                     creationFailuresDetected++;
                     checkCreateFailureId(e.resourceId(), createFailureId);
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     throw new AssertionError("Secondary exception suppression failed:" + e);
                 }
@@ -310,7 +310,7 @@ public class TwrTests {
      * Check for proper suppressed exceptions in proper order.
      *
      * @param suppressedExceptions the suppressed exceptions array returned by
-     *        getSuppressedExceptions()
+     *        getSuppressed()
      * @bitmap a bitmap indicating which suppressed exceptions are expected.
      *         Bit i is set iff id should throw a CloseFailException.
      */
@@ -376,7 +376,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -388,7 +388,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 1);
             }
@@ -409,7 +409,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -421,7 +421,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 2);
             }
@@ -443,7 +443,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -455,7 +455,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 2);
             }
@@ -477,7 +477,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -489,7 +489,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 3);
             }
@@ -513,7 +513,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -525,7 +525,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 3);
             }
@@ -548,7 +548,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -560,7 +560,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 4);
             }
@@ -586,7 +586,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -598,7 +598,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 4);
             }
@@ -621,7 +621,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -633,7 +633,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 5);
             }
@@ -660,7 +660,7 @@ public class TwrTests {
                 } catch (MyKindOfException e) {
                     if (failure == 0)
                         throw new AssertionError("Unexpected MyKindOfException");
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap);
                 } catch (Resource.CloseFailException e) {
                     if (failure == 1)
                         throw new AssertionError("Secondary exception suppression failed");
@@ -672,7 +672,7 @@ public class TwrTests {
                         throw new AssertionError("CloseFailException: got id " + id
                                                  + ", expected lg(" + highestCloseFailBit +")");
                     }
-                    checkSuppressedExceptions(e.getSuppressedExceptions(), bitMap & ~highestCloseFailBit);
+                    checkSuppressedExceptions(e.getSuppressed(), bitMap & ~highestCloseFailBit);
                 }
                 checkClosedList(closedList, 5);
             }

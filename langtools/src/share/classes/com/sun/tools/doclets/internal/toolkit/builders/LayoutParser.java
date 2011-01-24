@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class LayoutParser extends DefaultHandler {
     /**
      * Parse the XML specifying the layout of the documentation.
      *
-     * @return List the list of XML elements parsed.
+     * @return the list of XML elements parsed.
      */
     public XMLNode parseXML(String root) {
         if (xmlElementsMap.containsKey(root)) {

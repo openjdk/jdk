@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public interface Tree {
      */
     public enum Kind {
 
-        ANNOTATED_TYPE(AnnotatedTypeTree.class),
+//308        ANNOTATED_TYPE(AnnotatedTypeTree.class),
 
         /**
          * Used for instances of {@link AnnotationTree}.
@@ -234,9 +234,9 @@ public interface Tree {
         PARAMETERIZED_TYPE(ParameterizedTypeTree.class),
 
         /**
-         * Used for instances of {@link DisjointTypeTree}.
+         * Used for instances of {@link DisjunctiveTypeTree}.
          */
-        DISJOINT_TYPE(DisjointTypeTree.class),
+        DISJUNCTIVE_TYPE(DisjunctiveTypeTree.class),
 
         /**
          * Used for instances of {@link TypeCastTree}.

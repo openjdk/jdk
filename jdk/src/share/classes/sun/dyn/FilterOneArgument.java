@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodType;
+import java.dyn.*;
+import static sun.dyn.MemberName.uncaughtException;
 
 /**
  * Unary function composition, useful for many small plumbing jobs.
@@ -37,7 +36,7 @@ import java.dyn.MethodType;
  * final method type is the responsibility of a JVM-level adapter.
  * @author jrose
  */
-public class FilterOneArgument extends JavaMethodHandle {
+public class FilterOneArgument extends BoundMethodHandle {
     protected final MethodHandle filter;  // Object -> Object
     protected final MethodHandle target;  // Object -> Object
 
@@ -51,11 +50,19 @@ public class FilterOneArgument extends JavaMethodHandle {
         return target.invokeExact(filteredArgument);
     }
 
-    private static final MethodHandle INVOKE =
-        MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke", MethodType.genericMethodType(1));
+    private static final MethodHandle INVOKE;
+    static {
+        try {
+            INVOKE =
+                MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke",
+                                                         MethodType.genericMethodType(1));
+        } catch (NoAccessException ex) {
+            throw uncaughtException(ex);
+        }
+    }
 
     protected FilterOneArgument(MethodHandle filter, MethodHandle target) {
-        super(INVOKE);
+        super(Access.TOKEN, INVOKE);
         this.filter = filter;
         this.target = target;
     }

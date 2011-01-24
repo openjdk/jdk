@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 static BOOL bNoHwCheck = (getenv("J2D_D3D_NO_HWCHECK") != NULL);
 
 D3DPipelineManager *D3DPipelineManager::pMgr = NULL;
+
 
 D3DPipelineManager * D3DPipelineManager::CreateInstance(void)
 {
@@ -179,6 +180,12 @@ void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
     HMONITOR hMon;
     int gdiScreen;
     D3DPipelineManager *pMgr;
+
+    // fix for 6946559: if d3d preloading fails jmv may be NULL
+    if (jvm == NULL) {
+        return;
+    }
+
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     pMgr = D3DPipelineManager::GetInstance();
@@ -342,7 +349,8 @@ D3DPipelineManager::CheckOSVersion()
 {
     // require Windows XP or newer client-class OS
     if (IS_WINVER_ATLEAST(5, 1) &&
-        !D3DPPLM_OsVersionMatches(OS_WINSERV_2008|OS_WINSERV_2003))
+        !D3DPPLM_OsVersionMatches(OS_WINSERV_2008R2|OS_WINSERV_2008|
+                                  OS_WINSERV_2003))
     {
         J2dTraceLn(J2D_TRACE_INFO,
                    "D3DPPLM::CheckOSVersion: Windows XP or newer client-classs"\
@@ -435,13 +443,21 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
         if (bVersOk && osvi.dwPlatformId == VER_PLATFORM_WIN32_NT &&
             osvi.dwMajorVersion > 4)
         {
-            if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion >= 0) {
+            if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion == 0) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_VISTA or newer\n");
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_VISTA\n");
                     currentOS = OS_VISTA;
                 } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008 or newer\n");
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008\n");
                     currentOS = OS_WINSERV_2008;
+                }
+            } else if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion >= 1) {
+                if (osvi.wProductType == VER_NT_WORKSTATION) {
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
+                    currentOS = OS_WINDOWS7;
+                } else {
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
+                    currentOS = OS_WINSERV_2008R2;
                 }
             } else if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
@@ -934,3 +950,90 @@ HRESULT D3DPipelineManager::GetD3DContext(UINT adapterOrdinal,
     *ppd3dContext = pAdapters[adapterOrdinal].pd3dContext;
     return res;
 }
+
+
+//==============================================================
+// D3DInitializer
+//==============================================================
+
+D3DInitializer D3DInitializer::theInstance;
+
+D3DInitializer::D3DInitializer()
+    : bComInitialized(false), pAdapterIniters(NULL)
+{
+}
+
+D3DInitializer::~D3DInitializer()
+{
+    if (pAdapterIniters) {
+        delete[] pAdapterIniters;
+    }
+}
+
+void D3DInitializer::InitImpl()
+{
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DInitializer::InitImpl");
+    if (SUCCEEDED(::CoInitialize(NULL))) {
+        bComInitialized = true;
+    }
+    D3DPipelineManager *pMgr = D3DPipelineManager::CreateInstance();
+    if (pMgr != NULL) {
+        // init adapters if we are preloading
+        if (AwtToolkit::GetInstance().GetPreloadThread().OnPreloadThread()) {
+            UINT adapterCount = pMgr->adapterCount;
+
+            pAdapterIniters = new D3DAdapterInitializer[adapterCount];
+            for (UINT i=0; i<adapterCount; i++) {
+                pAdapterIniters[i].setAdapter(i);
+                AwtToolkit::GetInstance().GetPreloadThread().AddAction(&pAdapterIniters[i]);
+            }
+        }
+    }
+}
+
+void D3DInitializer::CleanImpl(bool reInit)
+{
+    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DInitializer::CleanImpl (%s)",
+                                    reInit ? "RELAUNCH" : "normal");
+    D3DPipelineManager::DeleteInstance();
+    if (bComInitialized) {
+        CoUninitialize();
+    }
+}
+
+
+void D3DInitializer::D3DAdapterInitializer::InitImpl()
+{
+    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) started", adapter);
+
+    D3DPipelineManager *pMgr = D3DPipelineManager::GetInstance();
+    if (pMgr == NULL) {
+        return;
+    }
+
+    D3DContext *pd3dContext;
+    pMgr->GetD3DContext(adapter, &pd3dContext);
+
+    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) finished", adapter);
+}
+
+void D3DInitializer::D3DAdapterInitializer::CleanImpl(bool reInit)
+{
+    // nothing to do - D3DPipelineManager cleans adapters
+}
+
+
+extern "C" {
+/*
+ * Export function to start D3D preloading
+ * (called from java/javaw - see src/windows/bin/java-md.c)
+ */
+__declspec(dllexport) int preloadD3D()
+{
+    J2dRlsTraceLn(J2D_TRACE_INFO, "AWT warmup: preloadD3D");
+    AwtToolkit::GetInstance().GetPreloadThread().AddAction(&D3DInitializer::GetInstance());
+    return 1;
+}
+
+}
+

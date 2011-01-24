@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_COMPILER_OOPMAP_HPP
+#define SHARE_VM_COMPILER_OOPMAP_HPP
+
+#include "code/compressedStream.hpp"
+#include "code/vmreg.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map
 // describes for a specific pc whether each register and frame stack slot is:
@@ -315,3 +323,5 @@ class DerivedPointerTableDeactivate: public StackObj {
   }
 };
 #endif // COMPILER2
+
+#endif // SHARE_VM_COMPILER_OOPMAP_HPP

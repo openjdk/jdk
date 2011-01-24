@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,6 +377,7 @@ public class ScrollPane extends Container implements Accessible {
      * This is a convenience method which interfaces with the Adjustable
      * objects which represent the state of the scrollbars.
      * @param p the Point representing the position to scroll to
+     * @throws NullPointerException if {@code p} is {@code null}
      */
     public void setScrollPosition(Point p) {
         setScrollPosition(p.x, p.y);

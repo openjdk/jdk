@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ static HPEN     nullpen;
 static jclass xorCompClass;
 
 static jboolean beingShutdown = JNI_FALSE;
+static volatile LONG timeStamp = 0;
 extern CriticalSection windowMoveLock;
 
 extern "C"
@@ -90,11 +91,23 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
     HDC oldhDC = info->hDC;
     // the hDC is NULL for offscreen surfaces - we don't store it
     // in TLS as it must be created new every time.
-    if (((oldhDC == NULL) && wsdo->window != NULL) || (info->wsdo != wsdo)) {
+
+    if( ((oldhDC == NULL) && wsdo->window != NULL) ||
+         (info->wsdo != wsdo) ||
+         (info->wsdoTimeStamp != wsdo->timeStamp) )
+    {
 
         // Init graphics state, either because this is our first time
         // using it in this thread or because this thread is now
         // dealing with a different window than it was last time.
+
+        //check extra condition:
+        //(info->wsdoTimeStamp != wsdo->timeStamp).
+        //Checking memory addresses (info->wsdo != wsdo) will not detect
+        //that wsdo points to a newly allocated structure in case
+        //that structure just got allocated at a "recycled" memory location
+        //which previously was pointed by info->wsdo
+        //see bug# 6859086
 
         // Release cached DC. We use deferred DC releasing mechanism because
         // the DC is associated with cached wsdo and component peer,
@@ -157,7 +170,9 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         info->xorcolor = 0;
         info->patrop = PATCOPY;
 
+        //store the address and time stamp of newly allocated GDIWinSDOps structure
         info->wsdo = wsdo;
+        info->wsdoTimeStamp = wsdo->timeStamp;
     }
 }
 
@@ -367,6 +382,7 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
         JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
         return;
     }
+    wsdo->timeStamp = InterlockedIncrement(&timeStamp); //creation time stamp
     wsdo->sdOps.Lock = GDIWinSD_Lock;
     wsdo->sdOps.GetRasInfo = GDIWinSD_GetRasInfo;
     wsdo->sdOps.Unlock = GDIWinSD_Unlock;

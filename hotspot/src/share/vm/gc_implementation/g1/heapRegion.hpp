@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
+
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
+#include "gc_implementation/g1/survRateGroup.hpp"
+#include "gc_implementation/shared/ageTable.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/watermark.hpp"
+
 #ifndef SERIALGC
 
 // A HeapRegion is the smallest piece of a G1CollectedHeap that
@@ -395,13 +406,11 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Causes the current region to represent a humongous object spanning "n"
   // regions.
-  virtual void set_startsHumongous();
+  void set_startsHumongous(HeapWord* new_end);
 
   // The regions that continue a humongous sequence should be added using
   // this method, in increasing address order.
   void set_continuesHumongous(HeapRegion* start);
-
-  void add_continuingHumongousRegion(HeapRegion* cont);
 
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
@@ -733,13 +742,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                    FilterOutOfRegionClosure* cl,
                                    bool filter_young);
 
-  // The region "mr" is entirely in "this", and starts and ends at block
-  // boundaries. The caller declares that all the contained blocks are
-  // coalesced into one.
-  void declare_filled_region_to_BOT(MemRegion mr) {
-    _offsets.single_block(mr.start(), mr.end());
-  }
-
   // A version of block start that is guaranteed to find *some* block
   // boundary at or before "p", but does not object iteration, and may
   // therefore be used safely when the heap is unparseable.
@@ -954,3 +956,5 @@ public:
 // End: ***
 
 #endif // SERIALGC
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP

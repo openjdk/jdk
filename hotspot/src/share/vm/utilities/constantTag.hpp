@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+
+#include "prims/jvm.h"
+#include "utilities/top.hpp"
 
 // constant tags in Java .class files
 
@@ -80,7 +86,15 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   bool is_method_type() const              { return _tag == JVM_CONSTANT_MethodType; }
   bool is_method_handle() const            { return _tag == JVM_CONSTANT_MethodHandle; }
-  bool is_invoke_dynamic() const           { return _tag == JVM_CONSTANT_InvokeDynamic; }
+  bool is_invoke_dynamic() const           { return (_tag == JVM_CONSTANT_InvokeDynamic ||
+                                                     _tag == JVM_CONSTANT_InvokeDynamicTrans); }
+
+  bool is_loadable_constant() const {
+    return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
+            is_method_type() || is_method_handle() ||
+            is_unresolved_klass() || is_unresolved_string() ||
+            is_object());
+  }
 
   constantTag() {
     _tag = JVM_CONSTANT_Invalid;
@@ -100,3 +114,5 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   void print_on(outputStream* st) const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_UTILITIES_CONSTANTTAG_HPP

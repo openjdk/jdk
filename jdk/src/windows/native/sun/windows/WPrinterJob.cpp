@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,7 +639,7 @@ static BOOL IsDCPostscript( HDC hDC )
     if( ::ExtEscape( hDC, GETTECHNOLOGY, 0, NULL, MAX_PATH,
                      (LPSTR)szTechnology ) <= 0 )
         return FALSE;
-    strupr( szTechnology );
+    _strupr_s(szTechnology, MAX_PATH);
     if(!strstr( szTechnology, "POSTSCRIPT" ) == NULL )
         return TRUE;
 

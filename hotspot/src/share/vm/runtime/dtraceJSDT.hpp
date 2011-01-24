@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_DTRACEJSDT_HPP
+#define SHARE_VM_RUNTIME_DTRACEJSDT_HPP
+
+#include "code/nmethod.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+#endif
 
 class RegisteredProbes;
 typedef jlong OpaqueProbes;
@@ -87,3 +101,5 @@ class RegisteredProbes : public CHeapObj {
     _nmethods[i] = nm;
   }
 };
+
+#endif // SHARE_VM_RUNTIME_DTRACEJSDT_HPP

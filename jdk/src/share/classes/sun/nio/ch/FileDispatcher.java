@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,5 +44,13 @@ abstract class FileDispatcher extends NativeDispatcher {
                        boolean shared) throws IOException;
 
     abstract void release(FileDescriptor fd, long pos, long size)
+        throws IOException;
+
+    /**
+     * Returns a dup of fd if a file descriptor is required for
+     * memory-mapping operations, otherwise returns an invalid
+     * FileDescriptor (meaning a newly allocated FileDescriptor)
+     */
+    abstract FileDescriptor duplicateForMapping(FileDescriptor fd)
         throws IOException;
 }

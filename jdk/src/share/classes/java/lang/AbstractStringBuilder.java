@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param   minimumCapacity   the minimum desired capacity.
      */
     public void ensureCapacity(int minimumCapacity) {
-        ensureCapacityInternal(minimumCapacity);
+        if (minimumCapacity > 0)
+            ensureCapacityInternal(minimumCapacity);
     }
 
     /**
@@ -108,6 +109,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * never synchronized.
      */
     private void ensureCapacityInternal(int minimumCapacity) {
+        // overflow-conscious code
         if (minimumCapacity - value.length > 0)
             expandCapacity(minimumCapacity);
     }

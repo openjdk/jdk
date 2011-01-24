@@ -22,6 +22,26 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_GLOBALS_HPP
+#define SHARE_VM_C1_C1_GLOBALS_HPP
+
+#include "runtime/globals.hpp"
+#ifdef TARGET_ARCH_x86
+# include "c1_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c1_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c1_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c1_globals_windows.hpp"
+#endif
+
 //
 // Defines all global flags used by the client compiler.
 //
@@ -74,6 +94,9 @@
                                                                             \
   develop(bool, SelectivePhiFunctions, true,                                \
           "create phi functions at loop headers only when necessary")       \
+                                                                            \
+  develop(bool, OptimizeIfOps, true,                                        \
+          "Optimize multiple IfOps")                                        \
                                                                             \
   develop(bool, DoCEE, true,                                                \
           "Do Conditional Expression Elimination to simplify CFG")          \
@@ -216,9 +239,6 @@
   develop(bool, DeoptC1, true,                                              \
           "Use deoptimization in C1")                                       \
                                                                             \
-  develop(bool, DeoptOnAsyncException, true,                                \
-          "Deoptimize upon Thread.stop(); improves precision of IR")        \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
@@ -303,6 +323,7 @@
 
 
 // Read default values for c1 globals
-// #include "incls/_c1_globals_pd.hpp.incl"
 
 C1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_NOTPRODUCT_FLAG)
+
+#endif // SHARE_VM_C1_C1_GLOBALS_HPP

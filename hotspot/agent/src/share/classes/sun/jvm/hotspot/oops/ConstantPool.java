@@ -53,11 +53,16 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type   = db.lookupType("constantPoolOopDesc");
     tags        = new OopField(type.getOopField("_tags"), 0);
+    operands    = new OopField(type.getOopField("_operands"), 0);
     cache       = new OopField(type.getOopField("_cache"), 0);
     poolHolder  = new OopField(type.getOopField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
     headerSize  = type.getSize();
     elementSize = 0;
+    // fetch constants:
+    INDY_BSM_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_bsm_offset").intValue();
+    INDY_ARGC_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argc_offset").intValue();
+    INDY_ARGV_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argv_offset").intValue();
   }
 
   ConstantPool(OopHandle handle, ObjectHeap heap) {
@@ -67,6 +72,7 @@ public class ConstantPool extends Oop implements ClassConstants {
   public boolean isConstantPool()      { return true; }
 
   private static OopField tags;
+  private static OopField operands;
   private static OopField cache;
   private static OopField poolHolder;
   private static CIntField length; // number of elements in oop
@@ -74,7 +80,12 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static long headerSize;
   private static long elementSize;
 
+  private static int INDY_BSM_OFFSET;
+  private static int INDY_ARGC_OFFSET;
+  private static int INDY_ARGV_OFFSET;
+
   public TypeArray         getTags()       { return (TypeArray)         tags.getValue(this); }
+  public TypeArray         getOperands()   { return (TypeArray)         operands.getValue(this); }
   public ConstantPoolCache getCache()      { return (ConstantPoolCache) cache.getValue(this); }
   public Klass             getPoolHolder() { return (Klass)             poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(this); }
@@ -278,6 +289,28 @@ public class ConstantPool extends Oop implements ClassConstants {
     return res;
   }
 
+  /** Lookup for multi-operand (InvokeDynamic) entries. */
+  public short[] getBootstrapSpecifierAt(int i) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
+    }
+    if (getTagAt(i).value() == JVM_CONSTANT_InvokeDynamicTrans)
+        return null;
+    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    TypeArray operands = getOperands();
+    if (operands == null)  return null;  // safety first
+    int basePos = VM.getVM().buildIntFromShorts(operands.getShortAt(bsmSpec * 2 + 0),
+                                                operands.getShortAt(bsmSpec * 2 + 1));
+    int argv = basePos + INDY_ARGV_OFFSET;
+    int argc = operands.getShortAt(basePos + INDY_ARGC_OFFSET);
+    int endPos = argv + argc;
+    short[] values = new short[endPos - basePos];
+    for (int j = 0; j < values.length; j++) {
+        values[j] = operands.getShortAt(basePos+j);
+    }
+    return values;
+  }
+
   final private static String[] nameForTag = new String[] {
   };
 
@@ -298,6 +331,7 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_MethodHandle:       return "JVM_CONSTANT_MethodHandle";
     case JVM_CONSTANT_MethodType:         return "JVM_CONSTANT_MethodType";
     case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
+    case JVM_CONSTANT_InvokeDynamicTrans: return "JVM_CONSTANT_InvokeDynamic/transitional";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
     case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
@@ -357,6 +391,7 @@ public class ConstantPool extends Oop implements ClassConstants {
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
         case JVM_CONSTANT_InvokeDynamic:
+        case JVM_CONSTANT_InvokeDynamicTrans:
           visitor.doInt(new IntField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;
         }
@@ -520,17 +555,19 @@ public class ConstantPool extends Oop implements ClassConstants {
                   break;
               }
 
+              case JVM_CONSTANT_InvokeDynamicTrans:
               case JVM_CONSTANT_InvokeDynamic: {
                   dos.writeByte(cpConstType);
                   int value = getIntAt(ci);
-                  short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
+                  short bsmIndex = (short) extractLowShortFromInt(value);
                   short nameAndTypeIndex = (short) extractHighShortFromInt(value);
-                  dos.writeShort(bootstrapMethodIndex);
+                  dos.writeShort(bsmIndex);
                   dos.writeShort(nameAndTypeIndex);
-                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bootstrapMethodIndex
+                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bsmIndex
                                           + ", N&T = " + nameAndTypeIndex);
                   break;
               }
+
               default:
                   throw new InternalError("unknown tag: " + cpConstType);
           } // switch

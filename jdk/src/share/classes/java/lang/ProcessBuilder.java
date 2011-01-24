@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public final class ProcessBuilder
      * @param command a string array containing the program and its arguments
      */
     public ProcessBuilder(String... command) {
-        this.command = new ArrayList<String>(command.length);
+        this.command = new ArrayList<>(command.length);
         for (String arg : command)
             this.command.add(arg);
     }
@@ -251,7 +251,7 @@ public final class ProcessBuilder
      * @return this process builder
      */
     public ProcessBuilder command(String... command) {
-        this.command = new ArrayList<String>(command.length);
+        this.command = new ArrayList<>(command.length);
         for (String arg : command)
             this.command.add(arg);
         return this;
@@ -537,7 +537,11 @@ public final class ProcessBuilder
          */
         public File file() { return null; }
 
-        FileOutputStream toFileOutputStream() throws IOException {
+        /**
+         * When redirected to a destination file, indicates if the output
+         * is to be written to the end of the file.
+         */
+        boolean append() {
             throw new UnsupportedOperationException();
         }
 
@@ -588,9 +592,7 @@ public final class ProcessBuilder
                     public String toString() {
                         return "redirect to write to file \"" + file + "\"";
                     }
-                    FileOutputStream toFileOutputStream() throws IOException {
-                        return new FileOutputStream(file, false);
-                    }
+                    boolean append() { return false; }
                 };
         }
 
@@ -620,9 +622,7 @@ public final class ProcessBuilder
                     public String toString() {
                         return "redirect to append to file \"" + file + "\"";
                     }
-                    FileOutputStream toFileOutputStream() throws IOException {
-                        return new FileOutputStream(file, true);
-                    }
+                    boolean append() { return true; }
                 };
         }
 

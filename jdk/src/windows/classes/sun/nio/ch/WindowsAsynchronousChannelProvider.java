@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.net.ProtocolFamily;
 import java.io.IOException;
 
 public class WindowsAsynchronousChannelProvider
@@ -89,13 +88,5 @@ public class WindowsAsynchronousChannelProvider
         throws IOException
     {
         return new WindowsAsynchronousSocketChannelImpl(toIocp(group));
-    }
-
-    @Override
-    public AsynchronousDatagramChannel openAsynchronousDatagramChannel(ProtocolFamily family,
-                                                                       AsynchronousChannelGroup group)
-        throws IOException
-    {
-        return new SimpleAsynchronousDatagramChannelImpl(family, toIocp(group));
     }
 }

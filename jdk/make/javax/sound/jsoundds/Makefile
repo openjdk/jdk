@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ FILES_export = \
 #
 # Extra cc/linker flags.
 #
-LDLIBS += dsound.lib winmm.lib user32.lib
+LDLIBS += dsound.lib winmm.lib user32.lib ole32.lib
 CPPFLAGS += \
 	-DUSE_DAUDIO=TRUE \
 	-I$(SHARE_SRC)/native/com/sun/media/sound \

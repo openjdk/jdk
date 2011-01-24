@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
  */
 public class RunExamples {
     public static void main(String... args) throws Exception {
-        boolean jtreg = (System.getProperty("test.src") != null);
+        jtreg = (System.getProperty("test.src") != null);
         File tmpDir;
         if (jtreg) {
             // use standard jtreg scratch directory: the current directory
@@ -166,10 +166,15 @@ public class RunExamples {
     Set<Example> getExamples(File examplesDir) {
         Set<Example> results = new TreeSet<Example>();
         for (File f: examplesDir.listFiles()) {
-            if (f.isDirectory() || f.isFile() && f.getName().endsWith(".java"))
+            if (isValidExample(f))
                 results.add(new Example(f));
         }
         return results;
+    }
+
+    boolean isValidExample(File f) {
+        return (f.isDirectory() && (!jtreg || f.list().length > 0)) ||
+                (f.isFile() && f.getName().endsWith(".java"));
     }
 
     /**
@@ -179,6 +184,8 @@ public class RunExamples {
         System.err.println("Error: " + msg);
         errors++;
     }
+
+    static boolean jtreg;
 
     int errors;
 

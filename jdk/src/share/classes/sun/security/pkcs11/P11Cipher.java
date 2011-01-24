@@ -74,7 +74,7 @@ final class P11Cipher extends CipherSpi {
         // DEC: return the length of trailing padding bytes given the specified
         // padded data
         int unpad(byte[] paddedData, int len)
-                throws BadPaddingException;
+                throws BadPaddingException, IllegalBlockSizeException;
     }
 
     private static class PKCS5Padding implements Padding {
@@ -96,9 +96,10 @@ final class P11Cipher extends CipherSpi {
         }
 
         public int unpad(byte[] paddedData, int len)
-                throws BadPaddingException {
-            if (len < 1 || len > paddedData.length) {
-                throw new BadPaddingException("Invalid pad array length!");
+                throws BadPaddingException, IllegalBlockSizeException {
+            if ((len < 1) || (len % blockSize != 0)) {
+                throw new IllegalBlockSizeException
+                    ("Input length must be multiples of " + blockSize);
             }
             byte padValue = paddedData[len - 1];
             if (padValue < 1 || padValue > blockSize) {
@@ -394,6 +395,8 @@ final class P11Cipher extends CipherSpi {
             }
         } catch (PKCS11Exception e) {
             throw new ProviderException("Cancel failed", e);
+        } finally {
+            reset();
         }
     }
 
@@ -407,12 +410,18 @@ final class P11Cipher extends CipherSpi {
         if (session == null) {
             session = token.getOpSession();
         }
-        if (encrypt) {
-            token.p11.C_EncryptInit(session.id(),
-                    new CK_MECHANISM(mechanism, iv), p11Key.keyID);
-        } else {
-            token.p11.C_DecryptInit(session.id(),
-                    new CK_MECHANISM(mechanism, iv), p11Key.keyID);
+        try {
+            if (encrypt) {
+                token.p11.C_EncryptInit(session.id(),
+                        new CK_MECHANISM(mechanism, iv), p11Key.keyID);
+            } else {
+                token.p11.C_DecryptInit(session.id(),
+                        new CK_MECHANISM(mechanism, iv), p11Key.keyID);
+            }
+        } catch (PKCS11Exception ex) {
+            // release session when initialization failed
+            session = token.releaseSession(session);
+            throw ex;
         }
         bytesBuffered = 0;
         padBufferLen = 0;
@@ -445,6 +454,16 @@ final class P11Cipher extends CipherSpi {
             result += (blockSize - (result & (blockSize - 1)));
         }
         return result;
+    }
+
+    // reset the states to the pre-initialized values
+    private void reset() {
+        initialized = false;
+        bytesBuffered = 0;
+        padBufferLen = 0;
+        if (session != null) {
+            session = token.releaseSession(session);
+        }
     }
 
     // see JCE spec
@@ -565,6 +584,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
+            reset();
             throw new ProviderException("update() failed", e);
         }
     }
@@ -682,6 +702,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
+            reset();
             throw new ProviderException("update() failed", e);
         }
     }
@@ -728,10 +749,7 @@ final class P11Cipher extends CipherSpi {
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
-            initialized = false;
-            bytesBuffered = 0;
-            padBufferLen = 0;
-            session = token.releaseSession(session);
+            reset();
         }
     }
 
@@ -805,9 +823,7 @@ final class P11Cipher extends CipherSpi {
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
-            initialized = false;
-            bytesBuffered = 0;
-            session = token.releaseSession(session);
+            reset();
         }
     }
 

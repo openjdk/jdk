@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_chaitin.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/oopMap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
+#include "opto/coalesce.hpp"
+#include "opto/connode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/indexSet.hpp"
+#include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/rootnode.hpp"
 
 //=============================================================================
 
@@ -1767,7 +1782,7 @@ void PhaseChaitin::dump() const {
   for(uint i2 = 1; i2 < _maxlrg; i2++ ) {
     tty->print("L%d: ",i2);
     if( i2 < _ifg->_maxlrg ) lrgs(i2).dump( );
-    else tty->print("new LRG");
+    else tty->print_cr("new LRG");
   }
   tty->print_cr("");
 
@@ -1978,7 +1993,7 @@ void PhaseChaitin::dump_bb( uint pre_order ) const {
 }
 
 //------------------------------dump_lrg---------------------------------------
-void PhaseChaitin::dump_lrg( uint lidx ) const {
+void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
   tty->print_cr("---dump of L%d---",lidx);
 
   if( _ifg ) {
@@ -1987,9 +2002,11 @@ void PhaseChaitin::dump_lrg( uint lidx ) const {
       return;
     }
     tty->print("L%d: ",lidx);
-    lrgs(lidx).dump( );
+    if( lidx < _ifg->_maxlrg ) lrgs(lidx).dump( );
+    else tty->print_cr("new LRG");
   }
-  if( _ifg ) {    tty->print("Neighbors: %d - ", _ifg->neighbor_cnt(lidx));
+  if( _ifg && lidx < _ifg->_maxlrg) {
+    tty->print("Neighbors: %d - ", _ifg->neighbor_cnt(lidx));
     _ifg->neighbors(lidx)->dump();
     tty->cr();
   }
@@ -2009,16 +2026,18 @@ void PhaseChaitin::dump_lrg( uint lidx ) const {
         dump(n);
         continue;
       }
-      uint cnt = n->req();
-      for( uint k = 1; k < cnt; k++ ) {
-        Node *m = n->in(k);
-        if (!m)  continue;  // be robust in the dumper
-        if( Find_const(m) == lidx ) {
-          if( !dump_once++ ) {
-            tty->cr();
-            b->dump_head( &_cfg._bbs );
+      if (!defs_only) {
+        uint cnt = n->req();
+        for( uint k = 1; k < cnt; k++ ) {
+          Node *m = n->in(k);
+          if (!m)  continue;  // be robust in the dumper
+          if( Find_const(m) == lidx ) {
+            if( !dump_once++ ) {
+              tty->cr();
+              b->dump_head( &_cfg._bbs );
+            }
+            dump(n);
           }
-          dump(n);
         }
       }
     }

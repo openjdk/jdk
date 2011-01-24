@@ -26,7 +26,7 @@
 /*
  *
  *
- * (C) Copyright IBM Corp. 2004-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 2004-2010 - All Rights Reserved
  *
  */
 
@@ -35,6 +35,7 @@
 #include "LEGlyphStorage.h"
 
 #include "LESwaps.h"
+#include "OpenTypeUtilities.h"
 
 #include <stdio.h>
 
@@ -91,8 +92,8 @@ struct KernTableHeader {
  * TODO: support multiple subtables
  * TODO: respect header flags
  */
-KernTable::KernTable(const LEFontInstance* font, const void* tableData)
-  : pairs(0), font(font)
+KernTable::KernTable(const LEFontInstance* font_, const void* tableData)
+  : pairs(0), font(font_)
 {
   const KernTableHeader* header = (const KernTableHeader*)tableData;
   if (header == 0) {
@@ -120,10 +121,18 @@ KernTable::KernTable(const LEFontInstance* font, const void* tableData)
       coverage = SWAPW(subhead->coverage);
       if (coverage & COVERAGE_HORIZONTAL) { // only handle horizontal kerning
         const Subtable_0* table = (const Subtable_0*)((char*)subhead + KERN_SUBTABLE_HEADER_SIZE);
-        nPairs = SWAPW(table->nPairs);
-        searchRange = SWAPW(table->searchRange) / KERN_PAIRINFO_SIZE ;
+
+        nPairs        = SWAPW(table->nPairs);
+
+#if 0   // some old fonts have bad values here...
+        searchRange   = SWAPW(table->searchRange);
         entrySelector = SWAPW(table->entrySelector);
-        rangeShift = SWAPW(table->rangeShift) / KERN_PAIRINFO_SIZE;
+        rangeShift    = SWAPW(table->rangeShift);
+#else
+        entrySelector = OpenTypeUtilities::highBit(nPairs);
+        searchRange   = (1 << entrySelector) * KERN_PAIRINFO_SIZE;
+        rangeShift    = (nPairs * KERN_PAIRINFO_SIZE) - searchRange;
+#endif
 
         pairs = (PairInfo*)font->getKernPairs();
         if (pairs == NULL) {

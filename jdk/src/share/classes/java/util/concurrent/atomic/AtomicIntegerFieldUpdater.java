@@ -55,7 +55,7 @@ import java.lang.reflect.*;
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
  */
-public abstract class  AtomicIntegerFieldUpdater<T>  {
+public abstract class  AtomicIntegerFieldUpdater<T> {
     /**
      * Creates and returns an updater for objects with the given field.
      * The Class argument is needed to check that reflective types and
@@ -279,7 +279,7 @@ public abstract class  AtomicIntegerFieldUpdater<T>  {
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
                     caller, tclass, null, modifiers);
                 sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
 

@@ -44,8 +44,19 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Locale.Category;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -59,11 +70,237 @@ public enum LauncherHelper {
     private static StringBuilder outBuf = new StringBuilder();
 
     private static ResourceBundle javarb = null;
+
+    private static final String INDENT = "    ";
+    private static final String VM_SETTINGS     = "VM settings:";
+    private static final String PROP_SETTINGS   = "Property settings:";
+    private static final String LOCALE_SETTINGS = "Locale settings:";
+
     private static synchronized ResourceBundle getLauncherResourceBundle() {
         if (javarb == null) {
             javarb = ResourceBundle.getBundle(defaultBundleName);
         }
         return javarb;
+    }
+
+    /*
+     * A method called by the launcher to print out the standard settings,
+     * by default -XshowSettings is equivalent to -XshowSettings:all,
+     * Specific information may be gotten by using suboptions with possible
+     * values vm, properties and locale.
+     *
+     * printToStderr: choose between stdout and stderr
+     *
+     * optionFlag: specifies which options to print default is all other
+     *    possible values are vm, properties, locale.
+     *
+     * initialHeapSize: in bytes, as set by the launcher, a zero-value indicates
+     *    this code should determine this value, using a suitable method or
+     *    the line could be omitted.
+     *
+     * maxHeapSize: in bytes, as set by the launcher, a zero-value indicates
+     *    this code should determine this value, using a suitable method.
+     *
+     * stackSize: in bytes, as set by the launcher, a zero-value indicates
+     *    this code determine this value, using a suitable method or omit the
+     *    line entirely.
+     */
+    static void showSettings(boolean printToStderr, String optionFlag,
+            long initialHeapSize, long maxHeapSize, long stackSize,
+            boolean isServer) {
+
+        PrintStream ostream = (printToStderr) ? System.err : System.out;
+        String opts[] = optionFlag.split(":");
+        String optStr = (opts.length > 1 && opts[1] != null)
+                ? opts[1].trim()
+                : "all";
+        switch (optStr) {
+            case "vm":
+                printVmSettings(ostream, initialHeapSize, maxHeapSize,
+                        stackSize, isServer);
+                break;
+            case "properties":
+                printProperties(ostream);
+                break;
+            case "locale":
+                printLocale(ostream);
+                break;
+            default:
+                printVmSettings(ostream, initialHeapSize, maxHeapSize,
+                        stackSize, isServer);
+                printProperties(ostream);
+                printLocale(ostream);
+                break;
+        }
+    }
+
+    /*
+     * prints the main vm settings subopt/section
+     */
+    private static void printVmSettings(PrintStream ostream,
+            long initialHeapSize, long maxHeapSize,
+            long stackSize, boolean isServer) {
+
+        ostream.println(VM_SETTINGS);
+        if (stackSize != 0L) {
+            ostream.println(INDENT + "Stack Size: " +
+                    SizePrefix.scaleValue(stackSize));
+        }
+        if (initialHeapSize != 0L) {
+             ostream.println(INDENT + "Min. Heap Size: " +
+                    SizePrefix.scaleValue(initialHeapSize));
+        }
+        if (maxHeapSize != 0L) {
+            ostream.println(INDENT + "Max. Heap Size: " +
+                    SizePrefix.scaleValue(maxHeapSize));
+        } else {
+            ostream.println(INDENT + "Max. Heap Size (Estimated): "
+                    + SizePrefix.scaleValue(Runtime.getRuntime().maxMemory()));
+        }
+        ostream.println(INDENT + "Ergonomics Machine Class: "
+                + ((isServer) ? "server" : "client"));
+        ostream.println(INDENT + "Using VM: "
+                + System.getProperty("java.vm.name"));
+        ostream.println();
+    }
+
+    /*
+     * prints the properties subopt/section
+     */
+    private static void printProperties(PrintStream ostream) {
+        Properties p = System.getProperties();
+        ostream.println(PROP_SETTINGS);
+        List<String> sortedPropertyKeys = new ArrayList<>();
+        sortedPropertyKeys.addAll(p.stringPropertyNames());
+        Collections.sort(sortedPropertyKeys);
+        for (String x : sortedPropertyKeys) {
+            printPropertyValue(ostream, x, p.getProperty(x));
+        }
+        ostream.println();
+    }
+
+    private static boolean isPath(String key) {
+        return key.endsWith(".dirs") || key.endsWith(".path");
+    }
+
+    private static void printPropertyValue(PrintStream ostream,
+            String key, String value) {
+        ostream.print(INDENT + key + " = ");
+        if (key.equals("line.separator")) {
+            for (byte b : value.getBytes()) {
+                switch (b) {
+                    case 0xd:
+                        ostream.print("\\r ");
+                        break;
+                    case 0xa:
+                        ostream.print("\\n ");
+                        break;
+                    default:
+                        // print any bizzare line separators in hex, but really
+                        // shouldn't happen.
+                        ostream.printf("0x%02X", b & 0xff);
+                        break;
+                }
+            }
+            ostream.println();
+            return;
+        }
+        if (!isPath(key)) {
+            ostream.println(value);
+            return;
+        }
+        String[] values = value.split(System.getProperty("path.separator"));
+        boolean first = true;
+        for (String s : values) {
+            if (first) { // first line treated specially
+                ostream.println(s);
+                first = false;
+            } else { // following lines prefix with indents
+                ostream.println(INDENT + INDENT + s);
+            }
+        }
+    }
+
+    /*
+     * prints the locale subopt/section
+     */
+    private static void printLocale(PrintStream ostream) {
+        Locale locale = Locale.getDefault();
+        ostream.println(LOCALE_SETTINGS);
+        ostream.println(INDENT + "default locale = " +
+                locale.getDisplayLanguage());
+        ostream.println(INDENT + "default display locale = " +
+                Locale.getDefault(Category.DISPLAY).getDisplayName());
+        ostream.println(INDENT + "default format locale = " +
+                Locale.getDefault(Category.FORMAT).getDisplayName());
+        printLocales(ostream);
+        ostream.println();
+    }
+
+    private static void printLocales(PrintStream ostream) {
+        Locale[] tlocales = Locale.getAvailableLocales();
+        final int len = tlocales == null ? 0 : tlocales.length;
+        if (len < 1 ) {
+            return;
+        }
+        // Locale does not implement Comparable so we convert it to String
+        // and sort it for pretty printing.
+        Set<String> sortedSet = new TreeSet<>();
+        for (Locale l : tlocales) {
+            sortedSet.add(l.toString());
+        }
+
+        ostream.print(INDENT + "available locales = ");
+        Iterator<String> iter = sortedSet.iterator();
+        final int last = len - 1;
+        for (int i = 0 ; iter.hasNext() ; i++) {
+            String s = iter.next();
+            ostream.print(s);
+            if (i != last) {
+                ostream.print(", ");
+            }
+            // print columns of 8
+            if ((i + 1) % 8 == 0) {
+                ostream.println();
+                ostream.print(INDENT + INDENT);
+            }
+        }
+    }
+
+    private enum SizePrefix {
+
+        KILO(1024, "K"),
+        MEGA(1024 * 1024, "M"),
+        GIGA(1024 * 1024 * 1024, "G"),
+        TERA(1024L * 1024L * 1024L * 1024L, "T");
+        long size;
+        String abbrev;
+
+        SizePrefix(long size, String abbrev) {
+            this.size = size;
+            this.abbrev = abbrev;
+        }
+
+        private static String scale(long v, SizePrefix prefix) {
+            return BigDecimal.valueOf(v).divide(BigDecimal.valueOf(prefix.size),
+                    2, RoundingMode.HALF_EVEN).toPlainString() + prefix.abbrev;
+        }
+        /*
+         * scale the incoming values to a human readable form, represented as
+         * K, M, G and T, see java.c parse_size for the scaled values and
+         * suffixes. The lowest possible scaled value is Kilo.
+         */
+        static String scaleValue(long v) {
+            if (v < MEGA.size) {
+                return scale(v, KILO);
+            } else if (v < GIGA.size) {
+                return scale(v, MEGA);
+            } else if (v < TERA.size) {
+                return scale(v, GIGA);
+            } else {
+                return scale(v, TERA);
+            }
+        }
     }
 
     /**
@@ -164,6 +401,14 @@ public enum LauncherHelper {
         }
     }
 
+
+    // From src/share/bin/java.c:
+    //   enum LaunchMode { LM_UNKNOWN = 0, LM_CLASS, LM_JAR };
+
+    private static final int LM_UNKNOWN = 0;
+    private static final int LM_CLASS   = 1;
+    private static final int LM_JAR     = 2;
+
     /**
      * This method does the following:
      * 1. gets the classname from a Jar's manifest, if necessary
@@ -183,24 +428,40 @@ public enum LauncherHelper {
      * @return
      * @throws java.io.IOException
      */
-    public static Object checkAndLoadMain(boolean printToStderr,
-            boolean isJar, String name) throws IOException {
+    public static Class<?> checkAndLoadMain(boolean printToStderr,
+                                            int mode,
+                                            String what) throws IOException
+    {
+
+        ClassLoader ld = ClassLoader.getSystemClassLoader();
+
         // get the class name
-        String classname = (isJar) ? getMainClassFromJar(name) : name;
-        classname = classname.replace('/', '.');
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        Class<?> clazz = null;
+        String cn = null;
+        switch (mode) {
+        case LM_CLASS:
+            cn = what;
+            break;
+        case LM_JAR:
+            cn = getMainClassFromJar(what);
+            break;
+        default:
+            throw new InternalError("" + mode + ": Unknown launch mode");
+        }
+        cn = cn.replace('/', '.');
+
         PrintStream ostream = (printToStderr) ? System.err : System.out;
+        Class<?> c = null;
         try {
-            clazz = loader.loadClass(classname);
+            c = ld.loadClass(cn);
         } catch (ClassNotFoundException cnfe) {
-            ostream.println(getLocalizedMessage("java.launcher.cls.error1", classname));
-            NoClassDefFoundError ncdfe = new NoClassDefFoundError(classname);
+            ostream.println(getLocalizedMessage("java.launcher.cls.error1",
+                                                cn));
+            NoClassDefFoundError ncdfe = new NoClassDefFoundError(cn);
             ncdfe.initCause(cnfe);
             throw ncdfe;
         }
-        signatureDiagnostic(ostream, clazz);
-        return clazz;
+        signatureDiagnostic(ostream, c);
+        return c;
     }
 
     static void signatureDiagnostic(PrintStream ostream, Class<?> clazz) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CITYPEARRAYKLASS_HPP
+#define SHARE_VM_CI_CITYPEARRAYKLASS_HPP
+
+#include "ci/ciArrayKlass.hpp"
 
 // ciTypeArrayKlass
 //
@@ -53,3 +58,5 @@ public:
   // Make an array klass corresponding to the specified primitive type.
   static ciTypeArrayKlass* make(BasicType type);
 };
+
+#endif // SHARE_VM_CI_CITYPEARRAYKLASS_HPP

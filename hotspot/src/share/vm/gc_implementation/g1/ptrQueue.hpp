@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_PTRQUEUE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_PTRQUEUE_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/sizes.hpp"
 
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
@@ -87,6 +93,10 @@ public:
   size_t size() {
     assert(_sz >= _index, "Invariant.");
     return _buf == NULL ? 0 : _sz - _index;
+  }
+
+  bool is_empty() {
+    return _buf == NULL || _sz == _index;
   }
 
   // Set the "active" property of the queue to "b".  An enqueue to an
@@ -289,3 +299,5 @@ public:
   // Notify the consumer if the number of buffers crossed the threshold
   void notify_if_necessary();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_PTRQUEUE_HPP

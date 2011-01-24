@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+#define SHARE_VM_C1_C1_LIRASSEMBLER_HPP
+
+#include "c1/c1_CodeStubs.hpp"
+#include "ci/ciMethodData.hpp"
+#include "oops/methodDataOop.hpp"
+#include "utilities/top.hpp"
+
 class Compilation;
 class ScopeValue;
 class BarrierSet;
@@ -157,15 +165,17 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void const2reg  (LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info);
   void const2stack(LIR_Opr src, LIR_Opr dest);
-  void const2mem  (LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+  void const2mem  (LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide);
   void reg2stack  (LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack);
   void reg2reg    (LIR_Opr src, LIR_Opr dest);
-  void reg2mem    (LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned);
+  void reg2mem    (LIR_Opr src, LIR_Opr dest, BasicType type,
+                   LIR_PatchCode patch_code, CodeEmitInfo* info,
+                   bool pop_fpu_stack, bool wide, bool unaligned);
   void stack2reg  (LIR_Opr src, LIR_Opr dest, BasicType type);
   void stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type);
   void mem2reg    (LIR_Opr src, LIR_Opr dest, BasicType type,
-                   LIR_PatchCode patch_code = lir_patch_none,
-                   CodeEmitInfo* info = NULL, bool unaligned = false);
+                   LIR_PatchCode patch_code,
+                   CodeEmitInfo* info, bool wide, bool unaligned);
 
   void prefetchr  (LIR_Opr src);
   void prefetchw  (LIR_Opr src);
@@ -203,11 +213,11 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack);
   void move_op(LIR_Opr src, LIR_Opr result, BasicType type,
-               LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned);
+               LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool unaligned, bool wide);
   void volatile_move_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);
   void comp_mem_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);  // info set for null exceptions
   void comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr result, LIR_Op2* op);
-  void cmove(LIR_Condition code, LIR_Opr left, LIR_Opr right, LIR_Opr result);
+  void cmove(LIR_Condition code, LIR_Opr left, LIR_Opr right, LIR_Opr result, BasicType type);
 
   void call(        LIR_OpJavaCall* op, relocInfo::relocType rtype);
   void ic_call(     LIR_OpJavaCall* op);
@@ -236,5 +246,13 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void verify_oop_map(CodeEmitInfo* info);
 
-  #include "incls/_c1_LIRAssembler_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_LIRAssembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_LIRAssembler_sparc.hpp"
+#endif
+
 };
+
+#endif // SHARE_VM_C1_C1_LIRASSEMBLER_HPP

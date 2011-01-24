@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 # Must also specify if CPU is little endian
 CFLAGS += -DVM_LITTLE_ENDIAN
 
-# Not included in includeDB because it has no dependencies
-Obj_Files += solaris_x86_64.o
-
 #
 # Special case flags for compilers and compiler versions on amd64.
 #
@@ -35,7 +32,8 @@ ifeq ("${Platform_compiler}", "sparcWorks")
 
 # Temporary until SS10 C++ compiler is fixed
 OPT_CFLAGS/generateOptoStub.o = -xO2
-
+# Temporary util SS12u1 C++ compiler is fixed
+OPT_CFLAGS/c1_LinearScan.o = -xO2
 else
 
 ifeq ("${Platform_compiler}", "gcc")

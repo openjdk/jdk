@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import sun.awt.AWTAccessor;
 
 import javax.swing.plaf.LayerUI;
 import javax.swing.border.Border;
+import javax.accessibility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -149,7 +150,7 @@ import java.security.PrivilegedAction;
  */
 public final class JLayer<V extends Component>
         extends JComponent
-        implements Scrollable, PropertyChangeListener {
+        implements Scrollable, PropertyChangeListener, Accessible {
     private V view;
     // this field is necessary because JComponent.ui is transient
     // when layerUI is serializable
@@ -321,7 +322,7 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * A non-{@code null] border, or non-zero insets, isn't supported, to prevent the geometry
+     * A non-{@code null} border, or non-zero insets, isn't supported, to prevent the geometry
      * of this component from becoming complex enough to inhibit
      * subclassing of {@code LayerUI} class.  To create a {@code JLayer} with a border,
      * add it to a {@code JPanel} that has a border.
@@ -372,8 +373,12 @@ public final class JLayer<V extends Component>
      * {@inheritDoc}
      */
     public void removeAll() {
-        setView(null);
-        setGlassPane(null);
+        if (view != null) {
+            setView(null);
+        }
+        if (glassPane != null) {
+            setGlassPane(null);
+        }
     }
 
     /**
@@ -383,7 +388,7 @@ public final class JLayer<V extends Component>
      * @return true
      * @see JComponent#isPaintingOrigin()
      */
-    boolean isPaintingOrigin() {
+    protected boolean isPaintingOrigin() {
         return true;
     }
 
@@ -663,6 +668,22 @@ public final class JLayer<V extends Component>
         if (getUI() != null) {
             getUI().doLayout(this);
         }
+    }
+
+    /**
+     * Gets the AccessibleContext associated with this {@code JLayer}.
+     *
+     * @return the AccessibleContext associated with this {@code JLayer}.
+     */
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleJComponent() {
+                public AccessibleRole getAccessibleRole() {
+                    return AccessibleRole.PANEL;
+                }
+            };
+        }
+        return accessibleContext;
     }
 
     /**

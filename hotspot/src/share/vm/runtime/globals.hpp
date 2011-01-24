@@ -22,6 +22,86 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
+#define SHARE_VM_RUNTIME_GLOBALS_HPP
+
+#include "utilities/debug.hpp"
+#ifdef TARGET_ARCH_x86
+# include "globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "globals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "globals_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "globals_windows.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "globals_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "globals_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "globals_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "globals_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "globals_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "globals_windows_x86.hpp"
+#endif
+#ifdef COMPILER1
+#ifdef TARGET_ARCH_x86
+# include "c1_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c1_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c1_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c1_globals_windows.hpp"
+#endif
+#endif
+#ifdef COMPILER2
+#ifdef TARGET_ARCH_x86
+# include "c2_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c2_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c2_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c2_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c2_globals_windows.hpp"
+#endif
+#endif
+#ifdef SHARK
+#ifdef TARGET_ARCH_zero
+# include "shark_globals_zero.hpp"
+#endif
+#endif
+
 #if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
@@ -273,6 +353,10 @@ class CommandLineFlags {
 //    UnlockExperimentalVMOptions flag, which allows the control and
 //    modification of the experimental flags.
 //
+// Nota bene: neither diagnostic nor experimental options should be used casually,
+//    and they are not supported on production loads, except under explicit
+//    direction from support engineers.
+//
 // manageable flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
@@ -323,10 +407,10 @@ class CommandLineFlags {
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
-  product(bool, UseMembar, false,                                           \
+  product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  /* Temporary: See 6948537 */                                             \
+  /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
                                                                             \
@@ -634,6 +718,9 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
+  notproduct(bool, ZapStackSegments, trueInDebug,                           \
+             "Zap allocated/freed Stack segments with 0xFADFADED")          \
+                                                                            \
   develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
                                                                             \
@@ -814,6 +901,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, PrintJVMWarnings, false,                                    \
           "Prints warnings for unimplemented JVM functions")                \
+                                                                            \
+  product(bool, PrintWarnings, true,                                        \
+          "Prints JVM warnings to output stream")                           \
                                                                             \
   notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
           "Prints warnings for stalled SpinLocks")                          \
@@ -1190,9 +1280,6 @@ class CommandLineFlags {
   develop(bool, TraceStartupTime, false,                                    \
           "Trace setup time")                                               \
                                                                             \
-  develop(bool, TraceHPI, false,                                            \
-          "Trace Host Porting Interface (HPI)")                             \
-                                                                            \
   product(ccstr, HPILibPath, NULL,                                          \
           "Specify alternate path to HPI library")                          \
                                                                             \
@@ -1312,6 +1399,10 @@ class CommandLineFlags {
   product(bool, GCLockerInvokesConcurrent, false,                           \
           "The exit of a JNI CS necessitating a scavenge also"              \
           " kicks off a bkgrd concurrent collection")                       \
+                                                                            \
+  product(uintx, GCLockerEdenExpansionPercent, 5,                           \
+          "How much the GC can expand the eden by while the GC locker  "    \
+          "is active (as a percentage)")                                    \
                                                                             \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
@@ -1578,7 +1669,7 @@ class CommandLineFlags {
           "(Temporary, subject to experimentation)"                         \
           "Nominal minimum work per abortable preclean iteration")          \
                                                                             \
-  product(intx, CMSAbortablePrecleanWaitMillis, 100,                        \
+  manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
           "(Temporary, subject to experimentation)"                         \
           " Time that we sleep between iterations when not given"           \
           " enough work per iteration")                                     \
@@ -1670,7 +1761,7 @@ class CommandLineFlags {
   product(uintx, CMSWorkQueueDrainThreshold, 10,                            \
           "Don't drain below this size per parallel worker/thief")          \
                                                                             \
-  product(intx, CMSWaitDuration, 2000,                                      \
+  manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
                                                                             \
   product(bool, CMSYield, true,                                             \
@@ -1779,10 +1870,6 @@ class CommandLineFlags {
   notproduct(bool, GCALotAtAllSafepoints, false,                            \
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
                                                                             \
-  product(bool, HandlePromotionFailure, true,                               \
-          "The youngest generation collection does not require "            \
-          "a guarantee of full promotion of all live objects.")             \
-                                                                            \
   product(bool, PrintPromotionFailure, false,                               \
           "Print additional diagnostic information following "              \
           " promotion failure")                                             \
@@ -1799,17 +1886,17 @@ class CommandLineFlags {
   develop(uintx, PromotionFailureALotInterval, 5,                           \
           "Total collections between promotion failures alot")              \
                                                                             \
-  develop(intx, WorkStealingSleepMillis, 1,                                 \
+  experimental(intx, WorkStealingSleepMillis, 1,                            \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
+  experimental(uintx, WorkStealingYieldsBeforeSleep, 1000,                  \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
-  develop(uintx, WorkStealingHardSpins, 4096,                               \
+  experimental(uintx, WorkStealingHardSpins, 4096,                          \
           "Number of iterations in a spin loop between checks on "          \
           "time out of hard spin")                                          \
                                                                             \
-  develop(uintx, WorkStealingSpinToYieldRatio, 10,                          \
+  experimental(uintx, WorkStealingSpinToYieldRatio, 10,                     \
           "Ratio of hard spins to calls to yield")                          \
                                                                             \
   product(uintx, PreserveMarkStackSize, 1024,                               \
@@ -2996,9 +3083,6 @@ class CommandLineFlags {
   product(intx, NewRatio, 2,                                                \
           "Ratio of new/old generation sizes")                              \
                                                                             \
-  product(uintx, MaxLiveObjectEvacuationRatio, 100,                         \
-          "Max percent of eden objects that will be live at scavenge")      \
-                                                                            \
   product_pd(uintx, NewSizeThreadIncrease,                                  \
           "Additional size added to desired new generation size per "       \
           "non-daemon thread (in bytes)")                                   \
@@ -3535,7 +3619,7 @@ class CommandLineFlags {
   product(uintx, SharedDummyBlockSize, 512*M,                               \
           "Size of dummy block used to shift heap addresses (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadWriteSize,  12*M,                                \
+  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(13*M),      \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
   product(uintx, SharedReadOnlySize,   10*M,                                \
@@ -3673,3 +3757,5 @@ class CommandLineFlags {
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+
+#endif // SHARE_VM_RUNTIME_GLOBALS_HPP

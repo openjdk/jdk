@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compilerOracle.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/klass.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 
 class MethodMatcher : public CHeapObj {
  public:
@@ -323,7 +332,7 @@ static OracleCommand parse_command_name(const char * line, int* bytes_read) {
          "command_names size mismatch");
 
   *bytes_read = 0;
-  char command[32];
+  char command[33];
   int result = sscanf(line, "%32[a-z]%n", command, bytes_read);
   for (uint i = 0; i < ARRAY_SIZE(command_names); i++) {
     if (strcmp(command, command_names[i]) == 0) {
@@ -461,6 +470,12 @@ void CompilerOracle::parse_from_line(char* line) {
   OracleCommand command = parse_command_name(line, &bytes_read);
   line += bytes_read;
 
+  if (command == UnknownCommand) {
+    tty->print_cr("CompilerOracle: unrecognized line");
+    tty->print_cr("  \"%s\"", original_line);
+    return;
+  }
+
   if (command == QuietCommand) {
     _quiet = true;
     return;
@@ -489,7 +504,7 @@ void CompilerOracle::parse_from_line(char* line) {
     line += bytes_read;
     // there might be a signature following the method.
     // signatures always begin with ( so match that by hand
-    if (1 == sscanf(line, "%*[ \t](%254[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
+    if (1 == sscanf(line, "%*[ \t](%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
       sig[0] = '(';
       line += bytes_read;
       signature = oopFactory::new_symbol_handle(sig, CHECK);

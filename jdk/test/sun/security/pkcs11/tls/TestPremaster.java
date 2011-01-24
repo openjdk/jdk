@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ public class TestPremaster extends PKCS11Test {
     }
 
     public void main(Provider provider) throws Exception {
-        if (provider.getService("KeyGenerator", "SunTlsRsaPremasterSecret") == null) {
+        if (provider.getService(
+                "KeyGenerator", "SunTlsRsaPremasterSecret") == null) {
             System.out.println("Not supported by provider, skipping");
             return;
         }
@@ -66,7 +67,8 @@ public class TestPremaster extends PKCS11Test {
         System.out.println("Done.");
     }
 
-    private static void test(KeyGenerator kg, int major, int minor) throws Exception {
+    private static void test(KeyGenerator kg, int major, int minor)
+            throws Exception {
 
         kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor));
         SecretKey key = kg.generateKey();
@@ -75,7 +77,8 @@ public class TestPremaster extends PKCS11Test {
             throw new Exception("length: " + encoded.length);
         }
         if ((encoded[0] != major) || (encoded[1] != minor)) {
-            throw new Exception("version mismatch: "  + encoded[0] + "." + encoded[1]);
+            throw new Exception("version mismatch: "  + encoded[0] +
+                "." + encoded[1]);
         }
         System.out.println("OK: " + major + "." + minor);
     }

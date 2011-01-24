@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
 
 // Convert the raw encoding form into the form expected by the
 // constructor for Address.
@@ -893,10 +910,10 @@ void MacroAssembler::verify_thread() {
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     sllx(L0,32,G2);             // Move old high G1 bits high in G2
-    sllx(G1, 0,G1);             // Clear current high G1 bits
+    srl(G1, 0,G1);              // Clear current high G1 bits
     or3 (G1,G2,G1);             // Recover 64-bit G1
     sllx(L6,32,G2);             // Move old high G4 bits high in G2
-    sllx(G4, 0,G4);             // Clear current high G4 bits
+    srl(G4, 0,G4);              // Clear current high G4 bits
     or3 (G4,G2,G4);             // Recover 64-bit G4
 #endif
     restore(O0, 0, G2_thread);
@@ -1311,37 +1328,38 @@ void MacroAssembler::patchable_sethi(const AddressLiteral& addrlit, Register d) 
 }
 
 
-int MacroAssembler::size_of_sethi(address a, bool worst_case) {
+int MacroAssembler::insts_for_sethi(address a, bool worst_case) {
 #ifdef _LP64
-  if (worst_case) return 7;
-  intptr_t iaddr = (intptr_t)a;
-  int hi32 = (int)(iaddr >> 32);
-  int lo32 = (int)(iaddr);
-  int inst_count;
-  if (hi32 == 0 && lo32 >= 0)
-    inst_count = 1;
-  else if (hi32 == -1)
-    inst_count = 2;
+  if (worst_case)  return 7;
+  intptr_t iaddr = (intptr_t) a;
+  int msb32 = (int) (iaddr >> 32);
+  int lsb32 = (int) (iaddr);
+  int count;
+  if (msb32 == 0 && lsb32 >= 0)
+    count = 1;
+  else if (msb32 == -1)
+    count = 2;
   else {
-    inst_count = 2;
-    if ( hi32 & 0x3ff )
-      inst_count++;
-    if ( lo32 & 0xFFFFFC00 ) {
-      if( (lo32 >> 20) & 0xfff ) inst_count += 2;
-      if( (lo32 >> 10) & 0x3ff ) inst_count += 2;
+    count = 2;
+    if (msb32 & 0x3ff)
+      count++;
+    if (lsb32 & 0xFFFFFC00 ) {
+      if ((lsb32 >> 20) & 0xfff)  count += 2;
+      if ((lsb32 >> 10) & 0x3ff)  count += 2;
     }
   }
-  return BytesPerInstWord * inst_count;
+  return count;
 #else
-  return BytesPerInstWord;
+  return 1;
 #endif
 }
 
-int MacroAssembler::worst_case_size_of_set() {
-  return size_of_sethi(NULL, true) + 1;
+int MacroAssembler::worst_case_insts_for_set() {
+  return insts_for_sethi(NULL, true) + 1;
 }
 
 
+// Keep in sync with MacroAssembler::insts_for_internal_set
 void MacroAssembler::internal_set(const AddressLiteral& addrlit, Register d, bool ForceRelocatable) {
   intptr_t value = addrlit.value();
 
@@ -1361,6 +1379,23 @@ void MacroAssembler::internal_set(const AddressLiteral& addrlit, Register d, boo
   if (ForceRelocatable || addrlit.rspec().type() != relocInfo::none || addrlit.low10() != 0) {
     add(d, addrlit.low10(), d, addrlit.rspec());
   }
+}
+
+// Keep in sync with MacroAssembler::internal_set
+int MacroAssembler::insts_for_internal_set(intptr_t value) {
+  // can optimize
+  if (-4096 <= value && value <= 4095) {
+    return 1;
+  }
+  if (inv_hi22(hi22(value)) == value) {
+    return insts_for_sethi((address) value);
+  }
+  int count = insts_for_sethi((address) value);
+  AddressLiteral al(value);
+  if (al.low10() != 0) {
+    count++;
+  }
+  return count;
 }
 
 void MacroAssembler::set(const AddressLiteral& al, Register d) {
@@ -1425,6 +1460,45 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
     sllx(tmp, 32, tmp);
     or3 (d, tmp, d);
   }
+}
+
+int MacroAssembler::insts_for_set64(jlong value) {
+  v9_dep();
+
+  int hi = (int) (value >> 32);
+  int lo = (int) (value & ~0);
+  int count = 0;
+
+  // (Matcher::isSimpleConstant64 knows about the following optimizations.)
+  if (Assembler::is_simm13(lo) && value == lo) {
+    count++;
+  } else if (hi == 0) {
+    count++;
+    if (low10(lo) != 0)
+      count++;
+  }
+  else if (hi == -1) {
+    count += 2;
+  }
+  else if (lo == 0) {
+    if (Assembler::is_simm13(hi)) {
+      count++;
+    } else {
+      count++;
+      if (low10(hi) != 0)
+        count++;
+    }
+    count++;
+  }
+  else {
+    count += 2;
+    if (low10(hi) != 0)
+      count++;
+    if (low10(lo) != 0)
+      count++;
+    count += 2;
+  }
+  return count;
 }
 
 // compute size in bytes of sparc frame, given
@@ -3094,11 +3168,10 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
   assert_different_registers(mtype_reg, mh_reg, temp_reg);
   // compare method type against that of the receiver
   RegisterOrConstant mhtype_offset = delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg);
-  ld_ptr(mh_reg, mhtype_offset, temp_reg);
+  load_heap_oop(mh_reg, mhtype_offset, temp_reg);
   cmp(temp_reg, mtype_reg);
   br(Assembler::notEqual, false, Assembler::pn, wrong_method_type);
   delayed()->nop();
@@ -3112,16 +3185,15 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
   // load mh.type.form.vmslots
   if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
     // hoist vmslots into every mh to avoid dependent load chain
-    ld(    Address(mh_reg,    delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
+    ld(           Address(mh_reg,    delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
   } else {
     Register temp2_reg = vmslots_reg;
-    ld_ptr(Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
-    ld_ptr(Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
-    ld(    Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
+    load_heap_oop(Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
+    load_heap_oop(Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
+    ld(           Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
   }
 }
 
@@ -3130,9 +3202,8 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
   assert(mh_reg == G3_method_handle, "caller must put MH object in G3");
   assert_different_registers(mh_reg, temp_reg);
 
-  if (UseCompressedOops)  unimplemented("coop");  // field accesses must decode
-
   // pick out the interpreted side of the handler
+  // NOTE: vmentry is not an oop!
   ld_ptr(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg), temp_reg);
 
   // off we go...
@@ -4031,11 +4102,15 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   store_klass(t2, top);
   verify_oop(top);
 
+  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t1);
+  sub(top, t1, t1); // size of tlab's allocated portion
+  incr_allocated_bytes(t1, 0, t2);
+
   // refill the tlab with an eden allocation
   bind(do_refill);
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t1);
   sll_ptr(t1, LogHeapWordSize, t1);
-  // add object_size ??
+  // allocate new tlab, address returned in top
   eden_allocate(top, t1, 0, t2, t3, slow_case);
 
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_start_offset()));
@@ -4061,6 +4136,22 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   verify_tlab();
   br(Assembler::always, false, Assembler::pt, retry);
   delayed()->nop();
+}
+
+void MacroAssembler::incr_allocated_bytes(Register var_size_in_bytes,
+                                          int con_size_in_bytes,
+                                          Register t1) {
+  // Bump total bytes allocated by this thread
+  assert(t1->is_global(), "must be global reg"); // so all 64 bits are saved on a context switch
+  assert_different_registers(var_size_in_bytes, t1);
+  // v8 support has gone the way of the dodo
+  ldx(G2_thread, in_bytes(JavaThread::allocated_bytes_offset()), t1);
+  if (var_size_in_bytes->is_valid()) {
+    add(t1, var_size_in_bytes, t1);
+  } else {
+    add(t1, con_size_in_bytes, t1);
+  }
+  stx(t1, G2_thread, in_bytes(JavaThread::allocated_bytes_offset()));
 }
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
@@ -4651,6 +4742,11 @@ void MacroAssembler::load_heap_oop(Register s1, int simm13a, Register d) {
   } else {
     ld_ptr(s1, simm13a, d);
   }
+}
+
+void MacroAssembler::load_heap_oop(Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_constant())  load_heap_oop(s1, s2.as_constant(), d);
+  else                   load_heap_oop(s1, s2.as_register(), d);
 }
 
 void MacroAssembler::store_heap_oop(Register d, Register s1, Register s2) {

@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP
+#define OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP
+
+#include "runtime/orderAccess.hpp"
+#include "vm_version_x86.hpp"
+
 // Implementation of class OrderAccess.
 
 // For Sun Studio - implementation is in solaris_i486.il.
@@ -127,3 +133,5 @@ inline void     OrderAccess::release_store_fence(volatile jdouble* p, jdouble v)
 
 inline void     OrderAccess::release_store_ptr_fence(volatile intptr_t* p, intptr_t v) { *p = v; fence(); }
 inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*    v) { *(void* volatile *)p = v; fence(); }
+
+#endif // OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP

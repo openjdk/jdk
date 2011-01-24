@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -42,7 +44,7 @@ public class BuddhistCalendar extends GregorianCalendar {
 
     private static final long serialVersionUID = -8527488697350388578L;
 
-    private static final int buddhistOffset = 543;
+    private static final int BUDDHIST_YEAR_OFFSET = 543;
 
 ///////////////
 // Constructors
@@ -103,7 +105,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * Generates the hash code for the BuddhistCalendar object
      */
     public int hashCode() {
-        return super.hashCode() ^ buddhistOffset;
+        return super.hashCode() ^ BUDDHIST_YEAR_OFFSET;
     }
 
     /**
@@ -141,6 +143,8 @@ public class BuddhistCalendar extends GregorianCalendar {
     public void add(int field, int amount)
     {
         int savedYearOffset = yearOffset;
+        // To let the superclass calculate date-time values correctly,
+        // temporarily make this GregorianCalendar.
         yearOffset = 0;
         try {
             super.add(field, amount);
@@ -159,6 +163,8 @@ public class BuddhistCalendar extends GregorianCalendar {
     public void roll(int field, int amount)
     {
         int savedYearOffset = yearOffset;
+        // To let the superclass calculate date-time values correctly,
+        // temporarily make this GregorianCalendar.
         yearOffset = 0;
         try {
             super.roll(field, amount);
@@ -246,6 +252,8 @@ public class BuddhistCalendar extends GregorianCalendar {
      */
     public int getActualMaximum(int field) {
         int savedYearOffset = yearOffset;
+        // To let the superclass calculate date-time values correctly,
+        // temporarily make this GregorianCalendar.
         yearOffset = 0;
         try {
             return super.getActualMaximum(field);
@@ -275,11 +283,16 @@ public class BuddhistCalendar extends GregorianCalendar {
         // Skip the year number
         while (Character.isDigit(s.charAt(p++)))
             ;
-        int year = internalGet(YEAR) + buddhistOffset;
+        int year = internalGet(YEAR) + BUDDHIST_YEAR_OFFSET;
         sb.append(year).append(s.substring(p - 1));
         return sb.toString();
     }
 
-    private transient int yearOffset = buddhistOffset;
+    private transient int yearOffset = BUDDHIST_YEAR_OFFSET;
 
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        yearOffset = BUDDHIST_YEAR_OFFSET;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,15 @@ public class Bits {
         for (int x = start; x < limit; x++)
             bits[x >>> wordshift] = bits[x >>> wordshift] |
                 (1 << (x & wordmask));
+    }
+
+    /** Exclude [start...end] from this set.
+     */
+    public void excludeFrom(int start) {
+        Bits temp = new Bits();
+        temp.sizeTo(bits.length);
+        temp.inclRange(0, start);
+        andSet(temp);
     }
 
     /** Exclude x from this set.

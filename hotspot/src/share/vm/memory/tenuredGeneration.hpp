@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_TENUREDGENERATION_HPP
+#define SHARE_VM_MEMORY_TENUREDGENERATION_HPP
+
+#include "gc_implementation/shared/cSpaceCounters.hpp"
+#include "gc_implementation/shared/gcStats.hpp"
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/generation.hpp"
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects.
 
@@ -101,8 +109,9 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
 
   virtual void update_gc_stats(int level, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   void verify_alloc_buffers_clean();
 };
+
+#endif // SHARE_VM_MEMORY_TENUREDGENERATION_HPP

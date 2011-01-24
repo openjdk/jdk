@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1443,6 +1443,10 @@ public class JTabbedPane extends JComponent
      * which can be <code>null</code>, in which case the tab's background color
      * will default to the background color of the <code>tabbedpane</code>.
      * An internal exception is raised if there is no tab at that index.
+     * <p/>
+     * It is up to the look and feel to honor this property, some may
+     * choose to ignore it.
+     *
      * @param index the tab index where the background should be set
      * @param background the color to be displayed in the tab's background
      * @exception IndexOutOfBoundsException if index is out of range
@@ -1472,6 +1476,9 @@ public class JTabbedPane extends JComponent
      * <code>null</code>, in which case the tab's foreground color
      * will default to the foreground color of this <code>tabbedpane</code>.
      * An internal exception is raised if there is no tab at that index.
+     * <p/>
+     * It is up to the look and feel to honor this property, some may
+     * choose to ignore it.
      *
      * @param index the tab index where the foreground should be set
      * @param foreground the color to be displayed as the tab's foreground

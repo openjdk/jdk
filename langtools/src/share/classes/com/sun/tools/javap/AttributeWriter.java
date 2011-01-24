@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,17 +158,15 @@ public class AttributeWriter extends BasicWriter
         indent(+1);
         for (int i = 0; i < attr.character_range_table.length; i++) {
             CharacterRangeTable_attribute.Entry e = attr.character_range_table[i];
-            print("    " + e.start_pc + ", " +
-                    e.end_pc + ", " +
-                    Integer.toHexString(e.character_range_start) + ", " +
-                    Integer.toHexString(e.character_range_end) + ", " +
-                    Integer.toHexString(e.flags));
+            print(String.format("    %2d, %2d, %6x, %6x, %4x",
+                    e.start_pc, e.end_pc,
+                    e.character_range_start, e.character_range_end,
+                    e.flags));
             tab();
-            print("// ");
-            print(e.start_pc + ", " +
-                    e.end_pc + ", " +
-                    (e.character_range_start >> 10) + ":" + (e.character_range_start & 0x3ff) + ", " +
-                    (e.character_range_end >> 10) + ":" + (e.character_range_end & 0x3ff));
+            print(String.format("// %2d, %2d, %4d:%02d, %4d:%02d",
+                    e.start_pc, e.end_pc,
+                    (e.character_range_start >> 10), (e.character_range_start & 0x3ff),
+                    (e.character_range_end >> 10), (e.character_range_end & 0x3ff)));
             if ((e.flags & CharacterRangeTable_attribute.CRT_STATEMENT) != 0)
                 print(", statement");
             if ((e.flags & CharacterRangeTable_attribute.CRT_BLOCK) != 0)
@@ -187,6 +185,7 @@ public class AttributeWriter extends BasicWriter
                 print(", branch-true");
             if ((e.flags & CharacterRangeTable_attribute.CRT_BRANCH_FALSE) != 0)
                 print(", branch-false");
+            println();
         }
         indent(-1);
         return null;

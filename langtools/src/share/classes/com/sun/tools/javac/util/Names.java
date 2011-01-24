@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,7 @@ public class Names {
     public final Name finalize;
     public final Name java_lang_AutoCloseable;
     public final Name close;
+    public final Name addSuppressed;
 
     public final Name.Table table;
 
@@ -268,6 +269,7 @@ public class Names {
 
         java_lang_AutoCloseable = fromString("java.lang.AutoCloseable");
         close = fromString("close");
+        addSuppressed = fromString("addSuppressed");
     }
 
     protected Name.Table createTable(Options options) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cpCacheOop.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 // Implememtation of ConstantPoolCacheEntry
@@ -86,6 +94,19 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
   // Need to flush pending stores here before bytecode is written.
   OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << 24));
 }
+
+// Atomically sets f1 if it is still NULL, otherwise it keeps the
+// current value.
+void ConstantPoolCacheEntry::set_f1_if_null_atomic(oop f1) {
+    // Use barriers as in oop_store
+    HeapWord* f1_addr = (HeapWord*) &_f1;
+    update_barrier_set_pre(f1_addr, f1);
+    void* result = Atomic::cmpxchg_ptr(f1, f1_addr, NULL);
+    bool success = (result == NULL);
+    if (success) {
+      update_barrier_set((void*) f1_addr, f1);
+    }
+  }
 
 #ifdef ASSERT
 // It is possible to have two different dummy methodOops created
@@ -165,7 +186,12 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
       }
       assert(method->can_be_statically_bound(), "must be a MH invoker method");
       assert(AllowTransitionalJSR292 || _f2 >= constantPoolOopDesc::CPCACHE_INDEX_TAG, "BSM index initialized");
-      set_f1(method());
+      // SystemDictionary::find_method_handle_invoke only caches
+      // methods which signature classes are on the boot classpath,
+      // otherwise the newly created method is returned.  To avoid
+      // races in that case we store the first one coming in into the
+      // cp-cache atomically if it's still unset.
+      set_f1_if_null_atomic(method());
       needs_vfinal_flag = false;  // _f2 is not an oop
       assert(!is_vfinal(), "f2 not an oop");
       byte_no = 1;  // coordinate this with bytecode_number & is_resolved

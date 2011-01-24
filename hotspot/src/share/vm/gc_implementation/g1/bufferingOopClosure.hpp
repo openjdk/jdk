@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_BUFFERINGOOPCLOSURE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_BUFFERINGOOPCLOSURE_HPP
+
+#include "memory/genOopClosures.hpp"
+#include "memory/generation.hpp"
+#include "runtime/os.hpp"
+#include "utilities/taskqueue.hpp"
 
 // A BufferingOops closure tries to separate out the cost of finding roots
 // from the cost of applying closures to them.  It maintains an array of
@@ -201,3 +209,5 @@ public:
     _hr_curr(_hr_buffer),
     _closure_app_seconds(0.0) { }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_BUFFERINGOOPCLOSURE_HPP

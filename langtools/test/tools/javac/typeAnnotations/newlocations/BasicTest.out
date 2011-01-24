@@ -1,0 +1,66 @@
+BasicTest.java:47:27: compiler.err.illegal.start.of.type
+BasicTest.java:47:28: compiler.err.expected: '{'
+BasicTest.java:47:36: compiler.err.expected: token.identifier
+BasicTest.java:47:38: compiler.err.illegal.start.of.type
+BasicTest.java:47:45: compiler.err.expected: token.identifier
+BasicTest.java:47:47: compiler.err.expected: ';'
+BasicTest.java:47:62: compiler.err.expected: token.identifier
+BasicTest.java:47:84: compiler.err.expected: token.identifier
+BasicTest.java:52:22: compiler.err.illegal.start.of.expr
+BasicTest.java:52:31: compiler.err.expected: ';'
+BasicTest.java:52:37: compiler.err.expected: token.identifier
+BasicTest.java:53:21: compiler.err.illegal.start.of.expr
+BasicTest.java:53:23: compiler.err.expected: ';'
+BasicTest.java:53:30: compiler.err.expected: token.identifier
+BasicTest.java:53:32: compiler.err.illegal.start.of.type
+BasicTest.java:53:37: compiler.err.expected: token.identifier
+BasicTest.java:53:38: compiler.err.expected: ';'
+BasicTest.java:56:17: compiler.err.expected: token.identifier
+BasicTest.java:56:23: compiler.err.expected: token.identifier
+BasicTest.java:56:24: compiler.err.expected2: '(', '['
+BasicTest.java:56:25: compiler.err.expected: ';'
+BasicTest.java:56:27: compiler.err.invalid.meth.decl.ret.type.req
+BasicTest.java:56:34: compiler.err.illegal.start.of.type
+BasicTest.java:58:34: compiler.err.illegal.start.of.type
+BasicTest.java:61:16: compiler.err.illegal.start.of.type
+BasicTest.java:61:18: compiler.err.expected: ';'
+BasicTest.java:61:24: compiler.err.illegal.start.of.type
+BasicTest.java:61:26: compiler.err.expected: ';'
+BasicTest.java:61:33: compiler.err.expected: token.identifier
+BasicTest.java:61:34: compiler.err.illegal.start.of.type
+BasicTest.java:61:35: compiler.err.expected: token.identifier
+BasicTest.java:61:37: compiler.err.expected: ';'
+BasicTest.java:61:45: compiler.err.expected: token.identifier
+BasicTest.java:61:50: compiler.err.expected: token.identifier
+BasicTest.java:62:16: compiler.err.expected: token.identifier
+BasicTest.java:62:17: compiler.err.expected2: '(', '['
+BasicTest.java:62:18: compiler.err.expected: ';'
+BasicTest.java:62:28: compiler.err.illegal.start.of.type
+BasicTest.java:62:30: compiler.err.expected: ';'
+BasicTest.java:62:36: compiler.err.illegal.start.of.type
+BasicTest.java:62:38: compiler.err.expected: ';'
+BasicTest.java:62:45: compiler.err.expected: token.identifier
+BasicTest.java:62:46: compiler.err.illegal.start.of.type
+BasicTest.java:62:47: compiler.err.expected: token.identifier
+BasicTest.java:62:49: compiler.err.expected: ';'
+BasicTest.java:62:57: compiler.err.expected: token.identifier
+BasicTest.java:62:58: compiler.err.illegal.start.of.type
+BasicTest.java:62:59: compiler.err.expected: token.identifier
+BasicTest.java:64:25: compiler.err.illegal.start.of.type
+BasicTest.java:64:27: compiler.err.expected: ';'
+BasicTest.java:64:34: compiler.err.expected: token.identifier
+BasicTest.java:64:38: compiler.err.expected: token.identifier
+BasicTest.java:64:41: compiler.err.illegal.start.of.expr
+BasicTest.java:64:50: compiler.err.expected: ';'
+BasicTest.java:64:56: compiler.err.expected: token.identifier
+BasicTest.java:69:17: compiler.err.expected: ';'
+BasicTest.java:69:24: compiler.err.illegal.start.of.type
+BasicTest.java:69:30: compiler.err.expected: ';'
+BasicTest.java:69:59: compiler.err.expected: token.identifier
+BasicTest.java:69:74: compiler.err.expected: ';'
+BasicTest.java:74:22: compiler.err.expected: token.identifier
+BasicTest.java:74:24: compiler.err.expected: ';'
+BasicTest.java:74:25: compiler.err.illegal.start.of.type
+BasicTest.java:74:33: compiler.err.expected: ';'
+BasicTest.java:77:2: compiler.err.premature.eof
+65 errors

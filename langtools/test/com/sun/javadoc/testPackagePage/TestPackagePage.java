@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,37 +43,32 @@ public class TestPackagePage extends JavadocTester {
         },
         //With just one package, all general pages link to the single package page.
         {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../../com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
+            "<a href=\"../../com/pkg/package-summary.html\">Package</a>"
         },
         {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "package-tree.html",
-            "<A HREF=\"../../com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
+            "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>"
         },
         {BUG_ID + "-1" + FS + "deprecated-list.html",
-            "<A HREF=\"com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
+            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
         {BUG_ID + "-1" + FS + "index-all.html",
-            "<A HREF=\"./com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
+            "<li><a href=\"./com/pkg/package-summary.html\">Package</a></li>"
         },
         {BUG_ID + "-1" + FS + "help-doc.html",
-            "<A HREF=\"com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
+            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
     };
 
     private static final String[][] TEST2 = {
         //With multiple packages, there is no package link in general pages.
         {BUG_ID + "-2" + FS + "deprecated-list.html",
-            " <FONT CLASS=\"NavBarFont1\">Package</FONT>&nbsp;"
+            "<li>Package</li>"
         },
         {BUG_ID + "-2" + FS + "index-all.html",
-            " <FONT CLASS=\"NavBarFont1\">Package</FONT>&nbsp;"
+            "<li>Package</li>"
         },
         {BUG_ID + "-2" + FS + "help-doc.html",
-            " <FONT CLASS=\"NavBarFont1\">Package</FONT>&nbsp;"
+            "<li>Package</li>"
         },
     };
 

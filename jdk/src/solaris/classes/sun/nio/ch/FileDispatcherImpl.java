@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,13 @@ class FileDispatcherImpl extends FileDispatcher
     static {
         Util.load();
         init();
+    }
+
+    FileDispatcherImpl(boolean append) {
+        /* append is ignored */
+    }
+
+    FileDispatcherImpl() {
     }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
@@ -92,6 +99,12 @@ class FileDispatcherImpl extends FileDispatcher
 
     void preClose(FileDescriptor fd) throws IOException {
         preClose0(fd);
+    }
+
+    FileDescriptor duplicateForMapping(FileDescriptor fd) {
+        // file descriptor not required for mapping operations; okay
+        // to return invalid file descriptor.
+        return new FileDescriptor();
     }
 
     // -- Native methods --

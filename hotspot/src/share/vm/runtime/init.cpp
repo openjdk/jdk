@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_init.cpp.incl"
+#include "precompiled.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/universe.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/init.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();
@@ -116,9 +125,6 @@ jint init_globals() {
   javaClasses_init();  // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
 
-  // Generate MethodHandles adapters.
-  MethodHandles::generate_adapters();
-
   // Although we'd like to, we can't easily do a heap verify
   // here because the main thread isn't yet a JavaThread, so
   // its TLAB may not be made parseable from the usual interfaces.
@@ -160,5 +166,6 @@ bool is_init_completed() {
 
 
 void set_init_completed() {
+  assert(Universe::is_fully_initialized(), "Should have completed initialization");
   _init_completed = true;
 }

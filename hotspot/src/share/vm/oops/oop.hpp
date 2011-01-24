@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_OOP_HPP
+#define SHARE_VM_OOPS_OOP_HPP
+
+#include "memory/iterator.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/specialized_oop_closures.hpp"
+#include "utilities/top.hpp"
+
 // oopDesc is the top baseclass for objects classes.  The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.
 // oopDesc is abstract.
@@ -30,12 +38,12 @@
 // no virtual functions allowed
 
 // store into oop with store check
-template <class T> inline void oop_store(T* p, oop v);
-template <class T> inline void oop_store(volatile T* p, oop v);
+template <class T> void oop_store(T* p, oop v);
+template <class T> void oop_store(volatile T* p, oop v);
 
 // store into oop without store check
-template <class T> inline void oop_store_without_check(T* p, oop v);
-template <class T> inline void oop_store_without_check(volatile T* p, oop v);
+template <class T> void oop_store_without_check(T* p, oop v);
+template <class T> void oop_store_without_check(volatile T* p, oop v);
 
 extern bool always_do_update_barrier;
 
@@ -403,3 +411,5 @@ class oopDesc {
   static int klass_offset_in_bytes()   { return offset_of(oopDesc, _metadata._klass); }
   static int klass_gap_offset_in_bytes();
 };
+
+#endif // SHARE_VM_OOPS_OOP_HPP

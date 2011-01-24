@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,73 +93,65 @@ import java.util.Locale;
  *         currency
  *         percent
  *         <i>SubformatPattern</i>
- *
- * <i>String:</i>
- *         <i>StringPart<sub>opt</sub></i>
- *         <i>String</i> <i>StringPart</i>
- *
- * <i>StringPart:</i>
- *         ''
- *         ' <i>QuotedString</i> '
- *         <i>UnquotedString</i>
- *
- * <i>SubformatPattern:</i>
- *         <i>SubformatPatternPart<sub>opt</sub></i>
- *         <i>SubformatPattern</i> <i>SubformatPatternPart</i>
- *
- * <i>SubFormatPatternPart:</i>
- *         ' <i>QuotedPattern</i> '
- *         <i>UnquotedPattern</i>
  * </pre></blockquote>
  *
- * <p>
- * Within a <i>String</i>, <code>"''"</code> represents a single
- * quote. A <i>QuotedString</i> can contain arbitrary characters
- * except single quotes; the surrounding single quotes are removed.
- * An <i>UnquotedString</i> can contain arbitrary characters
- * except single quotes and left curly brackets. Thus, a string that
- * should result in the formatted message "'{0}'" can be written as
- * <code>"'''{'0}''"</code> or <code>"'''{0}'''"</code>.
- * <p>
- * Within a <i>SubformatPattern</i>, different rules apply.
- * A <i>QuotedPattern</i> can contain arbitrary characters
- * except single quotes; but the surrounding single quotes are
- * <strong>not</strong> removed, so they may be interpreted by the
- * subformat. For example, <code>"{1,number,$'#',##}"</code> will
- * produce a number format with the pound-sign quoted, with a result
- * such as: "$#31,45".
- * An <i>UnquotedPattern</i> can contain arbitrary characters
- * except single quotes, but curly braces within it must be balanced.
- * For example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code>
- * are valid subformat patterns, but <code>"ab {0'}' de"</code> and
- * <code>"ab } de"</code> are not.
+ * <p>Within a <i>String</i>, a pair of single quotes can be used to
+ * quote any arbitrary characters except single quotes. For example,
+ * pattern string <code>"'{0}'"</code> represents string
+ * <code>"{0}"</code>, not a <i>FormatElement</i>. A single quote itself
+ * must be represented by doubled single quotes {@code ''} throughout a
+ * <i>String</i>.  For example, pattern string <code>"'{''}'"</code> is
+ * interpreted as a sequence of <code>'{</code> (start of quoting and a
+ * left curly brace), <code>''</code> (a single quote), and
+ * <code>}'</code> (a right curly brace and end of quoting),
+ * <em>not</em> <code>'{'</code> and <code>'}'</code> (quoted left and
+ * right curly braces): representing string <code>"{'}"</code>,
+ * <em>not</em> <code>"{}"</code>.
+ *
+ * <p>A <i>SubformatPattern</i> is interpreted by its corresponding
+ * subformat, and subformat-dependent pattern rules apply. For example,
+ * pattern string <code>"{1,number,<u>$'#',##</u>}"</code>
+ * (<i>SubformatPattern</i> with underline) will produce a number format
+ * with the pound-sign quoted, with a result such as: {@code
+ * "$#31,45"}. Refer to each {@code Format} subclass documentation for
+ * details.
+ *
+ * <p>Any unmatched quote is treated as closed at the end of the given
+ * pattern. For example, pattern string {@code "'{0}"} is treated as
+ * pattern {@code "'{0}'"}.
+ *
+ * <p>Any curly braces within an unquoted pattern must be balanced. For
+ * example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code> are
+ * valid patterns, but <code>"ab {0'}' de"</code>, <code>"ab } de"</code>
+ * and <code>"''{''"</code> are not.
+ *
  * <p>
  * <dl><dt><b>Warning:</b><dd>The rules for using quotes within message
  * format patterns unfortunately have shown to be somewhat confusing.
  * In particular, it isn't always obvious to localizers whether single
  * quotes need to be doubled or not. Make sure to inform localizers about
  * the rules, and tell them (for example, by using comments in resource
- * bundle source files) which strings will be processed by MessageFormat.
+ * bundle source files) which strings will be processed by {@code MessageFormat}.
  * Note that localizers may need to use single quotes in translated
  * strings where the original version doesn't have them.
  * </dl>
  * <p>
  * The <i>ArgumentIndex</i> value is a non-negative integer written
- * using the digits '0' through '9', and represents an index into the
- * <code>arguments</code> array passed to the <code>format</code> methods
- * or the result array returned by the <code>parse</code> methods.
+ * using the digits {@code '0'} through {@code '9'}, and represents an index into the
+ * {@code arguments} array passed to the {@code format} methods
+ * or the result array returned by the {@code parse} methods.
  * <p>
  * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
- * a <code>Format</code> instance for the format element. The following
- * table shows how the values map to Format instances. Combinations not
+ * a {@code Format} instance for the format element. The following
+ * table shows how the values map to {@code Format} instances. Combinations not
  * shown in the table are illegal. A <i>SubformatPattern</i> must
- * be a valid pattern string for the Format subclass used.
+ * be a valid pattern string for the {@code Format} subclass used.
  * <p>
  * <table border=1 summary="Shows how FormatType and FormatStyle values map to Format instances">
  *    <tr>
- *       <th id="ft">Format Type
- *       <th id="fs">Format Style
- *       <th id="sc">Subformat Created
+ *       <th id="ft" class="TableHeadingColor">FormatType
+ *       <th id="fs" class="TableHeadingColor">FormatStyle
+ *       <th id="sc" class="TableHeadingColor">Subformat Created
  *    <tr>
  *       <td headers="ft"><i>(none)</i>
  *       <td headers="fs"><i>(none)</i>
@@ -167,61 +159,61 @@ import java.util.Locale;
  *    <tr>
  *       <td headers="ft" rowspan=5><code>number</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>NumberFormat.getInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getInstance(Locale) NumberFormat.getInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>integer</code>
- *       <td headers="sc"><code>NumberFormat.getIntegerInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getIntegerInstance(Locale) NumberFormat.getIntegerInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>currency</code>
- *       <td headers="sc"><code>NumberFormat.getCurrencyInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getCurrencyInstance(Locale) NumberFormat.getCurrencyInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><code>percent</code>
- *       <td headers="sc"><code>NumberFormat.getPercentInstance(getLocale())</code>
+ *       <td headers="sc">{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new DecimalFormat(subformatPattern, DecimalFormatSymbols.getInstance(getLocale()))</code>
+ *       <td headers="sc">{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
  *       <td headers="ft" rowspan=6><code>date</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>short</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.SHORT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>medium</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>long</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.LONG, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>full</code>
- *       <td headers="sc"><code>DateFormat.getDateInstance(DateFormat.FULL, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new SimpleDateFormat(subformatPattern, getLocale())</code>
+ *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
  *       <td headers="ft" rowspan=6><code>time</code>
  *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>short</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.SHORT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>medium</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.DEFAULT, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>long</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.LONG, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><code>full</code>
- *       <td headers="sc"><code>DateFormat.getTimeInstance(DateFormat.FULL, getLocale())</code>
+ *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new SimpleDateFormat(subformatPattern, getLocale())</code>
+ *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
  *       <td headers="ft"><code>choice</code>
  *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc"><code>new ChoiceFormat(subformatPattern)</code>
+ *       <td headers="sc">{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
  * </table>
  * <p>
  *
@@ -321,7 +313,7 @@ import java.util.Locale;
  * </pre></blockquote>
  *
  * <p>
- * Likewise, parsing with a MessageFormat object using patterns containing
+ * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
  * <blockquote><pre>
@@ -343,7 +335,11 @@ import java.util.Locale;
  * @see          Format
  * @see          NumberFormat
  * @see          DecimalFormat
+ * @see          DecimalFormatSymbols
  * @see          ChoiceFormat
+ * @see          DateFormat
+ * @see          SimpleDateFormat
+ *
  * @author       Mark Davis
  */
 
@@ -427,18 +423,19 @@ public class MessageFormat extends Format {
      * @exception IllegalArgumentException if the pattern is invalid
      */
     public void applyPattern(String pattern) {
-            StringBuffer[] segments = new StringBuffer[4];
-            for (int i = 0; i < segments.length; ++i) {
-                segments[i] = new StringBuffer();
-            }
-            int part = 0;
+            StringBuilder[] segments = new StringBuilder[4];
+            // Allocate only segments[SEG_RAW] here. The rest are
+            // allocated on demand.
+            segments[SEG_RAW] = new StringBuilder();
+
+            int part = SEG_RAW;
             int formatNumber = 0;
             boolean inQuote = false;
             int braceStack = 0;
             maxOffset = -1;
             for (int i = 0; i < pattern.length(); ++i) {
                 char ch = pattern.charAt(i);
-                if (part == 0) {
+                if (part == SEG_RAW) {
                     if (ch == '\'') {
                         if (i + 1 < pattern.length()
                             && pattern.charAt(i+1) == '\'') {
@@ -448,43 +445,61 @@ public class MessageFormat extends Format {
                             inQuote = !inQuote;
                         }
                     } else if (ch == '{' && !inQuote) {
-                        part = 1;
+                        part = SEG_INDEX;
+                        if (segments[SEG_INDEX] == null) {
+                            segments[SEG_INDEX] = new StringBuilder();
+                        }
                     } else {
                         segments[part].append(ch);
                     }
-                } else  if (inQuote) {              // just copy quotes in parts
-                    segments[part].append(ch);
-                    if (ch == '\'') {
-                        inQuote = false;
-                    }
-                } else {
-                    switch (ch) {
-                    case ',':
-                        if (part < 3)
-                            part += 1;
-                        else
-                            segments[part].append(ch);
-                        break;
-                    case '{':
-                        ++braceStack;
+                } else  {
+                    if (inQuote) {              // just copy quotes in parts
                         segments[part].append(ch);
-                        break;
-                    case '}':
-                        if (braceStack == 0) {
-                            part = 0;
-                            makeFormat(i, formatNumber, segments);
-                            formatNumber++;
-                        } else {
-                            --braceStack;
-                            segments[part].append(ch);
+                        if (ch == '\'') {
+                            inQuote = false;
                         }
-                        break;
-                    case '\'':
-                        inQuote = true;
-                        // fall through, so we keep quotes in other parts
-                    default:
-                        segments[part].append(ch);
-                        break;
+                    } else {
+                        switch (ch) {
+                        case ',':
+                            if (part < SEG_MODIFIER) {
+                                if (segments[++part] == null) {
+                                    segments[part] = new StringBuilder();
+                                }
+                            } else {
+                                segments[part].append(ch);
+                            }
+                            break;
+                        case '{':
+                            ++braceStack;
+                            segments[part].append(ch);
+                            break;
+                        case '}':
+                            if (braceStack == 0) {
+                                part = SEG_RAW;
+                                makeFormat(i, formatNumber, segments);
+                                formatNumber++;
+                                // throw away other segments
+                                segments[SEG_INDEX] = null;
+                                segments[SEG_TYPE] = null;
+                                segments[SEG_MODIFIER] = null;
+                            } else {
+                                --braceStack;
+                                segments[part].append(ch);
+                            }
+                            break;
+                        case ' ':
+                            // Skip any leading space chars for SEG_TYPE.
+                            if (part != SEG_TYPE || segments[SEG_TYPE].length() > 0) {
+                                segments[part].append(ch);
+                            }
+                            break;
+                        case '\'':
+                            inQuote = true;
+                            // fall through, so we keep quotes in other parts
+                        default:
+                            segments[part].append(ch);
+                            break;
+                        }
                     }
                 }
             }
@@ -506,65 +521,57 @@ public class MessageFormat extends Format {
     public String toPattern() {
         // later, make this more extensible
         int lastOffset = 0;
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i <= maxOffset; ++i) {
-            copyAndFixQuotes(pattern, lastOffset, offsets[i],result);
+            copyAndFixQuotes(pattern, lastOffset, offsets[i], result);
             lastOffset = offsets[i];
-            result.append('{');
-            result.append(argumentNumbers[i]);
-            if (formats[i] == null) {
+            result.append('{').append(argumentNumbers[i]);
+            Format fmt = formats[i];
+            if (fmt == null) {
                 // do nothing, string format
-            } else if (formats[i] instanceof DecimalFormat) {
-                if (formats[i].equals(NumberFormat.getInstance(locale))) {
+            } else if (fmt instanceof NumberFormat) {
+                if (fmt.equals(NumberFormat.getInstance(locale))) {
                     result.append(",number");
-                } else if (formats[i].equals(NumberFormat.getCurrencyInstance(locale))) {
+                } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
                     result.append(",number,currency");
-                } else if (formats[i].equals(NumberFormat.getPercentInstance(locale))) {
+                } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
                     result.append(",number,percent");
-                } else if (formats[i].equals(NumberFormat.getIntegerInstance(locale))) {
+                } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
                     result.append(",number,integer");
                 } else {
-                    result.append(",number," +
-                                  ((DecimalFormat)formats[i]).toPattern());
+                    if (fmt instanceof DecimalFormat) {
+                        result.append(",number,").append(((DecimalFormat)fmt).toPattern());
+                    } else if (fmt instanceof ChoiceFormat) {
+                        result.append(",choice,").append(((ChoiceFormat)fmt).toPattern());
+                    } else {
+                        // UNKNOWN
+                    }
                 }
-            } else if (formats[i] instanceof SimpleDateFormat) {
-                if (formats[i].equals(DateFormat.getDateInstance(
-                                                               DateFormat.DEFAULT,locale))) {
-                    result.append(",date");
-                } else if (formats[i].equals(DateFormat.getDateInstance(
-                                                                      DateFormat.SHORT,locale))) {
-                    result.append(",date,short");
-                } else if (formats[i].equals(DateFormat.getDateInstance(
-                                                                      DateFormat.DEFAULT,locale))) {
-                    result.append(",date,medium");
-                } else if (formats[i].equals(DateFormat.getDateInstance(
-                                                                      DateFormat.LONG,locale))) {
-                    result.append(",date,long");
-                } else if (formats[i].equals(DateFormat.getDateInstance(
-                                                                      DateFormat.FULL,locale))) {
-                    result.append(",date,full");
-                } else if (formats[i].equals(DateFormat.getTimeInstance(
-                                                                      DateFormat.DEFAULT,locale))) {
-                    result.append(",time");
-                } else if (formats[i].equals(DateFormat.getTimeInstance(
-                                                                      DateFormat.SHORT,locale))) {
-                    result.append(",time,short");
-                } else if (formats[i].equals(DateFormat.getTimeInstance(
-                                                                      DateFormat.DEFAULT,locale))) {
-                    result.append(",time,medium");
-                } else if (formats[i].equals(DateFormat.getTimeInstance(
-                                                                      DateFormat.LONG,locale))) {
-                    result.append(",time,long");
-                } else if (formats[i].equals(DateFormat.getTimeInstance(
-                                                                      DateFormat.FULL,locale))) {
-                    result.append(",time,full");
-                } else {
-                    result.append(",date,"
-                                  + ((SimpleDateFormat)formats[i]).toPattern());
+            } else if (fmt instanceof DateFormat) {
+                int index;
+                for (index = MODIFIER_DEFAULT; index < DATE_TIME_MODIFIERS.length; index++) {
+                    DateFormat df = DateFormat.getDateInstance(DATE_TIME_MODIFIERS[index],
+                                                               locale);
+                    if (fmt.equals(df)) {
+                        result.append(",date");
+                        break;
+                    }
+                    df = DateFormat.getTimeInstance(DATE_TIME_MODIFIERS[index],
+                                                    locale);
+                    if (fmt.equals(df)) {
+                        result.append(",time");
+                        break;
+                    }
                 }
-            } else if (formats[i] instanceof ChoiceFormat) {
-                result.append(",choice,"
-                              + ((ChoiceFormat)formats[i]).toPattern());
+                if (index >= DATE_TIME_MODIFIERS.length) {
+                    if (fmt instanceof SimpleDateFormat) {
+                        result.append(",date,").append(((SimpleDateFormat)fmt).toPattern());
+                    } else {
+                        // UNKNOWN
+                    }
+                } else if (index != MODIFIER_DEFAULT) {
+                    result.append(',').append(DATE_TIME_MODIFIER_KEYWORDS[index]);
+                }
             } else {
                 //result.append(", unknown");
             }
@@ -678,7 +685,7 @@ public class MessageFormat extends Format {
      *
      * @param formatElementIndex the index of a format element within the pattern
      * @param newFormat the format to use for the specified format element
-     * @exception ArrayIndexOutOfBoundsException if formatElementIndex is equal to or
+     * @exception ArrayIndexOutOfBoundsException if {@code formatElementIndex} is equal to or
      *            larger than the number of format elements in the pattern string
      */
     public void setFormat(int formatElementIndex, Format newFormat) {
@@ -972,7 +979,8 @@ public class MessageFormat extends Format {
                 if (patternOffset >= tempLength) {
                     next = source.length();
                 }else{
-                    next = source.indexOf( pattern.substring(patternOffset,tempLength), sourceOffset);
+                    next = source.indexOf(pattern.substring(patternOffset, tempLength),
+                                          sourceOffset);
                 }
 
                 if (next < 0) {
@@ -1226,7 +1234,7 @@ public class MessageFormat extends Format {
             lastOffset = offsets[i];
             int argumentNumber = argumentNumbers[i];
             if (arguments == null || argumentNumber >= arguments.length) {
-                result.append("{" + argumentNumber + "}");
+                result.append('{').append(argumentNumber).append('}');
                 continue;
             }
             // int argRecursion = ((recursionProtection >> (argumentNumber*2)) & 0x3);
@@ -1338,25 +1346,83 @@ public class MessageFormat extends Format {
         }
     }
 
-    private static final String[] typeList =
-    {"", "", "number", "", "date", "", "time", "", "choice"};
-    private static final String[] modifierList =
-    {"", "", "currency", "", "percent", "", "integer"};
-    private static final String[] dateModifierList =
-    {"", "", "short", "", "medium", "", "long", "", "full"};
+    // Indices for segments
+    private static final int SEG_RAW      = 0;
+    private static final int SEG_INDEX    = 1;
+    private static final int SEG_TYPE     = 2;
+    private static final int SEG_MODIFIER = 3; // modifier or subformat
+
+    // Indices for type keywords
+    private static final int TYPE_NULL    = 0;
+    private static final int TYPE_NUMBER  = 1;
+    private static final int TYPE_DATE    = 2;
+    private static final int TYPE_TIME    = 3;
+    private static final int TYPE_CHOICE  = 4;
+
+    private static final String[] TYPE_KEYWORDS = {
+        "",
+        "number",
+        "date",
+        "time",
+        "choice"
+    };
+
+    // Indices for number modifiers
+    private static final int MODIFIER_DEFAULT  = 0; // common in number and date-time
+    private static final int MODIFIER_CURRENCY = 1;
+    private static final int MODIFIER_PERCENT  = 2;
+    private static final int MODIFIER_INTEGER  = 3;
+
+    private static final String[] NUMBER_MODIFIER_KEYWORDS = {
+        "",
+        "currency",
+        "percent",
+        "integer"
+    };
+
+    // Indices for date-time modifiers
+    private static final int MODIFIER_SHORT   = 1;
+    private static final int MODIFIER_MEDIUM  = 2;
+    private static final int MODIFIER_LONG    = 3;
+    private static final int MODIFIER_FULL    = 4;
+
+    private static final String[] DATE_TIME_MODIFIER_KEYWORDS = {
+        "",
+        "short",
+        "medium",
+        "long",
+        "full"
+    };
+
+    // Date-time style values corresponding to the date-time modifiers.
+    private static final int[] DATE_TIME_MODIFIERS = {
+        DateFormat.DEFAULT,
+        DateFormat.SHORT,
+        DateFormat.MEDIUM,
+        DateFormat.LONG,
+        DateFormat.FULL,
+    };
 
     private void makeFormat(int position, int offsetNumber,
-                            StringBuffer[] segments)
+                            StringBuilder[] textSegments)
     {
+        String[] segments = new String[textSegments.length];
+        for (int i = 0; i < textSegments.length; i++) {
+            StringBuilder oneseg = textSegments[i];
+            segments[i] = (oneseg != null) ? oneseg.toString() : "";
+        }
+
         // get the argument number
         int argumentNumber;
         try {
-            argumentNumber = Integer.parseInt(segments[1].toString()); // always unlocalized!
+            argumentNumber = Integer.parseInt(segments[SEG_INDEX]); // always unlocalized!
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("can't parse argument number: " + segments[1]);
+            throw new IllegalArgumentException("can't parse argument number: "
+                                               + segments[SEG_INDEX], e);
         }
         if (argumentNumber < 0) {
-            throw new IllegalArgumentException("negative argument number: " + argumentNumber);
+            throw new IllegalArgumentException("negative argument number: "
+                                               + argumentNumber);
         }
 
         // resize format information arrays if necessary
@@ -1374,119 +1440,128 @@ public class MessageFormat extends Format {
         }
         int oldMaxOffset = maxOffset;
         maxOffset = offsetNumber;
-        offsets[offsetNumber] = segments[0].length();
+        offsets[offsetNumber] = segments[SEG_RAW].length();
         argumentNumbers[offsetNumber] = argumentNumber;
 
         // now get the format
         Format newFormat = null;
-        switch (findKeyword(segments[2].toString(), typeList)) {
-        case 0:
-            break;
-        case 1: case 2:// number
-            switch (findKeyword(segments[3].toString(), modifierList)) {
-            case 0: // default;
-                newFormat = NumberFormat.getInstance(locale);
+        if (segments[SEG_TYPE].length() != 0) {
+            int type = findKeyword(segments[SEG_TYPE], TYPE_KEYWORDS);
+            switch (type) {
+            case TYPE_NULL:
+                // Type "" is allowed. e.g., "{0,}", "{0,,}", and "{0,,#}"
+                // are treated as "{0}".
                 break;
-            case 1: case 2:// currency
-                newFormat = NumberFormat.getCurrencyInstance(locale);
+
+            case TYPE_NUMBER:
+                switch (findKeyword(segments[SEG_MODIFIER], NUMBER_MODIFIER_KEYWORDS)) {
+                case MODIFIER_DEFAULT:
+                    newFormat = NumberFormat.getInstance(locale);
+                    break;
+                case MODIFIER_CURRENCY:
+                    newFormat = NumberFormat.getCurrencyInstance(locale);
+                    break;
+                case MODIFIER_PERCENT:
+                    newFormat = NumberFormat.getPercentInstance(locale);
+                    break;
+                case MODIFIER_INTEGER:
+                    newFormat = NumberFormat.getIntegerInstance(locale);
+                    break;
+                default: // DecimalFormat pattern
+                    try {
+                        newFormat = new DecimalFormat(segments[SEG_MODIFIER],
+                                                      DecimalFormatSymbols.getInstance(locale));
+                    } catch (IllegalArgumentException e) {
+                        maxOffset = oldMaxOffset;
+                        throw e;
+                    }
+                    break;
+                }
                 break;
-            case 3: case 4:// percent
-                newFormat = NumberFormat.getPercentInstance(locale);
+
+            case TYPE_DATE:
+            case TYPE_TIME:
+                int mod = findKeyword(segments[SEG_MODIFIER], DATE_TIME_MODIFIER_KEYWORDS);
+                if (mod >= 0 && mod < DATE_TIME_MODIFIER_KEYWORDS.length) {
+                    if (type == TYPE_DATE) {
+                        newFormat = DateFormat.getDateInstance(DATE_TIME_MODIFIERS[mod],
+                                                               locale);
+                    } else {
+                        newFormat = DateFormat.getTimeInstance(DATE_TIME_MODIFIERS[mod],
+                                                               locale);
+                    }
+                } else {
+                    // SimpleDateFormat pattern
+                    try {
+                        newFormat = new SimpleDateFormat(segments[SEG_MODIFIER], locale);
+                    } catch (IllegalArgumentException e) {
+                        maxOffset = oldMaxOffset;
+                        throw e;
+                    }
+                }
                 break;
-            case 5: case 6:// integer
-                newFormat = NumberFormat.getIntegerInstance(locale);
+
+            case TYPE_CHOICE:
+                try {
+                    // ChoiceFormat pattern
+                    newFormat = new ChoiceFormat(segments[SEG_MODIFIER]);
+                } catch (Exception e) {
+                    maxOffset = oldMaxOffset;
+                    throw new IllegalArgumentException("Choice Pattern incorrect: "
+                                                       + segments[SEG_MODIFIER], e);
+                }
                 break;
-            default: // pattern
-                newFormat = new DecimalFormat(segments[3].toString(), DecimalFormatSymbols.getInstance(locale));
-                break;
-            }
-            break;
-        case 3: case 4: // date
-            switch (findKeyword(segments[3].toString(), dateModifierList)) {
-            case 0: // default
-                newFormat = DateFormat.getDateInstance(DateFormat.DEFAULT, locale);
-                break;
-            case 1: case 2: // short
-                newFormat = DateFormat.getDateInstance(DateFormat.SHORT, locale);
-                break;
-            case 3: case 4: // medium
-                newFormat = DateFormat.getDateInstance(DateFormat.DEFAULT, locale);
-                break;
-            case 5: case 6: // long
-                newFormat = DateFormat.getDateInstance(DateFormat.LONG, locale);
-                break;
-            case 7: case 8: // full
-                newFormat = DateFormat.getDateInstance(DateFormat.FULL, locale);
-                break;
+
             default:
-                newFormat = new SimpleDateFormat(segments[3].toString(), locale);
-                break;
-            }
-            break;
-        case 5: case 6:// time
-            switch (findKeyword(segments[3].toString(), dateModifierList)) {
-            case 0: // default
-                newFormat = DateFormat.getTimeInstance(DateFormat.DEFAULT, locale);
-                break;
-            case 1: case 2: // short
-                newFormat = DateFormat.getTimeInstance(DateFormat.SHORT, locale);
-                break;
-            case 3: case 4: // medium
-                newFormat = DateFormat.getTimeInstance(DateFormat.DEFAULT, locale);
-                break;
-            case 5: case 6: // long
-                newFormat = DateFormat.getTimeInstance(DateFormat.LONG, locale);
-                break;
-            case 7: case 8: // full
-                newFormat = DateFormat.getTimeInstance(DateFormat.FULL, locale);
-                break;
-            default:
-                newFormat = new SimpleDateFormat(segments[3].toString(), locale);
-                break;
-            }
-            break;
-        case 7: case 8:// choice
-            try {
-                newFormat = new ChoiceFormat(segments[3].toString());
-            } catch (Exception e) {
                 maxOffset = oldMaxOffset;
-                throw new IllegalArgumentException(
-                                         "Choice Pattern incorrect");
+                throw new IllegalArgumentException("unknown format type: " +
+                                                   segments[SEG_TYPE]);
             }
-            break;
-        default:
-            maxOffset = oldMaxOffset;
-            throw new IllegalArgumentException("unknown format type: " +
-                                               segments[2].toString());
         }
         formats[offsetNumber] = newFormat;
-        segments[1].setLength(0);   // throw away other segments
-        segments[2].setLength(0);
-        segments[3].setLength(0);
     }
 
     private static final int findKeyword(String s, String[] list) {
-        s = s.trim().toLowerCase();
         for (int i = 0; i < list.length; ++i) {
             if (s.equals(list[i]))
                 return i;
         }
+
+        // Try trimmed lowercase.
+        String ls = s.trim().toLowerCase(Locale.ROOT);
+        if (ls != s) {
+            for (int i = 0; i < list.length; ++i) {
+                if (ls.equals(list[i]))
+                    return i;
+            }
+        }
         return -1;
     }
 
-    private static final void copyAndFixQuotes(
-                                               String source, int start, int end, StringBuffer target) {
+    private static final void copyAndFixQuotes(String source, int start, int end,
+                                               StringBuilder target) {
+        boolean quoted = false;
+
         for (int i = start; i < end; ++i) {
             char ch = source.charAt(i);
             if (ch == '{') {
-                target.append("'{'");
-            } else if (ch == '}') {
-                target.append("'}'");
+                if (!quoted) {
+                    target.append('\'');
+                    quoted = true;
+                }
+                target.append(ch);
             } else if (ch == '\'') {
                 target.append("''");
             } else {
+                if (quoted) {
+                    target.append('\'');
+                    quoted = false;
+                }
                 target.append(ch);
             }
+        }
+        if (quoted) {
+            target.append('\'');
         }
     }
 

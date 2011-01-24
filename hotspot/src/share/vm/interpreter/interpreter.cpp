@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreter.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateTable.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/timer.hpp"
 
 # define __ _masm->
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,25 @@
  * questions.
  *
  */
-# include "incls/_precompiled.incl"
-# include "incls/_vmGCOperations.cpp.incl"
 
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/preserveException.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#endif
 HS_DTRACE_PROBE_DECL1(hotspot, gc__begin, bool);
 HS_DTRACE_PROBE_DECL(hotspot, gc__end);
 

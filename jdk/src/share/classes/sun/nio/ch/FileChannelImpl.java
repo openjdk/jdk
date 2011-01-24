@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,11 @@ import sun.security.action.GetPropertyAction;
 public class FileChannelImpl
     extends FileChannel
 {
-
-    // Used to make native read and write calls
-    private static final FileDispatcher nd;
-
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity;
+
+    // Used to make native read and write calls
+    private final FileDispatcher nd;
 
     // File descriptor
     private final FileDescriptor fd;
@@ -63,22 +62,29 @@ public class FileChannelImpl
     private final Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, boolean readable,
-                            boolean writable, Object parent)
+                            boolean writable, boolean append, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
         this.parent = parent;
+        this.nd = new FileDispatcherImpl(append);
     }
 
-    // Invoked by getChannel() methods
-    // of java.io.File{Input,Output}Stream and RandomAccessFile
-    //
+    // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, parent);
+        return new FileChannelImpl(fd, readable, writable, false, parent);
+    }
+
+    // Used by FileOutputStream.getChannel
+    public static FileChannel open(FileDescriptor fd,
+                                   boolean readable, boolean writable,
+                                   boolean append, Object parent)
+    {
+        return new FileChannelImpl(fd, readable, writable, append, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -460,6 +466,16 @@ public class FileChannelImpl
                 } finally {
                     unmap(dbb);
                 }
+            } catch (ClosedByInterruptException e) {
+                // target closed by interrupt as ClosedByInterruptException needs
+                // to be thrown after closing this channel.
+                assert !target.isOpen();
+                try {
+                    close();
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+                throw e;
             } catch (IOException ioe) {
                 // Only throw exception if no bytes have been written
                 if (remaining == count)
@@ -694,20 +710,27 @@ public class FileChannelImpl
     private static class Unmapper
         implements Runnable
     {
+        // may be required to close file
+        private static final NativeDispatcher nd = new FileDispatcherImpl();
+
         // keep track of mapped buffer usage
         static volatile int count;
         static volatile long totalSize;
         static volatile long totalCapacity;
 
-        private long address;
-        private long size;
-        private int cap;
+        private volatile long address;
+        private final long size;
+        private final int cap;
+        private final FileDescriptor fd;
 
-        private Unmapper(long address, long size, int cap) {
+        private Unmapper(long address, long size, int cap,
+                         FileDescriptor fd)
+        {
             assert (address != 0);
             this.address = address;
             this.size = size;
             this.cap = cap;
+            this.fd = fd;
 
             synchronized (Unmapper.class) {
                 count++;
@@ -721,6 +744,15 @@ public class FileChannelImpl
                 return;
             unmap0(address, size);
             address = 0;
+
+            // if this mapping has a valid file descriptor then we close it
+            if (fd.valid()) {
+                try {
+                    nd.close(fd);
+                } catch (IOException ignore) {
+                    // nothing we can do
+                }
+            }
 
             synchronized (Unmapper.class) {
                 count--;
@@ -784,10 +816,12 @@ public class FileChannelImpl
             }
             if (size == 0) {
                 addr = 0;
+                // a valid file descriptor is not required
+                FileDescriptor dummy = new FileDescriptor();
                 if ((!writable) || (imode == MAP_RO))
-                    return Util.newMappedByteBufferR(0, 0, null);
+                    return Util.newMappedByteBufferR(0, 0, dummy, null);
                 else
-                    return Util.newMappedByteBuffer(0, 0, null);
+                    return Util.newMappedByteBuffer(0, 0, dummy, null);
             }
 
             int pagePosition = (int)(position % allocationGranularity);
@@ -813,14 +847,31 @@ public class FileChannelImpl
                 }
             }
 
+            // On Windows, and potentially other platforms, we need an open
+            // file descriptor for some mapping operations.
+            FileDescriptor mfd;
+            try {
+                mfd = nd.duplicateForMapping(fd);
+            } catch (IOException ioe) {
+                unmap0(addr, mapSize);
+                throw ioe;
+            }
+
             assert (IOStatus.checkAll(addr));
             assert (addr % allocationGranularity == 0);
             int isize = (int)size;
-            Unmapper um = new Unmapper(addr, size + pagePosition, isize);
-            if ((!writable) || (imode == MAP_RO))
-                return Util.newMappedByteBufferR(isize, addr + pagePosition, um);
-            else
-                return Util.newMappedByteBuffer(isize, addr + pagePosition, um);
+            Unmapper um = new Unmapper(addr, mapSize, isize, mfd);
+            if ((!writable) || (imode == MAP_RO)) {
+                return Util.newMappedByteBufferR(isize,
+                                                 addr + pagePosition,
+                                                 mfd,
+                                                 um);
+            } else {
+                return Util.newMappedByteBuffer(isize,
+                                                addr + pagePosition,
+                                                mfd,
+                                                um);
+            }
         } finally {
             threads.remove(ti);
             end(IOStatus.checkAll(addr));
@@ -1077,7 +1128,6 @@ public class FileChannelImpl
     static {
         Util.load();
         allocationGranularity = initIDs();
-        nd = new FileDispatcherImpl();
     }
 
 }

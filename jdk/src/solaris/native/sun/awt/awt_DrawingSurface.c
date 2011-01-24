@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ awt_DrawingSurface_GetDrawingSurfaceInfo(JAWT_DrawingSurface* ds)
 #ifndef XAWT
     px->drawable = XtWindow(cdata->widget);
 #else
-    px->drawable = JNU_GetLongFieldAsPtr(env, peer, windowID);
+    px->drawable = (*env)->GetLongField(env, peer, windowID);
 #endif
     px->display = awt_display;
 

@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_ASM_CODEBUFFER_HPP
+#define SHARE_VM_ASM_CODEBUFFER_HPP
+
+#include "asm/assembler.hpp"
+#include "code/oopRecorder.hpp"
+#include "code/relocInfo.hpp"
+
 class  CodeComments;
 class  AbstractAssembler;
 class  MacroAssembler;
@@ -168,8 +175,8 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
   bool allocates(address pc) const  { return pc >= _start && pc <  _limit; }
   bool allocates2(address pc) const { return pc >= _start && pc <= _limit; }
 
-  void    set_end(address pc)       { assert(allocates2(pc),""); _end = pc; }
-  void    set_mark(address pc)      { assert(contains2(pc),"not in codeBuffer");
+  void    set_end(address pc)       { assert(allocates2(pc), err_msg("not in CodeBuffer memory: " PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT, _start, pc, _limit)); _end = pc; }
+  void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
   void    set_mark_off(int offset)  { assert(contains2(offset+_start),"not in codeBuffer");
                                       _mark = offset + _start; }
@@ -550,7 +557,16 @@ class CodeBuffer: public StackObj {
 
 
   // The following header contains architecture-specific implementations
-  #include "incls/_codeBuffer_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "codeBuffer_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "codeBuffer_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "codeBuffer_zero.hpp"
+#endif
+
 };
 
 
@@ -562,3 +578,5 @@ inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
 }
+
+#endif // SHARE_VM_ASM_CODEBUFFER_HPP

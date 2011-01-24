@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -454,7 +454,7 @@ public abstract class TextTests extends Test {
                                             taaNames, taaHints,
                                             taaNames, taaNames,
                                             0x1);
-            ((Option.ObjectList) taaList).setNumRows(2);
+            ((Option.ObjectList) taaList).setNumRows(6);
             // add special TextAAOpt for backwards compatibility with
             // older options files
             new TextAAOpt();
@@ -707,3 +707,4 @@ public abstract class TextTests extends Test {
         }
     }
 }
+

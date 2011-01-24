@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_templateTable_x86_32.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateTable.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 
 #ifndef CC_INTERP
 #define __ _masm->
@@ -399,6 +409,23 @@ void TemplateTable::fast_aldc(bool wide) {
   if (VerifyOops) {
     __ verify_oop(rax);
   }
+
+  Label L_done, L_throw_exception;
+  const Register con_klass_temp = rcx;  // same as Rcache
+  __ movptr(con_klass_temp, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ cmpptr(con_klass_temp, ExternalAddress((address)Universe::systemObjArrayKlassObj_addr()));
+  __ jcc(Assembler::notEqual, L_done);
+  __ cmpl(Address(rax, arrayOopDesc::length_offset_in_bytes()), 0);
+  __ jcc(Assembler::notEqual, L_throw_exception);
+  __ xorptr(rax, rax);
+  __ jmp(L_done);
+
+  // Load the exception from the system-array which wraps it:
+  __ bind(L_throw_exception);
+  __ movptr(rax, Address(rax, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
+
+  __ bind(L_done);
 }
 
 void TemplateTable::ldc2_w() {
@@ -3111,19 +3138,22 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   // rax: CallSite object (f1)
   // rbx: unused (f2)
+  // rcx: receiver address
   // rdx: flags (unused)
 
+  Register rax_callsite      = rax;
+  Register rcx_method_handle = rcx;
+
   if (ProfileInterpreter) {
-    Label L;
     // %%% should make a type profile for any invokedynamic that takes a ref argument
     // profile this call
     __ profile_call(rsi);
   }
 
-  __ movptr(rcx, Address(rax, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
-  __ null_check(rcx);
+  __ movptr(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
+  __ null_check(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
-  __ jump_to_method_handle_entry(rcx, rdx);
+  __ jump_to_method_handle_entry(rcx_method_handle, rdx);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -3173,10 +3203,12 @@ void TemplateTable::_new() {
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc() && !CMSIncrementalMode;
 
-  if (UseTLAB) {
-    const Register thread = rcx;
-
+  const Register thread = rcx;
+  if (UseTLAB || allow_shared_alloc) {
     __ get_thread(thread);
+  }
+
+  if (UseTLAB) {
     __ movptr(rax, Address(thread, in_bytes(JavaThread::tlab_top_offset())));
     __ lea(rbx, Address(rax, rdx, Address::times_1));
     __ cmpptr(rbx, Address(thread, in_bytes(JavaThread::tlab_end_offset())));
@@ -3217,6 +3249,8 @@ void TemplateTable::_new() {
 
     // if someone beat us on the allocation, try again, otherwise continue
     __ jcc(Assembler::notEqual, retry);
+
+    __ incr_allocated_bytes(thread, rdx, 0);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
@@ -3226,12 +3260,12 @@ void TemplateTable::_new() {
     __ decrement(rdx, sizeof(oopDesc));
     __ jcc(Assembler::zero, initialize_header);
 
-  // Initialize topmost object field, divide rdx by 8, check if odd and
-  // test if zero.
+    // Initialize topmost object field, divide rdx by 8, check if odd and
+    // test if zero.
     __ xorl(rcx, rcx);    // use zero reg to clear memory (shorter code)
     __ shrl(rdx, LogBytesPerLong); // divide by 2*oopSize and set carry flag if odd
 
-  // rdx must have been multiple of 8
+    // rdx must have been multiple of 8
 #ifdef ASSERT
     // make sure rdx was multiple of 8
     Label L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_phaseX.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
+#include "opto/rootnode.hpp"
 
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
@@ -844,10 +855,33 @@ void PhaseIterGVN::optimize() {
   }
 #endif
 
+#ifdef ASSERT
+  Node* prev = NULL;
+  uint rep_cnt = 0;
+#endif
+  uint loop_count = 0;
+
   // Pull from worklist; transform node;
   // If node has changed: update edge info and put uses on worklist.
   while( _worklist.size() ) {
     Node *n  = _worklist.pop();
+    if (++loop_count >= K * C->unique()) {
+      debug_only(n->dump(4);)
+      assert(false, "infinite loop in PhaseIterGVN::optimize");
+      C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
+      return;
+    }
+#ifdef ASSERT
+    if (n == prev) {
+      if (++rep_cnt > 3) {
+        n->dump(4);
+        assert(false, "loop in Ideal transformation");
+      }
+    } else {
+      rep_cnt = 0;
+    }
+    prev = n;
+#endif
     if (TraceIterativeGVN && Verbose) {
       tty->print("  Pop ");
       NOT_PRODUCT( n->dump(); )

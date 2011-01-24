@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_bytecodeStream.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/bytecodes.hpp"
 
 Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
   assert(!is_last_bytecode(), "should have been checked");

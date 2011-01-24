@@ -22,8 +22,28 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_compilationPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/rframe.hpp"
+#include "runtime/simpleThresholdPolicy.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/timer.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CompilationPolicy* CompilationPolicy::_policy;
 elapsedTimer       CompilationPolicy::_accumulated_time;
@@ -129,16 +149,31 @@ void NonTieredCompPolicy::initialize() {
   }
 }
 
+// Note: this policy is used ONLY if TieredCompilation is off.
+// compiler_count() behaves the following way:
+// - with TIERED build (with both COMPILER1 and COMPILER2 defined) it should return
+//   zero for the c1 compilation levels, hence the particular ordering of the
+//   statements.
+// - the same should happen when COMPILER2 is defined and COMPILER1 is not
+//   (server build without TIERED defined).
+// - if only COMPILER1 is defined (client build), zero should be returned for
+//   the c2 level.
+// - if neither is defined - always return zero.
 int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
-#ifdef COMPILER1
-  if (is_c1_compile(comp_level)) {
-    return _compiler_count;
-  }
-#endif
-
+  assert(!TieredCompilation, "This policy should not be used with TieredCompilation");
 #ifdef COMPILER2
   if (is_c2_compile(comp_level)) {
     return _compiler_count;
+  } else {
+    return 0;
+  }
+#endif
+
+#ifdef COMPILER1
+  if (is_c1_compile(comp_level)) {
+    return _compiler_count;
+  } else {
+    return 0;
   }
 #endif
 

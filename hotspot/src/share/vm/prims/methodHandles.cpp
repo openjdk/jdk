@@ -22,12 +22,20 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+
 /*
  * JSR 292 reference implementation: method handles
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandles.cpp.incl"
 
 bool MethodHandles::_enabled = false; // set true after successful native linkage
 
@@ -103,7 +111,7 @@ bool MethodHandles::spot_check_entry_names() {
 //------------------------------------------------------------------------------
 // MethodHandles::generate_adapters
 //
-void MethodHandles::generate_adapters() {
+void MethodHandles::generate_adapters(TRAPS) {
   if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
@@ -115,20 +123,20 @@ void MethodHandles::generate_adapters() {
     vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
-  g.generate();
+  g.generate(CHECK);
 }
 
 
 //------------------------------------------------------------------------------
 // MethodHandlesAdapterGenerator::generate
 //
-void MethodHandlesAdapterGenerator::generate() {
+void MethodHandlesAdapterGenerator::generate(TRAPS) {
   // Generate generic method handle adapters.
   for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
        ek < MethodHandles::_EK_LIMIT;
        ek = MethodHandles::EntryKind(1 + (int)ek)) {
     StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-    MethodHandles::generate_method_handle_stub(_masm, ek);
+    MethodHandles::generate_method_handle_stub(_masm, ek, CHECK);
   }
 }
 
@@ -477,9 +485,8 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
   if ((flags & ALL_KINDS) == IS_METHOD &&
-      (defc() == SystemDictionary::InvokeDynamic_klass() ||
-       (defc() == SystemDictionary::MethodHandle_klass() &&
-        methodOopDesc::is_method_handle_invoke_name(name()))))
+      (defc() == SystemDictionary::MethodHandle_klass() &&
+       methodOopDesc::is_method_handle_invoke_name(name())))
     polymorphic_signature = true;
 
   // convert the external string or reflective type to an internal signature
@@ -974,6 +981,8 @@ bool MethodHandles::same_basic_type_for_arguments(BasicType src,
   assert(src != T_VOID && dst != T_VOID, "should not be here");
   if (src == dst)  return true;
   if (type2size[src] != type2size[dst])  return false;
+  if (src == T_OBJECT || dst == T_OBJECT)  return false;
+  if (raw)  return true;  // bitwise reinterpretation; caller guarantees safety
   // allow reinterpretation casts for integral widening
   if (is_subword_type(src)) { // subwords can fit in int or other subwords
     if (dst == T_INT)         // any subword fits in an int
@@ -1568,7 +1577,7 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
     if (ptype != T_INT) {
       int value_offset = java_lang_boxing_object::value_offset_in_bytes(T_INT);
       jint value = argument->int_field(value_offset);
-      int vminfo = adapter_subword_vminfo(ptype);
+      int vminfo = adapter_unbox_subword_vminfo(ptype);
       jint subword = truncate_subword_from_vminfo(value, vminfo);
       if (value != subword) {
         err = "bound subword value does not fit into the subword type";
@@ -2018,12 +2027,12 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         assert(src == T_INT || is_subword_type(src), "source is not float");
         // Subword-related cases are int -> {boolean,byte,char,short}.
         ek_opt = _adapter_opt_i2i;
-        vminfo = adapter_subword_vminfo(dest);
+        vminfo = adapter_prim_to_prim_subword_vminfo(dest);
         break;
       case 2 *4+ 1:
         if (src == T_LONG && (dest == T_INT || is_subword_type(dest))) {
           ek_opt = _adapter_opt_l2i;
-          vminfo = adapter_subword_vminfo(dest);
+          vminfo = adapter_prim_to_prim_subword_vminfo(dest);
         } else if (src == T_DOUBLE && dest == T_FLOAT) {
           ek_opt = _adapter_opt_d2f;
         } else {
@@ -2051,7 +2060,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
       switch (type2size[dest]) {
       case 1:
         ek_opt = _adapter_opt_unboxi;
-        vminfo = adapter_subword_vminfo(dest);
+        vminfo = adapter_unbox_subword_vminfo(dest);
         break;
       case 2:
         ek_opt = _adapter_opt_unboxl;
@@ -2635,6 +2644,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     } else {
       MethodHandles::set_enabled(true);
     }
+  }
+
+  // Generate method handles adapters if enabled.
+  if (MethodHandles::enabled()) {
+    MethodHandles::generate_adapters(CHECK);
   }
 }
 JVM_END

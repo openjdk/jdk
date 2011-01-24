@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,8 @@ extern "C" {
     void JNICALL DSUnlockAWT(JNIEnv* env);
 
     _JNI_IMPORT_OR_EXPORT_
-    jobject JNICALL DSGetComponent(JNIEnv* env, void* platformInfo);
+    jobject JNICALL DSGetComponent(
+        JNIEnv* env, void* platformInfo);
 
 #ifdef __cplusplus
 } /* extern "C" */

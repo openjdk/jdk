@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,7 +421,7 @@ public class Main {
         },
         new AptOption("-version",               "opt.version") {
             boolean process(String option) {
-                Bark.printLines(out, ownName + " " + JavaCompiler.version());
+                Bark.printLines(out, ownName + " " + AptJavaCompiler.version());
                 return super.process(option);
             }
         },
@@ -1111,11 +1111,11 @@ public class Main {
         }
         int exitCode = EXIT_OK;
 
-        JavaCompiler comp = null;
+        AptJavaCompiler comp = null;
         try {
             context.put(Bark.outKey, out);
 
-            comp = JavaCompiler.instance(context);
+            comp = AptJavaCompiler.instance(context);
             if (comp == null)
                 return EXIT_SYSERR;
 
@@ -1184,7 +1184,7 @@ public class Main {
      */
     void bugMessage(Throwable ex) {
         Bark.printLines(out, getLocalizedString("msg.bug",
-                                               JavaCompiler.version()));
+                                               AptJavaCompiler.version()));
         ex.printStackTrace(out);
     }
 

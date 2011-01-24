@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,14 +225,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
 jlong
 winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 {
-    /* To implement O_APPEND, we use the strategy from
-       http://msdn2.microsoft.com/en-us/library/aa363858.aspx
-       "You can get atomic append by opening a file with
-       FILE_APPEND_DATA access and _without_ FILE_WRITE_DATA access.
-       If you do this then all writes will ignore the current file
-       pointer and be done at the end-of file." */
     const DWORD access =
-        (flags & O_APPEND) ? (FILE_GENERIC_WRITE & ~FILE_WRITE_DATA) :
         (flags & O_WRONLY) ?  GENERIC_WRITE :
         (flags & O_RDWR)   ? (GENERIC_READ | GENERIC_WRITE) :
         GENERIC_READ;
@@ -307,7 +300,6 @@ handleStdinAvailable(jlong, long *);
 
 int
 handleAvailable(jlong fd, jlong *pbytes) {
-    jlong current, end;
     HANDLE h = (HANDLE)fd;
     DWORD type = 0;
 
@@ -327,18 +319,17 @@ handleAvailable(jlong fd, jlong *pbytes) {
     }
     /* Handle is for regular file */
     if (type == FILE_TYPE_DISK) {
-        long highPos = 0;
-        DWORD sizeLow = 0;
-        DWORD sizeHigh = 0;
-        DWORD lowPos = SetFilePointer(h, 0, &highPos, FILE_CURRENT);
-        if (lowPos == ((DWORD)-1)) {
+        jlong current, end;
+
+        LARGE_INTEGER filesize;
+        current = handleLseek(fd, 0, SEEK_CUR);
+        if (current < 0) {
             return FALSE;
         }
-        current = (((jlong)highPos) << 32) | lowPos;
-        end = GetFileSize(h, &sizeHigh);
-        if (sizeLow == ((DWORD)-1)) {
+        if (GetFileSizeEx(h, &filesize) == 0) {
             return FALSE;
         }
+        end = long_to_jlong(filesize.QuadPart);
         *pbytes = end - current;
         return TRUE;
     }
@@ -511,24 +502,42 @@ handleRead(jlong fd, void *buf, jint len)
     return read;
 }
 
-JNIEXPORT
-size_t
-handleWrite(jlong fd, const void *buf, jint len)
+static size_t writeInternal(jlong fd, const void *buf, jint len, jboolean append)
 {
     BOOL result = 0;
     DWORD written = 0;
     HANDLE h = (HANDLE)fd;
     if (h != INVALID_HANDLE_VALUE) {
-        result = WriteFile(h,           /* File handle to write */
-                      buf,              /* pointers to the buffers */
-                      len,              /* number of bytes to write */
-                      &written,         /* receives number of bytes written */
-                      NULL);            /* no overlapped struct */
+        OVERLAPPED ov;
+        LPOVERLAPPED lpOv;
+        if (append == JNI_TRUE) {
+            ov.Offset = (DWORD)0xFFFFFFFF;
+            ov.OffsetHigh = (DWORD)0xFFFFFFFF;
+            ov.hEvent = NULL;
+            lpOv = &ov;
+        } else {
+            lpOv = NULL;
+        }
+        result = WriteFile(h,                /* File handle to write */
+                           buf,              /* pointers to the buffers */
+                           len,              /* number of bytes to write */
+                           &written,         /* receives number of bytes written */
+                           lpOv);            /* overlapped struct */
     }
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
         return -1;
     }
-    return written;
+    return (size_t)written;
+}
+
+JNIEXPORT
+size_t handleWrite(jlong fd, const void *buf, jint len) {
+    return writeInternal(fd, buf, len, JNI_FALSE);
+}
+
+JNIEXPORT
+size_t handleAppend(jlong fd, const void *buf, jint len) {
+    return writeInternal(fd, buf, len, JNI_TRUE);
 }
 
 jint
@@ -558,6 +567,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
 jlong
 handleLseek(jlong fd, jlong offset, jint whence)
 {
+    LARGE_INTEGER pos, distance;
     DWORD lowPos = 0;
     long highPos = 0;
     DWORD op = FILE_CURRENT;
@@ -573,13 +583,9 @@ handleLseek(jlong fd, jlong offset, jint whence)
         op = FILE_BEGIN;
     }
 
-    lowPos = (DWORD)offset;
-    highPos = (long)(offset >> 32);
-    lowPos = SetFilePointer(h, lowPos, &highPos, op);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            return -1;
-        }
+    distance.QuadPart = offset;
+    if (SetFilePointerEx(h, distance, &pos, op) == 0) {
+        return -1;
     }
-    return (((jlong)highPos) << 32) | lowPos;
+    return long_to_jlong(pos.QuadPart);
 }

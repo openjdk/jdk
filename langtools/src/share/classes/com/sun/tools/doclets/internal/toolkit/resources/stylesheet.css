@@ -1,0 +1,439 @@
+/* Javadoc style sheet */
+/*
+Overall document style
+*/
+* {
+    margin:0;
+    padding:0;
+}
+body {
+    font-family:Helvetica, Arial, sans-serif;
+    color:#000000;
+}
+p {
+    margin:20px 0;
+}
+pre {
+    font-size:1.0em;
+}
+h1 {
+    font-size:1.4em;
+}
+h2 {
+    font-size:1.35em;
+}
+h3 {
+    font-size:1.3em;
+}
+h4 {
+    font-size:1.25em;
+}
+ul {
+    margin:10px 0 10px 20px;
+}
+li {
+    list-style:disc;
+}
+dl dt {
+    font-size:0.95em;
+    font-weight:bold;
+    margin:10px 0 0 0;
+}
+dl dd {
+    margin:10px 0 10px 20px;
+}
+dl dd ul {
+    margin-left:0;
+}
+dl dd ul li {
+    list-style:none;
+    margin:10px 0 10px 0;
+}
+caption {
+    background: #CCCCFF;
+    color:#000000;
+    text-align: left;
+    font-size: 150%;
+    font-weight: bold;
+    border-left: 2px ridge;
+    border-right: 2px ridge;
+    border-top: 2px ridge;
+    padding-left: 5px;
+    width:auto;
+}
+/*
+Document title and Copyright styles
+*/
+.aboutLanguage {
+    float:right;
+    font-size:0.9em;
+    color:#000000;
+}
+.legalCopy {
+    margin:7px;
+}
+.bar {
+    font-size:1em;
+    margin:10px 0 0 10px;
+}
+.bar a {
+    font-weight:normal;
+}
+/*
+Navigation bar styles
+*/
+.topNav {
+    border-top:2px solid #C0C0C0;
+    margin:7px;
+    padding:7px 0;
+    height:2.8em;
+    width:99%;
+    min-width:600px;
+}
+.bottomNav {
+    border-top:2px solid #C0C0C0;
+    margin:7px;
+    padding:7px 0;
+    height:2.8em;
+    width:99%;
+}
+.subNav {
+    border-bottom:2px solid #C0C0C0;
+    float:left;
+    width:99%;
+    margin:7px;
+    min-width:600px;
+}
+.subNav div {
+    clear:left;
+    float:left;
+    padding:0 0 5px 2px;
+    width:100%;
+}
+.topNav a:link,.topNav a:active, .topNav a:visited, .topNav a:hover,
+.bottomNav a:link,.bottomNav a:active, .bottomNav a:visited, .bottomNav a:hover {
+    color:#000000;
+    font-weight:bold;
+    text-decoration:underline;
+    font-size:1em;
+}
+/* Navigation bar list styles */
+.topNav ul.navList, .bottomNav ul.navList {
+    background-color:#EEEEFF;
+    padding:7px 5px;
+    margin:0;
+    float:left;
+    width:80%;
+}
+ul.navList li{
+    list-style:none;
+    float:left;
+    padding:3px 4px;
+    color:#000000;
+    font-size:0.98em;
+}
+ul.navList li.navBarCell1Rev {
+    background-color:#00008B;
+    color:#FFFFFF;
+    font-weight:bold;
+    font-size:0.97em;
+}
+/* Sub-navigation bar list styles */
+.subNav ul.navList {
+    float:left;
+    margin:0;
+    font-size:0.7em;
+    width:350px;
+}
+ul.subNavList {
+    float:left;
+    margin:0;
+    font-size:0.7em;
+    width:350px;
+}
+ul.subNavList li{
+    list-style:none;
+    float:left;
+    font-size:90%;
+}
+/*
+Page header and footer styles
+*/
+.header, .footer {
+    clear:both;
+    margin:0 7px;
+}
+.indexHeader {
+    font-size:0.9em;
+    margin:10px 0 7px 10px;
+}
+.header ul {
+    padding-left:20px;
+}
+/* Header and footer title styles */ 
+.header h1.title {
+    font-size:1.4em;
+    text-align:center;
+    margin:0;
+}
+.header h2.title {
+    font-size:1.35em;
+    margin:0;
+}
+.subTitle {
+    margin:0;
+    padding-top:10px;
+    font-size:0.75em;
+    font-weight:bold;
+}
+/*
+Page layout container styles
+*/
+.contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer,
+.constantValuesContainer {
+    clear:both;
+    padding:10px 10px;
+    position:relative;
+}
+.indexContainer {
+    padding:0 0 10px 10px;
+    font-size:0.9em;
+}
+/*
+Class inheritance information styles
+*/
+ul.inheritance {
+    margin:0;
+    padding:0;
+}
+ul.inheritance li {
+    display:inline;
+    list-style:none;
+}
+ul.inheritance li ul.inheritance {
+    margin-left:15px;
+    background-image:url(resources/inherit.gif);
+    background-repeat:no-repeat;
+    padding-left:15px;
+    padding-top:1px;
+}
+/*
+Heading styles
+*/
+.indexContainer h2 {
+    font-weight:normal;
+    font-size:1.0em;
+    padding:10px 0 0 0;
+}
+.contentContainer h2 {
+    margin:10px 0;
+}
+.constantValuesContainer h2 {
+    background:#CCCCFF;
+    border:2px ridge;
+    padding:3px;
+    margin:0 0 10px 0;
+}
+.serializedFormContainer ul.blockList li.blockList h2 {
+    background:#EEEEFF;
+    border:2px ridge;
+    padding:3px;
+    margin:0 0 15px 0;
+    text-align:center;
+}
+.classUseContainer ul li ul li h3 {
+    margin-bottom:30px;
+    padding:3px;
+}
+.serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList h3 {
+    background:#EEEEFF;
+    margin:0 0 15px 0;
+    padding:3px;
+}
+.serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList h3 {
+    background:#CCCCFF;
+    margin:0 0 15px 0;
+    padding:3px;
+    border:2px ridge;
+}
+ul.blockList ul.blockList li.blockList h3, ul.blockList ul.blockList li.blockList h3 {
+    background:#CCCCFF;
+    border:2px ridge;
+    padding-left:5px;
+}
+div.summary ul.blockList ul.blockList li.blockList h3 {
+    background:#CCCCFF;
+    border:0;
+    border:2px ridge;
+    padding-left:5px;
+}
+div.summary ul.blockList ul.blockList ul.blockList li.blockList h3 {
+    background:#EEEEFF;
+    border:0;
+    border-bottom:2px ridge;
+}
+div.details ul.blockList ul.blockList ul.blockList li.blockList h4,
+div.details ul.blockList ul.blockList ul.blockListLast li.blockList h4 {
+    font-size:1.15em;
+    font-weight:bold;
+    padding:0 0 10px 0;
+}
+/*
+Table styles
+*/
+.contentContainer table {
+    border-collapse: collapse ;
+    width:100%;
+}
+.contentContainer table td, .contentContainer table th {
+    border:2px ridge;
+    padding:3px;
+}
+/* Constant values page table styles */
+.constantValuesContainer table {
+    border-collapse: collapse ;
+    margin:0 0 10px 0;
+}
+.constantValuesContainer table caption{
+    font-size:0.95em;
+    padding:3px;
+    background:#EEEEFF;
+}
+.constantValuesContainer table td, .constantValuesContainer table th {
+    border:2px ridge;
+    padding:3px;
+}
+/* Class-use/Package-use page table styles */
+.classUseContainer table {
+    border-collapse: collapse ;
+    width:100%;
+    margin:0 0 15px 0;
+}
+.classUseContainer ul li ul li table {
+    margin-bottom:30px;
+}
+.classUseContainer ul li ul li table caption{
+    font-size:0.95em;
+    padding:3px;
+    background:#EEEEFF;
+}
+.classUseContainer table td, .classUseContainer table th {
+    border:2px ridge;
+    padding:3px;
+}
+/* Summary table styles */
+ul.blockList li.blockList table.overviewSummary {
+    margin:0;
+    margin-bottom:15px;
+}
+ul.blockList li.blockList table caption {
+    padding:3px;
+}
+ul.blockList li.blockList table.overviewSummary td.colFirst{
+    text-align:right;
+}
+table.packageSummary td.colFirst, table.overviewSummary th.colFirst {
+    width:15%;
+}
+div.summary ul.blockList ul.blockList li.blockList caption {
+    display:none;
+}
+div.summary ul.blockList li.blockList ul.blockList li.blockList table.overviewSummary th {
+    border-top:0;
+}
+/* Table column block styles */
+ul.blockList li.blockList table.overviewSummary td.colLast div.block{
+    padding:0;
+    padding-left:40px;
+}
+ul.blockList li.blockList table.overviewSummary td.colOne div.block{
+    padding:0;
+    padding-left:40px;
+}
+.contentContainer ul.blockList li.blockList table .colOne div.block{
+    padding-left:40px;
+}
+.classUseContainer ul li ul li table .colLast div.block,
+.classUseContainer ul li ul li table .colOne div.block{
+    padding-left:40px;
+}
+/*
+List styles
+*/
+ul.horizontal li {
+    display:inline;
+    font-size:0.9em;   
+}
+/* Container specific list styles */
+.indexContainer ul {
+    margin:0;
+}
+.indexContainer ul li {
+    list-style:none;
+}
+.serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList {
+    border:0;
+}
+.serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList {
+    list-style:none;
+    border:0;
+    border-bottom:2px ridge;
+}
+.serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockListLast {
+    list-style:none;
+}
+/* General list styles */
+ul.blockList, ul.blockListLast {
+    margin-left:0;
+    padding-left:0;
+}
+ul.blockList li.blockList, ul.blockListLast li.blockList {
+    list-style:none;
+    margin-bottom:25px;
+}
+ul.blockList ul.blockList ul.blockList li.blockList {
+    border:2px ridge;
+}
+div.details ul.blockList ul.blockList ul.blockList li.blockList {
+    border:0;
+    border-bottom:2px ridge;
+}
+/* Definition list styles */
+ul.blockList li.blockList dl{
+    margin-bottom:15px;
+}
+ul.blockList li.blockList dl dd{
+    margin:0 0 0 30px;
+}
+ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList dl,
+ul.blockList li.blockList ul.blockList li.blockList ul.blockListLast li.blockList dl{
+    padding:0 0 10px 35px;
+}
+dl.nameValue dt, dl.nameValue dd{
+    display:inline;
+}
+ul.blockList li.blockList pre{
+    margin:0 0 15px 0;
+}
+/* List content styles */
+ul.blockList li.blockList ul.blockList li.blockList pre{
+    margin:10px 0 15px 0;
+}
+ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList pre,
+ul.blockList li.blockList ul.blockList li.blockList ul.blockListLast li.blockList pre{
+    padding:0 0 10px 0;
+}
+ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList div.block,
+ul.blockList li.blockList ul.blockList li.blockList ul.blockListLast li.blockList div.block{
+    padding:0 0 10px 35px;
+}
+/*
+Formatting effect styles
+*/
+.strong {
+    font-weight:bold;
+}
+.sourceLineNo {
+    color:green;
+    padding:0 30px 0 0;
+}

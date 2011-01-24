@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,11 @@ else
   IMAGES_TARGET = images
 endif
 
-DEPLOY_BUILD_TARGETS = sanity javaws-all plugin-all 
+DEPLOY_BUILD_TARGETS = sanity deploy 
 # Only build 7-Zip LZMA file compression if it is available
 # Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(PLATFORM), windows)
-    ifneq ($(KERNEL), off)
       EC_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/lzma ] ; then \
         $(ECHO) true ; \
       else \
@@ -55,7 +54,6 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(EC_TMP), true)
         DEPLOY_BUILD_TARGETS += extra-comp-all
       endif
-    endif
   endif
 endif
 
@@ -79,7 +77,6 @@ ifneq ($(KERNEL), off)
       ifeq ($(UP_TMP), true)
         DEPLOY_BUILD_TARGETS += cmd-comp-all
       endif
-      DEPLOY_BUILD_TARGETS += kernel-all
     endif
   endif
 endif

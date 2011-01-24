@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt.geom;
 
 import java.awt.Shape;
+import java.beans.ConstructorProperties;
 
 /**
  * The <code>AffineTransform</code> class represents a 2D affine transform
@@ -508,6 +509,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param m12 the Y coordinate translation element of the 3x3 matrix
      * @since 1.2
      */
+    @ConstructorProperties({ "scaleX", "shearY", "shearX", "scaleY", "translateX", "translateY" })
     public AffineTransform(float m00, float m10,
                            float m01, float m11,
                            float m02, float m12) {

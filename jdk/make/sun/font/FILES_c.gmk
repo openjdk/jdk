@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,7 @@ FILES_cpp_shared = \
         GlyphPositioningTables.cpp \
         GlyphSubstLookupProc.cpp \
         GlyphSubstitutionTables.cpp \
-        HebrewLigatureData.cpp \
-        HebrewShaping.cpp \
+        HangulLayoutEngine.cpp \
         IndicClassTables.cpp \
         IndicReordering.cpp \
         KernTable.cpp \
@@ -95,6 +94,8 @@ FILES_cpp_shared = \
         SubstitutionLookups.cpp \
         ThaiShaping.cpp \
         ThaiStateTables.cpp \
+        TibetanLayoutEngine.cpp \
+        TibetanReordering.cpp \
         ValueRecords.cpp \
         ArabicLayoutEngine.cpp \
         ArabicShaping.cpp \

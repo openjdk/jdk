@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,8 +451,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCTypeDisjoint TypeDisjoint(List<JCExpression> components) {
-        JCTypeDisjoint tree = new JCTypeDisjoint(components);
+    public JCTypeDisjunction TypeDisjunction(List<JCExpression> components) {
+        JCTypeDisjunction tree = new JCTypeDisjunction(components);
         tree.pos = pos;
         return tree;
     }
@@ -734,8 +734,9 @@ public class TreeMaker implements JCTree.Factory {
             result = Literal(BYTE, value).
                 setType(syms.byteType.constType(value));
         } else if (value instanceof Character) {
+            int v = (int) (((Character) value).toString().charAt(0));
             result = Literal(CHAR, value).
-                setType(syms.charType.constType(value));
+                setType(syms.charType.constType(v));
         } else if (value instanceof Double) {
             result = Literal(DOUBLE, value).
                 setType(syms.doubleType.constType(value));
@@ -745,6 +746,10 @@ public class TreeMaker implements JCTree.Factory {
         } else if (value instanceof Short) {
             result = Literal(SHORT, value).
                 setType(syms.shortType.constType(value));
+        } else if (value instanceof Boolean) {
+            int v = ((Boolean) value) ? 1 : 0;
+            result = Literal(BOOLEAN, v).
+                setType(syms.booleanType.constType(v));
         } else {
             throw new AssertionError(value);
         }

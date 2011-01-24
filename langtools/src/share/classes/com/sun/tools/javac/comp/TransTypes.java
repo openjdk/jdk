@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,7 +719,7 @@ public class TransTypes extends TreeTranslator {
                 tree.sym = ((MethodSymbol)tree.sym).
                     implemented((TypeSymbol)tree.sym.owner, types);
             }
-            tree.selected = cast(
+            tree.selected = coerce(
                 translate(tree.selected, erasure(tree.selected.type)),
                 erasure(tree.sym.owner.type));
         } else
@@ -876,7 +876,8 @@ public class TransTypes extends TreeTranslator {
                 make.at(tree.pos);
                 if (addBridges) {
                     ListBuffer<JCTree> bridges = new ListBuffer<JCTree>();
-                    bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
+                    if (false) //see CR: 6996415
+                        bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
                     if ((tree.sym.flags() & INTERFACE) == 0)
                         addBridges(tree.pos(), tree.sym, bridges);
                     tree.defs = bridges.toList().prependList(tree.defs);

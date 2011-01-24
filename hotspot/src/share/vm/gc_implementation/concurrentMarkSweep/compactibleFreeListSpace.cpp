@@ -22,8 +22,25 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_compactibleFreeListSpace.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsLockVerifier.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/shared/liveRange.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/copy.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// CompactibleFreeListSpace
@@ -124,7 +141,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   checkFreeListConsistency();
 
   // Initialize locks for parallel case.
-  if (ParallelGCThreads > 0) {
+
+  if (CollectedHeap::use_parallel_gc_threads()) {
     for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
       _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
                                               "a freelist par lock",
@@ -1071,7 +1089,8 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
   // at address below "p" in finding the object that contains "p"
   // and those objects (if garbage) may have been modified to hold
   // live range information.
-  // assert(ParallelGCThreads > 0 || _bt.block_start(p) == p, "Should be a block boundary");
+  // assert(CollectedHeap::use_parallel_gc_threads() || _bt.block_start(p) == p,
+  //        "Should be a block boundary");
   if (FreeChunk::indicatesFreeChunk(p)) return false;
   klassOop k = oop(p)->klass_or_null();
   if (k != NULL) {
@@ -1091,7 +1110,9 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
 // perm_gen_verify_bit_map where we store the "deadness" information if
 // we did not sweep the perm gen in the most recent previous GC cycle.
 bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
-  assert (block_is_obj(p), "The address should point to an object");
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
+         "Else races are possible");
+  assert(block_is_obj(p), "The address should point to an object");
 
   // If we're sweeping, we use object liveness information from the main bit map
   // for both perm gen and old gen.
@@ -1100,9 +1121,14 @@ bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
   // main marking bit map (live_map below) is locked,
   // OR we're in other phases and perm_gen_verify_bit_map (dead_map below)
   // is stable, because it's mutated only in the sweeping phase.
+  // NOTE: This method is also used by jmap where, if class unloading is
+  // off, the results can return "false" for legitimate perm objects,
+  // when we are not in the midst of a sweeping phase, which can result
+  // in jmap not reporting certain perm gen objects. This will be moot
+  // if/when the perm gen goes away in the future.
   if (_collector->abstract_state() == CMSCollector::Sweeping) {
     CMSBitMap* live_map = _collector->markBitMap();
-    return live_map->isMarked((HeapWord*) p);
+    return live_map->par_isMarked((HeapWord*) p);
   } else {
     // If we're not currently sweeping and we haven't swept the perm gen in
     // the previous concurrent cycle then we may have dead but unswept objects
@@ -2264,7 +2290,7 @@ void CompactibleFreeListSpace::split(size_t from, size_t to1) {
 }
 
 void CompactibleFreeListSpace::print() const {
-  Space::print_on(tty);
+  print_on(tty);
 }
 
 void CompactibleFreeListSpace::prepare_for_verify() {
@@ -2932,7 +2958,9 @@ initialize_sequential_subtasks_for_rescan(int n_threads) {
          "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
-  pst->set_par_threads(n_threads);
+  // Sets the condition for completion of the subtask (how many threads
+  // need to finish in order to be done).
+  pst->set_n_threads(n_threads);
   pst->set_n_tasks((int)n_tasks);
 }
 
@@ -2972,6 +3000,8 @@ initialize_sequential_subtasks_for_marking(int n_threads,
          "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
-  pst->set_par_threads(n_threads);
+  // Sets the condition for completion of the subtask (how many threads
+  // need to finish in order to be done).
+  pst->set_n_threads(n_threads);
   pst->set_n_tasks((int)n_tasks);
 }

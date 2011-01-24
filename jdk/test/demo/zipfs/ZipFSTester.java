@@ -58,13 +58,12 @@ public class ZipFSTester {
         // clone a fs and test on it
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();
-        env.put("createNew", true);
+        env.put("create", "true");
         FileSystem fs0 = newZipFileSystem(tmpfsPath, env);
         z2zcopy(fs, fs0, "/", 0);
         fs0.close();                // sync to file
 
         fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>());
-
         try {
             // prepare a src
             Path src = getTempPath();
@@ -146,16 +145,9 @@ public class ZipFSTester {
         Path fs2Path = getTempPath();
         Path fs3Path = getTempPath();
 
-        if (fs1Path.exists())
-            fs1Path.delete();
-        if (fs2Path.exists())
-            fs2Path.delete();
-        if (fs3Path.exists())
-            fs3Path.delete();
-
         // create a new filesystem, copy everything from fs
         Map<String, Object> env = new HashMap<String, Object>();
-        env.put("createNew", true);
+        env.put("create", "true");
         FileSystem fs0 = newZipFileSystem(fs1Path, env);
 
         final FileSystem fs2 = newZipFileSystem(fs2Path, env);
@@ -280,7 +272,6 @@ public class ZipFSTester {
         walk(fs4.getPath("/"));
         System.out.println("closing: fs4");
         fs4.close();
-
         System.out.printf("failed=%d%n", failed);
 
         fs1Path.delete();
@@ -291,11 +282,7 @@ public class ZipFSTester {
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
         throws IOException
     {
-        return FileSystems.newFileSystem(
-                   URI.create("zip" +
-                               path.toUri().toString().substring(4)),
-                   env,
-                   null);
+        return FileSystems.newFileSystem(path, env, null);
     }
 
     private static Path getTempPath() throws IOException
@@ -426,6 +413,8 @@ public class ZipFSTester {
     }
 
     private static void mkdirs(Path path) throws IOException {
+        if (path.exists())
+            return;
         path = path.toAbsolutePath();
         Path parent = path.getParent();
         if (parent != null) {

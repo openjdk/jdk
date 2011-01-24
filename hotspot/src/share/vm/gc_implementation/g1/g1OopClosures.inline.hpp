@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP
+
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/g1OopClosures.hpp"
+#include "gc_implementation/g1/g1RemSet.hpp"
+
 /*
  * This really ought to be an inline function, but apparently the C++
  * compiler sometimes sees fit to ignore inline declarations.  Sigh.
@@ -121,3 +129,5 @@ template <class T> inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
   }
 }
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class ObjectInputStream
 
     /** table mapping primitive type names to corresponding class objects */
     private static final HashMap<String, Class<?>> primClasses
-        = new HashMap<String, Class<?>>(8, 1.0F);
+        = new HashMap<>(8, 1.0F);
     static {
         primClasses.put("boolean", boolean.class);
         primClasses.put("byte", byte.class);
@@ -229,11 +229,11 @@ public class ObjectInputStream
     private static class Caches {
         /** cache of subclass security audit results */
         static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<WeakClassKey,Boolean>();
+            new ConcurrentHashMap<>();
 
         /** queue for WeakReferences to audited subclasses */
         static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<Class<?>>();
+            new ReferenceQueue<>();
     }
 
     /** filter stream for handling block data conversion */
@@ -265,7 +265,7 @@ public class ObjectInputStream
      * object currently being deserialized and descriptor for current class.
      * Null when not during readObject upcall.
      */
-    private CallbackContext curContext;
+    private SerialCallbackContext curContext;
 
     /**
      * Creates an ObjectInputStream that reads from the specified InputStream.
@@ -1798,7 +1798,7 @@ public class ObjectInputStream
     private void readExternalData(Externalizable obj, ObjectStreamClass desc)
         throws IOException
     {
-        CallbackContext oldContext = curContext;
+        SerialCallbackContext oldContext = curContext;
         curContext = null;
         try {
             boolean blocked = desc.hasBlockExternalData();
@@ -1857,10 +1857,10 @@ public class ObjectInputStream
                     slotDesc.hasReadObjectMethod() &&
                     handles.lookupException(passHandle) == null)
                 {
-                    CallbackContext oldContext = curContext;
+                    SerialCallbackContext oldContext = curContext;
 
                     try {
-                        curContext = new CallbackContext(obj, slotDesc);
+                        curContext = new SerialCallbackContext(obj, slotDesc);
 
                         bin.setBlockDataMode(true);
                         slotDesc.invokeReadObject(obj, this);
@@ -3498,49 +3498,11 @@ public class ObjectInputStream
             return ((int[]) array).clone();
         } else if (array instanceof long[]) {
             return ((long[]) array).clone();
-        } else if (array instanceof double[]) {
-            return ((double[]) array).clone();
+        } else if (array instanceof short[]) {
+            return ((short[]) array).clone();
         } else {
             throw new AssertionError();
         }
     }
 
-    /**
-     * Context that during upcalls to class-defined readObject methods; holds
-     * object currently being deserialized and descriptor for current class.
-     * This context keeps a boolean state to indicate that defaultReadObject
-     * or readFields has already been invoked with this context or the class's
-     * readObject method has returned; if true, the getObj method throws
-     * NotActiveException.
-     */
-    private static class CallbackContext {
-        private final Object obj;
-        private final ObjectStreamClass desc;
-        private final AtomicBoolean used = new AtomicBoolean();
-
-        public CallbackContext(Object obj, ObjectStreamClass desc) {
-            this.obj = obj;
-            this.desc = desc;
-        }
-
-        public Object getObj() throws NotActiveException {
-            checkAndSetUsed();
-            return obj;
-        }
-
-        public ObjectStreamClass getDesc() {
-            return desc;
-        }
-
-        private void checkAndSetUsed() throws NotActiveException {
-            if (!used.compareAndSet(false, true)) {
-                 throw new NotActiveException(
-                      "not in readObject invocation or fields already read");
-            }
-        }
-
-        public void setUsed() {
-            used.set(true);
-        }
-    }
 }

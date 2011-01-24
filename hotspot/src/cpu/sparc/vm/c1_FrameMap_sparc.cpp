@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_FrameMap_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIR.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "vmreg_sparc.inline.hpp"
 
 
 const int FrameMap::pd_c_runtime_reserved_arg_size = 7;

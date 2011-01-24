@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,8 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_loops_GraphicsPrimitiveMgr_registerNativeLoops;
 		Java_sun_java2d_loops_MaskBlit_MaskBlit;
 		Java_sun_java2d_loops_MaskFill_MaskFill;
+		Java_sun_java2d_loops_MaskFill_FillAAPgram;
+		Java_sun_java2d_loops_MaskFill_DrawAAPgram;
                 Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans;
 		Java_sun_java2d_pipe_SpanClipRenderer_initIDs;
 		sun_awt_image_GifImageDecoder_initIDs;

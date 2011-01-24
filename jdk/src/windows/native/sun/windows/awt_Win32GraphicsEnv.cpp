@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
         //if the fontPath includes %SystemRoot%
         LPWSTR systemRoot = _wgetenv(L"SystemRoot");
         if (systemRoot != NULL
-            && swprintf(tmpPath, L"%s%s", systemRoot, fontPath + 12) != -1) {
+            && swprintf(tmpPath, MAX_PATH, L"%s%s", systemRoot, fontPath + 12) != -1) {
             fontPath = tmpPath;
         }
         else {
@@ -279,7 +279,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
         //else to see if it only inludes "EUDC.TTE"
         WCHAR systemRoot[MAX_PATH + 1];
         if (GetWindowsDirectory(systemRoot, MAX_PATH + 1) != 0) {
-            swprintf(tmpPath, L"%s\\FONTS\\EUDC.TTE", systemRoot);
+            swprintf(tmpPath, MAX_PATH, L"%s\\FONTS\\EUDC.TTE", systemRoot);
             fontPath = tmpPath;
         }
         else {

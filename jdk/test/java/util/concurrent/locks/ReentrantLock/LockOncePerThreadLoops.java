@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile LockOncePerThreadLoops.java
+ * @compile -source 1.5 LockOncePerThreadLoops.java
  * @run main/timeout=15000 LockOncePerThreadLoops
  * @summary Checks for missed signals by locking and unlocking each of an array of locks once per thread
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,6 +607,12 @@
 
 #define NAME_TRANSFORMHELPER_FUNCS(TYPE) TYPE ## TransformHelperFuncs
 
+#define NAME_SOLID_FILLPGRAM(TYPE)       TYPE ## SetParallelogram
+#define NAME_SOLID_PGRAM_FUNCS(TYPE)     TYPE ## SetParallelogramFuncs
+
+#define NAME_XOR_FILLPGRAM(TYPE)         TYPE ## XorParallelogram
+#define NAME_XOR_PGRAM_FUNCS(TYPE)       TYPE ## XorParallelogramFuncs
+
 /*
  * These macros conveniently name and declare the indicated native
  * primitive loop function for forward referencing.
@@ -688,6 +694,16 @@
     TransformHelperFunc NAME_TRANSFORMHELPER_BL(TYPE); \
     TransformHelperFunc NAME_TRANSFORMHELPER_BC(TYPE); \
     TransformHelperFuncs NAME_TRANSFORMHELPER_FUNCS(TYPE)
+
+#define DECLARE_SOLID_PARALLELOGRAM(TYPE) \
+    FillParallelogramFunc NAME_SOLID_FILLPGRAM(TYPE); \
+    DECLARE_SOLID_DRAWLINE(TYPE); \
+    DrawParallelogramFuncs NAME_SOLID_PGRAM_FUNCS(TYPE)
+
+#define DECLARE_XOR_PARALLELOGRAM(TYPE) \
+    FillParallelogramFunc NAME_XOR_FILLPGRAM(TYPE); \
+    DECLARE_XOR_DRAWLINE(TYPE); \
+    DrawParallelogramFuncs NAME_XOR_PGRAM_FUNCS(TYPE)
 
 /*
  * These macros construct the necessary NativePrimitive structure
@@ -799,6 +815,18 @@
 #define REGISTER_TRANSFORMHELPER_FUNCS(TYPE) \
     REGISTER_PRIMITIVE(TransformHelper, TYPE, SrcNoEa, IntArgbPre, \
                        (AnyFunc *) &NAME_TRANSFORMHELPER_FUNCS(TYPE))
+
+#define REGISTER_SOLID_PARALLELOGRAM(TYPE) \
+    REGISTER_PRIMITIVE(FillParallelogram, AnyColor, SrcNoEa, TYPE, \
+                       NAME_SOLID_FILLPGRAM(TYPE)), \
+    REGISTER_PRIMITIVE(DrawParallelogram, AnyColor, SrcNoEa, TYPE, \
+                       (AnyFunc *) &NAME_SOLID_PGRAM_FUNCS(TYPE))
+
+#define REGISTER_XOR_PARALLELOGRAM(TYPE) \
+    REGISTER_PRIMITIVE(FillParallelogram, AnyColor, Xor, TYPE, \
+                       NAME_XOR_FILLPGRAM(TYPE)), \
+    REGISTER_PRIMITIVE(DrawParallelogram, AnyColor, Xor, TYPE, \
+                       (AnyFunc *) &NAME_XOR_PGRAM_FUNCS(TYPE))
 
 /*
  * This macro defines an entire function to implement a Blit inner loop
@@ -1263,6 +1291,51 @@ void NAME_SOLID_FILLSPANS(DST)(SurfaceDataRasInfo *pRasInfo, \
         } while (--h > 0); \
     } \
 }
+
+/*
+ * This macro defines an entire function to implement a FillParallelogram
+ * inner loop for tracing 2 diagonal edges (left and right) and setting
+ * those regions of pixels between them to a specific pixel value.
+ * No blending of the fill color is done with the pixels.
+ */
+#define DEFINE_SOLID_FILLPGRAM(DST) \
+void NAME_SOLID_FILLPGRAM(DST)(SurfaceDataRasInfo *pRasInfo, \
+                               jint lox, jint loy, jint hix, jint hiy, \
+                               jlong leftx, jlong dleftx, \
+                               jlong rightx, jlong drightx, \
+                               jint pixel, struct _NativePrimitive *pPrim, \
+                               CompositeInfo *pCompInfo) \
+{ \
+    Declare ## DST ## PixelData(pix) \
+    jint scan = pRasInfo->scanStride; \
+    DST ## DataType *pPix = PtrCoord(pRasInfo->rasBase, 0, 0, loy, scan); \
+ \
+    Extract ## DST ## PixelData(pixel, pix); \
+    while (loy < hiy) { \
+        jint lx = WholeOfLong(leftx); \
+        jint rx = WholeOfLong(rightx); \
+        if (lx < lox) lx = lox; \
+        if (rx > hix) rx = hix; \
+        while (lx < rx) { \
+            Store ## DST ## PixelData(pPix, lx, pixel, pix); \
+            lx++; \
+        } \
+        pPix = PtrAddBytes(pPix, scan); \
+        leftx += dleftx; \
+        rightx += drightx; \
+        loy++; \
+    } \
+}
+
+#define DEFINE_SOLID_DRAWPARALLELOGRAM_FUNCS(DST) \
+    DrawParallelogramFuncs NAME_SOLID_PGRAM_FUNCS(DST) = { \
+        NAME_SOLID_FILLPGRAM(DST), \
+        NAME_SOLID_DRAWLINE(DST), \
+    };
+
+#define DEFINE_SOLID_PARALLELOGRAM(DST) \
+    DEFINE_SOLID_FILLPGRAM(DST) \
+    DEFINE_SOLID_DRAWPARALLELOGRAM_FUNCS(DST)
 
 /*
  * This macro declares the bumpmajor and bumpminor variables used for the

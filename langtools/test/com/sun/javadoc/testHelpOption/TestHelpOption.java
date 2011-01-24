@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,7 @@ public class TestHelpOption extends JavadocTester {
 
     private static final String[][] TEST2 = {
         {BUG_ID + FS + "TestHelpOption.html",
-            "<A HREF=\"help-doc.html\"><FONT CLASS=\"NavBarFont1\">" +
-            "<STRONG>Help</STRONG></FONT></A>"
+            "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };
     private static final String[][] NEGATED_TEST2 = NO_TEST;

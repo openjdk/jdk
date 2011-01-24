@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import com.sun.imageio.plugins.common.PaletteBuilder;
 
 public class GIFImageWriterSpi extends ImageWriterSpi {
 
-    private static final String vendorName = "Sun Microsystems, Inc.";
+    private static final String vendorName = "Oracle Corporation";
 
     private static final String version = "1.0";
 

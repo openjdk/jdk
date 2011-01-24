@@ -45,13 +45,13 @@ import java.lang.reflect.*;
  * independently subject to atomic updates. For example, a tree node
  * might be declared as
  *
- * <pre>
+ *  <pre> {@code
  * class Node {
  *   private volatile Node left, right;
  *
- *   private static final AtomicReferenceFieldUpdater&lt;Node, Node&gt; leftUpdater =
+ *   private static final AtomicReferenceFieldUpdater<Node, Node> leftUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
- *   private static AtomicReferenceFieldUpdater&lt;Node, Node&gt; rightUpdater =
+ *   private static AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
  *
  *   Node getLeft() { return left;  }
@@ -59,8 +59,7 @@ import java.lang.reflect.*;
  *     return leftUpdater.compareAndSet(this, expect, update);
  *   }
  *   // ... and so on
- * }
- * </pre>
+ * }}</pre>
  *
  * <p>Note that the guarantees of the {@code compareAndSet}
  * method in this class are weaker than in other atomic classes.
@@ -74,7 +73,7 @@ import java.lang.reflect.*;
  * @param <T> The type of the object holding the updatable field
  * @param <V> The type of the field
  */
-public abstract class AtomicReferenceFieldUpdater<T, V>  {
+public abstract class AtomicReferenceFieldUpdater<T, V> {
 
     /**
      * Creates and returns an updater for objects with the given field.
@@ -291,7 +290,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V>  {
             if (cclass.isInstance(obj)) {
                 return;
             }
-            throw new RuntimeException (
+            throw new RuntimeException(
                 new IllegalAccessException("Class " +
                     cclass.getName() +
                     " can not access a protected member of class " +

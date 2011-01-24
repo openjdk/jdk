@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,33 +159,45 @@ public class Resolve {
      *  @param c      The class whose accessibility is checked.
      */
     public boolean isAccessible(Env<AttrContext> env, TypeSymbol c) {
+        return isAccessible(env, c, false);
+    }
+
+    public boolean isAccessible(Env<AttrContext> env, TypeSymbol c, boolean checkInner) {
+        boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
-        case PRIVATE:
-            return
-                env.enclClass.sym.outermostClass() ==
-                c.owner.outermostClass();
-        case 0:
-            return
-                env.toplevel.packge == c.owner // fast special case
-                ||
-                env.toplevel.packge == c.packge()
-                ||
-                // Hack: this case is added since synthesized default constructors
-                // of anonymous classes should be allowed to access
-                // classes which would be inaccessible otherwise.
-                env.enclMethod != null &&
-                (env.enclMethod.mods.flags & ANONCONSTR) != 0;
-        default: // error recovery
-        case PUBLIC:
-            return true;
-        case PROTECTED:
-            return
-                env.toplevel.packge == c.owner // fast special case
-                ||
-                env.toplevel.packge == c.packge()
-                ||
-                isInnerSubClass(env.enclClass.sym, c.owner);
+            case PRIVATE:
+                isAccessible =
+                    env.enclClass.sym.outermostClass() ==
+                    c.owner.outermostClass();
+                break;
+            case 0:
+                isAccessible =
+                    env.toplevel.packge == c.owner // fast special case
+                    ||
+                    env.toplevel.packge == c.packge()
+                    ||
+                    // Hack: this case is added since synthesized default constructors
+                    // of anonymous classes should be allowed to access
+                    // classes which would be inaccessible otherwise.
+                    env.enclMethod != null &&
+                    (env.enclMethod.mods.flags & ANONCONSTR) != 0;
+                break;
+            default: // error recovery
+            case PUBLIC:
+                isAccessible = true;
+                break;
+            case PROTECTED:
+                isAccessible =
+                    env.toplevel.packge == c.owner // fast special case
+                    ||
+                    env.toplevel.packge == c.packge()
+                    ||
+                    isInnerSubClass(env.enclClass.sym, c.owner);
+                break;
         }
+        return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
+            isAccessible :
+            isAccessible && isAccessible(env, c.type.getEnclosingType(), checkInner);
     }
     //where
         /** Is given class a subclass of given base class, or an inner class
@@ -202,9 +214,13 @@ public class Resolve {
         }
 
     boolean isAccessible(Env<AttrContext> env, Type t) {
+        return isAccessible(env, t, false);
+    }
+
+    boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
         return (t.tag == ARRAY)
             ? isAccessible(env, types.elemtype(t))
-            : isAccessible(env, t.tsym);
+            : isAccessible(env, t.tsym, checkInner);
     }
 
     /** Is symbol accessible as a member of given type in given evironment?
@@ -214,8 +230,10 @@ public class Resolve {
      *  @param sym    The symbol.
      */
     public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym) {
+        return isAccessible(env, site, sym, false);
+    }
+    public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym, boolean checkInner) {
         if (sym.name == names.init && sym.owner != site.tsym) return false;
-        ClassSymbol sub;
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
             return
@@ -231,7 +249,7 @@ public class Resolve {
                  ||
                  env.toplevel.packge == sym.packge())
                 &&
-                isAccessible(env, site)
+                isAccessible(env, site, checkInner)
                 &&
                 sym.isInheritedIn(site.tsym, types)
                 &&
@@ -248,11 +266,11 @@ public class Resolve {
                  // (but type names should be disallowed elsewhere!)
                  env.info.selectSuper && (sym.flags() & STATIC) == 0 && sym.kind != TYP)
                 &&
-                isAccessible(env, site)
+                isAccessible(env, site, checkInner)
                 &&
                 notOverriddenIn(site, sym);
         default: // this case includes erroneous combinations as well
-            return isAccessible(env, site) && notOverriddenIn(site, sym);
+            return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
     }
     //where
@@ -451,7 +469,9 @@ public class Resolve {
             throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
 
         if (useVarargs) {
-            Type elt = types.elemtype(varargsFormal);
+            //note: if applicability check is triggered by most specific test,
+            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
+            Type elt = types.elemtypeOrType(varargsFormal);
             while (argtypes.nonEmpty()) {
                 if (!types.isConvertible(argtypes.head, elt, warn))
                     throw inapplicableMethodException.setMessage("varargs.argument.mismatch",
@@ -705,23 +725,11 @@ public class Resolve {
         switch (m2.kind) {
         case MTH:
             if (m1 == m2) return m1;
-            Type mt1 = types.memberType(site, m1);
-            noteWarner.unchecked = false;
-            boolean m1SignatureMoreSpecific =
-                (instantiate(env, site, m2, types.lowerBoundArgtypes(mt1), null,
-                             allowBoxing, false, noteWarner) != null ||
-                 useVarargs && instantiate(env, site, m2, types.lowerBoundArgtypes(mt1), null,
-                                           allowBoxing, true, noteWarner) != null) &&
-                !noteWarner.unchecked;
-            Type mt2 = types.memberType(site, m2);
-            noteWarner.unchecked = false;
-            boolean m2SignatureMoreSpecific =
-                (instantiate(env, site, m1, types.lowerBoundArgtypes(mt2), null,
-                             allowBoxing, false, noteWarner) != null ||
-                 useVarargs && instantiate(env, site, m1, types.lowerBoundArgtypes(mt2), null,
-                                           allowBoxing, true, noteWarner) != null) &&
-                !noteWarner.unchecked;
+            boolean m1SignatureMoreSpecific = signatureMoreSpecific(env, site, m1, m2, allowBoxing, useVarargs);
+            boolean m2SignatureMoreSpecific = signatureMoreSpecific(env, site, m2, m1, allowBoxing, useVarargs);
             if (m1SignatureMoreSpecific && m2SignatureMoreSpecific) {
+                Type mt1 = types.memberType(site, m1);
+                Type mt2 = types.memberType(site, m2);
                 if (!types.overrideEquivalent(mt1, mt2))
                     return new AmbiguityError(m1, m2);
                 // same signature; select (a) the non-bridge method, or
@@ -803,6 +811,56 @@ public class Resolve {
                 return new AmbiguityError(err1, err2);
         default:
             throw new AssertionError();
+        }
+    }
+    //where
+    private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
+        noteWarner.clear();
+        Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
+        return (instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
+                             allowBoxing, false, noteWarner) != null ||
+                 useVarargs && instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
+                                           allowBoxing, true, noteWarner) != null) &&
+                !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
+    }
+    //where
+    private Symbol adjustVarargs(Symbol to, Symbol from, boolean useVarargs) {
+        List<Type> fromArgs = from.type.getParameterTypes();
+        List<Type> toArgs = to.type.getParameterTypes();
+        if (useVarargs &&
+                (from.flags() & VARARGS) != 0 &&
+                (to.flags() & VARARGS) != 0) {
+            Type varargsTypeFrom = fromArgs.last();
+            Type varargsTypeTo = toArgs.last();
+            ListBuffer<Type> args = ListBuffer.lb();
+            if (toArgs.length() < fromArgs.length()) {
+                //if we are checking a varargs method 'from' against another varargs
+                //method 'to' (where arity of 'to' < arity of 'from') then expand signature
+                //of 'to' to 'fit' arity of 'from' (this means adding fake formals to 'to'
+                //until 'to' signature has the same arity as 'from')
+                while (fromArgs.head != varargsTypeFrom) {
+                    args.append(toArgs.head == varargsTypeTo ? types.elemtype(varargsTypeTo) : toArgs.head);
+                    fromArgs = fromArgs.tail;
+                    toArgs = toArgs.head == varargsTypeTo ?
+                        toArgs :
+                        toArgs.tail;
+                }
+            } else {
+                //formal argument list is same as original list where last
+                //argument (array type) is removed
+                args.appendList(toArgs.reverse().tail.reverse());
+            }
+            //append varargs element type as last synthetic formal
+            args.append(types.elemtype(varargsTypeTo));
+            MethodSymbol msym = new MethodSymbol(to.flags_field,
+                                                 to.name,
+                                                 (Type)to.type.clone(), //see: 6990136
+                                                 to.owner);
+            MethodType mtype = msym.type.asMethodType();
+            mtype.argtypes = args.toList();
+            return msym;
+        } else {
+            return to;
         }
     }
 

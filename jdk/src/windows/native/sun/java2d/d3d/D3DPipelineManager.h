@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "D3DPipeline.h"
 #include "D3DContext.h"
+#include "awt_Toolkit.h"
 
 typedef class D3DPipelineManager *LPD3DPIPELINEMANAGER;
 
@@ -38,11 +39,15 @@ typedef struct D3DAdapter
 
 class D3DPIPELINE_API D3DPipelineManager
 {
-public:
+    friend class D3DInitializer;
+private:
     // creates and initializes instance of D3DPipelineManager, may return NULL
     static D3DPipelineManager* CreateInstance(void);
+
     // deletes the single instance of the manager
     static void DeleteInstance();
+
+public:
     // returns the single instance of the manager, may return NULL
     static D3DPipelineManager* GetInstance(void);
 
@@ -140,6 +145,46 @@ private:
 #define OS_WINXP        (1 << 2)
 #define OS_WINXP_64     (1 << 3)
 #define OS_WINSERV_2003 (1 << 4)
-#define OS_ALL (OS_VISTA|OS_WINSERV_2008|OS_WINXP|OS_WINXP_64|OS_WINSERV_2003)
+#define OS_WINDOWS7     (1 << 5)
+#define OS_WINSERV_2008R2 (1 << 6)
+#define OS_ALL (OS_VISTA|OS_WINSERV_2008|OS_WINXP|OS_WINXP_64|OS_WINSERV_2003|\
+                OS_WINDOWS7|OS_WINSERV_2008R2)
 #define OS_UNKNOWN      (~OS_ALL)
 BOOL D3DPPLM_OsVersionMatches(USHORT osInfo);
+
+
+class D3DInitializer : public AwtToolkit::PreloadAction {
+private:
+    D3DInitializer();
+    ~D3DInitializer();
+
+protected:
+    // PreloadAction overrides
+    virtual void InitImpl();
+    virtual void CleanImpl(bool reInit);
+
+public:
+    static D3DInitializer& GetInstance() { return theInstance; }
+
+private:
+    // single instance
+    static D3DInitializer theInstance;
+
+    // adapter initializer class
+    class D3DAdapterInitializer : public AwtToolkit::PreloadAction {
+    public:
+        void setAdapter(UINT adapter) { this->adapter = adapter; }
+    protected:
+        // PreloadAction overrides
+        virtual void InitImpl();
+        virtual void CleanImpl(bool reInit);
+    private:
+        UINT adapter;
+    };
+
+    // the flag indicates success of COM initialization
+    bool bComInitialized;
+    D3DAdapterInitializer *pAdapterIniters;
+
+};
+

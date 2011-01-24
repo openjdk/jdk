@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_LinearScan.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "utilities/bitMap.inline.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.inline.hpp"
+#endif
 
 
 #ifndef PRODUCT
@@ -73,6 +90,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _intervals(0)   // initialized later with correct length
  , _new_intervals_from_allocation(new IntervalList())
  , _sorted_intervals(NULL)
+ , _needs_full_resort(false)
  , _lir_ops(0)     // initialized later with correct length
  , _block_of_op(0) // initialized later with correct length
  , _has_info(0)
@@ -1256,7 +1274,7 @@ void LinearScan::build_intervals() {
   int caller_save_registers[LinearScan::nof_regs];
 
   int i;
-  for (i = 0; i < FrameMap::nof_caller_save_cpu_regs; i++) {
+  for (i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
     LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
     assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
     assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
@@ -1503,6 +1521,14 @@ void LinearScan::create_unhandled_lists(Interval** list1, Interval** list2, bool
 void LinearScan::sort_intervals_before_allocation() {
   TIME_LINEAR_SCAN(timer_sort_intervals_before);
 
+  if (_needs_full_resort) {
+    // There is no known reason why this should occur but just in case...
+    assert(false, "should never occur");
+    // Re-sort existing interval list because an Interval::from() has changed
+    _sorted_intervals->sort(interval_cmp);
+    _needs_full_resort = false;
+  }
+
   IntervalList* unsorted_list = &_intervals;
   int unsorted_len = unsorted_list->length();
   int sorted_len = 0;
@@ -1542,10 +1568,17 @@ void LinearScan::sort_intervals_before_allocation() {
     }
   }
   _sorted_intervals = sorted_list;
+  assert(is_sorted(_sorted_intervals), "intervals unsorted");
 }
 
 void LinearScan::sort_intervals_after_allocation() {
   TIME_LINEAR_SCAN(timer_sort_intervals_after);
+
+  if (_needs_full_resort) {
+    // Re-sort existing interval list because an Interval::from() has changed
+    _sorted_intervals->sort(interval_cmp);
+    _needs_full_resort = false;
+  }
 
   IntervalArray* old_list      = _sorted_intervals;
   IntervalList*  new_list      = _new_intervals_from_allocation;
@@ -1554,6 +1587,7 @@ void LinearScan::sort_intervals_after_allocation() {
 
   if (new_len == 0) {
     // no intervals have been added during allocation, so sorted list is already up to date
+    assert(is_sorted(_sorted_intervals), "intervals unsorted");
     return;
   }
 
@@ -1576,6 +1610,7 @@ void LinearScan::sort_intervals_after_allocation() {
   }
 
   _sorted_intervals = combined_list;
+  assert(is_sorted(_sorted_intervals), "intervals unsorted");
 }
 
 
@@ -1808,6 +1843,8 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveRes
       interval = interval->split(from_op_id);
       interval->assign_reg(reg, regHi);
       append_interval(interval);
+    } else {
+      _needs_full_resort = true;
     }
     assert(interval->from() == from_op_id, "must be true now");
 
@@ -2016,6 +2053,12 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
         return LIR_OprFact::single_cpu_oop(assigned_reg);
+      }
+
+      case T_ADDRESS: {
+        assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_cpu_address(assigned_reg);
       }
 
 #ifdef __SOFTFP__
@@ -2268,8 +2311,8 @@ void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
 }
 
 void check_stack_depth(CodeEmitInfo* info, int stack_end) {
-  if (info->bci() != SynchronizationEntryBCI && !info->scope()->method()->is_native()) {
-    Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->bci());
+  if (info->stack()->bci() != SynchronizationEntryBCI && !info->scope()->method()->is_native()) {
+    Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->stack()->bci());
     switch (code) {
       case Bytecodes::_ifnull    : // fall through
       case Bytecodes::_ifnonnull : // fall through
@@ -2373,7 +2416,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
 
   // add oops from lock stack
   assert(info->stack() != NULL, "CodeEmitInfo must always have a stack");
-  int locks_count = info->stack()->locks_size();
+  int locks_count = info->stack()->total_locks_size();
   for (int i = 0; i < locks_count; i++) {
     map->set_oop(frame_map()->monitor_object_regname(i));
   }
@@ -2756,19 +2799,13 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
 }
 
 
-IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state, int cur_bci, int stack_end, int locks_end) {
+IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state) {
   IRScopeDebugInfo* caller_debug_info = NULL;
-  int stack_begin, locks_begin;
 
-  ValueStack* caller_state = cur_scope->caller_state();
+  ValueStack* caller_state = cur_state->caller_state();
   if (caller_state != NULL) {
     // process recursively to compute outermost scope first
-    stack_begin = caller_state->stack_size();
-    locks_begin = caller_state->locks_size();
-    caller_debug_info = compute_debug_info_for_scope(op_id, cur_scope->caller(), caller_state, innermost_state, cur_scope->caller_bci(), stack_begin, locks_begin);
-  } else {
-    stack_begin = 0;
-    locks_begin = 0;
+    caller_debug_info = compute_debug_info_for_scope(op_id, cur_scope->caller(), caller_state, innermost_state);
   }
 
   // initialize these to null.
@@ -2779,7 +2816,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
   GrowableArray<MonitorValue*>* monitors    = NULL;
 
   // describe local variable values
-  int nof_locals = cur_scope->method()->max_locals();
+  int nof_locals = cur_state->locals_size();
   if (nof_locals > 0) {
     locals = new GrowableArray<ScopeValue*>(nof_locals);
 
@@ -2794,45 +2831,41 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
     }
     assert(locals->length() == cur_scope->method()->max_locals(), "wrong number of locals");
     assert(locals->length() == cur_state->locals_size(), "wrong number of locals");
+  } else if (cur_scope->method()->max_locals() > 0) {
+    assert(cur_state->kind() == ValueStack::EmptyExceptionState, "should be");
+    nof_locals = cur_scope->method()->max_locals();
+    locals = new GrowableArray<ScopeValue*>(nof_locals);
+    for(int i = 0; i < nof_locals; i++) {
+      locals->append(&_illegal_value);
+    }
   }
-
 
   // describe expression stack
-  //
-  // When we inline methods containing exception handlers, the
-  // "lock_stacks" are changed to preserve expression stack values
-  // in caller scopes when exception handlers are present. This
-  // can cause callee stacks to be smaller than caller stacks.
-  if (stack_end > innermost_state->stack_size()) {
-    stack_end = innermost_state->stack_size();
-  }
-
-
-
-  int nof_stack = stack_end - stack_begin;
+  int nof_stack = cur_state->stack_size();
   if (nof_stack > 0) {
     expressions = new GrowableArray<ScopeValue*>(nof_stack);
 
-    int pos = stack_begin;
-    while (pos < stack_end) {
-      Value expression = innermost_state->stack_at_inc(pos);
+    int pos = 0;
+    while (pos < nof_stack) {
+      Value expression = cur_state->stack_at_inc(pos);
       append_scope_value(op_id, expression, expressions);
 
-      assert(expressions->length() + stack_begin == pos, "must match");
+      assert(expressions->length() == pos, "must match");
     }
+    assert(expressions->length() == cur_state->stack_size(), "wrong number of stack entries");
   }
 
   // describe monitors
-  assert(locks_begin <= locks_end, "error in scope iteration");
-  int nof_locks = locks_end - locks_begin;
+  int nof_locks = cur_state->locks_size();
   if (nof_locks > 0) {
+    int lock_offset = cur_state->caller_state() != NULL ? cur_state->caller_state()->total_locks_size() : 0;
     monitors = new GrowableArray<MonitorValue*>(nof_locks);
-    for (int i = locks_begin; i < locks_end; i++) {
-      monitors->append(location_for_monitor_index(i));
+    for (int i = 0; i < nof_locks; i++) {
+      monitors->append(location_for_monitor_index(lock_offset + i));
     }
   }
 
-  return new IRScopeDebugInfo(cur_scope, cur_bci, locals, expressions, monitors, caller_debug_info);
+  return new IRScopeDebugInfo(cur_scope, cur_state->bci(), locals, expressions, monitors, caller_debug_info);
 }
 
 
@@ -2844,17 +2877,14 @@ void LinearScan::compute_debug_info(CodeEmitInfo* info, int op_id) {
 
   assert(innermost_scope != NULL && innermost_state != NULL, "why is it missing?");
 
-  int stack_end = innermost_state->stack_size();
-  int locks_end = innermost_state->locks_size();
-
-  DEBUG_ONLY(check_stack_depth(info, stack_end));
+  DEBUG_ONLY(check_stack_depth(info, innermost_state->stack_size()));
 
   if (info->_scope_debug_info == NULL) {
     // compute debug information
-    info->_scope_debug_info = compute_debug_info_for_scope(op_id, innermost_scope, innermost_state, innermost_state, info->bci(), stack_end, locks_end);
+    info->_scope_debug_info = compute_debug_info_for_scope(op_id, innermost_scope, innermost_state, innermost_state);
   } else {
     // debug information already set. Check that it is correct from the current point of view
-    DEBUG_ONLY(assert_equal(info->_scope_debug_info, compute_debug_info_for_scope(op_id, innermost_scope, innermost_state, innermost_state, info->bci(), stack_end, locks_end)));
+    DEBUG_ONLY(assert_equal(info->_scope_debug_info, compute_debug_info_for_scope(op_id, innermost_scope, innermost_state, innermost_state)));
   }
 }
 
@@ -3547,7 +3577,7 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
 
     // invalidate all caller save registers at calls
     if (visitor.has_call()) {
-      for (j = 0; j < FrameMap::nof_caller_save_cpu_regs; j++) {
+      for (j = 0; j < FrameMap::nof_caller_save_cpu_regs(); j++) {
         state_put(input_state, reg_num(FrameMap::caller_save_cpu_reg_at(j)), NULL);
       }
       for (j = 0; j < FrameMap::nof_caller_save_fpu_regs; j++) {
@@ -4482,7 +4512,8 @@ void Interval::print(outputStream* out) const {
     }
   } else {
     type_name = type2name(type());
-    if (assigned_reg() != -1) {
+    if (assigned_reg() != -1 &&
+        (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
       opr = LinearScan::calc_operand_for_interval(this);
     }
   }
@@ -5586,7 +5617,7 @@ void LinearScanWalker::init_vars_for_alloc(Interval* cur) {
     _last_reg = pd_last_fpu_reg;
   } else {
     _first_reg = pd_first_cpu_reg;
-    _last_reg = pd_last_cpu_reg;
+    _last_reg = FrameMap::last_cpu_reg();
   }
 
   assert(0 <= _first_reg && _first_reg < LinearScan::nof_regs, "out of range");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ public class Type implements PrimitiveType {
     public String argtypes(boolean varargs) {
         List<Type> args = getParameterTypes();
         if (!varargs) return args.toString();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         while (args.tail.nonEmpty()) {
             buf.append(args.head);
             args = args.tail;
@@ -754,6 +754,10 @@ public class Type implements PrimitiveType {
             return (ARRAY << 5) + elemtype.hashCode();
         }
 
+        public boolean isVarargs() {
+            return false;
+        }
+
         public List<Type> allparams() { return elemtype.allparams(); }
 
         public boolean isErroneous() {
@@ -766,6 +770,15 @@ public class Type implements PrimitiveType {
 
         public boolean isRaw() {
             return elemtype.isRaw();
+        }
+
+        public ArrayType makeVarargs() {
+            return new ArrayType(elemtype, tsym) {
+                @Override
+                public boolean isVarargs() {
+                    return true;
+                }
+            };
         }
 
         public Type map(Mapping f) {
@@ -935,7 +948,7 @@ public class Type implements PrimitiveType {
 
     public static class TypeVar extends Type implements TypeVariable {
 
-        /** The bound of this type variable; set from outside.
+        /** The upper bound of this type variable; set from outside.
          *  Must be nonempty once it is set.
          *  For a bound, `bound' is the bound type itself.
          *  Multiple bounds are expressed as a single class type which has the
@@ -946,6 +959,12 @@ public class Type implements PrimitiveType {
          *  points to the first class or interface bound.
          */
         public Type bound = null;
+
+        /** The lower bound of this type variable.
+         *  TypeVars don't normally have a lower bound, so it is normally set
+         *  to syms.botType.
+         *  Subtypes, such as CapturedType, may provide a different value.
+         */
         public Type lower;
 
         public TypeVar(Name name, Symbol owner, Type lower) {
@@ -965,10 +984,12 @@ public class Type implements PrimitiveType {
             return v.visitTypeVar(this, s);
         }
 
+        @Override
         public Type getUpperBound() { return bound; }
 
         int rank_field = -1;
 
+        @Override
         public Type getLowerBound() {
             return lower;
         }
@@ -992,7 +1013,6 @@ public class Type implements PrimitiveType {
      */
     public static class CapturedType extends TypeVar {
 
-        public Type lower;
         public WildcardType wildcard;
 
         public CapturedType(Name name,
@@ -1010,10 +1030,6 @@ public class Type implements PrimitiveType {
         @Override
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitCapturedType(this, s);
-        }
-
-        public Type getLowerBound() {
-            return lower;
         }
 
         @Override

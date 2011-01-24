@@ -22,8 +22,37 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiExport.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "prims/jvmtiCodeBlobEvents.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiManageCapabilities.hpp"
+#include "prims/jvmtiRawMonitor.hpp"
+#include "prims/jvmtiTagMap.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vframe.hpp"
+#include "services/attachListener.hpp"
+#include "services/serviceUtil.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#endif
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; tty->print_cr out; }
@@ -325,18 +354,18 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   // micro version doesn't matter here (yet?)
   decode_version_values(version, &major, &minor, &micro);
   switch (major) {
-  case 1:
+    case 1:
       switch (minor) {
-      case 0:  // version 1.0.<micro> is recognized
-      case 1:  // version 1.1.<micro> is recognized
+        case 0:  // version 1.0.<micro> is recognized
+        case 1:  // version 1.1.<micro> is recognized
+        case 2:  // version 1.2.<micro> is recognized
           break;
 
-      default:
+        default:
           return JNI_EVERSION;  // unsupported minor version number
       }
       break;
-
-  default:
+    default:
       return JNI_EVERSION;  // unsupported major version number
   }
 
@@ -2269,16 +2298,16 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   // load it from the standard dll directory.
 
   if (is_absolute_path) {
-    library = hpi::dll_load(agent, ebuf, sizeof ebuf);
+    library = os::dll_load(agent, ebuf, sizeof ebuf);
   } else {
     // Try to load the agent from the standard dll directory
-    hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), agent);
-    library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+    os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), agent);
+    library = os::dll_load(buffer, ebuf, sizeof ebuf);
     if (library == NULL) {
       // not found - try local path
       char ns[1] = {0};
-      hpi::dll_build_name(buffer, sizeof(buffer), ns, agent);
-      library = hpi::dll_load(buffer, ebuf, sizeof ebuf);
+      os::dll_build_name(buffer, sizeof(buffer), ns, agent);
+      library = os::dll_load(buffer, ebuf, sizeof ebuf);
     }
   }
 
@@ -2291,13 +2320,13 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
     const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
     for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_attach_symbols); symbol_index++) {
       on_attach_entry =
-        CAST_TO_FN_PTR(OnAttachEntry_t, hpi::dll_lookup(library, on_attach_symbols[symbol_index]));
+        CAST_TO_FN_PTR(OnAttachEntry_t, os::dll_lookup(library, on_attach_symbols[symbol_index]));
       if (on_attach_entry != NULL) break;
     }
 
     if (on_attach_entry == NULL) {
       // Agent_OnAttach missing - unload library
-      hpi::dll_unload(library);
+      os::dll_unload(library);
     } else {
       // Invoke the Agent_OnAttach function
       JavaThread* THREAD = JavaThread::current();

@@ -25,7 +25,7 @@
 
 
 /*
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
  *
  * This file is a modification of the ICU file IndicLayoutEngine.cpp
  * by Jens Herden and Javier Sola for Khmer language
@@ -43,16 +43,16 @@ U_NAMESPACE_BEGIN
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(KhmerOpenTypeLayoutEngine)
 
 KhmerOpenTypeLayoutEngine::KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
-                    le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable)
-    : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable)
+                    le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable, LEErrorCode &success)
+    : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable, success)
 {
     fFeatureMap   = KhmerReordering::getFeatureMap(fFeatureMapCount);
     fFeatureOrder = TRUE;
 }
 
 KhmerOpenTypeLayoutEngine::KhmerOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
-                                                     le_int32 typoFlags)
-    : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags)
+                                                     le_int32 typoFlags, LEErrorCode &success)
+    : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success)
 {
     fFeatureMap   = KhmerReordering::getFeatureMap(fFeatureMapCount);
     fFeatureOrder = TRUE;

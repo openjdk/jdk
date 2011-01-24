@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class Bug6571733 {
 
         Thread thread = new Thread() { public void run() {
             try {
-                check (! lock.writeLock().tryLock(0, TimeUnit.DAYS));
+                check(! lock.writeLock().tryLock(0, TimeUnit.DAYS));
 
                 lock.readLock().lock();
                 lock.readLock().unlock();

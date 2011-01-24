@@ -22,8 +22,35 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_collectorPolicy.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generationSpec.hpp"
+#include "memory/space.hpp"
+#include "memory/universe.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
+#endif
 
 // CollectorPolicy methods.
 
@@ -658,10 +685,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
       result = expand_heap_and_allocate(size, is_tlab);
     }
     return result;   // could be null if we are out of space
-  } else if (!gch->incremental_collection_will_fail()) {
-    // The gc_prologues have not executed yet.  The value
-    // for incremental_collection_will_fail() is the remanent
-    // of the last collection.
+  } else if (!gch->incremental_collection_will_fail(false /* don't consult_young */)) {
     // Do an incremental collection.
     gch->do_collection(false            /* full */,
                        false            /* clear_all_soft_refs */,
@@ -669,6 +693,9 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
                        is_tlab          /* is_tlab */,
                        number_of_generations() - 1 /* max_level */);
   } else {
+    if (Verbose && PrintGCDetails) {
+      gclog_or_tty->print(" :: Trying full because partial may fail :: ");
+    }
     // Try a full collection; see delta for bug id 6266275
     // for the original code and why this has been simplified
     // with from-space allocation criteria modified and
@@ -739,9 +766,8 @@ bool GenCollectorPolicy::should_try_older_generation_allocation(
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   size_t gen0_capacity = gch->get_gen(0)->capacity_before_gc();
   return    (word_size > heap_word_size(gen0_capacity))
-         || (GC_locker::is_active_and_needs_gc())
-         || (   gch->last_incremental_collection_failed()
-             && gch->incremental_collection_will_fail());
+         || GC_locker::is_active_and_needs_gc()
+         || gch->incremental_collection_failed();
 }
 
 

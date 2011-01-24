@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,34 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_classFileParser.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verificationType.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/klassVtable.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/timer.hpp"
+#include "services/classLoadingService.hpp"
+#include "services/threadService.hpp"
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -141,6 +167,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           ShouldNotReachHere();
         }
         break;
+      case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
           if (!EnableInvokeDynamic ||
@@ -151,10 +178,20 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
                "Class file version does not support constant tag %u in class file %s"),
               tag, CHECK);
           }
-          cfs->guarantee_more(5, CHECK);  // bsm_index, name_and_type_index, tag/access_flags
-          u2 bootstrap_method_index = cfs->get_u2_fast();
+          cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
+          u2 bootstrap_specifier_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          cp->invoke_dynamic_at_put(index, bootstrap_method_index, name_and_type_index);
+          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
+            if (!AllowTransitionalJSR292)
+              classfile_parse_error(
+                "This JVM does not support transitional InvokeDynamic tag %u in class file %s",
+                tag, CHECK);
+            cp->invoke_dynamic_trans_at_put(index, bootstrap_specifier_index, name_and_type_index);
+            break;
+          }
+          if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index)
+            _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
+          cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_Integer :
@@ -290,7 +327,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
   // first verification pass - validate cross references and fixup class and string constants
   for (index = 1; index < length; index++) {          // Index 0 is unused
-    switch (cp->tag_at(index).value()) {
+    jbyte tag = cp->tag_at(index).value();
+    switch (tag) {
       case JVM_CONSTANT_Class :
         ShouldNotReachHere();     // Only JVM_CONSTANT_ClassIndex should be present
         break;
@@ -431,22 +469,24 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
         }
         break;
+      case JVM_CONSTANT_InvokeDynamicTrans :
       case JVM_CONSTANT_InvokeDynamic :
         {
-          int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
           int name_and_type_ref_index = cp->invoke_dynamic_name_and_type_ref_index_at(index);
-          check_property((bootstrap_method_ref_index == 0 && AllowTransitionalJSR292)
-                         ||
-                         (valid_cp_range(bootstrap_method_ref_index, length) &&
-                          cp->tag_at(bootstrap_method_ref_index).is_method_handle()),
-                         "Invalid constant pool index %u in class file %s",
-                         bootstrap_method_ref_index,
-                         CHECK_(nullHandle));
           check_property(valid_cp_range(name_and_type_ref_index, length) &&
                          cp->tag_at(name_and_type_ref_index).is_name_and_type(),
                          "Invalid constant pool index %u in class file %s",
                          name_and_type_ref_index,
                          CHECK_(nullHandle));
+          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
+            int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+            check_property(valid_cp_range(bootstrap_method_ref_index, length) &&
+                           cp->tag_at(bootstrap_method_ref_index).is_method_handle(),
+                           "Invalid constant pool index %u in class file %s",
+                           bootstrap_method_ref_index,
+                           CHECK_(nullHandle));
+          }
+          // bootstrap specifier index must be checked later, when BootstrapMethods attr is available
           break;
         }
       default:
@@ -2304,6 +2344,78 @@ void ClassFileParser::parse_classfile_signature_attribute(constantPoolHandle cp,
   k->set_generic_signature(cp->symbol_at(signature_index));
 }
 
+void ClassFileParser::parse_classfile_bootstrap_methods_attribute(constantPoolHandle cp, instanceKlassHandle k,
+                                                                  u4 attribute_byte_length, TRAPS) {
+  ClassFileStream* cfs = stream();
+  u1* current_start = cfs->current();
+
+  cfs->guarantee_more(2, CHECK);  // length
+  int attribute_array_length = cfs->get_u2_fast();
+
+  guarantee_property(_max_bootstrap_specifier_index < attribute_array_length,
+                     "Short length on BootstrapMethods in class file %s",
+                     CHECK);
+
+  // The attribute contains a counted array of counted tuples of shorts,
+  // represending bootstrap specifiers:
+  //    length*{bootstrap_method_index, argument_count*{argument_index}}
+  int operand_count = (attribute_byte_length - sizeof(u2)) / sizeof(u2);
+  // operand_count = number of shorts in attr, except for leading length
+
+  // The attribute is copied into a short[] array.
+  // The array begins with a series of short[2] pairs, one for each tuple.
+  int index_size = (attribute_array_length * 2);
+
+  typeArrayOop operands_oop = oopFactory::new_permanent_intArray(index_size + operand_count, CHECK);
+  typeArrayHandle operands(THREAD, operands_oop);
+  operands_oop = NULL; // tidy
+
+  int operand_fill_index = index_size;
+  int cp_size = cp->length();
+
+  for (int n = 0; n < attribute_array_length; n++) {
+    // Store a 32-bit offset into the header of the operand array.
+    assert(constantPoolOopDesc::operand_offset_at(operands(), n) == 0, "");
+    constantPoolOopDesc::operand_offset_at_put(operands(), n, operand_fill_index);
+
+    // Read a bootstrap specifier.
+    cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
+    u2 bootstrap_method_index = cfs->get_u2_fast();
+    u2 argument_count = cfs->get_u2_fast();
+    check_property(
+      valid_cp_range(bootstrap_method_index, cp_size) &&
+      cp->tag_at(bootstrap_method_index).is_method_handle(),
+      "bootstrap_method_index %u has bad constant type in class file %s",
+      bootstrap_method_index,
+      CHECK);
+    operands->short_at_put(operand_fill_index++, bootstrap_method_index);
+    operands->short_at_put(operand_fill_index++, argument_count);
+
+    cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
+    for (int j = 0; j < argument_count; j++) {
+      u2 argument_index = cfs->get_u2_fast();
+      check_property(
+        valid_cp_range(argument_index, cp_size) &&
+        cp->tag_at(argument_index).is_loadable_constant(),
+        "argument_index %u has bad constant type in class file %s",
+        argument_index,
+        CHECK);
+      operands->short_at_put(operand_fill_index++, argument_index);
+    }
+  }
+
+  assert(operand_fill_index == operands()->length(), "exact fill");
+  assert(constantPoolOopDesc::operand_array_length(operands()) == attribute_array_length, "correct decode");
+
+  u1* current_end = cfs->current();
+  guarantee_property(current_end == current_start + attribute_byte_length,
+                     "Bad length on BootstrapMethods in class file %s",
+                     CHECK);
+
+  cp->set_operands(operands());
+}
+
+
 void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS) {
   ClassFileStream* cfs = stream();
   // Set inner classes attribute to default sentinel
@@ -2313,6 +2425,7 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
   bool parsed_sourcefile_attribute = false;
   bool parsed_innerclasses_attribute = false;
   bool parsed_enclosingmethod_attribute = false;
+  bool parsed_bootstrap_methods_attribute = false;
   u1* runtime_visible_annotations = NULL;
   int runtime_visible_annotations_length = 0;
   u1* runtime_invisible_annotations = NULL;
@@ -2411,6 +2524,12 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
           classfile_parse_error("Invalid or out-of-bounds method index in EnclosingMethod attribute in class file %s", CHECK);
         }
         k->set_enclosing_method_indices(class_index, method_index);
+      } else if (tag == vmSymbols::tag_bootstrap_methods() &&
+                 _major_version >= Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+        if (parsed_bootstrap_methods_attribute)
+          classfile_parse_error("Multiple BootstrapMethods attributes in class file %s", CHECK);
+        parsed_bootstrap_methods_attribute = true;
+        parse_classfile_bootstrap_methods_attribute(cp, k, attribute_length, CHECK);
       } else {
         // Unknown attribute
         cfs->skip_u1(attribute_length, CHECK);
@@ -2426,6 +2545,11 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
                                                      runtime_invisible_annotations_length,
                                                      CHECK);
   k->set_class_annotations(annotations());
+
+  if (_max_bootstrap_specifier_index >= 0) {
+    guarantee_property(parsed_bootstrap_methods_attribute,
+                       "Missing BootstrapMethods attribute in class file %s", CHECK);
+  }
 }
 
 
@@ -2505,18 +2629,6 @@ void ClassFileParser::java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_pt
   // the check for the "discovered" field should issue a warning if
   // the field is not found.  For 1.6 this code should be issue a
   // fatal error if the "discovered" field is not found.
-  //
-  // Increment fac.nonstatic_oop_count so that the start of the
-  // next type of non-static oops leaves room for the fake oop.
-  // Do not increment next_nonstatic_oop_offset so that the
-  // fake oop is place after the java.lang.ref.Reference oop
-  // fields.
-  //
-  // Check the fields in java.lang.ref.Reference for the "discovered"
-  // field.  If it is not present, artifically create a field for it.
-  // This allows this VM to run on early JDK where the field is not
-  // present.
-
   //
   // Increment fac.nonstatic_oop_count so that the start of the
   // next type of non-static oops leaves room for the fake oop.
@@ -2663,7 +2775,7 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 // Force MethodHandle.vmentry to be an unmanaged pointer.
 // There is no way for a classfile to express this, so we must help it.
 void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
-                                                    typeArrayHandle* fields_ptr,
+                                                    typeArrayHandle fields,
                                                     FieldAllocationCount *fac_ptr,
                                                     TRAPS) {
   // Add fake fields for java.dyn.MethodHandle instances
@@ -2687,39 +2799,45 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
 
+  // Find vmentry field and change the signature.
   bool found_vmentry = false;
-
-  const int n = (*fields_ptr)()->length();
-  for (int i = 0; i < n; i += instanceKlass::next_offset) {
-    int name_index = (*fields_ptr)->ushort_at(i + instanceKlass::name_index_offset);
-    int sig_index  = (*fields_ptr)->ushort_at(i + instanceKlass::signature_index_offset);
-    int acc_flags  = (*fields_ptr)->ushort_at(i + instanceKlass::access_flags_offset);
+  for (int i = 0; i < fields->length(); i += instanceKlass::next_offset) {
+    int name_index = fields->ushort_at(i + instanceKlass::name_index_offset);
+    int sig_index  = fields->ushort_at(i + instanceKlass::signature_index_offset);
+    int acc_flags  = fields->ushort_at(i + instanceKlass::access_flags_offset);
     symbolOop f_name = cp->symbol_at(name_index);
     symbolOop f_sig  = cp->symbol_at(sig_index);
-    if (f_sig == vmSymbols::byte_signature() &&
-        f_name == vmSymbols::vmentry_name() &&
-        (acc_flags & JVM_ACC_STATIC) == 0) {
-      // Adjust the field type from byte to an unmanaged pointer.
-      assert(fac_ptr->nonstatic_byte_count > 0, "");
-      fac_ptr->nonstatic_byte_count -= 1;
-      (*fields_ptr)->ushort_at_put(i + instanceKlass::signature_index_offset,
-                                   word_sig_index);
-      fac_ptr->nonstatic_word_count += 1;
 
-      FieldAllocationType atype = (FieldAllocationType) (*fields_ptr)->ushort_at(i + instanceKlass::low_offset);
-      assert(atype == NONSTATIC_BYTE, "");
-      FieldAllocationType new_atype = NONSTATIC_WORD;
-      (*fields_ptr)->ushort_at_put(i + instanceKlass::low_offset, new_atype);
+    if (f_name == vmSymbols::vmentry_name() && (acc_flags & JVM_ACC_STATIC) == 0) {
+      if (f_sig == vmSymbols::machine_word_signature()) {
+        // If the signature of vmentry is already changed, we're done.
+        found_vmentry = true;
+        break;
+      }
+      else if (f_sig == vmSymbols::byte_signature()) {
+        // Adjust the field type from byte to an unmanaged pointer.
+        assert(fac_ptr->nonstatic_byte_count > 0, "");
+        fac_ptr->nonstatic_byte_count -= 1;
 
-      found_vmentry = true;
-      break;
+        fields->ushort_at_put(i + instanceKlass::signature_index_offset, word_sig_index);
+        assert(wordSize == longSize || wordSize == jintSize, "ILP32 or LP64");
+        if (wordSize == longSize)  fac_ptr->nonstatic_double_count += 1;
+        else                       fac_ptr->nonstatic_word_count   += 1;
+
+        FieldAllocationType atype = (FieldAllocationType) fields->ushort_at(i + instanceKlass::low_offset);
+        assert(atype == NONSTATIC_BYTE, "");
+        FieldAllocationType new_atype = (wordSize == longSize) ? NONSTATIC_DOUBLE : NONSTATIC_WORD;
+        fields->ushort_at_put(i + instanceKlass::low_offset, new_atype);
+
+        found_vmentry = true;
+        break;
+      }
     }
   }
 
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing vmentry byte field in java.dyn.MethodHandle");
-
 }
 
 
@@ -2749,6 +2867,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                             PerfClassTraceTime::PARSE_CLASS);
 
   _has_finalizer = _has_empty_finalizer = _has_vanilla_constructor = false;
+  _max_bootstrap_specifier_index = -1;
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
     unsigned char* ptr = cfs->buffer();
@@ -3080,7 +3199,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
     // adjust the vmentry field declaration in java.dyn.MethodHandle
     if (EnableMethodHandles && class_name() == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
-      java_dyn_MethodHandle_fix_pre(cp, &fields, &fac, CHECK_(nullHandle));
+      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 
     // Add a fake "discovered" field if it is not present
@@ -4307,20 +4426,21 @@ int ClassFileParser::verify_legal_method_signature(symbolHandle name, symbolHand
 }
 
 
-// Unqualified names may not contain the characters '.', ';', or '/'.
-// Method names also may not contain the characters '<' or '>', unless <init> or <clinit>.
-// Note that method names may not be <init> or <clinit> in this method.
-// Because these names have been checked as special cases before calling this method
-// in verify_legal_method_name.
-bool ClassFileParser::verify_unqualified_name(char* name, unsigned int length, int type) {
+// Unqualified names may not contain the characters '.', ';', '[', or '/'.
+// Method names also may not contain the characters '<' or '>', unless <init>
+// or <clinit>.  Note that method names may not be <init> or <clinit> in this
+// method.  Because these names have been checked as special cases before
+// calling this method in verify_legal_method_name.
+bool ClassFileParser::verify_unqualified_name(
+    char* name, unsigned int length, int type) {
   jchar ch;
 
   for (char* p = name; p != name + length; ) {
     ch = *p;
     if (ch < 128) {
       p++;
-      if (ch == '.' || ch == ';') {
-        return false;   // do not permit '.' or ';'
+      if (ch == '.' || ch == ';' || ch == '[' ) {
+        return false;   // do not permit '.', ';', or '['
       }
       if (type != LegalClass && ch == '/') {
         return false;   // do not permit '/' unless it's class name

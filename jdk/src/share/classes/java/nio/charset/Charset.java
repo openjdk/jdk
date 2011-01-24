@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,18 +275,17 @@ public abstract class Charset
 
     /* -- Static methods -- */
 
-    private static String bugLevel = null;
+    private static volatile String bugLevel = null;
 
     static boolean atBugLevel(String bl) {              // package-private
-        if (bugLevel == null) {
+        String level = bugLevel;
+        if (level == null) {
             if (!sun.misc.VM.isBooted())
                 return false;
-            bugLevel = AccessController.doPrivileged(
-                new GetPropertyAction("sun.nio.cs.bugLevel"));
-            if (bugLevel == null)
-                bugLevel = "";
+            bugLevel = level = AccessController.doPrivileged(
+                new GetPropertyAction("sun.nio.cs.bugLevel", ""));
         }
-        return (bugLevel != null) && bugLevel.equals(bl);
+        return level.equals(bl);
     }
 
     /**

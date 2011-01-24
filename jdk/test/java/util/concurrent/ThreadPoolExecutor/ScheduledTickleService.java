@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ public class ScheduledTickleService {
 
     // We get intermittent ClassCastException if greater than 1
     // because of calls to compareTo
-    private final static int concurrency = 2;
+    private static final int concurrency = 2;
 
     // Record when tasks are done
-    public final static CountDownLatch done = new CountDownLatch(concurrency);
+    public static final CountDownLatch done = new CountDownLatch(concurrency);
 
     public static void realMain(String... args) throws InterruptedException {
         // our tickle service

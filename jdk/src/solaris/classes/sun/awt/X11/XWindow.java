@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (isPostedField == null) {
             isPostedField = SunToolkit.getField(AWTEvent.class, "isPosted");
         }
+        // The uses of this method imply that the incoming event is system-generated
+        SunToolkit.setSystemGenerated(e);
         PeerEvent pe = new PeerEvent(Toolkit.getDefaultToolkit(), new Runnable() {
                 public void run() {
                     try {
@@ -779,7 +781,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                                                           xbe.get_x_root(),
                                                           xbe.get_y_root(),
                                                           1,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,
-                                                          3,button==4 ?  -1*clickCount : 1*clickCount);
+                                                          3,button==4 ?  -1 : 1);
                 postEventToEventQueue(mwe);
             }
         }

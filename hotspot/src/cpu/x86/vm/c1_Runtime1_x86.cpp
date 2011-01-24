@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Runtime1_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_x86.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "register_x86.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframeArray.hpp"
+#include "vmreg_x86.inline.hpp"
 
 
 // Implementation of StubAssembler
@@ -965,7 +977,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // verify that that there is really a valid exception in rax,
         __ verify_not_null_oop(exception_oop);
 
-
         oop_maps = new OopMapSet();
         OopMap* oop_map = generate_oop_map(sasm, 1);
         generate_handle_exception(sasm, oop_maps, oop_map);
@@ -1025,13 +1036,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.
           Label retry_tlab, try_eden;
-          __ tlab_refill(retry_tlab, try_eden, slow_path); // does not destroy rdx (klass)
+          const Register thread =
+            __ tlab_refill(retry_tlab, try_eden, slow_path); // does not destroy rdx (klass), returns rdi
 
           __ bind(retry_tlab);
 
           // get the instance size (size is postive so movl is fine for 64bit)
           __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+
           __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
+
           __ initialize_object(obj, klass, obj_size, 0, t1, t2);
           __ verify_oop(obj);
           __ pop(rbx);
@@ -1041,7 +1055,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
           __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
+          __ incr_allocated_bytes(thread, obj_size, 0);
+
           __ initialize_object(obj, klass, obj_size, 0, t1, t2);
           __ verify_oop(obj);
           __ pop(rbx);
@@ -1131,12 +1148,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.
           Label retry_tlab, try_eden;
-          __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves rbx, & rdx
+          const Register thread =
+            __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves rbx & rdx, returns rdi
 
           __ bind(retry_tlab);
 
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is postive movl does right thing on 64bit
+          // since size is positive movl does right thing on 64bit
           __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
@@ -1163,7 +1181,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ bind(try_eden);
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is postive movl does right thing on 64bit
+          // since size is positive movl does right thing on 64bit
           __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
@@ -1176,6 +1194,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ andptr(arr_size, ~MinObjAlignmentInBytesMask);
 
           __ eden_allocate(obj, arr_size, 0, t1, slow_path);  // preserves arr_size
+          __ incr_allocated_bytes(thread, arr_size, 0);
 
           __ initialize_header(obj, klass, length, t1, t2);
           __ movb(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes() + (Klass::_lh_header_size_shift / BitsPerByte)));
@@ -1249,7 +1268,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // load the klass and check the has finalizer flag
         Label register_finalizer;
         Register t = rsi;
-        __ movptr(t, Address(rax, oopDesc::klass_offset_in_bytes()));
+        __ load_klass(t, rax);
         __ movl(t, Address(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);

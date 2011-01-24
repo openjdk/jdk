@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_ARGUMENTS_HPP
+#define SHARE_VM_RUNTIME_ARGUMENTS_HPP
+
+#include "runtime/java.hpp"
+#include "runtime/perfData.hpp"
+#include "utilities/top.hpp"
+
 // Arguments parses the command line and recognizes options
 
 // Invocation API hook typedefs (these should really be defined in jni.hpp)
@@ -291,6 +298,8 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
+  // Check compressed oops compatibility with other flags
+  static void check_compressed_oops_compat();
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
@@ -484,6 +493,9 @@ class Arguments : AllStatic {
   // System properties
   static void init_system_properties();
 
+  // Update/Initialize System properties after JDK version number is known
+  static void init_version_specific_system_properties();
+
   // Property List manipulation
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, const char* k, char* v);
@@ -527,3 +539,5 @@ class Arguments : AllStatic {
   static char *get_kernel_properties();
 #endif // KERNEL
 };
+
+#endif // SHARE_VM_RUNTIME_ARGUMENTS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @summary Please add annotation <at>Deprecated to supplant the javadoc tag
  * @author gafter
  *
- * @compile      -source 1.4 -Xlint:dep-ann -Werror Dep.java
- * @compile/fail             -Xlint:dep-ann -Werror Dep.java
- * @compile                  -Xlint:dep-ann         Dep.java
+ * @compile      -source 1.4 -Xlint:-options -Xlint:dep-ann -Werror Dep.java
+ * @compile/fail                             -Xlint:dep-ann -Werror Dep.java
+ * @compile                                  -Xlint:dep-ann         Dep.java
  */
 
 /** @deprecated */

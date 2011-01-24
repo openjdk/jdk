@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_PRIMS_JVM_H
+#define SHARE_VM_PRIMS_JVM_H
+
+#include "prims/jni.h"
+#include "runtime/reflectionCompat.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "jvm_linux.h"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "jvm_solaris.h"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "jvm_windows.h"
+#endif
 
 #ifndef _JAVASOFT_JVM_H_
 #define _JAVASOFT_JVM_H_
@@ -1047,7 +1062,9 @@ enum {
     JVM_CONSTANT_NameAndType,
     JVM_CONSTANT_MethodHandle           = 15,  // JSR 292
     JVM_CONSTANT_MethodType             = 16,  // JSR 292
-    JVM_CONSTANT_InvokeDynamic          = 17  // JSR 292
+    JVM_CONSTANT_InvokeDynamicTrans     = 17,  // JSR 292, only occurs in old class files
+    JVM_CONSTANT_InvokeDynamic          = 18,  // JSR 292
+    JVM_CONSTANT_ExternalMax            = 18   // Last tag found in classfiles
 };
 
 /* JVM_CONSTANT_MethodHandle subtypes */
@@ -1388,23 +1405,6 @@ JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen);
 JNIEXPORT jint JNICALL
 JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen);
 
-/*
- * These routines are only reentrant on Windows
- */
-
-#ifdef _WINDOWS
-
-JNIEXPORT struct protoent * JNICALL
-JVM_GetProtoByName(char* name);
-
-JNIEXPORT struct hostent* JNICALL
-JVM_GetHostByAddr(const char* name, int len, int type);
-
-JNIEXPORT struct hostent* JNICALL
-JVM_GetHostByName(char* name);
-
-#endif /* _WINDOWS */
-
 JNIEXPORT int JNICALL
 JVM_GetHostName(char* name, int namelen);
 
@@ -1704,3 +1704,5 @@ typedef struct JDK1_1InitArgs {
 #endif /* __cplusplus */
 
 #endif /* !_JAVASOFT_JVM_H_ */
+
+#endif // SHARE_VM_PRIMS_JVM_H

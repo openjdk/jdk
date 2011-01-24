@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,8 +299,7 @@ public class PolicyFile extends java.security.Policy {
     private static final int DEFAULT_CACHE_SIZE = 1;
 
     // contains the policy grant entries, PD cache, and alias mapping
-    private AtomicReference<PolicyInfo> policyInfo =
-        new AtomicReference<PolicyInfo>();
+    private AtomicReference<PolicyInfo> policyInfo = new AtomicReference<>();
     private boolean constructed = false;
 
     private boolean expandProperties = true;
@@ -653,7 +652,7 @@ public class PolicyFile extends java.security.Policy {
             }
         } catch (PolicyParser.ParsingException pe) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                (POLICY + ": error parsing policy:\n\tmessage"));
+                (POLICY + ".error.parsing.policy.message"));
             Object[] source = {policy, pe.getLocalizedMessage()};
             System.err.println(form.format(source));
             if (debug != null)
@@ -895,7 +894,7 @@ public class PolicyFile extends java.security.Policy {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
                          (POLICY +
-                          ": error adding Permission, perm:\n\tmessage"));
+                          ".error.adding.Permission.perm.message"));
                     Object[] source = {pe.permission,
                                        ite.getTargetException().toString()};
                     System.err.println(form.format(source));
@@ -903,7 +902,7 @@ public class PolicyFile extends java.security.Policy {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
                          (POLICY +
-                          ": error adding Permission, perm:\n\tmessage"));
+                          ".error.adding.Permission.perm.message"));
                     Object[] source = {pe.permission,
                                        e.toString()};
                     System.err.println(form.format(source));
@@ -915,7 +914,7 @@ public class PolicyFile extends java.security.Policy {
         } catch (Exception e) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
                                          (POLICY
-                                         + ": error adding Entry:\n\tmessage"));
+                                         + ".error.adding.Entry.message"));
             Object[] source = {e.toString()};
             System.err.println(form.format(source));
         }
@@ -1334,8 +1333,7 @@ public class PolicyFile extends java.security.Policy {
 
         List<PolicyParser.PrincipalEntry> entryPs = entry.getPrincipals();
         if (debug != null) {
-            ArrayList<PolicyParser.PrincipalEntry> accPs =
-                        new ArrayList<PolicyParser.PrincipalEntry>();
+            ArrayList<PolicyParser.PrincipalEntry> accPs = new ArrayList<>();
             if (principals != null) {
                 for (int i = 0; i < principals.length; i++) {
                     accPs.add(new PolicyParser.PrincipalEntry
@@ -1416,8 +1414,7 @@ public class PolicyFile extends java.security.Policy {
                     // check if the PrincipalComparator
                     // implies the current thread's principals
 
-                    Set<Principal> pSet =
-                                new HashSet<Principal>(principals.length);
+                    Set<Principal> pSet = new HashSet<>(principals.length);
                     for (int j = 0; j < principals.length; j++) {
                         pSet.add(principals[j]);
                     }
@@ -1700,7 +1697,7 @@ public class PolicyFile extends java.security.Policy {
             // build an info array for every principal
             // in the current domain which has a principal class
             // that is equal to policy entry principal class name
-            List<Principal> plist = new ArrayList<Principal>();
+            List<Principal> plist = new ArrayList<>();
             for (int i = 0; i < pdp.length; i++) {
                 if(pe.principalClass.equals(pdp[i].getClass().getName()))
                     plist.add(pdp[i]);
@@ -1770,7 +1767,7 @@ public class PolicyFile extends java.security.Policy {
             // Done
             return certs;
 
-        ArrayList<Certificate> userCertList = new ArrayList<Certificate>();
+        ArrayList<Certificate> userCertList = new ArrayList<>();
         i = 0;
         while (i < certs.length) {
             userCertList.add(certs[i]);
@@ -1950,7 +1947,7 @@ public class PolicyFile extends java.security.Policy {
                 if (colonIndex == -1) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("alias name not provided (pe.name)"));
+                        ("alias.name.not.provided.pe.name."));
                     Object[] source = {pe.name};
                     throw new Exception(form.format(source));
                 }
@@ -1958,7 +1955,7 @@ public class PolicyFile extends java.security.Policy {
                 if ((suffix = getDN(suffix, keystore)) == null) {
                     MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("unable to perform substitution on alias, suffix"));
+                        ("unable.to.perform.substitution.on.alias.suffix"));
                     Object[] source = {value.substring(colonIndex+1)};
                     throw new Exception(form.format(source));
                 }
@@ -1968,7 +1965,7 @@ public class PolicyFile extends java.security.Policy {
             } else {
                 MessageFormat form = new MessageFormat
                         (ResourcesMgr.getString
-                        ("substitution value, prefix, unsupported"));
+                        ("substitution.value.prefix.unsupported"));
                 Object[] source = {prefix};
                 throw new Exception(form.format(source));
             }
@@ -2127,18 +2124,18 @@ public class PolicyFile extends java.security.Policy {
 
         @Override public String toString(){
             StringBuilder sb = new StringBuilder();
-            sb.append(ResourcesMgr.getString("("));
+            sb.append(ResourcesMgr.getString("LPARAM"));
             sb.append(getCodeSource());
             sb.append("\n");
             for (int j = 0; j < permissions.size(); j++) {
                 Permission p = permissions.get(j);
-                sb.append(ResourcesMgr.getString(" "));
-                sb.append(ResourcesMgr.getString(" "));
+                sb.append(ResourcesMgr.getString("SPACE"));
+                sb.append(ResourcesMgr.getString("SPACE"));
                 sb.append(p);
-                sb.append(ResourcesMgr.getString("\n"));
+                sb.append(ResourcesMgr.getString("NEWLINE"));
             }
-            sb.append(ResourcesMgr.getString(")"));
-            sb.append(ResourcesMgr.getString("\n"));
+            sb.append(ResourcesMgr.getString("RPARAM"));
+            sb.append(ResourcesMgr.getString("NEWLINE"));
             return sb.toString();
         }
     }
@@ -2195,7 +2192,7 @@ public class PolicyFile extends java.security.Policy {
             super(type);
             if (type == null) {
                 throw new NullPointerException
-                    (ResourcesMgr.getString("type can't be null"));
+                    (ResourcesMgr.getString("type.can.t.be.null"));
             }
             this.type = type;
             this.name = name;
@@ -2234,7 +2231,7 @@ public class PolicyFile extends java.security.Policy {
                     if (this.certs == null) {
                         // extract the signer certs
                         ArrayList<Certificate> signerCerts =
-                            new ArrayList<Certificate>();
+                            new ArrayList<>();
                         i = 0;
                         while (i < certs.length) {
                             signerCerts.add(certs[i]);

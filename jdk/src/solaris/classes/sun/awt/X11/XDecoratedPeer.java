@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,15 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     void postInit(XCreateWindowParams params) {
+        // The size hints must be set BEFORE mapping the window (see 6895647)
+        updateSizeHints(dimensions);
+
+        // The super method maps the window if it's visible on the shared level
         super.postInit(params);
+
         // The lines that follow need to be in a postInit, so they
         // happen after the X window is created.
         initResizability();
-        updateSizeHints(dimensions);
         XWM.requestWMExtents(getWindow());
 
         content = XContentWindow.createContent(this);

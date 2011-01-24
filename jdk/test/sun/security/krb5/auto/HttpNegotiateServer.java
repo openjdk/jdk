@@ -297,8 +297,8 @@ public class HttpNegotiateServer {
             }
 
             Krb5LoginModule krb5 = new Krb5LoginModule();
-            Map<String, String> map = new HashMap<String, String>();
-            Map<String, Object> shared = new HashMap<String, Object>();
+            Map<String, String> map = new HashMap<>();
+            Map<String, Object> shared = new HashMap<>();
 
             map.put("storeKey", "true");
             map.put("isInitiator", "false");

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ all: build
 clobber: clean
 
 # All ant targets of interest
-ANT_TARGETS = build clean sanity post-sanity diagnostics # for now
+ANT_TARGETS = build clean sanity post-sanity diagnostics build-all-tools  # for now
 
 # Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
 $(OUTPUTDIR)/build/ant-diagnostics.log:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,15 @@
  *
  */
 
-// Should this header be preserved during GC?
+#ifndef SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+#define SHARE_VM_OOPS_MARKOOP_INLINE_HPP
+
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/globals.hpp"
+
+// Should this header be preserved during GC (when biased locking is enabled)?
 inline bool markOopDesc::must_be_preserved_with_bias(oop obj_containing_mark) const {
   assert(UseBiasedLocking, "unexpected");
   if (has_bias_pattern()) {
@@ -39,14 +47,15 @@ inline bool markOopDesc::must_be_preserved_with_bias(oop obj_containing_mark) co
   return (!is_unlocked() || !has_no_hash());
 }
 
+// Should this header be preserved during GC?
 inline bool markOopDesc::must_be_preserved(oop obj_containing_mark) const {
   if (!UseBiasedLocking)
     return (!is_unlocked() || !has_no_hash());
   return must_be_preserved_with_bias(obj_containing_mark);
 }
 
-// Should this header (including its age bits) be preserved in the
-// case of a promotion failure during scavenge?
+// Should this header be preserved in the case of a promotion failure
+// during scavenge (when biased locking is enabled)?
 inline bool markOopDesc::must_be_preserved_with_bias_for_promotion_failure(oop obj_containing_mark) const {
   assert(UseBiasedLocking, "unexpected");
   // We don't explicitly save off the mark words of biased and
@@ -62,18 +71,20 @@ inline bool markOopDesc::must_be_preserved_with_bias_for_promotion_failure(oop o
       prototype_for_object(obj_containing_mark)->has_bias_pattern()) {
     return true;
   }
-  return (this != prototype());
+  return (!is_unlocked() || !has_no_hash());
 }
 
+// Should this header be preserved in the case of a promotion failure
+// during scavenge?
 inline bool markOopDesc::must_be_preserved_for_promotion_failure(oop obj_containing_mark) const {
   if (!UseBiasedLocking)
-    return (this != prototype());
+    return (!is_unlocked() || !has_no_hash());
   return must_be_preserved_with_bias_for_promotion_failure(obj_containing_mark);
 }
 
 
-// Should this header (including its age bits) be preserved in the
-// case of a scavenge in which CMS is the old generation?
+// Same as must_be_preserved_with_bias_for_promotion_failure() except that
+// it takes a klassOop argument, instead of the object of which this is the mark word.
 inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
   assert(UseBiasedLocking, "unexpected");
   // CMS scavenges preserve mark words in similar fashion to promotion failures; see above
@@ -81,11 +92,14 @@ inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(klassOop k
       klass_of_obj_containing_mark->klass_part()->prototype_header()->has_bias_pattern()) {
     return true;
   }
-  return (this != prototype());
+  return (!is_unlocked() || !has_no_hash());
 }
+
+// Same as must_be_preserved_for_promotion_failure() except that
+// it takes a klassOop argument, instead of the object of which this is the mark word.
 inline bool markOopDesc::must_be_preserved_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
   if (!UseBiasedLocking)
-    return (this != prototype());
+    return (!is_unlocked() || !has_no_hash());
   return must_be_preserved_with_bias_for_cms_scavenge(klass_of_obj_containing_mark);
 }
 
@@ -96,3 +110,5 @@ inline markOop markOopDesc::prototype_for_object(oop obj) {
 #endif
   return obj->klass()->klass_part()->prototype_header();
 }
+
+#endif // SHARE_VM_OOPS_MARKOOP_INLINE_HPP

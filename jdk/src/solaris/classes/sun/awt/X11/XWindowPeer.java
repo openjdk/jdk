@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void handleWindowFocusIn_Dispatch() {
         if (EventQueue.isDispatchThread()) {
             XKeyboardFocusManagerPeer.setCurrentNativeFocusedWindow((Window) target);
-            target.dispatchEvent(new WindowEvent((Window)target, WindowEvent.WINDOW_GAINED_FOCUS));
+            WindowEvent we = new WindowEvent((Window)target, WindowEvent.WINDOW_GAINED_FOCUS);
+            SunToolkit.setSystemGenerated(we);
+            target.dispatchEvent(we);
         }
     }
 

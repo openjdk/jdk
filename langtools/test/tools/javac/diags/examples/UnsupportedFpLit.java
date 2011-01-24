@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.unsupported.fp.lit
-// options: -source 1.4
+// options: -source 1.4 -Xlint:-options
 
 class UnsupportedFpLit {
     float f = 0xCafe.BabeP1;

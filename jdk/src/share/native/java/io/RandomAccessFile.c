@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,13 @@ Java_java_io_RandomAccessFile_readBytes(JNIEnv *env,
 
 JNIEXPORT void JNICALL
 Java_java_io_RandomAccessFile_write(JNIEnv *env, jobject this, jint byte) {
-    writeSingle(env, this, byte, raf_fd);
+    writeSingle(env, this, byte, JNI_FALSE, raf_fd);
 }
 
 JNIEXPORT void JNICALL
 Java_java_io_RandomAccessFile_writeBytes(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
-    writeBytes(env, this, bytes, off, len, raf_fd);
+    writeBytes(env, this, bytes, off, len, JNI_FALSE, raf_fd);
 }
 
 JNIEXPORT jlong JNICALL

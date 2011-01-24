@@ -85,7 +85,6 @@ reorder.jar : $(REORDER_JAR)
 libs.reorder :
 ifeq ($(PLATFORM), solaris)
 	$(MAKE) LIBBLDDIR=java/zip        LIBTMPDIR=sun/java.util.zip/zip   reorder.lib
-	$(MAKE) LIBBLDDIR=java/hpi/native LIBTMPDIR=java/hpi/native_threads reorder.lib
 	$(MAKE) LIBBLDDIR=java/java       LIBTMPDIR=java/java.lang/java     reorder.lib
 	$(MAKE) LIBBLDDIR=java/nio        LIBTMPDIR=java/java.nio/nio       reorder.lib
 	$(MAKE) LIBBLDDIR=sun/font        LIBTMPDIR=sun/sun.awt.font/fontmanager reorder.lib
@@ -96,7 +95,6 @@ endif
 libs.copy:
 ifeq ($(PLATFORM), solaris)
 	$(CP) $(OUTDIR)/reorder_java_zip-$(ARCH) ../../java/zip/reorder-$(ARCH)
-	$(CP) $(OUTDIR)/reorder_java_hpi_native-$(ARCH) ../../java/hpi/native/reorder-$(ARCH)
 	$(CP) $(OUTDIR)/reorder_java_java-$(ARCH) ../../java/java/reorder-$(ARCH)
 	$(CP) $(OUTDIR)/reorder_sun_font-$(ARCH) ../../sun/font/reorder-$(ARCH)
 	$(CP) $(OUTDIR)/reorder_sun_jpeg-$(ARCH) ../../sun/jpeg/reorder-$(ARCH)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,6 +204,9 @@ public class SourceClippingBlitTest extends Canvas {
         int w = getWidth();
         int h = getHeight();
         Toolkit.getDefaultToolkit().sync();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {}
         Point p = getLocationOnScreen();
         grabbedBI = robot.createScreenCapture(new Rectangle(p.x, p.y, w, h));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENERATIONSPEC_HPP
+#define SHARE_VM_MEMORY_GENERATIONSPEC_HPP
+
+#include "memory/generation.hpp"
+#include "memory/permGen.hpp"
 
 // The specification of a generation.  This class also encapsulates
 // some generation-specific behavior.  This is done here rather than as a
@@ -120,3 +126,5 @@ public:
   size_t misc_code_size() const { return _misc_code_size; }
   bool enable_shared_spaces()    const { return _enable_shared_spaces; }
 };
+
+#endif // SHARE_VM_MEMORY_GENERATIONSPEC_HPP

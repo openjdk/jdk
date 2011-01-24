@@ -22,8 +22,42 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_arguments.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaAssertions.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
+#include "services/management.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/taskqueue.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#endif
 
 #define DEFAULT_VENDOR_URL_BUG "http://java.sun.com/webapps/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
@@ -116,14 +150,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.version", "1.0", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
-        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
   // following are JVMTI agent writeable properties.
@@ -149,6 +179,28 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+}
+
+
+  // Update/Initialize System properties after JDK version number is known
+void Arguments::init_version_specific_system_properties() {
+  enum { bufsz = 16 };
+  char buffer[bufsz];
+  const char* spec_vendor = "Sun Microsystems Inc.";
+  uint32_t spec_version = 0;
+
+  if (JDK_Version::is_gte_jdk17x_version()) {
+    spec_vendor = "Oracle Corporation";
+    spec_version = JDK_Version::current().major_version();
+  }
+  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.version", buffer, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
 }
 
 /**
@@ -185,6 +237,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
   { "UseDepthFirstScavengeOrder",
                            JDK_Version::jdk_update(6,22), JDK_Version::jdk(7) },
+  { "HandlePromotionFailure",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
+  { "MaxLiveObjectEvacuationRatio",
+                           JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -948,26 +1004,37 @@ static void no_shared_spaces() {
   }
 }
 
+void Arguments::check_compressed_oops_compat() {
+#ifdef _LP64
+  assert(UseCompressedOops, "Precondition");
+  // Is it on by default or set on ergonomically
+  bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
+
+  // If dumping an archive or forcing its use, disable compressed oops if possible
+  if (DumpSharedSpaces || RequireSharedSpaces) {
+    if (is_on_by_default) {
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+      return;
+    } else {
+      vm_exit_during_initialization(
+        "Class Data Sharing is not supported with compressed oops yet", NULL);
+    }
+  } else if (UseSharedSpaces) {
+    // UseSharedSpaces is on by default. With compressed oops, we turn it off.
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+#endif
+}
+
 void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
     FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
   }
-
   if (CompilationPolicyChoice < 2) {
     vm_exit_during_initialization(
       "Incompatible compilation policy selected", NULL);
   }
-
-#ifdef _LP64
-  if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
-    UseCompressedOops = false;
-  }
-  if (UseCompressedOops) {
-    vm_exit_during_initialization(
-      "Tiered compilation is not supported with compressed oops yet", NULL);
-  }
-#endif
- // Increase the code cache size - tiered compiles a lot more.
+  // Increase the code cache size - tiered compiles a lot more.
   if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
     FLAG_SET_DEFAULT(ReservedCodeCacheSize, ReservedCodeCacheSize * 2);
   }
@@ -1261,20 +1328,41 @@ bool verify_object_alignment() {
   // Object alignment.
   if (!is_power_of_2(ObjectAlignmentInBytes)) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be power of 2", (int)ObjectAlignmentInBytes);
+                "error: ObjectAlignmentInBytes=%d must be power of 2\n",
+                (int)ObjectAlignmentInBytes);
     return false;
   }
   if ((int)ObjectAlignmentInBytes < BytesPerLong) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be greater or equal %d", (int)ObjectAlignmentInBytes, BytesPerLong);
+                "error: ObjectAlignmentInBytes=%d must be greater or equal %d\n",
+                (int)ObjectAlignmentInBytes, BytesPerLong);
+    return false;
+  }
+  // It does not make sense to have big object alignment
+  // since a space lost due to alignment will be greater
+  // then a saved space from compressed oops.
+  if ((int)ObjectAlignmentInBytes > 256) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must not be greater then 256\n",
+                (int)ObjectAlignmentInBytes);
+    return false;
+  }
+  // In case page size is very small.
+  if ((int)ObjectAlignmentInBytes >= os::vm_page_size()) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be less then page size %d\n",
+                (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
   return true;
 }
 
 inline uintx max_heap_for_compressed_oops() {
-  // Heap should be above HeapBaseMinAddress to get zero based compressed oops.
-  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size() - HeapBaseMinAddress);
+  // Avoid sign flip.
+  if (OopEncodingHeapMax < MaxPermSize + os::vm_page_size()) {
+    return 0;
+  }
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1452,7 +1540,13 @@ void Arguments::set_heap_size() {
     }
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
-      reasonable_max = MIN2(reasonable_max, (julong)max_heap_for_compressed_oops());
+      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
+      if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
+        // Heap should be above HeapBaseMinAddress to get zero based compressed oops
+        // but it should be not less than default MaxHeapSize.
+        max_coop_heap -= HeapBaseMinAddress;
+      }
+      reasonable_max = MIN2(reasonable_max, max_coop_heap);
     }
     reasonable_max = os::allocatable_physical_memory(reasonable_max);
 
@@ -1658,7 +1752,8 @@ bool Arguments::check_stack_pages()
   bool status = true;
   status = status && verify_min_value(StackYellowPages, 1, "StackYellowPages");
   status = status && verify_min_value(StackRedPages, 1, "StackRedPages");
-  status = status && verify_min_value(StackShadowPages, 1, "StackShadowPages");
+  // greater stack shadow pages can't generate instruction to bang stack
+  status = status && verify_interval(StackShadowPages, 1, 50, "StackShadowPages");
   return status;
 }
 
@@ -1704,8 +1799,6 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status = status && verify_percentage(MaxLiveObjectEvacuationRatio,
-                              "MaxLiveObjectEvacuationRatio");
   status = status && verify_percentage(AdaptiveSizePolicyWeight,
                               "AdaptiveSizePolicyWeight");
   status = status && verify_percentage(AdaptivePermSizeWeight, "AdaptivePermSizeWeight");
@@ -2204,14 +2297,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xoss", &tail)) {
           // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
     // -Xmaxjitcodesize
-    } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+    } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
+               match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize,
                                             (size_t)InitialCodeCacheSize);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum code cache size: %s\n",
-                    option->optionString);
+                    "Invalid maximum code cache size: %s. Should be greater than InitialCodeCacheSize=%dK\n",
+                    option->optionString, InitialCodeCacheSize/K);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
@@ -2809,6 +2903,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
   return JNI_OK;
 }
 
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
@@ -2951,10 +3046,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     PrintGC = true;
   }
 
-#if defined(_LP64) && defined(COMPILER1) && !defined(TIERED)
-  UseCompressedOops = false;
-#endif
-
   // Set object alignment values.
   set_object_alignment();
 
@@ -2968,14 +3059,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
-#ifdef _LP64
-  // XXX JSR 292 currently does not support compressed oops.
-  if (EnableMethodHandles && UseCompressedOops) {
-    if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
-      UseCompressedOops = false;
-    }
+  if (UseCompressedOops) {
+    check_compressed_oops_compat();
   }
-#endif // _LP64
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

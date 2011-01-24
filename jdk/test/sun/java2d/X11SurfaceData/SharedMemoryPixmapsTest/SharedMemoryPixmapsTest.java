@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,9 @@ public class SharedMemoryPixmapsTest {
         }
 
         private boolean testRendering() throws RuntimeException {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {}
             Robot r = null;
             try {
                 r = new Robot();

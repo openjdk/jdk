@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,8 @@ public class Infer {
             uv.hibounds = hibounds.toList();
         }
         Type qtype1 = types.subst(that.qtype, that.tvars, undetvars);
-        if (!types.isSubtype(qtype1, to)) {
+        if (!types.isSubtype(qtype1,
+                qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
             throw unambiguousNoInstanceException
                 .setMessage("infer.no.conforming.instance.exists",
                             that.tvars, that.qtype, to);
@@ -480,7 +481,7 @@ public class Infer {
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals, msym, env);
+                        chk.checkVararg(env.tree.pos(), formals, msym);
                     }
                     return super.inst(inferred, types);
             }};
@@ -553,12 +554,24 @@ public class Infer {
             //the enclosing tree E, as follows: if E is a cast, then use the
             //target type of the cast expression as a return type; if E is an
             //expression statement, the return type is 'void' - otherwise the
-            //return type is simply 'Object'.
-            switch (env.outer.tree.getTag()) {
+            //return type is simply 'Object'. A correctness check ensures that
+            //env.next refers to the lexically enclosing environment in which
+            //the polymorphic signature call environment is nested.
+
+            switch (env.next.tree.getTag()) {
                 case JCTree.TYPECAST:
-                    restype = ((JCTypeCast)env.outer.tree).clazz.type; break;
+                    JCTypeCast castTree = (JCTypeCast)env.next.tree;
+                    restype = (castTree.expr == env.tree) ?
+                        castTree.clazz.type :
+                        syms.objectType;
+                    break;
                 case JCTree.EXEC:
-                    restype = syms.voidType; break;
+                    JCTree.JCExpressionStatement execTree =
+                            (JCTree.JCExpressionStatement)env.next.tree;
+                    restype = (execTree.expr == env.tree) ?
+                        syms.voidType :
+                        syms.objectType;
+                    break;
                 default:
                     restype = syms.objectType;
             }

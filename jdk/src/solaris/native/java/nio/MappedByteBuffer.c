@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
 
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jlong address,
-                                      jlong len)
+Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jobject fdo,
+                                      jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
     int result = msync(a, (size_t)len, MS_SYNC);

@@ -35,8 +35,8 @@ public class KeyTabIndex {
         // observice the abnormal change of "index" field.
         kt.addEntry(new PrincipalName(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@A"),
-                "x".toCharArray(), 1);
-        kt.addEntry(new PrincipalName("a@A"), "x".toCharArray(), 1);
+                "x".toCharArray(), 1, true);
+        kt.addEntry(new PrincipalName("a@A"), "x".toCharArray(), 1, true);
         kt.save();
         Runnable t = new Runnable() {
             @Override

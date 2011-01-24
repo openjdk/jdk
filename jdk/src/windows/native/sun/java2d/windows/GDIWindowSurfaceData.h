@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,11 @@ typedef void InvalidateSDFunc(JNIEnv *env,
  */
 struct _GDIWinSDOps {
     SurfaceDataOps      sdOps;
+    LONG                timeStamp; // creation time stamp.
+                                   // Doesn't store a real time -
+                                   // just counts creation events of this structure
+                                   // made by GDIWindowSurfaceData_initOps()
+                                   // see bug# 6859086
     jboolean            invalid;
     GetDCFunc           *GetDC;
     ReleaseDCFunc       *ReleaseDC;
@@ -192,6 +197,13 @@ extern "C" {
 typedef struct {
     HDC         hDC;
     GDIWinSDOps *wsdo;
+    LONG        wsdoTimeStamp; // wsdo creation time stamp.
+                               // Other threads may deallocate wsdo
+                               // and then allocate a new GDIWinSDOps
+                               // structure at the same memory location.
+                               // Time stamp is the only way to detect if
+                               // wsdo got changed.
+                               // see bug# 6859086
     RECT        bounds;
     jobject     clip;
     jobject     comp;

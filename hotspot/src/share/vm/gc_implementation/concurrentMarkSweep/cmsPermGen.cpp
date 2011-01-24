@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cmsPermGen.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/shared/cSpaceCounters.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/permGen.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 
 CMSPermGen::CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
              CardTableRS* ct,
@@ -48,6 +59,18 @@ HeapWord* CMSPermGen::mem_allocate(size_t size) {
   } else {
     return mem_allocate_in_gen(size, _gen);
   }
+}
+
+HeapWord* CMSPermGen::request_expand_and_allocate(Generation* gen,
+                                                  size_t size,
+                                                  GCCause::Cause prev_cause /* ignored */) {
+  HeapWord* obj = gen->expand_and_allocate(size, false);
+  if (gen->capacity() >= _capacity_expansion_limit) {
+    set_capacity_expansion_limit(gen->capacity() + MaxPermHeapExpansion);
+    assert(((ConcurrentMarkSweepGeneration*)gen)->should_concurrent_collect(),
+           "Should kick off a collection if one not in progress");
+  }
+  return obj;
 }
 
 void CMSPermGen::compute_new_size() {

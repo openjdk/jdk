@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"keytool error: ", "Errore keytool: "},
         {"Illegal option:  ", "Opzione non valida:  "},
         {"Try keytool -help","Provare keytool -help"},
-        {"Command option <flag> needs an argument.", "\u00c8 necessario specificare un argomento per l'opzione di comando {0}."},
+        {"Command option <flag> needs an argument.", "\u00c8 necessario specificare un argomento per l''opzione di comando {0}."},
         {"Warning:  Different store and key passwords not supported for PKCS12 KeyStores. Ignoring user-specified <command> value.",
-                "Avviso: non sono supportate password diverse di chiave e di archivio per i KeyStore PKCS12. Il valore {0} specificato dall'utente verr\u00e0 ignorato."},
+                "Avviso: non sono supportate password diverse di chiave e di archivio per i KeyStore PKCS12. Il valore {0} specificato dall''utente verr\u00e0 ignorato."},
         {"-keystore must be NONE if -storetype is {0}",
                 "Se -storetype \u00e8 impostato su {0}, -keystore deve essere impostato su NONE"},
         {"Too may retries, program terminated",
@@ -100,16 +100,16 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"Unknown Entry Type", "Tipo di voce sconosciuto"},
         {"Too many failures. Alias not changed", "Si sono verificati troppi errori. L'alias non \u00e8 stato modificato."},
         {"Entry for alias <alias> successfully imported.",
-                 "La voce dell'alias {0} \u00e8 stata importata."},
-        {"Entry for alias <alias> not imported.", "La voce dell'alias {0} non \u00e8 stata importata."},
+                 "La voce dell''alias {0} \u00e8 stata importata."},
+        {"Entry for alias <alias> not imported.", "La voce dell''alias {0} non \u00e8 stata importata."},
         {"Problem importing entry for alias <alias>: <exception>.\nEntry for alias <alias> not imported.",
-                 "Si \u00e8 verificato un problema durante l'importazione della voce dell'alias {0}: {1}.\nLa voce dell'alias {0} non \u00e8 stata importata."},
+                 "Si \u00e8 verificato un problema durante l''importazione della voce dell''alias {0}: {1}.\nLa voce dell''alias {0} non \u00e8 stata importata."},
         {"Import command completed:  <ok> entries successfully imported, <fail> entries failed or cancelled",
                  "Importazione completata:  {0} voci importate, {1} voci non importate o annullate"},
         {"Warning: Overwriting existing alias <alias> in destination keystore",
-                 "Avviso: sovrascrittura in corso dell'alias {0} nel file keystore di destinazione"},
+                 "Avviso: sovrascrittura in corso dell''alias {0} nel file keystore di destinazione"},
         {"Existing entry alias <alias> exists, overwrite? [no]:  ",
-                 "La voce dell'alias {0} esiste gi\u00e0. Sovrascrivere? [no]:  "},
+                 "La voce dell''alias {0} esiste gi\u00e0. Sovrascrivere? [no]:  "},
         {"Too many failures - try later", "Troppi errori - riprovare"},
         {"Certification request stored in file <filename>",
                 "La richiesta di certificazione \u00e8 memorizzata nel file <{0}>"},
@@ -232,9 +232,9 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"y", "s"},
         {"  [defaultValue]:  ", " [{0}]:  "},
         {"Alias <alias> has no key",
-                "All'alias <{0}> non \u00e8 associata alcuna chiave"},
+                "All''alias <{0}> non \u00e8 associata alcuna chiave"},
         {"Alias <alias> references an entry type that is not a private key entry.  The -keyclone command only supports cloning of private key entries",
-                 "L'alias <{0}> fa riferimento a un tipo di voce che non \u00e8 una voce di chiave privata. Il comando -keyclone supporta solo la duplicazione delle voci di chiave private."},
+                 "L''alias <{0}> fa riferimento a un tipo di voce che non \u00e8 una voce di chiave privata. Il comando -keyclone supporta solo la duplicazione delle voci di chiave private."},
 
         {"*****************  WARNING WARNING WARNING  *****************",
             "*****************  AVVISO  AVVISO  AVVISO  *****************"},
@@ -274,7 +274,7 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"n", "n"},
         {"Wrong answer, try again", "Risposta errata, riprovare"},
         {"Secret key not generated, alias <alias> already exists",
-                "La chiave segreta non \u00e8 stata generata; l'alias <{0}> esiste gi\u00e0"},
+                "La chiave segreta non \u00e8 stata generata; l''alias <{0}> esiste gi\u00e0"},
         {"Please provide -keysize for secret key generation",
                 "Specificare il valore -keysize per la generazione della chiave segreta"},
         {"keytool usage:\n", "utilizzo keytool:\n"},
@@ -401,7 +401,7 @@ public class Resources_it extends java.util.ListResourceBundle {
 
         // policytool
         {"Warning: A public key for alias 'signers[i]' does not exist.  Make sure a KeyStore is properly configured.",
-                "Avviso: non esiste una chiave pubblica per l'alias {0}. Verificare che il KeyStore sia configurato correttamente."},
+                "Avviso: non esiste una chiave pubblica per l''alias {0}. Verificare che il KeyStore sia configurato correttamente."},
         {"Warning: Class not found: class", "Avviso: Classe non trovata: {0}"},
         {"Warning: Invalid argument(s) for constructor: arg",
                 "Avviso: argomento o argomenti non validi per il costruttore {0}"},

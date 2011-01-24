@@ -22,8 +22,52 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreterRuntime.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "interpreter/templateTable.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/threadCritical.hpp"
+#include "utilities/events.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 class UnlockFlagSaver {
   private:
@@ -716,12 +760,13 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
+  int pool_index = pool->cache()->entry_at(main_index)->constant_pool_index();
 
   // first resolve the signature to a MH.invoke methodOop
   if (!pool->cache()->entry_at(main_index)->is_resolved(bytecode)) {
     JvmtiHideSingleStepping jhss(thread);
-    CallInfo info;
-    LinkResolver::resolve_invoke(info, Handle(), pool,
+    CallInfo callinfo;
+    LinkResolver::resolve_invoke(callinfo, Handle(), pool,
                                  site_index, bytecode, CHECK);
     // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
     // as a common reference point for all invokedynamic call sites with
@@ -729,8 +774,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     // as if it were an invokevirtual of MethodHandle.invoke.
     pool->cache()->entry_at(main_index)->set_method(
       bytecode,
-      info.resolved_method(),
-      info.vtable_index());
+      callinfo.resolved_method(),
+      callinfo.vtable_index());
   }
 
   // The method (f2 entry) of the main entry is the MH.invoke for the
@@ -740,9 +785,10 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
 
+  Handle info;  // optional argument(s) in JVM_CONSTANT_InvokeDynamic
   Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
-                                                         main_index, CHECK);
-  if (bootm.is_null()) {
+                                                         main_index, info, CHECK);
+  if (!java_dyn_MethodHandle::is_instance(bootm())) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
               "no bootstrap method found for invokedynamic");
   }
@@ -752,8 +798,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     return;
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
-
-  Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
@@ -1149,9 +1193,20 @@ void SignatureHandlerLibrary::add(methodHandle method) {
       method->set_signature_handler(_handlers->at(handler_index));
     }
   }
+#ifdef ASSERT
+  int handler_index, fingerprint_index;
+  {
+    // '_handlers' and '_fingerprints' are 'GrowableArray's and are NOT synchronized
+    // in any way if accessed from multiple threads. To avoid races with another
+    // thread which may change the arrays in the above, mutex protected block, we
+    // have to protect this read access here with the same mutex as well!
+    MutexLocker mu(SignatureHandlerLibrary_lock);
+    handler_index = _handlers->find(method->signature_handler());
+    fingerprint_index = _fingerprints->find(Fingerprinter(method).fingerprint());
+  }
   assert(method->signature_handler() == Interpreter::slow_signature_handler() ||
-         _handlers->find(method->signature_handler()) == _fingerprints->find(Fingerprinter(method).fingerprint()),
-         "sanity check");
+         handler_index == fingerprint_index, "sanity check");
+#endif
 }
 
 

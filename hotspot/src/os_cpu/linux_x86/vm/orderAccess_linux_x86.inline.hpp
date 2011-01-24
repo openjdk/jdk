@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_INLINE_HPP
+#define OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_INLINE_HPP
+
+#include "runtime/orderAccess.hpp"
+#include "vm_version_x86.hpp"
+
 // Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { acquire(); }
@@ -204,3 +210,5 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
   release_store_fence((volatile jint*)p, (jint)v);
 #endif // AMD64
 }
+
+#endif // OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_INLINE_HPP

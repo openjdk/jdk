@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,8 +144,12 @@ public class HtmlDoclet extends AbstractDoclet {
             !configuration.nohelp) {
             HelpWriter.generate(configuration);
         }
+        // If a stylesheet file is not specified, copy the default stylesheet
+        // and replace newline with platform-specific newline.
         if (configuration.stylesheetfile.length() == 0) {
-            StylesheetWriter.generate(configuration);
+            Util.copyFile(configuration, "stylesheet.css", Util.RESOURCESDIR,
+                    (configdestdir.isEmpty()) ?
+                        System.getProperty("user.dir") : configdestdir, false, true);
         }
     }
 

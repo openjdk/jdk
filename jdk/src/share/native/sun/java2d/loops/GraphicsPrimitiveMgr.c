@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,6 +574,8 @@ struct _PrimitiveTypes PrimitiveTypes = {
     { "sun/java2d/loops/ScaledBlit", SD_LOCK_READ, SD_LOCK_WRITE, NULL, NULL},
     { "sun/java2d/loops/FillRect", 0, SD_LOCK_WRITE, NULL, NULL},
     { "sun/java2d/loops/FillSpans", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},
+    { "sun/java2d/loops/FillParallelogram", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},
+    { "sun/java2d/loops/DrawParallelogram", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},
     { "sun/java2d/loops/DrawLine", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},
     { "sun/java2d/loops/DrawRect", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},
     { "sun/java2d/loops/DrawPolygons", 0, SD_LOCK_PARTIAL_WRITE, NULL, NULL},

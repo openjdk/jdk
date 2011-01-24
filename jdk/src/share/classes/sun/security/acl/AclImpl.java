@@ -41,15 +41,15 @@ public class AclImpl extends OwnerImpl implements Acl {
     // or principal.
     //
     private Hashtable<Principal, AclEntry> allowedUsersTable =
-                                        new Hashtable<Principal, AclEntry>(23);
+                                        new Hashtable<>(23);
     private Hashtable<Principal, AclEntry> allowedGroupsTable =
-                                        new Hashtable<Principal, AclEntry>(23);
+                                        new Hashtable<>(23);
     private Hashtable<Principal, AclEntry> deniedUsersTable =
-                                        new Hashtable<Principal, AclEntry>(23);
+                                        new Hashtable<>(23);
     private Hashtable<Principal, AclEntry> deniedGroupsTable =
-                                        new Hashtable<Principal, AclEntry>(23);
+                                        new Hashtable<>(23);
     private String aclName = null;
-    private Vector<Permission> zeroSet = new Vector<Permission>(1,1);
+    private Vector<Permission> zeroSet = new Vector<>(1,1);
 
 
     /**
@@ -294,7 +294,7 @@ public class AclImpl extends OwnerImpl implements Acl {
     //
     private static Enumeration<Permission> union(Enumeration<Permission> e1,
                 Enumeration<Permission> e2) {
-        Vector<Permission> v = new Vector<Permission>(20, 20);
+        Vector<Permission> v = new Vector<>(20, 20);
 
         while (e1.hasMoreElements())
             v.addElement(e1.nextElement());
@@ -313,7 +313,7 @@ public class AclImpl extends OwnerImpl implements Acl {
     //
     private Enumeration<Permission> subtract(Enumeration<Permission> e1,
                 Enumeration<Permission> e2) {
-        Vector<Permission> v = new Vector<Permission>(20, 20);
+        Vector<Permission> v = new Vector<>(20, 20);
 
         while (e1.hasMoreElements())
             v.addElement(e1.nextElement());

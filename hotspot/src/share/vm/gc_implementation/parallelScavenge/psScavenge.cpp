@@ -22,9 +22,35 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
+#include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "gc_implementation/parallelScavenge/psTasks.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "memory/collectorPolicy.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.psgc.inline.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/stack.inline.hpp"
 
-# include "incls/_precompiled.incl"
-# include "incls/_psScavenge.cpp.incl"
 
 HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
 int                        PSScavenge::_consecutive_skipped_scavenges = 0;
@@ -34,9 +60,10 @@ bool                       PSScavenge::_survivor_overflow = false;
 int                        PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
 elapsedTimer               PSScavenge::_accumulated_time;
-GrowableArray<markOop>*    PSScavenge::_preserved_mark_stack = NULL;
-GrowableArray<oop>*        PSScavenge::_preserved_oop_stack = NULL;
+Stack<markOop>             PSScavenge::_preserved_mark_stack;
+Stack<oop>                 PSScavenge::_preserved_oop_stack;
 CollectorCounters*         PSScavenge::_counters = NULL;
+bool                       PSScavenge::_promotion_failed = false;
 
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
@@ -222,6 +249,9 @@ void PSScavenge::invoke() {
 bool PSScavenge::invoke_no_policy() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
+
+  assert(_preserved_mark_stack.is_empty(), "should be empty");
+  assert(_preserved_oop_stack.is_empty(), "should be empty");
 
   TimeStamp scavenge_entry;
   TimeStamp scavenge_midpoint;
@@ -636,24 +666,20 @@ void PSScavenge::clean_up_failed_promotion() {
     young_gen->object_iterate(&unforward_closure);
 
     if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Restoring %d marks",
-                              _preserved_oop_stack->length());
+      gclog_or_tty->print_cr("Restoring %d marks", _preserved_oop_stack.size());
     }
 
     // Restore any saved marks.
-    for (int i=0; i < _preserved_oop_stack->length(); i++) {
-      oop obj       = _preserved_oop_stack->at(i);
-      markOop mark  = _preserved_mark_stack->at(i);
+    while (!_preserved_oop_stack.is_empty()) {
+      oop obj      = _preserved_oop_stack.pop();
+      markOop mark = _preserved_mark_stack.pop();
       obj->set_mark(mark);
     }
 
-    // Deallocate the preserved mark and oop stacks.
-    // The stacks were allocated as CHeap objects, so
-    // we must call delete to prevent mem leaks.
-    delete _preserved_mark_stack;
-    _preserved_mark_stack = NULL;
-    delete _preserved_oop_stack;
-    _preserved_oop_stack = NULL;
+    // Clear the preserved mark and oop stack caches.
+    _preserved_mark_stack.clear(true);
+    _preserved_oop_stack.clear(true);
+    _promotion_failed = false;
   }
 
   // Reset the PromotionFailureALot counters.
@@ -661,27 +687,18 @@ void PSScavenge::clean_up_failed_promotion() {
 }
 
 // This method is called whenever an attempt to promote an object
-// fails. Some markOops will need preserving, some will not. Note
+// fails. Some markOops will need preservation, some will not. Note
 // that the entire eden is traversed after a failed promotion, with
 // all forwarded headers replaced by the default markOop. This means
 // it is not neccessary to preserve most markOops.
 void PSScavenge::oop_promotion_failed(oop obj, markOop obj_mark) {
-  if (_preserved_mark_stack == NULL) {
-    ThreadCritical tc; // Lock and retest
-    if (_preserved_mark_stack == NULL) {
-      assert(_preserved_oop_stack == NULL, "Sanity");
-      _preserved_mark_stack = new (ResourceObj::C_HEAP) GrowableArray<markOop>(40, true);
-      _preserved_oop_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(40, true);
-    }
-  }
-
-  // Because we must hold the ThreadCritical lock before using
-  // the stacks, we should be safe from observing partial allocations,
-  // which are also guarded by the ThreadCritical lock.
+  _promotion_failed = true;
   if (obj_mark->must_be_preserved_for_promotion_failure(obj)) {
+    // Should use per-worker private stakcs hetre rather than
+    // locking a common pair of stacks.
     ThreadCritical tc;
-    _preserved_oop_stack->push(obj);
-    _preserved_mark_stack->push(obj_mark);
+    _preserved_oop_stack.push(obj);
+    _preserved_mark_stack.push(obj_mark);
   }
 }
 

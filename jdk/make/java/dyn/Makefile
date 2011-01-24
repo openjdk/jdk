@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,7 @@ AUTO_FILES_JAVA_DIRS = java/dyn sun/dyn
 LANGUAGE_VERSION = -source 7
 CLASS_VERSION = -target 7
 
-# Actually, it will be less disruptive to compile with the same
-# -target option as the rest of the system, and just turn on
-# the specific compiler option we need here:
-OTHER_JAVACFLAGS = -XDinvokedynamic
+# Tell the compiler not to accept transitional forms.
+OTHER_JAVACFLAGS = -XDallowTransitionalJSR292=no
 
 include $(BUILDDIR)/common/Classes.gmk

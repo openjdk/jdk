@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.*;
 import java.io.IOException;
+import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
@@ -364,6 +365,7 @@ class Util {
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
+                                          FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
@@ -381,6 +383,7 @@ class Util {
     }
 
     static MappedByteBuffer newMappedByteBuffer(int size, long addr,
+                                                FileDescriptor fd,
                                                 Runnable unmapper)
     {
         MappedByteBuffer dbb;
@@ -390,6 +393,7 @@ class Util {
             dbb = (MappedByteBuffer)directByteBufferConstructor.newInstance(
               new Object[] { new Integer(size),
                              new Long(addr),
+                             fd,
                              unmapper });
         } catch (InstantiationException e) {
             throw new InternalError();
@@ -411,6 +415,7 @@ class Util {
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
+                                          FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
@@ -428,6 +433,7 @@ class Util {
     }
 
     static MappedByteBuffer newMappedByteBufferR(int size, long addr,
+                                                 FileDescriptor fd,
                                                  Runnable unmapper)
     {
         MappedByteBuffer dbb;
@@ -437,6 +443,7 @@ class Util {
             dbb = (MappedByteBuffer)directByteBufferRConstructor.newInstance(
               new Object[] { new Integer(size),
                              new Long(addr),
+                             fd,
                              unmapper });
         } catch (InstantiationException e) {
             throw new InternalError();

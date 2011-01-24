@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_METHODHANDLES_HPP
+#define SHARE_VM_PRIMS_METHODHANDLES_HPP
+
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.hpp"
+
 class MacroAssembler;
 class Label;
 class MethodHandleEntry;
@@ -226,11 +235,20 @@ class MethodHandles: AllStatic {
   }
 
   enum { CONV_VMINFO_SIGN_FLAG = 0x80 };
-  static int adapter_subword_vminfo(BasicType dest) {
-    if (dest == T_BOOLEAN) return (BitsPerInt -  1);
-    if (dest == T_CHAR)    return (BitsPerInt - 16);
-    if (dest == T_BYTE)    return (BitsPerInt -  8) | CONV_VMINFO_SIGN_FLAG;
-    if (dest == T_SHORT)   return (BitsPerInt - 16) | CONV_VMINFO_SIGN_FLAG;
+  // Shift values for prim-to-prim conversions.
+  static int adapter_prim_to_prim_subword_vminfo(BasicType dest) {
+    if (dest == T_BOOLEAN) return (BitsPerInt - 1);  // boolean is 1 bit
+    if (dest == T_CHAR)    return (BitsPerInt - BitsPerShort);
+    if (dest == T_BYTE)    return (BitsPerInt - BitsPerByte ) | CONV_VMINFO_SIGN_FLAG;
+    if (dest == T_SHORT)   return (BitsPerInt - BitsPerShort) | CONV_VMINFO_SIGN_FLAG;
+    return 0;                   // case T_INT
+  }
+  // Shift values for unboxing a primitive.
+  static int adapter_unbox_subword_vminfo(BasicType dest) {
+    if (dest == T_BOOLEAN) return (BitsPerInt - BitsPerByte );  // implemented as 1 byte
+    if (dest == T_CHAR)    return (BitsPerInt - BitsPerShort);
+    if (dest == T_BYTE)    return (BitsPerInt - BitsPerByte ) | CONV_VMINFO_SIGN_FLAG;
+    if (dest == T_SHORT)   return (BitsPerInt - BitsPerShort) | CONV_VMINFO_SIGN_FLAG;
     return 0;                   // case T_INT
   }
   // Here is the transformation the i2i adapter must perform:
@@ -276,11 +294,11 @@ class MethodHandles: AllStatic {
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // Generate MethodHandles adapters.
-  static void generate_adapters();
+  static void generate_adapters(TRAPS);
 
   // Called from InterpreterGenerator and MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm);
-  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek);
+  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek, TRAPS);
 
   // argument list parsing
   static int argument_slot(oop method_type, int arg);
@@ -512,5 +530,7 @@ class MethodHandlesAdapterGenerator : public StubCodeGenerator {
 public:
   MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
 
-  void generate();
+  void generate(TRAPS);
 };
+
+#endif // SHARE_VM_PRIMS_METHODHANDLES_HPP

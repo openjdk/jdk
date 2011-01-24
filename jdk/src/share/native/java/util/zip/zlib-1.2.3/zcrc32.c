@@ -406,7 +406,7 @@ uLong ZEXPORT crc32_combine(crc1, crc2, len2)
         return crc1;
 
     /* put operator for one zero bit in odd */
-    odd[0] = 0xedb88320L;           /* CRC-32 polynomial */
+    odd[0] = 0xedb88320UL;           /* CRC-32 polynomial */
     row = 1;
     for (n = 1; n < GF2_DIM; n++) {
         odd[n] = row;

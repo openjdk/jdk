@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.misc;
 
+import static java.lang.Thread.State.*;
 import java.util.Properties;
 import java.util.HashMap;
 import java.util.Map;
@@ -332,69 +333,37 @@ public class VM {
         }
     }
 
-
+    /**
+     * Returns Thread.State for the given threadStatus
+     */
     public static Thread.State toThreadState(int threadStatus) {
-        // Initialize the threadStateMap
-        initThreadStateMap();
-
-        Thread.State s = threadStateMap.get(threadStatus);
-        if (s == null) {
-            // default to RUNNABLE if the threadStatus value is unknown
-            s = Thread.State.RUNNABLE;
-        }
-        return s;
-    }
-
-    // a map of threadStatus values to the corresponding Thread.State
-    private static Map<Integer, Thread.State> threadStateMap = null;
-    private static Map<Integer, String> threadStateNames = null;
-
-    private synchronized static void initThreadStateMap() {
-        if (threadStateMap != null) {
-            return;
-        }
-
-        final Thread.State[] ts = Thread.State.values();
-
-        final int[][] vmThreadStateValues = new int[ts.length][];
-        final String[][] vmThreadStateNames = new String[ts.length][];
-        getThreadStateValues(vmThreadStateValues, vmThreadStateNames);
-
-        threadStateMap = new HashMap<Integer, Thread.State>();
-        threadStateNames = new HashMap<Integer, String>();
-        for (int i = 0; i < ts.length; i++) {
-            String state = ts[i].name();
-            int[] values = null;
-            String[] names = null;
-            for (int j = 0; j < ts.length; j++) {
-                if (vmThreadStateNames[j][0].startsWith(state)) {
-                    values = vmThreadStateValues[j];
-                    names = vmThreadStateNames[j];
-                }
-            }
-            if (values == null) {
-                throw new InternalError("No VM thread state mapped to " +
-                    state);
-            }
-            if (values.length != names.length) {
-                throw new InternalError("VM thread state values and names " +
-                    " mapped to " + state + ": length not matched" );
-            }
-            for (int k = 0; k < values.length; k++) {
-                threadStateMap.put(values[k], ts[i]);
-                threadStateNames.put(values[k], names[k]);
-            }
+        if ((threadStatus & JVMTI_THREAD_STATE_RUNNABLE) != 0) {
+            return RUNNABLE;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) != 0) {
+            return BLOCKED;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_WAITING_INDEFINITELY) != 0) {
+            return WAITING;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT) != 0) {
+            return TIMED_WAITING;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_TERMINATED) != 0) {
+            return TERMINATED;
+        } else if ((threadStatus & JVMTI_THREAD_STATE_ALIVE) == 0) {
+            return NEW;
+        } else {
+            return RUNNABLE;
         }
     }
-    // Fill in vmThreadStateValues with int arrays, each of which contains
-    // the threadStatus values mapping to the Thread.State enum constant.
-    // Fill in vmThreadStateNames with String arrays, each of which contains
-    // the name of each threadStatus value of the format:
-    //    <Thread.State.name()>[.<Substate name>]
-    // e.g. WAITING.OBJECT_WAIT
-    //
-    private native static void getThreadStateValues(int[][] vmThreadStateValues,
-                                                    String[][] vmThreadStateNames);
+
+    /* The threadStatus field is set by the VM at state transition
+     * in the hotspot implementation. Its value is set according to
+     * the JVM TI specification GetThreadState function.
+     */
+    private final static int JVMTI_THREAD_STATE_ALIVE = 0x0001;
+    private final static int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+    private final static int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
+    private final static int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
+    private final static int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
+    private final static int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
 
     static {
         initialize();

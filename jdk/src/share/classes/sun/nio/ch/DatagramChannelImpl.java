@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,10 +711,8 @@ class DatagramChannelImpl
                     cachedSenderInetAddress = isa.getAddress();
                     cachedSenderPort = isa.getPort();
 
-                    // Socket was not bound before connecting,
-                    if (localAddress == null) {
-                        localAddress = Net.localAddress(fd);
-                    }
+                    // set or refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }
@@ -735,6 +733,9 @@ class DatagramChannelImpl
                     disconnect0(fd);
                     remoteAddress = null;
                     state = ST_UNCONNECTED;
+
+                    // refresh local address
+                    localAddress = Net.localAddress(fd);
                 }
             }
         }

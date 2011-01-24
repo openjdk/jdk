@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,36 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
-import com.sun.java.util.jar.pack.Package.Class;
-import com.sun.java.util.jar.pack.Package.InnerClass;
-import com.sun.java.util.jar.pack.ConstantPool.*;
+import com.sun.java.util.jar.pack.ConstantPool.Entry;
+import com.sun.java.util.jar.pack.ConstantPool.Index;
+import com.sun.java.util.jar.pack.Package.Class.Field;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.Pack200;
+import static com.sun.java.util.jar.pack.Constants.*;
 
 /**
  * Define the structure and ordering of "bands" in a packed file.
  * @author John Rose
  */
 abstract
-class BandStructure implements Constants {
+class BandStructure {
     static final int MAX_EFFORT = 9;
     static final int MIN_EFFORT = 1;
     static final int DEFAULT_EFFORT = 5;
@@ -235,18 +252,18 @@ class BandStructure implements Constants {
 
         null
     };
-    final private static HashMap basicCodingIndexes;
+    final private static Map<Coding, Integer> basicCodingIndexes;
     static {
         assert(basicCodings[_meta_default] == null);
         assert(basicCodings[_meta_canon_min] != null);
         assert(basicCodings[_meta_canon_max] != null);
-        HashMap map = new HashMap();
+        Map<Coding, Integer> map = new HashMap<>();
         for (int i = 0; i < basicCodings.length; i++) {
             Coding c = basicCodings[i];
             if (c == null)  continue;
             assert(i >= _meta_canon_min);
             assert(i <= _meta_canon_max);
-            map.put(c, new Integer(i));
+            map.put(c, i);
         }
         basicCodingIndexes = map;
     }
@@ -254,12 +271,12 @@ class BandStructure implements Constants {
         return i < basicCodings.length ? basicCodings[i] : null;
     }
     public static int indexOf(Coding c) {
-        Integer i = (Integer) basicCodingIndexes.get(c);
+        Integer i = basicCodingIndexes.get(c);
         if (i == null)  return 0;
         return i.intValue();
     }
     public static Coding[] getBasicCodings() {
-        return (Coding[]) basicCodings.clone();
+        return basicCodings.clone();
     }
 
     protected byte[] bandHeaderBytes;    // used for input only
@@ -671,7 +688,6 @@ class BandStructure implements Constants {
             }
             bandCoding.writeArrayTo(out, values, 0, length);
             if (out == outputCounter) {
-                long len1 = outputCounter.getCount();
                 assert(outputSize == outputCounter.getCount() - len0)
                     : (outputSize+" != "+outputCounter.getCount()+"-"+len0);
             }
@@ -1034,8 +1050,8 @@ class BandStructure implements Constants {
 
     // Bootstrap support for CPRefBands.  These are needed to record
     // intended CP indexes, before the CP has been created.
-    private ArrayList allKQBands = new ArrayList();
-    private ArrayList needPredefIndex = new ArrayList();
+    private final List<CPRefBand> allKQBands = new ArrayList<>();
+    private List<Object[]> needPredefIndex = new ArrayList<>();
 
 
     int encodeRef(Entry e, Index ix) {
@@ -1062,9 +1078,9 @@ class BandStructure implements Constants {
                 && this instanceof PackageWriter) {
                 // Twist the random state based on my first file.
                 // This sends each segment off in a different direction.
-                List classes = ((PackageWriter)this).pkg.classes;
+                List<Package.Class> classes = ((PackageWriter)this).pkg.classes;
                 if (!classes.isEmpty()) {
-                    Package.Class cls = (Package.Class) classes.get(0);
+                    Package.Class cls = classes.get(0);
                     codingChooser.addStressSeed(cls.getName().hashCode());
                 }
             }
@@ -1603,8 +1619,7 @@ class BandStructure implements Constants {
     /** Given CP indexes, distribute tag-specific indexes to bands. */
     protected void setBandIndexes() {
         // Handle prior calls to setBandIndex:
-        for (Iterator i = needPredefIndex.iterator(); i.hasNext(); ) {
-            Object[] need = (Object[]) i.next();
+        for (Object[] need : needPredefIndex) {
             CPRefBand b     = (CPRefBand) need[0];
             Byte      which = (Byte)      need[1];
             b.setIndex(getCPIndex(which.byteValue()));
@@ -1617,7 +1632,7 @@ class BandStructure implements Constants {
     }
 
     protected void setBandIndex(CPRefBand b, byte which) {
-        Object[] need = { b, new Byte(which) };
+        Object[] need = { b, Byte.valueOf(which) };
         if (which == CONSTANT_Literal) {
             // I.e., attribute layouts KQ (no null) or KQN (null ok).
             allKQBands.add(b);
@@ -1629,7 +1644,7 @@ class BandStructure implements Constants {
         }
     }
 
-    protected void setConstantValueIndex(Class.Field f) {
+    protected void setConstantValueIndex(Field f) {
         Index ix = null;
         if (f != null) {
             byte tag = f.getLiteralTag();
@@ -1639,8 +1654,7 @@ class BandStructure implements Constants {
             assert(ix != null);
         }
         // Typically, allKQBands is the singleton of field_ConstantValue_KQ.
-        for (Iterator i = allKQBands.iterator(); i.hasNext(); ) {
-            CPRefBand xxx_KQ = (CPRefBand) i.next();
+        for (CPRefBand xxx_KQ : allKQBands) {
             xxx_KQ.setIndex(ix);
         }
     }
@@ -1672,7 +1686,7 @@ class BandStructure implements Constants {
     protected int attrClassFileVersionMask;
 
     // Mapping from Attribute.Layout to Band[] (layout element bands).
-    protected HashMap attrBandTable = new HashMap();
+    protected Map<Attribute.Layout, Band[]> attrBandTable = new HashMap<>();
 
     // Well-known attributes:
     protected final Attribute.Layout attrCodeEmpty;
@@ -1681,15 +1695,18 @@ class BandStructure implements Constants {
     protected final Attribute.Layout attrConstantValue;
 
     // Mapping from Attribute.Layout to Integer (inverse of attrDefs)
-    HashMap attrIndexTable = new HashMap();
+    Map<Attribute.Layout, Integer> attrIndexTable = new HashMap<>();
 
     // Mapping from attribute index (<32 are flag bits) to attributes.
-    protected ArrayList[] attrDefs = new ArrayList[ATTR_CONTEXT_LIMIT];
+    protected List<List<Attribute.Layout>> attrDefs =
+            new FixedList<>(ATTR_CONTEXT_LIMIT);
     {
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
             assert(attrIndexLimit[i] == 0);
             attrIndexLimit[i] = 32;  // just for the sake of predefs.
-            attrDefs[i] = new ArrayList(Collections.nCopies(attrIndexLimit[i], null));
+            attrDefs.set(i, new ArrayList<Attribute.Layout>(Collections.nCopies(
+                    attrIndexLimit[i], (Attribute.Layout)null)));
+
         }
 
         // Add predefined attribute definitions:
@@ -1851,9 +1868,10 @@ class BandStructure implements Constants {
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
             assert(attrIndexLimit[i] == 0);  // decide on it now!
             attrIndexLimit[i] = (haveFlagsHi(i)? 63: 32);
-            assert(attrDefs[i].size() == 32);  // all predef indexes are <32
-            int addMore = attrIndexLimit[i] - attrDefs[i].size();
-            attrDefs[i].addAll(Collections.nCopies(addMore, null));
+            List<Attribute.Layout> defList = attrDefs.get(i);
+            assert(defList.size() == 32);  // all predef indexes are <32
+            int addMore = attrIndexLimit[i] - defList.size();
+            defList.addAll(Collections.nCopies(addMore, (Attribute.Layout) null));
         }
     }
 
@@ -1874,13 +1892,13 @@ class BandStructure implements Constants {
         return testBit(archiveOptions, mask);
     }
 
-    protected ArrayList getPredefinedAttrs(int ctype) {
+    protected List getPredefinedAttrs(int ctype) {
         assert(attrIndexLimit[ctype] != 0);
-        ArrayList res = new ArrayList(attrIndexLimit[ctype]);
+        List<Attribute.Layout> res = new ArrayList<>(attrIndexLimit[ctype]);
         // Remove nulls and non-predefs.
         for (int ai = 0; ai < attrIndexLimit[ctype]; ai++) {
             if (testBit(attrDefSeen[ctype], 1L<<ai))  continue;
-            Attribute.Layout def = (Attribute.Layout) attrDefs[ctype].get(ai);
+            Attribute.Layout def = attrDefs.get(ctype).get(ai);
             if (def == null)  continue;  // unused flag bit
             assert(isPredefinedAttr(ctype, ai));
             res.add(def);
@@ -1894,7 +1912,7 @@ class BandStructure implements Constants {
         if (ai >= attrIndexLimit[ctype])          return false;
         // If the bit is set, it was explicitly def'd.
         if (testBit(attrDefSeen[ctype], 1L<<ai))  return false;
-        return (attrDefs[ctype].get(ai) != null);
+        return (attrDefs.get(ctype).get(ai) != null);
     }
 
     protected void adjustSpecialAttrMasks() {
@@ -2034,8 +2052,8 @@ class BandStructure implements Constants {
             System.out.println("Removing predefined "+ATTR_CONTEXT_NAME[ctype]+
                                " attribute on bit "+index);
         }
-        List defList = attrDefs[ctype];
-        Attribute.Layout def = (Attribute.Layout) defList.get(index);
+        List<Attribute.Layout> defList = attrDefs.get(ctype);
+        Attribute.Layout def = defList.get(index);
         assert(def != null);
         defList.set(index, null);
         attrIndexTable.put(def, null);
@@ -2043,7 +2061,7 @@ class BandStructure implements Constants {
         assert(index < 64);
         attrDefSeen[ctype]  &= ~(1L<<index);
         attrFlagMask[ctype] &= ~(1L<<index);
-        Band[] ab = (Band[]) attrBandTable.get(def);
+        Band[] ab = attrBandTable.get(def);
         for (int j = 0; j < ab.length; j++) {
             ab[j].doneWithUnusedBand();
         }
@@ -2069,9 +2087,8 @@ class BandStructure implements Constants {
             long defSeen = attrDefSeen[ctype];
             // Note: attrDefSeen is always a subset of attrFlagMask.
             assert((defSeen & ~attrFlagMask[ctype]) == 0);
-            for (int i = 0; i < attrDefs[ctype].size(); i++) {
-                Attribute.Layout def = (Attribute.Layout)
-                    attrDefs[ctype].get(i);
+            for (int i = 0; i < attrDefs.get(ctype).size(); i++) {
+                Attribute.Layout def = attrDefs.get(ctype).get(i);
                 if (def == null)  continue;  // unused flag bit
                 if (def.bandCount == 0)  continue;  // empty attr
                 if (i < attrIndexLimit[ctype] && !testBit(defSeen, 1L<<i)) {
@@ -2086,7 +2103,7 @@ class BandStructure implements Constants {
                 Band[] newAB  = makeNewAttributeBands(pfx, def,
                                                       xxx_attr_bands);
                 assert(newAB.length == def.bandCount);
-                Band[] prevAB = (Band[]) attrBandTable.put(def, newAB);
+                Band[] prevAB = attrBandTable.put(def, newAB);
                 if (prevAB != null) {
                     // We won't be using these predefined bands.
                     for (int j = 0; j < prevAB.length; j++) {
@@ -2196,14 +2213,14 @@ class BandStructure implements Constants {
     protected int setAttributeLayoutIndex(Attribute.Layout def, int index) {
         int ctype = def.ctype;
         assert(ATTR_INDEX_OVERFLOW <= index && index < attrIndexLimit[ctype]);
-        List defList = attrDefs[ctype];
+        List<Attribute.Layout> defList = attrDefs.get(ctype);
         if (index == ATTR_INDEX_OVERFLOW) {
             // Overflow attribute.
             index = defList.size();
             defList.add(def);
             if (verbose > 0)
                 Utils.log.info("Adding new attribute at "+def +": "+index);
-            attrIndexTable.put(def, new Integer(index));
+            attrIndexTable.put(def, index);
             return index;
         }
 
@@ -2224,7 +2241,7 @@ class BandStructure implements Constants {
         // Remove index binding of any previous fixed attr.
         attrIndexTable.put(defList.get(index), null);
         defList.set(index, def);
-        attrIndexTable.put(def, new Integer(index));
+        attrIndexTable.put(def, index);
         return index;
     }
 
@@ -2345,7 +2362,7 @@ class BandStructure implements Constants {
     ////////////////////////////////////////////////////////////////////
 
     static int nextSeqForDebug;
-    static File dumpDir;
+    static File dumpDir = null;
     static OutputStream getDumpStream(Band b, String ext) throws IOException {
         return getDumpStream(b.name, b.seqForDebug, ext, b);
     }
@@ -2496,19 +2513,19 @@ class BandStructure implements Constants {
                            +", "+cstr+", "+ixS+"),");
     }
 
-    private HashMap prevForAssertMap;
+    private Map<Band, Band> prevForAssertMap;
 
     // DEBUG ONLY:  Record something about the band order.
     boolean notePrevForAssert(Band b, Band p) {
         if (prevForAssertMap == null)
-            prevForAssertMap = new HashMap();
+            prevForAssertMap = new HashMap<>();
         prevForAssertMap.put(b, p);
         return true;
     }
 
     // DEBUG ONLY:  Validate next input band.
     private boolean assertReadyToReadFrom(Band b, InputStream in) throws IOException {
-        Band p = (Band) prevForAssertMap.get(b);
+        Band p = prevForAssertMap.get(b);
         // Any previous band must be done reading before this one starts.
         if (p != null && phaseCmp(p.phase(), DISBURSE_PHASE) < 0) {
             Utils.log.warning("Previous band not done reading.");
@@ -2520,19 +2537,21 @@ class BandStructure implements Constants {
         String name = b.name;
         if (optDebugBands && !name.startsWith("(")) {
             // Verify synchronization between reader & writer:
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             int ch;
             while ((ch = in.read()) > 0)
                 buf.append((char)ch);
             String inName = buf.toString();
             if (!inName.equals(name)) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("Expected "+name+" but read: ");
                 inName += (char)ch;
-                while (inName.length() < 10)
-                    inName += (char)in.read();
-                for (int i = 0; i < inName.length(); i++)
+                while (inName.length() < 10) {
+                    inName += (char) in.read();
+                }
+                for (int i = 0; i < inName.length(); i++) {
                     sb.append(inName.charAt(i));
+                }
                 Utils.log.warning(sb.toString());
                 return false;
             }
@@ -2557,7 +2576,7 @@ class BandStructure implements Constants {
 
     // DEBUG ONLY:  Maybe write a debugging cookie to next output band.
     private boolean assertReadyToWriteTo(Band b, OutputStream out) throws IOException {
-        Band p = (Band) prevForAssertMap.get(b);
+        Band p = prevForAssertMap.get(b);
         // Any previous band must be done writing before this one starts.
         if (p != null && phaseCmp(p.phase(), DONE_PHASE) < 0) {
             Utils.log.warning("Previous band not done writing.");
@@ -2638,7 +2657,7 @@ class BandStructure implements Constants {
     protected static Object[] realloc(Object[] a) {
         return realloc(a, Math.max(10, a.length*2));
     }
-    static private int[] noInts = {};
+
     protected static int[] realloc(int[] a, int len) {
         if (len == 0)  return noInts;
         if (a == null)  return new int[len];
@@ -2649,7 +2668,7 @@ class BandStructure implements Constants {
     protected static int[] realloc(int[] a) {
         return realloc(a, Math.max(10, a.length*2));
     }
-    static private byte[] noBytes = {};
+
     protected static byte[] realloc(byte[] a, int len) {
         if (len == 0)  return noBytes;
         if (a == null)  return new byte[len];

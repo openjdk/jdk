@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class ExchangeImpl {
     Headers reqHdrs, rspHdrs;
     Request req;
     String method;
+    boolean writefinished;
     URI uri;
     HttpConnection connection;
     long reqContentLen;

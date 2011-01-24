@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_pcTasks.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc_implementation/parallelScavenge/pcTasks.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/objArrayKlass.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/management.hpp"
 
 //
 // ThreadRootsMarkingTask
@@ -59,8 +73,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  assert(cm->stacks_have_been_allocated(),
-         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
 
   switch (_root_type) {
@@ -119,7 +131,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   // Do the real work
   cm->follow_marking_stacks();
-  // cm->deallocate_stacks();
 }
 
 
@@ -135,8 +146,6 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  assert(cm->stacks_have_been_allocated(),
-         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   PSParallelCompact::FollowStackClosure follow_stack_closure(cm);
   _rp_task.work(_work_id, *PSParallelCompact::is_alive_closure(),
