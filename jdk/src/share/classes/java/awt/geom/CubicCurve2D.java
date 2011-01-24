@@ -1387,203 +1387,13 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
             return false;
         }
 
-        // Trivially accept if either endpoint is inside the rectangle
-        // (not on its border since it may end there and not go inside)
-        // Record where they lie with respect to the rectangle.
-        //     -1 => left, 0 => inside, 1 => right
-        double x1 = getX1();
-        double y1 = getY1();
-        int x1tag = getTag(x1, x, x+w);
-        int y1tag = getTag(y1, y, y+h);
-        if (x1tag == INSIDE && y1tag == INSIDE) {
-            return true;
-        }
-        double x2 = getX2();
-        double y2 = getY2();
-        int x2tag = getTag(x2, x, x+w);
-        int y2tag = getTag(y2, y, y+h);
-        if (x2tag == INSIDE && y2tag == INSIDE) {
-            return true;
-        }
-
-        double ctrlx1 = getCtrlX1();
-        double ctrly1 = getCtrlY1();
-        double ctrlx2 = getCtrlX2();
-        double ctrly2 = getCtrlY2();
-        int ctrlx1tag = getTag(ctrlx1, x, x+w);
-        int ctrly1tag = getTag(ctrly1, y, y+h);
-        int ctrlx2tag = getTag(ctrlx2, x, x+w);
-        int ctrly2tag = getTag(ctrly2, y, y+h);
-
-        // Trivially reject if all points are entirely to one side of
-        // the rectangle.
-        if (x1tag < INSIDE && x2tag < INSIDE &&
-            ctrlx1tag < INSIDE && ctrlx2tag < INSIDE)
-        {
-            return false;       // All points left
-        }
-        if (y1tag < INSIDE && y2tag < INSIDE &&
-            ctrly1tag < INSIDE && ctrly2tag < INSIDE)
-        {
-            return false;       // All points above
-        }
-        if (x1tag > INSIDE && x2tag > INSIDE &&
-            ctrlx1tag > INSIDE && ctrlx2tag > INSIDE)
-        {
-            return false;       // All points right
-        }
-        if (y1tag > INSIDE && y2tag > INSIDE &&
-            ctrly1tag > INSIDE && ctrly2tag > INSIDE)
-        {
-            return false;       // All points below
-        }
-
-        // Test for endpoints on the edge where either the segment
-        // or the curve is headed "inwards" from them
-        // Note: These tests are a superset of the fast endpoint tests
-        //       above and thus repeat those tests, but take more time
-        //       and cover more cases
-        if (inwards(x1tag, x2tag, ctrlx1tag) &&
-            inwards(y1tag, y2tag, ctrly1tag))
-        {
-            // First endpoint on border with either edge moving inside
-            return true;
-        }
-        if (inwards(x2tag, x1tag, ctrlx2tag) &&
-            inwards(y2tag, y1tag, ctrly2tag))
-        {
-            // Second endpoint on border with either edge moving inside
-            return true;
-        }
-
-        // Trivially accept if endpoints span directly across the rectangle
-        boolean xoverlap = (x1tag * x2tag <= 0);
-        boolean yoverlap = (y1tag * y2tag <= 0);
-        if (x1tag == INSIDE && x2tag == INSIDE && yoverlap) {
-            return true;
-        }
-        if (y1tag == INSIDE && y2tag == INSIDE && xoverlap) {
-            return true;
-        }
-
-        // We now know that both endpoints are outside the rectangle
-        // but the 4 points are not all on one side of the rectangle.
-        // Therefore the curve cannot be contained inside the rectangle,
-        // but the rectangle might be contained inside the curve, or
-        // the curve might intersect the boundary of the rectangle.
-
-        double[] eqn = new double[4];
-        double[] res = new double[4];
-        if (!yoverlap) {
-            // Both y coordinates for the closing segment are above or
-            // below the rectangle which means that we can only intersect
-            // if the curve crosses the top (or bottom) of the rectangle
-            // in more than one place and if those crossing locations
-            // span the horizontal range of the rectangle.
-            fillEqn(eqn, (y1tag < INSIDE ? y : y+h), y1, ctrly1, ctrly2, y2);
-            int num = solveCubic(eqn, res);
-            num = evalCubic(res, num, true, true, null,
-                            x1, ctrlx1, ctrlx2, x2);
-            // odd counts imply the crossing was out of [0,1] bounds
-            // otherwise there is no way for that part of the curve to
-            // "return" to meet its endpoint
-            return (num == 2 &&
-                    getTag(res[0], x, x+w) * getTag(res[1], x, x+w) <= 0);
-        }
-
-        // Y ranges overlap.  Now we examine the X ranges
-        if (!xoverlap) {
-            // Both x coordinates for the closing segment are left of
-            // or right of the rectangle which means that we can only
-            // intersect if the curve crosses the left (or right) edge
-            // of the rectangle in more than one place and if those
-            // crossing locations span the vertical range of the rectangle.
-            fillEqn(eqn, (x1tag < INSIDE ? x : x+w), x1, ctrlx1, ctrlx2, x2);
-            int num = solveCubic(eqn, res);
-            num = evalCubic(res, num, true, true, null,
-                            y1, ctrly1, ctrly2, y2);
-            // odd counts imply the crossing was out of [0,1] bounds
-            // otherwise there is no way for that part of the curve to
-            // "return" to meet its endpoint
-            return (num == 2 &&
-                    getTag(res[0], y, y+h) * getTag(res[1], y, y+h) <= 0);
-        }
-
-        // The X and Y ranges of the endpoints overlap the X and Y
-        // ranges of the rectangle, now find out how the endpoint
-        // line segment intersects the Y range of the rectangle
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        double k = y2 * x1 - x2 * y1;
-        int c1tag, c2tag;
-        if (y1tag == INSIDE) {
-            c1tag = x1tag;
-        } else {
-            c1tag = getTag((k + dx * (y1tag < INSIDE ? y : y+h)) / dy, x, x+w);
-        }
-        if (y2tag == INSIDE) {
-            c2tag = x2tag;
-        } else {
-            c2tag = getTag((k + dx * (y2tag < INSIDE ? y : y+h)) / dy, x, x+w);
-        }
-        // If the part of the line segment that intersects the Y range
-        // of the rectangle crosses it horizontally - trivially accept
-        if (c1tag * c2tag <= 0) {
-            return true;
-        }
-
-        // Now we know that both the X and Y ranges intersect and that
-        // the endpoint line segment does not directly cross the rectangle.
-        //
-        // We can almost treat this case like one of the cases above
-        // where both endpoints are to one side, except that we may
-        // get one or three intersections of the curve with the vertical
-        // side of the rectangle.  This is because the endpoint segment
-        // accounts for the other intersection in an even pairing.  Thus,
-        // with the endpoint crossing we end up with 2 or 4 total crossings.
-        //
-        // (Remember there is overlap in both the X and Y ranges which
-        //  means that the segment itself must cross at least one vertical
-        //  edge of the rectangle - in particular, the "near vertical side"
-        //  - leaving an odd number of intersections for the curve.)
-        //
-        // Now we calculate the y tags of all the intersections on the
-        // "near vertical side" of the rectangle.  We will have one with
-        // the endpoint segment, and one or three with the curve.  If
-        // any pair of those vertical intersections overlap the Y range
-        // of the rectangle, we have an intersection.  Otherwise, we don't.
-
-        // c1tag = vertical intersection class of the endpoint segment
-        //
-        // Choose the y tag of the endpoint that was not on the same
-        // side of the rectangle as the subsegment calculated above.
-        // Note that we can "steal" the existing Y tag of that endpoint
-        // since it will be provably the same as the vertical intersection.
-        c1tag = ((c1tag * x1tag <= 0) ? y1tag : y2tag);
-
-        // Now we have to calculate an array of solutions of the curve
-        // with the "near vertical side" of the rectangle.  Then we
-        // need to sort the tags and do a pairwise range test to see
-        // if either of the pairs of crossings spans the Y range of
-        // the rectangle.
-        //
-        // Note that the c2tag can still tell us which vertical edge
-        // to test against.
-        fillEqn(eqn, (c2tag < INSIDE ? x : x+w), x1, ctrlx1, ctrlx2, x2);
-        int num = solveCubic(eqn, res);
-        num = evalCubic(res, num, true, true, null, y1, ctrly1, ctrly2, y2);
-
-        // Now put all of the tags into a bucket and sort them.  There
-        // is an intersection iff one of the pairs of tags "spans" the
-        // Y range of the rectangle.
-        int tags[] = new int[num+1];
-        for (int i = 0; i < num; i++) {
-            tags[i] = getTag(res[i], y, y+h);
-        }
-        tags[num] = c1tag;
-        Arrays.sort(tags);
-        return ((num >= 1 && tags[0] * tags[1] <= 0) ||
-                (num >= 3 && tags[2] * tags[3] <= 0));
+        int numCrossings = rectCrossings(x, y, w, h);
+        // the intended return value is
+        // numCrossings != 0 || numCrossings == Curve.RECT_INTERSECTS
+        // but if (numCrossings != 0) numCrossings == INTERSECTS won't matter
+        // and if !(numCrossings != 0) then numCrossings == 0, so
+        // numCrossings != RECT_INTERSECT
+        return numCrossings != 0;
     }
 
     /**
@@ -1602,20 +1412,32 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
         if (w <= 0 || h <= 0) {
             return false;
         }
-        // Assertion: Cubic curves closed by connecting their
-        // endpoints form either one or two convex halves with
-        // the closing line segment as an edge of both sides.
-        if (!(contains(x, y) &&
-              contains(x + w, y) &&
-              contains(x + w, y + h) &&
-              contains(x, y + h))) {
-            return false;
+
+        int numCrossings = rectCrossings(x, y, w, h);
+        return !(numCrossings == 0 || numCrossings == Curve.RECT_INTERSECTS);
+    }
+
+    private int rectCrossings(double x, double y, double w, double h) {
+        int crossings = 0;
+        if (!(getX1() == getX2() && getY1() == getY2())) {
+            crossings = Curve.rectCrossingsForLine(crossings,
+                                                   x, y,
+                                                   x+w, y+h,
+                                                   getX1(), getY1(),
+                                                   getX2(), getY2());
+            if (crossings == Curve.RECT_INTERSECTS) {
+                return crossings;
+            }
         }
-        // Either the rectangle is entirely inside one of the convex
-        // halves or it crosses from one to the other, in which case
-        // it must intersect the closing line segment.
-        Rectangle2D rect = new Rectangle2D.Double(x, y, w, h);
-        return !rect.intersectsLine(getX1(), getY1(), getX2(), getY2());
+        // we call this with the curve's direction reversed, because we wanted
+        // to call rectCrossingsForLine first, because it's cheaper.
+        return Curve.rectCrossingsForCubic(crossings,
+                                           x, y,
+                                           x+w, y+h,
+                                           getX2(), getY2(),
+                                           getCtrlX2(), getCtrlY2(),
+                                           getCtrlX1(), getCtrlY1(),
+                                           getX1(), getY1(), 0);
     }
 
     /**

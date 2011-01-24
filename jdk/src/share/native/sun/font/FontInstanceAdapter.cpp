@@ -224,6 +224,7 @@ void FontInstanceAdapter::getWideGlyphAdvance(le_uint32 glyph, LEPoint &advance)
     if (pt != NULL) {
         advance.fX = env->GetFloatField(pt, sunFontIDs.xFID);
         advance.fY = env->GetFloatField(pt, sunFontIDs.yFID);
+        env->DeleteLocalRef(pt);
     }
 }
 
