@@ -1042,10 +1042,13 @@ public class Check {
                 if (incompatibleArg != null) {
                     for (JCTree arg : tree.arguments) {
                         if (arg.type == incompatibleArg) {
-                            log.error(arg, "not.within.bounds", incompatibleArg);
+                            log.error(arg, "not.within.bounds", incompatibleArg, forms.head);
                         }
-                    }
-                }
+                        forms = forms.tail;
+                     }
+                 }
+
+                forms = tree.type.tsym.type.getTypeArguments();
 
                 boolean is_java_lang_Class = tree.type.tsym.flatName() == names.java_lang_Class;
 
