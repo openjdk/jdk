@@ -249,6 +249,13 @@ public class TreePosTest {
             error("File " + file + " ignored");
     }
 
+    // See CR:  6982992 Tests CheckAttributedTree.java, JavacTreeScannerTest.java, and SourceTreeeScannerTest.java timeout
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    Reporter r = new Reporter(pw);
+    JavacTool tool = JavacTool.create();
+    StandardJavaFileManager fm = tool.getStandardFileManager(r, null, null);
+
     /**
      * Read a file.
      * @param file the file to be read
@@ -257,12 +264,8 @@ public class TreePosTest {
      * @throws TreePosTest.ParseException if any errors occur while parsing the file
      */
     JCCompilationUnit read(File file) throws IOException, ParseException {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Reporter r = new Reporter(pw);
         JavacTool tool = JavacTool.create();
-        Charset cs = (encoding == null ? null : Charset.forName(encoding));
-        StandardJavaFileManager fm = tool.getStandardFileManager(r, null, null);
+        r.errors = 0;
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(file);
         JavacTask task = tool.getTask(pw, fm, r, Collections.<String>emptyList(), null, files);
         Iterable<? extends CompilationUnitTree> trees = task.parse();

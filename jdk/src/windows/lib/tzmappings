@@ -188,5 +188,6 @@ UTC-02:920,920::GMT-0200:
 UTC-11:921,921::GMT-1100:
 Ulaanbaatar Standard Time:922,922::Asia/Ulaanbaatar:
 Venezuela Standard Time:923,923::America/Caracas:
-Western Brazilian Standard Time:924,924:BR:America/Rio_Branco:
-Armenian Standard Time:925,925:AM:Asia/Yerevan:
+Magadan Standard Time:924,924::Asia/Magadan:
+Western Brazilian Standard Time:925,925:BR:America/Rio_Branco:
+Armenian Standard Time:926,926:AM:Asia/Yerevan:

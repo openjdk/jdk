@@ -1393,8 +1393,11 @@ class DirectAudioDevice extends AbstractMixer {
         public void run() {
             if (Printer.trace) Printer.trace(">>> DirectClip: run() threadID="+Thread.currentThread().getId());
             while (thread != null) {
-                if (!doIO) {
-                    synchronized(lock) {
+                // doIO is volatile, but we could check it, then get
+                // pre-empted while another thread changes doIO and notifies,
+                // before we wait (so we sleep in wait forever).
+                synchronized(lock) {
+                    if (!doIO) {
                         try {
                             lock.wait();
                         } catch(InterruptedException ie) {}

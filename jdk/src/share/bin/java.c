@@ -158,8 +158,9 @@ static jboolean IsWildCardEnabled();
  * Running Java code in primordial thread caused many problems. We will
  * create a new thread to invoke JVM. See 6316197 for more information.
  */
-static jlong threadStackSize = 0;  /* stack size of the new thread */
-static jlong heapSize        = 0;  /* heap size */
+static jlong threadStackSize    = 0;  /* stack size of the new thread */
+static jlong maxHeapSize        = 0;  /* max heap size */
+static jlong initialHeapSize    = 0;  /* inital heap size */
 
 int JNICALL JavaMain(void * args); /* entry point                  */
 
@@ -381,7 +382,7 @@ JavaMain(void * _args)
 
     if (showSettings != NULL) {
         ShowSettings(env, showSettings);
-        CHECK_EXCEPTION_LEAVE(0);
+        CHECK_EXCEPTION_LEAVE(1);
     }
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || (jarfile == 0 && classname == 0)) {
@@ -689,7 +690,14 @@ AddOption(char *str, void *info)
     if (JLI_StrCCmp(str, "-Xmx") == 0) {
         jlong tmp;
         if (parse_size(str + 4, &tmp)) {
-            heapSize = tmp;
+            maxHeapSize = tmp;
+        }
+    }
+
+    if (JLI_StrCCmp(str, "-Xms") == 0) {
+        jlong tmp;
+        if (parse_size(str + 4, &tmp)) {
+            initialHeapSize = tmp;
         }
     }
 }
@@ -1506,12 +1514,13 @@ ShowSettings(JNIEnv *env, char *optString)
     jstring joptString;
     NULL_CHECK(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
-            "showSettings", "(ZLjava/lang/String;JJZ)V"));
+            "showSettings", "(ZLjava/lang/String;JJJZ)V"));
     joptString = (*env)->NewStringUTF(env, optString);
     (*env)->CallStaticVoidMethod(env, cls, showSettingsID,
                                  JNI_TRUE,
                                  joptString,
-                                 (jlong)heapSize,
+                                 (jlong)initialHeapSize,
+                                 (jlong)maxHeapSize,
                                  (jlong)threadStackSize,
                                  ServerClassMachine());
 }
