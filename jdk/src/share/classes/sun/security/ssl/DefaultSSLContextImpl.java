@@ -98,7 +98,7 @@ public final class DefaultSSLContextImpl extends SSLContextImpl {
             return defaultKeyManagers;
         }
 
-        final Map<String,String> props = new HashMap<String,String>();
+        final Map<String,String> props = new HashMap<>();
         AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Object>() {
             public Object run() throws Exception {

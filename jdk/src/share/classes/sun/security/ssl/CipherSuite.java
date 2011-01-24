@@ -393,7 +393,7 @@ final class CipherSuite implements Comparable {
 
         // Map BulkCipher -> Boolean(available)
         private final static Map<BulkCipher,Boolean> availableCache =
-                                            new HashMap<BulkCipher,Boolean>(8);
+                                            new HashMap<>(8);
 
         // descriptive name including key size, e.g. AES/128
         final String description;

@@ -28,6 +28,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.net.*;
 import java.util.*;
+import java.util.zip.*;
 
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
@@ -42,7 +43,8 @@ public class ZipFSTester {
         FileSystem fs = null;
         try {
             fs = newZipFileSystem(Paths.get(args[0]), new HashMap<String, Object>());
-            test(fs);
+            test0(fs);
+            test1(fs);
             test2(fs);   // more tests
         } finally {
             if (fs != null)
@@ -50,11 +52,31 @@ public class ZipFSTester {
         }
     }
 
-    static void test(FileSystem fs)
+    static void test0(FileSystem fs)
+        throws Exception
+    {
+        List<String> list = new LinkedList<>();
+        try (ZipFile zf = new ZipFile(fs.toString())) {
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            while (zes.hasMoreElements()) {
+                list.add(zes.nextElement().getName());
+            }
+            for (String pname : list) {
+                Path path = fs.getPath(pname);
+                if (!path.exists())
+                    throw new RuntimeException("path existence check failed!");
+                while ((path = path.getParent()) != null) {
+                    if (!path.exists())
+                        throw new RuntimeException("parent existence check failed!");
+                }
+            }
+        }
+    }
+
+    static void test1(FileSystem fs)
         throws Exception
     {
         Random rdm = new Random();
-
         // clone a fs and test on it
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();

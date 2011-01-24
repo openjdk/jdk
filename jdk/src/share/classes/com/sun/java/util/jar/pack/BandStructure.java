@@ -1704,7 +1704,7 @@ class BandStructure {
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
             assert(attrIndexLimit[i] == 0);
             attrIndexLimit[i] = 32;  // just for the sake of predefs.
-            attrDefs.set(i, new ArrayList<>(Collections.nCopies(
+            attrDefs.set(i, new ArrayList<Attribute.Layout>(Collections.nCopies(
                     attrIndexLimit[i], (Attribute.Layout)null)));
 
         }
