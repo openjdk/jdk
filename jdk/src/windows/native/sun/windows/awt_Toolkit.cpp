@@ -2491,7 +2491,7 @@ Java_sun_awt_windows_WToolkit_loadSystemColors(JNIEnv *env, jobject self,
     jint* colorsPtr = NULL;
     try {
         colorsPtr = (jint *)env->GetPrimitiveArrayCritical(colors, 0);
-        for (int i = 0; i < sizeof indexMap && i < colorLen; i++) {
+        for (int i = 0; i < (sizeof indexMap)/(sizeof *indexMap) && i < colorLen; i++) {
             colorsPtr[i] = DesktopColor2RGB(indexMap[i]);
         }
     } catch (...) {
