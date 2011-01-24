@@ -407,7 +407,9 @@ public class Infer {
 
         // for varargs arguments as well
         if (useVarargs) {
-            Type elemType = types.elemtype(varargsFormal);
+            //note: if applicability check is triggered by most specific test,
+            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
+            Type elemType = types.elemtypeOrType(varargsFormal);
             Type elemUndet = types.subst(elemType, tvars, undetvars);
             while (actuals.nonEmpty()) {
                 Type actual = actuals.head.baseType();
