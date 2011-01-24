@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,16 @@
  * questions.
  */
 
-// key: compiler.warn.type.parameter.on.polymorphic.signature
-// key: compiler.err.unreported.exception.need.to.catch.or.throw
+/*
+ * @test
+ * @bug     7013865
+ * @summary varargs: javac crashes during overload resolution with generic varargs
+ * @compile T7013865.java
+ */
 
-import java.dyn.MethodHandle;
+class T7013865 {
+    public <X extends Number> void m(X... args) { }
+    public void m(Object... args) { }
 
-class TypeParameterOnPolymorphicSignature {
-    void test(MethodHandle mh) {
-        mh.<void>invokeExact("",123);
-    }
+    { m(null, null); }
 }
