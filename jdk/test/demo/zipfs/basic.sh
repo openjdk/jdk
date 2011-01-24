@@ -21,7 +21,7 @@
 # questions.
 #
 # @test
-# @bug 6990846
+# @bug 6990846 7009092 7009085
 # @summary Test ZipFileSystem demo
 # @build Basic PathOps ZipFSTester
 # @run shell basic.sh
