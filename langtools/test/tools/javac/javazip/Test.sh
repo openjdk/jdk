@@ -66,8 +66,8 @@ check() {
     # clean old classes
     rm -f ${TC}${FS}*.class 
 
-    echo "$*"
-    if $* 2>&1 ; then
+    echo "$@"
+    if "$@" 2>&1 ; then
       actual=ok
     else
       actual=err
