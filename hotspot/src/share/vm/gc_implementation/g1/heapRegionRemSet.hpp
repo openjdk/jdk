@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ class HeapRegionRemSetIterator;
 class PosParPRT;
 class SparsePRT;
 
+// Essentially a wrapper around SparsePRTCleanupTask. See
+// sparsePRT.hpp for more details.
+class HRRSCleanupTask : public SparsePRTCleanupTask {
+};
 
 // The "_coarse_map" is a bitmap with one bit for each region, where set
 // bits indicate that the corresponding region may contain some pointer
@@ -156,6 +160,8 @@ public:
   // "from_hr" is being cleared; remove any entries from it.
   void clear_incoming_entry(HeapRegion* from_hr);
 
+  void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
+
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
   // (Uses it to initialize from_card_cache).
   static void init_from_card_cache(size_t max_regions);
@@ -165,9 +171,7 @@ public:
   static void shrink_from_card_cache(size_t new_n_regs);
 
   static void print_from_card_cache();
-
 };
-
 
 class HeapRegionRemSet : public CHeapObj {
   friend class VMStructs;
@@ -342,11 +346,16 @@ public:
   static void print_recorded();
   static void record_event(Event evnt);
 
+  // These are wrappers for the similarly-named methods on
+  // SparsePRT. Look at sparsePRT.hpp for more details.
+  static void reset_for_cleanup_tasks();
+  void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
+  static void finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task);
+
   // Run unit tests.
 #ifndef PRODUCT
   static void test();
 #endif
-
 };
 
 class HeapRegionRemSetIterator : public CHeapObj {
