@@ -3827,6 +3827,7 @@ public class Collections {
      * @see Collection#addAll(Collection)
      * @since 1.5
      */
+    @SafeVarargs
     public static <T> boolean addAll(Collection<? super T> c, T... elements) {
         boolean result = false;
         for (T element : elements)
