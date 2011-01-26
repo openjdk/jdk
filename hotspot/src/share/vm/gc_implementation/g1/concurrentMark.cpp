@@ -1512,21 +1512,19 @@ class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   size_t _max_live_bytes;
   size_t _regions_claimed;
   size_t _freed_bytes;
-  FreeRegionList _local_cleanup_list;
-  HumongousRegionSet _humongous_proxy_set;
+  FreeRegionList* _local_cleanup_list;
+  HumongousRegionSet* _humongous_proxy_set;
+  HRRSCleanupTask* _hrrs_cleanup_task;
   double _claimed_region_time;
   double _max_region_time;
 
 public:
   G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
-                             int worker_num);
+                             int worker_num,
+                             FreeRegionList* local_cleanup_list,
+                             HumongousRegionSet* humongous_proxy_set,
+                             HRRSCleanupTask* hrrs_cleanup_task);
   size_t freed_bytes() { return _freed_bytes; }
-  FreeRegionList* local_cleanup_list() {
-    return &_local_cleanup_list;
-  }
-  HumongousRegionSet* humongous_proxy_set() {
-    return &_humongous_proxy_set;
-  }
 
   bool doHeapRegion(HeapRegion *r);
 
@@ -1553,7 +1551,12 @@ public:
 
   void work(int i) {
     double start = os::elapsedTime();
-    G1NoteEndOfConcMarkClosure g1_note_end(_g1h, i);
+    FreeRegionList local_cleanup_list("Local Cleanup List");
+    HumongousRegionSet humongous_proxy_set("Local Cleanup Humongous Proxy Set");
+    HRRSCleanupTask hrrs_cleanup_task;
+    G1NoteEndOfConcMarkClosure g1_note_end(_g1h, i, &local_cleanup_list,
+                                           &humongous_proxy_set,
+                                           &hrrs_cleanup_task);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
                                             HeapRegion::NoteEndClaimValue);
@@ -1565,15 +1568,17 @@ public:
     // Now update the lists
     _g1h->update_sets_after_freeing_regions(g1_note_end.freed_bytes(),
                                             NULL /* free_list */,
-                                            g1_note_end.humongous_proxy_set(),
+                                            &humongous_proxy_set,
                                             true /* par */);
     {
       MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
       _max_live_bytes += g1_note_end.max_live_bytes();
       _freed_bytes += g1_note_end.freed_bytes();
 
-      _cleanup_list->add_as_tail(g1_note_end.local_cleanup_list());
-      assert(g1_note_end.local_cleanup_list()->is_empty(), "post-condition");
+      _cleanup_list->add_as_tail(&local_cleanup_list);
+      assert(local_cleanup_list.is_empty(), "post-condition");
+
+      HeapRegionRemSet::finish_cleanup_task(&hrrs_cleanup_task);
     }
     double end = os::elapsedTime();
     if (G1PrintParCleanupStats) {
@@ -1614,13 +1619,17 @@ public:
 
 G1NoteEndOfConcMarkClosure::
 G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
-                           int worker_num)
+                           int worker_num,
+                           FreeRegionList* local_cleanup_list,
+                           HumongousRegionSet* humongous_proxy_set,
+                           HRRSCleanupTask* hrrs_cleanup_task)
   : _g1(g1), _worker_num(worker_num),
     _max_live_bytes(0), _regions_claimed(0),
     _freed_bytes(0),
     _claimed_region_time(0.0), _max_region_time(0.0),
-    _local_cleanup_list("Local Cleanup List"),
-    _humongous_proxy_set("Local Cleanup Humongous Proxy Set") { }
+    _local_cleanup_list(local_cleanup_list),
+    _humongous_proxy_set(humongous_proxy_set),
+    _hrrs_cleanup_task(hrrs_cleanup_task) { }
 
 bool G1NoteEndOfConcMarkClosure::doHeapRegion(HeapRegion *hr) {
   // We use a claim value of zero here because all regions
@@ -1631,11 +1640,12 @@ bool G1NoteEndOfConcMarkClosure::doHeapRegion(HeapRegion *hr) {
     _regions_claimed++;
     hr->note_end_of_marking();
     _max_live_bytes += hr->max_live_bytes();
-    _g1->free_region_if_totally_empty(hr,
-                                      &_freed_bytes,
-                                      &_local_cleanup_list,
-                                      &_humongous_proxy_set,
-                                      true /* par */);
+    _g1->free_region_if_empty(hr,
+                              &_freed_bytes,
+                              _local_cleanup_list,
+                              _humongous_proxy_set,
+                              _hrrs_cleanup_task,
+                              true /* par */);
     double region_time = (os::elapsedTime() - start);
     _claimed_region_time += region_time;
     if (region_time > _max_region_time) _max_region_time = region_time;
@@ -1670,6 +1680,8 @@ void ConcurrentMark::cleanup() {
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
+
+  HeapRegionRemSet::reset_for_cleanup_tasks();
 
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
