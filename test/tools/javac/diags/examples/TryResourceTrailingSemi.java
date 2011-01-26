@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,15 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6911256 6964740 6965277
- * @author Maurizio Cimadamore
- * @summary Resource of an intersection type crashes Flow
- * @compile TwrIntersection.java
- */
+// key: compiler.err.try.resource.trailing.semi
 
-interface MyCloseable extends AutoCloseable {
-   void close() throws java.io.IOException;
-}
-
-class ResourceTypeVar {
-
-    public void test() {
-        try(getX()) {
-            //do something
-        } catch (java.io.IOException e) { // Not reachable
-            throw new AssertionError("Shouldn't reach here", e);
+class TryResoureTrailingSemi implements AutoCloseable {
+    public static void main(String... args) {
+        try(TryResoureTrailingSemi r = new TryResoureTrailingSemi();) {
+            System.out.println(r.toString());
         }
     }
 
-    <X extends Number & MyCloseable> X getX() { return null; }
+    @Override
+    public void close() {return;}
 }

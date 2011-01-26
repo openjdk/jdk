@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6911256 6964740
+ * @bug 6911256 6964740 7013420
  * @author Joseph D. Darcy
  * @summary Test that TWR and multi-catch play well together
  * @compile TwrMultiCatch.java
@@ -48,9 +48,9 @@ public class TwrMultiCatch implements AutoCloseable {
 
     private static void test(TwrMultiCatch twrMultiCatch,
                      Class<? extends Exception> expected) {
-        try(twrMultiCatch) {
-            System.out.println(twrMultiCatch.toString());
-        } catch (final CustomCloseException1 |
+        try(TwrMultiCatch tmc = twrMultiCatch) {
+            System.out.println(tmc.toString());
+        } catch (CustomCloseException1 |
                  CustomCloseException2 exception) {
             if (!exception.getClass().equals(expected) ) {
                 throw new RuntimeException("Unexpected catch!");
@@ -68,7 +68,7 @@ public class TwrMultiCatch implements AutoCloseable {
 
         try {
             throw t;
-        } catch (final CustomCloseException1 |
+        } catch (CustomCloseException1 |
                  CustomCloseException2 exception) {
             throw exception;
         } catch (Throwable throwable) {

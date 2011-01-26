@@ -1,2 +1,2 @@
-BadTwrSyntax.java:14:43: compiler.err.illegal.start.of.expr
+BadTwrSyntax.java:14:42: compiler.err.try.resource.trailing.semi
 1 error
