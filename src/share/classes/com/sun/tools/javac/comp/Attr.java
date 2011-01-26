@@ -581,6 +581,41 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    /**
+     * Attribute a "lazy constant value".
+     *  @param env         The env for the const value
+     *  @param initializer The initializer for the const value
+     *  @param type        The expected type, or null
+     *  @see VarSymbol#setlazyConstValue
+     */
+    public Object attribLazyConstantValue(Env<AttrContext> env,
+                                      JCTree.JCExpression initializer,
+                                      Type type) {
+
+        // in case no lint value has been set up for this env, scan up
+        // env stack looking for smallest enclosing env for which it is set.
+        Env<AttrContext> lintEnv = env;
+        while (lintEnv.info.lint == null)
+            lintEnv = lintEnv.next;
+
+        // Having found the enclosing lint value, we can initialize the lint value for this class
+        env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
+
+        Lint prevLint = chk.setLint(env.info.lint);
+        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+
+        try {
+            Type itype = attribExpr(initializer, env, type);
+            if (itype.constValue() != null)
+                return coerce(itype, type).constValue();
+            else
+                return null;
+        } finally {
+            env.info.lint = prevLint;
+            log.useSource(prevSource);
+        }
+    }
+
     /** Attribute type reference in an `extends' or `implements' clause.
      *  Supertypes of anonymous inner classes are usually already attributed.
      *
