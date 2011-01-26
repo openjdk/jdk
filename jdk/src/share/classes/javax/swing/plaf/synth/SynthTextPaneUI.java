@@ -92,7 +92,7 @@ public class SynthTextPaneUI extends SynthEditorPaneUI {
      * </ol>
      *
      * @param c the editor component
-     * @see BasicTextUI#installUI
+     * @see javax.swing.plaf.basic.BasicTextUI#installUI
      * @see ComponentUI#installUI
      */
     @Override
