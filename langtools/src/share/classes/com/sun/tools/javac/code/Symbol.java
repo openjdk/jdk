@@ -961,22 +961,12 @@ public abstract class Symbol implements Element {
         }
 
         public void setLazyConstValue(final Env<AttrContext> env,
-                                      final Log log,
                                       final Attr attr,
                                       final JCTree.JCExpression initializer)
         {
             setData(new Callable<Object>() {
                 public Object call() {
-                    JavaFileObject source = log.useSource(env.toplevel.sourcefile);
-                    try {
-                        Type itype = attr.attribExpr(initializer, env, type);
-                        if (itype.constValue() != null)
-                            return attr.coerce(itype, type).constValue();
-                        else
-                            return null;
-                    } finally {
-                        log.useSource(source);
-                    }
+                    return attr.attribLazyConstantValue(env, initializer, type);
                 }
             });
         }
@@ -1010,6 +1000,7 @@ public abstract class Symbol implements Element {
                 try {
                     data = eval.call();
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     throw new AssertionError(ex);
                 }
             }
