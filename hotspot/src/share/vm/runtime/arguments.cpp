@@ -1941,10 +1941,16 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+#ifndef SERIALGC
   if (UseG1GC) {
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
+    status = status && verify_min_value(G1RefProcDrainInterval, 1,
+                                        "G1RefProcDrainInterval");
+    status = status && verify_min_value((intx)G1ConcMarkStepDurationMillis, 1,
+                                        "G1ConcMarkStepDurationMillis");
   }
+#endif
 
   status = status && verify_interval(RefDiscoveryPolicy,
                                      ReferenceProcessor::DiscoveryPolicyMin,
