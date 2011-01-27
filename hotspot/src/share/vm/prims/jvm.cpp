@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2651,12 +2651,18 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // we operate.
     MutexLocker mu(Threads_lock);
 
-    // Check to see if we're running a thread that's already exited or was
-    // stopped (is_stillborn) or is still active (thread is not NULL).
-    if (java_lang_Thread::is_stillborn(JNIHandles::resolve_non_null(jthread)) ||
-        java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
-        throw_illegal_thread_state = true;
+    // Since JDK 5 the java.lang.Thread threadStatus is used to prevent
+    // re-starting an already started thread, so we should usually find
+    // that the JavaThread is null. However for a JNI attached thread
+    // there is a small window between the Thread object being created
+    // (with its JavaThread set) and the update to its threadStatus, so we
+    // have to check for this
+    if (java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
+      throw_illegal_thread_state = true;
     } else {
+      // We could also check the stillborn flag to see if this thread was already stopped, but
+      // for historical reasons we let the thread detect that itself when it starts running
+
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
@@ -2704,7 +2710,7 @@ JVM_END
 // JVM_Stop is implemented using a VM_Operation, so threads are forced to safepoints
 // before the quasi-asynchronous exception is delivered.  This is a little obtrusive,
 // but is thought to be reliable and simple. In the case, where the receiver is the
-// save thread as the sender, no safepoint is needed.
+// same thread as the sender, no safepoint is needed.
 JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   JVMWrapper("JVM_StopThread");
 
@@ -2715,25 +2721,26 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   oop java_thread = JNIHandles::resolve_non_null(jthread);
   JavaThread* receiver = java_lang_Thread::thread(java_thread);
   Events::log("JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]", receiver, (address)java_thread, throwable);
-  // First check if thread already exited
+  // First check if thread is alive
   if (receiver != NULL) {
     // Check if exception is getting thrown at self (use oop equality, since the
     // target object might exit)
     if (java_thread == thread->threadObj()) {
-      // This is a change from JDK 1.1, but JDK 1.2 will also do it:
-      // NOTE (from JDK 1.2): this is done solely to prevent stopped
-      // threads from being restarted.
-      // Fix for 4314342, 4145910, perhaps others: it now doesn't have
-      // any effect on the "liveness" of a thread; see
-      // JVM_IsThreadAlive, below.
-      if (java_throwable->is_a(SystemDictionary::ThreadDeath_klass())) {
-        java_lang_Thread::set_stillborn(java_thread);
-      }
       THROW_OOP(java_throwable);
     } else {
       // Enques a VM_Operation to stop all threads and then deliver the exception...
       Thread::send_async_exception(java_thread, JNIHandles::resolve(throwable));
     }
+  }
+  else {
+    // Either:
+    // - target thread has not been started before being stopped, or
+    // - target thread already terminated
+    // We could read the threadStatus to determine which case it is
+    // but that is overkill as it doesn't matter. We must set the
+    // stillborn flag for the first case, and if the thread has already
+    // exited setting this flag has no affect
+    java_lang_Thread::set_stillborn(java_thread);
   }
 JVM_END
 

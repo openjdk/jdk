@@ -1510,11 +1510,11 @@ void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
   assert(this->threadObj() != NULL, "just checking");
 
-  // Execute thread entry point. If this thread is being asked to restart,
-  // or has been stopped before starting, do not reexecute entry point.
+  // Execute thread entry point unless this thread has a pending exception
+  // or has been stopped before starting.
   // Note: Due to JVM_StopThread we can have pending exceptions already!
-  if (!this->has_pending_exception() && !java_lang_Thread::is_stillborn(this->threadObj())) {
-    // enter the thread's entry point only if we have no pending exceptions
+  if (!this->has_pending_exception() &&
+      !java_lang_Thread::is_stillborn(this->threadObj())) {
     HandleMark hm(this);
     this->entry_point()(this, this);
   }
@@ -1533,13 +1533,10 @@ static void ensure_join(JavaThread* thread) {
   ObjectLocker lock(threadObj, thread);
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
-  // It is of profound importance that we set the stillborn bit and reset the thread object,
-  // before we do the notify. Since, changing these two variable will make JVM_IsAlive return
-  // false. So in case another thread is doing a join on this thread , it will detect that the thread
-  // is dead when it gets notified.
-  java_lang_Thread::set_stillborn(threadObj());
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), java_lang_Thread::TERMINATED);
+  // Clear the native thread instance - this makes isAlive return false and allows the join()
+  // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);
   lock.notify_all(thread);
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
@@ -1995,11 +1992,6 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   // Do not throw asynchronous exceptions against the compiler thread
   // (the compiler thread should not be a Java thread -- fix in 1.4.2)
   if (is_Compiler_thread()) return;
-
-  // This is a change from JDK 1.1, but JDK 1.2 will also do it:
-  if (java_throwable->is_a(SystemDictionary::ThreadDeath_klass())) {
-    java_lang_Thread::set_stillborn(threadObj());
-  }
 
   {
     // Actually throw the Throwable against the target Thread - however
