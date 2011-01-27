@@ -343,9 +343,10 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // returned.
 
   restore_live_registers(sasm);
-  __ restore();
-  __ br(Assembler::always, false, Assembler::pt, deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type);
-  __ delayed()->nop();
+
+  AddressLiteral dest(deopt_blob->unpack_with_reexecution());
+  __ jump_to(dest, O0);
+  __ delayed()->restore();
 
   __ bind(no_deopt);
   restore_live_registers(sasm);
