@@ -84,8 +84,7 @@ public class CompileTest {
         System.err.println("Test " + count + " " + Arrays.asList(opts) + " " + className);
         Path testSrcDir = Paths.get(System.getProperty("test.src"));
         Path testClassesDir = Paths.get(System.getProperty("test.classes"));
-        Path classes = Paths.get("classes." + count);
-        classes.createDirectory();
+        Path classes = Files.createDirectory(Paths.get("classes." + count));
 
         Context ctx = new Context();
         PathFileManager fm = new JavacPathFileManager(ctx, true, null);
