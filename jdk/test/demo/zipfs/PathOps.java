@@ -193,6 +193,17 @@ public class PathOps {
         return this;
     }
 
+    PathOps isSameFile(String target) {
+        try {
+            out.println("check two paths are same");
+            checkPath();
+            check(path.isSameFile(test(target).path()), true);
+        } catch (IOException ioe) {
+            fail();
+        }
+        return this;
+    }
+
     PathOps invalid() {
         if (!(exc instanceof InvalidPathException)) {
             out.println("InvalidPathException not thrown as expected");
@@ -344,7 +355,12 @@ public class PathOps {
             .normalize("foo");
         test("/foo/bar/gus/../..")
             .normalize("/foo");
-
+        test("/./.")
+            .normalize("/");
+        test("/.")
+            .normalize("/");
+        test("/./abc")
+            .normalize("/abc");
         // invalid
         test("foo\u0000bar")
             .invalid();
@@ -365,6 +381,10 @@ public class PathOps {
             .root("/")
             .parent("/foo")
             .name("bar");
+
+        // isSameFile
+        test("/fileDoesNotExist")
+            .isSameFile("/fileDoesNotExist");
     }
 
     static void npes() {

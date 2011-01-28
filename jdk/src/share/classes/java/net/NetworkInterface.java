@@ -493,55 +493,44 @@ public final class NetworkInterface {
      * @see     java.net.InetAddress#getAddress()
      */
     public boolean equals(Object obj) {
-        if ((obj == null) || !(obj instanceof NetworkInterface)) {
+        if (!(obj instanceof NetworkInterface)) {
             return false;
         }
-        NetworkInterface netIF = (NetworkInterface)obj;
-        if (name != null ) {
-            if (netIF.getName() != null) {
-                if (!name.equals(netIF.getName())) {
-                    return false;
-                }
-            } else {
+        NetworkInterface that = (NetworkInterface)obj;
+        if (this.name != null ) {
+            if (!this.name.equals(that.name)) {
                 return false;
             }
         } else {
-            if (netIF.getName() != null) {
+            if (that.name != null) {
                 return false;
             }
         }
-        Enumeration newAddrs = netIF.getInetAddresses();
-        int i = 0;
-        for (i = 0; newAddrs.hasMoreElements();newAddrs.nextElement(), i++);
-        if (addrs == null) {
-            if (i != 0) {
-                return false;
-            }
-        } else {
-            /*
-             * Compare number of addresses (in the checked subset)
-             */
-            int count = 0;
-            Enumeration e = getInetAddresses();
-            for (; e.hasMoreElements(); count++) {
-                e.nextElement();
-            }
-            if (i != count) {
-                return false;
-            }
+
+        if (this.addrs == null) {
+            return that.addrs == null;
+        } else if (that.addrs == null) {
+            return false;
         }
-        newAddrs = netIF.getInetAddresses();
-        for (; newAddrs.hasMoreElements();) {
-            boolean equal = false;
-            Enumeration thisAddrs = getInetAddresses();
-            InetAddress newAddr = (InetAddress)newAddrs.nextElement();
-            for (; thisAddrs.hasMoreElements();) {
-                InetAddress thisAddr = (InetAddress)thisAddrs.nextElement();
-                if (thisAddr.equals(newAddr)) {
-                    equal = true;
+
+        /* Both addrs not null. Compare number of addresses */
+
+        if (this.addrs.length != that.addrs.length) {
+            return false;
+        }
+
+        InetAddress[] thatAddrs = that.addrs;
+        int count = thatAddrs.length;
+
+        for (int i=0; i<count; i++) {
+            boolean found = false;
+            for (int j=0; j<count; j++) {
+                if (addrs[i].equals(thatAddrs[j])) {
+                    found = true;
+                    break;
                 }
             }
-            if (!equal) {
+            if (!found) {
                 return false;
             }
         }
@@ -549,12 +538,7 @@ public final class NetworkInterface {
     }
 
     public int hashCode() {
-        int count = name == null? 0: name.hashCode();
-        Enumeration<InetAddress> addrs = getInetAddresses();
-        while (addrs.hasMoreElements()) {
-            count += addrs.nextElement().hashCode();
-        }
-        return count;
+        return name == null? 0: name.hashCode();
     }
 
     public String toString() {

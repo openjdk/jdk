@@ -136,8 +136,25 @@ ifeq ($(PLATFORM), linux)
               -I$(OPENWIN_HOME)/include 
 endif
 
+# We have some odd logic here because some Solaris 10 updates
+# have a render.h file that suggests gradients are supported, but
+# the Xrender.h doesn't have the corresponding type definitions.
+# Earlier updates have neither. We'd like to know if there's a mismatch.
+# Whilst in the C preprocessor we can tell if the render.h define's are set
+# we can't tell anything about C declarations.
+# A grep of Xrender.h is the only way to know this. If they are absent
+# we will set a flag indicating this mismatch and the JDK source file
+# will interpret it to resolve the problem.
 ifeq ($(PLATFORM), solaris)
   CPPFLAGS += -I$(OPENWIN_HOME)/include/X11/extensions
+  OS_VERSION := $(shell uname -r)
+  XRENDER_H := $(OPENWIN_HOME)/share/include/X11/extensions/Xrender.h
+  ifeq ($(OS_VERSION),5.10) 
+     LINEARGRADIENT_CNT := $(shell $(EGREP) -c XLinearGradient $(XRENDER_H))
+     ifeq ($(LINEARGRADIENT_CNT),0) 
+       CFLAGS+= -DSOLARIS10_NO_XRENDER_STRUCTS
+     endif
+ endif
 endif
 
 ifeq ($(MILESTONE), internal)

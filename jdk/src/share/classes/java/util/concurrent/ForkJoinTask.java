@@ -42,6 +42,16 @@ import java.util.List;
 import java.util.RandomAccess;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Abstract base class for tasks that run within a {@link ForkJoinPool}.
@@ -129,6 +139,16 @@ import java.util.WeakHashMap;
  * result in exceptions or errors, possibly including
  * {@code ClassCastException}.
  *
+ * <p>Method {@link #join} and its variants are appropriate for use
+ * only when completion dependencies are acyclic; that is, the
+ * parallel computation can be described as a directed acyclic graph
+ * (DAG). Otherwise, executions may encounter a form of deadlock as
+ * tasks cyclically wait for each other.  However, this framework
+ * supports other methods and techniques (for example the use of
+ * {@link Phaser}, {@link #helpQuiesce}, and {@link #complete}) that
+ * may be of use in constructing custom subclasses for problems that
+ * are not statically structured as DAGs.
+ *
  * <p>Most base support methods are {@code final}, to prevent
  * overriding of implementations that are intrinsically tied to the
  * underlying lightweight task scheduling framework.  Developers
@@ -143,9 +163,10 @@ import java.util.WeakHashMap;
  * computation. Large tasks should be split into smaller subtasks,
  * usually via recursive decomposition. As a very rough rule of thumb,
  * a task should perform more than 100 and less than 10000 basic
- * computational steps. If tasks are too big, then parallelism cannot
- * improve throughput. If too small, then memory and internal task
- * maintenance overhead may overwhelm processing.
+ * computational steps, and should avoid indefinite looping. If tasks
+ * are too big, then parallelism cannot improve throughput. If too
+ * small, then memory and internal task maintenance overhead may
+ * overwhelm processing.
  *
  * <p>This class provides {@code adapt} methods for {@link Runnable}
  * and {@link Callable}, that may be of use when mixing execution of
@@ -242,65 +263,83 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Blocks a worker thread until completion. Called only by
-     * pool. Currently unused -- pool-based waits use timeout
-     * version below.
-     */
-    final void internalAwaitDone() {
-        int s;         // the odd construction reduces lock bias effects
-        while ((s = status) >= 0) {
-            try {
-                synchronized (this) {
-                    if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
-                        wait();
-                }
-            } catch (InterruptedException ie) {
-                cancelIfTerminating();
-            }
-        }
-    }
-
-    /**
      * Blocks a worker thread until completed or timed out.  Called
      * only by pool.
-     *
-     * @return status on exit
      */
-    final int internalAwaitDone(long millis) {
-        int s;
-        if ((s = status) >= 0) {
-            try {
+    final void internalAwaitDone(long millis, int nanos) {
+        int s = status;
+        if ((s == 0 &&
+             UNSAFE.compareAndSwapInt(this, statusOffset, 0, SIGNAL)) ||
+            s > 0)  {
+            try {     // the odd construction reduces lock bias effects
                 synchronized (this) {
-                    if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
-                        wait(millis, 0);
+                    if (status > 0)
+                        wait(millis, nanos);
+                    else
+                        notifyAll();
                 }
             } catch (InterruptedException ie) {
                 cancelIfTerminating();
             }
-            s = status;
         }
-        return s;
     }
 
     /**
      * Blocks a non-worker-thread until completion.
      */
     private void externalAwaitDone() {
-        int s;
-        while ((s = status) >= 0) {
+        if (status >= 0) {
+            boolean interrupted = false;
             synchronized (this) {
-                if (UNSAFE.compareAndSwapInt(this, statusOffset, s, SIGNAL)){
-                    boolean interrupted = false;
-                    while (status >= 0) {
+                for (;;) {
+                    int s = status;
+                    if (s == 0)
+                        UNSAFE.compareAndSwapInt(this, statusOffset,
+                                                 0, SIGNAL);
+                    else if (s < 0) {
+                        notifyAll();
+                        break;
+                    }
+                    else {
                         try {
                             wait();
                         } catch (InterruptedException ie) {
                             interrupted = true;
                         }
                     }
-                    if (interrupted)
-                        Thread.currentThread().interrupt();
-                    break;
+                }
+            }
+            if (interrupted)
+                Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Blocks a non-worker-thread until completion or interruption or timeout.
+     */
+    private void externalInterruptibleAwaitDone(boolean timed, long nanos)
+        throws InterruptedException {
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        if (status >= 0) {
+            long startTime = timed ? System.nanoTime() : 0L;
+            synchronized (this) {
+                for (;;) {
+                    long nt;
+                    int s = status;
+                    if (s == 0)
+                        UNSAFE.compareAndSwapInt(this, statusOffset,
+                                                 0, SIGNAL);
+                    else if (s < 0) {
+                        notifyAll();
+                        break;
+                    }
+                    else if (!timed)
+                        wait();
+                    else if ((nt = nanos - (System.nanoTime()-startTime)) > 0L)
+                        wait(nt / 1000000, (int)(nt % 1000000));
+                    else
+                        break;
                 }
             }
         }
@@ -335,7 +374,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * #isDone} returning {@code true}.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -349,10 +388,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Returns the result of the computation when it {@link #isDone is done}.
-     * This method differs from {@link #get()} in that
+     * Returns the result of the computation when it {@link #isDone is
+     * done}.  This method differs from {@link #get()} in that
      * abnormal completion results in {@code RuntimeException} or
-     * {@code Error}, not {@code ExecutionException}.
+     * {@code Error}, not {@code ExecutionException}, and that
+     * interrupts of the calling thread do <em>not</em> cause the
+     * method to abruptly return by throwing {@code
+     * InterruptedException}.
      *
      * @return the computed result
      */
@@ -394,7 +436,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * unprocessed.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -422,7 +464,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * normally or exceptionally, or left unprocessed.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -477,7 +519,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * unprocessed.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -529,25 +571,28 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Attempts to cancel execution of this task. This attempt will
-     * fail if the task has already completed, has already been
-     * cancelled, or could not be cancelled for some other reason. If
-     * successful, and this task has not started when cancel is
-     * called, execution of this task is suppressed, {@link
-     * #isCancelled} will report true, and {@link #join} will result
-     * in a {@code CancellationException} being thrown.
+     * fail if the task has already completed or could not be
+     * cancelled for some other reason. If successful, and this task
+     * has not started when {@code cancel} is called, execution of
+     * this task is suppressed. After this method returns
+     * successfully, unless there is an intervening call to {@link
+     * #reinitialize}, subsequent calls to {@link #isCancelled},
+     * {@link #isDone}, and {@code cancel} will return {@code true}
+     * and calls to {@link #join} and related methods will result in
+     * {@code CancellationException}.
      *
      * <p>This method may be overridden in subclasses, but if so, must
-     * still ensure that these minimal properties hold. In particular,
-     * the {@code cancel} method itself must not throw exceptions.
+     * still ensure that these properties hold. In particular, the
+     * {@code cancel} method itself must not throw exceptions.
      *
      * <p>This method is designed to be invoked by <em>other</em>
      * tasks. To terminate the current task, you can just return or
      * throw an unchecked exception from its computation method, or
      * invoke {@link #completeExceptionally}.
      *
-     * @param mayInterruptIfRunning this value is ignored in the
-     * default implementation because tasks are not
-     * cancelled via interruption
+     * @param mayInterruptIfRunning this value has no effect in the
+     * default implementation because interrupts are not used to
+     * control cancellation.
      *
      * @return {@code true} if this task is now cancelled
      */
@@ -681,23 +726,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * member of a ForkJoinPool and was interrupted while waiting
      */
     public final V get() throws InterruptedException, ExecutionException {
-        int s;
-        if (Thread.currentThread() instanceof ForkJoinWorkerThread) {
+        Thread t = Thread.currentThread();
+        if (t instanceof ForkJoinWorkerThread)
             quietlyJoin();
-            s = status;
-        }
-        else {
-            while ((s = status) >= 0) {
-                synchronized (this) { // interruptible form of awaitDone
-                    if (UNSAFE.compareAndSwapInt(this, statusOffset,
-                                                 s, SIGNAL)) {
-                        while (status >= 0)
-                            wait();
-                    }
-                }
-            }
-        }
-        if (s < NORMAL) {
+        else
+            externalInterruptibleAwaitDone(false, 0L);
+        int s = status;
+        if (s != NORMAL) {
             Throwable ex;
             if (s == CANCELLED)
                 throw new CancellationException();
@@ -723,72 +758,18 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
-        Thread t = Thread.currentThread();
-        ForkJoinPool pool;
-        if (t instanceof ForkJoinWorkerThread) {
-            ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;
-            if (status >= 0 && w.unpushTask(this))
-                quietlyExec();
-            pool = w.pool;
-        }
-        else
-            pool = null;
-        /*
-         * Timed wait loop intermixes cases for FJ (pool != null) and
-         * non FJ threads. For FJ, decrement pool count but don't try
-         * for replacement; increment count on completion. For non-FJ,
-         * deal with interrupts. This is messy, but a little less so
-         * than is splitting the FJ and nonFJ cases.
-         */
-        boolean interrupted = false;
-        boolean dec = false; // true if pool count decremented
         long nanos = unit.toNanos(timeout);
-        for (;;) {
-            if (pool == null && Thread.interrupted()) {
-                interrupted = true;
-                break;
-            }
-            int s = status;
-            if (s < 0)
-                break;
-            if (UNSAFE.compareAndSwapInt(this, statusOffset, s, SIGNAL)) {
-                long startTime = System.nanoTime();
-                long nt; // wait time
-                while (status >= 0 &&
-                       (nt = nanos - (System.nanoTime() - startTime)) > 0) {
-                    if (pool != null && !dec)
-                        dec = pool.tryDecrementRunningCount();
-                    else {
-                        long ms = nt / 1000000;
-                        int ns = (int) (nt % 1000000);
-                        try {
-                            synchronized (this) {
-                                if (status >= 0)
-                                    wait(ms, ns);
-                            }
-                        } catch (InterruptedException ie) {
-                            if (pool != null)
-                                cancelIfTerminating();
-                            else {
-                                interrupted = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
-        }
-        if (pool != null && dec)
-            pool.incrementRunningCount();
-        if (interrupted)
-            throw new InterruptedException();
-        int es = status;
-        if (es != NORMAL) {
+        Thread t = Thread.currentThread();
+        if (t instanceof ForkJoinWorkerThread)
+            ((ForkJoinWorkerThread)t).joinTask(this, true, nanos);
+        else
+            externalInterruptibleAwaitDone(true, nanos);
+        int s = status;
+        if (s != NORMAL) {
             Throwable ex;
-            if (es == CANCELLED)
+            if (s == CANCELLED)
                 throw new CancellationException();
-            if (es == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
+            if (s == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
                 throw new ExecutionException(ex);
             throw new TimeoutException();
         }
@@ -819,7 +800,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                         return;
                     }
                 }
-                w.joinTask(this);
+                w.joinTask(this, false, 0L);
             }
         }
         else
@@ -855,7 +836,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * processed.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -874,6 +855,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * under any other usage conditions are not guaranteed.
      * This method may be useful when executing
      * pre-constructed trees of subtasks in loops.
+     *
+     * <p>Upon completion of this method, {@code isDone()} reports
+     * {@code false}, and {@code getException()} reports {@code
+     * null}. However, the value returned by {@code getRawResult} is
+     * unaffected. To clear this value, you can invoke {@code
+     * setRawResult(null)}.
      */
     public void reinitialize() {
         if (status == EXCEPTIONAL)
@@ -895,11 +882,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Returns {@code true} if the current thread is executing as a
-     * ForkJoinPool computation.
+     * Returns {@code true} if the current thread is a {@link
+     * ForkJoinWorkerThread} executing as a ForkJoinPool computation.
      *
-     * @return {@code true} if the current thread is executing as a
-     * ForkJoinPool computation, or false otherwise
+     * @return {@code true} if the current thread is a {@link
+     * ForkJoinWorkerThread} executing as a ForkJoinPool computation,
+     * or {@code false} otherwise
      */
     public static boolean inForkJoinPool() {
         return Thread.currentThread() instanceof ForkJoinWorkerThread;
@@ -914,7 +902,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * were not, stolen.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -933,7 +921,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * fork other tasks.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -956,7 +944,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * exceeded.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -1014,7 +1002,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * otherwise.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -1033,7 +1021,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * be useful otherwise.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.
@@ -1056,7 +1044,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * otherwise.
      *
      * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
+     * ForkJoinPool} computations (as may be determined using method
      * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
      * result in exceptions or errors, possibly including {@code
      * ClassCastException}.

@@ -214,8 +214,9 @@ public class FontConfigManager {
             if (FontUtilities.isLogging()) {
                 PlatformLogger logger = FontUtilities.getLogger();
                 logger.info("Fontconfig returned no fonts at all.");
-                return;
             }
+            fontConfigFailed = true;
+            return;
         } else if (fontConfigFailed) {
             for (int i = 0; i< fontArr.length; i++) {
                 if (fontArr[i].firstFont == null) {

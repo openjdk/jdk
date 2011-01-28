@@ -439,6 +439,9 @@ java/rmi/reliability/benchmark/runRmiBench.sh			generic-all
 java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java generic-all
 java/rmi/activation/rmidViaInheritedChannel/RmidViaInheritedChannel.java generic-all
 
+java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java         generic-all
+java/rmi/transport/dgcDeadLock/TestImpl_Stub.java                       generic-all
+
 # Address already in use, othervm mode, solaris
 java/rmi/activation/Activatable/elucidateNoSuchMethod/ElucidateNoSuchMethod.java	generic-all
 java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java	generic-all
@@ -718,9 +721,6 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 #   11 separate stacktraces created... file reuse problem?
 java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
 
-# Failing on all -client 32bit platforms starting with b77? See 6908348.
-java/util/concurrent/BlockingQueue/CancelledProducerConsumerLoops.java generic-all
-
 # Assert error, failures, on Linux Fedora 9 -server
 #   Windows samevm failure, assert error "Passed = 134, failed = 2"
 java/util/Arrays/ArrayObjectMethods.java			generic-all
@@ -736,12 +736,6 @@ java/util/concurrent/locks/Lock/TimedAcquireLeak.java		generic-all
 
 # Fails on solaris-sparc -server (Set not equal to copy. 1)
 java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
-
-# Failing to close an input stream? "foo", triggers samevm windows failures
-java/util/Formatter/Constructors.java				generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-java/util/WeakHashMap/GCDuringIteration.java			generic-all
 
 ############################################################################
 

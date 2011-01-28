@@ -258,7 +258,7 @@ static final class ClientHello extends HandshakeMessage {
     // add server_name extension
     void addServerNameIndicationExtension(String hostname) {
         // We would have checked that the hostname ia a FQDN.
-        ArrayList<String> hostnames = new ArrayList<String>(1);
+        ArrayList<String> hostnames = new ArrayList<>(1);
         hostnames.add(hostname);
 
         try {
@@ -434,7 +434,7 @@ class CertificateMsg extends HandshakeMessage
 
     CertificateMsg(HandshakeInStream input) throws IOException {
         int chainLen = input.getInt24();
-        List<Certificate> v = new ArrayList<Certificate>(4);
+        List<Certificate> v = new ArrayList<>(4);
 
         CertificateFactory cf = null;
         while (chainLen > 0) {
@@ -1328,7 +1328,7 @@ class CertificateRequest extends HandshakeMessage
 
         // read the certificate_authorities
         int len = input.getInt16();
-        ArrayList<DistinguishedName> v = new ArrayList<DistinguishedName>();
+        ArrayList<DistinguishedName> v = new ArrayList<>();
         while (len >= 3) {
             DistinguishedName dn = new DistinguishedName(input);
             v.add(dn);
@@ -1719,7 +1719,7 @@ static final class CertificateVerify extends HandshakeMessage {
     // Note that this will prevent the Spi classes from being GC'd. We assume
     // that is not a problem.
     private final static Map<Class,Object> methodCache =
-                                        new ConcurrentHashMap<Class,Object>();
+                                        new ConcurrentHashMap<>();
 
     private static void digestKey(MessageDigest md, SecretKey key) {
         try {

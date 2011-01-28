@@ -165,7 +165,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         return new SunGraphics2D(sd, Color.white, Color.black, defaultFont);
     }
 
-    private static FontManagerForSGE getFontManagerForSGE() {
+    public static FontManagerForSGE getFontManagerForSGE() {
         FontManager fm = FontManagerFactory.getInstance();
         return (FontManagerForSGE) fm;
     }

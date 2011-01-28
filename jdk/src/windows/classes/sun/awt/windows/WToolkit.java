@@ -228,31 +228,29 @@ public class WToolkit extends SunToolkit implements Runnable {
 
         sun.java2d.Disposer.addRecord(anchor, new ToolkitDisposer());
 
-        synchronized (this) {
-            // Fix for bug #4046430 -- Race condition
-            // where notifyAll can be called before
-            // the "AWT-Windows" thread's parent thread is
-            // waiting, resulting in a deadlock on startup.
+        /*
+         * Fix for 4701990.
+         * AWTAutoShutdown state must be changed before the toolkit thread
+         * starts to avoid race condition.
+         */
+        AWTAutoShutdown.notifyToolkitThreadBusy();
 
-            /*
-             * Fix for 4701990.
-             * AWTAutoShutdown state must be changed before the toolkit thread
-             * starts to avoid race condition.
-             */
-            AWTAutoShutdown.notifyToolkitThreadBusy();
-
-            if (!startToolkitThread(this)) {
-                Thread toolkitThread = new Thread(this, "AWT-Windows");
-                toolkitThread.setDaemon(true);
-                toolkitThread.start();
-            }
-
-            try {
-                wait();
-            }
-            catch (InterruptedException x) {
-            }
+        if (!startToolkitThread(this)) {
+            Thread toolkitThread = new Thread(this, "AWT-Windows");
+            toolkitThread.setDaemon(true);
+            toolkitThread.start();
         }
+
+        try {
+            synchronized(this) {
+                while(!inited) {
+                    wait();
+                }
+            }
+        } catch (InterruptedException x) {
+            // swallow the exception
+        }
+
         SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
 
         // Enabled "live resizing" by default.  It remains controlled
@@ -265,33 +263,38 @@ public class WToolkit extends SunToolkit implements Runnable {
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
+    private final void registerShutdownHook() {
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                ThreadGroup currentTG =
+                    Thread.currentThread().getThreadGroup();
+                ThreadGroup parentTG = currentTG.getParent();
+                while (parentTG != null) {
+                    currentTG = parentTG;
+                    parentTG = currentTG.getParent();
+                }
+                Thread shutdown = new Thread(currentTG, new Runnable() {
+                    public void run() {
+                        shutdown();
+                    }
+                });
+                shutdown.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(shutdown);
+                return null;
+            }
+        });
+     }
+
     public void run() {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY+1);
         boolean startPump = init();
 
         if (startPump) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    ThreadGroup currentTG =
-                        Thread.currentThread().getThreadGroup();
-                    ThreadGroup parentTG = currentTG.getParent();
-                    while (parentTG != null) {
-                        currentTG = parentTG;
-                        parentTG = currentTG.getParent();
-                    }
-                    Thread shutdown = new Thread(currentTG, new Runnable() {
-                            public void run() {
-                                shutdown();
-                            }
-                        });
-                    shutdown.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(shutdown);
-                    return null;
-                }
-            });
+            registerShutdownHook();
         }
 
         synchronized(this) {
+            inited = true;
             notifyAll();
         }
 
@@ -309,6 +312,8 @@ public class WToolkit extends SunToolkit implements Runnable {
      * eventLoop() should Dispose the toolkit and exit.
      */
     private native boolean init();
+    private boolean inited = false;
+
     private native void eventLoop();
     private native void shutdown();
 
