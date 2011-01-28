@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 6866804
- * @summary Unit test for java.nio.file.Path
+ * @bug 6866804 7006126
+ * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
  * @run main/othervm CheckPermissions
@@ -31,6 +31,8 @@
 
 import java.nio.ByteBuffer;
 import java.nio.file.*;
+import static java.nio.file.Files.*;
+import static java.nio.file.StandardOpenOption.*;
 import java.nio.file.attribute.*;
 import java.nio.channels.SeekableByteChannel;
 import java.security.Permission;
@@ -45,12 +47,12 @@ import java.util.*;
 public class CheckPermissions {
 
     static class Checks {
-        private List<Permission> permissionsChecked = new ArrayList<Permission>();
-        private Set<String>  propertiesChecked = new HashSet<String>();
-        private List<String> readsChecked   = new ArrayList<String>();
-        private List<String> writesChecked  = new ArrayList<String>();
-        private List<String> deletesChecked = new ArrayList<String>();
-        private List<String> execsChecked   = new ArrayList<String>();
+        private List<Permission> permissionsChecked = new ArrayList<>();
+        private Set<String>  propertiesChecked = new HashSet<>();
+        private List<String> readsChecked   = new ArrayList<>();
+        private List<String> writesChecked  = new ArrayList<>();
+        private List<String> deletesChecked = new ArrayList<>();
+        private List<String> execsChecked   = new ArrayList<>();
 
         List<Permission> permissionsChecked()  { return permissionsChecked; }
         Set<String> propertiesChecked()        { return propertiesChecked; }
@@ -78,7 +80,7 @@ public class CheckPermissions {
             if (type.isInstance(perm) && perm.getName().equals(name))
                 return;
         }
-        throw new RuntimeException(type.getName() + "\"" + name + "\") not checked");
+        throw new RuntimeException(type.getName() + "(\"" + name + "\") not checked");
     }
 
     static void assertCheckPropertyAccess(String key) {
@@ -101,6 +103,17 @@ public class CheckPermissions {
 
     static void assertCheckWrite(Path file) {
         assertChecked(file, myChecks.get().writesChecked());
+    }
+
+    static void assertCheckWriteToDirectory(Path dir) {
+        String s = dir.toString();
+        List<String> list = myChecks.get().writesChecked();
+        for (String f: list) {
+            if (f.startsWith(s)) {
+                return;
+            }
+        }
+        throw new RuntimeException("Access not checked");
     }
 
     static void assertCheckDelete(Path file) {
@@ -197,215 +210,240 @@ public class CheckPermissions {
     }
 
     public static void main(String[] args) throws IOException {
-        Path dir = Paths.get(System.getProperty("test.dir", "."));
-        Path file = dir.resolve("file1234").createFile();
+        final Path testdir = Paths.get(System.getProperty("test.dir", ".")).toAbsolutePath();
+        final Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+
+        Path file = createFile(testdir.resolve("file1234"));
         try {
             LoggingSecurityManager.install();
 
-            // -- checkAccess --
+            // -- check access --
 
             prepare();
-            file.checkAccess();
+            exists(file);
             assertCheckRead(file);
 
             prepare();
-            file.checkAccess(AccessMode.READ);
+            isReadable(file);
             assertCheckRead(file);
 
             prepare();
-            file.checkAccess(AccessMode.WRITE);
+            isWritable(file);
             assertCheckWrite(file);
 
             prepare();
-            try {
-                file.checkAccess(AccessMode.EXECUTE);
-            } catch (AccessDeniedException x) { }
+            isExecutable(file);
             assertCheckExec(file);
 
-            prepare();
-            try {
-                file.checkAccess(AccessMode.READ, AccessMode.WRITE, AccessMode.EXECUTE);
-            } catch (AccessDeniedException x) { }
-            assertCheckRead(file);
-            assertCheckWrite(file);
-            assertCheckExec(file);
+            // -- copy --
 
-            // -- copyTo --
-
-            Path target = dir.resolve("target1234");
+            Path target = testdir.resolve("target1234");
             prepare();
-            file.copyTo(target);
+            copy(file, target);
             try {
                 assertCheckRead(file);
                 assertCheckWrite(target);
             } finally {
-                target.delete();
+                delete(target);
             }
 
-            if (TestUtil.supportsLinks(dir)) {
-                Path link = dir.resolve("link1234").createSymbolicLink(file);
+            if (TestUtil.supportsLinks(testdir)) {
+                Path link = testdir.resolve("link1234");
+                createSymbolicLink(link, file);
                 try {
                     prepare();
-                    link.copyTo(target, LinkOption.NOFOLLOW_LINKS);
+                    copy(link, target, LinkOption.NOFOLLOW_LINKS);
                     try {
                         assertCheckRead(link);
                         assertCheckWrite(target);
                         assertCheckPermission(LinkPermission.class, "symbolic");
                     } finally {
-                        target.delete();
+                        delete(target);
                     }
                 } finally {
-                    link.delete();
+                    delete(link);
                 }
             }
 
             // -- createDirectory --
 
-            Path subdir = dir.resolve("subdir1234");
+            Path subdir = testdir.resolve("subdir1234");
             prepare();
-            subdir.createDirectory();
+            createDirectory(subdir);
             try {
                 assertCheckWrite(subdir);
             } finally {
-                subdir.delete();
+                delete(subdir);
             }
 
             // -- createFile --
 
-            Path fileToCreate = dir.resolve("file7890");
+            Path fileToCreate = testdir.resolve("file7890");
             prepare();
+            createFile(fileToCreate);
             try {
-                fileToCreate.createFile();
                 assertCheckWrite(fileToCreate);
             } finally {
-                fileToCreate.delete();
+                delete(fileToCreate);
             }
 
             // -- createSymbolicLink --
 
-            if (TestUtil.supportsLinks(dir)) {
+            if (TestUtil.supportsLinks(testdir)) {
                 prepare();
-                Path link = dir.resolve("link1234").createSymbolicLink(file);
+                Path link = testdir.resolve("link1234");
+                createSymbolicLink(link, file);
                 try {
                     assertCheckWrite(link);
                     assertCheckPermission(LinkPermission.class, "symbolic");
                 } finally {
-                    link.delete();
+                    delete(link);
                 }
+            }
+
+            // -- createLink --
+
+            if (TestUtil.supportsLinks(testdir)) {
+                prepare();
+                Path link = testdir.resolve("entry234");
+                createLink(link, file);
+                try {
+                    assertCheckWrite(link);
+                    assertCheckPermission(LinkPermission.class, "hard");
+                } finally {
+                    delete(link);
+                }
+            }
+
+            // -- createTempFile --
+
+            prepare();
+            Path tmpfile1 = createTempFile("foo", null);
+            try {
+                assertCheckWriteToDirectory(tmpdir);
+            } finally {
+                delete(tmpfile1);
+            }
+            prepare();
+            Path tmpfile2 = createTempFile(testdir, "foo", ".tmp");
+            try {
+                assertCheckWriteToDirectory(testdir);
+            } finally {
+                delete(tmpfile2);
+            }
+
+            // -- createTempDirectory --
+
+            prepare();
+            Path tmpdir1 = createTempDirectory("foo");
+            try {
+                assertCheckWriteToDirectory(tmpdir);
+            } finally {
+                delete(tmpdir1);
+            }
+            prepare();
+            Path tmpdir2 = createTempDirectory(testdir, "foo");
+            try {
+                assertCheckWriteToDirectory(testdir);
+            } finally {
+                delete(tmpdir2);
             }
 
             // -- delete/deleteIfExists --
 
-            Path fileToDelete = dir.resolve("file7890");
+            Path fileToDelete = testdir.resolve("file7890");
 
-            fileToDelete.createFile();
+            createFile(fileToDelete);
             prepare();
-            fileToDelete.delete();
+            delete(fileToDelete);
             assertCheckDelete(fileToDelete);
 
-            fileToDelete.createFile();
+            createFile(fileToDelete);
             prepare();
-            fileToDelete.deleteIfExists();
+            deleteIfExists(fileToDelete);   // file exists
+            assertCheckDelete(fileToDelete);
+
+            prepare();
+            deleteIfExists(fileToDelete);   // file does not exist
             assertCheckDelete(fileToDelete);
 
             // -- exists/notExists --
 
             prepare();
-            file.exists();
+            exists(file);
             assertCheckRead(file);
 
             prepare();
-            file.notExists();
+            notExists(file);
             assertCheckRead(file);
 
             // -- getFileStore --
 
             prepare();
-            file.getFileStore();
+            getFileStore(file);
             assertCheckRead(file);
             assertCheckPermission(RuntimePermission.class, "getFileStoreAttributes");
 
             // -- isSameFile --
 
             prepare();
-            file.isSameFile(dir);
+            isSameFile(file, testdir);
             assertCheckRead(file);
-            assertCheckRead(dir);
+            assertCheckRead(testdir);
 
-            // -- moveTo --
+            // -- move --
 
-            Path target2 = dir.resolve("target1234");
+            Path target2 = testdir.resolve("target1234");
             prepare();
-            file.moveTo(target2);
+            move(file, target2);
             try {
                 assertCheckWrite(file);
                 assertCheckWrite(target2);
             } finally {
                 // restore file
-                target2.moveTo(file);
+                move(target2, file);
             }
 
             // -- newByteChannel --
 
-            SeekableByteChannel sbc;
-
             prepare();
-            sbc = file.newByteChannel();
-            try {
+            try (SeekableByteChannel sbc = newByteChannel(file)) {
                 assertCheckRead(file);
-            } finally {
-                sbc.close();
             }
             prepare();
-            sbc = file.newByteChannel(StandardOpenOption.WRITE);
-            try {
+            try (SeekableByteChannel sbc = newByteChannel(file, WRITE)) {
                 assertCheckWrite(file);
-            } finally {
-                sbc.close();
             }
             prepare();
-            sbc = file.newByteChannel(StandardOpenOption.READ, StandardOpenOption.WRITE);
-            try {
+            try (SeekableByteChannel sbc = newByteChannel(file, READ, WRITE)) {
                 assertCheckRead(file);
                 assertCheckWrite(file);
-            } finally {
-                sbc.close();
             }
 
             prepare();
-            sbc = file.newByteChannel(StandardOpenOption.DELETE_ON_CLOSE);
-            try {
+            try (SeekableByteChannel sbc = newByteChannel(file, DELETE_ON_CLOSE)) {
                 assertCheckRead(file);
                 assertCheckDelete(file);
-            } finally {
-                sbc.close();
             }
-            file.createFile(); // restore file
+            createFile(file); // restore file
 
 
             // -- newInputStream/newOutptuStream --
 
             prepare();
-            InputStream in = file.newInputStream();
-            try {
+            try (InputStream in = newInputStream(file)) {
                 assertCheckRead(file);
-            } finally {
-                in.close();
             }
             prepare();
-            OutputStream out = file.newOutputStream();
-            try {
+            try (OutputStream out = newOutputStream(file)) {
                 assertCheckWrite(file);
-            } finally {
-                out.close();
             }
 
             // -- newDirectoryStream --
 
             prepare();
-            DirectoryStream<Path> stream = dir.newDirectoryStream();
-            try {
-                assertCheckRead(dir);
+            try (DirectoryStream<Path> stream = newDirectoryStream(testdir)) {
+                assertCheckRead(testdir);
 
                 if (stream instanceof SecureDirectoryStream<?>) {
                     Path entry;
@@ -413,63 +451,57 @@ public class CheckPermissions {
                         (SecureDirectoryStream<Path>)stream;
 
                     // newByteChannel
-                    entry = file.getName();
+                    entry = file.getFileName();
                     prepare();
-                    sbc = sds.newByteChannel(entry, EnumSet.of(StandardOpenOption.READ));
-                    try {
+                    try (SeekableByteChannel sbc = sds.newByteChannel(entry, EnumSet.of(READ))) {
                         assertCheckRead(file);
-                    } finally {
-                        sbc.close();
                     }
                     prepare();
-                    sbc = sds.newByteChannel(entry, EnumSet.of(StandardOpenOption.WRITE));
-                    try {
+                    try (SeekableByteChannel sbc = sds.newByteChannel(entry, EnumSet.of(WRITE))) {
                         assertCheckWrite(file);
-                    } finally {
-                        sbc.close();
                     }
 
                     // deleteFile
-                    entry = file.getName();
+                    entry = file.getFileName();
                     prepare();
                     sds.deleteFile(entry);
                     assertCheckDelete(file);
-                    dir.resolve(entry).createFile();  // restore file
+                    createFile(testdir.resolve(entry));  // restore file
 
                     // deleteDirectory
                     entry = Paths.get("subdir1234");
-                    dir.resolve(entry).createDirectory();
+                    createDirectory(testdir.resolve(entry));
                     prepare();
                     sds.deleteDirectory(entry);
-                    assertCheckDelete(dir.resolve(entry));
+                    assertCheckDelete(testdir.resolve(entry));
 
                     // move
                     entry = Paths.get("tempname1234");
                     prepare();
-                    sds.move(file.getName(), sds, entry);
+                    sds.move(file.getFileName(), sds, entry);
                     assertCheckWrite(file);
-                    assertCheckWrite(dir.resolve(entry));
-                    sds.move(entry, sds, file.getName());  // restore file
+                    assertCheckWrite(testdir.resolve(entry));
+                    sds.move(entry, sds, file.getFileName());  // restore file
 
                     // newDirectoryStream
                     entry = Paths.get("subdir1234");
-                    dir.resolve(entry).createDirectory();
+                    createDirectory(testdir.resolve(entry));
                     try {
                         prepare();
                         sds.newDirectoryStream(entry).close();
-                        assertCheckRead(dir.resolve(entry));
+                        assertCheckRead(testdir.resolve(entry));
                     } finally {
-                        dir.resolve(entry).delete();
+                        delete(testdir.resolve(entry));
                     }
 
                     // getFileAttributeView to access attributes of directory
                     testBasicFileAttributeView(sds
-                        .getFileAttributeView(BasicFileAttributeView.class), dir);
+                        .getFileAttributeView(BasicFileAttributeView.class), testdir);
                     testPosixFileAttributeView(sds
-                        .getFileAttributeView(PosixFileAttributeView.class), dir);
+                        .getFileAttributeView(PosixFileAttributeView.class), testdir);
 
                     // getFileAttributeView to access attributes of entry
-                    entry = file.getName();
+                    entry = file.getFileName();
                     testBasicFileAttributeView(sds
                         .getFileAttributeView(entry, BasicFileAttributeView.class), file);
                     testPosixFileAttributeView(sds
@@ -478,15 +510,12 @@ public class CheckPermissions {
                 } else {
                     System.out.println("SecureDirectoryStream not tested");
                 }
-
-            } finally {
-                stream.close();
             }
 
             // -- toAbsolutePath --
 
             prepare();
-            file.getName().toAbsolutePath();
+            file.getFileName().toAbsolutePath();
             assertCheckPropertyAccess("user.dir");
 
             // -- toRealPath --
@@ -509,41 +538,38 @@ public class CheckPermissions {
 
             // -- register --
 
-            WatchService watcher = FileSystems.getDefault().newWatchService();
-            try {
+            try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
                 prepare();
-                dir.register(watcher, StandardWatchEventKind.ENTRY_DELETE);
-                assertCheckRead(dir);
-            } finally {
-                watcher.close();
+                testdir.register(watcher, StandardWatchEventKind.ENTRY_DELETE);
+                assertCheckRead(testdir);
             }
 
             // -- getAttribute/setAttribute/readAttributes --
 
             prepare();
-            file.getAttribute("size");
+            getAttribute(file, "size");
             assertCheckRead(file);
 
             prepare();
-            file.setAttribute("lastModifiedTime",
+            setAttribute(file, "lastModifiedTime",
                 FileTime.fromMillis(System.currentTimeMillis()));
             assertCheckWrite(file);
 
             prepare();
-            file.readAttributes("*");
+            readAttributes(file, "*");
             assertCheckRead(file);
 
             // -- BasicFileAttributeView --
-            testBasicFileAttributeView(file
-                .getFileAttributeView(BasicFileAttributeView.class), file);
+            testBasicFileAttributeView(
+                getFileAttributeView(file, BasicFileAttributeView.class), file);
 
             // -- PosixFileAttributeView --
 
             {
                 PosixFileAttributeView view =
-                    file.getFileAttributeView(PosixFileAttributeView.class);
+                    getFileAttributeView(file, PosixFileAttributeView.class);
                 if (view != null &&
-                    file.getFileStore().supportsFileAttributeView(PosixFileAttributeView.class))
+                    getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class))
                 {
                     testPosixFileAttributeView(view, file);
                 } else {
@@ -555,9 +581,9 @@ public class CheckPermissions {
 
             {
                 DosFileAttributeView view =
-                    file.getFileAttributeView(DosFileAttributeView.class);
+                    getFileAttributeView(file, DosFileAttributeView.class);
                 if (view != null &&
-                    file.getFileStore().supportsFileAttributeView(DosFileAttributeView.class))
+                    getFileStore(file).supportsFileAttributeView(DosFileAttributeView.class))
                 {
                     prepare();
                     view.readAttributes();
@@ -587,9 +613,9 @@ public class CheckPermissions {
 
             {
                 FileOwnerAttributeView view =
-                    file.getFileAttributeView(FileOwnerAttributeView.class);
+                    getFileAttributeView(file, FileOwnerAttributeView.class);
                 if (view != null &&
-                    file.getFileStore().supportsFileAttributeView(FileOwnerAttributeView.class))
+                    getFileStore(file).supportsFileAttributeView(FileOwnerAttributeView.class))
                 {
                     prepare();
                     UserPrincipal owner = view.getOwner();
@@ -610,9 +636,9 @@ public class CheckPermissions {
 
             {
                 UserDefinedFileAttributeView view =
-                    file.getFileAttributeView(UserDefinedFileAttributeView.class);
+                    getFileAttributeView(file, UserDefinedFileAttributeView.class);
                 if (view != null &&
-                    file.getFileStore().supportsFileAttributeView(UserDefinedFileAttributeView.class))
+                    getFileStore(file).supportsFileAttributeView(UserDefinedFileAttributeView.class))
                 {
                     prepare();
                     view.write("test", ByteBuffer.wrap(new byte[100]));
@@ -651,9 +677,9 @@ public class CheckPermissions {
             // -- AclFileAttributeView --
             {
                 AclFileAttributeView view =
-                    file.getFileAttributeView(AclFileAttributeView.class);
+                    getFileAttributeView(file, AclFileAttributeView.class);
                 if (view != null &&
-                    file.getFileStore().supportsFileAttributeView(AclFileAttributeView.class))
+                    getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class))
                 {
                     prepare();
                     List<AclEntry> acl = view.getAcl();
@@ -672,7 +698,7 @@ public class CheckPermissions {
 
             UserPrincipalLookupService lookupService =
                 FileSystems.getDefault().getUserPrincipalLookupService();
-            UserPrincipal owner = Attributes.getOwner(file);
+            UserPrincipal owner = getOwner(file);
 
             prepare();
             lookupService.lookupPrincipalByName(owner.getName());
@@ -680,7 +706,7 @@ public class CheckPermissions {
                                        "lookupUserInformation");
 
             try {
-                UserPrincipal group = Attributes.readPosixFileAttributes(file).group();
+                UserPrincipal group = readAttributes(file, PosixFileAttributes.class).group();
                 prepare();
                 lookupService.lookupPrincipalByGroupName(group.getName());
                 assertCheckPermission(RuntimePermission.class,
@@ -691,7 +717,7 @@ public class CheckPermissions {
 
 
         } finally {
-            file.deleteIfExists();
+            deleteIfExists(file);
         }
     }
 }

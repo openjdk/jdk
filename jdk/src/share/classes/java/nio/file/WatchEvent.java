@@ -44,7 +44,7 @@ package java.nio.file;
  * @since 1.7
  */
 
-public abstract class WatchEvent<T> {
+public interface WatchEvent<T> {
 
     /**
      * An event kind, for the purposes of identification.
@@ -63,11 +63,6 @@ public abstract class WatchEvent<T> {
          */
         Class<T> type();
     }
-
-    /**
-     * Initializes a new instance of this class.
-     */
-    protected WatchEvent() { }
 
     /**
      * An event modifier that qualifies how a {@link Watchable} is registered
@@ -90,7 +85,7 @@ public abstract class WatchEvent<T> {
      *
      * @return  the event kind
      */
-    public abstract Kind<T> kind();
+    Kind<T> kind();
 
     /**
      * Returns the event count. If the event count is greater than {@code 1}
@@ -98,7 +93,7 @@ public abstract class WatchEvent<T> {
      *
      * @return  the event count
      */
-    public abstract int count();
+    int count();
 
     /**
      * Returns the context for the event.
@@ -112,5 +107,5 @@ public abstract class WatchEvent<T> {
      *
      * @return  the event context; may be {@code null}
      */
-    public abstract T context();
+    T context();
 }

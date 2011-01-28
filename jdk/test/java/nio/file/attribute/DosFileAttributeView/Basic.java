@@ -74,27 +74,25 @@ public class Basic {
     static void readWriteTests(Path dir) throws IOException {
 
         // create "foo" and test that we can read/write each FAT attribute
-        Path file = dir.resolve("foo");
-        file.createFile();
+        Path file = Files.createFile(dir.resolve("foo"));
         try {
-            testAttributes(file
-                .getFileAttributeView(DosFileAttributeView.class));
+            testAttributes(Files.getFileAttributeView(file, DosFileAttributeView.class));
 
             // Following tests use a symbolic link so skip if not supported
             if (!TestUtil.supportsLinks(dir))
                 return;
 
-            Path link = dir.resolve("link").createSymbolicLink(file);
+            Path link = dir.resolve("link");
+            Files.createSymbolicLink(link, file);
 
             // test following links
-            testAttributes(link
-                .getFileAttributeView(DosFileAttributeView.class));
+            testAttributes(Files.getFileAttributeView(link, DosFileAttributeView.class));
 
             // test not following links
             try {
                 try {
-                    testAttributes(link
-                        .getFileAttributeView(DosFileAttributeView.class, NOFOLLOW_LINKS));
+                    testAttributes(Files
+                        .getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS));
                 } catch (IOException x) {
                     // access to link attributes not supported
                     return;
@@ -103,32 +101,32 @@ public class Basic {
                 // set all attributes on link
                 // run test on target of link (which leaves them all un-set)
                 // check that attributes of link remain all set
-                setAll(link
-                    .getFileAttributeView(DosFileAttributeView.class, NOFOLLOW_LINKS), true);
-                testAttributes(link
-                    .getFileAttributeView(DosFileAttributeView.class));
-                DosFileAttributes attrs = Attributes.readDosFileAttributes(link, NOFOLLOW_LINKS);
+                setAll(Files
+                    .getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS), true);
+                testAttributes(Files
+                    .getFileAttributeView(link, DosFileAttributeView.class));
+                DosFileAttributes attrs =
+                    Files.getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS)
+                         .readAttributes();
                 check(attrs.isReadOnly());
                 check(attrs.isHidden());
                 check(attrs.isArchive());
                 check(attrs.isSystem());
-                setAll(link
-                    .getFileAttributeView(DosFileAttributeView.class, NOFOLLOW_LINKS), false);
+                setAll(Files
+                    .getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS), false);
 
                 // set all attributes on target
                 // run test on link (which leaves them all un-set)
                 // check that attributes of target remain all set
-                setAll(link
-                    .getFileAttributeView(DosFileAttributeView.class), true);
-                testAttributes(link
-                    .getFileAttributeView(DosFileAttributeView.class, NOFOLLOW_LINKS));
-                attrs = Attributes.readDosFileAttributes(link);
+                setAll(Files.getFileAttributeView(link, DosFileAttributeView.class), true);
+                testAttributes(Files
+                    .getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS));
+                attrs = Files.getFileAttributeView(link, DosFileAttributeView.class).readAttributes();
                 check(attrs.isReadOnly());
                 check(attrs.isHidden());
                 check(attrs.isArchive());
                 check(attrs.isSystem());
-                setAll(link
-                    .getFileAttributeView(DosFileAttributeView.class), false);
+                setAll(Files.getFileAttributeView(link, DosFileAttributeView.class), false);
             } finally {
                 TestUtil.deleteUnchecked(link);
             }
@@ -143,7 +141,7 @@ public class Basic {
 
         try {
             // skip test if DOS file attributes not supported
-            if (!dir.getFileStore().supportsFileAttributeView("dos")) {
+            if (!Files.getFileStore(dir).supportsFileAttributeView("dos")) {
                 System.out.println("DOS file attribute not supported.");
                 return;
             }

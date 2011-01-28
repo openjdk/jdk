@@ -54,6 +54,14 @@ class PassThroughFileSystem extends FileSystem {
         return provider.newFileSystem(uri, env);
     }
 
+    static Path unwrap(Path wrapper) {
+        if (wrapper == null)
+            throw new NullPointerException();
+        if (!(wrapper instanceof PassThroughPath))
+            throw new ProviderMismatchException();
+        return ((PassThroughPath)wrapper).delegate;
+    }
+
     @Override
     public FileSystemProvider provider() {
         return provider;
@@ -117,8 +125,8 @@ class PassThroughFileSystem extends FileSystem {
     }
 
     @Override
-    public Path getPath(String path) {
-        return new PassThroughPath(this, delegate.getPath(path));
+    public Path getPath(String first, String... more) {
+        return new PassThroughPath(this, delegate.getPath(first, more));
     }
 
     @Override
@@ -127,7 +135,7 @@ class PassThroughFileSystem extends FileSystem {
         return new PathMatcher() {
             @Override
             public boolean matches(Path path) {
-                return matcher.matches(PassThroughPath.unwrap(path));
+                return matcher.matches(unwrap(path));
             }
         };
     }
@@ -199,9 +207,154 @@ class PassThroughFileSystem extends FileSystem {
                              uri.getSchemeSpecificPart());
             return new PassThroughPath(delegate, delegate.provider().getPath(uri));
         }
+
+        @Override
+        public void setAttribute(Path file, String attribute, Object value, LinkOption... options)
+            throws IOException
+        {
+            Files.setAttribute(unwrap(file), attribute, value, options);
+        }
+
+        @Override
+        public Map<String,Object> readAttributes(Path file, String attributes, LinkOption... options)
+            throws IOException
+        {
+            return Files.readAttributes(unwrap(file), attributes, options);
+        }
+
+        @Override
+        public <V extends FileAttributeView> V getFileAttributeView(Path file,
+                                                                    Class<V> type,
+                                                                    LinkOption... options)
+        {
+            return Files.getFileAttributeView(unwrap(file), type, options);
+        }
+
+        @Override
+        public <A extends BasicFileAttributes> A readAttributes(Path file,
+                                                                Class<A> type,
+                                                                LinkOption... options)
+            throws IOException
+        {
+            return Files.readAttributes(unwrap(file), type, options);
+        }
+
+        @Override
+        public void delete(Path file) throws IOException {
+            Files.delete(unwrap(file));
+        }
+
+        @Override
+        public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
+            throws IOException
+        {
+            Files.createSymbolicLink(unwrap(link), unwrap(target), attrs);
+        }
+
+        @Override
+        public void createLink(Path link, Path existing) throws IOException {
+            Files.createLink(unwrap(link), unwrap(existing));
+        }
+
+        @Override
+        public Path readSymbolicLink(Path link) throws IOException {
+            Path target = Files.readSymbolicLink(unwrap(link));
+            return new PassThroughPath(delegate, target);
+        }
+
+
+        @Override
+        public void copy(Path source, Path target, CopyOption... options) throws IOException {
+            Files.copy(unwrap(source), unwrap(target), options);
+        }
+
+        @Override
+        public void move(Path source, Path target, CopyOption... options) throws IOException {
+            Files.move(unwrap(source), unwrap(target), options);
+        }
+
+        private DirectoryStream<Path> wrap(final DirectoryStream<Path> stream) {
+            return new DirectoryStream<Path>() {
+                @Override
+                public Iterator<Path> iterator() {
+                    final Iterator<Path> itr = stream.iterator();
+                    return new Iterator<Path>() {
+                        @Override
+                        public boolean hasNext() {
+                            return itr.hasNext();
+                        }
+                        @Override
+                        public Path next() {
+                            return new PassThroughPath(delegate, itr.next());
+                        }
+                        @Override
+                        public void remove() {
+                            itr.remove();
+                        }
+                    };
+                }
+                @Override
+                public void close() throws IOException {
+                    stream.close();
+                }
+            };
+        }
+
+        @Override
+        public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter)
+            throws IOException
+        {
+            return wrap(Files.newDirectoryStream(dir, filter));
+        }
+
+        @Override
+        public void createDirectory(Path dir, FileAttribute<?>... attrs)
+            throws IOException
+        {
+            Files.createDirectory(unwrap(dir), attrs);
+        }
+
+        @Override
+        public SeekableByteChannel newByteChannel(Path file,
+                                                  Set<? extends OpenOption> options,
+                                                  FileAttribute<?>... attrs)
+            throws IOException
+        {
+            return Files.newByteChannel(unwrap(file), options, attrs);
+        }
+
+
+        @Override
+        public boolean isHidden(Path file) throws IOException {
+            return Files.isHidden(unwrap(file));
+        }
+
+        @Override
+        public FileStore getFileStore(Path file) throws IOException {
+            return Files.getFileStore(unwrap(file));
+        }
+
+        @Override
+        public boolean isSameFile(Path file, Path other) throws IOException {
+            return Files.isSameFile(unwrap(file), unwrap(other));
+        }
+
+        @Override
+        public void checkAccess(Path file, AccessMode... modes)
+            throws IOException
+        {
+            // hack
+            if (modes.length == 0) {
+                if (Files.exists(unwrap(file)))
+                    return;
+                else
+                    throw new NoSuchFileException(file.toString());
+            }
+            throw new RuntimeException("not implemented yet");
+        }
     }
 
-    static class PassThroughPath extends Path {
+    static class PassThroughPath implements Path {
         private final FileSystem fs;
         private final Path delegate;
 
@@ -212,12 +365,6 @@ class PassThroughFileSystem extends FileSystem {
 
         private Path wrap(Path path) {
             return (path != null) ? new PassThroughPath(fs, path) : null;
-        }
-
-        static Path unwrap(Path wrapper) {
-            if (!(wrapper instanceof PassThroughPath))
-                throw new ProviderMismatchException();
-            return ((PassThroughPath)wrapper).delegate;
         }
 
         @Override
@@ -235,12 +382,6 @@ class PassThroughFileSystem extends FileSystem {
             return wrap(delegate.getRoot());
         }
 
-
-        @Override
-        public Path getName() {
-            return wrap(delegate.getName());
-        }
-
         @Override
         public Path getParent() {
             return wrap(delegate.getParent());
@@ -249,6 +390,11 @@ class PassThroughFileSystem extends FileSystem {
         @Override
         public int getNameCount() {
             return delegate.getNameCount();
+        }
+
+        @Override
+        public Path getFileName() {
+            return wrap(delegate.getFileName());
         }
 
         @Override
@@ -267,8 +413,18 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
+        public boolean startsWith(String other) {
+            return delegate.startsWith(other);
+        }
+
+        @Override
         public boolean endsWith(Path other) {
             return delegate.endsWith(unwrap(other));
+        }
+
+        @Override
+        public boolean endsWith(String other) {
+            return delegate.endsWith(other);
         }
 
         @Override
@@ -287,67 +443,35 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
+        public Path resolveSibling(Path other) {
+            return wrap(delegate.resolveSibling(unwrap(other)));
+        }
+
+        @Override
+        public Path resolveSibling(String other) {
+            return wrap(delegate.resolveSibling(other));
+        }
+
+        @Override
         public Path relativize(Path other) {
             return wrap(delegate.relativize(unwrap(other)));
         }
 
         @Override
-        public void setAttribute(String attribute, Object value, LinkOption... options)
-            throws IOException
-        {
-            delegate.setAttribute(attribute, value, options);
+        public boolean equals(Object other) {
+            if (!(other instanceof PassThroughPath))
+                return false;
+            return delegate.equals(unwrap((PassThroughPath)other));
         }
 
         @Override
-        public Object getAttribute(String attribute, LinkOption... options)
-            throws IOException
-        {
-            // assume that unwrapped objects aren't exposed
-            return delegate.getAttribute(attribute, options);
+        public int hashCode() {
+            return delegate.hashCode();
         }
 
         @Override
-        public Map<String,?> readAttributes(String attributes, LinkOption... options)
-            throws IOException
-        {
-            // assume that unwrapped objects aren't exposed
-            return delegate.readAttributes(attributes, options);
-        }
-
-        @Override
-        public <V extends FileAttributeView> V getFileAttributeView(Class<V> type,
-                                                                    LinkOption... options)
-        {
-            return delegate.getFileAttributeView(type, options);
-        }
-
-        @Override
-        public void delete() throws IOException {
-            delegate.delete();
-        }
-
-        @Override
-        public void deleteIfExists() throws IOException {
-            delegate.deleteIfExists();
-        }
-
-        @Override
-        public Path createSymbolicLink(Path target, FileAttribute<?>... attrs)
-            throws IOException
-        {
-            delegate.createSymbolicLink(unwrap(target), attrs);
-            return this;
-        }
-
-        @Override
-        public Path createLink(Path existing) throws IOException {
-            delegate.createLink(unwrap(existing));
-            return this;
-        }
-
-        @Override
-        public Path readSymbolicLink() throws IOException {
-            return wrap(delegate.readSymbolicLink());
+        public String toString() {
+            return delegate.toString();
         }
 
         @Override
@@ -367,142 +491,9 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
-        public Path copyTo(Path target, CopyOption... options) throws IOException {
-            return wrap(delegate.copyTo(unwrap(target), options));
+        public File toFile() {
+            return delegate.toFile();
         }
-
-        @Override
-        public Path moveTo(Path target, CopyOption... options) throws IOException {
-            return wrap(delegate.copyTo(unwrap(target), options));
-        }
-
-        private DirectoryStream<Path> wrap(final DirectoryStream<Path> stream) {
-            return new DirectoryStream<Path>() {
-                @Override
-                public Iterator<Path> iterator() {
-                    final Iterator<Path> itr = stream.iterator();
-                    return new Iterator<Path>() {
-                        @Override
-                        public boolean hasNext() {
-                            return itr.hasNext();
-                        }
-                        @Override
-                        public Path next() {
-                            return wrap(itr.next());
-                        }
-                        @Override
-                        public void remove() {
-                            itr.remove();
-                        }
-                    };
-                }
-                @Override
-                public void close() throws IOException {
-                    stream.close();
-                }
-            };
-        }
-
-        @Override
-        public DirectoryStream<Path> newDirectoryStream() throws IOException {
-            return wrap(delegate.newDirectoryStream());
-        }
-
-        @Override
-        public DirectoryStream<Path> newDirectoryStream(String glob)
-            throws IOException
-        {
-            return wrap(delegate.newDirectoryStream(glob));
-        }
-
-        @Override
-        public DirectoryStream<Path> newDirectoryStream(DirectoryStream.Filter<? super Path> filter)
-            throws IOException
-        {
-            return wrap(delegate.newDirectoryStream(filter));
-        }
-
-        @Override
-        public Path createFile(FileAttribute<?>... attrs) throws IOException {
-            delegate.createFile(attrs);
-            return this;
-        }
-
-        @Override
-        public Path createDirectory(FileAttribute<?>... attrs)
-            throws IOException
-        {
-            delegate.createDirectory(attrs);
-            return this;
-        }
-
-        @Override
-        public SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                                       FileAttribute<?>... attrs)
-            throws IOException
-        {
-            return delegate.newByteChannel(options, attrs);
-        }
-
-        @Override
-        public SeekableByteChannel newByteChannel(OpenOption... options)
-            throws IOException
-        {
-            return delegate.newByteChannel(options);
-        }
-
-        @Override
-        public InputStream newInputStream(OpenOption... options) throws IOException {
-            return delegate.newInputStream();
-        }
-
-        @Override
-        public OutputStream newOutputStream(OpenOption... options)
-            throws IOException
-        {
-            return delegate.newOutputStream(options);
-        }
-
-        @Override
-        public boolean isHidden() throws IOException {
-            return delegate.isHidden();
-        }
-
-        @Override
-        public void checkAccess(AccessMode... modes) throws IOException {
-            delegate.checkAccess(modes);
-        }
-
-        @Override
-        public boolean exists() {
-            return delegate.exists();
-        }
-
-        @Override
-        public boolean notExists() {
-            return delegate.notExists();
-        }
-
-        @Override
-        public FileStore getFileStore() throws IOException {
-            return delegate.getFileStore();
-        }
-
-        @Override
-        public WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>[] events,
-                                      WatchEvent.Modifier... modifiers)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public  WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>... events)
-        {
-            throw new UnsupportedOperationException();
-        }
-
 
         @Override
         public Iterator<Path> iterator() {
@@ -529,26 +520,18 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
-        public boolean isSameFile(Path other) throws IOException {
-            return delegate.isSameFile(unwrap(other));
-        }
-
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof PassThroughPath))
-                return false;
-            return delegate.equals(unwrap((PassThroughPath)other));
+        public WatchKey register(WatchService watcher,
+                                      WatchEvent.Kind<?>[] events,
+                                      WatchEvent.Modifier... modifiers)
+        {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public int hashCode() {
-            return delegate.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return delegate.toString();
+        public  WatchKey register(WatchService watcher,
+                                      WatchEvent.Kind<?>... events)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

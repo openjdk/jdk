@@ -276,7 +276,7 @@ public class Transfer {
         while (fc == null) {
             sink = File.createTempFile("sink", null);
             // re-create as a sparse file
-            sink.toPath().delete();
+            sink.delete();
             try {
                 fc = FileChannel.open(sink.toPath(),
                                       StandardOpenOption.CREATE_NEW,

@@ -67,19 +67,6 @@ class LinuxDosFileAttributeView
     }
 
     @Override
-    public Object getAttribute(String attribute) throws IOException {
-        if (attribute.equals(READONLY_NAME))
-            return readAttributes().isReadOnly();
-        if (attribute.equals(ARCHIVE_NAME))
-            return readAttributes().isArchive();
-        if (attribute.equals(SYSTEM_NAME))
-            return readAttributes().isSystem();
-        if (attribute.equals(HIDDEN_NAME))
-            return readAttributes().isHidden();
-        return super.getAttribute(attribute);
-    }
-
-    @Override
     public void setAttribute(String attribute, Object value)
         throws IOException
     {
@@ -103,7 +90,7 @@ class LinuxDosFileAttributeView
     }
 
     @Override
-    public Map<String,?> readAttributes(String[] attributes)
+    public Map<String,Object> readAttributes(String[] attributes)
         throws IOException
     {
         AttributesBuilder builder = AttributesBuilder.create(attributes);
