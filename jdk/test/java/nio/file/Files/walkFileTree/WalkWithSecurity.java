@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,11 @@ public class WalkWithSecurity {
         Path dir = Paths.get(testSrc);
 
         // Sanity check the environment
-        if (Paths.get(here).isSameFile(dir))
+        if (Files.isSameFile(Paths.get(here), dir))
             throw new RuntimeException("Working directory cannot be " + dir);
-        DirectoryStream<Path> stream = dir.newDirectoryStream();
-        try {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             if (!stream.iterator().hasNext())
                 throw new RuntimeException(testSrc + " is empty");
-        } finally {
-            stream.close();
         }
 
         // Install security manager with the given policy file

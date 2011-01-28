@@ -25,7 +25,7 @@
 
 package sun.nio.fs;
 
-import java.nio.file.FileRef;
+import java.nio.file.Path;
 import java.nio.file.spi.FileTypeDetector;
 import java.util.Locale;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public abstract class AbstractFileTypeDetector
      * and checks that the content type's syntax is valid.
      */
     @Override
-    public final String probeContentType(FileRef file) throws IOException {
+    public final String probeContentType(Path file) throws IOException {
         if (file == null)
             throw new NullPointerException("'file' is null");
         String result = implProbeContentType(file);
@@ -56,7 +56,7 @@ public abstract class AbstractFileTypeDetector
     /**
      * Probes the given file to guess its content type.
      */
-    protected abstract String implProbeContentType(FileRef file)
+    protected abstract String implProbeContentType(Path file)
         throws IOException;
 
     /**

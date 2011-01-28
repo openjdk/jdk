@@ -81,11 +81,7 @@ import java.util.List;
  * @since 1.7
  */
 
-public abstract class WatchKey {
-    /**
-     * Initializes a new instance of this class.
-     */
-    protected WatchKey() { }
+public interface WatchKey {
 
     /**
      * Tells whether or not this watch key is valid.
@@ -95,7 +91,7 @@ public abstract class WatchKey {
      *
      * @return  {@code true} if, and only if, this watch key is valid
      */
-    public abstract boolean isValid();
+    boolean isValid();
 
     /**
      * Retrieves and removes all pending events for this watch key, returning
@@ -105,7 +101,7 @@ public abstract class WatchKey {
      *
      * @return  the list of the events retrieved; may be empty
      */
-    public abstract List<WatchEvent<?>> pollEvents();
+    List<WatchEvent<?>> pollEvents();
 
     /**
      * Resets this watch key.
@@ -121,7 +117,7 @@ public abstract class WatchKey {
      *          {@code false} if the watch key could not be reset because it is
      *          no longer {@link #isValid valid}
      */
-    public abstract boolean reset();
+    boolean reset();
 
     /**
      * Cancels the registration with the watch service. Upon return the watch key
@@ -134,5 +130,21 @@ public abstract class WatchKey {
      * <p> If this watch key has already been cancelled then invoking this
      * method has no effect.  Once cancelled, a watch key remains forever invalid.
      */
-    public abstract void cancel();
+    void cancel();
+
+    /**
+     * Returns the object for which this watch key was created. This method will
+     * continue to return the object even after the key is cancelled.
+     *
+     * <p> As the {@code WatchService} is intended to map directly on to the
+     * native file event notification facility (where available) then many of
+     * details on how registered objects are watched is highly implementation
+     * specific. When watching a directory for changes for example, and the
+     * directory is moved or renamed in the file system, there is no guarantee
+     * that the watch key will be cancelled and so the object returned by this
+     * method may no longer be a valid path to the directory.
+     *
+     * @return the object for which this watch key was created
+     */
+    //T watchable();
 }

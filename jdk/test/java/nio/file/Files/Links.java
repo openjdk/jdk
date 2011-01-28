@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4313887 6838333 6863864
- * @summary Unit test for java.nio.file.Path createSymbolicLink,
+ * @summary Unit test for java.nio.file.Files createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
  * @build Links
@@ -52,8 +52,8 @@ public class Links {
 
         // Check if sym links are supported
         try {
-            link.createSymbolicLink(Paths.get("foo"));
-            link.delete();
+            Files.createSymbolicLink(link, Paths.get("foo"));
+            Files.delete(link);
         } catch (UnsupportedOperationException x) {
             // sym links not supported
             return;
@@ -70,11 +70,11 @@ public class Links {
         String[] targets = (isWindows) ? windowsTargets : otherTargets;
         for (String s: targets) {
             Path target = Paths.get(s);
-            link.createSymbolicLink(target);
+            Files.createSymbolicLink(link, target);
             try {
-                assertTrue(link.readSymbolicLink().equals(target));
+                assertTrue(Files.readSymbolicLink(link).equals(target));
             } finally {
-                link.delete();
+                Files.delete(link);
             }
         }
 
@@ -82,57 +82,54 @@ public class Links {
         Path mydir = dir.resolve("mydir");
         Path myfile = mydir.resolve("myfile");
         try {
-            mydir.createDirectory();
-            myfile.createFile();
+            Files.createDirectory(mydir);
+            Files.createFile(myfile);
 
             // link -> "mydir"
-            link.createSymbolicLink(mydir.getName());
-            assertTrue(link.readSymbolicLink().equals(mydir.getName()));
+            Files.createSymbolicLink(link, mydir.getFileName());
+            assertTrue(Files.readSymbolicLink(link).equals(mydir.getFileName()));
 
             // Test access to directory via link
-            DirectoryStream<Path> stream = link.newDirectoryStream();
-            try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(link)) {
                 boolean found = false;
                 for (Path entry: stream) {
-                    if (entry.getName().equals(myfile.getName())) {
+                    if (entry.getFileName().equals(myfile.getFileName())) {
                         found = true;
                         break;
                     }
                 }
                 assertTrue(found);
-            } finally {
-                stream.close();
             }
 
             // Test link2 -> link -> mydir
             final Path link2 = dir.resolve("link2");
-            Path target2 = link.getName();
-            link2.createSymbolicLink(target2);
+            Path target2 = link.getFileName();
+            Files.createSymbolicLink(link2, target2);
             try {
-                assertTrue(link2.readSymbolicLink().equals(target2));
-                link2.newDirectoryStream().close();
+                assertTrue(Files.readSymbolicLink(link2).equals(target2));
+                Files.newDirectoryStream(link2).close();
             } finally {
-                link2.delete();
+                Files.delete(link2);
             }
 
             // Remove mydir and re-create link2 before re-creating mydir
             // (This is a useful test on Windows to ensure that creating a
             // sym link to a directory sym link creates the right type of link).
-            myfile.delete();
-            mydir.delete();
-            link2.createSymbolicLink(target2);
+            Files.delete(myfile);
+            Files.delete(mydir);
+            Files.createSymbolicLink(link2, target2);
             try {
-                assertTrue(link2.readSymbolicLink().equals(target2));
-                mydir.createDirectory();
-                link2.newDirectoryStream().close();
+                assertTrue(Files.readSymbolicLink(link2).equals(target2));
+                Files.createDirectory(mydir);
+                Files.newDirectoryStream(link2).close();
             } finally {
-                link2.delete();
+                Files.delete(link2);
             }
 
         } finally {
-            myfile.deleteIfExists();
-            mydir.deleteIfExists();
-            link.deleteIfExists();
+            Files.deleteIfExists(myfile);
+            Files.deleteIfExists(mydir);
+            Files.deleteIfExists(link);
         }
     }
 
@@ -140,11 +137,12 @@ public class Links {
      * Exercise createLink method
      */
     static void testHardLinks(Path dir) throws IOException {
-        Path foo = dir.resolve("foo").createFile();
+        Path foo = dir.resolve("foo");
+        Files.createFile(foo);
         try {
-            Path bar;
+            Path bar = dir.resolve("bar");
             try {
-                bar = dir.resolve("bar").createLink(foo);
+                Files.createLink(bar, foo);
             } catch (UnsupportedOperationException x) {
                 return;
             } catch (IOException x) {
@@ -152,18 +150,16 @@ public class Links {
                 return;
             }
             try {
-                Object key1 = Attributes
-                    .readBasicFileAttributes(foo).fileKey();
-                Object key2 = Attributes
-                    .readBasicFileAttributes(bar).fileKey();
+                Object key1 = Files.readAttributes(foo, BasicFileAttributes.class).fileKey();
+                Object key2 = Files.readAttributes(bar, BasicFileAttributes.class).fileKey();
                 assertTrue((key1 == null) || (key1.equals(key2)));
             } finally {
-                bar.delete();
+                Files.delete(bar);
             }
 
 
         } finally {
-            foo.delete();
+            Files.delete(foo);
         }
     }
 

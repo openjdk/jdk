@@ -27,6 +27,7 @@
  */
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.attribute.DosFileAttributeView;
 
 public class IsHidden {
@@ -42,7 +43,7 @@ public class IsHidden {
     }
 
     private static void setHidden(File f, boolean value) throws IOException {
-        f.toPath().getFileAttributeView(DosFileAttributeView.class).setHidden(value);
+        Files.getFileAttributeView(f.toPath(), DosFileAttributeView.class).setHidden(value);
     }
 
     private static void testWin32() throws Exception {

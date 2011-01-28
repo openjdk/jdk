@@ -34,21 +34,8 @@ public class CreateFileTree {
 
     static final Random rand = new Random();
 
-    public static Path createTemporaryDirectory() throws IOException {
-        Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
-        Path dir;
-        do {
-            dir = tmpdir.resolve("name" + rand.nextInt());
-        } while (dir.exists());
-        dir.createDirectory();
-        return dir;
-    }
-
     public static void main(String[] args) throws IOException {
-        Path top = createTemporaryDirectory();
-        if (!top.isAbsolute())
-            top = top.toAbsolutePath();
-
+        Path top = Files.createTempDirectory("tree");
         List<Path> dirs = new ArrayList<Path>();
 
         // create tree
@@ -61,7 +48,7 @@ public class CreateFileTree {
             int r = Math.min((total-n), (1+rand.nextInt(3)));
             for (int i=0; i<r; i++) {
                 String name = "dir" + (++n);
-                Path subdir = dir.resolve(name).createDirectory();
+                Path subdir = Files.createDirectory(dir.resolve(name));
                 queue.offer(subdir);
                 dirs.add(subdir);
             }
@@ -73,7 +60,7 @@ public class CreateFileTree {
         for (int i=0; i<files; i++) {
             String name = "file" + (i+1);
             int x = rand.nextInt(dirs.size());
-            dirs.get(x).resolve(name).createFile();
+            Files.createFile(dirs.get(x).resolve(name));
         }
 
         // create a few sym links in the file tree so as to create cycles
@@ -87,7 +74,7 @@ public class CreateFileTree {
             String name = "link" + (i+1);
             Path link = dirs.get(x).resolve(name);
             Path target = dirs.get(y);
-            link.createSymbolicLink(target);
+            Files.createSymbolicLink(link, target);
         }
 
         // done
