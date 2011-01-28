@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,21 +204,6 @@ public abstract class Attribute implements AnnotationValue {
         }
     }
 
-    public static class TypeCompound extends Compound {
-        public TypeAnnotationPosition position;
-        public TypeCompound(Compound compound,
-                TypeAnnotationPosition position) {
-            this(compound.type, compound.values, position);
-        }
-        public TypeCompound(Type type,
-                List<Pair<MethodSymbol, Attribute>> values,
-                TypeAnnotationPosition position) {
-            super(type, values);
-            this.position = position;
-        }
-
-    }
-
     /** The value for an annotation element of an array type.
      */
     public static class Array extends Attribute {
@@ -255,8 +240,7 @@ public abstract class Attribute implements AnnotationValue {
         public VarSymbol value;
         public Enum(Type type, VarSymbol value) {
             super(type);
-            assert value != null;
-            this.value = value;
+            this.value = Assert.checkNonNull(value);
         }
         public void accept(Visitor v) { v.visitEnum(this); }
         public String toString() {
