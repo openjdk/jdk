@@ -2121,7 +2121,7 @@ public class Check {
 
         public boolean accepts(Symbol s) {
             return s.kind == MTH &&
-                    (s.flags() & SYNTHETIC) == 0 &&
+                    (s.flags() & (SYNTHETIC | CLASH)) == 0 &&
                     s.isInheritedIn(site.tsym, types) &&
                     !s.isConstructor();
         }
@@ -2581,28 +2581,42 @@ public class Check {
         if (sym.owner.name == names.any) return false;
         for (Scope.Entry e = s.lookup(sym.name); e.scope == s; e = e.next()) {
             if (sym != e.sym &&
+                (e.sym.flags() & CLASH) == 0 &&
                 sym.kind == e.sym.kind &&
                 sym.name != names.error &&
                 (sym.kind != MTH || types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
-                if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS))
+                if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
-                else if (sym.kind == MTH && !types.overrideEquivalent(sym.type, e.sym.type))
+                    return true;
+                } else if (sym.kind == MTH && !hasSameSignature(sym.type, e.sym.type)) {
                     duplicateErasureError(pos, sym, e.sym);
-                else
+                    sym.flags_field |= CLASH;
+                    return true;
+                } else {
                     duplicateError(pos, e.sym);
-                return false;
+                    return false;
+                }
             }
         }
         return true;
     }
     //where
-    /** Report duplicate declaration error.
-     */
-    void duplicateErasureError(DiagnosticPosition pos, Symbol sym1, Symbol sym2) {
-        if (!sym1.type.isErroneous() && !sym2.type.isErroneous()) {
-            log.error(pos, "name.clash.same.erasure", sym1, sym2);
+        boolean hasSameSignature(Type mt1, Type mt2) {
+            if (mt1.tag == FORALL && mt2.tag == FORALL) {
+                ForAll fa1 = (ForAll)mt1;
+                ForAll fa2 = (ForAll)mt2;
+                mt2 = types.subst(fa2, fa2.tvars, fa1.tvars);
+            }
+            return types.hasSameArgs(mt1.asMethodType(), mt2.asMethodType());
         }
-    }
+
+        /** Report duplicate declaration error.
+         */
+        void duplicateErasureError(DiagnosticPosition pos, Symbol sym1, Symbol sym2) {
+            if (!sym1.type.isErroneous() && !sym2.type.isErroneous()) {
+                log.error(pos, "name.clash.same.erasure", sym1, sym2);
+            }
+        }
 
     /** Check that single-type import is not already imported or top-level defined,
      *  but make an exception for two single-type imports which denote the same type.
