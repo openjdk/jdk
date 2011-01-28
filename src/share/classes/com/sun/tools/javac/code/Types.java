@@ -2259,6 +2259,13 @@ public class Types {
 
         @Override
         public Type visitForAll(ForAll t, Void ignored) {
+            if (Type.containsAny(to, t.tvars)) {
+                //perform alpha-renaming of free-variables in 't'
+                //if 'to' types contain variables that are free in 't'
+                List<Type> freevars = newInstances(t.tvars);
+                t = new ForAll(freevars,
+                        Types.this.subst(t.qtype, t.tvars, freevars));
+            }
             List<Type> tvars1 = substBounds(t.tvars, from, to);
             Type qtype1 = subst(t.qtype);
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
