@@ -42,12 +42,12 @@ public class RegistryFileTypeDetector
     }
 
     @Override
-    public String implProbeContentType(FileRef file) throws IOException {
+    public String implProbeContentType(Path file) throws IOException {
         if (!(file instanceof Path))
             return null;
 
         // get file extension
-        Path name = ((Path)file).getName();
+        Path name = file.getFileName();
         if (name == null)
             return null;
         String filename = name.toString();

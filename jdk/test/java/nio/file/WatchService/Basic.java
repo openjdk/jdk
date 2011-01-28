@@ -41,8 +41,9 @@ import java.util.concurrent.TimeUnit;
 
 public class Basic {
 
-    static void createFile(Path file) throws IOException {
-        file.newOutputStream().close();
+    static void checkKey(WatchKey key, Path dir) {
+        if (!key.isValid())
+            throw new RuntimeException("Key is not valid");
     }
 
     static void takeExpectedKey(WatchService watcher, WatchKey expected) {
@@ -80,19 +81,19 @@ public class Basic {
         FileSystem fs = FileSystems.getDefault();
         Path name = fs.getPath("foo");
 
-        WatchService watcher = fs.newWatchService();
-        try {
+        try (WatchService watcher = fs.newWatchService()) {
             // --- ENTRY_CREATE ---
 
             // register for event
             System.out.format("register %s for ENTRY_CREATE\n", dir);
             WatchKey myKey = dir.register(watcher,
                 new WatchEvent.Kind<?>[]{ ENTRY_CREATE });
+            checkKey(myKey, dir);
 
             // create file
             Path file = dir.resolve("foo");
             System.out.format("create %s\n", file);
-            createFile(file);
+            Files.createFile(file);
 
             // remove key and check that we got the ENTRY_CREATE event
             takeExpectedKey(watcher, myKey);
@@ -112,9 +113,10 @@ public class Basic {
                 new WatchEvent.Kind<?>[]{ ENTRY_DELETE });
             if (deleteKey != myKey)
                 throw new RuntimeException("register did not return existing key");
+            checkKey(deleteKey, dir);
 
             System.out.format("delete %s\n", file);
-            file.delete();
+            Files.delete(file);
             takeExpectedKey(watcher, myKey);
             checkExpectedEvent(myKey.pollEvents(),
                 StandardWatchEventKind.ENTRY_DELETE, name);
@@ -126,7 +128,7 @@ public class Basic {
             System.out.println("OKAY");
 
             // create the file for the next test
-            createFile(file);
+            Files.createFile(file);
 
             // --- ENTRY_MODIFY ---
 
@@ -135,13 +137,11 @@ public class Basic {
                 new WatchEvent.Kind<?>[]{ ENTRY_MODIFY });
             if (newKey != myKey)
                 throw new RuntimeException("register did not return existing key");
+            checkKey(newKey, dir);
 
             System.out.format("update: %s\n", file);
-            OutputStream out = file.newOutputStream(StandardOpenOption.APPEND);
-            try {
+            try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.APPEND)) {
                 out.write("I am a small file".getBytes("UTF-8"));
-            } finally {
-                out.close();
             }
 
             // remove key and check that we got the ENTRY_MODIFY event
@@ -151,10 +151,7 @@ public class Basic {
             System.out.println("OKAY");
 
             // done
-            file.delete();
-
-        } finally {
-            watcher.close();
+            Files.delete(file);
         }
     }
 
@@ -164,12 +161,12 @@ public class Basic {
     static void testCancel(Path dir) throws IOException {
         System.out.println("-- Cancel --");
 
-        WatchService watcher = FileSystems.getDefault().newWatchService();
-        try {
+        try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
 
             System.out.format("register %s for events\n", dir);
             WatchKey myKey = dir.register(watcher,
                 new WatchEvent.Kind<?>[]{ ENTRY_CREATE });
+            checkKey(myKey, dir);
 
             System.out.println("cancel key");
             myKey.cancel();
@@ -177,7 +174,7 @@ public class Basic {
             // create a file in the directory
             Path file = dir.resolve("mars");
             System.out.format("create: %s\n", file);
-            createFile(file);
+            Files.createFile(file);
 
             // poll for keys - there will be none
             System.out.println("poll...");
@@ -190,12 +187,9 @@ public class Basic {
             }
 
             // done
-            file.delete();
+            Files.delete(file);
 
             System.out.println("OKAY");
-
-        } finally {
-            watcher.close();
         }
     }
 
@@ -206,17 +200,16 @@ public class Basic {
     static void testAutomaticCancel(Path dir) throws IOException {
         System.out.println("-- Automatic Cancel --");
 
-        Path subdir = dir.resolve("bar").createDirectory();
+        Path subdir = Files.createDirectory(dir.resolve("bar"));
 
-        WatchService watcher = FileSystems.getDefault().newWatchService();
-        try {
+        try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
 
             System.out.format("register %s for events\n", subdir);
             WatchKey myKey = subdir.register(watcher,
                 new WatchEvent.Kind<?>[]{ ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY });
 
             System.out.format("delete: %s\n", subdir);
-            subdir.delete();
+            Files.delete(subdir);
             takeExpectedKey(watcher, myKey);
 
             System.out.println("reset key");
@@ -227,8 +220,6 @@ public class Basic {
 
             System.out.println("OKAY");
 
-        } finally {
-            watcher.close();
         }
     }
 
@@ -411,7 +402,7 @@ public class Basic {
             // create gus1
             Path file1 = dir.resolve(name1);
             System.out.format("create %s\n", file1);
-            createFile(file1);
+            Files.createFile(file1);
 
             // register with both watch services (different events)
             System.out.println("register for different events");
@@ -426,7 +417,7 @@ public class Basic {
             // create gus2
             Path file2 = dir.resolve(name2);
             System.out.format("create %s\n", file2);
-            createFile(file2);
+            Files.createFile(file2);
 
             // check that key1 got ENTRY_CREATE
             takeExpectedKey(watcher1, key1);
@@ -439,7 +430,7 @@ public class Basic {
                 throw new RuntimeException("key not expected");
 
             // delete gus1
-            file1.delete();
+            Files.delete(file1);
 
             // check that key2 got ENTRY_DELETE
             takeExpectedKey(watcher2, key2);
@@ -462,7 +453,7 @@ public class Basic {
 
             // create file and key2 should be queued
             System.out.format("create %s\n", file1);
-            createFile(file1);
+            Files.createFile(file1);
             takeExpectedKey(watcher2, key2);
             checkExpectedEvent(key2.pollEvents(),
                 StandardWatchEventKind.ENTRY_CREATE, name1);

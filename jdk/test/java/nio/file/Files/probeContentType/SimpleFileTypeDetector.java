@@ -30,18 +30,9 @@ public class SimpleFileTypeDetector extends FileTypeDetector {
     public SimpleFileTypeDetector() {
     }
 
-    public String probeContentType(FileRef file) throws IOException {
-
+    public String probeContentType(Path file) throws IOException {
         System.out.println("probe " + file + "...");
-
-        if (file instanceof Path) {
-            String name = ((Path)file).toString();
-            if (name.endsWith(".grape")) {
-                return "grape/unknown";
-            }
-        }
-
-        // unknown
-        return null;
+        String name = file.toString();
+        return name.endsWith(".grape") ? "grape/unknown" : null;
     }
 }

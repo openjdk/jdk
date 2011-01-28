@@ -29,7 +29,6 @@
  */
 
 import java.nio.file.*;
-import java.nio.file.attribute.Attributes;
 import java.io.*;
 import java.util.concurrent.*;
 import com.sun.nio.file.ExtendedCopyOption;
@@ -43,10 +42,9 @@ public class InterruptCopy {
     public static void main(String[] args) throws Exception {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            FileStore store = dir.getFileStore();
+            FileStore store = Files.getFileStore(dir);
             System.out.format("Checking space (%s)\n", store);
-            long usableSpace = Attributes
-                .readFileStoreSpaceAttributes(store).usableSpace();
+            long usableSpace = store.getUsableSpace();
             if (usableSpace < 2*FILE_SIZE_TO_COPY) {
                 System.out.println("Insufficient disk space to run test.");
                 return;
@@ -66,14 +64,11 @@ public class InterruptCopy {
         System.out.println("Creating source file...");
         byte[] buf = new byte[32*1024];
         long total = 0;
-        OutputStream out = source.newOutputStream();
-        try {
+        try (OutputStream out = Files.newOutputStream(source)) {
             do {
                 out.write(buf);
                 total += buf.length;
             } while (total < FILE_SIZE_TO_COPY);
-        } finally {
-            out.close();
         }
         System.out.println("Source file created.");
 
@@ -89,7 +84,7 @@ public class InterruptCopy {
             System.out.println("Copying file...");
             try {
                 long start = System.currentTimeMillis();
-                source.copyTo(target, ExtendedCopyOption.INTERRUPTIBLE);
+                Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE);
                 long duration = System.currentTimeMillis() - start;
                 if (duration > DURATION_MAX_IN_MS)
                     throw new RuntimeException("Copy was not interrupted");
@@ -109,7 +104,7 @@ public class InterruptCopy {
             Future<Void> result = pool.submit(new Callable<Void>() {
                 public Void call() throws IOException {
                     System.out.println("Copying file...");
-                    source.copyTo(target, ExtendedCopyOption.INTERRUPTIBLE,
+                    Files.copy(source, target, ExtendedCopyOption.INTERRUPTIBLE,
                         StandardCopyOption.REPLACE_EXISTING);
                     return null;
                 }

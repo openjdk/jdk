@@ -24,9 +24,9 @@
 /* @test
  * @bug 4313887
  * @summary Unit test for probeContentType method
- * @library ..
- * @build ContentType SimpleFileTypeDetector
- * @run main/othervm ContentType
+ * @library ../..
+ * @build Basic SimpleFileTypeDetector
+ * @run main/othervm Basic
  */
 
 import java.nio.file.*;
@@ -36,22 +36,19 @@ import java.io.*;
  * Uses Files.probeContentType to probe html file and custom file type.
  */
 
-public class ContentType {
+public class Basic {
 
     static Path createHtmlFile() throws IOException {
-        Path file = File.createTempFile("foo", ".html").toPath();
-        OutputStream out = file.newOutputStream();
-        try {
+        Path file = Files.createTempFile("foo", ".html");
+        try (OutputStream out = Files.newOutputStream(file)) {
             out.write("<html><body>foo</body></html>".getBytes());
-        } finally {
-            out.close();
         }
 
         return file;
     }
 
     static Path createGrapeFile() throws IOException {
-        return File.createTempFile("red", ".grape").toPath();
+        return Files.createTempFile("red", ".grape");
     }
 
     public static void main(String[] args) throws IOException {
@@ -67,7 +64,7 @@ public class ContentType {
                     throw new RuntimeException("Unexpected type: " + type);
             }
         } finally {
-            file.delete();
+            Files.delete(file);
         }
 
         // exercise custom file type detector
@@ -79,7 +76,7 @@ public class ContentType {
             if (!type.equals("grape/unknown"))
                 throw new RuntimeException("Unexpected type: " + type);
         } finally {
-            file.delete();
+            Files.delete(file);
         }
 
     }
