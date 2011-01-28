@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     protected Archive openArchive(File zipFileName) throws IOException {
         File origZipFileName = zipFileName;
-        if (!ignoreSymbolFile && paths.isBootClassPathRtJar(zipFileName)) {
+        if (!ignoreSymbolFile && paths.isDefaultBootClassPathRtJar(zipFileName)) {
             File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
             if (new File(file.getName()).equals(new File("jre")))
                 file = file.getParentFile();
