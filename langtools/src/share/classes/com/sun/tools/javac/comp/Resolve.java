@@ -331,7 +331,7 @@ public class Resolve {
         throws Infer.InferenceException {
         boolean polymorphicSignature = m.isPolymorphicSignatureGeneric() && allowMethodHandles;
         if (useVarargs && (m.flags() & VARARGS) == 0)
-            throw inapplicableMethodException.setMessage(null);
+            throw inapplicableMethodException.setMessage();
         Type mt = types.memberType(site, m);
 
         // tvars is the list of formal type variables for which type arguments
@@ -386,7 +386,7 @@ public class Resolve {
                                     useVarargs,
                                     warn);
 
-        checkRawArgumentsAcceptable(argtypes, mt.getParameterTypes(),
+        checkRawArgumentsAcceptable(env, argtypes, mt.getParameterTypes(),
                                 allowBoxing, useVarargs, warn);
         return mt;
     }
@@ -411,19 +411,21 @@ public class Resolve {
 
     /** Check if a parameter list accepts a list of args.
      */
-    boolean argumentsAcceptable(List<Type> argtypes,
+    boolean argumentsAcceptable(Env<AttrContext> env,
+                                List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
                                 Warner warn) {
         try {
-            checkRawArgumentsAcceptable(argtypes, formals, allowBoxing, useVarargs, warn);
+            checkRawArgumentsAcceptable(env, argtypes, formals, allowBoxing, useVarargs, warn);
             return true;
         } catch (InapplicableMethodException ex) {
             return false;
         }
     }
-    void checkRawArgumentsAcceptable(List<Type> argtypes,
+    void checkRawArgumentsAcceptable(Env<AttrContext> env,
+                                List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
@@ -460,6 +462,14 @@ public class Resolve {
                             elt);
                 argtypes = argtypes.tail;
             }
+            //check varargs element type accessibility
+            if (!isAccessible(env, elt)) {
+                Symbol location = env.enclClass.sym;
+                throw inapplicableMethodException.setMessage("inaccessible.varargs.type",
+                            elt,
+                            Kinds.kindName(location),
+                            location);
+            }
         }
         return;
     }
@@ -474,12 +484,20 @@ public class Resolve {
                 this.diagnostic = null;
                 this.diags = diags;
             }
+            InapplicableMethodException setMessage() {
+                this.diagnostic = null;
+                return this;
+            }
             InapplicableMethodException setMessage(String key) {
                 this.diagnostic = key != null ? diags.fragment(key) : null;
                 return this;
             }
             InapplicableMethodException setMessage(String key, Object... args) {
                 this.diagnostic = key != null ? diags.fragment(key, args) : null;
+                return this;
+            }
+            InapplicableMethodException setMessage(JCDiagnostic diag) {
+                this.diagnostic = diag;
                 return this;
             }
 
