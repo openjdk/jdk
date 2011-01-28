@@ -60,6 +60,7 @@ public class Check {
 
     private final Names names;
     private final Log log;
+    private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
     private final Infer infer;
@@ -91,6 +92,7 @@ public class Check {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
