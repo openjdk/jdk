@@ -24,7 +24,6 @@ compiler.err.no.annotation.member
 compiler.err.no.encl.instance.of.type.in.scope          # cannot occur; always followed by assert false;
 compiler.err.no.match.entry                             # UNUSED?
 compiler.err.not.annotation.type                        # cannot occur given preceding checkType
-compiler.err.not.within.bounds.explain                  # UNUSED?
 compiler.err.prob.found.req.1                           # Check: DEAD, in unused method
 compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
 compiler.err.proc.cant.access                           # completion failure
@@ -43,6 +42,7 @@ compiler.err.undetermined.type
 compiler.err.unexpected.type
 compiler.err.unknown.enum.constant                      # in bad class file
 compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
+compiler.err.wrong.target.for.polymorphic.signature.definition     # Transitional 292
 compiler.misc.assignment.from.super-bound
 compiler.misc.assignment.to.extends-bound
 compiler.misc.bad.class.file.header                     # bad class file
@@ -52,7 +52,6 @@ compiler.misc.bad.const.pool.tag.at                     # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
-compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
 compiler.misc.ccf.found.later.version
 compiler.misc.ccf.unrecognized.attribute
@@ -113,4 +112,3 @@ compiler.warn.proc.type.already.exists                  # JavacFiler: just menti
 compiler.warn.unchecked.assign                          # DEAD, replaced by compiler.misc.unchecked.assign
 compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by compiler.misc.unchecked.cast.to.type
 compiler.warn.unexpected.archive.file                   # Paths: zip file with unknown extn
-compiler.warn.wrong.target.for.polymorphic.signature.definition     # Transitional 292
