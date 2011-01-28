@@ -223,7 +223,7 @@ class SharedRuntime: AllStatic {
 
   // Helper routine for full-speed JVMTI exception throwing support
   static void throw_and_post_jvmti_exception(JavaThread *thread, Handle h_exception);
-  static void throw_and_post_jvmti_exception(JavaThread *thread, symbolOop name, const char *message = NULL);
+  static void throw_and_post_jvmti_exception(JavaThread *thread, Symbol* name, const char *message = NULL);
 
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, methodOopDesc* m);
@@ -237,7 +237,7 @@ class SharedRuntime: AllStatic {
   // Used to back off a spin lock that is under heavy contention
   static void yield_all(JavaThread* thread, int attempts = 0);
 
-  static oop retrieve_receiver( symbolHandle sig, frame caller );
+  static oop retrieve_receiver( Symbol* sig, frame caller );
 
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
@@ -417,7 +417,7 @@ class SharedRuntime: AllStatic {
 
   // Convert a sig into a calling convention register layout
   // and find interesting things about it.
-  static VMRegPair* find_callee_arguments(symbolOop sig, bool has_receiver, int *arg_size);
+  static VMRegPair* find_callee_arguments(Symbol* sig, bool has_receiver, int *arg_size);
   static VMReg     name_for_receiver();
 
   // "Top of Stack" slots that may be unused by the calling convention but must

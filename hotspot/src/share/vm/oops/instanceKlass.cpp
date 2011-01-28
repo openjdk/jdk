@@ -41,7 +41,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/objArrayKlassKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/fieldDescriptor.hpp"
@@ -96,7 +96,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
   {                                                              \
     char* data = NULL;                                           \
     int len = 0;                                                 \
-    symbolOop name = (clss)->name();                             \
+    Symbol* name = (clss)->name();                               \
     if (name != NULL) {                                          \
       data = (char*)name->bytes();                               \
       len = name->utf8_length();                                 \
@@ -109,7 +109,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
   {                                                              \
     char* data = NULL;                                           \
     int len = 0;                                                 \
-    symbolOop name = (clss)->name();                             \
+    Symbol* name = (clss)->name();                               \
     if (name != NULL) {                                          \
       data = (char*)name->bytes();                               \
       len = name->utf8_length();                                 \
@@ -266,7 +266,7 @@ bool instanceKlass::link_class_impl(
       ResourceMark rm(THREAD);
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
-        vmSymbolHandles::java_lang_IncompatibleClassChangeError(),
+        vmSymbols::java_lang_IncompatibleClassChangeError(),
         "class %s has interface %s as super class",
         this_oop->external_name(),
         super->external_name()
@@ -500,8 +500,8 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       THROW_OOP(e());
     } else {
       JavaCallArguments args(e);
-      THROW_ARG(vmSymbolHandles::java_lang_ExceptionInInitializerError(),
-                vmSymbolHandles::throwable_void_signature(),
+      THROW_ARG(vmSymbols::java_lang_ExceptionInInitializerError(),
+                vmSymbols::throwable_void_signature(),
                 &args);
     }
   }
@@ -770,13 +770,13 @@ void instanceKlass::mask_for(methodHandle method, int bci,
 }
 
 
-bool instanceKlass::find_local_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const {
+bool instanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = fields()->length();
   for (int i = 0; i < n; i += next_offset ) {
     int name_index = fields()->ushort_at(i + name_index_offset);
     int sig_index  = fields()->ushort_at(i + signature_index_offset);
-    symbolOop f_name = constants()->symbol_at(name_index);
-    symbolOop f_sig  = constants()->symbol_at(sig_index);
+    Symbol* f_name = constants()->symbol_at(name_index);
+    Symbol* f_sig  = constants()->symbol_at(sig_index);
     if (f_name == name && f_sig == sig) {
       fd->initialize(as_klassOop(), i);
       return true;
@@ -786,21 +786,23 @@ bool instanceKlass::find_local_field(symbolOop name, symbolOop sig, fieldDescrip
 }
 
 
-void instanceKlass::field_names_and_sigs_iterate(OopClosure* closure) {
+void instanceKlass::shared_symbols_iterate(SymbolClosure* closure) {
+  Klass::shared_symbols_iterate(closure);
+  closure->do_symbol(&_generic_signature);
+  closure->do_symbol(&_source_file_name);
+  closure->do_symbol(&_source_debug_extension);
+
   const int n = fields()->length();
   for (int i = 0; i < n; i += next_offset ) {
     int name_index = fields()->ushort_at(i + name_index_offset);
-    symbolOop name = constants()->symbol_at(name_index);
-    closure->do_oop((oop*)&name);
-
+    closure->do_symbol(constants()->symbol_at_addr(name_index));
     int sig_index  = fields()->ushort_at(i + signature_index_offset);
-    symbolOop sig = constants()->symbol_at(sig_index);
-    closure->do_oop((oop*)&sig);
+    closure->do_symbol(constants()->symbol_at_addr(sig_index));
   }
 }
 
 
-klassOop instanceKlass::find_interface_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const {
+klassOop instanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();
   for (int i = 0; i < n; i++) {
     klassOop intf1 = klassOop(local_interfaces()->obj_at(i));
@@ -819,7 +821,7 @@ klassOop instanceKlass::find_interface_field(symbolOop name, symbolOop sig, fiel
 }
 
 
-klassOop instanceKlass::find_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const {
+klassOop instanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   // search order according to newest JVM spec (5.4.3.2, p.167).
   // 1) search for field in current klass
   if (find_local_field(name, sig, fd)) {
@@ -838,7 +840,7 @@ klassOop instanceKlass::find_field(symbolOop name, symbolOop sig, fieldDescripto
 }
 
 
-klassOop instanceKlass::find_field(symbolOop name, symbolOop sig, bool is_static, fieldDescriptor* fd) const {
+klassOop instanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fieldDescriptor* fd) const {
   // search order according to newest JVM spec (5.4.3.2, p.167).
   // 1) search for field in current klass
   if (find_local_field(name, sig, fd)) {
@@ -965,7 +967,7 @@ void instanceKlass::with_array_klasses_do(void f(klassOop k)) {
 }
 
 #ifdef ASSERT
-static int linear_search(objArrayOop methods, symbolOop name, symbolOop signature) {
+static int linear_search(objArrayOop methods, Symbol* name, Symbol* signature) {
   int len = methods->length();
   for (int index = 0; index < len; index++) {
     methodOop m = (methodOop)(methods->obj_at(index));
@@ -978,11 +980,11 @@ static int linear_search(objArrayOop methods, symbolOop name, symbolOop signatur
 }
 #endif
 
-methodOop instanceKlass::find_method(symbolOop name, symbolOop signature) const {
+methodOop instanceKlass::find_method(Symbol* name, Symbol* signature) const {
   return instanceKlass::find_method(methods(), name, signature);
 }
 
-methodOop instanceKlass::find_method(objArrayOop methods, symbolOop name, symbolOop signature) {
+methodOop instanceKlass::find_method(objArrayOop methods, Symbol* name, Symbol* signature) {
   int len = methods->length();
   // methods are sorted, so do binary search
   int l = 0;
@@ -1030,7 +1032,7 @@ methodOop instanceKlass::find_method(objArrayOop methods, symbolOop name, symbol
   return NULL;
 }
 
-methodOop instanceKlass::uncached_lookup_method(symbolOop name, symbolOop signature) const {
+methodOop instanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   klassOop klass = as_klassOop();
   while (klass != NULL) {
     methodOop method = instanceKlass::cast(klass)->find_method(name, signature);
@@ -1041,8 +1043,8 @@ methodOop instanceKlass::uncached_lookup_method(symbolOop name, symbolOop signat
 }
 
 // lookup a method in all the interfaces that this class implements
-methodOop instanceKlass::lookup_method_in_all_interfaces(symbolOop name,
-                                                         symbolOop signature) const {
+methodOop instanceKlass::lookup_method_in_all_interfaces(Symbol* name,
+                                                         Symbol* signature) const {
   objArrayOop all_ifs = instanceKlass::cast(as_klassOop())->transitive_interfaces();
   int num_ifs = all_ifs->length();
   instanceKlass *ik = NULL;
@@ -1990,6 +1992,26 @@ void instanceKlass::release_C_heap_structures() {
     _cached_class_file_bytes = NULL;
     _cached_class_file_len = 0;
   }
+
+  // Decrement symbol reference counts associated with the unloaded class.
+  if (_name != NULL) _name->decrement_refcount();
+  // unreference array name derived from this class name (arrays of an unloaded
+  // class can't be referenced anymore).
+  if (_array_name != NULL)  _array_name->decrement_refcount();
+  if (_source_file_name != NULL) _source_file_name->decrement_refcount();
+  if (_source_debug_extension != NULL) _source_debug_extension->decrement_refcount();
+  // walk constant pool and decrement symbol reference counts
+  _constants->unreference_symbols();
+}
+
+void instanceKlass::set_source_file_name(Symbol* n) {
+  _source_file_name = n;
+  if (_source_file_name != NULL) _source_file_name->increment_refcount();
+}
+
+void instanceKlass::set_source_debug_extension(Symbol* n) {
+  _source_debug_extension = n;
+  if (_source_debug_extension != NULL) _source_debug_extension->increment_refcount();
 }
 
 const char* instanceKlass::signature_name() const {
@@ -2011,7 +2033,7 @@ const char* instanceKlass::signature_name() const {
 bool instanceKlass::is_same_class_package(klassOop class2) {
   klassOop class1 = as_klassOop();
   oop classloader1 = instanceKlass::cast(class1)->class_loader();
-  symbolOop classname1 = Klass::cast(class1)->name();
+  Symbol* classname1 = Klass::cast(class1)->name();
 
   if (Klass::cast(class2)->oop_is_objArray()) {
     class2 = objArrayKlass::cast(class2)->bottom_klass();
@@ -2023,16 +2045,16 @@ bool instanceKlass::is_same_class_package(klassOop class2) {
     assert(Klass::cast(class2)->oop_is_typeArray(), "should be type array");
     classloader2 = NULL;
   }
-  symbolOop classname2 = Klass::cast(class2)->name();
+  Symbol* classname2 = Klass::cast(class2)->name();
 
   return instanceKlass::is_same_class_package(classloader1, classname1,
                                               classloader2, classname2);
 }
 
-bool instanceKlass::is_same_class_package(oop classloader2, symbolOop classname2) {
+bool instanceKlass::is_same_class_package(oop classloader2, Symbol* classname2) {
   klassOop class1 = as_klassOop();
   oop classloader1 = instanceKlass::cast(class1)->class_loader();
-  symbolOop classname1 = Klass::cast(class1)->name();
+  Symbol* classname1 = Klass::cast(class1)->name();
 
   return instanceKlass::is_same_class_package(classloader1, classname1,
                                               classloader2, classname2);
@@ -2040,8 +2062,8 @@ bool instanceKlass::is_same_class_package(oop classloader2, symbolOop classname2
 
 // return true if two classes are in the same package, classloader
 // and classname information is enough to determine a class's package
-bool instanceKlass::is_same_class_package(oop class_loader1, symbolOop class_name1,
-                                          oop class_loader2, symbolOop class_name2) {
+bool instanceKlass::is_same_class_package(oop class_loader1, Symbol* class_name1,
+                                          oop class_loader2, Symbol* class_name2) {
   if (class_loader1 != class_loader2) {
     return false;
   } else if (class_name1 == class_name2) {
@@ -2049,14 +2071,14 @@ bool instanceKlass::is_same_class_package(oop class_loader1, symbolOop class_nam
   } else {
     ResourceMark rm;
 
-    // The symbolOop's are in UTF8 encoding. Since we only need to check explicitly
+    // The Symbol*'s are in UTF8 encoding. Since we only need to check explicitly
     // for ASCII characters ('/', 'L', '['), we can keep them in UTF8 encoding.
     // Otherwise, we just compare jbyte values between the strings.
-    jbyte *name1 = class_name1->base();
-    jbyte *name2 = class_name2->base();
+    const jbyte *name1 = class_name1->base();
+    const jbyte *name2 = class_name2->base();
 
-    jbyte *last_slash1 = UTF8::strrchr(name1, class_name1->utf8_length(), '/');
-    jbyte *last_slash2 = UTF8::strrchr(name2, class_name2->utf8_length(), '/');
+    const jbyte *last_slash1 = UTF8::strrchr(name1, class_name1->utf8_length(), '/');
+    const jbyte *last_slash2 = UTF8::strrchr(name2, class_name2->utf8_length(), '/');
 
     if ((last_slash1 == NULL) || (last_slash2 == NULL)) {
       // One of the two doesn't have a package.  Only return true
@@ -2097,7 +2119,7 @@ bool instanceKlass::is_same_class_package(oop class_loader1, symbolOop class_nam
 // Assumes name-signature match
 // "this" is instanceKlass of super_method which must exist
 // note that the instanceKlass of the method in the targetclassname has not always been created yet
-bool instanceKlass::is_override(methodHandle super_method, Handle targetclassloader, symbolHandle targetclassname, TRAPS) {
+bool instanceKlass::is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
    // Private methods can not be overridden
    if (super_method->is_private()) {
      return false;
@@ -2109,12 +2131,12 @@ bool instanceKlass::is_override(methodHandle super_method, Handle targetclassloa
    }
    // Package-private methods are not inherited outside of package
    assert(super_method->is_package_private(), "must be package private");
-   return(is_same_class_package(targetclassloader(), targetclassname()));
+   return(is_same_class_package(targetclassloader(), targetclassname));
 }
 
 /* defined for now in jvm.cpp, for historical reasons *--
 klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
-                                                     symbolOop& simple_name_result, TRAPS) {
+                                                     Symbol*& simple_name_result, TRAPS) {
   ...
 }
 */
@@ -2185,7 +2207,7 @@ jint instanceKlass::compute_modifier_flags(TRAPS) const {
 
       // only look at classes that are already loaded
       // since we are looking for the flags for our self.
-      symbolOop inner_name = ik->constants()->klass_name_at(ioff);
+      Symbol* inner_name = ik->constants()->klass_name_at(ioff);
       if ((ik->name() == inner_name)) {
         // This is really a member class.
         access = inner_class_list_h->ushort_at(i + instanceKlass::inner_class_access_flags_offset);
@@ -2224,7 +2246,7 @@ methodOop instanceKlass::method_at_itable(klassOop holder, int index, TRAPS) {
     // If the interface isn't implemented by the receiver class,
     // the VM should throw IncompatibleClassChangeError.
     if (cnt >= nof_interfaces) {
-      THROW_OOP_0(vmSymbols::java_lang_IncompatibleClassChangeError());
+      THROW_0(vmSymbols::java_lang_IncompatibleClassChangeError());
     }
 
     klassOop ik = ioe->interface_klass();
@@ -2234,7 +2256,7 @@ methodOop instanceKlass::method_at_itable(klassOop holder, int index, TRAPS) {
   itableMethodEntry* ime = ioe->first_method_entry(as_klassOop());
   methodOop m = ime[index].method();
   if (m == NULL) {
-    THROW_OOP_0(vmSymbols::java_lang_AbstractMethodError());
+    THROW_0(vmSymbols::java_lang_AbstractMethodError());
   }
   return m;
 }
@@ -2721,8 +2743,8 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
       if (!emcp_methods->at(i)) {
         // only obsolete methods are interesting
         methodOop old_method = (methodOop) old_methods->obj_at(i);
-        symbolOop m_name = old_method->name();
-        symbolOop m_signature = old_method->signature();
+        Symbol* m_name = old_method->name();
+        Symbol* m_signature = old_method->signature();
 
         // skip the last entry since we just added it
         for (int j = _previous_versions->length() - 2; j >= 0; j--) {

@@ -2191,9 +2191,10 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   rp->verify_no_references_recorded();
   assert(!rp->discovery_enabled(), "should have been disabled");
 
-  // Now clean up stale oops in SymbolTable and StringTable
-  SymbolTable::unlink(&g1_is_alive);
+  // Now clean up stale oops in StringTable
   StringTable::unlink(&g1_is_alive);
+  // Clean up unreferenced symbols in symbol table.
+  SymbolTable::unlink();
 }
 
 void ConcurrentMark::swapMarkBitMaps() {

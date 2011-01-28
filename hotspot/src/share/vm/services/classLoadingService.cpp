@@ -43,7 +43,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
   {                                                 \
     char* data = NULL;                              \
     int len = 0;                                    \
-    symbolOop name = (clss)->name();                \
+    Symbol* name = (clss)->name();                  \
     if (name != NULL) {                             \
       data = (char*)name->bytes();                  \
       len = name->utf8_length();                    \

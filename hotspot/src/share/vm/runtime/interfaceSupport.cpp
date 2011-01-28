@@ -198,6 +198,11 @@ void InterfaceSupport::zombieAll() {
   }
 }
 
+void InterfaceSupport::unlinkSymbols() {
+  VM_UnlinkSymbols op;
+  VMThread::execute(&op);
+}
+
 void InterfaceSupport::deoptimizeAll() {
   if (is_init_completed() ) {
     if (DeoptimizeALot && deoptimizeAllCounter > DeoptimizeALotInterval) {

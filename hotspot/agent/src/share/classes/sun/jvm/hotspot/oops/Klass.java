@@ -53,7 +53,7 @@ public class Klass extends Oop implements ClassConstants {
     javaMirror   = new OopField(type.getOopField("_java_mirror"), Oop.getHeaderSize());
     superField   = new OopField(type.getOopField("_super"), Oop.getHeaderSize());
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), Oop.getHeaderSize());
-    name         = new OopField(type.getOopField("_name"), Oop.getHeaderSize());
+    name         = type.getAddressField("_name");
     accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), Oop.getHeaderSize());
     subklass     = new OopField(type.getOopField("_subklass"), Oop.getHeaderSize());
     nextSibling  = new OopField(type.getOopField("_next_sibling"), Oop.getHeaderSize());
@@ -83,18 +83,26 @@ public class Klass extends Oop implements ClassConstants {
   private static OopField  javaMirror;
   private static OopField  superField;
   private static IntField layoutHelper;
-  private static OopField  name;
+  private static AddressField  name;
   private static CIntField accessFlags;
   private static OopField  subklass;
   private static OopField  nextSibling;
   private static CIntField allocCount;
+
+  private Address getValue(AddressField field) {
+    return getHandle().getAddressAt(field.getOffset() + Oop.getHeaderSize());
+  }
+
+  protected Symbol getSymbol(AddressField field) {
+    return Symbol.create(getHandle().getAddressAt(field.getOffset() + Oop.getHeaderSize()));
+  }
 
   // Accessors for declared fields
   public Instance getJavaMirror()       { return (Instance) javaMirror.getValue(this);   }
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }
   public int      getLayoutHelper()     { return (int)           layoutHelper.getValue(this); }
-  public Symbol   getName()             { return (Symbol)   name.getValue(this);         }
+  public Symbol   getName()             { return getSymbol(name); }
   public long     getAccessFlags()      { return            accessFlags.getValue(this);  }
   // Convenience routine
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
@@ -162,7 +170,7 @@ public class Klass extends Oop implements ClassConstants {
       visitor.doOop(javaMirror, true);
       visitor.doOop(superField, true);
       visitor.doInt(layoutHelper, true);
-      visitor.doOop(name, true);
+      // visitor.doOop(name, true);
       visitor.doCInt(accessFlags, true);
       visitor.doOop(subklass, true);
       visitor.doOop(nextSibling, true);

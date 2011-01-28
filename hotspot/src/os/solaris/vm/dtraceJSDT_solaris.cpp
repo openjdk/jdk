@@ -142,7 +142,7 @@ int DTraceJSDT::pd_activate(
     ++strcount;
     for(int prbc = 0; prbc < provider->probe_count; ++prbc) {
       JVM_DTraceProbe* p = &(provider->probes[prbc]);
-      symbolOop sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
+      Symbol* sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
       // function + name + one per argument
       strcount += 2 + ArgumentCount(sig).size();
     }
@@ -178,7 +178,7 @@ int DTraceJSDT::pd_activate(
       stroffs[curstr++] = string_index;
       string_index += strlen(name) + 1;
 
-      symbolOop sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
+      Symbol* sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
       SignatureStream ss(sig);
       for ( ; !ss.at_return_type(); ss.next()) {
         BasicType bt = ss.type();
@@ -227,7 +227,7 @@ int DTraceJSDT::pd_activate(
     uint32_t argscount = 0;
     for(int prbc = 0; prbc < provider->probe_count; ++prbc) {
        JVM_DTraceProbe* p = &(provider->probes[prbc]);
-       symbolOop sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
+       Symbol* sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
        argscount += ArgumentCount(sig).size();
     }
     secoffs[argoffs_sec] = align_size_up(offset, alignment_for[ARG_OFFSETS]);
@@ -298,7 +298,7 @@ int DTraceJSDT::pd_activate(
       strcpy(str, name);
       str += strlen(name) + 1;
 
-      symbolOop sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
+      Symbol* sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
       SignatureStream ss(sig);
       for ( ; !ss.at_return_type(); ss.next()) {
         BasicType bt = ss.type();
@@ -433,7 +433,7 @@ int DTraceJSDT::pd_activate(
     uint8_t* par = (uint8_t*)(dof + sec->dofs_offset);
     for (int prbc = 0; prbc < provider->probe_count; ++prbc) {
       JVM_DTraceProbe* p = &(provider->probes[prbc]);
-      symbolOop sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
+      Symbol* sig = JNIHandles::resolve_jmethod_id(p->method)->signature();
       uint8_t count = (uint8_t)ArgumentCount(sig).size();
       for (uint8_t i = 0; i < count; ++i) {
         *par++ = i;

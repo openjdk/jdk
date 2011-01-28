@@ -61,7 +61,7 @@ void CompactingPermGenGen::serialize_oops(SerializeOopClosure* soc) {
   soc->do_tag(sizeof(constantPoolCacheOopDesc));
   soc->do_tag(objArrayOopDesc::base_offset_in_bytes());
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
-  soc->do_tag(sizeof(symbolOopDesc));
+  soc->do_tag(sizeof(Symbol));
   soc->do_tag(sizeof(klassOopDesc));
   soc->do_tag(sizeof(markOopDesc));
   soc->do_tag(sizeof(compiledICHolderOopDesc));
@@ -83,8 +83,12 @@ void CompactingPermGenGen::serialize_oops(SerializeOopClosure* soc) {
   // Dump/restore miscellaneous oops.
   Universe::oops_do(soc, true);
   soc->do_tag(--tag);
+  CodeCache::oops_do(soc);
+  soc->do_tag(--tag);
 
-  vmSymbols::oops_do(soc, true);               soc->do_tag(--tag);
-  CodeCache::oops_do(soc);                     soc->do_tag(--tag);
+  // Dump/restore references to commonly used names and signatures.
+  vmSymbols::serialize(soc);
+  soc->do_tag(--tag);
+
   soc->do_tag(666);
 }
