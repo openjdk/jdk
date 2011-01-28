@@ -278,7 +278,7 @@ public class Resolve {
             return true;
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
-            return (s2 == null || s2 == sym ||
+            return (s2 == null || s2 == sym || sym.owner == s2.owner ||
                     s2.isPolymorphicSignatureGeneric() ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
@@ -712,13 +712,14 @@ public class Resolve {
                 Type mt1 = types.memberType(site, m1);
                 Type mt2 = types.memberType(site, m2);
                 if (!types.overrideEquivalent(mt1, mt2))
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
+
                 // same signature; select (a) the non-bridge method, or
                 // (b) the one that overrides the other, or (c) the concrete
                 // one, or (d) merge both abstract signatures
-                if ((m1.flags() & BRIDGE) != (m2.flags() & BRIDGE)) {
+                if ((m1.flags() & BRIDGE) != (m2.flags() & BRIDGE))
                     return ((m1.flags() & BRIDGE) != 0) ? m2 : m1;
-                }
+
                 // if one overrides or hides the other, use it
                 TypeSymbol m1Owner = (TypeSymbol)m1.owner;
                 TypeSymbol m2Owner = (TypeSymbol)m2.owner;
@@ -738,24 +739,24 @@ public class Resolve {
                 if (m2Abstract && !m1Abstract) return m1;
                 // both abstract or both concrete
                 if (!m1Abstract && !m2Abstract)
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 // check that both signatures have the same erasure
                 if (!types.isSameTypes(m1.erasure(types).getParameterTypes(),
                                        m2.erasure(types).getParameterTypes()))
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol mostSpecific;
                 Type result2 = mt2.getReturnType();
                 if (mt2.tag == FORALL)
                     result2 = types.subst(result2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
-                if (types.isSubtype(mt1.getReturnType(), result2)) {
+                if (types.isSubtype(mt1.getReturnType(), result2))
                     mostSpecific = m1;
-                } else if (types.isSubtype(result2, mt1.getReturnType())) {
+                else if (types.isSubtype(result2, mt1.getReturnType()))
                     mostSpecific = m2;
-                } else {
+                else {
                     // Theoretically, this can't happen, but it is possible
                     // due to error recovery or mixing incompatible class files
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 }
                 MethodSymbol result = new MethodSymbol(
                         mostSpecific.flags(),
@@ -777,7 +778,7 @@ public class Resolve {
             }
             if (m1SignatureMoreSpecific) return m1;
             if (m2SignatureMoreSpecific) return m2;
-            return new AmbiguityError(m1, m2);
+            return ambiguityError(m1, m2);
         case AMBIGUOUS:
             AmbiguityError e = (AmbiguityError)m2;
             Symbol err1 = mostSpecific(m1, e.sym, env, site, allowBoxing, useVarargs);
@@ -787,9 +788,9 @@ public class Resolve {
             if (err1 instanceof AmbiguityError &&
                 err2 instanceof AmbiguityError &&
                 ((AmbiguityError)err1).sym == ((AmbiguityError)err2).sym)
-                return new AmbiguityError(m1, m2);
+                return ambiguityError(m1, m2);
             else
-                return new AmbiguityError(err1, err2);
+                return ambiguityError(err1, err2);
         default:
             throw new AssertionError();
         }
@@ -842,6 +843,14 @@ public class Resolve {
             return msym;
         } else {
             return to;
+        }
+    }
+    //where
+    Symbol ambiguityError(Symbol m1, Symbol m2) {
+        if (((m1.flags() | m2.flags()) & CLASH) != 0) {
+            return (m1.flags() & CLASH) == 0 ? m1 : m2;
+        } else {
+            return new AmbiguityError(m1, m2);
         }
     }
 
