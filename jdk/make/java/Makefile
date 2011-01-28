@@ -34,7 +34,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # The order of subdirs here is important
 #
-SUBDIRS += hpi version jvm redist verify fdlibm java sun_nio jli main zip
+SUBDIRS += version jvm redist verify fdlibm java sun_nio jli main zip
 
 # Others
 #    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk

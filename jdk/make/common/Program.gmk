@@ -142,10 +142,15 @@ else
   STACK_SIZE=1048576
 endif
 
-# In VS2005 or VS2008 the link command creates a .manifest file that we want
-# to insert into the linked artifact so we do not need to track it separately.
+IMVERSION=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)
+$(OBJDIR)/$(PROGRAM).exe.manifest: $(JDK_TOPDIR)/src/windows/resource/java.manifest
+	@$(prep-target)
+	$(SED) 's%IMVERSION%$(IMVERSION)%g;s%PROGRAM%$(PROGRAM)%g' $< > $@
+
+# We used a hand-crafted manifest file for all executables.
+# It is tweaked to embed the build number and executable name.
 # Use ";#2" for .dll and ";#1" for .exe in the MT command below:
-$(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o) $(JLI_LCF) 
+$(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o) $(JLI_LCF) $(OBJDIR)/$(PROGRAM).exe.manifest
 	@$(prep-target)
 	@set -- $?; \
 	    $(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};

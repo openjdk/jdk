@@ -718,25 +718,6 @@ public class X11FontManager extends SunFontManager {
         fontdirs = (String[])fontConfigDirs.toArray(new String[0]);
     }
 
-    /* Called by MToolkit to set the X11 font path */
-    public static void setNativeFontPath() {
-        if (fontdirs == null) {
-            return;
-        }
-
-        // need to register these individually rather than by one call
-        // to ensure that one bad directory doesn't cause all to be rejected
-        for (int i=0; i<fontdirs.length; i++) {
-            if (FontUtilities.debugFonts()) {
-                FontUtilities.getLogger().info("Add " + fontdirs[i] + " to X11 fontpath");
-            }
-            setNativeFontPath(fontdirs[i]);
-        }
-    }
-
-    private synchronized static native void setNativeFontPath(String fontPath);
-
-
     // Implements SunGraphicsEnvironment.createFontConfiguration.
     protected FontConfiguration createFontConfiguration() {
         /* The logic here decides whether to use a preconfigured
@@ -780,7 +761,12 @@ public class X11FontManager extends SunFontManager {
                                       preferLocaleFonts, preferPropFonts);
     }
 
-    public synchronized native String getFontPath(boolean noType1Fonts);
+    public synchronized native String getFontPathNative(boolean noType1Fonts);
+
+    protected synchronized String getFontPath(boolean noType1Fonts) {
+        isHeadless(); // make sure GE is inited, as its the X11 lock.
+        return getFontPathNative(noType1Fonts);
+    }
 
     public String[] getDefaultPlatformFont() {
         if (defaultPlatformFont != null) {

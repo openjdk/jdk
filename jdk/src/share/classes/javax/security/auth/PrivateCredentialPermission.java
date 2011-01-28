@@ -329,7 +329,7 @@ public final class PrivateCredentialPermission extends Permission {
             throw new IllegalArgumentException("invalid empty name");
         }
 
-        ArrayList<CredOwner> pList = new ArrayList<CredOwner>();
+        ArrayList<CredOwner> pList = new ArrayList<>();
         StringTokenizer tokenizer = new StringTokenizer(name, " ", true);
         String principalClass = null;
         String principalName = null;

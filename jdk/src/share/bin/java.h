@@ -153,7 +153,7 @@ int ContinueInNewThread0(int (JNICALL *continuation)(void *),
 
 /* sun.java.launcher.* platform properties. */
 void SetJavaLauncherPlatformProps(void);
-void SetJavaCommandLineProp(char* classname, char* jarfile, int argc, char** argv);
+void SetJavaCommandLineProp(char* what, int argc, char** argv);
 void SetJavaLauncherProp(void);
 
 /*
@@ -178,8 +178,9 @@ jint GetErgoPolicy();
 
 jboolean ServerClassMachine();
 
-static int ContinueInNewThread(InvocationFunctions* ifn, int argc, char** argv,
-                        char* jarfile, char* classname, int ret);
+static int ContinueInNewThread(InvocationFunctions* ifn,
+                               int argc, char** argv,
+                               int mode, char *what, int ret);
 
 /*
  * Initialize platform specific settings
