@@ -173,6 +173,10 @@ public class MessageInfo {
                 }
             }
             if (msgFile == null) {
+                if (jtreg) {
+                    System.err.println("Warning: no message file available, test skipped");
+                    return true;
+                }
                 error("no message file available");
                 return false;
             }
