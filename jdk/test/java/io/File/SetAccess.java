@@ -27,6 +27,7 @@
  */
 
 import java.io.*;
+import java.nio.file.*;
 import java.nio.file.attribute.*;
 
 public class SetAccess {
@@ -178,7 +179,7 @@ public class SetAccess {
     }
 
     private static String permission(File f) throws Exception {
-        PosixFileAttributes attrs = Attributes.readPosixFileAttributes(f.toPath());
+        PosixFileAttributes attrs = Files.readAttributes(f.toPath(), PosixFileAttributes.class);
         String type = attrs.isDirectory() ? "d" : " ";
         return type + PosixFilePermissions.toString(attrs.permissions());
     }

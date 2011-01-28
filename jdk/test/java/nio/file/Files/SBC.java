@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4313887
- * @summary Unit test for java.nio.file.Path.newByteChannel
+ * @summary Unit test for java.nio.file.Files.newByteChannel
  * @library ..
  */
 
@@ -75,24 +75,24 @@ public class SBC {
         // CREATE
         try {
             // create file (no existing file)
-            file.newByteChannel(CREATE, WRITE).close();
-            if (file.notExists())
+            Files.newByteChannel(file, CREATE, WRITE).close();
+            if (Files.notExists(file))
                 throw new RuntimeException("File not created");
 
             // create file (existing file)
-            file.newByteChannel(CREATE, WRITE).close();
+            Files.newByteChannel(file, CREATE, WRITE).close();
 
             // create file where existing file is a sym link
             if (supportsLinks) {
-                Path link = dir.resolve("link").createSymbolicLink(file);
+                Path link = Files.createSymbolicLink(dir.resolve("link"), file);
                 try {
                     // file already exists
-                    link.newByteChannel(CREATE, WRITE).close();
+                    Files.newByteChannel(link, CREATE, WRITE).close();
 
                     // file does not exist
-                    file.delete();
-                    link.newByteChannel(CREATE, WRITE).close();
-                    if (file.notExists())
+                    Files.delete(file);
+                    Files.newByteChannel(link, CREATE, WRITE).close();
+                    if (Files.notExists(file))
                         throw new RuntimeException("File not created");
 
                 } finally {
@@ -107,14 +107,14 @@ public class SBC {
         // CREATE_NEW
         try {
             // create file
-            file.newByteChannel(CREATE_NEW, WRITE).close();
-            if (file.notExists())
+            Files.newByteChannel(file, CREATE_NEW, WRITE).close();
+            if (Files.notExists(file))
                 throw new RuntimeException("File not created");
 
             // create should fail
             try {
                 SeekableByteChannel sbc =
-                    file.newByteChannel(CREATE_NEW, WRITE);
+                    Files.newByteChannel(file, CREATE_NEW, WRITE);
                 sbc.close();
                 throw new RuntimeException("FileAlreadyExistsException not thrown");
             } catch (FileAlreadyExistsException x) { }
@@ -123,12 +123,12 @@ public class SBC {
             if (supportsLinks) {
                 Path link = dir.resolve("link");
                 Path target = dir.resolve("thisDoesNotExist");
-                link.createSymbolicLink(target);
+                Files.createSymbolicLink(link, target);
                 try {
 
                     try {
                         SeekableByteChannel sbc =
-                            file.newByteChannel(CREATE_NEW, WRITE);
+                            Files.newByteChannel(file, CREATE_NEW, WRITE);
                         sbc.close();
                         throw new RuntimeException("FileAlreadyExistsException not thrown");
                     } catch (FileAlreadyExistsException x) { }
@@ -145,17 +145,13 @@ public class SBC {
 
         // CREATE_NEW + SPARSE
         try {
-            SeekableByteChannel sbc = file
-                .newByteChannel(CREATE_NEW, WRITE, SPARSE);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, CREATE_NEW, WRITE, SPARSE)) {
                 final long hole = 2L * 1024L * 1024L * 1024L;
                 sbc.position(hole);
                 write(sbc, "hello");
                 long size = sbc.size();
                 if (size != (hole + 5))
                     throw new RuntimeException("Unexpected size");
-            } finally {
-                sbc.close();
             }
         } finally {
             TestUtil.deleteUnchecked(file);
@@ -167,33 +163,23 @@ public class SBC {
         Path file = dir.resolve("foo");
         try {
             // "hello there" should be written to file
-            SeekableByteChannel sbc = file
-                .newByteChannel(CREATE_NEW, WRITE, APPEND);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, CREATE_NEW, WRITE, APPEND)) {
                 write(sbc, "hello ");
                 sbc.position(0L);
                 write(sbc, "there");
-            } finally {
-                sbc.close();
             }
 
             // check file
-            Scanner s = new Scanner(file);
-            try {
+            try (Scanner s = new Scanner(file)) {
                 String line = s.nextLine();
                 if (!line.equals("hello there"))
                     throw new RuntimeException("Unexpected file contents");
-            } finally {
-                s.close();
             }
 
             // check that read is not allowed
-            sbc = file.newByteChannel(APPEND);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, APPEND)) {
                 sbc.read(ByteBuffer.allocate(100));
             } catch (NonReadableChannelException x) {
-            } finally {
-                sbc.close();
             }
         } finally {
             // clean-up
@@ -205,40 +191,27 @@ public class SBC {
     static void truncateExistingTests(Path dir) throws Exception {
         Path file = dir.resolve("foo");
         try {
-            SeekableByteChannel sbc =
-                file.newByteChannel(CREATE_NEW, WRITE);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, CREATE_NEW, WRITE)) {
                 write(sbc, "Have a nice day!");
-            } finally {
-                sbc.close();
             }
 
             // re-open with truncate option
             // write short message and check
-            sbc = file.newByteChannel(WRITE, TRUNCATE_EXISTING);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, WRITE, TRUNCATE_EXISTING)) {
                 write(sbc, "Hello there!");
-            } finally {
-                sbc.close();
             }
-            Scanner s = new Scanner(file);
-            try {
+            try (Scanner s = new Scanner(file)) {
                 String line = s.nextLine();
                 if (!line.equals("Hello there!"))
                     throw new RuntimeException("Unexpected file contents");
-            } finally {
-                s.close();
             }
 
             // re-open with create + truncate option
             // check file is of size 0L
-            sbc = file.newByteChannel(WRITE, CREATE, TRUNCATE_EXISTING);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, WRITE, CREATE, TRUNCATE_EXISTING)) {
                 long size = ((FileChannel)sbc).size();
                 if (size != 0L)
                     throw new RuntimeException("File not truncated");
-            } finally {
-                sbc.close();
             }
 
         } finally {
@@ -252,14 +225,15 @@ public class SBC {
     static void noFollowLinksTests(Path dir) throws Exception {
         if (!supportsLinks)
             return;
-        Path file = dir.resolve("foo").createFile();
+        Path file = Files.createFile(dir.resolve("foo"));
         try {
             // ln -s foo link
-            Path link = dir.resolve("link").createSymbolicLink(file);
+            Path link = dir.resolve("link");
+            Files.createSymbolicLink(link, file);
 
             // open with NOFOLLOW_LINKS option
             try {
-                link.newByteChannel(READ, LinkOption.NOFOLLOW_LINKS);
+                Files.newByteChannel(link, READ, LinkOption.NOFOLLOW_LINKS);
                 throw new RuntimeException();
             } catch (IOException x) {
             } finally {
@@ -276,9 +250,7 @@ public class SBC {
     static void sizeTruncatePositionTests(Path dir) throws Exception {
         Path file = dir.resolve("foo");
         try {
-            SeekableByteChannel sbc = file
-                .newByteChannel(CREATE_NEW, READ, WRITE);
-            try {
+            try (SeekableByteChannel sbc = Files.newByteChannel(file, CREATE_NEW, READ, WRITE)) {
                 if (sbc.size() != 0L)
                     throw new RuntimeException("Unexpected size");
 
@@ -300,8 +272,6 @@ public class SBC {
                     throw new RuntimeException("Unexpected size");
                 if (sbc.position() != 2L)
                     throw new RuntimeException("Unexpected position");
-            } finally {
-                sbc.close();
             }
         } finally {
             TestUtil.deleteUnchecked(file);
@@ -311,76 +281,63 @@ public class SBC {
     // Windows specific options for the use by applications that really want
     // to use legacy DOS sharing options
     static void dosSharingOptionTests(Path dir) throws Exception {
-        Path file = dir.resolve("foo").createFile();
+        Path file = Files.createFile(dir.resolve("foo"));
         try {
-            SeekableByteChannel ch;
-
             // no sharing
-            ch = file.newByteChannel(READ,
-                NOSHARE_READ, NOSHARE_WRITE, NOSHARE_DELETE);
-            try {
+            try (SeekableByteChannel ch = Files.newByteChannel(file, READ, NOSHARE_READ,
+                                                               NOSHARE_WRITE, NOSHARE_DELETE))
+            {
                 try {
-                    file.newByteChannel(READ);
+                    Files.newByteChannel(file, READ);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
                 try {
-                    file.newByteChannel(WRITE);
+                    Files.newByteChannel(file, WRITE);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
                 try {
-                    file.delete();
+                    Files.delete(file);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
-            } finally {
-                ch.close();
             }
 
             // read allowed
-            ch = file.newByteChannel(READ, NOSHARE_WRITE, NOSHARE_DELETE);
-            try {
-                file.newByteChannel(READ).close();
+            try (SeekableByteChannel ch = Files.newByteChannel(file, READ, NOSHARE_WRITE, NOSHARE_DELETE)) {
+                Files.newByteChannel(file, READ).close();
                 try {
-                    file.newByteChannel(WRITE);
+                    Files.newByteChannel(file, WRITE);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
                 try {
-                    file.delete();
+                    Files.delete(file);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
-            } finally {
-                ch.close();
             }
 
             // write allowed
-            ch = file.newByteChannel(READ, NOSHARE_READ, NOSHARE_DELETE);
-            try {
+            try (SeekableByteChannel ch = Files.newByteChannel(file, READ, NOSHARE_READ, NOSHARE_DELETE)) {
                 try {
-                    file.newByteChannel(READ);
+                    Files.newByteChannel(file, READ);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
-                file.newByteChannel(WRITE).close();
+                Files.newByteChannel(file, WRITE).close();
                 try {
-                    file.delete();
+                    Files.delete(file);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
-            } finally {
-                ch.close();
             }
 
             // delete allowed
-            ch = file.newByteChannel(READ, NOSHARE_READ, NOSHARE_WRITE);
-            try {
+            try (SeekableByteChannel ch = Files.newByteChannel(file, READ, NOSHARE_READ, NOSHARE_WRITE)) {
                 try {
-                    file.newByteChannel(READ);
+                    Files.newByteChannel(file, READ);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
                 try {
-                    file.newByteChannel(WRITE);
+                    Files.newByteChannel(file, WRITE);
                     throw new RuntimeException("Sharing violation expected");
                 } catch (IOException ignore) { }
-                file.delete();
-            } finally {
-                ch.close();
+                Files.delete(file);
             }
 
         } finally {
@@ -393,12 +350,12 @@ public class SBC {
         Path file = dir.resolve("bad");
 
         try {
-            file.newByteChannel(READ, APPEND);
+            Files.newByteChannel(file, READ, APPEND);
             throw new RuntimeException("IllegalArgumentException expected");
         } catch (IllegalArgumentException x) { }
 
         try {
-            file.newByteChannel(WRITE, APPEND, TRUNCATE_EXISTING);
+            Files.newByteChannel(file, WRITE, APPEND, TRUNCATE_EXISTING);
             throw new RuntimeException("IllegalArgumentException expected");
         } catch (IllegalArgumentException x) { }
     }
@@ -409,11 +366,11 @@ public class SBC {
 
         OpenOption badOption = new OpenOption() { };
         try {
-            file.newByteChannel(badOption);
+            Files.newByteChannel(file, badOption);
             throw new RuntimeException("UnsupportedOperationException expected");
         } catch (UnsupportedOperationException e) { }
         try {
-            file.newByteChannel(READ, WRITE, badOption);
+            Files.newByteChannel(file, READ, WRITE, badOption);
             throw new RuntimeException("UnsupportedOperationException expected");
         } catch (UnsupportedOperationException e) { }
     }
@@ -423,39 +380,45 @@ public class SBC {
         Path file = dir.resolve("foo");
 
         try {
-            file.newByteChannel((OpenOption[])null);
+            OpenOption[] opts = { READ, null };
+            Files.newByteChannel((Path)null, opts);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException x) { }
+
+        try {
+            Files.newByteChannel(file, (OpenOption[])null);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
 
         try {
             OpenOption[] opts = { READ, null };
-            file.newByteChannel(opts);
+            Files.newByteChannel(file, opts);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
 
         try {
-            file.newByteChannel((Set<OpenOption>)null);
+            Files.newByteChannel(file, (Set<OpenOption>)null);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
 
         try {
-            Set<OpenOption> opts = new HashSet<OpenOption>();
+            Set<OpenOption> opts = new HashSet<>();
             opts.add(READ);
             opts.add(null);
-            file.newByteChannel(opts);
+            Files.newByteChannel(file, opts);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
 
         try {
             EnumSet<StandardOpenOption> opts = EnumSet.of(READ);
-            file.newByteChannel(opts, (FileAttribute[])null);
+            Files.newByteChannel(file, opts, (FileAttribute[])null);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
 
         try {
             EnumSet<StandardOpenOption> opts = EnumSet.of(READ);
             FileAttribute[] attrs = { null };
-            file.newByteChannel(opts, attrs);
+            Files.newByteChannel(file, opts, attrs);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
     }

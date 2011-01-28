@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4313887 6838333
- * @summary Unit test for java.nio.file.Path
+ * @summary Unit test for java.nio.file.Files
  * @library ..
  */
 
@@ -59,43 +59,43 @@ public class FileAttributes {
     }
 
     // Exercise getAttribute/setAttribute/readAttributes on basic attributes
-    static void checkBasicAttributes(FileRef file, BasicFileAttributes attrs)
+    static void checkBasicAttributes(Path file, BasicFileAttributes attrs)
         throws IOException
     {
         // getAttribute
-        checkEqual(attrs.size(), file.getAttribute("size"));
-        checkEqual(attrs.lastModifiedTime(), file.getAttribute("basic:lastModifiedTime"));
-        checkEqual(attrs.lastAccessTime(), file.getAttribute("lastAccessTime"));
-        checkEqual(attrs.creationTime(), file.getAttribute("basic:creationTime"));
-        assertTrue((Boolean)file.getAttribute("isRegularFile"));
-        assertTrue(!(Boolean)file.getAttribute("basic:isDirectory"));
-        assertTrue(!(Boolean)file.getAttribute("isSymbolicLink"));
-        assertTrue(!(Boolean)file.getAttribute("basic:isOther"));
-        checkEqual(attrs.fileKey(), file.getAttribute("basic:fileKey"));
+        checkEqual(attrs.size(), Files.getAttribute(file, "size"));
+        checkEqual(attrs.lastModifiedTime(), Files.getAttribute(file, "basic:lastModifiedTime"));
+        checkEqual(attrs.lastAccessTime(), Files.getAttribute(file, "lastAccessTime"));
+        checkEqual(attrs.creationTime(), Files.getAttribute(file, "basic:creationTime"));
+        assertTrue((Boolean)Files.getAttribute(file, "isRegularFile"));
+        assertTrue(!(Boolean)Files.getAttribute(file, "basic:isDirectory"));
+        assertTrue(!(Boolean)Files.getAttribute(file, "isSymbolicLink"));
+        assertTrue(!(Boolean)Files.getAttribute(file, "basic:isOther"));
+        checkEqual(attrs.fileKey(), Files.getAttribute(file, "basic:fileKey"));
 
         // setAttribute
         FileTime modTime = attrs.lastModifiedTime();
-        file.setAttribute("basic:lastModifiedTime", FileTime.fromMillis(0L));
-        checkEqual(Attributes.readBasicFileAttributes(file).lastModifiedTime(),
+        Files.setAttribute(file, "basic:lastModifiedTime", FileTime.fromMillis(0L));
+        checkEqual(Files.getLastModifiedTime(file),
                    FileTime.fromMillis(0L));
-        file.setAttribute("lastModifiedTime", modTime);
-        checkEqual(Attributes.readBasicFileAttributes(file).lastModifiedTime(), modTime);
+        Files.setAttribute(file, "lastModifiedTime", modTime);
+        checkEqual(Files.getLastModifiedTime(file), modTime);
 
-        Map<String,?> map;
-        map = file.readAttributes("*");
+        Map<String,Object> map;
+        map = Files.readAttributes(file, "*");
         assertTrue(map.size() >= 9);
         checkEqual(attrs.isRegularFile(), map.get("isRegularFile")); // check one
 
-        map = file.readAttributes("basic:*");
+        map = Files.readAttributes(file, "basic:*");
         assertTrue(map.size() >= 9);
         checkEqual(attrs.lastAccessTime(), map.get("lastAccessTime")); // check one
 
-        map = file.readAttributes("size,lastModifiedTime");
+        map = Files.readAttributes(file, "size,lastModifiedTime");
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.lastModifiedTime(), map.get("lastModifiedTime"));
 
-        map = file.readAttributes(
+        map = Files.readAttributes(file,
             "basic:lastModifiedTime,lastAccessTime,ShouldNotExist");
         assertTrue(map.size() == 2);
         checkEqual(attrs.lastModifiedTime(), map.get("lastModifiedTime"));
@@ -103,110 +103,110 @@ public class FileAttributes {
     }
 
     // Exercise getAttribute/setAttribute/readAttributes on posix attributes
-    static void checkPosixAttributes(FileRef file, PosixFileAttributes attrs)
+    static void checkPosixAttributes(Path file, PosixFileAttributes attrs)
         throws IOException
     {
         checkBasicAttributes(file, attrs);
 
         // getAttribute
-        checkEqual(attrs.permissions(), file.getAttribute("posix:permissions"));
-        checkEqual(attrs.owner(), file.getAttribute("posix:owner"));
-        checkEqual(attrs.group(), file.getAttribute("posix:group"));
+        checkEqual(attrs.permissions(), Files.getAttribute(file, "posix:permissions"));
+        checkEqual(attrs.owner(), Files.getAttribute(file, "posix:owner"));
+        checkEqual(attrs.group(), Files.getAttribute(file, "posix:group"));
 
         // setAttribute
         Set<PosixFilePermission> orig = attrs.permissions();
-        Set<PosixFilePermission> newPerms = new HashSet<PosixFilePermission>(orig);
+        Set<PosixFilePermission> newPerms = new HashSet<>(orig);
         newPerms.remove(PosixFilePermission.OTHERS_READ);
         newPerms.remove(PosixFilePermission.OTHERS_WRITE);
         newPerms.remove(PosixFilePermission.OTHERS_EXECUTE);
-        file.setAttribute("posix:permissions", newPerms);
-        checkEqual(Attributes.readPosixFileAttributes(file).permissions(), newPerms);
-        file.setAttribute("posix:permissions", orig);
-        checkEqual(Attributes.readPosixFileAttributes(file).permissions(), orig);
-        file.setAttribute("posix:owner", attrs.owner());
-        file.setAttribute("posix:group", attrs.group());
+        Files.setAttribute(file, "posix:permissions", newPerms);
+        checkEqual(Files.getPosixFilePermissions(file), newPerms);
+        Files.setAttribute(file, "posix:permissions", orig);
+        checkEqual(Files.getPosixFilePermissions(file), orig);
+        Files.setAttribute(file, "posix:owner", attrs.owner());
+        Files.setAttribute(file, "posix:group", attrs.group());
 
         // readAttributes
-        Map<String,?> map;
-        map = file.readAttributes("posix:*");
+        Map<String,Object> map;
+        map = Files.readAttributes(file, "posix:*");
         assertTrue(map.size() >= 12);
         checkEqual(attrs.permissions(), map.get("permissions")); // check one
 
-        map = file.readAttributes("posix:size,owner,ShouldNotExist");
+        map = Files.readAttributes(file, "posix:size,owner,ShouldNotExist");
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.owner(), map.get("owner"));
     }
 
     // Exercise getAttribute/readAttributes on unix attributes
-    static void checkUnixAttributes(FileRef file) throws IOException {
+    static void checkUnixAttributes(Path file) throws IOException {
         // getAttribute
-        int mode = (Integer)file.getAttribute("unix:mode");
-        long ino = (Long)file.getAttribute("unix:ino");
-        long dev = (Long)file.getAttribute("unix:dev");
-        long rdev = (Long)file.getAttribute("unix:rdev");
-        int nlink = (Integer)file.getAttribute("unix:nlink");
-        int uid = (Integer)file.getAttribute("unix:uid");
-        int gid = (Integer)file.getAttribute("unix:gid");
-        FileTime ctime = (FileTime)file.getAttribute("unix:ctime");
+        int mode = (Integer)Files.getAttribute(file, "unix:mode");
+        long ino = (Long)Files.getAttribute(file, "unix:ino");
+        long dev = (Long)Files.getAttribute(file, "unix:dev");
+        long rdev = (Long)Files.getAttribute(file, "unix:rdev");
+        int nlink = (Integer)Files.getAttribute(file, "unix:nlink");
+        int uid = (Integer)Files.getAttribute(file, "unix:uid");
+        int gid = (Integer)Files.getAttribute(file, "unix:gid");
+        FileTime ctime = (FileTime)Files.getAttribute(file, "unix:ctime");
 
         // readAttributes
-        Map<String,?> map;
-        map = file.readAttributes("unix:*");
+        Map<String,Object> map;
+        map = Files.readAttributes(file, "unix:*");
         assertTrue(map.size() >= 20);
 
-        map = file.readAttributes("unix:size,uid,gid,ShouldNotExist");
+        map = Files.readAttributes(file, "unix:size,uid,gid,ShouldNotExist");
         assertTrue(map.size() == 3);
         checkEqual(map.get("size"),
-                   Attributes.readBasicFileAttributes(file).size());
+                   Files.readAttributes(file, BasicFileAttributes.class).size());
     }
 
     // Exercise getAttribute/setAttribute on dos attributes
-    static void checkDosAttributes(FileRef file, DosFileAttributes attrs)
+    static void checkDosAttributes(Path file, DosFileAttributes attrs)
         throws IOException
     {
         checkBasicAttributes(file, attrs);
 
         // getAttribute
-        checkEqual(attrs.isReadOnly(), file.getAttribute("dos:readonly"));
-        checkEqual(attrs.isHidden(), file.getAttribute("dos:hidden"));
-        checkEqual(attrs.isSystem(), file.getAttribute("dos:system"));
-        checkEqual(attrs.isArchive(), file.getAttribute("dos:archive"));
+        checkEqual(attrs.isReadOnly(), Files.getAttribute(file, "dos:readonly"));
+        checkEqual(attrs.isHidden(), Files.getAttribute(file, "dos:hidden"));
+        checkEqual(attrs.isSystem(), Files.getAttribute(file, "dos:system"));
+        checkEqual(attrs.isArchive(), Files.getAttribute(file, "dos:archive"));
 
         // setAttribute
         boolean value;
 
         value = attrs.isReadOnly();
-        file.setAttribute("dos:readonly", !value);
-        checkEqual(Attributes.readDosFileAttributes(file).isReadOnly(), !value);
-        file.setAttribute("dos:readonly", value);
-        checkEqual(Attributes.readDosFileAttributes(file).isReadOnly(), value);
+        Files.setAttribute(file, "dos:readonly", !value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isReadOnly(), !value);
+        Files.setAttribute(file, "dos:readonly", value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isReadOnly(), value);
 
         value = attrs.isHidden();
-        file.setAttribute("dos:hidden", !value);
-        checkEqual(Attributes.readDosFileAttributes(file).isHidden(), !value);
-        file.setAttribute("dos:hidden", value);
-        checkEqual(Attributes.readDosFileAttributes(file).isHidden(), value);
+        Files.setAttribute(file, "dos:hidden", !value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isHidden(), !value);
+        Files.setAttribute(file, "dos:hidden", value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isHidden(), value);
 
         value = attrs.isSystem();
-        file.setAttribute("dos:system", !value);
-        checkEqual(Attributes.readDosFileAttributes(file).isSystem(), !value);
-        file.setAttribute("dos:system", value);
-        checkEqual(Attributes.readDosFileAttributes(file).isSystem(), value);
+        Files.setAttribute(file, "dos:system", !value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isSystem(), !value);
+        Files.setAttribute(file, "dos:system", value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isSystem(), value);
 
         value = attrs.isArchive();
-        file.setAttribute("dos:archive", !value);
-        checkEqual(Attributes.readDosFileAttributes(file).isArchive(), !value);
-        file.setAttribute("dos:archive", value);
-        checkEqual(Attributes.readDosFileAttributes(file).isArchive(), value);
+        Files.setAttribute(file, "dos:archive", !value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isArchive(), !value);
+        Files.setAttribute(file, "dos:archive", value);
+        checkEqual(Files.readAttributes(file, DosFileAttributes.class).isArchive(), value);
 
         // readAttributes
-        Map<String,?> map;
-        map = file.readAttributes("dos:*");
+        Map<String,Object> map;
+        map = Files.readAttributes(file, "dos:*");
         assertTrue(map.size() >= 13);
         checkEqual(attrs.isReadOnly(), map.get("readonly")); // check one
 
-        map = file.readAttributes("dos:size,hidden,ShouldNotExist");
+        map = Files.readAttributes(file, "dos:size,hidden,ShouldNotExist");
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.isHidden(), map.get("hidden"));
@@ -215,40 +215,41 @@ public class FileAttributes {
     static void miscTests(Path file) throws IOException {
         // NPE tests
         try {
-            file.getAttribute(null);
+            Files.getAttribute(file, null);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException npe) { }
         try {
-            file.getAttribute("isRegularFile", (LinkOption[])null);
+            Files.getAttribute(file, "isRegularFile", (LinkOption[])null);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException npe) { }
         try {
-            file.setAttribute(null, 0L);
+            Files.setAttribute(file, null, 0L);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException npe) { }
     }
 
     static void doTests(Path dir) throws IOException {
-        Path file = dir.resolve("foo").createFile();
-        FileStore store = file.getFileStore();
+        Path file = dir.resolve("foo");
+        Files.createFile(file);
+        FileStore store = Files.getFileStore(file);
         try {
             checkBasicAttributes(file,
-                Attributes.readBasicFileAttributes(file));
+                Files.readAttributes(file, BasicFileAttributes.class));
 
             if (store.supportsFileAttributeView("posix"))
                 checkPosixAttributes(file,
-                    Attributes.readPosixFileAttributes(file));
+                    Files.readAttributes(file, PosixFileAttributes.class));
 
             if (store.supportsFileAttributeView("unix"))
                 checkUnixAttributes(file);
 
             if (store.supportsFileAttributeView("dos"))
                 checkDosAttributes(file,
-                    Attributes.readDosFileAttributes(file));
+                    Files.readAttributes(file, DosFileAttributes.class));
 
             miscTests(file);
         } finally {
-            file.delete();
+            Files.delete(file);
         }
     }
 

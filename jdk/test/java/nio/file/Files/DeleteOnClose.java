@@ -31,44 +31,43 @@ public class DeleteOnClose {
     public static void main(String[] args) throws IOException {
         // open file but do not close it. Its existance will be checked by
         // the calling script.
-        Paths.get(args[0]).newByteChannel(READ, WRITE, DELETE_ON_CLOSE);
+        Files.newByteChannel(Paths.get(args[0]), READ, WRITE, DELETE_ON_CLOSE);
 
         // check temporary file has been deleted after closing it
-        Path file = File.createTempFile("blah", "tmp").toPath();
-        file.newByteChannel(READ, WRITE, DELETE_ON_CLOSE).close();
-        if (file.exists())
+        Path file = Files.createTempFile("blah", "tmp");
+        Files.newByteChannel(file, READ, WRITE, DELETE_ON_CLOSE).close();
+        if (Files.exists(file))
             throw new RuntimeException("Temporary file was not deleted");
 
-        Path dir = TestUtil.createTemporaryDirectory();
+        Path dir = Files.createTempDirectory("blah");
         try {
             // check that DELETE_ON_CLOSE fails when file is a sym link
             if (TestUtil.supportsLinks(dir)) {
-                file = dir.resolve("foo").createFile();
-                Path link = dir.resolve("link").createSymbolicLink(file);
+                file = dir.resolve("foo");
+                Files.createFile(file);
+                Path link = dir.resolve("link");
+                Files.createSymbolicLink(link, file);
                 try {
-                    link.newByteChannel(READ, WRITE, DELETE_ON_CLOSE);
+                    Files.newByteChannel(link, READ, WRITE, DELETE_ON_CLOSE);
                     throw new RuntimeException("IOException expected");
                 } catch (IOException ignore) { }
             }
 
             // check that DELETE_ON_CLOSE works with files created via open
             // directories
-            DirectoryStream stream = dir.newDirectoryStream();
-            try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
                 if (stream instanceof SecureDirectoryStream) {
-                    SecureDirectoryStream secure = (SecureDirectoryStream)stream;
+                    SecureDirectoryStream<Path> secure = (SecureDirectoryStream<Path>)stream;
                     file = Paths.get("foo");
 
-                    Set<OpenOption> opts = new HashSet<OpenOption>();
+                    Set<OpenOption> opts = new HashSet<>();
                     opts.add(WRITE);
                     opts.add(DELETE_ON_CLOSE);
                     secure.newByteChannel(file, opts).close();
 
-                    if (dir.resolve(file).exists())
+                    if (Files.exists(dir.resolve(file)))
                         throw new RuntimeException("File not deleted");
                 }
-            } finally {
-                stream.close();
             }
         } finally {
             TestUtil.removeAll(dir);

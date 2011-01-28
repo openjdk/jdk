@@ -55,15 +55,14 @@ public class LotsOfEvents {
     static void testOverflowEvent(Path dir)
         throws IOException, InterruptedException
     {
-        WatchService watcher = dir.getFileSystem().newWatchService();
-        try {
+        try (WatchService watcher = dir.getFileSystem().newWatchService()) {
             dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE);
 
             // create a lot of files
             int n = 1024;
             Path[] files = new Path[n];
             for (int i=0; i<n; i++) {
-                files[i] = dir.resolve("foo" + i).createFile();
+                files[i] = Files.createFile(dir.resolve("foo" + i));
             }
 
             // give time for events to accumulate (improve chance of overflow)
@@ -74,7 +73,7 @@ public class LotsOfEvents {
 
             // delete the files
             for (int i=0; i<n; i++) {
-                files[i].delete();
+                Files.delete(files[i]);
             }
 
             // give time for events to accumulate (improve chance of overflow)
@@ -82,8 +81,6 @@ public class LotsOfEvents {
 
             // check that we see the delete events (or overflow)
             drainAndCheckOverflowEvents(watcher, ENTRY_DELETE, n);
-        } finally {
-            watcher.close();
         }
     }
 
@@ -147,8 +144,7 @@ public class LotsOfEvents {
                 entries[i].create();
         }
 
-        WatchService watcher = dir.getFileSystem().newWatchService();
-        try {
+        try (WatchService watcher = dir.getFileSystem().newWatchService()) {
             dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 
             // do several rounds of noise and test
@@ -169,7 +165,7 @@ public class LotsOfEvents {
                 // events for the same file.
                 WatchKey key = watcher.poll(15, TimeUnit.SECONDS);
                 while (key != null) {
-                    Set<Path> modified = new HashSet<Path>();
+                    Set<Path> modified = new HashSet<>();
                     for (WatchEvent<?> event: key.pollEvents()) {
                         WatchEvent.Kind<?> kind = event.kind();
                         Path file = (kind == OVERFLOW) ? null : (Path)event.context();
@@ -188,9 +184,6 @@ public class LotsOfEvents {
                     key = watcher.poll(2, TimeUnit.SECONDS);
                 }
             }
-
-        } finally {
-            watcher.close();
         }
     }
 
@@ -200,20 +193,17 @@ public class LotsOfEvents {
             this.file = file;
         }
         void create() throws IOException {
-            if (file.notExists())
-                file.createFile();
+            if (Files.notExists(file))
+                Files.createFile(file);
 
         }
         void deleteIfExists() throws IOException {
-            file.deleteIfExists();
+            Files.deleteIfExists(file);
         }
         void modifyIfExists() throws IOException {
-            if (file.exists()) {
-                OutputStream out = file.newOutputStream(StandardOpenOption.APPEND);
-                try {
+            if (Files.exists(file)) {
+                try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.APPEND)) {
                     out.write("message".getBytes());
-                } finally {
-                    out.close();
                 }
             }
         }

@@ -41,7 +41,7 @@ public class MaxDepth {
                 // compute depth based on relative path to top directory
                 private int depth(Path file) {
                     Path rp = file.relativize(top);
-                    return (rp == null) ? 0 : rp.getNameCount();
+                    return (rp.getFileName().toString().equals("")) ? 0 : rp.getNameCount();
                 }
 
                 @Override

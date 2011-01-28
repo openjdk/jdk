@@ -35,20 +35,53 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Represents the value of a file's time stamp attribute. For example, it may
- * represent the time that the file was last modified, accessed, or created.
+ * represent the time that the file was last
+ * {@link BasicFileAttributes#lastModifiedTime() modified},
+ * {@link BasicFileAttributes#lastAccessTime() accessed},
+ * or {@link BasicFileAttributes#creationTime() created}.
  *
  * <p> Instances of this class are immutable.
  *
  * @since 1.7
- * @see BasicFileAttributes
- * @see Attributes#setLastModifiedTime
+ * @see java.nio.file.Files#setLastModifiedTime
+ * @see java.nio.file.Files#getLastModifiedTime
  */
 
-public final class FileTime implements Comparable<FileTime> {
+public final class FileTime
+    implements Comparable<FileTime>
+{
+    /**
+     * The value since the epoch; can be negative.
+     */
     private final long value;
-    private final TimeUnit unit;
-    private String valueAsString;  // created lazily
 
+    /**
+     * The unit of granularity to interpret the value.
+     */
+    private final TimeUnit unit;
+
+    /**
+     * The value return by toString (created lazily)
+     */
+    private String valueAsString;
+
+    /**
+     * The value in days and excess nanos (created lazily)
+     */
+    private DaysAndNanos daysAndNanos;
+
+    /**
+     * Returns a DaysAndNanos object representing the value.
+     */
+    private DaysAndNanos asDaysAndNanos() {
+        if (daysAndNanos == null)
+            daysAndNanos = new DaysAndNanos(value, unit);
+        return daysAndNanos;
+    }
+
+    /**
+     * Initializes a new instance of this class.
+     */
     private FileTime(long value, TimeUnit unit) {
         if (unit == null)
             throw new NullPointerException();
@@ -143,9 +176,8 @@ public final class FileTime implements Comparable<FileTime> {
      */
     @Override
     public int hashCode() {
-        // hash value for fixed granularity to satisfy contract with equals
-        long ms = toMillis();
-        return (int)(ms ^ (ms >>> 32));
+        // hashcode of days/nanos representation to satisfy contract with equals
+        return asDaysAndNanos().hashCode();
     }
 
     /**
@@ -162,46 +194,12 @@ public final class FileTime implements Comparable<FileTime> {
     @Override
     public int compareTo(FileTime other) {
         // same granularity
-        if (unit == other.unit)
+        if (unit == other.unit) {
             return (value < other.value) ? -1 : (value == other.value ? 0 : 1);
-
-        // compare in days
-        long thisValueInDays = unit.toDays(value);
-        long otherValueInDays = other.unit.toDays(other.value);
-        if (thisValueInDays != otherValueInDays)
-            return (thisValueInDays < otherValueInDays) ? -1 : 1;
-
-        // compare remainder in nanoseconds
-        long thisRemainder = remainderInNanos(thisValueInDays);
-        long otherRemainder = other.remainderInNanos(otherValueInDays);
-        return (thisRemainder < otherRemainder) ? -1 :
-            (thisRemainder == otherRemainder) ? 0 : 1;
-    }
-
-    private long remainderInNanos(long days) {
-        // constants for conversion
-        final long C0 = 1L;
-        final long C1 = C0 * 24L;
-        final long C2 = C1 * 60L;
-        final long C3 = C2 * 60L;
-        final long C4 = C3 * 1000L;
-        final long C5 = C4 * 1000L;
-        final long C6 = C5 * 1000L;
-
-        long scale;
-        switch (unit) {
-            case DAYS         : scale = C0; break;
-            case HOURS        : scale = C1; break;
-            case MINUTES      : scale = C2; break;
-            case SECONDS      : scale = C3; break;
-            case MILLISECONDS : scale = C4; break;
-            case MICROSECONDS : scale = C5; break;
-            case NANOSECONDS  : scale = C6; break;
-            default:
-                throw new AssertionError("Unit not handled");
+        } else {
+            // compare using days/nanos representation when unit differs
+            return asDaysAndNanos().compareTo(other.asDaysAndNanos());
         }
-        long rem = value - (days * scale);
-        return unit.toNanos(rem);
     }
 
     /**
@@ -239,26 +237,12 @@ public final class FileTime implements Comparable<FileTime> {
             // nothing to do when seconds/minutes/hours/days
             String fractionAsString = "";
             if (unit.compareTo(TimeUnit.SECONDS) < 0) {
-                // constants for conversion
-                final long C0 = 1L;
-                final long C1 = C0 * 1000L;
-                final long C2 = C1 * 1000L;
-                final long C3 = C2 * 1000L;
-
-                long scale;
-                int width;
-                switch (unit) {
-                    case MILLISECONDS : scale = C1; width = 3; break;
-                    case MICROSECONDS : scale = C2; width = 6; break;
-                    case NANOSECONDS  : scale = C3; width = 9; break;
-                    default:
-                        throw new AssertionError("Unit not handled");
-                }
-                long fraction = value % scale;
+                long fraction = asDaysAndNanos().fractionOfSecondInNanos();
                 if (fraction != 0L) {
                     // fraction must be positive
                     if (fraction < 0L) {
-                        fraction += scale;
+                        final long MAX_FRACTION_PLUS_1 = 1000L * 1000L * 1000L;
+                        fraction += MAX_FRACTION_PLUS_1;
                         if (ms != Long.MIN_VALUE) ms--;
                     }
 
@@ -266,7 +250,7 @@ public final class FileTime implements Comparable<FileTime> {
                     // stripping any trailing zeros
                     String s = Long.toString(fraction);
                     int len = s.length();
-                    width -= len;
+                    int width = 9 - len;
                     StringBuilder sb = new StringBuilder(".");
                     while (width-- > 0) {
                         sb.append('0');
@@ -301,5 +285,77 @@ public final class FileTime implements Comparable<FileTime> {
             valueAsString = v;
         }
         return v;
+    }
+
+    /**
+     * Represents a FileTime's value as two longs: the number of days since
+     * the epoch, and the excess (in nanoseconds). This is used for comparing
+     * values with different units of granularity.
+     */
+    private static class DaysAndNanos implements Comparable<DaysAndNanos> {
+        // constants for conversion
+        private static final long C0 = 1L;
+        private static final long C1 = C0 * 24L;
+        private static final long C2 = C1 * 60L;
+        private static final long C3 = C2 * 60L;
+        private static final long C4 = C3 * 1000L;
+        private static final long C5 = C4 * 1000L;
+        private static final long C6 = C5 * 1000L;
+
+        /**
+         * The value (in days) since the epoch; can be negative.
+         */
+        private final long days;
+
+        /**
+         * The excess (in nanoseconds); can be negative if days <= 0.
+         */
+        private final long excessNanos;
+
+        /**
+         * Initializes a new instance of this class.
+         */
+        DaysAndNanos(long value, TimeUnit unit) {
+            long scale;
+            switch (unit) {
+                case DAYS         : scale = C0; break;
+                case HOURS        : scale = C1; break;
+                case MINUTES      : scale = C2; break;
+                case SECONDS      : scale = C3; break;
+                case MILLISECONDS : scale = C4; break;
+                case MICROSECONDS : scale = C5; break;
+                case NANOSECONDS  : scale = C6; break;
+                default : throw new AssertionError("Unit not handled");
+            }
+            this.days = unit.toDays(value);
+            this.excessNanos = unit.toNanos(value - (this.days * scale));
+        }
+
+        /**
+         * Returns the fraction of a second, in nanoseconds.
+         */
+        long fractionOfSecondInNanos() {
+            return excessNanos % (1000L * 1000L * 1000L);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof DaysAndNanos) ?
+                compareTo((DaysAndNanos)obj) == 0 : false;
+        }
+
+        @Override
+        public int hashCode() {
+            return (int)(days ^ (days >>> 32) ^
+                         excessNanos ^ (excessNanos >>> 32));
+        }
+
+        @Override
+        public int compareTo(DaysAndNanos other) {
+            if (this.days != other.days)
+                return (this.days < other.days) ? -1 : 1;
+            return (this.excessNanos < other.excessNanos) ? -1 :
+                   (this.excessNanos == other.excessNanos) ? 0 : 1;
+        }
     }
 }

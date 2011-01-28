@@ -25,7 +25,8 @@
 
 package java.util;
 
-import java.nio.file.FileRef;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.regex.*;
 import java.io.*;
 import java.math.*;
@@ -699,16 +700,16 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
      *
      * @param   source
-     *          A file to be scanned
+     *          the path to the file to be scanned
      * @throws  IOException
      *          if an I/O error occurs opening source
      *
      * @since   1.7
      */
-    public Scanner(FileRef source)
+    public Scanner(Path source)
         throws IOException
     {
-        this(source.newInputStream());
+        this(Files.newInputStream(source));
     }
 
     /**
@@ -717,7 +718,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * characters using the specified charset.
      *
      * @param   source
-     *          A file to be scanned
+     *          the path to the file to be scanned
      * @param   charsetName
      *          The encoding type used to convert bytes from the file
      *          into characters to be scanned
@@ -727,12 +728,12 @@ public final class Scanner implements Iterator<String>, Closeable {
      *          if the specified encoding is not found
      * @since   1.7
      */
-    public Scanner(FileRef source, String charsetName) throws IOException {
+    public Scanner(Path source, String charsetName) throws IOException {
         this(Objects.nonNull(source), toCharset(charsetName));
     }
 
-    private Scanner(FileRef source, Charset charset)  throws IOException {
-        this(makeReadable(source.newInputStream(), charset));
+    private Scanner(Path source, Charset charset)  throws IOException {
+        this(makeReadable(Files.newInputStream(source), charset));
     }
 
     /**

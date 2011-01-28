@@ -22,6 +22,7 @@
 #
 # @test
 # @bug 6990846
+# @ignore Until zipfs updated (7015391)
 # @summary Test ZipFileSystem demo
 # @build Basic PathOps ZipFSTester
 # @run shell basic.sh

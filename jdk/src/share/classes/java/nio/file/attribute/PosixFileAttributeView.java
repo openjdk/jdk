@@ -60,8 +60,8 @@ import java.io.IOException;
  * <p> <b>Usage Example:</b>
  * Suppose we need to print out the owner and access permissions of a file:
  * <pre>
- *     FileRef file = ...
- *     PosixFileAttributes attrs = file.getFileAttributeView(PosixFileAttributeView.class)
+ *     Path file = ...
+ *     PosixFileAttributes attrs = Files.getFileAttributeView(file, PosixFileAttributeView.class)
  *         .readAttributes();
  *     System.out.format("%s %s%n",
  *         attrs.owner().getName(),
@@ -90,12 +90,12 @@ import java.io.IOException;
  * </table>
  * </blockquote>
  *
- * <p> The {@link FileRef#getAttribute getAttribute} method may be used to read
+ * <p> The {@link Files#getAttribute getAttribute} method may be used to read
  * any of these attributes, or any of the attributes defined by {@link
  * BasicFileAttributeView} as if by invoking the {@link #readAttributes
  * readAttributes()} method.
  *
- * <p> The {@link FileRef#setAttribute setAttribute} method may be used to update
+ * <p> The {@link Files#setAttribute setAttribute} method may be used to update
  * the file's last modified time, last access time or create time attributes as
  * defined by {@link BasicFileAttributeView}. It may also be used to update
  * the permissions, owner, or group-owner as if by invoking the {@link
@@ -105,8 +105,8 @@ import java.io.IOException;
  * <h4> Setting Initial Permissions </h4>
  * <p> Implementations supporting this attribute view may also support setting
  * the initial permissions when creating a file or directory. The
- * initial permissions are provided to the  {@link Path#createFile createFile}
- * or {@link Path#createDirectory createDirectory} methods as a {@link
+ * initial permissions are provided to the {@link Files#createFile createFile}
+ * or {@link Files#createDirectory createDirectory} methods as a {@link
  * FileAttribute} with {@link FileAttribute#name name} {@code "posix:permissions"}
  * and a {@link FileAttribute#value value} that is the set of permissions. The
  * following example uses the {@link PosixFilePermissions#asFileAttribute
@@ -117,7 +117,7 @@ import java.io.IOException;
  *     Path path = ...
  *     Set&lt;PosixFilePermission&gt; perms =
  *         EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ);
- *     path.createFile(PosixFilePermissions.asFileAttribute(perms));
+ *     Files.createFile(path, PosixFilePermissions.asFileAttribute(perms));
  * </pre>
  *
  * <p> When the access permissions are set at file creation time then the actual
@@ -128,13 +128,11 @@ import java.io.IOException;
  * the access permissions, and the underlying file system supports access
  * permissions, then it is required that the value of the actual access
  * permissions will be equal or less than the value of the attribute
- * provided to the {@link java.nio.file.Path#createFile createFile} or
- * {@link java.nio.file.Path#createDirectory createDirectory} methods. In
- * other words, the file may be more secure than requested.
+ * provided to the {@link Files#createFile createFile} or {@link
+ * Files#createDirectory createDirectory} methods. In other words, the file may
+ * be more secure than requested.
  *
  * @since 1.7
- *
- * @see Attributes#readPosixFileAttributes
  */
 
 public interface PosixFileAttributeView

@@ -55,20 +55,20 @@ public class PrintFileTree {
             options.add(FileVisitOption.FOLLOW_LINKS);
 
         final boolean reportCycles = printCycles;
-        Files.walkFileTree(dir, options, Integer.MAX_VALUE, new FileVisitor<FileRef>() {
+        Files.walkFileTree(dir, options, Integer.MAX_VALUE, new FileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(FileRef dir, BasicFileAttributes attrs) {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 System.out.println(dir);
                 return FileVisitResult.CONTINUE;
             }
             @Override
-            public FileVisitResult visitFile(FileRef file, BasicFileAttributes attrs) {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 if (!attrs.isDirectory() || reportCycles)
                     System.out.println(file);
                 return FileVisitResult.CONTINUE;
             }
             @Override
-            public FileVisitResult postVisitDirectory(FileRef dir, IOException exc)
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
                 throws IOException
             {
                 if (exc != null)
@@ -76,7 +76,7 @@ public class PrintFileTree {
                 return FileVisitResult.CONTINUE;
             }
             @Override
-            public FileVisitResult visitFileFailed(FileRef file, IOException exc)
+            public FileVisitResult visitFileFailed(Path file, IOException exc)
                 throws IOException
             {
                 if (reportCycles && (exc instanceof FileSystemLoopException)) {

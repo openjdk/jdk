@@ -30,7 +30,6 @@
  */
 
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
 
 public class FileType {
@@ -41,10 +40,8 @@ public class FileType {
         }
         for (String arg: args) {
             Path file = Paths.get(arg);
-            BasicFileAttributes attrs = Attributes.readBasicFileAttributes(file);
-
             String type;
-            if (attrs.isDirectory()) {
+            if (Files.isDirectory(file)) {
                 type = "directory";
             } else {
                 type = Files.probeContentType(file);
