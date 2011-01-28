@@ -302,7 +302,7 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
       Thread *thread = Thread::current();
       ResourceMark rm(thread);
       methodHandle mh(thread, method);
-      type = Bytecode_invoke(mh, bci).result_type(thread);
+      type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
       // (NOT needed for the old calling convension)
       if (!is_top_frame) {
@@ -316,7 +316,7 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
       Thread *thread = Thread::current();
       ResourceMark rm(thread);
       methodHandle mh(thread, method);
-      type = Bytecode_invoke(mh, bci).result_type(thread);
+      type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
       // (NOT needed for the old calling convension)
       if (!is_top_frame) {

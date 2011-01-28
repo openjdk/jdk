@@ -169,7 +169,7 @@
 # include "oops/oop.inline.hpp"
 # include "oops/oop.inline2.hpp"
 # include "oops/oopsHierarchy.hpp"
-# include "oops/symbolOop.hpp"
+# include "oops/symbol.hpp"
 # include "oops/typeArrayKlass.hpp"
 # include "oops/typeArrayOop.hpp"
 # include "prims/jni.h"

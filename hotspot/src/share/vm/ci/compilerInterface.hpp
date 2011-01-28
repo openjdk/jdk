@@ -49,7 +49,6 @@
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciSymbolKlass.hpp"
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciTypeArrayKlassKlass.hpp"

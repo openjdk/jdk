@@ -47,7 +47,7 @@
 
 class SignatureIterator: public ResourceObj {
  protected:
-  symbolHandle _signature;             // the signature to iterate over
+  Symbol*      _signature;             // the signature to iterate over
   int          _index;                 // the current character index (only valid during iteration)
   int          _parameter_index;       // the current parameter index (0 outside iteration phase)
   BasicType    _return_type;
@@ -87,9 +87,7 @@ class SignatureIterator: public ResourceObj {
   };
 
   // Constructors
-  SignatureIterator(symbolOop signature);
-  SignatureIterator(Thread *thread, symbolOop signature);
-  SignatureIterator(symbolHandle signature);
+  SignatureIterator(Symbol* signature);
 
   // Iteration
   void dispatch_field();               // dispatches once for field signatures
@@ -138,7 +136,7 @@ class SignatureTypeNames : public SignatureIterator {
   void do_array (int begin, int end)   { type_name("jobject" ); }
 
  public:
-  SignatureTypeNames(symbolHandle signature) : SignatureIterator(signature) {}
+  SignatureTypeNames(Symbol* signature) : SignatureIterator(signature) {}
 };
 
 
@@ -166,7 +164,7 @@ class SignatureInfo: public SignatureIterator {
   void do_array (int begin, int end)   { set(T_ARRAY_size  , T_ARRAY  ); }
 
  public:
-  SignatureInfo(symbolHandle signature) : SignatureIterator(signature) {
+  SignatureInfo(Symbol* signature) : SignatureIterator(signature) {
     _has_iterated = _has_iterated_return = false;
     _size         = 0;
     _return_type  = T_ILLEGAL;
@@ -181,7 +179,7 @@ class ArgumentSizeComputer: public SignatureInfo {
  private:
   void set(int size, BasicType type)   { _size += size; }
  public:
-  ArgumentSizeComputer(symbolHandle signature) : SignatureInfo(signature) {}
+  ArgumentSizeComputer(Symbol* signature) : SignatureInfo(signature) {}
 
   int       size()                     { lazy_iterate_parameters(); return _size; }
 };
@@ -191,7 +189,7 @@ class ArgumentCount: public SignatureInfo {
  private:
   void set(int size, BasicType type)   { _size ++; }
  public:
-  ArgumentCount(symbolHandle signature) : SignatureInfo(signature) {}
+  ArgumentCount(Symbol* signature) : SignatureInfo(signature) {}
 
   int       size()                     { lazy_iterate_parameters(); return _size; }
 };
@@ -205,7 +203,7 @@ class ResultTypeFinder: public SignatureInfo {
  public:
   BasicType type()                     { lazy_iterate_return(); return _return_type; }
 
-  ResultTypeFinder(symbolHandle signature) : SignatureInfo(signature) {}
+  ResultTypeFinder(Symbol* signature) : SignatureInfo(signature) {}
 };
 
 
@@ -234,11 +232,6 @@ class Fingerprinter: public SignatureIterator {
   void do_void()    { ShouldNotReachHere(); }
 
   Fingerprinter(methodHandle method) : SignatureIterator(method->signature()) {
-    mh = method;
-    _fingerprint = 0;
-  }
-
-  Fingerprinter(Thread *thread, methodHandle method) : SignatureIterator(thread, method->signature()) {
     mh = method;
     _fingerprint = 0;
   }
@@ -356,18 +349,19 @@ class NativeSignatureIterator: public SignatureIterator {
 
 class SignatureStream : public StackObj {
  private:
-  symbolHandle _signature;
+  Symbol*      _signature;
   int          _begin;
   int          _end;
   BasicType    _type;
   bool         _at_return_type;
+  GrowableArray<Symbol*>* _names;  // symbols created while parsing signature
 
  public:
   bool at_return_type() const                    { return _at_return_type; }
   bool is_done() const;
   void next_non_primitive(int t);
   void next() {
-    symbolOop sig = _signature();
+    Symbol* sig = _signature;
     int len = sig->utf8_length();
     if (_end >= len) {
       _end = len + 1;
@@ -392,32 +386,28 @@ class SignatureStream : public StackObj {
     _end++;
   }
 
-  SignatureStream(symbolHandle signature,
-                  bool is_method = true) :
-                   _signature(signature), _at_return_type(false) {
-    _begin = _end = (is_method ? 1 : 0);  // skip first '(' in method signatures
-    next();
-  }
+  SignatureStream(Symbol* signature, bool is_method = true);
+  ~SignatureStream();
 
   bool is_object() const;                        // True if this argument is an object
   bool is_array() const;                         // True if this argument is an array
   BasicType type() const                         { return _type; }
-  symbolOop as_symbol(TRAPS);
+  Symbol* as_symbol(TRAPS);
   enum FailureMode { ReturnNull, CNFException, NCDFError };
   klassOop as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
 
   // return same as_symbol except allocation of new symbols is avoided.
-  symbolOop as_symbol_or_null();
+  Symbol* as_symbol_or_null();
 };
 
 class SignatureVerifier : public StackObj {
   public:
     // Returns true if the symbol is valid method or type signature
-    static bool is_valid_signature(symbolHandle sig);
+    static bool is_valid_signature(Symbol* sig);
 
-    static bool is_valid_method_signature(symbolHandle sig);
-    static bool is_valid_type_signature(symbolHandle sig);
+    static bool is_valid_method_signature(Symbol* sig);
+    static bool is_valid_type_signature(Symbol* sig);
   private:
 
     static ssize_t is_valid_type(const char*, ssize_t);

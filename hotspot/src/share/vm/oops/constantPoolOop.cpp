@@ -52,13 +52,14 @@ void constantPoolOopDesc::set_flag_at(FlagBit fb) {
 }
 
 klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS) {
-  // A resolved constantPool entry will contain a klassOop, otherwise a symbolOop.
+  // A resolved constantPool entry will contain a klassOop, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and the entry and
   // tag is not updated atomicly.
-  oop entry = *(this_oop->obj_at_addr(which));
-  if (entry->is_klass()) {
+  CPSlot entry = this_oop->slot_at(which);
+  if (entry.is_oop()) {
+    assert(entry.get_oop()->is_klass(), "must be");
     // Already resolved - return entry.
-    return (klassOop)entry;
+    return (klassOop)entry.get_oop();
   }
 
   // Acquire lock on constant oop while doing update. After we get the lock, we check if another object
@@ -67,7 +68,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
   bool do_resolve = false;
   bool in_error = false;
 
-  symbolHandle name;
+  Symbol* name = NULL;
   Handle       loader;
   { ObjectLocker ol(this_oop, THREAD);
 
@@ -76,7 +77,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
         in_error = true;
       } else {
         do_resolve = true;
-        name   = symbolHandle(THREAD, this_oop->unresolved_klass_at(which));
+        name   = this_oop->unresolved_klass_at(which);
         loader = Handle(THREAD, instanceKlass::cast(this_oop->pool_holder())->class_loader());
       }
     }
@@ -86,8 +87,8 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
   // The original attempt to resolve this constant pool entry failed so find the
   // original error and throw it again (JVMS 5.4.3).
   if (in_error) {
-    symbolOop error = SystemDictionary::find_resolution_error(this_oop, which);
-    guarantee(error != (symbolOop)NULL, "tag mismatch with resolution error table");
+    Symbol* error = SystemDictionary::find_resolution_error(this_oop, which);
+    guarantee(error != (Symbol*)NULL, "tag mismatch with resolution error table");
     ResourceMark rm;
     // exception text will be the class name
     const char* className = this_oop->unresolved_klass_at(which)->as_C_string();
@@ -110,7 +111,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
     // to resolve this constant pool entry fail with the same error (JVMS 5.4.3).
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm;
-      symbolHandle error(PENDING_EXCEPTION->klass()->klass_part()->name());
+      Symbol* error = PENDING_EXCEPTION->klass()->klass_part()->name();
 
       bool throw_orig_error = false;
       {
@@ -120,7 +121,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
         if (this_oop->tag_at(which).is_klass()) {
           CLEAR_PENDING_EXCEPTION;
           entry = this_oop->resolved_klass_at(which);
-          return (klassOop)entry;
+          return (klassOop)entry.get_oop();
         }
 
         if (!PENDING_EXCEPTION->
@@ -135,8 +136,8 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
           this_oop->tag_at_put(which, JVM_CONSTANT_UnresolvedClassInError);
         } else {
           // some other thread has put the class in error state.
-          error = symbolHandle(SystemDictionary::find_resolution_error(this_oop, which));
-          assert(!error.is_null(), "checking");
+          error = SystemDictionary::find_resolution_error(this_oop, which);
+          assert(error != NULL, "checking");
           throw_orig_error = true;
         }
       } // unlocked
@@ -162,7 +163,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
         vframeStream vfst(JavaThread::current());
         if (!vfst.at_end()) {
           line_number = vfst.method()->line_number_from_bci(vfst.bci());
-          symbolOop s = instanceKlass::cast(vfst.method()->method_holder())->source_file_name();
+          Symbol* s = instanceKlass::cast(vfst.method()->method_holder())->source_file_name();
           if (s != NULL) {
             source_file = s->as_C_string();
           }
@@ -192,8 +193,8 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
   }
 
   entry = this_oop->resolved_klass_at(which);
-  assert(entry->is_klass(), "must be resolved at this point");
-  return (klassOop)entry;
+  assert(entry.is_oop() && entry.get_oop()->is_klass(), "must be resolved at this point");
+  return (klassOop)entry.get_oop();
 }
 
 
@@ -202,13 +203,14 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
 // instanceof operations. Returns NULL if the class has not been loaded or
 // if the verification of constant pool failed
 klassOop constantPoolOopDesc::klass_at_if_loaded(constantPoolHandle this_oop, int which) {
-  oop entry = *this_oop->obj_at_addr(which);
-  if (entry->is_klass()) {
-    return (klassOop)entry;
+  CPSlot entry = this_oop->slot_at(which);
+  if (entry.is_oop()) {
+    assert(entry.get_oop()->is_klass(), "must be");
+    return (klassOop)entry.get_oop();
   } else {
-    assert(entry->is_symbol(), "must be either symbol or klass");
+    assert(entry.is_metadata(), "must be either symbol or klass");
     Thread *thread = Thread::current();
-    symbolHandle name (thread, (symbolOop)entry);
+    Symbol* name = entry.get_symbol();
     oop loader = instanceKlass::cast(this_oop->pool_holder())->class_loader();
     oop protection_domain = Klass::cast(this_oop->pool_holder())->protection_domain();
     Handle h_prot (thread, protection_domain);
@@ -244,12 +246,13 @@ klassOop constantPoolOopDesc::klass_ref_at_if_loaded(constantPoolHandle this_oop
 // Note: We cannot update the ConstantPool from the vm_thread.
 klassOop constantPoolOopDesc::klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int index, TRAPS) {
   int which = this_oop->klass_ref_index_at(index);
-  oop entry = *this_oop->obj_at_addr(which);
-  if (entry->is_klass()) {
-    return (klassOop)entry;
+  CPSlot entry = this_oop->slot_at(which);
+  if (entry.is_oop()) {
+    assert(entry.get_oop()->is_klass(), "must be");
+    return (klassOop)entry.get_oop();
   } else {
-    assert(entry->is_symbol(), "must be either symbol or klass");
-    symbolHandle name (THREAD, (symbolOop)entry);
+    assert(entry.is_metadata(), "must be either symbol or klass");
+    Symbol*  name  = entry.get_symbol();
     oop loader = instanceKlass::cast(this_oop->pool_holder())->class_loader();
     oop protection_domain = Klass::cast(this_oop->pool_holder())->protection_domain();
     Handle h_loader(THREAD, loader);
@@ -263,13 +266,13 @@ klassOop constantPoolOopDesc::klass_ref_at_if_loaded_check(constantPoolHandle th
 }
 
 
-symbolOop constantPoolOopDesc::impl_name_ref_at(int which, bool uncached) {
+Symbol* constantPoolOopDesc::impl_name_ref_at(int which, bool uncached) {
   int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
   return symbol_at(name_index);
 }
 
 
-symbolOop constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
+Symbol* constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
   int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
   return symbol_at(signature_index);
 }
@@ -361,39 +364,40 @@ klassOop constantPoolOopDesc::klass_ref_at(int which, TRAPS) {
 }
 
 
-symbolOop constantPoolOopDesc::klass_name_at(int which) {
+Symbol* constantPoolOopDesc::klass_name_at(int which) {
   assert(tag_at(which).is_unresolved_klass() || tag_at(which).is_klass(),
          "Corrupted constant pool");
-  // A resolved constantPool entry will contain a klassOop, otherwise a symbolOop.
+  // A resolved constantPool entry will contain a klassOop, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and the entry and
   // tag is not updated atomicly.
-  oop entry = *(obj_at_addr(which));
-  if (entry->is_klass()) {
+  CPSlot entry = slot_at(which);
+  if (entry.is_oop()) {
     // Already resolved - return entry's name.
-    return klassOop(entry)->klass_part()->name();
+    assert(entry.get_oop()->is_klass(), "must be");
+    return klassOop(entry.get_oop())->klass_part()->name();
   } else {
-    assert(entry->is_symbol(), "must be either symbol or klass");
-    return (symbolOop)entry;
+    assert(entry.is_metadata(), "must be either symbol or klass");
+    return entry.get_symbol();
   }
 }
 
-symbolOop constantPoolOopDesc::klass_ref_at_noresolve(int which) {
+Symbol* constantPoolOopDesc::klass_ref_at_noresolve(int which) {
   jint ref_index = klass_ref_index_at(which);
   return klass_at_noresolve(ref_index);
 }
 
-symbolOop constantPoolOopDesc::uncached_klass_ref_at_noresolve(int which) {
+Symbol* constantPoolOopDesc::uncached_klass_ref_at_noresolve(int which) {
   jint ref_index = uncached_klass_ref_index_at(which);
   return klass_at_noresolve(ref_index);
 }
 
 char* constantPoolOopDesc::string_at_noresolve(int which) {
   // Test entry type in case string is resolved while in here.
-  oop entry = *(obj_at_addr(which));
-  if (entry->is_symbol()) {
-    return ((symbolOop)entry)->as_C_string();
-  } else if (java_lang_String::is_instance(entry)) {
-    return java_lang_String::as_utf8_string(entry);
+  CPSlot entry = slot_at(which);
+  if (entry.is_metadata()) {
+    return (entry.get_symbol())->as_C_string();
+  } else if (java_lang_String::is_instance(entry.get_oop())) {
+    return java_lang_String::as_utf8_string(entry.get_oop());
   } else {
     return (char*)"<pseudo-string>";
   }
@@ -498,8 +502,8 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
     {
       int ref_kind                 = this_oop->method_handle_ref_kind_at(index);
       int callee_index             = this_oop->method_handle_klass_index_at(index);
-      symbolHandle name(THREAD,      this_oop->method_handle_name_ref_at(index));
-      symbolHandle signature(THREAD, this_oop->method_handle_signature_ref_at(index));
+      Symbol*  name =      this_oop->method_handle_name_ref_at(index);
+      Symbol*  signature = this_oop->method_handle_signature_ref_at(index);
       if (PrintMiscellaneous)
         tty->print_cr("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
                       ref_kind, index, this_oop->method_handle_index_at(index),
@@ -524,7 +528,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
 
   case JVM_CONSTANT_MethodType:
     {
-      symbolHandle signature(THREAD, this_oop->method_type_signature_at(index));
+      Symbol*  signature = this_oop->method_type_signature_at(index);
       if (PrintMiscellaneous)
         tty->print_cr("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
                       index, this_oop->method_type_index_at(index),
@@ -605,30 +609,33 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
 }
 
 oop constantPoolOopDesc::string_at_impl(constantPoolHandle this_oop, int which, TRAPS) {
-  oop entry = *(this_oop->obj_at_addr(which));
-  if (entry->is_symbol()) {
+  oop str = NULL;
+  CPSlot entry = this_oop->slot_at(which);
+  if (entry.is_metadata()) {
     ObjectLocker ol(this_oop, THREAD);
     if (this_oop->tag_at(which).is_unresolved_string()) {
       // Intern string
-      symbolOop sym = this_oop->unresolved_string_at(which);
-      entry = StringTable::intern(sym, CHECK_(constantPoolOop(NULL)));
-      this_oop->string_at_put(which, entry);
+      Symbol* sym = this_oop->unresolved_string_at(which);
+      str = StringTable::intern(sym, CHECK_(constantPoolOop(NULL)));
+      this_oop->string_at_put(which, str);
     } else {
       // Another thread beat us and interned string, read string from constant pool
-      entry = this_oop->resolved_string_at(which);
+      str = this_oop->resolved_string_at(which);
     }
+  } else {
+    str = entry.get_oop();
   }
-  assert(java_lang_String::is_instance(entry), "must be string");
-  return entry;
+  assert(java_lang_String::is_instance(str), "must be string");
+  return str;
 }
 
 
 bool constantPoolOopDesc::is_pseudo_string_at(int which) {
-  oop entry = *(obj_at_addr(which));
-  if (entry->is_symbol())
+  CPSlot entry = slot_at(which);
+  if (entry.is_metadata())
     // Not yet resolved, but it will resolve to a string.
     return false;
-  else if (java_lang_String::is_instance(entry))
+  else if (java_lang_String::is_instance(entry.get_oop()))
     return false; // actually, it might be a non-interned or non-perm string
   else
     // truly pseudo
@@ -638,8 +645,8 @@ bool constantPoolOopDesc::is_pseudo_string_at(int which) {
 
 bool constantPoolOopDesc::klass_name_at_matches(instanceKlassHandle k,
                                                 int which) {
-  // Names are interned, so we can compare symbolOops directly
-  symbolOop cp_name = klass_name_at(which);
+  // Names are interned, so we can compare Symbol*s directly
+  Symbol* cp_name = klass_name_at(which);
   return (cp_name == k->name());
 }
 
@@ -650,7 +657,7 @@ int constantPoolOopDesc::pre_resolve_shared_klasses(TRAPS) {
   for (int index = 1; index < tags()->length(); index++) { // Index 0 is unused
     if (tag_at(index).is_unresolved_string()) {
       // Intern string
-      symbolOop sym = unresolved_string_at(index);
+      Symbol* sym = unresolved_string_at(index);
       oop entry = StringTable::intern(sym, CHECK_(-1));
       string_at_put(index, entry);
     }
@@ -658,23 +665,39 @@ int constantPoolOopDesc::pre_resolve_shared_klasses(TRAPS) {
   return count;
 }
 
+// Iterate over symbols and decrement ones which are Symbol*s.
+// This is done during GC so do not need to lock constantPool unless we
+// have per-thread safepoints.
+// Only decrement the UTF8 symbols. Unresolved classes and strings point to
+// these symbols but didn't increment the reference count.
+void constantPoolOopDesc::unreference_symbols() {
+  for (int index = 1; index < length(); index++) { // Index 0 is unused
+    constantTag tag = tag_at(index);
+    if (tag.is_symbol()) {
+      symbol_at(index)->decrement_refcount();
+    }
+  }
+}
 
 // Iterate over symbols which are used as class, field, method names and
 // signatures (in preparation for writing to the shared archive).
 
-void constantPoolOopDesc::shared_symbols_iterate(OopClosure* closure) {
+void constantPoolOopDesc::shared_symbols_iterate(SymbolClosure* closure) {
   for (int index = 1; index < length(); index++) { // Index 0 is unused
     switch (tag_at(index).value()) {
 
     case JVM_CONSTANT_UnresolvedClass:
-      closure->do_oop(obj_at_addr(index));
+    case JVM_CONSTANT_UnresolvedString:
+    case JVM_CONSTANT_Utf8:
+      assert(slot_at(index).is_metadata(), "must be symbol");
+      closure->do_symbol(symbol_at_addr(index));
       break;
 
     case JVM_CONSTANT_NameAndType:
       {
         int i = *int_at_addr(index);
-        closure->do_oop(obj_at_addr((unsigned)i >> 16));
-        closure->do_oop(obj_at_addr((unsigned)i & 0xffff));
+        closure->do_symbol(symbol_at_addr((unsigned)i >> 16));
+        closure->do_symbol(symbol_at_addr((unsigned)i & 0xffff));
       }
       break;
 
@@ -690,12 +713,6 @@ void constantPoolOopDesc::shared_symbols_iterate(OopClosure* closure) {
 
     case JVM_CONSTANT_String:
       // Do nothing!  Not a symbol.
-      break;
-
-    case JVM_CONSTANT_UnresolvedString:
-    case JVM_CONSTANT_Utf8:
-      // These constants are symbols, but unless these symbols are
-      // actually to be used for something, we don't want to mark them.
       break;
 
     case JVM_CONSTANT_Long:
@@ -744,7 +761,7 @@ void constantPoolOopDesc::shared_strings_iterate(OopClosure* closure) {
       break;
 
     case JVM_CONSTANT_String:
-      closure->do_oop(obj_at_addr(index));
+      closure->do_oop(obj_at_addr_raw(index));
       break;
 
     case JVM_CONSTANT_UnresolvedString:
@@ -904,8 +921,8 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_UnresolvedClass:
   {
-    symbolOop k1 = unresolved_klass_at(index1);
-    symbolOop k2 = cp2->unresolved_klass_at(index2);
+    Symbol* k1 = unresolved_klass_at(index1);
+    Symbol* k2 = cp2->unresolved_klass_at(index2);
     if (k1 == k2) {
       return true;
     }
@@ -960,8 +977,8 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_UnresolvedString:
   {
-    symbolOop s1 = unresolved_string_at(index1);
-    symbolOop s2 = cp2->unresolved_string_at(index2);
+    Symbol* s1 = unresolved_string_at(index1);
+    Symbol* s2 = cp2->unresolved_string_at(index2);
     if (s1 == s2) {
       return true;
     }
@@ -969,8 +986,8 @@ bool constantPoolOopDesc::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_Utf8:
   {
-    symbolOop s1 = symbol_at(index1);
-    symbolOop s2 = cp2->symbol_at(index2);
+    Symbol* s1 = symbol_at(index1);
+    Symbol* s2 = cp2->symbol_at(index2);
     if (s1 == s2) {
       return true;
     }
@@ -1158,13 +1175,13 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedClass:
   {
-    symbolOop k = from_cp->unresolved_klass_at(from_i);
+    Symbol* k = from_cp->unresolved_klass_at(from_i);
     to_cp->unresolved_klass_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_UnresolvedClassInError:
   {
-    symbolOop k = from_cp->unresolved_klass_at(from_i);
+    Symbol* k = from_cp->unresolved_klass_at(from_i);
     to_cp->unresolved_klass_at_put(to_i, k);
     to_cp->tag_at_put(to_i, JVM_CONSTANT_UnresolvedClassInError);
   } break;
@@ -1172,14 +1189,16 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedString:
   {
-    symbolOop s = from_cp->unresolved_string_at(from_i);
+    Symbol* s = from_cp->unresolved_string_at(from_i);
     to_cp->unresolved_string_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_Utf8:
   {
-    symbolOop s = from_cp->symbol_at(from_i);
+    Symbol* s = from_cp->symbol_at(from_i);
     to_cp->symbol_at_put(to_i, s);
+    // This constantPool has the same lifetime as the original, so don't
+    // increase reference counts for the copy.
   } break;
 
   case JVM_CONSTANT_MethodType:
@@ -1453,7 +1472,7 @@ jint constantPoolOopDesc::hash_entries_to(SymbolHashMap *symmap,
 
     switch(tag) {
       case JVM_CONSTANT_Utf8: {
-        symbolOop sym = symbol_at(idx);
+        Symbol* sym = symbol_at(idx);
         symmap->add_entry(sym, idx);
         DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
@@ -1461,7 +1480,7 @@ jint constantPoolOopDesc::hash_entries_to(SymbolHashMap *symmap,
       case JVM_CONSTANT_Class:
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
-        symbolOop sym = klass_name_at(idx);
+        Symbol* sym = klass_name_at(idx);
         classmap->add_entry(sym, idx);
         DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
@@ -1509,7 +1528,7 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
         break;
       }
       case JVM_CONSTANT_Utf8: {
-        symbolOop sym = symbol_at(idx);
+        Symbol* sym = symbol_at(idx);
         char*     str = sym->as_utf8();
         // Warning! It's crashing on x86 with len = sym->utf8_length()
         int       len = (int) strlen(str);
@@ -1546,7 +1565,7 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
         *bytes = JVM_CONSTANT_Class;
-        symbolOop sym = klass_name_at(idx);
+        Symbol* sym = klass_name_at(idx);
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -1556,19 +1575,19 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_String: {
         unsigned int hash;
         char *str = string_at_noresolve(idx);
-        symbolOop sym = SymbolTable::lookup_only(str, (int) strlen(str), hash);
+        TempNewSymbol sym = SymbolTable::lookup_only(str, (int) strlen(str), hash);
         if (sym == NULL) {
           // sym can be NULL if string refers to incorrectly encoded JVM_CONSTANT_Utf8
           // this can happen with JVM TI; see CR 6839599 for more details
-          oop string = *(obj_at_addr(idx));
+          oop string = *(obj_at_addr_raw(idx));
           assert(java_lang_String::is_instance(string),"Not a String");
           DBG(printf("Error #%03hd tag=%03hd\n", idx, tag));
           idx1 = 0;
           for (int j = 0; j < tbl->table_size() && idx1 == 0; j++) {
             for (SymbolHashMapEntry* cur = tbl->bucket(j); cur != NULL; cur = cur->next()) {
               int length;
-              sym = cur->symbol();
-              jchar* chars = sym->as_unicode(length);
+              Symbol* s = cur->symbol();
+              jchar* chars = s->as_unicode(length);
               if (java_lang_String::equals(string, chars, length)) {
                 idx1 = cur->value();
                 DBG(printf("Index found: %d\n",idx1));
@@ -1586,7 +1605,7 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
       }
       case JVM_CONSTANT_UnresolvedString: {
         *bytes = JVM_CONSTANT_String;
-        symbolOop sym = unresolved_string_at(idx);
+        Symbol* sym = unresolved_string_at(idx);
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -1666,7 +1685,7 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
 } /* end copy_cpool_bytes */
 
 
-void SymbolHashMap::add_entry(symbolOop sym, u2 value) {
+void SymbolHashMap::add_entry(Symbol* sym, u2 value) {
   char *str = sym->as_utf8();
   unsigned int hash = compute_hash(str, sym->utf8_length());
   unsigned int index = hash % table_size();
@@ -1687,7 +1706,7 @@ void SymbolHashMap::add_entry(symbolOop sym, u2 value) {
   assert(entry->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
 }
 
-SymbolHashMapEntry* SymbolHashMap::find_entry(symbolOop sym) {
+SymbolHashMapEntry* SymbolHashMap::find_entry(Symbol* sym) {
   assert(sym != NULL, "SymbolHashMap::find_entry - symbol is NULL");
   char *str = sym->as_utf8();
   int   len = sym->utf8_length();

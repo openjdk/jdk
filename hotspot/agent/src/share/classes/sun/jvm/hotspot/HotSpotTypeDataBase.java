@@ -89,6 +89,37 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     readVMLongConstants();
   }
 
+  public Type lookupType(String cTypeName, boolean throwException) {
+    Type fieldType = super.lookupType(cTypeName, false);
+    if (fieldType == null && cTypeName.startsWith("const ")) {
+      fieldType = (BasicType)lookupType(cTypeName.substring(6), false);
+    }
+    if (fieldType == null && cTypeName.endsWith(" const")) {
+        fieldType = (BasicType)lookupType(cTypeName.substring(0, cTypeName.length() - 6), false);
+    }
+    if (fieldType == null) {
+      if (cTypeName.startsWith("GrowableArray<") && cTypeName.endsWith(">*")) {
+        String ttype = cTypeName.substring("GrowableArray<".length(),
+                                            cTypeName.length() - 2);
+        Type templateType = lookupType(ttype, false);
+        if (templateType == null && typeNameIsPointerType(ttype)) {
+          templateType = recursiveCreateBasicPointerType(ttype);
+        }
+        if (templateType == null) {
+          lookupOrFail(ttype);
+        }
+        fieldType = recursiveCreateBasicPointerType(cTypeName);
+      }
+    }
+    if (fieldType == null && typeNameIsPointerType(cTypeName)) {
+      fieldType = recursiveCreateBasicPointerType(cTypeName);
+    }
+    if (fieldType == null && throwException) {
+      super.lookupType(cTypeName, true);
+    }
+    return fieldType;
+  }
+
   private void readVMTypes() {
     // Get the variables we need in order to traverse the VMTypeEntry[]
     long typeEntryTypeNameOffset;
@@ -250,7 +281,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         BasicType containingType = lookupOrFail(typeName);
 
         // The field's Type must already be in the database -- no exceptions
-        BasicType fieldType = lookupOrFail(typeString);
+        BasicType fieldType = (BasicType)lookupType(typeString);
 
         // Create field by type
         createField(containingType, fieldName, fieldType,
@@ -442,10 +473,17 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
       workarounds due to incomplete information in the VMStructs
       database. */
   private BasicPointerType recursiveCreateBasicPointerType(String typeName) {
+    BasicPointerType result = (BasicPointerType)super.lookupType(typeName, false);
+    if (result != null) {
+      return result;
+    }
     String targetTypeName = typeName.substring(0, typeName.lastIndexOf('*')).trim();
     Type targetType = null;
     if (typeNameIsPointerType(targetTypeName)) {
-      targetType = recursiveCreateBasicPointerType(targetTypeName);
+      targetType = lookupType(targetTypeName, false);
+      if (targetType == null) {
+        targetType = recursiveCreateBasicPointerType(targetTypeName);
+      }
     } else {
       targetType = lookupType(targetTypeName, false);
       if (targetType == null) {
@@ -466,6 +504,20 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
           BasicType basicTargetType = createBasicType(targetTypeName, false, true, true);
           basicTargetType.setSize(1);
           targetType = basicTargetType;
+        } else if (targetTypeName.startsWith("GrowableArray<")) {
+          BasicType basicTargetType = createBasicType(targetTypeName, false, false, false);
+
+          // transfer fields from GenericGrowableArray to template instance
+          BasicType generic = lookupOrFail("GenericGrowableArray");
+          basicTargetType.setSize(generic.getSize());
+          Iterator fields = generic.getFields();
+          while (fields.hasNext()) {
+              Field f = (Field)fields.next();
+              basicTargetType.addField(internalCreateField(basicTargetType, f.getName(),
+                                                           f.getType(), f.isStatic(),
+                                                           f.getOffset(), null));
+          }
+          targetType = basicTargetType;
         } else {
           if (DEBUG) {
             System.err.println("WARNING: missing target type \"" + targetTypeName + "\" for pointer type \"" + typeName + "\"");
@@ -474,7 +526,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         }
       }
     }
-    return new BasicPointerType(this, typeName, targetType);
+    result = new BasicPointerType(this, typeName, targetType);
+    result.setSize(UNINITIALIZED_SIZE);
+    addType(result);
+    return result;
   }
 
   private boolean typeNameIsPointerType(String typeName) {
