@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,16 @@ package javax.lang.model.element;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
-
 /**
  * Represents a field, {@code enum} constant, method or constructor
- * parameter, local variable, or exception parameter.
+ * parameter, local variable, resource variable, or exception
+ * parameter.
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
-
 public interface VariableElement extends Element {
 
     /**
