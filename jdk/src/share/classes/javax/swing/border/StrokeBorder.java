@@ -118,13 +118,17 @@ public class StrokeBorder extends AbstractBorder {
     /**
      * Reinitializes the {@code insets} parameter
      * with this border's current insets.
-     * All insets are equal to the line width of the stroke.
+     * Every inset is the smallest (closest to negative infinity) integer value
+     * that is greater than or equal to the line width of the stroke
+     * that is used to paint the border.
      *
      * @param c       the component for which this border insets value applies
      * @param insets  the {@code Insets} object to be reinitialized
      * @return the reinitialized {@code insets} parameter
      *
      * @throws NullPointerException if the specified {@code insets} is {@code null}
+     *
+     * @see Math#ceil
      */
     @Override
     public Insets getBorderInsets(Component c, Insets insets) {
