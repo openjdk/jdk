@@ -27,10 +27,16 @@
 #define _JAVASOFT_JNI_MD_H_
 
 #if defined(SOLARIS) || defined(LINUX)
+
+#if defined(__GNUC__) && (__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2)
+  #define JNIEXPORT     __attribute__((visibility("default")))
+  #define JNIIMPORT     __attribute__((visibility("default")))
+#else
   #define JNIEXPORT
   #define JNIIMPORT
-  #define JNICALL
+#endif
 
+  #define JNICALL
   typedef int jint;
 
 #ifdef _LP64

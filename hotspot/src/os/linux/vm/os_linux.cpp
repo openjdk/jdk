@@ -2509,8 +2509,10 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-extern "C" void numa_warn(int number, char *where, ...) { }
-extern "C" void numa_error(char *where) { }
+// Something to do with the numa-aware allocator needs these symbols
+extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
+extern "C" JNIEXPORT void numa_error(char *where) { }
+extern "C" JNIEXPORT int fork1() { return fork(); }
 
 
 // If we are running with libnuma version > 2, then we should
@@ -3483,7 +3485,7 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" int
+extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                         void* ucontext, int abort_if_unrecognized);
 
@@ -4678,44 +4680,6 @@ void os::pause() {
   }
 }
 
-extern "C" {
-
-/**
- * NOTE: the following code is to keep the green threads code
- * in the libjava.so happy. Once the green threads is removed,
- * these code will no longer be needed.
- */
-int
-jdk_waitpid(pid_t pid, int* status, int options) {
-    return waitpid(pid, status, options);
-}
-
-int
-fork1() {
-    return fork();
-}
-
-int
-jdk_sem_init(sem_t *sem, int pshared, unsigned int value) {
-    return sem_init(sem, pshared, value);
-}
-
-int
-jdk_sem_post(sem_t *sem) {
-    return sem_post(sem);
-}
-
-int
-jdk_sem_wait(sem_t *sem) {
-    return sem_wait(sem);
-}
-
-int
-jdk_pthread_sigmask(int how , const sigset_t* newmask, sigset_t* oldmask) {
-    return pthread_sigmask(how , newmask, oldmask);
-}
-
-}
 
 // Refer to the comments in os_solaris.cpp park-unpark.
 //
