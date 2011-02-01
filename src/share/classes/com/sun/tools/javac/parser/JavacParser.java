@@ -1639,7 +1639,7 @@ public class JavacParser implements Parser {
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
-     *     | TRY "(" ResourceSpecification ")" Block [Catches] [FinallyPart]
+     *     | TRY "(" ResourceSpecification ";"opt ")" Block [Catches] [FinallyPart]
      *     | SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
      *     | SYNCHRONIZED ParExpression Block
      *     | RETURN [Expression] ";"
@@ -2182,13 +2182,12 @@ public class JavacParser implements Parser {
         ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
         defs.append(resource());
         while (S.token() == SEMI) {
-            // All but last of multiple declarators subsume a semicolon
+            // All but last of multiple declarators must subsume a semicolon
             storeEnd(defs.elems.last(), S.endPos());
             int semiColonPos = S.pos();
             S.nextToken();
-            if (S.token() == RPAREN) { // Illegal trailing semicolon
+            if (S.token() == RPAREN) { // Optional trailing semicolon
                                        // after last resource
-                error(semiColonPos, "try.resource.trailing.semi");
                 break;
             }
             defs.append(resource());
