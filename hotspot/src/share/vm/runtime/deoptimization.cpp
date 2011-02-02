@@ -59,6 +59,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vmreg_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vmreg_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmreg_ppc.inline.hpp"
+#endif
 #ifdef COMPILER2
 #ifdef TARGET_ARCH_MODEL_x86_32
 # include "adfiles/ad_x86_32.hpp"
@@ -71,6 +77,12 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/ad_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/ad_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/ad_ppc.hpp"
 #endif
 #endif
 

@@ -65,6 +65,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif

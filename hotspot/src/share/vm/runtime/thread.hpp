@@ -1598,6 +1598,12 @@ public:
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "thread_windows_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "thread_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "thread_linux_ppc.hpp"
+#endif
 
 
  public:

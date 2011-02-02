@@ -108,6 +108,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vmStructs_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vmStructs_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmStructs_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif
@@ -134,6 +140,12 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "vmStructs_windows_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "vmStructs_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "vmStructs_linux_ppc.hpp"
 #endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
@@ -165,6 +177,12 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
 #endif
 #endif
 
