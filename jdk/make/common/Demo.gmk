@@ -294,6 +294,7 @@ $(DEMO_LIBRARY): $(DEMO_FULL_OBJECTS)
 	@$(prep-target)
 	$(LINK.demo) $(SHARED_LIBRARY_FLAG) $(CC_PROGRAM_OUTPUT_FLAG)$@ \
 	    $(DEMO_FULL_OBJECTS) $(LDLIBS.demo)
+	@$(call binary_file_verification,$@)
 
   # Generation of any javah include file, make sure objects are dependent on it
   ifdef DEMO_NATIVECLASS
