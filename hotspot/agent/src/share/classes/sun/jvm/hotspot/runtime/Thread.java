@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class Thread extends VMObject {
   public boolean   isJvmtiAgentThread()        { return false; }
   public boolean   isWatcherThread()           { return false; }
   public boolean   isConcurrentMarkSweepThread() { return false; }
-  public boolean   isLowMemoryDetectorThread() { return false; }
+  public boolean   isServiceThread()           { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {

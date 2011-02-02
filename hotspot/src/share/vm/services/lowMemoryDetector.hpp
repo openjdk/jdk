@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@
 //
 // May need to deal with hysteresis effect.
 //
+// Memory detection code runs in the Service thread (serviceThread.hpp).
 
-class LowMemoryDetectorThread;
 class OopClosure;
 class MemoryPool;
 
@@ -211,23 +211,22 @@ public:
 };
 
 class LowMemoryDetector : public AllStatic {
-friend class LowMemoryDetectorDisabler;
+  friend class LowMemoryDetectorDisabler;
+  friend class ServiceThread;
 private:
   // true if any collected heap has low memory detection enabled
   static volatile bool _enabled_for_collected_pools;
   // > 0 if temporary disabed
   static volatile jint _disabled_count;
 
-  static LowMemoryDetectorThread* _detector_thread;
-  static void low_memory_detector_thread_entry(JavaThread* thread, TRAPS);
   static void check_memory_usage();
   static bool has_pending_requests();
   static bool temporary_disabled() { return _disabled_count > 0; }
   static void disable() { Atomic::inc(&_disabled_count); }
   static void enable() { Atomic::dec(&_disabled_count); }
+  static void process_sensor_changes(TRAPS);
 
 public:
-  static void initialize();
   static void detect_low_memory();
   static void detect_low_memory(MemoryPool* pool);
   static void detect_after_gc_memory(MemoryPool* pool);
@@ -275,7 +274,6 @@ public:
       }
     }
   }
-
 };
 
 class LowMemoryDetectorDisabler: public StackObj {

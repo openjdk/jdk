@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,30 @@
  *
  */
 
-package sun.jvm.hotspot.runtime;
+#ifndef SHARE_VM_RUNTIME_SERVICETHREAD_HPP
+#define SHARE_VM_RUNTIME_SERVICETHREAD_HPP
 
-import java.io.*;
+#include "runtime/thread.hpp"
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
+// A JavaThread for low memory detection support and JVMTI
+// compiled-method-load events.
+class ServiceThread : public JavaThread {
+  friend class VMStructs;
+ private:
 
-public class LowMemoryDetectorThread extends JavaThread {
-  public LowMemoryDetectorThread(Address addr) {
-    super(addr);
-  }
+  static ServiceThread* _instance;
 
-  public boolean isJavaThread() { return false; }
-  public boolean isHiddenFromExternalView() { return true; }
-  public boolean isLowMemoryDetectorThread() { return true; }
+  static void service_thread_entry(JavaThread* thread, TRAPS);
+  ServiceThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
 
-}
+ public:
+  static void initialize();
+
+  // Hide this thread from external view.
+  bool is_hidden_from_external_view() const      { return true; }
+
+  // Returns true if the passed thread is the service thread.
+  static bool is_service_thread(Thread* thread);
+};
+
+#endif // SHARE_VM_RUNTIME_SERVICETHREAD_HPP
