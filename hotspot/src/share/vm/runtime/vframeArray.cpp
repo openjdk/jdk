@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,7 +399,7 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   } else if (TraceDeoptimization) {
     tty->print("     ");
     method()->print_value();
-    Bytecodes::Code code = Bytecodes::java_code_at(bcp);
+    Bytecodes::Code code = Bytecodes::java_code_at(method(), bcp);
     int bci = method()->bci_from(bcp);
     tty->print(" - %s", Bytecodes::name(code));
     tty->print(" @ bci %d ", bci);

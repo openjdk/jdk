@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowOop)                             \
      static_field(oopDesc,                     _bs,                                           BarrierSet*)                           \
   nonstatic_field(arrayKlass,                  _dimension,                                    int)                                   \
-  nonstatic_field(arrayKlass,                  _higher_dimension,                             klassOop)                              \
-  nonstatic_field(arrayKlass,                  _lower_dimension,                              klassOop)                              \
+  volatile_nonstatic_field(arrayKlass,         _higher_dimension,                             klassOop)                              \
+  volatile_nonstatic_field(arrayKlass,         _lower_dimension,                              klassOop)                              \
   nonstatic_field(arrayKlass,                  _vtable_len,                                   int)                                   \
   nonstatic_field(arrayKlass,                  _alloc_size,                                   juint)                                 \
   nonstatic_field(arrayKlass,                  _component_mirror,                             oop)                                   \

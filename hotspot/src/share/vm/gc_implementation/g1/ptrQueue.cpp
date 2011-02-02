@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 # include "thread_windows.inline.hpp"
 #endif
 
-PtrQueue::PtrQueue(PtrQueueSet* qset_, bool perm, bool active) :
-  _qset(qset_), _buf(NULL), _index(0), _active(active),
+PtrQueue::PtrQueue(PtrQueueSet* qset, bool perm, bool active) :
+  _qset(qset), _buf(NULL), _index(0), _active(active),
   _perm(perm), _lock(NULL)
 {}
 
@@ -153,10 +153,16 @@ void PtrQueueSet::reduce_free_list() {
 }
 
 void PtrQueue::handle_zero_index() {
-  assert(0 == _index, "Precondition.");
+  assert(_index == 0, "Precondition.");
+
   // This thread records the full buffer and allocates a new one (while
   // holding the lock if there is one).
   if (_buf != NULL) {
+    if (!should_enqueue_buffer()) {
+      assert(_index > 0, "the buffer can only be re-used if it's not full");
+      return;
+    }
+
     if (_lock) {
       assert(_lock->owned_by_self(), "Required.");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,20 +75,11 @@
           "(0 means do not periodically generate this info); "              \
           "it also requires -XX:+G1SummarizeRSetStats")                     \
                                                                             \
-  diagnostic(bool, G1SummarizeZFStats, false,                               \
-          "Summarize zero-filling info")                                    \
-                                                                            \
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
   product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
           "Size of the region stack for concurrent marking.")               \
-                                                                            \
-  develop(bool, G1ConcZeroFill, true,                                       \
-          "If true, run concurrent zero-filling thread")                    \
-                                                                            \
-  develop(intx, G1ConcZFMaxRegions, 1,                                      \
-          "Stop zero-filling when # of zf'd regions reaches")               \
                                                                             \
   develop(bool, G1SATBBarrierPrintNullPreVals, false,                       \
           "If true, count frac of ptr writes with null pre-vals.")          \
@@ -98,6 +89,13 @@
                                                                             \
   develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
           "Number of completed buffers that triggers log processing.")      \
+                                                                            \
+  product(uintx, G1SATBBufferEnqueueingThresholdPercent, 60,                \
+          "Before enqueueing them, each mutator thread tries to do some "   \
+          "filtering on the SATB buffers it generates. If post-filtering "  \
+          "the percentage of retained entries is over this threshold "      \
+          "the buffer will be enqueued for processing. A value of 0 "       \
+          "specifies that mutator threads should not do such filtering.")   \
                                                                             \
   develop(intx, G1ExtraRegionSurvRate, 33,                                  \
           "If the young survival rate is S, and there's room left in "      \
@@ -282,7 +280,20 @@
           "Size of a work unit of cards claimed by a worker thread"         \
           "during RSet scanning.")                                          \
                                                                             \
-  develop(bool, ReduceInitialCardMarksForG1, false,                         \
+  develop(uintx, G1SecondaryFreeListAppendLength, 5,                        \
+          "The number of regions we will add to the secondary free list "   \
+          "at every append operation")                                      \
+                                                                            \
+  develop(bool, G1ConcRegionFreeingVerbose, false,                          \
+          "Enables verboseness during concurrent region freeing")           \
+                                                                            \
+  develop(bool, G1StressConcRegionFreeing, false,                           \
+          "It stresses the concurrent region freeing operation")            \
+                                                                            \
+  develop(uintx, G1StressConcRegionFreeingDelayMillis, 0,                   \
+          "Artificial delay during concurrent region freeing")              \
+                                                                            \
+   develop(bool, ReduceInitialCardMarksForG1, false,                        \
           "When ReduceInitialCardMarks is true, this flag setting "         \
           " controls whether G1 allows the RICM optimization")
 
