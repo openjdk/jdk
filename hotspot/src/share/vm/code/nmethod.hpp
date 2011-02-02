@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,10 +696,11 @@ public:
 class nmethodLocker : public StackObj {
   nmethod* _nm;
 
+ public:
+
   static void lock_nmethod(nmethod* nm);   // note: nm can be NULL
   static void unlock_nmethod(nmethod* nm); // (ditto)
 
- public:
   nmethodLocker(address pc); // derive nm from pc
   nmethodLocker(nmethod *nm) { _nm = nm; lock_nmethod(_nm); }
   nmethodLocker() { _nm = NULL; }

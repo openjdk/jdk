@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,13 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -910,3 +912,207 @@ void JvmtiSuspendControl::print() {
   tty->print_cr("]");
 #endif
 }
+
+#ifndef KERNEL
+
+JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
+    nmethod* nm) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_LOAD);
+  event.set_compiled_method_load(nm);
+  nmethodLocker::lock_nmethod(nm); // will be unlocked when posted
+  return event;
+}
+
+JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_unload_event(
+    jmethodID id, const void* code) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_UNLOAD);
+  event.set_compiled_method_unload(id, code);
+  return event;
+}
+
+void JvmtiDeferredEvent::post() {
+  switch(_type) {
+    case TYPE_COMPILED_METHOD_LOAD:
+      JvmtiExport::post_compiled_method_load(compiled_method_load());
+      nmethodLocker::unlock_nmethod(compiled_method_load());
+      break;
+    case TYPE_COMPILED_METHOD_UNLOAD:
+      JvmtiExport::post_compiled_method_unload(
+        compiled_method_unload_method_id(),
+        compiled_method_unload_code_begin());
+      break;
+    case TYPE_FLUSH:
+      JvmtiDeferredEventQueue::flush_complete(flush_state_addr());
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_tail = NULL;
+JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_head = NULL;
+
+volatile JvmtiDeferredEventQueue::QueueNode*
+    JvmtiDeferredEventQueue::_pending_list = NULL;
+
+bool JvmtiDeferredEventQueue::has_events() {
+  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+  return _queue_head != NULL || _pending_list != NULL;
+}
+
+void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
+  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+
+  process_pending_events();
+
+  // Events get added to the end of the queue (and are pulled off the front).
+  QueueNode* node = new QueueNode(event);
+  if (_queue_tail == NULL) {
+    _queue_tail = _queue_head = node;
+  } else {
+    assert(_queue_tail->next() == NULL, "Must be the last element in the list");
+    _queue_tail->set_next(node);
+    _queue_tail = node;
+  }
+
+  Service_lock->notify_all();
+  assert((_queue_head == NULL) == (_queue_tail == NULL),
+         "Inconsistent queue markers");
+}
+
+JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
+  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+
+  process_pending_events();
+
+  assert(_queue_head != NULL, "Nothing to dequeue");
+
+  if (_queue_head == NULL) {
+    // Just in case this happens in product; it shouldn't but let's not crash
+    return JvmtiDeferredEvent();
+  }
+
+  QueueNode* node = _queue_head;
+  _queue_head = _queue_head->next();
+  if (_queue_head == NULL) {
+    _queue_tail = NULL;
+  }
+
+  assert((_queue_head == NULL) == (_queue_tail == NULL),
+         "Inconsistent queue markers");
+
+  JvmtiDeferredEvent event = node->event();
+  delete node;
+  return event;
+}
+
+void JvmtiDeferredEventQueue::add_pending_event(
+    const JvmtiDeferredEvent& event) {
+
+  QueueNode* node = new QueueNode(event);
+
+  bool success = false;
+  QueueNode* prev_value = (QueueNode*)_pending_list;
+  do {
+    node->set_next(prev_value);
+    prev_value = (QueueNode*)Atomic::cmpxchg_ptr(
+        (void*)node, (volatile void*)&_pending_list, (void*)node->next());
+  } while (prev_value != node->next());
+}
+
+// This method transfers any events that were added by someone NOT holding
+// the lock into the mainline queue.
+void JvmtiDeferredEventQueue::process_pending_events() {
+  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+
+  if (_pending_list != NULL) {
+    QueueNode* head =
+        (QueueNode*)Atomic::xchg_ptr(NULL, (volatile void*)&_pending_list);
+
+    assert((_queue_head == NULL) == (_queue_tail == NULL),
+           "Inconsistent queue markers");
+
+    if (head != NULL) {
+      // Since we've treated the pending list as a stack (with newer
+      // events at the beginning), we need to join the bottom of the stack
+      // with the 'tail' of the queue in order to get the events in the
+      // right order.  We do this by reversing the pending list and appending
+      // it to the queue.
+
+      QueueNode* new_tail = head;
+      QueueNode* new_head = NULL;
+
+      // This reverses the list
+      QueueNode* prev = new_tail;
+      QueueNode* node = new_tail->next();
+      new_tail->set_next(NULL);
+      while (node != NULL) {
+        QueueNode* next = node->next();
+        node->set_next(prev);
+        prev = node;
+        node = next;
+      }
+      new_head = prev;
+
+      // Now append the new list to the queue
+      if (_queue_tail != NULL) {
+        _queue_tail->set_next(new_head);
+      } else { // _queue_head == NULL
+        _queue_head = new_head;
+      }
+      _queue_tail = new_tail;
+    }
+  }
+}
+
+enum {
+  // Random - used for debugging
+  FLUSHING  = 0x50403020,
+  FLUSHED   = 0x09080706
+};
+
+void JvmtiDeferredEventQueue::flush_queue(Thread* thread) {
+
+  volatile int flush_state = FLUSHING;
+
+  JvmtiDeferredEvent flush(JvmtiDeferredEvent::TYPE_FLUSH);
+  flush.set_flush_state_addr((int*)&flush_state);
+
+  if (ServiceThread::is_service_thread(thread)) {
+    // If we are the service thread we have to post all preceding events
+    // Use the flush event as a token to indicate when we can stop
+    JvmtiDeferredEvent event;
+    {
+      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      enqueue(flush);
+      event = dequeue();
+    }
+    while (!event.is_flush_event() ||
+           event.flush_state_addr() != &flush_state) {
+      event.post();
+      {
+        MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+        event = dequeue();
+      }
+    }
+  } else {
+    // Wake up the service thread so it will process events.  When it gets
+    // to the flush event it will set 'flush_complete' and notify us.
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    enqueue(flush);
+    while (flush_state != FLUSHED) {
+      assert(flush_state == FLUSHING || flush_state == FLUSHED,
+             "only valid values for this");
+      Service_lock->wait(Mutex::_no_safepoint_check_flag);
+    }
+  }
+}
+
+void JvmtiDeferredEventQueue::flush_complete(int* state_addr) {
+  assert(state_addr != NULL && *state_addr == FLUSHING, "must be");
+  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  *state_addr = FLUSHED;
+  Service_lock->notify_all();
+}
+
+#endif // ndef KERNEL
