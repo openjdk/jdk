@@ -69,8 +69,7 @@ class FileTreeWalker {
         FileVisitResult result = walk(start,
                                       0,
                                       new ArrayList<AncestorDirectory>());
-        if (result == null)
-            throw new NullPointerException("FileVisitor returned null");
+        Objects.requireNonNull(result, "FileVisitor returned null");
     }
 
     /**

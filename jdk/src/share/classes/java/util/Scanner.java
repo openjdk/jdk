@@ -35,6 +35,7 @@ import java.nio.channels.*;
 import java.nio.charset.*;
 import java.text.*;
 import java.util.Locale;
+
 import sun.misc.LRUCache;
 
 /**
@@ -592,7 +593,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         interface
      */
     public Scanner(Readable source) {
-        this(Objects.nonNull(source, "source"), WHITESPACE_PATTERN);
+        this(Objects.requireNonNull(source, "source"), WHITESPACE_PATTERN);
     }
 
     /**
@@ -619,7 +620,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         does not exist
      */
     public Scanner(InputStream source, String charsetName) {
-        this(makeReadable(Objects.nonNull(source, "source"), toCharset(charsetName)),
+        this(makeReadable(Objects.requireNonNull(source, "source"), toCharset(charsetName)),
              WHITESPACE_PATTERN);
     }
 
@@ -629,7 +630,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @throws IllegalArgumentException      if the charset is not supported
      */
     private static Charset toCharset(String csn) {
-        Objects.nonNull(csn, "charsetName");
+        Objects.requireNonNull(csn, "charsetName");
         try {
             return Charset.forName(csn);
         } catch (IllegalCharsetNameException|UnsupportedCharsetException e) {
@@ -670,7 +671,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     public Scanner(File source, String charsetName)
         throws FileNotFoundException
     {
-        this(Objects.nonNull(source), toDecoder(charsetName));
+        this(Objects.requireNonNull(source), toDecoder(charsetName));
     }
 
     private Scanner(File source, CharsetDecoder dec)
@@ -680,7 +681,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     }
 
     private static CharsetDecoder toDecoder(String charsetName) {
-        Objects.nonNull(charsetName, "charsetName");
+        Objects.requireNonNull(charsetName, "charsetName");
         try {
             return Charset.forName(charsetName).newDecoder();
         } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
@@ -729,7 +730,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @since   1.7
      */
     public Scanner(Path source, String charsetName) throws IOException {
-        this(Objects.nonNull(source), toCharset(charsetName));
+        this(Objects.requireNonNull(source), toCharset(charsetName));
     }
 
     private Scanner(Path source, Charset charset)  throws IOException {
@@ -755,7 +756,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @param  source A channel to scan
      */
     public Scanner(ReadableByteChannel source) {
-        this(makeReadable(Objects.nonNull(source, "source")),
+        this(makeReadable(Objects.requireNonNull(source, "source")),
              WHITESPACE_PATTERN);
     }
 
@@ -775,7 +776,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         does not exist
      */
     public Scanner(ReadableByteChannel source, String charsetName) {
-        this(makeReadable(Objects.nonNull(source, "source"), toDecoder(charsetName)),
+        this(makeReadable(Objects.requireNonNull(source, "source"), toDecoder(charsetName)),
              WHITESPACE_PATTERN);
     }
 
