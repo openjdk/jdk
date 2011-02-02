@@ -76,6 +76,14 @@
 # include "assembler_zero.inline.hpp"
 # include "nativeInst_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "assembler_arm.inline.hpp"
+# include "nativeInst_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "assembler_ppc.inline.hpp"
+# include "nativeInst_ppc.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif

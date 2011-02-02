@@ -676,6 +676,12 @@ class os: AllStatic {
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "os_windows_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "os_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "os_linux_ppc.hpp"
+#endif
 
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)

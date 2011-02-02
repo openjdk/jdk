@@ -24,7 +24,7 @@
 
 # Usage:
 #
-# $(MAKE) -f buildtree.make ARCH=arch BUILDARCH=buildarch LIBARCH=libarch
+# $(MAKE) -f buildtree.make SRCARCH=srcarch BUILDARCH=buildarch LIBARCH=libarch
 #         GAMMADIR=dir OS_FAMILY=os VARIANT=variant
 #
 # The macros ARCH, GAMMADIR, OS_FAMILY and VARIANT must be defined in the
@@ -56,6 +56,8 @@
 # having to read the dependency files for the vm.
 
 include $(GAMMADIR)/make/scm.make
+include $(GAMMADIR)/make/closed.make
+
 
 # 'gmake MAKE_VERBOSE=y' or 'gmake QUIETLY=' gives all the gory details.
 QUIETLY$(MAKE_VERBOSE)	= @
@@ -127,7 +129,7 @@ BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.ma
         env.sh env.csh jdkpath.sh .dbxrc test_gamma
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
-	ARCH=$(ARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
+	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
 
 # Define variables to be set in flags.make.
 # Default values are set in make/defs.make.
@@ -146,12 +148,6 @@ endif
 # Define HOTSPOT_VM_DISTRO based on settings in make/openjdk_distro
 # or make/hotspot_distro.
 ifndef HOTSPOT_VM_DISTRO
-  CLOSED_DIR_EXISTS := $(shell                \
-    if [ -d $(GAMMADIR)/src/closed ] ; then \
-      echo true;                              \
-    else                                      \
-      echo false;                             \
-    fi)
   ifeq ($(CLOSED_DIR_EXISTS), true)
     include $(GAMMADIR)/make/hotspot_distro
   else
@@ -187,7 +183,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo; \
 	echo "GAMMADIR = $(GAMMADIR)"; \
 	echo "SYSDEFS = \$$(Platform_sysdefs)"; \
-	echo "SRCARCH = $(ARCH)"; \
+	echo "SRCARCH = $(SRCARCH)"; \
 	echo "BUILDARCH = $(BUILDARCH)"; \
 	echo "LIBARCH = $(LIBARCH)"; \
 	echo "TARGET = $(TARGET)"; \
@@ -208,16 +204,16 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo; \
 	echo "Src_Dirs_V = \\"; \
 	sed 's/$$/ \\/;s|$(GAMMADIR)|$$(GAMMADIR)|' ../shared_dirs.lst; \
-	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
+	echo "\$$(GAMMADIR)/src/$(HS_CLOSED_PATH)cpu/$(SRCARCH)/vm \\"; \
 	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
+	echo "\$$(GAMMADIR)/src/$(HS_CLOSED_PATH)os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm"; \
 	echo; \
 	echo "Src_Dirs_I = \\"; \
 	echo "\$$(GAMMADIR)/src/share/vm \\"; \
 	echo "\$$(GAMMADIR)/src/share/vm/prims \\"; \
-	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
+	echo "\$$(GAMMADIR)/src/$(HS_CLOSED_PATH)cpu/$(SRCARCH)/vm \\"; \
 	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
+	echo "\$$(GAMMADIR)/src/$(HS_CLOSED_PATH)os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm"; \
 	[ -n "$(CFLAGS_BROWSE)" ] && \
 	    echo && echo "CFLAGS_BROWSE = $(CFLAGS_BROWSE)"; \
 	[ -n "$(HOTSPOT_EXTRA_SYSDEFS)" ] && \

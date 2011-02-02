@@ -121,8 +121,8 @@ LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 CORE_PATHS := $(shell find $(GAMMADIR)/src/share/vm/* -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \))
 CORE_PATHS += $(GAMMADIR)/src/os/$(Platform_os_family)/vm
-CORE_PATHS += $(GAMMADIR)/src/cpu/$(Platform_arch)/vm
-CORE_PATHS += $(GAMMADIR)/src/os_cpu/$(Platform_os_arch)/vm
+CORE_PATHS += $(GAMMADIR)/src/$(HS_CLOSED_PATH)cpu/$(Platform_arch)/vm
+CORE_PATHS += $(GAMMADIR)/src/$(HS_CLOSED_PATH)os_cpu/$(Platform_os_arch)/vm
 CORE_PATHS += $(GENERATED)/jvmtifiles
 
 COMPILER1_PATHS := $(GAMMADIR)/src/share/vm/c1

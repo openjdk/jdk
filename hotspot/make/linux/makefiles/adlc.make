@@ -39,8 +39,8 @@ OS = $(Platform_os_family)
 
 SOURCE.AD = $(OUTDIR)/$(OS)_$(Platform_arch_model).ad 
 
-SOURCES.AD = $(GAMMADIR)/src/cpu/$(ARCH)/vm/$(Platform_arch_model).ad \
-	     $(GAMMADIR)/src/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad 
+SOURCES.AD = $(GAMMADIR)/src/$(HS_CLOSED_PATH)cpu/$(ARCH)/vm/$(Platform_arch_model).ad \
+	     $(GAMMADIR)/src/$(HS_CLOSED_PATH)os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad 
 
 EXEC	= $(OUTDIR)/adlc
 
