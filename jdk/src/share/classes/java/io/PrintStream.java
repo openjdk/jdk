@@ -70,11 +70,11 @@ public class PrintStream extends FilterOutputStream
     private OutputStreamWriter charOut;
 
     /**
-     * nonNull is explicitly declared here so as not to create an extra
-     * dependency on java.util.Objects.nonNull. PrintStream is loaded
+     * requireNonNull is explicitly declared here so as not to create an extra
+     * dependency on java.util.Objects.requireNonNull. PrintStream is loaded
      * early during system initialization.
      */
-    private static <T> T nonNull(T obj, String message) {
+    private static <T> T requireNonNull(T obj, String message) {
         if (obj == null)
             throw new NullPointerException(message);
         return obj;
@@ -88,7 +88,7 @@ public class PrintStream extends FilterOutputStream
     private static Charset toCharset(String csn)
         throws UnsupportedEncodingException
     {
-        nonNull(csn, "charsetName");
+        requireNonNull(csn, "charsetName");
         try {
             return Charset.forName(csn);
         } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
@@ -148,7 +148,7 @@ public class PrintStream extends FilterOutputStream
      * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream, boolean)
      */
     public PrintStream(OutputStream out, boolean autoFlush) {
-        this(autoFlush, nonNull(out, "Null output stream"));
+        this(autoFlush, requireNonNull(out, "Null output stream"));
     }
 
     /**
@@ -173,7 +173,7 @@ public class PrintStream extends FilterOutputStream
         throws UnsupportedEncodingException
     {
         this(autoFlush,
-             nonNull(out, "Null output stream"),
+             requireNonNull(out, "Null output stream"),
              toCharset(encoding));
     }
 

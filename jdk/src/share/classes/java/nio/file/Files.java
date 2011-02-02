@@ -2779,7 +2779,7 @@ public final class Files {
         throws IOException
     {
         // ensure not null before opening file
-        Objects.nonNull(in);
+        Objects.requireNonNull(in);
 
         // check for REPLACE_EXISTING
         boolean replaceExisting = false;
@@ -2861,7 +2861,7 @@ public final class Files {
      */
     public static long copy(Path source, OutputStream out) throws IOException {
         // ensure not null before opening file
-        Objects.nonNull(out);
+        Objects.requireNonNull(out);
 
         try (InputStream in = newInputStream(source)) {
             return copy(in, out);
@@ -3035,7 +3035,7 @@ public final class Files {
         throws IOException
     {
         // ensure bytes is not null before opening file
-        Objects.nonNull(bytes);
+        Objects.requireNonNull(bytes);
 
         try (OutputStream out = Files.newOutputStream(path, options)) {
             int len = bytes.length;
@@ -3094,7 +3094,7 @@ public final class Files {
         throws IOException
     {
         // ensure lines is not null before opening file
-        Objects.nonNull(lines);
+        Objects.requireNonNull(lines);
         CharsetEncoder encoder = cs.newEncoder();
         OutputStream out = newOutputStream(path, options);
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, encoder))) {
