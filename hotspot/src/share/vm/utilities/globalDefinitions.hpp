@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1178,6 +1178,8 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 // must define the macro FORMAT64_MODIFIER, which is the modifier for '%x' or
 // '%d' formats to indicate a 64-bit quantity; commonly "l" (in LP64) or "ll"
 // (in ILP32).
+
+#define BOOL_TO_STR(__b) (__b) ? "true" : "false"
 
 // Format 32-bit quantities.
 #define INT32_FORMAT  "%d"
