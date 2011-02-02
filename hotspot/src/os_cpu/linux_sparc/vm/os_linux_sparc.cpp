@@ -542,7 +542,7 @@ inline static bool checkICMiss(sigcontext* uc, address* pc, address* stub) {
   return false;
 }
 
-extern "C" int
+extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int sig,
                         siginfo_t* info,
                         void* ucVoid,

@@ -520,6 +520,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 //       method_id - jmethodID of the method being executed
 
 extern "C" {
+JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
 // This is if'd out because we no longer use thread suspension.
