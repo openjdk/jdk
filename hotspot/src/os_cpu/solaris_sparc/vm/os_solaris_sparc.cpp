@@ -317,9 +317,9 @@ extern "C" void Fetch32Resume () ;
 extern "C" void FetchNPFI () ;
 extern "C" void FetchNResume () ;
 
-extern "C" int JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized);
-
-int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrecognized) {
+extern "C" JNIEXPORT int
+JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
+                          int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
   Thread* t = ThreadLocalStorage::get_thread_slow();
