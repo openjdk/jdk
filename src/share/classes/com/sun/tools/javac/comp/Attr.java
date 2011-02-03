@@ -2374,7 +2374,6 @@ public class Attr extends JCTree.Visitor {
                                  int pkind) {
             DiagnosticPosition pos = tree.pos();
             Name name = tree.name;
-
             switch (site.tag) {
             case PACKAGE:
                 return rs.access(
@@ -3186,7 +3185,7 @@ public class Attr extends JCTree.Visitor {
                 if (sym == null ||
                     sym.kind != VAR ||
                     ((VarSymbol) sym).getConstValue() == null)
-                    log.error(l.head.pos(), "icls.cant.have.static.decl", sym.location());
+                    log.error(l.head.pos(), "icls.cant.have.static.decl", c);
             }
         }
 
