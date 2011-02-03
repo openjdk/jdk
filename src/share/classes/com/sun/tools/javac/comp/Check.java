@@ -807,8 +807,9 @@ public class Check {
                 Type actual = types.subst(args.head,
                     type.tsym.type.getTypeArguments(),
                     tvars_buf.toList());
-                if (!checkExtends(actual, (TypeVar)tvars.head) &&
-                        !tvars.head.getUpperBound().isErroneous()) {
+                if (!isTypeArgErroneous(actual) &&
+                        !tvars.head.getUpperBound().isErroneous() &&
+                        !checkExtends(actual, (TypeVar)tvars.head)) {
                     return args.head;
                 }
                 args = args.tail;
@@ -821,14 +822,39 @@ public class Check {
             for (Type arg : types.capture(type).getTypeArguments()) {
                 if (arg.tag == TYPEVAR &&
                         arg.getUpperBound().isErroneous() &&
-                        !tvars.head.getUpperBound().isErroneous()) {
+                        !tvars.head.getUpperBound().isErroneous() &&
+                        !isTypeArgErroneous(args.head)) {
                     return args.head;
                 }
                 tvars = tvars.tail;
+                args = args.tail;
             }
 
             return null;
         }
+        //where
+        boolean isTypeArgErroneous(Type t) {
+            return isTypeArgErroneous.visit(t);
+        }
+
+        Types.UnaryVisitor<Boolean> isTypeArgErroneous = new Types.UnaryVisitor<Boolean>() {
+            public Boolean visitType(Type t, Void s) {
+                return t.isErroneous();
+            }
+            @Override
+            public Boolean visitTypeVar(TypeVar t, Void s) {
+                return visit(t.getUpperBound());
+            }
+            @Override
+            public Boolean visitCapturedType(CapturedType t, Void s) {
+                return visit(t.getUpperBound()) ||
+                        visit(t.getLowerBound());
+            }
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Void s) {
+                return visit(t.type);
+            }
+        };
 
     /** Check that given modifiers are legal for given symbol and
      *  return modifiers together with any implicit modififiers for that symbol.
