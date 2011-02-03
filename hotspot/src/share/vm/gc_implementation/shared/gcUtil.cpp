@@ -106,8 +106,8 @@ void AdaptivePaddedNoZeroDevAverage::sample(float new_sample) {
 }
 
 LinearLeastSquareFit::LinearLeastSquareFit(unsigned weight) :
-  _sum_x(0), _sum_y(0), _sum_xy(0),
-  _mean_x(weight), _mean_y(weight) {}
+  _sum_x(0), _sum_x_squared(0), _sum_y(0), _sum_xy(0),
+  _intercept(0), _slope(0), _mean_x(weight), _mean_y(weight) {}
 
 void LinearLeastSquareFit::update(double x, double y) {
   _sum_x = _sum_x + x;
