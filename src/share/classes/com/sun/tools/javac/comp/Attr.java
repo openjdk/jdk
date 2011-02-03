@@ -83,6 +83,7 @@ public class Attr extends JCTree.Visitor {
     final Types types;
     final JCDiagnostic.Factory diags;
     final Annotate annotate;
+    final DeferredLintHandler deferredLintHandler;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -108,6 +109,7 @@ public class Attr extends JCTree.Visitor {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
+        deferredLintHandler = DeferredLintHandler.instance(context);
 
         Options options = Options.instance(context);
 
@@ -125,7 +127,6 @@ public class Attr extends JCTree.Visitor {
         findDiamonds = options.get("findDiamond") != null &&
                  source.allowDiamond();
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
-        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -172,12 +173,6 @@ public class Attr extends JCTree.Visitor {
      * RFE: 6425594
      */
     boolean useBeforeDeclarationWarning;
-
-    /**
-     * Switch: allow lint infrastructure to control proprietary
-     * API warnings.
-     */
-    boolean enableSunApiLintControl;
 
     /**
      * Switch: allow strings in switch?
@@ -707,6 +702,7 @@ public class Attr extends JCTree.Visitor {
         Lint prevLint = chk.setLint(lint);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
+            deferredLintHandler.flush(tree.pos());
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
             attribBounds(tree.typarams);
@@ -849,6 +845,7 @@ public class Attr extends JCTree.Visitor {
 
         // Check that the variable's declared type is well-formed.
         chk.validate(tree.vartype, env);
+        deferredLintHandler.flush(tree.pos());
 
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
@@ -2578,17 +2575,10 @@ public class Attr extends JCTree.Visitor {
             // Test (1): emit a `deprecation' warning if symbol is deprecated.
             // (for constructors, the error was given when the constructor was
             // resolved)
-            if (sym.name != names.init &&
-                (sym.flags() & DEPRECATED) != 0 &&
-                (env.info.scope.owner.flags() & DEPRECATED) == 0 &&
-                sym.outermostClass() != env.info.scope.owner.outermostClass())
-                chk.warnDeprecated(tree.pos(), sym);
 
-            if ((sym.flags() & PROPRIETARY) != 0) {
-                if (enableSunApiLintControl)
-                  chk.warnSunApi(tree.pos(), "sun.proprietary", sym);
-                else
-                  log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            if (sym.name != names.init) {
+                chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
+                chk.checkSunAPI(tree.pos(), sym);
             }
 
             // Test (3): if symbol is a variable, check that its type and
