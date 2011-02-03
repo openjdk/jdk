@@ -60,7 +60,6 @@ public class Check {
 
     private final Names names;
     private final Log log;
-    private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
     private final Infer infer;
@@ -69,6 +68,7 @@ public class Check {
     private final boolean skipAnnotations;
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
+    private boolean enableSunApiLintControl;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -92,7 +92,6 @@ public class Check {
 
         names = Names.instance(context);
         log = Log.instance(context);
-        rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
@@ -111,13 +110,13 @@ public class Check {
         skipAnnotations = options.isSet("skipAnnotations");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
+        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
-        boolean verboseVarargs = lint.isEnabled(LintCategory.VARARGS);
         boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
@@ -125,10 +124,10 @@ public class Check {
                 enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        unsafeVarargsHandler = new MandatoryWarningHandler(log, verboseVarargs,
-                enforceMandatoryWarnings, "varargs", LintCategory.VARARGS);
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi", null);
+
+        deferredLintHandler = DeferredLintHandler.immediateHandler;
     }
 
     /** Switch: generics enabled?
@@ -168,13 +167,13 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
-    /** A handler for messages about unchecked or unsafe vararg method decl.
-     */
-    private MandatoryWarningHandler unsafeVarargsHandler;
-
     /** A handler for messages about using proprietary API.
      */
     private MandatoryWarningHandler sunApiHandler;
+
+    /** A handler for deferred lint warnings.
+     */
+    private DeferredLintHandler deferredLintHandler;
 
 /* *************************************************************************
  * Errors and Warnings
@@ -183,6 +182,12 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
+        return prev;
+    }
+
+    DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
+        DeferredLintHandler prev = deferredLintHandler;
+        deferredLintHandler = newDeferredLintHandler;
         return prev;
     }
 
@@ -1096,6 +1101,7 @@ public class Check {
                     log.error(tree.pos(), "improperly.formed.type.param.missing");
             }
         }
+
         public void visitSelectInternal(JCFieldAccess tree) {
             if (tree.type.tsym.isStatic() &&
                 tree.selected.type.isParameterized()) {
@@ -1465,11 +1471,8 @@ public class Check {
         }
 
         // Warn if a deprecated method overridden by a non-deprecated one.
-        if ((other.flags() & DEPRECATED) != 0
-            && (m.flags() & DEPRECATED) == 0
-            && m.outermostClass() != other.outermostClass()
-            && !isDeprecatedOverrideIgnorable(other, origin)) {
-            warnDeprecated(TreeInfo.diagnosticPositionFor(m, tree), other);
+        if (!isDeprecatedOverrideIgnorable(other, origin)) {
+            checkDeprecated(TreeInfo.diagnosticPositionFor(m, tree), m, other);
         }
     }
     // where
@@ -2409,6 +2412,32 @@ public class Check {
             s.attribute(syms.deprecatedType.tsym) == null) {
             log.warning(LintCategory.DEP_ANN,
                     pos, "missing.deprecated.annotation");
+        }
+    }
+
+    void checkDeprecated(final DiagnosticPosition pos, final Symbol other, final Symbol s) {
+        if ((s.flags() & DEPRECATED) != 0 &&
+                (other.flags() & DEPRECATED) == 0 &&
+                s.outermostClass() != other.outermostClass()) {
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                @Override
+                public void report() {
+                    warnDeprecated(pos, s);
+                }
+            });
+        };
+    }
+
+    void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
+        if ((s.flags() & PROPRIETARY) != 0) {
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                public void report() {
+                    if (enableSunApiLintControl)
+                      warnSunApi(pos, "sun.proprietary", s);
+                    else
+                      log.strictWarning(pos, "sun.proprietary", s);
+                }
+            });
         }
     }
 
