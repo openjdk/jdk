@@ -38,8 +38,7 @@ public class Duped {
         public static void main(String args[]) throws Exception {
             StringBuffer s = new StringBuffer();
             int c;
-            while ((System.in.available() != 0)
-                           && ((c = System.in.read()) != -1))
+            while ((c = System.in.read()) != -1)
                 s.append((char)c);
             System.out.println(s);
         }
