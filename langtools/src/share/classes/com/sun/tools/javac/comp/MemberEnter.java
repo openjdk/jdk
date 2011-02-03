@@ -75,9 +75,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final Target target;
+    private final DeferredLintHandler deferredLintHandler;
 
     private final boolean skipAnnotations;
-    private final boolean allowSimplifiedVarargs;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -102,10 +102,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         target = Target.instance(context);
+        deferredLintHandler = DeferredLintHandler.instance(context);
         Options options = Options.instance(context);
         skipAnnotations = options.isSet("skipAnnotations");
-        Source source = Source.instance(context);
-        allowSimplifiedVarargs = source.allowSimplifiedVarargs();
     }
 
     /** A queue for classes whose members still need to be entered into the
@@ -571,10 +570,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = m;
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
-        // Compute the method type
-        m.type = signature(tree.typarams, tree.params,
-                           tree.restype, tree.thrown,
-                           localEnv);
+        DeferredLintHandler prevLintHandler =
+                chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
+        try {
+            // Compute the method type
+            m.type = signature(tree.typarams, tree.params,
+                               tree.restype, tree.thrown,
+                               localEnv);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
 
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
@@ -618,7 +623,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
-        attr.attribType(tree.vartype, localEnv);
+        DeferredLintHandler prevLintHandler =
+                chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
+        try {
+            attr.attribType(tree.vartype, localEnv);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
+
         if ((tree.mods.flags & VARARGS) != 0) {
             //if we are entering a varargs parameter, we need to replace its type
             //(a plain array type) with the more precise VarargsType --- we need

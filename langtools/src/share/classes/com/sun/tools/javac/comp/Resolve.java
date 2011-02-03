@@ -1638,10 +1638,7 @@ public class Resolve {
                                 names.init, argtypes,
                                 typeargtypes, allowBoxing,
                                 useVarargs, false);
-        if ((sym.flags() & DEPRECATED) != 0 &&
-            (env.info.scope.owner.flags() & DEPRECATED) == 0 &&
-            env.info.scope.owner.outermostClass() != sym.outermostClass())
-            chk.warnDeprecated(pos, sym);
+        chk.checkDeprecated(pos, env.info.scope.owner, sym);
         return sym;
     }
 
