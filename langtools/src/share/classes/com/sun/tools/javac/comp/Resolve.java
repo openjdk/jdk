@@ -1952,6 +1952,9 @@ public class Resolve {
                         key, name, first, second);
             }
             boolean hasLocation = false;
+            if (location == null) {
+                location = site.tsym;
+            }
             if (!location.name.isEmpty()) {
                 if (location.kind == PCK && !site.tsym.exists()) {
                     return diags.create(dkind, log.currentSource(), pos,
@@ -1969,7 +1972,7 @@ public class Resolve {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
                         typeargtypes, argtypes, //type parameters and arguments (if any)
-                        getLocationDiag(location)); //location kindname, type
+                        getLocationDiag(location, site)); //location kindname, type
             }
             else {
                 return diags.create(dkind, log.currentSource(), pos,
@@ -1990,15 +1993,18 @@ public class Resolve {
             }
             return key + suffix;
         }
-        private JCDiagnostic getLocationDiag(Symbol location) {
-            boolean isVar = location.kind == VAR;
-            String key = isVar ?
-                "location.1" :
-                "location";
-            return diags.fragment(key,
+        private JCDiagnostic getLocationDiag(Symbol location, Type site) {
+            if (location.kind == VAR) {
+                return diags.fragment("location.1",
                     kindName(location),
                     location,
-                    isVar ? location.type : null);
+                    location.type);
+            } else {
+                return diags.fragment("location",
+                    typeKindName(site),
+                    site,
+                    null);
+            }
         }
     }
 
