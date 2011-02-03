@@ -2049,8 +2049,14 @@ public class Resolve {
                 return null;
 
             if (isOperator(name)) {
-                return diags.create(dkind, log.currentSource(),
-                        pos, "operator.cant.be.applied", name, argtypes);
+                boolean isUnaryOp = argtypes.size() == 1;
+                String key = argtypes.size() == 1 ?
+                    "operator.cant.be.applied" :
+                    "operator.cant.be.applied.1";
+                Type first = argtypes.head;
+                Type second = !isUnaryOp ? argtypes.tail.head : null;
+                return diags.create(dkind, log.currentSource(), pos,
+                        key, name, first, second);
             }
             else {
                 Symbol ws = sym.asMemberOf(site, types);

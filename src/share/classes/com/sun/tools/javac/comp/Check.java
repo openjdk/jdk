@@ -2566,9 +2566,9 @@ public class Check {
                        Type right) {
         if (operator.opcode == ByteCodes.error) {
             log.error(pos,
-                      "operator.cant.be.applied",
+                      "operator.cant.be.applied.1",
                       treeinfo.operatorName(tag),
-                      List.of(left, right));
+                      left, right);
         }
         return operator.opcode;
     }
