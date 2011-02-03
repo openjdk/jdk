@@ -1991,7 +1991,9 @@ public class Attr extends JCTree.Visitor {
             tree.pos(), tree.getTag() - JCTree.ASGOffset, env,
             owntype, operand);
 
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !owntype.isErroneous() &&
+                !operand.isErroneous()) {
             chk.checkOperator(tree.pos(),
                               (OperatorSymbol)operator,
                               tree.getTag() - JCTree.ASGOffset,
@@ -2016,7 +2018,8 @@ public class Attr extends JCTree.Visitor {
             rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
 
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !argtype.isErroneous()) {
             owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
                 ? tree.arg.type
                 : operator.type.getReturnType();
@@ -2052,7 +2055,9 @@ public class Attr extends JCTree.Visitor {
             rs.resolveBinaryOperator(tree.pos(), tree.getTag(), env, left, right);
 
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !left.isErroneous() &&
+                !right.isErroneous()) {
             owntype = operator.type.getReturnType();
             int opc = chk.checkOperator(tree.lhs.pos(),
                                         (OperatorSymbol)operator,
