@@ -409,10 +409,10 @@ public class X509Factory extends CertificateFactorySpi {
         parseX509orPKCS7Cert(InputStream is)
         throws CertificateException, IOException
     {
-        Collection<X509CertImpl> coll = new ArrayList<X509CertImpl>();
+        Collection<X509CertImpl> coll = new ArrayList<>();
         byte[] data = readOneBlock(is);
         if (data == null) {
-            return new ArrayList<X509CertImpl>(0);
+            return new ArrayList<>(0);
         }
         try {
             PKCS7 pkcs7 = new PKCS7(data);
@@ -422,7 +422,7 @@ public class X509Factory extends CertificateFactorySpi {
                 return Arrays.asList(certs);
             } else {
                 // no crls provided
-                return new ArrayList<X509Certificate>(0);
+                return new ArrayList<>(0);
             }
         } catch (ParsingException e) {
             while (data != null) {
@@ -442,10 +442,10 @@ public class X509Factory extends CertificateFactorySpi {
         parseX509orPKCS7CRL(InputStream is)
         throws CRLException, IOException
     {
-        Collection<X509CRLImpl> coll = new ArrayList<X509CRLImpl>();
+        Collection<X509CRLImpl> coll = new ArrayList<>();
         byte[] data = readOneBlock(is);
         if (data == null) {
-            return new ArrayList<X509CRL>(0);
+            return new ArrayList<>(0);
         }
         try {
             PKCS7 pkcs7 = new PKCS7(data);
@@ -455,7 +455,7 @@ public class X509Factory extends CertificateFactorySpi {
                 return Arrays.asList(crls);
             } else {
                 // no crls provided
-                return new ArrayList<X509CRL>(0);
+                return new ArrayList<>(0);
             }
         } catch (ParsingException e) {
             while (data != null) {

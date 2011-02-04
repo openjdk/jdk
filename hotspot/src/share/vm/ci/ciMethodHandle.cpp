@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,12 @@
 // Return an adapter for this MethodHandle.
 ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
   VM_ENTRY_MARK;
-
   Handle h(get_oop());
   methodHandle callee(_callee->get_methodOop());
-  MethodHandleCompiler mhc(h, callee, is_invokedynamic, THREAD);
-  methodHandle m = mhc.compile(CHECK_NULL);
+  // We catch all exceptions here that could happen in the method
+  // handle compiler and stop the VM.
+  MethodHandleCompiler mhc(h, callee, is_invokedynamic, CATCH);
+  methodHandle m = mhc.compile(CATCH);
   return CURRENT_ENV->get_object(m())->as_method();
 }
 

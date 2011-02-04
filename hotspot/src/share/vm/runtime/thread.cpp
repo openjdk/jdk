@@ -31,6 +31,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -977,6 +978,19 @@ static void set_jkernel_boot_classloader_hook(TRAPS) {
 }
 #endif // KERNEL
 
+// General purpose hook into Java code, run once when the VM is initialized.
+// The Java library method itself may be changed independently from the VM.
+static void call_postVMInitHook(TRAPS) {
+  klassOop k = SystemDictionary::sun_misc_PostVMInitHook_klass();
+  instanceKlassHandle klass (THREAD, k);
+  if (klass.not_null()) {
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, klass, vmSymbolHandles::run_method_name(),
+                                           vmSymbolHandles::void_method_signature(),
+                                           CHECK);
+  }
+}
+
 static void reset_vm_info_property(TRAPS) {
   // the vm info string
   ResourceMark rm(THREAD);
@@ -1699,7 +1713,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     tlab().make_parsable(true);  // retire TLAB
   }
 
-  if (jvmti_thread_state() != NULL) {
+  if (JvmtiEnv::environments_might_exist()) {
     JvmtiExport::cleanup_thread(this);
   }
 
@@ -3345,6 +3359,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   BiasedLocking::init();
 
+  if (JDK_Version::current().post_vm_init_hook_enabled()) {
+    call_postVMInitHook(THREAD);
+    // The Java side of PostVMInitHook.run must deal with all
+    // exceptions and provide means of diagnosis.
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
 
   // Start up the WatcherThread if there are any periodic tasks
   // NOTE:  All PeriodicTasks should be registered by now. If they

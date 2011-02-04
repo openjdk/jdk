@@ -40,7 +40,7 @@ import java.security.Security;
 public class Providers {
 
     private static final ThreadLocal<ProviderList> threadLists =
-        new InheritableThreadLocal<ProviderList>();
+        new InheritableThreadLocal<>();
 
     // number of threads currently using thread-local provider lists
     // tracked to allow an optimization if == 0

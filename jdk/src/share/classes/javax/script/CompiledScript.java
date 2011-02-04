@@ -107,7 +107,7 @@ public abstract class CompiledScript {
     }
 
     /**
-     * Returns the <code>ScriptEngine</code> wbose <code>compile</code> method created this <code>CompiledScript</code>.
+     * Returns the <code>ScriptEngine</code> whose <code>compile</code> method created this <code>CompiledScript</code>.
      * The <code>CompiledScript</code> will execute in this engine.
      *
      * @return The <code>ScriptEngine</code> that created this <code>CompiledScript</code>

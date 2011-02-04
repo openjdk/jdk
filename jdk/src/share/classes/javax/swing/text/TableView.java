@@ -315,7 +315,7 @@ public abstract class TableView extends BoxView {
      * updated along the minor axis.
      * <p>
      * This is implemented to call the
-     * <a href="#layoutColumns">layoutColumns</a> method, and then
+     * {@link #layoutColumns layoutColumns} method, and then
      * forward to the superclass to actually carry out the layout
      * of the tables rows.
      *

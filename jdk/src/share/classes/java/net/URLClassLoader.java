@@ -27,19 +27,15 @@ package java.net;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.io.File;
-import java.io.FilePermission;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.Closeable;
+import java.lang.ref.*;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandlerFactory;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.jar.Manifest;
+import java.util.jar.JarFile;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.security.CodeSigner;
@@ -194,6 +190,65 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         acc = AccessController.getContext();
     }
 
+    /* A map (used as a set) to keep track of closeable local resources
+     * (either JarFiles or FileInputStreams). We don't care about
+     * Http resources since they don't need to be closed.
+     *
+     * If the resource is coming from a jar file
+     * we keep a (weak) reference to the JarFile object which can
+     * be closed if URLClassLoader.close() called. Due to jar file
+     * caching there will typically be only one JarFile object
+     * per underlying jar file.
+     *
+     * For file resources, which is probably a less common situation
+     * we have to keep a weak reference to each stream.
+     */
+
+    private WeakHashMap<Closeable,Void>
+        closeables = new WeakHashMap<>();
+
+    /**
+     * Returns an input stream for reading the specified resource.
+     * If this loader is closed, then any resources opened by this method
+     * will be closed.
+     *
+     * <p> The search order is described in the documentation for {@link
+     * #getResource(String)}.  </p>
+     *
+     * @param  name
+     *         The resource name
+     *
+     * @return  An input stream for reading the resource, or <tt>null</tt>
+     *          if the resource could not be found
+     *
+     * @since  1.7
+     */
+    public InputStream getResourceAsStream(String name) {
+        URL url = getResource(name);
+        try {
+            if (url == null) {
+                return null;
+            }
+            URLConnection urlc = url.openConnection();
+            InputStream is = urlc.getInputStream();
+            if (urlc instanceof JarURLConnection) {
+                JarURLConnection juc = (JarURLConnection)urlc;
+                JarFile jar = juc.getJarFile();
+                synchronized (closeables) {
+                    if (!closeables.containsKey(jar)) {
+                        closeables.put(jar, null);
+                    }
+                }
+            } else if (urlc instanceof sun.net.www.protocol.file.FileURLConnection) {
+                synchronized (closeables) {
+                    closeables.put(is, null);
+                }
+            }
+            return is;
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
    /**
     * Closes this URLClassLoader, so that it can no longer be used to load
@@ -202,8 +257,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * delegation hierarchy are still accessible. Also, any classes or resources
     * that are already loaded, are still accessible.
     * <p>
-    * In the case of jar: and file: URLs, it also closes any class files,
-    * or JAR files that were opened by it. If another thread is loading a
+    * In the case of jar: and file: URLs, it also closes any files
+    * that were opened by it. If another thread is loading a
     * class when the {@code close} method is invoked, then the result of
     * that load is undefined.
     * <p>
@@ -213,10 +268,10 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * loader has no effect.
     * <p>
     * @throws IOException if closing any file opened by this class loader
-    * resulted in an IOException. Any such exceptions are caught, and a
-    * single IOException is thrown after the last file has been closed.
-    * If only one exception was thrown, it will be set as the <i>cause</i>
-    * of this IOException.
+    * resulted in an IOException. Any such exceptions are caught internally.
+    * If only one is caught, then it is re-thrown. If more than one exception
+    * is caught, then the second and following exceptions are added
+    * as suppressed exceptions of the first one caught, which is then re-thrown.
     *
     * @throws SecurityException if a security manager is set, and it denies
     *   {@link RuntimePermission}<tt>("closeClassLoader")</tt>
@@ -229,21 +284,33 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             security.checkPermission(new RuntimePermission("closeClassLoader"));
         }
         List<IOException> errors = ucp.closeLoaders();
+
+        // now close any remaining streams.
+
+        synchronized (closeables) {
+            Set<Closeable> keys = closeables.keySet();
+            for (Closeable c : keys) {
+                try {
+                    c.close();
+                } catch (IOException ioex) {
+                    errors.add(ioex);
+                }
+            }
+            closeables.clear();
+        }
+
         if (errors.isEmpty()) {
             return;
         }
-        if (errors.size() == 1) {
-            throw new IOException (
-                "Error closing URLClassLoader resource",
-                errors.get(0)
-            );
-        }
-        // Several exceptions. So, just combine the error messages
-        String errormsg = "Error closing resources: ";
+
+        IOException firstex = errors.remove(0);
+
+        // Suppress any remaining exceptions
+
         for (IOException error: errors) {
-            errormsg = errormsg + "[" + error.toString() + "] ";
+            firstex.addSuppressed(error);
         }
-        throw new IOException (errormsg);
+        throw firstex;
     }
 
     /**

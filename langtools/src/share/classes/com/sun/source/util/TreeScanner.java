@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         r = scanAndReduce(node.getReturnType(), p, r);
         r = scanAndReduce(node.getTypeParameters(), p, r);
         r = scanAndReduce(node.getParameters(), p, r);
-//308        r = scanAndReduce(node.getReceiverAnnotations(), p, r);
         r = scanAndReduce(node.getThrows(), p, r);
         r = scanAndReduce(node.getBody(), p, r);
         r = scanAndReduce(node.getDefaultValue(), p, r);
@@ -362,7 +361,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 
     public R visitTypeParameter(TypeParameterTree node, P p) {
         R r = scan(node.getBounds(), p);
-//308        R r = scanAndReduce(node.getAnnotations(), p, r);
         return r;
     }
 
@@ -379,12 +377,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         r = scanAndReduce(node.getArguments(), p, r);
         return r;
     }
-
-//308   public R visitAnnotatedType(AnnotatedTypeTree node, P p) {
-//308       R r = scan(node.getAnnotations(), p);
-//308       r = scanAndReduce(node.getUnderlyingType(), p, r);
-//308       return r;
-//308   }
 
     public R visitOther(Tree node, P p) {
         return null;

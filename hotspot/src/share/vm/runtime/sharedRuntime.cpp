@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -944,9 +944,9 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   int          bci    = vfst.bci();
 
   // Find bytecode
-  Bytecode_invoke* bytecode = Bytecode_invoke_at(caller, bci);
-  bc = bytecode->java_code();
-  int bytecode_index = bytecode->index();
+  Bytecode_invoke bytecode(caller, bci);
+  bc = bytecode.java_code();
+  int bytecode_index = bytecode.index();
 
   // Find receiver for non-static call
   if (bc != Bytecodes::_invokestatic) {
@@ -957,7 +957,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
 
-    methodHandle callee = bytecode->static_target(CHECK_(nullHandle));
+    methodHandle callee = bytecode.static_target(CHECK_(nullHandle));
     if (callee.is_null()) {
       THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
     }
@@ -1674,10 +1674,9 @@ char* SharedRuntime::generate_class_cast_message(
   // Get target class name from the checkcast instruction
   vframeStream vfst(thread, true);
   assert(!vfst.at_end(), "Java frame must exist");
-  Bytecode_checkcast* cc = Bytecode_checkcast_at(
-    vfst.method()->bcp_from(vfst.bci()));
+  Bytecode_checkcast cc(vfst.method(), vfst.method()->bcp_from(vfst.bci()));
   Klass* targetKlass = Klass::cast(vfst.method()->constants()->klass_at(
-    cc->index(), thread));
+    cc.index(), thread));
   return generate_class_cast_message(objName, targetKlass->external_name());
 }
 
@@ -1711,11 +1710,11 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     const char* targetType = "the required signature";
     vframeStream vfst(thread, true);
     if (!vfst.at_end()) {
-      Bytecode_invoke* call = Bytecode_invoke_at(vfst.method(), vfst.bci());
+      Bytecode_invoke call(vfst.method(), vfst.bci());
       methodHandle target;
       {
         EXCEPTION_MARK;
-        target = call->static_target(THREAD);
+        target = call.static_target(THREAD);
         if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; }
       }
       if (target.not_null()
