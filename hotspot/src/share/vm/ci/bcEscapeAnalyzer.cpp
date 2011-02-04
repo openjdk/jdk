@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -761,15 +761,15 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_tableswitch:
         {
           state.spop();
-          Bytecode_tableswitch* switch_ = Bytecode_tableswitch_at(s.cur_bcp());
-          int len = switch_->length();
+          Bytecode_tableswitch sw(&s);
+          int len = sw.length();
           int dest_bci;
           for (int i = 0; i < len; i++) {
-            dest_bci = s.cur_bci() + switch_->dest_offset_at(i);
+            dest_bci = s.cur_bci() + sw.dest_offset_at(i);
             assert(_methodBlocks->is_block_start(dest_bci), "branch destination must start a block");
             successors.push(_methodBlocks->block_containing(dest_bci));
           }
-          dest_bci = s.cur_bci() + switch_->default_offset();
+          dest_bci = s.cur_bci() + sw.default_offset();
           assert(_methodBlocks->is_block_start(dest_bci), "branch destination must start a block");
           successors.push(_methodBlocks->block_containing(dest_bci));
           assert(s.next_bci() == limit_bci, "branch must end block");
@@ -779,15 +779,15 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_lookupswitch:
         {
           state.spop();
-          Bytecode_lookupswitch* switch_ = Bytecode_lookupswitch_at(s.cur_bcp());
-          int len = switch_->number_of_pairs();
+          Bytecode_lookupswitch sw(&s);
+          int len = sw.number_of_pairs();
           int dest_bci;
           for (int i = 0; i < len; i++) {
-            dest_bci = s.cur_bci() + switch_->pair_at(i)->offset();
+            dest_bci = s.cur_bci() + sw.pair_at(i).offset();
             assert(_methodBlocks->is_block_start(dest_bci), "branch destination must start a block");
             successors.push(_methodBlocks->block_containing(dest_bci));
           }
-          dest_bci = s.cur_bci() + switch_->default_offset();
+          dest_bci = s.cur_bci() + sw.default_offset();
           assert(_methodBlocks->is_block_start(dest_bci), "branch destination must start a block");
           successors.push(_methodBlocks->block_containing(dest_bci));
           fall_through = false;

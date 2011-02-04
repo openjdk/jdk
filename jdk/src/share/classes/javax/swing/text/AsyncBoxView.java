@@ -384,7 +384,7 @@ public class AsyncBoxView extends View {
 
     /**
      * Loads all of the children to initialize the view.
-     * This is called by the <a href="#setParent">setParent</a>
+     * This is called by the {@link #setParent setParent}
      * method.  Subclasses can reimplement this to initialize
      * their child views in a different manner.  The default
      * implementation creates a child view for each

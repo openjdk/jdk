@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,12 @@
 inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
 inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
 inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
 inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
 
 inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
 inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
 inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
@@ -54,7 +52,48 @@ inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); 
 inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
 inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
 
+
+#ifdef _LP64
+
+inline void Atomic::store(jlong store_value, jlong* dest) { *dest = store_value; }
+inline void Atomic::store(jlong store_value, volatile jlong* dest) { *dest = store_value; }
 inline jlong Atomic::load(volatile jlong* src) { return *src; }
+
+#else
+
+extern "C" void _Atomic_move_long_v8(volatile jlong* src, volatile jlong* dst);
+extern "C" void _Atomic_move_long_v9(volatile jlong* src, volatile jlong* dst);
+
+inline void Atomic_move_long(volatile jlong* src, volatile jlong* dst) {
+#ifdef COMPILER2
+  // Compiler2 does not support v8, it is used only for v9.
+  assert (VM_Version::v9_instructions_work(), "only supported on v9");
+  _Atomic_move_long_v9(src, dst);
+#else
+  // The branch is cheaper then emulated LDD.
+  if (VM_Version::v9_instructions_work()) {
+    _Atomic_move_long_v9(src, dst);
+  } else {
+    _Atomic_move_long_v8(src, dst);
+  }
+#endif
+}
+
+inline jlong Atomic::load(volatile jlong* src) {
+  volatile jlong dest;
+  Atomic_move_long(src, &dest);
+  return dest;
+}
+
+inline void Atomic::store(jlong store_value, jlong* dest) {
+  Atomic_move_long((volatile jlong*)&store_value, (volatile jlong*)dest);
+}
+
+inline void Atomic::store(jlong store_value, volatile jlong* dest) {
+  Atomic_move_long((volatile jlong*)&store_value, dest);
+}
+
+#endif
 
 #ifdef _GNU_SOURCE
 
