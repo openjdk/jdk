@@ -265,7 +265,7 @@ public class ZipPath implements Path {
 
     @Override
     public boolean isAbsolute() {
-        return (this.path[0] == '/');
+        return (this.path.length > 0 && path[0] == '/');
     }
 
     @Override
@@ -298,32 +298,40 @@ public class ZipPath implements Path {
     @Override
     public boolean startsWith(Path other) {
         final ZipPath o = checkPath(other);
-        if (o.isAbsolute() != this.isAbsolute())
+        if (o.isAbsolute() != this.isAbsolute() ||
+            o.path.length > this.path.length)
             return false;
-        final int oCount = o.getNameCount();
-        if (getNameCount() < oCount)
-            return false;
-        for (int i = 0; i < oCount; i++) {
-            if (!o.getName(i).equals(getName(i)))
+        int olast = o.path.length;
+        for (int i = 0; i < olast; i++) {
+            if (o.path[i] != this.path[i])
                 return false;
         }
-        return true;
+        olast--;
+        return o.path.length == this.path.length ||
+               o.path[olast] == '/' ||
+               this.path[olast + 1] == '/';
     }
 
     @Override
     public boolean endsWith(Path other) {
         final ZipPath o = checkPath(other);
-        if (o.isAbsolute())
-            return this.isAbsolute() ? this.equals(o) : false;
-        int i = o.getNameCount();
-        int j = this.getNameCount();
-        if (j < i)
+        int olast = o.path.length - 1;
+        if (olast > 0 && o.path[olast] == '/')
+            olast--;
+        int last = this.path.length - 1;
+        if (last > 0 && this.path[last] == '/')
+            last--;
+        if (olast == -1)    // o.path.length == 0
+            return last == -1;
+        if ((o.isAbsolute() &&(!this.isAbsolute() || olast != last)) ||
+            (last < olast))
             return false;
-        for (--i, --j; i >= 0; i--, j--) {
-            if (!o.getName(i).equals(this.getName(j)))
+        for (; olast >= 0; olast--, last--) {
+            if (o.path[olast] != this.path[last])
                 return false;
         }
-        return true;
+        return o.path[olast + 1] == '/' ||
+               last == -1 || this.path[last] == '/';
     }
 
     @Override

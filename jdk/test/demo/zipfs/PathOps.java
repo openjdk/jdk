@@ -252,31 +252,41 @@ public class PathOps {
             .name("foo");
 
         // startsWith
+        test("")
+            .starts("")
+            .notStarts("/");
         test("/")
             .starts("/")
             .notStarts("/foo");
         test("/foo")
             .starts("/")
             .starts("/foo")
-            .notStarts("/f");
+            .notStarts("/f")
+            .notStarts("");
         test("/foo/bar")
             .starts("/")
             .starts("/foo")
+            .starts("/foo/")
             .starts("/foo/bar")
             .notStarts("/f")
             .notStarts("foo")
-            .notStarts("foo/bar");
+            .notStarts("foo/bar")
+            .notStarts("");
         test("foo")
             .starts("foo")
             .notStarts("f");
         test("foo/bar")
             .starts("foo")
+            .starts("foo/")
             .starts("foo/bar")
             .notStarts("f")
             .notStarts("/foo")
             .notStarts("/foo/bar");
 
         // endsWith
+        test("")
+            .ends("")
+            .notEnds("/");
         test("/")
             .ends("/")
             .notEnds("foo")
@@ -288,13 +298,23 @@ public class PathOps {
         test("/foo/bar")
             .ends("bar")
             .ends("foo/bar")
+            .ends("foo/bar/")
+            .ends("/foo/bar")
+            .notEnds("/bar");
+        test("/foo/bar/")
+            .ends("bar")
+            .ends("foo/bar")
+            .ends("foo/bar/")
             .ends("/foo/bar")
             .notEnds("/bar");
         test("foo")
             .ends("foo");
         test("foo/bar")
             .ends("bar")
+            .ends("bar/")
+            .ends("foo/bar/")
             .ends("foo/bar");
+
 
         // elements
         test("a/b/c")
@@ -308,6 +328,8 @@ public class PathOps {
         test("/tmp")
             .absolute();
         test("tmp")
+            .notAbsolute();
+        test("")
             .notAbsolute();
 
         // resolve
