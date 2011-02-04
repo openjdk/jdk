@@ -93,6 +93,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/virtualspace.hpp"
@@ -1250,7 +1251,7 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(WatcherThread, Thread)                            \
            declare_type(JavaThread, Thread)                               \
            declare_type(JvmtiAgentThread, JavaThread)                     \
-           declare_type(LowMemoryDetectorThread, JavaThread)              \
+           declare_type(ServiceThread, JavaThread)                        \
   declare_type(CompilerThread, JavaThread)                        \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \

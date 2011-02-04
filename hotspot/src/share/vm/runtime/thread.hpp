@@ -1680,16 +1680,6 @@ inline size_t JavaThread::stack_available(address cur_sp) {
   return cur_sp > low_addr ? cur_sp - low_addr : 0;
 }
 
-// A JavaThread for low memory detection support
-class LowMemoryDetectorThread : public JavaThread {
-  friend class VMStructs;
-public:
-  LowMemoryDetectorThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
-
-  // Hide this thread from external view.
-  bool is_hidden_from_external_view() const      { return true; }
-};
-
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
