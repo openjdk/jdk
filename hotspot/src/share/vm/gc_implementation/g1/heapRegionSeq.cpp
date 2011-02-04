@@ -195,10 +195,10 @@ int HeapRegionSeq::find_contiguous(size_t num) {
     assert(0 <= res && res < _regions.length(),
            err_msg("res: %d should be valid", res));
     _alloc_search_start = res + (int) num;
+    assert(0 < _alloc_search_start && _alloc_search_start <= _regions.length(),
+           err_msg("_alloc_search_start: %d should be valid",
+                   _alloc_search_start));
   }
-  assert(0 < _alloc_search_start && _alloc_search_start <= _regions.length(),
-         err_msg("_alloc_search_start: %d should be valid",
-                 _alloc_search_start));
   return res;
 }
 

@@ -477,7 +477,7 @@ const TypeFunc *OptoRuntime::g1_wb_post_Type() {
 const TypeFunc *OptoRuntime::uncommon_trap_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
-  // symbolOop name of class to be loaded
+  // Symbol* name of class to be loaded
   fields[TypeFunc::Parms+0] = TypeInt::INT;
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
 
@@ -586,7 +586,7 @@ const TypeFunc* OptoRuntime::modf_Type() {
 const TypeFunc *OptoRuntime::Math_D_D_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
-  // symbolOop name of class to be loaded
+  // Symbol* name of class to be loaded
   fields[TypeFunc::Parms+0] = Type::DOUBLE;
   fields[TypeFunc::Parms+1] = Type::HALF;
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);

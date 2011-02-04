@@ -114,8 +114,8 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_HeapBlockHeader_used);
   copyin_offset(OFFSET_oopDesc_metadata);
 
-  copyin_offset(OFFSET_symbolOopDesc_length);
-  copyin_offset(OFFSET_symbolOopDesc_body);
+  copyin_offset(OFFSET_Symbol_length);
+  copyin_offset(OFFSET_Symbol_body);
 
   copyin_offset(OFFSET_methodOopDesc_constMethod);
   copyin_offset(OFFSET_methodOopDesc_constants);
@@ -366,13 +366,13 @@ dtrace:helper:ustack:
       this->nameIndex * sizeof (pointer) + SIZE_constantPoolOopDesc);
 
   this->nameSymbolLength = copyin_uint16(this->nameSymbol +
-      OFFSET_symbolOopDesc_length);
+      OFFSET_Symbol_length);
 
   this->signatureSymbol = copyin_ptr(this->constantPool +
       this->signatureIndex * sizeof (pointer) + SIZE_constantPoolOopDesc);
 
   this->signatureSymbolLength = copyin_uint16(this->signatureSymbol +
-      OFFSET_symbolOopDesc_length);
+      OFFSET_Symbol_length);
 
   this->klassPtr = copyin_ptr(this->constantPool +
       OFFSET_constantPoolOopDesc_pool_holder);
@@ -381,7 +381,7 @@ dtrace:helper:ustack:
       OFFSET_Klass_name + SIZE_oopDesc);
 
   this->klassSymbolLength = copyin_uint16(this->klassSymbol +
-      OFFSET_symbolOopDesc_length);
+      OFFSET_Symbol_length);
 
   /*
    * Enough for three strings, plus the '.', plus the trailing '\0'.
@@ -390,7 +390,7 @@ dtrace:helper:ustack:
       this->nameSymbolLength +
       this->signatureSymbolLength + 2 + 1);
 
-  copyinto(this->klassSymbol + OFFSET_symbolOopDesc_body,
+  copyinto(this->klassSymbol + OFFSET_Symbol_body,
       this->klassSymbolLength, this->result);
 
   /*
@@ -398,11 +398,11 @@ dtrace:helper:ustack:
    */
   this->result[this->klassSymbolLength] = '.';
 
-  copyinto(this->nameSymbol + OFFSET_symbolOopDesc_body,
+  copyinto(this->nameSymbol + OFFSET_Symbol_body,
       this->nameSymbolLength,
       this->result + this->klassSymbolLength + 1);
 
-  copyinto(this->signatureSymbol + OFFSET_symbolOopDesc_body,
+  copyinto(this->signatureSymbol + OFFSET_Symbol_body,
       this->signatureSymbolLength,
       this->result + this->klassSymbolLength +
       this->nameSymbolLength + 1);

@@ -106,15 +106,15 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     JavaCallArguments args;
     args.push_oop(mgr_name);    // Argument 1
 
-    symbolHandle method_name;
-    symbolHandle signature;
+    Symbol* method_name = NULL;
+    Symbol* signature = NULL;
     if (is_gc_memory_manager()) {
-      method_name = vmSymbolHandles::createGarbageCollector_name();
-      signature = vmSymbolHandles::createGarbageCollector_signature();
+      method_name = vmSymbols::createGarbageCollector_name();
+      signature = vmSymbols::createGarbageCollector_signature();
       args.push_oop(Handle());      // Argument 2 (for future extension)
     } else {
-      method_name = vmSymbolHandles::createMemoryManager_name();
-      signature = vmSymbolHandles::createMemoryManager_signature();
+      method_name = vmSymbols::createMemoryManager_name();
+      signature = vmSymbols::createMemoryManager_signature();
     }
 
     JavaCalls::call_static(&result,

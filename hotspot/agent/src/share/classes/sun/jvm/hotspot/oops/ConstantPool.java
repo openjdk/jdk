@@ -35,6 +35,38 @@ import sun.jvm.hotspot.utilities.*;
 // as described in the class file
 
 public class ConstantPool extends Oop implements ClassConstants {
+
+  public class CPSlot {
+    private Address ptr;
+
+    CPSlot(Address ptr) {
+      this.ptr = ptr;
+    }
+    CPSlot(Symbol sym) {
+      this.ptr = sym.getAddress().orWithMask(1);
+    }
+
+    public boolean isOop() {
+      return (ptr.minus(null) & 1) == 0;
+    }
+    public boolean isMetaData() {
+      return (ptr.minus(null) & 1) == 1;
+    }
+
+    public Symbol getSymbol() {
+      if (isMetaData()) {
+        return Symbol.create(ptr.xorWithMask(1));
+      }
+      throw new InternalError("not a symbol");
+    }
+    public Oop getOop() {
+      if (isOop()) {
+        return VM.getVM().getObjectHeap().newOop(ptr.addOffsetToAsOopHandle(0));
+      }
+      throw new InternalError("not an oop");
+    }
+  }
+
   // Used for debugging this code
   private static final boolean DEBUG = false;
 
@@ -110,12 +142,17 @@ public class ConstantPool extends Oop implements ClassConstants {
     return new ConstantTag(getTags().getByteAt((int) index));
   }
 
-  public Oop getObjAt(long index){
+  public CPSlot getSlotAt(long index) {
+    return new CPSlot(getHandle().getAddressAt(indexOffset(index)));
+  }
+
+  public Oop getObjAtRaw(long index){
     return getHeap().newOop(getHandle().getOopHandleAt(indexOffset(index)));
   }
 
   public Symbol getSymbolAt(long index) {
-    return (Symbol) getObjAt(index);
+    CPSlot slot = getSlotAt(index);
+    return slot.getSymbol();
   }
 
   public int getIntAt(long index){
@@ -187,7 +224,7 @@ public class ConstantPool extends Oop implements ClassConstants {
   // returns null, if not resolved.
   public Klass getKlassRefAt(int which) {
     if( ! getTagAt(which).isKlass()) return null;
-    return (Klass) getObjAt(which);
+    return (Klass) getObjAtRaw(which);
   }
 
   // returns null, if not resolved.
@@ -477,7 +514,7 @@ public class ConstantPool extends Oop implements ClassConstants {
               case JVM_CONSTANT_Class: {
                   dos.writeByte(cpConstType);
                   // Klass already resolved. ConstantPool constains klassOop.
-                  Klass refKls = (Klass) getObjAt(ci);
+                  Klass refKls = (Klass) getObjAtRaw(ci);
                   String klassName = refKls.getName().asString();
                   Short s = (Short) utf8ToIndex.get(klassName);
                   dos.writeShort(s.shortValue());
@@ -498,7 +535,7 @@ public class ConstantPool extends Oop implements ClassConstants {
 
               case JVM_CONSTANT_String: {
                   dos.writeByte(cpConstType);
-                  String str = OopUtilities.stringOopToString(getObjAt(ci));
+                  String str = OopUtilities.stringOopToString(getObjAtRaw(ci));
                   Short s = (Short) utf8ToIndex.get(str);
                   dos.writeShort(s.shortValue());
                   if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);

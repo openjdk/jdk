@@ -251,7 +251,9 @@ void ConcurrentMarkThread::run() {
 
         // Now do the remainder of the cleanup operation.
         _cm->completeCleanup();
+        _sts.join();
         g1_policy->record_concurrent_mark_cleanup_completed();
+        _sts.leave();
 
         double cleanup_end_sec = os::elapsedTime();
         if (PrintGC) {

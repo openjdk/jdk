@@ -422,17 +422,17 @@ void xmlStream::klass_text(KlassHandle klass) {
   klass->name()->print_symbol_on(out());
 }
 
-void xmlStream::name(symbolHandle name) {
+void xmlStream::name(const Symbol* name) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (name.is_null())  return;
+  if (name == NULL)  return;
   print_raw(" name='");
   name_text(name);
   print_raw("'");
 }
 
-void xmlStream::name_text(symbolHandle name) {
+void xmlStream::name_text(const Symbol* name) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (name.is_null())  return;
+  if (name == NULL)  return;
   //name->print_short_name(text());
   name->print_symbol_on(text());
 }
@@ -455,8 +455,6 @@ void xmlStream::object_text(Handle x) {
     method_text(methodOop(x()));
   else if (x->is_klass())
     klass_text(klassOop(x()));
-  else if (x->is_symbol())
-    name_text(symbolOop(x()));
   else
     x->print_value_on(text());
 }

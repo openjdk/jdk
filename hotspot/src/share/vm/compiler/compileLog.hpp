@@ -63,7 +63,7 @@ class CompileLog : public xmlStream {
   stringStream* context()                        { return &_context; }
 
   void          name(ciSymbol* s);               // name='s'
-  void          name(symbolHandle s)             { xmlStream::name(s); }
+  void          name(Symbol* s)                  { xmlStream::name(s); }
 
   // Output an object description, return obj->ident().
   int           identify(ciObject* obj);

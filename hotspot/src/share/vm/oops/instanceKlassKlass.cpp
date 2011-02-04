@@ -37,7 +37,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.hpp"
@@ -101,13 +101,10 @@ void instanceKlassKlass::oop_follow_contents(oop obj) {
   MarkSweep::mark_and_push(ik->adr_fields());
   MarkSweep::mark_and_push(ik->adr_constants());
   MarkSweep::mark_and_push(ik->adr_class_loader());
-  MarkSweep::mark_and_push(ik->adr_source_file_name());
-  MarkSweep::mark_and_push(ik->adr_source_debug_extension());
   MarkSweep::mark_and_push(ik->adr_inner_classes());
   MarkSweep::mark_and_push(ik->adr_protection_domain());
   MarkSweep::mark_and_push(ik->adr_host_klass());
   MarkSweep::mark_and_push(ik->adr_signers());
-  MarkSweep::mark_and_push(ik->adr_generic_signature());
   MarkSweep::mark_and_push(ik->adr_bootstrap_method());
   MarkSweep::mark_and_push(ik->adr_class_annotations());
   MarkSweep::mark_and_push(ik->adr_fields_annotations());
@@ -142,13 +139,10 @@ void instanceKlassKlass::oop_follow_contents(ParCompactionManager* cm,
   PSParallelCompact::mark_and_push(cm, ik->adr_fields());
   PSParallelCompact::mark_and_push(cm, ik->adr_constants());
   PSParallelCompact::mark_and_push(cm, ik->adr_class_loader());
-  PSParallelCompact::mark_and_push(cm, ik->adr_source_file_name());
-  PSParallelCompact::mark_and_push(cm, ik->adr_source_debug_extension());
   PSParallelCompact::mark_and_push(cm, ik->adr_inner_classes());
   PSParallelCompact::mark_and_push(cm, ik->adr_protection_domain());
   PSParallelCompact::mark_and_push(cm, ik->adr_host_klass());
   PSParallelCompact::mark_and_push(cm, ik->adr_signers());
-  PSParallelCompact::mark_and_push(cm, ik->adr_generic_signature());
   PSParallelCompact::mark_and_push(cm, ik->adr_bootstrap_method());
   PSParallelCompact::mark_and_push(cm, ik->adr_class_annotations());
   PSParallelCompact::mark_and_push(cm, ik->adr_fields_annotations());
@@ -189,13 +183,10 @@ int instanceKlassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   blk->do_oop(ik->adr_protection_domain());
   blk->do_oop(ik->adr_host_klass());
   blk->do_oop(ik->adr_signers());
-  blk->do_oop(ik->adr_source_file_name());
-  blk->do_oop(ik->adr_source_debug_extension());
   blk->do_oop(ik->adr_inner_classes());
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     blk->do_oop(&ik->adr_implementors()[i]);
   }
-  blk->do_oop(ik->adr_generic_signature());
   blk->do_oop(ik->adr_bootstrap_method());
   blk->do_oop(ik->adr_class_annotations());
   blk->do_oop(ik->adr_fields_annotations());
@@ -245,18 +236,12 @@ int instanceKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk,
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_signers();
   if (mr.contains(adr)) blk->do_oop(adr);
-  adr = ik->adr_source_file_name();
-  if (mr.contains(adr)) blk->do_oop(adr);
-  adr = ik->adr_source_debug_extension();
-  if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_inner_classes();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_implementors();
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     if (mr.contains(&adr[i])) blk->do_oop(&adr[i]);
   }
-  adr = ik->adr_generic_signature();
-  if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_bootstrap_method();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_class_annotations();
@@ -296,13 +281,10 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
   MarkSweep::adjust_pointer(ik->adr_protection_domain());
   MarkSweep::adjust_pointer(ik->adr_host_klass());
   MarkSweep::adjust_pointer(ik->adr_signers());
-  MarkSweep::adjust_pointer(ik->adr_source_file_name());
-  MarkSweep::adjust_pointer(ik->adr_source_debug_extension());
   MarkSweep::adjust_pointer(ik->adr_inner_classes());
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     MarkSweep::adjust_pointer(&ik->adr_implementors()[i]);
   }
-  MarkSweep::adjust_pointer(ik->adr_generic_signature());
   MarkSweep::adjust_pointer(ik->adr_bootstrap_method());
   MarkSweep::adjust_pointer(ik->adr_class_annotations());
   MarkSweep::adjust_pointer(ik->adr_fields_annotations());
@@ -452,6 +434,8 @@ instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
     ik->set_signers(NULL);
     ik->set_source_file_name(NULL);
     ik->set_source_debug_extension(NULL);
+    ik->set_source_debug_extension(NULL);
+    ik->set_array_name(NULL);
     ik->set_inner_classes(NULL);
     ik->set_static_oop_field_size(0);
     ik->set_nonstatic_field_size(0);
@@ -667,7 +651,7 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
 #endif
     // Verify that klass is present in SystemDictionary
     if (ik->is_loaded() && !ik->is_anonymous()) {
-      symbolHandle h_name (thread, ik->name());
+      Symbol* h_name = ik->name();
       Handle h_loader (thread, ik->class_loader());
       Handle h_obj(thread, obj);
       SystemDictionary::verify_obj_klass_present(h_obj, h_name, h_loader);
@@ -793,14 +777,6 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
     guarantee(ik->constants()->is_constantPool(),    "should be constant pool");
     guarantee(ik->inner_classes()->is_perm(),        "should be in permspace");
     guarantee(ik->inner_classes()->is_typeArray(),   "should be type array");
-    if (ik->source_file_name() != NULL) {
-      guarantee(ik->source_file_name()->is_perm(),   "should be in permspace");
-      guarantee(ik->source_file_name()->is_symbol(), "should be symbol");
-    }
-    if (ik->source_debug_extension() != NULL) {
-      guarantee(ik->source_debug_extension()->is_perm(),   "should be in permspace");
-      guarantee(ik->source_debug_extension()->is_symbol(), "should be symbol");
-    }
     if (ik->protection_domain() != NULL) {
       guarantee(ik->protection_domain()->is_oop(),  "should be oop");
     }
@@ -809,10 +785,6 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
     }
     if (ik->signers() != NULL) {
       guarantee(ik->signers()->is_objArray(),       "should be obj array");
-    }
-    if (ik->generic_signature() != NULL) {
-      guarantee(ik->generic_signature()->is_perm(),   "should be in permspace");
-      guarantee(ik->generic_signature()->is_symbol(), "should be symbol");
     }
     if (ik->class_annotations() != NULL) {
       guarantee(ik->class_annotations()->is_typeArray(), "should be type array");
