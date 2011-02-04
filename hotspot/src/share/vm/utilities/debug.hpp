@@ -176,6 +176,16 @@ void report_untested(const char* file, int line, const char* message);
 
 void warning(const char* format, ...);
 
+// out of shared space reporting
+enum SharedSpaceType {
+  SharedPermGen,
+  SharedReadOnly,
+  SharedReadWrite,
+  SharedMiscData
+};
+
+void report_out_of_shared_space(SharedSpaceType space_type);
+
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
 

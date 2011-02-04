@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,9 @@ class Runtime1: public AllStatic {
   static void throw_index_exception(JavaThread* thread, int index);
   static void throw_div0_exception(JavaThread* thread);
   static void throw_null_pointer_exception(JavaThread* thread);
-  static void throw_class_cast_exception(JavaThread* thread, oopDesc* obect);
+  static void throw_class_cast_exception(JavaThread* thread, oopDesc* object);
   static void throw_incompatible_class_change_error(JavaThread* thread);
-  static void throw_array_store_exception(JavaThread* thread);
+  static void throw_array_store_exception(JavaThread* thread, oopDesc* object);
 
   static void monitorenter(JavaThread* thread, oopDesc* obj, BasicObjectLock* lock);
   static void monitorexit (JavaThread* thread, BasicObjectLock* lock);

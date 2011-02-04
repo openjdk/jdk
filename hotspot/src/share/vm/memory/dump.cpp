@@ -133,6 +133,69 @@ static bool mark_object(oop obj) {
   return false;
 }
 
+
+class MoveSymbols : public SymbolClosure {
+private:
+  char* _start;
+  char* _end;
+  char* _top;
+  int _count;
+
+  bool in_shared_space(Symbol* sym) const {
+    return (char*)sym >= _start && (char*)sym < _end;
+  }
+
+  Symbol* get_shared_copy(Symbol* sym) {
+    return sym->refcount() > 0 ? NULL : (Symbol*)(_start - sym->refcount());
+  }
+
+  Symbol* make_shared_copy(Symbol* sym) {
+    Symbol* new_sym = (Symbol*)_top;
+    int size = sym->object_size();
+    _top += size * HeapWordSize;
+    if (_top <= _end) {
+      Copy::disjoint_words((HeapWord*)sym, (HeapWord*)new_sym, size);
+      // Encode a reference to the copy as a negative distance from _start
+      // When a symbol is being copied to a shared space
+      // during CDS archive creation, the original symbol is marked
+      // as relocated by putting a negative value to its _refcount field,
+      // This value is also used to find where exactly the shared copy is
+      // (see MoveSymbols::get_shared_copy), so that the other references
+      // to this symbol could be changed to point to the shared copy.
+      sym->_refcount = (int)(_start - (char*)new_sym);
+      // Mark the symbol in the shared archive as immortal so it is read only
+      // and not refcounted.
+      new_sym->_refcount = -1;
+      _count++;
+    } else {
+      report_out_of_shared_space(SharedMiscData);
+    }
+    return new_sym;
+  }
+
+public:
+  MoveSymbols(char* top, char* end) :
+    _start(top), _end(end), _top(top), _count(0) { }
+
+  char* get_top() const { return _top; }
+  int count()     const { return _count; }
+
+  void do_symbol(Symbol** p) {
+    Symbol* sym = load_symbol(p);
+    if (sym != NULL && !in_shared_space(sym)) {
+      Symbol* new_sym = get_shared_copy(sym);
+      if (new_sym == NULL) {
+        // The symbol has not been relocated yet; copy it to _top address
+        assert(sym->refcount() > 0, "should have positive reference count");
+        new_sym = make_shared_copy(sym);
+      }
+      // Make the reference point to the shared copy of the symbol
+      store_symbol(p, new_sym);
+    }
+  }
+};
+
+
 // Closure:  mark objects closure.
 
 class MarkObjectsOopClosure : public OopClosure {
@@ -164,7 +227,7 @@ static void mark_object_recursive_skipping_klasses(oop obj) {
 }
 
 
-// Closure:  mark common read-only objects, excluding symbols
+// Closure:  mark common read-only objects
 
 class MarkCommonReadOnly : public ObjectClosure {
 private:
@@ -216,54 +279,52 @@ public:
 };
 
 
-// Closure:  mark common symbols
+// Closure:  find symbol references in Java Heap objects
 
-class MarkCommonSymbols : public ObjectClosure {
+class CommonSymbolsClosure : public ObjectClosure {
 private:
-  MarkObjectsOopClosure mark_all;
+  SymbolClosure* _closure;
 public:
+  CommonSymbolsClosure(SymbolClosure* closure) : _closure(closure) { }
+
   void do_object(oop obj) {
 
-    // Mark symbols refered to by method objects.
+    // Traverse symbols referenced by method objects.
 
     if (obj->is_method()) {
       methodOop m = methodOop(obj);
-      mark_object(m->name());
-      mark_object(m->signature());
+      constantPoolOop constants = m->constants();
+      _closure->do_symbol(constants->symbol_at_addr(m->name_index()));
+      _closure->do_symbol(constants->symbol_at_addr(m->signature_index()));
     }
 
-    // Mark symbols referenced by klass objects which are read-only.
+    // Traverse symbols referenced by klass objects which are read-only.
 
     else if (obj->is_klass()) {
+      Klass* k = Klass::cast((klassOop)obj);
+      k->shared_symbols_iterate(_closure);
 
       if (obj->blueprint()->oop_is_instanceKlass()) {
         instanceKlass* ik = instanceKlass::cast((klassOop)obj);
-        mark_object(ik->name());
-        mark_object(ik->generic_signature());
-        mark_object(ik->source_file_name());
-        mark_object(ik->source_debug_extension());
-
         typeArrayOop inner_classes = ik->inner_classes();
         if (inner_classes != NULL) {
-          int length = inner_classes->length();
-          for (int i = 0;
-                   i < length;
-                   i += instanceKlass::inner_class_next_offset) {
+          constantPoolOop constants = ik->constants();
+          int n = inner_classes->length();
+          for (int i = 0; i < n; i += instanceKlass::inner_class_next_offset) {
             int ioff = i + instanceKlass::inner_class_inner_name_offset;
             int index = inner_classes->ushort_at(ioff);
             if (index != 0) {
-              mark_object(ik->constants()->symbol_at(index));
+              _closure->do_symbol(constants->symbol_at_addr(index));
             }
           }
         }
-        ik->field_names_and_sigs_iterate(&mark_all);
       }
     }
 
-    // Mark symbols referenced by other constantpool entries.
+    // Traverse symbols referenced by other constantpool entries.
 
-    if (obj->is_constantPool()) {
-      constantPoolOop(obj)->shared_symbols_iterate(&mark_all);
+    else if (obj->is_constantPool()) {
+      constantPoolOop(obj)->shared_symbols_iterate(_closure);
     }
   }
 };
@@ -404,18 +465,7 @@ public:
       int s = obj->size();
       oop sh_obj = (oop)_space->allocate(s);
       if (sh_obj == NULL) {
-        if (_read_only) {
-          warning("\nThe permanent generation read only space is not large "
-                  "enough to \npreload requested classes.  Use "
-                  "-XX:SharedReadOnlySize= to increase \nthe initial "
-                  "size of the read only space.\n");
-        } else {
-          warning("\nThe permanent generation read write space is not large "
-                  "enough to \npreload requested classes.  Use "
-                  "-XX:SharedReadWriteSize= to increase \nthe initial "
-                  "size of the read write space.\n");
-        }
-        exit(2);
+        report_out_of_shared_space(_read_only ? SharedReadOnly : SharedReadWrite);
       }
       if (PrintSharedSpaces && Verbose && WizardMode) {
         tty->print_cr("\nMoveMarkedObjects: " PTR_FORMAT " -> " PTR_FORMAT " %s", obj, sh_obj,
@@ -459,8 +509,6 @@ public:
       instanceKlass* ik = instanceKlass::cast((klassOop)obj);
       int i;
 
-      mark_and_move_for_policy(OP_favor_startup, ik->name(), _move_ro);
-
       if (ik->super() != NULL) {
         do_object(ik->super());
       }
@@ -469,7 +517,6 @@ public:
       mark_and_move_for_policy(OP_favor_startup, interfaces, _move_ro);
       for(i = 0; i < interfaces->length(); i++) {
         klassOop k = klassOop(interfaces->obj_at(i));
-        mark_and_move_for_policy(OP_favor_startup, k->klass_part()->name(), _move_ro);
         do_object(k);
       }
 
@@ -479,14 +526,6 @@ public:
         mark_and_move_for_policy(OP_favor_startup, m->constMethod(), _move_ro);
         mark_and_move_for_policy(OP_favor_runtime, m->constMethod()->exception_table(), _move_ro);
         mark_and_move_for_policy(OP_favor_runtime, m->constMethod()->stackmap_data(), _move_ro);
-
-        // We don't move the name symbolOop here because it may invalidate
-        // method ordering, which is dependent on the address of the name
-        // symbolOop.  It will get promoted later with the other symbols.
-        // Method name is rarely accessed during classloading anyway.
-        // mark_and_move_for_policy(OP_balanced, m->name(), _move_ro);
-
-        mark_and_move_for_policy(OP_favor_startup, m->signature(), _move_ro);
       }
 
       mark_and_move_for_policy(OP_favor_startup, ik->transitive_interfaces(), _move_ro);
@@ -574,45 +613,43 @@ public:
 };
 
 
-void sort_methods(instanceKlass* ik, TRAPS) {
-  klassOop super = ik->super();
-  if (super != NULL) {
-    sort_methods(instanceKlass::cast(super), THREAD);
-  }
-
-  // The methods array must be ordered by symbolOop address. (See
-  // classFileParser.cpp where methods in a class are originally
-  // sorted.)  Since objects have just be reordered, this must be
-  // corrected.
-  methodOopDesc::sort_methods(ik->methods(),
-                              ik->methods_annotations(),
-                              ik->methods_parameter_annotations(),
-                              ik->methods_default_annotations(),
-                              true /* idempotent, slow */);
-
-  // Itable indices are calculated based on methods array order
-  // (see klassItable::compute_itable_index()).  Must reinitialize.
-  // We assume that since checkconstraints is false, this method
-  // cannot throw an exception.  An exception here would be
-  // problematic since this is the VMThread, not a JavaThread.
-  ik->itable()->initialize_itable(false, THREAD);
-}
-
-// Sort methods if the oop is an instanceKlass.
+// The methods array must be reordered by Symbol* address.
+// (See classFileParser.cpp where methods in a class are originally
+// sorted). The addresses of symbols have been changed as a result
+// of moving to the shared space.
 
 class SortMethodsClosure: public ObjectClosure {
+public:
+  void do_object(oop obj) {
+    if (obj->blueprint()->oop_is_instanceKlass()) {
+      instanceKlass* ik = instanceKlass::cast((klassOop)obj);
+      methodOopDesc::sort_methods(ik->methods(),
+                                  ik->methods_annotations(),
+                                  ik->methods_parameter_annotations(),
+                                  ik->methods_default_annotations(),
+                                  true /* idempotent, slow */);
+    }
+  }
+};
+
+// Itable indices are calculated based on methods array order
+// (see klassItable::compute_itable_index()).  Must reinitialize
+// after ALL methods of ALL classes have been reordered.
+// We assume that since checkconstraints is false, this method
+// cannot throw an exception.  An exception here would be
+// problematic since this is the VMThread, not a JavaThread.
+
+class ReinitializeItables: public ObjectClosure {
 private:
   Thread* _thread;
 
 public:
-  SortMethodsClosure(Thread* thread) : _thread(thread) {}
+  ReinitializeItables(Thread* thread) : _thread(thread) {}
 
   void do_object(oop obj) {
-    // instanceKlass objects need some adjustment.
     if (obj->blueprint()->oop_is_instanceKlass()) {
       instanceKlass* ik = instanceKlass::cast((klassOop)obj);
-
-      sort_methods(ik, _thread);
+      ik->itable()->initialize_itable(false, _thread);
     }
   }
 };
@@ -673,18 +710,9 @@ private:
   oop* top;
   char* end;
 
-  void out_of_space() {
-    warning("\nThe shared miscellaneous data space is not large "
-            "enough to \npreload requested classes.  Use "
-            "-XX:SharedMiscDataSize= to increase \nthe initial "
-            "size of the miscellaneous data space.\n");
-    exit(2);
-  }
-
-
   inline void check_space() {
     if ((char*)top + sizeof(oop) > end) {
-      out_of_space();
+      report_out_of_shared_space(SharedMiscData);
     }
   }
 
@@ -737,7 +765,7 @@ public:
 
   void do_region(u_char* start, size_t size) {
     if ((char*)top + size > end) {
-      out_of_space();
+      report_out_of_shared_space(SharedMiscData);
     }
     assert((intptr_t)start % sizeof(oop) == 0, "bad alignment");
     assert(size % sizeof(oop) == 0, "bad size");
@@ -870,18 +898,12 @@ static void print_contents() {
 
 class PatchKlassVtables: public ObjectClosure {
 private:
-  void*         _vtbl_ptr;
-  VirtualSpace* _md_vs;
   GrowableArray<klassOop>* _klass_objects;
 
 public:
-
-  PatchKlassVtables(void* vtbl_ptr, VirtualSpace* md_vs) {
-    _vtbl_ptr = vtbl_ptr;
-    _md_vs = md_vs;
+  PatchKlassVtables() {
     _klass_objects = new GrowableArray<klassOop>();
   }
-
 
   void do_object(oop obj) {
     if (obj->is_klass()) {
@@ -889,26 +911,39 @@ public:
     }
   }
 
-
-  void patch(void** vtbl_list, int vtbl_list_size) {
-    for (int i = 0; i < _klass_objects->length(); ++i) {
+  void patch(void** vtbl_list, void* new_vtable_start) {
+    int n = _klass_objects->length();
+    for (int i = 0; i < n; i++) {
       klassOop obj = (klassOop)_klass_objects->at(i);
       Klass* k = obj->klass_part();
-      void* v =  *(void**)k;
-
-      int n;
-      for (n = 0; n < vtbl_list_size; ++n) {
-        *(void**)k = NULL;
-        if (vtbl_list[n] == v) {
-          *(void**)k = (void**)_vtbl_ptr +
-                                 (n * CompactingPermGenGen::num_virtuals);
-          break;
-        }
-      }
-      guarantee(n < vtbl_list_size, "unable to find matching vtbl pointer");
+      *(void**)k = CompactingPermGenGen::find_matching_vtbl_ptr(
+                     vtbl_list, new_vtable_start, k);
     }
   }
 };
+
+// Walk through all symbols and patch their vtable pointers.
+// Note that symbols have vtable pointers only in non-product builds
+// (see allocation.hpp).
+
+#ifndef PRODUCT
+class PatchSymbolVtables: public SymbolClosure {
+private:
+  void* _new_vtbl_ptr;
+
+public:
+  PatchSymbolVtables(void** vtbl_list, void* new_vtable_start) {
+    Symbol s;
+    _new_vtbl_ptr = CompactingPermGenGen::find_matching_vtbl_ptr(
+                      vtbl_list, new_vtable_start, &s);
+  }
+
+  void do_symbol(Symbol** p) {
+    Symbol* sym = load_symbol(p);
+    *(void**)sym = _new_vtbl_ptr;
+  }
+};
+#endif
 
 
 // Populate the shared space.
@@ -969,7 +1004,6 @@ public:
 
     MarkObjectsOopClosure mark_all;
     MarkCommonReadOnly mark_common_ro;
-    MarkCommonSymbols mark_common_symbols;
     MarkStringValues mark_string_values;
     MarkReadWriteObjects mark_rw;
     MarkStringObjects mark_strings;
@@ -1013,112 +1047,6 @@ public:
     MarkAndMoveOrderedReadOnly  mark_and_move_ordered_ro(&move_ro);
     MarkAndMoveOrderedReadWrite mark_and_move_ordered_rw(&move_rw);
 
-    // Phase 1a: move commonly used read-only objects to the read-only space.
-
-    if (SharedOptimizeColdStart) {
-      tty->print("Moving pre-ordered read-only objects to shared space at " PTR_FORMAT " ... ",
-                 _ro_space->top());
-      for (int i = 0; i < _class_promote_order->length(); i++) {
-        oop obj = _class_promote_order->at(i);
-        mark_and_move_ordered_ro.do_object(obj);
-      }
-      tty->print_cr("done. ");
-    }
-
-    tty->print("Moving read-only objects to shared space at " PTR_FORMAT " ... ",
-               _ro_space->top());
-    gch->object_iterate(&mark_common_ro);
-    gch->object_iterate(&move_ro);
-    tty->print_cr("done. ");
-
-    // Phase 1b: move commonly used symbols to the read-only space.
-
-    tty->print("Moving common symbols to shared space at " PTR_FORMAT " ... ",
-               _ro_space->top());
-    gch->object_iterate(&mark_common_symbols);
-    gch->object_iterate(&move_ro);
-    tty->print_cr("done. ");
-
-    // Phase 1c: move remaining symbols to the read-only space
-    // (e.g. String initializers).
-
-    tty->print("Moving remaining symbols to shared space at " PTR_FORMAT " ... ",
-               _ro_space->top());
-    vmSymbols::oops_do(&mark_all, true);
-    gch->object_iterate(&move_ro);
-    tty->print_cr("done. ");
-
-    // Phase 1d: move String character arrays to the read-only space.
-
-    tty->print("Moving string char arrays to shared space at " PTR_FORMAT " ... ",
-               _ro_space->top());
-    gch->object_iterate(&mark_string_values);
-    gch->object_iterate(&move_ro);
-    tty->print_cr("done. ");
-
-    // Phase 2: move all remaining symbols to the read-only space.  The
-    // remaining symbols are assumed to be string initializers no longer
-    // referenced.
-
-    void* extra_symbols = _ro_space->top();
-    tty->print("Moving additional symbols to shared space at " PTR_FORMAT " ... ",
-               _ro_space->top());
-    SymbolTable::oops_do(&mark_all);
-    gch->object_iterate(&move_ro);
-    tty->print_cr("done. ");
-    tty->print_cr("Read-only space ends at " PTR_FORMAT ", %d bytes.",
-                  _ro_space->top(), _ro_space->used());
-
-    // Phase 3: move read-write objects to the read-write space, except
-    // Strings.
-
-    if (SharedOptimizeColdStart) {
-      tty->print("Moving pre-ordered read-write objects to shared space at " PTR_FORMAT " ... ",
-                 _rw_space->top());
-      for (int i = 0; i < _class_promote_order->length(); i++) {
-        oop obj = _class_promote_order->at(i);
-        mark_and_move_ordered_rw.do_object(obj);
-      }
-      tty->print_cr("done. ");
-    }
-    tty->print("Moving read-write objects to shared space at " PTR_FORMAT " ... ",
-               _rw_space->top());
-    Universe::oops_do(&mark_all, true);
-    SystemDictionary::oops_do(&mark_all);
-    oop tmp = Universe::arithmetic_exception_instance();
-    mark_object(java_lang_Throwable::message(tmp));
-    gch->object_iterate(&mark_rw);
-    gch->object_iterate(&move_rw);
-    tty->print_cr("done. ");
-
-    // Phase 4: move String objects to the read-write space.
-
-    tty->print("Moving String objects to shared space at " PTR_FORMAT " ... ",
-               _rw_space->top());
-    StringTable::oops_do(&mark_all);
-    gch->object_iterate(&mark_strings);
-    gch->object_iterate(&move_rw);
-    tty->print_cr("done. ");
-    tty->print_cr("Read-write space ends at " PTR_FORMAT ", %d bytes.",
-                  _rw_space->top(), _rw_space->used());
-
-#ifdef DEBUG
-    // Check: scan for objects which were not moved.
-
-    CheckRemainingObjects check_objects;
-    gch->object_iterate(&check_objects);
-    check_objects.status();
-#endif
-
-    // Resolve forwarding in objects and saved C++ structures
-    tty->print("Updating references to shared objects ... ");
-    ResolveForwardingClosure resolve;
-    Universe::oops_do(&resolve);
-    SystemDictionary::oops_do(&resolve);
-    StringTable::oops_do(&resolve);
-    SymbolTable::oops_do(&resolve);
-    vmSymbols::oops_do(&resolve);
-
     // Set up the share data and shared code segments.
 
     char* md_top = _md_vs->low();
@@ -1144,6 +1072,122 @@ public:
                                                   &md_top, md_end,
                                                   &mc_top, mc_end);
 
+    // Reserve space for the total size and the number of stored symbols.
+
+    md_top += sizeof(intptr_t) * 2;
+
+    MoveSymbols move_symbols(md_top, md_end);
+    CommonSymbolsClosure traverse_common_symbols(&move_symbols);
+
+    // Phase 1a: remove symbols with _refcount == 0
+
+    SymbolTable::unlink();
+
+    // Phase 1b: move commonly used symbols referenced by oop fields.
+
+    tty->print("Moving common symbols to metadata section at " PTR_FORMAT " ... ",
+               move_symbols.get_top());
+    gch->object_iterate(&traverse_common_symbols);
+    tty->print_cr("done. ");
+
+    // Phase 1c: move known names and signatures.
+
+    tty->print("Moving vmSymbols to metadata section at " PTR_FORMAT " ... ",
+               move_symbols.get_top());
+    vmSymbols::symbols_do(&move_symbols);
+    tty->print_cr("done. ");
+
+    // Phase 1d: move the remaining symbols by scanning the whole SymbolTable.
+
+    void* extra_symbols = move_symbols.get_top();
+    tty->print("Moving the remaining symbols to metadata section at " PTR_FORMAT " ... ",
+               move_symbols.get_top());
+    SymbolTable::symbols_do(&move_symbols);
+    tty->print_cr("done. ");
+
+    // Record the total length of all symbols at the beginning of the block.
+    ((intptr_t*)md_top)[-2] = move_symbols.get_top() - md_top;
+    ((intptr_t*)md_top)[-1] = move_symbols.count();
+    tty->print_cr("Moved %d symbols, %d bytes.",
+                  move_symbols.count(), move_symbols.get_top() - md_top);
+    // Advance the pointer to the end of symbol store.
+    md_top = move_symbols.get_top();
+
+
+    // Phase 2: move commonly used read-only objects to the read-only space.
+
+    if (SharedOptimizeColdStart) {
+      tty->print("Moving pre-ordered read-only objects to shared space at " PTR_FORMAT " ... ",
+                 _ro_space->top());
+      for (int i = 0; i < _class_promote_order->length(); i++) {
+        oop obj = _class_promote_order->at(i);
+        mark_and_move_ordered_ro.do_object(obj);
+      }
+      tty->print_cr("done. ");
+    }
+
+    tty->print("Moving read-only objects to shared space at " PTR_FORMAT " ... ",
+               _ro_space->top());
+    gch->object_iterate(&mark_common_ro);
+    gch->object_iterate(&move_ro);
+    tty->print_cr("done. ");
+
+    // Phase 3: move String character arrays to the read-only space.
+
+    tty->print("Moving string char arrays to shared space at " PTR_FORMAT " ... ",
+               _ro_space->top());
+    gch->object_iterate(&mark_string_values);
+    gch->object_iterate(&move_ro);
+    tty->print_cr("done. ");
+
+    // Phase 4: move read-write objects to the read-write space, except
+    // Strings.
+
+    if (SharedOptimizeColdStart) {
+      tty->print("Moving pre-ordered read-write objects to shared space at " PTR_FORMAT " ... ",
+                 _rw_space->top());
+      for (int i = 0; i < _class_promote_order->length(); i++) {
+        oop obj = _class_promote_order->at(i);
+        mark_and_move_ordered_rw.do_object(obj);
+      }
+      tty->print_cr("done. ");
+    }
+    tty->print("Moving read-write objects to shared space at " PTR_FORMAT " ... ",
+               _rw_space->top());
+    Universe::oops_do(&mark_all, true);
+    SystemDictionary::oops_do(&mark_all);
+    oop tmp = Universe::arithmetic_exception_instance();
+    mark_object(java_lang_Throwable::message(tmp));
+    gch->object_iterate(&mark_rw);
+    gch->object_iterate(&move_rw);
+    tty->print_cr("done. ");
+
+    // Phase 5: move String objects to the read-write space.
+
+    tty->print("Moving String objects to shared space at " PTR_FORMAT " ... ",
+               _rw_space->top());
+    StringTable::oops_do(&mark_all);
+    gch->object_iterate(&mark_strings);
+    gch->object_iterate(&move_rw);
+    tty->print_cr("done. ");
+    tty->print_cr("Read-write space ends at " PTR_FORMAT ", %d bytes.",
+                  _rw_space->top(), _rw_space->used());
+
+#ifdef DEBUG
+    // Check: scan for objects which were not moved.
+
+    CheckRemainingObjects check_objects;
+    gch->object_iterate(&check_objects);
+    check_objects.status();
+#endif
+
+    // Resolve forwarding in objects and saved C++ structures
+    tty->print("Updating references to shared objects ... ");
+    ResolveForwardingClosure resolve;
+    Universe::oops_do(&resolve);
+    SystemDictionary::oops_do(&resolve);
+    StringTable::oops_do(&resolve);
+
     // Fix (forward) all of the references in these shared objects (which
     // are required to point ONLY to objects in the shared spaces).
     // Also, create a list of all objects which might later contain a
@@ -1166,9 +1210,13 @@ public:
     // pointer resolution, so that methods can be promoted in any order
     // with respect to their holder classes.
 
-    SortMethodsClosure sort(THREAD);
+    SortMethodsClosure sort;
     gen->ro_space()->object_iterate(&sort);
     gen->rw_space()->object_iterate(&sort);
+
+    ReinitializeItables reinit_itables(THREAD);
+    gen->ro_space()->object_iterate(&reinit_itables);
+    gen->rw_space()->object_iterate(&reinit_itables);
     tty->print_cr("done. ");
     tty->cr();
 
@@ -1233,9 +1281,16 @@ public:
     // Update the vtable pointers in all of the Klass objects in the
     // heap. They should point to newly generated vtable.
 
-    PatchKlassVtables pkvt(vtable, _md_vs);
+    PatchKlassVtables pkvt;
     _rw_space->object_iterate(&pkvt);
-    pkvt.patch(vtbl_list, vtbl_list_size);
+    pkvt.patch(vtbl_list, vtable);
+
+#ifndef PRODUCT
+    // Update the vtable pointers in all symbols,
+    // but only in non-product builds where symbols DO have virtual methods.
+    PatchSymbolVtables psvt(vtbl_list, vtable);
+    SymbolTable::symbols_do(&psvt);
+#endif
 
     char* saved_vtbl = (char*)malloc(vtbl_list_size * sizeof(void*));
     memmove(saved_vtbl, vtbl_list, vtbl_list_size * sizeof(void*));
@@ -1302,6 +1357,19 @@ jint CompactingPermGenGen::dump_shared(GrowableArray<oop>* class_promote_order, 
                                 gen->md_space(), gen->mc_space());
   VMThread::execute(&op);
   return JNI_OK;
+}
+
+void* CompactingPermGenGen::find_matching_vtbl_ptr(void** vtbl_list,
+                                                   void* new_vtable_start,
+                                                   void* obj) {
+  void* old_vtbl_ptr = *(void**)obj;
+  for (int i = 0; i < vtbl_list_size; i++) {
+    if (vtbl_list[i] == old_vtbl_ptr) {
+      return (void**)new_vtable_start + i * num_virtuals;
+    }
+  }
+  ShouldNotReachHere();
+  return NULL;
 }
 
 
@@ -1431,8 +1499,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
       computed_jsum = jsum(computed_jsum, class_name, (const int)name_len - 1);
 
       // Got a class name - load it.
-      symbolHandle class_name_symbol = oopFactory::new_symbol(class_name,
-                                                              THREAD);
+      TempNewSymbol class_name_symbol = SymbolTable::new_symbol(class_name, THREAD);
       guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
       klassOop klass = SystemDictionary::resolve_or_null(class_name_symbol,
                                                          THREAD);

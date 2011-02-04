@@ -41,7 +41,7 @@
 
 // hash P(31) from Kernighan & Ritchie
 
-inline unsigned int Hashtable::hash_symbol(const char* s, int len) {
+inline unsigned int BasicHashtable::hash_symbol(const char* s, int len) {
   unsigned int h = 0;
   while (len-- > 0) {
     h = 31*h + (unsigned) *s;

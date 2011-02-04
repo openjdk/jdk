@@ -792,7 +792,7 @@ class InterpretedArgumentOopFinder: public SignatureInfo {
   }
 
  public:
-  InterpretedArgumentOopFinder(symbolHandle signature, bool has_receiver, frame* fr, OopClosure* f) : SignatureInfo(signature), _has_receiver(has_receiver) {
+  InterpretedArgumentOopFinder(Symbol* signature, bool has_receiver, frame* fr, OopClosure* f) : SignatureInfo(signature), _has_receiver(has_receiver) {
     // compute size of arguments
     int args_size = ArgumentSizeComputer(signature).size() + (has_receiver ? 1 : 0);
     assert(!fr->is_interpreted_frame() ||
@@ -846,7 +846,7 @@ class EntryFrameOopFinder: public SignatureInfo {
   }
 
  public:
-   EntryFrameOopFinder(frame* frame, symbolHandle signature, bool is_static) : SignatureInfo(signature) {
+   EntryFrameOopFinder(frame* frame, Symbol* signature, bool is_static) : SignatureInfo(signature) {
      _f = NULL; // will be set later
      _fr = frame;
      _is_static = is_static;
@@ -861,7 +861,7 @@ class EntryFrameOopFinder: public SignatureInfo {
 
 };
 
-oop* frame::interpreter_callee_receiver_addr(symbolHandle signature) {
+oop* frame::interpreter_callee_receiver_addr(Symbol* signature) {
   ArgumentSizeComputer asc(signature);
   int size = asc.size();
   return (oop *)interpreter_frame_tos_at(size);
@@ -922,7 +922,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
-  symbolHandle signature;
+  Symbol* signature = NULL;
   bool has_receiver = false;
 
   // Process a callee's arguments if we are at a call site
@@ -932,7 +932,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   if (!m->is_native()) {
     Bytecode_invoke call = Bytecode_invoke_check(m, bci);
     if (call.is_valid()) {
-      signature = symbolHandle(thread, call.signature());
+      signature = call.signature();
       has_receiver = call.has_receiver();
       if (map->include_argument_oops() &&
           interpreter_frame_expression_stack_size() > 0) {
@@ -965,7 +965,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 }
 
 
-void frame::oops_interpreted_arguments_do(symbolHandle signature, bool has_receiver, OopClosure* f) {
+void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) {
   InterpretedArgumentOopFinder finder(signature, has_receiver, this, f);
   finder.oops_do();
 }
@@ -1014,7 +1014,7 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   }
 
  public:
-  CompiledArgumentOopFinder(symbolHandle signature, bool has_receiver, OopClosure* f, frame fr,  const RegisterMap* reg_map)
+  CompiledArgumentOopFinder(Symbol* signature, bool has_receiver, OopClosure* f, frame fr,  const RegisterMap* reg_map)
     : SignatureInfo(signature) {
 
     // initialize CompiledArgumentOopFinder
@@ -1026,7 +1026,7 @@ class CompiledArgumentOopFinder: public SignatureInfo {
     _arg_size  = ArgumentSizeComputer(signature).size() + (has_receiver ? 1 : 0);
 
     int arg_size;
-    _regs = SharedRuntime::find_callee_arguments(signature(), has_receiver, &arg_size);
+    _regs = SharedRuntime::find_callee_arguments(signature, has_receiver, &arg_size);
     assert(arg_size == _arg_size, "wrong arg size");
   }
 
@@ -1039,7 +1039,7 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   }
 };
 
-void frame::oops_compiled_arguments_do(symbolHandle signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f) {
+void frame::oops_compiled_arguments_do(Symbol* signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f) {
   ResourceMark rm;
   CompiledArgumentOopFinder finder(signature, has_receiver, f, *this, reg_map);
   finder.oops_do();
@@ -1099,8 +1099,7 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
     // must collect argument oops, as nobody else is doing it
     Thread *thread = Thread::current();
     methodHandle m (thread, entry_frame_call_wrapper()->callee_method());
-    symbolHandle signature (thread, m->signature());
-    EntryFrameOopFinder finder(this, signature, m->is_static());
+    EntryFrameOopFinder finder(this, m->signature(), m->is_static());
     finder.arguments_do(f);
   }
   // Traverse the Handle Block saved in the entry frame

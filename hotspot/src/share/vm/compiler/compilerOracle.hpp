@@ -31,8 +31,6 @@
 // CompilerOracle is an interface for turning on and off compilation
 // for some methods
 
-class symbolHandle;
-
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;

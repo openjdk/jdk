@@ -30,11 +30,11 @@
 #include "utilities/xmlstream.hpp"
 
 
-symbolOop vmSymbols::_symbols[vmSymbols::SID_LIMIT];
+Symbol* vmSymbols::_symbols[vmSymbols::SID_LIMIT];
 
-symbolOop vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
+Symbol* vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
 
-inline int compare_symbol(symbolOop a, symbolOop b) {
+inline int compare_symbol(Symbol* a, Symbol* b) {
   if (a == b)  return 0;
   // follow the natural address order:
   return (address)a > (address)b ? +1 : -1;
@@ -43,8 +43,8 @@ inline int compare_symbol(symbolOop a, symbolOop b) {
 static vmSymbols::SID vm_symbol_index[vmSymbols::SID_LIMIT];
 extern "C" {
   static int compare_vmsymbol_sid(const void* void_a, const void* void_b) {
-    symbolOop a = vmSymbols::symbol_at(*((vmSymbols::SID*) void_a));
-    symbolOop b = vmSymbols::symbol_at(*((vmSymbols::SID*) void_b));
+    Symbol* a = vmSymbols::symbol_at(*((vmSymbols::SID*) void_a));
+    Symbol* b = vmSymbols::symbol_at(*((vmSymbols::SID*) void_b));
     return compare_symbol(a, b);
   }
 }
@@ -79,7 +79,7 @@ void vmSymbols::initialize(TRAPS) {
   if (!UseSharedSpaces) {
     const char* string = &vm_symbol_bodies[0];
     for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
-      symbolOop sym = oopFactory::new_symbol(string, CHECK);
+      Symbol* sym = SymbolTable::new_symbol(string, CHECK);
       _symbols[index] = sym;
       string += strlen(string); // skip string body
       string += 1;              // skip trailing null
@@ -100,7 +100,7 @@ void vmSymbols::initialize(TRAPS) {
 #ifdef ASSERT
   // Check for duplicates:
   for (int i1 = (int)FIRST_SID; i1 < (int)SID_LIMIT; i1++) {
-    symbolOop sym = symbol_at((SID)i1);
+    Symbol* sym = symbol_at((SID)i1);
     for (int i2 = (int)FIRST_SID; i2 < i1; i2++) {
       if (symbol_at((SID)i2) == sym) {
         tty->print("*** Duplicate VM symbol SIDs %s(%d) and %s(%d): \"",
@@ -128,16 +128,16 @@ void vmSymbols::initialize(TRAPS) {
     // Spot-check correspondence between strings, symbols, and enums:
     assert(_symbols[NO_SID] == NULL, "must be");
     const char* str = "java/lang/Object";
-    symbolOop sym = oopFactory::new_symbol(str, CHECK);
-    assert(strcmp(str, (char*)sym->base()) == 0, "");
-    assert(sym == java_lang_Object(), "");
+    TempNewSymbol jlo = SymbolTable::new_symbol(str, CHECK);
+    assert(strncmp(str, (char*)jlo->base(), jlo->utf8_length()) == 0, "");
+    assert(jlo == java_lang_Object(), "");
     SID sid = VM_SYMBOL_ENUM_NAME(java_lang_Object);
-    assert(find_sid(sym) == sid, "");
-    assert(symbol_at(sid) == sym, "");
+    assert(find_sid(jlo) == sid, "");
+    assert(symbol_at(sid) == jlo, "");
 
     // Make sure find_sid produces the right answer in each case.
     for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
-      sym = symbol_at((SID)index);
+      Symbol* sym = symbol_at((SID)index);
       sid = find_sid(sym);
       assert(sid == (SID)index, "symbol index works");
       // Note:  If there are duplicates, this assert will fail.
@@ -147,8 +147,8 @@ void vmSymbols::initialize(TRAPS) {
     // The string "format" happens (at the moment) not to be a vmSymbol,
     // though it is a method name in java.lang.String.
     str = "format";
-    sym = oopFactory::new_symbol(str, CHECK);
-    sid = find_sid(sym);
+    TempNewSymbol fmt = SymbolTable::new_symbol(str, CHECK);
+    sid = find_sid(fmt);
     assert(sid == NO_SID, "symbol index works (negative test)");
   }
 #endif
@@ -172,22 +172,23 @@ const char* vmSymbols::name_for(vmSymbols::SID sid) {
 
 
 
-void vmSymbols::oops_do(OopClosure* f, bool do_all) {
+void vmSymbols::symbols_do(SymbolClosure* f) {
   for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
-    f->do_oop((oop*) &_symbols[index]);
+    f->do_symbol(&_symbols[index]);
   }
   for (int i = 0; i < T_VOID+1; i++) {
-    if (_type_signatures[i] != NULL) {
-      assert(i >= T_BOOLEAN, "checking");
-      f->do_oop((oop*)&_type_signatures[i]);
-    } else if (do_all) {
-      f->do_oop((oop*)&_type_signatures[i]);
-    }
+    f->do_symbol(&_type_signatures[i]);
   }
 }
 
+void vmSymbols::serialize(SerializeOopClosure* soc) {
+  soc->do_region((u_char*)&_symbols[FIRST_SID],
+                 (SID_LIMIT - FIRST_SID) * sizeof(_symbols[0]));
+  soc->do_region((u_char*)_type_signatures, sizeof(_type_signatures));
+}
 
-BasicType vmSymbols::signature_type(symbolOop s) {
+
+BasicType vmSymbols::signature_type(Symbol* s) {
   assert(s != NULL, "checking");
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     if (s == _type_signatures[i]) {
@@ -205,7 +206,7 @@ static int find_sid_calls, find_sid_probes;
 // (Typical counts are calls=7000 and probes=17000.)
 #endif
 
-vmSymbols::SID vmSymbols::find_sid(symbolOop symbol) {
+vmSymbols::SID vmSymbols::find_sid(Symbol* symbol) {
   // Handle the majority of misses by a bounds check.
   // Then, use a binary search over the index.
   // Expected trip count is less than log2_SID_LIMIT, about eight.
@@ -260,7 +261,7 @@ vmSymbols::SID vmSymbols::find_sid(symbolOop symbol) {
     // (We have already proven that there are no duplicates in the list.)
     SID sid2 = NO_SID;
     for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
-      symbolOop sym2 = symbol_at((SID)index);
+      Symbol* sym2 = symbol_at((SID)index);
       if (sym2 == symbol) {
         sid2 = (SID)index;
         break;
@@ -319,9 +320,9 @@ vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest)
 
 methodOop vmIntrinsics::method_for(vmIntrinsics::ID id) {
   if (id == _none)  return NULL;
-  symbolOop cname = vmSymbols::symbol_at(class_for(id));
-  symbolOop mname = vmSymbols::symbol_at(name_for(id));
-  symbolOop msig  = vmSymbols::symbol_at(signature_for(id));
+  Symbol* cname = vmSymbols::symbol_at(class_for(id));
+  Symbol* mname = vmSymbols::symbol_at(name_for(id));
+  Symbol* msig  = vmSymbols::symbol_at(signature_for(id));
   if (cname == NULL || mname == NULL || msig == NULL)  return NULL;
   klassOop k = SystemDictionary::find_well_known_klass(cname);
   if (k == NULL)  return NULL;
@@ -490,17 +491,17 @@ vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
 #ifndef PRODUCT
 // verify_method performs an extra check on a matched intrinsic method
 
-static bool match_method(methodOop m, symbolOop n, symbolOop s) {
+static bool match_method(methodOop m, Symbol* n, Symbol* s) {
   return (m->name() == n &&
           m->signature() == s);
 }
 
-static vmIntrinsics::ID match_method_with_klass(methodOop m, symbolOop mk) {
+static vmIntrinsics::ID match_method_with_klass(methodOop m, Symbol* mk) {
 #define VM_INTRINSIC_MATCH(id, klassname, namepart, sigpart, flags) \
-  { symbolOop k = vmSymbols::klassname(); \
+  { Symbol* k = vmSymbols::klassname(); \
     if (mk == k) { \
-      symbolOop n = vmSymbols::namepart(); \
-      symbolOop s = vmSymbols::sigpart(); \
+      Symbol* n = vmSymbols::namepart(); \
+      Symbol* s = vmSymbols::sigpart(); \
       if (match_method(m, n, s)) \
         return vmIntrinsics::id; \
     } }
@@ -511,7 +512,7 @@ static vmIntrinsics::ID match_method_with_klass(methodOop m, symbolOop mk) {
 }
 
 void vmIntrinsics::verify_method(ID actual_id, methodOop m) {
-  symbolOop mk = Klass::cast(m->method_holder())->name();
+  Symbol* mk = Klass::cast(m->method_holder())->name();
   ID declared_id = match_method_with_klass(m, mk);
 
   if (declared_id == actual_id)  return; // success
