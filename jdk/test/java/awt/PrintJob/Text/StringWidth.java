@@ -63,7 +63,8 @@ public class StringWidth extends Frame {
   }
 
   public static void main(String[] args) {
-    new StringWidth();
+    StringWidth sw = new StringWidth();
+    sw.dispose();
   }
 
 }
