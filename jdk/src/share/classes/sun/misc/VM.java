@@ -235,6 +235,9 @@ public class VM {
         return savedProps.getProperty(key);
     }
 
+    // TODO: the Property Management needs to be refactored and
+    // the appropriate prop keys need to be accessible to the
+    // calling classes to avoid duplication of keys.
     private static final Properties savedProps = new Properties();
 
     // Save a private copy of the system properties and remove
@@ -283,6 +286,9 @@ public class VM {
 
         // used by java.util.zip.ZipFile
         props.remove("sun.zip.disableMemoryMapping");
+
+        // used by sun.launcher.LauncherHelper
+        props.remove("sun.java.launcher.diag");
     }
 
     // Initialize any miscellenous operating system settings that need to be
