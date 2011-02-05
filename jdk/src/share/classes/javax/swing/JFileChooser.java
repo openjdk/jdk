@@ -256,10 +256,6 @@ public class JFileChooser extends JComponent implements Accessible {
 
     private FileView fileView = null;
 
-    // uiFileView is not serialized, as it is initialized
-    // by updateUI() after deserialization
-    private transient FileView uiFileView = null;
-
     private boolean controlsShown = true;
 
     private boolean useFileHiding = true;
@@ -1504,6 +1500,9 @@ public class JFileChooser extends JComponent implements Accessible {
             if(getFileView() != null) {
                 filename = getFileView().getName(f);
             }
+
+            FileView uiFileView = getUI().getFileView(this);
+
             if(filename == null && uiFileView != null) {
                 filename = uiFileView.getName(f);
             }
@@ -1524,6 +1523,9 @@ public class JFileChooser extends JComponent implements Accessible {
             if(getFileView() != null) {
                 description = getFileView().getDescription(f);
             }
+
+            FileView uiFileView = getUI().getFileView(this);
+
             if(description == null && uiFileView != null) {
                 description = uiFileView.getDescription(f);
             }
@@ -1544,6 +1546,9 @@ public class JFileChooser extends JComponent implements Accessible {
             if(getFileView() != null) {
                 typeDescription = getFileView().getTypeDescription(f);
             }
+
+            FileView uiFileView = getUI().getFileView(this);
+
             if(typeDescription == null && uiFileView != null) {
                 typeDescription = uiFileView.getTypeDescription(f);
             }
@@ -1564,6 +1569,9 @@ public class JFileChooser extends JComponent implements Accessible {
             if(getFileView() != null) {
                 icon = getFileView().getIcon(f);
             }
+
+            FileView uiFileView = getUI().getFileView(this);
+
             if(icon == null && uiFileView != null) {
                 icon = uiFileView.getIcon(f);
             }
@@ -1584,6 +1592,9 @@ public class JFileChooser extends JComponent implements Accessible {
             if (getFileView() != null) {
                 traversable = getFileView().isTraversable(f);
             }
+
+            FileView uiFileView = getUI().getFileView(this);
+
             if (traversable == null && uiFileView != null) {
                 traversable = uiFileView.isTraversable(f);
             }
@@ -1791,7 +1802,6 @@ public class JFileChooser extends JComponent implements Accessible {
         }
         setUI(ui);
 
-        uiFileView = getUI().getFileView(this);
         if(isAcceptAllFileFilterUsed()) {
             addChoosableFileFilter(getAcceptAllFileFilter());
         }

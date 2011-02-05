@@ -161,11 +161,11 @@ typedef short INT16;
 
 /* INT32 must hold at least signed 32-bit values. */
 
-#ifndef XMD_H                   /* X11/xmd.h correctly defines INT32 */
-#ifndef _LP64
-typedef long INT32;
-#else
+#ifndef XMD_H                         /* X11/xmd.h correctly defines INT32 */
+#if defined(_LP64) || defined(_WIN32) /* _WIN32 is on all windows platfroms (x86 and x64) */
 typedef int INT32;
+#else
+typedef long INT32;
 #endif
 #endif
 
@@ -221,10 +221,13 @@ typedef unsigned int JDIMENSION;
  * explicit coding is needed; see uses of the NEED_FAR_POINTERS symbol.
  */
 
+
+#ifndef FAR
 #ifdef NEED_FAR_POINTERS
 #define FAR  far
 #else
 #define FAR
+#endif
 #endif
 
 

@@ -50,7 +50,7 @@
 #
 # Assumes basic unix utilities are in the PATH already (uname, hostname, etc.).
 #
-# On Windows, assumes PROCESSOR_IDENTIFIER, VS71COMNTOOLS,
+# On Windows, assumes PROCESSOR_IDENTIFIER, VS100COMNTOOLS,
 #   SYSTEMROOT (or SystemRoot), COMPUTERNAME (or hostname works), and
 #   USERNAME is defined in the environment.
 #   This profile does not rely on using vcvars32.bat and 64bit Setup.bat.
@@ -81,8 +81,7 @@
 #    Windows Only:
 #      ALT_UNIXCOMMAND_PATH
 #      ALT_DXSDK_PATH
-#      ALT_MSVCRT_DLL_PATH
-#      ALT_MSVCR71_DLL_PATH
+#      ALT_MSVCRNN_DLL_PATH
 #
 #############################################################################
 #
@@ -213,78 +212,17 @@ else
   # Compiler setup (nasty part)
   #   NOTE: You can use vcvars32.bat to set PATH, LIB, and INCLUDE.
   #   NOTE: CYGWIN has a link.exe too, make sure the compilers are first
-  if [ "${windows_arch}" = i586 ] ; then
-    # 32bit Windows compiler settings
-    # VisualStudio .NET 2003 VC++ 7.1 (VS71COMNTOOLS should be defined)
-    vs_root=$(${cygpath} "${VS71COMNTOOLS}/../..")
-    # Fill in PATH, LIB, and INCLUDE (unset all others to make sure)
-    vc7_root="${vs_root}/Vc7"
-    compiler_path="${vc7_root}/bin"
-    platform_sdk="${vc7_root}/PlatformSDK"
-        
-    # LIB and INCLUDE must use ; as a separator
-    include4sdk="${vc7_root}/atlmfc/include"
-    include4sdk="${include4sdk};${vc7_root}/include"
-    include4sdk="${include4sdk};${platform_sdk}/include/prerelease"
-    include4sdk="${include4sdk};${platform_sdk}/include"
-    include4sdk="${include4sdk};${vs_root}/SDK/v1.1/include"
-    lib4sdk="${lib4sdk};${vc7_root}/lib"
-    lib4sdk="${lib4sdk};${platform_sdk}/lib/prerelease"
-    lib4sdk="${lib4sdk};${platform_sdk}/lib"
-    lib4sdk="${lib4sdk};${vs_root}/SDK/v1.1/lib"
-    # Search path and DLL locating path
-    #   WARNING: CYGWIN has a link.exe too, make sure compilers are first
-    path4sdk="${vs_root}/Common7/Tools/bin;${path4sdk}"
-    path4sdk="${vs_root}/SDK/v1.1/bin;${path4sdk}"
-    path4sdk="${vs_root}/Common7/Tools;${path4sdk}"
-    path4sdk="${vs_root}/Common7/Tools/bin/prerelease;${path4sdk}"
-    path4sdk="${vs_root}/Common7/IDE;${path4sdk}"
-    path4sdk="${compiler_path};${path4sdk}"
-  elif [ "${windows_arch}" = amd64 ] ; then
-    # AMD64 64bit Windows compiler settings
-    if [ "${ALT_DEPLOY_MSSDK}" != "" ] ; then
-      platform_sdk=${ALT_DEPLOY_MSSDK}
-    else
-      platform_sdk=$(${cygpath} "C:/Program Files/Microsoft Platform SDK/")
-    fi
-    if [ "${ALT_COMPILER_PATH}" != "" ] ; then
-      compiler_path=${ALT_COMPILER_PATH}
-      if [ "${ALT_DEPLOY_MSSDK}" = "" ] ; then
-        platform_sdk=${ALT_COMPILER_PATH}/../../../..
-      fi
-    else
-      compiler_path="${platform_sdk}/Bin/win64/x86/AMD64"
-    fi
-    # LIB and INCLUDE must use ; as a separator
-    include4sdk="${platform_sdk}/Include"
-    include4sdk="${include4sdk};${platform_sdk}/Include/crt/sys"
-    include4sdk="${include4sdk};${platform_sdk}/Include/mfc"
-    include4sdk="${include4sdk};${platform_sdk}/Include/atl"
-    include4sdk="${include4sdk};${platform_sdk}/Include/crt"
-    lib4sdk="${platform_sdk}/Lib/AMD64"
-    lib4sdk="${lib4sdk};${platform_sdk}/Lib/AMD64/atlmfc"
-    # Search path and DLL locating path
-    #   WARNING: CYGWIN has a link.exe too, make sure compilers are first
-    path4sdk="${platform_sdk}/bin;${path4sdk}"
-    path4sdk="${compiler_path};${path4sdk}"
-  fi
-  # Export LIB and INCLUDE
-  unset lib
-  unset Lib
-  LIB="${lib4sdk}"
-  export LIB
-  unset include
-  unset Include
-  INCLUDE="${include4sdk}"
-  export INCLUDE
-    
-  # Turn all \\ into /, remove duplicates and trailing /
-  slash_path="$(echo ${path4sdk} | sed -e 's@\\\\@/@g' -e 's@//@/@g' -e 's@/$@@' -e 's@/;@;@g')"
-  path4sdk="${slash_path}"
-   
-  # Convert path4sdk to cygwin style
-  path4sdk="$(/usr/bin/cygpath -p ${path4sdk})"
 
+  # Use supplied vsvars.sh
+  repo=`hg root`
+  if [ -f "${repo}/make/scripts/vsvars.sh" ] ; then
+    eval `sh ${repo}/make/scripts/vsvars.sh -v10`
+  elif [ -f "${repo}/../make/scripts/vsvars.sh" ] ; then
+    eval `sh ${repo}/../make/scripts/vsvars.sh -v10`
+  else
+    echo "WARNING: No make/scripts/vsvars.sh file found"
+  fi
+    
 fi
 
 # Get the previous JDK to be used to bootstrap the build

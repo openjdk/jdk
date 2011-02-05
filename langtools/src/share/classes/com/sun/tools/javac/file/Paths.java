@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class Paths {
      * rt.jar as found on the default bootclass path.  If the user specified a
      * bootclasspath, null is used.
      */
-    private File bootClassPathRtJar = null;
+    private File defaultBootClassPathRtJar = null;
 
     /**
      *  Is bootclasspath the default?
@@ -143,8 +143,10 @@ public class Paths {
                 // no defaults for other paths
                 p = null;
         } else {
-            if (location == PLATFORM_CLASS_PATH)
+            if (location == PLATFORM_CLASS_PATH) {
+                defaultBootClassPathRtJar = null;
                 isDefaultBootClassPath = false;
+            }
             p = new Path();
             for (File f: path)
                 p.addFile(f, warn); // TODO: is use of warn appropriate?
@@ -185,8 +187,8 @@ public class Paths {
             : Collections.unmodifiableCollection(p);
     }
 
-    boolean isBootClassPathRtJar(File file) {
-        return file.equals(bootClassPathRtJar);
+    boolean isDefaultBootClassPathRtJar(File file) {
+        return file.equals(defaultBootClassPathRtJar);
     }
 
     /**
@@ -355,7 +357,7 @@ public class Paths {
     }
 
     private Path computeBootClassPath() {
-        bootClassPathRtJar = null;
+        defaultBootClassPathRtJar = null;
         Path path = new Path();
 
         String bootclasspathOpt = options.get(BOOTCLASSPATH);
@@ -380,7 +382,7 @@ public class Paths {
             File rt_jar = new File("rt.jar");
             for (File file : getPathEntries(files)) {
                 if (new File(file.getName()).equals(rt_jar))
-                    bootClassPathRtJar = file;
+                    defaultBootClassPathRtJar = file;
             }
         }
 

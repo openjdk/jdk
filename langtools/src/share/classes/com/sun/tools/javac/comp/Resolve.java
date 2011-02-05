@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,6 @@ public class Resolve {
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
     public final boolean allowMethodHandles;
-    public final boolean allowInvokeDynamic;
-    public final boolean allowTransitionalJSR292;
     private final boolean debugResolve;
 
     Scope polymorphicSignatureScope;
@@ -111,13 +109,8 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
-        allowTransitionalJSR292 = options.isSet("allowTransitionalJSR292");
         Target target = Target.instance(context);
-        allowMethodHandles = allowTransitionalJSR292 ||
-                target.hasMethodHandles();
-        allowInvokeDynamic = (allowTransitionalJSR292 ||
-                target.hasInvokedynamic()) &&
-                options.isSet("invokedynamic");
+        allowMethodHandles = target.hasMethodHandles();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
 
         inapplicableMethodException = new InapplicableMethodException(diags);
@@ -336,8 +329,7 @@ public class Resolve {
                         boolean useVarargs,
                         Warner warn)
         throws Infer.InferenceException {
-        boolean polymorphicSignature = (m.isPolymorphicSignatureGeneric() && allowMethodHandles) ||
-                                        isTransitionalDynamicCallSite(site, m);
+        boolean polymorphicSignature = m.isPolymorphicSignatureGeneric() && allowMethodHandles;
         if (useVarargs && (m.flags() & VARARGS) == 0)
             throw inapplicableMethodException.setMessage(null);
         Type mt = types.memberType(site, m);
@@ -346,10 +338,7 @@ public class Resolve {
         // need to inferred.
         List<Type> tvars = env.info.tvars;
         if (typeargtypes == null) typeargtypes = List.nil();
-        if (allowTransitionalJSR292 && polymorphicSignature && typeargtypes.nonEmpty()) {
-            //transitional 292 call sites might have wrong number of targs
-        }
-        else if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
+        if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
             // which is fine, see JLS3 15.12.2.1
         } else if (mt.tag == FORALL && typeargtypes.nonEmpty()) {
@@ -387,7 +376,7 @@ public class Resolve {
 
         if (instNeeded)
             return polymorphicSignature ?
-                infer.instantiatePolymorphicSignatureInstance(env, site, m.name, (MethodSymbol)m, argtypes, typeargtypes) :
+                infer.instantiatePolymorphicSignatureInstance(env, site, m.name, (MethodSymbol)m, argtypes) :
                 infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
@@ -400,14 +389,6 @@ public class Resolve {
         checkRawArgumentsAcceptable(argtypes, mt.getParameterTypes(),
                                 allowBoxing, useVarargs, warn);
         return mt;
-    }
-
-    boolean isTransitionalDynamicCallSite(Type site, Symbol sym) {
-        return allowTransitionalJSR292 &&  // old logic that doesn't use annotations
-                !sym.isPolymorphicSignatureInstance() &&
-                ((allowMethodHandles && site == syms.methodHandleType && // invokeExact, invokeGeneric, invoke
-                    (sym.name == names.invoke && sym.isPolymorphicSignatureGeneric())) ||
-                (site == syms.invokeDynamicType && allowInvokeDynamic)); // InvokeDynamic.XYZ
     }
 
     /** Same but returns null instead throwing a NoInstanceException
@@ -679,7 +660,7 @@ public class Resolve {
                       boolean operator) {
         if (sym.kind == ERR) return bestSoFar;
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
-        assert sym.kind < AMBIGUOUS;
+        Assert.check(sym.kind < AMBIGUOUS);
         try {
             rawInstantiate(env, site, sym, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings);
@@ -1255,6 +1236,7 @@ public class Resolve {
      */
     Symbol access(Symbol sym,
                   DiagnosticPosition pos,
+                  Symbol location,
                   Type site,
                   Name name,
                   boolean qualified,
@@ -1265,23 +1247,46 @@ public class Resolve {
             if (!site.isErroneous() &&
                 !Type.isErroneous(argtypes) &&
                 (typeargtypes==null || !Type.isErroneous(typeargtypes)))
-                logResolveError(errSym, pos, site, name, argtypes, typeargtypes);
+                logResolveError(errSym, pos, location, site, name, argtypes, typeargtypes);
             sym = errSym.access(name, qualified ? site.tsym : syms.noSymbol);
         }
         return sym;
     }
 
-    /** Same as above, but without type arguments and arguments.
+    /** Same as original access(), but without location.
+     */
+    Symbol access(Symbol sym,
+                  DiagnosticPosition pos,
+                  Type site,
+                  Name name,
+                  boolean qualified,
+                  List<Type> argtypes,
+                  List<Type> typeargtypes) {
+        return access(sym, pos, site.tsym, site, name, qualified, argtypes, typeargtypes);
+    }
+
+    /** Same as original access(), but without type arguments and arguments.
+     */
+    Symbol access(Symbol sym,
+                  DiagnosticPosition pos,
+                  Symbol location,
+                  Type site,
+                  Name name,
+                  boolean qualified) {
+        if (sym.kind >= AMBIGUOUS)
+            return access(sym, pos, location, site, name, qualified, List.<Type>nil(), null);
+        else
+            return sym;
+    }
+
+    /** Same as original access(), but without location, type arguments and arguments.
      */
     Symbol access(Symbol sym,
                   DiagnosticPosition pos,
                   Type site,
                   Name name,
                   boolean qualified) {
-        if (sym.kind >= AMBIGUOUS)
-            return access(sym, pos, site, name, qualified, List.<Type>nil(), null);
-        else
-            return sym;
+        return access(sym, pos, site.tsym, site, name, qualified);
     }
 
     /** Check that sym is not an abstract method.
@@ -1399,6 +1404,11 @@ public class Resolve {
     Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
                                   Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes) {
+        return resolveQualifiedMethod(pos, env, site.tsym, site, name, argtypes, typeargtypes);
+    }
+    Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
+                                  Symbol location, Type site, Name name, List<Type> argtypes,
+                                  List<Type> typeargtypes) {
         Symbol sym = startResolution();
         List<MethodResolutionPhase> steps = methodResolutionSteps;
         while (steps.nonEmpty() &&
@@ -1412,26 +1422,25 @@ public class Resolve {
             steps = steps.tail;
         }
         if (sym.kind >= AMBIGUOUS) {
-            if (site.tsym.isPolymorphicSignatureGeneric() ||
-                    isTransitionalDynamicCallSite(site, sym)) {
+            if (site.tsym.isPolymorphicSignatureGeneric()) {
                 //polymorphic receiver - synthesize new method symbol
                 env.info.varArgs = false;
                 sym = findPolymorphicSignatureInstance(env,
-                        site, name, null, argtypes, typeargtypes);
+                        site, name, null, argtypes);
             }
             else {
                 //if nothing is found return the 'first' error
                 MethodResolutionPhase errPhase =
                         firstErroneousResolutionPhase();
                 sym = access(methodResolutionCache.get(errPhase),
-                        pos, site, name, true, argtypes, typeargtypes);
+                        pos, location, site, name, true, argtypes, typeargtypes);
                 env.info.varArgs = errPhase.isVarargsRequired;
             }
         } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
             //non-instantiated polymorphic signature - synthesize new method symbol
             env.info.varArgs = false;
             sym = findPolymorphicSignatureInstance(env,
-                    site, name, (MethodSymbol)sym, argtypes, typeargtypes);
+                    site, name, (MethodSymbol)sym, argtypes);
         }
         return sym;
     }
@@ -1449,15 +1458,9 @@ public class Resolve {
     Symbol findPolymorphicSignatureInstance(Env<AttrContext> env, Type site,
                                             Name name,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
-                                            List<Type> argtypes,
-                                            List<Type> typeargtypes) {
-        if (typeargtypes.nonEmpty() && (site.tsym.isPolymorphicSignatureGeneric() ||
-                (spMethod != null && spMethod.isPolymorphicSignatureGeneric()))) {
-            log.warning(env.tree.pos(), "type.parameter.on.polymorphic.signature");
-        }
-
+                                            List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
-                site, name, spMethod, argtypes, typeargtypes);
+                site, name, spMethod, argtypes);
         long flags = ABSTRACT | HYPOTHETICAL | POLYMORPHIC_SIGNATURE |
                     (spMethod != null ?
                         spMethod.flags() & Flags.AccessFlags :
@@ -1497,7 +1500,7 @@ public class Resolve {
                                         List<Type> argtypes,
                                         List<Type> typeargtypes) {
         Symbol sym = resolveQualifiedMethod(
-            pos, env, site, name, argtypes, typeargtypes);
+            pos, env, site.tsym, site, name, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
                  diags.fragment("fatal.err.cant.locate.meth",
@@ -1572,11 +1575,13 @@ public class Resolve {
                 null;
             Symbol errSym = new ResolveError(WRONG_MTH, "diamond error") {
                 @Override
-                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                        Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
                     String key = details == null ?
                         "cant.apply.diamond" :
                         "cant.apply.diamond.1";
-                    return diags.create(dkind, log.currentSource(), pos, key, diags.fragment("diamond", site.tsym), details);
+                    return diags.create(dkind, log.currentSource(), pos, key,
+                            diags.fragment("diamond", site.tsym), details);
                 }
             };
             MethodResolutionPhase errPhase = firstErroneousResolutionPhase();
@@ -1755,17 +1760,18 @@ public class Resolve {
 
     public void logAccessError(Env<AttrContext> env, JCTree tree, Type type) {
         AccessError error = new AccessError(env, type.getEnclosingType(), type.tsym);
-        logResolveError(error, tree.pos(), type.getEnclosingType(), null, null, null);
+        logResolveError(error, tree.pos(), type.getEnclosingType().tsym, type.getEnclosingType(), null, null, null);
     }
     //where
     private void logResolveError(ResolveError error,
             DiagnosticPosition pos,
+            Symbol location,
             Type site,
             Name name,
             List<Type> argtypes,
             List<Type> typeargtypes) {
         JCDiagnostic d = error.getDiagnostic(JCDiagnostic.DiagnosticType.ERROR,
-                pos, site, name, argtypes, typeargtypes);
+                pos, location, site, name, argtypes, typeargtypes);
         if (d != null) {
             d.setFlag(DiagnosticFlag.RESOLVE_ERROR);
             log.report(d);
@@ -1835,6 +1841,7 @@ public class Resolve {
          */
         abstract JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -1900,6 +1907,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -1910,16 +1918,23 @@ public class Resolve {
                 return null;
 
             if (isOperator(name)) {
+                boolean isUnaryOp = argtypes.size() == 1;
+                String key = argtypes.size() == 1 ?
+                    "operator.cant.be.applied" :
+                    "operator.cant.be.applied.1";
+                Type first = argtypes.head;
+                Type second = !isUnaryOp ? argtypes.tail.head : null;
                 return diags.create(dkind, log.currentSource(), pos,
-                        "operator.cant.be.applied", name, argtypes);
+                        key, name, first, second);
             }
             boolean hasLocation = false;
-            if (!site.tsym.name.isEmpty()) {
-                if (site.tsym.kind == PCK && !site.tsym.exists()) {
+            if (!location.name.isEmpty()) {
+                if (location.kind == PCK && !site.tsym.exists()) {
                     return diags.create(dkind, log.currentSource(), pos,
-                        "doesnt.exist", site.tsym);
+                        "doesnt.exist", location);
                 }
-                hasLocation = true;
+                hasLocation = !location.name.equals(names._this) &&
+                        !location.name.equals(names._super);
             }
             boolean isConstructor = kind == ABSENT_MTH &&
                     name == names.table.names.init;
@@ -1930,7 +1945,7 @@ public class Resolve {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
                         typeargtypes, argtypes, //type parameters and arguments (if any)
-                        typeKindName(site), site); //location kindname, type
+                        getLocationDiag(location)); //location kindname, type
             }
             else {
                 return diags.create(dkind, log.currentSource(), pos,
@@ -1950,6 +1965,16 @@ public class Resolve {
                 }
             }
             return key + suffix;
+        }
+        private JCDiagnostic getLocationDiag(Symbol location) {
+            boolean isVar = location.kind == VAR;
+            String key = isVar ?
+                "location.1" :
+                "location";
+            return diags.fragment(key,
+                    kindName(location),
+                    location,
+                    isVar ? location.type : null);
         }
     }
 
@@ -1991,6 +2016,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -2042,6 +2068,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -2057,7 +2084,7 @@ public class Resolve {
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(site));
             } else {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,
-                    site, name, argtypes, typeargtypes);
+                    location, site, name, argtypes, typeargtypes);
             }
         }
 
@@ -2157,6 +2184,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -2166,7 +2194,7 @@ public class Resolve {
 
             if (sym.name == names.init && sym.owner != site.tsym) {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind,
-                        pos, site, name, argtypes, typeargtypes);
+                        pos, location, site, name, argtypes, typeargtypes);
             }
             else if ((sym.flags() & PUBLIC) != 0
                 || (env != null && this.site != null
@@ -2201,6 +2229,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,
@@ -2231,6 +2260,7 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
                 DiagnosticPosition pos,
+                Symbol location,
                 Type site,
                 Name name,
                 List<Type> argtypes,

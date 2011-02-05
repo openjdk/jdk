@@ -389,10 +389,9 @@ Library: Use <code>/opt:REF </code> when building the dll.
 <li>
 MS DLL Runtime: Use the <code>/MD /D _STATIC_CPPLIB</code> option.
 <br>
-This causes your dll to become dependent on MSVCRT.DLL and/or 
-the newer C++ runtime MSVCR71.DLL.
+This causes your dll to become dependent on just MSVCR*.DLL.
 The option /D _STATIC_CPPLIB prevents you from becoming dependent on the
-C++ library MSVCP71.DLL.
+C++ library MSVCP*.DLL.
 This is what we use in the JDK, but there are probably many combinations
 that you could safely use, unfortunately there are many combinations
 of runtimes that will not work. 

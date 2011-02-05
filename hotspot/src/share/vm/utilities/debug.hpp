@@ -34,6 +34,7 @@ template <size_t bufsz = 256>
 class FormatBuffer {
 public:
   inline FormatBuffer(const char * format, ...);
+  inline void append(const char* format, ...);
   operator const char *() const { return _buf; }
 
 private:
@@ -48,6 +49,19 @@ FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) {
   va_list argp;
   va_start(argp, format);
   vsnprintf(_buf, bufsz, format, argp);
+  va_end(argp);
+}
+
+template <size_t bufsz>
+void FormatBuffer<bufsz>::append(const char* format, ...) {
+  // Given that the constructor does a vsnprintf we can assume that
+  // _buf is already initialized.
+  size_t len = strlen(_buf);
+  char* buf_end = _buf + len;
+
+  va_list argp;
+  va_start(argp, format);
+  vsnprintf(buf_end, bufsz - len, format, argp);
   va_end(argp);
 }
 

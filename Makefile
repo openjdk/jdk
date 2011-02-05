@@ -29,15 +29,6 @@ ifndef TOPDIR
   TOPDIR:=.
 endif
 
-# Openjdk sources (only used if SKIP_OPENJDK_BUILD!=true)
-OPENJDK_SOURCETREE=$(TOPDIR)/openjdk
-OPENJDK_BUILDDIR:=$(shell \
-  if [ -r $(OPENJDK_SOURCETREE)/Makefile ]; then \
-    echo "$(OPENJDK_SOURCETREE)"; \
-  else \
-    echo "."; \
-  fi)
-
 ifndef JDK_TOPDIR
   JDK_TOPDIR=$(TOPDIR)/jdk
 endif
@@ -70,7 +61,7 @@ include ./make/deploy-rules.gmk
 all::
 	@$(START_ECHO)
 
-all:: openjdk_check sanity
+all:: sanity
 
 ifeq ($(SKIP_FASTDEBUG_BUILD), false)
   all:: fastdebug_build
@@ -78,10 +69,6 @@ endif
 
 ifeq ($(SKIP_DEBUG_BUILD), false)
   all:: debug_build
-endif
-
-ifneq ($(SKIP_OPENJDK_BUILD), true)
-  all:: openjdk_build
 endif
 
 all:: all_product_build 
@@ -267,81 +254,6 @@ product_build:: build_product_image
 debug_build:: build_debug_image
 fastdebug_build:: build_fastdebug_image
 
-# Check on whether we really can build the openjdk, need source etc.
-openjdk_check: FRC
-ifneq ($(SKIP_OPENJDK_BUILD), true)
-	@$(ECHO) " "
-	@$(ECHO) "================================================="
-	@if [ ! -r $(OPENJDK_BUILDDIR)/Makefile ] ; then \
-	    $(ECHO) "ERROR: No openjdk source tree available at: $(OPENJDK_BUILDDIR)"; \
-	    exit 1; \
-	else \
-	    $(ECHO) "OpenJDK will be built after JDK is built"; \
-	    $(ECHO) "  OPENJDK_BUILDDIR=$(OPENJDK_BUILDDIR)"; \
-	fi
-	@$(ECHO) "================================================="
-	@$(ECHO) " "
-endif
-
-# If we have bundle rules, we have a chance here to do a complete cycle
-#   build, of production and open build.
-# FIXUP: We should create the openjdk source bundle and build that?
-#   But how do we reliable create or get at a formal openjdk source tree?
-#   The one we have needs to be trimmed of built bits and closed dirs.
-#   The repositories might not be available.
-#   The openjdk source bundle is probably not available.
-
-ifneq ($(SKIP_OPENJDK_BUILD), true)
-  ifeq ($(BUILD_JDK), true)
-    ifeq ($(BUNDLE_RULES_AVAILABLE), true)
-
-OPENJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/open-output
-OPENJDK_BUILD_NAME \
-  = openjdk-$(JDK_MINOR_VERSION)-$(BUILD_NUMBER)-$(PLATFORM)-$(ARCH)-$(BUNDLE_DATE)
-OPENJDK_BUILD_BINARY_ZIP=$(ABS_BIN_BUNDLEDIR)/$(OPENJDK_BUILD_NAME).zip
-BUILT_IMAGE=$(ABS_OUTPUTDIR)/j2sdk-image
-ifeq ($(PLATFORM)$(ARCH_DATA_MODEL),solaris64)
-  OPENJDK_BOOTDIR=$(BOOTDIR)
-  OPENJDK_IMPORTJDK=$(JDK_IMPORT_PATH)
-else
-  OPENJDK_BOOTDIR=$(BUILT_IMAGE)
-  OPENJDK_IMPORTJDK=$(BUILT_IMAGE)
-endif
-
-openjdk_build:
-	@$(START_ECHO)
-	@$(ECHO) " "
-	@$(ECHO) "================================================="
-	@$(ECHO) "Starting openjdk build"
-	@$(ECHO) " Using: ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR)"
-	@$(ECHO) "================================================="
-	@$(ECHO) " "
-	$(RM) -r $(OPENJDK_OUTPUTDIR)
-	$(MKDIR) -p $(OPENJDK_OUTPUTDIR)
-	($(CD) $(OPENJDK_BUILDDIR) && $(MAKE) \
-	  OPENJDK=true \
-	  GENERATE_DOCS=false \
-	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
-	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
-	  ALT_BOOTDIR=$(OPENJDK_BOOTDIR) \
-	  ALT_JDK_IMPORT_PATH=$(OPENJDK_IMPORTJDK) \
-		product_build )
-	$(RM) $(OPENJDK_BUILD_BINARY_ZIP)
-	( $(CD) $(OPENJDK_OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(OPENJDK_BUILD_BINARY_ZIP) .)
-	$(RM) -r $(OPENJDK_OUTPUTDIR)
-	@$(ECHO) " "
-	@$(ECHO) "================================================="
-	@$(ECHO) "Finished openjdk build"
-	@$(ECHO) " Binary Bundle: $(OPENJDK_BUILD_BINARY_ZIP)"
-	@$(ECHO) "================================================="
-	@$(ECHO) " "
-	@$(FINISH_ECHO)
-    
-    endif
-  endif
-endif
-
 clobber::
 	$(RM) -r $(OUTPUTDIR)/*
 	$(RM) -r $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-debug/*
@@ -448,7 +360,6 @@ CACERTS_FILE.desc          = Location of certificates file
 DEVTOOLS_PATH.desc         = Directory containing zip and gnumake
 CUPS_HEADERS_PATH.desc     = Include directory location for CUPS header files
 DXSDK_PATH.desc            = Root directory of DirectX SDK
-MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
 
 # Make variables to print out (description and value)
 VARIABLE_PRINTVAL_LIST +=       \
@@ -477,12 +388,10 @@ VARIABLE_CHECKFIL_LIST +=       \
 ifeq ($(PLATFORM), windows)
 
 VARIABLE_PRINTVAL_LIST +=       \
-    DXSDK_PATH                  \
-    MSVCRT_DLL_PATH
+    DXSDK_PATH
 
 VARIABLE_CHECKDIR_LIST +=       \
-    DXSDK_PATH                  \
-    MSVCRT_DLL_PATH
+    DXSDK_PATH
 
 endif
 

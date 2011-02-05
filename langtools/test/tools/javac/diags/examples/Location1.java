@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.enum.const.req
+// key: compiler.err.cant.resolve.location
+// key: compiler.misc.location.1
 
-class EnumConstRequired {
-    enum E { A, B, C };
-
-    void m(E e) {
-        switch (e) {
-            case e:
-                System.err.println("It's me!");
-        }
-    }
+class Location1 {
+    Object o = null;
+    { Object o2 = o.v; }
 }

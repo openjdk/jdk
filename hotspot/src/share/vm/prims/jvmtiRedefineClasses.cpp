@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1458,7 +1458,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
     if (bc_length == 0) {
       // More complicated bytecodes report a length of zero so
       // we have to try again a slightly different way.
-      bc_length = Bytecodes::length_at(bcp);
+      bc_length = Bytecodes::length_at(method(), bcp);
     }
 
     assert(bc_length != 0, "impossible bytecode length");

@@ -409,15 +409,15 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   } else {
     fail_type = _unloaded_ciinstance_klass;
   }
-  klassOop found_klass;
+  KlassHandle found_klass;
   if (!require_local) {
-    found_klass =
-      SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
-                                                                 KILL_COMPILE_ON_FATAL_(fail_type));
+    klassOop kls = SystemDictionary::find_constrained_instance_or_array_klass(
+        sym, loader, KILL_COMPILE_ON_FATAL_(fail_type));
+    found_klass = KlassHandle(THREAD, kls);
   } else {
-    found_klass =
-      SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
-                                                     KILL_COMPILE_ON_FATAL_(fail_type));
+    klassOop kls = SystemDictionary::find_instance_or_array_klass(
+        sym, loader, domain, KILL_COMPILE_ON_FATAL_(fail_type));
+    found_klass = KlassHandle(THREAD, kls);
   }
 
   // If we fail to find an array klass, look again for its element type.
@@ -444,9 +444,9 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     }
   }
 
-  if (found_klass != NULL) {
+  if (found_klass() != NULL) {
     // Found it.  Build a CI handle.
-    return get_object(found_klass)->as_klass();
+    return get_object(found_klass())->as_klass();
   }
 
   if (require_local)  return NULL;
