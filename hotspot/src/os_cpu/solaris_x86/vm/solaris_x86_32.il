@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,9 @@
       popl     %ebx
       .end
 
-  // Support for void Atomic::load(volatile jlong* src, volatile jlong* dest).
-      .inline _Atomic_load_long,2
+  // Support for jlong Atomic::load and Atomic::store.
+  // void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+      .inline _Atomic_move_long,2
       movl     0(%esp), %eax   // src
       fildll    (%eax)
       movl     4(%esp), %eax   // dest

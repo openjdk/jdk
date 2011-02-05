@@ -35,6 +35,7 @@ ifeq ($(PLATFORM), windows)
   LIBEXE       = $(COMPILER_PATH)lib
   LINK         = $(COMPILER_PATH)link
   LINK32       = $(LINK)
+  DUMPBIN      = $(COMPILER_PATH)dumpbin.exe
  
   # Fill in unknown values
   COMPILER_NAME=Unknown MSVC Compiler
@@ -139,8 +140,8 @@ ifeq ($(PLATFORM), windows)
         _OTHER_TOOLS_BIN = $(WINDOWSSDKDIR)/Bin/x64
       endif
     endif
-    RC     = $(_OTHER_TOOLS_BIN)/rc.exe
-    REBASE = $(_OTHER_TOOLS_BIN)/rebase.exe
+    RC     = $(_OTHER_TOOLS_BIN)/RC.Exe
+    REBASE = $(_OTHER_TOOLS_BIN)/ReBase.Exe
     MT     = $(_OTHER_TOOLS_BIN)/mt.exe
     MTL    = $(_OTHER_TOOLS_BIN)/midl.exe
   endif

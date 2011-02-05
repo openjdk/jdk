@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,24 +319,24 @@ void BlockListBuilder::set_leaders() {
 
       case Bytecodes::_tableswitch: {
         // set block for each case
-        Bytecode_tableswitch *switch_ = Bytecode_tableswitch_at(s.cur_bcp());
-        int l = switch_->length();
+        Bytecode_tableswitch sw(&s);
+        int l = sw.length();
         for (int i = 0; i < l; i++) {
-          make_block_at(cur_bci + switch_->dest_offset_at(i), current);
+          make_block_at(cur_bci + sw.dest_offset_at(i), current);
         }
-        make_block_at(cur_bci + switch_->default_offset(), current);
+        make_block_at(cur_bci + sw.default_offset(), current);
         current = NULL;
         break;
       }
 
       case Bytecodes::_lookupswitch: {
         // set block for each case
-        Bytecode_lookupswitch *switch_ = Bytecode_lookupswitch_at(s.cur_bcp());
-        int l = switch_->number_of_pairs();
+        Bytecode_lookupswitch sw(&s);
+        int l = sw.number_of_pairs();
         for (int i = 0; i < l; i++) {
-          make_block_at(cur_bci + switch_->pair_at(i)->offset(), current);
+          make_block_at(cur_bci + sw.pair_at(i).offset(), current);
         }
-        make_block_at(cur_bci + switch_->default_offset(), current);
+        make_block_at(cur_bci + sw.default_offset(), current);
         current = NULL;
         break;
       }
@@ -1275,15 +1275,15 @@ void GraphBuilder::ret(int local_index) {
 
 
 void GraphBuilder::table_switch() {
-  Bytecode_tableswitch* switch_ = Bytecode_tableswitch_at(method()->code() + bci());
-  const int l = switch_->length();
+  Bytecode_tableswitch sw(stream());
+  const int l = sw.length();
   if (CanonicalizeNodes && l == 1) {
     // total of 2 successors => use If instead of switch
     // Note: This code should go into the canonicalizer as soon as it can
     //       can handle canonicalized forms that contain more than one node.
-    Value key = append(new Constant(new IntConstant(switch_->low_key())));
-    BlockBegin* tsux = block_at(bci() + switch_->dest_offset_at(0));
-    BlockBegin* fsux = block_at(bci() + switch_->default_offset());
+    Value key = append(new Constant(new IntConstant(sw.low_key())));
+    BlockBegin* tsux = block_at(bci() + sw.dest_offset_at(0));
+    BlockBegin* fsux = block_at(bci() + sw.default_offset());
     bool is_bb = tsux->bci() < bci() || fsux->bci() < bci();
     ValueStack* state_before = is_bb ? copy_state_before() : NULL;
     append(new If(ipop(), If::eql, true, key, tsux, fsux, state_before, is_bb));
@@ -1293,29 +1293,29 @@ void GraphBuilder::table_switch() {
     int i;
     bool has_bb = false;
     for (i = 0; i < l; i++) {
-      sux->at_put(i, block_at(bci() + switch_->dest_offset_at(i)));
-      if (switch_->dest_offset_at(i) < 0) has_bb = true;
+      sux->at_put(i, block_at(bci() + sw.dest_offset_at(i)));
+      if (sw.dest_offset_at(i) < 0) has_bb = true;
     }
     // add default successor
-    sux->at_put(i, block_at(bci() + switch_->default_offset()));
+    sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
-    append(new TableSwitch(ipop(), sux, switch_->low_key(), state_before, has_bb));
+    append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
   }
 }
 
 
 void GraphBuilder::lookup_switch() {
-  Bytecode_lookupswitch* switch_ = Bytecode_lookupswitch_at(method()->code() + bci());
-  const int l = switch_->number_of_pairs();
+  Bytecode_lookupswitch sw(stream());
+  const int l = sw.number_of_pairs();
   if (CanonicalizeNodes && l == 1) {
     // total of 2 successors => use If instead of switch
     // Note: This code should go into the canonicalizer as soon as it can
     //       can handle canonicalized forms that contain more than one node.
     // simplify to If
-    LookupswitchPair* pair = switch_->pair_at(0);
-    Value key = append(new Constant(new IntConstant(pair->match())));
-    BlockBegin* tsux = block_at(bci() + pair->offset());
-    BlockBegin* fsux = block_at(bci() + switch_->default_offset());
+    LookupswitchPair pair = sw.pair_at(0);
+    Value key = append(new Constant(new IntConstant(pair.match())));
+    BlockBegin* tsux = block_at(bci() + pair.offset());
+    BlockBegin* fsux = block_at(bci() + sw.default_offset());
     bool is_bb = tsux->bci() < bci() || fsux->bci() < bci();
     ValueStack* state_before = is_bb ? copy_state_before() : NULL;
     append(new If(ipop(), If::eql, true, key, tsux, fsux, state_before, is_bb));
@@ -1326,13 +1326,13 @@ void GraphBuilder::lookup_switch() {
     int i;
     bool has_bb = false;
     for (i = 0; i < l; i++) {
-      LookupswitchPair* pair = switch_->pair_at(i);
-      if (pair->offset() < 0) has_bb = true;
-      sux->at_put(i, block_at(bci() + pair->offset()));
-      keys->at_put(i, pair->match());
+      LookupswitchPair pair = sw.pair_at(i);
+      if (pair.offset() < 0) has_bb = true;
+      sux->at_put(i, block_at(bci() + pair.offset()));
+      keys->at_put(i, pair.match());
     }
     // add default successor
-    sux->at_put(i, block_at(bci() + switch_->default_offset()));
+    sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
     append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
   }

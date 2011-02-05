@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@ import com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Float_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Integer_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_InterfaceMethodref_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_InvokeDynamic_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Long_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodType_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_String_info;
@@ -304,6 +307,20 @@ public class ClassTranslator
         return info;
     }
 
+    public CPInfo visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Map<Object, Object> translations) {
+        CONSTANT_InvokeDynamic_info info2 = (CONSTANT_InvokeDynamic_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp) {
+                info2 = info;
+            } else {
+                info2 = new CONSTANT_InvokeDynamic_info(cp2, info.bootstrap_method_attr_index, info.name_and_type_index);
+            }
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
     public CPInfo visitLong(CONSTANT_Long_info info, Map<Object, Object> translations) {
         CONSTANT_Long_info info2 = (CONSTANT_Long_info) translations.get(info);
         if (info2 == null) {
@@ -334,6 +351,34 @@ public class ClassTranslator
                 info2 = info;
             else
                 info2 = new CONSTANT_Methodref_info(cp2, info.class_index, info.name_and_type_index);
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    public CPInfo visitMethodHandle(CONSTANT_MethodHandle_info info, Map<Object, Object> translations) {
+        CONSTANT_MethodHandle_info info2 = (CONSTANT_MethodHandle_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp) {
+                info2 = info;
+            } else {
+                info2 = new CONSTANT_MethodHandle_info(cp2, info.reference_kind, info.reference_index);
+            }
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    public CPInfo visitMethodType(CONSTANT_MethodType_info info, Map<Object, Object> translations) {
+        CONSTANT_MethodType_info info2 = (CONSTANT_MethodType_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp) {
+                info2 = info;
+            } else {
+                info2 = new CONSTANT_MethodType_info(cp2, info.descriptor_index);
+            }
             translations.put(info, info2);
         }
         return info;

@@ -1054,6 +1054,7 @@ void PSParallelCompact::post_compact()
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();
+  JvmtiExport::gc_epilogue();
 
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 

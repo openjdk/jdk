@@ -31,7 +31,6 @@
 #include "memory/oopFactory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -40,6 +39,7 @@
 #ifndef SERIALGC
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #endif
+
 HS_DTRACE_PROBE_DECL1(hotspot, gc__begin, bool);
 HS_DTRACE_PROBE_DECL(hotspot, gc__end);
 
@@ -158,8 +158,7 @@ void VM_GC_HeapInspection::doit() {
 
 
 void VM_GenCollectForAllocation::doit() {
-  JvmtiGCForAllocationMarker jgcm;
-  notify_gc_begin(false);
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
@@ -169,22 +168,19 @@ void VM_GenCollectForAllocation::doit() {
   if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
-  notify_gc_end();
 }
 
 void VM_GenCollectFull::doit() {
-  JvmtiGCFullMarker jgcm;
-  notify_gc_begin(true);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
   gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
-  notify_gc_end();
 }
 
 void VM_GenCollectForPermanentAllocation::doit() {
-  JvmtiGCForAllocationMarker jgcm;
-  notify_gc_begin(true);
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
+
   SharedHeap* heap = (SharedHeap*)Universe::heap();
   GCCauseSetter gccs(heap, _gc_cause);
   switch (heap->kind()) {
@@ -209,5 +205,4 @@ void VM_GenCollectForPermanentAllocation::doit() {
   if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
-  notify_gc_end();
 }

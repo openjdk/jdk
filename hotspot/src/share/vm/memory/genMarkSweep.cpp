@@ -158,6 +158,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();
+  JvmtiExport::gc_epilogue();
 
   if (PrintGC && !PrintGCDetails) {
     gch->print_heap_change(gch_prev_used);

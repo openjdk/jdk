@@ -96,7 +96,6 @@ ifeq ($(PLATFORM),solaris)
   endif
 endif
 ifeq ($(PLATFORM),windows)
-  ALL_SETTINGS+=$(call addAltSetting,MSVCRT_DLL_PATH)
   ifneq ($(MSVCRNN_DLL),)
     ALL_SETTINGS+=$(call addAltSetting,MSVCRNN_DLL_PATH)
   endif
@@ -117,6 +116,9 @@ ALL_SETTINGS+=$(call addRequiredVersionSetting,ZIP_VER)
 ALL_SETTINGS+=$(call addRequiredVersionSetting,UNZIP_VER)
 ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addRequiredVersionSetting,LINK_VER)
+  ALL_SETTINGS+=$(call addRequiredSetting,CC)
+  ALL_SETTINGS+=$(call addRequiredSetting,LINK)
+  ALL_SETTINGS+=$(call addRequiredSetting,DUMPBIN)
 endif
 ALL_SETTINGS+=$(call addRequiredVersionSetting,ANT_VER)
 ALL_SETTINGS+=$(call addRequiredSetting,TEMPDIR)
@@ -226,13 +228,13 @@ ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addAltSetting,DXSDK_INCLUDE_PATH)
   ALL_SETTINGS+=$(call addAltSetting,DXSDK_LIB_PATH)
   ALL_SETTINGS+=$(call addAltSetting,WINDOWSSDKDIR)
+  ALL_SETTINGS+=$(call addRequiredSetting,RC)
+  ALL_SETTINGS+=$(call addRequiredSetting,REBASE)
   ifndef OPENJDK
     ALL_SETTINGS+=$(call addAltSetting,DEPLOY_MSSDK)
     ALL_SETTINGS+=$(call addAltSetting,INSTALL_MSSDK)
     ALL_SETTINGS+=$(call addAltSetting,WSCRIPT)
     ALL_SETTINGS+=$(call addAltSetting,MSICERT)
-    ALL_SETTINGS+=$(call addAltSetting,MSITRAN)
-    ALL_SETTINGS+=$(call addAltSetting,MSIVAL2)
   endif
 endif
 ALL_SETTINGS+=$(call addAltSetting,CACERTS_FILE)
