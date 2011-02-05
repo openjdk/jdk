@@ -177,8 +177,7 @@ class StackMapFrame : public ResourceObj {
     if (_stack_size != 0) {
       VerificationType top = _stack[_stack_size - 1];
       bool subtype = type.is_assignable_from(
-        top, verifier()->current_class(),
-        CHECK_(VerificationType::bogus_type()));
+        top, verifier(), CHECK_(VerificationType::bogus_type()));
       if (subtype) {
         _stack_size --;
         NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )
@@ -194,11 +193,9 @@ class StackMapFrame : public ResourceObj {
     assert(type2.is_long() || type2.is_double(), "must be long/double_2");
     if (_stack_size >= 2) {
       VerificationType top1 = _stack[_stack_size - 1];
-      bool subtype1 = type1.is_assignable_from(
-        top1, verifier()->current_class(), CHECK);
+      bool subtype1 = type1.is_assignable_from(top1, verifier(), CHECK);
       VerificationType top2 = _stack[_stack_size - 2];
-      bool subtype2 = type2.is_assignable_from(
-        top2, verifier()->current_class(), CHECK);
+      bool subtype2 = type2.is_assignable_from(top2, verifier(), CHECK);
       if (subtype1 && subtype2) {
         _stack_size -= 2;
         NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )

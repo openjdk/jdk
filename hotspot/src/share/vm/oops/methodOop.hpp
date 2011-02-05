@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,17 +161,17 @@ class methodOopDesc : public oopDesc {
   void set_access_flags(AccessFlags flags)       { _access_flags = flags; }
 
   // name
-  symbolOop name() const                         { return _constants->symbol_at(name_index()); }
+  Symbol* name() const                           { return _constants->symbol_at(name_index()); }
   int name_index() const                         { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
 
   // signature
-  symbolOop signature() const                    { return _constants->symbol_at(signature_index()); }
+  Symbol* signature() const                      { return _constants->symbol_at(signature_index()); }
   int signature_index() const                    { return constMethod()->signature_index();         }
   void set_signature_index(int index)            { constMethod()->set_signature_index(index);       }
 
   // generics support
-  symbolOop generic_signature() const            { int idx = generic_signature_index(); return ((idx != 0) ? _constants->symbol_at(idx) : (symbolOop)NULL); }
+  Symbol* generic_signature() const              { int idx = generic_signature_index(); return ((idx != 0) ? _constants->symbol_at(idx) : (Symbol*)NULL); }
   int generic_signature_index() const            { return constMethod()->generic_signature_index(); }
   void set_generic_signature_index(int index)    { constMethod()->set_generic_signature_index(index); }
 
@@ -193,11 +193,18 @@ class methodOopDesc : public oopDesc {
   char* name_and_sig_as_C_string(char* buf, int size);
 
   // Static routine in the situations we don't have a methodOop
-  static char* name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature);
-  static char* name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature, char* buf, int size);
+  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
+  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size);
+
+  Bytecodes::Code java_code_at(int bci) const {
+    return Bytecodes::java_code_at(this, bcp_from(bci));
+  }
+  Bytecodes::Code code_at(int bci) const {
+    return Bytecodes::code_at(this, bcp_from(bci));
+  }
 
   // JVMTI breakpoints
-  Bytecodes::Code orig_bytecode_at(int bci);
+  Bytecodes::Code orig_bytecode_at(int bci) const;
   void        set_orig_bytecode_at(int bci, Bytecodes::Code code);
   void set_breakpoint(int bci);
   void clear_breakpoint(int bci);
@@ -426,7 +433,7 @@ class methodOopDesc : public oopDesc {
   klassOop method_holder() const                 { return _constants->pool_holder(); }
 
   void compute_size_of_parameters(Thread *thread); // word size of parameters (receiver if any + arguments)
-  symbolOop klass_name() const;                  // returns the name of the method holder
+  Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const;                 // type of the method result
   int result_type_index() const;                 // type index of the method result
   bool is_returning_oop() const                  { BasicType r = result_type(); return (r == T_OBJECT || r == T_ARRAY); }
@@ -557,15 +564,15 @@ class methodOopDesc : public oopDesc {
   // JSR 292 support
   bool is_method_handle_invoke() const              { return access_flags().is_method_handle_invoke(); }
   static bool is_method_handle_invoke_name(vmSymbols::SID name_sid);
-  static bool is_method_handle_invoke_name(symbolOop name) {
+  static bool is_method_handle_invoke_name(Symbol* name) {
     return is_method_handle_invoke_name(vmSymbols::find_sid(name));
   }
   // Tests if this method is an internal adapter frame from the
   // MethodHandleCompiler.
   bool is_method_handle_adapter() const;
   static methodHandle make_invoke_method(KlassHandle holder,
-                                         symbolHandle name, //invokeExact or invokeGeneric
-                                         symbolHandle signature, //anything at all
+                                         Symbol* name, //invokeExact or invokeGeneric
+                                         Symbol* signature, //anything at all
                                          Handle method_type,
                                          TRAPS);
   // these operate only on invoke methods:
@@ -654,8 +661,6 @@ class methodOopDesc : public oopDesc {
   bool queued_for_compilation() const  { return access_flags().queued_for_compilation(); }
   void set_queued_for_compilation()    { _access_flags.set_queued_for_compilation();     }
   void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
-
-  static methodOop method_from_bcp(address bcp);
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(methodHandle m, TRAPS);
@@ -787,11 +792,11 @@ class BreakpointInfo : public CHeapObj {
   void                 set_next(BreakpointInfo* n)    { _next = n; }
 
   // helps for searchers
-  bool match(methodOop m, int bci) {
+  bool match(const methodOopDesc* m, int bci) {
     return bci == _bci && match(m);
   }
 
-  bool match(methodOop m) {
+  bool match(const methodOopDesc* m) {
     return _name_index == m->name_index() &&
       _signature_index == m->signature_index();
   }

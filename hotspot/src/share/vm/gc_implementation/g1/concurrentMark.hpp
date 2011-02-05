@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/heapRegionSets.hpp"
 #include "utilities/taskqueue.hpp"
 
 class G1CollectedHeap;
@@ -353,6 +353,10 @@ class ConcurrentMark: public CHeapObj {
   friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
   friend class CalcLiveObjectsClosure;
+  friend class G1RefProcTaskProxy;
+  friend class G1RefProcTaskExecutor;
+  friend class G1CMParKeepAliveAndDrainClosure;
+  friend class G1CMParDrainMarkingStackClosure;
 
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
@@ -369,13 +373,7 @@ protected:
   double                _cleanup_sleep_factor;
   double                _cleanup_task_overhead;
 
-  // Stuff related to age cohort processing.
-  struct ParCleanupThreadState {
-    char _pre[64];
-    UncleanRegionList list;
-    char _post[64];
-  };
-  ParCleanupThreadState** _par_cleanup_thread_state;
+  FreeRegionList        _cleanup_list;
 
   // CMS marking support structures
   CMBitMap                _markBitMap1;
@@ -483,6 +481,10 @@ protected:
 
   // prints all gathered CM-related statistics
   void print_stats();
+
+  bool cleanup_list_is_empty() {
+    return _cleanup_list.is_empty();
+  }
 
   // accessor methods
   size_t parallel_marking_threads() { return _parallel_marking_threads; }
@@ -938,7 +940,7 @@ private:
   // if this is true, then the task has aborted for some reason
   bool                        _has_aborted;
   // set when the task aborts because it has met its time quota
-  bool                        _has_aborted_timed_out;
+  bool                        _has_timed_out;
   // true when we're draining SATB buffers; this avoids the task
   // aborting due to SATB buffers being available (as we're already
   // dealing with them)
@@ -1043,7 +1045,7 @@ public:
   // trying not to exceed the given duration. However, it might exit
   // prematurely, according to some conditions (i.e. SATB buffers are
   // available for processing).
-  void do_marking_step(double target_ms);
+  void do_marking_step(double target_ms, bool do_stealing, bool do_termination);
 
   // These two calls start and stop the timer
   void record_start_time() {
@@ -1065,7 +1067,8 @@ public:
   bool has_aborted()            { return _has_aborted; }
   void set_has_aborted()        { _has_aborted = true; }
   void clear_has_aborted()      { _has_aborted = false; }
-  bool claimed() { return _claimed; }
+  bool has_timed_out()          { return _has_timed_out; }
+  bool claimed()                { return _claimed; }
 
   // Support routines for the partially scanned region that may be
   // recorded as a result of aborting while draining the CMRegionStack

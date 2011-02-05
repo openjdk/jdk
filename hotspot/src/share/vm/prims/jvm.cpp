@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,9 @@ static void trace_class_resolution_impl(klassOop to_class, TRAPS) {
     vframeStream vfst(jthread);
 
     // scan up the stack skipping ClassLoader, AccessController and PrivilegedAction frames
-    symbolHandle access_controller = oopFactory::new_symbol_handle("java/security/AccessController", CHECK);
+    TempNewSymbol access_controller = SymbolTable::new_symbol("java/security/AccessController", CHECK);
     klassOop access_controller_klass = SystemDictionary::resolve_or_fail(access_controller, false, CHECK);
-    symbolHandle privileged_action = oopFactory::new_symbol_handle("java/security/PrivilegedAction", CHECK);
+    TempNewSymbol privileged_action = SymbolTable::new_symbol("java/security/PrivilegedAction", CHECK);
     klassOop privileged_action_klass = SystemDictionary::resolve_or_fail(privileged_action, false, CHECK);
 
     methodOop last_caller = NULL;
@@ -175,7 +175,7 @@ static void trace_class_resolution_impl(klassOop to_class, TRAPS) {
         // show method name if it's a native method
         trace = vfst.method()->name_and_sig_as_C_string();
       }
-      symbolOop s = instanceKlass::cast(caller)->source_file_name();
+      Symbol* s = instanceKlass::cast(caller)->source_file_name();
       if (s != NULL) {
         source_file = s->as_C_string();
       }
@@ -311,8 +311,8 @@ static void set_property(Handle props, const char* key, const char* value, TRAPS
   JavaCalls::call_virtual(&r,
                           props,
                           KlassHandle(THREAD, SystemDictionary::Properties_klass()),
-                          vmSymbolHandles::put_name(),
-                          vmSymbolHandles::object_object_object_signature(),
+                          vmSymbols::put_name(),
+                          vmSymbols::object_object_object_signature(),
                           key_str,
                           value_str,
                           THREAD);
@@ -716,13 +716,13 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
   JVMWrapper2("JVM_FindClassFromBootLoader %s", name);
 
   // Java libraries should ensure that name is never null...
-  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     return NULL;
   }
 
-  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
   klassOop k = SystemDictionary::resolve_or_null(h_name, CHECK_NULL);
   if (k == NULL) {
     return NULL;
@@ -740,7 +740,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
   JVMWrapper3("JVM_FindClassFromClassLoader %s throw %s", name,
                throwError ? "error" : "exception");
   // Java libraries should ensure that name is never null...
-  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     if (throwError) {
@@ -749,7 +749,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
       THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
     }
   }
-  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                Handle(), throwError, THREAD);
@@ -764,12 +764,12 @@ JVM_END
 JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                                          jboolean init, jclass from))
   JVMWrapper2("JVM_FindClassFromClass %s", name);
-  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
   }
-  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
   oop from_class_oop = JNIHandles::resolve(from);
   klassOop from_class = (from_class_oop == NULL)
                            ? (klassOop)NULL
@@ -838,15 +838,15 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
 
   // Since exceptions can be thrown, class initialization can take place
   // if name is NULL no check for class name in .class stream has to be made.
-  symbolHandle class_name;
+  TempNewSymbol class_name = NULL;
   if (name != NULL) {
     const int str_len = (int)strlen(name);
-    if (str_len > symbolOopDesc::max_length()) {
+    if (str_len > Symbol::max_length()) {
       // It's impossible to create this class;  the name cannot fit
       // into the constant pool.
       THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
     }
-    class_name = oopFactory::new_symbol_handle(name, str_len, CHECK_NULL);
+    class_name = SymbolTable::new_symbol(name, str_len, CHECK_NULL);
   }
 
   ResourceMark rm(THREAD);
@@ -905,12 +905,12 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   if (str == NULL) return NULL;
 
   const int str_len = (int)strlen(str);
-  if (str_len > symbolOopDesc::max_length()) {
+  if (str_len > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     return NULL;
   }
-  symbolHandle klass_name = oopFactory::new_symbol_handle(str, str_len,CHECK_NULL);
+  TempNewSymbol klass_name = SymbolTable::new_symbol(str, str_len, CHECK_NULL);
 
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing
@@ -1155,8 +1155,8 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
         !pending_exception->is_a(SystemDictionary::RuntimeException_klass())) {
       // Throw a java.security.PrivilegedActionException(Exception e) exception
       JavaCallArguments args(pending_exception);
-      THROW_ARG_0(vmSymbolHandles::java_security_PrivilegedActionException(),
-                  vmSymbolHandles::exception_void_signature(),
+      THROW_ARG_0(vmSymbols::java_security_PrivilegedActionException(),
+                  vmSymbols::exception_void_signature(),
                   &args);
     }
   }
@@ -1452,8 +1452,8 @@ JVM_ENTRY(jstring, JVM_GetClassSignature(JNIEnv *env, jclass cls))
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve(cls));
     if (Klass::cast(k)->oop_is_instance()) {
-      symbolHandle sym = symbolHandle(THREAD, instanceKlass::cast(k)->generic_signature());
-      if (sym.is_null()) return NULL;
+      Symbol* sym = instanceKlass::cast(k)->generic_signature();
+      if (sym == NULL) return NULL;
       Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
       return (jstring) JNIHandles::make_local(env, str());
     }
@@ -1842,8 +1842,8 @@ static jobject get_method_at_helper(constantPoolHandle cp, jint index, bool forc
     if (k_o == NULL) return NULL;
   }
   instanceKlassHandle k(THREAD, k_o);
-  symbolOop name = cp->uncached_name_ref_at(index);
-  symbolOop sig  = cp->uncached_signature_ref_at(index);
+  Symbol* name = cp->uncached_name_ref_at(index);
+  Symbol* sig  = cp->uncached_signature_ref_at(index);
   methodHandle m (THREAD, k->find_method(name, sig));
   if (m.is_null()) {
     THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "Unable to look up method in target class");
@@ -1893,8 +1893,8 @@ static jobject get_field_at_helper(constantPoolHandle cp, jint index, bool force
     if (k_o == NULL) return NULL;
   }
   instanceKlassHandle k(THREAD, k_o);
-  symbolOop name = cp->uncached_name_ref_at(index);
-  symbolOop sig  = cp->uncached_signature_ref_at(index);
+  Symbol* name = cp->uncached_name_ref_at(index);
+  Symbol* sig  = cp->uncached_signature_ref_at(index);
   fieldDescriptor fd;
   klassOop target_klass = k->find_field(name, sig, &fd);
   if (target_klass == NULL) {
@@ -1937,9 +1937,9 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv *env, jobject 
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
   int klass_ref = cp->uncached_klass_ref_index_at(index);
-  symbolHandle klass_name (THREAD, cp->klass_name_at(klass_ref));
-  symbolHandle member_name(THREAD, cp->uncached_name_ref_at(index));
-  symbolHandle member_sig (THREAD, cp->uncached_signature_ref_at(index));
+  Symbol*  klass_name  = cp->klass_name_at(klass_ref);
+  Symbol*  member_name = cp->uncached_name_ref_at(index);
+  Symbol*  member_sig  = cp->uncached_signature_ref_at(index);
   objArrayOop  dest_o = oopFactory::new_objArray(SystemDictionary::String_klass(), 3, CHECK_NULL);
   objArrayHandle dest(THREAD, dest_o);
   Handle str = java_lang_String::create_from_symbol(klass_name, CHECK_NULL);
@@ -2028,8 +2028,7 @@ JVM_ENTRY(jstring, JVM_ConstantPoolGetUTF8At(JNIEnv *env, jobject unused, jobjec
   if (!tag.is_symbol()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  symbolOop sym_o = cp->symbol_at(index);
-  symbolHandle sym(THREAD, sym_o);
+  Symbol* sym = cp->symbol_at(index);
   Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
   return (jstring) JNIHandles::make_local(str());
 }
@@ -2356,7 +2355,7 @@ JVM_ENTRY(const char*, JVM_GetCPClassNameUTF(JNIEnv *env, jclass cls, jint cp_in
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   constantPoolOop cp = instanceKlass::cast(k)->constants();
-  symbolOop classname = cp->klass_name_at(cp_index);
+  Symbol* classname = cp->klass_name_at(cp_index);
   return classname->as_utf8();
 JVM_END
 
@@ -2369,7 +2368,7 @@ JVM_ENTRY(const char*, JVM_GetCPFieldClassNameUTF(JNIEnv *env, jclass cls, jint 
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
       int class_index = cp->uncached_klass_ref_index_at(cp_index);
-      symbolOop classname = cp->klass_name_at(class_index);
+      Symbol* classname = cp->klass_name_at(class_index);
       return classname->as_utf8();
     }
     default:
@@ -2389,7 +2388,7 @@ JVM_ENTRY(const char*, JVM_GetCPMethodClassNameUTF(JNIEnv *env, jclass cls, jint
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
       int class_index = cp->uncached_klass_ref_index_at(cp_index);
-      symbolOop classname = cp->klass_name_at(class_index);
+      Symbol* classname = cp->klass_name_at(class_index);
       return classname->as_utf8();
     }
     default:
@@ -2410,8 +2409,8 @@ JVM_QUICK_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_in
   constantPoolOop cp_called = instanceKlass::cast(k_called)->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
-      symbolOop name      = cp->uncached_name_ref_at(cp_index);
-      symbolOop signature = cp->uncached_signature_ref_at(cp_index);
+      Symbol* name      = cp->uncached_name_ref_at(cp_index);
+      Symbol* signature = cp->uncached_signature_ref_at(cp_index);
       typeArrayOop fields = instanceKlass::cast(k_called)->fields();
       int fields_count = fields->length();
       for (int i = 0; i < fields_count; i += instanceKlass::next_offset) {
@@ -2440,8 +2439,8 @@ JVM_QUICK_ENTRY(jint, JVM_GetCPMethodModifiers(JNIEnv *env, jclass cls, int cp_i
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
-      symbolOop name      = cp->uncached_name_ref_at(cp_index);
-      symbolOop signature = cp->uncached_signature_ref_at(cp_index);
+      Symbol* name      = cp->uncached_name_ref_at(cp_index);
+      Symbol* signature = cp->uncached_signature_ref_at(cp_index);
       objArrayOop methods = instanceKlass::cast(k_called)->methods();
       int methods_count = methods->length();
       for (int i = 0; i < methods_count; i++) {
@@ -2629,8 +2628,8 @@ static void thread_entry(JavaThread* thread, TRAPS) {
   JavaCalls::call_virtual(&result,
                           obj,
                           KlassHandle(THREAD, SystemDictionary::Thread_klass()),
-                          vmSymbolHandles::run_method_name(),
-                          vmSymbolHandles::void_method_signature(),
+                          vmSymbols::run_method_name(),
+                          vmSymbols::void_method_signature(),
                           THREAD);
 }
 
@@ -2651,12 +2650,18 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // we operate.
     MutexLocker mu(Threads_lock);
 
-    // Check to see if we're running a thread that's already exited or was
-    // stopped (is_stillborn) or is still active (thread is not NULL).
-    if (java_lang_Thread::is_stillborn(JNIHandles::resolve_non_null(jthread)) ||
-        java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
-        throw_illegal_thread_state = true;
+    // Since JDK 5 the java.lang.Thread threadStatus is used to prevent
+    // re-starting an already started thread, so we should usually find
+    // that the JavaThread is null. However for a JNI attached thread
+    // there is a small window between the Thread object being created
+    // (with its JavaThread set) and the update to its threadStatus, so we
+    // have to check for this
+    if (java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
+      throw_illegal_thread_state = true;
     } else {
+      // We could also check the stillborn flag to see if this thread was already stopped, but
+      // for historical reasons we let the thread detect that itself when it starts running
+
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
@@ -2704,7 +2709,7 @@ JVM_END
 // JVM_Stop is implemented using a VM_Operation, so threads are forced to safepoints
 // before the quasi-asynchronous exception is delivered.  This is a little obtrusive,
 // but is thought to be reliable and simple. In the case, where the receiver is the
-// save thread as the sender, no safepoint is needed.
+// same thread as the sender, no safepoint is needed.
 JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   JVMWrapper("JVM_StopThread");
 
@@ -2715,25 +2720,26 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   oop java_thread = JNIHandles::resolve_non_null(jthread);
   JavaThread* receiver = java_lang_Thread::thread(java_thread);
   Events::log("JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]", receiver, (address)java_thread, throwable);
-  // First check if thread already exited
+  // First check if thread is alive
   if (receiver != NULL) {
     // Check if exception is getting thrown at self (use oop equality, since the
     // target object might exit)
     if (java_thread == thread->threadObj()) {
-      // This is a change from JDK 1.1, but JDK 1.2 will also do it:
-      // NOTE (from JDK 1.2): this is done solely to prevent stopped
-      // threads from being restarted.
-      // Fix for 4314342, 4145910, perhaps others: it now doesn't have
-      // any effect on the "liveness" of a thread; see
-      // JVM_IsThreadAlive, below.
-      if (java_throwable->is_a(SystemDictionary::ThreadDeath_klass())) {
-        java_lang_Thread::set_stillborn(java_thread);
-      }
       THROW_OOP(java_throwable);
     } else {
       // Enques a VM_Operation to stop all threads and then deliver the exception...
       Thread::send_async_exception(java_thread, JNIHandles::resolve(throwable));
     }
+  }
+  else {
+    // Either:
+    // - target thread has not been started before being stopped, or
+    // - target thread already terminated
+    // We could read the threadStatus to determine which case it is
+    // but that is overkill as it doesn't matter. We must set the
+    // stillborn flag for the first case, and if the thread has already
+    // exited setting this flag has no affect
+    java_lang_Thread::set_stillborn(java_thread);
   }
 JVM_END
 
@@ -3106,9 +3112,8 @@ JVM_ENTRY(jint, JVM_ClassDepth(JNIEnv *env, jstring name))
   Handle class_name_str = java_lang_String::internalize_classname(h_name, CHECK_0);
 
   const char* str = java_lang_String::as_utf8_string(class_name_str());
-  symbolHandle class_name_sym =
-                symbolHandle(THREAD, SymbolTable::probe(str, (int)strlen(str)));
-  if (class_name_sym.is_null()) {
+  TempNewSymbol class_name_sym = SymbolTable::probe(str, (int)strlen(str));
+  if (class_name_sym == NULL) {
     return -1;
   }
 
@@ -3118,7 +3123,7 @@ JVM_ENTRY(jint, JVM_ClassDepth(JNIEnv *env, jstring name))
     if (!vfst.method()->is_native()) {
       klassOop holder = vfst.method()->method_holder();
       assert(holder->is_klass(), "just checking");
-      if (instanceKlass::cast(holder)->name() == class_name_sym()) {
+      if (instanceKlass::cast(holder)->name() == class_name_sym) {
         return depth;
       }
       depth++;
@@ -3317,13 +3322,13 @@ JVM_ENTRY(jclass, JVM_LoadClass0(JNIEnv *env, jobject receiver,
 
   const char* str = java_lang_String::as_utf8_string(string());
 
-  if (str == NULL || (int)strlen(str) > symbolOopDesc::max_length()) {
+  if (str == NULL || (int)strlen(str) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), str);
   }
 
-  symbolHandle name = oopFactory::new_symbol_handle(str, CHECK_NULL);
+  TempNewSymbol name = SymbolTable::new_symbol(str, CHECK_NULL);
   Handle curr_klass (THREAD, JNIHandles::resolve(currClass));
   // Find the most recent class on the stack with a non-null classloader
   oop loader = NULL;
@@ -3966,7 +3971,7 @@ JVM_END
 
 // Shared JNI/JVM entry points //////////////////////////////////////////////////////////////
 
-jclass find_class_from_class_loader(JNIEnv* env, symbolHandle name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS) {
+jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS) {
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
@@ -4062,14 +4067,13 @@ JVM_ENTRY(jobject, JVM_GetClassField(JNIEnv *env, jclass cls, jstring name, jint
   Handle str (THREAD, JNIHandles::resolve_non_null(name));
 
   const char* cstr = java_lang_String::as_utf8_string(str());
-  symbolHandle field_name =
-           symbolHandle(THREAD, SymbolTable::probe(cstr, (int)strlen(cstr)));
-  if (field_name.is_null()) {
+  TempNewSymbol field_name = SymbolTable::probe(cstr, (int)strlen(cstr));
+  if (field_name == NULL) {
     THROW_0(vmSymbols::java_lang_NoSuchFieldException());
   }
 
   oop mirror = JNIHandles::resolve_non_null(cls);
-  oop result = Reflection::reflect_field(mirror, field_name(), which, CHECK_NULL);
+  oop result = Reflection::reflect_field(mirror, field_name, which, CHECK_NULL);
   if (result == NULL) {
     THROW_0(vmSymbols::java_lang_NoSuchFieldException());
   }
@@ -4086,9 +4090,8 @@ JVM_ENTRY(jobject, JVM_GetClassMethod(JNIEnv *env, jclass cls, jstring name, job
   Handle str (THREAD, JNIHandles::resolve_non_null(name));
 
   const char* cstr = java_lang_String::as_utf8_string(str());
-  symbolHandle method_name =
-          symbolHandle(THREAD, SymbolTable::probe(cstr, (int)strlen(cstr)));
-  if (method_name.is_null()) {
+  TempNewSymbol method_name = SymbolTable::probe(cstr, (int)strlen(cstr));
+  if (method_name == NULL) {
     THROW_0(vmSymbols::java_lang_NoSuchMethodException());
   }
 
@@ -4461,16 +4464,14 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
   dest->obj_at_put(0, Klass::cast(enc_k)->java_mirror());
   int encl_method_method_idx = ik_h->enclosing_method_method_index();
   if (encl_method_method_idx != 0) {
-    symbolOop sym_o = ik_h->constants()->symbol_at(
+    Symbol* sym = ik_h->constants()->symbol_at(
                         extract_low_short_from_int(
                           ik_h->constants()->name_and_type_at(encl_method_method_idx)));
-    symbolHandle sym(THREAD, sym_o);
     Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(1, str());
-    sym_o = ik_h->constants()->symbol_at(
+    sym = ik_h->constants()->symbol_at(
               extract_high_short_from_int(
                 ik_h->constants()->name_and_type_at(encl_method_method_idx)));
-    sym = symbolHandle(THREAD, sym_o);
     str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(2, str());
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "oops/objArrayOop.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "utilities/hashtable.hpp"
 
 // The system dictionary stores all loaded classes and maps:
 //
-//   [class name,class loader] -> class   i.e.  [symbolOop,oop] -> klassOop
+//   [class name,class loader] -> class   i.e.  [Symbol*,oop] -> klassOop
 //
 // Classes are loaded lazily. The default VM class loader is
 // represented as NULL.
@@ -172,6 +172,8 @@ class SymbolPropertyTable;
                                                                               \
   template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
+  template(sun_misc_PostVMInitHook_klass, sun_misc_PostVMInitHook, Opt)       \
+                                                                              \
   /* Preload boxing klasses */                                                \
   template(Boolean_klass,                java_lang_Boolean,              Pre) \
   template(Character_klass,              java_lang_Character,            Pre) \
@@ -224,26 +226,26 @@ class SystemDictionary : AllStatic {
   // throw_error flag.  For most uses the throw_error argument should be set
   // to true.
 
-  static klassOop resolve_or_fail(symbolHandle class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
+  static klassOop resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
-  static klassOop resolve_or_fail(symbolHandle class_name, bool throw_error, TRAPS);
+  static klassOop resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
 private:
   // handle error translation for resolve_or_null results
-  static klassOop handle_resolution_exception(symbolHandle class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS);
+  static klassOop handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS);
 
 public:
 
   // Returns a class with a given class name and class loader.
   // Loads the class if needed. If not found NULL is returned.
-  static klassOop resolve_or_null(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static klassOop resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
-  static klassOop resolve_or_null(symbolHandle class_name, TRAPS);
+  static klassOop resolve_or_null(Symbol* class_name, TRAPS);
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
   // "child_name" is the class whose super class or interface is being resolved.
-  static klassOop resolve_super_or_fail(symbolHandle child_name,
-                                        symbolHandle class_name,
+  static klassOop resolve_super_or_fail(Symbol* child_name,
+                                        Symbol* class_name,
                                         Handle class_loader,
                                         Handle protection_domain,
                                         bool is_superclass,
@@ -251,7 +253,7 @@ public:
 
   // Parse new stream. This won't update the system dictionary or
   // class hierarchy, simply parse the stream. Used by JVMTI RedefineClasses.
-  static klassOop parse_stream(symbolHandle class_name,
+  static klassOop parse_stream(Symbol* class_name,
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
@@ -259,7 +261,7 @@ public:
     KlassHandle nullHandle;
     return parse_stream(class_name, class_loader, protection_domain, st, nullHandle, NULL, THREAD);
   }
-  static klassOop parse_stream(symbolHandle class_name,
+  static klassOop parse_stream(Symbol* class_name,
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
@@ -268,23 +270,23 @@ public:
                                TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static klassOop resolve_from_stream(symbolHandle class_name, Handle class_loader,
+  static klassOop resolve_from_stream(Symbol* class_name, Handle class_loader,
                                       Handle protection_domain,
                                       ClassFileStream* st, bool verify, TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static klassOop find(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static klassOop find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
-  static klassOop find_instance_or_array_klass(symbolHandle class_name,
+  static klassOop find_instance_or_array_klass(Symbol* class_name,
                                                Handle class_loader,
                                                Handle protection_domain,
                                                TRAPS);
 
   // If the given name is known to vmSymbols, return the well-know klass:
-  static klassOop find_well_known_klass(symbolOop class_name);
+  static klassOop find_well_known_klass(Symbol* class_name);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -307,7 +309,7 @@ public:
   // satisfied, and it is safe for classes in the given class loader
   // to manipulate strongly-typed values of the found class, subject
   // to local linkage and access checks.
-  static klassOop find_constrained_instance_or_array_klass(symbolHandle class_name,
+  static klassOop find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
                                                            TRAPS);
 
@@ -322,7 +324,7 @@ public:
   //   (added for helpers that use HandleMarks and ResourceMarks)
   static void classes_do(void f(klassOop, oop, TRAPS), TRAPS);
   // All entries in the placeholder table and their class loaders
-  static void placeholders_do(void f(symbolOop, oop));
+  static void placeholders_do(void f(Symbol*, oop));
 
   // Iterate over all methods in all klasses in dictionary
   static void methods_do(void f(methodOop));
@@ -381,12 +383,12 @@ public:
   static void verify();
 
 #ifdef ASSERT
-  static bool is_internal_format(symbolHandle class_name);
+  static bool is_internal_format(Symbol* class_name);
 #endif
 
   // Verify class is in dictionary
   static void verify_obj_klass_present(Handle obj,
-                                       symbolHandle class_name,
+                                       Symbol* class_name,
                                        Handle class_loader);
 
   // Initialization
@@ -467,19 +469,19 @@ public:
   // Note:  java_lang_Class::primitive_type is the inverse of java_mirror
 
   // Check class loader constraints
-  static bool add_loader_constraint(symbolHandle name, Handle loader1,
+  static bool add_loader_constraint(Symbol* name, Handle loader1,
                                     Handle loader2, TRAPS);
-  static char* check_signature_loaders(symbolHandle signature, Handle loader1,
+  static char* check_signature_loaders(Symbol* signature, Handle loader1,
                                        Handle loader2, bool is_method, TRAPS);
 
   // JSR 292
   // find the java.dyn.MethodHandles::invoke method for a given signature
-  static methodOop find_method_handle_invoke(symbolHandle name,
-                                             symbolHandle signature,
+  static methodOop find_method_handle_invoke(Symbol* name,
+                                             Symbol* signature,
                                              KlassHandle accessing_klass,
                                              TRAPS);
   // ask Java to compute a java.dyn.MethodType object for a given signature
-  static Handle    find_method_handle_type(symbolHandle signature,
+  static Handle    find_method_handle_type(Symbol* signature,
                                            KlassHandle accessing_klass,
                                            bool for_invokeGeneric,
                                            bool& return_bcp_flag,
@@ -488,13 +490,13 @@ public:
   static Handle    link_method_handle_constant(KlassHandle caller,
                                                int ref_kind, //e.g., JVM_REF_invokeVirtual
                                                KlassHandle callee,
-                                               symbolHandle name,
-                                               symbolHandle signature,
+                                               Symbol* name,
+                                               Symbol* signature,
                                                TRAPS);
   // ask Java to create a dynamic call site, while linking an invokedynamic op
   static Handle    make_dynamic_call_site(Handle bootstrap_method,
                                           // Callee information:
-                                          symbolHandle name,
+                                          Symbol* name,
                                           methodHandle signature_invoker,
                                           Handle info,
                                           // Caller information:
@@ -517,8 +519,8 @@ public:
 
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
-  static void add_resolution_error(constantPoolHandle pool, int which, symbolHandle error);
-  static symbolOop find_resolution_error(constantPoolHandle pool, int which);
+  static void add_resolution_error(constantPoolHandle pool, int which, Symbol* error);
+  static Symbol* find_resolution_error(constantPoolHandle pool, int which);
 
  private:
 
@@ -578,29 +580,29 @@ private:
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
   // Basic loading operations
-  static klassOop resolve_instance_class_or_null(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static klassOop resolve_array_class_or_null(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static instanceKlassHandle handle_parallel_super_load(symbolHandle class_name, symbolHandle supername, Handle class_loader, Handle protection_domain, Handle lockObject, TRAPS);
+  static klassOop resolve_instance_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static klassOop resolve_array_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static instanceKlassHandle handle_parallel_super_load(Symbol* class_name, Symbol* supername, Handle class_loader, Handle protection_domain, Handle lockObject, TRAPS);
   // Wait on SystemDictionary_lock; unlocks lockObject before
   // waiting; relocks lockObject with correct recursion count
   // after waiting, but before reentering SystemDictionary_lock
   // to preserve lock order semantics.
   static void double_lock_wait(Handle lockObject, TRAPS);
   static void define_instance_class(instanceKlassHandle k, TRAPS);
-  static instanceKlassHandle find_or_define_instance_class(symbolHandle class_name,
+  static instanceKlassHandle find_or_define_instance_class(Symbol* class_name,
                                                 Handle class_loader,
                                                 instanceKlassHandle k, TRAPS);
-  static instanceKlassHandle load_shared_class(symbolHandle class_name,
+  static instanceKlassHandle load_shared_class(Symbol* class_name,
                                                Handle class_loader, TRAPS);
   static instanceKlassHandle load_shared_class(instanceKlassHandle ik,
                                                Handle class_loader, TRAPS);
-  static instanceKlassHandle load_instance_class(symbolHandle class_name, Handle class_loader, TRAPS);
+  static instanceKlassHandle load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
-  static klassOop find_shared_class(symbolHandle class_name);
+  static klassOop find_shared_class(Symbol* class_name);
 
   // Setup link to hierarchy
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
@@ -611,34 +613,29 @@ private:
 
   // Basic find on loaded classes
   static klassOop find_class(int index, unsigned int hash,
-                             symbolHandle name, Handle loader);
+                             Symbol* name, Handle loader);
+  static klassOop find_class(Symbol* class_name, Handle class_loader);
 
   // Basic find on classes in the midst of being loaded
-  static symbolOop find_placeholder(int index, unsigned int hash,
-                                    symbolHandle name, Handle loader);
-
-  // Basic find operation of loaded classes and classes in the midst
-  // of loading;  used for assertions and verification only.
-  static oop find_class_or_placeholder(symbolHandle class_name,
-                                       Handle class_loader);
+  static Symbol* find_placeholder(Symbol* name, Handle loader);
 
   // Updating entry in dictionary
   // Add a completely loaded class
-  static void add_klass(int index, symbolHandle class_name,
+  static void add_klass(int index, Symbol* class_name,
                         Handle class_loader, KlassHandle obj);
 
   // Add a placeholder for a class being loaded
   static void add_placeholder(int index,
-                              symbolHandle class_name,
+                              Symbol* class_name,
                               Handle class_loader);
   static void remove_placeholder(int index,
-                                 symbolHandle class_name,
+                                 Symbol* class_name,
                                  Handle class_loader);
 
   // Performs cleanups after resolve_super_or_fail. This typically needs
   // to be called on failure.
   // Won't throw, but can block.
-  static void resolution_cleanups(symbolHandle class_name,
+  static void resolution_cleanups(Symbol* class_name,
                                   Handle class_loader,
                                   TRAPS);
 
@@ -668,7 +665,6 @@ private:
   static bool _has_checkPackageAccess;
 };
 
-// Cf. vmSymbols vs. vmSymbolHandles
 class SystemDictionaryHandles : AllStatic {
 public:
   #define WK_KLASS_HANDLE_DECLARE(name, ignore_symbol, option) \

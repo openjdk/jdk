@@ -83,7 +83,7 @@ final class ProtocolList {
             throw new IllegalArgumentException("Protocols may not be null");
         }
 
-        ArrayList<ProtocolVersion> versions = new ArrayList<ProtocolVersion>(3);
+        ArrayList<ProtocolVersion> versions = new ArrayList<>(3);
         for (int i = 0; i < names.length; i++ ) {
             ProtocolVersion version = ProtocolVersion.valueOf(names[i]);
             if (versions.contains(version) == false) {

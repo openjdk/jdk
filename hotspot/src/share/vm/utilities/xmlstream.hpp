@@ -139,13 +139,13 @@ class xmlStream : public outputStream {
   void          stamp();                 // stamp='1.234'
   void          method(methodHandle m);  // method='k n s' ...
   void          klass(KlassHandle k);    // klass='name'
-  void          name(symbolHandle s);    // name='name'
+  void          name(const Symbol* s);   // name='name'
   void          object(const char* attr, Handle val);
 
   // print the text alone (sans ''):
   void          method_text(methodHandle m);
   void          klass_text(KlassHandle k);    // klass='name'
-  void          name_text(symbolHandle s);    // name='name'
+  void          name_text(const Symbol* s);   // name='name'
   void          object_text(Handle x);
 
   /*  Example uses:

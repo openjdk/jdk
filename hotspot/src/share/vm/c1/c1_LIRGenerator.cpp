@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1990,9 +1990,8 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 
   LIR_Opr reg = reg = rlock_result(x, x->basic_type());
 
-  if (x->is_volatile() && os::is_MP()) __ membar_acquire();
   get_Object_unsafe(reg, src.result(), off.result(), type, x->is_volatile());
-  if (x->is_volatile() && os::is_MP()) __ membar();
+  if (x->is_volatile() && os::is_MP()) __ membar_acquire();
 }
 
 
@@ -2014,6 +2013,7 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
 
   if (x->is_volatile() && os::is_MP()) __ membar_release();
   put_Object_unsafe(src.result(), off.result(), data.result(), type, x->is_volatile());
+  if (x->is_volatile() && os::is_MP()) __ membar();
 }
 
 
@@ -2738,6 +2738,31 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
     __ branch(lir_cond_equal, T_INT, overflow);
     __ branch_destination(overflow->continuation());
+  }
+}
+
+void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
+  LIR_OprList* args = new LIR_OprList(x->number_of_arguments());
+  BasicTypeList* signature = new BasicTypeList(x->number_of_arguments());
+
+  if (x->pass_thread()) {
+    signature->append(T_ADDRESS);
+    args->append(getThreadPointer());
+  }
+
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    Value a = x->argument_at(i);
+    LIRItem* item = new LIRItem(a, this);
+    item->load_item();
+    args->append(item->result());
+    signature->append(as_BasicType(a->type()));
+  }
+
+  LIR_Opr result = call_runtime(signature, args, x->entry(), x->type(), NULL);
+  if (x->type() == voidType) {
+    set_no_result(x);
+  } else {
+    __ move(result, rlock_result(x));
   }
 }
 

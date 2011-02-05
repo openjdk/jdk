@@ -43,7 +43,6 @@ FDDLIBM_SUFFIX = lib
 # The suffix applied to scripts (.bat for windows, nothing for unix)
 SCRIPT_SUFFIX = .bat
 
-HPIS = windows
 # LIB_LOCATION, which for windows identifies where .exe files go, may be
 # set by each GNUmakefile. The default is BINDIR.
 ifndef LIB_LOCATION
@@ -68,28 +67,27 @@ PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 
 # The following DLL's are considered MS runtime libraries and should
 #     not to be REBASEd, see deploy/make/common/Release.gmk.
-#     msvcrt.dll, msvcrnn.dll [msvcr71 or msvcr80 or msvcr90] : Microsoft runtimes
-MS_RUNTIME_LIBRARIES = msvcrt.dll
+#     msvcr*.dll: Microsoft runtimes
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(COMPILER_VERSION), VS2003)
     MSVCRNN_DLL = msvcr71.dll
     MSVCPNN_DLL = msvcp71.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
   endif
   ifeq ($(COMPILER_VERSION), VS2005)
     MSVCRNN_DLL = msvcr80.dll
     MSVCPNN_DLL = msvcp80.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
   endif
   ifeq ($(COMPILER_VERSION), VS2008)
     MSVCRNN_DLL = msvcr90.dll
     MSVCPNN_DLL = msvcp90.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
   endif
   ifeq ($(COMPILER_VERSION), VS2010)
     MSVCRNN_DLL = msvcr100.dll
     MSVCPNN_DLL = msvcp100.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
   endif
 endif
 
@@ -97,12 +95,12 @@ ifeq ($(ARCH_DATA_MODEL), 64)
   ifeq ($(COMPILER_VERSION), VS2008)
     MSVCRNN_DLL = msvcr90.dll
     MSVCPNN_DLL = msvcp90.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
   endif
   ifeq ($(COMPILER_VERSION), VS2010)
     MSVCRNN_DLL = msvcr100.dll
     MSVCPNN_DLL = msvcp100.dll
-    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+    MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
   endif
 endif
 
@@ -284,7 +282,7 @@ ifeq ($(MFC_DEBUG), true)
     MS_RUNTIME_OPTION=-MTd
   else
     # This MS debugging flag forces a dependence on the debug
-    #     version of the runtime library (MSVCRTD.DLL), as does -MDd.
+    #     version of the runtime library (MSVCR*D.DLL), as does -MDd.
     #     We cannot re-distribute this debug runtime.
     MS_RUNTIME_OPTION=-MDd
   endif
@@ -365,10 +363,6 @@ ifeq ($(CC_VERSION),msvc)
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no
-ifdef MT
-    # VS2005, VS2008, and beyond: ask LINK to generate manifests for .dll & .exe
-    BASELFLAGS += /manifest
-endif
 
   LFLAGS = $(BASELFLAGS) $(LDEBUG) $(EXTRA_LFLAGS) $(LFLAGS_$(COMPILER_VERSION))
   LDDFLAGS += $(LFLAGS_$(COMPILER_VERSION))

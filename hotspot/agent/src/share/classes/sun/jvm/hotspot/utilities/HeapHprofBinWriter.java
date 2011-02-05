@@ -740,7 +740,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         for (Iterator itr = fields.iterator(); itr.hasNext();) {
             Field field = (Field) itr.next();
             Symbol name = symTbl.probe(field.getID().getName());
-            writeObjectID(name);
+            writeSymbolID(name);
             char typeCode = (char) field.getSignature().getByteAt(0);
             int kind = signatureToHprofKind(typeCode);
             out.writeByte((byte)kind);
@@ -852,7 +852,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private void writeSymbol(Symbol sym) throws IOException {
         byte[] buf = sym.asString().getBytes("UTF-8");
         writeHeader(HPROF_UTF8, buf.length + OBJ_ID_SIZE);
-        writeObjectID(sym);
+        writeSymbolID(sym);
         out.write(buf);
     }
 
@@ -869,7 +869,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                         out.writeInt(serialNum);
                         writeObjectID(clazz);
                         out.writeInt(DUMMY_STACK_TRACE_ID);
-                        writeObjectID(k.getName());
+                        writeSymbolID(k.getName());
                         serialNum++;
                     } catch (IOException exp) {
                         throw new RuntimeException(exp);
@@ -899,6 +899,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         OopHandle handle = (oop != null)? oop.getHandle() : null;
         long address = getAddressValue(handle);
         writeObjectID(address);
+    }
+
+    private void writeSymbolID(Symbol sym) throws IOException {
+        writeObjectID(getAddressValue(sym.getAddress()));
     }
 
     private void writeObjectID(long address) throws IOException {

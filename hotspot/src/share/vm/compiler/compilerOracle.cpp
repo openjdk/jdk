@@ -30,7 +30,7 @@
 #include "oops/klass.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 
@@ -46,33 +46,33 @@ class MethodMatcher : public CHeapObj {
   };
 
  protected:
-  jobject        _class_name;
+  Symbol*        _class_name;
+  Symbol*        _method_name;
+  Symbol*        _signature;
   Mode           _class_mode;
-  jobject        _method_name;
   Mode           _method_mode;
-  jobject        _signature;
   MethodMatcher* _next;
 
-  static bool match(symbolHandle candidate, symbolHandle match, Mode match_mode);
+  static bool match(Symbol* candidate, Symbol* match, Mode match_mode);
 
-  symbolHandle class_name() const { return (symbolOop)JNIHandles::resolve_non_null(_class_name); }
-  symbolHandle method_name() const { return (symbolOop)JNIHandles::resolve_non_null(_method_name); }
-  symbolHandle signature() const { return (symbolOop)JNIHandles::resolve(_signature); }
+  Symbol* class_name() const { return _class_name; }
+  Symbol* method_name() const { return _method_name; }
+  Symbol* signature() const { return _signature; }
 
  public:
-  MethodMatcher(symbolHandle class_name, Mode class_mode,
-                symbolHandle method_name, Mode method_mode,
-                symbolHandle signature, MethodMatcher* next);
-  MethodMatcher(symbolHandle class_name, symbolHandle method_name, MethodMatcher* next);
+  MethodMatcher(Symbol* class_name, Mode class_mode,
+                Symbol* method_name, Mode method_mode,
+                Symbol* signature, MethodMatcher* next);
+  MethodMatcher(Symbol* class_name, Symbol* method_name, MethodMatcher* next);
 
   // utility method
   MethodMatcher* find(methodHandle method) {
-    symbolHandle class_name  = Klass::cast(method->method_holder())->name();
-    symbolHandle method_name = method->name();
+    Symbol* class_name  = Klass::cast(method->method_holder())->name();
+    Symbol* method_name = method->name();
     for (MethodMatcher* current = this; current != NULL; current = current->_next) {
       if (match(class_name, current->class_name(), current->_class_mode) &&
           match(method_name, current->method_name(), current->_method_mode) &&
-          (current->signature().is_null() || current->signature()() == method->signature())) {
+          (current->signature() == NULL || current->signature() == method->signature())) {
         return current;
       }
     }
@@ -85,14 +85,14 @@ class MethodMatcher : public CHeapObj {
 
   MethodMatcher* next() const { return _next; }
 
-  static void print_symbol(symbolHandle h, Mode mode) {
+  static void print_symbol(Symbol* h, Mode mode) {
     ResourceMark rm;
 
     if (mode == Suffix || mode == Substring || mode == Any) {
       tty->print("*");
     }
     if (mode != Any) {
-      h()->print_symbol_on(tty);
+      h->print_symbol_on(tty);
     }
     if (mode == Prefix || mode == Substring) {
       tty->print("*");
@@ -103,7 +103,7 @@ class MethodMatcher : public CHeapObj {
     print_symbol(class_name(), _class_mode);
     tty->print(".");
     print_symbol(method_name(), _method_mode);
-    if (!signature().is_null()) {
+    if (signature() != NULL) {
       tty->print(" ");
       signature()->print_symbol_on(tty);
     }
@@ -115,9 +115,9 @@ class MethodMatcher : public CHeapObj {
   }
 };
 
-MethodMatcher::MethodMatcher(symbolHandle class_name, symbolHandle method_name, MethodMatcher* next) {
-  _class_name  = JNIHandles::make_global(class_name);
-  _method_name = JNIHandles::make_global(method_name);
+MethodMatcher::MethodMatcher(Symbol* class_name, Symbol* method_name, MethodMatcher* next) {
+  _class_name  = class_name;
+  _method_name = method_name;
   _next        = next;
   _class_mode  = MethodMatcher::Exact;
   _method_mode = MethodMatcher::Exact;
@@ -125,24 +125,24 @@ MethodMatcher::MethodMatcher(symbolHandle class_name, symbolHandle method_name, 
 }
 
 
-MethodMatcher::MethodMatcher(symbolHandle class_name, Mode class_mode,
-                             symbolHandle method_name, Mode method_mode,
-                             symbolHandle signature, MethodMatcher* next):
+MethodMatcher::MethodMatcher(Symbol* class_name, Mode class_mode,
+                             Symbol* method_name, Mode method_mode,
+                             Symbol* signature, MethodMatcher* next):
     _class_mode(class_mode)
   , _method_mode(method_mode)
   , _next(next)
-  , _class_name(JNIHandles::make_global(class_name()))
-  , _method_name(JNIHandles::make_global(method_name()))
-  , _signature(JNIHandles::make_global(signature())) {
+  , _class_name(class_name)
+  , _method_name(method_name)
+  , _signature(signature) {
 }
 
-bool MethodMatcher::match(symbolHandle candidate, symbolHandle match, Mode match_mode) {
+bool MethodMatcher::match(Symbol* candidate, Symbol* match, Mode match_mode) {
   if (match_mode == Any) {
     return true;
   }
 
   if (match_mode == Exact) {
-    return candidate() == match();
+    return candidate == match;
   }
 
   ResourceMark rm;
@@ -171,9 +171,9 @@ bool MethodMatcher::match(symbolHandle candidate, symbolHandle match, Mode match
 class MethodOptionMatcher: public MethodMatcher {
   const char * option;
  public:
-  MethodOptionMatcher(symbolHandle class_name, Mode class_mode,
-                             symbolHandle method_name, Mode method_mode,
-                             symbolHandle signature, const char * opt, MethodMatcher* next):
+  MethodOptionMatcher(Symbol* class_name, Mode class_mode,
+                             Symbol* method_name, Mode method_mode,
+                             Symbol* signature, const char * opt, MethodMatcher* next):
     MethodMatcher(class_name, class_mode, method_name, method_mode, signature, next) {
     option = opt;
   }
@@ -256,9 +256,9 @@ static bool check_predicate(OracleCommand command, methodHandle method) {
 
 
 static MethodMatcher* add_predicate(OracleCommand command,
-                                    symbolHandle class_name, MethodMatcher::Mode c_mode,
-                                    symbolHandle method_name, MethodMatcher::Mode m_mode,
-                                    symbolHandle signature) {
+                                    Symbol* class_name, MethodMatcher::Mode c_mode,
+                                    Symbol* method_name, MethodMatcher::Mode m_mode,
+                                    Symbol* signature) {
   assert(command != OptionCommand, "must use add_option_string");
   if (command == LogCommand && !LogCompilation && lists[LogCommand] == NULL)
     tty->print_cr("Warning:  +LogCompilation must be enabled in order for individual methods to be logged.");
@@ -268,9 +268,9 @@ static MethodMatcher* add_predicate(OracleCommand command,
 
 
 
-static MethodMatcher* add_option_string(symbolHandle class_name, MethodMatcher::Mode c_mode,
-                                        symbolHandle method_name, MethodMatcher::Mode m_mode,
-                                        symbolHandle signature,
+static MethodMatcher* add_option_string(Symbol* class_name, MethodMatcher::Mode c_mode,
+                                        Symbol* method_name, MethodMatcher::Mode m_mode,
+                                        Symbol* signature,
                                         const char* option) {
   lists[OptionCommand] = new MethodOptionMatcher(class_name, c_mode, method_name, m_mode,
                                                  signature, option, lists[OptionCommand]);
@@ -497,9 +497,9 @@ void CompilerOracle::parse_from_line(char* line) {
 
   if (scan_line(line, class_name, &c_match, method_name, &m_match, &bytes_read, error_msg)) {
     EXCEPTION_MARK;
-    symbolHandle c_name = oopFactory::new_symbol_handle(class_name, CHECK);
-    symbolHandle m_name = oopFactory::new_symbol_handle(method_name, CHECK);
-    symbolHandle signature;
+    Symbol* c_name = SymbolTable::new_symbol(class_name, CHECK);
+    Symbol* m_name = SymbolTable::new_symbol(method_name, CHECK);
+    Symbol* signature = NULL;
 
     line += bytes_read;
     // there might be a signature following the method.
@@ -507,7 +507,7 @@ void CompilerOracle::parse_from_line(char* line) {
     if (1 == sscanf(line, "%*[ \t](%254[[);/" RANGEBASE "]%n", sig + 1, &bytes_read)) {
       sig[0] = '(';
       line += bytes_read;
-      signature = oopFactory::new_symbol_handle(sig, CHECK);
+      signature = SymbolTable::new_symbol(sig, CHECK);
     }
 
     if (command == OptionCommand) {
@@ -714,9 +714,9 @@ void CompilerOracle::parse_compile_only(char * line) {
       }
 
       EXCEPTION_MARK;
-      symbolHandle c_name = oopFactory::new_symbol_handle(className, CHECK);
-      symbolHandle m_name = oopFactory::new_symbol_handle(methodName, CHECK);
-      symbolHandle signature;
+      Symbol* c_name = SymbolTable::new_symbol(className, CHECK);
+      Symbol* m_name = SymbolTable::new_symbol(methodName, CHECK);
+      Symbol* signature = NULL;
 
       add_predicate(CompileOnlyCommand, c_name, c_match, m_name, m_match, signature);
       if (PrintVMOptions) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,16 +53,15 @@ klassOop typeArrayKlass::create_klass(BasicType type, int scale,
                                       const char* name_str, TRAPS) {
   typeArrayKlass o;
 
-  symbolHandle sym(symbolOop(NULL));
-  // bootstrapping: don't create sym if symbolKlass not created yet
-  if (Universe::symbolKlassObj() != NULL && name_str != NULL) {
-    sym = oopFactory::new_symbol_handle(name_str, CHECK_NULL);
+  Symbol* sym = NULL;
+  if (name_str != NULL) {
+    sym = SymbolTable::new_symbol(name_str, CHECK_NULL);
   }
   KlassHandle klassklass (THREAD, Universe::typeArrayKlassKlassObj());
 
   arrayKlassHandle k = base_create_array_klass(o.vtbl_value(), header_size(), klassklass, CHECK_NULL);
   typeArrayKlass* ak = typeArrayKlass::cast(k());
-  ak->set_name(sym());
+  ak->set_name(sym);
   ak->set_layout_helper(array_layout_helper(type));
   assert(scale == (1 << ak->log2_element_size()), "scale must check out");
   assert(ak->oop_is_javaArray(), "sanity");
@@ -179,6 +178,7 @@ klassOop typeArrayKlass::array_klass_impl(typeArrayKlassHandle h_this, bool or_n
           dimension + 1, h_this, CHECK_NULL);
         h_ak = objArrayKlassHandle(THREAD, oak);
         h_ak->set_lower_dimension(h_this());
+        OrderAccess::storestore();
         h_this->set_higher_dimension(h_ak());
         assert(h_ak->oop_is_objArray(), "incorrect initialization of objArrayKlass");
       }

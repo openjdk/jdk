@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,20 +406,6 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
     ce->store_parameter(_obj->as_register(), 0);
   }
   __ call(RuntimeAddress(Runtime1::entry_for(_stub)));
-  ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
-}
-
-
-ArrayStoreExceptionStub::ArrayStoreExceptionStub(CodeEmitInfo* info):
-  _info(info) {
-}
-
-
-void ArrayStoreExceptionStub::emit_code(LIR_Assembler* ce) {
-  assert(__ rsp_offset() == 0, "frame size should be fixed");
-  __ bind(_entry);
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::throw_array_store_exception_id)));
   ce->add_call_info_here(_info);
   debug_only(__ should_not_reach_here());
 }

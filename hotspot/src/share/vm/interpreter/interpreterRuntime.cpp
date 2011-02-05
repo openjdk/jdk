@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #include "oops/methodDataOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -132,9 +132,9 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
          bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
   ResourceMark rm(thread);
   methodHandle m (thread, method(thread));
-  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(m, bci(thread));
-  oop result = ldc->resolve_constant(THREAD);
-  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc->cache_index()));
+  Bytecode_loadconstant ldc(m, bci(thread));
+  oop result = ldc.resolve_constant(THREAD);
+  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc.cache_index()));
   assert(result == cpce->f1(), "expected result for assembly code");
 }
 IRT_END
@@ -295,7 +295,7 @@ IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     if (s == vmSymbols::java_lang_ArithmeticException()) {
       note_trap(thread, Deoptimization::Reason_div0_check, CHECK);
@@ -304,7 +304,7 @@ IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* n
     }
   }
   // create exception
-  Handle exception = Exceptions::new_exception(thread, s(), message);
+  Handle exception = Exceptions::new_exception(thread, s, message);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -313,12 +313,12 @@ IRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, c
   ResourceMark rm(thread);
   const char* klass_name = Klass::cast(obj->klass())->external_name();
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);
   }
   // create exception, with klass name as detail message
-  Handle exception = Exceptions::new_exception(thread, s(), klass_name);
+  Handle exception = Exceptions::new_exception(thread, s, klass_name);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -326,13 +326,13 @@ IRT_END
 IRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index))
   char message[jintAsStringSize];
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_range_check, CHECK);
   }
   // create exception
   sprintf(message, "%d", index);
-  THROW_MSG(s(), message);
+  THROW_MSG(s, message);
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
@@ -672,8 +672,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
-    Bytecode_invoke* call = Bytecode_invoke_at(m, bci(thread));
-    symbolHandle signature (thread, call->signature());
+    Bytecode_invoke call(m, bci(thread));
+    Symbol* signature = call.signature();
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
     assert(Universe::heap()->is_in_reserved_or_null(receiver()),
@@ -756,7 +756,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     caller_bci = caller_method->bci_from(caller_bcp);
     site_index = Bytes::get_native_u4(caller_bcp+1);
   }
-  assert(site_index == InterpreterRuntime::bytecode(thread)->get_index_u4(bytecode), "");
+  assert(site_index == InterpreterRuntime::bytecode(thread).get_index_u4(bytecode), "");
   assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
@@ -797,7 +797,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
     return;
 
-  symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
+  Symbol*  call_site_name = pool->name_ref_at(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
@@ -884,7 +884,7 @@ IRT_LEAF(jint, InterpreterRuntime::bcp_to_di(methodOopDesc* method, address cur_
   return mdo->bci_to_di(bci);
 IRT_END
 
-IRT_ENTRY(jint, InterpreterRuntime::profile_method(JavaThread* thread, address cur_bcp))
+IRT_ENTRY(void, InterpreterRuntime::profile_method(JavaThread* thread))
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
   UnlockFlagSaver fs(thread);
@@ -893,16 +893,12 @@ IRT_ENTRY(jint, InterpreterRuntime::profile_method(JavaThread* thread, address c
   frame fr = thread->last_frame();
   assert(fr.is_interpreted_frame(), "must come from interpreter");
   methodHandle method(thread, fr.interpreter_frame_method());
-  int bci = method->bci_from(cur_bcp);
   methodOopDesc::build_interpreter_method_data(method, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
     CLEAR_PENDING_EXCEPTION;
     // and fall through...
   }
-  methodDataOop mdo = method->method_data();
-  if (mdo == NULL)  return 0;
-  return mdo->bci_to_di(bci);
 IRT_END
 
 
@@ -1245,9 +1241,9 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
   assert(fr.is_interpreted_frame(), "");
   jint bci = fr.interpreter_frame_bci();
   methodHandle mh(thread, fr.interpreter_frame_method());
-  Bytecode_invoke* invoke = Bytecode_invoke_at(mh, bci);
-  ArgumentSizeComputer asc(invoke->signature());
-  int size_of_arguments = (asc.size() + (invoke->has_receiver() ? 1 : 0)); // receiver
+  Bytecode_invoke invoke(mh, bci);
+  ArgumentSizeComputer asc(invoke.signature());
+  int size_of_arguments = (asc.size() + (invoke.has_receiver() ? 1 : 0)); // receiver
   Copy::conjoint_jbytes(src_address, dest_address,
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
