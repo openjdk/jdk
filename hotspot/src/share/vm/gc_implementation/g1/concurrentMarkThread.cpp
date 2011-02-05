@@ -251,6 +251,14 @@ void ConcurrentMarkThread::run() {
 
         // Now do the remainder of the cleanup operation.
         _cm->completeCleanup();
+        // Notify anyone who's waiting that there are no more free
+        // regions coming. We have to do this before we join the STS,
+        // otherwise we might deadlock: a GC worker could be blocked
+        // waiting for the notification whereas this thread will be
+        // blocked for the pause to finish while it's trying to join
+        // the STS, which is conditional on the GC workers finishing.
+        g1h->reset_free_regions_coming();
+
         _sts.join();
         g1_policy->record_concurrent_mark_cleanup_completed();
         _sts.leave();
@@ -262,9 +270,6 @@ void ConcurrentMarkThread::run() {
           gclog_or_tty->print_cr("[GC concurrent-cleanup-end, %1.7lf]",
                                  cleanup_end_sec - cleanup_start_sec);
         }
-
-        // We're done: no more free regions coming.
-        g1h->reset_free_regions_coming();
       }
       guarantee(cm()->cleanup_list_is_empty(),
                 "at this point there should be no regions on the cleanup list");
