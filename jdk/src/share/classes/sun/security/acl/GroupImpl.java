@@ -34,7 +34,7 @@ import java.security.acl.*;
  * @author      Satish Dharmaraj
  */
 public class GroupImpl implements Group {
-    private Vector<Principal> groupMembers = new Vector<Principal>(50, 100);
+    private Vector<Principal> groupMembers = new Vector<>(50, 100);
     private String group;
 
     /**
@@ -131,7 +131,7 @@ public class GroupImpl implements Group {
         if (groupMembers.contains(member)) {
             return true;
         } else {
-            Vector<Group> alreadySeen = new Vector<Group>(10);
+            Vector<Group> alreadySeen = new Vector<>(10);
             return isMemberRecurse(member, alreadySeen);
         }
     }

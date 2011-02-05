@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 #include "oops/methodDataOop.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandleWalk.hpp"
 #include "prims/nativeLookup.hpp"
@@ -77,7 +77,7 @@ char* methodOopDesc::name_and_sig_as_C_string(char* buf, int size) {
   return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature(), buf, size);
 }
 
-char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature) {
+char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature) {
   const char* klass_name = klass->external_name();
   int klass_name_len  = (int)strlen(klass_name);
   int method_name_len = method_name->utf8_length();
@@ -91,8 +91,8 @@ char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, symbolOop method_nam
   return dest;
 }
 
-char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature, char* buf, int size) {
-  symbolOop klass_name = klass->name();
+char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size) {
+  Symbol* klass_name = klass->name();
   klass_name->as_klass_external_name(buf, size);
   int len = (int)strlen(buf);
 
@@ -149,17 +149,6 @@ int  methodOopDesc::fast_exception_handler_bci_for(KlassHandle ex_klass, int thr
 
   return -1;
 }
-
-methodOop methodOopDesc::method_from_bcp(address bcp) {
-  debug_only(static int count = 0; count++);
-  assert(Universe::heap()->is_in_permanent(bcp), "bcp not in perm_gen");
-  // TO DO: this may be unsafe in some configurations
-  HeapWord* p = Universe::heap()->block_start(bcp);
-  assert(Universe::heap()->block_is_obj(p), "must be obj");
-  assert(oop(p)->is_constMethod(), "not a method");
-  return constMethodOop(p)->method();
-}
-
 
 void methodOopDesc::mask_for(int bci, InterpreterOopMap* mask) {
 
@@ -232,7 +221,7 @@ int methodOopDesc::object_size(bool is_native) {
 }
 
 
-symbolOop methodOopDesc::klass_name() const {
+Symbol* methodOopDesc::klass_name() const {
   klassOop k = method_holder();
   assert(k->is_klass(), "must be klass");
   instanceKlass* ik = (instanceKlass*) k->klass_part();
@@ -344,8 +333,7 @@ int methodOopDesc::extra_stack_words() {
 
 
 void methodOopDesc::compute_size_of_parameters(Thread *thread) {
-  symbolHandle h_signature(thread, signature());
-  ArgumentSizeComputer asc(h_signature);
+  ArgumentSizeComputer asc(signature());
   set_size_of_parameters(asc.size() + (is_static() ? 0 : 1));
 }
 
@@ -469,11 +457,10 @@ bool methodOopDesc::can_be_statically_bound() const {
 bool methodOopDesc::is_accessor() const {
   if (code_size() != 5) return false;
   if (size_of_parameters() != 1) return false;
-  methodOop m = (methodOop)this;  // pass to code_at() to avoid method_from_bcp
-  if (Bytecodes::java_code_at(code_base()+0, m) != Bytecodes::_aload_0 ) return false;
-  if (Bytecodes::java_code_at(code_base()+1, m) != Bytecodes::_getfield) return false;
-  if (Bytecodes::java_code_at(code_base()+4, m) != Bytecodes::_areturn &&
-      Bytecodes::java_code_at(code_base()+4, m) != Bytecodes::_ireturn ) return false;
+  if (java_code_at(0) != Bytecodes::_aload_0 ) return false;
+  if (java_code_at(1) != Bytecodes::_getfield) return false;
+  if (java_code_at(4) != Bytecodes::_areturn &&
+      java_code_at(4) != Bytecodes::_ireturn ) return false;
   return true;
 }
 
@@ -532,7 +519,7 @@ int methodOopDesc::line_number_from_bci(int bci) const {
 bool methodOopDesc::is_klass_loaded_by_klass_index(int klass_index) const {
   if( _constants->tag_at(klass_index).is_unresolved_klass() ) {
     Thread *thread = Thread::current();
-    symbolHandle klass_name(thread, _constants->klass_name_at(klass_index));
+    Symbol* klass_name = _constants->klass_name_at(klass_index);
     Handle loader(thread, instanceKlass::cast(method_holder())->class_loader());
     Handle prot  (thread, Klass::cast(method_holder())->protection_domain());
     return SystemDictionary::find(klass_name, loader, prot, thread) != NULL;
@@ -864,7 +851,7 @@ bool methodOopDesc::is_method_handle_invoke_name(vmSymbols::SID name_sid) {
 // Constant pool structure for invoke methods:
 enum {
   _imcp_invoke_name = 1,        // utf8: 'invokeExact' or 'invokeGeneric'
-  _imcp_invoke_signature,       // utf8: (variable symbolOop)
+  _imcp_invoke_signature,       // utf8: (variable Symbol*)
   _imcp_method_type_value,      // string: (variable java/dyn/MethodType, sic)
   _imcp_limit
 };
@@ -907,8 +894,8 @@ bool methodOopDesc::is_method_handle_adapter() const {
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
-                                               symbolHandle name,
-                                               symbolHandle signature,
+                                               Symbol* name,
+                                               Symbol* signature,
                                                Handle method_type, TRAPS) {
   methodHandle empty;
 
@@ -926,9 +913,9 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
     constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
-  cp->symbol_at_put(_imcp_invoke_name,       name());
-  cp->symbol_at_put(_imcp_invoke_signature,  signature());
-  cp->string_at_put(_imcp_method_type_value, vmSymbols::void_signature());
+  cp->symbol_at_put(_imcp_invoke_name,       name);
+  cp->symbol_at_put(_imcp_invoke_signature,  signature);
+  cp->string_at_put(_imcp_method_type_value, Universe::the_null_string());
   cp->set_pool_holder(holder());
 
   // set up the fancy stuff:
@@ -944,7 +931,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   m->set_name_index(_imcp_invoke_name);
   m->set_signature_index(_imcp_invoke_signature);
   assert(is_method_handle_invoke_name(m->name()), "");
-  assert(m->signature() == signature(), "");
+  assert(m->signature() == signature, "");
   assert(m->is_method_handle_invoke(), "");
 #ifdef CC_INTERP
   ResultTypeFinder rtf(signature());
@@ -1059,7 +1046,7 @@ vmSymbols::SID methodOopDesc::klass_id_for_intrinsics(klassOop holder) {
     return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
 
   // see if the klass name is well-known:
-  symbolOop klass_name = instanceKlass::cast(holder)->name();
+  Symbol* klass_name = instanceKlass::cast(holder)->name();
   return vmSymbols::find_sid(klass_name);
 }
 
@@ -1135,11 +1122,12 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
   bool sig_is_loaded = true;
   Handle class_loader(THREAD, instanceKlass::cast(m->method_holder())->class_loader());
   Handle protection_domain(THREAD, Klass::cast(m->method_holder())->protection_domain());
-  symbolHandle signature(THREAD, m->signature());
+  ResourceMark rm(THREAD);
+  Symbol*  signature = m->signature();
   for(SignatureStream ss(signature); !ss.is_done(); ss.next()) {
     if (ss.is_object()) {
-      symbolOop sym = ss.as_symbol(CHECK_(false));
-      symbolHandle name (THREAD, sym);
+      Symbol* sym = ss.as_symbol(CHECK_(false));
+      Symbol*  name  = sym;
       klassOop klass = SystemDictionary::resolve_or_null(name, class_loader,
                                              protection_domain, THREAD);
       // We are loading classes eagerly. If a ClassNotFoundException or
@@ -1161,11 +1149,12 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
 bool methodOopDesc::has_unloaded_classes_in_signature(methodHandle m, TRAPS) {
   Handle class_loader(THREAD, instanceKlass::cast(m->method_holder())->class_loader());
   Handle protection_domain(THREAD, Klass::cast(m->method_holder())->protection_domain());
-  symbolHandle signature(THREAD, m->signature());
+  ResourceMark rm(THREAD);
+  Symbol*  signature = m->signature();
   for(SignatureStream ss(signature); !ss.is_done(); ss.next()) {
     if (ss.type() == T_OBJECT) {
-      symbolHandle name(THREAD, ss.as_symbol_or_null());
-      if (name() == NULL) return true;
+      Symbol* name = ss.as_symbol_or_null();
+      if (name == NULL) return true;
       klassOop klass = SystemDictionary::find(name, class_loader, protection_domain, THREAD);
       if (klass == NULL) return true;
     }
@@ -1329,7 +1318,7 @@ class SignatureTypePrinter : public SignatureTypeNames {
   }
 
  public:
-  SignatureTypePrinter(symbolHandle signature, outputStream* st) : SignatureTypeNames(signature) {
+  SignatureTypePrinter(Symbol* signature, outputStream* st) : SignatureTypeNames(signature) {
     _st = st;
     _use_separator = false;
   }
@@ -1414,7 +1403,7 @@ bool CompressedLineNumberReadStream::read_pair() {
 }
 
 
-Bytecodes::Code methodOopDesc::orig_bytecode_at(int bci) {
+Bytecodes::Code methodOopDesc::orig_bytecode_at(int bci) const {
   BreakpointInfo* bp = instanceKlass::cast(method_holder())->breakpoints();
   for (; bp != NULL; bp = bp->next()) {
     if (bp->match(this, bci)) {

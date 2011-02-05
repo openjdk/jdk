@@ -79,7 +79,7 @@ all: $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
 # Test targets
 $(LANGTOOLS_TEST_LIST):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
-$(JDK_TEST_LIST):
+$(JDK_TEST_LIST) $(JDK_TEST_LIST2):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), $@)
 
 clean:

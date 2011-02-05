@@ -127,6 +127,7 @@ endif
 
 # Solaris specific
 ifeq ($(PLATFORM), solaris)
+  REQUIRED_OS_NAME            = SunOS
   REQUIRED_OS_VERSION         = 5.10
   REQUIRED_OS_VARIANT_NAME    = Solaris
   REQUIRED_OS_VARIANT_VERSION = $(REQUIRED_OS_VERSION)
@@ -148,6 +149,7 @@ endif
 
 # Linux specific
 ifeq ($(PLATFORM), linux)
+  REQUIRED_OS_NAME            = Linux
   REQUIRED_OS_VERSION         = 2.6
   REQUIRED_OS_VARIANT_NAME    = Fedora
   REQUIRED_OS_VARIANT_VERSION = 9
@@ -166,6 +168,7 @@ endif
 
 # Windows specific
 ifeq ($(PLATFORM), windows)
+  REQUIRED_OS_NAME            = Windows
   ifeq ($(ARCH_DATA_MODEL),64)
     REQUIRED_OS_VERSION       = 5.2
     REQUIRED_OS_VARIANT_NAME  = Windows2003
@@ -205,7 +208,7 @@ ifeq ($(PLATFORM), windows)
 endif
 
 # Generic
-REQUIRED_ANT_VER          = 1.6.3
+REQUIRED_ANT_VER          = 1.7.1
 REQUIRED_BOOT_VER         = 1.6
 REQUIRED_FREETYPE_VERSION = 2.3.0
 REQUIRED_MAKE_VER         = 3.81

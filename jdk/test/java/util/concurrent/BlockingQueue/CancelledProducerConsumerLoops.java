@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile CancelledProducerConsumerLoops.java
+ * @compile -source 1.5 CancelledProducerConsumerLoops.java
  * @run main/timeout=7000 CancelledProducerConsumerLoops
  * @summary Checks for responsiveness of blocking queues to cancellation.
  * Runs under the assumption that ITERS computations require more than
@@ -119,48 +119,24 @@ public class CancelledProducerConsumerLoops {
         }
     }
 
-    static final class LTQasSQ<T> extends LinkedTransferQueue<T> {
-        LTQasSQ() { super(); }
-        public void put(T x) {
-            try { super.transfer(x); }
-            catch (InterruptedException ex) { throw new Error(); }
-        }
-        private final static long serialVersionUID = 42;
-    }
-
-    static final class HalfSyncLTQ<T> extends LinkedTransferQueue<T> {
-        HalfSyncLTQ() { super(); }
-        public void put(T x) {
-            if (ThreadLocalRandom.current().nextBoolean())
-                super.put(x);
-            else {
-                try { super.transfer(x); }
-                catch (InterruptedException ex) { throw new Error(); }
-            }
-        }
-        private final static long serialVersionUID = 42;
-    }
-
     static void oneTest(int pairs, int iters) throws Exception {
 
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
+        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
         oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
 
-        /* TODO: unbounded queue implementations are prone to OOME
+        /* PriorityBlockingQueue is unbounded
         oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
-        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
-        oneRun(new LTQasSQ<Integer>(), pairs, iters);
-        oneRun(new HalfSyncLTQ<Integer>(), pairs, iters);
         */
     }
 
-    static abstract class Stage implements Callable<Integer> {
+    abstract static class Stage implements Callable<Integer> {
         final BlockingQueue<Integer> queue;
         final CyclicBarrier barrier;
         final int iters;
-        Stage (BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
+        Stage(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
             queue = q;
             barrier = b;
             this.iters = iters;

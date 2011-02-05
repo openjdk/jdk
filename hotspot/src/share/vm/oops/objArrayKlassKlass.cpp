@@ -110,14 +110,11 @@ klassOop objArrayKlassKlass::allocate_objArray_klass_impl(objArrayKlassKlassHand
     }
   }
 
-  // Create type name for klass (except for symbol arrays, since symbolKlass
-  // does not have a name).  This will potentially allocate an object, cause
-  // GC, and all other kinds of things.  Hence, this must be done before we
-  // get a handle to the new objArrayKlass we want to construct.  We cannot
-  // block while holding a handling to a partly initialized object.
-  symbolHandle name = symbolHandle();
+  // Create type name for klass.
+  Symbol* name = NULL;
+  if (!element_klass->oop_is_instance() ||
+      (name = instanceKlass::cast(element_klass())->array_name()) == NULL) {
 
-  if (!element_klass->oop_is_symbol()) {
     ResourceMark rm(THREAD);
     char *name_str = element_klass->name()->as_C_string();
     int len = element_klass->name()->utf8_length();
@@ -133,7 +130,11 @@ klassOop objArrayKlassKlass::allocate_objArray_klass_impl(objArrayKlassKlassHand
       new_str[idx++] = ';';
     }
     new_str[idx++] = '\0';
-    name = oopFactory::new_symbol_handle(new_str, CHECK_0);
+    name = SymbolTable::new_symbol(new_str, CHECK_0);
+    if (element_klass->oop_is_instance()) {
+      instanceKlass* ik = instanceKlass::cast(element_klass());
+      ik->set_array_name(name);
+    }
   }
 
   objArrayKlass o;
@@ -142,12 +143,15 @@ klassOop objArrayKlassKlass::allocate_objArray_klass_impl(objArrayKlassKlassHand
                                                           this_oop,
                                                            CHECK_0);
 
-
   // Initialize instance variables
   objArrayKlass* oak = objArrayKlass::cast(k());
   oak->set_dimension(n);
   oak->set_element_klass(element_klass());
-  oak->set_name(name());
+  oak->set_name(name);
+  // decrement refcount because object arrays are not explicitly freed.  The
+  // instanceKlass array_name() keeps the name counted while the klass is
+  // loaded.
+  name->decrement_refcount();
 
   klassOop bk;
   if (element_klass->oop_is_objArray()) {

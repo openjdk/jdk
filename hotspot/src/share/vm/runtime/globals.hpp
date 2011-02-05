@@ -607,6 +607,9 @@ class CommandLineFlags {
   notproduct(bool, ZombieALot, false,                                       \
           "creates zombies (non-entrant) at exit from the runt. system")    \
                                                                             \
+  product(bool, UnlinkSymbolsALot, false,                                   \
+          "unlink unreferenced symbols from the symbol table at safepoints")\
+                                                                            \
   notproduct(bool, WalkStackALot, false,                                    \
           "trace stack (no print) at every exit from the runtime system")   \
                                                                             \
@@ -1197,9 +1200,6 @@ class CommandLineFlags {
                                                                             \
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
-                                                                            \
-  product(bool, ForceFullGCJVMTIEpilogues, false,                           \
-          "Force 'Full GC' was done semantics for JVMTI GC epilogues")      \
                                                                             \
   /* This option can change an EMCP method into an obsolete method. */      \
   /* This can affect tests that except specific methods to be EMCP. */      \
