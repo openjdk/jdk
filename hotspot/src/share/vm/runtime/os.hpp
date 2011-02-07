@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,9 +559,10 @@ class os: AllStatic {
   static char* strdup(const char *);  // Like strdup
 
 #ifndef PRODUCT
-  static int  num_mallocs;            // # of calls to malloc/realloc
-  static size_t  alloc_bytes;         // # of bytes allocated
-  static int  num_frees;              // # of calls to free
+  static julong num_mallocs;         // # of calls to malloc/realloc
+  static julong alloc_bytes;         // # of bytes allocated
+  static julong num_frees;           // # of calls to free
+  static julong free_bytes;          // # of bytes freed
 #endif
 
   // SocketInterface (ex HPI SocketInterface )

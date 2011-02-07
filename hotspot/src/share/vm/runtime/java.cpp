@@ -320,7 +320,7 @@ void print_statistics() {
   }
 
   print_bytecode_count();
-  if (WizardMode) {
+  if (PrintMallocStatistics) {
     tty->print("allocation stats: ");
     alloc_stats.print();
     tty->cr();

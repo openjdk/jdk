@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,10 @@ int               os::_processor_count    = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
 
 #ifndef PRODUCT
-int os::num_mallocs = 0;            // # of calls to malloc/realloc
-size_t os::alloc_bytes = 0;         // # of bytes allocated
-int os::num_frees = 0;              // # of calls to free
+julong os::num_mallocs = 0;         // # of calls to malloc/realloc
+julong os::alloc_bytes = 0;         // # of bytes allocated
+julong os::num_frees = 0;           // # of calls to free
+julong os::free_bytes = 0;          // # of bytes freed
 #endif
 
 // Fill in buffer with current local time as an ISO-8601 string.
@@ -490,9 +491,9 @@ void print_neighbor_blocks(void* ptr) {
   }
 
   if (start_of_prev_block + space_before + size + space_after == start_of_this_block) {
-    tty->print_cr("### previous object: %p (%ld bytes)", obj, size);
+    tty->print_cr("### previous object: " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", obj, size);
   } else {
-    tty->print_cr("### previous object (not sure if correct): %p (%ld bytes)", obj, size);
+    tty->print_cr("### previous object (not sure if correct): " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", obj, size);
   }
 
   // now find successor block
@@ -504,16 +505,16 @@ void print_neighbor_blocks(void* ptr) {
       start_of_next_block[1] == badResourceValue &&
       start_of_next_block[2] == badResourceValue &&
       start_of_next_block[3] == badResourceValue) {
-    tty->print_cr("### next object: %p (%ld bytes)", next_obj, next_size);
+    tty->print_cr("### next object: " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", next_obj, next_size);
   } else {
-    tty->print_cr("### next object (not sure if correct): %p (%ld bytes)", next_obj, next_size);
+    tty->print_cr("### next object (not sure if correct): " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", next_obj, next_size);
   }
 }
 
 
 void report_heap_error(void* memblock, void* bad, const char* where) {
-  tty->print_cr("## nof_mallocs = %d, nof_frees = %d", os::num_mallocs, os::num_frees);
-  tty->print_cr("## memory stomp: byte at %p %s object %p", bad, where, memblock);
+  tty->print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
+  tty->print_cr("## memory stomp: byte at " PTR_FORMAT " %s object " PTR_FORMAT, bad, where, memblock);
   print_neighbor_blocks(memblock);
   fatal("memory stomping error");
 }
@@ -538,8 +539,8 @@ void verify_block(void* memblock) {
 #endif
 
 void* os::malloc(size_t size) {
-  NOT_PRODUCT(num_mallocs++);
-  NOT_PRODUCT(alloc_bytes += size);
+  NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
+  NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
   if (size == 0) {
     // return a valid pointer if size is zero
@@ -562,26 +563,26 @@ void* os::malloc(size_t size) {
 #endif
   u_char* memblock = ptr + space_before;
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::malloc caught, %lu bytes --> %p", size, memblock);
+    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, memblock);
     breakpoint();
   }
   debug_only(if (paranoid) verify_block(memblock));
-  if (PrintMalloc && tty != NULL) tty->print_cr("os::malloc %lu bytes --> %p", size, memblock);
+  if (PrintMalloc && tty != NULL) tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, memblock);
   return memblock;
 }
 
 
 void* os::realloc(void *memblock, size_t size) {
-  NOT_PRODUCT(num_mallocs++);
-  NOT_PRODUCT(alloc_bytes += size);
 #ifndef ASSERT
+  NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
+  NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
   return ::realloc(memblock, size);
 #else
   if (memblock == NULL) {
-    return os::malloc(size);
+    return malloc(size);
   }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::realloc caught %p", memblock);
+    tty->print_cr("os::realloc caught " PTR_FORMAT, memblock);
     breakpoint();
   }
   verify_block(memblock);
@@ -589,13 +590,13 @@ void* os::realloc(void *memblock, size_t size) {
   if (size == 0) return NULL;
   // always move the block
   void* ptr = malloc(size);
-  if (PrintMalloc) tty->print_cr("os::remalloc %lu bytes, %p --> %p", size, memblock, ptr);
+  if (PrintMalloc) tty->print_cr("os::remalloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
   // Copy to new memory if malloc didn't fail
   if ( ptr != NULL ) {
     memcpy(ptr, memblock, MIN2(size, get_size(memblock)));
     if (paranoid) verify_block(ptr);
     if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-      tty->print_cr("os::realloc caught, %lu bytes --> %p", size, ptr);
+      tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
       breakpoint();
     }
     free(memblock);
@@ -606,17 +607,14 @@ void* os::realloc(void *memblock, size_t size) {
 
 
 void  os::free(void *memblock) {
-  NOT_PRODUCT(num_frees++);
+  NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    if (tty != NULL) tty->print_cr("os::free caught %p", memblock);
+    if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, memblock);
     breakpoint();
   }
   verify_block(memblock);
-  if (PrintMalloc && tty != NULL)
-    // tty->print_cr("os::free %p", memblock);
-    fprintf(stderr, "os::free %p\n", memblock);
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
   // Added by detlefs.
   if (MallocCushion) {
@@ -627,12 +625,18 @@ void  os::free(void *memblock) {
       *p = (u_char)freeBlockPad;
     }
     size_t size = get_size(memblock);
+    inc_stat_counter(&free_bytes, size);
     u_char* end = ptr + space_before + size;
     for (u_char* q = end; q < end + MallocCushion; q++) {
       guarantee(*q == badResourceValue,
                 "Thing freed should be malloc result.");
       *q = (u_char)freeBlockPad;
     }
+    if (PrintMalloc && tty != NULL)
+      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, memblock);
+  } else if (PrintMalloc && tty != NULL) {
+    // tty->print_cr("os::free %p", memblock);
+    fprintf(stderr, "os::free " PTR_FORMAT "\n", memblock);
   }
 #endif
   ::free((char*)memblock - space_before);
