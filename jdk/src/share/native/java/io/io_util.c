@@ -44,7 +44,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
     }
-    nread = IO_Read(fd, &ret, 1);
+    nread = (jint)IO_Read(fd, &ret, 1);
     if (nread == 0) { /* EOF */
         return -1;
     } else if (nread == JVM_IO_ERR) { /* error */
@@ -108,7 +108,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         JNU_ThrowIOException(env, "Stream Closed");
         nread = -1;
     } else {
-        nread = IO_Read(fd, buf, len);
+        nread = (jint)IO_Read(fd, buf, len);
         if (nread > 0) {
             (*env)->SetByteArrayRegion(env, bytes, off, nread, (jbyte *)buf);
         } else if (nread == JVM_IO_ERR) {
@@ -137,9 +137,9 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
         return;
     }
     if (append == JNI_TRUE) {
-        n = IO_Append(fd, &c, 1);
+        n = (jint)IO_Append(fd, &c, 1);
     } else {
-        n = IO_Write(fd, &c, 1);
+        n = (jint)IO_Write(fd, &c, 1);
     }
     if (n == JVM_IO_ERR) {
         JNU_ThrowIOExceptionWithLastError(env, "Write error");
@@ -190,9 +190,9 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
                 break;
             }
             if (append == JNI_TRUE) {
-                n = IO_Append(fd, buf+off, len);
+                n = (jint)IO_Append(fd, buf+off, len);
             } else {
-                n = IO_Write(fd, buf+off, len);
+                n = (jint)IO_Write(fd, buf+off, len);
             }
             if (n == JVM_IO_ERR) {
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");

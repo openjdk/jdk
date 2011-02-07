@@ -368,7 +368,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile0(JNIEnv* env, jclass this,
 
     HANDLE handle = FindFirstFileW(lpFileName, &data);
     if (handle != INVALID_HANDLE_VALUE) {
-        jstring name = (*env)->NewString(env, data.cFileName, wcslen(data.cFileName));
+        jstring name = (*env)->NewString(env, data.cFileName, (jsize)wcslen(data.cFileName));
         if (name == NULL)
             return;
         (*env)->SetLongField(env, obj, findFirst_handle, ptr_to_jlong(handle));
@@ -401,7 +401,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindNextFile(JNIEnv* env, jclass this,
     WIN32_FIND_DATAW* data = (WIN32_FIND_DATAW*)jlong_to_ptr(dataAddress);
 
     if (FindNextFileW(h, data) != 0) {
-        return (*env)->NewString(env, data->cFileName, wcslen(data->cFileName));
+        return (*env)->NewString(env, data->cFileName, (jsize)wcslen(data->cFileName));
     } else {
     if (GetLastError() != ERROR_NO_MORE_FILES)
         throwWindowsException(env, GetLastError());
@@ -424,7 +424,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstStream0(JNIEnv* env, jclass thi
 
     handle = (*FindFirstStream_func)(lpFileName, FindStreamInfoStandard, &data, 0);
     if (handle != INVALID_HANDLE_VALUE) {
-        jstring name = (*env)->NewString(env, data.cStreamName, wcslen(data.cStreamName));
+        jstring name = (*env)->NewString(env, data.cStreamName, (jsize)wcslen(data.cStreamName));
         if (name == NULL)
             return;
         (*env)->SetLongField(env, obj, findStream_handle, ptr_to_jlong(handle));
@@ -452,7 +452,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindNextStream(JNIEnv* env, jclass this,
     }
 
     if ((*FindNextStream_func)(h, &data) != 0) {
-        return (*env)->NewString(env, data.cStreamName, wcslen(data.cStreamName));
+        return (*env)->NewString(env, data.cStreamName, (jsize)wcslen(data.cStreamName));
     } else {
         if (GetLastError() != ERROR_HANDLE_EOF)
             throwWindowsException(env, GetLastError());
@@ -1224,9 +1224,10 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_CreateIoCompletionPort(JNIEnv* env, jclass this,
     jlong fileHandle, jlong existingPort, jint completionKey)
 {
+    ULONG_PTR ck = completionKey;
     HANDLE port = CreateIoCompletionPort((HANDLE)jlong_to_ptr(fileHandle),
                                          (HANDLE)jlong_to_ptr(existingPort),
-                                         (DWORD)completionKey,
+                                         ck,
                                          0);
     if (port == NULL) {
         throwWindowsException(env, GetLastError());
@@ -1239,7 +1240,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetQueuedCompletionStatus0(JNIEnv* env, 
     jlong completionPort, jobject obj)
 {
     DWORD bytesTransferred;
-    DWORD completionKey;
+    ULONG_PTR completionKey;
     OVERLAPPED *lpOverlapped;
     BOOL res;
 
