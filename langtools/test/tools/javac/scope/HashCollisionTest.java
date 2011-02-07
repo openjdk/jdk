@@ -47,7 +47,6 @@ public class HashCollisionTest {
         JavacFileManager.preRegister(context); // required by ClassReader which is required by Symtab
         names = Names.instance(context);       // Name.Table impls tied to an instance of Names
         symtab = Symtab.instance(context);
-        scopeCounter = ScopeCounter.instance(context);
 
         // determine hashMask for an empty scope
         Scope emptyScope = new Scope(symtab.unnamedPackage); // any owner will do
@@ -171,7 +170,7 @@ public class HashCollisionTest {
      */
     ClassSymbol createClass(Name name, Symbol owner) {
         ClassSymbol sym = new ClassSymbol(0, name, owner);
-        sym.members_field = new ClassScope(sym, scopeCounter);
+        sym.members_field = new Scope(sym);
         if (owner != symtab.unnamedPackage)
             owner.members().enter(sym);
         return sym;
@@ -247,5 +246,4 @@ public class HashCollisionTest {
 
     Names names;
     Symtab symtab;
-    ScopeCounter scopeCounter;
 }
