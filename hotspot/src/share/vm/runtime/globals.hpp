@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,6 +711,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, PrintMalloc, false,                                         \
           "print all malloc/free calls")                                    \
+                                                                            \
+  develop(bool, PrintMallocStatistics, false,                               \
+          "print malloc/free statistics")                                   \
                                                                             \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \
