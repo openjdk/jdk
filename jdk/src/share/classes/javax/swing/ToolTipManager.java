@@ -75,6 +75,9 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
     private MouseMotionListener moveBeforeEnterListener = null;
     private KeyListener accessibilityKeyListener = null;
 
+    private KeyStroke postTip;
+    private KeyStroke hideTip;
+
     // PENDING(ges)
     protected boolean lightWeightPopupEnabled = true;
     protected boolean heavyWeightPopupEnabled = false;
@@ -89,6 +92,9 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
 
         moveBeforeEnterListener = new MoveBeforeEnterListener();
         accessibilityKeyListener = new AccessibilityKeyListener();
+
+        postTip = KeyStroke.getKeyStroke(KeyEvent.VK_F1, InputEvent.CTRL_MASK);
+        hideTip =  KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
     }
 
     /**
@@ -805,13 +811,13 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         public void keyPressed(KeyEvent e) {
             if (!e.isConsumed()) {
                 JComponent source = (JComponent) e.getComponent();
-                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                KeyStroke keyStrokeForEvent = KeyStroke.getKeyStrokeForEvent(e);
+                if (hideTip.equals(keyStrokeForEvent)) {
                     if (tipWindow != null) {
                         hide(source);
                         e.consume();
                     }
-                } else if (e.getKeyCode() == KeyEvent.VK_F1
-                        && e.getModifiers() == Event.CTRL_MASK) {
+                } else if (postTip.equals(keyStrokeForEvent)) {
                     // Shown tooltip will be hidden
                     ToolTipManager.this.show(source);
                     e.consume();
