@@ -21,14 +21,19 @@
  * questions.
  */
 
-// key: compiler.err.name.clash.same.erasure.no.override
+// key: compiler.err.name.clash.same.erasure.no.override.1
 
-public class NameClashSameErasureNoOverride<X> {
-    static class A {
-        void m(NameClashSameErasureNoOverride<String> l) {}
+public class NameClashSameErasureNoOverride1 {
+
+    interface I<X> {
+        void m(X l);
     }
 
-    static class B extends A {
-        void m(NameClashSameErasureNoOverride<Integer> l) {}
+    class A {
+        void m(Object l) {}
+    }
+
+    class B extends A implements I<Integer> {
+        public void m(Integer l) {}
     }
 }

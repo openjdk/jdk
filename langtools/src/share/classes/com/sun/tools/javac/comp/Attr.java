@@ -709,7 +709,11 @@ public class Attr extends JCTree.Visitor {
 
             // If we override any other methods, check that we do so properly.
             // JLS ???
-            chk.checkClashes(tree.pos(), env.enclClass.type, m);
+            if (m.isStatic()) {
+                chk.checkHideClashes(tree.pos(), env.enclClass.type, m);
+            } else {
+                chk.checkOverrideClashes(tree.pos(), env.enclClass.type, m);
+            }
             chk.checkOverride(tree, m);
 
             // Create a new environment with local scope

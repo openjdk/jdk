@@ -21,14 +21,5 @@
  * questions.
  */
 
-// key: compiler.err.name.clash.same.erasure.no.override
-
-public class NameClashSameErasureNoOverride<X> {
-    static class A {
-        void m(NameClashSameErasureNoOverride<String> l) {}
-    }
-
-    static class B extends A {
-        void m(NameClashSameErasureNoOverride<Integer> l) {}
-    }
-}
+package p1;
+public class C<T> { void m(T arg) { } /* implicit: m(Object) */ }
