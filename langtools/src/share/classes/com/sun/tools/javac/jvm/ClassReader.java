@@ -1321,7 +1321,9 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
-                if (majorVersion >= V51.major && proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
+                if (majorVersion >= V51.major &&
+                        (proxy.type.tsym == syms.polymorphicSignatureType.tsym ||
+                         proxy.type.tsym == syms.transientPolymorphicSignatureType.tsym)) {
                     sym.flags_field |= POLYMORPHIC_SIGNATURE;
                 }
             }
