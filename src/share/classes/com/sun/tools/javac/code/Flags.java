@@ -237,7 +237,7 @@ public class Flags {
 
     /**
      * Flag that marks a signature-polymorphic invoke method.
-     * (These occur inside java.dyn.MethodHandle.)
+     * (These occur inside java.lang.invoke.MethodHandle.)
      */
     public static final long POLYMORPHIC_SIGNATURE = 1L<<40;
 
