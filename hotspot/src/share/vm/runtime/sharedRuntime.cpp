@@ -68,6 +68,14 @@
 # include "nativeInst_zero.hpp"
 # include "vmreg_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "nativeInst_arm.hpp"
+# include "vmreg_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "nativeInst_ppc.hpp"
+# include "vmreg_ppc.inline.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -2618,6 +2626,7 @@ void SharedRuntime::get_utf(oopDesc* src, address dst) {
   int          jlsLen    = java_lang_String::length(src);
   jchar*       jlsPos    = (jlsLen == 0) ? NULL :
                                            jlsValue->char_at_addr(jlsOffset);
+  assert(typeArrayKlass::cast(jlsValue->klass())->element_type() == T_CHAR, "compressed string");
   (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
 }
 #endif // ndef HAVE_DTRACE_H

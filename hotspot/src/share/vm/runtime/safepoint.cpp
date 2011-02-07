@@ -61,6 +61,14 @@
 # include "nativeInst_zero.hpp"
 # include "vmreg_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "nativeInst_arm.hpp"
+# include "vmreg_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "nativeInst_ppc.hpp"
+# include "vmreg_ppc.inline.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif

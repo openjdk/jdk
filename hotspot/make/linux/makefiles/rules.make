@@ -146,6 +146,8 @@ ifndef LP64
 include $(GAMMADIR)/make/pic.make
 endif
 
+include $(GAMMADIR)/make/closed.make
+
 # The non-PIC object files are only generated for 32 bit platforms.
 ifdef LP64
 %.o: %.cpp
