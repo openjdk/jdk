@@ -131,7 +131,7 @@ extern Mutex*   MMUTracker_lock;                 // protects the MMU
 extern Mutex*   HotCardCache_lock;               // protects the hot card cache
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
-extern Monitor* LowMemory_lock;                  // a lock used for low memory detection
+extern Monitor* Service_lock;                    // a lock used for service thread operation
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not

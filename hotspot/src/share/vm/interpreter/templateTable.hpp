@@ -40,6 +40,12 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "interp_masm_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "interp_masm_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "interp_masm_ppc.hpp"
+#endif
 
 #ifndef CC_INTERP
 // All the necessary definitions used for (bytecode) template generation. Instead of
@@ -363,6 +369,12 @@ class TemplateTable: AllStatic {
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "templateTable_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "templateTable_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "templateTable_ppc.hpp"
 #endif
 
 };

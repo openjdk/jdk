@@ -35,6 +35,12 @@
 #ifdef TARGET_ARCH_zero
 # include "nativeInst_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "nativeInst_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "nativeInst_ppc.hpp"
+#endif
 
 class RegisteredProbes;
 typedef jlong OpaqueProbes;
