@@ -21,14 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.name.clash.same.erasure.no.override
+// key: compiler.err.name.clash.same.erasure.no.hide
 
-public class NameClashSameErasureNoOverride<X> {
+public class NameClashSameErasureNoHide<X> {
     static class A {
-        void m(NameClashSameErasureNoOverride<String> l) {}
+        static void m(NameClashSameErasureNoHide<String> l) {}
     }
 
     static class B extends A {
-        void m(NameClashSameErasureNoOverride<Integer> l) {}
+        static void m(NameClashSameErasureNoHide<Integer> l) {}
     }
 }

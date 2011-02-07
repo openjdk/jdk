@@ -5,7 +5,7 @@
  * @compile/fail/ref=T6476118c.out -XDrawDiagnostics T6476118c.java
  */
 
-class T6476118b {
+class T6476118c {
     static class A<T> {
         public void foo(T t) { }
     }

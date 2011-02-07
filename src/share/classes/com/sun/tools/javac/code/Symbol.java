@@ -729,6 +729,10 @@ public abstract class Symbol implements Element {
          */
         public Pool pool;
 
+        /** members closure cache (set by Types.membersClosure)
+         */
+        Scope membersClosure;
+
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(flags, name, type, owner);
             this.members_field = null;
@@ -1222,7 +1226,7 @@ public abstract class Symbol implements Element {
             };
 
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
-            MethodSymbol res = types.implementation(this, origin, types, checkResult, implFilter);
+            MethodSymbol res = types.implementation(this, origin, checkResult, implFilter);
             if (res != null)
                 return res;
             // if origin is derived from a raw type, we might have missed
