@@ -71,6 +71,11 @@ class oopDesc {
   static BarrierSet* _bs;
 
  public:
+  enum ConcSafeType {
+    IsUnsafeConc = false,
+    IsSafeConc   = true
+  };
+
   markOop  mark() const         { return _mark; }
   markOop* mark_addr() const    { return (markOop*) &_mark; }
 

@@ -6360,18 +6360,16 @@ size_t CMSCollector::block_size_using_printezis_bits(HeapWord* addr) const {
 // A variant of the above (block_size_using_printezis_bits()) except
 // that we return 0 if the P-bits are not yet set.
 size_t CMSCollector::block_size_if_printezis_bits(HeapWord* addr) const {
-  if (_markBitMap.isMarked(addr)) {
-    assert(_markBitMap.isMarked(addr + 1), "Missing Printezis bit?");
+  if (_markBitMap.isMarked(addr + 1)) {
+    assert(_markBitMap.isMarked(addr), "P-bit can be set only for marked objects");
     HeapWord* nextOneAddr = _markBitMap.getNextMarkedWordAddress(addr + 2);
     size_t size = pointer_delta(nextOneAddr + 1, addr);
     assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
            "alignment problem");
     assert(size >= 3, "Necessary for Printezis marks to work");
     return size;
-  } else {
-    assert(!_markBitMap.isMarked(addr + 1), "Bit map inconsistency?");
-    return 0;
   }
+  return 0;
 }
 
 HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
@@ -9212,7 +9210,6 @@ bool MarkRefsIntoAndScanClosure::take_from_overflow_list() {
 
 size_t MarkDeadObjectsClosure::do_blk(HeapWord* addr) {
   size_t res = _sp->block_size_no_stall(addr, _collector);
-  assert(res != 0, "Should always be able to compute a size");
   if (_sp->block_is_obj(addr)) {
     if (_live_bit_map->isMarked(addr)) {
       // It can't have been dead in a previous cycle
@@ -9221,6 +9218,7 @@ size_t MarkDeadObjectsClosure::do_blk(HeapWord* addr) {
       _dead_bit_map->mark(addr);      // mark the dead object
     }
   }
+  // Could be 0, if the block size could not be computed without stalling.
   return res;
 }
 

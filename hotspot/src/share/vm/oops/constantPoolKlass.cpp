@@ -71,6 +71,12 @@ constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS
   c->set_is_conc_safe(is_conc_safe);
   // all fields are initialized; needed for GC
 
+  // Note: because we may be in this "conc_unsafe" state when allocating
+  // t_oop below, which may in turn cause a GC, it is imperative that our
+  // size be correct, consistent and henceforth stable, at this stage.
+  assert(c->is_parsable(), "Else size() below is unreliable");
+  DEBUG_ONLY(int sz = c->size();)
+
   // initialize tag array
   // Note: cannot introduce constant pool handle before since it is not
   //       completely initialized (no class) -> would cause assertion failure
@@ -82,6 +88,8 @@ constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS
   }
   pool->set_tags(tags());
 
+  // Check that our size was stable at its old value.
+  assert(sz == c->size(), "size() changed");
   return pool();
 }
 
