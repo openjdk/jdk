@@ -3655,6 +3655,12 @@ class CommandLineFlags {
   manageable(bool, PrintConcurrentLocks, false,                             \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \
+  diagnostic(bool, TransmitErrorReport, false,                              \
+          "Enable error report transmission on erroneous termination")      \
+                                                                            \
+  diagnostic(ccstr, ErrorReportServer, NULL,                                \
+          "Override built-in error report server address")                  \
+                                                                            \
   /* Shared spaces */                                                       \
                                                                             \
   product(bool, UseSharedSpaces, true,                                      \
