@@ -962,22 +962,6 @@ static void call_initializeSystemClass(TRAPS) {
                                          vmSymbols::void_method_signature(), CHECK);
 }
 
-#ifdef KERNEL
-static void set_jkernel_boot_classloader_hook(TRAPS) {
-  klassOop k = SystemDictionary::sun_jkernel_DownloadManager_klass();
-  instanceKlassHandle klass (THREAD, k);
-
-  if (k == NULL) {
-    // sun.jkernel.DownloadManager may not present in the JDK; just return
-    return;
-  }
-
-  JavaValue result(T_VOID);
-  JavaCalls::call_static(&result, klass, vmSymbols::setBootClassLoaderHook_name(),
-                                         vmSymbols::void_method_signature(), CHECK);
-}
-#endif // KERNEL
-
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
@@ -3283,12 +3267,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (HAS_PENDING_EXCEPTION) {
     vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
-
-#ifdef KERNEL
-  if (JDK_Version::is_gte_jdk17x_version()) {
-    set_jkernel_boot_classloader_hook(THREAD);
-  }
-#endif // KERNEL
 
 #ifndef SERIALGC
   // Support for ConcurrentMarkSweep. This should be cleaned up
