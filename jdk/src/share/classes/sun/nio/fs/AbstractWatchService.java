@@ -33,7 +33,7 @@ import java.io.IOException;
  * Base implementation class for watch services.
  */
 
-abstract class AbstractWatchService extends WatchService {
+abstract class AbstractWatchService implements WatchService {
 
     // signaled keys waiting to be dequeued
     private final LinkedBlockingDeque<WatchKey> pendingKeys =
@@ -41,7 +41,7 @@ abstract class AbstractWatchService extends WatchService {
 
     // special key to indicate that watch service is closed
     private final WatchKey CLOSE_KEY =
-        new AbstractWatchKey(null) {
+        new AbstractWatchKey(null, null) {
             @Override
             public boolean isValid() {
                 return true;
@@ -54,7 +54,7 @@ abstract class AbstractWatchService extends WatchService {
 
     // used when closing watch service
     private volatile boolean closed;
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
 
     protected AbstractWatchService() {
     }
@@ -93,7 +93,7 @@ abstract class AbstractWatchService extends WatchService {
     }
 
     @Override
-    public final WatchKey  poll() {
+    public final WatchKey poll() {
         checkOpen();
         WatchKey key = pendingKeys.poll();
         checkKey(key);

@@ -36,15 +36,22 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 public class SocksProxyVersion implements Runnable {
-    ServerSocket ss;
+    final ServerSocket ss;
     volatile boolean failed;
 
     public static void main(String[] args) throws Exception {
         new SocksProxyVersion();
     }
 
+    @SuppressWarnings("try")
     public SocksProxyVersion() throws Exception {
         ss = new ServerSocket(0);
+        try (ServerSocket socket = ss) {
+            runTest();
+        }
+    }
+
+    void runTest() throws Exception {
         int port = ss.getLocalPort();
         Thread serverThread = new Thread(this);
         serverThread.start();
@@ -75,22 +82,21 @@ public class SocksProxyVersion implements Runnable {
     }
 
     public void run() {
-        try (ss) {
-            Socket s = ss.accept();
-            int version = (s.getInputStream()).read();
-            if (version != 4) {
-                System.out.println("Got " + version + ", expected 4");
-                failed = true;
+        try {
+            try (Socket s = ss.accept()) {
+                int version = (s.getInputStream()).read();
+                if (version != 4) {
+                    System.out.println("Got " + version + ", expected 4");
+                    failed = true;
+                }
             }
-            s.close();
-
-            s = ss.accept();
-            version = (s.getInputStream()).read();
-            if (version != 5) {
-                System.out.println("Got " + version + ", expected 5");
-                failed = true;
+            try (Socket s = ss.accept()) {
+                int version = (s.getInputStream()).read();
+                if (version != 5) {
+                    System.out.println("Got " + version + ", expected 5");
+                    failed = true;
+                }
             }
-            s.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

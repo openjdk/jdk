@@ -176,7 +176,7 @@ public final class AclEntry {
          */
         public Builder setPermissions(Set<AclEntryPermission> perms) {
             // copy and check for erroneous elements
-            perms = new HashSet<AclEntryPermission>(perms);
+            perms = EnumSet.copyOf(perms);
             checkSet(perms, AclEntryPermission.class);
             this.perms = perms;
             return this;
@@ -190,8 +190,7 @@ public final class AclEntry {
          * @return  this builder
          */
         public Builder setPermissions(AclEntryPermission... perms) {
-            Set<AclEntryPermission> set =
-                new HashSet<AclEntryPermission>(perms.length);
+            Set<AclEntryPermission> set = EnumSet.noneOf(AclEntryPermission.class);
             // copy and check for null elements
             for (AclEntryPermission p: perms) {
                 if (p == null)
@@ -214,7 +213,7 @@ public final class AclEntry {
          */
         public Builder setFlags(Set<AclEntryFlag> flags) {
             // copy and check for erroneous elements
-            flags = new HashSet<AclEntryFlag>(flags);
+            flags = EnumSet.copyOf(flags);
             checkSet(flags, AclEntryFlag.class);
             this.flags = flags;
             return this;
@@ -228,7 +227,7 @@ public final class AclEntry {
          * @return  this builder
          */
         public Builder setFlags(AclEntryFlag... flags) {
-            Set<AclEntryFlag> set = new HashSet<AclEntryFlag>(flags.length);
+            Set<AclEntryFlag> set = EnumSet.noneOf(AclEntryFlag.class);
             // copy and check for null elements
             for (AclEntryFlag f: flags) {
                 if (f == null)

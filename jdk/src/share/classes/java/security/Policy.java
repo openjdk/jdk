@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,6 @@ import sun.security.util.SecurityConstants;
  * implementation.  In addition, an instance of a Policy object can be
  * constructed by invoking one of the <code>getInstance</code> factory methods
  * with a standard type.  The default policy type is "JavaPolicy".
- * See Appendix A in the <a href="../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
- * Java Cryptography Architecture API Specification &amp; Reference </a>
- * for a list of standard Policy types.
  *
  * <p> Once a Policy instance has been installed (either by default, or by
  * calling <code>setPolicy</code>),
@@ -133,7 +130,7 @@ public abstract class Policy {
      * This method first calls
      * <code>SecurityManager.checkPermission</code> with a
      * <code>SecurityPermission("getPolicy")</code> permission
-     * to ensure it's ok to get the Policy object..
+     * to ensure it's ok to get the Policy object.
      *
      * @return the installed Policy.
      *
@@ -340,9 +337,10 @@ public abstract class Policy {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param type the specified Policy type.  See Appendix A in the
-     *    <a href="../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     *    Java Cryptography Architecture API Specification &amp; Reference </a>
+     * @param type the specified Policy type.  See the Policy section in the
+     *    <a href=
+     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
+     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.
@@ -393,9 +391,10 @@ public abstract class Policy {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param type the specified Policy type.  See Appendix A in the
-     *    <a href="../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     *    Java Cryptography Architecture API Specification &amp; Reference </a>
+     * @param type the specified Policy type.  See the Policy section in the
+     *    <a href=
+     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
+     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.
@@ -456,9 +455,10 @@ public abstract class Policy {
      * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
-     * @param type the specified Policy type.  See Appendix A in the
-     *    <a href="../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     *    Java Cryptography Architecture API Specification &amp; Reference </a>
+     * @param type the specified Policy type.  See the Policy section in the
+     *    <a href=
+     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
+     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.

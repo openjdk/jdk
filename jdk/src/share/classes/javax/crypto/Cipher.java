@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ import sun.security.jca.GetInstance.Instance;
  *     Cipher c = Cipher.getInstance("<i>DES/CBC/PKCS5Padding</i>");
  * </pre>
  *
- * Using modes such as <code>CFB</code> and <code>OFB<code>, block
+ * Using modes such as <code>CFB</code> and <code>OFB</code>, block
  * ciphers can encrypt data in units smaller than the cipher's actual
  * block size.  When requesting such a mode, you may optionally specify
  * the number of bits to be processed at a time by appending this number
@@ -88,6 +88,33 @@ import sun.security.jca.GetInstance.Instance;
  * example, the SunJCE provider uses a default of 64 bits for DES.)
  * Thus, block ciphers can be turned into byte-oriented stream ciphers by
  * using an 8 bit mode such as CFB8 or OFB8.
+ *
+ * <p> Every implementation of the Java platform is required to support
+ * the following standard <code>Cipher</code> transformations with the keysizes
+ * in parentheses:
+ * <ul>
+ * <li><tt>AES/CBC/NoPadding</tt> (128)</li>
+ * <li><tt>AES/CBC/PKCS5Padding</tt> (128)</li>
+ * <li><tt>AES/ECB/NoPadding</tt> (128)</li>
+ * <li><tt>AES/ECB/PKCS5Padding</tt> (128)</li>
+ * <li><tt>DES/CBC/NoPadding</tt> (56)</li>
+ * <li><tt>DES/CBC/PKCS5Padding</tt> (56)</li>
+ * <li><tt>DES/ECB/NoPadding</tt> (56)</li>
+ * <li><tt>DES/ECB/PKCS5Padding</tt> (56)</li>
+ * <li><tt>DESede/CBC/NoPadding</tt> (168)</li>
+ * <li><tt>DESede/CBC/PKCS5Padding</tt> (168)</li>
+ * <li><tt>DESede/ECB/NoPadding</tt> (168)</li>
+ * <li><tt>DESede/ECB/PKCS5Padding</tt> (168)</li>
+ * <li><tt>RSA/ECB/PKCS1Padding</tt> (1024, 2048)</li>
+ * <li><tt>RSA/ECB/OAEPWithSHA-1AndMGF1Padding</tt> (1024, 2048)</li>
+ * <li><tt>RSA/ECB/OAEPWithSHA-256AndMGF1Padding</tt> (1024, 2048)</li>
+ * </ul>
+ * These transformations are described in the
+ * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+ * Cipher section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other transformations are supported.
  *
  * @author Jan Luehe
  * @see KeyGenerator
@@ -408,10 +435,9 @@ public class Cipher {
      *
      * @param transformation the name of the transformation, e.g.,
      * <i>DES/CBC/PKCS5Padding</i>.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Cipher section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard transformation names.
      *
      * @return a cipher that implements the requested transformation.
@@ -485,10 +511,9 @@ public class Cipher {
      *
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Cipher section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard transformation names.
      *
      * @param provider the name of the provider.
@@ -538,10 +563,9 @@ public class Cipher {
      *
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the Cipher section in the <a href=
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard transformation names.
      *
      * @param provider the provider.

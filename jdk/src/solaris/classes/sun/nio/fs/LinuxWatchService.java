@@ -102,8 +102,8 @@ class LinuxWatchService
         // watch descriptor
         private volatile int wd;
 
-        LinuxWatchKey(LinuxWatchService watcher, int ifd, int wd) {
-            super(watcher);
+        LinuxWatchKey(UnixPath dir, LinuxWatchService watcher, int ifd, int wd) {
+            super(dir, watcher);
             this.ifd = ifd;
             this.wd = wd;
         }
@@ -266,7 +266,7 @@ class LinuxWatchService
             // ensure watch descriptor is in map
             LinuxWatchKey key = wdToKey.get(wd);
             if (key == null) {
-                key = new LinuxWatchKey(watcher, ifd, wd);
+                key = new LinuxWatchKey(dir, watcher, ifd, wd);
                 wdToKey.put(wd, key);
             }
             return key;

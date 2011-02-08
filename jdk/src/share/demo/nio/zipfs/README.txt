@@ -5,9 +5,8 @@ The factory methods defined by the java.nio.file.FileSystems class can be
 used to create a FileSystem, eg:
 
    // use file type detection
-   Map<String,?> env = Collections.emptyMap();
    Path jarfile = Paths.get("foo.jar");
-   FileSystem fs = FileSystems.newFileSystem(jarfile, env, null);
+   FileSystem fs = FileSystems.newFileSystem(jarfile, null);
 
 -or
 

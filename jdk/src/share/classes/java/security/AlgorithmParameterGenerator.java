@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,20 @@ import java.security.spec.AlgorithmParameterSpec;
  * default modulus prime size of 1024 bits for the generation of DSA
  * parameters.
  *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>AlgorithmParameterGenerator</code> algorithms and
+ * keysizes in parentheses:
+ * <ul>
+ * <li><tt>DiffieHellman</tt> (1024)</li>
+ * <li><tt>DSA</tt> (1024)</li>
+ * </ul>
+ * These algorithms are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
+ * AlgorithmParameterGenerator section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
+ *
  * @author Jan Luehe
  *
  *
@@ -126,9 +140,9 @@ public class AlgorithmParameterGenerator {
      *
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameterGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new AlgorithmParameterGenerator object.
@@ -168,9 +182,9 @@ public class AlgorithmParameterGenerator {
      *
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameterGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the string name of the Provider.
@@ -214,9 +228,9 @@ public class AlgorithmParameterGenerator {
      *
      * @param algorithm the string name of the algorithm this
      * parameter generator is associated with.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameterGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the Provider object.

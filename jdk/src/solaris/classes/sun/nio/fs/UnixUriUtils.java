@@ -25,8 +25,11 @@
 
 package sun.nio.fs;
 
+import java.nio.file.Path;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
 /**
  * Unix specific Path <--> URI conversion
@@ -38,7 +41,7 @@ class UnixUriUtils {
     /**
      * Converts URI to Path
      */
-    static UnixPath fromUri(UnixFileSystem fs, URI uri) {
+    static Path fromUri(UnixFileSystem fs, URI uri) {
         if (!uri.isAbsolute())
             throw new IllegalArgumentException("URI is not absolute");
         if (uri.isOpaque())
@@ -53,22 +56,41 @@ class UnixUriUtils {
         if (uri.getQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
 
-        String path = uri.getPath();
-        if (path.equals(""))
-            throw new IllegalArgumentException("URI path component is empty");
-        if (path.endsWith("/") && (path.length() > 1)) {
-            // "/foo/" --> "/foo", but "/" --> "/"
-            path = path.substring(0, path.length() - 1);
-        }
+        // compatability with java.io.File
+        if (!uri.toString().startsWith("file:///"))
+            return new File(uri).toPath();
 
-        // preserve bytes
-        byte[] result = new byte[path.length()];
-        for (int i=0; i<path.length(); i++) {
-            byte v = (byte)(path.charAt(i));
-            if (v == 0)
-                throw new IllegalArgumentException("Nul character not allowed");
-            result[i] = v;
+        // transformation use raw path
+        String p = uri.getRawPath();
+        int len = p.length();
+        if (len == 0)
+            throw new IllegalArgumentException("URI path component is empty");
+
+        // transform escaped octets and unescaped characters to bytes
+        if (p.endsWith("/") && len > 1)
+            len--;
+        byte[] result = new byte[len];
+        int rlen = 0;
+        int pos = 0;
+        while (pos < len) {
+            char c = p.charAt(pos++);
+            byte b;
+            if (c == '%') {
+                assert (pos+2) <= len;
+                char c1 = p.charAt(pos++);
+                char c2 = p.charAt(pos++);
+                b = (byte)((decode(c1) << 4) | decode(c2));
+                if (b == 0)
+                    throw new IllegalArgumentException("Nul character not allowed");
+            } else {
+                assert c < 0x80;
+                b = (byte)c;
+            }
+            result[rlen++] = b;
         }
+        if (rlen != result.length)
+            result = Arrays.copyOf(result, rlen);
+
         return new UnixPath(fs, result);
     }
 
@@ -86,7 +108,7 @@ class UnixUriUtils {
             } else {
                sb.append('%');
                sb.append(hexDigits[(c >> 4) & 0x0f]);
-               sb.append(hexDigits[(c >> 0) & 0x0f]);
+               sb.append(hexDigits[(c) & 0x0f]);
             }
         }
 
@@ -162,6 +184,17 @@ class UnixUriUtils {
         if (c < 128)
             return ((1L << (c - 64)) & highMask) != 0;
         return false;
+    }
+
+    // decode
+    private static int decode(char c) {
+        if ((c >= '0') && (c <= '9'))
+            return c - '0';
+        if ((c >= 'a') && (c <= 'f'))
+            return c - 'a' + 10;
+        if ((c >= 'A') && (c <= 'F'))
+            return c - 'A' + 10;
+        throw new AssertionError();
     }
 
     // digit    = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" |
