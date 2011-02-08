@@ -156,7 +156,6 @@ public class Demo {
         if (action == Action.create)
             env.put("create", "true");
         try (FileSystem fs = provider.newFileSystem(Paths.get(args[1]), env)) {
-            FileSystem fs2;
             Path path, src, dst;
             boolean isRename = false;
             switch (action) {
@@ -201,12 +200,12 @@ public class Demo {
                 Files.copy(src, dst, COPY_ATTRIBUTES);
                 break;
             case zzmove:
-                try (fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
+                try (FileSystem fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
                     z2zmove(fs, fs2, args[3]);
                 }
                 break;
             case zzcopy:
-                try (fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
+                try (FileSystem fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
                     z2zcopy(fs, fs2, args[3]);
                 }
                 break;
