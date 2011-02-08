@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,25 +185,6 @@ int methodDataKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   ProfileData* data;
   for (data = m->first_data(); m->is_valid(data); data = m->next_data(data)) {
     data->update_pointers();
-  }
-  return m->object_size();
-}
-
-int
-methodDataKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                     HeapWord* beg_addr, HeapWord* end_addr) {
-  assert(obj->is_methodData(), "should be method data");
-
-  oop* p;
-  methodDataOop m = methodDataOop(obj);
-
-  p = m->adr_method();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
-  ResourceMark rm;
-  ProfileData* data;
-  for (data = m->first_data(); m->is_valid(data); data = m->next_data(data)) {
-    data->update_pointers(beg_addr, end_addr);
   }
   return m->object_size();
 }

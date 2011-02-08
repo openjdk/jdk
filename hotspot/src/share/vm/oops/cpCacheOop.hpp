@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 #endif // SERIALGC
 
   void update_pointers();
-  void update_pointers(HeapWord* beg_addr, HeapWord* end_addr);
 
   // RedefineClasses() API support:
   // If this constantPoolCacheEntry refers to old_method then update it

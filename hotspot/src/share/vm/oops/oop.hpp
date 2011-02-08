@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,13 +322,6 @@ class oopDesc {
 
   // Parallel Old
   void update_contents(ParCompactionManager* cm);
-  void update_contents(ParCompactionManager* cm,
-                       HeapWord* begin_limit,
-                       HeapWord* end_limit);
-  void update_contents(ParCompactionManager* cm,
-                       klassOop old_klass,
-                       HeapWord* begin_limit,
-                       HeapWord* end_limit);
 
   void follow_contents(ParCompactionManager* cm);
   void follow_header(ParCompactionManager* cm);
@@ -369,7 +362,6 @@ class oopDesc {
 #ifndef SERIALGC
   // Parallel old
   void update_header();
-  void update_header(HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   // mark-sweep support

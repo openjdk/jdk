@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,25 +201,6 @@ constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
     cache->entry_at(i)->update_pointers();
   }
 
-  return cache->object_size();
-}
-
-int
-constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                            HeapWord* beg_addr,
-                                            HeapWord* end_addr) {
-  assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
-  constantPoolCacheOop cache = (constantPoolCacheOop)obj;
-
-  // Iteration over constant pool cache instance variables
-  oop* p;
-  p = (oop*)cache->constant_pool_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
-  // Iteration over constant pool cache entries
-  for (int i = 0; i < cache->length(); ++i) {
-    cache->entry_at(i)->update_pointers(beg_addr, end_addr);
-  }
   return cache->object_size();
 }
 #endif // SERIALGC
