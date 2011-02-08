@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,40 +276,6 @@ int constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   PSParallelCompact::adjust_pointer(cp->cache_addr());
   PSParallelCompact::adjust_pointer(cp->operands_addr());
   PSParallelCompact::adjust_pointer(cp->pool_holder_addr());
-  return cp->object_size();
-}
-
-int
-constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                       HeapWord* beg_addr, HeapWord* end_addr) {
-  assert (obj->is_constantPool(), "obj must be constant pool");
-  constantPoolOop cp = (constantPoolOop) obj;
-
-  // If the tags array is null we are in the middle of allocating this constant
-  // pool.
-  if (cp->tags() != NULL) {
-    oop* base = (oop*)cp->base();
-    oop* const beg_oop = MAX2((oop*)beg_addr, base);
-    oop* const end_oop = MIN2((oop*)end_addr, base + cp->length());
-    const size_t beg_idx = pointer_delta(beg_oop, base, sizeof(oop*));
-    const size_t end_idx = pointer_delta(end_oop, base, sizeof(oop*));
-    for (size_t cur_idx = beg_idx; cur_idx < end_idx; ++cur_idx, ++base) {
-      if (cp->is_pointer_entry(int(cur_idx))) {
-        PSParallelCompact::adjust_pointer(base);
-      }
-    }
-  }
-
-  oop* p;
-  p = cp->tags_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->cache_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->operands_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->pool_holder_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
   return cp->object_size();
 }
 

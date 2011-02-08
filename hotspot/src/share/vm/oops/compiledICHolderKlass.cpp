@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,21 +143,6 @@ int compiledICHolderKlass::oop_update_pointers(ParCompactionManager* cm,
 
   PSParallelCompact::adjust_pointer(c->adr_holder_method());
   PSParallelCompact::adjust_pointer(c->adr_holder_klass());
-  return c->object_size();
-}
-
-int compiledICHolderKlass::oop_update_pointers(ParCompactionManager* cm,
-                                               oop obj,
-                                               HeapWord* beg_addr,
-                                               HeapWord* end_addr) {
-  assert(obj->is_compiledICHolder(), "must be compiledICHolder");
-  compiledICHolderOop c = compiledICHolderOop(obj);
-
-  oop* p;
-  p = c->adr_holder_method();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = c->adr_holder_klass();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
   return c->object_size();
 }
 #endif // SERIALGC
