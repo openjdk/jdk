@@ -72,7 +72,7 @@ public class ZipFSTester {
         }
     }
 
-    static void test1(FileSystem fs)
+    static void test1(FileSystem fs0)
         throws Exception
     {
         Random rdm = new Random();
@@ -80,11 +80,11 @@ public class ZipFSTester {
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
-        FileSystem fs0 = newZipFileSystem(tmpfsPath, env);
-        z2zcopy(fs, fs0, "/", 0);
-        fs0.close();                // sync to file
+        try (FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
+            z2zcopy(fs0, copy, "/", 0);
+        }
 
-        try (fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>())) {
+        try (FileSystem fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>())) {
 
             FileSystemProvider provider = fs.provider();
             // newFileSystem(path...) should not throw exception
