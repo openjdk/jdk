@@ -33,7 +33,7 @@ import sun.awt.geom.PathConsumer2D;
 // TODO: some of the arithmetic here is too verbose and prone to hard to
 // debug typos. We should consider making a small Point/Vector class that
 // has methods like plus(Point), minus(Point), dot(Point), cross(Point)and such
-public class Stroker implements PathConsumer2D {
+final class Stroker implements PathConsumer2D {
 
     private static final int MOVE_TO = 0;
     private static final int DRAWING_OP_TO = 1; // ie. curve, line, or quad
@@ -130,7 +130,7 @@ public class Stroker implements PathConsumer2D {
     private static void computeOffset(final float lx, final float ly,
                                       final float w, final float[] m)
     {
-        final float len = (float)Math.hypot(lx, ly);
+        final float len = (float)Math.sqrt(lx*lx + ly*ly);
         if (len == 0) {
             m[0] = m[1] = 0;
         } else {
@@ -758,7 +758,7 @@ public class Stroker implements PathConsumer2D {
     // This is where the curve to be processed is put. We give it
     // enough room to store 2 curves: one for the current subdivision, the
     // other for the rest of the curve.
-    private float[][] middle = new float[2][8];
+    private float[] middle = new float[2*8];
     private float[] lp = new float[8];
     private float[] rp = new float[8];
     private static final int MAX_N_CURVES = 11;
@@ -766,55 +766,55 @@ public class Stroker implements PathConsumer2D {
 
     private void somethingTo(final int type) {
         // need these so we can update the state at the end of this method
-        final float xf = middle[0][type-2], yf = middle[0][type-1];
-        float dxs = middle[0][2] - middle[0][0];
-        float dys = middle[0][3] - middle[0][1];
-        float dxf = middle[0][type - 2] - middle[0][type - 4];
-        float dyf = middle[0][type - 1] - middle[0][type - 3];
+        final float xf = middle[type-2], yf = middle[type-1];
+        float dxs = middle[2] - middle[0];
+        float dys = middle[3] - middle[1];
+        float dxf = middle[type - 2] - middle[type - 4];
+        float dyf = middle[type - 1] - middle[type - 3];
         switch(type) {
         case 6:
             if ((dxs == 0f && dys == 0f) ||
                 (dxf == 0f && dyf == 0f)) {
-               dxs = dxf = middle[0][4] - middle[0][0];
-               dys = dyf = middle[0][5] - middle[0][1];
+               dxs = dxf = middle[4] - middle[0];
+               dys = dyf = middle[5] - middle[1];
             }
             break;
         case 8:
             boolean p1eqp2 = (dxs == 0f && dys == 0f);
             boolean p3eqp4 = (dxf == 0f && dyf == 0f);
             if (p1eqp2) {
-                dxs = middle[0][4] - middle[0][0];
-                dys = middle[0][5] - middle[0][1];
+                dxs = middle[4] - middle[0];
+                dys = middle[5] - middle[1];
                 if (dxs == 0f && dys == 0f) {
-                    dxs = middle[0][6] - middle[0][0];
-                    dys = middle[0][7] - middle[0][1];
+                    dxs = middle[6] - middle[0];
+                    dys = middle[7] - middle[1];
                 }
             }
             if (p3eqp4) {
-                dxf = middle[0][6] - middle[0][2];
-                dyf = middle[0][7] - middle[0][3];
+                dxf = middle[6] - middle[2];
+                dyf = middle[7] - middle[3];
                 if (dxf == 0f && dyf == 0f) {
-                    dxf = middle[0][6] - middle[0][0];
-                    dyf = middle[0][7] - middle[0][1];
+                    dxf = middle[6] - middle[0];
+                    dyf = middle[7] - middle[1];
                 }
             }
         }
         if (dxs == 0f && dys == 0f) {
             // this happens iff the "curve" is just a point
-            lineTo(middle[0][0], middle[0][1]);
+            lineTo(middle[0], middle[1]);
             return;
         }
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            double len = Math.hypot(dxs, dys);
-            dxs = (float)(dxs / len);
-            dys = (float)(dys / len);
+            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            dxs /= len;
+            dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            double len = Math.hypot(dxf, dyf);
-            dxf = (float)(dxf / len);
-            dyf = (float)(dyf / len);
+            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            dxf /= len;
+            dyf /= len;
         }
 
         computeOffset(dxs, dys, lineWidth2, offset[0]);
@@ -822,20 +822,20 @@ public class Stroker implements PathConsumer2D {
         final float my = offset[0][1];
         drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, mx, my);
 
-        int nSplits = findSubdivPoints(middle[0], subdivTs, type,lineWidth2);
+        int nSplits = findSubdivPoints(middle, subdivTs, type, lineWidth2);
 
         int kind = 0;
-        Iterator<float[]> it = Curve.breakPtsAtTs(middle, type, subdivTs, nSplits);
+        Iterator<Integer> it = Curve.breakPtsAtTs(middle, type, subdivTs, nSplits);
         while(it.hasNext()) {
-            float[] curCurve = it.next();
+            int curCurveOff = it.next();
 
             kind = 0;
             switch (type) {
             case 8:
-                kind = computeOffsetCubic(curCurve, 0, lp, rp);
+                kind = computeOffsetCubic(middle, curCurveOff, lp, rp);
                 break;
             case 6:
-                kind = computeOffsetQuad(curCurve, 0, lp, rp);
+                kind = computeOffsetQuad(middle, curCurveOff, lp, rp);
                 break;
             }
             if (kind != 0) {
@@ -871,8 +871,7 @@ public class Stroker implements PathConsumer2D {
     // to get good offset curves a distance of w away from the middle curve.
     // Stores the points in ts, and returns how many of them there were.
     private static Curve c = new Curve();
-    private static int findSubdivPoints(float[] pts, float[] ts,
-                                        final int type, final float w)
+    private static int findSubdivPoints(float[] pts, float[] ts, final int type, final float w)
     {
         final float x12 = pts[2] - pts[0];
         final float y12 = pts[3] - pts[1];
@@ -919,6 +918,7 @@ public class Stroker implements PathConsumer2D {
         // now we must subdivide at points where one of the offset curves will have
         // a cusp. This happens at ts where the radius of curvature is equal to w.
         ret += c.rootsOfROCMinusW(ts, ret, w, 0.0001f);
+
         ret = Helpers.filterOutNotInAB(ts, 0, ret, 0.0001f, 0.9999f);
         Helpers.isort(ts, 0, ret);
         return ret;
@@ -928,10 +928,10 @@ public class Stroker implements PathConsumer2D {
                                   float x2, float y2,
                                   float x3, float y3)
     {
-        middle[0][0] = cx0; middle[0][1] = cy0;
-        middle[0][2] = x1; middle[0][3] = y1;
-        middle[0][4] = x2; middle[0][5] = y2;
-        middle[0][6] = x3; middle[0][7] = y3;
+        middle[0] = cx0; middle[1] = cy0;
+        middle[2] = x1;  middle[3] = y1;
+        middle[4] = x2;  middle[5] = y2;
+        middle[6] = x3;  middle[7] = y3;
         somethingTo(8);
     }
 
@@ -940,9 +940,9 @@ public class Stroker implements PathConsumer2D {
     }
 
     @Override public void quadTo(float x1, float y1, float x2, float y2) {
-        middle[0][0] = cx0; middle[0][1] = cy0;
-        middle[0][2] = x1; middle[0][3] = y1;
-        middle[0][4] = x2; middle[0][5] = y2;
+        middle[0] = cx0; middle[1] = cy0;
+        middle[2] = x1;  middle[3] = y1;
+        middle[4] = x2;  middle[5] = y2;
         somethingTo(6);
     }
 
