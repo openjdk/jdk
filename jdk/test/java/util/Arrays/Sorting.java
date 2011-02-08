@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6880672 6896573 6899694 6976036
+ * @bug 6880672 6896573 6899694 6976036 7013585
  * @summary Exercise Arrays.sort
  * @build Sorting
  * @run main Sorting -shortrun
@@ -546,13 +546,19 @@ public class Sorting {
 
     private static void prepareSubArray(int[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            a[i] = 0xBABA;
+            a[i] = 0xDEDA;
         }
-        for (int i = fromIndex; i < toIndex; i++) {
-            a[i] = -i + m;
+        int middle = (fromIndex + toIndex) >>> 1;
+        int k = 0;
+
+        for (int i = fromIndex; i < middle; i++) {
+            a[i] = k++;
+        }
+        for (int i = middle; i < toIndex; i++) {
+            a[i] = k--;
         }
         for (int i = toIndex; i < a.length; i++) {
-            a[i] = 0xDEDA;
+            a[i] = 0xBABA;
         }
     }
 
@@ -1518,9 +1524,9 @@ public class Sorting {
 
     private static void checkSubArray(Integer[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i].intValue() != 0xBABA) {
+            if (a[i].intValue() != 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1531,18 +1537,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i].intValue() != 0xDEDA) {
+            if (a[i].intValue() != 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(int[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != 0xBABA) {
+            if (a[i] != 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1553,18 +1559,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != 0xDEDA) {
+            if (a[i] != 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(byte[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (byte) 0xBABA) {
+            if (a[i] != (byte) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1575,18 +1581,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (byte) 0xDEDA) {
+            if (a[i] != (byte) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(long[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (long) 0xBABA) {
+            if (a[i] != (long) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1597,18 +1603,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (long) 0xDEDA) {
+            if (a[i] != (long) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(char[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (char) 0xBABA) {
+            if (a[i] != (char) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1619,18 +1625,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (char) 0xDEDA) {
+            if (a[i] != (char) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(short[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (short) 0xBABA) {
+            if (a[i] != (short) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1641,18 +1647,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (short) 0xDEDA) {
+            if (a[i] != (short) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(float[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (float) 0xBABA) {
+            if (a[i] != (float) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1663,18 +1669,18 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (float) 0xDEDA) {
+            if (a[i] != (float) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
 
     private static void checkSubArray(double[] a, int fromIndex, int toIndex, int m) {
         for (int i = 0; i < fromIndex; i++) {
-            if (a[i] != (double) 0xBABA) {
+            if (a[i] != (double) 0xDEDA) {
                 failed("Range sort changes left element on position " + i +
-                    ": " + a[i] + ", must be " + 0xBABA);
+                    ": " + a[i] + ", must be " + 0xDEDA);
             }
         }
 
@@ -1685,9 +1691,9 @@ public class Sorting {
         }
 
         for (int i = toIndex; i < a.length; i++) {
-            if (a[i] != (double) 0xDEDA) {
+            if (a[i] != (double) 0xBABA) {
                 failed("Range sort changes right element on position " + i +
-                    ": " + a[i] + ", must be " + 0xDEDA);
+                    ": " + a[i] + ", must be " + 0xBABA);
             }
         }
     }
