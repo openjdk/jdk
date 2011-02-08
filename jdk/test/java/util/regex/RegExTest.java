@@ -32,7 +32,7 @@
  * 4872664 4803179 4892980 4900747 4945394 4938995 4979006 4994840 4997476
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
- * 6350801 6676425 6878475 6919132 6931676 6948903
+ * 6350801 6676425 6878475 6919132 6931676 6948903 7014645
  */
 
 import java.util.regex.*;
@@ -136,6 +136,7 @@ public class RegExTest {
         namedGroupCaptureTest();
         nonBmpClassComplementTest();
         unicodePropertiesTest();
+        unicodeHexNotationTest();
         if (failure)
             throw new RuntimeException("Failure in the RE handling.");
         else
@@ -161,18 +162,19 @@ public class RegExTest {
 
     private static void check(Matcher m, String result, boolean expected) {
         m.find();
-        if (m.group().equals(result))
-            failCount += (expected) ? 0 : 1;
-        else
-            failCount += (expected) ? 1 : 0;
+        if (m.group().equals(result) != expected)
+            failCount++;
     }
 
     private static void check(Pattern p, String s, boolean expected) {
-        Matcher matcher = p.matcher(s);
-        if (matcher.find())
-            failCount += (expected) ? 0 : 1;
-        else
-            failCount += (expected) ? 1 : 0;
+        if (p.matcher(s).find() != expected)
+            failCount++;
+    }
+
+    private static void check(String p, String s, boolean expected) {
+        Matcher matcher = Pattern.compile(p).matcher(s);
+        if (matcher.find() != expected)
+            failCount++;
     }
 
     private static void check(String p, char c, boolean expected) {
@@ -3614,4 +3616,45 @@ public class RegExTest {
         }
         report("unicodeProperties");
     }
+
+    private static void unicodeHexNotationTest() throws Exception {
+
+        // negative
+        checkExpectedFail("\\x{-23}");
+        checkExpectedFail("\\x{110000}");
+        checkExpectedFail("\\x{}");
+        checkExpectedFail("\\x{AB[ef]");
+
+        // codepoint
+        check("^\\x{1033c}$",              "\uD800\uDF3C", true);
+        check("^\\xF0\\x90\\x8C\\xBC$",    "\uD800\uDF3C", false);
+        check("^\\x{D800}\\x{DF3c}+$",     "\uD800\uDF3C", false);
+        check("^\\xF0\\x90\\x8C\\xBC$",    "\uD800\uDF3C", false);
+
+        // in class
+        check("^[\\x{D800}\\x{DF3c}]+$",   "\uD800\uDF3C", false);
+        check("^[\\xF0\\x90\\x8C\\xBC]+$", "\uD800\uDF3C", false);
+        check("^[\\x{D800}\\x{DF3C}]+$",   "\uD800\uDF3C", false);
+        check("^[\\x{DF3C}\\x{D800}]+$",   "\uD800\uDF3C", false);
+        check("^[\\x{D800}\\x{DF3C}]+$",   "\uDF3C\uD800", true);
+        check("^[\\x{DF3C}\\x{D800}]+$",   "\uDF3C\uD800", true);
+
+        for (int cp = 0; cp <= 0x10FFFF; cp++) {
+             String s = "A" + new String(Character.toChars(cp)) + "B";
+             String hexUTF16 = (cp <= 0xFFFF)? String.format("\\u%04x", cp)
+                                             : String.format("\\u%04x\\u%04x",
+                                               (int) Character.toChars(cp)[0],
+                                               (int) Character.toChars(cp)[1]);
+             String hexCodePoint = "\\x{" + Integer.toHexString(cp) + "}";
+             if (!Pattern.matches("A" + hexUTF16 + "B", s))
+                 failCount++;
+             if (!Pattern.matches("A[" + hexUTF16 + "]B", s))
+                 failCount++;
+             if (!Pattern.matches("A" + hexCodePoint + "B", s))
+                 failCount++;
+             if (!Pattern.matches("A[" + hexCodePoint + "]B", s))
+                 failCount++;
+         }
+         report("unicodeHexNotation");
+     }
 }

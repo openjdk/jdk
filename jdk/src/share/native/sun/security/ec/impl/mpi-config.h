@@ -57,8 +57,6 @@
 #ifndef _MPI_CONFIG_H
 #define _MPI_CONFIG_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mpi-config.h,v 1.5 2004/04/25 15:03:10 gerv%gerv.net Exp $ */
 
 /*

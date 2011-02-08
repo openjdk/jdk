@@ -248,7 +248,7 @@ public abstract class FileChannel
      * FileSystemProvider#newFileChannel newFileChannel} method on the
      * provider that created the {@code Path}.
      *
-     * @param   file
+     * @param   path
      *          The path of the file to open or create
      * @param   options
      *          Options specifying how the file is opened
@@ -261,7 +261,7 @@ public abstract class FileChannel
      * @throws  IllegalArgumentException
      *          If the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If the {@code file} is associated with a provider that does not
+     *          If the {@code path} is associated with a provider that does not
      *          support creating file channels, or an unsupported open option is
      *          specified, or the array contains an attribute that cannot be set
      *          atomically when creating the file
@@ -278,13 +278,13 @@ public abstract class FileChannel
      *
      * @since   1.7
      */
-    public static FileChannel open(Path file,
+    public static FileChannel open(Path path,
                                    Set<? extends OpenOption> options,
                                    FileAttribute<?>... attrs)
         throws IOException
     {
-        FileSystemProvider provider = file.getFileSystem().provider();
-        return provider.newFileChannel(file, options, attrs);
+        FileSystemProvider provider = path.getFileSystem().provider();
+        return provider.newFileChannel(path, options, attrs);
     }
 
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
@@ -295,10 +295,12 @@ public abstract class FileChannel
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
      * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, options, new FileAttribute&lt;?&gt;[0]);
+     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
      * </pre>
+     * where {@code opts} is a set of the options specified in the {@code
+     * options} array.
      *
-     * @param   file
+     * @param   path
      *          The path of the file to open or create
      * @param   options
      *          Options specifying how the file is opened
@@ -308,7 +310,7 @@ public abstract class FileChannel
      * @throws  IllegalArgumentException
      *          If the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If the {@code file} is associated with a provider that does not
+     *          If the {@code path} is associated with a provider that does not
      *          support creating file channels, or an unsupported open option is
      *          specified
      * @throws  IOException
@@ -324,12 +326,12 @@ public abstract class FileChannel
      *
      * @since   1.7
      */
-    public static FileChannel open(Path file, OpenOption... options)
+    public static FileChannel open(Path path, OpenOption... options)
         throws IOException
     {
         Set<OpenOption> set = new HashSet<OpenOption>(options.length);
         Collections.addAll(set, options);
-        return open(file, set, NO_ATTRIBUTES);
+        return open(path, set, NO_ATTRIBUTES);
     }
 
     // -- Channel operations --

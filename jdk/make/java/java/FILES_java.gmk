@@ -443,7 +443,6 @@ JAVA_JAVA_java = \
             java/io/FileReader.java \
         java/io/PipedReader.java \
         java/io/StringReader.java \
-    java/io/TempFileHelper.java \
     java/io/Writer.java \
 	java/io/BufferedWriter.java \
 	    java/io/PrintWriter.java \

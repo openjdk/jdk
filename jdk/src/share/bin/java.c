@@ -244,6 +244,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         for (i = 0; i < argc ; i++) {
             printf("argv[%d] = %s\n", i, argv[i]);
         }
+        AddOption("-Dsun.java.launcher.diag=true", NULL);
     }
 
     CreateExecutionEnvironment(&argc, &argv,
@@ -1009,6 +1010,8 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "-XshowSettings") == 0 ||
                 JLI_StrCCmp(arg, "-XshowSettings:") == 0) {
             showSettings = arg;
+        } else if (JLI_StrCmp(arg, "-Xdiag") == 0) {
+            AddOption("-Dsun.java.launcher.diag=true", NULL);
 /*
  * The following case provide backward compatibility with old-style
  * command line options.

@@ -27,6 +27,7 @@ package sun.tools.jar;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
@@ -1017,17 +1018,17 @@ class Main {
         Path jarPath = jarFile.toPath();
         Path tmpPath = createTempFileInSameDirectoryAs(jarFile).toPath();
         try {
-            if (update(jarPath.newInputStream(),
-                       tmpPath.newOutputStream(),
+            if (update(Files.newInputStream(jarPath),
+                       Files.newOutputStream(tmpPath),
                        null, index)) {
                 try {
-                    tmpPath.moveTo(jarPath, REPLACE_EXISTING);
+                    Files.move(tmpPath, jarPath, REPLACE_EXISTING);
                 } catch (IOException e) {
                     throw new IOException(getMsg("error.write.file"), e);
                 }
             }
         } finally {
-            tmpPath.deleteIfExists();
+            Files.deleteIfExists(tmpPath);
         }
     }
 

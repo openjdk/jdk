@@ -56,8 +56,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mplogic.c,v 1.15 2004/04/27 23:04:36 gerv%gerv.net Exp $ */
 
 #include "mpi-priv.h"
