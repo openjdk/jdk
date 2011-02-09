@@ -221,7 +221,7 @@ final class CipherSuiteList {
     private static CipherSuiteList buildAvailableCache(int minPriority) {
         // SortedSet automatically arranges ciphersuites in default
         // preference order
-        Set<CipherSuite> cipherSuites = new TreeSet<CipherSuite>();
+        Set<CipherSuite> cipherSuites = new TreeSet<>();
         Collection<CipherSuite> allowedCipherSuites =
                                     CipherSuite.allowedCipherSuites();
         for (CipherSuite c : allowedCipherSuites) {

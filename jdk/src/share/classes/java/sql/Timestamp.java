@@ -473,7 +473,9 @@ public class Timestamp extends java.util.Date {
      * @since   1.4
      */
     public int compareTo(Timestamp ts) {
-        int i = super.compareTo(ts);
+        long thisTime = this.getTime();
+        long anotherTime = ts.getTime();
+        int i = (thisTime<anotherTime ? -1 :(thisTime==anotherTime?0 :1));
         if (i == 0) {
             if (nanos > ts.nanos) {
                     return 1;

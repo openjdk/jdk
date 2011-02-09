@@ -43,7 +43,6 @@ FDDLIBM_SUFFIX = lib
 # The suffix applied to scripts (.bat for windows, nothing for unix)
 SCRIPT_SUFFIX = .bat
 
-HPIS = windows
 # LIB_LOCATION, which for windows identifies where .exe files go, may be
 # set by each GNUmakefile. The default is BINDIR.
 ifndef LIB_LOCATION
@@ -365,10 +364,6 @@ ifeq ($(CC_VERSION),msvc)
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no
-ifdef MT
-    # VS2005, VS2008, and beyond: ask LINK to generate manifests for .dll & .exe
-    BASELFLAGS += /manifest
-endif
 
   LFLAGS = $(BASELFLAGS) $(LDEBUG) $(EXTRA_LFLAGS) $(LFLAGS_$(COMPILER_VERSION))
   LDDFLAGS += $(LFLAGS_$(COMPILER_VERSION))

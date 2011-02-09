@@ -677,8 +677,7 @@ class InetAddress implements java.io.Serializable {
 
     static InetAddressImpl  impl;
 
-    private static HashMap<String, InetAddress[]> lookupTable
-        = new HashMap<String, InetAddress[]>();
+    private static final HashMap<String, Void> lookupTable = new HashMap<>();
 
     /**
      * Represents a cache entry
@@ -737,7 +736,7 @@ class InetAddress implements java.io.Serializable {
 
                 // As we iterate in insertion order we can
                 // terminate when a non-expired entry is found.
-                LinkedList<String> expired = new LinkedList<String>();
+                LinkedList<String> expired = new LinkedList<>();
                 long now = System.currentTimeMillis();
                 for (String key : cache.keySet()) {
                     CacheEntry entry = cache.get(key);
@@ -1227,43 +1226,45 @@ class InetAddress implements java.io.Serializable {
         //         lookupTable and return null so the
         //         following code would do  a lookup itself.
         if ((addresses = checkLookupTable(host)) == null) {
-            // This is the first thread which looks up the addresses
-            // this host or the cache entry for this host has been
-            // expired so this thread should do the lookup.
-            for (NameService nameService : nameServices) {
-                try {
-                    /*
-                     * Do not put the call to lookup() inside the
-                     * constructor.  if you do you will still be
-                     * allocating space when the lookup fails.
-                     */
+            try {
+                // This is the first thread which looks up the addresses
+                // this host or the cache entry for this host has been
+                // expired so this thread should do the lookup.
+                for (NameService nameService : nameServices) {
+                    try {
+                        /*
+                         * Do not put the call to lookup() inside the
+                         * constructor.  if you do you will still be
+                         * allocating space when the lookup fails.
+                         */
 
-                    addresses = nameService.lookupAllHostAddr(host);
-                    success = true;
-                    break;
-                } catch (UnknownHostException uhe) {
-                    if (host.equalsIgnoreCase("localhost")) {
-                        InetAddress[] local = new InetAddress[] { impl.loopbackAddress() };
-                        addresses = local;
+                        addresses = nameService.lookupAllHostAddr(host);
                         success = true;
                         break;
-                    }
-                    else {
-                        addresses = unknown_array;
-                        success = false;
-                        ex = uhe;
+                    } catch (UnknownHostException uhe) {
+                        if (host.equalsIgnoreCase("localhost")) {
+                            InetAddress[] local = new InetAddress[] { impl.loopbackAddress() };
+                            addresses = local;
+                            success = true;
+                            break;
+                        }
+                        else {
+                            addresses = unknown_array;
+                            success = false;
+                            ex = uhe;
+                        }
                     }
                 }
-            }
 
-            // Cache the addresses.
-            cacheAddresses(host, addresses, success);
-            // Delete the host from the lookupTable, and
-            // notify all threads waiting for the monitor
-            // for lookupTable.
-            updateLookupTable(host);
-            if (!success && ex != null)
-                throw ex;
+                // Cache the addresses.
+                cacheAddresses(host, addresses, success);
+                if (!success && ex != null)
+                    throw ex;
+            } finally {
+                // Delete host from the lookupTable and notify
+                // all threads waiting on the lookupTable monitor.
+                updateLookupTable(host);
+            }
         }
 
         return addresses;
@@ -1271,16 +1272,13 @@ class InetAddress implements java.io.Serializable {
 
 
     private static InetAddress[] checkLookupTable(String host) {
-        // make sure addresses is null.
-        InetAddress[] addresses = null;
-
         synchronized (lookupTable) {
             // If the host isn't in the lookupTable, add it in the
             // lookuptable and return null. The caller should do
             // the lookup.
             if (lookupTable.containsKey(host) == false) {
                 lookupTable.put(host, null);
-                return addresses;
+                return null;
             }
 
             // If the host is in the lookupTable, it means that another
@@ -1298,10 +1296,11 @@ class InetAddress implements java.io.Serializable {
         // the host. This thread should retry to get the addresses
         // from the addressCache. If it doesn't get the addresses from
         // the cache, it will try to look up the addresses itself.
-        addresses = getCachedAddresses(host);
+        InetAddress[] addresses = getCachedAddresses(host);
         if (addresses == null) {
             synchronized (lookupTable) {
                 lookupTable.put(host, null);
+                return null;
             }
         }
 

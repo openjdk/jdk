@@ -655,7 +655,7 @@ final class ClientHandshaker extends Handshaker {
         if (certRequest != null) {
             X509ExtendedKeyManager km = sslContext.getX509KeyManager();
 
-            ArrayList<String> keytypesTmp = new ArrayList<String>(4);
+            ArrayList<String> keytypesTmp = new ArrayList<>(4);
 
             for (int i = 0; i < certRequest.types.length; i++) {
                 String typeName;
@@ -1174,8 +1174,7 @@ final class ClientHandshaker extends Handshaker {
                         "Can't reuse existing SSL client session");
                 }
 
-                Collection<CipherSuite> cipherList =
-                                                new ArrayList<CipherSuite>(2);
+                Collection<CipherSuite> cipherList = new ArrayList<>(2);
                 cipherList.add(sessionSuite);
                 if (!secureRenegotiation &&
                         cipherSuites.contains(CipherSuite.C_SCSV)) {
@@ -1193,7 +1192,7 @@ final class ClientHandshaker extends Handshaker {
         // exclude SCSV for secure renegotiation
         if (secureRenegotiation && cipherSuites.contains(CipherSuite.C_SCSV)) {
             Collection<CipherSuite> cipherList =
-                        new ArrayList<CipherSuite>(cipherSuites.size() - 1);
+                        new ArrayList<>(cipherSuites.size() - 1);
             for (CipherSuite suite : cipherSuites.collection()) {
                 if (suite != CipherSuite.C_SCSV) {
                     cipherList.add(suite);
