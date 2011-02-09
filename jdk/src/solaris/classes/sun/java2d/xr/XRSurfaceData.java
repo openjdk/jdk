@@ -479,8 +479,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         if (xrpipe == null) {
             try {
                 SunToolkit.awtLock();
-                xgc = renderQueue.createGC(xid); // TODO: GC leak? where to
-                // clean up?
+                xgc = XCreateGC(getNativeOps());
 
                 xrpipe = new XRRenderer(maskBuffer.getMaskBuffer());
                 xrtxpipe = new PixelToShapeConverter(xrpipe);
