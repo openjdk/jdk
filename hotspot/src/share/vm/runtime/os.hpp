@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -613,6 +613,9 @@ class os: AllStatic {
 
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
+
+  // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
+  static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
 
   // JVMTI & JVM monitoring and management support
   // The thread_cpu_time() and current_thread_cpu_time() are only

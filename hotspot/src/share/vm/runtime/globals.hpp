@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -789,6 +789,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ShowMessageBoxOnError, false,                               \
           "Keep process alive on VM fatal error")                           \
+                                                                            \
+  product(bool, CreateMinidumpOnCrash, false,                               \
+          "Create minidump on VM fatal error")                              \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
