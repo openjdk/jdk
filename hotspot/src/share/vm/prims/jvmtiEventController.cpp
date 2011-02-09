@@ -667,14 +667,13 @@ void
 JvmtiEventControllerPrivate::thread_ended(JavaThread *thread) {
   // Removes the JvmtiThreadState associated with the specified thread.
   // May be called after all environments have been disposed.
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
   EC_TRACE(("JVMTI [%s] # thread ended", JvmtiTrace::safe_get_thread_name(thread)));
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
-  if (state != NULL) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    delete state;
-  }
+  assert(state != NULL, "else why are we here?");
+  delete state;
 }
 
 void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,

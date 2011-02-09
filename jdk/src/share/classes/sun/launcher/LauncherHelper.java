@@ -401,6 +401,14 @@ public enum LauncherHelper {
         }
     }
 
+
+    // From src/share/bin/java.c:
+    //   enum LaunchMode { LM_UNKNOWN = 0, LM_CLASS, LM_JAR };
+
+    private static final int LM_UNKNOWN = 0;
+    private static final int LM_CLASS   = 1;
+    private static final int LM_JAR     = 2;
+
     /**
      * This method does the following:
      * 1. gets the classname from a Jar's manifest, if necessary
@@ -420,24 +428,40 @@ public enum LauncherHelper {
      * @return
      * @throws java.io.IOException
      */
-    public static Object checkAndLoadMain(boolean printToStderr,
-            boolean isJar, String name) throws IOException {
+    public static Class<?> checkAndLoadMain(boolean printToStderr,
+                                            int mode,
+                                            String what) throws IOException
+    {
+
+        ClassLoader ld = ClassLoader.getSystemClassLoader();
+
         // get the class name
-        String classname = (isJar) ? getMainClassFromJar(name) : name;
-        classname = classname.replace('/', '.');
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        Class<?> clazz = null;
+        String cn = null;
+        switch (mode) {
+        case LM_CLASS:
+            cn = what;
+            break;
+        case LM_JAR:
+            cn = getMainClassFromJar(what);
+            break;
+        default:
+            throw new InternalError("" + mode + ": Unknown launch mode");
+        }
+        cn = cn.replace('/', '.');
+
         PrintStream ostream = (printToStderr) ? System.err : System.out;
+        Class<?> c = null;
         try {
-            clazz = loader.loadClass(classname);
+            c = ld.loadClass(cn);
         } catch (ClassNotFoundException cnfe) {
-            ostream.println(getLocalizedMessage("java.launcher.cls.error1", classname));
-            NoClassDefFoundError ncdfe = new NoClassDefFoundError(classname);
+            ostream.println(getLocalizedMessage("java.launcher.cls.error1",
+                                                cn));
+            NoClassDefFoundError ncdfe = new NoClassDefFoundError(cn);
             ncdfe.initCause(cnfe);
             throw ncdfe;
         }
-        signatureDiagnostic(ostream, clazz);
-        return clazz;
+        signatureDiagnostic(ostream, c);
+        return c;
     }
 
     static void signatureDiagnostic(PrintStream ostream, Class<?> clazz) {

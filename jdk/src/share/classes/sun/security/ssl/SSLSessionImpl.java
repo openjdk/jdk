@@ -618,8 +618,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * key and the calling security context. This is important since
      * sessions can be shared across different protection domains.
      */
-    private Hashtable<SecureKey, Object> table =
-                                new Hashtable<SecureKey, Object>();
+    private Hashtable<SecureKey, Object> table = new Hashtable<>();
 
     /**
      * Assigns a session value.  Session change events are given if
@@ -687,7 +686,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     public String[] getValueNames() {
         Enumeration<SecureKey> e;
-        Vector<Object> v = new Vector<Object>();
+        Vector<Object> v = new Vector<>();
         SecureKey key;
         Object securityCtx = SecureKey.getCurrentSecurityContext();
 

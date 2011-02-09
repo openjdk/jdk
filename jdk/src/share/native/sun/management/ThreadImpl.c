@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,15 @@ Java_sun_management_ThreadImpl_setThreadCpuTimeEnabled0
     jmm_interface->SetBoolAttribute(env, JMM_THREAD_CPU_TIME, flag);
 }
 
+JNIEXPORT void JNICALL
+Java_sun_management_ThreadImpl_setThreadAllocatedMemoryEnabled0
+  (JNIEnv *env, jclass cls, jboolean flag)
+{
+    jmm_interface->SetBoolAttribute(env, JMM_THREAD_ALLOCATED_MEMORY, flag);
+}
 
 JNIEXPORT void JNICALL
-Java_sun_management_ThreadImpl_getThreadInfo0
+Java_sun_management_ThreadImpl_getThreadInfo1
   (JNIEnv *env, jclass cls, jlongArray ids, jint maxDepth,
    jobjectArray infoArray)
 {
@@ -65,11 +71,34 @@ Java_sun_management_ThreadImpl_getThreadTotalCpuTime0
     return jmm_interface->GetThreadCpuTimeWithKind(env, tid, JNI_TRUE /* user+sys */);
 }
 
+JNIEXPORT void JNICALL
+Java_sun_management_ThreadImpl_getThreadTotalCpuTime1
+  (JNIEnv *env, jclass cls, jlongArray ids, jlongArray timeArray)
+{
+    jmm_interface->GetThreadCpuTimesWithKind(env, ids, timeArray,
+                                             JNI_TRUE /* user+sys */);
+}
+
 JNIEXPORT jlong JNICALL
 Java_sun_management_ThreadImpl_getThreadUserCpuTime0
   (JNIEnv *env, jclass cls, jlong tid)
 {
     return jmm_interface->GetThreadCpuTimeWithKind(env, tid, JNI_FALSE /* user */);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_management_ThreadImpl_getThreadUserCpuTime1
+  (JNIEnv *env, jclass cls, jlongArray ids, jlongArray timeArray)
+{
+    jmm_interface->GetThreadCpuTimesWithKind(env, ids, timeArray,
+                                             JNI_FALSE /* user */);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_management_ThreadImpl_getThreadAllocatedMemory1
+  (JNIEnv *env, jclass cls, jlongArray ids, jlongArray sizeArray)
+{
+    jmm_interface->GetThreadAllocatedMemory(env, ids, sizeArray);
 }
 
 JNIEXPORT jobjectArray JNICALL

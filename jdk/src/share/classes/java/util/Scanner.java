@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,10 +571,8 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @return A scanner with the specified source and pattern
      */
     private Scanner(Readable source, Pattern pattern) {
-        if (source == null)
-            throw new NullPointerException("source");
-        if (pattern == null)
-            throw new NullPointerException("pattern");
+        assert source != null : "source should not be null";
+        assert pattern != null : "pattern should not be null";
         this.source = source;
         delimPattern = pattern;
         buf = CharBuffer.allocate(BUFFER_SIZE);
@@ -593,7 +591,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         interface
      */
     public Scanner(Readable source) {
-        this(source, WHITESPACE_PATTERN);
+        this(Objects.nonNull(source, "source"), WHITESPACE_PATTERN);
     }
 
     /**
@@ -620,23 +618,27 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         does not exist
      */
     public Scanner(InputStream source, String charsetName) {
-        this(makeReadable(source, charsetName), WHITESPACE_PATTERN);
+        this(makeReadable(Objects.nonNull(source, "source"), toCharset(charsetName)),
+             WHITESPACE_PATTERN);
     }
 
-    private static Readable makeReadable(InputStream source,
-                                         String charsetName)
-    {
-        if (source == null)
-            throw new NullPointerException("source");
-        InputStreamReader isr = null;
+    /**
+     * Returns a charset object for the given charset name.
+     * @throws NullPointerException          is csn is null
+     * @throws IllegalArgumentException      if the charset is not supported
+     */
+    private static Charset toCharset(String csn) {
+        Objects.nonNull(csn, "charsetName");
         try {
-            isr = new InputStreamReader(source, charsetName);
-        } catch (UnsupportedEncodingException uee) {
-            IllegalArgumentException iae = new IllegalArgumentException();
-            iae.initCause(uee);
-            throw iae;
+            return Charset.forName(csn);
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException e) {
+            // IllegalArgumentException should be thrown
+            throw new IllegalArgumentException(e);
         }
-        return isr;
+    }
+
+    private static Readable makeReadable(InputStream source, Charset charset) {
+        return new InputStreamReader(source, charset);
     }
 
     /**
@@ -648,9 +650,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @param  source A file to be scanned
      * @throws FileNotFoundException if source is not found
      */
-    public Scanner(File source)
-        throws FileNotFoundException
-    {
+    public Scanner(File source) throws FileNotFoundException {
         this((ReadableByteChannel)(new FileInputStream(source).getChannel()));
     }
 
@@ -669,8 +669,27 @@ public final class Scanner implements Iterator<String>, Closeable {
     public Scanner(File source, String charsetName)
         throws FileNotFoundException
     {
-        this((ReadableByteChannel)(new FileInputStream(source).getChannel()),
-             charsetName);
+        this(Objects.nonNull(source), toDecoder(charsetName));
+    }
+
+    private Scanner(File source, CharsetDecoder dec)
+        throws FileNotFoundException
+    {
+        this(makeReadable((ReadableByteChannel)(new FileInputStream(source).getChannel()), dec));
+    }
+
+    private static CharsetDecoder toDecoder(String charsetName) {
+        Objects.nonNull(charsetName, "charsetName");
+        try {
+            return Charset.forName(charsetName).newDecoder();
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
+            throw new IllegalArgumentException(charsetName);
+        }
+    }
+
+    private static Readable makeReadable(ReadableByteChannel source,
+                                         CharsetDecoder dec) {
+        return Channels.newReader(source, dec, -1);
     }
 
     /**
@@ -708,10 +727,12 @@ public final class Scanner implements Iterator<String>, Closeable {
      *          if the specified encoding is not found
      * @since   1.7
      */
-    public Scanner(FileRef source, String charsetName)
-        throws IOException
-    {
-        this(source.newInputStream(), charsetName);
+    public Scanner(FileRef source, String charsetName) throws IOException {
+        this(Objects.nonNull(source), toCharset(charsetName));
+    }
+
+    private Scanner(FileRef source, Charset charset)  throws IOException {
+        this(makeReadable(source.newInputStream(), charset));
     }
 
     /**
@@ -733,16 +754,12 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @param  source A channel to scan
      */
     public Scanner(ReadableByteChannel source) {
-        this(makeReadable(source), WHITESPACE_PATTERN);
+        this(makeReadable(Objects.nonNull(source, "source")),
+             WHITESPACE_PATTERN);
     }
 
     private static Readable makeReadable(ReadableByteChannel source) {
-        if (source == null)
-            throw new NullPointerException("source");
-        String defaultCharsetName =
-            java.nio.charset.Charset.defaultCharset().name();
-        return Channels.newReader(source,
-                           java.nio.charset.Charset.defaultCharset().name());
+        return makeReadable(source, Charset.defaultCharset().newDecoder());
     }
 
     /**
@@ -757,17 +774,8 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         does not exist
      */
     public Scanner(ReadableByteChannel source, String charsetName) {
-        this(makeReadable(source, charsetName), WHITESPACE_PATTERN);
-    }
-
-    private static Readable makeReadable(ReadableByteChannel source,
-                                  String charsetName)
-    {
-        if (source == null)
-            throw new NullPointerException("source");
-        if (!Charset.isSupported(charsetName))
-            throw new IllegalArgumentException(charsetName);
-        return Channels.newReader(source, charsetName);
+        this(makeReadable(Objects.nonNull(source, "source"), toDecoder(charsetName)),
+             WHITESPACE_PATTERN);
     }
 
     // Private primitives used to support scanning

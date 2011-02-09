@@ -51,24 +51,35 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final int base = unsafe.arrayBaseOffset(Object[].class);
-    private static final int scale = unsafe.arrayIndexScale(Object[].class);
+    private static final int shift;
     private final Object[] array;
 
-    private long rawIndex(int i) {
+    static {
+        int scale = unsafe.arrayIndexScale(Object[].class);
+        if ((scale & (scale - 1)) != 0)
+            throw new Error("data type scale not a power of two");
+        shift = 31 - Integer.numberOfLeadingZeros(scale);
+    }
+
+    private long checkedByteOffset(int i) {
         if (i < 0 || i >= array.length)
             throw new IndexOutOfBoundsException("index " + i);
-        return base + (long) i * scale;
+
+        return byteOffset(i);
+    }
+
+    private static long byteOffset(int i) {
+        return ((long) i << shift) + base;
     }
 
     /**
-     * Creates a new AtomicReferenceArray of given length.
+     * Creates a new AtomicReferenceArray of the given length, with all
+     * elements initially null.
+     *
      * @param length the length of the array
      */
     public AtomicReferenceArray(int length) {
         array = new Object[length];
-        // must perform at least one volatile write to conform to JMM
-        if (length > 0)
-            unsafe.putObjectVolatile(array, rawIndex(0), null);
     }
 
     /**
@@ -79,18 +90,8 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @throws NullPointerException if array is null
      */
     public AtomicReferenceArray(E[] array) {
-        if (array == null)
-            throw new NullPointerException();
-        int length = array.length;
-        this.array = new Object[length];
-        if (length > 0) {
-            int last = length-1;
-            for (int i = 0; i < last; ++i)
-                this.array[i] = array[i];
-            // Do the last write as volatile
-            E e = array[last];
-            unsafe.putObjectVolatile(this.array, rawIndex(last), e);
-        }
+        // Visibility guaranteed by final field guarantees
+        this.array = array.clone();
     }
 
     /**
@@ -109,7 +110,11 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @return the current value
      */
     public final E get(int i) {
-        return (E) unsafe.getObjectVolatile(array, rawIndex(i));
+        return getRaw(checkedByteOffset(i));
+    }
+
+    private E getRaw(long offset) {
+        return (E) unsafe.getObjectVolatile(array, offset);
     }
 
     /**
@@ -119,7 +124,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param newValue the new value
      */
     public final void set(int i, E newValue) {
-        unsafe.putObjectVolatile(array, rawIndex(i), newValue);
+        unsafe.putObjectVolatile(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -130,7 +135,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int i, E newValue) {
-        unsafe.putOrderedObject(array, rawIndex(i), newValue);
+        unsafe.putOrderedObject(array, checkedByteOffset(i), newValue);
     }
 
 
@@ -143,9 +148,10 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @return the previous value
      */
     public final E getAndSet(int i, E newValue) {
+        long offset = checkedByteOffset(i);
         while (true) {
-            E current = get(i);
-            if (compareAndSet(i, current, newValue))
+            E current = (E) getRaw(offset);
+            if (compareAndSetRaw(offset, current, newValue))
                 return current;
         }
     }
@@ -153,6 +159,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     /**
      * Atomically sets the element at position {@code i} to the given
      * updated value if the current value {@code ==} the expected value.
+     *
      * @param i the index
      * @param expect the expected value
      * @param update the new value
@@ -160,8 +167,11 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(int i, E expect, E update) {
-        return unsafe.compareAndSwapObject(array, rawIndex(i),
-                                         expect, update);
+        return compareAndSetRaw(checkedByteOffset(i), expect, update);
+    }
+
+    private boolean compareAndSetRaw(long offset, E expect, E update) {
+        return unsafe.compareAndSwapObject(array, offset, expect, update);
     }
 
     /**
@@ -183,12 +193,21 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
 
     /**
      * Returns the String representation of the current values of array.
-     * @return the String representation of the current values of array.
+     * @return the String representation of the current values of array
      */
     public String toString() {
-        if (array.length > 0) // force volatile read
-            get(0);
-        return Arrays.toString(array);
+           int iMax = array.length - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = 0; ; i++) {
+            b.append(getRaw(byteOffset(i)));
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(',').append(' ');
+        }
     }
 
 }

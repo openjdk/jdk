@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,8 +626,24 @@ public class Dependencies {
                 return visitRef(info, p);
             }
 
+            public Void visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Void p) {
+                return null;
+            }
+
             public Void visitLong(CONSTANT_Long_info info, Void p) {
                 return null;
+            }
+
+            public Void visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
+                return null;
+            }
+
+            public Void visitMethodType(CONSTANT_MethodType_info info, Void p) {
+                return null;
+            }
+
+            public Void visitMethodref(CONSTANT_Methodref_info info, Void p) {
+                return visitRef(info, p);
             }
 
             public Void visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
@@ -637,10 +653,6 @@ public class Dependencies {
                 } catch (ConstantPoolException e) {
                     throw new ClassFileError(e);
                 }
-            }
-
-            public Void visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                return visitRef(info, p);
             }
 
             public Void visitString(CONSTANT_String_info info, Void p) {

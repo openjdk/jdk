@@ -15,7 +15,7 @@
 [desugar B]
 [generate code B]
 [attribute B1]
-B.java:12:9: compiler.err.cant.resolve.location: kindname.variable, x, , , kindname.class, B1
+B.java:12:9: compiler.err.cant.resolve.location: kindname.variable, x, , , (compiler.misc.location: kindname.class, B1, null)
 [attribute B2]
 [attribute D]
 [attribute D1]

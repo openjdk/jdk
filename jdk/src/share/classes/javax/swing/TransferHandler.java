@@ -344,7 +344,7 @@ public class TransferHandler implements Serializable {
          *
          * @return the drop location
          * @throws IllegalStateException if this is not a drop
-         * @see #isDrop
+         * @see #isDrop()
          */
         public DropLocation getDropLocation() {
             assureIsDrop();
@@ -380,7 +380,7 @@ public class TransferHandler implements Serializable {
          *
          * @param showDropLocation whether or not to indicate the drop location
          * @throws IllegalStateException if this is not a drop
-         * @see #isDrop
+         * @see #isDrop()
          */
         public void setShowDropLocation(boolean showDropLocation) {
             assureIsDrop();
@@ -406,7 +406,7 @@ public class TransferHandler implements Serializable {
          * @see #getDropAction
          * @see #getUserDropAction
          * @see #getSourceDropActions
-         * @see #isDrop
+         * @see #isDrop()
          */
         public void setDropAction(int dropAction) {
             assureIsDrop();
@@ -440,7 +440,7 @@ public class TransferHandler implements Serializable {
          * @throws IllegalStateException if this is not a drop
          * @see #setDropAction
          * @see #getUserDropAction
-         * @see #isDrop
+         * @see #isDrop()
          */
         public int getDropAction() {
             return dropAction == -1 ? getUserDropAction() : dropAction;
@@ -468,7 +468,7 @@ public class TransferHandler implements Serializable {
          * @throws IllegalStateException if this is not a drop
          * @see #setDropAction
          * @see #getDropAction
-         * @see #isDrop
+         * @see #isDrop()
          */
         public int getUserDropAction() {
             assureIsDrop();
@@ -501,7 +501,7 @@ public class TransferHandler implements Serializable {
          *
          * @return the drag source's supported drop actions
          * @throws IllegalStateException if this is not a drop
-         * @see #isDrop
+         * @see #isDrop()
          */
         public int getSourceDropActions() {
             assureIsDrop();

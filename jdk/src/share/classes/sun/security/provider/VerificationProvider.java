@@ -76,7 +76,7 @@ public final class VerificationProvider extends Provider {
             SunRsaSignEntries.putEntries(this);
         } else {
             // use LinkedHashMap to preserve the order of the PRNGs
-            Map<Object, Object> map = new LinkedHashMap<Object, Object>();
+            Map<Object, Object> map = new LinkedHashMap<>();
             SunEntries.putEntries(map);
             SunRsaSignEntries.putEntries(map);
             AccessController.doPrivileged(new PutAllAction(this, map));

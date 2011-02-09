@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2358,6 +2358,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
          op->tmp3()->as_register()  == G4 &&
          op->tmp4()->as_register()  == O1 &&
          op->klass()->as_register() == G5, "must be");
+
+  LP64_ONLY( __ signx(op->len()->as_register()); )
   if (UseSlowPath ||
       (!UseFastNewObjectArray && (op->type() == T_OBJECT || op->type() == T_ARRAY)) ||
       (!UseFastNewTypeArray   && (op->type() != T_OBJECT && op->type() != T_ARRAY))) {

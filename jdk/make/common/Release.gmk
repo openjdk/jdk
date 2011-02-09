@@ -26,6 +26,9 @@
 include $(JDK_TOPDIR)/make/docs/CORE_PKGS.gmk
 include $(JDK_TOPDIR)/make/docs/NON_CORE_PKGS.gmk
 
+# What jdk version are we building
+THIS_JDK_VERSION := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
+
 #
 # Perform release engineering tasks.
 #
@@ -72,14 +75,6 @@ endif
 
 JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
 
-#We use this for man page header
-jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
-
-# Text documents on windows use this suffix
-ifeq ($(PLATFORM), windows)
-  TEXT_SUFFIX = .txt
-endif
-
 # The base names of all the license and document files for the jdk and jre
 #   (These files get placed in the jdk and jre install images)
 ifdef OPENJDK
@@ -87,53 +82,28 @@ ifdef OPENJDK
   SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)
   SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)
   # Same files for jdk and jre, no name changes
-  LICENSE_DOCLIST_JDK = LICENSE     ASSEMBLY_EXCEPTION
-  LICENSE_DOCLIST_JRE = LICENSE     ASSEMBLY_EXCEPTION
-  OTHER_DOCLIST_JDK   = THIRD_PARTY_README
-  OTHER_DOCLIST_JRE   = THIRD_PARTY_README
+  IMAGE_DOCLIST_JDK = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+  IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
   # Where to find these files
   SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
   SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
-  # Select the pre-release or FCS license version based on the build milestone.
-  LICENSE_VERSION=.pre
-  ifeq ($(MILESTONE), fcs)
-    LICENSE_VERSION=.fcs
-  endif
+  IMAGE_DOCLIST_JDK = COPYRIGHT README.html  THIRDPARTYLICENSEREADME.txt
+  IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html THIRDPARTYLICENSEREADME.txt
   ifeq ($(PLATFORM), windows)
-    LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
-		   $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
-		           $(LS) *LICENSE*$(LICENSE_VERSION)))
-    LICENSE_DOCLIST_JRE = $(subst $(LICENSE_VERSION),,\
-		   $(shell $(CD) $(SHARE_JRE_DOC_SRC) && \
-		           $(LS) *LICENSE*$(LICENSE_VERSION)))
+    IMAGE_DOCLIST_JRE += README.txt
   else
-    LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
-	         $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
-		         $(LS) *LICENSE*$(LICENSE_VERSION) | $(GREP) -v rtf))
-    LICENSE_DOCLIST_JRE = $(subst $(LICENSE_VERSION),,\
-	         $(shell $(CD) $(SHARE_JRE_DOC_SRC) && \
-		         $(LS) *LICENSE*$(LICENSE_VERSION) | $(GREP) -v rtf))
+    IMAGE_DOCLIST_JRE += README
   endif
-  OTHER_DOCLIST_JDK = COPYRIGHT README.html README_ja.html README_zh_CN.html
-  OTHER_DOCLIST_JRE = COPYRIGHT Welcome.html
-  JRE_NAMECHANGE_DOCLIST = README
 endif
 
 # Paths to these files we need
-JDK_LICENSES   = $(LICENSE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
-JDK64_LICENSES = $(LICENSE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%64)
-JDK_DOCFILES   = $(OTHER_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
-
-JRE_LICENSES   = $(LICENSE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
-JRE64_LICENSES = $(LICENSE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%64)
-JRE_DOCFILES   = $(OTHER_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
-JRE_DOCFILES  += $(JRE_NAMECHANGE_DOCLIST:%=$(JRE_IMAGE_DIR)/%$(TEXT_SUFFIX))
+JDK_DOCFILES   = $(IMAGE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
+JRE_DOCFILES   = $(IMAGE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
 
 # absolute directory names: note, these must exist prior to build
 # time - they are created in the main Makefile.
 JRE_IMAGE_BINDIR   = $(JRE_IMAGE_DIR)/bin
-JRE_IMAGE_THREADIR = $(JRE_IMAGE_DIR)/bin/*/native_threads
 
 MAINMANIFEST  = $(JDK_TOPDIR)/make/tools/manifest.mf
 BEANMANIFEST  = $(JDK_TOPDIR)/make/javax/swing/beaninfo/manifest
@@ -214,7 +184,7 @@ for manbase in $(MANBASEDIRS:%=%/$(MAN1SUBDIR)) ; do \
         $(MKDIR) -p $1/man/$${ja_dir}/man1; \
         $(CAT) $${manbase}/ja/$${manpage} \
           | $(NATIVE2ASCII) -encoding $(JA_SOURCE_ENCODING) \
-          | $(SED) 's/@@VERSION@@/$(jdkversion)/g' \
+          | $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
           | $(NATIVE2ASCII) -reverse -encoding $${ja_encoding} \
             > $1/man/$${ja_dir}/man1/$${manpage}; \
       done; \
@@ -244,6 +214,7 @@ images images-clobber \
 initial-image-jre initial-image-jdk \
 initial-image-jre-sol64 initial-image-jdk-sol64 \
 trim-image-jre trim-image-jdk \
+identify-image-jre identify-image-jdk \
 process-image-jre process-image-jdk \
 compare-image \
 sec-files sec-files-win jgss-files ::
@@ -253,11 +224,12 @@ sec-files sec-files-win jgss-files ::
 images:: sanity-images post-sanity-images  \
 	 $(INITIAL_IMAGE_JRE) $(INITIAL_IMAGE_JDK) \
 	 trim-image-jre trim-image-jdk \
+         identify-image-jre identify-image-jdk \
 	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files
 
 # Don't use these
-image-jre:: initial-image-jre trim-image-jre process-image-jre
-image-jdk:: initial-image-jdk trim-image-jdk process-image-jdk
+image-jre:: initial-image-jre trim-image-jre identify-image-jre process-image-jre
+image-jdk:: initial-image-jdk trim-image-jdk identify-image-jdk process-image-jdk
 
 #
 # Sources we ship in the SDK.
@@ -504,33 +476,12 @@ endef
 # JDK files
 $(JDK_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%
 	$(process-doc-file)
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JDK_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JDK_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JDK_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%
-	$(process-doc-file)
-endif
 
 # JRE files 
 $(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
 	$(process-doc-file)
-# Add $(TEXT_SUFFIX) suffix
-ifdef TEXT_SUFFIX
-$(JRE_IMAGE_DIR)/%$(TEXT_SUFFIX): $(SHARE_JRE_DOC_SRC)/%
-	$(process-doc-file)
-endif
-# Removes LICENSE_VERSION or not
-ifdef LICENSE_VERSION
-$(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-$(JRE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
-	$(process-doc-file)
-else
-$(JRE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%
+ifeq ($(PLATFORM), windows)
+$(JRE_IMAGE_DIR)/README.txt: $(SHARE_JRE_DOC_SRC)/README
 	$(process-doc-file)
 endif
 
@@ -738,8 +689,7 @@ initial-image-jre-setup:
 	$(MKDIR) -p $(JRE_IMAGE_DIR)
 
 # 64-bit solaris jre image contains only the 64-bit add-on files.
-initial-image-jre-sol64:: initial-image-jre-setup \
-			  $(JRE_LICENSES) $(JRE64_LICENSES)
+initial-image-jre-sol64:: initial-image-jre-setup
 	@# Use tar instead of cp to preserve the symbolic links
 	for dir in bin lib ; do \
 	  ( $(CD) $(OUTPUTDIR) && \
@@ -760,7 +710,7 @@ initial-image-jre-sol64:: initial-image-jre-setup \
 # See "initial-image-jdk-setup" for an explanation of the rm of
 # drive names like C:
 initial-image-jre:: initial-image-jre-setup \
-		    $(JRE_LICENSES) $(JRE_DOCFILES) \
+		    $(JRE_DOCFILES) \
 		    $(RT_JAR) $(RESOURCES_JAR) $(JSSE_JAR) \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
@@ -802,7 +752,7 @@ ifeq ($(PLATFORM), windows)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
-                  hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+                  awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@# The Java Kernel JRE image ships with a special VM.  It is not included
 	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
@@ -836,11 +786,14 @@ else # PLATFORM
   endif
 endif # PLATFORM
 
-# Get list of all Elf files in the jre
-JRE_ELF_LIST=$(TEMPDIR)/jre-elf-files.list
-$(JRE_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+# Get list of all binary (COFF or Elf) files in the jre
+JRE_BIN_LIST=$(TEMPDIR)/jre-bin-files.list
+$(JRE_BIN_LIST):
 	$(RM) $@
+ifeq ($(PLATFORM), windows)
+	$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
+else
 	$(FIND) $(JRE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
@@ -848,9 +801,9 @@ endif
 
 # Post process the image (strips and mcs on Elf files we are shipping)
 #   (Note the jdk WILL want the jre image before this processing)
-process-image-jre:: $(JRE_ELF_LIST)
+process-image-jre:: $(JRE_BIN_LIST)
 ifneq ($(POST_STRIP_PROCESS), )
-	for f in `$(CAT) $(JRE_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
 	  $(POST_STRIP_PROCESS) $${f}; \
@@ -858,14 +811,17 @@ ifneq ($(POST_STRIP_PROCESS), )
 	done
 endif
 ifneq ($(POST_MCS_PROCESS), )
-	for f in `$(CAT) $(JRE_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
 	  $(POST_MCS_PROCESS) $${f}; \
 	  $(CHMOD) go-w $${f}; \
 	done
 endif
-	$(RM) $(JRE_ELF_LIST)
+	@for f in `$(CAT) $(JRE_BIN_LIST)`; do \
+	  $(call binary_file_verification,$${f}); \
+	done
+	$(RM) $(JRE_BIN_LIST)
 
 ######################################################
 # JDK Image
@@ -905,8 +861,7 @@ initial-image-jdk64-bindemos:
 
 # Solaris 64 bit image is special
 initial-image-jdk-sol64:: initial-image-jdk-setup \
-			  initial-image-jdk64-bindemos \
-			  $(JDK_LICENSES) $(JDK64_LICENSES)
+			  initial-image-jdk64-bindemos
 
 # DB files to add
 ifdef OPENJDK
@@ -930,7 +885,7 @@ endif
 # Standard jdk image
 initial-image-jdk:: initial-image-jdk-setup \
 		    initial-image-jdk-db \
-		    $(JDK_LICENSES) $(JDK_DOCFILES)
+		    $(JDK_DOCFILES)
 	$(MKDIR) $(JDK_IMAGE_DIR)/lib
 	@#
 	@# Copy in the jars in lib that only belong in the JDK
@@ -1089,14 +1044,18 @@ endif # !windows
 trim-image-jdk::
 	@# Remove tools that should not be part of SDK.
 	for t in $(NOTJDKTOOLS); do \
-	    $(RM) $(JDK_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX) \
-		  $(JDK_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
+	    $(RM) $(JDK_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX); \
 	done
 
-# Get list of Elf files in the jdk
-JDK_ELF_LIST=$(TEMPDIR)/jdk-elf-files.list
-$(JDK_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+# Get list of binary (COFF or Elf) files in the jdk
+JDK_BIN_LIST=$(TEMPDIR)/jdk-bin-files.list
+$(JDK_BIN_LIST):
+ifeq ($(PLATFORM), windows)
+	$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
+	$(FIND) $(JDK_IMAGE_DIR)/bin -type f -name \*.exe \
+	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" >> $@
+else
 	$(RM) $@
 	$(FIND) $(JDK_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
@@ -1106,9 +1065,9 @@ ifneq ($(PLATFORM), windows)
 endif
 
 # Post process the image (strips and mcs on files we are shipping)
-process-image-jdk:: $(JDK_ELF_LIST)
+process-image-jdk:: $(JDK_BIN_LIST)
 ifneq ($(POST_STRIP_PROCESS), )
-	for f in `$(CAT) $(JDK_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
 	  $(POST_STRIP_PROCESS) $${f}; \
@@ -1116,14 +1075,56 @@ ifneq ($(POST_STRIP_PROCESS), )
 	done
 endif
 ifneq ($(POST_MCS_PROCESS), )
-	for f in `$(CAT) $(JDK_ELF_LIST)`; do \
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
 	  $(CHMOD) u+w $${f}; \
 	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
 	  $(POST_MCS_PROCESS) $${f}; \
 	  $(CHMOD) go-w $${f}; \
 	done
 endif
-	$(RM) $(JDK_ELF_LIST)
+	@for f in `$(CAT) $(JDK_BIN_LIST)`; do \
+	  $(call binary_file_verification,$${f}); \
+	done
+	$(RM) $(JDK_BIN_LIST)
+
+###################################################################
+# What did we build
+###################################################################
+
+# The jdk text info file that lives at the root of the install image.
+
+JDK_INFO_FILE = $(JDK_IMAGE_DIR)/release
+JRE_INFO_FILE = $(JRE_IMAGE_DIR)/release
+
+# Common way to emit a line into the release or info file
+define info-file-item # name value
+$(PRINTF) "%s=\"%s\"\n" $1 $2 >> $@
+endef
+
+# Values to emit
+MINIMUM_OS_NAME    := $(REQUIRED_OS_NAME)
+MINIMUM_OS_VERSION := $(REQUIRED_OS_VERSION)
+MINIMUM_OS_ARCH    := $(ARCH)
+
+$(JDK_INFO_FILE): FRC
+	$(prep-target)
+	$(call info-file-item, "JAVA_VERSION", "$(THIS_JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+
+# Create release file to identify this image
+identify-image-jdk:: $(JDK_INFO_FILE)
+
+$(JRE_INFO_FILE): FRC
+	$(prep-target)
+	$(call info-file-item, "JAVA_VERSION", "$(THIS_JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+
+# Create release file to identify this image
+identify-image-jre:: $(JRE_INFO_FILE)
 
 ###################################################################
 # What do we compare against
@@ -1278,6 +1279,7 @@ images images-clobber::
         initial-image-jre-setup \
 	trim-image-jre trim-image-jdk \
 	process-image-jre process-image-jdk \
+	identify-image-jre identify-image-jdk \
 	install-previous-jre install-previous-jdk \
 	compare-image-jre compare-image-jdk \
 	compare-image compare-image-clobber \
