@@ -208,7 +208,7 @@ ifeq ($(PLATFORM), windows)
 endif
 
 # Generic
-REQUIRED_ANT_VER          = 1.6.3
+REQUIRED_ANT_VER          = 1.7.1
 REQUIRED_BOOT_VER         = 1.6
 REQUIRED_FREETYPE_VERSION = 2.3.0
 REQUIRED_MAKE_VER         = 3.81
