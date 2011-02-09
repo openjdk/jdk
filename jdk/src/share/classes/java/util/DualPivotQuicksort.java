@@ -36,7 +36,7 @@ package java.util;
  * @author Jon Bentley
  * @author Josh Bloch
  *
- * @version 2011.01.21 m765.827.12i:5\7pm
+ * @version 2011.02.11 m765.827.12i:5\7pm
  * @since 1.7
  */
 final class DualPivotQuicksort {
@@ -115,7 +115,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
@@ -555,7 +555,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
@@ -1027,7 +1027,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
@@ -1499,7 +1499,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
@@ -2076,7 +2076,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
@@ -2603,7 +2603,7 @@ final class DualPivotQuicksort {
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
          */
-        int[] run = new int[MAX_RUN_COUNT];
+        int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
