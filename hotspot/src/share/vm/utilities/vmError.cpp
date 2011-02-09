@@ -35,6 +35,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/errorReporter.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
@@ -769,6 +770,7 @@ void VMError::report_and_die() {
   // then save detailed information in log file (verbose = true).
   static bool out_done = false;         // done printing to standard out
   static bool log_done = false;         // done saving error log
+  static bool transmit_report_done = false; // done error reporting
   static fdStream log;                  // error log
 
   if (SuppressFatalErrorMessage) {
@@ -859,7 +861,7 @@ void VMError::report_and_die() {
         bool copy_ok =
           Arguments::copy_expand_pid(ErrorFile, strlen(ErrorFile), buffer, sizeof(buffer));
         if (copy_ok) {
-          fd = open(buffer, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
         }
       }
 
@@ -870,7 +872,7 @@ void VMError::report_and_die() {
         // so use the default name in the current directory
         jio_snprintf(&buffer[len], sizeof(buffer)-len, "%shs_err_pid%u.log",
                      os::file_separator(), os::current_process_id());
-        fd = open(buffer, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
       }
 
       if (fd == -1) {
@@ -879,7 +881,7 @@ void VMError::report_and_die() {
         if (tmpdir != NULL && tmpdir[0] != '\0') {
           jio_snprintf(buffer, sizeof(buffer), "%s%shs_err_pid%u.log",
                        tmpdir, os::file_separator(), os::current_process_id());
-          fd = open(buffer, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
         }
       }
 
@@ -892,6 +894,9 @@ void VMError::report_and_die() {
       } else {
         out.print_raw_cr("# Can not save log file, dump to screen..");
         log.set_fd(defaultStream::output_fd());
+        /* Error reporting currently needs dumpfile.
+         * Maybe implement direct streaming in the future.*/
+        transmit_report_done = true;
       }
     }
 
@@ -899,6 +904,16 @@ void VMError::report_and_die() {
     first_error->report(&sbs);
     first_error->_current_step = 0;         // reset current_step
     first_error->_current_step_info = "";   // reset current_step string
+
+    // Run error reporting to determine whether or not to report the crash.
+    if (!transmit_report_done && should_report_bug(first_error->_id)) {
+      transmit_report_done = true;
+      FILE* hs_err = ::fdopen(log.fd(), "r");
+      if (NULL != hs_err) {
+        ErrorReporter er;
+        er.call(hs_err, buffer, O_BUFLEN);
+      }
+    }
 
     if (log.fd() != defaultStream::output_fd()) {
       close(log.fd());
