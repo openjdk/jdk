@@ -153,11 +153,11 @@ public final class KeyTool {
     private KeyStore caks = null; // "cacerts" keystore
     private char[] srcstorePass = null;
     private String srcstoretype = null;
-    private Set<char[]> passwords = new HashSet<char[]> ();
+    private Set<char[]> passwords = new HashSet<>();
     private String startDate = null;
 
-    private List <String> ids = new ArrayList <String> ();   // used in GENCRL
-    private List <String> v3ext = new ArrayList <String> ();
+    private List<String> ids = new ArrayList<>();   // used in GENCRL
+    private List<String> v3ext = new ArrayList<>();
 
     enum Command {
         CERTREQ("Generates.a.certificate.request",
@@ -2091,7 +2091,7 @@ public final class KeyTool {
      */
     public static List<CRL> readCRLsFromCert(X509Certificate cert)
             throws Exception {
-        List<CRL> crls = new ArrayList<CRL>();
+        List<CRL> crls = new ArrayList<>();
         CRLDistributionPointsExtension ext =
                 X509CertImpl.toImpl(cert).getCRLDistributionPointsExtension();
         if (ext == null) return crls;
@@ -2258,7 +2258,7 @@ public final class KeyTool {
         if (jarfile != null) {
             JarFile jf = new JarFile(jarfile, true);
             Enumeration<JarEntry> entries = jf.entries();
-            Set<CodeSigner> ss = new HashSet<CodeSigner>();
+            Set<CodeSigner> ss = new HashSet<>();
             byte[] buffer = new byte[8192];
             int pos = 0;
             while (entries.hasMoreElements()) {
@@ -3347,7 +3347,7 @@ public final class KeyTool {
         }
 
         // start building chain
-        Vector<Certificate> chain = new Vector<Certificate>(2);
+        Vector<Certificate> chain = new Vector<>(2);
         if (buildChain((X509Certificate)certToVerify, chain, certs)) {
             Certificate[] newChain = new Certificate[chain.size()];
             // buildChain() returns chain with self-signed root-cert first and
@@ -3873,8 +3873,7 @@ public final class KeyTool {
                         break;
                     case 2:     // EKU
                         if(value != null) {
-                            Vector <ObjectIdentifier> v =
-                                    new Vector <ObjectIdentifier>();
+                            Vector<ObjectIdentifier> v = new Vector<>();
                             for (String s: value.split(",")) {
                                 int p = oneOf(s,
                                         "anyExtendedKeyUsage",
@@ -3944,7 +3943,7 @@ public final class KeyTool {
                         }
                         if(value != null) {
                             List<AccessDescription> accessDescriptions =
-                                    new ArrayList<AccessDescription>();
+                                    new ArrayList<>();
                             String[] ps = value.split(",");
                             for(String item: ps) {
                                 colonpos = item.indexOf(':');
@@ -4228,7 +4227,7 @@ class Pair<A, B> {
     }
 
     public static <A,B> Pair<A,B> of(A a, B b) {
-        return new Pair<A,B>(a,b);
+        return new Pair<>(a,b);
     }
 }
 

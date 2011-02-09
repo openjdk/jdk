@@ -337,7 +337,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
 
         X500Principal[] x500Issuers = (X500Principal[])issuers;
         // the algorithm below does not produce duplicates, so avoid Set
-        List<String> aliases = new ArrayList<String>();
+        List<String> aliases = new ArrayList<>();
 
         for (Map.Entry<String,X509Credentials> entry :
                                                 credentialsMap.entrySet()) {
@@ -397,7 +397,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * possible. Principals that cannot be converted are ignored.
      */
     private static X500Principal[] convertPrincipals(Principal[] principals) {
-        List<X500Principal> list = new ArrayList<X500Principal>(principals.length);
+        List<X500Principal> list = new ArrayList<>(principals.length);
         for (int i = 0; i < principals.length; i++) {
             Principal p = principals[i];
             if (p instanceof X500Principal) {
