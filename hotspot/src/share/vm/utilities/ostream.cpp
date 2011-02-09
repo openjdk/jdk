@@ -314,12 +314,36 @@ fileStream::fileStream(const char* file_name) {
   _need_close = true;
 }
 
+fileStream::fileStream(const char* file_name, const char* opentype) {
+  _file = fopen(file_name, opentype);
+  _need_close = true;
+}
+
 void fileStream::write(const char* s, size_t len) {
   if (_file != NULL)  {
     // Make an unused local variable to avoid warning from gcc 4.x compiler.
     size_t count = fwrite(s, 1, len, _file);
   }
   update_position(s, len);
+}
+
+long fileStream::fileSize() {
+  long size = -1;
+  if (_file != NULL) {
+    long pos  = ::ftell(_file);
+    if (::fseek(_file, 0, SEEK_END) == 0) {
+      size = ::ftell(_file);
+    }
+    ::fseek(_file, pos, SEEK_SET);
+  }
+  return size;
+}
+
+char* fileStream::readln(char *data, int count ) {
+  char * ret = ::fgets(data, count, _file);
+  //Get rid of annoying \n char
+  data[::strlen(data)-1] = '\0';
+  return ret;
 }
 
 fileStream::~fileStream() {
