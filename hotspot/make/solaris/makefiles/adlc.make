@@ -27,6 +27,7 @@
 # It knows how to compile, link, and run the adlc.
 
 include $(GAMMADIR)/make/$(Platform_os_family)/makefiles/rules.make
+include $(GAMMADIR)/make/altsrc.make
 
 # #########################################################################
 
@@ -39,8 +40,9 @@ OS = $(Platform_os_family)
 
 SOURCE.AD = $(OUTDIR)/$(OS)_$(Platform_arch_model).ad 
 
-SOURCES.AD = $(GAMMADIR)/src/cpu/$(ARCH)/vm/$(Platform_arch_model).ad \
-	     $(GAMMADIR)/src/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad 
+SOURCES.AD = \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(ARCH)/vm/$(Platform_arch_model).ad) \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad)
 
 EXEC	= $(OUTDIR)/adlc
 
