@@ -1277,6 +1277,9 @@ private:
   void prefetcht2(Address src);
   void prefetchw(Address src);
 
+  // POR - Bitwise logical OR
+  void por(XMMRegister dst, XMMRegister src);
+
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
   void pshufd(XMMRegister dst, Address src,     int mode);
@@ -2294,7 +2297,7 @@ public:
   // Compare strings.
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      XMMRegister vec1, XMMRegister vec2);
+                      XMMRegister vec1);
 
   // Compare char[] arrays.
   void char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,
