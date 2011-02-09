@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,16 +286,15 @@ void MethodLiveness::init_basic_blocks() {
         break;
       case Bytecodes::_tableswitch:
         {
-          Bytecode_tableswitch *tableswitch =
-            Bytecode_tableswitch_at(bytes.cur_bcp());
+          Bytecode_tableswitch tableswitch(&bytes);
 
-          int len = tableswitch->length();
+          int len = tableswitch.length();
 
-          dest = _block_map->at(bci + tableswitch->default_offset());
+          dest = _block_map->at(bci + tableswitch.default_offset());
           assert(dest != NULL, "branch desination must start a block.");
           dest->add_normal_predecessor(current_block);
           while (--len >= 0) {
-            dest = _block_map->at(bci + tableswitch->dest_offset_at(len));
+            dest = _block_map->at(bci + tableswitch.dest_offset_at(len));
             assert(dest != NULL, "branch desination must start a block.");
             dest->add_normal_predecessor(current_block);
           }
@@ -304,17 +303,16 @@ void MethodLiveness::init_basic_blocks() {
 
       case Bytecodes::_lookupswitch:
         {
-          Bytecode_lookupswitch *lookupswitch =
-            Bytecode_lookupswitch_at(bytes.cur_bcp());
+          Bytecode_lookupswitch lookupswitch(&bytes);
 
-          int npairs = lookupswitch->number_of_pairs();
+          int npairs = lookupswitch.number_of_pairs();
 
-          dest = _block_map->at(bci + lookupswitch->default_offset());
+          dest = _block_map->at(bci + lookupswitch.default_offset());
           assert(dest != NULL, "branch desination must start a block.");
           dest->add_normal_predecessor(current_block);
           while(--npairs >= 0) {
-            LookupswitchPair *pair = lookupswitch->pair_at(npairs);
-            dest = _block_map->at( bci + pair->offset());
+            LookupswitchPair pair = lookupswitch.pair_at(npairs);
+            dest = _block_map->at( bci + pair.offset());
             assert(dest != NULL, "branch desination must start a block.");
             dest->add_normal_predecessor(current_block);
           }

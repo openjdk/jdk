@@ -439,7 +439,14 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         MediaTray[] arr = new MediaTray[nTray];
         int dmBin;
-        for (int i = 0, j=0; i < mediaTr.length; i++) {
+
+        /* Some drivers in Win 7 don't have the same length for DC_BINS and
+         * DC_BINNAMES so there is no guarantee that lengths of mediaTr and
+         * winMediaTrayNames are equal. To avoid getting ArrayIndexOutOfBounds,
+         * we need to make sure we get the minimum of the two.
+         */
+
+        for (int i = 0, j=0; i < Math.min(mediaTr.length, winMediaTrayNames.length); i++) {
             dmBin = mediaTr[i];
             if (dmBin > 0) {
                 // check for unsupported DMBINs and create new Win32MediaTray

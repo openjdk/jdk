@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -204,19 +205,20 @@ public class Infer {
      *  Throw a NoInstanceException if this not possible.
      */
     void maximizeInst(UndetVar that, Warner warn) throws NoInstanceException {
+        List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
         if (that.inst == null) {
-            if (that.hibounds.isEmpty())
+            if (hibounds.isEmpty())
                 that.inst = syms.objectType;
-            else if (that.hibounds.tail.isEmpty())
-                that.inst = that.hibounds.head;
+            else if (hibounds.tail.isEmpty())
+                that.inst = hibounds.head;
             else
-                that.inst = types.glb(that.hibounds);
+                that.inst = types.glb(hibounds);
         }
         if (that.inst == null ||
             that.inst.isErroneous())
             throw ambiguousNoInstanceException
                 .setMessage("no.unique.maximal.instance.exists",
-                            that.qtype, that.hibounds);
+                            that.qtype, hibounds);
     }
     //where
         private boolean isSubClass(Type t, final List<Type> ts) {
@@ -240,37 +242,46 @@ public class Infer {
             return true;
         }
 
+    private Filter<Type> errorFilter = new Filter<Type>() {
+        @Override
+        public boolean accepts(Type t) {
+            return !t.isErroneous();
+        }
+    };
+
     /** Instantiate undetermined type variable to the lub of all its lower bounds.
      *  Throw a NoInstanceException if this not possible.
      */
     void minimizeInst(UndetVar that, Warner warn) throws NoInstanceException {
+        List<Type> lobounds = Type.filter(that.lobounds, errorFilter);
         if (that.inst == null) {
-            if (that.lobounds.isEmpty())
+            if (lobounds.isEmpty())
                 that.inst = syms.botType;
-            else if (that.lobounds.tail.isEmpty())
-                that.inst = that.lobounds.head.isPrimitive() ? syms.errType : that.lobounds.head;
+            else if (lobounds.tail.isEmpty())
+                that.inst = lobounds.head.isPrimitive() ? syms.errType : lobounds.head;
             else {
-                that.inst = types.lub(that.lobounds);
+                that.inst = types.lub(lobounds);
             }
             if (that.inst == null || that.inst.tag == ERROR)
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.minimal.instance.exists",
-                                    that.qtype, that.lobounds);
+                                    that.qtype, lobounds);
             // VGJ: sort of inlined maximizeInst() below.  Adding
             // bounds can cause lobounds that are above hibounds.
-            if (that.hibounds.isEmpty())
+            List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
+            if (hibounds.isEmpty())
                 return;
             Type hb = null;
-            if (that.hibounds.tail.isEmpty())
-                hb = that.hibounds.head;
-            else for (List<Type> bs = that.hibounds;
+            if (hibounds.tail.isEmpty())
+                hb = hibounds.head;
+            else for (List<Type> bs = hibounds;
                       bs.nonEmpty() && hb == null;
                       bs = bs.tail) {
-                if (isSubClass(bs.head, that.hibounds))
+                if (isSubClass(bs.head, hibounds))
                     hb = types.fromUnknownFun.apply(bs.head);
             }
             if (hb == null ||
-                !types.isSubtypeUnchecked(hb, that.hibounds, warn) ||
+                !types.isSubtypeUnchecked(hb, hibounds, warn) ||
                 !types.isSubtypeUnchecked(that.inst, hb, warn))
                 throw ambiguousNoInstanceException;
         }
@@ -396,7 +407,9 @@ public class Infer {
 
         // for varargs arguments as well
         if (useVarargs) {
-            Type elemType = types.elemtype(varargsFormal);
+            //note: if applicability check is triggered by most specific test,
+            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
+            Type elemType = types.elemtypeOrType(varargsFormal);
             Type elemUndet = types.subst(elemType, tvars, undetvars);
             while (actuals.nonEmpty()) {
                 Type actual = actuals.head.baseType();
@@ -527,7 +540,8 @@ public class Infer {
         for (List<Type> tvs = tvars, args = arguments;
              tvs.nonEmpty();
              tvs = tvs.tail, args = args.tail) {
-            if (args.head instanceof UndetVar) continue;
+            if (args.head instanceof UndetVar ||
+                    tvars.head.getUpperBound().isErroneous()) continue;
             List<Type> bounds = types.subst(types.getBounds((TypeVar)tvs.head), tvars, arguments);
             if (!types.isSubtypeUnchecked(args.head, bounds, warn))
                 throw invalidInstanceException
@@ -538,43 +552,39 @@ public class Infer {
 
     /**
      * Compute a synthetic method type corresponding to the requested polymorphic
-     * method signature. If no explicit return type is supplied, a provisional
-     * return type is computed (just Object in case of non-transitional 292)
+     * method signature. The target return type is computed from the immediately
+     * enclosing scope surrounding the polymorphic-signature call.
      */
     Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
                                             Name name,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
-                                            List<Type> argtypes,
-                                            List<Type> typeargtypes) {
+                                            List<Type> argtypes) {
         final Type restype;
-        if (rs.allowTransitionalJSR292 && typeargtypes.nonEmpty()) {
-            restype = typeargtypes.head;
-        } else {
-            //The return type for a polymorphic signature call is computed from
-            //the enclosing tree E, as follows: if E is a cast, then use the
-            //target type of the cast expression as a return type; if E is an
-            //expression statement, the return type is 'void' - otherwise the
-            //return type is simply 'Object'. A correctness check ensures that
-            //env.next refers to the lexically enclosing environment in which
-            //the polymorphic signature call environment is nested.
 
-            switch (env.next.tree.getTag()) {
-                case JCTree.TYPECAST:
-                    JCTypeCast castTree = (JCTypeCast)env.next.tree;
-                    restype = (castTree.expr == env.tree) ?
-                        castTree.clazz.type :
-                        syms.objectType;
-                    break;
-                case JCTree.EXEC:
-                    JCTree.JCExpressionStatement execTree =
-                            (JCTree.JCExpressionStatement)env.next.tree;
-                    restype = (execTree.expr == env.tree) ?
-                        syms.voidType :
-                        syms.objectType;
-                    break;
-                default:
-                    restype = syms.objectType;
-            }
+        //The return type for a polymorphic signature call is computed from
+        //the enclosing tree E, as follows: if E is a cast, then use the
+        //target type of the cast expression as a return type; if E is an
+        //expression statement, the return type is 'void' - otherwise the
+        //return type is simply 'Object'. A correctness check ensures that
+        //env.next refers to the lexically enclosing environment in which
+        //the polymorphic signature call environment is nested.
+
+        switch (env.next.tree.getTag()) {
+            case JCTree.TYPECAST:
+                JCTypeCast castTree = (JCTypeCast)env.next.tree;
+                restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
+                    castTree.clazz.type :
+                    syms.objectType;
+                break;
+            case JCTree.EXEC:
+                JCTree.JCExpressionStatement execTree =
+                        (JCTree.JCExpressionStatement)env.next.tree;
+                restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?
+                    syms.voidType :
+                    syms.objectType;
+                break;
+            default:
+                restype = syms.objectType;
         }
 
         List<Type> paramtypes = Type.map(argtypes, implicitArgType);

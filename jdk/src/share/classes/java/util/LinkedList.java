@@ -26,9 +26,9 @@
 package java.util;
 
 /**
- * Linked list implementation of the {@link List} and {@link Deque} interfaces.
- * Implements all optional operations, and permits all elements (including
- * {@code null}).
+ * Doubly-linked list implementation of the {@code List} and {@code Deque}
+ * interfaces.  Implements all optional list operations, and permits all
+ * elements (including {@code null}).
  *
  * <p>All of the operations perform as could be expected for a doubly-linked
  * list.  Operations that index into the list will traverse the list from
@@ -249,7 +249,7 @@ public class LinkedList<E>
      * @return the last element in this list
      * @throws NoSuchElementException if this list is empty
      */
-    public E getLast()  {
+    public E getLast() {
         final Node<E> l = last;
         if (l == null)
             throw new NoSuchElementException();

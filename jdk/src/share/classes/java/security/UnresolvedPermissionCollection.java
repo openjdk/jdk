@@ -119,7 +119,7 @@ implements java.io.Serializable
 
     public Enumeration<Permission> elements() {
         List<Permission> results =
-            new ArrayList<Permission>(); // where results are stored
+            new ArrayList<>(); // where results are stored
 
         // Get iterator of Map values (which are lists of permissions)
         synchronized (this) {
@@ -161,7 +161,7 @@ implements java.io.Serializable
 
         // Copy perms into a Hashtable
         Hashtable<String, Vector<UnresolvedPermission>> permissions =
-            new Hashtable<String, Vector<UnresolvedPermission>>(perms.size()*2);
+            new Hashtable<>(perms.size()*2);
 
         // Convert each entry (List) into a Vector
         synchronized (this) {
@@ -169,8 +169,7 @@ implements java.io.Serializable
             for (Map.Entry<String, List<UnresolvedPermission>> e : set) {
                 // Convert list into Vector
                 List<UnresolvedPermission> list = e.getValue();
-                Vector<UnresolvedPermission> vec =
-                        new Vector<UnresolvedPermission>(list.size());
+                Vector<UnresolvedPermission> vec = new Vector<>(list.size());
                 synchronized (list) {
                     vec.addAll(list);
                 }
@@ -207,8 +206,7 @@ implements java.io.Serializable
         for (Map.Entry<String, Vector<UnresolvedPermission>> e : set) {
             // Convert Vector into ArrayList
             Vector<UnresolvedPermission> vec = e.getValue();
-            List<UnresolvedPermission> list =
-                        new ArrayList<UnresolvedPermission>(vec.size());
+            List<UnresolvedPermission> list = new ArrayList<>(vec.size());
             list.addAll(vec);
 
             // Add to Hashtable being serialized

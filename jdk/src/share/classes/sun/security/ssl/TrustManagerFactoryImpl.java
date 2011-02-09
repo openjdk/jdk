@@ -134,7 +134,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
         FileInputStream fis = null;
         String defaultTrustStoreType;
         String defaultTrustStoreProvider;
-        final HashMap<String,String> props = new HashMap<String,String>();
+        final HashMap<String,String> props = new HashMap<>();
         final String sep = File.separator;
         KeyStore ks = null;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ class HeapRegionSeq: public CHeapObj {
   // (For efficiency only; private to obj_allocate after initialization.)
   int _alloc_search_start;
 
-  // Attempts to allocate a block of the (assumed humongous) word_size,
-  // starting at the region "ind".
-  HeapWord* alloc_obj_from_region_index(int ind, size_t word_size);
+  // Finds a contiguous set of empty regions of length num, starting
+  // from a given index.
+  int find_contiguous_from(int from, size_t num);
 
   // Currently, we're choosing collection sets in a round-robin fashion,
   // starting here.
@@ -76,11 +76,8 @@ class HeapRegionSeq: public CHeapObj {
   // that are available for allocation.
   size_t free_suffix();
 
-  // Requires "word_size" to be humongous (in the technical sense).  If
-  // possible, allocates a contiguous subsequence of the heap regions to
-  // satisfy the allocation, and returns the address of the beginning of
-  // that sequence, otherwise returns NULL.
-  HeapWord* obj_allocate(size_t word_size);
+  // Finds a contiguous set of empty regions of length num.
+  int find_contiguous(size_t num);
 
   // Apply the "doHeapRegion" method of "blk" to all regions in "this",
   // in address order, terminating the iteration early
@@ -106,7 +103,7 @@ class HeapRegionSeq: public CHeapObj {
 
   // If "addr" falls within a region in the sequence, return that region,
   // or else NULL.
-  HeapRegion* addr_to_region(const void* addr);
+  inline HeapRegion* addr_to_region(const void* addr);
 
   void print();
 

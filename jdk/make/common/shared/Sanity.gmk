@@ -879,13 +879,6 @@ sane-devtools_path:
 ######################################################
 sane-msvcrt_path:
 ifeq ($(PLATFORM), windows)
-	@if [ ! -r "$(MSVCRT_DLL_PATH)/msvcrt.dll" ]; then \
-	  $(ECHO) "ERROR: You do not have access to msvcrt.dll. \n" \
-	    "      Please check your access to \n" \
-	    "          $(MSVCRT_DLL_PATH) \n" \
-	    "      and/or check your value of ALT_MSVCRT_DLL_PATH. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
   ifneq ($(MSVCRNN_DLL),)
 	@if [ ! -r "$(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)" ]; then \
 	  $(ECHO) "ERROR: You do not have access to $(MSVCRNN_DLL). \n" \
@@ -1018,6 +1011,22 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  else
+    ifeq ($(wildcard $(REBASE)),)
+	@$(ECHO) "ERROR: Cannot find the REBASE utility from path: $(REBASE)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
+    ifeq ($(wildcard $(RC)),)
+	@$(ECHO) "ERROR: Cannot find the RC utility from path: $(RC)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
+    ifeq ($(wildcard $(DUMPBIN)),)
+	@$(ECHO) "ERROR: Cannot find the DUMPBIN utility from path: $(DUMPBIN)\n" \
+	    "      This is normally obtained from the WINDOWSSDKDIR." \
+	    "" >> $(ERROR_FILE)
+    endif
   endif
 endif
 
@@ -1455,25 +1464,6 @@ ifeq ($(PLATFORM), windows)
 	    "      Please check your access to \n" \
 	    "          $(INSTALL_MSSDK) \n" \
 	    "      and/or check your value of ALT_INSTALL_MSSDK. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-endif
-
-######################################################
-# Check for existence of INSTALL_MSIVAL2 on windows
-######################################################
-sane-install-msival2_path:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(INSTALL_MSIVAL2)" ]; then \
-	  $(ECHO) "WARNING: Your INSTALL_MSIVAL2 setting is empty.\n" \
-	    "        It is recommended to set ALT_INSTALL_MSIVAL2.\n" \
-	    "" >> $(WARNING_FILE) ; \
-	fi
-	@if [ ! -r "$(INSTALL_MSIVAL2)" ]; then \
-	  $(ECHO) "ERROR: You do not have a valid INSTALL_MSIVAL2 setting. \n" \
-	    "      Please check your access to \n" \
-	    "          $(INSTALL_MSIVAL2) \n" \
-	    "      and/or check your value of ALT_INSTALL_MSIVAL2. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
 endif

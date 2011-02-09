@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,18 +54,46 @@ u_char          Bytecodes::_lengths       [Bytecodes::number_of_codes];
 Bytecodes::Code Bytecodes::_java_code     [Bytecodes::number_of_codes];
 u_short         Bytecodes::_flags         [(1<<BitsPerByte)*2];
 
+#ifdef ASSERT
+bool Bytecodes::check_method(const methodOopDesc* method, address bcp) {
+  return method->contains(bcp);
+}
+#endif
 
-Bytecodes::Code Bytecodes::code_at(methodOop method, int bci) {
-  return code_at(method->bcp_from(bci), method);
+bool Bytecodes::check_must_rewrite(Bytecodes::Code code) {
+  assert(can_rewrite(code), "post-check only");
+
+  // Some codes are conditionally rewriting.  Look closely at them.
+  switch (code) {
+  case Bytecodes::_aload_0:
+    // Even if RewriteFrequentPairs is turned on,
+    // the _aload_0 code might delay its rewrite until
+    // a following _getfield rewrites itself.
+    return false;
+
+  case Bytecodes::_lookupswitch:
+    return false;  // the rewrite is not done by the interpreter
+
+  case Bytecodes::_new:
+    // (Could actually look at the class here, but the profit would be small.)
+    return false;  // the rewrite is not always done
+  }
+
+  // No other special cases.
+  return true;
 }
 
-Bytecodes::Code Bytecodes::non_breakpoint_code_at(address bcp, methodOop method) {
-  if (method == NULL)  method = methodOopDesc::method_from_bcp(bcp);
+Bytecodes::Code Bytecodes::code_at(methodOop method, int bci) {
+  return code_at(method, method->bcp_from(bci));
+}
+
+Bytecodes::Code Bytecodes::non_breakpoint_code_at(const methodOopDesc* method, address bcp) {
+  assert(method != NULL, "must have the method for breakpoint conversion");
+  assert(method->contains(bcp), "must be valid bcp in method");
   return method->orig_bytecode_at(method->bci_from(bcp));
 }
 
-int Bytecodes::special_length_at(address bcp, address end) {
-  Code code = code_at(bcp);
+int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end) {
   switch (code) {
   case _wide:
     if (end != NULL && bcp + 1 >= end) {
@@ -120,7 +148,7 @@ int Bytecodes::raw_special_length_at(address bcp, address end) {
   if (code == _breakpoint) {
     return 1;
   } else {
-    return special_length_at(bcp, end);
+    return special_length_at(code, bcp, end);
   }
 }
 

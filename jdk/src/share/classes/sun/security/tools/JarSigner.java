@@ -123,19 +123,19 @@ public class JarSigner {
                                     // or the default keystore, never null
 
     String keystore; // key store file
-    List<String> crlfiles = new ArrayList<String>();  // CRL files to add
+    List<String> crlfiles = new ArrayList<>();  // CRL files to add
     boolean nullStream = false; // null keystore input stream (NONE)
     boolean token = false; // token-based keystore
     String jarfile;  // jar files to sign or verify
     String alias;    // alias to sign jar with
-    List<String> ckaliases = new ArrayList<String>(); // aliases in -verify
+    List<String> ckaliases = new ArrayList<>(); // aliases in -verify
     char[] storepass; // keystore password
     boolean protectedPath; // protected authentication path
     String storetype; // keystore type
     String providerName; // provider name
     Vector<String> providers = null; // list of providers
     // arguments for provider constructors
-    HashMap<String,String> providerArgs = new HashMap<String, String>();
+    HashMap<String,String> providerArgs = new HashMap<>();
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
@@ -236,7 +236,7 @@ public class JarSigner {
                 if (crlfiles.size() > 0 || autoCRL) {
                     CertificateFactory fac =
                             CertificateFactory.getInstance("X509");
-                    List<CRL> list = new ArrayList<CRL>();
+                    List<CRL> list = new ArrayList<>();
                     for (String file: crlfiles) {
                         Collection<? extends CRL> tmp = KeyTool.loadCRLs(file);
                         for (CRL crl: tmp) {
@@ -606,7 +606,7 @@ public class JarSigner {
 
         try {
             jf = new JarFile(jarName, true);
-            Vector<JarEntry> entriesVec = new Vector<JarEntry>();
+            Vector<JarEntry> entriesVec = new Vector<>();
             byte[] buffer = new byte[8192];
 
             Enumeration<JarEntry> entries = jf.entries();
@@ -633,8 +633,7 @@ public class JarSigner {
             // The map to record display info, only used when -verbose provided
             //      key: signer info string
             //      value: the list of files with common key
-            Map<String,List<String>> output =
-                    new LinkedHashMap<String,List<String>>();
+            Map<String,List<String>> output = new LinkedHashMap<>();
 
             if (man != null) {
                 if (verbose != null) System.out.println();
@@ -1000,8 +999,7 @@ public class JarSigner {
             .append(signTimeForm.format(source)).append("]").toString();
     }
 
-    private Map<CodeSigner,Integer> cacheForInKS =
-            new IdentityHashMap<CodeSigner,Integer>();
+    private Map<CodeSigner,Integer> cacheForInKS = new IdentityHashMap<>();
 
     private int inKeyStoreForOneSigner(CodeSigner signer) {
         if (cacheForInKS.containsKey(signer)) {
@@ -1044,8 +1042,7 @@ public class JarSigner {
         return result;
     }
 
-    Hashtable<Certificate, String> storeHash =
-                                new Hashtable<Certificate, String>();
+    Hashtable<Certificate, String> storeHash = new Hashtable<>();
 
     int inKeyStore(CodeSigner[] signers) {
 
@@ -1175,7 +1172,7 @@ public class JarSigner {
              *   generated one. (This may invalidate existing signatures!)
              */
             BASE64Encoder encoder = new JarBASE64Encoder();
-            Vector<ZipEntry> mfFiles = new Vector<ZipEntry>();
+            Vector<ZipEntry> mfFiles = new Vector<>();
 
             boolean wasSigned = false;
 
@@ -1531,7 +1528,7 @@ public class JarSigner {
         return false;
     }
 
-    Map<CodeSigner,String> cacheForSignerInfo = new IdentityHashMap<CodeSigner,String>();
+    Map<CodeSigner,String> cacheForSignerInfo = new IdentityHashMap<>();
 
     /**
      * Returns a string of singer info, with a newline at the end
@@ -1655,7 +1652,7 @@ public class JarSigner {
                     }
                 }
             }
-            Set<TrustAnchor> tas = new HashSet<TrustAnchor>();
+            Set<TrustAnchor> tas = new HashSet<>();
             try {
                 KeyStore caks = KeyTool.getCacertsKeyStore();
                 if (caks != null) {
