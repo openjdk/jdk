@@ -2349,6 +2349,17 @@ void Assembler::prefix(Prefix p) {
   a_byte(p);
 }
 
+void Assembler::por(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+
+  emit_byte(0x66);
+  int  encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+
+  emit_byte(0xEB);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::pshufd(XMMRegister dst, XMMRegister src, int mode) {
   assert(isByte(mode), "invalid value");
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
@@ -8655,7 +8666,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
 // Compare strings.
 void MacroAssembler::string_compare(Register str1, Register str2,
                                     Register cnt1, Register cnt2, Register result,
-                                    XMMRegister vec1, XMMRegister vec2) {
+                                    XMMRegister vec1) {
   Label LENGTH_DIFF_LABEL, POP_LABEL, DONE_LABEL, WHILE_HEAD_LABEL;
 
   // Compute the minimum of the string lengths and the
@@ -8702,62 +8713,85 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     bind(LSkip2);
   }
 
-  // Advance to next character
-  addptr(str1, 2);
-  addptr(str2, 2);
+  Address::ScaleFactor scale = Address::times_2;
+  int stride = 8;
+
+  // Advance to next element
+  addptr(str1, 16/stride);
+  addptr(str2, 16/stride);
 
   if (UseSSE42Intrinsics) {
-    // With SSE4.2, use double quad vector compare
-    Label COMPARE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_TAIL;
+    Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_TAIL;
+    int pcmpmask = 0x19;
     // Setup to compare 16-byte vectors
-    movl(cnt1, cnt2);
-    andl(cnt2, 0xfffffff8); // cnt2 holds the vector count
-    andl(cnt1, 0x00000007); // cnt1 holds the tail count
-    testl(cnt2, cnt2);
+    movl(result, cnt2);
+    andl(cnt2, ~(stride - 1));   // cnt2 holds the vector count
     jccb(Assembler::zero, COMPARE_TAIL);
 
-    lea(str2, Address(str2, cnt2, Address::times_2));
-    lea(str1, Address(str1, cnt2, Address::times_2));
-    negptr(cnt2);
+    lea(str1, Address(str1, result, scale));
+    lea(str2, Address(str2, result, scale));
+    negptr(result);
 
-    bind(COMPARE_VECTORS);
-    movdqu(vec1, Address(str1, cnt2, Address::times_2));
-    movdqu(vec2, Address(str2, cnt2, Address::times_2));
-    pxor(vec1, vec2);
-    ptest(vec1, vec1);
-    jccb(Assembler::notZero, VECTOR_NOT_EQUAL);
-    addptr(cnt2, 8);
-    jcc(Assembler::notZero, COMPARE_VECTORS);
-    jmpb(COMPARE_TAIL);
+    // pcmpestri
+    //   inputs:
+    //     vec1- substring
+    //     rax - negative string length (elements count)
+    //     mem - scaned string
+    //     rdx - string length (elements count)
+    //     pcmpmask - cmp mode: 11000 (string compare with negated result)
+    //               + 00 (unsigned bytes) or  + 01 (unsigned shorts)
+    //   outputs:
+    //     rcx - first mismatched element index
+    assert(result == rax && cnt2 == rdx && cnt1 == rcx, "pcmpestri");
+
+    bind(COMPARE_WIDE_VECTORS);
+    movdqu(vec1, Address(str1, result, scale));
+    pcmpestri(vec1, Address(str2, result, scale), pcmpmask);
+    // After pcmpestri cnt1(rcx) contains mismatched element index
+
+    jccb(Assembler::below, VECTOR_NOT_EQUAL);  // CF==1
+    addptr(result, stride);
+    subptr(cnt2, stride);
+    jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+    // compare wide vectors tail
+    testl(result, result);
+    jccb(Assembler::zero, LENGTH_DIFF_LABEL);
+
+    movl(cnt2, stride);
+    movl(result, stride);
+    negptr(result);
+    movdqu(vec1, Address(str1, result, scale));
+    pcmpestri(vec1, Address(str2, result, scale), pcmpmask);
+    jccb(Assembler::aboveEqual, LENGTH_DIFF_LABEL);
 
     // Mismatched characters in the vectors
     bind(VECTOR_NOT_EQUAL);
-    lea(str1, Address(str1, cnt2, Address::times_2));
-    lea(str2, Address(str2, cnt2, Address::times_2));
-    movl(cnt1, 8);
+    addptr(result, cnt1);
+    movptr(cnt2, result);
+    load_unsigned_short(result, Address(str1, cnt2, scale));
+    load_unsigned_short(cnt1, Address(str2, cnt2, scale));
+    subl(result, cnt1);
+    jmpb(POP_LABEL);
 
-    // Compare tail (< 8 chars), or rescan last vectors to
-    // find 1st mismatched characters
-    bind(COMPARE_TAIL);
-    testl(cnt1, cnt1);
-    jccb(Assembler::zero, LENGTH_DIFF_LABEL);
-    movl(cnt2, cnt1);
+    bind(COMPARE_TAIL); // limit is zero
+    movl(cnt2, result);
     // Fallthru to tail compare
   }
 
   // Shift str2 and str1 to the end of the arrays, negate min
-  lea(str1, Address(str1, cnt2, Address::times_2, 0));
-  lea(str2, Address(str2, cnt2, Address::times_2, 0));
+  lea(str1, Address(str1, cnt2, scale, 0));
+  lea(str2, Address(str2, cnt2, scale, 0));
   negptr(cnt2);
 
-    // Compare the rest of the characters
+  // Compare the rest of the elements
   bind(WHILE_HEAD_LABEL);
-  load_unsigned_short(result, Address(str1, cnt2, Address::times_2, 0));
-  load_unsigned_short(cnt1, Address(str2, cnt2, Address::times_2, 0));
+  load_unsigned_short(result, Address(str1, cnt2, scale, 0));
+  load_unsigned_short(cnt1, Address(str2, cnt2, scale, 0));
   subl(result, cnt1);
   jccb(Assembler::notZero, POP_LABEL);
   increment(cnt2);
-  jcc(Assembler::notZero, WHILE_HEAD_LABEL);
+  jccb(Assembler::notZero, WHILE_HEAD_LABEL);
 
   // Strings are equal up to min length.  Return the length difference.
   bind(LENGTH_DIFF_LABEL);
@@ -8766,7 +8800,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   // Discard the stored length difference
   bind(POP_LABEL);
-  addptr(rsp, wordSize);
+  pop(cnt1);
 
   // That's it
   bind(DONE_LABEL);
@@ -8814,6 +8848,7 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
   if (UseSSE42Intrinsics) {
     // With SSE4.2, use double quad vector compare
     Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+
     // Compare 16-byte vectors
     andl(result, 0x0000000e);  //   tail count (in bytes)
     andl(limit, 0xfffffff0);   // vector count (in bytes)
@@ -8827,10 +8862,22 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
     movdqu(vec1, Address(ary1, limit, Address::times_1));
     movdqu(vec2, Address(ary2, limit, Address::times_1));
     pxor(vec1, vec2);
+
     ptest(vec1, vec1);
     jccb(Assembler::notZero, FALSE_LABEL);
     addptr(limit, 16);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+    testl(result, result);
+    jccb(Assembler::zero, TRUE_LABEL);
+
+    movdqu(vec1, Address(ary1, result, Address::times_1, -16));
+    movdqu(vec2, Address(ary2, result, Address::times_1, -16));
+    pxor(vec1, vec2);
+
+    ptest(vec1, vec1);
+    jccb(Assembler::notZero, FALSE_LABEL);
+    jmpb(TRUE_LABEL);
 
     bind(COMPARE_TAIL); // limit is zero
     movl(limit, result);
