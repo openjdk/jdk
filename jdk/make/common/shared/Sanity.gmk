@@ -1259,10 +1259,10 @@ ANT_CHECK :=$(call CheckVersions,$(ANT_VER),$(REQUIRED_ANT_VER))
 sane-ant_version:
 	@if [ "$(ANT_CHECK)" != "same" \
 	      -a "$(ANT_CHECK)" != "newer" ]; then \
-	  $(ECHO) "WARNING: The version of ant being used is older than \n" \
+	  $(ECHO) "ERROR: The version of ant being used is older than \n" \
 	    "      the required version of '$(REQUIRED_ANT_VER)'. \n" \
 	    "      The version of ant found was '$(ANT_VER)'. \n" \
-	    "" >> $(WARNING_FILE) ; \
+	    "" >> $(ERROR_FILE) ; \
 	fi
 
 ######################################################
