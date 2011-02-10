@@ -1372,7 +1372,7 @@ void CompressedLineNumberWriteStream::write_pair_regular(int bci_delta, int line
 }
 
 // See comment in methodOop.hpp which explains why this exists.
-#if defined(_M_AMD64) && MSC_VER >= 1400
+#if defined(_M_AMD64) && _MSC_VER >= 1400
 #pragma optimize("", off)
 void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
   write_pair_inline(bci, line);

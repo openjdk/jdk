@@ -732,8 +732,8 @@ class CompressedLineNumberWriteStream: public CompressedWriteStream {
 // Disabling optimization doesn't work for methods in header files
 // so we force it to call through the non-optimized version in the .cpp.
 // It's gross, but it's the only way we can ensure that all callers are
-// fixed.  MSC_VER is defined in build/windows/makefiles/compile.make.
-#if defined(_M_AMD64) && MSC_VER >= 1400
+// fixed.  _MSC_VER is defined by the windows compiler
+#if defined(_M_AMD64) && _MSC_VER >= 1400
   void write_pair(int bci, int line);
 #else
   void write_pair(int bci, int line) { write_pair_inline(bci, line); }
