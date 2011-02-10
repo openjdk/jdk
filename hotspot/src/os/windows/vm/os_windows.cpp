@@ -956,9 +956,14 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     return;
   }
 
-  dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithFullMemoryInfo |
-    MiniDumpWithHandleData | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
+  dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData);
 
+// Older versions of dbghelp.h doesn't contain all the dumptypes we want, dbghelp.h with
+// API_VERSION_NUMBER 11 or higher contains the ones we want though
+#if API_VERSION_NUMBER >= 11
+  dumpType = (MINIDUMP_TYPE)(dumpType | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo |
+    MiniDumpWithUnloadedModules);
+#endif
 
   cwd = get_current_directory(NULL, 0);
   jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp",cwd, current_process_id());
