@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@
 
 #if _MSC_VER >= 1300
 using namespace std;
-#endif
-
-// make sure the MSC_VER and _MSC_VER settings make sense
-#if _MSC_VER != MSC_VER && (_MSC_VER != 1400 || MSC_VER != 1399)
-#error "Something is wrong with the detection of MSC_VER in the makefiles"
 #endif
 
 #if _MSC_VER >= 1400
