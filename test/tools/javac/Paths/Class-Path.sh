@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #
 
 
-# @test @(#)Class-Path.sh	1.3 03/10/31
+# @test
 # @bug 4212732
 # @summary Test handling of the Class-Path attribute in jar file manifests
 # @author Martin Buchholz
@@ -184,8 +184,8 @@ Success "$jar" umf  MANIFEST.MF "Hello.jar"
 #
 Success "$jar" cfe "Hello.jar" "Hello" Bye.class
 
-# Jar creation and update when there is no manifest and inputfiles
-specified
+# Jar creation and update when there is no manifest and inputfiles 
+# specified
 Failure "$jar" cvf "A.jar"
 Failure "$jar" uvf "A.jar"
 
