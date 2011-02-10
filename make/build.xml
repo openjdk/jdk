@@ -868,8 +868,10 @@
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/GenStubs"
                destdir="${build.toolclasses.dir}/"
-               classpath="${build.bootstrap.dir}/classes:${ant.core.lib}"
-               includeantruntime="false"/>
+               classpath="${ant.core.lib}"
+               includeantruntime="false">
+            <compilerarg value="-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+        </javac>
         <taskdef name="genstubs"
                  classname="GenStubs$$Ant"
                  classpath="${build.toolclasses.dir}/"/>
