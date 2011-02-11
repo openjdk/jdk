@@ -106,6 +106,19 @@ public class JarIndex {
     /**
      * Returns the jar index, or <code>null</code> if none.
      *
+     * This single parameter version of the method is retained
+     * for binary compatibility with earlier releases.
+     *
+     * @param jar the JAR file to get the index from.
+     * @exception IOException if an I/O error has occurred.
+     */
+    public static JarIndex getJarIndex(JarFile jar) throws IOException {
+        return getJarIndex(jar, null);
+    }
+
+    /**
+     * Returns the jar index, or <code>null</code> if none.
+     *
      * @param jar the JAR file to get the index from.
      * @exception IOException if an I/O error has occurred.
      */
