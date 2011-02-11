@@ -2585,7 +2585,7 @@ int jio_vfprintf(FILE* f, const char *fmt, va_list args) {
 }
 
 
-int jio_printf(const char *fmt, ...) {
+JNIEXPORT int jio_printf(const char *fmt, ...) {
   int len;
   va_list args;
   va_start(args, fmt);

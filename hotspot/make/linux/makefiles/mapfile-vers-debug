@@ -262,14 +262,6 @@ SUNWprivate_1.1 {
                 JVM_SetField;
                 JVM_SetPrimitiveField;
 
-                # Needed for dropping VM into JDK 1.3.x, 1.4
-                _JVM_native_threads;
-                jdk_sem_init;
-                jdk_sem_post;
-                jdk_sem_wait;
-                jdk_pthread_sigmask;
-                jdk_waitpid;
-
                 # debug JVM
                 JVM_AccessVMBooleanFlag;
                 JVM_AccessVMIntFlag;

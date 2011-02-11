@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,14 @@ public class Threads {
         // for now, use JavaThread itself. fix it later with appropriate class if needed
         virtualConstructor.addMapping("SurrogateLockerThread", JavaThread.class);
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
-        virtualConstructor.addMapping("LowMemoryDetectorThread", LowMemoryDetectorThread.class);
+        virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
     }
 
     public Threads() {
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, and LowMemoryDetectorThread.
+      JvmtiAgentThread, and ServiceThread.
       The latter four are subclasses of the former. Most operations
       (fetching the top frame, etc.) are only allowed to be performed on
       a "pure" JavaThread. For this reason, {@link
@@ -143,7 +143,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, LowMemoryDetectorThread, JvmtiAgentThread, or SurrogateLockerThread)", e);
+            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread, or SurrogateLockerThread)", e);
         }
     }
 

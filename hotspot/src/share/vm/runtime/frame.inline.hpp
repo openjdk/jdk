@@ -40,6 +40,12 @@
 #ifdef TARGET_ARCH_zero
 # include "jniTypes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "jniTypes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "jniTypes_ppc.hpp"
+#endif
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "entryFrame_zero.hpp"
@@ -87,6 +93,12 @@ inline bool frame::is_first_frame() const {
 #endif
 #ifdef TARGET_ARCH_zero
 # include "frame_zero.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "frame_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "frame_ppc.inline.hpp"
 #endif
 
 

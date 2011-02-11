@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,12 @@
 #ifdef TARGET_ARCH_zero
 # include "globals_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "globals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "globals_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "globals_linux.hpp"
 #endif
@@ -62,12 +68,24 @@
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "globals_windows_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "globals_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "globals_linux_ppc.hpp"
+#endif
 #ifdef COMPILER1
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"
 #endif
 #ifdef TARGET_ARCH_sparc
 # include "c1_globals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "c1_globals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "c1_globals_ppc.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c1_globals_linux.hpp"
@@ -85,6 +103,9 @@
 #endif
 #ifdef TARGET_ARCH_sparc
 # include "c2_globals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "c2_globals_arm.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"
@@ -410,7 +431,14 @@ class CommandLineFlags {
   product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  /* Temporary: See 6948537 */                                              \
+  /* Temp PPC Flag to allow disabling the use of lwsync on ppc platforms    \
+   * that don't support it.  This will be replaced by processor detection   \
+   * logic.                                                                 \
+   */                                                                       \
+  product(bool, UsePPCLWSYNC, true,                                         \
+          "Use lwsync instruction if true, else use slower sync")           \
+                                                                            \
+  /* Temporary: See 6948537 */                                             \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
                                                                             \
@@ -761,6 +789,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ShowMessageBoxOnError, false,                               \
           "Keep process alive on VM fatal error")                           \
+                                                                            \
+  product(bool, CreateMinidumpOnCrash, false,                               \
+          "Create minidump on VM fatal error")                              \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
@@ -1926,6 +1957,9 @@ class CommandLineFlags {
   product(bool, PrintRevisitStats, false,                                   \
           "Print revisit (klass and MDO) stack related information")        \
                                                                             \
+  EMBEDDED_ONLY(product(bool, LowMemoryProtection, true,                    \
+          "Enable LowMemoryProtection"))                                    \
+                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \
@@ -2630,6 +2664,25 @@ class CommandLineFlags {
   product(bool, UseStringCache, false,                                      \
           "Enable String cache capabilities on String.java")                \
                                                                             \
+  /* byte strings */                                                        \
+  product(bool, UseCompressedStrings, false,                                \
+          "Enable byte-valued strings")                                     \
+                                                                            \
+  product(bool, SpecialStringCompress, true,                                \
+          "special version of string compress")                             \
+                                                                            \
+  product(bool, SpecialStringInflate, true,                                 \
+          "special version of string inflate")                              \
+                                                                            \
+  product(bool, SpecialStringCompareToCC, true,                             \
+          "special version of string compareToCC")                          \
+                                                                            \
+  product(bool, SpecialStringIndexOfCC, true,                               \
+          "special version of string indexOfCC")                            \
+                                                                            \
+  product(bool, SpecialStringEqualsCC, true,                                \
+          "special version of string equalsCC")                             \
+                                                                            \
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "counts method invocations")                                      \
@@ -2851,9 +2904,13 @@ class CommandLineFlags {
           "Max. no. of lines in the stack trace for Java exceptions "       \
           "(0 means all)")                                                  \
                                                                             \
-  develop(intx, GuaranteedSafepointInterval, 1000,                          \
+  NOT_EMBEDDED(develop(intx, GuaranteedSafepointInterval, 1000,             \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
-          "(0 means none)")                                                 \
+          "(0 means none)"))                                                \
+                                                                            \
+  EMBEDDED_ONLY(product(intx, GuaranteedSafepointInterval, 0,               \
+          "Guarantee a safepoint (at least) every so many milliseconds "    \
+          "(0 means none)"))                                                \
                                                                             \
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
@@ -3543,9 +3600,13 @@ class CommandLineFlags {
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \
-  product(bool, UsePerfData, true,                                          \
+  NOT_EMBEDDED(product(bool, UsePerfData, true,                             \
           "Flag to disable jvmstat instrumentation for performance testing" \
-          "and problem isolation purposes.")                                \
+          "and problem isolation purposes."))                               \
+                                                                            \
+  EMBEDDED_ONLY(product(bool, UsePerfData, false,                           \
+          "Flag to disable jvmstat instrumentation for performance testing" \
+          "and problem isolation purposes."))                               \
                                                                             \
   product(bool, PerfDataSaveToFile, false,                                  \
           "Save PerfData memory to hsperfdata_<pid> file on exit")          \
@@ -3596,6 +3657,12 @@ class CommandLineFlags {
                                                                             \
   manageable(bool, PrintConcurrentLocks, false,                             \
           "Print java.util.concurrent locks in thread dump")                \
+                                                                            \
+  diagnostic(bool, TransmitErrorReport, false,                              \
+          "Enable error report transmission on erroneous termination")      \
+                                                                            \
+  diagnostic(ccstr, ErrorReportServer, NULL,                                \
+          "Override built-in error report server address")                  \
                                                                             \
   /* Shared spaces */                                                       \
                                                                             \
