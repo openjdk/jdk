@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,7 +768,9 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 // Initialize the compilation queue
 void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
+#ifndef ZERO
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
+#endif // !ZERO
   if (c2_compiler_count > 0) {
     _c2_method_queue  = new CompileQueue("C2MethodQueue",  MethodCompileQueue_lock);
   }
