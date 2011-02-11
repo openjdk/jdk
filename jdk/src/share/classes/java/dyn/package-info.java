@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,13 +166,13 @@
  * normal accesses are legal.
  * <p>
  * A constant may refer to a method or constructor with the {@code varargs}
- * bit (hexadecimal {@code 80}) set in its modifier bitmask.
- * The method handle constant produced for such a method behaves the same
+ * bit (hexadecimal {@code 0x0080}) set in its modifier bitmask.
+ * The method handle constant produced for such a method behaves as if
+ * it were created by {@link java.dyn.MethodHandle#asVarargsCollector asVarargsCollector}.
+ * In other words, the constant method handle will exhibit variable arity,
+ * when invoked via {@code invokeGeneric}.
+ * On the other hand, its behavior with respect to {@code invokeExact} will be the same
  * as if the {@code varargs} bit were not set.
- * The argument-collecting behavior of {@code varargs} can be emulated by
- * adapting the method handle constant with
- * {@link java.dyn.MethodHandle#asCollector asCollector}.
- * There is no provision for doing this automatically.
  * <p>
  * Although the {@code CONSTANT_MethodHandle} and {@code CONSTANT_MethodType} constant types
  * resolve class names, they do not force class initialization.
@@ -369,21 +369,40 @@
  * the instruction's bootstrap method will be invoked on three arguments,
  * conveying the instruction's caller class, name, and method type.
  * If the {@code invokedynamic} instruction specifies one or more static arguments,
- * a fourth argument will be passed to the bootstrap argument,
- * either an {@code Object} reference to the sole extra argument (if there is one)
- * or an {@code Object} array of references to all the arguments (if there are two or more),
- * as if the bootstrap method is a variable-arity method.
+ * those values will be passed as additional arguments to the method handle.
+ * (Note that because there is a limit of 255 arguments to any method,
+ * at most 252 extra arguments can be supplied.)
+ * The bootstrap method will be invoked as if by either {@code invokeGeneric}
+ * or {@code invokeWithArguments}.  (There is no way to tell the difference.)
+ * If the bootstrap method is a variable arity method (its modifier bit {@code 0x0080} is set),
+ * then some or all of the arguments specified here may be collected into a trailing array parameter.
+ * (This is not a special rule, but rather a useful consequence of the interaction
+ * between {@code CONSTANT_MethodHandle} constants, the modifier bit for variable arity methods,
+ * and the {@code java.dyn.MethodHandle#asVarargsCollector asVarargsCollector} transformation.)
+ * <p>
+ * Given these rules, here are examples of legal bootstrap method declarations,
+ * given various numbers {@code N} of extra arguments.
+ * The first rows (marked {@code *}) will work for any number of extra arguments.
  * <code>
  * <table border=1 cellpadding=5 summary="Static argument types">
  * <tr><th>N</th><th>sample bootstrap method</th></tr>
+ * <tr><td>*</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
+ * <tr><td>*</td><td><code>CallSite bootstrap(Object... args)</code></td></tr>
+ * <tr><td>*</td><td><code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code></td></tr>
  * <tr><td>0</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code></td></tr>
+ * <tr><td>0</td><td><code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code></td></tr>
  * <tr><td>1</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)</code></td></tr>
  * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
+ * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code></td></tr>
+ * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code></td></tr>
  * </table>
  * </code>
+ * The last example assumes that the extra arguments are of type
+ * {@code CONSTANT_String} and {@code CONSTANT_Integer}, respectively.
+ * The second-to-last example assumes that all extra arguments are of type
+ * {@code CONSTANT_String}.
+ * The other examples work with all types of extra arguments.
  * <p>
- * The argument and return types listed here are used by the {@code invokeGeneric}
- * call to the bootstrap method.
  * As noted above, the actual method type of the bootstrap method can vary.
  * For example, the fourth argument could be {@code MethodHandle},
  * if that is the type of the corresponding constant in
@@ -391,38 +410,14 @@
  * In that case, the {@code invokeGeneric} call will pass the extra method handle
  * constant as an {@code Object}, but the type matching machinery of {@code invokeGeneric}
  * will cast the reference back to {@code MethodHandle} before invoking the bootstrap method.
- * (If a string constant were passed instead, by badly generated code, that cast would then fail.)
- * <p>
- * If the fourth argument is an array, the array element type must be {@code Object},
- * since object arrays (as produced by the JVM at this point) cannot be converted
- * to other array types.
- * <p>
- * If an array is provided, it will appear to be freshly allocated.
- * That is, the same array will not appear to two bootstrap method calls.
+ * (If a string constant were passed instead, by badly generated code, that cast would then fail,
+ * resulting in an {@code InvokeDynamicBootstrapError}.)
  * <p>
  * Extra bootstrap method arguments are intended to allow language implementors
  * to safely and compactly encode metadata.
  * In principle, the name and extra arguments are redundant,
  * since each call site could be given its own unique bootstrap method.
  * Such a practice is likely to produce large class files and constant pools.
- *
- * <p style="font-size:smaller;">
- * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
- * (Usage Note: There is no mechanism for specifying five or more positional arguments to the bootstrap method.
- * If there are two or more arguments, the Java code of the bootstrap method is required to extract them from
- * a varargs-style object array.
- * This design uses varargs because it anticipates some use cases where bootstrap arguments
- * contribute components of variable-length structures, such as virtual function tables
- * or interpreter token streams.
- * Such parameters would be awkward or impossible to manage if represented
- * as normal positional method arguments,
- * since there would need to be one Java method per length.
- * On balance, leaving out the varargs feature would cause more trouble to users than keeping it.
- * Also, this design allows bootstrap methods to be called in a limited JVM stack depth.
- * At both the user and JVM level, the difference between varargs and non-varargs
- * calling sequences can easily be bridged via the
- * {@link java.dyn.MethodHandle#asSpreader asSpreader}
- * and {@link java.dyn.MethodHandle#asSpreader asCollector} methods.)
  *
  * <h2><a name="structs"></a>Structure Summary</h2>
  * <blockquote><pre>// summary of constant and attribute structures

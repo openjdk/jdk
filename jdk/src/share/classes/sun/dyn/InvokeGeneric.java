@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class InvokeGeneric {
      */
     private MethodHandle dispatch(MethodType callerType, MethodHandle target) {
         MethodType targetType = target.type();
-        if (USE_AS_TYPE_PATH || target instanceof AdapterMethodHandle.WithTypeHandler) {
+        if (USE_AS_TYPE_PATH || target.isVarargsCollector()) {
             MethodHandle newTarget = target.asType(callerType);
             targetType = callerType;
             Invokers invokers = MethodTypeImpl.invokers(Access.TOKEN, targetType);

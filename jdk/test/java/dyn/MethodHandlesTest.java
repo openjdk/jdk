@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1108,18 +1108,6 @@ public class MethodHandlesTest {
         }
     }
 
-    static MethodHandle typeHandler2(MethodHandle target, MethodType newType) {
-        MethodType oldType = target.type();
-        int oldArity = oldType.parameterCount();
-        int newArity = newType.parameterCount();
-        if (newArity < oldArity)
-            return MethodHandles.insertArguments(target, oldArity, "OPTIONAL");
-        else if (newArity > oldArity)
-            return MethodHandles.dropArguments(target, oldArity-1, newType.parameterType(oldArity-1));
-        else
-            return target;  // attempt no further conversions
-    }
-
     @Test
     public void testConvertArguments() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
@@ -1135,23 +1123,6 @@ public class MethodHandlesTest {
     void testConvert(MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
         testConvert(true, false, id, rtype, name, params);
         testConvert(true, true,  id, rtype, name, params);
-    }
-
-    @Test
-    public void testTypeHandler() throws Throwable {
-        MethodHandle id = Callee.ofType(1);
-        MethodHandle th2 = PRIVATE.findStatic(MethodHandlesTest.class, "typeHandler2",
-                               MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
-        MethodHandle id2 = id.withTypeHandler(th2);
-        testConvert(true,  false, id2, null, "id", Object.class);
-        testConvert(true,  true,  id2, null, "id", Object.class);
-        if (true)  return;  //FIXME
-        testConvert(true,  false, id2, null, "id", String.class);  // FIXME: throws WMT
-        testConvert(false, true,  id2, null, "id", String.class);  // FIXME: should not succeed
-        testConvert(false, false, id2, null, "id", Object.class, String.class); //FIXME: array[1] line 1164
-        testConvert(true,  true,  id2, null, "id", Object.class, String.class);
-        testConvert(false, false, id2, null, "id");
-        testConvert(true,  true,  id2, null, "id");
     }
 
     void testConvert(boolean positive, boolean useAsType,
@@ -1183,9 +1154,9 @@ public class MethodHandlesTest {
         RuntimeException error = null;
         try {
             if (useAsType)
-                target = MethodHandles.convertArguments(id, newType);
-            else
                 target = id.asType(newType);
+            else
+                target = MethodHandles.convertArguments(id, newType);
         } catch (RuntimeException ex) {
             error = ex;
         }
@@ -1202,6 +1173,20 @@ public class MethodHandlesTest {
         assertEquals(convResult, result);
         if (verbosity >= 1)
             System.out.print(':');
+    }
+
+    @Test
+    public void testVarargsCollector() throws Throwable {
+        MethodHandle vac0 = PRIVATE.findStatic(MethodHandlesTest.class, "called",
+                               MethodType.methodType(Object.class, String.class, Object[].class));
+        vac0 = vac0.bindTo("vac");
+        MethodHandle vac = vac0.asVarargsCollector(Object[].class);
+        testConvert(true,  true,  vac.asType(MethodType.genericMethodType(0)), null, "vac");
+        testConvert(true,  true,  vac.asType(MethodType.genericMethodType(0)), null, "vac");
+        for (Class<?> at : new Class[] { Object.class, String.class, Integer.class }) {
+            testConvert(true,  true,  vac.asType(MethodType.genericMethodType(1)), null, "vac", at);
+            testConvert(true,  true,  vac.asType(MethodType.genericMethodType(2)), null, "vac", at, at);
+        }
     }
 
     @Test
@@ -1644,14 +1629,14 @@ public class MethodHandlesTest {
         assertCalled("invokee", args);
         // varargs invoker #0
         calledLog.clear();
-        inv = MethodHandles.varargsInvoker(type, 0);
+        inv = MethodHandles.spreadInvoker(type, 0);
         result = inv.invokeExact(target, args);
         if (testRetCode)  assertEquals(code, result);
         assertCalled("invokee", args);
         if (nargs >= 1) {
             // varargs invoker #1
             calledLog.clear();
-            inv = MethodHandles.varargsInvoker(type, 1);
+            inv = MethodHandles.spreadInvoker(type, 1);
             result = inv.invokeExact(target, args[0], Arrays.copyOfRange(args, 1, nargs));
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
@@ -1659,7 +1644,7 @@ public class MethodHandlesTest {
         if (nargs >= 2) {
             // varargs invoker #2
             calledLog.clear();
-            inv = MethodHandles.varargsInvoker(type, 2);
+            inv = MethodHandles.spreadInvoker(type, 2);
             result = inv.invokeExact(target, args[0], args[1], Arrays.copyOfRange(args, 2, nargs));
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
@@ -1667,7 +1652,7 @@ public class MethodHandlesTest {
         if (nargs >= 3) {
             // varargs invoker #3
             calledLog.clear();
-            inv = MethodHandles.varargsInvoker(type, 3);
+            inv = MethodHandles.spreadInvoker(type, 3);
             result = inv.invokeExact(target, args[0], args[1], args[2], Arrays.copyOfRange(args, 3, nargs));
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
@@ -1676,7 +1661,7 @@ public class MethodHandlesTest {
             // varargs invoker #0..N
             countTest();
             calledLog.clear();
-            inv = MethodHandles.varargsInvoker(type, k);
+            inv = MethodHandles.spreadInvoker(type, k);
             List<Object> targetPlusVarArgs = new ArrayList<Object>(targetPlusArgs);
             List<Object> tailList = targetPlusVarArgs.subList(1+k, 1+nargs);
             Object[] tail = tailList.toArray();
@@ -2089,19 +2074,6 @@ public class MethodHandlesTest {
             }
         }
         // Test error checking:
-        MethodHandle genericMH = ValueConversions.varargsArray(0);
-        genericMH = MethodHandles.convertArguments(genericMH, genericMH.type().generic());
-        for (Class<?> sam : new Class[] { Runnable.class,
-                                          Fooable.class,
-                                          Iterable.class }) {
-            try {
-                // Must throw, because none of these guys has generic type.
-                MethodHandles.asInstance(genericMH, sam);
-                System.out.println("Failed to throw");
-                assertTrue(false);
-            } catch (IllegalArgumentException ex) {
-            }
-        }
         for (Class<?> nonSAM : new Class[] { Object.class,
                                              String.class,
                                              CharSequence.class,

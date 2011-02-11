@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,10 @@ public abstract class MethodHandleImpl {
         if (!mh.isValid())
             throw newNoAccessException(method, lookupClass);
         assert(mh.type() == mtype);
-        return mh;
+        if (!method.isVarargs())
+            return mh;
+        else
+            return mh.asVarargsCollector(mtype.parameterType(mtype.parameterCount()-1));
     }
 
     public static
@@ -1263,8 +1266,8 @@ public abstract class MethodHandleImpl {
         return MethodHandleNatives.getBootstrap(callerClass);
     }
 
-    public static MethodHandle withTypeHandler(Access token, MethodHandle target, MethodHandle typeHandler) {
+    public static MethodHandle asVarargsCollector(Access token, MethodHandle target, Class<?> arrayType) {
         Access.check(token);
-        return AdapterMethodHandle.makeTypeHandler(token, target, typeHandler);
+        return AdapterMethodHandle.makeVarargsCollector(token, target, arrayType);
     }
 }
