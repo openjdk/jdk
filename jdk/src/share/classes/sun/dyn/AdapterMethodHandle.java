@@ -962,7 +962,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
     @Override
     public String toString() {
-        return nonAdapter((MethodHandle)vmtarget).toString();
+        return MethodHandleImpl.getNameString(IMPL_TOKEN, nonAdapter((MethodHandle)vmtarget), this);
     }
 
     private static MethodHandle nonAdapter(MethodHandle mh) {

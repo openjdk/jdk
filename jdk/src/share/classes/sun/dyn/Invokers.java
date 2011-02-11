@@ -104,8 +104,7 @@ public class Invokers {
         MethodHandle vaInvoker = spreadInvokers[objectArgCount];
         if (vaInvoker != null)  return vaInvoker;
         MethodHandle gInvoker = genericInvoker();
-        MethodType vaType = MethodType.genericMethodType(objectArgCount, true);
-        vaInvoker = MethodHandles.spreadArguments(gInvoker, invokerType(vaType));
+        vaInvoker = gInvoker.asSpreader(Object[].class, targetType.parameterCount() - objectArgCount);
         spreadInvokers[objectArgCount] = vaInvoker;
         return vaInvoker;
     }

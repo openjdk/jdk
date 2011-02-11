@@ -323,6 +323,44 @@ public class MethodHandlesTest {
         return x.getClass().getSimpleName();
     }
 
+    /** Return lambda(arg...[arity]) { new Object[]{ arg... } } */
+    static MethodHandle varargsList(int arity) {
+        return ValueConversions.varargsList(arity);
+    }
+    /** Return lambda(arg...[arity]) { Arrays.asList(arg...) } */
+    static MethodHandle varargsArray(int arity) {
+        return ValueConversions.varargsArray(arity);
+    }
+    /** Variation of varargsList, but with the given rtype. */
+    static MethodHandle varargsList(int arity, Class<?> rtype) {
+        MethodHandle list = varargsList(arity);
+        MethodType listType = list.type().changeReturnType(rtype);
+        if (List.class.isAssignableFrom(rtype) || rtype == void.class || rtype == Object.class) {
+            // OK
+        } else if (rtype.isAssignableFrom(String.class)) {
+            if (LIST_TO_STRING == null)
+                try {
+                    LIST_TO_STRING = PRIVATE.findStatic(PRIVATE.lookupClass(), "listToString",
+                                                        MethodType.methodType(String.class, List.class));
+                } catch (Exception ex) { throw new RuntimeException(ex); }
+            list = MethodHandles.filterReturnValue(list, LIST_TO_STRING);
+        } else if (rtype.isPrimitive()) {
+            if (LIST_TO_INT == null)
+                try {
+                    LIST_TO_INT = PRIVATE.findStatic(PRIVATE.lookupClass(), "listToInt",
+                                                     MethodType.methodType(int.class, List.class));
+                } catch (Exception ex) { throw new RuntimeException(ex); }
+            list = MethodHandles.filterReturnValue(list, LIST_TO_INT);
+            list = MethodHandles.explicitCastArguments(list, listType);
+        } else {
+            throw new RuntimeException("varargsList: "+rtype);
+        }
+        return list.asType(listType);
+    }
+    private static MethodHandle LIST_TO_STRING, LIST_TO_INT;
+    private static String listToString(List x) { return x.toString(); }
+    private static int listToInt(List x) { return x.toString().hashCode(); }
+
     static MethodHandle changeArgTypes(MethodHandle target, Class<?> argType) {
         return changeArgTypes(target, 0, 999, argType);
     }
@@ -1302,7 +1340,7 @@ public class MethodHandlesTest {
         }
         MethodType inType  = MethodType.methodType(Object.class, types);
         MethodType outType = MethodType.methodType(Object.class, permTypes);
-        MethodHandle target = MethodHandles.convertArguments(ValueConversions.varargsList(outargs), outType);
+        MethodHandle target = MethodHandles.convertArguments(varargsList(outargs), outType);
         MethodHandle newTarget = MethodHandles.permuteArguments(target, inType, reorder);
         Object result = newTarget.invokeWithArguments(args);
         Object expected = Arrays.asList(permArgs);
@@ -1329,7 +1367,7 @@ public class MethodHandlesTest {
     }
     public void testSpreadArguments(Class<?> argType, int pos, int nargs) throws Throwable {
         countTest();
-        MethodHandle target = ValueConversions.varargsArray(nargs);
+        MethodHandle target = varargsArray(nargs);
         MethodHandle target2 = changeArgTypes(target, argType);
         if (verbosity >= 3)
             System.out.println("spread into "+target2+" ["+pos+".."+nargs+"]");
@@ -1359,7 +1397,7 @@ public class MethodHandlesTest {
             spreadParams.clear(); spreadParams.add(Object[].class);
         }
         MethodType newType = MethodType.methodType(Object.class, newParams);
-        MethodHandle result = MethodHandles.spreadArguments(target2, newType);
+        MethodHandle result = target2.asSpreader(Object[].class, nargs-pos).asType(newType);
         Object[] returnValue;
         if (pos == 0) {
             // In the following line, the first cast implies
@@ -1393,7 +1431,7 @@ public class MethodHandlesTest {
     public void testCollectArguments(Class<?> argType, int pos, int nargs) throws Throwable {
         countTest();
         // fake up a MH with the same type as the desired adapter:
-        MethodHandle fake = ValueConversions.varargsArray(nargs);
+        MethodHandle fake = varargsArray(nargs);
         fake = changeArgTypes(fake, argType);
         MethodType newType = fake.type();
         Object[] args = randomArgs(newType.parameterArray());
@@ -1401,12 +1439,12 @@ public class MethodHandlesTest {
         Object[] collectedArgs = Arrays.copyOfRange(args, 0, pos+1);
         collectedArgs[pos] = Arrays.copyOfRange(args, pos, args.length);
         // here is the MH which will witness the collected argument tail:
-        MethodHandle target = ValueConversions.varargsArray(pos+1);
+        MethodHandle target = varargsArray(pos+1);
         target = changeArgTypes(target, 0, pos, argType);
         target = changeArgTypes(target, pos, pos+1, Object[].class);
         if (verbosity >= 3)
             System.out.println("collect from "+Arrays.asList(args)+" ["+pos+".."+nargs+"]");
-        MethodHandle result = MethodHandles.collectArguments(target, newType);
+        MethodHandle result = target.asCollector(Object[].class, nargs-pos).asType(newType);
         Object[] returnValue = (Object[]) result.invokeWithArguments(args);
 //        assertTrue(returnValue.length == pos+1 && returnValue[pos] instanceof Object[]);
 //        returnValue[pos] = Arrays.asList((Object[]) returnValue[pos]);
@@ -1430,7 +1468,7 @@ public class MethodHandlesTest {
 
     void testInsertArguments(int nargs, int pos, int ins) throws Throwable {
         countTest();
-        MethodHandle target = ValueConversions.varargsArray(nargs + ins);
+        MethodHandle target = varargsArray(nargs + ins);
         Object[] args = randomArgs(target.type().parameterArray());
         List<Object> resList = Arrays.asList(args);
         List<Object> argsToPass = new ArrayList<Object>(resList);
@@ -1450,6 +1488,55 @@ public class MethodHandlesTest {
     }
 
     @Test
+    public void testFilterReturnValue() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("filterReturnValue");
+        Class<?> classOfVCList = varargsList(1).invokeWithArguments(0).getClass();
+        assertTrue(List.class.isAssignableFrom(classOfVCList));
+        for (int nargs = 0; nargs <= 3; nargs++) {
+            for (Class<?> rtype : new Class[] { Object.class,
+                                                List.class,
+                                                int.class,
+                                                //byte.class, //FIXME: add this
+                                                //long.class, //FIXME: add this
+                                                CharSequence.class,
+                                                String.class }) {
+                testFilterReturnValue(nargs, rtype);
+            }
+        }
+    }
+
+    void testFilterReturnValue(int nargs, Class<?> rtype) throws Throwable {
+        countTest();
+        MethodHandle target = varargsList(nargs, rtype);
+        MethodHandle filter;
+        if (List.class.isAssignableFrom(rtype) || rtype.isAssignableFrom(List.class))
+            filter = varargsList(1);  // add another layer of list-ness
+        else
+            filter = MethodHandles.identity(rtype);
+        filter = filter.asType(MethodType.methodType(target.type().returnType(), rtype));
+        Object[] argsToPass = randomArgs(nargs, Object.class);
+        if (verbosity >= 3)
+            System.out.println("filter "+target+" to "+rtype.getSimpleName()+" with "+filter);
+        MethodHandle target2 = MethodHandles.filterReturnValue(target, filter);
+        if (verbosity >= 4)
+            System.out.println("filtered target: "+target2);
+        // Simulate expected effect of filter on return value:
+        Object unfiltered = target.invokeWithArguments(argsToPass);
+        Object expected = filter.invokeWithArguments(unfiltered);
+        if (verbosity >= 4)
+            System.out.println("unfiltered: "+unfiltered+" : "+unfiltered.getClass().getSimpleName());
+        if (verbosity >= 4)
+            System.out.println("expected: "+expected+" : "+expected.getClass().getSimpleName());
+        Object result = target2.invokeWithArguments(argsToPass);
+        if (verbosity >= 3)
+            System.out.println("result: "+result+" : "+result.getClass().getSimpleName());
+        if (!expected.equals(result))
+            System.out.println("*** fail at n/rt = "+nargs+"/"+rtype.getSimpleName()+": "+Arrays.asList(argsToPass)+" => "+result+" != "+expected);
+        assertEquals(expected, result);
+    }
+
+    @Test
     public void testFilterArguments() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("filterArguments");
@@ -1462,8 +1549,8 @@ public class MethodHandlesTest {
 
     void testFilterArguments(int nargs, int pos) throws Throwable {
         countTest();
-        MethodHandle target = ValueConversions.varargsList(nargs);
-        MethodHandle filter = ValueConversions.varargsList(1);
+        MethodHandle target = varargsList(nargs);
+        MethodHandle filter = varargsList(1);
         filter = MethodHandles.convertArguments(filter, filter.type().generic());
         Object[] argsToPass = randomArgs(nargs, Object.class);
         if (verbosity >= 3)
@@ -1477,7 +1564,7 @@ public class MethodHandlesTest {
         if (verbosity >= 3)
             System.out.println("result: "+result);
         if (!expected.equals(result))
-            System.out.println("*** fail at n/p = "+nargs+"/"+pos+": "+argsToPass+" => "+result);
+            System.out.println("*** fail at n/p = "+nargs+"/"+pos+": "+Arrays.asList(argsToPass)+" => "+result+" != "+expected);
         assertEquals(expected, result);
     }
 
@@ -1497,8 +1584,8 @@ public class MethodHandlesTest {
     void testFoldArguments(int nargs, int pos, int fold) throws Throwable {
         if (pos != 0)  return;  // can fold only at pos=0 for now
         countTest();
-        MethodHandle target = ValueConversions.varargsList(1 + nargs);
-        MethodHandle combine = ValueConversions.varargsList(fold).asType(MethodType.genericMethodType(fold));
+        MethodHandle target = varargsList(1 + nargs);
+        MethodHandle combine = varargsList(fold).asType(MethodType.genericMethodType(fold));
         List<Object> argsToPass = Arrays.asList(randomArgs(nargs, Object.class));
         if (verbosity >= 3)
             System.out.println("fold "+target+" with "+combine);
@@ -1514,7 +1601,7 @@ public class MethodHandlesTest {
         if (verbosity >= 3)
             System.out.println("result: "+result);
         if (!expected.equals(result))
-            System.out.println("*** fail at n/p/f = "+nargs+"/"+pos+"/"+fold+": "+argsToPass+" => "+result);
+            System.out.println("*** fail at n/p/f = "+nargs+"/"+pos+"/"+fold+": "+argsToPass+" => "+result+" != "+expected);
         assertEquals(expected, result);
     }
 
@@ -1533,7 +1620,7 @@ public class MethodHandlesTest {
 
     void testDropArguments(int nargs, int pos, int drop) throws Throwable {
         countTest();
-        MethodHandle target = ValueConversions.varargsArray(nargs);
+        MethodHandle target = varargsArray(nargs);
         Object[] args = randomArgs(target.type().parameterArray());
         MethodHandle target2 = MethodHandles.dropArguments(target, pos,
                 Collections.nCopies(drop, Object.class).toArray(new Class[0]));
@@ -1584,7 +1671,8 @@ public class MethodHandlesTest {
         boolean testRetCode = type.returnType() != void.class;
         MethodHandle target = PRIVATE.findStatic(MethodHandlesTest.class, "invokee",
                                 MethodType.genericMethodType(0, true));
-        target = MethodHandles.collectArguments(target, type);
+        assertTrue(target.isVarargsCollector());
+        target = target.asType(type);
         Object[] args = randomArgs(type.parameterArray());
         List<Object> targetPlusArgs = new ArrayList<Object>(Arrays.asList(args));
         targetPlusArgs.add(0, target);
@@ -1808,7 +1896,7 @@ public class MethodHandlesTest {
         MethodHandle thrower = throwOrReturn.asType(MethodType.genericMethodType(2));
         while (thrower.type().parameterCount() < nargs)
             thrower = MethodHandles.dropArguments(thrower, thrower.type().parameterCount(), Object.class);
-        MethodHandle catcher = ValueConversions.varargsList(1+nargs).asType(MethodType.genericMethodType(1+nargs));
+        MethodHandle catcher = varargsList(1+nargs).asType(MethodType.genericMethodType(1+nargs));
         MethodHandle target = MethodHandles.catchException(thrower,
                 thrown.getClass(), catcher);
         assertEquals(thrower.type(), target.type());
@@ -2079,7 +2167,7 @@ public class MethodHandlesTest {
                                              CharSequence.class,
                                              Example.class }) {
             try {
-                MethodHandles.asInstance(ValueConversions.varargsArray(0), nonSAM);
+                MethodHandles.asInstance(varargsArray(0), nonSAM);
                 System.out.println("Failed to throw");
                 assertTrue(false);
             } catch (IllegalArgumentException ex) {
@@ -2183,22 +2271,22 @@ class ValueConversions {
                                      Object a8, Object a9)
                 { return makeList(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
     static MethodHandle[] makeLists() {
-        ArrayList<MethodHandle> arrays = new ArrayList<MethodHandle>();
+        ArrayList<MethodHandle> lists = new ArrayList<MethodHandle>();
         MethodHandles.Lookup lookup = IMPL_LOOKUP;
         for (;;) {
-            int nargs = arrays.size();
+            int nargs = lists.size();
             MethodType type = MethodType.genericMethodType(nargs).changeReturnType(List.class);
             String name = "list";
-            MethodHandle array = null;
+            MethodHandle list = null;
             try {
-                array = lookup.findStatic(ValueConversions.class, name, type);
+                list = lookup.findStatic(ValueConversions.class, name, type);
             } catch (NoAccessException ex) {
             }
-            if (array == null)  break;
-            arrays.add(array);
+            if (list == null)  break;
+            lists.add(list);
         }
-        assert(arrays.size() == 11);  // current number of methods
-        return arrays.toArray(new MethodHandle[0]);
+        assert(lists.size() == 11);  // current number of methods
+        return lists.toArray(new MethodHandle[0]);
     }
     static final MethodHandle[] LISTS = makeLists();
 

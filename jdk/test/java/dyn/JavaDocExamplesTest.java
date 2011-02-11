@@ -151,8 +151,8 @@ MethodHandles.Lookup lookup = MethodHandles.lookup();
 // mt is (char,char)String
 mt = MethodType.methodType(String.class, char.class, char.class);
 mh = lookup.findVirtual(String.class, "replace", mt);
-// (Ljava/lang/String;CC)Ljava/lang/String;
 s = (String) mh.invokeExact("daddy",'d','n');
+// invokeExact(Ljava/lang/String;CC)Ljava/lang/String;
 assert(s.equals("nanny"));
 // weakly typed invocation (using MHs.invoke)
 s = (String) mh.invokeWithArguments("sappy", 'p', 'v');
@@ -162,23 +162,24 @@ mt = MethodType.methodType(java.util.List.class, Object[].class);
 mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
 assert(mh.isVarargsCollector());
 x = mh.invokeGeneric("one", "two");
+// invokeGeneric(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
 assert(x.equals(java.util.Arrays.asList("one","two")));
 // mt is (Object,Object,Object)Object
 mt = MethodType.genericMethodType(3);
-mh = MethodHandles.collectArguments(mh, mt);
-// mt is (Object,Object,Object)Object
-// (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+mh = mh.asType(mt);
 x = mh.invokeExact((Object)1, (Object)2, (Object)3);
+// invokeExact(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 assert(x.equals(java.util.Arrays.asList(1,2,3)));
 // mt is { =&gt; int}
 mt = MethodType.methodType(int.class);
 mh = lookup.findVirtual(java.util.List.class, "size", mt);
-// (Ljava/util/List;)I
 i = (int) mh.invokeExact(java.util.Arrays.asList(1,2,3));
+// invokeExact(Ljava/util/List;)I
 assert(i == 3);
 mt = MethodType.methodType(void.class, String.class);
 mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
 mh.invokeExact(System.out, "Hello, world.");
+// invokeExact(Ljava/io/PrintStream;Ljava/lang/String;)V
 {}
             }}
     }
@@ -206,9 +207,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
 MethodHandle vamh = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
-MethodHandle invokeExact = publicLookup()
-  .findVirtual(MethodHandle.class, "invokeExact", vamh.type());
-MethodHandle mh = invokeExact.bindTo(vamh);
+MethodHandle mh = MethodHandles.exactInvoker(vamh.type()).bindTo(vamh);
 assert(vamh.type().equals(mh.type()));
 assertEquals("[1, 2, 3]", vamh.invokeGeneric(1,2,3).toString());
 boolean failed = false;

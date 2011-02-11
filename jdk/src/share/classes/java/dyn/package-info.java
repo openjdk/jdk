@@ -24,21 +24,20 @@
  */
 
 /**
- * This package contains dynamic language support provided directly by
+ * The {@code java.lang.invoke} package contains dynamic language support provided directly by
  * the Java core class libraries and virtual machine.
+ *
+ * <p style="font-size:smaller;">
+ * <em>Historic Note:</em> In some early versions of Java SE 7,
+ * the name of this package is {@code java.dyn}.
  * <p>
  * Certain types in this package have special relations to dynamic
  * language support in the virtual machine:
  * <ul>
- * <li>In source code, a call to
- * {@link java.dyn.MethodHandle#invokeExact   MethodHandle.invokeExact} or
- * {@link java.dyn.MethodHandle#invokeGeneric MethodHandle.invokeGeneric}
- * will compile and link, regardless of the requested type signature.
- * As usual, the Java compiler emits an {@code invokevirtual}
- * instruction with the given signature against the named method.
- * The JVM links any such call (regardless of signature) to a dynamically
- * typed method handle invocation.  In the case of {@code invokeGeneric},
- * argument and return value conversions are applied.
+ * <li>The class {@link java.dyn.MethodHandle MethodHandle} contains
+ * <a href="MethodHandle.html#sigpoly">signature polymorphic methods</a>
+ * which can be linked regardless of their type descriptor.
+ * Normally, method linkage requires exact matching of type descriptors.
  * </li>
  *
  * <li>The JVM bytecode format supports immediate constants of
@@ -58,12 +57,11 @@
  * The final two bytes are reserved for future use and required to be zero.
  * The constant pool reference of an {@code invokedynamic} instruction is to a entry
  * with tag {@code CONSTANT_InvokeDynamic} (decimal 18).  See below for its format.
- * (The tag value 17 is also temporarily allowed.  See below.)
  * The entry specifies the following information:
  * <ul>
  * <li>a bootstrap method (a {@link java.dyn.MethodHandle MethodHandle} constant)</li>
  * <li>the dynamic invocation name (a UTF8 string)</li>
- * <li>the argument and return types of the call (encoded as a signature in a UTF8 string)</li>
+ * <li>the argument and return types of the call (encoded as a type descriptor in a UTF8 string)</li>
  * <li>optionally, a sequence of additional <em>static arguments</em> to the bootstrap method ({@code ldc}-type constants)</li>
  * </ul>
  * <p>
@@ -78,9 +76,9 @@
  * as <a href="#bsm">described below</a>.
  *
  * <p style="font-size:smaller;">
- * (Historic Note: Some older JVMs may allow the index of a {@code CONSTANT_NameAndType}
+ * <em>Historic Note:</em> Some older JVMs may allow the index of a {@code CONSTANT_NameAndType}
  * instead of a {@code CONSTANT_InvokeDynamic}.  In earlier, obsolete versions of this API, the
- * bootstrap method was specified dynamically, in a per-class basis, during class initialization.)
+ * bootstrap method was specified dynamically, in a per-class basis, during class initialization.
  *
  * <h3><a name="indycon"></a>constant pool entries for {@code invokedynamic} instructions</h3>
  * If a constant pool entry has the tag {@code CONSTANT_InvokeDynamic} (decimal 18),
@@ -90,33 +88,21 @@
  * <em>bootstrap method table</em>, which is stored in the {@code BootstrapMethods}
  * attribute as <a href="#bsmattr">described below</a>.
  * The second pair of bytes must be an index to a {@code CONSTANT_NameAndType}.
- * This table is not part of the constant pool.  Instead, it is stored
- * in a class attribute named {@code BootstrapMethods}, described below.
  * <p>
  * The first index specifies a bootstrap method used by the associated dynamic call sites.
  * The second index specifies the method name, argument types, and return type of the dynamic call site.
  * The structure of such an entry is therefore analogous to a {@code CONSTANT_Methodref},
  * except that the bootstrap method specifier reference replaces
  * the {@code CONSTANT_Class} reference of a {@code CONSTANT_Methodref} entry.
- * <p>
- * Some older JVMs may allow an older constant pool entry tag of decimal 17.
- * The format and behavior of a constant pool entry with this tag is identical to
- * an entry with a tag of decimal 18, except that the first index refers directly
- * to a {@code CONSTANT_MethodHandle} to use as the bootstrap method.
- * This format does not require the bootstrap method table.
- *
- * <p style="font-size:smaller;">
- * <em>(Note: The Proposed Final Draft of this specification is likely to support
- * only the tag 18, not the tag 17.)</em>
  *
  * <h3><a name="mtcon"></a>constant pool entries for {@linkplain java.dyn.MethodType method types}</h3>
  * If a constant pool entry has the tag {@code CONSTANT_MethodType} (decimal 16),
  * it must contain exactly two more bytes, which must be an index to a {@code CONSTANT_Utf8}
- * entry which represents a method type signature.
+ * entry which represents a method type descriptor.
  * <p>
  * The JVM will ensure that on first
  * execution of an {@code ldc} instruction for this entry, a {@link java.dyn.MethodType MethodType}
- * will be created which represents the signature.
+ * will be created which represents the type descriptor.
  * Any classes mentioned in the {@code MethodType} will be loaded if necessary,
  * but not initialized.
  * Access checking and error reporting is performed exactly as it is for
@@ -144,24 +130,58 @@
  * The method handle itself will have a type and behavior determined by the subtag as follows:
  * <code>
  * <table border=1 cellpadding=5 summary="CONSTANT_MethodHandle subtypes">
- * <tr><th>N</th><th>subtag name</th><th>member</th><th>MH type</th><th>MH behavior</th></tr>
- * <tr><td>1</td><td>REF_getField</td><td>C.f:T</td><td>(C)T</td><td>getfield C.f:T</td></tr>
- * <tr><td>2</td><td>REF_getStatic</td><td>C.f:T</td><td>(&nbsp;)T</td><td>getstatic C.f:T</td></tr>
- * <tr><td>3</td><td>REF_putField</td><td>C.f:T</td><td>(C,T)void</td><td>putfield C.f:T</td></tr>
- * <tr><td>4</td><td>REF_putStatic</td><td>C.f:T</td><td>(T)void</td><td>putstatic C.f:T</td></tr>
- * <tr><td>5</td><td>REF_invokeVirtual</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokevirtual C.m(A*)T</td></tr>
- * <tr><td>6</td><td>REF_invokeStatic</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokestatic C.m(A*)T</td></tr>
- * <tr><td>7</td><td>REF_invokeSpecial</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokespecial C.m(A*)T</td></tr>
- * <tr><td>8</td><td>REF_newInvokeSpecial</td><td>C.&lt;init&gt;(A*)void</td><td>(A*)C</td><td>new C; dup; invokespecial C.&lt;init&gt;(A*)void</td></tr>
- * <tr><td>9</td><td>REF_invokeInterface</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokeinterface C.m(A*)T</td></tr>
+ * <tr><th>N</th><th>subtag name</th><th>member</th><th>MH type</th><th>bytecode behavior</th><th>lookup expression</th></tr>
+ * <tr><td>1</td><td>REF_getField</td><td>C.f:T</td><td>(C)T</td><td>getfield C.f:T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findGetter findGetter(C.class,"f",T.class)}</td></tr>
+ * <tr><td>2</td><td>REF_getStatic</td><td>C.f:T</td><td>(&nbsp;)T</td><td>getstatic C.f:T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findStaticGetter findStaticGetter(C.class,"f",T.class)}</td></tr>
+ * <tr><td>3</td><td>REF_putField</td><td>C.f:T</td><td>(C,T)void</td><td>putfield C.f:T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findSetter findSetter(C.class,"f",T.class)}</td></tr>
+ * <tr><td>4</td><td>REF_putStatic</td><td>C.f:T</td><td>(T)void</td><td>putstatic C.f:T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findStaticSetter findStaticSetter(C.class,"f",T.class)}</td></tr>
+ * <tr><td>5</td><td>REF_invokeVirtual</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokevirtual C.m(A*)T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findVirtual findVirtual(C.class,"m",MT)}</td></tr>
+ * <tr><td>6</td><td>REF_invokeStatic</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokestatic C.m(A*)T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findStatic findStatic(C.class,"m",MT)}</td></tr>
+ * <tr><td>7</td><td>REF_invokeSpecial</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokespecial C.m(A*)T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findSpecial findSpecial(C.class,"m",MT,this.class)}</td></tr>
+ * <tr><td>8</td><td>REF_newInvokeSpecial</td><td>C.&lt;init&gt;(A*)void</td><td>(A*)C</td><td>new C; dup; invokespecial C.&lt;init&gt;(A*)void</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findConstructor findConstructor(C.class,MT)}</td></tr>
+ * <tr><td>9</td><td>REF_invokeInterface</td><td>C.m(A*)T</td><td>(C,A*)T</td><td>invokeinterface C.m(A*)T</td>
+ *               <td>{@linkplain java.dyn.MethodHandles.Lookup#findVirtual findVirtual(C.class,"m",MT)}</td></tr>
  * </table>
  * </code>
+ * Here, the type {@code C} is taken from the {@code CONSTANT_Class} reference associated
+ * with the {@code CONSTANT_NameAndType} descriptor.
+ * The field name {@code f} or method name {@code m} is taken from the {@code CONSTANT_NameAndType}
+ * as is the result type {@code T} and (in the case of a method or constructor) the argument type sequence
+ * {@code A*}.
+ * <p>
+ * Each method handle constant has an equivalent instruction sequence called its <em>bytecode behavior</em>.
+ * In general, creating a method handle constant can be done in exactly the same circumstances that
+ * the JVM would successfully resolve the symbolic references in the bytecode behavior.
+ * Also, the type of a method handle constant is such that a valid {@code invokeExact} call
+ * on the method handle has exactly the same JVM stack effects as the <em>bytecode behavior</em>.
+ * Finally, calling a method handle constant on a valid set of arguments has exactly the same effect
+ * and returns the same result (if any) as the corresponding <em>bytecode behavior</em>.
+ * <p>
+ * Each method handle constant also has an equivalent reflective <em>lookup expression</em>,
+ * which is a query to a method in {@link java.dyn.MethodHandles.Lookup}.
+ * In the example lookup method expression given in the table above, the name {@code MT}
+ * stands for a {@code MethodType} built from {@code T} and the sequence of argument types {@code A*}.
+ * (Note that the type {@code C} is not prepended to the query type {@code MT} even if the member is non-static.)
+ * In the case of {@code findSpecial}, the name {@code this.class} refers to the class containing
+ * the bytecodes.
  * <p>
  * The special name {@code <clinit>} is not allowed.
  * The special name {@code <init>} is not allowed except for subtag 8 as shown.
  * <p>
  * The JVM verifier and linker apply the same access checks and restrictions for these references as for the hypothetical
- * bytecode instructions specified in the last column of the table.  In particular, method handles to
+ * bytecode instructions specified in the last column of the table.
+ * A method handle constant will successfully resolve to a method handle if the symbolic references
+ * of the corresponding bytecode instruction(s) would also resolve successfully.
+ * Otherwise, an attempt to resolve the constant will throw equivalent linkage errors.
+ * In particular, method handles to
  * private and protected members can be created in exactly those classes for which the corresponding
  * normal accesses are legal.
  * <p>
@@ -186,14 +206,14 @@
  * by the execution of {@code invokedynamic} and {@code ldc} instructions.
  * (Roughly speaking, this means that every use of a constant pool entry
  * must lead to the same outcome.
- * If the resoultion succeeds, the same object reference is produced
+ * If the resolution succeeds, the same object reference is produced
  * by every subsequent execution of the same instruction.
  * If the resolution of the constant causes an error to occur,
  * the same error will be re-thrown on every subsequent attempt
  * to use this particular constant.)
  * <p>
  * Constants created by the resolution of these constant pool types are not necessarily
- * interned.  Except for {@link CONSTANT_Class} and {@link CONSTANT_String} entries,
+ * interned.  Except for {@code CONSTANT_Class} and {@code CONSTANT_String} entries,
  * two distinct constant pool entries might not resolve to the same reference
  * even if they contain the same symbolic reference.
  *
@@ -207,31 +227,31 @@
  * <p>
  * Each {@code invokedynamic} instruction statically specifies its own
  * bootstrap method as a constant pool reference.
- * The constant pool reference also specifies the call site's name and type signature,
+ * The constant pool reference also specifies the call site's name and type descriptor,
  * just like {@code invokevirtual} and the other invoke instructions.
  * <p>
  * Linking starts with resolving the constant pool entry for the
  * bootstrap method, and resolving a {@link java.dyn.MethodType MethodType} object for
- * the type signature of the dynamic call site.
+ * the type descriptor of the dynamic call site.
  * This resolution process may trigger class loading.
  * It may therefore throw an error if a class fails to load.
  * This error becomes the abnormal termination of the dynamic
  * call site execution.
  * Linkage does not trigger class initialization.
  * <p>
- * Next, the bootstrap method call is started, with four or five values being stacked:
+ * Next, the bootstrap method call is started, with at least four values being stacked:
  * <ul>
  * <li>a {@code MethodHandle}, the resolved bootstrap method itself </li>
  * <li>a {@code MethodHandles.Lookup}, a lookup object on the <em>caller class</em> in which dynamic call site occurs </li>
  * <li>a {@code String}, the method name mentioned in the call site </li>
- * <li>a {@code MethodType}, the resolved type signature of the call </li>
- * <li>optionally, a single object representing one or more <a href="#args">additional static arguments</a> </li>
+ * <li>a {@code MethodType}, the resolved type descriptor of the call </li>
+ * <li>optionally, one or more <a href="#args">additional static arguments</a> </li>
  * </ul>
  * The method handle is then applied to the other values as if by
  * {@link java.dyn.MethodHandle#invokeGeneric invokeGeneric}.
  * The returned result must be a {@link java.dyn.CallSite CallSite} (or a subclass).
  * The type of the call site's target must be exactly equal to the type
- * derived from the dynamic call site signature and passed to
+ * derived from the dynamic call site's type descriptor and passed to
  * the bootstrap method.
  * The call site then becomes permanently linked to the dynamic call site.
  * <p>
@@ -299,11 +319,11 @@
  * chosen target object.
  *
  * <p style="font-size:smaller;">
- * (Historic Note: Unlike some previous versions of this specification,
+ * <em>Historic Note:</em> Unlike some previous versions of this specification,
  * these rules do not enable the JVM to duplicate dynamic call sites,
  * or to issue &ldquo;causeless&rdquo; bootstrap method calls.
  * Every dynamic call site transitions at most once from unlinked to linked,
- * just before its first invocation.)
+ * just before its first invocation.
  *
  * <h3><a name="bsmattr">the {@code BootstrapMethods} attribute </h3>
  * Each {@code CONSTANT_InvokeDynamic} entry contains an index which references
@@ -349,7 +369,6 @@
  * Static arguments are specified constant pool indexes stored in the {@code BootstrapMethods} attribute.
  * Before the bootstrap method is invoked, each index is used to compute an {@code Object}
  * reference to the indexed value in the constant pool.
- * If the value is a primitive type, it is converted to a reference by boxing conversion.
  * The valid constant pool entries are listed in this table:
  * <code>
  * <table border=1 cellpadding=5 summary="Static argument types">
@@ -374,6 +393,9 @@
  * at most 252 extra arguments can be supplied.)
  * The bootstrap method will be invoked as if by either {@code invokeGeneric}
  * or {@code invokeWithArguments}.  (There is no way to tell the difference.)
+ * <p>
+ * The normal argument conversion rules for {@code invokeGeneric} apply to all stacked arguments.
+ * For example, if a pushed value is a primitive type, it may be converted to a reference by boxing conversion.
  * If the bootstrap method is a variable arity method (its modifier bit {@code 0x0080} is set),
  * then some or all of the arguments specified here may be collected into a trailing array parameter.
  * (This is not a special rule, but rather a useful consequence of the interaction
@@ -430,11 +452,6 @@ struct CONSTANT_MethodType_info {
   u1 tag = 16;
   u2 descriptor_index;    // index to CONSTANT_Utf8, as in NameAndType
 }
-struct CONSTANT_InvokeDynamic_17_info {
-  u1 tag = 17;
-  u2 bootstrap_method_index;   // index to CONSTANT_MethodHandle
-  u2 name_and_type_index;      // same as for CONSTANT_Methodref, etc.
-}
 struct CONSTANT_InvokeDynamic_info {
   u1 tag = 18;
   u2 bootstrap_method_attr_index;  // index into BootstrapMethods_attr
@@ -451,9 +468,6 @@ struct BootstrapMethods_attr {
  } bootstrap_methods[bootstrap_method_count];
 }
  * </pre></blockquote>
- * <p>
- * <em>Note: The Proposed Final Draft of JSR 292 may remove the constant tag 17,
- * for the sake of simplicity.</em>
  *
  * @author John Rose, JSR 292 EG
  */

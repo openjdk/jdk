@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.lang.reflect.UndeclaredThrowableException;
 
 /**
- * Lazily associate a computed value with (potentially) every class.
+ * Lazily associate a computed value with (potentially) every type.
+ * For example, if a dynamic language needs to construct a message dispatch
+ * table for each class encountered at a message send call site,
+ * it can use a {@code ClassValue} to cache information needed to
+ * perform the message send quickly, for each class encountered.
  * @author John Rose, JSR 292 EG
  */
-public class ClassValue<T> {
+public abstract class ClassValue<T> {
     /**
      * Compute the given class's derived value for this {@code ClassValue}.
      * <p>
@@ -45,61 +49,41 @@ public class ClassValue<T> {
      * but it may be invoked again if there has been a call to
      * {@link #remove remove}.
      * <p>
-     * If there is no override from a subclass, this method returns
-     * the result of applying the {@code ClassValue}'s {@code computeValue}
-     * method handle, which was supplied at construction time.
+     * If this method throws an exception, the corresponding call to {@code get}
+     * will terminate abnormally with that exception, and no class value will be recorded.
      *
+     * @param type the type whose class value must be computed
      * @return the newly computed value associated with this {@code ClassValue}, for the given class or interface
-     * @throws UndeclaredThrowableException if the {@code computeValue} method handle invocation throws something other than a {@code RuntimeException} or {@code Error}
-     * @throws UnsupportedOperationException if the {@code computeValue} method handle is null (subclasses must override)
+     * @see #get
+     * @see #remove
      */
-    protected T computeValue(Class<?> type) {
-        if (computeValue == null)
-            return null;
-        try {
-            return (T) (Object) computeValue.invokeGeneric(type);
-        } catch (Throwable ex) {
-            if (ex instanceof Error)             throw (Error) ex;
-            if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
-            throw new UndeclaredThrowableException(ex);
-        }
-    }
-
-    private final MethodHandle computeValue;
-
-    /**
-     * Creates a new class value.
-     * Subclasses which use this constructor must override
-     * the {@link #computeValue computeValue} method,
-     * since the default {@code computeValue} method requires a method handle,
-     * which this constructor does not provide.
-     */
-    protected ClassValue() {
-        this.computeValue = null;
-    }
-
-    /**
-     * Creates a new class value, whose {@link #computeValue computeValue} method
-     * will return the result of {@code computeValue.invokeGeneric(type)}.
-     * @throws NullPointerException  if the method handle parameter is null
-     */
-    public ClassValue(MethodHandle computeValue) {
-        computeValue.getClass();  // trigger NPE if null
-        this.computeValue = computeValue;
-    }
+    protected abstract T computeValue(Class<?> type);
 
     /**
      * Returns the value for the given class.
      * If no value has yet been computed, it is obtained by
-     * by an invocation of the {@link #computeValue computeValue} method.
+     * an invocation of the {@link #computeValue computeValue} method.
      * <p>
      * The actual installation of the value on the class
      * is performed atomically.
-     * At that point, if racing threads have
+     * At that point, if several racing threads have
      * computed values, one is chosen, and returned to
      * all the racing threads.
+     * <p>
+     * The {@code type} parameter is typically a class, but it may be any type,
+     * such as an interface, a primitive type (like {@code int.class}), or {@code void.class}.
+     * <p>
+     * In the absence of {@code remove} calls, a class value has a simple
+     * state diagram:  uninitialized and initialized.
+     * When {@code remove} calls are made,
+     * the rules for value observation are more complex.
+     * See the documentation for {@link #remove remove} for more information.
      *
+     * @param type the type whose class value must be computed or retrieved
      * @return the current value associated with this {@code ClassValue}, for the given class or interface
+     * @throws NullPointerException if the argument is null
+     * @see #remove
+     * @see #computeValue
      */
     public T get(Class<?> type) {
         ClassValueMap map = getMap(type);
@@ -119,12 +103,51 @@ public class ClassValue<T> {
      * This may result in an additional invocation of the
      * {@code computeValue computeValue} method for the given class.
      * <p>
-     * If racing threads perform a combination of {@code get} and {@code remove} calls,
-     * the calls are serialized.
-     * A value produced by a call to {@code computeValue} will be discarded, if
-     * the corresponding {@code get} call was followed by a {@code remove} call
-     * before the {@code computeValue} could complete.
-     * In such a case, the {@code get} call will re-invoke {@code computeValue}.
+     * In order to explain the interaction between {@code get} and {@code remove} calls,
+     * we must model the state transitions of a class value to take into account
+     * the alternation between uninitialized and initialized states.
+     * To do this, number these states sequentially from zero, and note that
+     * uninitialized (or removed) states are numbered with even numbers,
+     * while initialized (or re-initialized) states have odd numbers.
+     * <p>
+     * When a thread {@code T} removes a class value in state {@code 2N},
+     * nothing happens, since the class value is already uninitialized.
+     * Otherwise, the state is advanced atomically to {@code 2N+1}.
+     * <p>
+     * When a thread {@code T} queries a class value in state {@code 2N},
+     * the thread first attempts to initialize the class value to state {@code 2N+1}
+     * by invoking {@code computeValue} and installing the resulting value.
+     * <p>
+     * When {@code T} attempts to install the newly computed value,
+     * if the state is still at {@code 2N}, the class value will be initialized
+     * with the computed value, advancing it to state {@code 2N+1}.
+     * <p>
+     * Otherwise, whether the new state is even or odd,
+     * {@code T} will discard the newly computed value
+     * and retry the {@code get} operation.
+     * <p>
+     * Discarding and retrying is an important proviso,
+     * since otherwise {@code T} could potentially install
+     * a disastrously stale value.  For example:
+     * <ul>
+     * <li>{@code T} calls {@code CV.get(C)} and sees state {@code 2N}
+     * <li>{@code T} quickly computes a time-dependent value {@code V0} and gets ready to install it
+     * <li>{@code T} is hit by an unlucky paging or scheduling event, and goes to sleep for a long time
+     * <li>...meanwhile, {@code T2} also calls {@code CV.get(C)} and sees state {@code 2N}
+     * <li>{@code T2} quickly computes a similar time-dependent value {@code V1} and installs it on {@code CV.get(C)}
+     * <li>{@code T2} (or a third thread) then calls {@code CV.remove(C)}, undoing {@code T2}'s work
+     * <li> the previous actions of {@code T2} are repeated several times
+     * <li> also, the relevant computed values change over time: {@code V1}, {@code V2}, ...
+     * <li>...meanwhile, {@code T} wakes up and attempts to install {@code V0}; <em>this must fail</em>
+     * </ul>
+     * We can assume in the above scenario that {@code CV.computeValue} uses locks to properly
+     * observe the time-dependent states as it computes {@code V1}, etc.
+     * This does not remove the threat of a stale value, since there is a window of time
+     * between the return of {@code computeValue} in {@code T} and the installation
+     * of the the new value.  No user synchronization is possible during this time.
+     *
+     * @param type the type whose class value must be removed
+     * @throws NullPointerException if the argument is null
      */
     public void remove(Class<?> type) {
         ClassValueMap map = getMap(type);
@@ -137,9 +160,9 @@ public class ClassValue<T> {
 
     /// Implementation...
 
-    /** The hash code for this type is based on the identity of the object,
-     *  and is well-dispersed for power-of-two tables.
-     */
+    // The hash code for this type is based on the identity of the object,
+    // and is well-dispersed for power-of-two tables.
+    /** @deprecated This override, which is implementation-specific, will be removed for PFD. */
     public final int hashCode() { return hashCode; }
     private final int hashCode = HASH_CODES.getAndAdd(0x61c88647);
     private static final AtomicInteger HASH_CODES = new AtomicInteger();
