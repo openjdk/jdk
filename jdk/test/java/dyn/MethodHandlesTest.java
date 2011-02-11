@@ -496,8 +496,12 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.in(defc).findStatic(defc, name, type);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            if (name.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchMethodException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findStatic "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -566,8 +570,12 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.in(defc).findVirtual(defc, methodName, type);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            if (name.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchMethodException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findVirtual "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -596,11 +604,12 @@ public class MethodHandlesTest {
         testFindSpecial(SubExample.class, Example.class, void.class, "v0");
         testFindSpecial(SubExample.class, Example.class, void.class, "pkg_v0");
         // Do some negative testing:
+        testFindSpecial(false, EXAMPLE, SubExample.class, Example.class, void.class, "bogus");
+        testFindSpecial(false, PRIVATE, SubExample.class, Example.class, void.class, "bogus");
         for (Lookup lookup : new Lookup[]{ PRIVATE, EXAMPLE, PACKAGE, PUBLIC }) {
             testFindSpecial(false, lookup, Object.class, Example.class, void.class, "v0");
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", int.class);
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "s0");
-            testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "bogus");
         }
     }
 
@@ -621,8 +630,12 @@ public class MethodHandlesTest {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             if (verbosity >= 5)  System.out.println("  lookup => "+lookup.in(specialCaller));
             target = lookup.in(specialCaller).findSpecial(defc, name, type, specialCaller);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            if (name.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchMethodException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findSpecial from "+specialCaller.getName()+" to "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -677,8 +690,12 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.in(defc).bind(receiver, methodName, type);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            if (name.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchMethodException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("bind "+receiver+"."+name+"/"+type+" => "+target
@@ -736,14 +753,9 @@ public class MethodHandlesTest {
                                    Class<?> defc, Class<?> rcvc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         countTest(positive);
         MethodType type = MethodType.methodType(ret, params);
-        Method rmethod = null;
+        Method rmethod = defc.getDeclaredMethod(name, params);
         MethodHandle target = null;
         Exception noAccess = null;
-        try {
-            rmethod = defc.getDeclaredMethod(name, params);
-        } catch (NoSuchMethodException ex) {
-            throw new NoAccessException(ex);
-        }
         boolean isStatic = (rcvc == null);
         boolean isSpecial = (specialCaller != null);
         try {
@@ -752,8 +764,12 @@ public class MethodHandlesTest {
                 target = lookup.in(specialCaller).unreflectSpecial(rmethod, specialCaller);
             else
                 target = lookup.in(defc).unreflect(rmethod);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            if (name.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchMethodException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("unreflect"+(isSpecial?"Special":"")+" "+defc.getName()+"."+name+"/"+type
@@ -862,25 +878,28 @@ public class MethodHandlesTest {
                     if (type == float.class) {
                         float v = 'F';
                         if (isStatic)  v++;
-                        assert(value.equals(v));
+                        assertTrue(value.equals(v));
                     }
-                    assert(name.equals(field.getName()));
-                    assert(type.equals(field.getType()));
-                    assert(isStatic == (Modifier.isStatic(field.getModifiers())));
+                    assertTrue(name.equals(field.getName()));
+                    assertTrue(type.equals(field.getType()));
+                    assertTrue(isStatic == (Modifier.isStatic(field.getModifiers())));
                     cases.add(new Object[]{ field, value });
                 }
             }
+            cases.add(new Object[]{ new Object[]{ false, HasFields.class, "bogus_fD", double.class }, Error.class });
+            cases.add(new Object[]{ new Object[]{ true,  HasFields.class, "bogus_sL", Object.class }, Error.class });
             CASES = cases.toArray(new Object[0][]);
         }
     }
 
-    static final int TEST_UNREFLECT = 1, TEST_FIND_FIELD = 2, TEST_FIND_STATIC_FIELD = 3;
+    static final int TEST_UNREFLECT = 1, TEST_FIND_FIELD = 2, TEST_FIND_STATIC = 3, TEST_SETTER = 0x10;
     static boolean testModeMatches(int testMode, boolean isStatic) {
         switch (testMode) {
-        case TEST_FIND_STATIC_FIELD:    return isStatic;
+        case TEST_FIND_STATIC:          return isStatic;
         case TEST_FIND_FIELD:           return !isStatic;
-        default:                        return true;  // unreflect matches both
+        case TEST_UNREFLECT:            return true;  // unreflect matches both
         }
+        throw new InternalError("testMode="+testMode);
     }
 
     @Test
@@ -896,54 +915,161 @@ public class MethodHandlesTest {
     @Test
     public void testFindStaticGetter() throws Throwable {
         startTest("findStaticGetter");
-        testGetter(TEST_FIND_STATIC_FIELD);
+        testGetter(TEST_FIND_STATIC);
     }
     public void testGetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         for (Object[] c : HasFields.CASES) {
-            Field f = (Field)c[0];
-            Object value = c[1];
-            Class<?> type = f.getType();
-            testGetter(lookup, f, type, value, testMode);
+            boolean positive = (c[1] != Error.class);
+            testGetter(positive, lookup, c[0], c[1], testMode);
+        }
+        testGetter(true, lookup,
+                   new Object[]{ true,  System.class, "out", java.io.PrintStream.class },
+                   System.out, testMode);
+        for (int isStaticN = 0; isStaticN <= 1; isStaticN++) {
+            testGetter(false, lookup,
+                       new Object[]{ (isStaticN != 0), System.class, "bogus", char.class },
+                       null, testMode);
         }
     }
-    public void testGetter(MethodHandles.Lookup lookup,
-            Field f, Class<?> type, Object value, int testMode) throws Throwable {
-        boolean isStatic = Modifier.isStatic(f.getModifiers());
-        Class<?> fclass = f.getDeclaringClass();
-        String   fname  = f.getName();
-        Class<?> ftype  = f.getType();
+    public void testGetter(boolean positive, MethodHandles.Lookup lookup,
+                           Object fieldRef, Object value, int testMode) throws Throwable {
+        testAccessor(positive, lookup, fieldRef, value, testMode);
+    }
+
+    public void testAccessor(boolean positive, MethodHandles.Lookup lookup,
+                             Object fieldRef, Object value, int testMode0) throws Throwable {
+        boolean isGetter = ((testMode0 & TEST_SETTER) == 0);
+        int testMode = testMode0 & ~TEST_SETTER;
+        boolean isStatic;
+        Class<?> fclass;
+        String   fname;
+        Class<?> ftype;
+        Field f = (fieldRef instanceof Field ? (Field)fieldRef : null);
+        if (f != null) {
+            isStatic = Modifier.isStatic(f.getModifiers());
+            fclass   = f.getDeclaringClass();
+            fname    = f.getName();
+            ftype    = f.getType();
+        } else {
+            Object[] scnt = (Object[]) fieldRef;
+            isStatic = (Boolean)  scnt[0];
+            fclass   = (Class<?>) scnt[1];
+            fname    = (String)   scnt[2];
+            ftype    = (Class<?>) scnt[3];
+            try {
+                f = fclass.getDeclaredField(fname);
+            } catch (ReflectiveOperationException ex) {
+                f = null;
+            }
+        }
         if (!testModeMatches(testMode, isStatic))  return;
-        countTest(true);
-        MethodType expType = MethodType.methodType(type, HasFields.class);
+        if (f == null && testMode == TEST_UNREFLECT)  return;
+        countTest(positive);
+        MethodType expType;
+        if (isGetter)
+            expType = MethodType.methodType(ftype, HasFields.class);
+        else
+            expType = MethodType.methodType(void.class, HasFields.class, ftype);
         if (isStatic)  expType = expType.dropParameterTypes(0, 1);
-        MethodHandle mh = lookup.unreflectGetter(f);
+        Exception noAccess = null;
+        MethodHandle mh;
+        try {
+            switch (testMode0) {
+            case TEST_UNREFLECT:   mh = lookup.unreflectGetter(f);                      break;
+            case TEST_FIND_FIELD:  mh = lookup.findGetter(fclass, fname, ftype);        break;
+            case TEST_FIND_STATIC: mh = lookup.findStaticGetter(fclass, fname, ftype);  break;
+            case TEST_SETTER|
+                 TEST_UNREFLECT:   mh = lookup.unreflectSetter(f);                      break;
+            case TEST_SETTER|
+                 TEST_FIND_FIELD:  mh = lookup.findSetter(fclass, fname, ftype);        break;
+            case TEST_SETTER|
+                 TEST_FIND_STATIC: mh = lookup.findStaticSetter(fclass, fname, ftype);  break;
+            default:
+                throw new InternalError("testMode="+testMode);
+            }
+        } catch (ReflectiveOperationException ex) {
+            mh = null;
+            noAccess = ex;
+            if (fname.contains("bogus"))
+                assertTrue(noAccess instanceof NoSuchFieldException);
+            else
+                assertTrue(noAccess instanceof IllegalAccessException);
+        }
+        if (verbosity >= 3)
+            System.out.println("find"+(isStatic?"Static":"")+(isGetter?"Getter":"Setter")+" "+fclass.getName()+"."+fname+"/"+ftype
+                               +" => "+mh
+                               +(noAccess == null ? "" : " !! "+noAccess));
+        if (positive && noAccess != null)  throw new RuntimeException(noAccess);
+        assertEquals(positive ? "positive test" : "negative test erroneously passed", positive, mh != null);
+        if (!positive)  return; // negative test failed as expected
+        assertEquals((isStatic ? 0 : 1)+(isGetter ? 0 : 1), mh.type().parameterCount());
+
+
         assertSame(mh.type(), expType);
         assertNameStringContains(mh, fname);
         HasFields fields = new HasFields();
         Object sawValue;
-        Class<?> rtype = type;
-        if (type != int.class)  rtype = Object.class;
-        mh = MethodHandles.convertArguments(mh, mh.type().generic().changeReturnType(rtype));
-        Object expValue = value;
-        for (int i = 0; i <= 1; i++) {
-            if (isStatic) {
-                if (type == int.class)
-                    sawValue = (int) mh.invokeExact();  // do these exactly
-                else
-                    sawValue = mh.invokeExact();
-            } else {
-                if (type == int.class)
-                    sawValue = (int) mh.invokeExact((Object) fields);
-                else
-                    sawValue = mh.invokeExact((Object) fields);
-            }
-            assertEquals(sawValue, expValue);
-            Object random = randomArg(type);
-            f.set(fields, random);
-            expValue = random;
+        Class<?> vtype = ftype;
+        if (ftype != int.class)  vtype = Object.class;
+        if (isGetter) {
+            mh = MethodHandles.convertArguments(mh, mh.type().generic()
+                                                .changeReturnType(vtype));
+        } else {
+            int last = mh.type().parameterCount() - 1;
+            mh = MethodHandles.convertArguments(mh, mh.type().generic()
+                                                .changeReturnType(void.class)
+                                                .changeParameterType(last, vtype));
         }
-        f.set(fields, value);  // put it back
+        if (f != null && f.getDeclaringClass() == HasFields.class) {
+            assertEquals(f.get(fields), value);  // clean to start with
+        }
+        if (isGetter) {
+            Object expValue = value;
+            for (int i = 0; i <= 1; i++) {
+                if (isStatic) {
+                    if (ftype == int.class)
+                        sawValue = (int) mh.invokeExact();  // do these exactly
+                    else
+                        sawValue = mh.invokeExact();
+                } else {
+                    if (ftype == int.class)
+                        sawValue = (int) mh.invokeExact((Object) fields);
+                    else
+                        sawValue = mh.invokeExact((Object) fields);
+                }
+                assertEquals(sawValue, expValue);
+                if (f != null && f.getDeclaringClass() == HasFields.class
+                    && !Modifier.isFinal(f.getModifiers())) {
+                    Object random = randomArg(ftype);
+                    f.set(fields, random);
+                    expValue = random;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            for (int i = 0; i <= 1; i++) {
+                Object putValue = randomArg(ftype);
+                if (isStatic) {
+                    if (ftype == int.class)
+                        mh.invokeExact((int)putValue);  // do these exactly
+                    else
+                        mh.invokeExact(putValue);
+                } else {
+                    if (ftype == int.class)
+                        mh.invokeExact((Object) fields, (int)putValue);
+                    else
+                        mh.invokeExact((Object) fields, putValue);
+                }
+                if (f != null && f.getDeclaringClass() == HasFields.class) {
+                    assertEquals(f.get(fields), putValue);
+                }
+            }
+        }
+        if (f != null && f.getDeclaringClass() == HasFields.class) {
+            f.set(fields, value);  // put it back
+        }
     }
 
 
@@ -960,61 +1086,24 @@ public class MethodHandlesTest {
     @Test
     public void testFindStaticSetter() throws Throwable {
         startTest("findStaticSetter");
-        testSetter(TEST_FIND_STATIC_FIELD);
+        testSetter(TEST_FIND_STATIC);
     }
     public void testSetter(int testMode) throws Throwable {
         Lookup lookup = PRIVATE;  // FIXME: test more lookups than this one
         startTest("unreflectSetter");
         for (Object[] c : HasFields.CASES) {
-            Field f = (Field)c[0];
-            Object value = c[1];
-            Class<?> type = f.getType();
-            testSetter(lookup, f, type, value, testMode);
+            boolean positive = (c[1] != Error.class);
+            testSetter(positive, lookup, c[0], c[1], testMode);
+        }
+        for (int isStaticN = 0; isStaticN <= 1; isStaticN++) {
+            testSetter(false, lookup,
+                       new Object[]{ (isStaticN != 0), System.class, "bogus", char.class },
+                       null, testMode);
         }
     }
-    public void testSetter(MethodHandles.Lookup lookup,
-            Field f, Class<?> type, Object value, int testMode) throws Throwable {
-        boolean isStatic = Modifier.isStatic(f.getModifiers());
-        Class<?> fclass = f.getDeclaringClass();
-        String   fname  = f.getName();
-        Class<?> ftype  = f.getType();
-        if (!testModeMatches(testMode, isStatic))  return;
-        countTest(true);
-        MethodType expType = MethodType.methodType(void.class, HasFields.class, type);
-        if (isStatic)  expType = expType.dropParameterTypes(0, 1);
-        MethodHandle mh;
-        if (testMode == TEST_UNREFLECT)
-            mh = lookup.unreflectSetter(f);
-        else if (testMode == TEST_FIND_FIELD)
-            mh = lookup.findSetter(fclass, fname, ftype);
-        else if (testMode == TEST_FIND_STATIC_FIELD)
-            mh = lookup.findStaticSetter(fclass, fname, ftype);
-        else  throw new InternalError();
-        assertSame(mh.type(), expType);
-        assertNameStringContains(mh, fname);
-        HasFields fields = new HasFields();
-        Object sawValue;
-        Class<?> vtype = type;
-        if (type != int.class)  vtype = Object.class;
-        int last = mh.type().parameterCount() - 1;
-        mh = MethodHandles.convertArguments(mh, mh.type().generic().changeReturnType(void.class).changeParameterType(last, vtype));
-        assertEquals(f.get(fields), value);  // clean to start with
-        for (int i = 0; i <= 1; i++) {
-            Object putValue = randomArg(type);
-            if (isStatic) {
-                if (type == int.class)
-                    mh.invokeExact((int)putValue);  // do these exactly
-                else
-                    mh.invokeExact(putValue);
-            } else {
-                if (type == int.class)
-                    mh.invokeExact((Object) fields, (int)putValue);
-                else
-                    mh.invokeExact((Object) fields, putValue);
-            }
-            assertEquals(f.get(fields), putValue);
-        }
-        f.set(fields, value);  // put it back
+    public void testSetter(boolean positive, MethodHandles.Lookup lookup,
+                           Object fieldRef, Object value, int testMode) throws Throwable {
+        testAccessor(positive, lookup, fieldRef, value, testMode | TEST_SETTER);
     }
 
     @Test
@@ -1323,7 +1412,7 @@ public class MethodHandlesTest {
                 types[i] = args[i].getClass();
         }
         int inargs = args.length, outargs = reorder.length;
-        assert(inargs == types.length);
+        assertTrue(inargs == types.length);
         if (verbosity >= 3)
             System.out.println("permuteArguments "+Arrays.toString(reorder));
         Object[] permArgs = new Object[outargs];
@@ -2219,12 +2308,13 @@ class ValueConversions {
             MethodHandle array = null;
             try {
                 array = lookup.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
+                // break from loop!
             }
             if (array == null)  break;
             arrays.add(array);
         }
-        assert(arrays.size() == 11);  // current number of methods
+        assertTrue(arrays.size() == 11);  // current number of methods
         return arrays.toArray(new MethodHandle[0]);
     }
     static final MethodHandle[] ARRAYS = makeArrays();
@@ -2280,12 +2370,13 @@ class ValueConversions {
             MethodHandle list = null;
             try {
                 list = lookup.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
+                // break from loop!
             }
             if (list == null)  break;
             lists.add(list);
         }
-        assert(lists.size() == 11);  // current number of methods
+        assertTrue(lists.size() == 11);  // current number of methods
         return lists.toArray(new MethodHandle[0]);
     }
     static final MethodHandle[] LISTS = makeLists();

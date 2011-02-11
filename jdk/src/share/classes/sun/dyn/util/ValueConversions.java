@@ -153,7 +153,7 @@ public class ValueConversions {
             try {
                 // actually, type is wrong; the Java method takes Object
                 mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type.erase());
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 mh = null;
             }
         } else {
@@ -289,7 +289,7 @@ public class ValueConversions {
         if (exact) {
             try {
                 mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 mh = null;
             }
         } else {
@@ -408,7 +408,7 @@ public class ValueConversions {
         if (exact) {
             try {
                 mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 mh = null;
             }
         } else {
@@ -492,7 +492,7 @@ public class ValueConversions {
             case INT: case LONG: case FLOAT: case DOUBLE:
                 try {
                     mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "zero"+wrap.simpleName(), type);
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                     mh = null;
                 }
                 break;
@@ -654,7 +654,7 @@ public class ValueConversions {
             type = type.appendParameterTypes(wrap.primitiveType());
         try {
             mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", type);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             mh = null;
         }
         if (mh == null && wrap == Wrapper.VOID) {
@@ -723,7 +723,7 @@ public class ValueConversions {
             MethodHandle array = null;
             try {
                 array = lookup.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
             }
             if (array == null)  break;
             arrays.add(array);
@@ -784,7 +784,7 @@ public class ValueConversions {
             MethodHandle array = null;
             try {
                 array = lookup.findStatic(ValueConversions.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
             }
             if (array == null)  break;
             arrays.add(array);
