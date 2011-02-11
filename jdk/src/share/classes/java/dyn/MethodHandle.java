@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,11 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * constant pool entry.
  * For more details, see the <a href="package-summary.html#mhcon">package summary</a>.)
  * <p>
+ * Method handles produced by lookups or constant loads from methods or
+ * constructors with the variable arity modifier bit ({@code 0x0080})
+ * have a corresponding variable arity, as if they were defined with
+ * the help of {@link #asVarargsCollector asVarargsCollector}.
+ * <p>
  * Java code can also use a reflective API called
  * {@link java.dyn.MethodHandles.Lookup MethodHandles.Lookup}
  * for creating and calling method handles.
@@ -175,6 +180,9 @@ assert(s.equals("savvy"));
 // mt is {Object[] =&gt; List}
 mt = MethodType.methodType(java.util.List.class, Object[].class);
 mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
+assert(mh.isVarargsCollector());
+x = mh.invokeGeneric("one", "two");
+assert(x.equals(java.util.Arrays.asList("one","two")));
 // mt is {(Object,Object,Object) =&gt; Object}
 mt = MethodType.genericMethodType(3);
 mh = MethodHandles.collectArguments(mh, mt);
@@ -307,26 +315,6 @@ public abstract class MethodHandle
     }
 
     /**
-     * Returns a string representation of the method handle,
-     * starting with the string {@code "MethodHandle"} and
-     * ending with the string representation of the method handle's type.
-     * In other words, this method returns a string equal to the value of:
-     * <blockquote><pre>
-     * "MethodHandle" + type().toString()
-     * </pre></blockquote>
-     * <p>
-     * Note:  Future releases of this API may add further information
-     * to the string representation.
-     * Therefore, the present syntax should not be parsed by applications.
-     *
-     * @return a string representation of the method handle
-     */
-    @Override
-    public String toString() {
-        return MethodHandleImpl.getNameString(IMPL_TOKEN, this);
-    }
-
-    /**
      * Invoke the method handle, allowing any caller signature, but requiring an exact signature match.
      * The signature at the call site of {@code invokeExact} must
      * exactly match this method handle's {@link #type type}.
@@ -338,7 +326,7 @@ public abstract class MethodHandle
 
     /**
      * Invoke the method handle, allowing any caller signature,
-     * and optionally performing conversions for arguments and return types.
+     * and optionally performing conversions on arguments and return values.
      * <p>
      * If the call site signature exactly matches this method handle's {@link #type type},
      * the call proceeds as if by {@link #invokeExact invokeExact}.
@@ -353,14 +341,13 @@ public abstract class MethodHandle
      * adaptations directly on the caller's arguments,
      * and call the target method handle according to its own exact type.
      * <p>
-     * If the method handle is equipped with a
-     * {@linkplain #withTypeHandler type handler}, the handler must produce
-     * an entry point of the call site's exact type.
-     * Otherwise, the signature at the call site of {@code invokeGeneric} must
-     * be a valid argument to the standard {@code asType} method.
+     * The signature at the call site of {@code invokeGeneric} must
+     * be a valid argument to the receivers {@code asType} method.
      * In particular, the caller must specify the same argument arity
-     * as the callee's type.
+     * as the callee's type,
+     * if the callee is not a {@linkplain #asVarargsCollector variable arity collector}.
      * @throws WrongMethodTypeException if the target's type cannot be adjusted to the caller's type signature
+     * @throws ClassCastException if the target's type can be adjusted to the caller, but a reference cast fails
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
     public final native @PolymorphicSignature Object invokeGeneric(Object... args) throws Throwable;
@@ -400,14 +387,14 @@ public abstract class MethodHandle
      * <p>
      * This call is equivalent to the following code:
      * <p><blockquote><pre>
-     * MethodHandle invoker = MethodHandles.varargsInvoker(this.type(), 0);
+     * MethodHandle invoker = MethodHandles.spreadInvoker(this.type(), 0);
      * Object result = invoker.invokeExact(this, arguments);
      * </pre></blockquote>
      * @param arguments the arguments to pass to the target
      * @return the result returned by the target
      * @throws WrongMethodTypeException if the target's type cannot be adjusted to take the arguments
      * @throws Throwable anything thrown by the target method invocation
-     * @see MethodHandles#varargsInvoker
+     * @see MethodHandles#spreadInvoker
      */
     public final Object invokeWithArguments(Object... arguments) throws Throwable {
         int argc = arguments == null ? 0 : arguments.length;
@@ -456,7 +443,7 @@ public abstract class MethodHandle
         }
 
         // more than ten arguments get boxed in a varargs list:
-        MethodHandle invoker = MethodHandles.invokers(type).varargsInvoker(0);
+        MethodHandle invoker = invokers(type).spreadInvoker(0);
         return invoker.invokeExact(this, arguments);
     }
     /** Equivalent to {@code invokeWithArguments(arguments.toArray())}. */
@@ -488,13 +475,7 @@ public abstract class MethodHandle
      * to match up the caller's and callee's types.
      * <p>
      * This method is equivalent to {@link MethodHandles#convertArguments convertArguments},
-     * except for method handles produced by {@link #withTypeHandler withTypeHandler},
-     * in which case the specified type handler is used for calls to {@code asType}.
-     * <p>
-     * Note that the default behavior of {@code asType} only performs
-     * pairwise argument conversion and return value conversion.
-     * Because of this, unless the method handle has a type handler,
-     * the original type and new type must have the same number of arguments.
+     * except for variable arity method handles produced by {@link #asVarargsCollector asVarargsCollector}.
      *
      * @param newType the expected type of the new method handle
      * @return a method handle which delegates to {@code this} after performing
@@ -508,14 +489,16 @@ public abstract class MethodHandle
     }
 
     /**
-     * Produce a method handle which adapts, as its <i>target</i>,
+     * Make an adapter which accepts a trailing array argument
+     * and spreads its elements as positional arguments.
+     * The new method handle adapts, as its <i>target</i>,
      * the current method handle.  The type of the adapter will be
      * the same as the type of the target, except that the final
      * {@code arrayLength} parameters of the target's type are replaced
      * by a single array parameter of type {@code arrayType}.
      * <p>
      * If the array element type differs from any of the corresponding
-     * argument types on original target,
+     * argument types on the original target,
      * the original target is adapted to take the array elements directly,
      * as if by a call to {@link #asType asType}.
      * <p>
@@ -539,6 +522,7 @@ public abstract class MethodHandle
      * @throws IllegalArgumentException if target does not have at least
      *         {@code arrayLength} parameter types
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
+     * @see #asCollector
      */
     public final MethodHandle asSpreader(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
@@ -553,13 +537,15 @@ public abstract class MethodHandle
     }
 
     /**
-     * Produce a method handle which adapts, as its <i>target</i>,
+     * Make an adapter which accepts a given number of trailing
+     * positional arguments and collects them into an array argument.
+     * The new method handle adapts, as its <i>target</i>,
      * the current method handle.  The type of the adapter will be
      * the same as the type of the target, except that a single trailing
      * parameter (usually of type {@code arrayType}) is replaced by
      * {@code arrayLength} parameters whose type is element type of {@code arrayType}.
      * <p>
-     * If the array type differs from the final argument type on original target,
+     * If the array type differs from the final argument type on the original target,
      * the original target is adapted to take the array type directly,
      * as if by a call to {@link #asType asType}.
      * <p>
@@ -570,21 +556,31 @@ public abstract class MethodHandle
      * What the target eventually returns is returned unchanged by the adapter.
      * <p>
      * (The array may also be a shared constant when {@code arrayLength} is zero.)
-     * @param arrayType usually {@code Object[]}, the type of the array argument which will collect the arguments
+     * <p>
+     * (<em>Note:</em> The {@code arrayType} is often identical to the last
+     * parameter type of the original target.
+     * It is an explicit argument for symmetry with {@code asSpreader}, and also
+     * to allow the target to use a simple {@code Object} as its last parameter type.)
+     * <p>
+     * In order to create a collecting adapter which is not restricted to a particular
+     * number of collected arguments, use {@link #asVarargsCollector asVarargsCollector} instead.
+     * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @param arrayLength the number of arguments to collect into a new array argument
      * @return a new method handle which collects some trailing argument
      *         into an array, before calling the original method handle
      * @throws IllegalArgumentException if {@code arrayType} is not an array type
-               or {@code arrayType} is not assignable to this method handle's trailing parameter type
-     * @throws IllegalArgumentException if {@code arrayLength} is not
-     *         a legal array size
+     *         or {@code arrayType} is not assignable to this method handle's trailing parameter type,
+     *         or {@code arrayLength} is not a legal array size
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
+     * @see #asSpreader
+     * @see #asVarargsCollector
      */
     public final MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
         if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
         MethodType oldType = type();
         int nargs = oldType.parameterCount();
+        if (nargs == 0)  throw newIllegalArgumentException("no trailing argument");
         MethodType newType = oldType.dropParameterTypes(nargs-1, nargs);
         newType = newType.insertParameterTypes(nargs-1,
                     java.util.Collections.<Class<?>>nCopies(arrayLength, arrayElement));
@@ -592,8 +588,183 @@ public abstract class MethodHandle
     }
 
     /**
-     * Produce a method handle which binds the given argument
-     * to the current method handle as <i>target</i>.
+     * Make a <em>variable arity</em> adapter which is able to accept
+     * any number of trailing positional arguments and collect them
+     * into an array argument.
+     * <p>
+     * The type and behavior of the adapter will be the same as
+     * the type and behavior of the target, except that certain
+     * {@code invokeGeneric} and {@code asType} requests can lead to
+     * trailing positional arguments being collected into target's
+     * trailing parameter.
+     * Also, the last parameter type of the adapter will be
+     * {@code arrayType}, even if the target has a different
+     * last parameter type.
+     * <p>
+     * When called with {@link #invokeExact invokeExact}, the adapter invokes
+     * the target with no argument changes.
+     * (<em>Note:</em> This behavior is different from a
+     * {@linkplain #asCollector fixed arity collector},
+     * since it accepts a whole array of indeterminate length,
+     * rather than a fixed number of arguments.)
+     * <p>
+     * When called with {@link #invokeGeneric invokeGeneric}, if the caller
+     * type is the same as the adapter, the adapter invokes the target as with
+     * {@code invokeExact}.
+     * (This is the normal behavior for {@code invokeGeneric} when types match.)
+     * <p>
+     * Otherwise, if the caller and adapter arity are the same, and the
+     * trailing parameter type of the caller is a reference type identical to
+     * or assignable to the trailing parameter type of the adapter,
+     * the arguments and return values are converted pairwise,
+     * as if by {@link MethodHandles#convertArguments convertArguments}.
+     * (This is also normal behavior for {@code invokeGeneric} in such a case.)
+     * <p>
+     * Otherwise, the arities differ, or the adapter's trailing parameter
+     * type is not assignable from the corresponding caller type.
+     * In this case, the adapter replaces all trailing arguments from
+     * the original trailing argument position onward, by
+     * a new array of type {@code arrayType}, whose elements
+     * comprise (in order) the replaced arguments.
+     * <p>
+     * The caller type must provides as least enough arguments,
+     * and of the correct type, to satisfy the target's requirement for
+     * positional arguments before the trailing array argument.
+     * Thus, the caller must supply, at a minimum, {@code N-1} arguments,
+     * where {@code N} is the arity of the target.
+     * Also, there must exist conversions from the incoming arguments
+     * to the target's arguments.
+     * As with other uses of {@code invokeGeneric}, if these basic
+     * requirements are not fulfilled, a {@code WrongMethodTypeException}
+     * may be thrown.
+     * <p>
+     * In all cases, what the target eventually returns is returned unchanged by the adapter.
+     * <p>
+     * In the final case, it is exactly as if the target method handle were
+     * temporarily adapted with a {@linkplain #asCollector fixed arity collector}
+     * to the arity required by the caller type.
+     * (As with {@code asCollector}, if the array length is zero,
+     * a shared constant may be used instead of a new array.
+     * If the implied call to {@code asCollector} would throw
+     * an {@code IllegalArgumentException} or {@code WrongMethodTypeException},
+     * the call to the variable arity adapter must throw
+     * {@code WrongMethodTypeException}.)
+     * <p>
+     * The behavior of {@link #asType asType} is also specialized for
+     * variable arity adapters, to maintain the invariant that
+     * {@code invokeGeneric} is always equivalent to an {@code asType}
+     * call to adjust the target type, followed by {@code invokeExact}.
+     * Therefore, a variable arity adapter responds
+     * to an {@code asType} request by building a fixed arity collector,
+     * if and only if the adapter and requested type differ either
+     * in arity or trailing argument type.
+     * The resulting fixed arity collector has its type further adjusted
+     * (if necessary) to the requested type by pairwise conversion,
+     * as if by another application of {@code asType}.
+     * <p>
+     * When a method handle is obtained by executing an {@code ldc} instruction
+     * of a {@code CONSTANT_MethodHandle} constant, and the target method is marked
+     * as a variable arity method (with the modifier bit {@code 0x0080}),
+     * the method handle will accept multiple arities, as if the method handle
+     * constant were created by means of a call to {@code asVarargsCollector}.
+     * <p>
+     * In order to create a collecting adapter which collects a predetermined
+     * number of arguments, and whose type reflects this predetermined number,
+     * use {@link #asCollector asCollector} instead.
+     * <p>
+     * No method handle transformations produce new method handles with
+     * variable arity, unless they are documented as doing so.
+     * Therefore, besides {@code asVarargsCollector},
+     * all methods in {@code MethodHandle} and {@code MethodHandles}
+     * will return a method handle with fixed arity,
+     * except in the cases where they are specified to return their original
+     * operand (e.g., {@code asType} of the method handle's own type).
+     * <p>
+     * Calling {@code asVarargsCollector} on a method handle which is already
+     * of variable arity will produce a method handle with the same type and behavior.
+     * It may (or may not) return the original variable arity method handle.
+     * <p>
+     * Here is an example, of a list-making variable arity method handle:
+     * <blockquote><pre>
+MethodHandle asList = publicLookup()
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
+  .asVarargsCollector(Object[].class);
+assertEquals("[]", asList.invokeGeneric().toString());
+assertEquals("[1]", asList.invokeGeneric(1).toString());
+assertEquals("[two, too]", asList.invokeGeneric("two", "too").toString());
+Object[] argv = { "three", "thee", "tee" };
+assertEquals("[three, thee, tee]", asList.invokeGeneric(argv).toString());
+List ls = (List) asList.invokeGeneric((Object)argv);
+assertEquals(1, ls.size());
+assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
+     * </pre></blockquote>
+     * <p style="font-size:smaller;">
+     * These rules are designed as a dynamically-typed variation
+     * of the Java rules for variable arity methods.
+     * In both cases, callers to a variable arity method or method handle
+     * can either pass zero or more positional arguments, or else pass
+     * pre-collected arrays of any length.  Users should be aware of the
+     * special role of the final argument, and of the effect of a
+     * type match on that final argument, which determines whether
+     * or not a single trailing argument is interpreted as a whole
+     * array or a single element of an array to be collected.
+     * Note that the dynamic type of the trailing argument has no
+     * effect on this decision, only a comparison between the static
+     * type signature of the call site and the type of the method handle.)
+     * <p style="font-size:smaller;">
+     * As a result of the previously stated rules, the variable arity behavior
+     * of a method handle may be suppressed, by binding it to the exact invoker
+     * of its own type, as follows:
+     * <blockquote><pre>
+MethodHandle vamh = publicLookup()
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
+  .asVarargsCollector(Object[].class);
+MethodHandle invokeExact = publicLookup()
+  .findVirtual(MethodHandle.class, "invokeExact", vamh.type());
+MethodHandle mh = invokeExact.bindTo(vamh);
+assert(vamh.type().equals(mh.type()));
+assertEquals("[1, 2, 3]", vamh.invokeGeneric(1,2,3).toString());
+boolean failed = false;
+try { mh.invokeGeneric(1,2,3); }
+catch (WrongMethodTypeException ex) { failed = true; }
+assert(failed);
+     * </pre></blockquote>
+     * This transformation has no behavioral effect if the method handle is
+     * not of variable arity.
+     * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
+     * @return a new method handle which can collect any number of trailing arguments
+     *         into an array, before calling the original method handle
+     * @throws IllegalArgumentException if {@code arrayType} is not an array type
+     *         or {@code arrayType} is not assignable to this method handle's trailing parameter type
+     * @see #asCollector
+     */
+    public MethodHandle asVarargsCollector(Class<?> arrayType) {
+        Class<?> arrayElement = arrayType.getComponentType();
+        if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
+        return MethodHandles.asVarargsCollector(this, arrayType);
+    }
+
+    /**
+     * Determine if this method handle
+     * supports {@linkplain #asVarargsCollector variable arity} calls.
+     * Such method handles arise from the following sources:
+     * <ul>
+     * <li>a call to {@linkplain #asVarargsCollector asVarargsCollector}
+     * <li>a call to a {@linkplain java.dyn.MethodHandles.Lookup lookup method}
+     *     which resolves to a variable arity Java method or constructor
+     * <li>an {@code ldc} instruction of a {@code CONSTANT_MethodHandle}
+     *     which resolves to a variable arity Java method or constructor
+     * </ul>
+     * @return true if this method handle accepts more than one arity of {@code invokeGeneric} calls
+     */
+    public boolean isVarargsCollector() {
+        return false;
+    }
+
+    /**
+     * Bind a value {@code x} to the first argument of a method handle, without invoking it.
+     * The new method handle adapts, as its <i>target</i>,
+     * to the current method handle.
      * The type of the bound handle will be
      * the same as the type of the target, except that a single leading
      * reference parameter will be omitted.
@@ -619,74 +790,22 @@ public abstract class MethodHandle
     }
 
     /**
-     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Create a new method handle with the same type as this one,
-     * but whose {@code asType} method invokes the given
-     * {@code typeHandler} on this method handle,
-     * instead of the standard {@code MethodHandles.convertArguments}.
-     * <p>
-     * The new method handle will have the same behavior as the
-     * old one when invoked by {@code invokeExact}.
-     * For {@code invokeGeneric} calls which exactly match
-     * the method type, the two method handles will also
-     * have the same behavior.
-     * For other {@code invokeGeneric} calls, the {@code typeHandler}
-     * will control the behavior of the new method handle.
-     * <p>
-     * Thus, a method handle with an {@code asType} handler can
-     * be configured to accept more than one arity of {@code invokeGeneric}
-     * call, and potentially every possible arity.
-     * It can also be configured to supply default values for
-     * optional arguments, when the caller does not specify them.
-     * <p>
-     * The given method handle must take two arguments and return
-     * one result.  The result it returns must be a method handle
-     * of exactly the requested type.  If the result returned by
-     * the target is null, a {@link NullPointerException} is thrown,
-     * else if the type of the target does not exactly match
-     * the requested type, a {@link WrongMethodTypeException} is thrown.
-     * <p>
-     * A method handle's type handler is not guaranteed to be called every
-     * time its {@code asType} or {@code invokeGeneric} method is called.
-     * If the implementation is faced is able to prove that an equivalent
-     * type handler call has already occurred (on the same two arguments),
-     * it may substitute the result of that previous invocation, without
-     * making a new invocation.  Thus, type handlers should not (in general)
-     * perform significant side effects.
-     * <p>
-     * Therefore, the type handler is invoked as if by this code:
+     * Returns a string representation of the method handle,
+     * starting with the string {@code "MethodHandle"} and
+     * ending with the string representation of the method handle's type.
+     * In other words, this method returns a string equal to the value of:
      * <blockquote><pre>
-     * MethodHandle target = this;      // original method handle
-     * MethodHandle adapter = ...;      // adapted method handle
-     * MethodType requestedType = ...;  // argument to asType()
-     * if (type().equals(requestedType))
-     *    return adapter;
-     * MethodHandle result = (MethodHandle)
-     *    typeHandler.invokeGeneric(target, requestedType);
-     * if (!result.type().equals(requestedType))
-     *    throw new WrongMethodTypeException();
-     * return result;
+     * "MethodHandle" + type().toString()
      * </pre></blockquote>
      * <p>
-     * For example, here is a list-making variable-arity method handle:
-     * <blockquote><pre>
-MethodHandle makeEmptyList = MethodHandles.constant(List.class, Arrays.asList());
-MethodHandle asList = lookup()
-  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
-static MethodHandle collectingTypeHandler(MethodHandle base, MethodType newType) {
-  return asList.asCollector(Object[].class, newType.parameterCount()).asType(newType);
-}
-MethodHandle collectingTypeHandler = lookup()
-  .findStatic(lookup().lookupClass(), "collectingTypeHandler",
-     methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
-MethodHandle makeAnyList = makeEmptyList.withTypeHandler(collectingTypeHandler);
-
-assertEquals("[]", makeAnyList.invokeGeneric().toString());
-assertEquals("[1]", makeAnyList.invokeGeneric(1).toString());
-assertEquals("[two, too]", makeAnyList.invokeGeneric("two", "too").toString());
-     * <pre><blockquote>
+     * Note:  Future releases of this API may add further information
+     * to the string representation.
+     * Therefore, the present syntax should not be parsed by applications.
+     *
+     * @return a string representation of the method handle
      */
-    public MethodHandle withTypeHandler(MethodHandle typeHandler) {
-        return MethodHandles.withTypeHandler(this, typeHandler);
+    @Override
+    public String toString() {
+        return MethodHandleImpl.getNameString(IMPL_TOKEN, this);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,10 @@ public class MethodHandles {
      * <p>
      * In general, the conditions under which a method handle may be
      * created for a method {@code M} are exactly as restrictive as the conditions
-     * under which the lookup class could have compiled a call to {@code M}.
+     * under which the lookup class could have compiled a call to {@code M},
+     * or could have compiled an {@code ldc} instruction loading a
+     * {@code CONSTANT_MethodHandle} of M.
+     * The same point is true of fields and constructors.
      * <p>
      * In some cases, this access is obtained by the Java compiler by creating
      * an wrapper method to access a private method of another class
@@ -379,6 +382,10 @@ public class MethodHandles {
          * The method and all its argument types must be accessible to the lookup class.
          * If the method's class has not yet been initialized, that is done
          * immediately, before the method handle is returned.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param refc the class from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method
@@ -403,6 +410,10 @@ public class MethodHandles {
          * implementation to enter.
          * (The dispatching action is identical with that performed by an
          * {@code invokevirtual} or {@code invokeinterface} instruction.)
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param refc the class or interface from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
@@ -427,6 +438,10 @@ public class MethodHandles {
          * <p>
          * Note:  The requested type must have a return type of {@code void}.
          * This is consistent with the JVM's treatment of constructor signatures.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the constructor's variable arity modifier bit ({@code 0x0080}) is set.
          * @param refc the class or interface from which the method is accessed
          * @param type the type of the method, with the receiver argument omitted, and a void return type
          * @return the desired method handle
@@ -438,7 +453,23 @@ public class MethodHandles {
             assert(ctor.isConstructor());
             checkAccess(refc, ctor);
             MethodHandle rawMH = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
-            return MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawMH);
+            MethodHandle allocMH = MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawMH);
+            return fixVarargs(allocMH, rawMH);
+        }
+
+        /** Return a version of MH which matches matchMH w.r.t. isVarargsCollector. */
+        private static MethodHandle fixVarargs(MethodHandle mh, MethodHandle matchMH) {
+            boolean va1 = mh.isVarargsCollector();
+            boolean va2 = matchMH.isVarargsCollector();
+            if (va1 == va2) {
+                return mh;
+            } else if (va2) {
+                MethodType type = mh.type();
+                int arity = type.parameterCount();
+                return mh.asVarargsCollector(type.parameterType(arity-1));
+            } else {
+                throw new InternalError("already varargs, but template is not: "+mh);
+            }
         }
 
         /**
@@ -458,6 +489,10 @@ public class MethodHandles {
          * If the explicitly specified caller class is not identical with the
          * lookup class, or if this lookup object does not have private access
          * privileges, the access fails.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param refc the class or interface from which the method is accessed
          * @param name the name of the method (which must not be "&lt;init&gt;")
          * @param type the type of the method, with the receiver argument omitted
@@ -547,13 +582,26 @@ public class MethodHandles {
          * so that every call to the method handle will invoke the
          * requested method on the given receiver.
          * <p>
-         * This is equivalent to the following expression:
-         * <code>
-         * {@link #insertArguments insertArguments}({@link #findVirtual findVirtual}(defc, name, type), receiver)
-         * </code>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set
+         * <em>and</em> the trailing array argument is not the only argument.
+         * (If the trailing array argument is the only argument,
+         * the given receiver value will be bound to it.)
+         * <p>
+         * This is equivalent to the following code:
+         * <blockquote><pre>
+MethodHandle mh0 = {@link #findVirtual findVirtual}(defc, name, type);
+MethodHandle mh1 = mh0.{@link MethodHandle#bindTo bindTo}(receiver);
+MethodType mt1 = mh1.type();
+if (mh0.isVarargsCollector() && mt1.parameterCount() > 0) {
+  mh1 = mh1.asVarargsCollector(mt1.parameterType(mt1.parameterCount()-1));
+return mh1;
+         * </pre></blockquote>
          * where {@code defc} is either {@code receiver.getClass()} or a super
          * type of that class, in which the requested method is accessible
          * to the lookup class.
+         * (Note that {@code bindTo} does not preserve variable arity.)
          * @param receiver the object from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
@@ -568,7 +616,9 @@ public class MethodHandles {
             MethodHandle bmh = MethodHandleImpl.bindReceiver(IMPL_TOKEN, dmh, receiver);
             if (bmh == null)
                 throw newNoAccessException(method, lookupClass());
-            return bmh;
+            if (dmh.type().parameterCount() == 0)
+                return dmh;  // bound the trailing parameter; no varargs possible
+            return fixVarargs(bmh, dmh);
         }
 
         /**
@@ -581,6 +631,10 @@ public class MethodHandles {
          * If the method's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
          * If <i>m</i> is not public, do not share the resulting handle with untrusted parties.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param m the reflected method
          * @return a method handle which can invoke the reflected method
          * @exception NoAccessException if access checking fails
@@ -603,6 +657,10 @@ public class MethodHandles {
          * If the method's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class,
          * as if {@code invokespecial} instruction were being linked.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param m the reflected method
          * @param specialCaller the class nominally calling the method
          * @return a method handle which can invoke the reflected method
@@ -628,6 +686,10 @@ public class MethodHandles {
          * <p>
          * If the constructor's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
+         * <p>
+         * The returned method handle will have
+         * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
+         * the constructor's variable arity modifier bit ({@code 0x0080}) is set.
          * @param c the reflected constructor
          * @return a method handle which can invoke the reflected constructor
          * @exception NoAccessException if access checking fails
@@ -637,7 +699,8 @@ public class MethodHandles {
             assert(ctor.isConstructor());
             if (!c.isAccessible())  checkAccess(c.getDeclaringClass(), ctor);
             MethodHandle rawCtor = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
-            return MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawCtor);
+            MethodHandle allocator = MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawCtor);
+            return fixVarargs(allocator, rawCtor);
         }
 
         /**
@@ -785,7 +848,8 @@ public class MethodHandles {
             MethodType rawType = mh.type();
             if (rawType.parameterType(0) == caller)  return mh;
             MethodType narrowType = rawType.changeParameterType(0, caller);
-            return MethodHandleImpl.convertArguments(IMPL_TOKEN, mh, narrowType, rawType, null);
+            MethodHandle narrowMH = MethodHandleImpl.convertArguments(IMPL_TOKEN, mh, narrowType, rawType, null);
+            return fixVarargs(narrowMH, mh);
         }
 
         MethodHandle makeAccessor(Class<?> refc, String name, Class<?> type,
@@ -909,22 +973,21 @@ public class MethodHandles {
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-     * MethodHandle invoker = lookup().findVirtual(MethodHandle.class, "invokeGeneric", type);
-     * MethodType vaType = MethodType.genericMethodType(objectArgCount, true);
-     * vaType = vaType.insertParameterType(0, MethodHandle.class);
-     * int spreadArgCount = type.parameterCount - objectArgCount;
-     * invoker = invoker.asSpreader(Object.class, spreadArgCount);
-     * return invoker.asType(vaType);
+MethodHandle invoker = publicLookup()
+  .findVirtual(MethodHandle.class, "invokeGeneric", type)
+int spreadArgCount = type.parameterCount - objectArgCount;
+invoker = invoker.asSpreader(Object[].class, spreadArgCount);
+return invoker;
      * </pre></blockquote>
      * @param type the desired target type
      * @param objectArgCount number of fixed (non-varargs) {@code Object} arguments
      * @return a method handle suitable for invoking any method handle of the given type
      */
     static public
-    MethodHandle varargsInvoker(MethodType type, int objectArgCount) {
+    MethodHandle spreadInvoker(MethodType type, int objectArgCount) {
         if (objectArgCount < 0 || objectArgCount > type.parameterCount())
             throw new IllegalArgumentException("bad argument count "+objectArgCount);
-        return invokers(type).varargsInvoker(objectArgCount);
+        return invokers(type).spreadInvoker(objectArgCount);
     }
 
     /**
@@ -1826,7 +1889,10 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * the given {@code target} on the incoming arguments,
      * and returning or throwing whatever the {@code target}
      * returns or throws.  The invocation will be as if by
-     * {@code target.invokeExact}.
+     * {@code target.invokeGeneric}.
+     * The target's type will be checked before the SAM
+     * instance is created, as if by a call to {@code asType},
+     * which may result in a {@code WrongMethodTypeException}.
      * <p>
      * The method handle may throw an <em>undeclared exception</em>,
      * which means any checked exception (or other checked throwable)
@@ -1874,15 +1940,17 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * {@link java.dyn.MethodHandles.AsInstanceObject AsInstanceObject}
      * in the adapters, so that generic code can extract the underlying
      * method handle without knowing where the SAM adapter came from.
+     * <p>
+     * Future versions of this API may accept additional types,
+     * such as abstract classes with single abstract methods.
      * @param target the method handle to invoke from the wrapper
      * @param samType the desired type of the wrapper, a SAM type
      * @return a correctly-typed wrapper for the given {@code target}
-     * @throws IllegalArgumentException if the {@code target} throws
-     *         an undeclared exception
+     * @throws IllegalArgumentException if the {@code samType} is not a
+     *         valid argument to this method
+     * @throws WrongMethodTypeException if the {@code target} cannot
+     *         be converted to the type required by the SAM type
      */
-    // ISSUE: Should we delegate equals/hashCode to the targets?
-    // Not useful unless there is a stable equals/hashCode behavior
-    // for MethodHandle, but there isn't.
     public static
     <T> T asInstance(final MethodHandle target, final Class<T> samType) {
         // POC implementation only; violates the above contract several ways
@@ -1890,8 +1958,9 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         if (sam == null)
             throw new IllegalArgumentException("not a SAM type: "+samType.getName());
         MethodType samMT = MethodType.methodType(sam.getReturnType(), sam.getParameterTypes());
-        if (!samMT.equals(target.type()))
-            throw new IllegalArgumentException("wrong method type: "+target+" should match "+sam);
+        MethodHandle checkTarget = target.asType(samMT);  // make throw WMT
+        checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
+        final MethodHandle vaTarget = checkTarget.asSpreader(Object[].class, samMT.parameterCount());
         return samType.cast(Proxy.newProxyInstance(
                 samType.getClassLoader(),
                 new Class[]{ samType, AsInstanceObject.class },
@@ -1905,7 +1974,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
                         if (method.getDeclaringClass() == AsInstanceObject.class)
                             return getArg(method.getName());
                         if (method.equals(sam))
-                            return target.invokeVarargs(args);
+                            return vaTarget.invokeExact(args);
                         if (isObjectMethod(method))
                             return callObjectMethod(this, method, args);
                         throw new InternalError();
@@ -1991,7 +2060,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     }
 
     /*non-public*/
-    static MethodHandle withTypeHandler(MethodHandle target, MethodHandle typeHandler) {
-        return MethodHandleImpl.withTypeHandler(IMPL_TOKEN, target, typeHandler);
+    static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
+        return MethodHandleImpl.asVarargsCollector(IMPL_TOKEN, target, arrayType);
     }
 }
