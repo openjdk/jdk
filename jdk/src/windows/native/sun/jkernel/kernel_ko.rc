@@ -23,6 +23,7 @@
  * questions.
  */
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -45,6 +46,7 @@ BEGIN
                     12, 100, 265, 14
     PUSHBUTTON	    "취소",  2, 285, 100, 46, 14
 END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -71,50 +73,50 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_DOWNLOAD_CANCEL_MESSAGE   "응용 프로그램에서 필요한 추가 구성 요소의 설치를 취소하면 응용 프로그램이 종료될 수 있습니다.\n\n추가 구성 요소의 설치를 취소하시겠습니까?"
+    IDS_DOWNLOAD_CANCEL_MESSAGE   "응용 프로그램에 필요한 추가 구성 요소의 설치를 취소하면 응용 프로그램이 종료될 수 있습니다.\n\n추가 구성 요소의 설치를 취소하겠습니까?"
     IDS_DOWNLOAD_CANCEL_CAPTION   "취소 - 추가 구성 요소"
     IDS_DOWNLOAD_CANCEL_INSTRUCTION   ""
-    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "연결 시간 초과"
+    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "연결 시간이 초과됨"
     IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "인터넷에 연결할 수 없습니다."
-    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "서버 오류(오류 %s)"
-    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "서비스를 사용할 수 없음(오류 %s)"
-    IDS_HTTP_INSTRUCTION_FORBIDDEN            "액세스가 거부되었거나 금지됨(오류 %s)"
-    IDS_HTTP_STATUS_OTHER                     "이 요청 동안 오류가 발생했습니다. 요청을 다시 시도하시겠습니까?"
+    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "서버 오류(%s 오류)"
+    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "서비스를 사용할 수 없음(%s 오류)"
+    IDS_HTTP_INSTRUCTION_FORBIDDEN            "액세스가 거부되거나 금지됨(%s 오류)"
+    IDS_HTTP_STATUS_OTHER                     "이 요청을 처리하는 중 오류가 발생했습니다. 요청을 다시 시도하겠습니까?"
 
 // HTTP status code
-    IDS_HTTP_STATUS_REQUEST_TIMEOUT "서버가 요청을 기다리는 동안 시간이 초과되었습니다."
-    IDS_HTTP_STATUS_FORBIDDEN		"서버가 요청을 이해했지만 이행하기를 거부합니다."
-    IDS_HTTP_STATUS_SERVER_ERROR	"서버에서 요청 이행을 방해하는 예상치 못한 조건이 발견되었습니다."
-    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"서버가 일시적으로 과부하되었습니다."
+    IDS_HTTP_STATUS_REQUEST_TIMEOUT "요청된 구성 요소를 다운로드하는 데 사용된 서버가 응답하지 않아 연결 시간이 초과되었습니다. 다시 연결하겠습니까?"
+    IDS_HTTP_STATUS_FORBIDDEN		"응용 프로그램에서 요청한 구성 요소를 다운로드하기 위해 서버에 액세스할 권한이 없습니다. 서버에 대한 액세스를 재시도하겠습니까?"
+    IDS_HTTP_STATUS_SERVER_ERROR	"서버에 오류가 발생하여 요청을 완료할 수 없습니다. 요청을 다시 시도하겠습니까?"
+    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"요청된 서비스를 일시적으로 사용할 수 없습니다. 요청을 다시 시도하겠습니까?"
 
 
     IDS_DOWNLOAD_STATUS_RETRY		"현재 서버가 사용 중이므로 %ld초 후에 다시 시도하십시오."
-
-    IDS_ERROR_CAPTION               "오류 - Java 커널"
-    IDS_HOURSMINUTESECOND	    "예상된 남은 시간: %d시간 %d분 %.0f초"
-    IDS_HOURMINUTESECOND	    "예상된 남은 시간: %d시간 %d분 %.0f초"
-    IDS_MINUTESECOND 		    "예상된 남은 시간: %d분 %.0f초"
-    IDS_SECOND                      "예상된 남은 시간: %.0f초"
-    IDS_DISK_FULL_ERROR_CAPTION     "디스크가 가득 참"
-    IDS_DISK_FULL_ERROR             "디스크가 가득 차서 Java Kernel에서 필요한 구성 요소를 다운로드하지 못했습니다. 다시 시도하시겠습니까?"
-    IDS_DISK_WRITE_ERROR_CAPTION    "디스크 쓰기 오류"
-    IDS_DISK_WRITE_ERROR            "디스크에 쓰는 동안 Java Kernel에서 오류가 발생했습니다. 다시 시도하시겠습니까?"
-    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "시스템의 현재 인터넷 연결 설정으로는 Java Kernel을 계속할 수 없습니다.  Windows 제어판에서 인터넷 옵션 -> 연결을 선택하여 설정 및 프록시 정보가 올바른지 확인하십시오."
+  
+    IDS_ERROR_CAPTION               "Java Installer"
+    IDS_HOURSMINUTESECOND	    "예상되는 남은 시간: %d시간 %d분 %.0f초"
+    IDS_HOURMINUTESECOND	    "예상되는 남은 시간: %d시간 %d분 %.0f초"
+    IDS_MINUTESECOND 		    "예상되는 남은 시간: %d분 %.0f초"
+    IDS_SECOND                      "예상되는 남은 시간: %.0f초"
+    IDS_DISK_FULL_ERROR_CAPTION     "디스크 가득 참 %s"
+    IDS_DISK_FULL_ERROR             "디스크 공간이 부족하여 요청된 구성 요소를 다운로드할 수 없습니다. 디스크 공간을 확보한 다음 재시도하십시오."
+    IDS_DISK_WRITE_ERROR_CAPTION    "%s 디스크에 쓸 수 없습니다."
+    IDS_DISK_WRITE_ERROR            "디스크에 쓰는 중 오류가 발생했습니다. 쓸 수 없도록 디스크가 보호되고 있는지 확인하십시오."
+    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java가 인터넷에 연결할 수 없습니다. Windows 제어판에서 인터넷 옵션 -> 연결을 선택하여 인터넷 연결 설정이 올바른지 확인하고 방화벽에서 java.exe가 인터넷에 액세스할 수 있도록 허용하는지 확인하십시오."
 
     IDS_DOWNLOAD_RETRY             "다운로드 오류"
-    IDS_DOWNLOAD_RETRY_TEXT        "요청된 구성 요소를 다운로드하는 동안 오류가 발생했습니다. 이 구성 요소를 다시 다운로드하시겠습니까?"
+    IDS_DOWNLOAD_RETRY_TEXT        "요청된 일부 구성 요소를 다운로드하는 중 오류가 발생했습니다. 해당 구성 요소를 다시 다운로드해 보겠습니까?"
 
-    IDS_DOWNLOAD                   "추가 구성 요소 설치"
-	IDS_DOWNLOAD_UNPACKING         "번들 압축 풀기"
+    IDS_DOWNLOAD                   "추가 구성 요소를 설치하는 중"
+    IDS_DOWNLOAD_UNPACKING         "번들 압축을 푸는 중"
     IDS_DOWNLOAD_TEXT              "필요한 추가 구성 요소가 다운로드되어 설치되면 Java 응용 프로그램이 시작됩니다."
     
-    IDS_FILE_UPDATE_ERROR          "%s%s을(를) 업데이트하는 동안 오류가 발생했습니다."
-    IDS_FILE_DELETE_ERROR          "%s을(를) 제거하는 동안 오류가 발생했습니다."
+    IDS_FILE_UPDATE_ERROR          "%s%s을(를) 갱신하는 중 오류가 발생했습니다."
+    IDS_FILE_DELETE_ERROR          "%s을(를) 제거하는 중 오류가 발생했습니다."
     IDS_JAVA_HOME_ERROR            "Java 홈 디렉토리를 확인할 수 없습니다."
     IDS_KERNEL_HOME_ERROR          "jkernel.dll의 경로를 확인할 수 없습니다."
     IDS_JBROKER_ERROR              "jbroker.exe를 시작할 수 없습니다."
-    IDS_FATAL_ERROR                "필요한 구성 요소를 다운로드하지 못했습니다.  프로그램이 종료됩니다."
-    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "다운로드 서버와 통신하지 못했습니다.  프로그램이 종료됩니다."
-    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "다운로드 서버와의 통신 오류가 발생했습니다.  프로그램이 종료됩니다."
-    IDS_ERROR_MALFORMED_URL "URL '%s'에서 다운로드하지 못했습니다.  프로그램이 종료됩니다."
+    IDS_FATAL_ERROR                "Java가 필요한 구성 요소를 다운로드하지 못했습니다. 프로그램이 종료됩니다."
+    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "Java가 다운로드 서버와 통신하지 못했습니다. 프로그램이 종료됩니다."
+    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "다운로드 서버와 통신하는 중 Java에 오류가 발생했습니다. 프로그램이 종료됩니다."
+    IDS_ERROR_MALFORMED_URL "Java가 URL '%s'에서 다운로드하지 못했습니다. 프로그램이 종료됩니다."
 END

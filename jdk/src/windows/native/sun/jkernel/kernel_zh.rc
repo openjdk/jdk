@@ -23,6 +23,7 @@
  * questions.
  */
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -45,6 +46,7 @@ BEGIN
                     12, 100, 265, 14
     PUSHBUTTON	    "取消",  2, 285, 100, 46, 14
 END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -71,45 +73,45 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_DOWNLOAD_CANCEL_MESSAGE   "取消安装应用程序所需的额外组件可能会导致该应用程序退出。\n\n是否确定要取消安装额外组件？"
-    IDS_DOWNLOAD_CANCEL_CAPTION   "取消 - 额外组件"
+    IDS_DOWNLOAD_CANCEL_MESSAGE   "取消安装应用程序所需的附加组件可能会导致应用程序退出。\n\n是否确实要取消安装附加组件?"
+    IDS_DOWNLOAD_CANCEL_CAPTION   "取消 - 附加组件"
     IDS_DOWNLOAD_CANCEL_INSTRUCTION   ""
-    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "连接已超时"
+    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "连接超时"
     IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "无法连接到 Internet"
-    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "服务器错误（错误 %s）"
-    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "服务不可用（错误 %s）"
-    IDS_HTTP_INSTRUCTION_FORBIDDEN            "拒绝访问或禁止访问（错误 %s）"
-    IDS_HTTP_STATUS_OTHER                     "在此请求期间出现错误。您是否要重试请求？"
+    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "服务器错误 (错误 %s)"
+    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "服务不可用 (错误 %s)"
+    IDS_HTTP_INSTRUCTION_FORBIDDEN            "访问被拒绝或禁止 (错误 %s)"
+    IDS_HTTP_STATUS_OTHER                     "此请求期间出错。是否要重新尝试该请求?"
 
 // HTTP status code
-    IDS_HTTP_STATUS_REQUEST_TIMEOUT "服务器等待请求时超时。"
-    IDS_HTTP_STATUS_FORBIDDEN		"服务器已接受请求，但拒绝执行。"
-    IDS_HTTP_STATUS_SERVER_ERROR	"服务器遇到意外情况，无法完成请求。"
-    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"服务暂时过载。"
+    IDS_HTTP_STATUS_REQUEST_TIMEOUT "用于下载请求组件的服务器未响应, 连接已超时。是否要重新尝试连接?"
+    IDS_HTTP_STATUS_FORBIDDEN		"您没有访问服务器的权限, 无法下载应用程序所请求的组件。是否要重试对服务器的访问?"
+    IDS_HTTP_STATUS_SERVER_ERROR	"服务器出错, 无法完成请求。是否要重试该请求?"
+    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"请求的服务暂时不可用。是否要重新尝试该请求?"
 
 
-    IDS_DOWNLOAD_STATUS_RETRY		"服务器正忙，请在 %ld 秒后重试..."
-
-    IDS_ERROR_CAPTION               "错误 - Java Kernel"
-    IDS_HOURSMINUTESECOND	    "估计剩余时间:%d 小时 %d 分钟 %.0f 秒"
-    IDS_HOURMINUTESECOND	    "估计剩余时间:%d 小时  %d 分钟 %.0f 秒"
-    IDS_MINUTESECOND 		    "估计剩余时间:%d 分钟 %.0f 秒"
-    IDS_SECOND                      "估计剩余时间:%.0f 秒"
-    IDS_DISK_FULL_ERROR_CAPTION     "磁盘已满"
-    IDS_DISK_FULL_ERROR             "由于磁盘已满，Java Kernel 无法下载所需的组件。是否重试？"
-    IDS_DISK_WRITE_ERROR_CAPTION    "磁盘写入错误"
-    IDS_DISK_WRITE_ERROR            "在向磁盘执行写入操作时 Java Kernel 遇到错误。是否重试？"
-    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "在使用系统当前的 Internet 连接设置的情况下，Java Kernel 无法继续执行。在 Windows""控制面板""中，请检查""Internet 选项""->""连接""以确保设置和代理信息正确。"
+    IDS_DOWNLOAD_STATUS_RETRY		"服务器正忙, 请在 %ld 秒后重试..."
+  
+    IDS_ERROR_CAPTION               "Java 安装程序"
+    IDS_HOURSMINUTESECOND	    "估计剩余时间: %d 小时 %d 分 %.0f 秒"
+    IDS_HOURMINUTESECOND	    "估计剩余时间: %d 小时 %d 分 %.0f 秒"
+    IDS_MINUTESECOND 		    "估计剩余时间: %d 分 %.0f 秒"
+    IDS_SECOND                      "估计剩余时间: %.0f 秒"
+    IDS_DISK_FULL_ERROR_CAPTION     "磁盘已满 %s"
+    IDS_DISK_FULL_ERROR             "磁盘上没有足够的空间, 无法下载请求的组件。清理磁盘上的空间, 然后重试。"
+    IDS_DISK_WRITE_ERROR_CAPTION    "无法写入磁盘 %s"
+    IDS_DISK_WRITE_ERROR            "写入磁盘时出错。请检查磁盘是否处于写保护状态。"
+    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java 无法连接到 Internet。请确保 Internet 连接设置正确 (可在 Windows 控制面板的“Internet 选项”>“连接”中找到这些设置) 并且防火墙允许 java.exe 访问 Internet。"
 
     IDS_DOWNLOAD_RETRY             "下载错误"
-    IDS_DOWNLOAD_RETRY_TEXT        "在下载某些请求的组件期间发生错误。是否要再试一次下载这些组件？"
+    IDS_DOWNLOAD_RETRY_TEXT        "在下载某些请求的组件期间出错。是否要再试一次下载这些组件?"
 
-    IDS_DOWNLOAD                   "安装其他组件"
-	IDS_DOWNLOAD_UNPACKING         "正在解压缩包"
-    IDS_DOWNLOAD_TEXT              "下载并安装 Java 应用程序所需的其他组件后，该应用程序将启动。"
+    IDS_DOWNLOAD                   "正在安装其他组件"
+    IDS_DOWNLOAD_UNPACKING         "正在解压缩包"
+    IDS_DOWNLOAD_TEXT              "下载并安装 Java 应用程序所需的其他组件后, 该应用程序将启动。"
     
-    IDS_FILE_UPDATE_ERROR          "更新 %s%s 时发生错误。"
-    IDS_FILE_DELETE_ERROR          "删除 %s 时发生错误。"
+    IDS_FILE_UPDATE_ERROR          "更新 %s%s 时出错。"
+    IDS_FILE_DELETE_ERROR          "删除 %s 时出错。"
     IDS_JAVA_HOME_ERROR            "无法确定 Java 主目录。"
     IDS_KERNEL_HOME_ERROR          "无法确定 jkernel.dll 的路径。"
     IDS_JBROKER_ERROR              "无法启动 jbroker.exe。"
