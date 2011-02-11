@@ -59,8 +59,8 @@ import java.security.BasicPermission;
  *
  * @since 1.7
  *
- * @see Path#createLink
- * @see Path#createSymbolicLink
+ * @see Files#createLink
+ * @see Files#createSymbolicLink
  */
 public final class LinkPermission extends BasicPermission {
     static final long serialVersionUID = -1441492453772213220L;

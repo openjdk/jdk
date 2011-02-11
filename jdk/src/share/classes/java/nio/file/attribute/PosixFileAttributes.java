@@ -37,8 +37,6 @@ import java.util.Set;
  * PosixFileAttributeView#readAttributes readAttributes} method.
  *
  * @since 1.7
- *
- * @see Attributes#readPosixFileAttributes
  */
 
 public interface PosixFileAttributes

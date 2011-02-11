@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 
 import java.util.regex.*;
+import java.math.BigDecimal;
 
 public class ParseDouble {
 
@@ -416,7 +417,15 @@ public class ParseDouble {
 
         "0x00100p1",
         "0x00.100p1",
-        "0x001.100p1"
+        "0x001.100p1",
+
+        // Limits
+
+        "1.7976931348623157E308",     // Double.MAX_VALUE
+        "4.9e-324",                   // Double.MIN_VALUE
+        "2.2250738585072014e-308",    // Double.MIN_NORMAL
+
+        "2.2250738585072012e-308",    // near Double.MIN_NORMAL
     };
 
     static String paddedBadStrings[];
@@ -546,6 +555,32 @@ public class ParseDouble {
 
     }
 
+    /**
+     * For each subnormal power of two, test at boundaries of
+     * region that should convert to that value.
+     */
+    private static void testSubnormalPowers() {
+        BigDecimal TWO = BigDecimal.valueOf(2);
+        // An ulp is the same for all subnormal values
+        BigDecimal ulp_BD = new BigDecimal(Double.MIN_VALUE);
+
+        // Test subnormal powers of two
+        for(int i = -1074; i <= -1022; i++) {
+            double d = Math.scalb(1.0, i);
+
+            /*
+             * The region [d - ulp/2, d + ulp/2] should round to d.
+             */
+            BigDecimal d_BD = new BigDecimal(d);
+
+            BigDecimal lowerBound = d_BD.subtract(ulp_BD.divide(TWO));
+            BigDecimal upperBound = d_BD.add(ulp_BD.divide(TWO));
+
+            double convertedLowerBound = Double.parseDouble(lowerBound.toString());
+            double convertedUpperBound = Double.parseDouble(upperBound.toString());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -558,5 +593,7 @@ public class ParseDouble {
         testRegex(paddedGoodStrings, false);
         testRegex(badStrings, true);
         testRegex(paddedBadStrings, true);
+
+        testSubnormalPowers();
     }
 }

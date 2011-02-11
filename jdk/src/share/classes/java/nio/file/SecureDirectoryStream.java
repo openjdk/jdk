@@ -43,7 +43,7 @@ import java.io.IOException;
  *
  * <p> A {@code SecureDirectoryStream} requires corresponding support from the
  * underlying operating system. Where an implementation supports this features
- * then the {@code DirectoryStream} returned by the {@link Path#newDirectoryStream
+ * then the {@code DirectoryStream} returned by the {@link Files#newDirectoryStream
  * newDirectoryStream} method will be a {@code SecureDirectoryStream} and must
  * be cast to that type in order to invoke the methods defined by this interface.
  *
@@ -56,20 +56,15 @@ import java.io.IOException;
  * @since   1.7
  */
 
-public abstract class SecureDirectoryStream<T>
-    implements DirectoryStream<T>
+public interface SecureDirectoryStream<T>
+    extends DirectoryStream<T>
 {
-    /**
-     * Initialize a new instance of this class.
-     */
-    protected SecureDirectoryStream() { }
-
     /**
      * Opens the directory identified by the given path, returning a {@code
      * SecureDirectoryStream} to iterate over the entries in the directory.
      *
      * <p> This method works in exactly the manner specified by the {@link
-     * Path#newDirectoryStream() newDirectoryStream} method for the case that
+     * Files#newDirectoryStream(Path) newDirectoryStream} method for the case that
      * the {@code path} parameter is an {@link Path#isAbsolute absolute} path.
      * When the parameter is a relative path then the directory to open is
      * relative to this open directory. The {@link
@@ -99,8 +94,7 @@ public abstract class SecureDirectoryStream<T>
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
      */
-    public abstract SecureDirectoryStream<T> newDirectoryStream(T path,
-                                                                LinkOption... options)
+    SecureDirectoryStream<T> newDirectoryStream(T path, LinkOption... options)
         throws IOException;
 
     /**
@@ -108,11 +102,11 @@ public abstract class SecureDirectoryStream<T>
      * channel to access the file.
      *
      * <p> This method works in exactly the manner specified by the {@link
-     * Path#newByteChannel Path.newByteChannel} method for the
+     * Files#newByteChannel Files.newByteChannel} method for the
      * case that the {@code path} parameter is an {@link Path#isAbsolute absolute}
      * path. When the parameter is a relative path then the file to open or
      * create is relative to this open directory. In addition to the options
-     * defined by the {@code Path.newByteChannel} method, the {@link
+     * defined by the {@code Files.newByteChannel} method, the {@link
      * LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} option may be used to
      * ensure that this method fails if the file is a symbolic link.
      *
@@ -149,15 +143,15 @@ public abstract class SecureDirectoryStream<T>
      *          checkWrite} method is invoked to check write access to the path
      *          if the file is opened for writing.
      */
-    public abstract SeekableByteChannel newByteChannel(T path,
-                                                       Set<? extends OpenOption> options,
-                                                       FileAttribute<?>... attrs)
+    SeekableByteChannel newByteChannel(T path,
+                                       Set<? extends OpenOption> options,
+                                       FileAttribute<?>... attrs)
         throws IOException;
 
     /**
      * Deletes a file.
      *
-     * <p> Unlike the {@link Path#delete delete()} method, this method does
+     * <p> Unlike the {@link Files#delete delete()} method, this method does
      * not first examine the file to determine if the file is a directory.
      * Whether a directory is deleted by this method is system dependent and
      * therefore not specified. If the file is a symbolic link, then the link
@@ -179,12 +173,12 @@ public abstract class SecureDirectoryStream<T>
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
      *          method is invoked to check delete access to the file
      */
-    public abstract void deleteFile(T path) throws IOException;
+    void deleteFile(T path) throws IOException;
 
     /**
      * Deletes a directory.
      *
-     * <p> Unlike the {@link Path#delete delete()} method, this method
+     * <p> Unlike the {@link Files#delete delete()} method, this method
      * does not first examine the file to determine if the file is a directory.
      * Whether non-directories are deleted by this method is system dependent and
      * therefore not specified. When the parameter is a relative path then the
@@ -207,12 +201,12 @@ public abstract class SecureDirectoryStream<T>
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
      *          method is invoked to check delete access to the directory
      */
-    public abstract void deleteDirectory(T path) throws IOException;
+    void deleteDirectory(T path) throws IOException;
 
     /**
      * Move a file from this directory to another directory.
      *
-     * <p> This method works in a similar manner to {@link Path#moveTo moveTo}
+     * <p> This method works in a similar manner to {@link Files#move move}
      * method when the {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} option
      * is specified. That is, this method moves a file as an atomic file system
      * operation. If the {@code srcpath} parameter is an {@link Path#isAbsolute
@@ -247,7 +241,7 @@ public abstract class SecureDirectoryStream<T>
      *          method is invoked to check write access to both the source and
      *          target file.
      */
-    public abstract void move(T srcpath, SecureDirectoryStream<T> targetdir, T targetpath)
+    void move(T srcpath, SecureDirectoryStream<T> targetdir, T targetpath)
         throws IOException;
 
     /**
@@ -273,7 +267,7 @@ public abstract class SecureDirectoryStream<T>
      *          this directory stream, or {@code null} if the attribute view
      *          type is not available
      */
-    public abstract <V extends FileAttributeView> V getFileAttributeView(Class<V> type);
+    <V extends FileAttributeView> V getFileAttributeView(Class<V> type);
 
     /**
      * Returns a new file attribute view to access the file attributes of a file
@@ -306,7 +300,7 @@ public abstract class SecureDirectoryStream<T>
      *          type is not available
      *
      */
-    public abstract <V extends FileAttributeView> V getFileAttributeView(T path,
-                                                                         Class<V> type,
-                                                                         LinkOption... options);
+    <V extends FileAttributeView> V getFileAttributeView(T path,
+                                                         Class<V> type,
+                                                         LinkOption... options);
 }

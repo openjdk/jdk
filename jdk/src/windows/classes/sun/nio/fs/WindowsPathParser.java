@@ -74,8 +74,6 @@ class WindowsPathParser {
      * Parses the given input as a Windows path
      */
     static Result parse(String input) {
-        if (input == null || input.length() == 0)
-            throw new InvalidPathException(input, "Empty or null path");
         return parse(input, true);
     }
 
@@ -135,7 +133,7 @@ class WindowsPathParser {
             }
         }
         if (off == 0) {
-            if (isSlash(input.charAt(0))) {
+            if (len > 0 && isSlash(input.charAt(0))) {
                 type = WindowsPathType.DIRECTORY_RELATIVE;
                 root = "\\";
             } else {

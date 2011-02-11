@@ -46,8 +46,6 @@
  *     <td>Can read or update user-defined file attributes</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileStoreAttributeView}</i></tt></td>
  *     <td>Can read or update file system attributes</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileStoreSpaceAttributeView}&nbsp;&nbsp;</i></tt></td>
- *     <td>Can read file system <em>space usage</em> related attributes</td></tr>
  * </table></blockquote>
  *
  * <p> An attribute view provides a read-only or updatable view of the non-opaque
@@ -55,7 +53,7 @@
  * The {@link java.nio.file.attribute.FileAttributeView} interface is
  * extended by several other interfaces that that views to specific sets of file
  * attributes. {@code FileAttributeViews} are selected by invoking the {@link
- * java.nio.file.FileRef#getFileAttributeView} method with a
+ * java.nio.file.Files#getFileAttributeView} method with a
  * <em>type-token</em> to identify the required view. Views can also be identified
  * by name. The {@link java.nio.file.attribute.FileStoreAttributeView} interface
  * provides access to file store attributes. A {@code FileStoreAttributeView} of
@@ -82,13 +80,6 @@
  * file attribute. The ACL model used by this file attribute view is based
  * on the model defined by <a href="http://www.ietf.org/rfc/rfc3530.txt">
  * <i>RFC&nbsp;3530: Network File System (NFS) version 4 Protocol</i></a>.
- *
- * <p> The {@link java.nio.file.attribute.FileStoreSpaceAttributeView} class
- * defines methods to read file system space usage related attributes of a file system.
- *
- * <p> The {@link java.nio.file.attribute.Attributes} utility class defines
- * static methods to access file or file system attribute using the above
- * attribute views.
  *
  * <p> In addition to attribute views, this package also defines classes and
  * interfaces that are used when accessing attributes:

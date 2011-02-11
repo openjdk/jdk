@@ -31,29 +31,23 @@
 
 package com.sun.nio.zipfs;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
-import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.*;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.*;
 import java.util.*;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
+
 
 /**
  *
  * @author  Xueming Shen, Rajendra Gutupalli,Jaya Hangal
  */
 
-public class ZipPath extends Path {
+public class ZipPath implements Path {
 
     private final ZipFileSystem zfs;
     private final byte[] path;
@@ -82,7 +76,7 @@ public class ZipPath extends Path {
     }
 
     @Override
-    public Path getName() {
+    public Path getFileName() {
         initOffsets();
         int count = offsets.length;
         if (count == 0)
@@ -162,8 +156,7 @@ public class ZipPath extends Path {
         return realPath;
     }
 
-    @Override
-    public boolean isHidden() {
+    boolean isHidden() {
         return false;
     }
 
@@ -230,7 +223,7 @@ public class ZipPath extends Path {
     public Path relativize(Path other) {
         final ZipPath o = checkPath(other);
         if (o.equals(this))
-            return null;
+            return new ZipPath(getFileSystem(), new byte[0], true);
         if (/* this.getFileSystem() != o.getFileSystem() || */
             this.isAbsolute() != o.isAbsolute()) {
             throw new IllegalArgumentException();
@@ -272,13 +265,11 @@ public class ZipPath extends Path {
 
     @Override
     public boolean isAbsolute() {
-        return (this.path[0] == '/');
+        return (this.path.length > 0 && path[0] == '/');
     }
 
     @Override
     public ZipPath resolve(Path other) {
-        if (other == null)
-            return this;
         final ZipPath o = checkPath(other);
         if (o.isAbsolute())
             return o;
@@ -297,39 +288,70 @@ public class ZipPath extends Path {
     }
 
     @Override
-    public ZipPath resolve(String other) {
-        return resolve(getFileSystem().getPath(other));
+    public Path resolveSibling(Path other) {
+        if (other == null)
+            throw new NullPointerException();
+        Path parent = getParent();
+        return (parent == null) ? other : parent.resolve(other);
     }
 
     @Override
     public boolean startsWith(Path other) {
         final ZipPath o = checkPath(other);
-        if (o.isAbsolute() != this.isAbsolute())
+        if (o.isAbsolute() != this.isAbsolute() ||
+            o.path.length > this.path.length)
             return false;
-        final int oCount = o.getNameCount();
-        if (getNameCount() < oCount)
-            return false;
-        for (int i = 0; i < oCount; i++) {
-            if (!o.getName(i).equals(getName(i)))
+        int olast = o.path.length;
+        for (int i = 0; i < olast; i++) {
+            if (o.path[i] != this.path[i])
                 return false;
         }
-        return true;
+        olast--;
+        return o.path.length == this.path.length ||
+               o.path[olast] == '/' ||
+               this.path[olast + 1] == '/';
     }
 
     @Override
     public boolean endsWith(Path other) {
         final ZipPath o = checkPath(other);
-        if (o.isAbsolute())
-            return this.isAbsolute() ? this.equals(o) : false;
-        int i = o.getNameCount();
-        int j = this.getNameCount();
-        if (j < i)
+        int olast = o.path.length - 1;
+        if (olast > 0 && o.path[olast] == '/')
+            olast--;
+        int last = this.path.length - 1;
+        if (last > 0 && this.path[last] == '/')
+            last--;
+        if (olast == -1)    // o.path.length == 0
+            return last == -1;
+        if ((o.isAbsolute() &&(!this.isAbsolute() || olast != last)) ||
+            (last < olast))
             return false;
-        for (--i, --j; i >= 0; i--, j--) {
-            if (!o.getName(i).equals(this.getName(j)))
+        for (; olast >= 0; olast--, last--) {
+            if (o.path[olast] != this.path[last])
                 return false;
         }
-        return true;
+        return o.path[olast + 1] == '/' ||
+               last == -1 || this.path[last] == '/';
+    }
+
+    @Override
+    public ZipPath resolve(String other) {
+        return resolve(getFileSystem().getPath(other));
+    }
+
+    @Override
+    public final Path resolveSibling(String other) {
+        return resolveSibling(getFileSystem().getPath(other));
+    }
+
+    @Override
+    public final boolean startsWith(String other) {
+        return startsWith(getFileSystem().getPath(other));
+    }
+
+    @Override
+    public final boolean endsWith(String other) {
+        return endsWith(getFileSystem().getPath(other));
     }
 
     @Override
@@ -337,8 +359,6 @@ public class ZipPath extends Path {
         byte[] resolved = getResolved();
         if (resolved == path)    // no change
             return this;
-        if (resolved.length == 0)
-            return null;
         return new ZipPath(zfs, resolved, true);
     }
 
@@ -548,198 +568,6 @@ public class ZipPath extends Path {
         return len1 - len2;
     }
 
-    @Override
-    public Path createSymbolicLink(
-            Path target, FileAttribute<?>... attrs) throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public Path createLink(
-            Path existing) throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public Path readSymbolicLink() throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public Path createDirectory(FileAttribute<?>... attrs)
-        throws IOException
-    {
-        zfs.createDirectory(getResolvedPath(), attrs);
-        return this;
-    }
-
-    public final Path createFile(FileAttribute<?>... attrs)
-        throws IOException
-    {
-        OutputStream os = newOutputStream(CREATE_NEW, WRITE);
-        try {
-            os.close();
-        } catch (IOException x) {}
-        return this;
-    }
-
-    @Override
-    public InputStream newInputStream(OpenOption... options)
-            throws IOException {
-        if (options.length > 0) {
-            for (OpenOption opt : options) {
-                if (opt != READ)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
-        }
-        return zfs.newInputStream(getResolvedPath());
-    }
-
-    private static final DirectoryStream.Filter<Path> acceptAllFilter =
-        new DirectoryStream.Filter<>() {
-            @Override public boolean accept(Path entry) { return true; }
-        };
-
-    @Override
-    public final DirectoryStream<Path> newDirectoryStream() throws IOException {
-        return newDirectoryStream(acceptAllFilter);
-    }
-
-    @Override
-    public DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter)
-        throws IOException
-    {
-        return new ZipDirectoryStream(this, filter);
-    }
-
-    @Override
-    public final DirectoryStream<Path> newDirectoryStream(String glob)
-        throws IOException
-    {
-        // avoid creating a matcher if all entries are required.
-        if (glob.equals("*"))
-            return newDirectoryStream();
-
-        // create a matcher and return a filter that uses it.
-        final PathMatcher matcher = getFileSystem().getPathMatcher("glob:" + glob);
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<>() {
-            @Override
-            public boolean accept(Path entry)  {
-                return matcher.matches(entry.getName());
-            }
-        };
-        return newDirectoryStream(filter);
-    }
-
-    @Override
-    public final void delete() throws IOException {
-        zfs.deleteFile(getResolvedPath(), true);
-    }
-
-    @Override
-    public final void deleteIfExists() throws IOException {
-        zfs.deleteFile(getResolvedPath(), false);
-    }
-
-    ZipFileAttributes getAttributes() throws IOException
-    {
-        ZipFileAttributes zfas = zfs.getFileAttributes(getResolvedPath());
-        if (zfas == null)
-            throw new NoSuchFileException(toString());
-        return zfas;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V extends FileAttributeView> V getFileAttributeView(Class<V> type,
-                                                                LinkOption... options)
-    {
-        return (V)ZipFileAttributeView.get(this, type);
-    }
-
-    @Override
-    public void setAttribute(String attribute,
-                             Object value,
-                             LinkOption... options)
-        throws IOException
-    {
-        String type = null;
-        String attr = null;
-        int colonPos = attribute.indexOf(':');
-        if (colonPos == -1) {
-            type = "basic";
-            attr = attribute;
-        } else {
-            type = attribute.substring(0, colonPos++);
-            attr = attribute.substring(colonPos);
-        }
-        ZipFileAttributeView view = ZipFileAttributeView.get(this, type);
-        if (view == null)
-            throw new UnsupportedOperationException("view <" + view + "> is not supported");
-        view.setAttribute(attr, value);
-    }
-
-    void setTimes(FileTime mtime, FileTime atime, FileTime ctime)
-        throws IOException
-    {
-        zfs.setTimes(getResolvedPath(), mtime, atime, ctime);
-    }
-
-    private Object getAttributesImpl(String attribute, boolean domap)
-        throws IOException
-    {
-        String view = null;
-        String attr = null;
-        int colonPos = attribute.indexOf(':');
-        if (colonPos == -1) {
-            view = "basic";
-            attr = attribute;
-        } else {
-            view = attribute.substring(0, colonPos++);
-            attr = attribute.substring(colonPos);
-        }
-        ZipFileAttributeView zfv = ZipFileAttributeView.get(this, view);
-        if (zfv == null) {
-            throw new UnsupportedOperationException("view not supported");
-        }
-        return zfv.getAttribute(attr, domap);
-    }
-
-    @Override
-    public Object getAttribute(String attribute, LinkOption... options)
-        throws IOException
-    {
-        return getAttributesImpl(attribute, false);
-    }
-
-    @Override
-    public Map<String,?> readAttributes(String attribute, LinkOption... options)
-        throws IOException
-    {
-        return (Map<String, ?>)getAttributesImpl(attribute, true);
-    }
-
-    @Override
-    public FileStore getFileStore() throws IOException {
-        // each ZipFileSystem only has one root (as requested for now)
-        if (exists())
-            return zfs.getFileStore(this);
-        throw new NoSuchFileException(zfs.getString(path));
-    }
-
-    @Override
-    public boolean isSameFile(Path other) throws IOException {
-        if (this.equals(other))
-            return true;
-        if (other == null ||
-            this.getFileSystem() != other.getFileSystem())
-            return false;
-        this.checkAccess();
-        other.checkAccess();
-        return Arrays.equals(this.getResolvedPath(),
-                             ((ZipPath)other).getResolvedPath());
-    }
-
     public WatchKey register(
             WatchService watcher,
             WatchEvent.Kind<?>[] events,
@@ -753,6 +581,11 @@ public class ZipPath extends Path {
     @Override
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events) {
         return register(watcher, events, new WatchEvent.Modifier[0]);
+    }
+
+    @Override
+    public final File toFile() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -783,9 +616,115 @@ public class ZipPath extends Path {
         };
     }
 
-    @Override
-    public SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                              FileAttribute<?>... attrs)
+    /////////////////////////////////////////////////////////////////////
+
+
+    void createDirectory(FileAttribute<?>... attrs)
+        throws IOException
+    {
+        zfs.createDirectory(getResolvedPath(), attrs);
+    }
+
+    InputStream newInputStream(OpenOption... options) throws IOException
+    {
+        if (options.length > 0) {
+            for (OpenOption opt : options) {
+                if (opt != READ)
+                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
+            }
+        }
+        return zfs.newInputStream(getResolvedPath());
+    }
+
+    DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter)
+        throws IOException
+    {
+        return new ZipDirectoryStream(this, filter);
+    }
+
+    void delete() throws IOException {
+        zfs.deleteFile(getResolvedPath(), true);
+    }
+
+    void deleteIfExists() throws IOException {
+        zfs.deleteFile(getResolvedPath(), false);
+    }
+
+    ZipFileAttributes getAttributes() throws IOException
+    {
+        ZipFileAttributes zfas = zfs.getFileAttributes(getResolvedPath());
+        if (zfas == null)
+            throw new NoSuchFileException(toString());
+        return zfas;
+    }
+
+    void setAttribute(String attribute, Object value, LinkOption... options)
+        throws IOException
+    {
+        String type = null;
+        String attr = null;
+        int colonPos = attribute.indexOf(':');
+        if (colonPos == -1) {
+            type = "basic";
+            attr = attribute;
+        } else {
+            type = attribute.substring(0, colonPos++);
+            attr = attribute.substring(colonPos);
+        }
+        ZipFileAttributeView view = ZipFileAttributeView.get(this, type);
+        if (view == null)
+            throw new UnsupportedOperationException("view <" + view + "> is not supported");
+        view.setAttribute(attr, value);
+    }
+
+    void setTimes(FileTime mtime, FileTime atime, FileTime ctime)
+        throws IOException
+    {
+        zfs.setTimes(getResolvedPath(), mtime, atime, ctime);
+    }
+
+    Map<String, Object> readAttributes(String attributes, LinkOption... options)
+        throws IOException
+
+    {
+        String view = null;
+        String attrs = null;
+        int colonPos = attributes.indexOf(':');
+        if (colonPos == -1) {
+            view = "basic";
+            attrs = attributes;
+        } else {
+            view = attributes.substring(0, colonPos++);
+            attrs = attributes.substring(colonPos);
+        }
+        ZipFileAttributeView zfv = ZipFileAttributeView.get(this, view);
+        if (zfv == null) {
+            throw new UnsupportedOperationException("view not supported");
+        }
+        return zfv.readAttributes(attrs);
+    }
+
+    FileStore getFileStore() throws IOException {
+        // each ZipFileSystem only has one root (as requested for now)
+        if (exists())
+            return zfs.getFileStore(this);
+        throw new NoSuchFileException(zfs.getString(path));
+    }
+
+    boolean isSameFile(Path other) throws IOException {
+        if (this.equals(other))
+            return true;
+        if (other == null ||
+            this.getFileSystem() != other.getFileSystem())
+            return false;
+        this.checkAccess();
+        ((ZipPath)other).checkAccess();
+        return Arrays.equals(this.getResolvedPath(),
+                             ((ZipPath)other).getResolvedPath());
+    }
+
+    SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
+                                       FileAttribute<?>... attrs)
         throws IOException
     {
         return zfs.newByteChannel(getResolvedPath(), options, attrs);
@@ -799,16 +738,7 @@ public class ZipPath extends Path {
         return zfs.newFileChannel(getResolvedPath(), options, attrs);
     }
 
-    @Override
-    public SeekableByteChannel newByteChannel(OpenOption... options)
-            throws IOException {
-        Set<OpenOption> set = new HashSet<>(options.length);
-        Collections.addAll(set, options);
-        return newByteChannel(set);
-    }
-
-    @Override
-    public void checkAccess(AccessMode... modes) throws IOException {
+    void checkAccess(AccessMode... modes) throws IOException {
         boolean w = false;
         boolean x = false;
         for (AccessMode mode : modes) {
@@ -834,11 +764,9 @@ public class ZipPath extends Path {
         }
         if (x)
             throw new AccessDeniedException(toString());
-
     }
 
-    @Override
-    public boolean exists() {
+    boolean exists() {
         if (path.length == 1 && path[0] == '/')
             return true;
         try {
@@ -847,15 +775,7 @@ public class ZipPath extends Path {
         return false;
     }
 
-    @Override
-    public boolean notExists() {
-        return !exists();
-    }
-
-
-    @Override
-    public OutputStream newOutputStream(OpenOption... options)
-        throws IOException
+    OutputStream newOutputStream(OpenOption... options) throws IOException
     {
         if (options.length == 0)
             return zfs.newOutputStream(getResolvedPath(),
@@ -863,42 +783,32 @@ public class ZipPath extends Path {
         return zfs.newOutputStream(getResolvedPath(), options);
     }
 
-    @Override
-    public Path moveTo(Path target, CopyOption... options)
+    void move(ZipPath target, CopyOption... options)
         throws IOException
     {
-        if (this.zfs.provider() == target.getFileSystem().provider() &&
-            this.zfs.getZipFile().isSameFile(((ZipPath)target).zfs.getZipFile()))
+        if (Files.isSameFile(this.zfs.getZipFile(), target.zfs.getZipFile()))
         {
             zfs.copyFile(true,
-                         getResolvedPath(),
-                         ((ZipPath)target).getResolvedPath(),
+                         getResolvedPath(), target.getResolvedPath(),
                          options);
         } else {
             copyToTarget(target, options);
             delete();
         }
-        return target;
     }
 
-    @Override
-    public Path copyTo(Path target, CopyOption... options)
+    void copy(ZipPath target, CopyOption... options)
         throws IOException
     {
-        if (this.zfs.provider() == target.getFileSystem().provider() &&
-            this.zfs.getZipFile().isSameFile(((ZipPath)target).zfs.getZipFile()))
-        {
+        if (Files.isSameFile(this.zfs.getZipFile(), target.zfs.getZipFile()))
             zfs.copyFile(false,
-                         getResolvedPath(),
-                         ((ZipPath)target).getResolvedPath(),
+                         getResolvedPath(), target.getResolvedPath(),
                          options);
-        } else {
+        else
             copyToTarget(target, options);
-        }
-        return target;
     }
 
-    private void copyToTarget(Path target, CopyOption... options)
+    private void copyToTarget(ZipPath target, CopyOption... options)
         throws IOException
     {
         boolean replaceExisting = false;
@@ -948,7 +858,7 @@ public class ZipPath extends Path {
         }
         if (copyAttrs) {
             BasicFileAttributeView view =
-                target.getFileAttributeView(BasicFileAttributeView.class);
+                ZipFileAttributeView.get(target, BasicFileAttributeView.class);
             try {
                 view.setTimes(zfas.lastModifiedTime(),
                               zfas.lastAccessTime(),

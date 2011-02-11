@@ -27,17 +27,12 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.channels.*;
 import java.io.*;
 import java.net.URI;
-import java.security.AccessController;
 import java.util.*;
 import java.lang.ref.WeakReference;
 
 import com.sun.nio.file.ExtendedWatchEventModifier;
-
-import sun.security.util.SecurityConstants;
-import sun.misc.Unsafe;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -47,7 +42,6 @@ import static sun.nio.fs.WindowsConstants.*;
  */
 
 class WindowsPath extends AbstractPath {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     // The maximum path that does not require long path prefix. On Windows
     // the maximum path is 260 minus 1 (NUL) but for directories it is 260
@@ -229,6 +223,8 @@ class WindowsPath extends AbstractPath {
         // Relative path ("foo" for example)
         if (type == WindowsPathType.RELATIVE) {
             String defaultDirectory = getFileSystem().defaultDirectory();
+            if (isEmpty())
+                return defaultDirectory;
             if (defaultDirectory.endsWith("\\")) {
                 return defaultDirectory + path;
             } else {
@@ -286,7 +282,7 @@ class WindowsPath extends AbstractPath {
     }
 
     // Add long path prefix to path if required
-    private static String addPrefixIfNeeded(String path) {
+    static String addPrefixIfNeeded(String path) {
         if (path.length() > 248) {
             if (path.startsWith("\\\\")) {
                 path = "\\\\?\\UNC" + path.substring(1, path.length());
@@ -304,10 +300,22 @@ class WindowsPath extends AbstractPath {
 
     // -- Path operations --
 
+    private boolean isEmpty() {
+        return path.length() == 0;
+    }
+
+    private WindowsPath emptyPath() {
+        return new WindowsPath(getFileSystem(), WindowsPathType.RELATIVE, "", "");
+    }
+
     @Override
-    public Path getName() {
+    public Path getFileName() {
+        int len = path.length();
+        // represents empty path
+        if (len == 0)
+            return this;
         // represents root component only
-        if (root.length() == path.length())
+        if (root.length() == len)
             return null;
         int off = path.lastIndexOf('\\');
         if (off < root.length())
@@ -340,6 +348,11 @@ class WindowsPath extends AbstractPath {
     }
 
     // package-private
+    WindowsPathType type() {
+        return type;
+    }
+
+    // package-private
     boolean isUnc() {
         return type == WindowsPathType.UNC;
     }
@@ -355,7 +368,7 @@ class WindowsPath extends AbstractPath {
         return type == WindowsPathType.ABSOLUTE || type == WindowsPathType.UNC;
     }
 
-    private WindowsPath checkPath(FileRef path) {
+    static WindowsPath toWindowsPath(Path path) {
         if (path == null)
             throw new NullPointerException();
         if (!(path instanceof WindowsPath)) {
@@ -366,9 +379,9 @@ class WindowsPath extends AbstractPath {
 
     @Override
     public WindowsPath relativize(Path obj) {
-        WindowsPath other = checkPath(obj);
+        WindowsPath other = toWindowsPath(obj);
         if (this.equals(other))
-            return null;
+            return emptyPath();
 
         // can only relativize paths of the same type
         if (this.type != other.type)
@@ -410,7 +423,7 @@ class WindowsPath extends AbstractPath {
     @Override
     public Path normalize() {
         final int count = getNameCount();
-        if (count == 0)
+        if (count == 0 || isEmpty())
             return this;
 
         boolean[] ignore = new boolean[count];      // true => ignore name
@@ -488,7 +501,7 @@ class WindowsPath extends AbstractPath {
 
         // corner case - all names removed
         if (remaining == 0) {
-            return getRoot();
+            return (root.length() == 0) ? emptyPath() : getRoot();
         }
 
         // re-constitute the path from the remaining names.
@@ -497,7 +510,7 @@ class WindowsPath extends AbstractPath {
             result.append(root);
         for (int i=0; i<count; i++) {
             if (!ignore[i]) {
-                result.append(getName(i).toString());
+                result.append(getName(i));
                 result.append("\\");
             }
         }
@@ -509,9 +522,9 @@ class WindowsPath extends AbstractPath {
 
     @Override
     public WindowsPath resolve(Path obj) {
-        if (obj == null)
+        WindowsPath other = toWindowsPath(obj);
+        if (other.isEmpty())
             return this;
-        WindowsPath other = checkPath(obj);
         if (other.isAbsolute())
             return other;
 
@@ -559,27 +572,27 @@ class WindowsPath extends AbstractPath {
         }
     }
 
-    @Override
-    public WindowsPath resolve(String other) {
-        return resolve(getFileSystem().getPath(other));
-    }
-
     // generate offset array
     private void initOffsets() {
         if (offsets == null) {
-            ArrayList<Integer> list = new ArrayList<Integer>();
-            int start = root.length();
-            int off = root.length();
-            while (off < path.length()) {
-                if (path.charAt(off) != '\\') {
-                    off++;
-                } else {
-                    list.add(start);
-                    start = ++off;
+            ArrayList<Integer> list = new ArrayList<>();
+            if (isEmpty()) {
+                // empty path considered to have one name element
+                list.add(0);
+            } else {
+                int start = root.length();
+                int off = root.length();
+                while (off < path.length()) {
+                    if (path.charAt(off) != '\\') {
+                        off++;
+                    } else {
+                        list.add(start);
+                        start = ++off;
+                    }
                 }
+                if (start != off)
+                    list.add(start);
             }
-            if (start != off)
-                list.add(start);
             synchronized (this) {
                 if (offsets == null)
                     offsets = list.toArray(new Integer[list.size()]);
@@ -633,11 +646,16 @@ class WindowsPath extends AbstractPath {
 
     @Override
     public boolean startsWith(Path obj) {
-        WindowsPath other = checkPath(obj);
+        WindowsPath other = toWindowsPath(obj);
 
         // if this path has a root component the given path's root must match
-        if (!this.root.equalsIgnoreCase(other.root))
+        if (!this.root.equalsIgnoreCase(other.root)) {
             return false;
+        }
+
+        // empty path starts with itself
+        if (other.isEmpty())
+            return this.isEmpty();
 
         // roots match so compare elements
         int thisCount = getNameCount();
@@ -657,11 +675,16 @@ class WindowsPath extends AbstractPath {
 
     @Override
     public boolean endsWith(Path obj) {
-        WindowsPath other = checkPath(obj);
+        WindowsPath other = toWindowsPath(obj);
 
         // other path is longer
-        if (other.path.length() > path.length()) {
+        if (other.path.length() > this.path.length()) {
             return false;
+        }
+
+        // empty path ends in itself
+        if (other.isEmpty()) {
+            return this.isEmpty();
         }
 
         int thisCount = this.getNameCount();
@@ -742,31 +765,6 @@ class WindowsPath extends AbstractPath {
         return path;
     }
 
-    @Override
-    public Iterator<Path> iterator() {
-        return new Iterator<Path>() {
-            private int i = 0;
-            @Override
-            public boolean hasNext() {
-                return (i < getNameCount());
-            }
-            @Override
-            public Path next() {
-                if (i < getNameCount()) {
-                    Path result = getName(i);
-                    i++;
-                    return result;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
     // -- file operations --
 
     // package-private
@@ -806,453 +804,6 @@ class WindowsPath extends AbstractPath {
     }
 
     @Override
-    public FileStore getFileStore()
-        throws IOException
-    {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
-            checkRead();
-        }
-        return WindowsFileStore.create(this);
-    }
-
-    /**
-     * Returns buffer with SID_AND_ATTRIBUTES structure representing the user
-     * associated with the current thread access token.
-     * FIXME - this should be cached.
-     */
-    private NativeBuffer getUserInfo() throws IOException {
-        try {
-            long hToken = WindowsSecurity.processTokenWithQueryAccess;
-            int size = GetTokenInformation(hToken, TokenUser, 0L, 0);
-            assert size > 0;
-
-            NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-            try {
-                int newsize = GetTokenInformation(hToken, TokenUser,
-                                                  buffer.address(), size);
-                if (newsize != size)
-                    throw new AssertionError();
-                return buffer;
-            } catch (WindowsException x) {
-                buffer.release();
-                throw x;
-            }
-        } catch (WindowsException x) {
-            throw new IOException(x.getMessage());
-        }
-    }
-
-    /**
-     * Reads the file ACL and return the effective access as ACCESS_MASK
-     */
-    private int getEffectiveAccess() throws IOException {
-        // read security descriptor continaing ACL (symlinks are followed)
-        String target = WindowsLinkSupport.getFinalPath(this, true);
-        NativeBuffer aclBuffer = WindowsAclFileAttributeView
-            .getFileSecurity(target, DACL_SECURITY_INFORMATION);
-
-        // retrieves DACL from security descriptor
-        long pAcl = GetSecurityDescriptorDacl(aclBuffer.address());
-
-        // Use GetEffectiveRightsFromAcl to get effective access to file
-        try {
-            NativeBuffer userBuffer = getUserInfo();
-            try {
-                try {
-                    // SID_AND_ATTRIBUTES->pSid
-                    long pSid = unsafe.getAddress(userBuffer.address());
-                    long pTrustee = BuildTrusteeWithSid(pSid);
-                    try {
-                        return GetEffectiveRightsFromAcl(pAcl, pTrustee);
-                    } finally {
-                        LocalFree(pTrustee);
-                    }
-                } catch (WindowsException x) {
-                    throw new IOException("Unable to get effective rights from ACL: " +
-                        x.getMessage());
-                }
-            } finally {
-                userBuffer.release();
-            }
-        } finally {
-            aclBuffer.release();
-        }
-    }
-
-    @Override
-    public void checkAccess(AccessMode... modes) throws IOException {
-        // if no access modes then simply file attributes
-        if (modes.length == 0) {
-            checkRead();
-            try {
-                WindowsFileAttributes.get(this, true);
-            } catch (WindowsException exc) {
-                exc.rethrowAsIOException(this);
-            }
-            return;
-        }
-
-        boolean r = false;
-        boolean w = false;
-        boolean x = false;
-        for (AccessMode mode: modes) {
-            switch (mode) {
-                case READ : r = true; break;
-                case WRITE : w = true; break;
-                case EXECUTE : x = true; break;
-                default: throw new AssertionError("Should not get here");
-            }
-        }
-
-        int mask = 0;
-        if (r) {
-            checkRead();
-            mask |= FILE_READ_DATA;
-        }
-        if (w) {
-            checkWrite();
-            mask |= FILE_WRITE_DATA;
-        }
-        if (x) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkExec(getPathForPermissionCheck());
-            mask |= FILE_EXECUTE;
-        }
-
-        if ((getEffectiveAccess() & mask) == 0)
-            throw new AccessDeniedException(
-                this.getPathForExceptionMessage(), null,
-                "Effective permissions does not allow requested access");
-
-        // for write access we neeed to check if the DOS readonly attribute
-        // and if the volume is read-only
-        if (w) {
-            try {
-                WindowsFileAttributes attrs = WindowsFileAttributes.get(this, true);
-                if (!attrs.isDirectory() && attrs.isReadOnly())
-                    throw new AccessDeniedException(
-                        this.getPathForExceptionMessage(), null,
-                        "DOS readonly attribute is set");
-            } catch (WindowsException exc) {
-                exc.rethrowAsIOException(this);
-            }
-
-            if (WindowsFileStore.create(this).isReadOnly()) {
-                throw new AccessDeniedException(
-                    this.getPathForExceptionMessage(), null, "Read-only file system");
-            }
-            return;
-        }
-    }
-
-    @Override
-    void implDelete(boolean failIfNotExists) throws IOException {
-        checkDelete();
-
-        WindowsFileAttributes attrs = null;
-        try {
-             // need to know if file is a directory or junction
-             attrs = WindowsFileAttributes.get(this, false);
-             if (attrs.isDirectory() || attrs.isDirectoryLink()) {
-                RemoveDirectory(getPathForWin32Calls());
-             } else {
-                DeleteFile(getPathForWin32Calls());
-             }
-        } catch (WindowsException x) {
-
-            // no-op if file does not exist
-            if (!failIfNotExists &&
-                (x.lastError() == ERROR_FILE_NOT_FOUND ||
-                 x.lastError() == ERROR_PATH_NOT_FOUND)) return;
-
-            if (attrs != null && attrs.isDirectory()) {
-                // ERROR_ALREADY_EXISTS is returned when attempting to delete
-                // non-empty directory on SAMBA servers.
-                if (x.lastError() == ERROR_DIR_NOT_EMPTY ||
-                    x.lastError() == ERROR_ALREADY_EXISTS)
-                {
-                    throw new DirectoryNotEmptyException(
-                        getPathForExceptionMessage());
-                }
-            }
-            x.rethrowAsIOException(this);
-        }
-    }
-
-    @Override
-    public DirectoryStream<Path> newDirectoryStream(DirectoryStream.Filter<? super Path> filter)
-        throws IOException
-    {
-        checkRead();
-        if (filter == null)
-            throw new NullPointerException();
-        return new WindowsDirectoryStream(this, filter);
-    }
-
-    @Override
-    public void implCopyTo(Path obj, CopyOption... options) throws IOException {
-        WindowsPath target = (WindowsPath)obj;
-        WindowsFileCopy.copy(this, target, options);
-    }
-
-    @Override
-    public void implMoveTo(Path obj, CopyOption... options) throws IOException {
-        WindowsPath target = (WindowsPath)obj;
-        WindowsFileCopy.move(this, target, options);
-    }
-
-    private boolean followLinks(LinkOption... options) {
-        boolean followLinks = true;
-        for (LinkOption option: options) {
-            if (option == LinkOption.NOFOLLOW_LINKS) {
-                followLinks = false;
-                continue;
-            }
-            if (option == null)
-                throw new NullPointerException();
-            throw new AssertionError("Should not get here");
-        }
-        return followLinks;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V extends FileAttributeView> V
-        getFileAttributeView(Class<V> view, LinkOption... options)
-    {
-        if (view == null)
-            throw new NullPointerException();
-        boolean followLinks = followLinks(options);
-        if (view == BasicFileAttributeView.class)
-            return (V) WindowsFileAttributeViews.createBasicView(this, followLinks);
-        if (view == DosFileAttributeView.class)
-            return (V) WindowsFileAttributeViews.createDosView(this, followLinks);
-        if (view == AclFileAttributeView.class)
-            return (V) new WindowsAclFileAttributeView(this, followLinks);
-        if (view == FileOwnerAttributeView.class)
-            return (V) new FileOwnerAttributeViewImpl(
-                new WindowsAclFileAttributeView(this, followLinks));
-        if (view == UserDefinedFileAttributeView.class)
-            return (V) new WindowsUserDefinedFileAttributeView(this, followLinks);
-        return (V) null;
-    }
-
-    @Override
-    public DynamicFileAttributeView getFileAttributeView(String name, LinkOption... options) {
-        boolean followLinks = followLinks(options);
-        if (name.equals("basic"))
-            return WindowsFileAttributeViews.createBasicView(this, followLinks);
-        if (name.equals("dos"))
-            return WindowsFileAttributeViews.createDosView(this, followLinks);
-        if (name.equals("acl"))
-            return new WindowsAclFileAttributeView(this, followLinks);
-        if (name.equals("owner"))
-            return new FileOwnerAttributeViewImpl(
-                new WindowsAclFileAttributeView(this, followLinks));
-        if (name.equals("user"))
-            return new WindowsUserDefinedFileAttributeView(this, followLinks);
-        return null;
-    }
-
-    @Override
-    public WindowsPath createDirectory(FileAttribute<?>... attrs)
-        throws IOException
-    {
-        checkWrite();
-        WindowsSecurityDescriptor sd = WindowsSecurityDescriptor.fromAttribute(attrs);
-        try {
-            CreateDirectory(getPathForWin32Calls(), sd.address());
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-        } finally {
-            sd.release();
-        }
-        return this;
-    }
-
-    @Override
-    public SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                              FileAttribute<?>... attrs)
-         throws IOException
-    {
-        WindowsSecurityDescriptor sd =
-            WindowsSecurityDescriptor.fromAttribute(attrs);
-        try {
-            return WindowsChannelFactory
-                .newFileChannel(getPathForWin32Calls(),
-                                getPathForPermissionCheck(),
-                                options,
-                                sd.address());
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        } finally {
-            sd.release();
-        }
-    }
-
-    @Override
-    public boolean isSameFile(Path obj) throws IOException {
-        if (this.equals(obj))
-            return true;
-        if (!(obj instanceof WindowsPath))  // includes null check
-            return false;
-        WindowsPath other = (WindowsPath)obj;
-
-        // check security manager access to both files
-        this.checkRead();
-        other.checkRead();
-
-        // open both files and see if they are the same
-        long h1 = 0L;
-        try {
-            h1 = this.openForReadAttributeAccess(true);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-        }
-        try {
-            WindowsFileAttributes attrs1 = null;
-            try {
-                attrs1 = WindowsFileAttributes.readAttributes(h1);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(this);
-            }
-            long h2 = 0L;
-            try {
-                h2 = other.openForReadAttributeAccess(true);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(other);
-            }
-            try {
-                WindowsFileAttributes attrs2 = null;
-                try {
-                    attrs2 = WindowsFileAttributes.readAttributes(h2);
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(other);
-                }
-                return WindowsFileAttributes.isSameFile(attrs1, attrs2);
-            } finally {
-                CloseHandle(h2);
-            }
-        } finally {
-            CloseHandle(h1);
-        }
-    }
-
-    @Override
-    public WindowsPath createSymbolicLink(Path obj, FileAttribute<?>... attrs)
-        throws IOException
-    {
-        if (!getFileSystem().supportsLinks()) {
-            throw new UnsupportedOperationException("Symbolic links not supported "
-                + "on this operating system");
-        }
-
-        WindowsPath target = checkPath(obj);
-
-        // no attributes allowed
-        if (attrs.length > 0) {
-            WindowsSecurityDescriptor.fromAttribute(attrs);  // may throw NPE or UOE
-            throw new UnsupportedOperationException("Initial file attributes" +
-                "not supported when creating symbolic link");
-        }
-
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("symbolic"));
-            this.checkWrite();
-        }
-
-        /**
-         * Throw I/O exception for the drive-relative case because Windows
-         * creates a link with the resolved target for this case.
-         */
-        if (target.type == WindowsPathType.DRIVE_RELATIVE) {
-            throw new IOException("Cannot create symbolic link to working directory relative target");
-        }
-
-        /*
-         * Windows treates symbolic links to directories differently than it
-         * does to other file types. For that reason we need to check if the
-         * target is a directory (or a directory junction).
-         */
-        WindowsPath resolvedTarget;
-        if (target.type == WindowsPathType.RELATIVE) {
-            WindowsPath parent = getParent();
-            resolvedTarget = (parent == null) ? target : parent.resolve(target);
-        } else {
-            resolvedTarget = resolve(target);
-        }
-        int flags = 0;
-        try {
-            WindowsFileAttributes wattrs = WindowsFileAttributes.get(resolvedTarget, false);
-            if (wattrs.isDirectory() || wattrs.isDirectoryLink())
-                flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
-        } catch (WindowsException x) {
-            // unable to access target so assume target is not a directory
-        }
-
-        // create the link
-        try {
-            CreateSymbolicLink(getPathForWin32Calls(),
-                               addPrefixIfNeeded(target.toString()),
-                               flags);
-        } catch (WindowsException x) {
-            if (x.lastError() == ERROR_INVALID_REPARSE_DATA) {
-                x.rethrowAsIOException(this, target);
-            } else {
-                x.rethrowAsIOException(this);
-            }
-        }
-        return this;
-    }
-
-    @Override
-    public Path createLink(Path obj) throws IOException {
-        WindowsPath existing = checkPath(obj);
-
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("hard"));
-            this.checkWrite();
-            existing.checkWrite();
-        }
-
-        // create hard link
-        try {
-            CreateHardLink(this.getPathForWin32Calls(),
-                           existing.getPathForWin32Calls());
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this, existing);
-        }
-
-        return this;
-    }
-
-    @Override
-    public WindowsPath readSymbolicLink() throws IOException {
-        if (!getFileSystem().supportsLinks()) {
-            throw new UnsupportedOperationException("symbolic links not supported");
-        }
-
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission perm = new FilePermission(getPathForPermissionCheck(),
-                SecurityConstants.FILE_READLINK_ACTION);
-            AccessController.checkPermission(perm);
-        }
-
-        String target = WindowsLinkSupport.readLink(this);
-        return createFromNormalizedPath(getFileSystem(), target);
-    }
-
-    @Override
     public URI toUri() {
         return WindowsUriSupport.toUri(this);
     }
@@ -1280,21 +831,6 @@ class WindowsPath extends AbstractPath {
         checkRead();
         String rp = WindowsLinkSupport.getRealPath(this, resolveLinks);
         return createFromNormalizedPath(getFileSystem(), rp);
-    }
-
-    @Override
-    public boolean isHidden() throws IOException {
-        checkRead();
-        WindowsFileAttributes attrs = null;
-        try {
-            attrs = WindowsFileAttributes.get(this, true);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-        }
-        // DOS hidden attribute not meaningful when set on directories
-        if (attrs.isDirectory())
-            return false;
-        return attrs.isHidden();
     }
 
     @Override

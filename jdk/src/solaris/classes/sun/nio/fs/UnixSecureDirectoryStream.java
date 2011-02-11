@@ -40,7 +40,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixSecureDirectoryStream
-    extends SecureDirectoryStream<Path>
+    implements SecureDirectoryStream<Path>
 {
     private final UnixDirectoryStream ds;
     private final int dfd;
@@ -81,6 +81,20 @@ class UnixSecureDirectoryStream
         return (UnixPath)obj;
     }
 
+    private boolean followLinks(LinkOption... options) {
+        boolean followLinks = true;
+        for (LinkOption option: options) {
+            if (option == LinkOption.NOFOLLOW_LINKS) {
+                followLinks = false;
+                continue;
+            }
+            if (option == null)
+                throw new NullPointerException();
+            throw new AssertionError("Should not get here");
+        }
+        return followLinks;
+    }
+
     /**
      * Opens sub-directory in this directory
      */
@@ -91,7 +105,7 @@ class UnixSecureDirectoryStream
     {
         UnixPath file = getName(obj);
         UnixPath child = ds.directory().resolve(file);
-        boolean followLinks = file.getFileSystem().followLinks(options);
+        boolean followLinks = followLinks(options);
 
         // permission check using name resolved against original path of directory
         SecurityManager sm = System.getSecurityManager();
@@ -302,7 +316,7 @@ class UnixSecureDirectoryStream
                                                                 LinkOption... options)
     {
         UnixPath file = getName(obj);
-        boolean followLinks = file.getFileSystem().followLinks(options);
+        boolean followLinks = followLinks(options);
         return getFileAttributeViewImpl(file, type, followLinks);
     }
 
@@ -336,7 +350,11 @@ class UnixSecureDirectoryStream
         private void checkWriteAccess() {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                ds.directory().resolve(file).checkWrite();
+                if (file == null) {
+                    ds.directory().checkWrite();
+                } else {
+                    ds.directory().resolve(file).checkWrite();
+                }
             }
         }
 

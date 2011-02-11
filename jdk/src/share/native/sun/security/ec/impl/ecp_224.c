@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecp.h"
 #include "mpi.h"
 #include "mplogic.h"
@@ -251,10 +249,10 @@ ec_GFp_nistp224_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
                         +(  0, a6,a5b,  0)
                         -(  0    0,    0|a6b, a6a|a5b )
                         -(  a6b, a6a|a5b, a5a|a4b, a4a|a3b ) */
-                MP_ADD_CARRY (r1, a3b, r1, 0,     carry);
+                MP_ADD_CARRY_ZERO (r1, a3b, r1, carry);
                 MP_ADD_CARRY (r2, a4 , r2, carry, carry);
                 MP_ADD_CARRY (r3, a5a, r3, carry, carry);
-                MP_ADD_CARRY (r1, a5b, r1, 0,     carry);
+                MP_ADD_CARRY_ZERO (r1, a5b, r1, carry);
                 MP_ADD_CARRY (r2, a6 , r2, carry, carry);
                 MP_ADD_CARRY (r3,   0, r3, carry, carry);
 
@@ -275,7 +273,7 @@ ec_GFp_nistp224_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
                 r3b = (int)(r3 >>32);
                 while (r3b > 0) {
                         r3 &= 0xffffffff;
-                        MP_ADD_CARRY(r1,((mp_digit)r3b) << 32, r1, 0, carry);
+                        MP_ADD_CARRY_ZERO(r1,((mp_digit)r3b) << 32, r1, carry);
                         if (carry) {
                                 MP_ADD_CARRY(r2,  0, r2, carry, carry);
                                 MP_ADD_CARRY(r3,  0, r3, carry, carry);
@@ -290,7 +288,7 @@ ec_GFp_nistp224_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
                 }
 
                 while (r3b < 0) {
-                        MP_ADD_CARRY (r0, 1, r0, 0,     carry);
+                        MP_ADD_CARRY_ZERO (r0, 1, r0, carry);
                         MP_ADD_CARRY (r1, MP_DIGIT_MAX <<32, r1, carry, carry);
                         MP_ADD_CARRY (r2, MP_DIGIT_MAX, r2, carry, carry);
                         MP_ADD_CARRY (r3, MP_DIGIT_MAX >> 32, r3, carry, carry);
