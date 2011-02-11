@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 #define SEC_IN_NANOSECS  1000000000LL
 
+#define LARGEPAGES_BIT (1 << 6)
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;
@@ -2817,6 +2818,43 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
+/*
+* Set the coredump_filter bits to include largepages in core dump (bit 6)
+*
+* From the coredump_filter documentation:
+*
+* - (bit 0) anonymous private memory
+* - (bit 1) anonymous shared memory
+* - (bit 2) file-backed private memory
+* - (bit 3) file-backed shared memory
+* - (bit 4) ELF header pages in file-backed private memory areas (it is
+*           effective only if the bit 2 is cleared)
+* - (bit 5) hugetlb private memory
+* - (bit 6) hugetlb shared memory
+*/
+static void set_coredump_filter(void) {
+  FILE *f;
+  long cdm;
+
+  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
+    return;
+  }
+
+  if (fscanf(f, "%lx", &cdm) != 1) {
+    fclose(f);
+    return;
+  }
+
+  rewind(f);
+
+  if ((cdm & LARGEPAGES_BIT) == 0) {
+    cdm |= LARGEPAGES_BIT;
+    fprintf(f, "%#lx", cdm);
+  }
+
+  fclose(f);
+}
+
 // Large page support
 
 static size_t _large_page_size = 0;
@@ -2873,6 +2911,8 @@ bool os::large_page_init() {
     _page_sizes[1] = default_page_size;
     _page_sizes[2] = 0;
   }
+
+  set_coredump_filter();
 
   // Large page support is available on 2.6 or newer kernel, some vendors
   // (e.g. Redhat) have backported it to their 2.4 based distributions.
