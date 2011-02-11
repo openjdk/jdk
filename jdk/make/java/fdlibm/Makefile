@@ -24,7 +24,7 @@
 #
 
 #
-# Makefile for native threads HPI.
+# Makefile for fdlibm
 #
 # Note:
 # The fdlibm libraries are built using special rules in Library.gmk.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -918,9 +918,7 @@ bool Arguments::add_property(const char* prop) {
   } else if (strcmp(key, "sun.java.command") == 0) {
     _java_command = value;
 
-    // don't add this property to the properties exposed to the java application
-    FreeHeap(key);
-    return true;
+    // Record value in Arguments, but let it get passed to Java.
   } else if (strcmp(key, "sun.java.launcher.pid") == 0) {
     // launcher.pid property is private and is processed
     // in process_sun_java_launcher_properties();
@@ -1943,10 +1941,16 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+#ifndef SERIALGC
   if (UseG1GC) {
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
+    status = status && verify_min_value(G1RefProcDrainInterval, 1,
+                                        "G1RefProcDrainInterval");
+    status = status && verify_min_value((intx)G1ConcMarkStepDurationMillis, 1,
+                                        "G1ConcMarkStepDurationMillis");
   }
+#endif
 
   status = status && verify_interval(RefDiscoveryPolicy,
                                      ReferenceProcessor::DiscoveryPolicyMin,
@@ -3031,15 +3035,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     ScavengeRootsInCode = 1;
   }
-#ifdef COMPILER2
-  if (EnableInvokeDynamic && DoEscapeAnalysis) {
-    // TODO: We need to find rules for invokedynamic and EA.  For now,
-    // simply disable EA by default.
-    if (FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
-      DoEscapeAnalysis = false;
-    }
-  }
-#endif
 
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well

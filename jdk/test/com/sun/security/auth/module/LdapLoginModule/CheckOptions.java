@@ -73,7 +73,7 @@ public class CheckOptions {
 
         // bad value for userProvider option
 
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
         options.put(USER_PROVIDER_OPTION, "ldap://localhost:23456");
         ldap.initialize(subject, null, null, options);
 
@@ -93,7 +93,7 @@ public class CheckOptions {
 
         LdapLoginModule ldap = new LdapLoginModule();
         Subject subject = new Subject();
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
         ldap.initialize(subject, null, null, options);
 
         try {
@@ -110,7 +110,7 @@ public class CheckOptions {
 
         LdapLoginModule ldap = new LdapLoginModule();
         Subject subject = new Subject();
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
 
         CallbackHandler goodHandler = new MyCallbackHandler(true);
         ldap.initialize(subject, goodHandler, null, options);

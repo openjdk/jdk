@@ -352,6 +352,45 @@
         </java>
     </target>
 
+    <!-- a patching facility to speed up incorporating the langtools' classfiles
+         into a jdk of your choice. Either target.java.home or patch.jdk can be
+         set on the command line; setting target.java.home has the advantage of
+         patching the jdk used for jtreg and other tests.
+    -->
+    <target name="patch" depends="build-all-classes">
+        <condition property="patch.jdk" value="${target.java.home}">
+            <available file="${target.java.home}" type="dir"/>
+        </condition>
+        <fail message="patch.jdk or target.java.home is not set, please set target.java.home, or patch.jdk for an alternate jdk image to patch">
+            <condition>
+                <not>
+                    <isset property="patch.jdk"/>
+                </not>
+            </condition>
+        </fail>
+        <property name="patch.tools.jar" location="${patch.jdk}/lib/tools.jar"/>
+        <property name="patch.rt.jar" location="${patch.jdk}/jre/lib/rt.jar"/>
+        <fail message="patch.jdk or target.java.home must point to a valid jdk image: missing tools.jar">
+            <condition>
+                <not>
+                    <available file="${patch.tools.jar}" type="file"/>
+                </not>
+            </condition>
+        </fail>
+        <fail message="patch.jdk or target.java.home must point to a valid jdk image: missing rt.jar">
+            <condition>
+                <not>
+                    <available file="${patch.rt.jar}" type="file"/>
+                </not>
+            </condition>
+        </fail>
+        <zip zipfile="${patch.tools.jar}" update="true">
+            <zipfileset dir="${build.classes.dir}" includes="com/**"/>
+        </zip>
+        <zip zipfile="${patch.rt.jar}" update="true">
+            <zipfileset dir="${build.classes.dir}" includes="javax/**"/>
+        </zip>
+    </target>
 
     <!--
     **** Debugging/diagnostic targets.

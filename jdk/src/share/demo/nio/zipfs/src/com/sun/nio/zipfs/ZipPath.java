@@ -157,7 +157,7 @@ public class ZipPath extends Path {
 
     @Override
     public ZipPath toRealPath(boolean resolveLinks) throws IOException {
-        ZipPath realPath = new ZipPath(zfs, getResolvedPath());
+        ZipPath realPath = new ZipPath(zfs, getResolvedPath()).toAbsolutePath();
         realPath.checkAccess();
         return realPath;
     }
@@ -472,8 +472,11 @@ public class ZipPath extends Path {
             int n = offsets[i];
             int len = (i == offsets.length - 1)?
                       (path.length - n):(offsets[i + 1] - n - 1);
-            if (len == 1 && path[n] == (byte)'.')
+            if (len == 1 && path[n] == (byte)'.') {
+                if (m == 0 && path[0] == '/')   // absolute path
+                    to[m++] = '/';
                 continue;
+            }
             if (len == 2 && path[n] == '.' && path[n + 1] == '.') {
                 if (lastMOff >= 0) {
                     m = lastM[lastMOff--];  // retreat
@@ -726,6 +729,8 @@ public class ZipPath extends Path {
 
     @Override
     public boolean isSameFile(Path other) throws IOException {
+        if (this.equals(other))
+            return true;
         if (other == null ||
             this.getFileSystem() != other.getFileSystem())
             return false;

@@ -28,7 +28,7 @@
 #include "oops/constantPoolOop.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/constantTag.hpp"
@@ -49,15 +49,15 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   constantPoolHandle  _cp;
 
  public:
-  symbolOop name() const               { return _cp->symbol_at(_name_index); }
-  symbolOop signature() const          { return _cp->symbol_at(_signature_index); }
+  Symbol* name() const                 { return _cp->symbol_at(_name_index); }
+  Symbol* signature() const            { return _cp->symbol_at(_signature_index); }
   klassOop field_holder() const        { return _cp->pool_holder(); }
   constantPoolOop constants() const    { return _cp(); }
   AccessFlags access_flags() const     { return _access_flags; }
   oop loader() const;
   // Offset (in words) of field from start of instanceOop / klassOop
   int offset() const                   { return _offset; }
-  symbolOop generic_signature() const  { return (_generic_signature_index > 0 ? _cp->symbol_at(_generic_signature_index) : (symbolOop)NULL); }
+  Symbol* generic_signature() const    { return (_generic_signature_index > 0 ? _cp->symbol_at(_generic_signature_index) : (Symbol*)NULL); }
   int index() const                    { return _index; }
   typeArrayOop annotations() const;
 

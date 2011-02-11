@@ -85,7 +85,7 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
     long hashValue = hashSymbol(name);
     for (HashtableEntry e = (HashtableEntry) bucket(hashToIndex(hashValue)); e != null; e = (HashtableEntry) e.next()) {
       if (e.hash() == hashValue) {
-         Symbol sym = (Symbol) e.literal();
+         Symbol sym = Symbol.create(e.literalValue());
          if (sym.equals(name)) {
            return sym;
          }
@@ -103,7 +103,7 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
     for (int i = 0; i < numBuckets; i++) {
       for (HashtableEntry e = (HashtableEntry) bucket(i); e != null;
            e = (HashtableEntry) e.next()) {
-        visitor.visit((Symbol) e.literal());
+        visitor.visit(Symbol.create(e.literalValue()));
       }
     }
   }

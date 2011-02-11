@@ -258,6 +258,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     BiasedLocking::restore_marks();
     Threads::gc_epilogue();
     CodeCache::gc_epilogue();
+    JvmtiExport::gc_epilogue();
 
     COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
@@ -526,7 +527,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     Management::oops_do(mark_and_push_closure());
     JvmtiExport::oops_do(mark_and_push_closure());
     SystemDictionary::always_strong_oops_do(mark_and_push_closure());
-    vmSymbols::oops_do(mark_and_push_closure());
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
   }
@@ -557,9 +557,10 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   follow_mdo_weak_refs();
   assert(_marking_stack.is_empty(), "just drained");
 
-  // Visit symbol and interned string tables and delete unmarked oops
-  SymbolTable::unlink(is_alive_closure());
+  // Visit interned string tables and delete unmarked oops
   StringTable::unlink(is_alive_closure());
+  // Clean up unreferenced symbols in symbol table.
+  SymbolTable::unlink();
 
   assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
@@ -633,7 +634,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   JvmtiExport::oops_do(adjust_root_pointer_closure());
   // SO_AllClasses
   SystemDictionary::oops_do(adjust_root_pointer_closure());
-  vmSymbols::oops_do(adjust_root_pointer_closure());
   //CodeCache::scavenge_root_nmethods_oops_do(adjust_root_pointer_closure());
 
   // Now adjust pointers in remaining weak roots.  (All of which should
@@ -642,7 +642,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   JNIHandles::weak_oops_do(&always_true, adjust_root_pointer_closure());
 
   CodeCache::oops_do(adjust_pointer_closure());
-  SymbolTable::oops_do(adjust_root_pointer_closure());
   StringTable::oops_do(adjust_root_pointer_closure());
   ref_processor()->weak_oops_do(adjust_root_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_root_pointer_closure());

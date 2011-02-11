@@ -35,6 +35,10 @@
 #include "oops/oop.inline2.hpp"
 #include "runtime/atomic.hpp"
 
+void Klass::set_name(Symbol* n) {
+  _name = n;
+  if (_name != NULL) _name->increment_refcount();
+}
 
 bool Klass::is_subclass_of(klassOop k) const {
   // Run up the super chain and check
@@ -115,7 +119,7 @@ bool Klass::compute_is_subtype_of(klassOop k) {
 }
 
 
-methodOop Klass::uncached_lookup_method(symbolOop name, symbolOop signature) const {
+methodOop Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 #ifdef ASSERT
   tty->print_cr("Error: uncached_lookup_method called on a klass oop."
                 " Likely error: reflection method does not correctly"
@@ -451,6 +455,11 @@ void Klass::remove_unshareable_info() {
   }
   set_subklass(NULL);
   set_next_sibling(NULL);
+}
+
+
+void Klass::shared_symbols_iterate(SymbolClosure* closure) {
+  closure->do_symbol(&_name);
 }
 
 

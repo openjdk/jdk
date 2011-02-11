@@ -320,9 +320,6 @@ public class FcFontConfiguration extends FontConfiguration {
             } else if ((f = new File("/etc/fedora-release")).canRead()) {
                 osName = "Fedora";
                 osVersion = getVersionString(f);
-            } else if ((f = new File("/etc/sun-release")).canRead()) {
-                osName = "Sun";
-                osVersion = getVersionString(f);
             }
         } catch (Exception e) {
             if (FontUtilities.debugFonts()) {

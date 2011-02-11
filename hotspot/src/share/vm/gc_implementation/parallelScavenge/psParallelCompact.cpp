@@ -1054,6 +1054,7 @@ void PSParallelCompact::post_compact()
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();
+  JvmtiExport::gc_epilogue();
 
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
@@ -2374,7 +2375,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::vm_symbols));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
 
     if (parallel_gc_threads > 1) {
@@ -2424,9 +2424,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Revisit memoized MDO's and clear any unmarked weak refs
   follow_mdo_weak_refs();
 
-  // Visit symbol and interned string tables and delete unmarked oops
-  SymbolTable::unlink(is_alive_closure());
+  // Visit interned string tables and delete unmarked oops
   StringTable::unlink(is_alive_closure());
+  // Clean up unreferenced symbols in symbol table.
+  SymbolTable::unlink();
 
   assert(cm->marking_stacks_empty(), "marking stacks should be empty");
 }
@@ -2455,7 +2456,6 @@ void PSParallelCompact::adjust_roots() {
   JvmtiExport::oops_do(adjust_root_pointer_closure());
   // SO_AllClasses
   SystemDictionary::oops_do(adjust_root_pointer_closure());
-  vmSymbols::oops_do(adjust_root_pointer_closure());
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
@@ -2463,7 +2463,6 @@ void PSParallelCompact::adjust_roots() {
   JNIHandles::weak_oops_do(&always_true, adjust_root_pointer_closure());
 
   CodeCache::oops_do(adjust_pointer_closure());
-  SymbolTable::oops_do(adjust_root_pointer_closure());
   StringTable::oops_do(adjust_root_pointer_closure());
   ref_processor()->weak_oops_do(adjust_root_pointer_closure());
   // Roots were visited so references into the young gen in roots

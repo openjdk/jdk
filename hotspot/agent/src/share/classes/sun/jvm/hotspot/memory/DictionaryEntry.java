@@ -63,7 +63,7 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
   }
 
   public Klass klass() {
-    return (Klass) literal();
+    return (Klass)VM.getVM().getObjectHeap().newOop(literalValue().addOffsetToAsOopHandle(0));
   }
 
   public DictionaryEntry(Address addr) {

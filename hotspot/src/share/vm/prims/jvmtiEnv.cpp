@@ -541,12 +541,12 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
       JavaCalls::call_special(&res,
                               loader,
                               loader_ik,
-                              vmSymbolHandles::appendToClassPathForInstrumentation_name(),
-                              vmSymbolHandles::appendToClassPathForInstrumentation_signature(),
+                              vmSymbols::appendToClassPathForInstrumentation_name(),
+                              vmSymbols::appendToClassPathForInstrumentation_signature(),
                               path,
                               THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+        Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
         CLEAR_PENDING_EXCEPTION;
 
         if (ex_name == vmSymbols::java_lang_NoSuchMethodError()) {
@@ -2124,7 +2124,7 @@ JvmtiEnv::GetClassSignature(oop k_mirror, char** signature_ptr, char** generic_p
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
     if (!isPrimitive && Klass::cast(k)->oop_is_instance()) {
-      symbolOop soo = instanceKlass::cast(k)->generic_signature();
+      Symbol* soo = instanceKlass::cast(k)->generic_signature();
       if (soo != NULL) {
         const char *gen_sig = soo->as_C_string();
         if (gen_sig != NULL) {
@@ -2176,7 +2176,7 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
-  symbolOop sfnOop = instanceKlass::cast(k_klass)->source_file_name();
+  Symbol* sfnOop = instanceKlass::cast(k_klass)->source_file_name();
   NULL_CHECK(sfnOop, JVMTI_ERROR_ABSENT_INFORMATION);
   {
     JavaThread* current_thread  = JavaThread::current();
@@ -2539,7 +2539,7 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
     if (!Klass::cast(k)->oop_is_instance()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
-    symbolOop sdeOop = instanceKlass::cast(k)->source_debug_extension();
+    Symbol* sdeOop = instanceKlass::cast(k)->source_debug_extension();
     NULL_CHECK(sdeOop, JVMTI_ERROR_ABSENT_INFORMATION);
 
     {
@@ -2619,7 +2619,7 @@ JvmtiEnv::GetFieldName(fieldDescriptor* fdesc_ptr, char** name_ptr, char** signa
   }
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
-    symbolOop soop = fdesc_ptr->generic_signature();
+    Symbol* soop = fdesc_ptr->generic_signature();
     if (soop != NULL) {
       const char* gen_sig = soop->as_C_string();
       if (gen_sig != NULL) {
@@ -2695,7 +2695,7 @@ JvmtiEnv::GetMethodName(methodOop method_oop, char** name_ptr, char** signature_
 
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
-    symbolOop soop = method_oop->generic_signature();
+    Symbol* soop = method_oop->generic_signature();
     if (soop != NULL) {
       const char* gen_sig = soop->as_C_string();
       if (gen_sig != NULL) {

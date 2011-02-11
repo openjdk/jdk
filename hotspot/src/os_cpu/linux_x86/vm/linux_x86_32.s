@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 	.globl _mmx_Copy_arrayof_conjoint_jshorts
 
         .globl _Atomic_cmpxchg_long
+        .globl _Atomic_move_long
 
 	.text
 
@@ -651,5 +652,17 @@ _Atomic_cmpxchg_long:
 1:      cmpxchg8b (%edi)
         popl     %edi
         popl     %ebx
+        ret
+
+
+        # Support for jlong Atomic::load and Atomic::store.
+        # void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+        .p2align 4,,15
+	.type    _Atomic_move_long,@function
+_Atomic_move_long:
+        movl     4(%esp), %eax   # src
+        fildll    (%eax)
+        movl     8(%esp), %eax   # dest
+        fistpll   (%eax)
         ret
 

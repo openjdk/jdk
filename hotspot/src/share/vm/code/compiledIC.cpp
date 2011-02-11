@@ -34,7 +34,7 @@
 #include "memory/oopFactory.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"

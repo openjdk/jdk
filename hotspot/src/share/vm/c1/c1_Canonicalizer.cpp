@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -898,4 +898,4 @@ void Canonicalizer::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void Canonicalizer::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void Canonicalizer::do_ProfileCall(ProfileCall* x) {}
 void Canonicalizer::do_ProfileInvoke(ProfileInvoke* x) {}
-
+void Canonicalizer::do_RuntimeCall(RuntimeCall* x) {}
