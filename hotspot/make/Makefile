@@ -73,7 +73,7 @@ else
   include defs.make
 endif
 
-include $(GAMMADIR)/make/closed.make
+include $(GAMMADIR)/make/altsrc.make
 
 ifneq ($(ALT_OUTPUTDIR),)
   ALT_OUT=ALT_OUTPUTDIR=$(ALT_OUTPUTDIR)
@@ -362,7 +362,8 @@ $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/code/%
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/prims/%
 	$(install-file)
 
-$(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h:  $(HS_JNI_ARCH_SRC)
+HS_JNI_ARCH_SRC=$(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(HS_ARCH)/vm/jni_$(HS_ARCH).h)
+$(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h: $(HS_JNI_ARCH_SRC)
 	$(install-file)
 
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/services/%

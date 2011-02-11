@@ -245,6 +245,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
 }
 
+const char *Abstract_VM_Version::vm_build_user() {
+  return HOTSPOT_BUILD_USER;
+}
+
 unsigned int Abstract_VM_Version::jvm_version() {
   return ((Abstract_VM_Version::vm_major_version() & 0xFF) << 24) |
          ((Abstract_VM_Version::vm_minor_version() & 0xFF) << 16) |
