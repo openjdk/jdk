@@ -595,15 +595,16 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
 }
 
 XImage* X11SD_GetSharedImage(X11SDOps *xsdo, jint width, jint height,
-                             jboolean readBits)
+                             jint maxWidth, jint maxHeight, jboolean readBits)
 {
     XImage * retImage = NULL;
     if (cachedXImage != NULL &&
-        X11SD_CachedXImageFits(width, height, xsdo->depth, readBits)) {
-            /* sync so previous data gets flushed */
-            XSync(awt_display, False);
-            retImage = cachedXImage;
-            cachedXImage = (XImage *)NULL;
+        X11SD_CachedXImageFits(width, height, maxWidth, maxHeight,
+                               xsdo->depth, readBits)) {
+        /* sync so previous data gets flushed */
+        XSync(awt_display, False);
+        retImage = cachedXImage;
+        cachedXImage = (XImage *)NULL;
     } else if (width * height * xsdo->depth > 0x10000) {
         retImage = X11SD_CreateSharedImage(xsdo, width, height);
     }
@@ -728,8 +729,8 @@ void X11SD_UnPuntPixmap(X11SDOps *xsdo)
  * it must be close enough to avoid excessive reading from the screen;
  * otherwise it should just be at least the size requested.
  */
-jboolean X11SD_CachedXImageFits(jint width, jint height, jint depth,
-                                jboolean readBits)
+jboolean X11SD_CachedXImageFits(jint width, jint height, jint maxWidth,
+                                jint maxHeight, jint depth, jboolean readBits)
 {
     /* we assume here that the cached image exists */
     jint imgWidth = cachedXImage->width;
@@ -747,10 +748,14 @@ jboolean X11SD_CachedXImageFits(jint width, jint height, jint depth,
         return JNI_TRUE;
     }
 
-    if ((imgWidth < width + 64) && (imgHeight < height + 64)) {
+    if ((imgWidth < width + 64) && (imgHeight < height + 64)
+         && imgWidth <= maxWidth && imgHeight <= maxHeight)
+    {
         /* Cached image's width/height shouldn't be more than 64 pixels
          * larger than requested, because the region in XShmGetImage
          * can't be specified and we don't want to read too much.
+         * Furthermore it has to be smaller than maxWidth/Height
+         * so drawables are not read out of bounds.
          */
         return JNI_TRUE;
     }
@@ -1295,7 +1300,7 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
                                SurfaceDataBounds *bounds,
                                jint lockFlags)
 {
-    int x, y, w, h;
+    int x, y, w, h, maxWidth, maxHeight;
     int scan;
     XImage * img = NULL;
     Drawable drawable;
@@ -1311,10 +1316,31 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
 
 #ifdef MITSHM
     if (useMitShmExt == CAN_USE_MITSHM) {
-        if (xsdo->isPixmap && readBits) {
-            X11SD_PuntPixmap(xsdo, w, h);
+        if (xsdo->isPixmap) {
+            if (readBits) {
+                X11SD_PuntPixmap(xsdo, w, h);
+            }
+            maxWidth = xsdo->pmWidth;
+            maxHeight = xsdo->pmHeight;
+        } else {
+            XWindowAttributes winAttr;
+            if (XGetWindowAttributes(awt_display,
+                                     (Window) xsdo->drawable, &winAttr) != 0) {
+                maxWidth = winAttr.width;
+                maxHeight = winAttr.height;
+           } else {
+                /* XGWA failed which isn't a good thing. Defaulting to using
+                 * x,y means that after the subtraction of these we will use
+                 * w=0, h=0 which is a reasonable default on such a failure.
+                 */
+                maxWidth = x;
+                maxHeight = y;
+           }
         }
-        img = X11SD_GetSharedImage(xsdo, w, h, readBits);
+        maxWidth -= x;
+        maxHeight -= y;
+
+        img = X11SD_GetSharedImage(xsdo, w, h, maxWidth, maxHeight, readBits);
     }
 #endif /* MITSHM */
     drawable = xsdo->drawable;
