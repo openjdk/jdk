@@ -64,34 +64,6 @@ class oopFactory: AllStatic {
 
   static typeArrayOop    new_typeArray(BasicType type, int length, TRAPS);
 
-  // Symbols
-  static symbolOop new_symbol(const char* utf8_buffer, int length, TRAPS) {
-    assert(utf8_buffer != NULL, "just checking");
-    return SymbolTable::lookup(utf8_buffer, length, CHECK_NULL);
-  }
-  static void new_symbols(constantPoolHandle cp, int names_count,
-                          const char** name, int* lengths,
-                          int* cp_indices, unsigned int* hashValues,
-                          TRAPS) {
-    SymbolTable::add(cp, names_count, name, lengths, cp_indices,
-                     hashValues, CHECK);
-  }
-
-  static symbolOop       new_symbol(char* name, TRAPS) { return new_symbol(name, (int)strlen(name), CHECK_NULL); }
-  static symbolOop       new_symbol(const char* name, TRAPS) { return new_symbol(name, (int)strlen(name), CHECK_NULL); }
-  static symbolOop       new_symbol(symbolHandle sym, int begin, int end, TRAPS) {
-    assert(begin <= end && end <= sym->utf8_length(), "just checking");
-    return SymbolTable::lookup(sym, begin, end, CHECK_NULL);
-  }
-
-  // Create symbols as above but return a handle
-  static symbolHandle    new_symbol_handle(const char* name, int length, TRAPS) {
-    symbolOop sym = new_symbol(name, length, THREAD);
-    return symbolHandle(THREAD, sym);
-  }
-  static symbolHandle    new_symbol_handle(char* name, TRAPS) { return new_symbol_handle(name, (int)strlen(name), CHECK_(symbolHandle())); }
-  static symbolHandle    new_symbol_handle(const char* name, TRAPS) { return new_symbol_handle(name, (int)strlen(name), CHECK_(symbolHandle())); }
-
   // Constant pools
   static constantPoolOop      new_constantPool     (int length,
                                                     bool is_conc_safe,

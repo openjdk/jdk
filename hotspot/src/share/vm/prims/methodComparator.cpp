@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/handles.inline.hpp"
@@ -194,10 +194,10 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
   case Bytecodes::_ldc   : // fall through
   case Bytecodes::_ldc_w : {
-    Bytecode_loadconstant* ldc_old = Bytecode_loadconstant_at(_s_old->method(), _s_old->bci());
-    Bytecode_loadconstant* ldc_new = Bytecode_loadconstant_at(_s_new->method(), _s_new->bci());
-    int cpi_old = ldc_old->pool_index();
-    int cpi_new = ldc_new->pool_index();
+    Bytecode_loadconstant ldc_old(_s_old->method(), _s_old->bci());
+    Bytecode_loadconstant ldc_new(_s_new->method(), _s_new->bci());
+    int cpi_old = ldc_old.pool_index();
+    int cpi_new = ldc_new.pool_index();
     if (!pool_constants_same(cpi_old, cpi_new))
       return false;
     break;
@@ -267,8 +267,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_ifnonnull : // fall through
   case Bytecodes::_ifnull    : // fall through
   case Bytecodes::_jsr       : {
-    int old_ofs = _s_old->bytecode()->get_offset_s2(c_old);
-    int new_ofs = _s_new->bytecode()->get_offset_s2(c_new);
+    int old_ofs = _s_old->bytecode().get_offset_s2(c_old);
+    int new_ofs = _s_new->bytecode().get_offset_s2(c_new);
     if (_switchable_test) {
       int old_dest = _s_old->bci() + old_ofs;
       int new_dest = _s_new->bci() + new_ofs;
@@ -304,8 +304,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
   case Bytecodes::_goto_w : // fall through
   case Bytecodes::_jsr_w  : {
-    int old_ofs = _s_old->bytecode()->get_offset_s4(c_old);
-    int new_ofs = _s_new->bytecode()->get_offset_s4(c_new);
+    int old_ofs = _s_old->bytecode().get_offset_s4(c_old);
+    int new_ofs = _s_new->bytecode().get_offset_s4(c_new);
     if (_switchable_test) {
       int old_dest = _s_old->bci() + old_ofs;
       int new_dest = _s_new->bci() + new_ofs;

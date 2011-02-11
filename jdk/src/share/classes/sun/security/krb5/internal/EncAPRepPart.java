@@ -133,7 +133,7 @@ public class EncAPRepPart {
      * @exception IOException if an I/O error occurs while reading encoded data.
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<DerValue>();
+        Vector<DerValue> v = new Vector<>();
         DerOutputStream temp = new DerOutputStream();
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x00), ctime.asn1Encode()));

@@ -134,7 +134,7 @@ public class KRBCred {
             if (subsubDer.getTag() != DerValue.tag_SequenceOf) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
             }
-            Vector<Ticket> v = new Vector<Ticket>();
+            Vector<Ticket> v = new Vector<>();
             while (subsubDer.getData().available() > 0) {
                 v.addElement(new Ticket(subsubDer.getData().getDerValue()));
             }

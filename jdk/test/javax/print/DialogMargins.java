@@ -25,7 +25,7 @@
 
 /**
  * @test
- * @bug 4485755 6361370 6448717 5080051
+ * @bug 4485755 6361370 6448717 5080051 6939417
  * @summary dialog doesn't have way to specify margins
  *          for 6361370, verify exception for offline printer in Windows
  *          for 6448717, faster display of print dialog

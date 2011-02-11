@@ -41,7 +41,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
@@ -752,11 +752,7 @@ void PackageHashtable::copy_table(char** top, char* end,
     }
   }
   if (*top + n + sizeof(intptr_t) >= end) {
-    warning("\nThe shared miscellaneous data space is not large "
-            "enough to \npreload requested classes.  Use "
-            "-XX:SharedMiscDataSize= to increase \nthe initial "
-            "size of the miscellaneous data space.\n");
-    exit(2);
+    report_out_of_shared_space(SharedMiscData);
   }
 
   // Copy the table data (the strings) to the shared space.
@@ -875,9 +871,9 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 }
 
 
-instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
+instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   ResourceMark rm(THREAD);
-  EventMark m("loading class " INTPTR_FORMAT, (address)h_name());
+  EventMark m("loading class " INTPTR_FORMAT, (address)h_name);
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
   stringStream st;
@@ -912,7 +908,7 @@ instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
     ClassFileParser parser(stream);
     Handle class_loader;
     Handle protection_domain;
-    symbolHandle parsed_name;
+    TempNewSymbol parsed_name = NULL;
     instanceKlassHandle result = parser.parseClassFile(h_name,
                                                        class_loader,
                                                        protection_domain,
@@ -1308,7 +1304,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       if (_compile_the_world_counter > CompileTheWorldStopAt) return;
 
       // Construct name without extension
-      symbolHandle sym = oopFactory::new_symbol_handle(buffer, CHECK);
+      TempNewSymbol sym = SymbolTable::new_symbol(buffer, CHECK);
       // Use loader to load and initialize class
       klassOop ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
       instanceKlassHandle k (THREAD, ik);
@@ -1382,3 +1378,61 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
 }
 
 #endif //PRODUCT
+
+// Please keep following two functions at end of this file. With them placed at top or in middle of the file,
+// they could get inlined by agressive compiler, an unknown trick, see bug 6966589.
+void PerfClassTraceTime::initialize() {
+  if (!UsePerfData) return;
+
+  if (_eventp != NULL) {
+    // increment the event counter
+    _eventp->inc();
+  }
+
+  // stop the current active thread-local timer to measure inclusive time
+  _prev_active_event = -1;
+  for (int i=0; i < EVENT_TYPE_COUNT; i++) {
+     if (_timers[i].is_active()) {
+       assert(_prev_active_event == -1, "should have only one active timer");
+       _prev_active_event = i;
+       _timers[i].stop();
+     }
+  }
+
+  if (_recursion_counters == NULL || (_recursion_counters[_event_type])++ == 0) {
+    // start the inclusive timer if not recursively called
+    _t.start();
+  }
+
+  // start thread-local timer of the given event type
+   if (!_timers[_event_type].is_active()) {
+    _timers[_event_type].start();
+  }
+}
+
+PerfClassTraceTime::~PerfClassTraceTime() {
+  if (!UsePerfData) return;
+
+  // stop the thread-local timer as the event completes
+  // and resume the thread-local timer of the event next on the stack
+  _timers[_event_type].stop();
+  jlong selftime = _timers[_event_type].ticks();
+
+  if (_prev_active_event >= 0) {
+    _timers[_prev_active_event].start();
+  }
+
+  if (_recursion_counters != NULL && --(_recursion_counters[_event_type]) > 0) return;
+
+  // increment the counters only on the leaf call
+  _t.stop();
+  _timep->inc(_t.ticks());
+  if (_selftimep != NULL) {
+    _selftimep->inc(selftime);
+  }
+  // add all class loading related event selftime to the accumulated time counter
+  ClassLoader::perf_accumulated_time()->inc(selftime);
+
+  // reset the timer
+  _timers[_event_type].reset();
+}

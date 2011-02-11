@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,18 +476,12 @@ class SimpleExceptionStub: public CodeStub {
 
 
 
-class ArrayStoreExceptionStub: public CodeStub {
+class ArrayStoreExceptionStub: public SimpleExceptionStub {
  private:
   CodeEmitInfo* _info;
 
  public:
-  ArrayStoreExceptionStub(CodeEmitInfo* info);
-  virtual void emit_code(LIR_Assembler* emit);
-  virtual CodeEmitInfo* info() const             { return _info; }
-  virtual bool is_exception_throw_stub() const   { return true; }
-  virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case(_info);
-  }
+  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(Runtime1::throw_array_store_exception_id, obj, info) {}
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("ArrayStoreExceptionStub"); }
 #endif // PRODUCT

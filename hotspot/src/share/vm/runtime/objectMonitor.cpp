@@ -79,7 +79,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
   char* bytes = NULL;                                                      \
   int len = 0;                                                             \
   jlong jtid = SharedRuntime::get_java_tid(thread);                        \
-  symbolOop klassname = ((oop)(klassOop))->klass()->klass_part()->name();  \
+  Symbol* klassname = ((oop)(klassOop))->klass()->klass_part()->name();    \
   if (klassname != NULL) {                                                 \
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \

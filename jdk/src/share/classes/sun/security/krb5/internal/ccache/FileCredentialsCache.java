@@ -490,7 +490,7 @@ public class FileCredentialsCache extends CredentialsCache
 
     private static String exec(String c) {
         StringTokenizer st = new StringTokenizer(c);
-        Vector<String> v = new Vector<String> ();
+        Vector<String> v = new Vector<>();
         while (st.hasMoreTokens()) {
             v.addElement(st.nextToken());
         }

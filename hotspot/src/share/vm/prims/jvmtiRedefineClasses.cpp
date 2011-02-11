@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_String:      // fall through
 
     // These were indirect CP entries, but they have been changed into
-    // symbolOops so these entries can be directly appended.
+    // Symbol*s so these entries can be directly appended.
     case JVM_CONSTANT_UnresolvedClass:  // fall through
     case JVM_CONSTANT_UnresolvedString:
     {
@@ -575,12 +575,12 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     // name and signature
     jshort name_index = k_old_fields->short_at(i + instanceKlass::name_index_offset);
     jshort sig_index = k_old_fields->short_at(i +instanceKlass::signature_index_offset);
-    symbolOop name_sym1 = the_class->constants()->symbol_at(name_index);
-    symbolOop sig_sym1 = the_class->constants()->symbol_at(sig_index);
+    Symbol* name_sym1 = the_class->constants()->symbol_at(name_index);
+    Symbol* sig_sym1 = the_class->constants()->symbol_at(sig_index);
     name_index = k_new_fields->short_at(i + instanceKlass::name_index_offset);
     sig_index = k_new_fields->short_at(i + instanceKlass::signature_index_offset);
-    symbolOop name_sym2 = scratch_class->constants()->symbol_at(name_index);
-    symbolOop sig_sym2 = scratch_class->constants()->symbol_at(sig_index);
+    Symbol* name_sym2 = scratch_class->constants()->symbol_at(name_index);
+    Symbol* sig_sym2 = scratch_class->constants()->symbol_at(sig_index);
     if (name_sym1 != name_sym2 || sig_sym1 != sig_sym2) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
@@ -855,7 +855,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
     klassOop the_class_oop = java_lang_Class::as_klassOop(mirror);
     instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
-    symbolHandle the_class_sym = symbolHandle(THREAD, the_class->name());
+    Symbol*  the_class_sym = the_class->name();
 
     // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
     RC_TRACE_WITH_THREAD(0x00000001, THREAD,
@@ -886,7 +886,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     instanceKlassHandle scratch_class (THREAD, k);
 
     if (HAS_PENDING_EXCEPTION) {
-      symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
       // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
       RC_TRACE_WITH_THREAD(0x00000002, THREAD, ("parse_stream exception: '%s'",
         ex_name->as_C_string()));
@@ -912,7 +912,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     if (!the_class->is_linked()) {
       the_class->link_class(THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+        Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
         // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
         RC_TRACE_WITH_THREAD(0x00000002, THREAD, ("link_class exception: '%s'",
           ex_name->as_C_string()));
@@ -950,7 +950,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     if (HAS_PENDING_EXCEPTION) {
-      symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
       // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
       RC_TRACE_WITH_THREAD(0x00000002, THREAD,
         ("verify_byte_codes exception: '%s'", ex_name->as_C_string()));
@@ -976,7 +976,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       }
 
       if (HAS_PENDING_EXCEPTION) {
-        symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+        Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
         // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
         RC_TRACE_WITH_THREAD(0x00000002, THREAD,
           ("verify_byte_codes post merge-CP exception: '%s'",
@@ -993,7 +993,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
     Rewriter::rewrite(scratch_class, THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      symbolOop ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
       CLEAR_PENDING_EXCEPTION;
       if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
@@ -1458,7 +1458,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
     if (bc_length == 0) {
       // More complicated bytecodes report a length of zero so
       // we have to try again a slightly different way.
-      bc_length = Bytecodes::length_at(bcp);
+      bc_length = Bytecodes::length_at(method(), bcp);
     }
 
     assert(bc_length != 0, "impossible bytecode length");
@@ -2857,8 +2857,8 @@ class TransferNativeFunctionRegistration {
   //    (2) with the prefix.
   // where 'prefix' is the prefix at that 'depth' (first prefix, second prefix,...)
   methodOop search_prefix_name_space(int depth, char* name_str, size_t name_len,
-                                     symbolOop signature) {
-    symbolOop name_symbol = SymbolTable::probe(name_str, (int)name_len);
+                                     Symbol* signature) {
+    TempNewSymbol name_symbol = SymbolTable::probe(name_str, (int)name_len);
     if (name_symbol != NULL) {
       methodOop method = Klass::cast(the_class())->lookup_method(name_symbol, signature);
       if (method != NULL) {
@@ -2897,7 +2897,7 @@ class TransferNativeFunctionRegistration {
 
   // Return the method name with old prefixes stripped away.
   char* method_name_without_prefixes(methodOop method) {
-    symbolOop name = method->name();
+    Symbol* name = method->name();
     char* name_str = name->as_utf8();
 
     // Old prefixing may be defunct, strip prefixes, if any.

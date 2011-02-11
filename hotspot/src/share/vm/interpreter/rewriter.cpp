@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ void Rewriter::scan_method(methodOop method) {
       // call to calculate the length.
       bc_length = Bytecodes::length_for(c);
       if (bc_length == 0) {
-        bc_length = Bytecodes::length_at(bcp);
+        bc_length = Bytecodes::length_at(method, bcp);
 
         // length_at will put us at the bytecode after the one modified
         // by 'wide'. We don't currently examine any of the bytecodes
@@ -237,9 +237,9 @@ void Rewriter::scan_method(methodOop method) {
       switch (c) {
         case Bytecodes::_lookupswitch   : {
 #ifndef CC_INTERP
-          Bytecode_lookupswitch* bc = Bytecode_lookupswitch_at(bcp);
+          Bytecode_lookupswitch bc(method, bcp);
           (*bcp) = (
-            bc->number_of_pairs() < BinarySwitchThreshold
+            bc.number_of_pairs() < BinarySwitchThreshold
             ? Bytecodes::_fast_linearswitch
             : Bytecodes::_fast_binaryswitch
           );

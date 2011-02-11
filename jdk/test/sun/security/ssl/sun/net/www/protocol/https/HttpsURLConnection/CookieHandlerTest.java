@@ -300,8 +300,8 @@ public class CookieHandlerTest {
             getCalled = true;
             // returns cookies[0]
             // they will be include in request
-            Map<String,List<String>> map = new HashMap<String,List<String>>();
-            List<String> l = new ArrayList<String>();
+            Map<String,List<String>> map = new HashMap<>();
+            List<String> l = new ArrayList<>();
             l.add(cookies.get("Cookie"));
             map.put("Cookie",l);
             return Collections.unmodifiableMap(map);

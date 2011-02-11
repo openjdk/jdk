@@ -28,7 +28,7 @@
 #include "memory/oopFactory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/signature.hpp"
 
@@ -44,22 +44,8 @@
 // ClassName  = string.
 
 
-SignatureIterator::SignatureIterator(symbolHandle signature) {
-  assert(signature->is_symbol(), "not a symbol");
+SignatureIterator::SignatureIterator(Symbol* signature) {
   _signature       = signature;
-  _parameter_index = 0;
-}
-
-// Overloaded version called without handle
-SignatureIterator::SignatureIterator(symbolOop signature) {
-  symbolHandle sh(Thread::current(), signature);
-  _signature       = sh;
-  _parameter_index = 0;
-}
-
-SignatureIterator::SignatureIterator(Thread *thread, symbolOop signature) {
-  symbolHandle sh(thread, signature);
-  _signature       = sh;
   _parameter_index = 0;
 }
 
@@ -70,7 +56,7 @@ void SignatureIterator::expect(char c) {
 
 
 void SignatureIterator::skip_optional_size() {
-  symbolOop sig = _signature();
+  Symbol* sig = _signature;
   char c = sig->byte_at(_index);
   while ('0' <= c && c <= '9') c = sig->byte_at(++_index);
 }
@@ -104,7 +90,7 @@ int SignatureIterator::parse_type() {
               _index++; size = T_VOID_size;  ; break;
     case 'L':
       { int begin = ++_index;
-        symbolOop sig = _signature();
+        Symbol* sig = _signature;
         while (sig->byte_at(_index++) != ';') ;
         do_object(begin, _index);
       }
@@ -114,7 +100,7 @@ int SignatureIterator::parse_type() {
     case '[':
       { int begin = ++_index;
         skip_optional_size();
-        symbolOop sig = _signature();
+        Symbol* sig = _signature;
         while (sig->byte_at(_index) == '[') {
           _index++;
           skip_optional_size();
@@ -237,7 +223,7 @@ void SignatureIterator::iterate_returntype() {
   // Ignore parameters
   _index = 0;
   expect('(');
-  symbolOop sig = _signature();
+  Symbol* sig = _signature;
   while (sig->byte_at(_index) != ')') _index++;
   expect(')');
   // Parse return type
@@ -264,9 +250,22 @@ void SignatureIterator::iterate() {
 
 
 // Implementation of SignatureStream
+SignatureStream::SignatureStream(Symbol* signature, bool is_method) :
+                   _signature(signature), _at_return_type(false) {
+  _begin = _end = (is_method ? 1 : 0);  // skip first '(' in method signatures
+  _names = new GrowableArray<Symbol*>(10);
+  next();
+}
+
+SignatureStream::~SignatureStream() {
+  // decrement refcount for names created during signature parsing
+  for (int i = 0; i < _names->length(); i++) {
+    _names->at(i)->decrement_refcount();
+  }
+}
 
 bool SignatureStream::is_done() const {
-  return _end > _signature()->utf8_length();
+  return _end > _signature->utf8_length();
 }
 
 
@@ -274,13 +273,13 @@ void SignatureStream::next_non_primitive(int t) {
   switch (t) {
     case 'L': {
       _type = T_OBJECT;
-      symbolOop sig = _signature();
+      Symbol* sig = _signature;
       while (sig->byte_at(_end++) != ';');
       break;
     }
     case '[': {
       _type = T_ARRAY;
-      symbolOop sig = _signature();
+      Symbol* sig = _signature;
       char c = sig->byte_at(_end);
       while ('0' <= c && c <= '9') c = sig->byte_at(_end++);
       while (sig->byte_at(_end) == '[') {
@@ -319,25 +318,28 @@ bool SignatureStream::is_array() const {
   return _type == T_ARRAY;
 }
 
-symbolOop SignatureStream::as_symbol(TRAPS) {
+Symbol* SignatureStream::as_symbol(TRAPS) {
   // Create a symbol from for string _begin _end
   int begin = _begin;
   int end   = _end;
 
-  if (   _signature()->byte_at(_begin) == 'L'
-      && _signature()->byte_at(_end-1) == ';') {
+  if (   _signature->byte_at(_begin) == 'L'
+      && _signature->byte_at(_end-1) == ';') {
     begin++;
     end--;
   }
 
-  symbolOop result = oopFactory::new_symbol(_signature, begin, end, CHECK_NULL);
-  return result;
+  // Save names for cleaning up reference count at the end of
+  // SignatureStream scope.
+  Symbol* name = SymbolTable::new_symbol(_signature, begin, end, CHECK_NULL);
+  _names->push(name);  // save new symbol for decrementing later
+  return name;
 }
 
 klassOop SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
                                    FailureMode failure_mode, TRAPS) {
   if (!is_object())  return NULL;
-  symbolOop name = as_symbol(CHECK_NULL);
+  Symbol* name = as_symbol(CHECK_NULL);
   if (failure_mode == ReturnNull) {
     return SystemDictionary::resolve_or_null(name, class_loader, protection_domain, THREAD);
   } else {
@@ -355,28 +357,28 @@ oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domai
   return Klass::cast(klass)->java_mirror();
 }
 
-symbolOop SignatureStream::as_symbol_or_null() {
+Symbol* SignatureStream::as_symbol_or_null() {
   // Create a symbol from for string _begin _end
   ResourceMark rm;
 
   int begin = _begin;
   int end   = _end;
 
-  if (   _signature()->byte_at(_begin) == 'L'
-      && _signature()->byte_at(_end-1) == ';') {
+  if (   _signature->byte_at(_begin) == 'L'
+      && _signature->byte_at(_end-1) == ';') {
     begin++;
     end--;
   }
 
   char* buffer = NEW_RESOURCE_ARRAY(char, end - begin);
   for (int index = begin; index < end; index++) {
-    buffer[index - begin] = _signature()->byte_at(index);
+    buffer[index - begin] = _signature->byte_at(index);
   }
-  symbolOop result = SymbolTable::probe(buffer, end - begin);
+  Symbol* result = SymbolTable::probe(buffer, end - begin);
   return result;
 }
 
-bool SignatureVerifier::is_valid_signature(symbolHandle sig) {
+bool SignatureVerifier::is_valid_signature(Symbol* sig) {
   const char* signature = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   if (signature == NULL || signature[0] == '\0' || len < 1) {
@@ -388,7 +390,7 @@ bool SignatureVerifier::is_valid_signature(symbolHandle sig) {
   }
 }
 
-bool SignatureVerifier::is_valid_method_signature(symbolHandle sig) {
+bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   ssize_t index = 0;
@@ -411,7 +413,7 @@ bool SignatureVerifier::is_valid_method_signature(symbolHandle sig) {
   return false;
 }
 
-bool SignatureVerifier::is_valid_type_signature(symbolHandle sig) {
+bool SignatureVerifier::is_valid_type_signature(Symbol* sig) {
   const char* type_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   return (type_sig != NULL && len >= 1 &&

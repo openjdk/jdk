@@ -545,8 +545,7 @@ public final class Security {
             value = filter.substring(index + 1);
         }
 
-        Hashtable<String, String> hashtableFilter =
-                new Hashtable<String, String>(1);
+        Hashtable<String, String> hashtableFilter = new Hashtable<>(1);
         hashtableFilter.put(key, value);
 
         return (getProviders(hashtableFilter));
@@ -606,7 +605,7 @@ public final class Security {
         // Then only return those providers who satisfy the selection criteria.
         Provider[] allProviders = Security.getProviders();
         Set<String> keySet = filter.keySet();
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<Provider>(5);
+        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
 
         // Returns all installed providers
         // if the selection criteria is null.
@@ -660,8 +659,7 @@ public final class Security {
     }
 
     // Map containing cached Spi Class objects of the specified type
-    private static final Map<String,Class> spiMap =
-                                new ConcurrentHashMap<String,Class>();
+    private static final Map<String, Class> spiMap = new ConcurrentHashMap<>();
 
     /**
      * Return the Class object for the given engine type
@@ -885,7 +883,7 @@ public final class Security {
                                                 String attrName,
                                                 String filterValue,
                                                 Provider[] allProviders) {
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<Provider>(5);
+        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
         for (int i = 0; i < allProviders.length; i++) {
             if (isCriterionSatisfied(allProviders[i], serviceName,
                                      algName,
@@ -1082,7 +1080,7 @@ public final class Security {
             return Collections.EMPTY_SET;
         }
 
-        HashSet<String> result = new HashSet<String>();
+        HashSet<String> result = new HashSet<>();
         Provider[] providers = Security.getProviders();
 
         for (int i = 0; i < providers.length; i++) {

@@ -921,7 +921,7 @@
             <!-- ------------------------------------------------------ -->
             <h4><a name="ant">Ant</a></h4>
             <blockquote>
-                All OpenJDK builds require access to least Ant 1.6.5.
+                All OpenJDK builds require access to least Ant 1.7.1.
                 The Ant tool is available from the 
                 <a href="http://ant.apache.org" target="_blank">
                     Ant download site</a>.
@@ -1414,14 +1414,14 @@
                 but it's normally found via the DirectX environment variable
                 <tt>DXSDK_DIR</tt>.
             </blockquote>
-            <strong><a name="msvcrt"><tt>MSVCR100.DLL</tt></a></strong>
+            <strong><a name="msvcrNN"><tt>MSVCR100.DLL</tt></a></strong>
             <blockquote> 
                 The OpenJDK build requires access to a redistributable
                 <tt>MSVCR100.DLL</tt>.
                 This is usually picked up automatically from the redist
                 directories of Visual Studio 2010.
                 If this cannot be found set the 
-                <a href="#ALT_MSVCRT_DLL_PATH"><tt>ALT_MSVCRT_DLL_PATH</tt></a>
+                <a href="#ALT_MSVCRNN_DLL_PATH"><tt>ALT_MSVCRNN_DLL_PATH</tt></a>
                 variable to the location of this file.
                 <p> 
             </blockquote>
@@ -1671,15 +1671,10 @@
                             variable <tt>DXSDK_DIR</tt>,
                             failing that, look in <tt>C:/DXSDK</tt>.
                         </dd>
-                        <dt><tt><a name="ALT_MSVCRT_DLL_PATH">ALT_MSVCRT_DLL_PATH</a></tt> </dt>
-                        <dd>
-                            The location of the 
-                            <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
-                        </dd>
                         <dt><tt><a name="ALT_MSVCRNN_DLL_PATH">ALT_MSVCRNN_DLL_PATH</a></tt> </dt>
                         <dd>
                             The location of the 
-                            <a href="#msvcrt"><tt>MSVCR100.DLL</tt></a>. 
+                            <a href="#msvcrNN"><tt>MSVCR100.DLL</tt></a>. 
                         </dd>
                     </dl>
                 </dd>

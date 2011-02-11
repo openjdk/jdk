@@ -71,7 +71,7 @@ class klassVtable : public ResourceObj {
 
   // searching; all methods return -1 if not found
   int index_of(methodOop m) const                         { return index_of(m, _length); }
-  int index_of_miranda(symbolOop name, symbolOop signature);
+  int index_of_miranda(Symbol* name, Symbol* signature);
 
   void initialize_vtable(bool checkconstraints, TRAPS);   // initialize vtable of a new klass
 
@@ -79,7 +79,7 @@ class klassVtable : public ResourceObj {
   static void compute_vtable_size_and_num_mirandas(int &vtable_length, int &num_miranda_methods,
                                                    klassOop super, objArrayOop methods,
                                                    AccessFlags class_flags, Handle classloader,
-                                                   symbolHandle classname, objArrayOop local_interfaces,
+                                                   Symbol* classname, objArrayOop local_interfaces,
                                                    TRAPS);
 
   // RedefineClasses() API support:
@@ -125,11 +125,11 @@ class klassVtable : public ResourceObj {
   int  initialize_from_super(KlassHandle super);
   int  index_of(methodOop m, int len) const; // same as index_of, but search only up to len
   void put_method_at(methodOop m, int index);
-  static bool needs_new_vtable_entry(methodHandle m, klassOop super, Handle classloader, symbolHandle classname, AccessFlags access_flags, TRAPS);
+  static bool needs_new_vtable_entry(methodHandle m, klassOop super, Handle classloader, Symbol* classname, AccessFlags access_flags, TRAPS);
 
   bool update_inherited_vtable(instanceKlass* klass, methodHandle target_method, int super_vtable_len, bool checkconstraints, TRAPS);
  instanceKlass* find_transitive_override(instanceKlass* initialsuper, methodHandle target_method, int vtable_index,
-                                         Handle target_loader, symbolHandle target_classname, Thread* THREAD);
+                                         Handle target_loader, Symbol* target_classname, Thread* THREAD);
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);

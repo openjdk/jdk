@@ -137,7 +137,7 @@ void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
     JNU_ThrowByName(env, "java/awt/color/CMMException", errMsg);
 }
 
-JNIEXPORT int JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     javaVM = jvm;
 
     cmsSetLogErrorHandler(errorHandler);
