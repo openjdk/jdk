@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
+          manifestVersion="1.0"
+          xmlns:asmv3="urn:schemas-microsoft-com:asm.v3"
+>
 <assemblyIdentity
-    version="1.0.0.0"
+    version="IMVERSION"
     processorArchitecture="X86"
     name="Oracle Corporation, Java(tm) 2 Standard Edition"
     type="win32"
 />
-<description>AWT</description>
+<description>Java(TM) SE PROGRAM process</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity
@@ -19,4 +22,23 @@
         />
     </dependentAssembly>
 </dependency>
+
+  <!-- Identify the application security requirements. -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel
+          level="asInvoker"
+          uiAccess="false"/>
+        </requestedPrivileges>
+       </security>
+  </trustInfo>
+
+  <!-- Indicate JDK is high-dpi aware. -->
+  <asmv3:application>
+    <asmv3:windowsSettings  xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
+       <dpiAware>true</dpiAware>
+    </asmv3:windowsSettings>
+  </asmv3:application>
+
 </assembly>

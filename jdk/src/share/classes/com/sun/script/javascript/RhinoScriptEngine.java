@@ -223,7 +223,9 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
         } catch (RhinoException re) {
             if (DEBUG) re.printStackTrace();
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            throw new ScriptException(re.toString(), re.sourceName(), line);
+            ScriptException se = new ScriptException(re.toString(), re.sourceName(), line);
+            se.initCause(re);
+            throw se;
         } finally {
             cx.exit();
         }
@@ -257,6 +259,8 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
             "        str = 'null';                         \n" +
             "    }                                         \n" +
             "    var out = context.getWriter();            \n" +
+            "    if (!(out instanceof java.io.PrintWriter))\n" +
+            "        out = new java.io.PrintWriter(out);   \n" +
             "    out.print(String(str));                   \n" +
             "    if (newline) out.print('\\n');            \n" +
             "    out.flush();                              \n" +

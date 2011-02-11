@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package java.io;
 
 import java.util.Formatter;
 import java.util.Locale;
-
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * A <code>PrintStream</code> adds functionality to another output stream,
@@ -56,7 +58,7 @@ public class PrintStream extends FilterOutputStream
     implements Appendable, Closeable
 {
 
-    private boolean autoFlush = false;
+    private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
 
@@ -68,6 +70,60 @@ public class PrintStream extends FilterOutputStream
     private OutputStreamWriter charOut;
 
     /**
+     * nonNull is explicitly declared here so as not to create an extra
+     * dependency on java.util.Objects.nonNull. PrintStream is loaded
+     * early during system initialization.
+     */
+    private static <T> T nonNull(T obj, String message) {
+        if (obj == null)
+            throw new NullPointerException(message);
+        return obj;
+    }
+
+    /**
+     * Returns a charset object for the given charset name.
+     * @throws NullPointerException          is csn is null
+     * @throws UnsupportedEncodingException  if the charset is not supported
+     */
+    private static Charset toCharset(String csn)
+        throws UnsupportedEncodingException
+    {
+        nonNull(csn, "charsetName");
+        try {
+            return Charset.forName(csn);
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
+            // UnsupportedEncodingException should be thrown
+            throw new UnsupportedEncodingException(csn);
+        }
+    }
+
+    /* Private constructors */
+    private PrintStream(boolean autoFlush, OutputStream out) {
+        super(out);
+        this.autoFlush = autoFlush;
+        this.charOut = new OutputStreamWriter(this);
+        this.textOut = new BufferedWriter(charOut);
+    }
+
+    private PrintStream(boolean autoFlush, OutputStream out, Charset charset) {
+        super(out);
+        this.autoFlush = autoFlush;
+        this.charOut = new OutputStreamWriter(this, charset);
+        this.textOut = new BufferedWriter(charOut);
+    }
+
+    /* Variant of the private constructor so that the given charset name
+     * can be verified before evaluating the OutputStream argument. Used
+     * by constructors creating a FileOutputStream that also take a
+     * charset name.
+     */
+    private PrintStream(boolean autoFlush, Charset charset, OutputStream out)
+        throws UnsupportedEncodingException
+    {
+        this(autoFlush, out, charset);
+    }
+
+    /**
      * Creates a new print stream.  This stream will not flush automatically.
      *
      * @param  out        The output stream to which values and objects will be
@@ -77,27 +133,6 @@ public class PrintStream extends FilterOutputStream
      */
     public PrintStream(OutputStream out) {
         this(out, false);
-    }
-
-    /* Initialization is factored into a private constructor (note the swapped
-     * parameters so that this one isn't confused with the public one) and a
-     * separate init method so that the following two public constructors can
-     * share code.  We use a separate init method so that the constructor that
-     * takes an encoding will throw an NPE for a null stream before it throws
-     * an UnsupportedEncodingException for an unsupported encoding.
-     */
-
-    private PrintStream(boolean autoFlush, OutputStream out)
-    {
-        super(out);
-        if (out == null)
-            throw new NullPointerException("Null output stream");
-        this.autoFlush = autoFlush;
-    }
-
-    private void init(OutputStreamWriter osw) {
-        this.charOut = osw;
-        this.textOut = new BufferedWriter(osw);
     }
 
     /**
@@ -113,8 +148,7 @@ public class PrintStream extends FilterOutputStream
      * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream, boolean)
      */
     public PrintStream(OutputStream out, boolean autoFlush) {
-        this(autoFlush, out);
-        init(new OutputStreamWriter(this));
+        this(autoFlush, nonNull(out, "Null output stream"));
     }
 
     /**
@@ -138,8 +172,9 @@ public class PrintStream extends FilterOutputStream
     public PrintStream(OutputStream out, boolean autoFlush, String encoding)
         throws UnsupportedEncodingException
     {
-        this(autoFlush, out);
-        init(new OutputStreamWriter(this, encoding));
+        this(autoFlush,
+             nonNull(out, "Null output stream"),
+             toCharset(encoding));
     }
 
     /**
@@ -171,7 +206,6 @@ public class PrintStream extends FilterOutputStream
      */
     public PrintStream(String fileName) throws FileNotFoundException {
         this(false, new FileOutputStream(fileName));
-        init(new OutputStreamWriter(this));
     }
 
     /**
@@ -210,8 +244,8 @@ public class PrintStream extends FilterOutputStream
     public PrintStream(String fileName, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(false, new FileOutputStream(fileName));
-        init(new OutputStreamWriter(this, csn));
+        // ensure charset is checked before the file is opened
+        this(false, toCharset(csn), new FileOutputStream(fileName));
     }
 
     /**
@@ -243,7 +277,6 @@ public class PrintStream extends FilterOutputStream
      */
     public PrintStream(File file) throws FileNotFoundException {
         this(false, new FileOutputStream(file));
-        init(new OutputStreamWriter(this));
     }
 
     /**
@@ -282,8 +315,8 @@ public class PrintStream extends FilterOutputStream
     public PrintStream(File file, String csn)
         throws FileNotFoundException, UnsupportedEncodingException
     {
-        this(false, new FileOutputStream(file));
-        init(new OutputStreamWriter(this, csn));
+        // ensure charset is checked before the file is opened
+        this(false, toCharset(csn), new FileOutputStream(file));
     }
 
     /** Check to make sure that the stream has not been closed */

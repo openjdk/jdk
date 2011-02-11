@@ -269,6 +269,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
 
     /**
      * Inserts the specified element at the tail of this queue.
+     * As the queue is unbounded, this method will never throw
+     * {@link IllegalStateException} or return {@code false}.
      *
      * @return {@code true} (as specified by {@link Collection#add})
      * @throws NullPointerException if the specified element is null
@@ -298,6 +300,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
 
     /**
      * Inserts the specified element at the tail of this queue.
+     * As the queue is unbounded, this method will never return {@code false}.
      *
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null

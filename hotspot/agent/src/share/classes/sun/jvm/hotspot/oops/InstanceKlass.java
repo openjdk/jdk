@@ -82,8 +82,8 @@ public class InstanceKlass extends Klass {
     classLoader          = new OopField(type.getOopField("_class_loader"), Oop.getHeaderSize());
     protectionDomain     = new OopField(type.getOopField("_protection_domain"), Oop.getHeaderSize());
     signers              = new OopField(type.getOopField("_signers"), Oop.getHeaderSize());
-    sourceFileName       = new OopField(type.getOopField("_source_file_name"), Oop.getHeaderSize());
-    sourceDebugExtension = new OopField(type.getOopField("_source_debug_extension"), Oop.getHeaderSize());
+    sourceFileName       = type.getAddressField("_source_file_name");
+    sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = new OopField(type.getOopField("_inner_classes"), Oop.getHeaderSize());
     nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), Oop.getHeaderSize());
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), Oop.getHeaderSize());
@@ -94,7 +94,7 @@ public class InstanceKlass extends Klass {
     vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), Oop.getHeaderSize());
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), Oop.getHeaderSize());
     breakpoints          = type.getAddressField("_breakpoints");
-    genericSignature     = new OopField(type.getOopField("_generic_signature"), Oop.getHeaderSize());
+    genericSignature     = type.getAddressField("_generic_signature");
     majorVersion         = new CIntField(type.getCIntegerField("_major_version"), Oop.getHeaderSize());
     minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), Oop.getHeaderSize());
     headerSize           = alignObjectOffset(Oop.getHeaderSize() + type.getSize());
@@ -135,8 +135,8 @@ public class InstanceKlass extends Klass {
   private static OopField  classLoader;
   private static OopField  protectionDomain;
   private static OopField  signers;
-  private static OopField  sourceFileName;
-  private static OopField  sourceDebugExtension;
+  private static AddressField  sourceFileName;
+  private static AddressField  sourceDebugExtension;
   private static OopField  innerClasses;
   private static CIntField nonstaticFieldSize;
   private static CIntField staticFieldSize;
@@ -147,7 +147,7 @@ public class InstanceKlass extends Klass {
   private static CIntField vtableLen;
   private static CIntField itableLen;
   private static AddressField breakpoints;
-  private static OopField  genericSignature;
+  private static AddressField  genericSignature;
   private static CIntField majorVersion;
   private static CIntField minorVersion;
 
@@ -257,8 +257,8 @@ public class InstanceKlass extends Klass {
   public Oop       getClassLoader()         { return                classLoader.getValue(this); }
   public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
   public ObjArray  getSigners()             { return (ObjArray)     signers.getValue(this); }
-  public Symbol    getSourceFileName()      { return (Symbol)       sourceFileName.getValue(this); }
-  public Symbol    getSourceDebugExtension(){ return (Symbol)       sourceDebugExtension.getValue(this); }
+  public Symbol    getSourceFileName()      { return getSymbol(sourceFileName); }
+  public Symbol    getSourceDebugExtension(){ return getSymbol(sourceDebugExtension); }
   public TypeArray getInnerClasses()        { return (TypeArray)    innerClasses.getValue(this); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticFieldSize()     { return                staticFieldSize.getValue(this); }
@@ -267,7 +267,7 @@ public class InstanceKlass extends Klass {
   public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getVtableLen()           { return                vtableLen.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
-  public Symbol    getGenericSignature()    { return (Symbol)       genericSignature.getValue(this); }
+  public Symbol    getGenericSignature()    { return getSymbol(genericSignature); }
   public long      majorVersion()           { return                majorVersion.getValue(this); }
   public long      minorVersion()           { return                minorVersion.getValue(this); }
 
@@ -308,12 +308,12 @@ public class InstanceKlass extends Klass {
           if (ioff != 0) {
              // only look at classes that are already loaded
              // since we are looking for the flags for our self.
-             Oop classInfo = getConstants().getObjAt(ioff);
+             ConstantPool.CPSlot classInfo = getConstants().getSlotAt(ioff);
              Symbol name = null;
-             if (classInfo instanceof Klass) {
-                name = ((Klass) classInfo).getName();
-             } else if (classInfo instanceof Symbol) {
-                name = (Symbol) classInfo;
+             if (classInfo.isOop()) {
+               name = ((Klass) classInfo.getOop()).getName();
+             } else if (classInfo.isMetaData()) {
+               name = classInfo.getSymbol();
              } else {
                 throw new RuntimeException("should not reach here");
              }
@@ -358,12 +358,12 @@ public class InstanceKlass extends Klass {
          // 'ioff' can be zero.
          // refer to JVM spec. section 4.7.5.
          if (ioff != 0) {
-            Oop iclassInfo = getConstants().getObjAt(ioff);
+            ConstantPool.CPSlot iclassInfo = getConstants().getSlotAt(ioff);
             Symbol innerName = null;
-            if (iclassInfo instanceof Klass) {
-               innerName = ((Klass) iclassInfo).getName();
-            } else if (iclassInfo instanceof Symbol) {
-               innerName = (Symbol) iclassInfo;
+            if (iclassInfo.isOop()) {
+              innerName = ((Klass) iclassInfo.getOop()).getName();
+            } else if (iclassInfo.isMetaData()) {
+              innerName = iclassInfo.getSymbol();
             } else {
                throw new RuntimeException("should not reach here");
             }
@@ -387,12 +387,12 @@ public class InstanceKlass extends Klass {
                   }
                }
             } else {
-               Oop oclassInfo = getConstants().getObjAt(ooff);
+               ConstantPool.CPSlot oclassInfo = getConstants().getSlotAt(ooff);
                Symbol outerName = null;
-               if (oclassInfo instanceof Klass) {
-                  outerName = ((Klass) oclassInfo).getName();
-               } else if (oclassInfo instanceof Symbol) {
-                  outerName = (Symbol) oclassInfo;
+               if (oclassInfo.isOop()) {
+                 outerName = ((Klass) oclassInfo.getOop()).getName();
+               } else if (oclassInfo.isMetaData()) {
+                 outerName = oclassInfo.getSymbol();
                } else {
                   throw new RuntimeException("should not reach here");
                }
@@ -450,7 +450,6 @@ public class InstanceKlass extends Klass {
       visitor.doOop(classLoader, true);
       visitor.doOop(protectionDomain, true);
       visitor.doOop(signers, true);
-      visitor.doOop(sourceFileName, true);
       visitor.doOop(innerClasses, true);
       visitor.doCInt(nonstaticFieldSize, true);
       visitor.doCInt(staticFieldSize, true);
@@ -467,7 +466,7 @@ public class InstanceKlass extends Klass {
     for (int index = 0; index < length; index += NEXT_OFFSET) {
       short accessFlags    = fields.getShortAt(index + ACCESS_FLAGS_OFFSET);
       short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
-      FieldType   type   = new FieldType((Symbol) getConstants().getObjAt(signatureIndex));
+      FieldType   type   = new FieldType(getConstants().getSymbolAt(signatureIndex));
       AccessFlags access = new AccessFlags(accessFlags);
       if (access.isStatic()) {
         visitField(visitor, type, index);
@@ -490,7 +489,7 @@ public class InstanceKlass extends Klass {
       short accessFlags    = fields.getShortAt(index + ACCESS_FLAGS_OFFSET);
       short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
 
-      FieldType   type   = new FieldType((Symbol) getConstants().getObjAt(signatureIndex));
+      FieldType   type   = new FieldType(getConstants().getSymbolAt(signatureIndex));
       AccessFlags access = new AccessFlags(accessFlags);
       if (!access.isStatic()) {
         visitField(visitor, type, index);
@@ -787,7 +786,7 @@ public class InstanceKlass extends Klass {
   private Field newField(int index) {
     TypeArray fields = getFields();
     short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
-    FieldType type = new FieldType((Symbol) getConstants().getObjAt(signatureIndex));
+    FieldType type = new FieldType(getConstants().getSymbolAt(signatureIndex));
     if (type.isOop()) {
      if (VM.getVM().isCompressedOopsEnabled()) {
         return new NarrowOopField(this, index);

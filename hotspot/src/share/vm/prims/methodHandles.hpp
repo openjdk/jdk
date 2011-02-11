@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,18 +287,18 @@ class MethodHandles: AllStatic {
   static void init_MemberName(oop mname_oop, oop target); // compute vmtarget/vmindex from target
   static void init_MemberName(oop mname_oop, methodOop m, bool do_dispatch = true);
   static void init_MemberName(oop mname_oop, klassOop field_holder, AccessFlags mods, int offset);
-  static int find_MemberNames(klassOop k, symbolOop name, symbolOop sig,
+  static int find_MemberNames(klassOop k, Symbol* name, Symbol* sig,
                               int mflags, klassOop caller,
                               int skip, objArrayOop results);
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // Generate MethodHandles adapters.
-  static void generate_adapters(TRAPS);
+  static void generate_adapters();
 
   // Called from InterpreterGenerator and MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm);
-  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek, TRAPS);
+  static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek);
 
   // argument list parsing
   static int argument_slot(oop method_type, int arg);
@@ -466,6 +466,8 @@ class MethodHandles: AllStatic {
                                Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
+
+  static Symbol* convert_to_signature(oop type_str, bool polymorphic, TRAPS);
 };
 
 
@@ -530,7 +532,7 @@ class MethodHandlesAdapterGenerator : public StubCodeGenerator {
 public:
   MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
 
-  void generate(TRAPS);
+  void generate();
 };
 
 #endif // SHARE_VM_PRIMS_METHODHANDLES_HPP

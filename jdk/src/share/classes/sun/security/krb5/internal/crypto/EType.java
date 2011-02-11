@@ -257,7 +257,7 @@ public abstract class EType {
                 + configName);
         }
 
-        List<Integer> list = new ArrayList<Integer> (answer.length);
+        List<Integer> list = new ArrayList<>(answer.length);
         for (int i = 0; i < answer.length; i++) {
             if (EncryptionKey.findKey(answer[i], keys) != null) {
                 list.add(answer[i]);

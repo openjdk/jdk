@@ -576,7 +576,7 @@ public class GenerateOopMap {
           ConstantPool cp       = method().getConstants();
           int nameAndTypeIdx    = cp.name_and_type_ref_index_at(idx);
           int signatureIdx      = cp.signature_ref_index_at(nameAndTypeIdx);
-          symbolOop signature   = cp.symbol_at(signatureIdx);
+          Symbol* signature     = cp.symbol_at(signatureIdx);
           tty.print("%s", signature.as_C_string());
         */
       }
@@ -616,7 +616,7 @@ public class GenerateOopMap {
           constantPoolOop cp    = method().constants();
           int nameAndTypeIdx    = cp.name_and_type_ref_index_at(idx);
           int signatureIdx      = cp.signature_ref_index_at(nameAndTypeIdx);
-          symbolOop signature   = cp.symbol_at(signatureIdx);
+          Symbol* signature     = cp.symbol_at(signatureIdx);
           tty.print("%s", signature.as_C_string());
         */
       }

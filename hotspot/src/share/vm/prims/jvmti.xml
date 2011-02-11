@@ -13048,8 +13048,8 @@ myInit() {
   <event label="Garbage Collection Start"
 	 id="GarbageCollectionStart" const="JVMTI_EVENT_GARBAGE_COLLECTION_START" num="81">
     <description>
-      A Garbage Collection Start event is sent when a full cycle
-      garbage collection begins.
+      A Garbage Collection Start event is sent when a 
+      garbage collection pause begins.
       Only stop-the-world collections are reported--that is, collections during
       which all threads cease to modify the state of the Java virtual machine.
       This means that some collectors will never generate these events.
@@ -13075,8 +13075,8 @@ myInit() {
   <event label="Garbage Collection Finish"
 	 id="GarbageCollectionFinish" const="JVMTI_EVENT_GARBAGE_COLLECTION_FINISH" num="82">
     <description>
-      A Garbage Collection Finish event is sent when a full 
-      garbage collection cycle ends.
+      A Garbage Collection Finish event is sent when a
+      garbage collection pause ends.
       This event is sent while the VM is still stopped, thus
       the event handler must not use JNI functions and
       must not use <jvmti/> functions except those which

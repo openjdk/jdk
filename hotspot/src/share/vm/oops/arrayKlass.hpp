@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ class arrayKlass: public Klass {
   friend class VMStructs;
  private:
   int      _dimension;         // This is n'th-dimensional array.
-  klassOop _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
-  klassOop _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+  volatile klassOop _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  volatile klassOop _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
   int      _vtable_len;        // size of vtable for this klass
   juint    _alloc_size;        // allocation profiling support
   oop      _component_mirror;  // component type, as a java/lang/Class
@@ -84,7 +84,7 @@ class arrayKlass: public Klass {
   objArrayOop allocate_arrayArray(int n, int length, TRAPS);
 
   // Lookup operations
-  methodOop uncached_lookup_method(symbolOop name, symbolOop signature) const;
+  methodOop uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
   // Casting from klassOop
   static arrayKlass* cast(klassOop k) {

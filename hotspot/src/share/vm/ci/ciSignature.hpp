@@ -48,7 +48,7 @@ private:
 
   void get_all_klasses();
 
-  symbolOop get_symbolOop() const                { return _symbol->get_symbolOop(); }
+  Symbol* get_symbol() const                     { return _symbol->get_symbol(); }
 
 public:
   ciSymbol* as_symbol() const                    { return _symbol; }

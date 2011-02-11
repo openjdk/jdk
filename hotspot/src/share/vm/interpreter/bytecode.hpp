@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,20 @@
 # include "bytes_zero.hpp"
 #endif
 
-// Base class for different kinds of abstractions working
-// relative to an objects 'this' pointer.
+class ciBytecodeStream;
 
-class ThisRelativeObj VALUE_OBJ_CLASS_SPEC {
- public:
+// The base class for different kinds of bytecode abstractions.
+// Provides the primitive operations to manipulate code relative
+// to the bcp.
+
+class Bytecode: public StackObj {
+ protected:
+  const address   _bcp;
+  const Bytecodes::Code _code;
+
   // Address computation
-  address addr_at            (int offset)        const     { return (address)this + offset; }
-  int     byte_at            (int offset)        const     { return *(addr_at(offset)); }
+  address addr_at            (int offset)        const     { return (address)_bcp + offset; }
+  u_char byte_at(int offset) const               { return *addr_at(offset); }
   address aligned_addr_at    (int offset)        const     { return (address)round_to((intptr_t)addr_at(offset), jintSize); }
   int     aligned_offset     (int offset)        const     { return aligned_addr_at(offset) - addr_at(0); }
 
@@ -54,31 +60,20 @@ class ThisRelativeObj VALUE_OBJ_CLASS_SPEC {
   int     get_Java_u4_at     (int offset)        const     { return Bytes::get_Java_u4(addr_at(offset)); }
   int     get_native_u2_at   (int offset)        const     { return Bytes::get_native_u2(addr_at(offset)); }
   int     get_native_u4_at   (int offset)        const     { return Bytes::get_native_u4(addr_at(offset)); }
-};
-
-
-// The base class for different kinds of bytecode abstractions.
-// Provides the primitive operations to manipulate code relative
-// to an objects 'this' pointer.
-// FIXME: Make this a ResourceObj, include the enclosing methodOop, and cache the opcode.
-
-class Bytecode: public ThisRelativeObj {
- protected:
-  u_char byte_at(int offset) const               { return *addr_at(offset); }
-  bool check_must_rewrite(Bytecodes::Code bc) const;
 
  public:
+  Bytecode(methodOop method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {
+    assert(method != NULL, "this form requires a valid methodOop");
+  }
+  // Defined in ciStreams.hpp
+  inline Bytecode(const ciBytecodeStream* stream, address bcp = NULL);
+
   // Attributes
-  address bcp() const                            { return addr_at(0); }
-  int instruction_size() const                   { return Bytecodes::length_at(bcp()); }
+  address bcp() const                            { return _bcp; }
+  int instruction_size() const                   { return Bytecodes::length_for_code_at(_code, bcp()); }
 
-  // Warning: Use code() with caution on live bytecode streams.  4926272
-  Bytecodes::Code code() const                   { return Bytecodes::code_at(addr_at(0)); }
+  Bytecodes::Code code() const                   { return _code; }
   Bytecodes::Code java_code() const              { return Bytecodes::java_code(code()); }
-  bool must_rewrite(Bytecodes::Code code) const  { return Bytecodes::can_rewrite(code) && check_must_rewrite(code); }
-
-  // Creation
-  inline friend Bytecode* Bytecode_at(address bcp);
 
   // Static functions for parsing bytecodes in place.
   int get_index_u1(Bytecodes::Code bc) const {
@@ -89,7 +84,7 @@ class Bytecode: public ThisRelativeObj {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
     if (can_use_native_byte_order(bc, is_wide))
-          return Bytes::get_native_u2(p);
+      return Bytes::get_native_u2(p);
     else  return Bytes::get_Java_u2(p);
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
@@ -138,20 +133,17 @@ class Bytecode: public ThisRelativeObj {
   }
 };
 
-inline Bytecode* Bytecode_at(address bcp) {
-  // Warning: Use with caution on live bytecode streams.  4926272
-  return (Bytecode*)bcp;
-}
-
 
 // Abstractions for lookupswitch bytecode
-
-class LookupswitchPair: ThisRelativeObj {
+class LookupswitchPair VALUE_OBJ_CLASS_SPEC {
  private:
-  int  _match;
-  int  _offset;
+  const address _bcp;
+
+  address addr_at            (int offset)        const     { return _bcp + offset; }
+  int     get_Java_u4_at     (int offset)        const     { return Bytes::get_Java_u4(addr_at(offset)); }
 
  public:
+  LookupswitchPair(address bcp): _bcp(bcp) {}
   int  match() const                             { return get_Java_u4_at(0 * jintSize); }
   int  offset() const                            { return get_Java_u4_at(1 * jintSize); }
 };
@@ -159,26 +151,25 @@ class LookupswitchPair: ThisRelativeObj {
 
 class Bytecode_lookupswitch: public Bytecode {
  public:
+  Bytecode_lookupswitch(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  // Defined in ciStreams.hpp
+  inline Bytecode_lookupswitch(const ciBytecodeStream* stream);
   void verify() const PRODUCT_RETURN;
 
   // Attributes
   int  default_offset() const                    { return get_Java_u4_at(aligned_offset(1 + 0*jintSize)); }
   int  number_of_pairs() const                   { return get_Java_u4_at(aligned_offset(1 + 1*jintSize)); }
-  LookupswitchPair* pair_at(int i) const         { assert(0 <= i && i < number_of_pairs(), "pair index out of bounds");
-                                                   return (LookupswitchPair*)aligned_addr_at(1 + (1 + i)*2*jintSize); }
-  // Creation
-  inline friend Bytecode_lookupswitch* Bytecode_lookupswitch_at(address bcp);
+  LookupswitchPair pair_at(int i) const          {
+    assert(0 <= i && i < number_of_pairs(), "pair index out of bounds");
+    return LookupswitchPair(aligned_addr_at(1 + (1 + i)*2*jintSize));
+  }
 };
-
-inline Bytecode_lookupswitch* Bytecode_lookupswitch_at(address bcp) {
-  Bytecode_lookupswitch* b = (Bytecode_lookupswitch*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
 
 class Bytecode_tableswitch: public Bytecode {
  public:
+  Bytecode_tableswitch(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  // Defined in ciStreams.hpp
+  inline Bytecode_tableswitch(const ciBytecodeStream* stream);
   void verify() const PRODUCT_RETURN;
 
   // Attributes
@@ -187,52 +178,36 @@ class Bytecode_tableswitch: public Bytecode {
   int  high_key() const                          { return get_Java_u4_at(aligned_offset(1 + 2*jintSize)); }
   int  dest_offset_at(int i) const;
   int  length()                                  { return high_key()-low_key()+1; }
-
-  // Creation
-  inline friend Bytecode_tableswitch* Bytecode_tableswitch_at(address bcp);
 };
-
-inline Bytecode_tableswitch* Bytecode_tableswitch_at(address bcp) {
-  Bytecode_tableswitch* b = (Bytecode_tableswitch*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
 
 // Common code for decoding invokes and field references.
 
-class Bytecode_member_ref: public ResourceObj {
+class Bytecode_member_ref: public Bytecode {
  protected:
-  methodHandle _method;                          // method containing the bytecode
-  int          _bci;                             // position of the bytecode
+  const methodHandle _method;                          // method containing the bytecode
 
-  Bytecode_member_ref(methodHandle method, int bci)  : _method(method), _bci(bci) {}
+  Bytecode_member_ref(methodHandle method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
+
+  methodHandle method() const                    { return _method; }
 
  public:
-  // Attributes
-  methodHandle method() const                    { return _method; }
-  int          bci() const                       { return _bci; }
-  address      bcp() const                       { return _method->bcp_from(bci()); }
-  Bytecode*    bytecode() const                  { return Bytecode_at(bcp()); }
-
   int          index() const;                    // cache index (loaded from instruction)
   int          pool_index() const;               // constant pool index
-  symbolOop    name() const;                     // returns the name of the method or field
-  symbolOop    signature() const;                // returns the signature of the method or field
+  Symbol*      name() const;                     // returns the name of the method or field
+  Symbol*      signature() const;                // returns the signature of the method or field
 
-  BasicType    result_type(Thread* thread) const; // returns the result type of the getfield or invoke
-
-  Bytecodes::Code code() const                   { return Bytecodes::code_at(bcp(), _method()); }
-  Bytecodes::Code java_code() const              { return Bytecodes::java_code(code()); }
+  BasicType    result_type() const;              // returns the result type of the getfield or invoke
 };
 
 // Abstraction for invoke_{virtual, static, interface, special}
 
 class Bytecode_invoke: public Bytecode_member_ref {
  protected:
-  Bytecode_invoke(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) {}
+  // Constructor that skips verification
+  Bytecode_invoke(methodHandle method, int bci, bool unused)  : Bytecode_member_ref(method, bci) {}
 
  public:
+  Bytecode_invoke(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
   void verify() const;
 
   // Attributes
@@ -253,31 +228,20 @@ class Bytecode_invoke: public Bytecode_member_ref {
                                                           is_invokespecial()   ||
                                                           is_invokedynamic(); }
 
-  // Creation
-  inline friend Bytecode_invoke* Bytecode_invoke_at(methodHandle method, int bci);
-
-  // Like Bytecode_invoke_at. Instead it returns NULL if the bci is not at an invoke.
-  inline friend Bytecode_invoke* Bytecode_invoke_at_check(methodHandle method, int bci);
+  // Helper to skip verification.   Used is_valid() to check if the result is really an invoke
+  inline friend Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci);
 };
 
-inline Bytecode_invoke* Bytecode_invoke_at(methodHandle method, int bci) {
-  Bytecode_invoke* b = new Bytecode_invoke(method, bci);
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
-inline Bytecode_invoke* Bytecode_invoke_at_check(methodHandle method, int bci) {
-  Bytecode_invoke* b = new Bytecode_invoke(method, bci);
-  return b->is_valid() ? b : NULL;
+inline Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci) {
+  return Bytecode_invoke(method, bci, false);
 }
 
 
 // Abstraction for all field accesses (put/get field/static)
 class Bytecode_field: public Bytecode_member_ref {
- protected:
-  Bytecode_field(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) {}
-
  public:
+  Bytecode_field(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
+
   // Testers
   bool is_getfield() const                       { return java_code() == Bytecodes::_getfield; }
   bool is_putfield() const                       { return java_code() == Bytecodes::_putfield; }
@@ -292,131 +256,64 @@ class Bytecode_field: public Bytecode_member_ref {
                                                           is_getstatic()  ||
                                                           is_putstatic(); }
   void verify() const;
-
-  // Creation
-  inline friend Bytecode_field* Bytecode_field_at(methodHandle method, int bci);
 };
 
-inline Bytecode_field* Bytecode_field_at(methodHandle method, int bci) {
-  Bytecode_field* b = new Bytecode_field(method, bci);
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
-
 // Abstraction for checkcast
-
 class Bytecode_checkcast: public Bytecode {
  public:
+  Bytecode_checkcast(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(Bytecodes::java_code(code()) == Bytecodes::_checkcast, "check checkcast"); }
 
   // Returns index
   long index() const   { return get_index_u2(Bytecodes::_checkcast); };
-
-  // Creation
-  inline friend Bytecode_checkcast* Bytecode_checkcast_at(address bcp);
 };
 
-inline Bytecode_checkcast* Bytecode_checkcast_at(address bcp) {
-  Bytecode_checkcast* b = (Bytecode_checkcast*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
-
 // Abstraction for instanceof
-
 class Bytecode_instanceof: public Bytecode {
  public:
+  Bytecode_instanceof(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(code() == Bytecodes::_instanceof, "check instanceof"); }
 
   // Returns index
   long index() const   { return get_index_u2(Bytecodes::_instanceof); };
-
-  // Creation
-  inline friend Bytecode_instanceof* Bytecode_instanceof_at(address bcp);
 };
-
-inline Bytecode_instanceof* Bytecode_instanceof_at(address bcp) {
-  Bytecode_instanceof* b = (Bytecode_instanceof*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
 
 class Bytecode_new: public Bytecode {
  public:
+  Bytecode_new(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_new, "check new"); }
 
   // Returns index
   long index() const   { return get_index_u2(Bytecodes::_new); };
-
-  // Creation
-  inline friend Bytecode_new* Bytecode_new_at(address bcp);
 };
-
-inline Bytecode_new* Bytecode_new_at(address bcp) {
-  Bytecode_new* b = (Bytecode_new*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
 
 class Bytecode_multianewarray: public Bytecode {
  public:
+  Bytecode_multianewarray(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_multianewarray, "check new"); }
 
   // Returns index
   long index() const   { return get_index_u2(Bytecodes::_multianewarray); };
-
-  // Creation
-  inline friend Bytecode_multianewarray* Bytecode_multianewarray_at(address bcp);
 };
-
-inline Bytecode_multianewarray* Bytecode_multianewarray_at(address bcp) {
-  Bytecode_multianewarray* b = (Bytecode_multianewarray*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
 
 class Bytecode_anewarray: public Bytecode {
  public:
+  Bytecode_anewarray(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_anewarray, "check anewarray"); }
 
   // Returns index
   long index() const   { return get_index_u2(Bytecodes::_anewarray); };
-
-  // Creation
-  inline friend Bytecode_anewarray* Bytecode_anewarray_at(address bcp);
 };
 
-inline Bytecode_anewarray* Bytecode_anewarray_at(address bcp) {
-  Bytecode_anewarray* b = (Bytecode_anewarray*)bcp;
-  DEBUG_ONLY(b->verify());
-  return b;
-}
-
-
 // Abstraction for ldc, ldc_w and ldc2_w
-
-class Bytecode_loadconstant: public ResourceObj {
+class Bytecode_loadconstant: public Bytecode {
  private:
-  int          _bci;
-  methodHandle _method;
-
-  Bytecodes::Code code() const                   { return bytecode()->code(); }
+  const methodHandle _method;
 
   int raw_index() const;
 
-  Bytecode_loadconstant(methodHandle method, int bci) : _method(method), _bci(bci) {}
-
  public:
-  // Attributes
-  methodHandle method() const                    { return _method; }
-  int          bci() const                       { return _bci; }
-  address      bcp() const                       { return _method->bcp_from(bci()); }
-  Bytecode*    bytecode() const                  { return Bytecode_at(bcp()); }
+  Bytecode_loadconstant(methodHandle method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method) { verify(); }
 
   void verify() const {
     assert(_method.not_null(), "must supply method");
@@ -437,15 +334,6 @@ class Bytecode_loadconstant: public ResourceObj {
   BasicType result_type() const;        // returns the result type of the ldc
 
   oop resolve_constant(TRAPS) const;
-
-  // Creation
-  inline friend Bytecode_loadconstant* Bytecode_loadconstant_at(methodHandle method, int bci);
 };
-
-inline Bytecode_loadconstant* Bytecode_loadconstant_at(methodHandle method, int bci) {
-  Bytecode_loadconstant* b = new Bytecode_loadconstant(method, bci);
-  DEBUG_ONLY(b->verify());
-  return b;
-}
 
 #endif // SHARE_VM_INTERPRETER_BYTECODE_HPP
