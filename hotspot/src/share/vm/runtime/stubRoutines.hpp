@@ -40,6 +40,12 @@
 #ifdef TARGET_ARCH_zero
 # include "nativeInst_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "nativeInst_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "nativeInst_ppc.hpp"
+#endif
 
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
@@ -104,6 +110,12 @@ class StubRoutines: AllStatic {
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "stubRoutines_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "stubRoutines_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "stubRoutines_ppc.hpp"
 #endif
 
 
