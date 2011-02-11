@@ -36,7 +36,7 @@
 #include "oops/klass.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/methodOop.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
@@ -57,7 +57,7 @@
 #endif
 
 static bool find_field(instanceKlass* ik,
-                       symbolOop name_symbol, symbolOop signature_symbol,
+                       Symbol* name_symbol, Symbol* signature_symbol,
                        fieldDescriptor* fd,
                        bool allow_super = false) {
   if (allow_super)
@@ -69,7 +69,7 @@ static bool find_field(instanceKlass* ik,
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
 compute_offset(int &dest_offset,
-               klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol,
+               klassOop klass_oop, Symbol* name_symbol, Symbol* signature_symbol,
                bool allow_super = false) {
   fieldDescriptor fd;
   instanceKlass* ik = instanceKlass::cast(klass_oop);
@@ -84,7 +84,7 @@ compute_offset(int &dest_offset,
 // Same as above but for "optional" offsets that might not be present in certain JDK versions
 static void
 compute_optional_offset(int& dest_offset,
-                        klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol,
+                        klassOop klass_oop, Symbol* name_symbol, Symbol* signature_symbol,
                         bool allow_super = false) {
   fieldDescriptor fd;
   instanceKlass* ik = instanceKlass::cast(klass_oop);
@@ -164,7 +164,7 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
   return h_obj();
 }
 
-Handle java_lang_String::create_from_symbol(symbolHandle symbol, TRAPS) {
+Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
   int length = UTF8::unicode_length((char*)symbol->bytes(), symbol->utf8_length());
   Handle h_obj = basic_create(length, false, CHECK_NH);
   if (length > 0) {
@@ -278,17 +278,17 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
-symbolHandle java_lang_String::as_symbol(Handle java_string, TRAPS) {
+Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
   oop          obj    = java_string();
   typeArrayOop value  = java_lang_String::value(obj);
   int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
   jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
-  symbolOop sym = SymbolTable::lookup_unicode(base, length, THREAD);
-  return symbolHandle(THREAD, sym);
+  Symbol* sym = SymbolTable::lookup_unicode(base, length, THREAD);
+  return sym;
 }
 
-symbolOop java_lang_String::as_symbol_or_null(oop java_string) {
+Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
@@ -437,7 +437,7 @@ klassOop java_lang_Class::as_klassOop(oop java_class) {
 
 void java_lang_Class::print_signature(oop java_class, outputStream* st) {
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  symbolOop name = NULL;
+  Symbol* name = NULL;
   bool is_instance = false;
   if (is_primitive(java_class)) {
     name = vmSymbols::type_signature(primitive_type(java_class));
@@ -455,25 +455,32 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
   if (is_instance)  st->print(";");
 }
 
-symbolOop java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, TRAPS) {
+Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, TRAPS) {
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  symbolOop name = NULL;
+  Symbol* name;
   if (is_primitive(java_class)) {
-    return vmSymbols::type_signature(primitive_type(java_class));
+    name = vmSymbols::type_signature(primitive_type(java_class));
+    // Because this can create a new symbol, the caller has to decrement
+    // the refcount, so make adjustment here and below for symbols returned
+    // that are not created or incremented due to a successful lookup.
+    name->increment_refcount();
   } else {
     klassOop k = as_klassOop(java_class);
     if (!Klass::cast(k)->oop_is_instance()) {
-      return Klass::cast(k)->name();
+      name = Klass::cast(k)->name();
+      name->increment_refcount();
     } else {
       ResourceMark rm;
       const char* sigstr = Klass::cast(k)->signature_name();
       int         siglen = (int) strlen(sigstr);
-      if (!intern_if_not_found)
-        return SymbolTable::probe(sigstr, siglen);
-      else
-        return oopFactory::new_symbol(sigstr, siglen, THREAD);
+      if (!intern_if_not_found) {
+        name = SymbolTable::probe(sigstr, siglen);
+      } else {
+        name = SymbolTable::new_symbol(sigstr, siglen, THREAD);
+      }
     }
   }
+  return name;
 }
 
 
@@ -1022,8 +1029,8 @@ void java_lang_Throwable::print_to_stream(Handle stream, const char* str) {
       JavaCalls::call_virtual(&result,
                               stream,
                               KlassHandle(THREAD, stream->klass()),
-                              vmSymbolHandles::println_name(),
-                              vmSymbolHandles::char_array_void_signature(),
+                              vmSymbols::println_name(),
+                              vmSymbols::char_array_void_signature(),
                               arg,
                               THREAD);
     }
@@ -1077,8 +1084,8 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
       JavaCalls::call_virtual(&result,
                               h_throwable,
                               KlassHandle(THREAD, h_throwable->klass()),
-                              vmSymbolHandles::getCause_name(),
-                              vmSymbolHandles::void_throwable_signature(),
+                              vmSymbols::getCause_name(),
+                              vmSymbols::void_throwable_signature(),
                               THREAD);
       // Ignore any exceptions. we are in the middle of exception handling. Same as classic VM.
       if (HAS_PENDING_EXCEPTION) {
@@ -1516,7 +1523,7 @@ oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
   oop methodname = StringTable::intern(method->name(), CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
   // Fill in source file name
-  symbolOop source = instanceKlass::cast(method->method_holder())->source_file_name();
+  Symbol* source = instanceKlass::cast(method->method_holder())->source_file_name();
   oop filename = StringTable::intern(source, CHECK_0);
   java_lang_StackTraceElement::set_fileName(element(), filename);
   // File in source line number
@@ -1732,7 +1739,7 @@ void java_lang_reflect_Constructor::compute_offsets() {
 
 Handle java_lang_reflect_Constructor::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  symbolHandle name = vmSymbolHandles::java_lang_reflect_Constructor();
+  Symbol* name = vmSymbols::java_lang_reflect_Constructor();
   klassOop k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
@@ -1854,7 +1861,7 @@ void java_lang_reflect_Field::compute_offsets() {
 
 Handle java_lang_reflect_Field::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  symbolHandle name = vmSymbolHandles::java_lang_reflect_Field();
+  Symbol* name = vmSymbols::java_lang_reflect_Field();
   klassOop k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
   instanceKlassHandle klass (THREAD, k);
   // Ensure it is initialized
@@ -2422,16 +2429,19 @@ void java_dyn_MethodType::print_signature(oop mt, outputStream* st) {
   java_lang_Class::print_signature(rtype(mt), st);
 }
 
-symbolOop java_dyn_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAPS) {
+Symbol* java_dyn_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAPS) {
   ResourceMark rm;
   stringStream buffer(128);
   print_signature(mt, &buffer);
   const char* sigstr =       buffer.base();
   int         siglen = (int) buffer.size();
-  if (!intern_if_not_found)
-    return SymbolTable::probe(sigstr, siglen);
-  else
-    return oopFactory::new_symbol(sigstr, siglen, THREAD);
+  Symbol *name;
+  if (!intern_if_not_found) {
+    name = SymbolTable::probe(sigstr, siglen);
+  } else {
+    name = SymbolTable::new_symbol(sigstr, siglen, THREAD);
+  }
+  return name;
 }
 
 oop java_dyn_MethodType::rtype(oop mt) {
@@ -2908,13 +2918,12 @@ void JavaClasses::compute_offsets() {
 bool JavaClasses::check_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) {
   EXCEPTION_MARK;
   fieldDescriptor fd;
-  symbolHandle klass_sym = oopFactory::new_symbol_handle(klass_name, CATCH);
+  TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   klassOop k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
   instanceKlassHandle h_klass (THREAD, k);
-  //instanceKlassHandle h_klass(klass);
-  symbolHandle f_name = oopFactory::new_symbol_handle(field_name, CATCH);
-  symbolHandle f_sig  = oopFactory::new_symbol_handle(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name(), f_sig(), &fd)) {
+  TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
+  TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
+  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Nonstatic field %s.%s not found", klass_name, field_name);
     return false;
   }
@@ -2935,12 +2944,12 @@ bool JavaClasses::check_offset(const char *klass_name, int hardcoded_offset, con
 bool JavaClasses::check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) {
   EXCEPTION_MARK;
   fieldDescriptor fd;
-  symbolHandle klass_sym = oopFactory::new_symbol_handle(klass_name, CATCH);
+  TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   klassOop k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
   instanceKlassHandle h_klass (THREAD, k);
-  symbolHandle f_name = oopFactory::new_symbol_handle(field_name, CATCH);
-  symbolHandle f_sig  = oopFactory::new_symbol_handle(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name(), f_sig(), &fd)) {
+  TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
+  TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
+  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Static field %s.%s not found", klass_name, field_name);
     return false;
   }
@@ -2960,12 +2969,12 @@ bool JavaClasses::check_static_offset(const char *klass_name, int hardcoded_offs
 bool JavaClasses::check_constant(const char *klass_name, int hardcoded_constant, const char *field_name, const char* field_sig) {
   EXCEPTION_MARK;
   fieldDescriptor fd;
-  symbolHandle klass_sym = oopFactory::new_symbol_handle(klass_name, CATCH);
+  TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   klassOop k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
   instanceKlassHandle h_klass (THREAD, k);
-  symbolHandle f_name = oopFactory::new_symbol_handle(field_name, CATCH);
-  symbolHandle f_sig  = oopFactory::new_symbol_handle(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name(), f_sig(), &fd)) {
+  TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
+  TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
+  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Static field %s.%s not found", klass_name, field_name);
     return false;
   }

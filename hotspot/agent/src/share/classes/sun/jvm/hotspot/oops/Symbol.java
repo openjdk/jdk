@@ -34,7 +34,7 @@ import sun.jvm.hotspot.utilities.*;
 // A Symbol is a canonicalized string.
 // All Symbols reside in global symbolTable.
 
-public class Symbol extends Oop {
+public class Symbol extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -44,9 +44,10 @@ public class Symbol extends Oop {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type  = db.lookupType("symbolOopDesc");
-    length     = new CIntField(type.getCIntegerField("_length"), 0);
+    Type type  = db.lookupType("Symbol");
+    length     = type.getCIntegerField("_length");
     baseOffset = type.getField("_body").getOffset();
+    idHash = type.getCIntegerField("_identity_hash");
   }
 
   // Format:
@@ -55,8 +56,15 @@ public class Symbol extends Oop {
   //   [length] byte size of uft8 string
   //   ..body..
 
-  Symbol(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public static Symbol create(Address addr) {
+    if (addr == null) {
+      return null;
+    }
+    return new Symbol(addr);
+  }
+
+  Symbol(Address addr) {
+    super(addr);
   }
 
   public boolean isSymbol()            { return true; }
@@ -64,14 +72,18 @@ public class Symbol extends Oop {
   private static long baseOffset; // tells where the array part starts
 
   // Fields
-  private static CIntField length;
+  private static CIntegerField length;
 
   // Accessors for declared fields
-  public long   getLength() { return          length.getValue(this); }
+  public long   getLength() { return          length.getValue(this.addr); }
 
   public byte getByteAt(long index) {
-    return getHandle().getJByteAt(baseOffset + index);
+    return addr.getJByteAt(baseOffset + index);
   }
+
+  private static CIntegerField idHash;
+
+  public int identityHash() { return     (int)idHash.getValue(this.addr); }
 
   public boolean equals(byte[] modUTF8Chars) {
     int l = (int) getLength();
@@ -98,7 +110,9 @@ public class Symbol extends Oop {
     // Decode the byte array and return the string.
     try {
       return readModifiedUTF8(asByteArray());
-    } catch(IOException e) {
+    } catch(Exception e) {
+      System.err.println(addr);
+      e.printStackTrace();
       return null;
     }
   }
@@ -111,28 +125,13 @@ public class Symbol extends Oop {
     tty.print("#" + asString());
   }
 
-  public long getObjectSize() {
-    return alignObjectSize(baseOffset + getLength());
-  }
-
-  void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doCInt(length, true);
-      int length = (int) getLength();
-      for (int index = 0; index < length; index++) {
-        visitor.doByte(new ByteField(new IndexableFieldIdentifier(index), baseOffset + index, false), true);
-      }
-    }
-  }
-
   /** Note: this comparison is used for vtable sorting only; it
       doesn't matter what order it defines, as long as it is a total,
-      time-invariant order Since symbolOops are in permSpace, their
+      time-invariant order Since Symbol* are in C_HEAP, their
       relative order in memory never changes, so use address
       comparison for speed. */
   public int fastCompare(Symbol other) {
-    return (int) getHandle().minus(other.getHandle());
+    return (int) addr.minus(other.addr);
   }
 
   private static String readModifiedUTF8(byte[] buf) throws IOException {

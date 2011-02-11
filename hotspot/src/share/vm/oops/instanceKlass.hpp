@@ -189,16 +189,10 @@ class instanceKlass: public Klass {
   klassOop        _host_klass;
   // Class signers.
   objArrayOop     _signers;
-  // Name of source file containing this klass, NULL if not specified.
-  symbolOop       _source_file_name;
-  // the source debug extension for this klass, NULL if not specified.
-  symbolOop       _source_debug_extension;
   // inner_classes attribute.
   typeArrayOop    _inner_classes;
   // Implementors of this interface (not valid if it overflows)
   klassOop        _implementors[implementors_limit];
-  // Generic signature, or null if none.
-  symbolOop       _generic_signature;
   // invokedynamic bootstrap method (a java.dyn.MethodHandle)
   oop             _bootstrap_method;
   // Annotations for this class, or null if none.
@@ -221,6 +215,16 @@ class instanceKlass: public Klass {
   //
   // End of the oop block.
   //
+
+  // Name of source file containing this klass, NULL if not specified.
+  Symbol*         _source_file_name;
+  // the source debug extension for this klass, NULL if not specified.
+  Symbol*         _source_debug_extension;
+  // Generic signature, or null if none.
+  Symbol*         _generic_signature;
+  // Array name derived from this class which needs unreferencing
+  // if this class is unloaded.
+  Symbol*         _array_name;
 
   // Number of heapOopSize words used by non-static fields in this klass
   // (including inherited fields but after header_size()).
@@ -343,12 +347,12 @@ class instanceKlass: public Klass {
   };
 
   // method override check
-  bool is_override(methodHandle super_method, Handle targetclassloader, symbolHandle targetclassname, TRAPS);
+  bool is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
 
   // package
   bool is_same_class_package(klassOop class2);
-  bool is_same_class_package(oop classloader2, symbolOop classname2);
-  static bool is_same_class_package(oop class_loader1, symbolOop class_name1, oop class_loader2, symbolOop class_name2);
+  bool is_same_class_package(oop classloader2, Symbol* classname2);
+  static bool is_same_class_package(oop class_loader1, Symbol* class_name1, oop class_loader2, Symbol* class_name2);
 
   // find an enclosing class (defined where original code was, in jvm.cpp!)
   klassOop compute_enclosing_class(bool* inner_is_member, TRAPS) {
@@ -402,13 +406,13 @@ class instanceKlass: public Klass {
   void set_reference_type(ReferenceType t) { _reference_type = t; }
 
   // find local field, returns true if found
-  bool find_local_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const;
+  bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find field in direct superinterfaces, returns the interface in which the field is defined
-  klassOop find_interface_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const;
+  klassOop find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
-  klassOop find_field(symbolOop name, symbolOop sig, fieldDescriptor* fd) const;
+  klassOop find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find instance or static fields according to JVM spec 5.4.3.2, returns the klass in which the field is defined
-  klassOop find_field(symbolOop name, symbolOop sig, bool is_static, fieldDescriptor* fd) const;
+  klassOop find_field(Symbol* name, Symbol* sig, bool is_static, fieldDescriptor* fd) const;
 
   // find a non-static or static field given its offset within the class.
   bool contains_field_offset(int offset) {
@@ -419,15 +423,15 @@ class instanceKlass: public Klass {
   bool find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const;
 
   // find a local method (returns NULL if not found)
-  methodOop find_method(symbolOop name, symbolOop signature) const;
-  static methodOop find_method(objArrayOop methods, symbolOop name, symbolOop signature);
+  methodOop find_method(Symbol* name, Symbol* signature) const;
+  static methodOop find_method(objArrayOop methods, Symbol* name, Symbol* signature);
 
   // lookup operation (returns NULL if not found)
-  methodOop uncached_lookup_method(symbolOop name, symbolOop signature) const;
+  methodOop uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
-  methodOop lookup_method_in_all_interfaces(symbolOop name, symbolOop signature) const;
+  methodOop lookup_method_in_all_interfaces(Symbol* name, Symbol* signature) const;
 
   // constant pool
   constantPoolOop constants() const        { return _constants; }
@@ -451,8 +455,8 @@ class instanceKlass: public Klass {
   void set_signers(objArrayOop s)          { oop_store((oop*) &_signers, oop(s)); }
 
   // source file name
-  symbolOop source_file_name() const       { return _source_file_name; }
-  void set_source_file_name(symbolOop n)   { oop_store_without_check((oop*) &_source_file_name, (oop) n); }
+  Symbol* source_file_name() const         { return _source_file_name; }
+  void set_source_file_name(Symbol* n);
 
   // minor and major version numbers of class file
   u2 minor_version() const                 { return _minor_version; }
@@ -461,8 +465,12 @@ class instanceKlass: public Klass {
   void set_major_version(u2 major_version) { _major_version = major_version; }
 
   // source debug extension
-  symbolOop source_debug_extension() const    { return _source_debug_extension; }
-  void set_source_debug_extension(symbolOop n){ oop_store_without_check((oop*) &_source_debug_extension, (oop) n); }
+  Symbol* source_debug_extension() const   { return _source_debug_extension; }
+  void set_source_debug_extension(Symbol* n);
+
+  // symbol unloading support (refcount already added)
+  Symbol* array_name()                     { return _array_name; }
+  void set_array_name(Symbol* name)        { assert(_array_name == NULL, "name already created"); _array_name = name; }
 
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {
@@ -511,8 +519,9 @@ class instanceKlass: public Klass {
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
 
   // generics support
-  symbolOop generic_signature() const                 { return _generic_signature; }
-  void set_generic_signature(symbolOop sig)           { oop_store_without_check((oop*)&_generic_signature, (oop)sig); }
+  Symbol* generic_signature() const                   { return _generic_signature; }
+  void set_generic_signature(Symbol* sig)             { _generic_signature = sig; }
+
   u2 enclosing_method_class_index() const             { return _enclosing_method_class_index; }
   u2 enclosing_method_method_index() const            { return _enclosing_method_method_index; }
   void set_enclosing_method_indices(u2 class_index,
@@ -807,11 +816,8 @@ private:
   oop* adr_protection_domain() const { return (oop*)&this->_protection_domain;}
   oop* adr_host_klass() const        { return (oop*)&this->_host_klass;}
   oop* adr_signers() const           { return (oop*)&this->_signers;}
-  oop* adr_source_file_name() const  { return (oop*)&this->_source_file_name;}
-  oop* adr_source_debug_extension() const { return (oop*)&this->_source_debug_extension;}
   oop* adr_inner_classes() const     { return (oop*)&this->_inner_classes;}
   oop* adr_implementors() const      { return (oop*)&this->_implementors[0];}
-  oop* adr_generic_signature() const { return (oop*)&this->_generic_signature;}
   oop* adr_bootstrap_method() const  { return (oop*)&this->_bootstrap_method;}
   oop* adr_methods_jmethod_ids() const             { return (oop*)&this->_methods_jmethod_ids;}
   oop* adr_methods_cached_itable_indices() const   { return (oop*)&this->_methods_cached_itable_indices;}
@@ -843,7 +849,7 @@ private:
 public:
   // sharing support
   virtual void remove_unshareable_info();
-  void field_names_and_sigs_iterate(OopClosure* closure);
+  virtual void shared_symbols_iterate(SymbolClosure* closure);
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;

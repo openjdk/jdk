@@ -36,7 +36,7 @@ class DictionaryEntry;
 // The data structure for the system dictionary (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable {
+class Dictionary : public TwoOopHashtable<klassOop> {
   friend class VMStructs;
 private:
   // current iteration index.
@@ -45,19 +45,19 @@ private:
   static DictionaryEntry*       _current_class_entry;
 
   DictionaryEntry* get_entry(int index, unsigned int hash,
-                             symbolHandle name, Handle loader);
+                             Symbol* name, Handle loader);
 
   DictionaryEntry* bucket(int i) {
-    return (DictionaryEntry*)Hashtable::bucket(i);
+    return (DictionaryEntry*)Hashtable<klassOop>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable::bucket_addr(i);
+    return (DictionaryEntry**)Hashtable<klassOop>::bucket_addr(i);
   }
 
   void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable::add_entry(index, (HashtableEntry*)new_entry);
+    Hashtable<klassOop>::add_entry(index, (HashtableEntry<oop>*)new_entry);
   }
 
 
@@ -71,12 +71,12 @@ public:
 
   void free_entry(DictionaryEntry* entry);
 
-  void add_klass(symbolHandle class_name, Handle class_loader,KlassHandle obj);
+  void add_klass(Symbol* class_name, Handle class_loader,KlassHandle obj);
 
   klassOop find_class(int index, unsigned int hash,
-                      symbolHandle name, Handle loader);
+                      Symbol* name, Handle loader);
 
-  klassOop find_shared_class(int index, unsigned int hash, symbolHandle name);
+  klassOop find_shared_class(int index, unsigned int hash, Symbol* name);
 
   // Compiler support
   klassOop try_get_next_class();
@@ -95,7 +95,7 @@ public:
 
   // Classes loaded by the bootstrap loader are always strongly reachable.
   // If we're not doing class unloading, all classes are strongly reachable.
-  static bool is_strongly_reachable(oop class_loader, oop klass) {
+  static bool is_strongly_reachable(oop class_loader, klassOop klass) {
     assert (klass != NULL, "should have non-null klass");
     return (class_loader == NULL || !ClassUnloading);
   }
@@ -105,10 +105,10 @@ public:
   bool do_unloading(BoolObjectClosure* is_alive);
 
   // Protection domains
-  klassOop find(int index, unsigned int hash, symbolHandle name,
+  klassOop find(int index, unsigned int hash, Symbol* name,
                 Handle loader, Handle protection_domain, TRAPS);
   bool is_valid_protection_domain(int index, unsigned int hash,
-                                  symbolHandle name, Handle class_loader,
+                                  Symbol* name, Handle class_loader,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
                              instanceKlassHandle klass, Handle loader,
@@ -147,7 +147,7 @@ class ProtectionDomainEntry :public CHeapObj {
 // An entry in the system dictionary, this describes a class as
 // { klassOop, loader, protection_domain }.
 
-class DictionaryEntry : public HashtableEntry {
+class DictionaryEntry : public HashtableEntry<klassOop> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
@@ -166,11 +166,11 @@ class DictionaryEntry : public HashtableEntry {
   klassOop* klass_addr() { return (klassOop*)literal_addr(); }
 
   DictionaryEntry* next() const {
-    return (DictionaryEntry*)HashtableEntry::next();
+    return (DictionaryEntry*)HashtableEntry<klassOop>::next();
   }
 
   DictionaryEntry** next_addr() {
-    return (DictionaryEntry**)HashtableEntry::next_addr();
+    return (DictionaryEntry**)HashtableEntry<klassOop>::next_addr();
   }
 
   oop loader() const { return _loader; }
@@ -209,7 +209,7 @@ class DictionaryEntry : public HashtableEntry {
     }
   }
 
-  bool equals(symbolOop class_name, oop class_loader) const {
+  bool equals(Symbol* class_name, oop class_loader) const {
     klassOop klass = (klassOop)literal();
     return (instanceKlass::cast(klass)->name() == class_name &&
             _loader == class_loader);
@@ -226,9 +226,9 @@ class DictionaryEntry : public HashtableEntry {
   }
 };
 
-// Entry in a SymbolPropertyTable, mapping a single symbolOop
+// Entry in a SymbolPropertyTable, mapping a single Symbol*
 // to a managed and an unmanaged pointer.
-class SymbolPropertyEntry : public HashtableEntry {
+class SymbolPropertyEntry : public HashtableEntry<Symbol*> {
   friend class VMStructs;
  private:
   intptr_t _symbol_mode;  // secondary key
@@ -236,7 +236,7 @@ class SymbolPropertyEntry : public HashtableEntry {
   address _property_data;
 
  public:
-  symbolOop symbol() const          { return (symbolOop) literal(); }
+  Symbol* symbol() const            { return literal(); }
 
   intptr_t symbol_mode() const      { return _symbol_mode; }
   void set_symbol_mode(intptr_t m)  { _symbol_mode = m; }
@@ -248,14 +248,13 @@ class SymbolPropertyEntry : public HashtableEntry {
   void set_property_data(address p) { _property_data = p; }
 
   SymbolPropertyEntry* next() const {
-    return (SymbolPropertyEntry*)HashtableEntry::next();
+    return (SymbolPropertyEntry*)HashtableEntry<Symbol*>::next();
   }
 
   SymbolPropertyEntry** next_addr() {
-    return (SymbolPropertyEntry**)HashtableEntry::next_addr();
+    return (SymbolPropertyEntry**)HashtableEntry<Symbol*>::next_addr();
   }
 
-  oop* symbol_addr()                { return literal_addr(); }
   oop* property_oop_addr()          { return &_property_oop; }
 
   void print_on(outputStream* st) const {
@@ -279,16 +278,16 @@ class SymbolPropertyEntry : public HashtableEntry {
 // A system-internal mapping of symbols to pointers, both managed
 // and unmanaged.  Used to record the auto-generation of each method
 // MethodHandle.invoke(S)T, for all signatures (S)T.
-class SymbolPropertyTable : public Hashtable {
+class SymbolPropertyTable : public Hashtable<Symbol*> {
   friend class VMStructs;
 private:
   SymbolPropertyEntry* bucket(int i) {
-    return (SymbolPropertyEntry*) Hashtable::bucket(i);
+    return (SymbolPropertyEntry*) Hashtable<Symbol*>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   SymbolPropertyEntry** bucket_addr(int i) {
-    return (SymbolPropertyEntry**) Hashtable::bucket_addr(i);
+    return (SymbolPropertyEntry**) Hashtable<Symbol*>::bucket_addr(i);
   }
 
   void add_entry(int index, SymbolPropertyEntry* new_entry) {
@@ -298,8 +297,10 @@ private:
     ShouldNotReachHere();
   }
 
-  SymbolPropertyEntry* new_entry(unsigned int hash, symbolOop symbol, intptr_t symbol_mode) {
-    SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable::new_entry(hash, symbol);
+  SymbolPropertyEntry* new_entry(unsigned int hash, Symbol* symbol, intptr_t symbol_mode) {
+    SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable<Symbol*>::new_entry(hash, symbol);
+    // Hashtable with Symbol* literal must increment and decrement refcount.
+    symbol->increment_refcount();
     entry->set_symbol_mode(symbol_mode);
     entry->set_property_oop(NULL);
     entry->set_property_data(NULL);
@@ -311,23 +312,25 @@ public:
   SymbolPropertyTable(int table_size, HashtableBucket* t, int number_of_entries);
 
   void free_entry(SymbolPropertyEntry* entry) {
-    Hashtable::free_entry(entry);
+    // decrement Symbol refcount here because hashtable doesn't.
+    entry->literal()->decrement_refcount();
+    Hashtable<Symbol*>::free_entry(entry);
   }
 
-  unsigned int compute_hash(symbolHandle sym, intptr_t symbol_mode) {
+  unsigned int compute_hash(Symbol* sym, intptr_t symbol_mode) {
     // Use the regular identity_hash.
-    return Hashtable::compute_hash(sym) ^ symbol_mode;
+    return Hashtable<Symbol*>::compute_hash(sym) ^ symbol_mode;
   }
 
-  int index_for(symbolHandle name, intptr_t symbol_mode) {
+  int index_for(Symbol* name, intptr_t symbol_mode) {
     return hash_to_index(compute_hash(name, symbol_mode));
   }
 
   // need not be locked; no state change
-  SymbolPropertyEntry* find_entry(int index, unsigned int hash, symbolHandle name, intptr_t name_mode);
+  SymbolPropertyEntry* find_entry(int index, unsigned int hash, Symbol* name, intptr_t name_mode);
 
   // must be done under SystemDictionary_lock
-  SymbolPropertyEntry* add_entry(int index, unsigned int hash, symbolHandle name, intptr_t name_mode);
+  SymbolPropertyEntry* add_entry(int index, unsigned int hash, Symbol* name, intptr_t name_mode);
 
   // GC support
   void oops_do(OopClosure* f);
@@ -343,6 +346,4 @@ public:
 #endif
   void verify();
 };
-
-
 #endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP

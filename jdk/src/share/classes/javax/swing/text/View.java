@@ -117,7 +117,7 @@ A view has the following responsibilities:
     what it is prepared to deal with.
     <li>The coordinate system is the same as the hosting <code>Component</code>
     (i.e. the <code>Component</code> returned by the
-    <a href="#getContainer">getContainer</a> method).
+    {@link #getContainer getContainer} method).
     This means a child view lives in the same coordinate system as the parent
     view unless the parent has explicitly changed the coordinate system.
     To schedule itself to be repainted a view can call repaint on the hosting
@@ -180,9 +180,9 @@ A view has the following responsibilities:
     starting from the root of the view hierarchy.
     The methods for doing this are:
     <ul>
-    <li><a href="#insertUpdate">insertUpdate</a>
-    <li><a href="#removeUpdate">removeUpdate</a>
-    <li><a href="#changedUpdate">changedUpdate</a>
+    <li>{@link #insertUpdate insertUpdate}
+    <li>{@link #removeUpdate removeUpdate}
+    <li>{@link #changedUpdate changedUpdate}
     </ul>
     <p>
 </dl>
@@ -497,6 +497,10 @@ public abstract class View implements SwingConstants {
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
       throws BadLocationException {
+        if (pos < -1) {
+            // -1 is a reserved value, see the code below
+            throw new BadLocationException("Invalid position", pos);
+        }
 
         biasRet[0] = Position.Bias.Forward;
         switch (direction) {
@@ -670,15 +674,15 @@ public abstract class View implements SwingConstants {
      * spread out into the following calls that subclasses can
      * reimplement:
      * <ol>
-     * <li><a href="#updateChildren">updateChildren</a> is called
+     * <li>{@link #updateChildren updateChildren} is called
      * if there were any changes to the element this view is
      * responsible for.  If this view has child views that are
      * represent the child elements, then this method should do
      * whatever is necessary to make sure the child views correctly
      * represent the model.
-     * <li><a href="#forwardUpdate">forwardUpdate</a> is called
+     * <li>{@link #forwardUpdate forwardUpdate} is called
      * to forward the DocumentEvent to the appropriate child views.
-     * <li><a href="#updateLayout">updateLayout</a> is called to
+     * <li>{@link #updateLayout updateLayout} is called to
      * give the view a chance to either repair its layout, to reschedule
      * layout, or do nothing.
      * </ol>
@@ -711,15 +715,15 @@ public abstract class View implements SwingConstants {
      * spread out into the following calls that subclasses can
      * reimplement:
      * <ol>
-     * <li><a href="#updateChildren">updateChildren</a> is called
+     * <li>{@link #updateChildren updateChildren} is called
      * if there were any changes to the element this view is
      * responsible for.  If this view has child views that are
      * represent the child elements, then this method should do
      * whatever is necessary to make sure the child views correctly
      * represent the model.
-     * <li><a href="#forwardUpdate">forwardUpdate</a> is called
+     * <li>{@link #forwardUpdate forwardUpdate} is called
      * to forward the DocumentEvent to the appropriate child views.
-     * <li><a href="#updateLayout">updateLayout</a> is called to
+     * <li>{@link #updateLayout updateLayout} is called to
      * give the view a chance to either repair its layout, to reschedule
      * layout, or do nothing.
      * </ol>
@@ -752,15 +756,15 @@ public abstract class View implements SwingConstants {
      * spread out into the following calls that subclasses can
      * reimplement:
      * <ol>
-     * <li><a href="#updateChildren">updateChildren</a> is called
+     * <li>{@link #updateChildren updateChildren} is called
      * if there were any changes to the element this view is
      * responsible for.  If this view has child views that are
      * represent the child elements, then this method should do
      * whatever is necessary to make sure the child views correctly
      * represent the model.
-     * <li><a href="#forwardUpdate">forwardUpdate</a> is called
+     * <li>{@link #forwardUpdate forwardUpdate} is called
      * to forward the DocumentEvent to the appropriate child views.
-     * <li><a href="#updateLayout">updateLayout</a> is called to
+     * <li>{@link #updateLayout updateLayout} is called to
      * give the view a chance to either repair its layout, to reschedule
      * layout, or do nothing.
      * </ol>
@@ -1186,7 +1190,7 @@ public abstract class View implements SwingConstants {
      * simply messages the view with a call to <code>insertUpdate</code>,
      * <code>removeUpdate</code>, or <code>changedUpdate</code> depending
      * upon the type of the event.  This is called by
-     * <a href="#forwardUpdate">forwardUpdate</a> to forward
+     * {@link #forwardUpdate forwardUpdate} to forward
      * the event to children that need it.
      *
      * @param v the child view to forward the event to

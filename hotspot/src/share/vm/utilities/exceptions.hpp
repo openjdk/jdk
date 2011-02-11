@@ -50,8 +50,7 @@
 
 class Thread;
 class Handle;
-class symbolHandle;
-class symbolOopDesc;
+class Symbol;
 class JavaCallArguments;
 
 // The ThreadShadow class is a helper class to access the _pending_exception
@@ -100,7 +99,7 @@ class ThreadShadow: public CHeapObj {
 
 class Exceptions {
   static bool special_exception(Thread *thread, const char* file, int line, Handle exception);
-  static bool special_exception(Thread* thread, const char* file, int line, symbolHandle name, const char* message);
+  static bool special_exception(Thread* thread, const char* file, int line, Symbol* name, const char* message);
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -112,38 +111,36 @@ class Exceptions {
   static void _throw_oop(Thread* thread, const char* file, int line, oop exception);
   static void _throw(Thread* thread, const char* file, int line, Handle exception, const char* msg = NULL);
   static void _throw_msg(Thread* thread, const char* file, int line,
-                         symbolHandle name, const char* message, Handle loader,
+                         Symbol* name, const char* message, Handle loader,
                          Handle protection_domain);
   static void _throw_msg(Thread* thread, const char* file, int line,
-                         symbolOop name, const char* message);
-  static void _throw_msg(Thread* thread, const char* file, int line,
-                         symbolHandle name, const char* message);
+                         Symbol* name, const char* message);
   static void _throw_args(Thread* thread, const char* file, int line,
-                          symbolHandle name, symbolHandle signature,
+                          Symbol* name, Symbol* signature,
                           JavaCallArguments* args);
   static void _throw_msg_cause(Thread* thread, const char* file,
-                         int line, symbolHandle h_name, const char* message,
+                         int line, Symbol* h_name, const char* message,
                          Handle h_cause, Handle h_loader, Handle h_protection_domain);
   static void _throw_msg_cause(Thread* thread, const char* file, int line,
-                            symbolHandle name, const char* message, Handle cause);
+                            Symbol* name, const char* message, Handle cause);
 
   // There is no THROW... macro for this method. Caller should remember
   // to do a return after calling it.
-  static void fthrow(Thread* thread, const char* file, int line, symbolHandle name,
+  static void fthrow(Thread* thread, const char* file, int line, Symbol* name,
                      const char* format, ...);
 
   // Create and initialize a new exception
-  static Handle new_exception(Thread* thread, symbolHandle name,
-                              symbolHandle signature, JavaCallArguments* args,
+  static Handle new_exception(Thread* thread, Symbol* name,
+                              Symbol* signature, JavaCallArguments* args,
                               Handle cause, Handle loader,
                               Handle protection_domain);
 
-  static Handle new_exception(Thread* thread, symbolHandle name,
+  static Handle new_exception(Thread* thread, Symbol* name,
                               const char* message, Handle cause, Handle loader,
                               Handle protection_domain,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
- static Handle new_exception(Thread* thread, symbolOop name,
+ static Handle new_exception(Thread* thread, Symbol* name,
                              const char* message,
                              ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 

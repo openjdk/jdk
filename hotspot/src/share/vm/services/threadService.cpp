@@ -249,7 +249,7 @@ Handle ThreadService::dump_stack_traces(GrowableArray<instanceHandle>* threads,
   // Allocate the resulting StackTraceElement[][] object
 
   ResourceMark rm(THREAD);
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_StackTraceElement_array(), true, CHECK_NH);
+  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackTraceElement_array(), true, CHECK_NH);
   objArrayKlassHandle ik (THREAD, k);
   objArrayOop r = oopFactory::new_objArray(ik(), num_threads, CHECK_NH);
   objArrayHandle result_obj(THREAD, r);

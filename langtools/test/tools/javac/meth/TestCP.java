@@ -42,13 +42,15 @@ public class TestCP {
 
     static class TestClass {
         void test(MethodHandle mh) throws Throwable {
-            Number n = mh.<Number>invokeExact("daddy",1,'n');
+            Number n = (Number)mh.invokeExact("daddy",1,'n');
             n = (Number)mh.invokeExact("bunny",1,'d');
+            n = (Number)(mh.invokeExact("foo",1,'d'));
+            n = (Number)((mh.invokeExact("bar",1,'d')));
         }
     }
 
     static final String PS_TYPE = "(Ljava/lang/String;IC)Ljava/lang/Number;";
-    static final int PS_CALLS_COUNT = 2;
+    static final int PS_CALLS_COUNT = 4;
     static final String SUBTEST_NAME = TestClass.class.getName() + ".class";
     static final String TEST_METHOD_NAME = "test";
 

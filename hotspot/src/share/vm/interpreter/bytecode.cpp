@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,30 +33,6 @@
 #include "runtime/signature.hpp"
 
 // Implementation of Bytecode
-
-bool Bytecode::check_must_rewrite(Bytecodes::Code code) const {
-  assert(Bytecodes::can_rewrite(code), "post-check only");
-
-  // Some codes are conditionally rewriting.  Look closely at them.
-  switch (code) {
-  case Bytecodes::_aload_0:
-    // Even if RewriteFrequentPairs is turned on,
-    // the _aload_0 code might delay its rewrite until
-    // a following _getfield rewrites itself.
-    return false;
-
-  case Bytecodes::_lookupswitch:
-    return false;  // the rewrite is not done by the interpreter
-
-  case Bytecodes::_new:
-    // (Could actually look at the class here, but the profit would be small.)
-    return false;  // the rewrite is not always done
-  }
-
-  // No other special cases.
-  return true;
-}
-
 
 #ifdef ASSERT
 
@@ -148,21 +124,20 @@ void Bytecode_invoke::verify() const {
 }
 
 
-symbolOop Bytecode_member_ref::signature() const {
+Symbol* Bytecode_member_ref::signature() const {
   constantPoolOop constants = method()->constants();
   return constants->signature_ref_at(index());
 }
 
 
-symbolOop Bytecode_member_ref::name() const {
+Symbol* Bytecode_member_ref::name() const {
   constantPoolOop constants = method()->constants();
   return constants->name_ref_at(index());
 }
 
 
-BasicType Bytecode_member_ref::result_type(Thread *thread) const {
-  symbolHandle sh(thread, signature());
-  ResultTypeFinder rts(sh);
+BasicType Bytecode_member_ref::result_type() const {
+  ResultTypeFinder rts(signature());
   rts.iterate();
   return rts.type();
 }
@@ -188,17 +163,16 @@ int Bytecode_member_ref::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
   // at the same time it allocates per-call-site CP cache entries.
   Bytecodes::Code rawc = code();
-  Bytecode* invoke = bytecode();
-  if (invoke->has_index_u4(rawc))
-    return invoke->get_index_u4(rawc);
+  if (has_index_u4(rawc))
+    return get_index_u4(rawc);
   else
-    return invoke->get_index_u2_cpcache(rawc);
+    return get_index_u2_cpcache(rawc);
 }
 
 int Bytecode_member_ref::pool_index() const {
   int index = this->index();
   DEBUG_ONLY({
-      if (!bytecode()->has_index_u4(code()))
+      if (!has_index_u4(code()))
         index -= constantPoolOopDesc::CPCACHE_INDEX_TAG;
     });
   return _method->constants()->cache()->entry_at(index)->constant_pool_index();
@@ -214,13 +188,12 @@ void Bytecode_field::verify() const {
 // Implementation of Bytecode_loadconstant
 
 int Bytecode_loadconstant::raw_index() const {
-  Bytecode* bcp = bytecode();
-  Bytecodes::Code rawc = bcp->code();
+  Bytecodes::Code rawc = code();
   assert(rawc != Bytecodes::_wide, "verifier prevents this");
   if (Bytecodes::java_code(rawc) == Bytecodes::_ldc)
-    return bcp->get_index_u1(rawc);
+    return get_index_u1(rawc);
   else
-    return bcp->get_index_u2(rawc, false);
+    return get_index_u2(rawc, false);
 }
 
 int Bytecode_loadconstant::pool_index() const {
@@ -258,7 +231,7 @@ void Bytecode_lookupswitch::verify() const {
     case Bytecodes::_lookupswitch:
       { int i = number_of_pairs() - 1;
         while (i-- > 0) {
-          assert(pair_at(i)->match() < pair_at(i+1)->match(), "unsorted table entries");
+          assert(pair_at(i).match() < pair_at(i+1).match(), "unsorted table entries");
         }
       }
       break;

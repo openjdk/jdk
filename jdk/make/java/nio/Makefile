@@ -296,7 +296,7 @@ ifeq ($(PLATFORM), linux)
 OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread -ldl
 endif
 ifeq ($(PLATFORM), solaris)
-OTHER_LDLIBS += $(JVMLIB) $(LIBSOCKET) -lposix4 -ldl \
+OTHER_LDLIBS += $(JVMLIB) $(LIBSOCKET) -lposix4 -ldl -lsendfile \
 		-L$(LIBDIR)/$(LIBARCH) -ljava -lnet
 endif # PLATFORM
 

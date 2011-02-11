@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,6 +839,15 @@ void InstructionPrinter::do_ProfileInvoke(ProfileInvoke* x) {
   output()->print(" %s.%s", x->inlinee()->holder()->name()->as_utf8(), x->inlinee()->name()->as_utf8());
   output()->put(')');
 
+}
+
+void InstructionPrinter::do_RuntimeCall(RuntimeCall* x) {
+  output()->print("call_rt %s(", x->entry_name());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    if (i > 0) output()->print(", ");
+    print_value(x->argument_at(i));
+  }
+  output()->put(')');
 }
 
 #endif // PRODUCT

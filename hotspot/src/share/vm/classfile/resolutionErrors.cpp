@@ -32,12 +32,12 @@
 
 // add new entry to the table
 void ResolutionErrorTable::add_entry(int index, unsigned int hash,
-                                     constantPoolHandle pool, int cp_index, symbolHandle error)
+                                     constantPoolHandle pool, int cp_index, Symbol* error)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && !error.is_null(), "adding NULL obj");
+  assert(!pool.is_null() && error != NULL, "adding NULL obj");
 
-  ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, error());
+  ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, error);
   add_entry(index, entry);
 }
 
@@ -57,20 +57,35 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(int index, unsigned int h
   return NULL;
 }
 
+void ResolutionErrorEntry::set_error(Symbol* e) {
+  assert(e == NULL || _error == NULL, "cannot reset error");
+  _error = e;
+  if (_error != NULL) _error->increment_refcount();
+}
+
 // create new error entry
 ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, constantPoolOop pool,
-                                                      int cp_index, symbolOop error)
+                                                      int cp_index, Symbol* error)
 {
-  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable::new_entry(hash, pool);
+  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<constantPoolOop>::new_entry(hash, pool);
   entry->set_cp_index(cp_index);
+  NOT_PRODUCT(entry->set_error(NULL);)
   entry->set_error(error);
 
   return entry;
 }
 
+void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
+  // decrement error refcount
+  assert(entry->error() != NULL, "error should be set");
+  entry->error()->decrement_refcount();
+  Hashtable<constantPoolOop>::free_entry(entry);
+}
+
+
 // create resolution error table
 ResolutionErrorTable::ResolutionErrorTable(int table_size)
-    : Hashtable(table_size, sizeof(ResolutionErrorEntry)) {
+    : Hashtable<constantPoolOop>(table_size, sizeof(ResolutionErrorEntry)) {
 }
 
 // GC support
@@ -80,7 +95,7 @@ void ResolutionErrorTable::oops_do(OopClosure* f) {
                            probe != NULL;
                            probe = probe->next()) {
       assert(probe->pool() != (constantPoolOop)NULL, "resolution error table is corrupt");
-      assert(probe->error() != (symbolOop)NULL, "resolution error table is corrupt");
+      assert(probe->error() != (Symbol*)NULL, "resolution error table is corrupt");
       probe->oops_do(f);
     }
   }
@@ -89,20 +104,6 @@ void ResolutionErrorTable::oops_do(OopClosure* f) {
 // GC support
 void ResolutionErrorEntry::oops_do(OopClosure* blk) {
   blk->do_oop((oop*)pool_addr());
-  blk->do_oop((oop*)error_addr());
-}
-
-// We must keep the symbolOop used in the error alive. The constantPoolOop will
-// decide when the entry can be purged.
-void ResolutionErrorTable::always_strong_classes_do(OopClosure* blk) {
-  for (int i = 0; i < table_size(); i++) {
-    for (ResolutionErrorEntry* probe = bucket(i);
-                           probe != NULL;
-                           probe = probe->next()) {
-      assert(probe->error() != (symbolOop)NULL, "resolution error table is corrupt");
-      blk->do_oop((oop*)probe->error_addr());
-    }
-  }
 }
 
 // Remove unloaded entries from the table

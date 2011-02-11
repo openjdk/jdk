@@ -25,13 +25,20 @@
 
 package sun.net.spi;
 
-import sun.net.NetProperties;
-import java.net.*;
-import java.util.*;
-import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.io.IOException;
 import sun.misc.RegexpPool;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.net.NetProperties;
+import sun.net.SocksProxy;
 
 /**
  * Supports proxy settings using system properties This proxy selector
@@ -74,6 +81,8 @@ public class DefaultProxySelector extends ProxySelector {
         {"gopher", "gopherProxy", "socksProxy"},
         {"socket", "socksProxy"}
     };
+
+    private static final String SOCKS_PROXY_VERSION = "socksProxyVersion";
 
     private static boolean hasSystemProxies = false;
 
@@ -287,7 +296,8 @@ public class DefaultProxySelector extends ProxySelector {
                             saddr = InetSocketAddress.createUnresolved(phost, pport);
                             // Socks is *always* the last on the list.
                             if (j == (props[i].length - 1)) {
-                                return new Proxy(Proxy.Type.SOCKS, saddr);
+                                int version = NetProperties.getInteger(SOCKS_PROXY_VERSION, 5).intValue();
+                                return SocksProxy.create(saddr, version);
                             } else {
                                 return new Proxy(Proxy.Type.HTTP, saddr);
                             }

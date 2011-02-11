@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class Context {
             o = fac.make();
             if (o instanceof Factory<?>)
                 throw new AssertionError("T extends Context.Factory");
-            assert ht.get(key) == o;
+            Assert.check(ht.get(key) == o);
         }
 
         /* The following cast can't fail unless there was

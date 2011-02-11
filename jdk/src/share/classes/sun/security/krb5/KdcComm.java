@@ -462,7 +462,7 @@ public final class KdcComm {
      */
     static class KdcAccessibility {
         // Known bad KDCs
-        private static Set<String> bads = new HashSet<String>();
+        private static Set<String> bads = new HashSet<>();
 
         private static synchronized void addBad(String kdc) {
             if (DEBUG) {
@@ -492,9 +492,9 @@ public final class KdcComm {
         // Returns a preferred KDC list by putting the bad ones at the end
         private static synchronized String[] list(String kdcList) {
             StringTokenizer st = new StringTokenizer(kdcList);
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             if (badPolicy == BpType.TRY_LAST) {
-                List<String> badkdcs = new ArrayList<String>();
+                List<String> badkdcs = new ArrayList<>();
                 while (st.hasMoreTokens()) {
                     String t = st.nextToken();
                     if (bads.contains(t)) badkdcs.add(t);

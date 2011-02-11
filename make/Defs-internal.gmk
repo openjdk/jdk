@@ -147,7 +147,7 @@ ifndef BUILD_SPONSORS
 endif
 
 
-# Do we build the source and openjdk binary plug bundles?
+# Do we build the source bundles?
 BUNDLE_RULES = $(JDK_TOPDIR)/make/closed/bundles.gmk
 ifeq ($(SKIP_BUNDLES_BUILD), true)
   BUNDLE_RULES_AVAILABLE := false
@@ -171,7 +171,6 @@ ifdef OPENJDK
   ifndef SKIP_COMPARE_IMAGES
     SKIP_COMPARE_IMAGES = true
   endif
-  SKIP_OPENJDK_BUILD = true
 else
   
   # Various non-OPENJDK reasons to NOT build the deploy repository
@@ -187,19 +186,9 @@ else
     endif
   endif
 
-  ifndef SKIP_OPENJDK_BUILD
-    #SKIP_OPENJDK_BUILD = false
-    # Until 6675289 is resolved, or this feature is removed.
-    SKIP_OPENJDK_BUILD = true
-  endif
 endif
 ifndef SKIP_PRODUCT_BUILD
   SKIP_PRODUCT_BUILD = false
-endif
-
-# Solaris 64 bit builds are not complete enough to ever do this
-ifeq ($(PLATFORM)$(ARCH_DATA_MODEL),solaris64)
-  SKIP_OPENJDK_BUILD = true
 endif
 
 # Many reasons why we would want to skip the comparison to previous jdk
@@ -223,7 +212,7 @@ ifndef SKIP_DEBUG_BUILD
   SKIP_DEBUG_BUILD=true
 endif
 ifndef SKIP_FASTDEBUG_BUILD
-  SKIP_FASTDEBUG_BUILD=false
+  SKIP_FASTDEBUG_BUILD=true
 endif
 
 # Select javadoc setting GENERATE_DOCS
