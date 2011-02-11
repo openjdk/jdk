@@ -43,7 +43,7 @@ public class Basic {
     static void checkAttributesOfDirectory(Path dir)
         throws IOException
     {
-        BasicFileAttributes attrs = Attributes.readBasicFileAttributes(dir);
+        BasicFileAttributes attrs = Files.readAttributes(dir, BasicFileAttributes.class);
         check(attrs.isDirectory(), "is a directory");
         check(!attrs.isRegularFile(), "is not a regular file");
         check(!attrs.isSymbolicLink(), "is not a link");
@@ -58,7 +58,7 @@ public class Basic {
     static void checkAttributesOfFile(Path dir, Path file)
         throws IOException
     {
-        BasicFileAttributes attrs = Attributes.readBasicFileAttributes(file);
+        BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
         check(attrs.isRegularFile(), "is a regular file");
         check(!attrs.isDirectory(), "is not a directory");
         check(!attrs.isSymbolicLink(), "is not a link");
@@ -73,8 +73,8 @@ public class Basic {
         // copy last-modified time and file create time from directory to file,
         // re-read attribtues, and check they match
         BasicFileAttributeView view =
-            file.getFileAttributeView(BasicFileAttributeView.class);
-        BasicFileAttributes dirAttrs = Attributes.readBasicFileAttributes(dir);
+            Files.getFileAttributeView(file, BasicFileAttributeView.class);
+        BasicFileAttributes dirAttrs = Files.readAttributes(dir, BasicFileAttributes.class);
         view.setTimes(dirAttrs.lastModifiedTime(), null, null);
         if (dirAttrs.creationTime() != null) {
             view.setTimes(null, null, dirAttrs.creationTime());
@@ -95,8 +95,8 @@ public class Basic {
     static void checkAttributesOfLink(Path link)
         throws IOException
     {
-        BasicFileAttributes attrs = Attributes
-            .readBasicFileAttributes(link, LinkOption.NOFOLLOW_LINKS);
+        BasicFileAttributes attrs =
+            Files.readAttributes(link, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
         check(attrs.isSymbolicLink(), "is a link");
         check(!attrs.isDirectory(), "is a directory");
         check(!attrs.isRegularFile(), "is not a regular file");
@@ -108,11 +108,8 @@ public class Basic {
     {
         // create file
         Path file = dir.resolve("foo");
-        OutputStream out = file.newOutputStream();
-        try {
+        try (OutputStream out = Files.newOutputStream(file)) {
             out.write("this is not an empty file".getBytes("UTF-8"));
-        } finally {
-            out.close();
         }
 
         // check attributes of directory and file
@@ -122,7 +119,7 @@ public class Basic {
         // symbolic links may be supported
         Path link = dir.resolve("link");
         try {
-            link.createSymbolicLink( file );
+            Files.createSymbolicLink(link, file);
         } catch (UnsupportedOperationException x) {
             return;
         } catch (IOException x) {

@@ -187,7 +187,7 @@ public final class Objects {
      * and constructors, as demonstrated below:
      * <blockquote><pre>
      * public Foo(Bar bar) {
-     *     this.bar = Objects.nonNull(bar);
+     *     this.bar = Objects.requireNonNull(bar);
      * }
      * </pre></blockquote>
      *
@@ -196,7 +196,7 @@ public final class Objects {
      * @return {@code obj} if not {@code null}
      * @throws NullPointerException if {@code obj} is {@code null}
      */
-    public static <T> T nonNull(T obj) {
+    public static <T> T requireNonNull(T obj) {
         if (obj == null)
             throw new NullPointerException();
         return obj;
@@ -209,8 +209,8 @@ public final class Objects {
      * constructors with multiple parameters, as demonstrated below:
      * <blockquote><pre>
      * public Foo(Bar bar, Baz baz) {
-     *     this.bar = Objects.nonNull(bar, "bar must not be null");
-     *     this.baz = Objects.nonNull(baz, "baz must not be null");
+     *     this.bar = Objects.requireNonNull(bar, "bar must not be null");
+     *     this.baz = Objects.requireNonNull(baz, "baz must not be null");
      * }
      * </pre></blockquote>
      *
@@ -221,7 +221,7 @@ public final class Objects {
      * @return {@code obj} if not {@code null}
      * @throws NullPointerException if {@code obj} is {@code null}
      */
-    public static <T> T nonNull(T obj, String message) {
+    public static <T> T requireNonNull(T obj, String message) {
         if (obj == null)
             throw new NullPointerException(message);
         return obj;

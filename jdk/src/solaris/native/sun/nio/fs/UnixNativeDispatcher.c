@@ -55,10 +55,21 @@
 
 #include "sun_nio_fs_UnixNativeDispatcher.h"
 
+/**
+ * Size of password or group entry when not available via sysconf
+ */
+#define ENT_BUF_SIZE   1024
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
   } while((_result == -1) && (errno == EINTR)); \
+} while(0)
+
+#define RESTARTABLE_RETURN_PTR(_cmd, _result) do { \
+  do { \
+    _result = _cmd; \
+  } while((_result == NULL) && (errno == EINTR)); \
 } while(0)
 
 static jfieldID attrs_st_mode;
@@ -858,37 +869,41 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwuid(JNIEnv* env, jclass this, jint uid
 {
     jbyteArray result = NULL;
     int buflen;
+    char* pwbuf;
 
+    /* allocate buffer for password record */
     buflen = (int)sysconf(_SC_GETPW_R_SIZE_MAX);
-    if (buflen == -1) {
-        throwUnixException(env, errno);
+    if (buflen == -1)
+        buflen = ENT_BUF_SIZE;
+    pwbuf = (char*)malloc(buflen);
+    if (pwbuf == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "native heap");
     } else {
-        char* pwbuf = (char*)malloc(buflen);
-        if (pwbuf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, "native heap");
-        } else {
-            struct passwd pwent;
-            struct passwd* p;
-            int res = 0;
+        struct passwd pwent;
+        struct passwd* p = NULL;
+        int res = 0;
 
-#ifdef __solaris__
-            p = getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen);
-#else
-            res = getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen, &p);
-#endif
+        errno = 0;
+        #ifdef __solaris__
+            RESTARTABLE_RETURN_PTR(getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen), p);
+        #else
+            RESTARTABLE(getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen, &p), res);
+        #endif
 
-            if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
+        if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
+            /* not found or error */
+            if (errno != 0 && errno != ENOENT)
                 throwUnixException(env, errno);
-            } else {
-                jsize len = strlen(p->pw_name);
-                result = (*env)->NewByteArray(env, len);
-                if (result != NULL) {
-                    (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)(p->pw_name));
-                }
+        } else {
+            jsize len = strlen(p->pw_name);
+            result = (*env)->NewByteArray(env, len);
+            if (result != NULL) {
+                (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)(p->pw_name));
             }
-            free(pwbuf);
         }
+        free(pwbuf);
     }
+
     return result;
 }
 
@@ -898,36 +913,55 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrgid(JNIEnv* env, jclass this, jint gid
 {
     jbyteArray result = NULL;
     int buflen;
+    int retry;
 
+    /* initial size of buffer for group record */
     buflen = (int)sysconf(_SC_GETGR_R_SIZE_MAX);
-    if (buflen == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (buflen == -1)
+        buflen = ENT_BUF_SIZE;
+
+    do {
+        struct group grent;
+        struct group* g = NULL;
+        int res = 0;
+
         char* grbuf = (char*)malloc(buflen);
         if (grbuf == NULL) {
             JNU_ThrowOutOfMemoryError(env, "native heap");
-        } else {
-            struct group grent;
-            struct group* g;
-            int res = 0;
+            return NULL;
+        }
 
-#ifdef __solaris__
-            g = getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen);
-#else
-            res = getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen, &g);
-#endif
-            if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
-                throwUnixException(env, errno);
-            } else {
-                jsize len = strlen(g->gr_name);
-                result = (*env)->NewByteArray(env, len);
-                if (result != NULL) {
-                    (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)(g->gr_name));
+        errno = 0;
+        #ifdef __solaris__
+            RESTARTABLE_RETURN_PTR(getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen), g);
+        #else
+            RESTARTABLE(getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen, &g), res);
+        #endif
+
+        retry = 0;
+        if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
+            /* not found or error */
+            if (errno != 0 && errno != ENOENT) {
+                if (errno == ERANGE) {
+                    /* insufficient buffer size so need larger buffer */
+                    buflen += ENT_BUF_SIZE;
+                    retry = 1;
+                } else {
+                    throwUnixException(env, errno);
                 }
             }
-            free(grbuf);
+        } else {
+            jsize len = strlen(g->gr_name);
+            result = (*env)->NewByteArray(env, len);
+            if (result != NULL) {
+                (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)(g->gr_name));
+            }
         }
-    }
+
+        free(grbuf);
+
+    } while (retry);
+
     return result;
 }
 
@@ -938,35 +972,36 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0(JNIEnv* env, jclass this,
     jint uid = -1;
     int buflen;
     char* pwbuf;
-    struct passwd pwent;
-    struct passwd* p;
-    int res = 0;
-    const char* name = (const char*)jlong_to_ptr(nameAddress);
 
+    /* allocate buffer for password record */
     buflen = (int)sysconf(_SC_GETPW_R_SIZE_MAX);
-    if (buflen == -1) {
-        throwUnixException(env, errno);
-        return -1;
-    }
+    if (buflen == -1)
+        buflen = ENT_BUF_SIZE;
     pwbuf = (char*)malloc(buflen);
     if (pwbuf == NULL) {
         JNU_ThrowOutOfMemoryError(env, "native heap");
-        return -1;
-    }
-
-#ifdef __solaris__
-    p = getpwnam_r(name, &pwent, pwbuf, (size_t)buflen);
-#else
-    res = getpwnam_r(name, &pwent, pwbuf, (size_t)buflen, &p);
-#endif
-
-    if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
-        /* not found or error */
     } else {
-        uid = p->pw_uid;
-    }
+        struct passwd pwent;
+        struct passwd* p = NULL;
+        int res = 0;
+        const char* name = (const char*)jlong_to_ptr(nameAddress);
 
-    free(pwbuf);
+        errno = 0;
+        #ifdef __solaris__
+            RESTARTABLE_RETURN_PTR(getpwnam_r(name, &pwent, pwbuf, (size_t)buflen), p);
+        #else
+            RESTARTABLE(getpwnam_r(name, &pwent, pwbuf, (size_t)buflen, &p), res);
+        #endif
+
+        if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
+            /* not found or error */
+            if (errno != 0 && errno != ENOENT)
+                throwUnixException(env, errno);
+        } else {
+            uid = p->pw_uid;
+        }
+        free(pwbuf);
+    }
 
     return uid;
 }
@@ -976,36 +1011,52 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
     jlong nameAddress)
 {
     jint gid = -1;
-    int buflen;
-    char* grbuf;
-    struct group grent;
-    struct group* g;
-    int res = 0;
-    const char* name = (const char*)jlong_to_ptr(nameAddress);
+    int buflen, retry;
 
+    /* initial size of buffer for group record */
     buflen = (int)sysconf(_SC_GETGR_R_SIZE_MAX);
-    if (buflen == -1) {
-        throwUnixException(env, errno);
-        return -1;
-    }
-    grbuf = (char*)malloc(buflen);
-    if (grbuf == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "native heap");
-        return -1;
-    }
+    if (buflen == -1)
+        buflen = ENT_BUF_SIZE;
 
-#ifdef __solaris__
-    g = getgrnam_r(name, &grent, grbuf, (size_t)buflen);
-#else
-    res = getgrnam_r(name, &grent, grbuf, (size_t)buflen, &g);
-#endif
+    do {
+        struct group grent;
+        struct group* g = NULL;
+        int res = 0;
+        char *grbuf;
+        const char* name = (const char*)jlong_to_ptr(nameAddress);
 
-    if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
-        /* not found or error */
-    } else {
-        gid = g->gr_gid;
-    }
-    free(grbuf);
+        grbuf = (char*)malloc(buflen);
+        if (grbuf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "native heap");
+            return -1;
+        }
+
+        errno = 0;
+        #ifdef __solaris__
+            RESTARTABLE_RETURN_PTR(getgrnam_r(name, &grent, grbuf, (size_t)buflen), g);
+        #else
+            RESTARTABLE(getgrnam_r(name, &grent, grbuf, (size_t)buflen, &g), res);
+        #endif
+
+        retry = 0;
+        if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
+            /* not found or error */
+            if (errno != 0 && errno != ENOENT) {
+                if (errno == ERANGE) {
+                    /* insufficient buffer size so need larger buffer */
+                    buflen += ENT_BUF_SIZE;
+                    retry = 1;
+                } else {
+                    throwUnixException(env, errno);
+                }
+            }
+        } else {
+            gid = g->gr_gid;
+        }
+
+        free(grbuf);
+
+    } while (retry);
 
     return gid;
 }

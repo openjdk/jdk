@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
-Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -45,21 +45,22 @@ The reader/writer facility, available through the
 use and update data from a spread sheet, flat file, or any other tabular 
 data source.
 <P>
-<h2>What the JDBC<sup><font size=-2>TM</font></sup> 4.0 API Includes</h2>
-The JDBC<sup><font size=-2>TM</font></sup> 4.0 API includes both
+<h2>What the JDBC<sup><font size=-2>TM</font></sup> 4.1 API Includes</h2>
+The JDBC<sup><font size=-2>TM</font></sup> 4.1 API includes both
 the <code>java.sql</code> package, referred to as the JDBC core API,
 and the <code>javax.sql</code> package, referred to as the JDBC Optional
 Package API. This complete JDBC API
 is included in the Java<sup><font size=-2>TM</font></sup>  
-Standard Edition (Java SE<sup><font size=-2>TM</font></sup>), version 6.  
+Standard Edition (Java SE<sup><font size=-2>TM</font></sup>), version 7.
 The <code>javax.sql</code> package extends the functionality of the JDBC API 
 from a client-side API to a server-side API, and it is an essential part
 of the Java<sup><font size=-2>TM</font></sup>  Enterprise Edition
 (Java EE<sup><font size=-2>TM</font></sup>) technology. 
 <P>
 <h2>Versions</h2>
-The JDBC 4.0 API incorporates all of the previous JDBC API versions:
+The JDBC 4.1 API incorporates all of the previous JDBC API versions:
 <UL>
+ <LI> The JDBC 4.0 API
  <LI> The JDBC 3.0 API
  <LI> The JDBC 2.1 core API
  <LI> The JDBC 2.0 Optional Package API<br>
@@ -75,7 +76,9 @@ into the Java platform. When these "since" tags are used in
 Javadoc<sup><font size=-2>TM</font></sup> comments for the JDBC API,
 they indicate the following:
 <UL>
- <LI>Since 1.6 -- new in the JDBC 4.0 API and part of the Java SE platform, 
+ <LI>Since 1.7 -- new in the JDBC 4.1 API and part of the Java SE platform,
+     version 7
+<LI>Since 1.6 -- new in the JDBC 4.0 API and part of the Java SE platform,
      version 6
  <LI>Since 1.4 -- new in the JDBC 3.0 API and part of the J2SE platform, 
      version 1.4
@@ -176,6 +179,25 @@ The <code>java.sql</code> package contains API for the following:
 	</UL>
 </UL>
 <P>
+    <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.1 API</h3>
+<UL>
+    <LI>Allow <code>Connection</code>,
+        <code>ResultSet</code> and <code>Statement</code> objects to be
+        used with the try-with-resources statement</LI>
+    <LI>Supported added to <code>CallableStatement</code> and
+        <code>ResultSet</code> to specify the Java type to convert to via the
+        <code>getObject</code> method</LI>
+    <LI><code>DatabaseMetaData</code> methods to return PseudoColumns and if a
+        generated key is always returned</LI>
+    <LI>Added support to <code>Connection</code> to specify a database schema,
+    abort and timeout a physical connection.</LI>
+    <LI>Added support to close a <code>Statement</code> object when its dependent
+    objects have been closed</LI>
+    <LI>Support for obtaining the parent logger for a <code>Driver</code>,
+     <code>DataSource</code>, <code>ConnectionPoolDataSource</code> and
+     <code>XADataSource</code></LI>
+
+</UL>
 <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.0 API</h3>
 <UL>
   <LI>auto java.sql.Driver discovery -- no longer need to load a 
@@ -190,7 +212,7 @@ The <code>java.sql</code> package contains API for the following:
  <li>Support added to allow a JDBC application to access an instance of a JDBC resource
  that has been wrapped by a vendor, usually in an application server or connection 
  pooling environment.
- <li>Availability to be notfied when a <code>PreparedStatement</code> that is associated
+ <li>Availability to be notified when a <code>PreparedStatement</code> that is associated
  with a <code>PooledConnection</code> has been closed or the driver determines is invalid
  
  
@@ -288,7 +310,7 @@ object back to its SQL type to store it in the data source.
 <h2>Related Documentation</h2>
 
 <ul>
-  <li><a href="../../../guide/jdbc/getstart/GettingStartedTOC.fm.html">Getting Started</a>--overviews of the major interfaces
+  <li><a href="../../../technotes/guides/jdbc/getstart/GettingStartedTOC.fm.html">Getting Started</a>--overviews of the major interfaces
 <P>
   <li><a href="http://java.sun.com/docs/books/tutorial/jdbc">Chapters on the JDBC 
      API</a>--from the online version of <i>The Java Tutorial Continued</i>

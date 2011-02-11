@@ -33,6 +33,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.*;
+import java.nio.file.spi.*;
 import java.nio.file.attribute.*;
 import java.net.*;
 import java.text.DateFormat;
@@ -144,78 +145,76 @@ public class Demo {
     }
 
     public static void main(String[] args) throws Throwable {
+        FileSystemProvider provider = getZipFSProvider();
+        if (provider == null) {
+            System.err.println("ZIP filesystem provider is not installed");
+            System.exit(1);
+        }
 
         Action action = Action.valueOf(args[0]);
         Map<String, Object> env = env = new HashMap<>();
         if (action == Action.create)
             env.put("create", "true");
-        if (action == Action.tlist || action == Action.twalk)
-            env.put("buildDirTree", true);
-        FileSystem fs = FileSystems.newFileSystem(Paths.get(args[1]), env, null);
-
-        try {
-            FileSystem fs2;
+        try (FileSystem fs = provider.newFileSystem(Paths.get(args[1]), env)) {
             Path path, src, dst;
             boolean isRename = false;
             switch (action) {
             case rename:
                 src = fs.getPath(args[2]);
                 dst = fs.getPath(args[3]);
-                src.moveTo(dst);
+                Files.move(src, dst);
                 break;
             case moveout:
                 src = fs.getPath(args[2]);
                 dst = Paths.get(args[3]);
-                src.moveTo(dst);
+                Files.move(src, dst);
                 break;
             case movein:
                 src = Paths.get(args[2]);
                 dst = fs.getPath(args[3]);
-                src.moveTo(dst);
+                Files.move(src, dst);
                 break;
             case copy:
                 src = fs.getPath(args[2]);
                 dst = fs.getPath(args[3]);
-                src.copyTo(dst);
+                Files.copy(src, dst);
                 break;
             case copyout:
                 src = fs.getPath(args[2]);
                 dst = Paths.get(args[3]);
-                src.copyTo(dst);
+                Files.copy(src, dst);
                 break;
             case copyin:
                 src = Paths.get(args[2]);
                 dst = fs.getPath(args[3]);
-                src.copyTo(dst);
+                Files.copy(src, dst);
                 break;
             case copyin_attrs:
                 src = Paths.get(args[2]);
                 dst = fs.getPath(args[3]);
-                src.copyTo(dst, COPY_ATTRIBUTES);
+                Files.copy(src, dst, COPY_ATTRIBUTES);
                 break;
             case copyout_attrs:
                 src = fs.getPath(args[2]);
                 dst = Paths.get(args[3]);
-                src.copyTo(dst, COPY_ATTRIBUTES);
+                Files.copy(src, dst, COPY_ATTRIBUTES);
                 break;
             case zzmove:
-                fs2 = FileSystems.newFileSystem(Paths.get(args[2]), env, null);
-                //sf1.getPath(args[3]).moveTo(fs2.getPath(args[3]));
-                z2zmove(fs, fs2, args[3]);
-                fs2.close();
+                try (FileSystem fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
+                    z2zmove(fs, fs2, args[3]);
+                }
                 break;
             case zzcopy:
-                fs2 = FileSystems.newFileSystem(Paths.get(args[2]), env, null);
-                //sf1.getPath(args[3]).copyTo(fs2.getPath(args[3]));
-                z2zcopy(fs, fs2, args[3]);
-                fs2.close();
+                try (FileSystem fs2 = provider.newFileSystem(Paths.get(args[2]), env)) {
+                    z2zcopy(fs, fs2, args[3]);
+                }
                 break;
             case attrs:
                 for (int i = 2; i < args.length; i++) {
                     path = fs.getPath(args[i]);
                     System.out.println(path);
                     System.out.println(
-                        Attributes.readBasicFileAttributes(path).toString());
+                        Files.readAttributes(path, BasicFileAttributes.class).toString());
                 }
                 break;
             case setmtime:
@@ -223,10 +222,10 @@ public class Demo {
                 Date newDatetime = df.parse(args[2]);
                 for (int i = 3; i < args.length; i++) {
                     path = fs.getPath(args[i]);
-                    path.setAttribute("lastModifiedTime",
-                                      FileTime.fromMillis(newDatetime.getTime()));
+                    Files.setAttribute(path, "lastModifiedTime",
+                                       FileTime.fromMillis(newDatetime.getTime()));
                     System.out.println(
-                        Attributes.readBasicFileAttributes(path).toString());
+                        Files.readAttributes(path, BasicFileAttributes.class).toString());
                 }
                 break;
             case setctime:
@@ -234,10 +233,10 @@ public class Demo {
                 newDatetime = df.parse(args[2]);
                 for (int i = 3; i < args.length; i++) {
                     path = fs.getPath(args[i]);
-                    path.setAttribute("creationTime",
-                                      FileTime.fromMillis(newDatetime.getTime()));
+                    Files.setAttribute(path, "creationTime",
+                                       FileTime.fromMillis(newDatetime.getTime()));
                     System.out.println(
-                        Attributes.readBasicFileAttributes(path).toString());
+                        Files.readAttributes(path, BasicFileAttributes.class).toString());
                 }
                 break;
             case setatime:
@@ -245,25 +244,22 @@ public class Demo {
                 newDatetime = df.parse(args[2]);
                 for (int i = 3; i < args.length; i++) {
                     path = fs.getPath(args[i]);
-                    path.setAttribute("lastAccessTime",
-                                      FileTime.fromMillis(newDatetime.getTime()));
+                    Files.setAttribute(path, "lastAccessTime",
+                                       FileTime.fromMillis(newDatetime.getTime()));
                     System.out.println(
-                        Attributes.readBasicFileAttributes(path).toString());
+                        Files.readAttributes(path, BasicFileAttributes.class).toString());
                 }
                 break;
             case attrsspace:
                 path = fs.getPath("/");
-                FileStore fstore = path.getFileStore();
-                //System.out.println(fstore.getFileStoreAttributeView(FileStoreSpaceAttributeView.class)
-                //                         .readAttributes());
-                // or
+                FileStore fstore = Files.getFileStore(path);
                 System.out.printf("filestore[%s]%n", fstore.name());
                 System.out.printf("    totalSpace: %d%n",
-                                  (Long)fstore.getAttribute("space:totalSpace"));
+                                  (Long)fstore.getAttribute("totalSpace"));
                 System.out.printf("   usableSpace: %d%n",
-                                  (Long)fstore.getAttribute("space:usableSpace"));
+                                  (Long)fstore.getAttribute("usableSpace"));
                 System.out.printf("  unallocSpace: %d%n",
-                                  (Long)fstore.getAttribute("space:unallocatedSpace"));
+                                  (Long)fstore.getAttribute("unallocatedSpace"));
                 break;
             case list:
             case tlist:
@@ -293,7 +289,7 @@ public class Demo {
                 break;
             case delete:
                 for (int i = 2; i < args.length; i++)
-                    fs.getPath(args[i]).delete();
+                    Files.delete(fs.getPath(args[i]));
                 break;
             case create:
             case add:
@@ -305,17 +301,19 @@ public class Demo {
             case lsdir:
                 path = fs.getPath(args[2]);
                 final String fStr = (args.length > 3)?args[3]:"";
-                DirectoryStream<Path> ds = path.newDirectoryStream(
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(path,
                     new DirectoryStream.Filter<Path>() {
                         public boolean accept(Path path) {
                             return path.toString().contains(fStr);
                         }
-                    });
-                for (Path p : ds)
-                    System.out.println(p);
+                    }))
+                {
+                    for (Path p : ds)
+                        System.out.println(p);
+                }
                 break;
             case mkdir:
-                fs.getPath(args[2]).createDirectory();
+                Files.createDirectory(fs.getPath(args[2]));
                 break;
             case mkdirs:
                 mkdirs(fs.getPath(args[2]));
@@ -326,14 +324,14 @@ public class Demo {
                     System.out.printf("%n%s%n", path);
                     System.out.println("-------(1)---------");
                     System.out.println(
-                        Attributes.readBasicFileAttributes(path).toString());
+                        Files.readAttributes(path, BasicFileAttributes.class).toString());
                     System.out.println("-------(2)---------");
-                    Map<String, ?> map = path.readAttributes("zip:*");
-                    for (Map.Entry<String, ?> e : map.entrySet()) {
+                    Map<String, Object> map = Files.readAttributes(path, "zip:*");
+                    for (Map.Entry<String, Object> e : map.entrySet()) {
                         System.out.printf("    %s : %s%n", e.getKey(), e.getValue());
                     }
                     System.out.println("-------(3)---------");
-                    map = path.readAttributes("size,lastModifiedTime,isDirectory");
+                    map = Files.readAttributes(path, "size,lastModifiedTime,isDirectory");
                     for (Map.Entry<String, ?> e : map.entrySet()) {
                         System.out.printf("    %s : %s%n", e.getKey(), e.getValue());
                     }
@@ -349,10 +347,15 @@ public class Demo {
             }
         } catch (Exception x) {
             x.printStackTrace();
-        } finally {
-            if (fs != null)
-                fs.close();
         }
+    }
+
+    private static FileSystemProvider getZipFSProvider() {
+        for (FileSystemProvider provider : FileSystemProvider.installedProviders()) {
+            if ("jar".equals(provider.getScheme()))
+                return provider;
+        }
+        return null;
     }
 
     private static byte[] getBytes(String name) {
@@ -380,7 +383,7 @@ public class Demo {
                                                  BasicFileAttributes attrs)
                 {
                     indent();
-                    System.out.printf("%s%n", file.getName().toString());
+                    System.out.printf("%s%n", file.getFileName().toString());
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -406,35 +409,35 @@ public class Demo {
 
     private static void update(FileSystem fs, String path) throws Throwable{
         Path src = FileSystems.getDefault().getPath(path);
-        if (Boolean.TRUE.equals(src.getAttribute("isDirectory"))) {
-            DirectoryStream<Path> ds = src.newDirectoryStream();
-            for (Path child : ds)
-                update(fs, child.toString());
-            ds.close();
+        if (Files.isDirectory(src)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(src)) {
+                for (Path child : ds)
+                    update(fs, child.toString());
+            }
         } else {
             Path dst = fs.getPath(path);
             Path parent = dst.getParent();
-            if (parent != null && parent.notExists())
+            if (parent != null && Files.notExists(parent))
                 mkdirs(parent);
-            src.copyTo(dst, REPLACE_EXISTING);
+            Files.copy(src, dst, REPLACE_EXISTING);
         }
     }
 
     private static void extract(FileSystem fs, String path) throws Throwable{
         Path src = fs.getPath(path);
-        if (Boolean.TRUE.equals(src.getAttribute("isDirectory"))) {
-            DirectoryStream<Path> ds = src.newDirectoryStream();
-            for (Path child : ds)
-                extract(fs, child.toString());
-            ds.close();
+        if (Files.isDirectory(src)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(src)) {
+                for (Path child : ds)
+                    extract(fs, child.toString());
+            }
         } else {
             if (path.startsWith("/"))
                 path = path.substring(1);
             Path dst = FileSystems.getDefault().getPath(path);
             Path parent = dst.getParent();
-            if (parent.notExists())
+            if (Files.notExists(parent))
                 mkdirs(parent);
-            src.copyTo(dst, REPLACE_EXISTING);
+            Files.copy(src, dst, REPLACE_EXISTING);
         }
     }
 
@@ -445,21 +448,21 @@ public class Demo {
         Path srcPath = src.getPath(path);
         Path dstPath = dst.getPath(path);
 
-        if (Boolean.TRUE.equals(srcPath.getAttribute("isDirectory"))) {
-            if (!dstPath.exists()) {
+        if (Files.isDirectory(srcPath)) {
+            if (!Files.exists(dstPath)) {
                 try {
                     mkdirs(dstPath);
                 } catch (FileAlreadyExistsException x) {}
             }
-            DirectoryStream<Path> ds = srcPath.newDirectoryStream();
-            for (Path child : ds) {
-                z2zcopy(src, dst,
-                        path + (path.endsWith("/")?"":"/") + child.getName());
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(srcPath)) {
+                for (Path child : ds) {
+                    z2zcopy(src, dst,
+                            path + (path.endsWith("/")?"":"/") + child.getFileName());
+                }
             }
-            ds.close();
         } else {
             //System.out.println("copying..." + path);
-            srcPath.copyTo(dstPath);
+            Files.copy(srcPath, dstPath);
         }
     }
 
@@ -480,9 +483,9 @@ public class Demo {
                 dst = dstPath.resolve(dst);
                 try {
                     Path parent = dstPath.getParent();
-                    if (parent != null && parent.notExists())
+                    if (parent != null && Files.notExists(parent))
                         mkdirs(parent);
-                    file.moveTo(dst);
+                    Files.move(file, dst);
                 } catch (IOException x) {
                     x.printStackTrace();
                 }
@@ -497,7 +500,7 @@ public class Demo {
                 dst = dstPath.resolve(dst);
                 try {
 
-                    if (dst.notExists())
+                    if (Files.notExists(dst))
                         mkdirs(dst);
                 } catch (IOException x) {
                     x.printStackTrace();
@@ -511,7 +514,7 @@ public class Demo {
                 throws IOException
             {
                 try {
-                    dir.delete();
+                    Files.delete(dir);
                 } catch (IOException x) {
                     //x.printStackTrace();
                 }
@@ -525,15 +528,15 @@ public class Demo {
         path = path.toAbsolutePath();
         Path parent = path.getParent();
         if (parent != null) {
-            if (parent.notExists())
+            if (Files.notExists(parent))
                 mkdirs(parent);
         }
-        path.createDirectory();
+        Files.createDirectory(path);
     }
 
     private static void rmdirs(Path path) throws IOException {
         while (path != null && path.getNameCount() != 0) {
-            path.delete();
+            Files.delete(path);
             path = path.getParent();
         }
     }
@@ -542,15 +545,15 @@ public class Demo {
         if (!"/".equals(path.toString())) {
            System.out.printf("  %s%n", path.toString());
            if (verbose)
-                System.out.println(Attributes.readBasicFileAttributes(path).toString());
+                System.out.println(Files.readAttributes(path, BasicFileAttributes.class).toString());
         }
-        if (path.notExists())
+        if (Files.notExists(path))
             return;
-        if (Attributes.readBasicFileAttributes(path).isDirectory()) {
-            DirectoryStream<Path> ds = path.newDirectoryStream();
-            for (Path child : ds)
-                list(child, verbose);
-            ds.close();
+        if (Files.isDirectory(path)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
+                for (Path child : ds)
+                    list(child, verbose);
+            }
         }
     }
 
@@ -561,12 +564,11 @@ public class Demo {
         //                  src.toString(), dst.toString());
 
         //streams
-        InputStream isSrc = src.newInputStream();
-        InputStream isDst = dst.newInputStream();
         byte[] bufSrc = new byte[8192];
         byte[] bufDst = new byte[8192];
-
-        try {
+        try (InputStream isSrc = Files.newInputStream(src);
+             InputStream isDst = Files.newInputStream(dst))
+        {
             int nSrc = 0;
             while ((nSrc = isSrc.read(bufSrc)) != -1) {
                 int nDst = 0;
@@ -588,24 +590,22 @@ public class Demo {
                     nSrc--;
                 }
             }
-        } finally {
-            isSrc.close();
-            isDst.close();
         }
 
         // channels
-        SeekableByteChannel chSrc = src.newByteChannel();
-        SeekableByteChannel chDst = dst.newByteChannel();
-        if (chSrc.size() != chDst.size()) {
-            System.out.printf("src[%s].size=%d, dst[%s].size=%d%n",
-                              chSrc.toString(), chSrc.size(),
-                              chDst.toString(), chDst.size());
-            throw new RuntimeException("CHECK FAILED!");
-        }
-        ByteBuffer bbSrc = ByteBuffer.allocate(8192);
-        ByteBuffer bbDst = ByteBuffer.allocate(8192);
 
-        try {
+        try (SeekableByteChannel chSrc = Files.newByteChannel(src);
+             SeekableByteChannel chDst = Files.newByteChannel(dst))
+        {
+            if (chSrc.size() != chDst.size()) {
+                System.out.printf("src[%s].size=%d, dst[%s].size=%d%n",
+                                  chSrc.toString(), chSrc.size(),
+                                  chDst.toString(), chDst.size());
+                throw new RuntimeException("CHECK FAILED!");
+            }
+            ByteBuffer bbSrc = ByteBuffer.allocate(8192);
+            ByteBuffer bbDst = ByteBuffer.allocate(8192);
+
             int nSrc = 0;
             while ((nSrc = chSrc.read(bbSrc)) != -1) {
                 int nDst = chDst.read(bbDst);
@@ -627,9 +627,6 @@ public class Demo {
             }
         } catch (IOException x) {
             x.printStackTrace();
-        } finally {
-            chSrc.close();
-            chDst.close();
         }
     }
 
@@ -641,23 +638,15 @@ public class Demo {
         openwrite.add(CREATE_NEW);
         openwrite.add(WRITE);
 
-        FileChannel srcFc = src.getFileSystem()
-                               .provider()
-                               .newFileChannel(src, read);
-        FileChannel dstFc = dst.getFileSystem()
-                               .provider()
-                               .newFileChannel(dst, openwrite);
-
-        try {
+        try (FileChannel srcFc = src.getFileSystem().provider().newFileChannel(src, read);
+             FileChannel dstFc = dst.getFileSystem().provider().newFileChannel(dst, openwrite))
+        {
             ByteBuffer bb = ByteBuffer.allocate(8192);
             while (srcFc.read(bb) >= 0) {
                 bb.flip();
                 dstFc.write(bb);
                 bb.clear();
             }
-        } finally {
-            srcFc.close();
-            dstFc.close();
         }
     }
 
@@ -669,35 +658,28 @@ public class Demo {
         openwrite.add(CREATE_NEW);
         openwrite.add(WRITE);
 
-        SeekableByteChannel srcCh = src.newByteChannel(read);
-        SeekableByteChannel dstCh = dst.newByteChannel(openwrite);
-
-        try {
+        try (SeekableByteChannel srcCh = Files.newByteChannel(src, read);
+             SeekableByteChannel dstCh = Files.newByteChannel(dst, openwrite))
+        {
             ByteBuffer bb = ByteBuffer.allocate(8192);
             while (srcCh.read(bb) >= 0) {
                 bb.flip();
                 dstCh.write(bb);
                 bb.clear();
             }
-        } finally {
-            srcCh.close();
-            dstCh.close();
         }
     }
 
     private static void streamCopy(Path src, Path dst) throws IOException
     {
-        InputStream isSrc = src.newInputStream();
-        OutputStream osDst = dst.newOutputStream();
         byte[] buf = new byte[8192];
-        try {
+        try (InputStream isSrc = Files.newInputStream(src);
+             OutputStream osDst = Files.newOutputStream(dst))
+        {
             int n = 0;
             while ((n = isSrc.read(buf)) != -1) {
                 osDst.write(buf, 0, n);
             }
-        } finally {
-            isSrc.close();
-            osDst.close();
         }
     }
 }

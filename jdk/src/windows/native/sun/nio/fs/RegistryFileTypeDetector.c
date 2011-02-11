@@ -51,7 +51,7 @@ Java_sun_nio_fs_RegistryFileTypeDetector_queryStringValue(JNIEnv* env, jclass th
         res = RegQueryValueExW(hKey, lpValueName, NULL, &type, (LPBYTE)&data, &size);
         if (res == ERROR_SUCCESS) {
             if (type == REG_SZ) {
-                jsize len = wcslen((WCHAR*)data);
+                jsize len = (jsize)wcslen((WCHAR*)data);
                 result = (*env)->NewString(env, (const jchar*)&data, len);
             }
         }
