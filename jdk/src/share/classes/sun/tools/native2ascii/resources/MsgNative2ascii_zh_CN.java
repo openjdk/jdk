@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import java.util.ListResourceBundle;
 public class MsgNative2ascii_zh_CN extends ListResourceBundle {
 
     public Object[][] getContents() {
-        return new Object[][] {
-        {"err.bad.arg", "-encoding \u9700\u8981\u53c2\u6570"},
-        {"err.cannot.read",  "\u65e0\u6cd5\u8bfb\u53d6 {0}\u3002"},
-        {"err.cannot.write", "\u65e0\u6cd5\u5199\u5165 {0}\u3002"},
-        {"usage", "\u7528\u6cd5\uff1anative2ascii" +
-         " [-reverse] [-encoding \u7f16\u7801] [\u8f93\u5165\u6587\u4ef6 [\u8f93\u51fa\u6587\u4ef6]]"},
+        Object[][] temp = new Object[][] {
+        {"err.bad.arg", "-encoding \u9700\u8981\u53C2\u6570"},
+        {"err.cannot.read",  "\u65E0\u6CD5\u8BFB\u53D6{0}\u3002"},
+        {"err.cannot.write", "\u65E0\u6CD5\u5199\u5165{0}\u3002"},
+        {"usage", "\u7528\u6CD5: native2ascii [-reverse] [-encoding encoding] [inputfile [outputfile]]"},
         };
+
+        return temp;
     }
 }

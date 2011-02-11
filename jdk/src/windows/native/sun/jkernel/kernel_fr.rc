@@ -23,6 +23,7 @@
  * questions.
  */
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -36,7 +37,7 @@ EXSTYLE WS_EX_APPWINDOW
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "", IDC_DOWNLOAD_MASTHEAD, 0, 0, 340, 39
-    LTEXT           "", IDC_MASTHEAD_TEXT, 60, 4, 220, 30
+    LTEXT           "", IDC_MASTHEAD_TEXT, 60, 14, 200, 12
     CONTROL         "", IDC_STATIC,"Static", SS_BLACKFRAME | SS_SUNKEN,
                     0, 39, 340, 1
     LTEXT           "", IDC_DOWNLOAD_TEXT, 12, 60, 316, 20
@@ -45,6 +46,7 @@ BEGIN
                     12, 100, 265, 14
     PUSHBUTTON	    "Annuler",  2, 285, 100, 46, 14
 END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -71,50 +73,50 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_DOWNLOAD_CANCEL_MESSAGE   "L'annulation de l'installation de composants supplémentaires nécessaires à l'application risque d'entraîner la fermeture de celle-ci.\n\nVoulez-vous vraiment annuler l'installation des composants supplémentaires ?"
-    IDS_DOWNLOAD_CANCEL_CAPTION   "Annuler : composants supplémentaires"
+    IDS_DOWNLOAD_CANCEL_MESSAGE   "L'annulation de l'installation de composants supplémentaires nécessaires à l'application risque d'entraîner la fermeture de celle-ci.\n\nVoulez-vous annuler l'installation des composants supplémentaires ?"
+    IDS_DOWNLOAD_CANCEL_CAPTION   "Annulation - Composants supplémentaires"
     IDS_DOWNLOAD_CANCEL_INSTRUCTION   ""
-    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "Délai de connexion dépassé"
+    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "Temporisation de la connexion"
     IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "Connexion à Internet impossible"
     IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "Erreur de serveur (erreur %s)"
-    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "Service non disponible (erreur %s)"
+    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "Service indisponible (erreur %s)"
     IDS_HTTP_INSTRUCTION_FORBIDDEN            "Accès refusé ou interdit (erreur %s)"
-    IDS_HTTP_STATUS_OTHER                     "Une erreur s'est produite lors de cette demande. Voulez-vous effectuer à nouveau la demande ?"
+    IDS_HTTP_STATUS_OTHER                     "Une erreur s'est produite lors de cette demande. Voulez-vous réessayer ?"
 
 // HTTP status code
-    IDS_HTTP_STATUS_REQUEST_TIMEOUT "Temporisation du serveur lors de l'attente de la requête."
-    IDS_HTTP_STATUS_FORBIDDEN		"Le serveur a compris la requête mais refuse de la satisfaire."
-    IDS_HTTP_STATUS_SERVER_ERROR	"Le serveur a rencontré une condition inattendue l'empêchant de satisfaire la requête."
-    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"Le service est temporairement surchargé."
+    IDS_HTTP_STATUS_REQUEST_TIMEOUT "Le serveur utilisé pour télécharger les composants requis ne répond pas et la connexion a expiré. Voulez-vous essayer de vous reconnecter ?"
+    IDS_HTTP_STATUS_FORBIDDEN		"Vous n'êtes pas autorisé à accéder au serveur pour télécharger les composants requis par l'application. Voulez-vous réessayer d'accéder au serveur ?"
+    IDS_HTTP_STATUS_SERVER_ERROR	"Le serveur a rencontré une erreur l'empêchant de satisfaire la demande. Voulez-vous relancer la demande ?"
+    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"Le service demandé est temporairement indisponible. Voulez-vous relancer la demande ?"
 
 
-    IDS_DOWNLOAD_STATUS_RETRY		"Le serveur est occupé ; veuillez réessayer dans %ld secondes..."
-
-    IDS_ERROR_CAPTION               "Erreur - Java Kernel"
-    IDS_HOURSMINUTESECOND	    "Temps restant prévu : %d heures %d minutes %.0f secondes"
-    IDS_HOURMINUTESECOND	    "Temps restant prévu : %d heure %d minutes %.0f secondes"
-    IDS_MINUTESECOND 		    "Temps restant prévu : %d minutes %.0f secondes"
-    IDS_SECOND                      "Temps restant prévu : %.0f secondes"
-    IDS_DISK_FULL_ERROR_CAPTION     "Disque saturé"
-    IDS_DISK_FULL_ERROR             "En raison de la saturation du disque, Java Kernel n'a pas été en mesure de télécharger les composants requis.  Voulez-vous réessayer ?"
-    IDS_DISK_WRITE_ERROR_CAPTION    "Erreur d'écriture sur le disque"
-    IDS_DISK_WRITE_ERROR            "Java Kernel a rencontré une erreur lors de l'écriture sur le disque.  Voulez-vous réessayer ?"
-    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java Kernel ne peut pas s'exécuter avec les paramètres de connexion Internet actuels de votre système.  Dans le Panneau de configuration de Windows, cliquez sur Options Internet -> Connexions pour vérifier les paramètres et informations de proxy."
+    IDS_DOWNLOAD_STATUS_RETRY		"Le serveur est occupé. Réessayez dans %ld secondes..."
+  
+    IDS_ERROR_CAPTION               "Programme d'installation de Java"
+    IDS_HOURSMINUTESECOND	    "Temps restant estimé : %d heures, %d minutes, %.0f secondes"
+    IDS_HOURMINUTESECOND	    "Temps restant estimé : %d heure, %d minutes, %.0f secondes"
+    IDS_MINUTESECOND 		    "Temps restant estimé : %d minutes, %.0f secondes"
+    IDS_SECOND                      "Temps restant estimé : %.0f secondes"
+    IDS_DISK_FULL_ERROR_CAPTION     "Disque saturé %s"
+    IDS_DISK_FULL_ERROR             "L'espace disque est insuffisant pour le téléchargement des composants requis. Faites de la place et réessayez."
+    IDS_DISK_WRITE_ERROR_CAPTION    "Impossible d'écrire sur le disque %s"
+    IDS_DISK_WRITE_ERROR            "Une erreur est survenue lors de l'écriture sur le disque. Vérifiez que le disque n'est pas protégé contre l'écriture."
+    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java ne peut pas se connecter à Internet. Vérifiez que les paramètres de connexion Internet sont corrects (sous Windows, ils se trouvent dans Panneau de configuration > Options Internet > Connexions) et que le pare-feu autorise java.exe à accéder à Internet."
 
     IDS_DOWNLOAD_RETRY             "Erreur de téléchargement"
-    IDS_DOWNLOAD_RETRY_TEXT        "Une erreur s'est produite lors du téléchargement de certains composants requis. Souhaitez-vous réessayer de télécharger ces composants ?"
+    IDS_DOWNLOAD_RETRY_TEXT        "Une erreur s'est produite lors du téléchargement de certains composants requis. Voulez-vous réessayer de télécharger ces composants ?"
 
     IDS_DOWNLOAD                   "Installation de composants supplémentaires"
-	IDS_DOWNLOAD_UNPACKING         "Décompression du bundle"
-    IDS_DOWNLOAD_TEXT              "L'application Java démarre lorsque des composants supplémentaires requis sont téléchargés et installés."
+    IDS_DOWNLOAD_UNPACKING         "Décompression du package"
+    IDS_DOWNLOAD_TEXT              "L'application Java démarre une fois que les composants supplémentaires requis sont téléchargés et installés."
     
     IDS_FILE_UPDATE_ERROR          "Une erreur s'est produite lors de la mise à jour de %s%s."
     IDS_FILE_DELETE_ERROR          "Une erreur s'est produite lors de la suppression de %s."
-    IDS_JAVA_HOME_ERROR            "Le répertoire d'accueil Java est introuvable."
-    IDS_KERNEL_HOME_ERROR          "Le chemin de jkernel.dll est introuvable."
+    IDS_JAVA_HOME_ERROR            "Le répertoire d'origine Java est introuvable."
+    IDS_KERNEL_HOME_ERROR          "Impossible de déterminer le chemin de jkernel.dll."
     IDS_JBROKER_ERROR              "Impossible de lancer jbroker.exe."
-    IDS_FATAL_ERROR                "Java n'a pas été en mesure de télécharger les composants requis.  Fermeture imminente du programme."
-    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "Java n'a pas été en mesure de communiquer avec le serveur de téléchargement.  Fermeture imminente du programme."
-    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "Java a rencontré une erreur lors de la communication avec le serveur de téléchargement.  Fermeture imminente du programme."
-    IDS_ERROR_MALFORMED_URL "Java n'a pas été en mesure de réaliser le téléchargement à partir de l'URL '%s'.  Fermeture imminente du programme."
+    IDS_FATAL_ERROR                "Java n'a pas pu télécharger les composants requis. Fermeture imminente du programme."
+    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "Java n'a pas pu communiquer avec le serveur de téléchargement. Fermeture imminente du programme."
+    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "Java a rencontré une erreur lors de la communication avec le serveur de téléchargement. Fermeture imminente du programme."
+    IDS_ERROR_MALFORMED_URL "Java n'a pas pu télécharger à partir de l'URL '%s'. Fermeture imminente du programme."
 END
