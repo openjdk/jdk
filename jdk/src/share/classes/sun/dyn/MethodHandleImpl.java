@@ -30,7 +30,6 @@ import java.dyn.MethodHandles.Lookup;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.dyn.util.VerifyType;
-import java.dyn.NoAccessException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -169,11 +168,11 @@ public abstract class MethodHandleImpl {
      * @param doDispatch whether the method handle will test the receiver type
      * @param lookupClass access-check relative to this class
      * @return a direct handle to the matching method
-     * @throws NoAccessException if the given method cannot be accessed by the lookup class
+     * @throws IllegalAccessException if the given method cannot be accessed by the lookup class
      */
     public static
     MethodHandle findMethod(Access token, MemberName method,
-            boolean doDispatch, Class<?> lookupClass) throws NoAccessException {
+                            boolean doDispatch, Class<?> lookupClass) throws IllegalAccessException {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
         if (!method.isStatic()) {
@@ -307,7 +306,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(AllocateObject.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -322,7 +321,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -474,7 +473,7 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findVirtual(FieldAccessor.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
             if (evclass != vclass || (!isStatic && ecclass != cclass)) {
@@ -542,7 +541,7 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findStatic(FieldAccessor.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
             if (caclass != null) {
@@ -1014,7 +1013,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(GuardWithTest.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -1029,7 +1028,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithTest.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -1150,7 +1149,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(GuardWithCatch.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -1165,7 +1164,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithCatch.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -1212,7 +1211,7 @@ public abstract class MethodHandleImpl {
             THROW_EXCEPTION
             = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
                     MethodType.methodType(Empty.class, Throwable.class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
     }

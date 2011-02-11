@@ -226,9 +226,14 @@ public class MethodHandles {
      * the containing class is not accessible to the lookup class, or
      * because the desired class member is missing, or because the
      * desired class member is not accessible to the lookup class.
-     * It can also fail if a security manager is installed and refuses
-     * access.  In any of these cases, an exception will be
-     * thrown from the attempted lookup.
+     * In any of these cases, a {@code ReflectiveOperationException} will be
+     * thrown from the attempted lookup.  The exact class will be one of
+     * the following:
+     * <ul>
+     * <li>NoSuchMethodException &mdash; if a method is requested but does not exist
+     * <li>NoSuchFieldException &mdash; if a field is requested but does not exist
+     * <li>IllegalAccessException &mdash; if the member exists but an access check fails
+     * </ul>
      * <p>
      * In general, the conditions under which a method handle may be
      * looked up for a method {@code M} are exactly equivalent to the conditions
@@ -511,10 +516,12 @@ public class MethodHandles {
          * @param name the name of the method
          * @param type the type of the method
          * @return the desired method handle
-         * @exception NoAccessException if the method does not exist or access checking fails
+         * @throws NoSuchMethodException if the method does not exist
+         * @throws IllegalAccessException if access checking fails, or if the method is not {@code static}
+         * @throws NullPointerException if any argument is null
          */
         public
-        MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoAccessException {
+        MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, true);
             checkMethod(refc, method, true);
             return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClassOrNull());
@@ -549,9 +556,11 @@ public class MethodHandles {
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
          * @return the desired method handle
-         * @exception NoAccessException if the method does not exist or access checking fails
+         * @throws NoSuchMethodException if the method does not exist
+         * @throws IllegalAccessException if access checking fails, or if the method is {@code static}
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoAccessException {
+        public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, false);
             checkMethod(refc, method, false);
             MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
@@ -576,9 +585,11 @@ public class MethodHandles {
          * @param refc the class or interface from which the method is accessed
          * @param type the type of the method, with the receiver argument omitted, and a void return type
          * @return the desired method handle
-         * @exception NoAccessException if the method does not exist or access checking fails
+         * @throws NoSuchMethodException if the constructor does not exist
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoAccessException {
+        public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             String name = "<init>";
             MemberName ctor = resolveOrFail(refc, name, type, false, false, lookupClassOrNull());
             assert(ctor.isConstructor());
@@ -629,10 +640,12 @@ public class MethodHandles {
          * @param type the type of the method, with the receiver argument omitted
          * @param specialCaller the proposed calling class to perform the {@code invokespecial}
          * @return the desired method handle
-         * @exception NoAccessException if the method does not exist or access checking fails
+         * @throws NoSuchMethodException if the method does not exist
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if any argument is null
          */
         public MethodHandle findSpecial(Class<?> refc, String name, MethodType type,
-                                        Class<?> specialCaller) throws NoAccessException {
+                                        Class<?> specialCaller) throws NoSuchMethodException, IllegalAccessException {
             checkSpecialCaller(specialCaller);
             MemberName method = resolveOrFail(refc, name, type, false, false, specialCaller);
             checkMethod(refc, method, false);
@@ -651,9 +664,11 @@ public class MethodHandles {
          * @param name the field's name
          * @param type the field's type
          * @return a method handle which can load values from the field
-         * @exception NoAccessException if access checking fails
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+        public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             return makeAccessor(refc, name, type, false, false);
         }
 
@@ -668,9 +683,11 @@ public class MethodHandles {
          * @param name the field's name
          * @param type the field's type
          * @return a method handle which can store values into the field
-         * @exception NoAccessException if access checking fails
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+        public MethodHandle findSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             return makeAccessor(refc, name, type, false, true);
         }
 
@@ -684,9 +701,11 @@ public class MethodHandles {
          * @param name the field's name
          * @param type the field's type
          * @return a method handle which can load values from the field
-         * @exception NoAccessException if access checking fails
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+        public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             return makeAccessor(refc, name, type, true, false);
         }
 
@@ -700,9 +719,11 @@ public class MethodHandles {
          * @param name the field's name
          * @param type the field's type
          * @return a method handle which can store values into the field
-         * @exception NoAccessException if access checking fails
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+        public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             return makeAccessor(refc, name, type, true, true);
         }
 
@@ -741,16 +762,18 @@ return mh1;
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
          * @return the desired method handle
-         * @exception NoAccessException if the method does not exist or access checking fails
+         * @throws NoSuchMethodException if the method does not exist
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle bind(Object receiver, String name, MethodType type) throws NoAccessException {
+        public MethodHandle bind(Object receiver, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(refc, name, type, false);
             checkMethod(refc, method, false);
             MethodHandle dmh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
             MethodHandle bmh = MethodHandleImpl.bindReceiver(IMPL_TOKEN, dmh, receiver);
             if (bmh == null)
-                throw newNoAccessException(method, lookupClass());
+                throw newNoAccessException(method, this);
             if (dmh.type().parameterCount() == 0)
                 return dmh;  // bound the trailing parameter; no varargs possible
             return fixVarargs(bmh, dmh);
@@ -772,9 +795,10 @@ return mh1;
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * @param m the reflected method
          * @return a method handle which can invoke the reflected method
-         * @exception NoAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if the argument is null
          */
-        public MethodHandle unreflect(Method m) throws NoAccessException {
+        public MethodHandle unreflect(Method m) throws IllegalAccessException {
             MemberName method = new MemberName(m);
             assert(method.isMethod());
             if (!m.isAccessible())  checkMethod(method.getDeclaringClass(), method, method.isStatic());
@@ -799,9 +823,10 @@ return mh1;
          * @param m the reflected method
          * @param specialCaller the class nominally calling the method
          * @return a method handle which can invoke the reflected method
-         * @exception NoAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if any argument is null
          */
-        public MethodHandle unreflectSpecial(Method m, Class<?> specialCaller) throws NoAccessException {
+        public MethodHandle unreflectSpecial(Method m, Class<?> specialCaller) throws IllegalAccessException {
             checkSpecialCaller(specialCaller);
             MemberName method = new MemberName(m);
             assert(method.isMethod());
@@ -827,9 +852,10 @@ return mh1;
          * the constructor's variable arity modifier bit ({@code 0x0080}) is set.
          * @param c the reflected constructor
          * @return a method handle which can invoke the reflected constructor
-         * @exception NoAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if the argument is null
          */
-        public MethodHandle unreflectConstructor(Constructor c) throws NoAccessException {
+        public MethodHandle unreflectConstructor(Constructor c) throws IllegalAccessException {
             MemberName ctor = new MemberName(c);
             assert(ctor.isConstructor());
             if (!c.isAccessible())  checkAccess(c.getDeclaringClass(), ctor);
@@ -849,9 +875,10 @@ return mh1;
          * access checking is performed immediately on behalf of the lookup class.
          * @param f the reflected field
          * @return a method handle which can load values from the reflected field
-         * @exception NoAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if the argument is null
          */
-        public MethodHandle unreflectGetter(Field f) throws NoAccessException {
+        public MethodHandle unreflectGetter(Field f) throws IllegalAccessException {
             return makeAccessor(f.getDeclaringClass(), new MemberName(f), f.isAccessible(), false);
         }
 
@@ -866,40 +893,47 @@ return mh1;
          * access checking is performed immediately on behalf of the lookup class.
          * @param f the reflected field
          * @return a method handle which can store values into the reflected field
-         * @exception NoAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if the argument is null
          */
-        public MethodHandle unreflectSetter(Field f) throws NoAccessException {
+        public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return makeAccessor(f.getDeclaringClass(), new MemberName(f), f.isAccessible(), true);
         }
 
         /// Helper methods, all package-private.
 
-        MemberName resolveOrFail(Class<?> refc, String name, Class<?> type, boolean isStatic) throws NoAccessException {
+        MemberName resolveOrFail(Class<?> refc, String name, Class<?> type, boolean isStatic) throws NoSuchFieldException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
+            name.getClass(); type.getClass();  // NPE
             int mods = (isStatic ? Modifier.STATIC : 0);
-            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull(),
+                                            NoSuchFieldException.class);
         }
 
-        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic) throws NoAccessException {
+        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
+            name.getClass(); type.getClass();  // NPE
             int mods = (isStatic ? Modifier.STATIC : 0);
-            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull(),
+                                            NoSuchMethodException.class);
         }
 
         MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic,
-                                 boolean searchSupers, Class<?> specialCaller) throws NoAccessException {
+                                 boolean searchSupers, Class<?> specialCaller) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
+            name.getClass(); type.getClass();  // NPE
             int mods = (isStatic ? Modifier.STATIC : 0);
-            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), searchSupers, specialCaller);
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), searchSupers, specialCaller,
+                                            NoSuchMethodException.class);
         }
 
-        void checkSymbolicClass(Class<?> refc) throws NoAccessException {
+        void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller))
-                throw newNoAccessException("symbolic reference class is not public", new MemberName(refc), caller);
+                throw newNoAccessException("symbolic reference class is not public", new MemberName(refc), this);
         }
 
-        void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) throws NoAccessException {
+        void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) throws IllegalAccessException {
             String message;
             if (m.isConstructor())
                 message = "expected a method, not a constructor";
@@ -909,10 +943,10 @@ return mh1;
                 message = wantStatic ? "expected a static method" : "expected a non-static method";
             else
                 { checkAccess(refc, m); return; }
-            throw newNoAccessException(message, m, lookupClass());
+            throw newNoAccessException(message, m, this);
         }
 
-        void checkAccess(Class<?> refc, MemberName m) throws NoAccessException {
+        void checkAccess(Class<?> refc, MemberName m) throws IllegalAccessException {
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
@@ -927,22 +961,25 @@ return mh1;
                 && VerifyAccess.isSamePackage(m.getDeclaringClass(), lookupClass()))
                 // Protected members can also be checked as if they were package-private.
                 return;
-            throw newNoAccessException(accessFailedMessage(refc, m), m, lookupClass());
+            throw newNoAccessException(accessFailedMessage(refc, m), m, this);
         }
 
         String accessFailedMessage(Class<?> refc, MemberName m) {
             Class<?> defc = m.getDeclaringClass();
             int mods = m.getModifiers();
-            if (!VerifyAccess.isClassAccessible(defc, lookupClass()))
+            // check the class first:
+            boolean classOK = (Modifier.isPublic(defc.getModifiers()) &&
+                               (defc == refc ||
+                                Modifier.isPublic(refc.getModifiers())));
+            if (!classOK && (allowedModes & PACKAGE) != 0) {
+                classOK = (VerifyAccess.isClassAccessible(defc, lookupClass()) &&
+                           (defc == refc ||
+                            VerifyAccess.isClassAccessible(refc, lookupClass())));
+            }
+            if (!classOK)
                 return "class is not public";
-            if (refc != defc && !VerifyAccess.isClassAccessible(refc, lookupClass()))
-                return "symbolic reference "+refc.getName()+" is not public";
             if (Modifier.isPublic(mods))
                 return "access to public member failed";  // (how?)
-            else if (allowedModes == PUBLIC)
-                return "member is not public";
-            else if (allowedModes == 0)
-                return "attempted member access through a non-public class";
             if (Modifier.isPrivate(mods))
                 return "member is private";
             if (Modifier.isProtected(mods))
@@ -952,17 +989,17 @@ return mh1;
 
         private static final boolean ALLOW_NESTMATE_ACCESS = false;
 
-        void checkSpecialCaller(Class<?> specialCaller) throws NoAccessException {
+        void checkSpecialCaller(Class<?> specialCaller) throws IllegalAccessException {
             if (allowedModes == TRUSTED)  return;
             if ((allowedModes & PRIVATE) == 0
                 || (specialCaller != lookupClass()
                     && !(ALLOW_NESTMATE_ACCESS &&
                          VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))))
                 throw newNoAccessException("no private access for invokespecial",
-                                           new MemberName(specialCaller), lookupClass());
+                                           new MemberName(specialCaller), this);
         }
 
-        MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) throws NoAccessException {
+        MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) throws IllegalAccessException {
             // The accessing class only has the right to use a protected member
             // on itself or a subclass.  Enforce that restriction, from JVMS 5.4.4, etc.
             if (!method.isProtected() || method.isStatic()
@@ -974,7 +1011,7 @@ return mh1;
             else
                 return restrictReceiver(method, mh, lookupClass());
         }
-        MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) throws NoAccessException {
+        MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) throws IllegalAccessException {
             assert(!method.isStatic());
             Class<?> defc = method.getDeclaringClass();  // receiver type of mh is too wide
             if (defc.isInterface() || !defc.isAssignableFrom(caller)) {
@@ -988,18 +1025,18 @@ return mh1;
         }
 
         MethodHandle makeAccessor(Class<?> refc, String name, Class<?> type,
-                                  boolean isStatic, boolean isSetter) throws NoAccessException {
+                                  boolean isStatic, boolean isSetter) throws NoSuchFieldException, IllegalAccessException {
             MemberName field = resolveOrFail(refc, name, type, isStatic);
             if (isStatic != field.isStatic())
                 throw newNoAccessException(isStatic
                                            ? "expected a static field"
                                            : "expected a non-static field",
-                                           field, lookupClass());
+                                           field, this);
             return makeAccessor(refc, field, false, isSetter);
         }
 
         MethodHandle makeAccessor(Class<?> refc, MemberName field,
-                                  boolean trusted, boolean isSetter) throws NoAccessException {
+                                  boolean trusted, boolean isSetter) throws IllegalAccessException {
             assert(field.isField());
             if (trusted)
                 return MethodHandleImpl.accessField(IMPL_TOKEN, field, isSetter, lookupClassOrNull());

@@ -338,7 +338,7 @@ public class InvokeGenericTest {
                 = LOOKUP.findStatic(LOOKUP.lookupClass(),
                                     "collector",
                                     methodType(Object.class, Object[].class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
     }

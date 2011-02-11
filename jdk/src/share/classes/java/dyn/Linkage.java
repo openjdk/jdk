@@ -88,7 +88,7 @@ public class Linkage {
         MethodHandle bootstrapMethod;
         try {
             bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException("no such bootstrap method in "+runtime+": "+name, ex);
         }
         MethodHandleImpl.registerBootstrap(IMPL_TOKEN, callerClass, bootstrapMethod);

@@ -74,7 +74,7 @@ static final private Lookup LOOKUP = lookup();
 // static final private MethodHandle HASHCODE_1 = LOOKUP.findVirtual(Object.class,
 //     "hashCode", methodType(int.class));
 
-// form required if NoAccessException is intercepted:
+// form required if ReflectiveOperationException is intercepted:
 static final private MethodHandle CONCAT_2, HASHCODE_2;
 static {
   try {
@@ -82,7 +82,7 @@ static {
       "concat", methodType(String.class, String.class));
     HASHCODE_2 = LOOKUP.findVirtual(Object.class,
       "hashCode", methodType(int.class));
-   } catch (NoAccessException ex) {
+   } catch (ReflectiveOperationException ex) {
      throw new RuntimeException(ex);
    }
 }

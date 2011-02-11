@@ -129,7 +129,7 @@ public class CallSiteImpl {
                 MethodType.methodType(void.class,
                                       String.class, MethodType.class,
                                       MemberName.class, int.class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw uncaughtException(ex);
         }
     }

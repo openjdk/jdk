@@ -69,7 +69,7 @@ public class Invokers {
         if (invoker != null)  return invoker;
         try {
             invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invokeExact", targetType);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new InternalError("JVM cannot find invoker for "+targetType);
         }
         assert(invokerType(targetType) == invoker.type());
@@ -128,7 +128,7 @@ public class Invokers {
                 THROW_UCS = MethodHandleImpl.IMPL_LOOKUP
                     .findStatic(CallSite.class, "uninitializedCallSite",
                                 MethodType.methodType(Empty.class));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw new RuntimeException(ex);
             }
         }

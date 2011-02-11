@@ -44,7 +44,7 @@ class InvokeGeneric {
     /** Compute and cache information for this adapter, so that it can
      *  call out to targets of the erasure-family of the given erased type.
      */
-    private InvokeGeneric(MethodType erasedCallerType) throws NoAccessException {
+    private InvokeGeneric(MethodType erasedCallerType) throws ReflectiveOperationException {
         this.erasedCallerType = erasedCallerType;
         this.initialInvoker = makeInitialInvoker();
         assert initialInvoker.type().equals(erasedCallerType
@@ -64,14 +64,14 @@ class InvokeGeneric {
             try {
                 InvokeGeneric gen = new InvokeGeneric(form.erasedType());
                 form.genericInvoker = genericInvoker = gen.initialInvoker;
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw new RuntimeException(ex);
             }
         }
         return genericInvoker;
     }
 
-    private MethodHandle makeInitialInvoker() throws NoAccessException {
+    private MethodHandle makeInitialInvoker() throws ReflectiveOperationException {
         // postDispatch = #(MH'; MT, MH; A...){MH'(MT, MH; A)}
         MethodHandle postDispatch = makePostDispatchInvoker();
         MethodHandle invoker;
@@ -95,7 +95,7 @@ class InvokeGeneric {
         return MethodHandles.dropArguments(targetInvoker, 1, EXTRA_ARGS);
     }
 
-    private MethodHandle dispatcher(String dispatchName) throws NoAccessException {
+    private MethodHandle dispatcher(String dispatchName) throws ReflectiveOperationException {
         return lookup().bind(this, dispatchName,
                              MethodType.methodType(MethodHandle.class,
                                                    MethodType.class, MethodHandle.class));
