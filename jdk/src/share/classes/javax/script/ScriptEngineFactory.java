@@ -152,12 +152,11 @@ public interface ScriptEngineFactory {
      *      ret += "." + m + "(";
      *      for (int i = 0; i < args.length; i++) {
      *          ret += args[i];
-     *          if (i == args.length - 1) {
-     *              ret += ")";
-     *          } else {
+     *          if (i < args.length - 1) {
      *              ret += ",";
      *          }
      *      }
+     *      ret += ")";
      *      return ret;
      * }
      *</pre></code>
