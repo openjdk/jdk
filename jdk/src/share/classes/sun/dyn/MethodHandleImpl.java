@@ -136,6 +136,8 @@ public abstract class MethodHandleImpl {
     }
 
     static {
+        if (!MethodHandleNatives.JVM_SUPPORT)  // force init of native API
+            throw new InternalError("No JVM support for JSR 292");
         // Force initialization of Lookup, so it calls us back as initLookup:
         MethodHandles.publicLookup();
         if (IMPL_LOOKUP_INIT == null)
@@ -1216,14 +1218,24 @@ public abstract class MethodHandleImpl {
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
-    public static String getNameString(Access token, MethodHandle target) {
+    public static String getNameString(Access token, MethodHandle target, Object type) {
         Access.check(token);
+        if (!(type instanceof MethodType)) {
+            if (type == null)
+                type = target.type();
+            else if (type instanceof MethodHandle)
+                type = ((MethodHandle)type).type();
+        }
         MemberName name = null;
         if (target != null)
             name = MethodHandleNatives.getMethodName(target);
         if (name == null)
-            return "invoke" + target.type();
-        return name.getName() + target.type();
+            return "invoke" + type;
+        return name.getName() + type;
+    }
+
+    public static String getNameString(Access token, MethodHandle target) {
+        return getNameString(token, target, null);
     }
 
     static String addTypeString(Object obj, MethodHandle target) {

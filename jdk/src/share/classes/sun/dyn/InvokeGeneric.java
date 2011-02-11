@@ -28,6 +28,7 @@ package sun.dyn;
 import java.dyn.*;
 import java.lang.reflect.*;
 import sun.dyn.util.*;
+import static sun.dyn.MethodTypeImpl.invokers;
 
 /**
  * Adapters which manage MethodHanndle.invokeGeneric calls.
@@ -87,7 +88,7 @@ class InvokeGeneric {
     private MethodHandle makePostDispatchInvoker() {
         // Take (MH'; MT, MH; A...) and run MH'(MT, MH; A...).
         MethodType invokerType = erasedCallerType.insertParameterTypes(0, EXTRA_ARGS);
-        return MethodHandles.exactInvoker(invokerType);
+        return invokers(invokerType).exactInvoker();
     }
     private MethodHandle dropDispatchArguments(MethodHandle targetInvoker) {
         assert(targetInvoker.type().parameterType(0) == MethodHandle.class);
