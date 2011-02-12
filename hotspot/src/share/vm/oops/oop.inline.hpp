@@ -140,7 +140,6 @@ inline bool oopDesc::is_array()              const { return blueprint()->oop_is_
 inline bool oopDesc::is_objArray()           const { return blueprint()->oop_is_objArray(); }
 inline bool oopDesc::is_typeArray()          const { return blueprint()->oop_is_typeArray(); }
 inline bool oopDesc::is_javaArray()          const { return blueprint()->oop_is_javaArray(); }
-inline bool oopDesc::is_symbol()             const { return blueprint()->oop_is_symbol(); }
 inline bool oopDesc::is_klass()              const { return blueprint()->oop_is_klass(); }
 inline bool oopDesc::is_thread()             const { return blueprint()->oop_is_thread(); }
 inline bool oopDesc::is_method()             const { return blueprint()->oop_is_method(); }

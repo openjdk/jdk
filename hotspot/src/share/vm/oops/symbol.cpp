@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,29 @@
  *
  */
 
+
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
+#include "runtime/os.hpp"
+#include "memory/allocation.inline.hpp"
 
+Symbol::Symbol(const u1* name, int length) : _refcount(0), _length(length) {
+  _identity_hash = os::random();
+  for (int i = 0; i < _length; i++) {
+    byte_at_put(i, name[i]);
+  }
+}
+
+void* Symbol::operator new(size_t size, int len) {
+  return (void *) AllocateHeap(object_size(len) * HeapWordSize, "symbol");
+}
 
 // ------------------------------------------------------------------
-// symbolOopDesc::equals
+// Symbol::equals
 //
 // Compares the symbol with a string of the given length.
-bool symbolOopDesc::equals(const char* str, int len) const {
+bool Symbol::equals(const char* str, int len) const {
   int l = utf8_length();
   if (l != len) return false;
   while (l-- > 0) {
@@ -44,11 +57,11 @@ bool symbolOopDesc::equals(const char* str, int len) const {
 
 
 // ------------------------------------------------------------------
-// symbolOopDesc::starts_with
+// Symbol::starts_with
 //
 // Tests if the symbol starts with the specified prefix of the given
 // length.
-bool symbolOopDesc::starts_with(const char* prefix, int len) const {
+bool Symbol::starts_with(const char* prefix, int len) const {
   if (len > utf8_length()) return false;
   while (len-- > 0) {
     if (prefix[len] != (char) byte_at(len))
@@ -60,15 +73,15 @@ bool symbolOopDesc::starts_with(const char* prefix, int len) const {
 
 
 // ------------------------------------------------------------------
-// symbolOopDesc::index_of
+// Symbol::index_of
 //
 // Finds if the given string is a substring of this symbol's utf8 bytes.
 // Return -1 on failure.  Otherwise return the first index where str occurs.
-int symbolOopDesc::index_of_at(int i, const char* str, int len) const {
+int Symbol::index_of_at(int i, const char* str, int len) const {
   assert(i >= 0 && i <= utf8_length(), "oob");
   if (len <= 0)  return 0;
   char first_char = str[0];
-  address bytes = (address) ((symbolOopDesc*)this)->base();
+  address bytes = (address) ((Symbol*)this)->base();
   address limit = bytes + utf8_length() - len;  // inclusive limit
   address scan = bytes + i;
   if (scan > limit)
@@ -84,7 +97,7 @@ int symbolOopDesc::index_of_at(int i, const char* str, int len) const {
 }
 
 
-char* symbolOopDesc::as_C_string(char* buf, int size) const {
+char* Symbol::as_C_string(char* buf, int size) const {
   if (size > 0) {
     int len = MIN2(size - 1, utf8_length());
     for (int i = 0; i < len; i++) {
@@ -95,13 +108,13 @@ char* symbolOopDesc::as_C_string(char* buf, int size) const {
   return buf;
 }
 
-char* symbolOopDesc::as_C_string() const {
+char* Symbol::as_C_string() const {
   int len = utf8_length();
   char* str = NEW_RESOURCE_ARRAY(char, len + 1);
   return as_C_string(str, len + 1);
 }
 
-char* symbolOopDesc::as_C_string_flexible_buffer(Thread* t,
+char* Symbol::as_C_string_flexible_buffer(Thread* t,
                                                  char* buf, int size) const {
   char* str;
   int len = utf8_length();
@@ -114,7 +127,7 @@ char* symbolOopDesc::as_C_string_flexible_buffer(Thread* t,
   return as_C_string(str, buf_len);
 }
 
-void symbolOopDesc::print_symbol_on(outputStream* st) {
+void Symbol::print_symbol_on(outputStream* st) const {
   st = st ? st : tty;
   int length = UTF8::unicode_length((const char*)bytes(), utf8_length());
   const char *ptr = (const char *)bytes();
@@ -129,8 +142,8 @@ void symbolOopDesc::print_symbol_on(outputStream* st) {
   }
 }
 
-jchar* symbolOopDesc::as_unicode(int& length) const {
-  symbolOopDesc* this_ptr = (symbolOopDesc*)this;
+jchar* Symbol::as_unicode(int& length) const {
+  Symbol* this_ptr = (Symbol*)this;
   length = UTF8::unicode_length((char*)this_ptr->bytes(), utf8_length());
   jchar* result = NEW_RESOURCE_ARRAY(jchar, length);
   if (length > 0) {
@@ -139,7 +152,7 @@ jchar* symbolOopDesc::as_unicode(int& length) const {
   return result;
 }
 
-const char* symbolOopDesc::as_klass_external_name(char* buf, int size) const {
+const char* Symbol::as_klass_external_name(char* buf, int size) const {
   if (size > 0) {
     char* str    = as_C_string(buf, size);
     int   length = (int)strlen(str);
@@ -155,7 +168,7 @@ const char* symbolOopDesc::as_klass_external_name(char* buf, int size) const {
   }
 }
 
-const char* symbolOopDesc::as_klass_external_name() const {
+const char* Symbol::as_klass_external_name() const {
   char* str    = as_C_string();
   int   length = (int)strlen(str);
   // Turn all '/'s into '.'s (also for array klasses)
@@ -166,3 +179,53 @@ const char* symbolOopDesc::as_klass_external_name() const {
   }
   return str;
 }
+
+
+void Symbol::print_on(outputStream* st) const {
+  if (this == NULL) {
+    st->print_cr("NULL");
+  } else {
+    st->print("Symbol: '");
+    print_symbol_on(st);
+    st->print("'");
+    st->print(" count %d", refcount());
+  }
+}
+
+// The print_value functions are present in all builds, to support the
+// disassembler and error reporting.
+void Symbol::print_value_on(outputStream* st) const {
+  if (this == NULL) {
+    st->print("NULL");
+  } else {
+    st->print("'");
+    for (int i = 0; i < utf8_length(); i++) {
+      st->print("%c", byte_at(i));
+    }
+    st->print("'");
+  }
+}
+
+void Symbol::increment_refcount() {
+  // Only increment the refcount if positive.  If negative either
+  // overflow has occurred or it is a permanent symbol in a read only
+  // shared archive.
+  if (_refcount >= 0) {
+    Atomic::inc(&_refcount);
+    NOT_PRODUCT(Atomic::inc(&_total_count);)
+  }
+}
+
+void Symbol::decrement_refcount() {
+  if (_refcount >= 0) {
+    Atomic::dec(&_refcount);
+#ifdef ASSERT
+    if (_refcount < 0) {
+      print();
+      assert(false, "reference count underflow for symbol");
+    }
+#endif
+  }
+}
+
+NOT_PRODUCT(int Symbol::_total_count = 0;)
