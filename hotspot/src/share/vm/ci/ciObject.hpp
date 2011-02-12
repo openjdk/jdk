@@ -268,10 +268,6 @@ public:
     assert(is_type_array_klass(), "bad cast");
     return (ciTypeArrayKlass*)this;
   }
-  ciSymbolKlass*           as_symbol_klass() {
-    assert(is_symbol_klass(), "bad cast");
-    return (ciSymbolKlass*)this;
-  }
   ciKlassKlass*            as_klass_klass() {
     assert(is_klass_klass(), "bad cast");
     return (ciKlassKlass*)this;

@@ -58,7 +58,7 @@ public class PlaceholderEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
   }
 
   public Symbol klass() {
-    return (Symbol) literal();
+    return Symbol.create(literalValue());
   }
 
   /* covariant return type :-(

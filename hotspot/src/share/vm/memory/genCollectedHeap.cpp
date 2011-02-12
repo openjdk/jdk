@@ -875,10 +875,7 @@ void GenCollectedHeap::collect_locked(GCCause::Cause cause) {
 
 void GenCollectedHeap::collect_locked(GCCause::Cause cause, int max_level) {
   if (_preloading_shared_classes) {
-    warning("\nThe permanent generation is not large enough to preload "
-            "requested classes.\nUse -XX:PermSize= to increase the initial "
-            "size of the permanent generation.\n");
-    vm_exit(2);
+    report_out_of_shared_space(SharedPermGen);
   }
   // Read the GC count while holding the Heap_lock
   unsigned int gc_count_before      = total_collections();

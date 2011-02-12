@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/rframe.hpp"
 #include "runtime/vframe.hpp"

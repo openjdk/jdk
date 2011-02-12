@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
 
@@ -47,6 +47,8 @@ enum {
   ITEM_Bogus = (uint)-1
 };
 
+class ClassVerifier;
+
 class VerificationType VALUE_OBJ_CLASS_SPEC {
   private:
     // Least significant bits of _handle are always 0, so we use these as
@@ -56,7 +58,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     // will catch this and we'll have to add a descriminator tag to this
     // structure.
     union {
-      symbolOop* _handle;
+      Symbol*   _sym;
       uintptr_t _data;
     } _u;
 
@@ -73,7 +75,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
       TypeMask           = 0x00000003,
 
       // Topmost types encoding
-      Reference          = 0x0,        // _handle contains the name
+      Reference          = 0x0,        // _sym contains the name
       Primitive          = 0x1,        // see below for primitive list
       Uninitialized      = 0x2,        // 0x00ffff00 contains bci
       TypeQuery          = 0x3,        // Meta-types used for category testing
@@ -85,7 +87,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
       Category2_2ndFlag  = 0x04,       // Second word of a two-word value
 
       // special reference values
-      Null               = 0x00000000, // A reference with a 0 handle is null
+      Null               = 0x00000000, // A reference with a 0 sym is null
 
       // Primitives categories (the second byte determines the category)
       Category1          = (Category1Flag     << 1 * BitsPerByte) | Primitive,
@@ -152,17 +154,14 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
   static VerificationType category2_2nd_check()
     { return VerificationType(Category2_2ndQuery); }
 
-  // For reference types, store the actual oop* handle
-  static VerificationType reference_type(symbolHandle sh) {
-      assert(((uintptr_t)sh.raw_value() & 0x3) == 0, "Oops must be aligned");
+  // For reference types, store the actual Symbol
+  static VerificationType reference_type(Symbol* sh) {
+      assert(((uintptr_t)sh & 0x3) == 0, "Oops must be aligned");
       // If the above assert fails in the future because oop* isn't aligned,
       // then this type encoding system will have to change to have a tag value
       // to descriminate between oops and primitives.
-      return VerificationType((uintptr_t)((symbolOop*)sh.raw_value()));
+      return VerificationType((uintptr_t)sh);
   }
-  static VerificationType reference_type(symbolOop s, TRAPS)
-    { return reference_type(symbolHandle(THREAD, s)); }
-
   static VerificationType uninitialized_type(u2 bci)
     { return VerificationType(bci << 1 * BitsPerByte | Uninitialized); }
   static VerificationType uninitialized_this_type()
@@ -242,13 +241,9 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     return ((_u._data & BciMask) >> 1 * BitsPerByte);
   }
 
-  symbolHandle name_handle() const {
+  Symbol* name() const {
     assert(is_reference() && !is_null(), "Must be a non-null reference");
-    return symbolHandle(_u._handle, true);
-  }
-  symbolOop name() const {
-    assert(is_reference() && !is_null(), "Must be a non-null reference");
-    return *(_u._handle);
+    return _u._sym;
   }
 
   bool equals(const VerificationType& t) const {
@@ -269,7 +264,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
   // is assignable to another.  Returns true if one can assign 'from' to
   // this.
   bool is_assignable_from(
-      const VerificationType& from, instanceKlassHandle context, TRAPS) const {
+      const VerificationType& from, ClassVerifier* context, TRAPS) const {
     if (equals(from) || is_bogus()) {
       return true;
     } else {
@@ -298,7 +293,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     }
   }
 
-  VerificationType get_component(TRAPS) const;
+  VerificationType get_component(ClassVerifier* context, TRAPS) const;
 
   int dimensions() const {
     assert(is_array(), "Must be an array");
@@ -312,7 +307,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
  private:
 
   bool is_reference_assignable_from(
-    const VerificationType&, instanceKlassHandle, TRAPS) const;
+    const VerificationType&, ClassVerifier*, TRAPS) const;
 };
 
 #endif // SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP

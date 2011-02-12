@@ -41,7 +41,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
@@ -752,11 +752,7 @@ void PackageHashtable::copy_table(char** top, char* end,
     }
   }
   if (*top + n + sizeof(intptr_t) >= end) {
-    warning("\nThe shared miscellaneous data space is not large "
-            "enough to \npreload requested classes.  Use "
-            "-XX:SharedMiscDataSize= to increase \nthe initial "
-            "size of the miscellaneous data space.\n");
-    exit(2);
+    report_out_of_shared_space(SharedMiscData);
   }
 
   // Copy the table data (the strings) to the shared space.
@@ -875,9 +871,9 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 }
 
 
-instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
+instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   ResourceMark rm(THREAD);
-  EventMark m("loading class " INTPTR_FORMAT, (address)h_name());
+  EventMark m("loading class " INTPTR_FORMAT, (address)h_name);
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
   stringStream st;
@@ -912,7 +908,7 @@ instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
     ClassFileParser parser(stream);
     Handle class_loader;
     Handle protection_domain;
-    symbolHandle parsed_name;
+    TempNewSymbol parsed_name = NULL;
     instanceKlassHandle result = parser.parseClassFile(h_name,
                                                        class_loader,
                                                        protection_domain,
@@ -1308,7 +1304,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       if (_compile_the_world_counter > CompileTheWorldStopAt) return;
 
       // Construct name without extension
-      symbolHandle sym = oopFactory::new_symbol_handle(buffer, CHECK);
+      TempNewSymbol sym = SymbolTable::new_symbol(buffer, CHECK);
       // Use loader to load and initialize class
       klassOop ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
       instanceKlassHandle k (THREAD, ik);

@@ -31,7 +31,7 @@
 
 class LoaderConstraintEntry;
 
-class LoaderConstraintTable : public Hashtable {
+class LoaderConstraintTable : public Hashtable<klassOop> {
   friend class VMStructs;
 private:
 
@@ -40,39 +40,39 @@ private:
     _nof_buckets            = 1009                     // number of buckets in hash table
   };
 
-  LoaderConstraintEntry** find_loader_constraint(symbolHandle name,
+  LoaderConstraintEntry** find_loader_constraint(Symbol* name,
                                                  Handle loader);
 
 public:
 
   LoaderConstraintTable(int nof_buckets);
 
-  LoaderConstraintEntry* new_entry(unsigned int hash, symbolOop name,
+  LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
                                    klassOop klass, int num_loaders,
                                    int max_loaders);
+  void free_entry(LoaderConstraintEntry *entry);
 
   LoaderConstraintEntry* bucket(int i) {
-    return (LoaderConstraintEntry*)Hashtable::bucket(i);
+    return (LoaderConstraintEntry*)Hashtable<klassOop>::bucket(i);
   }
 
   LoaderConstraintEntry** bucket_addr(int i) {
-    return (LoaderConstraintEntry**)Hashtable::bucket_addr(i);
+    return (LoaderConstraintEntry**)Hashtable<klassOop>::bucket_addr(i);
   }
 
   // GC support
   void oops_do(OopClosure* f);
-  void always_strong_classes_do(OopClosure* blk);
 
   // Check class loader constraints
-  bool add_entry(symbolHandle name, klassOop klass1, Handle loader1,
+  bool add_entry(Symbol* name, klassOop klass1, Handle loader1,
                                     klassOop klass2, Handle loader2);
 
   // Note:  The main entry point for this module is via SystemDictionary.
-  // SystemDictionary::check_signature_loaders(symbolHandle signature,
+  // SystemDictionary::check_signature_loaders(Symbol* signature,
   //                                           Handle loader1, Handle loader2,
   //                                           bool is_method, TRAPS)
 
-  klassOop find_constrained_klass(symbolHandle name, Handle loader);
+  klassOop find_constrained_klass(Symbol* name, Handle loader);
 
   // Class loader constraints
 
@@ -83,7 +83,7 @@ public:
                                 LoaderConstraintEntry** pp2, klassOop klass);
 
   bool check_or_update(instanceKlassHandle k, Handle loader,
-                              symbolHandle name);
+                              Symbol* name);
 
 
   void purge_loader_constraints(BoolObjectClosure* is_alive);
@@ -94,34 +94,36 @@ public:
 #endif
 };
 
-class LoaderConstraintEntry : public HashtableEntry {
+class LoaderConstraintEntry : public HashtableEntry<klassOop> {
   friend class VMStructs;
 private:
-  symbolOop              _name;                   // class name
+  Symbol*                _name;                   // class name
   int                    _num_loaders;
   int                    _max_loaders;
   oop*                   _loaders;                // initiating loaders
 
 public:
 
-  klassOop klass() { return (klassOop)literal(); }
-  klassOop* klass_addr() { return (klassOop*)literal_addr(); }
+  klassOop klass() { return literal(); }
+  klassOop* klass_addr() { return literal_addr(); }
   void set_klass(klassOop k) { set_literal(k); }
 
   LoaderConstraintEntry* next() {
-    return (LoaderConstraintEntry*)HashtableEntry::next();
+    return (LoaderConstraintEntry*)HashtableEntry<klassOop>::next();
   }
 
   LoaderConstraintEntry** next_addr() {
-    return (LoaderConstraintEntry**)HashtableEntry::next_addr();
+    return (LoaderConstraintEntry**)HashtableEntry<klassOop>::next_addr();
   }
   void set_next(LoaderConstraintEntry* next) {
-    HashtableEntry::set_next(next);
+    HashtableEntry<klassOop>::set_next(next);
   }
 
-  symbolOop name() { return _name; }
-  symbolOop* name_addr() { return &_name; }
-  void set_name(symbolOop name) { _name = name; }
+  Symbol* name() { return _name; }
+  void set_name(Symbol* name) {
+    _name = name;
+    if (name != NULL) name->increment_refcount();
+  }
 
   int num_loaders() { return _num_loaders; }
   void set_num_loaders(int i) { _num_loaders = i; }

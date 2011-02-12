@@ -118,14 +118,7 @@ class markOopDesc: public oopDesc {
   };
 
   // The biased locking code currently requires that the age bits be
-  // contiguous to the lock bits. Class data sharing would prefer the
-  // hash bits to be lower down to provide more random hash codes for
-  // shared read-only symbolOop objects, because these objects' mark
-  // words are set to their own address with marked_value in the lock
-  // bit, and using lower bits would make their identity hash values
-  // more random. However, the performance decision was made in favor
-  // of the biased locking code.
-
+  // contiguous to the lock bits.
   enum { lock_shift               = 0,
          biased_lock_shift        = lock_bits,
          age_shift                = lock_bits + biased_lock_bits,

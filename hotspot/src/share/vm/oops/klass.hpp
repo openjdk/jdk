@@ -212,6 +212,10 @@ class Klass : public Klass_vtbl {
   // secondary supers, else is &_primary_supers[depth()].
   juint       _super_check_offset;
 
+  // Class name.  Instance classes: java/lang/String, etc.  Array classes: [I,
+  // [Ljava/lang/String;, etc.  Set to zero for all other kinds of classes.
+  Symbol*     _name;
+
  public:
   oop* oop_block_beg() const { return adr_secondary_super_cache(); }
   oop* oop_block_end() const { return adr_next_sibling() + 1; }
@@ -235,9 +239,6 @@ class Klass : public Klass_vtbl {
   oop       _java_mirror;
   // Superclass
   klassOop  _super;
-  // Class name.  Instance classes: java/lang/String, etc.  Array classes: [I,
-  // [Ljava/lang/String;, etc.  Set to zero for all other kinds of classes.
-  symbolOop _name;
   // First subclass (NULL if none); _subklass->next_sibling() is next one
   klassOop _subklass;
   // Sibling link (or NULL); links all subklasses of a klass
@@ -361,7 +362,6 @@ class Klass : public Klass_vtbl {
   oop* adr_secondary_super_cache() const { return (oop*)&_secondary_super_cache; }
   oop* adr_secondary_supers()const { return (oop*)&_secondary_supers;  }
   oop* adr_java_mirror()     const { return (oop*)&_java_mirror;       }
-  oop* adr_name()            const { return (oop*)&_name;              }
   oop* adr_subklass()        const { return (oop*)&_subklass;          }
   oop* adr_next_sibling()    const { return (oop*)&_next_sibling;      }
 
@@ -511,9 +511,9 @@ class Klass : public Klass_vtbl {
   virtual void initialize(TRAPS);
   // lookup operation for MethodLookupCache
   friend class MethodLookupCache;
-  virtual methodOop uncached_lookup_method(symbolOop name, symbolOop signature) const;
+  virtual methodOop uncached_lookup_method(Symbol* name, Symbol* signature) const;
  public:
-  methodOop lookup_method(symbolOop name, symbolOop signature) const {
+  methodOop lookup_method(Symbol* name, Symbol* signature) const {
     return uncached_lookup_method(name, signature);
   }
 
@@ -537,6 +537,7 @@ class Klass : public Klass_vtbl {
 
  public:
   virtual void remove_unshareable_info();
+  virtual void shared_symbols_iterate(SymbolClosure* closure);
 
  protected:
   // computes the subtype relationship
@@ -579,7 +580,6 @@ class Klass : public Klass_vtbl {
   virtual bool oop_is_instanceRef()         const { return false; }
   virtual bool oop_is_array()               const { return false; }
   virtual bool oop_is_objArray_slow()       const { return false; }
-  virtual bool oop_is_symbol()              const { return false; }
   virtual bool oop_is_klass()               const { return false; }
   virtual bool oop_is_thread()              const { return false; }
   virtual bool oop_is_method()              const { return false; }
@@ -781,8 +781,8 @@ class Klass : public Klass_vtbl {
   Klass *up_cast_abstract();
 
   // klass name
-  symbolOop name() const                   { return _name; }
-  void set_name(symbolOop n)               { oop_store_without_check((oop*) &_name, (oop) n); }
+  Symbol* name() const                   { return _name; }
+  void set_name(Symbol* n);
 
   friend class klassKlass;
 

@@ -38,7 +38,6 @@
 #include "ci/ciObjArrayKlassKlass.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciSymbolKlass.hpp"
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciTypeArrayKlassKlass.hpp"
@@ -98,6 +97,8 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
   _unloaded_instances = new (arena) GrowableArray<ciInstance*>(arena, 4, 0, NULL);
   _return_addresses =
     new (arena) GrowableArray<ciReturnAddress*>(arena, 8, 0, NULL);
+
+  _symbols = new (arena) GrowableArray<ciSymbol*>(arena, 100, 0, NULL);
 }
 
 // ------------------------------------------------------------------
@@ -127,19 +128,19 @@ void ciObjectFactory::init_shared_objects() {
     // Create the shared symbols, but not in _shared_ci_objects.
     int i;
     for (i = vmSymbols::FIRST_SID; i < vmSymbols::SID_LIMIT; i++) {
-      symbolHandle sym_handle = vmSymbolHandles::symbol_handle_at((vmSymbols::SID) i);
-      assert(vmSymbols::find_sid(sym_handle()) == i, "1-1 mapping");
-      ciSymbol* sym = new (_arena) ciSymbol(sym_handle, (vmSymbols::SID) i);
+      Symbol* vmsym = vmSymbols::symbol_at((vmSymbols::SID) i);
+      assert(vmSymbols::find_sid(vmsym) == i, "1-1 mapping");
+      ciSymbol* sym = new (_arena) ciSymbol(vmsym, (vmSymbols::SID) i);
       init_ident_of(sym);
       _shared_ci_symbols[i] = sym;
     }
 #ifdef ASSERT
     for (i = vmSymbols::FIRST_SID; i < vmSymbols::SID_LIMIT; i++) {
-      symbolHandle sym_handle = vmSymbolHandles::symbol_handle_at((vmSymbols::SID) i);
+      Symbol* vmsym = vmSymbols::symbol_at((vmSymbols::SID) i);
       ciSymbol* sym = vm_symbol_at((vmSymbols::SID) i);
-      assert(sym->get_oop() == sym_handle(), "oop must match");
+      assert(sym->get_symbol() == vmsym, "oop must match");
     }
-    assert(ciSymbol::void_class_signature()->get_oop() == vmSymbols::void_class_signature(), "spot check");
+    assert(ciSymbol::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
 #endif
   }
 
@@ -157,8 +158,6 @@ void ciObjectFactory::init_shared_objects() {
   init_ident_of(ciEnv::_null_object_instance);
   ciEnv::_method_klass_instance =
     get(Universe::methodKlassObj())->as_method_klass();
-  ciEnv::_symbol_klass_instance =
-    get(Universe::symbolKlassObj())->as_symbol_klass();
   ciEnv::_klass_klass_instance =
     get(Universe::klassKlassObj())->as_klass_klass();
   ciEnv::_instance_klass_klass_instance =
@@ -188,7 +187,7 @@ void ciObjectFactory::init_shared_objects() {
     }
   }
 
-  ciEnv::_unloaded_cisymbol = (ciSymbol*) ciObjectFactory::get(vmSymbols::dummy_symbol_oop());
+  ciEnv::_unloaded_cisymbol = ciObjectFactory::get_symbol(vmSymbols::dummy_symbol());
   // Create dummy instanceKlass and objArrayKlass object and assign them idents
   ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, NULL, NULL);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
@@ -216,6 +215,30 @@ void ciObjectFactory::init_shared_objects() {
 
   _shared_ident_limit = _next_ident;
   _shared_ci_objects = _ci_objects;
+}
+
+
+ciSymbol* ciObjectFactory::get_symbol(Symbol* key) {
+  vmSymbols::SID sid = vmSymbols::find_sid(key);
+  if (sid != vmSymbols::NO_SID) {
+    // do not pollute the main cache with it
+    return vm_symbol_at(sid);
+  }
+
+  assert(vmSymbols::find_sid(key) == vmSymbols::NO_SID, "");
+  ciSymbol* s = new (arena()) ciSymbol(key, vmSymbols::NO_SID);
+  _symbols->push(s);
+  return s;
+}
+
+// Decrement the refcount when done on symbols referenced by this compilation.
+void ciObjectFactory::remove_symbols() {
+  for (int i = 0; i < _symbols->length(); i++) {
+    ciSymbol* s = _symbols->at(i);
+    s->get_symbol()->decrement_refcount();
+  }
+  // Since _symbols is resource allocated we're not allowed to delete it
+  // but it'll go away just the same.
 }
 
 // ------------------------------------------------------------------
@@ -255,15 +278,6 @@ ciObject* ciObjectFactory::get(oop key) {
       return bucket->object();
     }
 
-    // Check in the shared symbol area before putting it in the list.
-    if (key->is_symbol()) {
-      vmSymbols::SID sid = vmSymbols::find_sid((symbolOop)key);
-      if (sid != vmSymbols::NO_SID) {
-        // do not pollute the main cache with it
-        return vm_symbol_at(sid);
-      }
-    }
-
     // The ciObject does not yet exist.  Create it and insert it
     // into the cache.
     Handle keyHandle(key);
@@ -297,11 +311,7 @@ ciObject* ciObjectFactory::get(oop key) {
 ciObject* ciObjectFactory::create_new_object(oop o) {
   EXCEPTION_CONTEXT;
 
-  if (o->is_symbol()) {
-    symbolHandle h_o(THREAD, (symbolOop)o);
-    assert(vmSymbols::find_sid(h_o()) == vmSymbols::NO_SID, "");
-    return new (arena()) ciSymbol(h_o, vmSymbols::NO_SID);
-  } else if (o->is_klass()) {
+  if (o->is_klass()) {
     KlassHandle h_k(THREAD, (klassOop)o);
     Klass* k = ((klassOop)o)->klass_part();
     if (k->oop_is_instance()) {
@@ -312,8 +322,6 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciTypeArrayKlass(h_k);
     } else if (k->oop_is_method()) {
       return new (arena()) ciMethodKlass(h_k);
-    } else if (k->oop_is_symbol()) {
-      return new (arena()) ciSymbolKlass(h_k);
     } else if (k->oop_is_klass()) {
       if (k->oop_is_objArrayKlass()) {
         return new (arena()) ciObjArrayKlassKlass(h_k);
@@ -426,22 +434,20 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   // unloaded instanceKlass.  Deal with both.
   if (name->byte_at(0) == '[') {
     // Decompose the name.'
-    jint dimension = 0;
-    symbolOop element_name = NULL;
-    BasicType element_type= FieldType::get_array_info(name->get_symbolOop(),
-                                                      &dimension,
-                                                      &element_name,
-                                                      THREAD);
+    FieldArrayInfo fd;
+    BasicType element_type = FieldType::get_array_info(name->get_symbol(),
+                                                       fd, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::_unloaded_ciobjarrayklass;
     }
+    int dimension = fd.dimension();
     assert(element_type != T_ARRAY, "unsuccessful decomposition");
     ciKlass* element_klass = NULL;
     if (element_type == T_OBJECT) {
       ciEnv *env = CURRENT_THREAD_ENV;
-      ciSymbol* ci_name = env->get_object(element_name)->as_symbol();
+      ciSymbol* ci_name = env->get_symbol(fd.object_key());
       element_klass =
         env->get_klass_by_name(accessing_klass, ci_name, false)->as_instance_klass();
     } else {
@@ -570,6 +576,10 @@ ciReturnAddress* ciObjectFactory::get_return_address(int bci) {
 // ------------------------------------------------------------------
 // ciObjectFactory::init_ident_of
 void ciObjectFactory::init_ident_of(ciObject* obj) {
+  obj->set_ident(_next_ident++);
+}
+
+void ciObjectFactory::init_ident_of(ciSymbol* obj) {
   obj->set_ident(_next_ident++);
 }
 

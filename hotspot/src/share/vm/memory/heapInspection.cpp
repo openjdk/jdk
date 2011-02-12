@@ -56,7 +56,6 @@ void KlassInfoEntry::print_on(outputStream* st) const {
     if (_klass == Universe::objArrayKlassKlassObj())     name = "<objArrayKlassKlass>";     else
     if (_klass == Universe::instanceKlassKlassObj())     name = "<instanceKlassKlass>";     else
     if (_klass == Universe::typeArrayKlassKlassObj())    name = "<typeArrayKlassKlass>";    else
-    if (_klass == Universe::symbolKlassObj())            name = "<symbolKlass>";            else
     if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
     if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
     if (_klass == Universe::singleArrayKlassObj())       name = "<singleArrayKlass>";       else

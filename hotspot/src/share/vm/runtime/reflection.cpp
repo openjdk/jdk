@@ -64,7 +64,7 @@ static void trace_class_resolution(klassOop to_class) {
       // this frame is a likely suspect
       caller = vfst.method()->method_holder();
       line_number = vfst.method()->line_number_from_bci(vfst.bci());
-      symbolOop s = instanceKlass::cast(vfst.method()->method_holder())->source_file_name();
+      Symbol* s = instanceKlass::cast(vfst.method()->method_holder())->source_file_name();
       if (s != NULL) {
         source_file = s->as_C_string();
       }
@@ -622,7 +622,7 @@ void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassH
   ResourceMark rm(THREAD);
   Exceptions::fthrow(
     THREAD_AND_LOCATION,
-    vmSymbolHandles::java_lang_IncompatibleClassChangeError(),
+    vmSymbols::java_lang_IncompatibleClassChangeError(),
     "%s and %s disagree on InnerClasses attribute",
     outer->external_name(),
     inner->external_name()
@@ -638,11 +638,11 @@ oop get_mirror_from_signature(methodHandle method, SignatureStream* ss, TRAPS) {
       return java_lang_Class::primitive_mirror(ss->type());
     case T_OBJECT:
     case T_ARRAY:
-      symbolOop name        = ss->as_symbol(CHECK_NULL);
+      Symbol* name        = ss->as_symbol(CHECK_NULL);
       oop loader            = instanceKlass::cast(method->method_holder())->class_loader();
       oop protection_domain = instanceKlass::cast(method->method_holder())->protection_domain();
       klassOop k = SystemDictionary::resolve_or_fail(
-                                       symbolHandle(THREAD, name),
+                                       name,
                                        Handle(THREAD, loader),
                                        Handle(THREAD, protection_domain),
                                        true, CHECK_NULL);
@@ -660,7 +660,8 @@ objArrayHandle Reflection::get_parameter_types(methodHandle method, int paramete
   objArrayHandle mirrors (THREAD, m);
   int index = 0;
   // Collect parameter types
-  symbolHandle signature (THREAD, method->signature());
+  ResourceMark rm(THREAD);
+  Symbol*  signature  = method->signature();
   SignatureStream ss(signature);
   while (!ss.at_return_type()) {
     oop mirror = get_mirror_from_signature(method, &ss, CHECK_(objArrayHandle()));
@@ -681,9 +682,9 @@ objArrayHandle Reflection::get_exception_types(methodHandle method, TRAPS) {
 }
 
 
-Handle Reflection::new_type(symbolHandle signature, KlassHandle k, TRAPS) {
+Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
   // Basic types
-  BasicType type = vmSymbols::signature_type(signature());
+  BasicType type = vmSymbols::signature_type(signature);
   if (type != T_OBJECT) {
     return Handle(THREAD, Universe::java_mirror(type));
   }
@@ -714,7 +715,7 @@ oop Reflection::new_method(methodHandle method, bool intern_name, bool for_const
   instanceKlassHandle holder (THREAD, method->method_holder());
   int slot = method->method_idnum();
 
-  symbolHandle signature (THREAD, method->signature());
+  Symbol*  signature  = method->signature();
   int parameter_count = ArgumentCount(signature).size();
   oop return_type_oop = NULL;
   objArrayHandle parameter_types = get_parameter_types(method, parameter_count, &return_type_oop, CHECK_NULL);
@@ -726,16 +727,16 @@ oop Reflection::new_method(methodHandle method, bool intern_name, bool for_const
 
   if (exception_types.is_null()) return NULL;
 
-  symbolHandle method_name(THREAD, method->name());
+  Symbol*  method_name = method->name();
   Handle name;
   if (intern_name) {
     // intern_name is only true with UseNewReflection
-    oop name_oop = StringTable::intern(method_name(), CHECK_NULL);
+    oop name_oop = StringTable::intern(method_name, CHECK_NULL);
     name = Handle(THREAD, name_oop);
   } else {
     name = java_lang_String::create_from_symbol(method_name, CHECK_NULL);
   }
-  if (name.is_null()) return NULL;
+  if (name == NULL) return NULL;
 
   int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
 
@@ -751,7 +752,7 @@ oop Reflection::new_method(methodHandle method, bool intern_name, bool for_const
   java_lang_reflect_Method::set_override(mh(), false);
   if (java_lang_reflect_Method::has_signature_field() &&
       method->generic_signature() != NULL) {
-    symbolHandle gs(THREAD, method->generic_signature());
+    Symbol*  gs = method->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Method::set_signature(mh(), sig());
   }
@@ -774,7 +775,7 @@ oop Reflection::new_constructor(methodHandle method, TRAPS) {
   instanceKlassHandle  holder (THREAD, method->method_holder());
   int slot = method->method_idnum();
 
-  symbolHandle signature (THREAD, method->signature());
+  Symbol*  signature  = method->signature();
   int parameter_count = ArgumentCount(signature).size();
   objArrayHandle parameter_types = get_parameter_types(method, parameter_count, NULL, CHECK_NULL);
   if (parameter_types.is_null()) return NULL;
@@ -794,7 +795,7 @@ oop Reflection::new_constructor(methodHandle method, TRAPS) {
   java_lang_reflect_Constructor::set_override(ch(), false);
   if (java_lang_reflect_Constructor::has_signature_field() &&
       method->generic_signature() != NULL) {
-    symbolHandle gs(THREAD, method->generic_signature());
+    Symbol*  gs = method->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Constructor::set_signature(ch(), sig());
   }
@@ -809,16 +810,16 @@ oop Reflection::new_constructor(methodHandle method, TRAPS) {
 
 
 oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
-  symbolHandle field_name(THREAD, fd->name());
+  Symbol*  field_name = fd->name();
   Handle name;
   if (intern_name) {
     // intern_name is only true with UseNewReflection
-    oop name_oop = StringTable::intern(field_name(), CHECK_NULL);
+    oop name_oop = StringTable::intern(field_name, CHECK_NULL);
     name = Handle(THREAD, name_oop);
   } else {
     name = java_lang_String::create_from_symbol(field_name, CHECK_NULL);
   }
-  symbolHandle signature (THREAD, fd->signature());
+  Symbol*  signature  = fd->signature();
   KlassHandle  holder    (THREAD, fd->field_holder());
   Handle type = new_type(signature, holder, CHECK_NULL);
   Handle rh  = java_lang_reflect_Field::create(CHECK_NULL);
@@ -832,7 +833,7 @@ oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
   java_lang_reflect_Field::set_override(rh(), false);
   if (java_lang_reflect_Field::has_signature_field() &&
       fd->generic_signature() != NULL) {
-    symbolHandle gs(THREAD, fd->generic_signature());
+    Symbol*  gs = fd->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Field::set_signature(rh(), sig());
   }
@@ -858,8 +859,8 @@ methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, metho
   assert(!method.is_null() , "method should not be null");
 
   CallInfo info;
-  symbolHandle signature (THREAD, method->signature());
-  symbolHandle name      (THREAD, method->name());
+  Symbol*  signature  = method->signature();
+  Symbol*  name       = method->name();
   LinkResolver::resolve_interface_call(info, receiver, recv_klass, klass,
                                        name, signature,
                                        KlassHandle(), false, true,
@@ -912,8 +913,8 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
             oop resolution_exception = PENDING_EXCEPTION;
             CLEAR_PENDING_EXCEPTION;
             JavaCallArguments args(Handle(THREAD, resolution_exception));
-            THROW_ARG_0(vmSymbolHandles::java_lang_reflect_InvocationTargetException(),
-                vmSymbolHandles::throwable_void_signature(),
+            THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                vmSymbols::throwable_void_signature(),
                 &args);
           }
         } else {
@@ -941,8 +942,8 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
                      method->name(),
                      method->signature()));
               JavaCallArguments args(h_origexception);
-              THROW_ARG_0(vmSymbolHandles::java_lang_reflect_InvocationTargetException(),
-                vmSymbolHandles::throwable_void_signature(),
+              THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                vmSymbols::throwable_void_signature(),
                 &args);
             } else {
               ResourceMark rm(THREAD);
@@ -1043,8 +1044,8 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
     oop target_exception = PENDING_EXCEPTION;
     CLEAR_PENDING_EXCEPTION;
     JavaCallArguments args(Handle(THREAD, target_exception));
-    THROW_ARG_0(vmSymbolHandles::java_lang_reflect_InvocationTargetException(),
-                vmSymbolHandles::throwable_void_signature(),
+    THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                vmSymbols::throwable_void_signature(),
                 &args);
   } else {
     if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT)
@@ -1097,9 +1098,9 @@ bool Reflection::match_parameter_types(methodHandle method, objArrayHandle types
 
 
 oop Reflection::new_field(FieldStream* st, TRAPS) {
-  symbolHandle field_name(THREAD, st->name());
+  Symbol*  field_name = st->name();
   Handle name = java_lang_String::create_from_symbol(field_name, CHECK_NULL);
-  symbolHandle signature(THREAD, st->signature());
+  Symbol*  signature = st->signature();
   Handle type = new_type(signature, st->klass(), CHECK_NULL);
   Handle rh  = java_lang_reflect_Field::create(CHECK_NULL);
   oop result = rh();
@@ -1242,7 +1243,7 @@ void Reflection::field_set(jvalue* value, fieldDescriptor* fd, Handle receiver, 
     case T_ARRAY: {
       Handle obj(THREAD, (oop) value->l);
       if (obj.not_null()) {
-        symbolHandle signature(THREAD, fd->signature());
+        Symbol*  signature = fd->signature();
         Handle       loader   (THREAD, fd->loader());
         Handle       protect  (THREAD, Klass::cast(fd->field_holder())->protection_domain());
         klassOop k = SystemDictionary::resolve_or_fail(signature, loader, protect, true, CHECK); // may block
@@ -1259,7 +1260,7 @@ void Reflection::field_set(jvalue* value, fieldDescriptor* fd, Handle receiver, 
 }
 
 
-oop Reflection::reflect_field(oop mirror, symbolOop field_name, jint which, TRAPS) {
+oop Reflection::reflect_field(oop mirror, Symbol* field_name, jint which, TRAPS) {
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(mirror))                             return NULL;
   if (Klass::cast(java_lang_Class::as_klassOop(mirror))->oop_is_array()) return NULL;
@@ -1287,7 +1288,7 @@ objArrayOop Reflection::reflect_fields(oop mirror, jint which, TRAPS) {
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(mirror)
       || Klass::cast(java_lang_Class::as_klassOop(mirror))->oop_is_array()) {
-    symbolHandle name = vmSymbolHandles::java_lang_reflect_Field();
+    Symbol* name = vmSymbols::java_lang_reflect_Field();
     klassOop klass = SystemDictionary::resolve_or_fail(name, true, CHECK_NULL);
     return oopFactory::new_objArray(klass, 0, CHECK_NULL);  // Return empty array
   }
@@ -1308,7 +1309,7 @@ objArrayOop Reflection::reflect_fields(oop mirror, jint which, TRAPS) {
   }
 
   // Allocate result
-  symbolHandle name = vmSymbolHandles::java_lang_reflect_Field();
+  Symbol* name = vmSymbols::java_lang_reflect_Field();
   klassOop klass = SystemDictionary::resolve_or_fail(name, true, CHECK_NULL);
   objArrayOop r = oopFactory::new_objArray(klass, count, CHECK_NULL);
   objArrayHandle result (THREAD, r);
@@ -1327,7 +1328,7 @@ objArrayOop Reflection::reflect_fields(oop mirror, jint which, TRAPS) {
 }
 
 
-oop Reflection::reflect_method(oop mirror, symbolHandle method_name, objArrayHandle types, jint which, TRAPS) {
+oop Reflection::reflect_method(oop mirror, Symbol* method_name, objArrayHandle types, jint which, TRAPS) {
   if (java_lang_Class::is_primitive(mirror))  return NULL;
   klassOop klass = java_lang_Class::as_klassOop(mirror);
   if (Klass::cast(klass)->oop_is_array() && which == MEMBER_DECLARED)  return NULL;
@@ -1351,8 +1352,8 @@ oop Reflection::reflect_method(oop mirror, symbolHandle method_name, objArrayHan
         for (MethodStream st(h_k, false, false); !st.eos(); st.next()) {
           methodHandle m(THREAD, st.method());
           // For interfaces include static initializers since classic does that!
-          if (method_name() == m->name() && (include_clinit || (m->is_public() && !m->is_static() && !m->is_initializer()))) {
-            symbolHandle signature(THREAD, m->signature());
+          if (method_name == m->name() && (include_clinit || (m->is_public() && !m->is_static() && !m->is_initializer()))) {
+            Symbol*  signature = m->signature();
             bool parameter_match = match_parameter_types(m, types, ArgumentCount(signature).size(), CHECK_NULL);
             if (parameter_match) {
               return new_method(m, false, false, THREAD);
@@ -1364,8 +1365,8 @@ oop Reflection::reflect_method(oop mirror, symbolHandle method_name, objArrayHan
       {
         for (MethodStream st(h_k, false, false); !st.eos(); st.next()) {
           methodHandle m(THREAD, st.method());
-          if (method_name() == m->name() && m->is_public() && m->is_static() && !m->is_initializer()) {
-            symbolHandle signature(THREAD, m->signature());
+          if (method_name == m->name() && m->is_public() && m->is_static() && !m->is_initializer()) {
+            Symbol*  signature = m->signature();
             bool parameter_match = match_parameter_types(m, types, ArgumentCount(signature).size(), CHECK_NULL);
             if (parameter_match) {
               return new_method(m, false, false, THREAD);
@@ -1379,8 +1380,8 @@ oop Reflection::reflect_method(oop mirror, symbolHandle method_name, objArrayHan
       {
         for (MethodStream st(h_k, true, true); !st.eos(); st.next()) {
           methodHandle m(THREAD, st.method());
-          if (method_name() == m->name() && !m->is_initializer()) {
-            symbolHandle signature(THREAD, m->signature());
+          if (method_name == m->name() && !m->is_initializer()) {
+            Symbol*  signature = m->signature();
             bool parameter_match = match_parameter_types(m, types, ArgumentCount(signature).size(), CHECK_NULL);
             if (parameter_match) {
               return new_method(m, false, false, THREAD);
@@ -1531,7 +1532,7 @@ oop Reflection::reflect_constructor(oop mirror, objArrayHandle types, jint which
   for (MethodStream st(h_k, true, true); !st.eos(); st.next()) {
     methodHandle m(THREAD, st.method());
     if (m->name() == vmSymbols::object_initializer_name() && (local_only || m->is_public())) {
-      symbolHandle signature(THREAD, m->signature());
+      Symbol*  signature = m->signature();
       bool parameter_match = match_parameter_types(m, types, ArgumentCount(signature).size(), CHECK_NULL);
       if (parameter_match) {
         return new_constructor(m, THREAD);
@@ -1569,7 +1570,7 @@ objArrayOop Reflection::reflect_constructors(oop mirror, jint which, TRAPS) {
   }
 
   // Allocate result
-  symbolHandle name = vmSymbolHandles::java_lang_reflect_Constructor();
+  Symbol* name = vmSymbols::java_lang_reflect_Constructor();
   klassOop klass = SystemDictionary::resolve_or_fail(name, true, CHECK_NULL);
   objArrayOop r = oopFactory::new_objArray(klass, count, CHECK_NULL);
   objArrayHandle h_result (THREAD, r);

@@ -70,11 +70,13 @@ public class StringTable extends sun.jvm.hotspot.utilities.Hashtable {
   }
 
   public void stringsDo(StringVisitor visitor) {
+    ObjectHeap oh = VM.getVM().getObjectHeap();
     int numBuckets = tableSize();
     for (int i = 0; i < numBuckets; i++) {
       for (HashtableEntry e = (HashtableEntry) bucket(i); e != null;
            e = (HashtableEntry) e.next()) {
-        visitor.visit((Instance) e.literal());
+        Instance s = (Instance)oh.newOop(e.literalValue().addOffsetToAsOopHandle(0));
+        visitor.visit(s);
       }
     }
   }

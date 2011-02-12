@@ -124,21 +124,20 @@ void Bytecode_invoke::verify() const {
 }
 
 
-symbolOop Bytecode_member_ref::signature() const {
+Symbol* Bytecode_member_ref::signature() const {
   constantPoolOop constants = method()->constants();
   return constants->signature_ref_at(index());
 }
 
 
-symbolOop Bytecode_member_ref::name() const {
+Symbol* Bytecode_member_ref::name() const {
   constantPoolOop constants = method()->constants();
   return constants->name_ref_at(index());
 }
 
 
-BasicType Bytecode_member_ref::result_type(Thread *thread) const {
-  symbolHandle sh(thread, signature());
-  ResultTypeFinder rts(sh);
+BasicType Bytecode_member_ref::result_type() const {
+  ResultTypeFinder rts(signature());
   rts.iterate();
   return rts.type();
 }
