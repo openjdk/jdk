@@ -619,8 +619,8 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
 
   JavaCalls::call_special(&result,
                           ik,
-                          vmSymbolHandles::object_initializer_name(),
-                          vmSymbolHandles::long_long_long_long_void_signature(),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::long_long_long_long_void_signature(),
                           &args,
                           CHECK_NH);
   return obj;

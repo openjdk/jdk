@@ -28,15 +28,18 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 
 // ciSymbol
 //
-// This class represents a symbolOop in the HotSpot virtual
+// This class represents a Symbol* in the HotSpot virtual
 // machine.
-class ciSymbol : public ciObject {
+class ciSymbol : public ResourceObj {
+  Symbol* _symbol;
+  uint _ident;
+
   CI_PACKAGE_ACCESS
-  // These friends all make direct use of get_symbolOop:
+  // These friends all make direct use of get_symbol:
   friend class ciEnv;
   friend class ciInstanceKlass;
   friend class ciSignature;
@@ -45,24 +48,28 @@ class ciSymbol : public ciObject {
 
 private:
   const vmSymbols::SID _sid;
-  DEBUG_ONLY( bool sid_ok() { return vmSymbols::find_sid(get_symbolOop()) == _sid; } )
+  DEBUG_ONLY( bool sid_ok() { return vmSymbols::find_sid(get_symbol()) == _sid; } )
 
-  ciSymbol(symbolOop s);  // normal case, for symbols not mentioned in vmSymbols
-  ciSymbol(symbolHandle s, vmSymbols::SID sid);   // for use with vmSymbolHandles
+  ciSymbol(Symbol* s);  // normal case, for symbols not mentioned in vmSymbols
+  ciSymbol(Symbol* s, vmSymbols::SID sid);   // for use with vmSymbols
 
-  symbolOop get_symbolOop() const { return (symbolOop)get_oop(); }
+  Symbol* get_symbol() const { return _symbol; }
 
   const char* type_string() { return "ciSymbol"; }
 
   void print_impl(outputStream* st);
 
-  // This is public in symbolOop but private here, because the base can move:
-  jbyte*      base();
+  // This is public in Symbol* but private here, because the base can move:
+  const jbyte* base();
 
   // Make a ciSymbol from a C string (implementation).
   static ciSymbol* make_impl(const char* s);
 
+  void set_ident(uint id) { _ident = id; }
 public:
+  // A number unique to this object.
+  uint ident() { return _ident; }
+
   // The enumeration ID from vmSymbols, or vmSymbols::NO_SID if none.
   vmSymbols::SID sid() const { return _sid; }
 
@@ -79,9 +86,6 @@ public:
   // Determines where the symbol contains the given substring.
   int index_of_at(int i, const char* str, int len) const;
 
-  // What kind of ciObject is this?
-  bool is_symbol() { return true; }
-
   void print_symbol_on(outputStream* st);
   void print_symbol() {
     print_symbol_on(tty);
@@ -96,6 +100,13 @@ public:
   static ciSymbol* name() { return ciObjectFactory::vm_symbol_at(vmSymbols::VM_SYMBOL_ENUM_NAME(name)); }
   VM_SYMBOLS_DO(CI_SYMBOL_DECLARE, CI_SYMBOL_DECLARE)
 #undef CI_SYMBOL_DECLARE
+
+  void print() {
+    _symbol->print();
+  }
+
+  // Are two ciSymbols equal?
+  bool equals(ciSymbol* obj) { return this->_symbol == obj->get_symbol(); }
 };
 
 #endif // SHARE_VM_CI_CISYMBOL_HPP

@@ -278,7 +278,7 @@ methodOop MethodHandles::decode_methodOop(methodOop m, int& decode_flags_result)
   assert(m->is_method(), "");
   if (m->is_static()) {
     // check that signature begins '(L' or '([' (not '(I', '()', etc.)
-    symbolOop sig = m->signature();
+    Symbol* sig = m->signature();
     BasicType recv_bt = char2type(sig->byte_at(1));
     // Note: recv_bt might be T_ILLEGAL if byte_at(2) is ')'
     assert(sig->byte_at(0) == '(', "must be method sig");
@@ -438,6 +438,25 @@ methodOop MethodHandles::decode_MemberName(oop mname, klassOop& receiver_limit_r
   return m;
 }
 
+// convert the external string or reflective type to an internal signature
+Symbol* MethodHandles::convert_to_signature(oop type_str,
+                                            bool polymorphic,
+                                            TRAPS) {
+  if (java_dyn_MethodType::is_instance(type_str)) {
+    return java_dyn_MethodType::as_signature(type_str, polymorphic, CHECK_NULL);
+  } else if (java_lang_Class::is_instance(type_str)) {
+    return java_lang_Class::as_signature(type_str, false, CHECK_NULL);
+  } else if (java_lang_String::is_instance(type_str)) {
+    if (polymorphic) {
+      return java_lang_String::as_symbol(type_str, CHECK_NULL);
+    } else {
+      return java_lang_String::as_symbol_or_null(type_str);
+    }
+  } else {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "unrecognized type", NULL);
+  }
+}
+
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers dirctly to JVM internals.
@@ -478,39 +497,24 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   defc->link_class(CHECK);
 
   // convert the external string name to an internal symbol
-  symbolHandle name(THREAD, java_lang_String::as_symbol_or_null(name_str));
-  if (name.is_null())  return;  // no such name
+  TempNewSymbol name = java_lang_String::as_symbol_or_null(name_str);
+  if (name == NULL)  return;  // no such name
   name_str = NULL;  // safety
 
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
   if ((flags & ALL_KINDS) == IS_METHOD &&
       (defc() == SystemDictionary::MethodHandle_klass() &&
-       methodOopDesc::is_method_handle_invoke_name(name())))
+       methodOopDesc::is_method_handle_invoke_name(name)))
     polymorphic_signature = true;
 
   // convert the external string or reflective type to an internal signature
-  symbolHandle type; {
-    symbolOop type_sym = NULL;
-    if (java_dyn_MethodType::is_instance(type_str)) {
-      type_sym = java_dyn_MethodType::as_signature(type_str, polymorphic_signature, CHECK);
-      if (polymorphic_signature)
-        polymorphic_method_type = Handle(THREAD, type_str);  //preserve exactly
-    } else if (java_lang_Class::is_instance(type_str)) {
-      type_sym = java_lang_Class::as_signature(type_str, false, CHECK);
-    } else if (java_lang_String::is_instance(type_str)) {
-      if (polymorphic_signature) {
-        type     = java_lang_String::as_symbol(type_str, CHECK);
-      } else {
-        type_sym = java_lang_String::as_symbol_or_null(type_str);
-      }
-    } else {
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "unrecognized type");
-    }
-    if (type_sym != NULL)
-      type = symbolHandle(THREAD, type_sym);
+  TempNewSymbol type = convert_to_signature(type_str, polymorphic_signature, CHECK);
+  if (java_dyn_MethodType::is_instance(type_str) && polymorphic_signature) {
+    polymorphic_method_type = Handle(THREAD, type_str);  //preserve exactly
   }
-  if (type.is_null())  return;  // no such signature exists in the VM
+
+  if (type == NULL)  return;  // no such signature exists in the VM
   type_str = NULL; // safety
 
   // Time to do the lookup.
@@ -566,7 +570,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       CallInfo result;
       {
         EXCEPTION_MARK;
-        if (name() == vmSymbols::object_initializer_name()) {
+        if (name == vmSymbols::object_initializer_name()) {
           LinkResolver::resolve_special_call(result,
                         defc, name, type, KlassHandle(), false, THREAD);
         } else {
@@ -594,7 +598,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
     {
       // This is taken from LinkResolver::resolve_field, sans access checks.
       fieldDescriptor fd; // find_field initializes fd if found
-      KlassHandle sel_klass(THREAD, instanceKlass::cast(defc())->find_field(name(), type(), &fd));
+      KlassHandle sel_klass(THREAD, instanceKlass::cast(defc())->find_field(name, type, &fd));
       // check if field exists; i.e., if a klass containing the field def has been selected
       if (sel_klass.is_null())  return;
       oop vmtarget = sel_klass->as_klassOop();
@@ -725,7 +729,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
 }
 
 int MethodHandles::find_MemberNames(klassOop k,
-                                    symbolOop name, symbolOop sig,
+                                    Symbol* name, Symbol* sig,
                                     int mflags, klassOop caller,
                                     int skip, objArrayOop results) {
   DEBUG_ONLY(No_Safepoint_Verifier nsv);
@@ -782,8 +786,8 @@ int MethodHandles::find_MemberNames(klassOop k,
 
   if ((match_flags & (IS_METHOD | IS_CONSTRUCTOR)) != 0) {
     // watch out for these guys:
-    symbolOop init_name   = vmSymbols::object_initializer_name();
-    symbolOop clinit_name = vmSymbols::class_initializer_name();
+    Symbol* init_name   = vmSymbols::object_initializer_name();
+    Symbol* clinit_name = vmSymbols::class_initializer_name();
     if (name == clinit_name)  clinit_name = NULL; // hack for exposing <clinit>
     bool negate_name_test = false;
     // fix name so that it captures the intention of IS_CONSTRUCTOR
@@ -807,7 +811,7 @@ int MethodHandles::find_MemberNames(klassOop k,
     }
     for (MethodStream st(k, local_only, !search_intfc); !st.eos(); st.next()) {
       methodOop m = st.method();
-      symbolOop m_name = m->name();
+      Symbol* m_name = m->name();
       if (m_name == clinit_name)
         continue;
       if (name != NULL && ((m_name != name) ^ negate_name_test))
@@ -928,7 +932,7 @@ static bool is_always_null_type(klassOop klass) {
   // Must be on the boot class path:
   if (ik->class_loader() != NULL)  return false;
   // Check the name.
-  symbolOop name = ik->name();
+  Symbol* name = ik->name();
   for (int i = 0; ; i++) {
     const char* test_name = always_null_names[i];
     if (test_name == NULL)  break;
@@ -1026,6 +1030,7 @@ void MethodHandles::verify_method_signature(methodHandle m,
   int pmax = ptypes->length();
   int mnum = 0;                 // method argument
   const char* err = NULL;
+  ResourceMark rm(THREAD);
   for (SignatureStream ss(m->signature()); !ss.is_done(); ss.next()) {
     oop ptype_oop = NULL;
     if (ss.at_return_type()) {
@@ -1061,15 +1066,14 @@ void MethodHandles::verify_method_signature(methodHandle m,
       }
       KlassHandle pklass_handle(THREAD, pklass); pklass = NULL;
       // If we fail to resolve types at this point, we will throw an error.
-      symbolOop    name_oop = ss.as_symbol(CHECK);
-      symbolHandle name(THREAD, name_oop);
+      Symbol* name = ss.as_symbol(CHECK);
       instanceKlass* mk = instanceKlass::cast(m->method_holder());
       Handle loader(THREAD, mk->class_loader());
       Handle domain(THREAD, mk->protection_domain());
       mklass = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
       pklass = pklass_handle();
       if (mklass == NULL && pklass != NULL &&
-          Klass::cast(pklass)->name() == name() &&
+          Klass::cast(pklass)->name() == name &&
           m->is_method_handle_invoke()) {
         // Assume a match.  We can't really decode the signature of MH.invoke*.
         continue;
@@ -2288,7 +2292,8 @@ JVM_ENTRY(void, MHI_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
     tty->print("creating MethodType form ");
     if (WizardMode || Verbose) {   // Warning: this calls Java code on the MH!
       // call Object.toString()
-      symbolOop name = vmSymbols::toString_name(), sig = vmSymbols::void_string_signature();
+      Symbol* name = vmSymbols::toString_name();
+      Symbol* sig = vmSymbols::void_string_signature();
       JavaCallArguments args(Handle(THREAD, JNIHandles::resolve_non_null(erased_jh)));
       JavaValue result(T_OBJECT);
       JavaCalls::call_virtual(&result, SystemDictionary::Object_klass(), name, sig,
@@ -2452,7 +2457,8 @@ JVM_ENTRY(jint, MHI_getMembers(JNIEnv *env, jobject igcls,
   objArrayOop results = (objArrayOop) JNIHandles::resolve(results_jh);
   if (results == NULL || !results->is_objArray())       return -1;
 
-  symbolOop name = NULL, sig = NULL;
+  TempNewSymbol name = NULL;
+  TempNewSymbol sig = NULL;
   if (name_jh != NULL) {
     name = java_lang_String::as_symbol_or_null(JNIHandles::resolve_non_null(name_jh));
     if (name == NULL)  return 0; // a match is not possible
@@ -2611,10 +2617,10 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
   if (enable_MH) {
     KlassHandle MHI_klass = SystemDictionaryHandles::MethodHandleImpl_klass();
     if (MHI_klass.not_null()) {
-      symbolHandle raiseException_name = oopFactory::new_symbol_handle("raiseException", CHECK);
-      symbolHandle raiseException_sig  = oopFactory::new_symbol_handle("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK);
+      TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK);
+      TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK);
       methodOop raiseException_method  = instanceKlass::cast(MHI_klass->as_klassOop())
-                    ->find_method(raiseException_name(), raiseException_sig());
+                    ->find_method(raiseException_name, raiseException_sig);
       if (raiseException_method != NULL && raiseException_method->is_static()) {
         MethodHandles::set_raise_exception_method(raiseException_method);
       } else {

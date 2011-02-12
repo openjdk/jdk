@@ -607,6 +607,9 @@ class CommandLineFlags {
   notproduct(bool, ZombieALot, false,                                       \
           "creates zombies (non-entrant) at exit from the runt. system")    \
                                                                             \
+  product(bool, UnlinkSymbolsALot, false,                                   \
+          "unlink unreferenced symbols from the symbol table at safepoints")\
+                                                                            \
   notproduct(bool, WalkStackALot, false,                                    \
           "trace stack (no print) at every exit from the runtime system")   \
                                                                             \

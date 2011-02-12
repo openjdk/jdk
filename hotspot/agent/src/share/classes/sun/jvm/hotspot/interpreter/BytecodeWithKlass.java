@@ -37,11 +37,11 @@ public class BytecodeWithKlass extends BytecodeWithCPIndex {
   }
 
   public Symbol getClassName() {
-    Oop obj = method().getConstants().getObjAt(index());
-    if (obj instanceof Symbol) {
-       return (Symbol)obj;
+    ConstantPool.CPSlot obj = method().getConstants().getSlotAt(index());
+    if (obj.isMetaData()) {
+      return obj.getSymbol();
     } else {
-       return ((Klass)obj).getName();
+      return ((Klass)obj.getOop()).getName();
     }
   }
 

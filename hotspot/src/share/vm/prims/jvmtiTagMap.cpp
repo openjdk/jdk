@@ -2605,7 +2605,7 @@ class SimpleRootsClosure : public OopClosure {
     }
 
     // some objects are ignored - in the case of simple
-    // roots it's mostly symbolOops that we are skipping
+    // roots it's mostly Symbol*s that we are skipping
     // here.
     if (!ServiceUtil::visible_oop(o)) {
       return;

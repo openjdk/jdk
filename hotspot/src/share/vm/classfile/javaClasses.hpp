@@ -78,7 +78,7 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_unicode(jchar* unicode, int len, TRAPS);
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
-  static Handle create_from_symbol(symbolHandle symbol, TRAPS);
+  static Handle create_from_symbol(Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
   static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
@@ -116,8 +116,8 @@ class java_lang_String : AllStatic {
   static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
-  static symbolHandle as_symbol(Handle java_string, TRAPS);
-  static symbolOop as_symbol_or_null(oop java_string);
+  static Symbol* as_symbol(Handle java_string, TRAPS);
+  static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
   static bool is_instance(oop obj) {
@@ -167,7 +167,7 @@ class java_lang_Class : AllStatic {
     (*reference_klass) = KlassHandle(refk_oop);
     return result;
   }
-  static symbolOop as_signature(oop java_class, bool intern_if_not_found, TRAPS);
+  static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
   // Testing
   static bool is_instance(oop obj) {
@@ -1039,7 +1039,7 @@ class java_dyn_MethodType: AllStatic {
   static oop            ptype(oop mt, int index);
   static int            ptype_count(oop mt);
 
-  static symbolOop      as_signature(oop mt, bool intern_if_not_found, TRAPS);
+  static Symbol*        as_signature(oop mt, bool intern_if_not_found, TRAPS);
   static void           print_signature(oop mt, outputStream* st);
 
   static bool is_instance(oop obj) {

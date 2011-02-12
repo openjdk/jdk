@@ -122,7 +122,7 @@ void Management::initialize(TRAPS) {
     // Load and initialize the sun.management.Agent class
     // invoke startAgent method to start the management server
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbolHandles::sun_management_Agent(),
+    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(),
                                                    loader,
                                                    Handle(),
                                                    true,
@@ -132,8 +132,8 @@ void Management::initialize(TRAPS) {
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            ik,
-                           vmSymbolHandles::startAgent_name(),
-                           vmSymbolHandles::void_method_signature(),
+                           vmSymbols::startAgent_name(),
+                           vmSymbols::void_method_signature(),
                            CHECK);
   }
 }
@@ -142,7 +142,7 @@ void Management::get_optional_support(jmmOptionalSupport* support) {
   memcpy(support, &_optional_support, sizeof(jmmOptionalSupport));
 }
 
-klassOop Management::load_and_initialize_klass(symbolHandle sh, TRAPS) {
+klassOop Management::load_and_initialize_klass(Symbol* sh, TRAPS) {
   klassOop k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {
@@ -182,49 +182,49 @@ void Management::oops_do(OopClosure* f) {
 
 klassOop Management::java_lang_management_ThreadInfo_klass(TRAPS) {
   if (_threadInfo_klass == NULL) {
-    _threadInfo_klass = load_and_initialize_klass(vmSymbolHandles::java_lang_management_ThreadInfo(), CHECK_NULL);
+    _threadInfo_klass = load_and_initialize_klass(vmSymbols::java_lang_management_ThreadInfo(), CHECK_NULL);
   }
   return _threadInfo_klass;
 }
 
 klassOop Management::java_lang_management_MemoryUsage_klass(TRAPS) {
   if (_memoryUsage_klass == NULL) {
-    _memoryUsage_klass = load_and_initialize_klass(vmSymbolHandles::java_lang_management_MemoryUsage(), CHECK_NULL);
+    _memoryUsage_klass = load_and_initialize_klass(vmSymbols::java_lang_management_MemoryUsage(), CHECK_NULL);
   }
   return _memoryUsage_klass;
 }
 
 klassOop Management::java_lang_management_MemoryPoolMXBean_klass(TRAPS) {
   if (_memoryPoolMXBean_klass == NULL) {
-    _memoryPoolMXBean_klass = load_and_initialize_klass(vmSymbolHandles::java_lang_management_MemoryPoolMXBean(), CHECK_NULL);
+    _memoryPoolMXBean_klass = load_and_initialize_klass(vmSymbols::java_lang_management_MemoryPoolMXBean(), CHECK_NULL);
   }
   return _memoryPoolMXBean_klass;
 }
 
 klassOop Management::java_lang_management_MemoryManagerMXBean_klass(TRAPS) {
   if (_memoryManagerMXBean_klass == NULL) {
-    _memoryManagerMXBean_klass = load_and_initialize_klass(vmSymbolHandles::java_lang_management_MemoryManagerMXBean(), CHECK_NULL);
+    _memoryManagerMXBean_klass = load_and_initialize_klass(vmSymbols::java_lang_management_MemoryManagerMXBean(), CHECK_NULL);
   }
   return _memoryManagerMXBean_klass;
 }
 
 klassOop Management::java_lang_management_GarbageCollectorMXBean_klass(TRAPS) {
   if (_garbageCollectorMXBean_klass == NULL) {
-      _garbageCollectorMXBean_klass = load_and_initialize_klass(vmSymbolHandles::java_lang_management_GarbageCollectorMXBean(), CHECK_NULL);
+      _garbageCollectorMXBean_klass = load_and_initialize_klass(vmSymbols::java_lang_management_GarbageCollectorMXBean(), CHECK_NULL);
   }
   return _garbageCollectorMXBean_klass;
 }
 
 klassOop Management::sun_management_Sensor_klass(TRAPS) {
   if (_sensor_klass == NULL) {
-    _sensor_klass = load_and_initialize_klass(vmSymbolHandles::sun_management_Sensor(), CHECK_NULL);
+    _sensor_klass = load_and_initialize_klass(vmSymbols::sun_management_Sensor(), CHECK_NULL);
   }
   return _sensor_klass;
 }
 
 klassOop Management::sun_management_ManagementFactory_klass(TRAPS) {
   if (_managementFactory_klass == NULL) {
-    _managementFactory_klass = load_and_initialize_klass(vmSymbolHandles::sun_management_ManagementFactory(), CHECK_NULL);
+    _managementFactory_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactory(), CHECK_NULL);
   }
   return _managementFactory_klass;
 }
@@ -290,8 +290,8 @@ instanceOop Management::create_thread_info_instance(ThreadSnapshot* snapshot, TR
   // Call ThreadInfo constructor with no locked monitors and synchronizers
   JavaCalls::call_special(&result,
                           ik,
-                          vmSymbolHandles::object_initializer_name(),
-                          vmSymbolHandles::java_lang_management_ThreadInfo_constructor_signature(),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::java_lang_management_ThreadInfo_constructor_signature(),
                           &args,
                           CHECK_NULL);
 
@@ -325,8 +325,8 @@ instanceOop Management::create_thread_info_instance(ThreadSnapshot* snapshot,
   // Call ThreadInfo constructor with locked monitors and synchronizers
   JavaCalls::call_special(&result,
                           ik,
-                          vmSymbolHandles::object_initializer_name(),
-                          vmSymbolHandles::java_lang_management_ThreadInfo_with_locks_constructor_signature(),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::java_lang_management_ThreadInfo_with_locks_constructor_signature(),
                           &args,
                           CHECK_NULL);
 

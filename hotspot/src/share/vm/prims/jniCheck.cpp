@@ -27,7 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jni.h"
 #include "prims/jniCheck.hpp"
 #include "prims/jvm_misc.hpp"
