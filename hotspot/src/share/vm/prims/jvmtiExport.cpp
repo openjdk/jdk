@@ -268,9 +268,9 @@ private:
   jclass  _class_being_redefined;
 
 public:
-  JvmtiClassFileLoadEventMark(JavaThread *thread, symbolHandle name,
+  JvmtiClassFileLoadEventMark(JavaThread *thread, Symbol* name,
      Handle class_loader, Handle prot_domain, KlassHandle *class_being_redefined) : JvmtiThreadEventMark(thread) {
-      _class_name = name() != NULL? name->as_utf8() : NULL;
+      _class_name = name != NULL? name->as_utf8() : NULL;
       _jloader = (jobject)to_jobject(class_loader());
       _protection_domain = (jobject)to_jobject(prot_domain());
       if (class_being_redefined == NULL) {
@@ -506,7 +506,7 @@ JvmtiExport::get_all_native_method_prefixes(int* count_ptr) {
 
 class JvmtiClassFileLoadHookPoster : public StackObj {
  private:
-  symbolHandle         _h_name;
+  Symbol*            _h_name;
   Handle               _class_loader;
   Handle               _h_protection_domain;
   unsigned char **     _data_ptr;
@@ -522,7 +522,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiClassLoadKind   _load_kind;
 
  public:
-  inline JvmtiClassFileLoadHookPoster(symbolHandle h_name, Handle class_loader,
+  inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
                                       Handle h_protection_domain,
                                       unsigned char **data_ptr, unsigned char **end_ptr,
                                       unsigned char **cached_data_ptr,
@@ -597,7 +597,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
 //    EVT_TRACE(JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
 //     ("JVMTI [%s] class file load hook event sent %s  data_ptr = %d, data_len = %d",
 //               JvmtiTrace::safe_get_thread_name(_thread),
-//               _h_name.is_null() ? "NULL" : _h_name->as_utf8(),
+//               _h_name == NULL ? "NULL" : _h_name->as_utf8(),
 //               _curr_data, _curr_len ));
     JvmtiClassFileLoadEventMark jem(_thread, _h_name, _class_loader,
                                     _h_protection_domain,
@@ -655,7 +655,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // this entry is for class file load hook on class load, redefine and retransform
-void JvmtiExport::post_class_file_load_hook(symbolHandle h_name,
+void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,

@@ -39,7 +39,7 @@
 #include "oops/methodDataOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -295,7 +295,7 @@ IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     if (s == vmSymbols::java_lang_ArithmeticException()) {
       note_trap(thread, Deoptimization::Reason_div0_check, CHECK);
@@ -304,7 +304,7 @@ IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* n
     }
   }
   // create exception
-  Handle exception = Exceptions::new_exception(thread, s(), message);
+  Handle exception = Exceptions::new_exception(thread, s, message);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -313,12 +313,12 @@ IRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, c
   ResourceMark rm(thread);
   const char* klass_name = Klass::cast(obj->klass())->external_name();
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);
   }
   // create exception, with klass name as detail message
-  Handle exception = Exceptions::new_exception(thread, s(), klass_name);
+  Handle exception = Exceptions::new_exception(thread, s, klass_name);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -326,13 +326,13 @@ IRT_END
 IRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index))
   char message[jintAsStringSize];
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_range_check, CHECK);
   }
   // create exception
   sprintf(message, "%d", index);
-  THROW_MSG(s(), message);
+  THROW_MSG(s, message);
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
@@ -673,7 +673,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
     Bytecode_invoke call(m, bci(thread));
-    symbolHandle signature (thread, call.signature());
+    Symbol* signature = call.signature();
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
     assert(Universe::heap()->is_in_reserved_or_null(receiver()),
@@ -797,7 +797,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
     return;
 
-  symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
+  Symbol*  call_site_name = pool->name_ref_at(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,

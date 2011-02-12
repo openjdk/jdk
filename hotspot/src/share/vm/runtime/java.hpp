@@ -49,7 +49,7 @@ extern void notify_vm_shutdown();
 
 // VM exit if error occurs during initialization of VM
 extern void vm_exit_during_initialization(Handle exception);
-extern void vm_exit_during_initialization(symbolHandle exception_name, const char* message);
+extern void vm_exit_during_initialization(Symbol* exception_name, const char* message);
 extern void vm_exit_during_initialization(const char* error, const char* message = NULL);
 extern void vm_shutdown_during_initialization(const char* error, const char* message = NULL);
 

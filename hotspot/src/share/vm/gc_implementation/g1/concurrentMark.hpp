@@ -353,6 +353,10 @@ class ConcurrentMark: public CHeapObj {
   friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
   friend class CalcLiveObjectsClosure;
+  friend class G1RefProcTaskProxy;
+  friend class G1RefProcTaskExecutor;
+  friend class G1CMParKeepAliveAndDrainClosure;
+  friend class G1CMParDrainMarkingStackClosure;
 
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
@@ -936,7 +940,7 @@ private:
   // if this is true, then the task has aborted for some reason
   bool                        _has_aborted;
   // set when the task aborts because it has met its time quota
-  bool                        _has_aborted_timed_out;
+  bool                        _has_timed_out;
   // true when we're draining SATB buffers; this avoids the task
   // aborting due to SATB buffers being available (as we're already
   // dealing with them)
@@ -1041,7 +1045,7 @@ public:
   // trying not to exceed the given duration. However, it might exit
   // prematurely, according to some conditions (i.e. SATB buffers are
   // available for processing).
-  void do_marking_step(double target_ms);
+  void do_marking_step(double target_ms, bool do_stealing, bool do_termination);
 
   // These two calls start and stop the timer
   void record_start_time() {
@@ -1063,7 +1067,8 @@ public:
   bool has_aborted()            { return _has_aborted; }
   void set_has_aborted()        { _has_aborted = true; }
   void clear_has_aborted()      { _has_aborted = false; }
-  bool claimed() { return _claimed; }
+  bool has_timed_out()          { return _has_timed_out; }
+  bool claimed()                { return _claimed; }
 
   // Support routines for the partially scanned region that may be
   // recorded as a result of aborting while draining the CMRegionStack

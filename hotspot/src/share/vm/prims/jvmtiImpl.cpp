@@ -285,8 +285,8 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
   // not saved in the PreviousVersionInfo.
   Thread *thread = Thread::current();
   instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
-  symbolOop m_name = _method->name();
-  symbolOop m_signature = _method->signature();
+  Symbol* m_name = _method->name();
+  Symbol* m_signature = _method->signature();
 
   {
     ResourceMark rm(thread);
@@ -628,22 +628,22 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
     ty_sign++;
     len -= 2;
   }
-  symbolHandle ty_sym = oopFactory::new_symbol_handle(ty_sign, len, thread);
-  if (klass->name() == ty_sym()) {
+  TempNewSymbol ty_sym = SymbolTable::new_symbol(ty_sign, len, thread);
+  if (klass->name() == ty_sym) {
     return true;
   }
   // Compare primary supers
   int super_depth = klass->super_depth();
   int idx;
   for (idx = 0; idx < super_depth; idx++) {
-    if (Klass::cast(klass->primary_super_of_depth(idx))->name() == ty_sym()) {
+    if (Klass::cast(klass->primary_super_of_depth(idx))->name() == ty_sym) {
       return true;
     }
   }
   // Compare secondary supers
   objArrayOop sec_supers = klass->secondary_supers();
   for (idx = 0; idx < sec_supers->length(); idx++) {
-    if (Klass::cast((klassOop) sec_supers->obj_at(idx))->name() == ty_sym()) {
+    if (Klass::cast((klassOop) sec_supers->obj_at(idx))->name() == ty_sym) {
       return true;
     }
   }
@@ -690,7 +690,7 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;       // Incorrect slot index
   }
-  symbolOop   sign_sym  = method_oop->constants()->symbol_at(signature_idx);
+  Symbol*   sign_sym  = method_oop->constants()->symbol_at(signature_idx);
   const char* signature = (const char *) sign_sym->as_utf8();
   BasicType slot_type = char2type(signature[0]);
 

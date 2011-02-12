@@ -339,8 +339,10 @@ JRT_ENTRY(void, Runtime1::unimplemented_entry(JavaThread* thread, StubID id))
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::throw_array_store_exception(JavaThread* thread))
-  THROW(vmSymbolHandles::java_lang_ArrayStoreException());
+JRT_ENTRY(void, Runtime1::throw_array_store_exception(JavaThread* thread, oopDesc* obj))
+  ResourceMark rm(thread);
+  const char* klass_name = Klass::cast(obj->klass())->external_name();
+  SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArrayStoreException(), klass_name);
 JRT_END
 
 

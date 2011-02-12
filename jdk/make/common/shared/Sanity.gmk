@@ -255,10 +255,10 @@ endif
 MAKE_CHECK :=$(call CheckVersions,$(MAKE_VER),$(REQUIRED_MAKE_VER))
 sane-make:
 	@if [ "$(MAKE_CHECK)" != "same" -a "$(MAKE_CHECK)" != "newer" ]; then \
-	  $(ECHO) "WARNING: The version of make being used is older than \n" \
+	  $(ECHO) "ERROR: The version of make being used is older than \n" \
 	    "      the required version of '$(REQUIRED_MAKE_VER)'. \n" \
 	    "      The version of make found was '$(MAKE_VER)'. \n" \
-	    "" >> $(WARNING_FILE) ; \
+	    "" >> $(ERROR_FILE) ; \
 	fi
 
 ######################################################
@@ -1259,10 +1259,10 @@ ANT_CHECK :=$(call CheckVersions,$(ANT_VER),$(REQUIRED_ANT_VER))
 sane-ant_version:
 	@if [ "$(ANT_CHECK)" != "same" \
 	      -a "$(ANT_CHECK)" != "newer" ]; then \
-	  $(ECHO) "WARNING: The version of ant being used is older than \n" \
+	  $(ECHO) "ERROR: The version of ant being used is older than \n" \
 	    "      the required version of '$(REQUIRED_ANT_VER)'. \n" \
 	    "      The version of ant found was '$(ANT_VER)'. \n" \
-	    "" >> $(WARNING_FILE) ; \
+	    "" >> $(ERROR_FILE) ; \
 	fi
 
 ######################################################

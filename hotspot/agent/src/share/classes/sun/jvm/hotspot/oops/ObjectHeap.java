@@ -47,7 +47,6 @@ public class ObjectHeap {
     DEBUG = System.getProperty("sun.jvm.hotspot.oops.ObjectHeap.DEBUG") != null;
   }
 
-  private OopHandle              symbolKlassHandle;
   private OopHandle              methodKlassHandle;
   private OopHandle              constMethodKlassHandle;
   private OopHandle              methodDataKlassHandle;
@@ -68,7 +67,6 @@ public class ObjectHeap {
   private OopHandle              arrayKlassKlassHandle;
   private OopHandle              compiledICHolderKlassHandle;
 
-  private SymbolKlass            symbolKlassObj;
   private MethodKlass            methodKlassObj;
   private ConstMethodKlass       constMethodKlassObj;
   private MethodDataKlass        methodDataKlassObj;
@@ -92,9 +90,6 @@ public class ObjectHeap {
   public void initialize(TypeDataBase db) throws WrongTypeException {
     // Lookup the roots in the object hierarchy.
     Type universeType = db.lookupType("Universe");
-
-    symbolKlassHandle         = universeType.getOopField("_symbolKlassObj").getValue();
-    symbolKlassObj            = new SymbolKlass(symbolKlassHandle, this);
 
     methodKlassHandle         = universeType.getOopField("_methodKlassObj").getValue();
     methodKlassObj            = new MethodKlass(methodKlassHandle, this);
@@ -199,7 +194,6 @@ public class ObjectHeap {
   public long getDoubleSize()  { return doubleSize;  }
 
   // Accessors for well-known system classes (from Universe)
-  public SymbolKlass            getSymbolKlassObj()            { return symbolKlassObj; }
   public MethodKlass            getMethodKlassObj()            { return methodKlassObj; }
   public ConstMethodKlass       getConstMethodKlassObj()       { return constMethodKlassObj; }
   public MethodDataKlass        getMethodDataKlassObj()        { return methodDataKlassObj; }
@@ -337,7 +331,6 @@ public class ObjectHeap {
     // First check if handle is one of the root objects
     if (handle.equals(methodKlassHandle))              return getMethodKlassObj();
     if (handle.equals(constMethodKlassHandle))         return getConstMethodKlassObj();
-    if (handle.equals(symbolKlassHandle))              return getSymbolKlassObj();
     if (handle.equals(constantPoolKlassHandle))        return getConstantPoolKlassObj();
     if (handle.equals(constantPoolCacheKlassHandle))   return getConstantPoolCacheKlassObj();
     if (handle.equals(instanceKlassKlassHandle))       return getInstanceKlassKlassObj();
@@ -363,7 +356,6 @@ public class ObjectHeap {
     if (klass != null) {
       if (klass.equals(methodKlassHandle))              return new Method(handle, this);
       if (klass.equals(constMethodKlassHandle))         return new ConstMethod(handle, this);
-      if (klass.equals(symbolKlassHandle))              return new Symbol(handle, this);
       if (klass.equals(constantPoolKlassHandle))        return new ConstantPool(handle, this);
       if (klass.equals(constantPoolCacheKlassHandle))   return new ConstantPoolCache(handle, this);
       if (!VM.getVM().isCore()) {

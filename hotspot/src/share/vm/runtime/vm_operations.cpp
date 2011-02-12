@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -169,6 +171,12 @@ void VM_ZombieAll::doit() {
 }
 
 #endif // !PRODUCT
+
+void VM_UnlinkSymbols::doit() {
+  JavaThread *thread = (JavaThread *)calling_thread();
+  assert(thread->is_Java_thread(), "must be a Java thread");
+  SymbolTable::unlink();
+}
 
 void VM_HandleFullCodeCache::doit() {
   NMethodSweeper::speculative_disconnect_nmethods(_is_full);
