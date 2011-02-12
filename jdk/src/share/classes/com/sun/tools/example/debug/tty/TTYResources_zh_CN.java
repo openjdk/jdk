@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,409 +45,282 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
      * @return the contents of this <code>ResourceBundle</code>.
      */
     public Object[][] getContents() {
-        return new Object[][] {
+        Object[][] temp = new Object[][] {
         // NOTE: The value strings in this file containing "{0}" are
         //       processed by the java.text.MessageFormat class.  Any
         //       single quotes appearing in these strings need to be
         //       doubled up.
         //
         // LOCALIZE THIS
-        {"** classes list **", "** \u7c7b\u5217\u8868 **\n{0}"},
-        {"** fields list **", "** \u5b57\u6bb5\u5217\u8868 **\n{0}"},
-        {"** methods list **", "** \u65b9\u6cd5\u5217\u8868 **\n{0}"},
-        {"*** Reading commands from", "*** \u6b63\u5728\u4ece {0} \u4e2d\u8bfb\u53d6\u547d\u4ee4"},
-        {"All threads resumed.", "\u6240\u6709\u7ebf\u7a0b\u5df2\u6062\u590d\u3002"},
-        {"All threads suspended.", "\u6240\u6709\u7ebf\u7a0b\u5df2\u6682\u505c\u3002"},
-        {"Argument is not defined for connector:", "\u6ca1\u6709\u4e3a\u8fde\u63a5\u5668\u5b9a\u4e49\u53c2\u6570 {0}\uff1a {1}"},
-        {"Arguments match no method", "\u53c2\u6570\u4e0e\u65b9\u6cd5\u4e0d\u5339\u914d"},
-        {"Array:", "\u6570\u7ec4\uff1a{0}"},
-        {"Array element is not a method", "\u6570\u7ec4\u5143\u7d20\u4e0d\u662f\u65b9\u6cd5"},
-        {"Array index must be a integer type", "\u6570\u7ec4\u7d22\u5f15\u5fc5\u987b\u4e3a\u6574\u6570\u7c7b\u578b"},
-        {"base directory:", "\u57fa\u672c\u76ee\u5f55\uff1a{0}"},
-        {"bootclasspath:", "\u5f15\u5bfc\u7c7b\u8def\u5f84\uff1a{0}"},
-        {"Breakpoint hit:", "\u65ad\u70b9\u547d\u4e2d\uff1a "},
-        {"breakpoint", "\u65ad\u70b9 {0}"},
-        {"Breakpoints set:", "\u65ad\u70b9\u96c6\uff1a"},
-        {"Breakpoints can be located only in classes.", "\u65ad\u70b9\u53ea\u80fd\u4f4d\u4e8e\u7c7b\u4e2d\u3002{0} \u662f\u63a5\u53e3\u6216\u6570\u7ec4\u3002"},
-        {"Can only trace", "\u53ea\u80fd\u8ddf\u8e2a 'methods'\u3001'method exit' \u6216 'method exits'"},
-        {"cannot redefine existing connection", "{0} \u65e0\u6cd5\u91cd\u65b0\u5b9a\u4e49\u73b0\u6709\u8fde\u63a5"},
-        {"Cannot assign to a method invocation", "\u65e0\u6cd5\u6307\u5b9a\u7ed9\u65b9\u6cd5\u8c03\u7528"},
-        {"Cannot specify command line with connector:", "\u65e0\u6cd5\u4f7f\u7528\u8fde\u63a5\u5668 {0} \u6307\u5b9a\u547d\u4ee4\u884c"},
-        {"Cannot specify target vm arguments with connector:", "\u65e0\u6cd5\u4f7f\u7528\u8fde\u63a5\u5668 {0} \u6307\u5b9a\u76ee\u6807 VM \u53c2\u6570"},
-        {"Class containing field must be specified.", "\u5fc5\u987b\u6307\u5b9a\u5305\u542b\u5b57\u6bb5\u7684\u7c7b\u3002"},
-        {"Class:", "\u7c7b\uff1a{0}"},
-        {"Classic VM no longer supported.", "\u4e0d\u518d\u652f\u6301 Classic VM\u3002"},
-        {"classpath:", "\u7c7b\u8def\u5f84\uff1a{0}"},
+        {"** classes list **", "** \u7C7B\u5217\u8868 **\n{0}"},
+        {"** fields list **", "** \u5B57\u6BB5\u5217\u8868 **\n{0}"},
+        {"** methods list **", "** \u65B9\u6CD5\u5217\u8868 **\n{0}"},
+        {"*** Reading commands from", "*** \u6B63\u5728\u4ECE{0}\u8BFB\u53D6\u547D\u4EE4"},
+        {"All threads resumed.", "\u5DF2\u6062\u590D\u6240\u6709\u7EBF\u7A0B\u3002"},
+        {"All threads suspended.", "\u5DF2\u6302\u8D77\u6240\u6709\u7EBF\u7A0B\u3002"},
+        {"Argument is not defined for connector:", "\u6CA1\u6709\u4E3A\u8FDE\u63A5\u5668{1}\u5B9A\u4E49\u53C2\u6570{0}"},
+        {"Arguments match no method", "\u53C2\u6570\u4E0D\u4E0E\u4EFB\u4F55\u65B9\u6CD5\u5339\u914D"},
+        {"Array:", "\u6570\u7EC4: {0}"},
+        {"Array element is not a method", "\u6570\u7EC4\u5143\u7D20\u4E0D\u662F\u65B9\u6CD5"},
+        {"Array index must be a integer type", "\u6570\u7EC4\u7D22\u5F15\u5FC5\u987B\u4E3A\u6574\u6570\u7C7B\u578B"},
+        {"base directory:", "\u57FA\u76EE\u5F55: {0}"},
+        {"bootclasspath:", "\u5F15\u5BFC\u7C7B\u8DEF\u5F84: {0}"},
+        {"Breakpoint hit:", "\u65AD\u70B9\u547D\u4E2D: "},
+        {"breakpoint", "\u65AD\u70B9{0}"},
+        {"Breakpoints set:", "\u65AD\u70B9\u96C6:"},
+        {"Breakpoints can be located only in classes.", "\u65AD\u70B9\u53EA\u80FD\u4F4D\u4E8E\u7C7B\u4E2D\u3002{0}\u662F\u63A5\u53E3\u6216\u6570\u7EC4\u3002"},
+        {"Can only trace", "\u53EA\u80FD\u8DDF\u8E2A 'methods', 'method exit' \u6216 'method exits'"},
+        {"cannot redefine existing connection", "{0}\u65E0\u6CD5\u91CD\u65B0\u5B9A\u4E49\u73B0\u6709\u8FDE\u63A5"},
+        {"Cannot assign to a method invocation", "\u65E0\u6CD5\u5206\u914D\u5230\u65B9\u6CD5\u8C03\u7528"},
+        {"Cannot specify command line with connector:", "\u65E0\u6CD5\u6307\u5B9A\u5E26\u6709\u8FDE\u63A5\u5668\u7684\u547D\u4EE4\u884C: {0}"},
+        {"Cannot specify target vm arguments with connector:", "\u65E0\u6CD5\u6307\u5B9A\u5E26\u6709\u8FDE\u63A5\u5668\u7684\u76EE\u6807 VM \u53C2\u6570: {0}"},
+        {"Class containing field must be specified.", "\u5FC5\u987B\u6307\u5B9A\u5305\u542B\u5B57\u6BB5\u7684\u7C7B\u3002"},
+        {"Class:", "\u7C7B: {0}"},
+        {"Classic VM no longer supported.", "\u4E0D\u518D\u652F\u6301\u7ECF\u5178 VM\u3002"},
+        {"classpath:", "\u7C7B\u8DEF\u5F84: {0}"},
         {"colon mark", ":"},
         {"colon space", ": "},
-        {"Command is not supported on the target VM", "\u76ee\u6807 VM \u4e0d\u652f\u6301\u547d\u4ee4 \"{0}\""},
-        {"Command is not supported on a read-only VM connection", "\u53ea\u8bfb VM \u8fde\u63a5\u4e0d\u652f\u6301\u547d\u4ee4 \"{0}\""},
-        {"Command not valid until the VM is started with the run command", "\u4f7f\u7528 \"run\" \u547d\u4ee4\u542f\u52a8 VM \u4e4b\u540e\uff0c\u547d\u4ee4 \"{0}\" \u624d\u6709\u6548"},
-        {"Condition must be boolean", "\u6761\u4ef6\u5fc5\u987b\u4e3a\u5e03\u5c14\u503c"},
-        {"Connector and Transport name", "  \u8fde\u63a5\u5668\uff1a{0}  \u4f20\u9001\u5668\uff1a{1}"},
-        {"Connector argument nodefault", "    \u53c2\u6570\uff1a{0}\uff08\u65e0\u9ed8\u8ba4\u503c\uff09"},
-        {"Connector argument default", "    \u53c2\u6570\uff1a{0} \u9ed8\u8ba4\u503c\uff1a{1}"},
-        {"Connector description", "    \u63cf\u8ff0\uff1a{0}"},
-        {"Connector required argument nodefault", "    \u5fc5\u9700\u53c2\u6570\uff1a{0}\uff08\u65e0\u9ed8\u8ba4\u503c\uff09"},
-        {"Connector required argument default", "    \u5fc5\u9700\u53c2\u6570\uff1a{0} \u9ed8\u8ba4\u503c\uff1a{1}"},
-        {"Connectors available", "\u53ef\u7528\u7684\u8fde\u63a5\u5668\u5305\u62ec\uff1a"},
-        {"Constant is not a method", "\u5e38\u91cf\u4e0d\u662f\u65b9\u6cd5"},
-        {"Could not open:", "\u65e0\u6cd5\u6253\u5f00\uff1a{0}"},
-        {"Current method is native", "\u5f53\u524d\u65b9\u6cd5\u662f\u672c\u673a\u65b9\u6cd5"},
-        {"Current thread died. Execution continuing...", "\u5f53\u524d\u7ebf\u7a0b {0} \u5df2\u7ec8\u6b62\u3002\u6b63\u5728\u7ee7\u7eed\u6267\u884c..."},
-        {"Current thread isnt suspended.", "\u5f53\u524d\u7ebf\u7a0b\u672a\u6682\u505c\u3002"},
-        {"Current thread not set.", "\u5f53\u524d\u7ebf\u7a0b\u672a\u8bbe\u7f6e\u3002"},
-        {"dbgtrace flag value must be an integer:", "dbgtrace \u6807\u5fd7\u503c\u5fc5\u987b\u4e3a\u6574\u6570\uff1a {0}"},
-        {"Deferring.", "\u6b63\u5728\u5ef6\u8fdf {0}\u3002\n\u5c06\u5728\u88c5\u5165\u7c7b\u4e4b\u540e\u5bf9\u5176\u8fdb\u884c\u8bbe\u7f6e\u3002"},
-        {"End of stack.", "\u5806\u6808\u7ed3\u5c3e\u3002"},
-        {"Error popping frame", "\u5f39\u51fa\u5e27\u65f6\u51fa\u9519 - {0}"},
-        {"Error reading file", "\u8bfb\u53d6 \"{0}\" \u65f6\u51fa\u9519 - {1}"},
-        {"Error redefining class to file", "\u5c06 {0} \u91cd\u65b0\u5b9a\u4e49\u5230 {1} \u65f6\u51fa\u9519 - {2}"},
-        {"exceptionSpec all", "\u6240\u6709 {0}"},
-        {"exceptionSpec caught", "\u6355\u6349\u5230 {0}"},
-        {"exceptionSpec uncaught", "\u672a\u6355\u6349\u5230 {0}"},
-        {"Exception in expression:", "\u8868\u8fbe\u5f0f\u4e2d\u51fa\u73b0\u5f02\u5e38\uff1a{0}"},
-        {"Exception occurred caught", "\u51fa\u73b0\u5f02\u5e38\uff1a{0}\uff08\u5728 {1} \u88ab\u6355\u6349\uff09"},
-        {"Exception occurred uncaught", "\u51fa\u73b0\u5f02\u5e38\uff1a{0}\uff08\u672a\u6355\u6349\uff09"},
-        {"Exceptions caught:", "\u51fa\u73b0\u8fd9\u4e9b\u5f02\u5e38\u65f6\u4e2d\u65ad\uff1a"},
-        {"expr is null", "{0} = null"},
+        {"Command is not supported on the target VM", "\u76EE\u6807 VM \u4E0D\u652F\u6301\u547D\u4EE4 ''{0}''"},
+        {"Command is not supported on a read-only VM connection", "\u53EA\u8BFB VM \u8FDE\u63A5\u4E0D\u652F\u6301\u547D\u4EE4 ''{0}''"},
+        {"Command not valid until the VM is started with the run command", "\u5728\u4F7F\u7528 ''run'' \u547D\u4EE4\u542F\u52A8 VM \u524D, \u547D\u4EE4 ''{0}'' \u662F\u65E0\u6548\u7684"},
+        {"Condition must be boolean", "\u6761\u4EF6\u5FC5\u987B\u662F\u5E03\u5C14\u578B"},
+        {"Connector and Transport name", "  \u8FDE\u63A5\u5668: {0}, \u4F20\u8F93: {1}"},
+        {"Connector argument nodefault", "    \u53C2\u6570: {0} (\u65E0\u9ED8\u8BA4\u503C)"},
+        {"Connector argument default", "    \u53C2\u6570: {0}, \u9ED8\u8BA4\u503C: {1}"},
+        {"Connector description", "    \u8BF4\u660E: {0}"},
+        {"Connector required argument nodefault", "    \u6240\u9700\u7684\u53C2\u6570: {0} (\u65E0\u9ED8\u8BA4\u503C)"},
+        {"Connector required argument default", "    \u6240\u9700\u7684\u53C2\u6570: {0}, \u9ED8\u8BA4\u503C: {1}"},
+        {"Connectors available", "\u53EF\u7528\u8FDE\u63A5\u5668\u4E3A:"},
+        {"Constant is not a method", "\u5E38\u91CF\u4E0D\u662F\u65B9\u6CD5"},
+        {"Could not open:", "\u65E0\u6CD5\u6253\u5F00: {0}"},
+        {"Current method is native", "\u5F53\u524D\u65B9\u6CD5\u4E3A\u672C\u673A\u65B9\u6CD5"},
+        {"Current thread died. Execution continuing...", "\u5F53\u524D\u7EBF\u7A0B{0}\u5DF2\u6210\u4E3A\u6B7B\u7EBF\u7A0B\u3002\u7EE7\u7EED\u6267\u884C..."},
+        {"Current thread isnt suspended.", "\u5F53\u524D\u7EBF\u7A0B\u672A\u6302\u8D77\u3002"},
+        {"Current thread not set.", "\u5F53\u524D\u7EBF\u7A0B\u672A\u8BBE\u7F6E\u3002"},
+        {"dbgtrace flag value must be an integer:", "dbgtrace \u6807\u8BB0\u503C\u5FC5\u987B\u4E3A\u6574\u6570: {0}"},
+        {"Deferring.", "\u6B63\u5728\u5EF6\u8FDF{0}\u3002\n\u5C06\u5728\u52A0\u8F7D\u7C7B\u540E\u8BBE\u7F6E\u3002"},
+        {"End of stack.", "\u5806\u6808\u7ED3\u675F\u3002"},
+        {"Error popping frame", "\u4F7F\u5E27\u51FA\u6808\u65F6\u51FA\u9519 - {0}"},
+        {"Error reading file", "\u8BFB\u53D6 ''{0}'' \u65F6\u51FA\u9519 - {1}"},
+        {"Error redefining class to file", "\u5C06{0}\u91CD\u65B0\u5B9A\u4E49\u4E3A{1}\u65F6\u51FA\u9519 - {2}"},
+        {"exceptionSpec all", "\u6240\u6709{0}"},
+        {"exceptionSpec caught", "\u6355\u83B7\u7684{0}"},
+        {"exceptionSpec uncaught", "\u672A\u6355\u83B7\u7684{0}"},
+        {"Exception in expression:", "\u8868\u8FBE\u5F0F\u4E2D\u51FA\u73B0\u5F02\u5E38\u9519\u8BEF: {0}"},
+        {"Exception occurred caught", "\u51FA\u73B0\u5F02\u5E38\u9519\u8BEF: {0} (\u5C06\u5728\u4EE5\u4E0B\u4F4D\u7F6E\u6355\u83B7: {1})"},
+        {"Exception occurred uncaught", "\u51FA\u73B0\u5F02\u5E38\u9519\u8BEF: {0} (\u672A\u6355\u83B7)"},
+        {"Exceptions caught:", "\u51FA\u73B0\u8FD9\u4E9B\u5F02\u5E38\u9519\u8BEF\u65F6\u4E2D\u65AD:"},
+        {"expr is null", "{0} = \u7A7A\u503C"},
         {"expr is value", "{0} = {1}"},
-        {"expr is value <collected>", "  {0} = {1} <\u5df2\u6536\u96c6>"},
-        {"Expression cannot be void", "\u8868\u8fbe\u5f0f\u4e0d\u80fd\u6ca1\u6709\u8fd4\u56de\u503c"},
-        {"Expression must evaluate to an object", "\u8868\u8fbe\u5f0f\u7684\u503c\u5fc5\u987b\u4e3a\u5bf9\u8c61"},
-        {"extends:", "\u6269\u5c55\uff1a {0}"},
-        {"Failed reading output", "\u8bfb\u53d6\u5b50 java \u89e3\u91ca\u7a0b\u5e8f\u7684\u8f93\u51fa\u5931\u8d25\u3002"},
-        {"Fatal error", "\u81f4\u547d\u9519\u8bef\uff1a"},
-        {"Field access encountered before after", "\u5b57\u6bb5 ({0}) \u4e3a {1}\uff0c\u5c06 {2}\uff1a "},
-        {"Field access encountered", "\u9047\u5230\u5b57\u6bb5 ({0}) \u8bbf\u95ee\uff1a "},
-        {"Field to unwatch not specified", "\u672a\u6307\u5b9a\u8981\u53d6\u6d88\u76d1\u89c6\u7684\u5b57\u6bb5\u3002"},
-        {"Field to watch not specified", "\u672a\u6307\u5b9a\u8981\u76d1\u89c6\u7684\u5b57\u6bb5\u3002"},
-        {"GC Disabled for", "\u5df2\u7981\u7528 {0} \u7684 GC\uff1a"},
-        {"GC Enabled for", "\u5df2\u542f\u7528 {0} \u7684 GC\uff1a"},
+        {"expr is value <collected>", "  {0} = {1} <\u5DF2\u6536\u96C6>"},
+        {"Expression cannot be void", "\u8868\u8FBE\u5F0F\u4E0D\u80FD\u4E3A\u7A7A"},
+        {"Expression must evaluate to an object", "\u8868\u8FBE\u5F0F\u7684\u8BA1\u7B97\u7ED3\u679C\u5FC5\u987B\u4E3A\u5BF9\u8C61"},
+        {"extends:", "\u6269\u5C55: {0}"},
+        {"Failed reading output", "\u65E0\u6CD5\u8BFB\u53D6\u5B50 Java \u89E3\u91CA\u5668\u7684\u8F93\u51FA\u3002"},
+        {"Fatal error", "\u81F4\u547D\u9519\u8BEF:"},
+        {"Field access encountered before after", "\u5B57\u6BB5 ({0}) \u4E3A{1}, \u5C06\u4E3A{2}: "},
+        {"Field access encountered", "\u9047\u5230\u5B57\u6BB5 ({0}) \u8BBF\u95EE: "},
+        {"Field to unwatch not specified", "\u672A\u6307\u5B9A\u8981\u53D6\u6D88\u76D1\u89C6\u7684\u5B57\u6BB5\u3002"},
+        {"Field to watch not specified", "\u672A\u6307\u5B9A\u8981\u76D1\u89C6\u7684\u5B57\u6BB5\u3002"},
+        {"GC Disabled for", "\u5DF2\u5BF9{0}\u7981\u7528 GC:"},
+        {"GC Enabled for", "\u5DF2\u5BF9{0}\u542F\u7528 GC:"},
         {"grouping begin character", "{"},
         {"grouping end character", "}"},
-        {"Illegal Argument Exception", "\u975e\u6cd5\u53c2\u6570\u5f02\u5e38"},
-        {"Illegal connector argument", "\u975e\u6cd5\u8fde\u63a5\u5668\u53c2\u6570\uff1a {0}"},
-        {"implementor:", "\u5b9e\u73b0\u8005\uff1a {0}"},
-        {"implements:", "\u5b9e\u73b0\uff1a {0}"},
-        {"Initializing progname", "\u6b63\u5728\u521d\u59cb\u5316 {0}..."},
-        {"Input stream closed.", "\u8f93\u5165\u6d41\u5df2\u7ed3\u675f\u3002"},
-        {"Interface:", "\u63a5\u53e3\uff1a {0}"},
-        {"Internal debugger error.", "\u5185\u90e8\u8c03\u8bd5\u5668\u9519\u8bef\u3002"},
-        {"Internal error: null ThreadInfo created", "\u5185\u90e8\u9519\u8bef\uff1a\u521b\u5efa\u4e86\u7a7a\u7684 ThreadInfo"},
-        {"Internal error; unable to set", "\u5185\u90e8\u9519\u8bef\uff1b\u65e0\u6cd5\u8bbe\u7f6e {0}"},
-        {"Internal exception during operation:", "\u5728\u64cd\u4f5c\u8fc7\u7a0b\u4e2d\u51fa\u73b0\u5185\u90e8\u5f02\u5e38\uff1a\n    {0}"},
-        {"Internal exception:", "\u5185\u90e8\u5f02\u5e38\uff1a"},
-        {"Invalid argument type name", "\u53c2\u6570\u7c7b\u578b\u540d\u79f0\u65e0\u6548"},
-        {"Invalid assignment syntax", "\u6307\u5b9a\u8bed\u6cd5\u65e0\u6548"},
-        {"Invalid command syntax", "\u547d\u4ee4\u8bed\u6cd5\u65e0\u6548"},
-        {"Invalid connect type", "\u8fde\u63a5\u7c7b\u578b\u65e0\u6548"},
-        {"Invalid consecutive invocations", "\u8fde\u7eed\u8c03\u7528\u65e0\u6548"},
-        {"Invalid exception object", "\u5f02\u5e38\u5bf9\u8c61\u65e0\u6548"},
-        {"Invalid method specification:", "\u65e0\u6548\u7684\u65b9\u6cd5\u8bf4\u660e\uff1a {0}"},
-        {"Invalid option on class command", "\u7c7b\u547d\u4ee4\u7684\u9009\u9879\u65e0\u6548"},
-        {"invalid option", "\u65e0\u6548\u7684\u9009\u9879\uff1a {0}"},
-        {"Invalid thread status.", "\u7ebf\u7a0b\u72b6\u6001\u65e0\u6548\u3002"},
-        {"Invalid transport name:", "\u65e0\u6548\u7684\u4f20\u9001\u5668\u540d\u79f0\uff1a {0}"},
-        {"I/O exception occurred:", "\u51fa\u73b0 I/O \u5f02\u5e38\uff1a {0}"},
-        {"is an ambiguous method name in", "\"{0}\" \u5728 \"{1}\" \u4e2d\u662f\u4e0d\u660e\u786e\u7684\u65b9\u6cd5\u540d\u79f0"},
-        {"is an invalid line number for",  "\u5bf9\u4e8e {1}\uff0c{0,number,integer} \u662f\u65e0\u6548\u7684\u884c\u53f7"},
-        {"is not a valid class name", "\"{0}\" \u662f\u65e0\u6548\u7684\u7c7b\u540d\u3002"},
-        {"is not a valid field name", "\"{0}\" \u662f\u65e0\u6548\u7684\u5b57\u6bb5\u540d\u3002"},
-        {"is not a valid id or class name", "\"{0}\" \u662f\u65e0\u6548\u7684 ID \u6216\u7c7b\u540d\u3002"},
-        {"is not a valid line number or method name for", "\u5bf9\u4e8e\u7c7b \"{1}\"\uff0c\"{0}\" \u662f\u65e0\u6548\u7684\u884c\u53f7\u6216\u65b9\u6cd5\u540d"},
-        {"is not a valid method name", "\"{0}\" \u662f\u65e0\u6548\u7684\u65b9\u6cd5\u540d\u3002"},
-        {"is not a valid thread id", "\"{0}\" \u662f\u65e0\u6548\u7684\u7ebf\u7a0b ID\u3002"},
-        {"is not a valid threadgroup name", "\"{0}\" \u662f\u65e0\u6548\u7684\u7ebf\u7a0b\u7ec4\u540d\u79f0\u3002"},
+        {"Illegal Argument Exception", "\u975E\u6CD5\u53C2\u6570\u5F02\u5E38\u9519\u8BEF"},
+        {"Illegal connector argument", "\u975E\u6CD5\u8FDE\u63A5\u5668\u53C2\u6570: {0}"},
+        {"implementor:", "\u5B9E\u73B0\u8005: {0}"},
+        {"implements:", "\u5B9E\u73B0: {0}"},
+        {"Initializing progname", "\u6B63\u5728\u521D\u59CB\u5316{0}..."},
+        {"Input stream closed.", "\u8F93\u5165\u6D41\u5DF2\u5173\u95ED\u3002"},
+        {"Interface:", "\u63A5\u53E3: {0}"},
+        {"Internal debugger error.", "\u5185\u90E8\u8C03\u8BD5\u5668\u9519\u8BEF\u3002"},
+        {"Internal error: null ThreadInfo created", "\u5185\u90E8\u9519\u8BEF: \u521B\u5EFA\u4E86\u7A7A\u503C ThreadInfo"},
+        {"Internal error; unable to set", "\u5185\u90E8\u9519\u8BEF; \u65E0\u6CD5\u8BBE\u7F6E{0}"},
+        {"Internal exception during operation:", "\u64CD\u4F5C\u671F\u95F4\u51FA\u73B0\u5185\u90E8\u5F02\u5E38\u9519\u8BEF:\n    {0}"},
+        {"Internal exception:", "\u5185\u90E8\u5F02\u5E38\u9519\u8BEF:"},
+        {"Invalid argument type name", "\u53C2\u6570\u7C7B\u578B\u540D\u79F0\u65E0\u6548"},
+        {"Invalid assignment syntax", "\u8D4B\u503C\u8BED\u6CD5\u65E0\u6548"},
+        {"Invalid command syntax", "\u547D\u4EE4\u8BED\u6CD5\u65E0\u6548"},
+        {"Invalid connect type", "\u8FDE\u63A5\u7C7B\u578B\u65E0\u6548"},
+        {"Invalid consecutive invocations", "\u8FDE\u7EED\u8C03\u7528\u65E0\u6548"},
+        {"Invalid exception object", "\u5F02\u5E38\u9519\u8BEF\u5BF9\u8C61\u65E0\u6548"},
+        {"Invalid method specification:", "\u65B9\u6CD5\u89C4\u8303\u65E0\u6548: {0}"},
+        {"Invalid option on class command", "\u7C7B\u547D\u4EE4\u7684\u9009\u9879\u65E0\u6548"},
+        {"invalid option", "\u9009\u9879\u65E0\u6548: {0}"},
+        {"Invalid thread status.", "\u7EBF\u7A0B\u72B6\u6001\u65E0\u6548\u3002"},
+        {"Invalid transport name:", "\u4F20\u8F93\u540D\u79F0\u65E0\u6548: {0}"},
+        {"I/O exception occurred:", "\u51FA\u73B0 I/O \u5F02\u5E38\u9519\u8BEF: {0}"},
+        {"is an ambiguous method name in", "\"{0}\" \u5728 \"{1}\" \u4E2D\u662F\u4E0D\u660E\u786E\u7684\u65B9\u6CD5\u540D\u79F0"},
+        {"is an invalid line number for",  "{0,number,integer} \u662F{1}\u7684\u65E0\u6548\u884C\u53F7"},
+        {"is not a valid class name", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684\u7C7B\u540D\u3002"},
+        {"is not a valid field name", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684\u5B57\u6BB5\u540D\u3002"},
+        {"is not a valid id or class name", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684 ID \u6216\u7C7B\u540D\u3002"},
+        {"is not a valid line number or method name for", "\"{0}\" \u4E0D\u662F\u7C7B \"{1}\" \u7684\u6709\u6548\u884C\u53F7\u6216\u65B9\u6CD5\u540D"},
+        {"is not a valid method name", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684\u65B9\u6CD5\u540D\u3002"},
+        {"is not a valid thread id", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684\u7EBF\u7A0B ID\u3002"},
+        {"is not a valid threadgroup name", "\"{0}\" \u4E0D\u662F\u6709\u6548\u7684\u7EBF\u7A0B\u7EC4\u540D\u79F0\u3002"},
         {"jdb prompt with no current thread", "> "},
         {"jdb prompt thread name and current stack frame", "{0}[{1,number,integer}] "},
-        {"killed", "{0} \u5df2\u4e2d\u6b62"},
-        {"killing thread:", "\u6b63\u5728\u4e2d\u6b62\u7ebf\u7a0b\uff1a {0}"},
-        {"Line number information not available for", "\u6b64\u4f4d\u7f6e\u7684\u6e90\u884c\u53f7\u4e0d\u53ef\u7528\u3002"},
-        {"line number", "\uff1a{0,number,integer}"},
+        {"killed", "{0}\u5DF2\u7EC8\u6B62"},
+        {"killing thread:", "\u6B63\u5728\u7EC8\u6B62\u7EBF\u7A0B: {0}"},
+        {"Line number information not available for", "\u6B64\u4F4D\u7F6E\u7684\u6E90\u884C\u53F7\u4E0D\u53EF\u7528\u3002"},
+        {"line number", ":{0,number,integer}"},
         {"list field typename and name", "{0} {1}\n"},
-        {"list field typename and name inherited", "{0} {1}\uff08\u4ece {2}\u7ee7\u627f\uff09\n"},
-        {"list field typename and name hidden", "{0} {1} \uff08\u9690\u85cf\uff09\n"},
-        {"Listening at address:", "\u6b63\u5728\u4ee5\u4e0b\u5730\u5740\u4fa6\u542c\uff1a {0}"},
-        {"Local variable information not available.", "\u5c40\u90e8\u53d8\u91cf\u4fe1\u606f\u4e0d\u53ef\u7528\u3002\u4f7f\u7528 -g \u7f16\u8bd1\u4ee5\u751f\u6210\u53d8\u91cf\u4fe1\u606f"},
-        {"Local variables:", "\u5c40\u90e8\u53d8\u91cf\uff1a"},
-        {"<location unavailable>", "<\u4f4d\u7f6e\u4e0d\u53ef\u7528>"},
-        {"location", "\"thread={0}\", {1}"},
-        {"locationString", "{0}.{1}(), line={2,number,integer} bci={3,number,integer}"},
-        {"Main class and arguments must be specified", "\u5fc5\u987b\u6307\u5b9a\u4e3b\u7c7b\u548c\u53c2\u6570"},
-        {"Method arguments:", "\u65b9\u6cd5\u53c2\u6570\uff1a"},
-        {"Method entered:", "\u65b9\u6cd5\u5df2\u8f93\u5165: "},
-        {"Method exited:",  "\u65b9\u6cd5\u5df2\u9000\u51fa"},
-        {"Method exitedValue:", "\u65b9\u6cd5\u5df2\u9000\u51fa: \u8fd4\u56de\u503c = {0}\uff0c"},
-        {"Method is overloaded; specify arguments", "\u65b9\u6cd5 {0} \u5df2\u8fc7\u8f7d\uff1b\u6307\u5b9a\u53c2\u6570"},
-        {"minus version", "\u8fd9\u662f {0} \u7248\u672c {1,number,integer}.{2,number,integer}\uff08J2SE \u7248\u672c {3}\uff09"},
-        {"Monitor information for thread", "\u7ebf\u7a0b {0} \u7684\u76d1\u89c6\u5668\u4fe1\u606f\uff1a"},
-        {"Monitor information for expr", "{0} ({1}) \u7684\u76d1\u89c6\u5668\u4fe1\u606f\uff1a"},
-        {"More than one class named", "\u547d\u540d\u4e86\u591a\u4e2a\u7c7b\uff1a ''{0}''"},
-        {"native method", "\u672c\u673a\u65b9\u6cd5"},
-        {"nested:", "\u5d4c\u5957\uff1a {0}"},
-        {"No attach address specified.", "\u672a\u6307\u5b9a\u8fde\u63a5\u5730\u5740\u3002"},
-        {"No breakpoints set.", "\u672a\u8bbe\u7f6e\u65ad\u70b9\u3002"},
-        {"No class named", "\u6ca1\u6709\u540d\u4e3a \"{0}\" \u7684\u7c7b"},
-        {"No class specified.", "\u672a\u6307\u5b9a\u7c7b\u3002"},
-        {"No classpath specified.", "\u672a\u6307\u5b9a\u7c7b\u8def\u5f84\u3002"},
-        {"No code at line", "{1} \u4e2d\u7684\u7b2c {0,number,integer} \u884c\u6ca1\u6709\u4ee3\u7801"},
-        {"No connect specification.", "\u6ca1\u6709\u8fde\u63a5\u8bf4\u660e\u3002"},
-        {"No connector named:", "\u6ca1\u6709\u540d\u4e3a {0} \u7684\u8fde\u63a5\u5668"},
-        {"No current thread", "\u6ca1\u6709\u5f53\u524d\u7ebf\u7a0b"},
-        {"No default thread specified:", "\u672a\u6307\u5b9a\u9ed8\u8ba4\u7ebf\u7a0b\uff1a\u8bf7\u5148\u4f7f\u7528 \"thread\" \u547d\u4ee4\u3002"},
-        {"No exception object specified.", "\u672a\u6307\u5b9a\u5f02\u5e38\u5bf9\u8c61\u3002"},
-        {"No exceptions caught.", "\u672a\u6355\u6349\u5230\u5f02\u5e38\u3002"},
-        {"No expression specified.", "\u672a\u6307\u5b9a\u8868\u8fbe\u5f0f\u3002"},
-        {"No field in", "{1} \u4e2d\u6ca1\u6709\u5b57\u6bb5 {0}"},
-        {"No frames on the current call stack", "\u5f53\u524d\u8c03\u7528\u5806\u6808\u4e2d\u6ca1\u6709\u5e27"},
-        {"No linenumber information for", "\u6ca1\u6709 {0} \u7684\u884c\u53f7\u4fe1\u606f\u3002\u5c1d\u8bd5\u5728\u542f\u7528\u8c03\u8bd5\u65f6\u8fdb\u884c\u7f16\u8bd1\u3002"},
-        {"No local variables", "\u65e0\u5c40\u90e8\u53d8\u91cf"},
-        {"No method in", "{1} \u4e2d\u6ca1\u6709\u65b9\u6cd5 {0}"},
-        {"No method specified.", "\u672a\u6307\u5b9a\u65b9\u6cd5\u3002"},
-        {"No monitor numbered:", "\u6ca1\u6709\u7f16\u53f7\u7684\u76d1\u89c6\u5668\uff1a {0}"},
-        {"No monitors owned", "  \u6ca1\u6709\u62e5\u6709\u7684\u76d1\u89c6\u5668"},
-        {"No object specified.", "\u672a\u6307\u5b9a\u5bf9\u8c61\u3002"},
-        {"No objects specified.", "\u672a\u6307\u5b9a\u5bf9\u8c61\u3002"},
-        {"No save index specified.", "\u672a\u6307\u5b9a\u4fdd\u5b58\u7d22\u5f15\u3002"},
-        {"No saved values", "\u6ca1\u6709\u4fdd\u5b58\u7684\u503c"},
-        {"No source information available for:", "{0}\u6ca1\u6709\u53ef\u7528\u7684\u6e90\u4fe1\u606f"},
-        {"No sourcedebugextension specified", "\u672a\u6307\u5b9a SourceDebugExtension"},
-        {"No sourcepath specified.", "\u672a\u6307\u5b9a\u6e90\u8def\u5f84\u3002"},
-        {"No thread specified.", "\u672a\u6307\u5b9a\u7ebf\u7a0b\u3002"},
-        {"No VM connected", "\u672a\u8fde\u63a5 VM"},
-        {"No waiters", "  \u6ca1\u6709\u7b49\u5f85\u8005"},
-        {"not a class", "{0} \u4e0d\u662f\u7c7b"},
-        {"Not a monitor number:", "\u4e0d\u662f\u76d1\u89c6\u5668\u7f16\u53f7\uff1a ''{0}''"},
-        {"not found (try the full name)", "{0} \u672a\u627e\u5230\uff08\u8bf7\u5c1d\u8bd5\u4f7f\u7528\u5168\u540d\uff09"},
-        {"Not found:", "\u672a\u627e\u5230\uff1a {0}"},
-        {"not found", "{0} \u672a\u627e\u5230"},
-        {"Not owned", "  \u4e0d\u62e5\u6709"},
-        {"Not waiting for a monitor", "  \u4e0d\u7b49\u5f85\u76d1\u89c6\u5668"},
-        {"Nothing suspended.", "\u672a\u6682\u505c\u4efb\u4f55\u5bf9\u8c61\u3002"},
+        {"list field typename and name inherited", "{0} {1} (\u7EE7\u627F\u81EA{2})\n"},
+        {"list field typename and name hidden", "{0} {1} (\u9690\u85CF)\n"},
+        {"Listening at address:", "\u76D1\u542C\u5730\u5740: {0}"},
+        {"Local variable information not available.", "\u672C\u5730\u53D8\u91CF\u4FE1\u606F\u4E0D\u53EF\u7528\u3002\u8BF7\u4F7F\u7528 -g \u7F16\u8BD1\u4EE5\u751F\u6210\u53D8\u91CF\u4FE1\u606F"},
+        {"Local variables:", "\u672C\u5730\u53D8\u91CF:"},
+        {"<location unavailable>", "<\u4F4D\u7F6E\u4E0D\u53EF\u7528>"},
+        {"location", "\"\u7EBF\u7A0B={0}\", {1}"},
+        {"locationString", "{0}.{1}(), \u884C={2,number,integer} bci={3,number,integer}"},
+        {"Main class and arguments must be specified", "\u5FC5\u987B\u6307\u5B9A\u4E3B\u7C7B\u548C\u53C2\u6570"},
+        {"Method arguments:", "\u65B9\u6CD5\u53C2\u6570:"},
+        {"Method entered:", "\u5DF2\u8FDB\u5165\u65B9\u6CD5: "},
+        {"Method exited:",  "\u5DF2\u9000\u51FA\u65B9\u6CD5"},
+        {"Method exitedValue:", "\u5DF2\u9000\u51FA\u65B9\u6CD5: \u8FD4\u56DE\u503C = {0}, "},
+        {"Method is overloaded; specify arguments", "\u5DF2\u91CD\u8F7D\u65B9\u6CD5{0}; \u8BF7\u6307\u5B9A\u53C2\u6570"},
+        {"minus version", "\u8FD9\u662F{0}\u7248\u672C {1,number,integer}.{2,number,integer} (Java SE \u7248\u672C {3})"},
+        {"Monitor information for thread", "\u76D1\u89C6\u7EBF\u7A0B{0}\u7684\u4FE1\u606F:"},
+        {"Monitor information for expr", "\u76D1\u89C6{0} ({1}) \u7684\u4FE1\u606F:"},
+        {"More than one class named", "\u591A\u4E2A\u7C7B\u7684\u540D\u79F0\u4E3A: ''{0}''"},
+        {"native method", "\u672C\u673A\u65B9\u6CD5"},
+        {"nested:", "\u5D4C\u5957: {0}"},
+        {"No attach address specified.", "\u672A\u6307\u5B9A\u9644\u52A0\u5730\u5740\u3002"},
+        {"No breakpoints set.", "\u672A\u8BBE\u7F6E\u65AD\u70B9\u3002"},
+        {"No class named", "\u6CA1\u6709\u540D\u4E3A ''{0}'' \u7684\u7C7B"},
+        {"No class specified.", "\u672A\u6307\u5B9A\u7C7B\u3002"},
+        {"No classpath specified.", "\u672A\u6307\u5B9A\u7C7B\u8DEF\u5F84\u3002"},
+        {"No code at line", "{1}\u4E2D\u7684\u884C {0,number,integer} \u5904\u6CA1\u6709\u4EE3\u7801"},
+        {"No connect specification.", "\u6CA1\u6709\u8FDE\u63A5\u89C4\u8303\u3002"},
+        {"No connector named:", "\u6CA1\u6709\u540D\u4E3A{0}\u7684\u8FDE\u63A5\u5668"},
+        {"No current thread", "\u6CA1\u6709\u5F53\u524D\u7EBF\u7A0B"},
+        {"No default thread specified:", "\u672A\u6307\u5B9A\u9ED8\u8BA4\u7EBF\u7A0B: \u8BF7\u5148\u4F7F\u7528 \"thread\" \u547D\u4EE4\u3002"},
+        {"No exception object specified.", "\u672A\u6307\u5B9A\u5F02\u5E38\u9519\u8BEF\u5BF9\u8C61\u3002"},
+        {"No exceptions caught.", "\u672A\u6355\u83B7\u5230\u5F02\u5E38\u9519\u8BEF\u3002"},
+        {"No expression specified.", "\u672A\u6307\u5B9A\u8868\u8FBE\u5F0F\u3002"},
+        {"No field in", "{1}\u4E2D\u6CA1\u6709\u5B57\u6BB5{0}"},
+        {"No frames on the current call stack", "\u5F53\u524D\u8C03\u7528\u5806\u6808\u4E0A\u6CA1\u6709\u5E27"},
+        {"No linenumber information for", "{0}\u6CA1\u6709\u884C\u53F7\u4FE1\u606F\u3002\u8BF7\u5C1D\u8BD5\u5728\u542F\u7528\u8C03\u8BD5\u7684\u60C5\u51B5\u4E0B\u7F16\u8BD1\u3002"},
+        {"No local variables", "\u6CA1\u6709\u672C\u5730\u53D8\u91CF"},
+        {"No method in", "{1}\u4E2D\u6CA1\u6709\u65B9\u6CD5{0}"},
+        {"No method specified.", "\u672A\u6307\u5B9A\u65B9\u6CD5\u3002"},
+        {"No monitor numbered:", "\u6CA1\u6709\u7F16\u53F7\u4E3A {0} \u7684\u76D1\u89C6\u5668"},
+        {"No monitors owned", "  \u4E0D\u62E5\u6709\u76D1\u89C6\u5668"},
+        {"No object specified.", "\u672A\u6307\u5B9A\u5BF9\u8C61\u3002"},
+        {"No objects specified.", "\u672A\u6307\u5B9A\u5BF9\u8C61\u3002"},
+        {"No save index specified.", "\u672A\u6307\u5B9A\u4FDD\u5B58\u7D22\u5F15\u3002"},
+        {"No saved values", "\u6CA1\u6709\u4FDD\u5B58\u7684\u503C"},
+        {"No source information available for:", "\u6CA1\u6709\u53EF\u7528\u4E8E{0}\u7684\u6E90\u4FE1\u606F"},
+        {"No sourcedebugextension specified", "\u672A\u6307\u5B9A SourceDebugExtension"},
+        {"No sourcepath specified.", "\u672A\u6307\u5B9A\u6E90\u8DEF\u5F84\u3002"},
+        {"No thread specified.", "\u672A\u6307\u5B9A\u7EBF\u7A0B\u3002"},
+        {"No VM connected", "\u672A\u8FDE\u63A5 VM"},
+        {"No waiters", "  \u6CA1\u6709\u7B49\u5F85\u8FDB\u7A0B"},
+        {"not a class", "{0}\u4E0D\u662F\u7C7B"},
+        {"Not a monitor number:", "\u4E0D\u662F\u76D1\u89C6\u5668\u7F16\u53F7: ''{0}''"},
+        {"not found (try the full name)", "\u627E\u4E0D\u5230{0} (\u8BF7\u5C1D\u8BD5\u4F7F\u7528\u5168\u540D)"},
+        {"Not found:", "\u627E\u4E0D\u5230: {0}"},
+        {"not found", "\u627E\u4E0D\u5230{0}"},
+        {"Not owned", "  \u4E0D\u62E5\u6709"},
+        {"Not waiting for a monitor", "  \u672A\u7B49\u5F85\u76D1\u89C6\u5668"},
+        {"Nothing suspended.", "\u672A\u6302\u8D77\u4EFB\u4F55\u5BF9\u8C61\u3002"},
         {"object description and hex id", "({0}){1}"},
-        {"Operation is not supported on the target VM", "\u76ee\u6807 VM \u4e0d\u652f\u6301\u64cd\u4f5c"},
-        {"operation not yet supported", "\u5c1a\u4e0d\u652f\u6301\u64cd\u4f5c"},
-        {"Owned by:", "  \u62e5\u6709\u8005\uff1a{0}\uff0c\u6761\u76ee\u8ba1\u6570\uff1a{1,number,integer}"},
-        {"Owned monitor:", "  \u62e5\u6709\u7684\u76d1\u89c6\u5668\uff1a {0}"},
-        {"Parse exception:", "\u89e3\u6790\u5f02\u5e38\uff1a {0}"},
-        {"printbreakpointcommandusage", "\u7528\u6cd5\uff1a{0} <\u7c7b>:<\u884c\u53f7> \u6216\n       {1} <\u7c7b>.<\u65b9\u6cd5\u540d>[(\u53c2\u6570\u7c7b\u578b,...)]"},
-        {"Removed:", "\u5df2\u5220\u9664\uff1a {0}"},
-        {"Requested stack frame is no longer active:", "\u8bf7\u6c42\u7684\u5806\u6808\u5e27\u4e0d\u518d\u5904\u4e8e\u6d3b\u52a8\u72b6\u6001\uff1a{0,number,integer}"},
-        {"run <args> command is valid only with launched VMs", "\u201crun <\u53c2\u6570>\u201d\u547d\u4ee4\u4ec5\u5bf9\u5df2\u542f\u52a8\u7684 VM \u6709\u6548"},
-        {"run", "\u8fd0\u884c {0}"},
-        {"saved", "{0} \u5df2\u4fdd\u5b58"},
-        {"Set deferred", "\u8bbe\u7f6e\u5ef6\u8fdf\u7684 {0}"},
-        {"Set", "\u8bbe\u7f6e {0}"},
-        {"Source file not found:", "\u627e\u4e0d\u5230\u6e90\u6587\u4ef6\uff1a {0}"},
+        {"Operation is not supported on the target VM", "\u76EE\u6807 VM \u4E0D\u652F\u6301\u8BE5\u64CD\u4F5C"},
+        {"operation not yet supported", "\u5C1A\u4E0D\u652F\u6301\u8BE5\u64CD\u4F5C"},
+        {"Owned by:", "  \u62E5\u6709\u8005: {0}, \u6761\u76EE\u8BA1\u6570: {1,number,integer}"},
+        {"Owned monitor:", "  \u62E5\u6709\u7684\u76D1\u89C6\u5668: {0}"},
+        {"Parse exception:", "\u8BED\u6CD5\u5206\u6790\u5F02\u5E38\u9519\u8BEF: {0}"},
+        {"printbreakpointcommandusage", "\u7528\u6CD5: {0} <class>:<line_number> \u6216\n       {1} <class>.<method_name>[(argument_type,...)]"},
+        {"Removed:", "\u5DF2\u5220\u9664: {0}"},
+        {"Requested stack frame is no longer active:", "\u8BF7\u6C42\u7684\u5806\u6808\u5E27\u4E0D\u518D\u6709\u6548: {0,number,integer}"},
+        {"run <args> command is valid only with launched VMs", "'run <args>' \u547D\u4EE4\u4EC5\u5BF9\u542F\u52A8\u7684 VM \u6709\u6548"},
+        {"run", "\u8FD0\u884C{0}"},
+        {"saved", "{0}\u5DF2\u4FDD\u5B58"},
+        {"Set deferred", "\u8BBE\u7F6E\u5EF6\u8FDF\u7684{0}"},
+        {"Set", "\u8BBE\u7F6E{0}"},
+        {"Source file not found:", "\u627E\u4E0D\u5230\u6E90\u6587\u4EF6: {0}"},
         {"source line number and line", "{0,number,integer}    {1}"},
         {"source line number current line and line", "{0,number,integer} => {1}"},
-        {"sourcedebugextension", "SourceDebugExtension- {0}"},
-        {"Specify class and method", "\u6307\u5b9a\u7c7b\u548c\u65b9\u6cd5"},
-        {"Specify classes to redefine", "\u6307\u5b9a\u8981\u91cd\u65b0\u5b9a\u4e49\u7684\u7c7b"},
-        {"Specify file name for class", "\u6307\u5b9a\u7c7b {0} \u7684\u6587\u4ef6\u540d"},
+        {"sourcedebugextension", "SourceDebugExtension -- {0}"},
+        {"Specify class and method", "\u6307\u5B9A\u7C7B\u548C\u65B9\u6CD5"},
+        {"Specify classes to redefine", "\u6307\u5B9A\u8981\u91CD\u65B0\u5B9A\u4E49\u7684\u7C7B"},
+        {"Specify file name for class", "\u6307\u5B9A\u7C7B{0}\u7684\u6587\u4EF6\u540D"},
         {"stack frame dump with pc", "  [{0,number,integer}] {1}.{2} ({3}), pc = {4}"},
         {"stack frame dump", "  [{0,number,integer}] {1}.{2} ({3})"},
-        {"Step completed:", "\u5df2\u5b8c\u6210\u6b65\u9aa4\uff1a "},
-        {"Stopping due to deferred breakpoint errors.", "\u7531\u4e8e\u5ef6\u8fdf\u7684\u65ad\u70b9\u9519\u8bef\u800c\u505c\u6b62\u3002\n"},
-        {"subclass:", "\u5b50\u7c7b\uff1a {0}"},
-        {"subinterface:", "\u5b50\u63a5\u53e3\uff1a {0}"},
+        {"Step completed:", "\u5DF2\u5B8C\u6210\u7684\u6B65\u9AA4: "},
+        {"Stopping due to deferred breakpoint errors.", "\u7531\u4E8E\u5EF6\u8FDF\u65AD\u70B9\u9519\u8BEF\u800C\u505C\u6B62\u3002\n"},
+        {"subclass:", "\u5B50\u7C7B: {0}"},
+        {"subinterface:", "\u5B50\u63A5\u53E3: {0}"},
         {"tab", "\t{0}"},
-        {"Target VM failed to initialize.", "\u76ee\u6807 VM \u65e0\u6cd5\u521d\u59cb\u5316\u3002"},
-        {"The application exited", "\u5e94\u7528\u7a0b\u5e8f\u5df2\u9000\u51fa"},
-        {"The application has been disconnected", "\u5df2\u65ad\u5f00\u5e94\u7528\u7a0b\u5e8f\u7684\u8fde\u63a5"},
-        {"The gc command is no longer necessary.", "\u4e0d\u518d\u9700\u8981 'gc' \u547d\u4ee4\u3002\n" +
-"\u5982\u5e73\u5e38\u4e00\u6837\u5bf9\u6240\u6709\u5bf9\u8c61\u8fdb\u884c\u5783\u573e\u6536\u96c6\u3002\u4f7f\u7528 'enablegc' \u548c 'disablegc' \n" +
-"\u547d\u4ee4\u6765\u63a7\u5236\u5404\u4e2a\u5bf9\u8c61\u7684\u5783\u573e\u6536\u96c6\u3002"},
-        {"The load command is no longer supported.", "\u4e0d\u518d\u652f\u6301 \"load\" \u547d\u4ee4\u3002"},
-        {"The memory command is no longer supported.", "\u4e0d\u518d\u652f\u6301 \"memory\" \u547d\u4ee4\u3002"},
-        {"The VM does not use paths", "VM \u4e0d\u4f7f\u7528\u8def\u5f84"},
-        {"Thread is not running (no stack).", "\u7ebf\u7a0b\u672a\u8fd0\u884c\uff08\u65e0\u5806\u6808\uff09\u3002"},
-        {"Thread number not specified.", "\u672a\u6307\u5b9a\u7ebf\u7a0b\u53f7\u3002"},
+        {"Target VM failed to initialize.", "\u65E0\u6CD5\u521D\u59CB\u5316\u76EE\u6807 VM\u3002"},
+        {"The application exited", "\u5E94\u7528\u7A0B\u5E8F\u5DF2\u9000\u51FA"},
+        {"The application has been disconnected", "\u5E94\u7528\u7A0B\u5E8F\u5DF2\u65AD\u5F00\u8FDE\u63A5"},
+        {"The gc command is no longer necessary.", "\u4E0D\u518D\u9700\u8981 'gc' \u547D\u4EE4\u3002\n\u6240\u6709\u5BF9\u8C61\u5DF2\u7167\u5E38\u8FDB\u884C\u5783\u573E\u6536\u96C6\u3002\u8BF7\u4F7F\u7528 'enablegc' \u548C 'disablegc'\n\u547D\u4EE4\u6765\u63A7\u5236\u5404\u4E2A\u5BF9\u8C61\u7684\u5783\u573E\u6536\u96C6\u3002"},
+        {"The load command is no longer supported.", "\u4E0D\u518D\u652F\u6301 'load' \u547D\u4EE4\u3002"},
+        {"The memory command is no longer supported.", "\u4E0D\u518D\u652F\u6301 'memory' \u547D\u4EE4\u3002"},
+        {"The VM does not use paths", "VM \u4E0D\u4F7F\u7528\u8DEF\u5F84"},
+        {"Thread is not running (no stack).", "\u7EBF\u7A0B\u672A\u8FD0\u884C (\u6CA1\u6709\u5806\u6808)\u3002"},
+        {"Thread number not specified.", "\u672A\u6307\u5B9A\u7EBF\u7A0B\u7F16\u53F7\u3002"},
         {"Thread:", "{0}:"},
-        {"Thread Group:", "\u7ec4 {0}\uff1a"},
-        {"Thread description name unknownStatus BP",  "  {0} {1} \u672a\u77e5\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name unknownStatus",     "  {0} {1} \u672a\u77e5"},
-        {"Thread description name zombieStatus BP",   "  {0} {1} \u5904\u4e8e\u50f5\u72b6\u6001\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name zombieStatus",      "  {0} {1} \u5904\u4e8e\u50f5\u72b6\u6001"},
-        {"Thread description name runningStatus BP",  "  {0} {1} \u6b63\u5728\u8fd0\u884c\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name runningStatus",     "  {0} {1} \u6b63\u5728\u8fd0\u884c"},
-        {"Thread description name sleepingStatus BP", "  {0} {1} \u6b63\u5728\u4f11\u7720\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name sleepingStatus",    "  {0} {1} \u6b63\u5728\u4f11\u7720"},
-        {"Thread description name waitingStatus BP",  "  {0} {1} \u6b63\u5728\u76d1\u89c6\u5668\u4e2d\u7b49\u5f85\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name waitingStatus",     "  {0} {1} \u6b63\u5728\u76d1\u89c6\u5668\u4e2d\u7b49\u5f85"},
-        {"Thread description name condWaitstatus BP", "  {0} {1} \u6761\u4ef6\u6b63\u5728\u7b49\u5f85\uff08\u5728\u65ad\u70b9\u5904\uff09"},
-        {"Thread description name condWaitstatus",    "  {0} {1} \u6761\u4ef6\u6b63\u5728\u7b49\u5f85"},
-        {"Thread has been resumed", "\u7ebf\u7a0b\u5df2\u6062\u590d"},
-        {"Thread not suspended", "\u7ebf\u7a0b\u672a\u6682\u505c"},
-        {"thread group number description name", "{0,number,integer}\u3002 {1} {2}"},
-        {"Threadgroup name not specified.", "\u672a\u6307\u5b9a\u7ebf\u7a0b\u7ec4\u540d\u79f0\u3002"},
-        {"Threads must be suspended", "\u5fc5\u987b\u6682\u505c\u7ebf\u7a0b"},
-        {"trace method exit in effect for", "\u5bf9 {0} \u6709\u6548\u8ddf\u8e2a\u65b9\u6cd5\u9000\u51fa"},
-        {"trace method exits in effect", "\u6709\u6548\u8ddf\u8e2a\u65b9\u6cd5\u9000\u51fa"},
-        {"trace methods in effect", "\u6709\u6548\u8ddf\u8e2a\u65b9\u6cd5"},
-        {"trace go method exit in effect for", "\u5bf9 {0} \u6709\u6548\u8ddf\u8e2a go \u65b9\u6cd5\u9000\u51fa"},
-        {"trace go method exits in effect", "\u6709\u6548\u8ddf\u8e2a go \u65b9\u6cd5\u9000\u51fa"},
-        {"trace go methods in effect", "\u6709\u6548\u8ddf\u8e2a go \u65b9\u6cd5"},
-        {"trace not in effect", "\u65e0\u6548\u8ddf\u8e2a"},
-        {"Unable to attach to target VM.", "\u65e0\u6cd5\u8fde\u63a5\u5230\u76ee\u6807 VM\u3002"},
-        {"Unable to display process output:", "\u65e0\u6cd5\u663e\u793a\u8fdb\u7a0b\u8f93\u51fa\uff1a {0}"},
-        {"Unable to launch target VM.", "\u65e0\u6cd5\u542f\u52a8\u76ee\u6807 VM\u3002"},
-        {"Unable to set deferred", "\u65e0\u6cd5\u8bbe\u7f6e\u5ef6\u8fdf\u7684 {0}\uff1a {1}"},
-        {"Unable to set main class and arguments", "\u65e0\u6cd5\u8bbe\u7f6e\u4e3b\u7c7b\u548c\u53c2\u6570"},
-        {"Unable to set", "\u65e0\u6cd5\u8bbe\u7f6e {0}\uff1a {1}"},
-        {"Unexpected event type", "\u610f\u5916\u7684\u4e8b\u4ef6\u7c7b\u578b: {0}"},
-        {"unknown", "\u672a\u77e5"},
-        {"Unmonitoring", "\u672a\u76d1\u89c6 {0} "},
-        {"Unrecognized command.  Try help...", "\u65e0\u6cd5\u8bc6\u522b\u7684\u547d\u4ee4\uff1a \"{0}\" \u3002  \u8bf7\u5c1d\u8bd5\u4f7f\u7528 help..."},
-        {"Usage: catch exception", "\u7528\u6cd5\uff1acatch [uncaught|caught|all] <\u7c7b ID>|<\u7c7b\u6a21\u5f0f>"},
-        {"Usage: ignore exception", "\u7528\u6cd5\uff1aignore [uncaught|caught|all] <\u7c7b ID>|<\u7c7b\u6a21\u5f0f>"},
-        {"Usage: down [n frames]", "\u7528\u6cd5\uff1adown [n \u5e27]"},
-        {"Usage: kill <thread id> <throwable>", "\u7528\u6cd5\uff1akill <\u7ebf\u7a0bID> <throwable>"},
-        {"Usage: read <command-filename>", "\u7528\u6cd5\uff1aread <\u547d\u4ee4\u6587\u4ef6\u540d>"},
-        {"Usage: unmonitor <monitor#>", "\u7528\u6cd5\uff1aunmonitor <\u76d1\u89c6\u5668\u53f7>"},
-        {"Usage: up [n frames]", "\u7528\u6cd5\uff1aup [n \u5e27]"},
-        {"Use java minus X to see", "\u4f7f\u7528 \"java -X\" \u53ef\u4ee5\u67e5\u770b\u53ef\u7528\u7684\u975e\u6807\u51c6\u9009\u9879"},
-        {"Use stop at to set a breakpoint at a line number", "\u4f7f\u7528 \"stop at\" \u53ef\u4ee5\u5728\u67d0\u4e2a\u884c\u53f7\u5904\u8bbe\u7f6e\u65ad\u70b9"},
-        {"VM already running. use cont to continue after events.", "VM \u5df2\u8fd0\u884c\u3002\u4f7f\u7528 \"cont\" \u53ef\u4ee5\u5728\u4e8b\u4ef6\u540e\u7ee7\u7eed\u3002"},
-        {"VM Started:", "VM \u5df2\u542f\u52a8\uff1a "},
-        {"vmstartexception", "VM \u542f\u52a8\u5f02\u5e38\uff1a {0}"},
-        {"Waiting for monitor:", "   \u6b63\u5728\u7b49\u5f85\u76d1\u89c6\u5668\uff1a {0}"},
-        {"Waiting thread:", " \u6b63\u5728\u7b49\u5f85\u7ebf\u7a0b\uff1a {0}"},
-        {"watch accesses of", "\u76d1\u89c6 {0}.{1} \u7684\u8bbf\u95ee"},
-        {"watch modification of", "\u76d1\u89c6 {0}.{1} \u7684\u4fee\u6539"},
+        {"Thread Group:", "\u7EC4{0}:"},
+        {"Thread description name unknownStatus BP",  "  {0} {1}\u672A\u77E5 (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name unknownStatus",     "  {0} {1}\u672A\u77E5"},
+        {"Thread description name zombieStatus BP",   "  {0} {1}\u5904\u4E8E\u50F5\u6B7B\u72B6\u6001 (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name zombieStatus",      "  {0} {1}\u5904\u4E8E\u50F5\u6B7B\u72B6\u6001"},
+        {"Thread description name runningStatus BP",  "  {0} {1}\u6B63\u5728\u8FD0\u884C (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name runningStatus",     "  {0} {1}\u6B63\u5728\u8FD0\u884C"},
+        {"Thread description name sleepingStatus BP", "  {0} {1}\u6B63\u5728\u4F11\u7720 (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name sleepingStatus",    "  {0} {1}\u6B63\u5728\u4F11\u7720"},
+        {"Thread description name waitingStatus BP",  "  {0} {1}\u6B63\u5728\u7B49\u5F85\u76D1\u89C6\u5668 (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name waitingStatus",     "  {0} {1}\u6B63\u5728\u7B49\u5F85\u76D1\u89C6\u5668"},
+        {"Thread description name condWaitstatus BP", "  {0} {1}\u6B63\u5728\u6267\u884C\u6761\u4EF6\u7B49\u5F85 (\u5728\u65AD\u70B9\u5904)"},
+        {"Thread description name condWaitstatus",    "  {0} {1}\u6B63\u5728\u6267\u884C\u6761\u4EF6\u7B49\u5F85"},
+        {"Thread has been resumed", "\u5DF2\u6062\u590D\u7EBF\u7A0B"},
+        {"Thread not suspended", "\u672A\u6302\u8D77\u7EBF\u7A0B"},
+        {"thread group number description name", "{0,number,integer}\u3002{1} {2}"},
+        {"Threadgroup name not specified.", "\u672A\u6307\u5B9A\u7EBF\u7A0B\u7EC4\u540D\u3002"},
+        {"Threads must be suspended", "\u5FC5\u987B\u6302\u8D77\u7EBF\u7A0B"},
+        {"trace method exit in effect for", "\u6B63\u5728\u5BF9{0}\u5B9E\u884C trace method exit"},
+        {"trace method exits in effect", "\u6B63\u5728\u5B9E\u884C trace method exits"},
+        {"trace methods in effect", "\u6B63\u5728\u5B9E\u884C trace methods"},
+        {"trace go method exit in effect for", "\u6B63\u5728\u5BF9{0}\u5B9E\u884C trace go method exit"},
+        {"trace go method exits in effect", "\u6B63\u5728\u5B9E\u884C trace go method exits"},
+        {"trace go methods in effect", "\u6B63\u5728\u5B9E\u884C trace go methods"},
+        {"trace not in effect", "\u672A\u5B9E\u884C trace"},
+        {"Unable to attach to target VM.", "\u65E0\u6CD5\u9644\u52A0\u5230\u76EE\u6807 VM\u3002"},
+        {"Unable to display process output:", "\u65E0\u6CD5\u663E\u793A\u8FDB\u7A0B\u8F93\u51FA: {0}"},
+        {"Unable to launch target VM.", "\u65E0\u6CD5\u542F\u52A8\u76EE\u6807 VM\u3002"},
+        {"Unable to set deferred", "\u65E0\u6CD5\u8BBE\u7F6E\u5EF6\u8FDF\u7684{0}: {1}"},
+        {"Unable to set main class and arguments", "\u65E0\u6CD5\u8BBE\u7F6E\u4E3B\u7C7B\u548C\u53C2\u6570"},
+        {"Unable to set", "\u65E0\u6CD5\u8BBE\u7F6E{0}: {1}"},
+        {"Unexpected event type", "\u610F\u5916\u7684\u4E8B\u4EF6\u7C7B\u578B: {0}"},
+        {"unknown", "\u672A\u77E5"},
+        {"Unmonitoring", "\u53D6\u6D88\u76D1\u89C6{0} "},
+        {"Unrecognized command.  Try help...", "\u65E0\u6CD5\u8BC6\u522B\u7684\u547D\u4EE4: ''{0}''\u3002\u8BF7\u5C1D\u8BD5\u83B7\u5F97\u5E2E\u52A9..."},
+        {"Usage: catch exception", "\u7528\u6CD5: catch [uncaught|caught|all] <class id>|<class pattern>"},
+        {"Usage: ignore exception", "\u7528\u6CD5: ignore [uncaught|caught|all] <class id>|<class pattern>"},
+        {"Usage: down [n frames]", "\u7528\u6CD5: down [n frames]"},
+        {"Usage: kill <thread id> <throwable>", "\u7528\u6CD5: kill <thread id> <throwable>"},
+        {"Usage: read <command-filename>", "\u7528\u6CD5: read <command-filename>"},
+        {"Usage: unmonitor <monitor#>", "\u7528\u6CD5: unmonitor <monitor#>"},
+        {"Usage: up [n frames]", "\u7528\u6CD5: up [n frames]"},
+        {"Use java minus X to see", "\u4F7F\u7528 'java -X' \u53EF\u4EE5\u67E5\u770B\u53EF\u7528\u7684\u975E\u6807\u51C6\u9009\u9879"},
+        {"Use stop at to set a breakpoint at a line number", "\u4F7F\u7528 'stop at' \u53EF\u4EE5\u5728\u884C\u53F7\u5904\u8BBE\u7F6E\u65AD\u70B9"},
+        {"VM already running. use cont to continue after events.", "VM \u5DF2\u5728\u8FD0\u884C\u3002\u8BF7\u4F7F\u7528 'cont' \u4EE5\u5728\u4E8B\u4EF6\u7ED3\u675F\u540E\u7EE7\u7EED\u3002"},
+        {"VM Started:", "VM \u5DF2\u542F\u52A8: "},
+        {"vmstartexception", "VM \u542F\u52A8\u5F02\u5E38\u9519\u8BEF: {0}"},
+        {"Waiting for monitor:", "   \u6B63\u5728\u7B49\u5F85\u76D1\u89C6\u5668: {0}"},
+        {"Waiting thread:", " \u6B63\u5728\u7B49\u5F85\u7EBF\u7A0B: {0}"},
+        {"watch accesses of", "\u76D1\u89C6{0}.{1}\u7684\u8BBF\u95EE"},
+        {"watch modification of", "\u76D1\u89C6{0}.{1}\u7684\u4FEE\u6539"},
         {"zz help text",
-"** \u547d\u4ee4\u5217\u8868 **\n" +
-"connectors                -- \u5217\u51fa\u6b64 VM \u4e2d\u53ef\u7528\u7684\u8fde\u63a5\u5668\u548c\u4f20\u8f93\u5668\n" +
-             "\n" +
-"run [\u7c7b [\u53c2\u6570]]        -- \u5f00\u59cb\u6267\u884c\u5e94\u7528\u7a0b\u5e8f\u7684\u4e3b\u7c7b\n" +
-             "\n" +
-"threads [\u7ebf\u7a0b\u7ec4]     -- \u5217\u51fa\u7ebf\u7a0b\n" +
-"thread <\u7ebf\u7a0b ID>        -- \u8bbe\u7f6e\u9ed8\u8ba4\u7ebf\u7a0b\n" +
-"suspend [\u7ebf\u7a0b ID]    -- \u6682\u505c\u7ebf\u7a0b\uff08\u9ed8\u8ba4\u503c\u4e3a all\uff09\n" +
-"resume [\u7ebf\u7a0b ID]     -- \u6062\u590d\u7ebf\u7a0b\uff08\u9ed8\u8ba4\u503c\u4e3a all\uff09\n" +
-"where [<\u7ebf\u7a0b ID> | all] -- \u8f6c\u50a8\u7ebf\u7a0b\u7684\u5806\u6808\n" +
-"wherei [<\u7ebf\u7a0b ID> | all] -- \u8f6c\u50a8\u7ebf\u7a0b\u7684\u5806\u6808\u4ee5\u53ca pc \u4fe1\u606f\n" +
-"up [n \u5e27]             -- \u5411\u4e0a\u79fb\u52a8\u7ebf\u7a0b\u7684\u5806\u6808\n" +
-"down [n \u5e27]           -- \u5411\u4e0b\u79fb\u52a8\u7ebf\u7a0b\u7684\u5806\u6808\n" +
-"kill <\u7ebf\u7a0b ID> <\u8868\u8fbe\u5f0f>   -- \u4e2d\u6b62\u5177\u6709\u7ed9\u5b9a\u7684\u5f02\u5e38\u5bf9\u8c61\u7684\u7ebf\u7a0b\n" +
-"interrupt <\u7ebf\u7a0b ID>     -- \u4e2d\u65ad\u7ebf\u7a0b\n" +
-             "\n" +
-"print <\u8868\u8fbe\u5f0f>              -- \u8f93\u51fa\u8868\u8fbe\u5f0f\u7684\u503c\n" +
-"dump <\u8868\u8fbe\u5f0f>               -- \u8f93\u51fa\u6240\u6709\u5bf9\u8c61\u4fe1\u606f\n" +
-"eval <\u8868\u8fbe\u5f0f>               -- \u8ba1\u7b97\u8868\u8fbe\u5f0f\u7684\u503c\uff08\u4e0e print \u4f5c\u7528\u76f8\u540c\uff09\n" +
-"set <lvalue> = <\u8868\u8fbe\u5f0f>     -- \u4e3a\u5b57\u6bb5/\u53d8\u91cf/\u6570\u7ec4\u5143\u7d20\u6307\u5b9a\u65b0\u503c\n" +
-"locals                    -- \u8f93\u51fa\u5f53\u524d\u5806\u6808\u5e27\u4e2d\u7684\u6240\u6709\u672c\u5730\u53d8\u91cf\n" +
-             "\n" +
-"classes                   -- \u5217\u51fa\u5f53\u524d\u5df2\u77e5\u7684\u7c7b\n" +
-"class <\u7c7b ID>          -- \u663e\u793a\u5df2\u547d\u540d\u7c7b\u7684\u8be6\u7ec6\u4fe1\u606f\n" +
-"methods <\u7c7b ID>        -- \u5217\u51fa\u7c7b\u7684\u65b9\u6cd5\n" +
-"fields <\u7c7b ID>         -- \u5217\u51fa\u7c7b\u7684\u5b57\u6bb5\n" +
-             "\n" +
-"threadgroups              -- \u5217\u51fa\u7ebf\u7a0b\u7ec4\n" +
-"threadgroup <\u540d\u79f0>        -- \u8bbe\u7f6e\u5f53\u524d\u7ebf\u7a0b\u7ec4\n" +
-             "\n" +
-"stop in <\u7c7b ID>.<\u65b9\u6cd5>[(\u53c2\u6570\u7c7b\u578b,...)]\n" +
-"                          -- \u5728\u65b9\u6cd5\u4e2d\u8bbe\u7f6e\u65ad\u70b9\n" +
-"stop at <\u7c7b ID>:<\u884c> -- \u5728\u884c\u4e2d\u8bbe\u7f6e\u65ad\u70b9\n" +
-"clear <\u7c7b ID>.<\u65b9\u6cd5>[(\u53c2\u6570\u7c7b\u578b,...)]\n" +
-"                          -- \u6e05\u9664\u65b9\u6cd5\u4e2d\u7684\u65ad\u70b9\n" +
-"clear <\u7c7b ID>:<\u884c>   -- \u6e05\u9664\u884c\u4e2d\u7684\u65ad\u70b9\n" +
-"clear                     -- \u5217\u51fa\u65ad\u70b9\n" +
-"catch [uncaught|caught|all] <\u7c7b ID>|<\u7c7b\u6a21\u5f0f>\n" +
-"                          -- \u51fa\u73b0\u6307\u5b9a\u7684\u5f02\u5e38\u65f6\u4e2d\u65ad\n" +
-"ignore [uncaught|caught|all] <\u7c7b ID>|<\u7c7b\u6a21\u5f0f>\n" +
-"                          -- \u5bf9\u4e8e\u6307\u5b9a\u7684\u5f02\u5e38\uff0c\u53d6\u6d88 'catch'\n" +
-"watch [access|all] <\u7c7b ID>.<\u5b57\u6bb5\u540d>\n" +
-"                          -- \u76d1\u89c6\u5bf9\u5b57\u6bb5\u7684\u8bbf\u95ee/\u4fee\u6539\n" +
-"unwatch [access|all] <\u7c7b ID>.<\u5b57\u6bb5\u540d>\n" +
-"                          -- \u505c\u6b62\u76d1\u89c6\u5bf9\u5b57\u6bb5\u7684\u8bbf\u95ee/\u4fee\u6539\n" +
-"trace [go] methods [thread]\n" +
-"                          -- \u8ddf\u8e2a\u65b9\u6cd5\u7684\u8fdb\u5165\u548c\u9000\u51fa\u3002\n" +
-"                          -- \u9664\u975e\u6307\u5b9a 'go'\uff0c\u5426\u5219\u6240\u6709\u7ebf\u7a0b\u90fd\u5c06\u6682\u505c\n" +
-"trace [go] method exit | exits [thread]\n" +
-"                          -- \u8ddf\u8e2a\u5f53\u524d\u65b9\u6cd5\u7684\u9000\u51fa\u6216\u6240\u6709\u65b9\u6cd5\u7684\u9000\u51fa\n" +
-"                          -- \u9664\u975e\u6307\u5b9a 'go'\uff0c\u5426\u5219\u6240\u6709\u7ebf\u7a0b\u90fd\u5c06\u6682\u505c\n" +
-"untrace [\u65b9\u6cd5]         -- \u505c\u6b62\u8ddf\u8e2a\u65b9\u6cd5\u7684\u8fdb\u5165\u548c/\u6216\u9000\u51fa\n" +
-"step                      -- \u6267\u884c\u5f53\u524d\u884c\n" +
-"step up                   -- \u6267\u884c\u5230\u5f53\u524d\u65b9\u6cd5\u8fd4\u56de\u5176\u8c03\u7528\u65b9\n" +
-"stepi                     -- \u6267\u884c\u5f53\u524d\u6307\u4ee4\n" +
-"next                      -- \u8df3\u8fc7\u4e00\u884c\uff08\u8de8\u8fc7\u8c03\u7528\uff09\n" +
-"cont                      -- \u4ece\u65ad\u70b9\u5904\u7ee7\u7eed\u6267\u884c\n" +
-             "\n" +
-"list [line number|method] -- \u8f93\u51fa\u6e90\u4ee3\u7801\n" +
-"use\uff08\u6216 sourcepath\uff09[\u6e90\u6587\u4ef6\u8def\u5f84]\n" +
-"                          -- \u663e\u793a\u6216\u66f4\u6539\u6e90\u8def\u5f84\n" +
-"exclude [<\u7c7b\u6a21\u5f0f>, ...|\u201c\u65e0\u201d]\n" +
-"                          -- \u4e0d\u62a5\u544a\u6307\u5b9a\u7c7b\u7684\u6b65\u9aa4\u6216\u65b9\u6cd5\u4e8b\u4ef6\n" +
-"classpath                 -- \u4ece\u76ee\u6807 VM \u8f93\u51fa\u7c7b\u8def\u5f84\u4fe1\u606f\n" +
-             "\n" +
-"monitor <\u547d\u4ee4>         -- \u6bcf\u6b21\u7a0b\u5e8f\u505c\u6b62\u65f6\u6267\u884c\u547d\u4ee4\n" +
-"monitor                   -- \u5217\u51fa\u76d1\u89c6\u5668\n" +
-"unmonitor <\u76d1\u89c6\u5668\u53f7>      -- \u5220\u9664\u67d0\u4e2a\u76d1\u89c6\u5668\n" +
-"read <\u6587\u4ef6\u540d>           -- \u8bfb\u53d6\u5e76\u6267\u884c\u67d0\u4e2a\u547d\u4ee4\u6587\u4ef6\n" +
-             "\n" +
-"lock <\u8868\u8fbe\u5f0f>               -- \u8f93\u51fa\u5bf9\u8c61\u7684\u9501\u4fe1\u606f\n" +
-"threadlocks [\u7ebf\u7a0b ID]   -- \u8f93\u51fa\u7ebf\u7a0b\u7684\u9501\u4fe1\u606f\n" +
-             "\n" +
-"pop                       -- \u5f39\u51fa\u6574\u4e2a\u5806\u6808\uff0c\u4e14\u5305\u542b\u5f53\u524d\u5e27\n" +
-"reenter                   -- \u4e0e pop \u4f5c\u7528\u76f8\u540c\uff0c\u4f46\u91cd\u65b0\u8fdb\u5165\u5f53\u524d\u5e27\n" +
-"redefine <\u7c7b ID> <\u7c7b\u6587\u4ef6\u540d>\n" +
-"                          -- \u91cd\u65b0\u5b9a\u4e49\u7c7b\u4ee3\u7801\n" +
-             "\n" +
-"disablegc <\u8868\u8fbe\u5f0f>          -- \u7981\u6b62\u5bf9\u8c61\u7684\u5783\u573e\u56de\u6536\n" +
-"enablegc <\u8868\u8fbe\u5f0f>           -- \u5141\u8bb8\u5bf9\u8c61\u7684\u5783\u573e\u56de\u6536\n" +
-             "\n" +
-"!!                        -- \u91cd\u590d\u6267\u884c\u6700\u540e\u4e00\u4e2a\u547d\u4ee4\n" +
-"<n> <\u547d\u4ee4>             -- \u5c06\u547d\u4ee4\u91cd\u590d\u6267\u884c n \u6b21\n" +
-"# <\u547d\u4ee4>               -- \u653e\u5f03\uff08\u4e0d\u6267\u884c\uff09\n" +
-"help\uff08\u6216 ?\uff09               -- \u5217\u51fa\u547d\u4ee4\n" +
-"version                   -- \u8f93\u51fa\u7248\u672c\u4fe1\u606f\n" +
-"exit\uff08\u6216 quit\uff09            -- \u9000\u51fa\u8c03\u8bd5\u5668\n" +
-             "\n" +
-"<\u7c7b ID>: \u5e26\u6709\u8f6f\u4ef6\u5305\u9650\u5b9a\u7b26\u7684\u5b8c\u6574\u7c7b\u540d\n" +
-"<\u7c7b\u6a21\u5f0f>: \u5e26\u6709\u524d\u5bfc\u6216\u540e\u7f00\u901a\u914d\u7b26 (*) \u7684\u7c7b\u540d\n" +
-"<\u7ebf\u7a0b ID>: 'threads' \u547d\u4ee4\u4e2d\u6240\u62a5\u544a\u7684\u7ebf\u7a0b\u53f7\n" +
-"<\u8868\u8fbe\u5f0f>: Java(TM) \u7f16\u7a0b\u8bed\u8a00\u8868\u8fbe\u5f0f\u3002\n" +
-"\u652f\u6301\u5927\u591a\u6570\u5e38\u89c1\u8bed\u6cd5\u3002\n" +
-             "\n" +
-"\u53ef\u4ee5\u5c06\u542f\u52a8\u547d\u4ee4\u7f6e\u4e8e \"jdb.ini\" \u6216 \".jdbrc\" \u4e4b\u4e2d\n" +
-"\uff08\u4e24\u8005\u4f4d\u4e8e user.home \u6216 user.dir \u4e2d\uff09"},
+             "** \u547D\u4EE4\u5217\u8868 **\nconnectors                -- \u5217\u51FA\u6B64 VM \u4E2D\u53EF\u7528\u7684\u8FDE\u63A5\u5668\u548C\u4F20\u8F93\n\nrun [class [args]]        -- \u5F00\u59CB\u6267\u884C\u5E94\u7528\u7A0B\u5E8F\u7684\u4E3B\u7C7B\n\nthreads [threadgroup]     -- \u5217\u51FA\u7EBF\u7A0B\nthread <thread id>        -- \u8BBE\u7F6E\u9ED8\u8BA4\u7EBF\u7A0B\nsuspend [thread id(s)]    -- \u6302\u8D77\u7EBF\u7A0B (\u9ED8\u8BA4\u503C: all)\nresume [thread id(s)]     -- \u6062\u590D\u7EBF\u7A0B (\u9ED8\u8BA4\u503C: all)\nwhere [<thread id> | all] -- \u8F6C\u50A8\u7EBF\u7A0B\u7684\u5806\u6808\nwherei [<thread id> | all]-- \u8F6C\u50A8\u7EBF\u7A0B\u7684\u5806\u6808, \u4EE5\u53CA pc \u4FE1\u606F\nup [n frames]             -- \u4E0A\u79FB\u7EBF\u7A0B\u7684\u5806\u6808\ndown [n frames]           -- \u4E0B\u79FB\u7EBF\u7A0B\u7684\u5806\u6808\nkill <thread id> <expr>   -- \u7EC8\u6B62\u5177\u6709\u7ED9\u5B9A\u7684\u5F02\u5E38\u9519\u8BEF\u5BF9\u8C61\u7684\u7EBF\u7A0B\ninterrupt <thread id>     -- \u4E2D\u65AD\u7EBF\u7A0B\n\nprint <expr>              -- \u8F93\u51FA\u8868\u8FBE\u5F0F\u7684\u503C\ndump <expr>               -- \u8F93\u51FA\u6240\u6709\u5BF9\u8C61\u4FE1\u606F\neval <expr>               -- \u5BF9\u8868\u8FBE\u5F0F\u6C42\u503C (\u4E0E print \u76F8\u540C)\nset <lvalue> = <expr>     -- \u5411\u5B57\u6BB5/\u53D8\u91CF/\u6570\u7EC4\u5143\u7D20\u5206\u914D\u65B0\u503C\nlocals                    -- \u8F93\u51FA\u5F53\u524D\u5806\u6808\u5E27\u4E2D\u7684\u6240\u6709\u672C\u5730\u53D8\u91CF\n\nclasses                   -- \u5217\u51FA\u5F53\u524D\u5DF2\u77E5\u7684\u7C7B\nclass <class id>          -- \u663E\u793A\u5DF2\u547D\u540D\u7C7B\u7684\u8BE6\u7EC6\u8D44\u6599\nmethods <class id>        -- \u5217\u51FA\u7C7B\u7684\u65B9\u6CD5\nfields <class id>         -- \u5217\u51FA\u7C7B\u7684\u5B57\u6BB5\n\nthreadgroups              -- \u5217\u51FA\u7EBF\u7A0B\u7EC4\nthreadgroup <name>        -- \u8BBE\u7F6E\u5F53\u524D\u7EBF\u7A0B\u7EC4\n\nstop in <class id>.<method>[(argument_type,...)]\n                          -- \u5728\u65B9\u6CD5\u4E2D\u8BBE\u7F6E\u65AD\u70B9\nstop at <class id>:<line> -- \u5728\u884C\u4E2D\u8BBE\u7F6E\u65AD\u70B9\nclear <class id>.<method>[(argument_type,...)]\n                          -- \u6E05\u9664\u65B9\u6CD5\u4E2D\u7684\u65AD\u70B9\nclear <class id>:<line>   -- \u6E05\u9664\u884C\u4E2D\u7684\u65AD\u70B9\nclear                     -- \u5217\u51FA\u65AD\u70B9\ncatch [uncaught|caught|all] <class id>|<class pattern>\n                          -- \u51FA\u73B0\u6307\u5B9A\u7684\u5F02\u5E38\u9519\u8BEF\u65F6\u4E2D\u65AD\nignore [uncaught|caught|all] <class id>|<class pattern>\n                          -- \u5BF9\u4E8E\u6307\u5B9A\u7684\u5F02\u5E38\u9519\u8BEF, \u53D6\u6D88 'catch'\nwatch [access|all] <class id>.<field name>\n                          -- \u76D1\u89C6\u5BF9\u5B57\u6BB5\u7684\u8BBF\u95EE/\u4FEE\u6539\nunwatch [access|all] <class id>.<field name>\n                          -- \u505C\u6B62\u76D1\u89C6\u5BF9\u5B57\u6BB5\u7684\u8BBF\u95EE/\u4FEE\u6539\ntrace [go] methods [thread]\n                          -- \u8DDF\u8E2A\u65B9\u6CD5\u8FDB\u5165\u548C\u9000\u51FA\u3002\n                          -- \u9664\u975E\u6307\u5B9A 'go', \u5426\u5219\u6302\u8D77\u6240\u6709\u7EBF\u7A0B\ntrace [go] method exit | exits [thread]\n                          -- \u8DDF\u8E2A\u5F53\u524D\u65B9\u6CD5\u7684\u9000\u51FA, \u6216\u8005\u6240\u6709\u65B9\u6CD5\u7684\u9000\u51FA\n                          -- \u9664\u975E\u6307\u5B9A 'go', \u5426\u5219\u6302\u8D77\u6240\u6709\u7EBF\u7A0B\nuntrace [methods]         -- \u505C\u6B62\u8DDF\u8E2A\u65B9\u6CD5\u8FDB\u5165\u548C/\u6216\u9000\u51FA\nstep                      -- \u6267\u884C\u5F53\u524D\u884C\nstep up                   -- \u4E00\u76F4\u6267\u884C, \u76F4\u5230\u5F53\u524D\u65B9\u6CD5\u8FD4\u56DE\u5230\u5176\u8C03\u7528\u65B9\nstepi                     -- \u6267\u884C\u5F53\u524D\u6307\u4EE4\nnext                      -- \u6B65\u8FDB\u4E00\u884C (\u6B65\u8FC7\u8C03\u7528)\ncont                      -- \u4ECE\u65AD\u70B9\u5904\u7EE7\u7EED\u6267\u884C\n\nlist [line number|method] -- \u8F93\u51FA\u6E90\u4EE3\u7801\nuse (\u6216 sourcepath) [source file path]\n                          -- \u663E\u793A\u6216\u66F4\u6539\u6E90\u8DEF\u5F84\nexclude [<class pattern>, ... | \"none\"]\n                          -- \u5BF9\u4E8E\u6307\u5B9A\u7684\u7C7B, \u4E0D\u62A5\u544A\u6B65\u9AA4\u6216\u65B9\u6CD5\u4E8B\u4EF6\nclasspath                 -- \u4ECE\u76EE\u6807 VM \u8F93\u51FA\u7C7B\u8DEF\u5F84\u4FE1\u606F\n\nmonitor <command>         -- \u6BCF\u6B21\u7A0B\u5E8F\u505C\u6B62\u65F6\u6267\u884C\u547D\u4EE4\nmonitor                   -- \u5217\u51FA\u76D1\u89C6\u5668\nunmonitor <monitor#>      -- \u5220\u9664\u76D1\u89C6\u5668\nread <filename>           -- \u8BFB\u53D6\u5E76\u6267\u884C\u547D\u4EE4\u6587\u4EF6\n\nlock <expr>               -- \u8F93\u51FA\u5BF9\u8C61\u7684\u9501\u4FE1\u606F\nthreadlocks [thread id]   -- \u8F93\u51FA\u7EBF\u7A0B\u7684\u9501\u4FE1\u606F\n\npop                       -- \u901A\u8FC7\u5F53\u524D\u5E27\u51FA\u6808, \u4E14\u5305\u542B\u5F53\u524D\u5E27\nreenter                   -- \u4E0E pop \u76F8\u540C, \u4F46\u91CD\u65B0\u8FDB\u5165\u5F53\u524D\u5E27\nredefine <class id> <class file name>\n                          -- \u91CD\u65B0\u5B9A\u4E49\u7C7B\u7684\u4EE3\u7801\n\ndisablegc <expr>          -- \u7981\u6B62\u5BF9\u8C61\u7684\u5783\u573E\u6536\u96C6\nenablegc <expr>           -- \u5141\u8BB8\u5BF9\u8C61\u7684\u5783\u573E\u6536\u96C6\n\n!!                        -- \u91CD\u590D\u6267\u884C\u6700\u540E\u4E00\u4E2A\u547D\u4EE4\n<n> <command>             -- \u5C06\u547D\u4EE4\u91CD\u590D\u6267\u884C n \u6B21\n# <command>               -- \u653E\u5F03 (\u65E0\u64CD\u4F5C)\nhelp (\u6216 ?)               -- \u5217\u51FA\u547D\u4EE4\nversion                   -- \u8F93\u51FA\u7248\u672C\u4FE1\u606F\nexit (\u6216 quit)            -- \u9000\u51FA\u8C03\u8BD5\u5668\n\n<class id>: \u5E26\u6709\u7A0B\u5E8F\u5305\u9650\u5B9A\u7B26\u7684\u5B8C\u6574\u7C7B\u540D\n<class pattern>: \u5E26\u6709\u524D\u5BFC\u6216\u5C3E\u968F\u901A\u914D\u7B26 ('*') \u7684\u7C7B\u540D\n<thread id>: 'threads' \u547D\u4EE4\u4E2D\u62A5\u544A\u7684\u7EBF\u7A0B\u7F16\u53F7\n<expr>: Java(TM) \u7F16\u7A0B\u8BED\u8A00\u8868\u8FBE\u5F0F\u3002\n\u652F\u6301\u5927\u591A\u6570\u5E38\u89C1\u8BED\u6CD5\u3002\n\n\u53EF\u4EE5\u5C06\u542F\u52A8\u547D\u4EE4\u7F6E\u4E8E \"jdb.ini\" \u6216 \".jdbrc\" \u4E2D\n\u4F4D\u4E8E user.home \u6216 user.dir \u4E2D"},
         {"zz usage text",
-"\u7528\u6cd5:{0} <\u9009\u9879> <\u7c7b> <\u53c2\u6570>\n" +
-             "\n" +
-"\u5176\u4e2d\u9009\u9879\u5305\u62ec:\n" +
-"    -help             \u8f93\u51fa\u6b64\u6d88\u606f\u5e76\u9000\u51fa\n" +
-"    -sourcepath <\u4ee5 \"{1}\" \u5206\u9694\u7684\u76ee\u5f55>\n" +
-"                      \u5728\u5176\u4e2d\u67e5\u627e\u6e90\u6587\u4ef6\u7684\u76ee\u5f55\n" +
-"    -attach <\u5730\u5740>\n" +
-"                      \u4f7f\u7528\u6807\u51c6\u8fde\u63a5\u5668\u8fde\u63a5\u5230\u6b63\u5728\u6307\u5b9a\u5730\u5740\u8fd0\u884c\u7684 VM\n" +
-"    -listen <\u5730\u5740>\n" +
-"                      \u7b49\u5f85\u6b63\u5728\u6307\u5b9a\u5730\u5740\u8fd0\u884c\u7684 VM \u4f7f\u7528\u6807\u51c6\u8fde\u63a5\u5668\u8fdb\u884c\u8fde\u63a5\n" +
-"    -listenany\n" +
-"                      \u7b49\u5f85\u6b63\u5728\u4efb\u610f\u53ef\u7528\u5730\u5740\u8fd0\u884c\u7684 VM \u4f7f\u7528\u6807\u51c6\u8fde\u63a5\u5668\u8fdb\u884c\u8fde\u63a5\n" +
-"    -launch\n" +
-"                      \u7acb\u5373\u542f\u52a8 VM\uff0c\u800c\u4e0d\u7b49\u5f85 ''run'' \u547d\u4ee4\n" +
-"    -listconnectors   \u5217\u51fa\u6b64 VM \u4e2d\u53ef\u7528\u7684\u8fde\u63a5\u5668\n" +
-"    -connect <\u8fde\u63a5\u5668\u540d\u79f0>:<\u540d\u79f0 1>=<\u503c 1>,...\n" +
-"                      \u4f7f\u7528\u547d\u540d\u7684\u8fde\u63a5\u5668\u548c\u5217\u51fa\u7684\u53c2\u6570\u503c\u8fde\u63a5\u5230\u76ee\u6807 VM\n" +
-"    -dbgtrace [\u6807\u5fd7] \u8f93\u51fa\u7528\u4e8e\u8c03\u8bd5 {0} \u7684\u4fe1\u606f\n" +
-"    -tclient          \u5728 Hotspot(TM) Performance Engine\uff08\u5ba2\u6237\u673a\uff09\u4e2d\u8fd0\u884c\u5e94\u7528\u7a0b\u5e8f\n" +
-"    -tserver          \u5728 Hotspot(TM) Performance Engine\uff08\u670d\u52a1\u5668\uff09\u4e2d\u8fd0\u884c\u5e94\u7528\u7a0b\u5e8f\n" +
-             "\n" +
-"\u8f6c\u53d1\u7ed9\u88ab\u8c03\u8bd5\u8fdb\u7a0b\u7684\u9009\u9879:\n" +
-"    -v -verbose[:class|gc|jni]\n" +
-"                      \u542f\u7528\u8be6\u7ec6\u6a21\u5f0f\n" +
-"    -D<\u540d\u79f0>=<\u503c>  \u8bbe\u7f6e\u7cfb\u7edf\u5c5e\u6027\n" +
-"    -classpath <\u4ee5 \"{1}\" \u5206\u9694\u7684\u76ee\u5f55>\n" +
-"                      \u5217\u51fa\u8981\u5728\u5176\u4e2d\u67e5\u627e\u7c7b\u7684\u76ee\u5f55\n" +
-"    -X<\u9009\u9879>        \u975e\u6807\u51c6\u76ee\u6807 VM \u9009\u9879\n" +
-             "\n" +
-"<\u7c7b> \u662f\u8981\u5f00\u59cb\u8c03\u8bd5\u7684\u7c7b\u7684\u540d\u79f0\n" +
-"<\u53c2\u6570> \u662f\u4f20\u9012\u7ed9 <\u7c7b> \u7684 main() \u65b9\u6cd5\u7684\u53c2\u6570\n" +
-             "\n" +
-"\u8981\u83b7\u5f97\u547d\u4ee4\u5e2e\u52a9\uff0c\u8bf7\u5728 {0} \u63d0\u793a\u7b26\u4e0b\u952e\u5165 ''help''"},
+             "\u7528\u6CD5: {0} <options> <class> <arguments>\n\n\u5176\u4E2D, \u9009\u9879\u5305\u62EC:\n    -help             \u8F93\u51FA\u6B64\u6D88\u606F\u5E76\u9000\u51FA\n    -sourcepath <\u7531 \"{1}\" \u5206\u9694\u7684\u76EE\u5F55>\n                      \u8981\u5728\u5176\u4E2D\u67E5\u627E\u6E90\u6587\u4EF6\u7684\u76EE\u5F55\n    -attach <address>\n                      \u4F7F\u7528\u6807\u51C6\u8FDE\u63A5\u5668\u9644\u52A0\u5230\u6307\u5B9A\u5730\u5740\u5904\u6B63\u5728\u8FD0\u884C\u7684 VM\n    -listen <address>\n                      \u7B49\u5F85\u6B63\u5728\u8FD0\u884C\u7684 VM \u4F7F\u7528\u6807\u51C6\u8FDE\u63A5\u5668\u5728\u6307\u5B9A\u5730\u5740\u5904\u8FDE\u63A5\n    -listenany\n                      \u7B49\u5F85\u6B63\u5728\u8FD0\u884C\u7684 VM \u4F7F\u7528\u6807\u51C6\u8FDE\u63A5\u5668\u5728\u4EFB\u4F55\u53EF\u7528\u5730\u5740\u5904\u8FDE\u63A5\n    -launch\n                      \u7ACB\u5373\u542F\u52A8 VM \u800C\u4E0D\u662F\u7B49\u5F85 ''run'' \u547D\u4EE4\n    -listconnectors   \u5217\u51FA\u6B64 VM \u4E2D\u7684\u53EF\u7528\u8FDE\u63A5\u5668\n    -connect <connector-name>:<name1>=<value1>,...\n                      \u4F7F\u7528\u6240\u5217\u53C2\u6570\u503C\u901A\u8FC7\u6307\u5B9A\u7684\u8FDE\u63A5\u5668\u8FDE\u63A5\u5230\u76EE\u6807 VM\n    -dbgtrace [flags] \u8F93\u51FA\u4FE1\u606F\u4F9B\u8C03\u8BD5{0}\n    -tclient          \u5728 HotSpot(TM) \u5BA2\u6237\u673A\u7F16\u8BD1\u5668\u4E2D\u8FD0\u884C\u5E94\u7528\u7A0B\u5E8F\n    -tserver          \u5728 HotSpot(TM) \u670D\u52A1\u5668\u7F16\u8BD1\u5668\u4E2D\u8FD0\u884C\u5E94\u7528\u7A0B\u5E8F\n\n\u8F6C\u53D1\u5230\u88AB\u8C03\u8BD5\u8FDB\u7A0B\u7684\u9009\u9879:\n    -v -verbose[:class|gc|jni]\n                      \u542F\u7528\u8BE6\u7EC6\u6A21\u5F0F\n    -D<name>=<value>  \u8BBE\u7F6E\u7CFB\u7EDF\u5C5E\u6027\n    -classpath <\u7531 \"{1}\" \u5206\u9694\u7684\u76EE\u5F55>\n                      \u5217\u51FA\u8981\u5728\u5176\u4E2D\u67E5\u627E\u7C7B\u7684\u76EE\u5F55\n    -X<option>        \u975E\u6807\u51C6\u76EE\u6807 VM \u9009\u9879\n\n<class> \u662F\u8981\u5F00\u59CB\u8C03\u8BD5\u7684\u7C7B\u7684\u540D\u79F0\n<arguments> \u662F\u4F20\u9012\u5230 <class> \u7684 main() \u65B9\u6CD5\u7684\u53C2\u6570\n\n\u8981\u83B7\u5F97\u547D\u4EE4\u7684\u5E2E\u52A9, \u8BF7\u5728{0}\u63D0\u793A\u4E0B\u952E\u5165 ''help''"},
         // END OF MATERIAL TO LOCALIZE
         };
+
+        return temp;
     }
 }

@@ -23,6 +23,7 @@
  * questions.
  */
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -45,6 +46,7 @@ BEGIN
                     12, 100, 265, 14
     PUSHBUTTON	    "取消",  2, 285, 100, 46, 14
 END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -78,34 +80,34 @@ BEGIN
     IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "無法連線至網際網路"
     IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "伺服器錯誤 (錯誤 %s)"
     IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "無法使用服務 (錯誤 %s)"
-    IDS_HTTP_INSTRUCTION_FORBIDDEN            "拒絕或禁止存取 (錯誤 %s)"
-    IDS_HTTP_STATUS_OTHER                     "在此請求期間發生錯誤。是否要重試請求？"
+    IDS_HTTP_INSTRUCTION_FORBIDDEN            "拒絕或禁止存取  (錯誤 %s)"
+    IDS_HTTP_STATUS_OTHER                     "在此要求期間發生錯誤。是否要重試要求？"
 
 // HTTP status code
-    IDS_HTTP_STATUS_REQUEST_TIMEOUT "伺服器等待請求時出現逾時。"
-    IDS_HTTP_STATUS_FORBIDDEN		"伺服器瞭解該請求，但正在拒絕實現它。"
-    IDS_HTTP_STATUS_SERVER_ERROR	"伺服器遇到阻止其實現請求的未預期條件。"
-    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"服務暫時超載。"
+    IDS_HTTP_STATUS_REQUEST_TIMEOUT "用來下載要求元件的伺服器沒有回應，而且連線連線逾時。是否要重試連線？"
+    IDS_HTTP_STATUS_FORBIDDEN		"您沒有權限存取伺服器，以便下載應用程式要求的元件。是否要重試存取伺服器？"
+    IDS_HTTP_STATUS_SERVER_ERROR	"伺服器發生錯誤，而且無法完成要求。是否要重試要求？"
+    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"要求的服務暫時無法使用。是否要重試要求？"
 
 
     IDS_DOWNLOAD_STATUS_RETRY		"伺服器目前處於忙碌狀態，請在 %ld 秒後重試..."
-
-    IDS_ERROR_CAPTION               "錯誤 - Java Kernel"
-    IDS_HOURSMINUTESECOND	    "預估剩餘時間：%d 小時 %d 分 %.0f 秒"
-    IDS_HOURMINUTESECOND	    "預估剩餘時間：%d 小時 %d 分 %.0f 秒"
-    IDS_MINUTESECOND 		    "預估剩餘時間：%d 分 %.0f 秒"
-    IDS_SECOND                      "預估剩餘時間：%.0f 秒"
-    IDS_DISK_FULL_ERROR_CAPTION     "磁碟已滿"
-    IDS_DISK_FULL_ERROR             "由於磁碟已滿，Java Kernel 無法下載所需的元件。是否要重試？"
-    IDS_DISK_WRITE_ERROR_CAPTION    "磁碟寫入錯誤"
-    IDS_DISK_WRITE_ERROR            "Java Kernel 在寫入至磁碟時遇到錯誤。是否要重試？"
-    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "在系統目前的網際網路連線設定下，Java Kernel 無法繼續執行。在 Windows「控制台」中，請核對「網際網路選項」->「連線」，以確定設定和代理伺服器資訊正確。"
+  
+    IDS_ERROR_CAPTION               "Java 安裝程式"
+    IDS_HOURSMINUTESECOND	    "預估剩餘時間: %d 小時 %d 分 %.0f 秒"
+    IDS_HOURMINUTESECOND	    "預估剩餘時間: %d 小時 %d 分 %.0f 秒"
+    IDS_MINUTESECOND 		    "預估剩餘時間: %d 分 %.0f 秒"
+    IDS_SECOND                      "預估剩餘時間: %.0f 秒"
+    IDS_DISK_FULL_ERROR_CAPTION     "磁碟已滿 %s"
+    IDS_DISK_FULL_ERROR             "磁碟空間不足，無法下載所需的元件。請清除磁碟空間然後再重試。"
+    IDS_DISK_WRITE_ERROR_CAPTION    "無法寫入磁碟 %s"
+    IDS_DISK_WRITE_ERROR            "寫入至磁碟時發生錯誤。請檢查磁碟沒有寫入保護。"
+    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java 無法連線至網路網路。請檢查網際網路連線設定是否正確 (Windows「控制台」的「網際網路選項」 > 「連線」)，及您的防火牆是否允許 java.exe 存取網際網路。"
 
     IDS_DOWNLOAD_RETRY             "下載錯誤"
     IDS_DOWNLOAD_RETRY_TEXT        "下載某些所需元件時發生錯誤。是否要重試下載這些元件？"
 
     IDS_DOWNLOAD                   "正在安裝其他元件"
-	IDS_DOWNLOAD_UNPACKING         "正在解壓縮束"
+    IDS_DOWNLOAD_UNPACKING         "正在解壓縮套件組合"
     IDS_DOWNLOAD_TEXT              "下載並安裝其他所需元件後，Java 應用程式將啟動。"
     
     IDS_FILE_UPDATE_ERROR          "更新 %s%s 時發生錯誤。"

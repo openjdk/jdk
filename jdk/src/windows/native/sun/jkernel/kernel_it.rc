@@ -23,6 +23,7 @@
  * questions.
  */
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -36,7 +37,7 @@ EXSTYLE WS_EX_APPWINDOW
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "", IDC_DOWNLOAD_MASTHEAD, 0, 0, 340, 39
-    LTEXT           "", IDC_MASTHEAD_TEXT, 60, 4, 220, 30
+    LTEXT           "", IDC_MASTHEAD_TEXT, 60, 14, 200, 12
     CONTROL         "", IDC_STATIC,"Static", SS_BLACKFRAME | SS_SUNKEN,
                     0, 39, 340, 1
     LTEXT           "", IDC_DOWNLOAD_TEXT, 12, 60, 316, 20
@@ -45,6 +46,7 @@ BEGIN
                     12, 100, 265, 14
     PUSHBUTTON	    "Annulla",  2, 285, 100, 46, 14
 END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -74,47 +76,47 @@ BEGIN
     IDS_DOWNLOAD_CANCEL_MESSAGE   "Se si annulla l'installazione di componenti aggiuntivi necessari per l'applicazione, quest'ultima potrebbe chiudersi.\n\nAnnullare l'installazione di componenti aggiuntivi?"
     IDS_DOWNLOAD_CANCEL_CAPTION   "Annulla - Componenti aggiuntivi"
     IDS_DOWNLOAD_CANCEL_INSTRUCTION   ""
-    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "Timeout della connessione"
-    IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "Impossibile stabilire una connessione a Internet"
-    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "Errore del server (errore %s)"
-    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "Servizio non disponibile (errore %s)"
-    IDS_HTTP_INSTRUCTION_FORBIDDEN            "Accesso negato o vietato (errore %s)"
-    IDS_HTTP_STATUS_OTHER                     "Errore durante la richiesta. Provare a reinviare la richiesta?"
+    IDS_HTTP_INSTRUCTION_REQUEST_TIMEOUT      "Timeout connessione"
+    IDS_HTTP_INSTRUCTION_SERVER_NOT_REACHABLE "Impossibile eseguire la connessione a Internet"
+    IDS_HTTP_INSTRUCTION_UNKNOWN_ERROR        "Errore server (Errore %s)"
+    IDS_HTTP_INSTRUCTION_SERVICE_UNAVAIL      "Servizio non disponibile (Errore %s)"
+    IDS_HTTP_INSTRUCTION_FORBIDDEN            "Accesso negato o non consentito (Errore %s)"
+    IDS_HTTP_STATUS_OTHER                     "Si è verificato un errore durante la richiesta corrente. Riprovare?"
 
 // HTTP status code
-    IDS_HTTP_STATUS_REQUEST_TIMEOUT "Tempo scaduto del server in attesa della richiesta."
-    IDS_HTTP_STATUS_FORBIDDEN		"Il server ha ricevuto la richiesta ma non ne consente l'elaborazione."
+    IDS_HTTP_STATUS_REQUEST_TIMEOUT "Il server utilizzato per scaricare i componenti richiesti non risponde. Timeout della connessione. Riprovare a connettersi?"
+    IDS_HTTP_STATUS_FORBIDDEN		"Non si dispone dell'autorizzazione ad accedere al server per scaricare i componenti richiesti dall'applicazione. Riprovare ad accedere al server?"
     IDS_HTTP_STATUS_SERVER_ERROR	"Il server ha rilevato una condizione imprevista che ha impedito di soddisfare la richiesta."
-    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"Il servizio è temporaneamente sovraccarico."
+    IDS_HTTP_STATUS_SERVICE_UNAVAIL	"Il servizio richiesto è temporaneamente non disponibile. Riprovare?"
 
 
     IDS_DOWNLOAD_STATUS_RETRY		"Server occupato, riprovare tra %ld secondi..."
-
-    IDS_ERROR_CAPTION               "Errore - Java Kernel"
+  
+    IDS_ERROR_CAPTION               "Installer Java"
     IDS_HOURSMINUTESECOND	    "Tempo rimanente previsto: %d ore %d minuti %.0f secondi"
     IDS_HOURMINUTESECOND	    "Tempo rimanente previsto: %d ora %d minuti %.0f secondi"
     IDS_MINUTESECOND 		    "Tempo rimanente previsto: %d minuti %.0f secondi"
     IDS_SECOND                      "Tempo rimanente previsto: %.0f secondi"
-    IDS_DISK_FULL_ERROR_CAPTION     "Disco pieno"
-    IDS_DISK_FULL_ERROR             "Java Kernel non ha effettuato il download dei componenti necessari perchÃ© il disco Ã¨ pieno.  Riprovare?"
-    IDS_DISK_WRITE_ERROR_CAPTION    "Errore di scrittura sul disco"
-    IDS_DISK_WRITE_ERROR            "Java Kernel ha rilevato un errore durante la scrittura sul disco.  Riprovare?"
-    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Non è possibile utilizzare Java Kernel con le impostazioni di connessione Internet attive nel sistema.  Nel Pannello di controllo di Windows, selezionare Opzioni Internet -> Connessioni per controllare che le impostazioni e le informazioni sul proxy siano corrette."
+    IDS_DISK_FULL_ERROR_CAPTION     "Disco pieno %s"
+    IDS_DISK_FULL_ERROR             "Non esiste spazio sufficiente su disco per scaricare i componenti richiesti. Liberare spazio sul disco e riprovare."
+    IDS_DISK_WRITE_ERROR_CAPTION    "Impossibile scrivere sul disco %s"
+    IDS_DISK_WRITE_ERROR            "Si è verificato un errore durante la scrittura sul disco. Verificare che il disco non sia protetto in scrittura."
+    IDS_HTTP_STATUS_SERVER_NOT_REACHABLE "Java non è in grado di eseguire la connessione a Internet. Verificare che le impostazioni di connessione a Internet siano corrette nel Pannello di controllo di Windows selezionando Opzioni Internet -> Connessioni e che il firewall consenta l'esecuzione di java.exe per l'accesso a Internet."
 
-    IDS_DOWNLOAD_RETRY             "Errore di download"
-    IDS_DOWNLOAD_RETRY_TEXT        "Si è verificato un errore durante il download di alcuni componenti richiesti. Ritentare il download di tali componenti?"
+    IDS_DOWNLOAD_RETRY             "Errore di scaricamento"
+    IDS_DOWNLOAD_RETRY_TEXT        "Si è verificato un errore durante lo scaricamento di alcuni componenti richiesti. Ritentare lo scaricamento di tali componenti?"
 
     IDS_DOWNLOAD                   "Installazione di componenti aggiuntivi in corso"
-	IDS_DOWNLOAD_UNPACKING         "Decompressione del bundle in corso"
-    IDS_DOWNLOAD_TEXT              "L'applicazione Java verrà avviata dopo il download e l'installazione dei componenti richiesti."
+    IDS_DOWNLOAD_UNPACKING         "Decompressione del bundle in corso"
+    IDS_DOWNLOAD_TEXT              "L'applicazione Java verrà avviata dopo lo scaricamento e l'installazione dei componenti richiesti."
     
     IDS_FILE_UPDATE_ERROR          "Errore durante l'aggiornamento di %s%s."
     IDS_FILE_DELETE_ERROR          "Errore durante la rimozione di %s."
     IDS_JAVA_HOME_ERROR            "Impossibile determinare la directory home di Java."
     IDS_KERNEL_HOME_ERROR          "Impossibile determinare il percorso di jkernel.dll."
     IDS_JBROKER_ERROR              "Impossibile avviare jbroker.exe."
-    IDS_FATAL_ERROR                "Java non è in grado di scaricare i componenti necessari. Il programma verrà terminato."
-    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "Java non è in grado di comunicare con il server di download. Il programma verrà terminato."
-    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "Java ha rilevato un errore durante la comunicazione con il server di download. Il programma verrà terminato."
-    IDS_ERROR_MALFORMED_URL "Java non è in grado di eseguire il download dall'URL '%s'. Il programma verrà terminato."
+    IDS_FATAL_ERROR                "Java non è in grado di scaricare i componenti richiesti. Il programma verrà terminato."
+    IDS_ERROR_DOWNLOADING_BUNDLE_PROPERTIES "Java non è in grado di comunicare con il server di scaricamento. Il programma verrà terminato."
+    IDS_ERROR_MALFORMED_BUNDLE_PROPERTIES "Java ha rilevato un errore durante la comunicazione con il server di scaricamento. Il programma verrà terminato."
+    IDS_ERROR_MALFORMED_URL "Java non è in grado di eseguire lo scaricamento dall'URL '%s'. Il programma verrà terminato."
 END
