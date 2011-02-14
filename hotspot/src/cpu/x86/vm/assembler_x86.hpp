@@ -1522,8 +1522,9 @@ class MacroAssembler: public Assembler {
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
 
-  // Loading values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  // Load and store values by size and signed-ness
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
