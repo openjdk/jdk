@@ -764,11 +764,13 @@ void methodDataOopDesc::initialize(methodHandle method) {
   if (TieredCompilation) {
     _invocation_counter.init();
     _backedge_counter.init();
+    _invocation_counter_start = 0;
+    _backedge_counter_start = 0;
     _num_loops = 0;
     _num_blocks = 0;
     _highest_comp_level = 0;
     _highest_osr_comp_level = 0;
-    _would_profile = false;
+    _would_profile = true;
   }
   set_creation_mileage(mileage_of(method()));
 

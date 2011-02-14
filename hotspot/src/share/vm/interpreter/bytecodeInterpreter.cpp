@@ -1942,7 +1942,7 @@ run:
         constantPoolOop constants = istate->method()->constants();
         if (!constants->tag_at(index).is_unresolved_klass()) {
           // Make sure klass is initialized and doesn't have a finalizer
-          oop entry = (klassOop) *constants->obj_at_addr(index);
+          oop entry = constants->slot_at(index).get_oop();
           assert(entry->is_klass(), "Should be resolved klass");
           klassOop k_entry = (klassOop) entry;
           assert(k_entry->klass_part()->oop_is_instance(), "Should be instanceKlass");
@@ -2032,7 +2032,7 @@ run:
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
-            klassOop klassOf = (klassOop) *(METHOD->constants()->obj_at_addr(index));
+            klassOop klassOf = (klassOop) METHOD->constants()->slot_at(index).get_oop();
             klassOop objKlassOop = STACK_OBJECT(-1)->klass(); //ebx
             //
             // Check for compatibilty. This check must not GC!!
@@ -2067,7 +2067,7 @@ run:
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
-            klassOop klassOf = (klassOop) *(METHOD->constants()->obj_at_addr(index));
+            klassOop klassOf = (klassOop) METHOD->constants()->slot_at(index).get_oop();
             klassOop objKlassOop = STACK_OBJECT(-1)->klass();
             //
             // Check for compatibilty. This check must not GC!!

@@ -740,6 +740,9 @@ class CommandLineFlags {
   develop(bool, PrintMalloc, false,                                         \
           "print all malloc/free calls")                                    \
                                                                             \
+  develop(bool, PrintMallocStatistics, false,                               \
+          "print malloc/free statistics")                                   \
+                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \
                                                                             \

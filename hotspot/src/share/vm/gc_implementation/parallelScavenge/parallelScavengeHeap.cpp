@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,12 @@ jint ParallelScavengeHeap::initialize() {
   yg_cur_size = MAX2(yg_cur_size, yg_min_size);
 
   og_min_size = align_size_up(og_min_size, og_align);
-  og_max_size = align_size_up(og_max_size, og_align);
+  // Align old gen size down to preserve specified heap size.
+  assert(og_align == yg_align, "sanity");
+  og_max_size = align_size_down(og_max_size, og_align);
+  og_max_size = MAX2(og_max_size, og_min_size);
   size_t og_cur_size =
-    align_size_up(_collector_policy->old_gen_size(), og_align);
+    align_size_down(_collector_policy->old_gen_size(), og_align);
   og_cur_size = MAX2(og_cur_size, og_min_size);
 
   pg_min_size = align_size_up(pg_min_size, pg_align);
