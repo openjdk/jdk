@@ -6528,20 +6528,39 @@ int MacroAssembler::load_unsigned_short(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src,
-                                      size_t size_in_bytes, bool is_signed) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
   switch (size_in_bytes) {
 #ifndef _LP64
-  // For case 8, caller is responsible for manually loading
-  // the second word into another register.
-  case  8: movl(dst, src); break;
+  case  8:
+    assert(dst2 != noreg, "second dest register required");
+    movl(dst,  src);
+    movl(dst2, src.plus_disp(BytesPerInt));
+    break;
 #else
-  case  8: movq(dst, src); break;
+  case  8:  movq(dst, src); break;
 #endif
-  case  4: movl(dst, src); break;
-  case  2: is_signed ? load_signed_short(dst, src) : load_unsigned_short(dst, src); break;
-  case  1: is_signed ? load_signed_byte( dst, src) : load_unsigned_byte( dst, src); break;
-  default: ShouldNotReachHere();
+  case  4:  movl(dst, src); break;
+  case  2:  is_signed ? load_signed_short(dst, src) : load_unsigned_short(dst, src); break;
+  case  1:  is_signed ? load_signed_byte( dst, src) : load_unsigned_byte( dst, src); break;
+  default:  ShouldNotReachHere();
+  }
+}
+
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+  switch (size_in_bytes) {
+#ifndef _LP64
+  case  8:
+    assert(src2 != noreg, "second source register required");
+    movl(dst,                        src);
+    movl(dst.plus_disp(BytesPerInt), src2);
+    break;
+#else
+  case  8:  movq(dst, src); break;
+#endif
+  case  4:  movl(dst, src); break;
+  case  2:  movw(dst, src); break;
+  case  1:  movb(dst, src); break;
+  default:  ShouldNotReachHere();
   }
 }
 

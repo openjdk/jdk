@@ -934,7 +934,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   assert(m->signature() == signature, "");
   assert(m->is_method_handle_invoke(), "");
 #ifdef CC_INTERP
-  ResultTypeFinder rtf(signature());
+  ResultTypeFinder rtf(signature);
   m->set_result_index(rtf.type());
 #endif
   m->compute_size_of_parameters(THREAD);

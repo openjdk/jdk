@@ -412,13 +412,16 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     fail_type = _unloaded_ciinstance_klass;
   }
   KlassHandle found_klass;
-  if (!require_local) {
-    klassOop kls = SystemDictionary::find_constrained_instance_or_array_klass(
-        sym, loader, KILL_COMPILE_ON_FATAL_(fail_type));
-    found_klass = KlassHandle(THREAD, kls);
-  } else {
-    klassOop kls = SystemDictionary::find_instance_or_array_klass(
-        sym, loader, domain, KILL_COMPILE_ON_FATAL_(fail_type));
+  {
+    MutexLocker ml(Compile_lock);
+    klassOop kls;
+    if (!require_local) {
+      kls = SystemDictionary::find_constrained_instance_or_array_klass(sym, loader,
+                                                                       KILL_COMPILE_ON_FATAL_(fail_type));
+    } else {
+      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
+                                                           KILL_COMPILE_ON_FATAL_(fail_type));
+    }
     found_klass = KlassHandle(THREAD, kls);
   }
 

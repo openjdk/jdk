@@ -1290,6 +1290,15 @@ void ClassLoader::compile_the_world() {
 int ClassLoader::_compile_the_world_counter = 0;
 static int _codecache_sweep_counter = 0;
 
+// Filter out all exceptions except OOMs
+static void clear_pending_exception_if_not_oom(TRAPS) {
+  if (HAS_PENDING_EXCEPTION &&
+      !PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+    CLEAR_PENDING_EXCEPTION;
+  }
+  // The CHECK at the caller will propagate the exception out
+}
+
 void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
   int len = (int)strlen(name);
   if (len > 6 && strcmp(".class", name + len - 6) == 0) {
@@ -1312,12 +1321,12 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
         k->initialize(THREAD);
       }
       bool exception_occurred = HAS_PENDING_EXCEPTION;
-      CLEAR_PENDING_EXCEPTION;
+      clear_pending_exception_if_not_oom(CHECK);
       if (CompileTheWorldPreloadClasses && k.not_null()) {
         constantPoolKlass::preload_and_initialize_all_classes(k->constants(), THREAD);
         if (HAS_PENDING_EXCEPTION) {
           // If something went wrong in preloading we just ignore it
-          CLEAR_PENDING_EXCEPTION;
+          clear_pending_exception_if_not_oom(CHECK);
           tty->print_cr("Preloading failed for (%d) %s", _compile_the_world_counter, buffer);
         }
       }
@@ -1344,7 +1353,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_initial_compile,
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
-                CLEAR_PENDING_EXCEPTION;
+                clear_pending_exception_if_not_oom(CHECK);
                 tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
               }
               if (TieredCompilation) {
@@ -1358,7 +1367,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_full_optimization,
                                               methodHandle(), 0, "CTW", THREAD);
                 if (HAS_PENDING_EXCEPTION) {
-                  CLEAR_PENDING_EXCEPTION;
+                  clear_pending_exception_if_not_oom(CHECK);
                   tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
                 }
               }
