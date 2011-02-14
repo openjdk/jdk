@@ -845,23 +845,35 @@ public class Hashtable<K,V>
      *             for each key-value mapping represented by the Hashtable
      *             The key-value mappings are emitted in no particular order.
      */
-    private synchronized void writeObject(java.io.ObjectOutputStream s)
-        throws IOException
-    {
-        // Write out the length, threshold, loadfactor
-        s.defaultWriteObject();
+    private void writeObject(java.io.ObjectOutputStream s)
+            throws IOException {
+        Entry<Object, Object> entryStack = null;
 
-        // Write out length, count of elements and then the key/value objects
-        s.writeInt(table.length);
-        s.writeInt(count);
-        for (int index = table.length-1; index >= 0; index--) {
-            Entry entry = table[index];
+        synchronized (this) {
+            // Write out the length, threshold, loadfactor
+            s.defaultWriteObject();
 
-            while (entry != null) {
-                s.writeObject(entry.key);
-                s.writeObject(entry.value);
-                entry = entry.next;
+            // Write out length, count of elements
+            s.writeInt(table.length);
+            s.writeInt(count);
+
+            // Stack copies of the entries in the table
+            for (int index = 0; index < table.length; index++) {
+                Entry entry = table[index];
+
+                while (entry != null) {
+                    entryStack =
+                        new Entry<>(0, entry.key, entry.value, entryStack);
+                    entry = entry.next;
+                }
             }
+        }
+
+        // Write out the key/value objects from the stacked entries
+        while (entryStack != null) {
+            s.writeObject(entryStack.key);
+            s.writeObject(entryStack.value);
+            entryStack = entryStack.next;
         }
     }
 
