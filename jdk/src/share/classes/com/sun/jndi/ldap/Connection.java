@@ -656,14 +656,17 @@ public final class Connection implements Runnable {
                 }
                 nparent = notifyParent;
             }
-        }
-        if (nparent) {
-            LdapRequest ldr = pendingRequests;
-            while (ldr != null) {
-                ldr.notify();
-                ldr = ldr.next;
+            if (nparent) {
+                LdapRequest ldr = pendingRequests;
+                while (ldr != null) {
+
+                    synchronized (ldr) {
+                        ldr.notify();
+                        ldr = ldr.next;
+                    }
+                }
+                parent.processConnectionClosure();
             }
-            parent.processConnectionClosure();
         }
     }
 

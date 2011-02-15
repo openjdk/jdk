@@ -49,9 +49,8 @@ public class Basic {
         Set<PosixFilePermission> perms = PosixFilePermissions.fromString(mode);
 
         // change permissions and re-read them.
-        Attributes.setPosixFilePermissions(file, perms);
-        Set<PosixFilePermission> current = Attributes
-            .readPosixFileAttributes(file).permissions();
+        Files.setPosixFilePermissions(file, perms);
+        Set<PosixFilePermission> current = Files.getPosixFilePermissions(file);
         if (!current.equals(perms)) {
             throw new RuntimeException("Actual permissions: " +
                 PosixFilePermissions.toString(current) + ", expected: " +
@@ -59,8 +58,8 @@ public class Basic {
         }
 
         // repeat test using setAttribute/getAttribute
-        file.setAttribute("posix:permissions", perms);
-        current = (Set<PosixFilePermission>)file.getAttribute("posix:permissions");
+        Files.setAttribute(file, "posix:permissions", perms);
+        current = (Set<PosixFilePermission>)Files.getAttribute(file, "posix:permissions");
         if (!current.equals(perms)) {
             throw new RuntimeException("Actual permissions: " +
                 PosixFilePermissions.toString(current) + ", expected: " +
@@ -97,25 +96,25 @@ public class Basic {
         FileAttribute<Set<PosixFilePermission>> attr =
             PosixFilePermissions.asFileAttribute(requested);
         System.out.format("create file with mode: %s\n", mode);
-        file.createFile(attr);
+        Files.createFile(file, attr);
         try {
-            checkSecure(requested,  file
-                .getFileAttributeView(PosixFileAttributeView.class)
-                .readAttributes()
-                .permissions());
+            checkSecure(requested,
+                Files.getFileAttributeView(file, PosixFileAttributeView.class)
+                     .readAttributes()
+                     .permissions());
         } finally {
-            file.delete();
+            Files.delete(file);
         }
 
         System.out.format("create directory with mode: %s\n", mode);
-        file.createDirectory(attr);
+        Files.createDirectory(file, attr);
         try {
-            checkSecure(requested,  file
-                .getFileAttributeView(PosixFileAttributeView.class)
-                .readAttributes()
-                .permissions());
+            checkSecure(requested,
+                Files.getFileAttributeView(file, PosixFileAttributeView.class)
+                     .readAttributes()
+                     .permissions());
         } finally {
-            file.delete();
+            Files.delete(file);
         }
     }
 
@@ -130,11 +129,11 @@ public class Basic {
         // create file and test updating and reading its permissions
         Path file = dir.resolve("foo");
         System.out.format("create %s\n", file);
-        file.createFile();
+        Files.createFile(file);
         try {
             // get initial permissions so that we can restore them later
-            PosixFileAttributeView view = file
-                .getFileAttributeView(PosixFileAttributeView.class);
+            PosixFileAttributeView view =
+                Files.getFileAttributeView(file, PosixFileAttributeView.class);
             Set<PosixFilePermission> save = view.readAttributes()
                 .permissions();
 
@@ -165,7 +164,7 @@ public class Basic {
                 view.setPermissions(save);
             }
         } finally {
-            file.delete();
+            Files.delete(file);
         }
 
         // create link (to file that doesn't exist) and test reading of
@@ -173,15 +172,18 @@ public class Basic {
         if (TestUtil.supportsLinks(dir)) {
             Path link = dir.resolve("link");
             System.out.format("create link %s\n", link);
-            link.createSymbolicLink(file);
+            Files.createSymbolicLink(link, file);
             try {
-                PosixFileAttributes attrs = Attributes
-                    .readPosixFileAttributes(link, NOFOLLOW_LINKS);
+                PosixFileAttributes attrs =
+                    Files.getFileAttributeView(link,
+                                               PosixFileAttributeView.class,
+                                               NOFOLLOW_LINKS)
+                         .readAttributes();
                 if (!attrs.isSymbolicLink()) {
                     throw new RuntimeException("not a link");
                 }
             } finally {
-                link.delete();
+                Files.delete(link);
             }
         }
 
@@ -235,12 +237,12 @@ public class Basic {
         Path file = dir.resolve("gus");
         System.out.format("create %s\n", file);
 
-        file.createFile();
+        Files.createFile(file);
         try {
 
             // read attributes of directory to get owner/group
-            PosixFileAttributeView view = file
-                .getFileAttributeView(PosixFileAttributeView.class);
+            PosixFileAttributeView view =
+                Files.getFileAttributeView(file, PosixFileAttributeView.class);
             PosixFileAttributes attrs = view.readAttributes();
 
             // set to existing owner/group
@@ -248,13 +250,13 @@ public class Basic {
             view.setGroup(attrs.group());
 
             // repeat test using set/getAttribute
-            UserPrincipal owner = (UserPrincipal)file.getAttribute("posix:owner");
-            file.setAttribute("posix:owner", owner);
-            UserPrincipal group = (UserPrincipal)file.getAttribute("posix:group");
-            file.setAttribute("posix:group", group);
+            UserPrincipal owner = (UserPrincipal)Files.getAttribute(file, "posix:owner");
+            Files.setAttribute(file, "posix:owner", owner);
+            UserPrincipal group = (UserPrincipal)Files.getAttribute(file, "posix:group");
+            Files.setAttribute(file, "posix:group", group);
 
         } finally {
-            file.delete();
+            Files.delete(file);
         }
 
         System.out.println("OKAY");
@@ -272,7 +274,7 @@ public class Basic {
             .getUserPrincipalLookupService();
 
         // read attributes of directory to get owner/group
-        PosixFileAttributes attrs = Attributes.readPosixFileAttributes(dir);
+        PosixFileAttributes attrs = Files.readAttributes(dir, PosixFileAttributes.class);
 
         // lookup owner and check it matches file's owner
         System.out.format("lookup: %s\n", attrs.owner().getName());
@@ -322,8 +324,8 @@ public class Basic {
     {
         System.out.println("-- Exceptions --");
 
-        PosixFileAttributeView view = dir
-            .getFileAttributeView(PosixFileAttributeView.class);
+        PosixFileAttributeView view =
+            Files.getFileAttributeView(dir,PosixFileAttributeView.class);
 
         // NullPointerException
         try {
@@ -355,7 +357,7 @@ public class Basic {
         } catch (NullPointerException x) {
         }
         try {
-            Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
+            Set<PosixFilePermission> perms = new HashSet<>();
             perms.add(null);
             view.setPermissions(perms);
             throw new RuntimeException("NullPointerException not thrown");
@@ -377,7 +379,7 @@ public class Basic {
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            if (!dir.getFileStore().supportsFileAttributeView("posix")) {
+            if (!Files.getFileStore(dir).supportsFileAttributeView("posix")) {
                 System.out.println("PosixFileAttributeView not supported");
                 return;
             }

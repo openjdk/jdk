@@ -32,7 +32,7 @@ import java.util.*;
  * Base implementation class for watch keys.
  */
 
-abstract class AbstractWatchKey extends WatchKey {
+abstract class AbstractWatchKey implements WatchKey {
 
     /**
      * Maximum size of event list (in the future this may be tunable)
@@ -53,6 +53,9 @@ abstract class AbstractWatchKey extends WatchKey {
     // reference to watcher
     private final AbstractWatchService watcher;
 
+    // reference to the original directory
+    private final Path dir;
+
     // key state
     private State state;
 
@@ -63,8 +66,9 @@ abstract class AbstractWatchKey extends WatchKey {
     // event for the context is an ENTRY_MODIFY event).
     private Map<Object,WatchEvent<?>> lastModifyEvents;
 
-    protected AbstractWatchKey(AbstractWatchService watcher) {
+    protected AbstractWatchKey(Path dir, AbstractWatchService watcher) {
         this.watcher = watcher;
+        this.dir = dir;
         this.state = State.READY;
         this.events = new ArrayList<WatchEvent<?>>();
         this.lastModifyEvents = new HashMap<Object,WatchEvent<?>>();
@@ -72,6 +76,13 @@ abstract class AbstractWatchKey extends WatchKey {
 
     final AbstractWatchService watcher() {
         return watcher;
+    }
+
+    /**
+     * Return the original watchable (Path)
+     */
+    Path watchable() {
+        return dir;
     }
 
     /**
@@ -175,7 +186,7 @@ abstract class AbstractWatchKey extends WatchKey {
     /**
      * WatchEvent implementation
      */
-    private static class Event<T> extends WatchEvent<T> {
+    private static class Event<T> implements WatchEvent<T> {
         private final WatchEvent.Kind<T> kind;
         private final T context;
 

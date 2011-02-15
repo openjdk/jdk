@@ -124,7 +124,7 @@ class UnixFileAttributes
 
     @Override
     public FileTime creationTime() {
-        return null;
+        return lastModifiedTime();
     }
 
     @Override
@@ -194,7 +194,7 @@ class UnixFileAttributes
     @Override
     public Set<PosixFilePermission> permissions() {
         int bits = (st_mode & UnixConstants.S_IAMB);
-        HashSet<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
+        HashSet<PosixFilePermission> perms = new HashSet<>();
 
         if ((bits & UnixConstants.S_IRUSR) > 0)
             perms.add(PosixFilePermission.OWNER_READ);

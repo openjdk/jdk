@@ -149,17 +149,6 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Object getAttribute(String attribute) throws IOException {
-            if (attribute.equals(PERMISSIONS_NAME))
-                return readAttributes().permissions();
-            if (attribute.equals(OWNER_NAME))
-                return readAttributes().owner();
-            if (attribute.equals(GROUP_NAME))
-                return readAttributes().group();
-            return super.getAttribute(attribute);
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
         public void setAttribute(String attribute, Object value)
             throws IOException
@@ -195,7 +184,7 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,?> readAttributes(String[] attributes)
+        public Map<String,Object> readAttributes(String[] attributes)
             throws IOException
         {
             AttributesBuilder builder = AttributesBuilder.create(attributes);
@@ -308,27 +297,6 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Object getAttribute(String attribute) throws IOException {
-            if (attribute.equals(MODE_NAME))
-                return readAttributes().mode();
-            if (attribute.equals(INO_NAME))
-                return readAttributes().ino();
-            if (attribute.equals(DEV_NAME))
-                return readAttributes().dev();
-            if (attribute.equals(RDEV_NAME))
-                return readAttributes().rdev();
-            if (attribute.equals(NLINK_NAME))
-                return readAttributes().nlink();
-            if (attribute.equals(UID_NAME))
-                return readAttributes().uid();
-            if (attribute.equals(GID_NAME))
-                return readAttributes().gid();
-            if (attribute.equals(CTIME_NAME))
-                return readAttributes().ctime();
-            return super.getAttribute(attribute);
-        }
-
-        @Override
         public void setAttribute(String attribute, Object value)
             throws IOException
         {
@@ -348,7 +316,7 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,?> readAttributes(String[] attributes)
+        public Map<String,Object> readAttributes(String[] attributes)
             throws IOException
         {
             AttributesBuilder builder = AttributesBuilder.create(attributes);

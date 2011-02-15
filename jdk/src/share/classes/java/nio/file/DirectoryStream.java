@@ -54,7 +54,7 @@ import java.io.IOException;
  * construct to ensure that the stream is closed:
  * <pre>
  *   Path dir = ...
- *   try (DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream()) {
+ *   try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir)) {
  *       for (Path entry: stream) {
  *           ...
  *       }
@@ -97,8 +97,8 @@ import java.io.IOException;
  * both the for-each and try-with-resources constructs.
  * <pre>
  *   List&lt;Path&gt; listSourceFiles(Path dir) throws IOException {
- *       List&lt;Path&gt; result = new ArrayList&lt;Path&gt;();
- *       try (DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream("*.{c,h,cpp,hpp,java}")) {
+ *       List&lt;Path&gt; result = new ArrayList&lt;&gt;();
+ *       try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir, "*.{c,h,cpp,hpp,java}")) {
  *           for (Path entry: stream) {
  *               result.add(entry);
  *           }
@@ -113,7 +113,7 @@ import java.io.IOException;
  *
  * @since 1.7
  *
- * @see Path#newDirectoryStream
+ * @see Files#newDirectoryStream(Path)
  */
 
 public interface DirectoryStream<T>
@@ -122,9 +122,9 @@ public interface DirectoryStream<T>
     /**
      * An interface that is implemented by objects that decide if a directory
      * entry should be accepted or filtered. A {@code Filter} is passed as the
-     * parameter to the {@link Path#newDirectoryStream(DirectoryStream.Filter)
-     * newDirectoryStream} method when opening a directory to iterate over the
-     * entries in the directory.
+     * parameter to the {@link Files#newDirectoryStream(Path,DirectoryStream.Filter)}
+     * method when opening a directory to iterate over the entries in the
+     * directory.
      *
      * @param   <T>     the type of the directory entry
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,23 @@ import sun.security.jca.GetInstance.Instance;
  * <p>In case the client does not explicitly initialize the KeyGenerator
  * (via a call to an <code>init</code> method), each provider must
  * supply (and document) a default initialization.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>KeyGenerator</code> algorithms with the keysizes in
+ * parentheses:
+ * <ul>
+ * <li><tt>AES</tt> (128)</li>
+ * <li><tt>DES</tt> (56)</li>
+ * <li><tt>DESede</tt> (168)</li>
+ * <li><tt>HmacSHA1</tt></li>
+ * <li><tt>HmacSHA256</tt></li>
+ * </ul>
+ * These algorithms are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
+ * KeyGenerator section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
  * @author Jan Luehe
  *
@@ -170,10 +187,9 @@ public class KeyGenerator {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the standard name of the requested key algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new <code>KeyGenerator</code> object.
@@ -204,10 +220,9 @@ public class KeyGenerator {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the standard name of the requested key algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -247,10 +262,9 @@ public class KeyGenerator {
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyGenerator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
