@@ -198,6 +198,10 @@ public class MethodHandles {
      * the lookup can still succeed.
      * For example, lookups for {@code MethodHandle.invokeExact} and
      * {@code MethodHandle.invokeGeneric} will always succeed, regardless of requested type.
+     * <li>If there is a security manager installed, it can forbid the lookup
+     * on various grounds (<a href="#secmgr">see below</a>).
+     * By contrast, the {@code ldc} instruction is not subject to
+     * security manager checks.
      * </ul>
      *
      * <h3><a name="access"></a>Access checking</h3>
@@ -255,6 +259,18 @@ public class MethodHandles {
      * which can transform a lookup on {@code C.E} into one on any of those other
      * classes, without special elevation of privilege.
      * <p>
+     * Although bytecode instructions can only refer to classes in
+     * a related class loader, this API can search for methods in any
+     * class, as long as a reference to its {@code Class} object is
+     * available.  Such cross-loader references are also possible with the
+     * Core Reflection API, and are impossible to bytecode instructions
+     * such as {@code invokestatic} or {@code getfield}.
+     * There is a {@linkplain java.lang.SecurityManager security manager API}
+     * to allow applications to check such cross-loader references.
+     * These checks apply to both the {@code MethodHandles.Lookup} API
+     * and the Core Reflection API
+     * (as found on {@link java.lang.Class Class}).
+     * <p>
      * Access checks only apply to named and reflected methods,
      * constructors, and fields.
      * Other method handle creation methods, such as
@@ -262,6 +278,41 @@ public class MethodHandles {
      * do not require any access checks, and are done
      * with static methods of {@link MethodHandles},
      * independently of any {@code Lookup} object.
+     *
+     * <h3>Security manager interactions</h3>
+     * <a name="secmgr"></a>
+     * If a security manager is present, member lookups are subject to
+     * additional checks.
+     * From one to four calls are made to the security manager.
+     * Any of these calls can refuse access by throwing a
+     * {@link java.lang.SecurityException SecurityException}.
+     * Define {@code smgr} as the security manager,
+     * {@code refc} as the containing class in which the member
+     * is being sought, and {@code defc} as the class in which the
+     * member is actually defined.
+     * The calls are made according to the following rules:
+     * <ul>
+     * <li>In all cases, {@link SecurityManager#checkMemberAccess
+     *     smgr.checkMemberAccess(refc, Member.PUBLIC)} is called.
+     * <li>If the class loader of the lookup class is not
+     *     the same as or an ancestor of the class loader of {@code refc},
+     *     then {@link SecurityManager#checkPackageAccess
+     *     smgr.checkPackageAccess(refcPkg)} is called,
+     *     where {@code refcPkg} is the package of {@code refc}.
+     * <li>If the retrieved member is not public,
+     *     {@link SecurityManager#checkMemberAccess
+     *     smgr.checkMemberAccess(defc, Member.DECLARED)} is called.
+     *     (Note that {@code defc} might be the same as {@code refc}.)
+     * <li>If the retrieved member is not public,
+     *     and if {@code defc} and {@code refc} are in different class loaders,
+     *     and if the class loader of the lookup class is not
+     *     the same as or an ancestor of the class loader of {@code defc},
+     *     then {@link SecurityManager#checkPackageAccess
+     *     smgr.checkPackageAccess(defcPkg)} is called,
+     *     where {@code defcPkg} is the package of {@code defc}.
+     * </ul>
+     * In all cases, the requesting class presented to the security
+     * manager will be the lookup class from the current {@code Lookup} object.
      */
     public static final
     class Lookup {
@@ -518,6 +569,8 @@ public class MethodHandles {
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails, or if the method is not {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public
@@ -558,6 +611,8 @@ public class MethodHandles {
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails, or if the method is {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
@@ -587,6 +642,8 @@ public class MethodHandles {
          * @return the desired method handle
          * @throws NoSuchMethodException if the constructor does not exist
          * @throws IllegalAccessException if access checking fails
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
@@ -642,6 +699,8 @@ public class MethodHandles {
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findSpecial(Class<?> refc, String name, MethodType type,
@@ -666,6 +725,8 @@ public class MethodHandles {
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -685,6 +746,8 @@ public class MethodHandles {
          * @return a method handle which can store values into the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -703,6 +766,8 @@ public class MethodHandles {
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -721,6 +786,8 @@ public class MethodHandles {
          * @return a method handle which can store values into the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -764,6 +831,8 @@ return mh1;
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
