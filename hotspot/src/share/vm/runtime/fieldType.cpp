@@ -30,7 +30,7 @@
 #include "runtime/fieldType.hpp"
 #include "runtime/signature.hpp"
 
-void FieldType::skip_optional_size(symbolOop signature, int* index) {
+void FieldType::skip_optional_size(Symbol* signature, int* index) {
   jchar c = signature->byte_at(*index);
   while (c >= '0' && c <= '9') {
     *index = *index + 1;
@@ -38,12 +38,12 @@ void FieldType::skip_optional_size(symbolOop signature, int* index) {
   }
 }
 
-BasicType FieldType::basic_type(symbolOop signature) {
+BasicType FieldType::basic_type(Symbol* signature) {
   return char2type(signature->byte_at(0));
 }
 
 // Check if it is a valid array signature
-bool FieldType::is_valid_array_signature(symbolOop sig) {
+bool FieldType::is_valid_array_signature(Symbol* sig) {
   assert(sig->utf8_length() > 1, "this should already have been checked");
   assert(sig->byte_at(0) == '[', "this should already have been checked");
   // The first character is already checked
@@ -73,7 +73,7 @@ bool FieldType::is_valid_array_signature(symbolOop sig) {
 }
 
 
-BasicType FieldType::get_array_info(symbolOop signature, jint* dimension, symbolOop* object_key, TRAPS) {
+BasicType FieldType::get_array_info(Symbol* signature, FieldArrayInfo& fd, TRAPS) {
   assert(basic_type(signature) == T_ARRAY, "must be array");
   int index = 1;
   int dim   = 1;
@@ -84,14 +84,15 @@ BasicType FieldType::get_array_info(symbolOop signature, jint* dimension, symbol
     skip_optional_size(signature, &index);
   }
   ResourceMark rm;
-  symbolOop element = oopFactory::new_symbol(signature->as_C_string() + index, CHECK_(T_BYTE));
-  BasicType element_type = FieldType::basic_type(element);
+  char *element = signature->as_C_string() + index;
+  BasicType element_type = char2type(element[0]);
   if (element_type == T_OBJECT) {
-    char* object_type = element->as_C_string();
-    object_type[element->utf8_length() - 1] = '\0';
-    *object_key = oopFactory::new_symbol(object_type + 1, CHECK_(T_BYTE));
+    int len = (int)strlen(element);
+    assert(element[len-1] == ';', "last char should be a semicolon");
+    element[len-1] = '\0';        // chop off semicolon
+    fd._object_key = SymbolTable::new_symbol(element + 1, CHECK_(T_BYTE));
   }
   // Pass dimension back to caller
-  *dimension = dim;
+  fd._dimension = dim;
   return element_type;
 }

@@ -97,6 +97,7 @@ class InterfaceSupport: AllStatic {
 # endif
 
   static void zombieAll();
+  static void unlinkSymbols();
   static void deoptimizeAll();
   static void stress_derived_pointers();
   static void verify_stack();
@@ -374,6 +375,9 @@ class VMEntryWrapper {
     }
     if (ZombieALot) {
       InterfaceSupport::zombieAll();
+    }
+    if (UnlinkSymbolsALot) {
+      InterfaceSupport::unlinkSymbols();
     }
     // do verification AFTER potential deoptimization
     if (VerifyStack) {

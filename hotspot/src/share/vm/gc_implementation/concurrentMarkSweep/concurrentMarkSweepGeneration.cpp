@@ -5921,9 +5921,10 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
 
     {
       TraceTime t("scrub symbol & string tables", PrintGCDetails, false, gclog_or_tty);
-      // Now clean up stale oops in SymbolTable and StringTable
-      SymbolTable::unlink(&_is_alive_closure);
+      // Now clean up stale oops in StringTable
       StringTable::unlink(&_is_alive_closure);
+      // Clean up unreferenced symbols in symbol table.
+      SymbolTable::unlink();
     }
   }
 

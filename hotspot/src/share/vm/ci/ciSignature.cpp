@@ -47,7 +47,8 @@ ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
 
   int size = 0;
   int count = 0;
-  symbolHandle sh (THREAD, symbol->get_symbolOop());
+  ResourceMark rm(THREAD);
+  Symbol* sh = symbol->get_symbol();
   SignatureStream ss(sh);
   for (; ; ss.next()) {
     // Process one element of the signature
@@ -55,14 +56,14 @@ ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
     if (!ss.is_object()) {
       type = ciType::make(ss.type());
     } else {
-      symbolOop name = ss.as_symbol(THREAD);
+      Symbol* name = ss.as_symbol(THREAD);
       if (HAS_PENDING_EXCEPTION) {
         type = ss.is_array() ? (ciType*)ciEnv::unloaded_ciobjarrayklass()
           : (ciType*)ciEnv::unloaded_ciinstance_klass();
         env->record_out_of_memory_failure();
         CLEAR_PENDING_EXCEPTION;
       } else {
-        ciSymbol* klass_name = env->get_object(name)->as_symbol();
+        ciSymbol* klass_name = env->get_symbol(name);
         type = env->get_klass_by_name_impl(_accessing_klass, klass_name, false);
       }
     }

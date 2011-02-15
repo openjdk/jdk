@@ -380,7 +380,7 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   VM_ENTRY_MARK;
   instanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
-  klassOop def = k->find_field(name->get_symbolOop(), signature->get_symbolOop(), is_static, &fd);
+  klassOop def = k->find_field(name->get_symbol(), signature->get_symbol(), is_static, &fd);
   if (def == NULL) {
     return NULL;
   }
@@ -541,8 +541,8 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
 ciMethod* ciInstanceKlass::find_method(ciSymbol* name, ciSymbol* signature) {
   VM_ENTRY_MARK;
   instanceKlass* k = get_instanceKlass();
-  symbolOop name_sym = name->get_symbolOop();
-  symbolOop sig_sym= signature->get_symbolOop();
+  Symbol* name_sym = name->get_symbol();
+  Symbol* sig_sym= signature->get_symbol();
 
   methodOop m = k->find_method(name_sym, sig_sym);
   if (m == NULL)  return NULL;
