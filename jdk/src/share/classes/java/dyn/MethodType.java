@@ -84,9 +84,14 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * @author John Rose, JSR 292 EG
  */
 public final
-class MethodType {
+class MethodType implements java.io.Serializable {
+    private static final long serialVersionUID = 292L;  // {rtype, {ptype...}}
+
+    // The rtype and ptypes fields define the structural identity of the method type:
     private final Class<?>   rtype;
     private final Class<?>[] ptypes;
+
+    // The remaining fields are caches of various sorts:
     private MethodTypeForm form; // erased form, plus cached data about primitives
     private MethodType wrapAlt;  // alternative wrapped/unwrapped version
     private Invokers invokers;   // cache of handy higher-order adapters
@@ -119,6 +124,9 @@ class MethodType {
         });
     }
 
+    /**
+     * Check the given parameters for validity and store them into the final fields.
+     */
     private MethodType(Class<?> rtype, Class<?>[] ptypes) {
         checkRtype(rtype);
         checkPtypes(ptypes);
@@ -751,5 +759,107 @@ class MethodType {
      */
     public String toMethodDescriptorString() {
         return BytecodeDescriptor.unparse(this);
+    }
+
+    /// Serialization.
+
+    /**
+     * There are no serializable fields for {@code MethodType}.
+     */
+    private static final java.io.ObjectStreamField[] serialPersistentFields = { };
+
+    /**
+     * Save the {@code MethodType} instance to a stream.
+     *
+     * @serialData
+     * For portability, the serialized format does not refer to named fields.
+     * Instead, the return type and parameter type arrays are written directly
+     * from the {@code writeObject} method, using two calls to {@code s.writeObject}
+     * as follows:
+     * <blockquote><pre>
+s.writeObject(this.returnType());
+s.writeObject(this.parameterArray());
+     * </pre></blockquote>
+     * <p>
+     * The deserialized field values are checked as if they were
+     * provided to the factory method {@link #methodType(Class,Class[]) methodType}.
+     * For example, null values, or {@code void} parameter types,
+     * will lead to exceptions during deserialization.
+     * @param the stream to write the object to
+     */
+    private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
+        s.defaultWriteObject();  // requires serialPersistentFields to be an empty array
+        s.writeObject(returnType());
+        s.writeObject(parameterArray());
+    }
+
+    /**
+     * Reconstitute the {@code MethodType} instance from a stream (that is,
+     * deserialize it).
+     * This instance is a scratch object with bogus final fields.
+     * It provides the parameters to the factory method called by
+     * {@link #readResolve readResolve}.
+     * After that call it is discarded.
+     * @param the stream to read the object from
+     * @see #MethodType()
+     * @see #readResolve
+     * @see #writeObject
+     */
+    private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
+        s.defaultReadObject();  // requires serialPersistentFields to be an empty array
+
+        Class<?>   returnType     = (Class<?>)   s.readObject();
+        Class<?>[] parameterArray = (Class<?>[]) s.readObject();
+
+        // Probably this object will never escape, but let's check
+        // the field values now, just to be sure.
+        checkRtype(returnType);
+        checkPtypes(parameterArray);
+
+        parameterArray = parameterArray.clone();  // make sure it is unshared
+        MethodType_init(returnType, parameterArray);
+    }
+
+    /**
+     * For serialization only.
+     * Sets the final fields to null, pending {@code Unsafe.putObject}.
+     */
+    private MethodType() {
+        this.rtype = null;
+        this.ptypes = null;
+    }
+    private void MethodType_init(Class<?> rtype, Class<?>[] ptypes) {
+        // In order to communicate these values to readResolve, we must
+        // store them into the implementation-specific final fields.
+        checkRtype(rtype);
+        checkPtypes(ptypes);
+        unsafe.putObject(this, rtypeOffset, rtype);
+        unsafe.putObject(this, ptypesOffset, ptypes);
+    }
+
+    // Support for resetting final fields while deserializing
+    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+    private static final long rtypeOffset, ptypesOffset;
+    static {
+        try {
+            rtypeOffset = unsafe.objectFieldOffset
+                (MethodType.class.getDeclaredField("rtype"));
+            ptypesOffset = unsafe.objectFieldOffset
+                (MethodType.class.getDeclaredField("ptypes"));
+        } catch (Exception ex) {
+            throw new Error(ex);
+        }
+    }
+
+    /**
+     * Resolves and initializes a {@code MethodType} object
+     * after serialization.
+     * @return the fully initialized {@code MethodType} object
+     */
+    private Object readResolve() {
+        // Do not use a trusted path for deserialization:
+        //return makeImpl(rtype, ptypes, true);
+        // Verify all operands, and make sure ptypes is unshared:
+        return methodType(rtype, ptypes);
     }
 }
