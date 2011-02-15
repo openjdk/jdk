@@ -127,6 +127,9 @@
  * type is created.  Any classes mentioned in this reification will be loaded if necessary,
  * but not initialized, and access checking and error reporting performed as usual.
  * <p>
+ * Unlike the reflective {@code Lookup} API, there are no security manager calls made
+ * when these constants are resolved.
+ * <p>
  * The method handle itself will have a type and behavior determined by the subtag as follows:
  * <code>
  * <table border=1 cellpadding=5 summary="CONSTANT_MethodHandle subtypes">
