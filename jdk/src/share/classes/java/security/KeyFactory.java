@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,21 @@ import sun.security.jca.GetInstance.Instance;
  * sig.verify(signature);
  * </pre>
  *
- * @author Jan Luehe
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>KeyFactory</code> algorithms:
+ * <ul>
+ * <li><tt>DiffieHellman</tt></li>
+ * <li><tt>DSA</tt></li>
+ * <li><tt>RSA</tt></li>
+ * </ul>
+ * These algorithms are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
+ * KeyFactory section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
+ * @author Jan Luehe
  *
  * @see Key
  * @see PublicKey
@@ -141,9 +154,9 @@ public class KeyFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested key algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new KeyFactory object.
@@ -172,9 +185,9 @@ public class KeyFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested key algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -211,9 +224,9 @@ public class KeyFactory {
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the requested key algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* Uses Montgomery reduction for field arithmetic.  See mpi/mpmontg.c for
  * code implementation. */
 

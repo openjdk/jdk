@@ -65,7 +65,7 @@ class WindowsUserDefinedFileAttributeView
 
     // enumerates the file streams using FindFirstStream/FindNextStream APIs.
     private List<String> listUsingStreamEnumeration() throws IOException {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             FirstStream first = FindFirstStream(file.getPathForWin32Calls());
             if (first != null) {
@@ -114,7 +114,7 @@ class WindowsUserDefinedFileAttributeView
         NativeBuffer buffer = null;
 
         // result with names of alternative data streams
-        final List<String> list = new ArrayList<String>();
+        final List<String> list = new ArrayList<>();
 
         try {
             buffer = NativeBuffers.getNativeBuffer(BUFFER_SIZE);
@@ -216,7 +216,7 @@ class WindowsUserDefinedFileAttributeView
         // wrap with channel
         FileChannel fc = null;
         try {
-            Set<OpenOption> opts = new HashSet<OpenOption>();
+            Set<OpenOption> opts = new HashSet<>();
             opts.add(READ);
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
@@ -243,7 +243,7 @@ class WindowsUserDefinedFileAttributeView
         // wrap with channel
         FileChannel fc = null;
         try {
-            Set<OpenOption> opts = new HashSet<OpenOption>();
+            Set<OpenOption> opts = new HashSet<>();
             opts.add(READ);
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
@@ -298,7 +298,7 @@ class WindowsUserDefinedFileAttributeView
             x.rethrowAsIOException(file);
         }
         try {
-            Set<OpenOption> opts = new HashSet<OpenOption>();
+            Set<OpenOption> opts = new HashSet<>();
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
             opts.add(CREATE);

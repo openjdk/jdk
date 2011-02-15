@@ -239,7 +239,7 @@ public class AclEdit {
 
         // read file's ACL
         AclFileAttributeView view =
-            file.getFileAttributeView(AclFileAttributeView.class);
+            Files.getFileAttributeView(file, AclFileAttributeView.class);
         if (view == null) {
             System.err.println("ACLs not supported on this platform");
             System.exit(-1);

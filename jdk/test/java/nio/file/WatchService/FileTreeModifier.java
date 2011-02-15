@@ -62,10 +62,7 @@ public class FileTreeModifier {
         WatchService watcher = fs.newWatchService();
 
         // create directories
-        Path subdir = top
-           .resolve("a").createDirectory()
-           .resolve("b").createDirectory()
-           .resolve("c").createDirectory();
+        Path subdir = Files.createDirectories(top.resolve("a").resolve("b").resolve("c"));
 
         // Test ENTRY_CREATE with FILE_TREE modifier.
 
@@ -73,7 +70,7 @@ public class FileTreeModifier {
             new WatchEvent.Kind<?>[]{ ENTRY_CREATE }, FILE_TREE);
 
         // create file in a/b/c and check we get create event
-        Path file = subdir.resolve("foo").createFile();
+        Path file = Files.createFile(subdir.resolve("foo"));
         checkExpectedEvent(watcher, ENTRY_CREATE, top.relativize(file));
         key.reset();
 
@@ -85,7 +82,7 @@ public class FileTreeModifier {
             throw new RuntimeException("Existing key not returned");
 
         // delete a/b/c/foo and check we get delete event
-        file.delete();
+        Files.delete(file);
         checkExpectedEvent(watcher, ENTRY_DELETE, top.relativize(file));
         key.reset();
 
@@ -96,19 +93,20 @@ public class FileTreeModifier {
             throw new RuntimeException("Existing key not returned");
 
         // create a/b/c/foo
-        file.createFile();
+        Files.createFile(file);
 
         // check that key is not queued
+        WatchKey nextKey;
         try {
-            k = watcher.poll(3, TimeUnit.SECONDS);
+            nextKey = watcher.poll(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException();
         }
-        if (k != null)
+        if (nextKey != null)
             throw new RuntimeException("WatchKey not expected to be polled");
 
         // create bar and check we get create event
-        file = top.resolve("bar").createFile();
+        file = Files.createFile(top.resolve("bar"));
         checkExpectedEvent(watcher, ENTRY_CREATE, top.relativize(file));
         key.reset();
 
@@ -121,11 +119,8 @@ public class FileTreeModifier {
             throw new RuntimeException("Existing key not returned");
 
         // modify bar and check we get modify event
-        OutputStream out = file.newOutputStream();
-        try {
+        try (OutputStream out = Files.newOutputStream(file)) {
             out.write("Double shot expresso please".getBytes("UTF-8"));
-        } finally {
-            out.close();
         }
         checkExpectedEvent(watcher, ENTRY_MODIFY, top.relativize(file));
         key.reset();

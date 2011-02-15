@@ -59,8 +59,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecp.h"
 #include "mplogic.h"
 #ifndef _KERNEL

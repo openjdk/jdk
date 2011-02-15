@@ -50,11 +50,9 @@
  *
  *********************************************************************** */
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  */
-
-#pragma ident   "%Z%%M% %I%     %E% SMI"
 
 #include <sys/types.h>
 
@@ -433,8 +431,7 @@ SECOidData *
 SECOID_FindOID(const SECItem *oid)
 {
     SECOidData *po;
-    SECOidData *ret;
-    int i;
+    SECOidData *ret = NULL;
 
     if (oid->len == 8) {
         if (oid->data[6] == 0x00) {
@@ -454,8 +451,6 @@ SECOID_FindOID(const SECItem *oid)
         po = &SECG_oids[oid->data[4]];
         if (memcmp(oid->data, po->oid.data, 5) == 0)
                 ret = po;
-    } else {
-        ret = NULL;
     }
     return(ret);
 }
