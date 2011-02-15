@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class Messages_fr extends java.util.ListResourceBundle {
     }
 
     private static final Object[][] contents = {
-        { "optpkg.versionerror", "ERREUR\u00a0: Format de version utilis\u00e9 pour le fichier JAR {0} non valide. Consultez la documentation pour voir le format de version pris en charge." },
-        { "optpkg.attributeerror", "ERREUR\u00a0: L''attribut manifeste JAR {0} n\u00e9cessaire n''est pas d\u00e9fini pour le fichier {1}. " },
-        { "optpkg.attributeserror", "ERREUR\u00a0: Certains attributs manifeste JAR {0} n\u00e9cessaires ne sont pas d\u00e9finis pour le fichier {1}. " }
+        { "optpkg.versionerror", "ERREUR\u00A0: le format de version utilis\u00E9 pour le fichier JAR {0} n''est pas valide. Pour conna\u00EEtre le format de version pris en charge, consultez la documentation." },
+        { "optpkg.attributeerror", "ERREUR\u00A0: l''attribut manifest JAR {0} obligatoire n''est pas d\u00E9fini dans le fichier JAR {1}." },
+        { "optpkg.attributeserror", "ERREUR\u00A0: certains attributs manifest JAR obligatoires ne sont pas d\u00E9finis dans le fichier JAR {0}." }
     };
 
 }
