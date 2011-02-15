@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@
             executable="${dist.bin.dir}/javac"
             srcdir="test/tools/javac/diags"
             destdir="${build.dir}/diag-examples/classes"
-            includes="Example.java,FileManager.java,HTMLWriter.java,RunExamples.java"
+            includes="ArgTypeCompilerFactory.java,Example.java,FileManager.java,HTMLWriter.java,RunExamples.java"
             sourcepath=""
             classpath="${dist.lib.dir}/javac.jar"
             includeAntRuntime="no"

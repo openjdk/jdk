@@ -278,7 +278,7 @@ public class Resolve {
             return true;
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
-            return (s2 == null || s2 == sym ||
+            return (s2 == null || s2 == sym || sym.owner == s2.owner ||
                     s2.isPolymorphicSignatureGeneric() ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
@@ -331,7 +331,7 @@ public class Resolve {
         throws Infer.InferenceException {
         boolean polymorphicSignature = m.isPolymorphicSignatureGeneric() && allowMethodHandles;
         if (useVarargs && (m.flags() & VARARGS) == 0)
-            throw inapplicableMethodException.setMessage(null);
+            throw inapplicableMethodException.setMessage();
         Type mt = types.memberType(site, m);
 
         // tvars is the list of formal type variables for which type arguments
@@ -386,7 +386,7 @@ public class Resolve {
                                     useVarargs,
                                     warn);
 
-        checkRawArgumentsAcceptable(argtypes, mt.getParameterTypes(),
+        checkRawArgumentsAcceptable(env, argtypes, mt.getParameterTypes(),
                                 allowBoxing, useVarargs, warn);
         return mt;
     }
@@ -411,19 +411,21 @@ public class Resolve {
 
     /** Check if a parameter list accepts a list of args.
      */
-    boolean argumentsAcceptable(List<Type> argtypes,
+    boolean argumentsAcceptable(Env<AttrContext> env,
+                                List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
                                 Warner warn) {
         try {
-            checkRawArgumentsAcceptable(argtypes, formals, allowBoxing, useVarargs, warn);
+            checkRawArgumentsAcceptable(env, argtypes, formals, allowBoxing, useVarargs, warn);
             return true;
         } catch (InapplicableMethodException ex) {
             return false;
         }
     }
-    void checkRawArgumentsAcceptable(List<Type> argtypes,
+    void checkRawArgumentsAcceptable(Env<AttrContext> env,
+                                List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
@@ -460,6 +462,14 @@ public class Resolve {
                             elt);
                 argtypes = argtypes.tail;
             }
+            //check varargs element type accessibility
+            if (!isAccessible(env, elt)) {
+                Symbol location = env.enclClass.sym;
+                throw inapplicableMethodException.setMessage("inaccessible.varargs.type",
+                            elt,
+                            Kinds.kindName(location),
+                            location);
+            }
         }
         return;
     }
@@ -474,12 +484,20 @@ public class Resolve {
                 this.diagnostic = null;
                 this.diags = diags;
             }
+            InapplicableMethodException setMessage() {
+                this.diagnostic = null;
+                return this;
+            }
             InapplicableMethodException setMessage(String key) {
                 this.diagnostic = key != null ? diags.fragment(key) : null;
                 return this;
             }
             InapplicableMethodException setMessage(String key, Object... args) {
                 this.diagnostic = key != null ? diags.fragment(key, args) : null;
+                return this;
+            }
+            InapplicableMethodException setMessage(JCDiagnostic diag) {
+                this.diagnostic = diag;
                 return this;
             }
 
@@ -712,13 +730,14 @@ public class Resolve {
                 Type mt1 = types.memberType(site, m1);
                 Type mt2 = types.memberType(site, m2);
                 if (!types.overrideEquivalent(mt1, mt2))
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
+
                 // same signature; select (a) the non-bridge method, or
                 // (b) the one that overrides the other, or (c) the concrete
                 // one, or (d) merge both abstract signatures
-                if ((m1.flags() & BRIDGE) != (m2.flags() & BRIDGE)) {
+                if ((m1.flags() & BRIDGE) != (m2.flags() & BRIDGE))
                     return ((m1.flags() & BRIDGE) != 0) ? m2 : m1;
-                }
+
                 // if one overrides or hides the other, use it
                 TypeSymbol m1Owner = (TypeSymbol)m1.owner;
                 TypeSymbol m2Owner = (TypeSymbol)m2.owner;
@@ -738,24 +757,24 @@ public class Resolve {
                 if (m2Abstract && !m1Abstract) return m1;
                 // both abstract or both concrete
                 if (!m1Abstract && !m2Abstract)
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 // check that both signatures have the same erasure
                 if (!types.isSameTypes(m1.erasure(types).getParameterTypes(),
                                        m2.erasure(types).getParameterTypes()))
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol mostSpecific;
                 Type result2 = mt2.getReturnType();
                 if (mt2.tag == FORALL)
                     result2 = types.subst(result2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
-                if (types.isSubtype(mt1.getReturnType(), result2)) {
+                if (types.isSubtype(mt1.getReturnType(), result2))
                     mostSpecific = m1;
-                } else if (types.isSubtype(result2, mt1.getReturnType())) {
+                else if (types.isSubtype(result2, mt1.getReturnType()))
                     mostSpecific = m2;
-                } else {
+                else {
                     // Theoretically, this can't happen, but it is possible
                     // due to error recovery or mixing incompatible class files
-                    return new AmbiguityError(m1, m2);
+                    return ambiguityError(m1, m2);
                 }
                 MethodSymbol result = new MethodSymbol(
                         mostSpecific.flags(),
@@ -777,7 +796,7 @@ public class Resolve {
             }
             if (m1SignatureMoreSpecific) return m1;
             if (m2SignatureMoreSpecific) return m2;
-            return new AmbiguityError(m1, m2);
+            return ambiguityError(m1, m2);
         case AMBIGUOUS:
             AmbiguityError e = (AmbiguityError)m2;
             Symbol err1 = mostSpecific(m1, e.sym, env, site, allowBoxing, useVarargs);
@@ -787,9 +806,9 @@ public class Resolve {
             if (err1 instanceof AmbiguityError &&
                 err2 instanceof AmbiguityError &&
                 ((AmbiguityError)err1).sym == ((AmbiguityError)err2).sym)
-                return new AmbiguityError(m1, m2);
+                return ambiguityError(m1, m2);
             else
-                return new AmbiguityError(err1, err2);
+                return ambiguityError(err1, err2);
         default:
             throw new AssertionError();
         }
@@ -842,6 +861,14 @@ public class Resolve {
             return msym;
         } else {
             return to;
+        }
+    }
+    //where
+    Symbol ambiguityError(Symbol m1, Symbol m2) {
+        if (((m1.flags() | m2.flags()) & CLASH) != 0) {
+            return (m1.flags() & CLASH) == 0 ? m1 : m2;
+        } else {
+            return new AmbiguityError(m1, m2);
         }
     }
 
@@ -1611,10 +1638,7 @@ public class Resolve {
                                 names.init, argtypes,
                                 typeargtypes, allowBoxing,
                                 useVarargs, false);
-        if ((sym.flags() & DEPRECATED) != 0 &&
-            (env.info.scope.owner.flags() & DEPRECATED) == 0 &&
-            env.info.scope.owner.outermostClass() != sym.outermostClass())
-            chk.warnDeprecated(pos, sym);
+        chk.checkDeprecated(pos, env.info.scope.owner, sym);
         return sym;
     }
 
@@ -1928,6 +1952,9 @@ public class Resolve {
                         key, name, first, second);
             }
             boolean hasLocation = false;
+            if (location == null) {
+                location = site.tsym;
+            }
             if (!location.name.isEmpty()) {
                 if (location.kind == PCK && !site.tsym.exists()) {
                     return diags.create(dkind, log.currentSource(), pos,
@@ -1945,7 +1972,7 @@ public class Resolve {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
                         typeargtypes, argtypes, //type parameters and arguments (if any)
-                        getLocationDiag(location)); //location kindname, type
+                        getLocationDiag(location, site)); //location kindname, type
             }
             else {
                 return diags.create(dkind, log.currentSource(), pos,
@@ -1966,15 +1993,18 @@ public class Resolve {
             }
             return key + suffix;
         }
-        private JCDiagnostic getLocationDiag(Symbol location) {
-            boolean isVar = location.kind == VAR;
-            String key = isVar ?
-                "location.1" :
-                "location";
-            return diags.fragment(key,
+        private JCDiagnostic getLocationDiag(Symbol location, Type site) {
+            if (location.kind == VAR) {
+                return diags.fragment("location.1",
                     kindName(location),
                     location,
-                    isVar ? location.type : null);
+                    location.type);
+            } else {
+                return diags.fragment("location",
+                    typeKindName(site),
+                    site,
+                    null);
+            }
         }
     }
 
@@ -2025,8 +2055,14 @@ public class Resolve {
                 return null;
 
             if (isOperator(name)) {
-                return diags.create(dkind, log.currentSource(),
-                        pos, "operator.cant.be.applied", name, argtypes);
+                boolean isUnaryOp = argtypes.size() == 1;
+                String key = argtypes.size() == 1 ?
+                    "operator.cant.be.applied" :
+                    "operator.cant.be.applied.1";
+                Type first = argtypes.head;
+                Type second = !isUnaryOp ? argtypes.tail.head : null;
+                return diags.create(dkind, log.currentSource(), pos,
+                        key, name, first, second);
             }
             else {
                 Symbol ws = sym.asMemberOf(site, types);

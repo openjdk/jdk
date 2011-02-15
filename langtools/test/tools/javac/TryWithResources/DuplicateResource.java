@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 6911256 6964740 6965277
+ * @bug 6911256 6964740 6965277 7013420
  * @author Maurizio Cimadamore
- * @summary Check that lowered arm block does not end up creating resource twice
+ * @summary Check that lowered try-with-resources block does not end up creating resource twice
  */
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class DuplicateResource {
     static ArrayList<TestResource> resources = new ArrayList<TestResource>();
 
     public static void main(String[] args) {
-        try(new TestResource()) {
+        try(TestResource tr = new TestResource()) {
            //do something
         } catch (Exception e) {
             throw new AssertionError("Shouldn't reach here", e);
@@ -59,7 +59,7 @@ public class DuplicateResource {
        }
        TestResource resource = resources.get(0);
        if (!resource.isClosed) {
-           throw new AssertionError("Resource used in ARM block has not been automatically closed");
+           throw new AssertionError("Resource used in try-with-resources block has not been automatically closed");
        }
     }
 }

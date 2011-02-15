@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,11 +485,8 @@ public class Infer {
                 @Override
                 public Type inst(List<Type> inferred, Types types) throws NoInstanceException {
                     List<Type> formals = types.subst(mt2.argtypes, tvars, inferred);
-                    if (!rs.argumentsAcceptable(capturedArgs, formals,
-                           allowBoxing, useVarargs, warn)) {
-                      // inferred method is not applicable
-                      throw invalidInstanceException.setMessage("inferred.do.not.conform.to.params", formals, argtypes);
-                    }
+                    // check that actuals conform to inferred formals
+                    checkArgumentsAcceptable(env, capturedArgs, formals, allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
@@ -500,16 +497,26 @@ public class Infer {
             }};
             return mt2;
         }
-        else if (!rs.argumentsAcceptable(capturedArgs, mt.getParameterTypes(), allowBoxing, useVarargs, warn)) {
-            // inferred method is not applicable
-            throw invalidInstanceException.setMessage("inferred.do.not.conform.to.params", mt.getParameterTypes(), argtypes);
-        }
         else {
+            // check that actuals conform to inferred formals
+            checkArgumentsAcceptable(env, capturedArgs, mt.getParameterTypes(), allowBoxing, useVarargs, warn);
             // return instantiated version of method type
             return mt;
         }
     }
     //where
+
+        private void checkArgumentsAcceptable(Env<AttrContext> env, List<Type> actuals, List<Type> formals,
+                boolean allowBoxing, boolean useVarargs, Warner warn) {
+            try {
+                rs.checkRawArgumentsAcceptable(env, actuals, formals,
+                       allowBoxing, useVarargs, warn);
+            }
+            catch (Resolve.InapplicableMethodException ex) {
+                // inferred method is not applicable
+                throw invalidInstanceException.setMessage(ex.getDiagnostic());
+            }
+        }
 
         /** Try to instantiate argument type `that' to given type `to'.
          *  If this fails, try to insantiate `that' to `to' where

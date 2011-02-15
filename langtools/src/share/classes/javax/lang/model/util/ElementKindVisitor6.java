@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,8 @@ public class ElementKindVisitor6<R, P>
      * Visits a variable element, dispatching to the visit method for
      * the specific {@linkplain ElementKind kind} of variable, {@code
      * ENUM_CONSTANT}, {@code EXCEPTION_PARAMETER}, {@code FIELD},
-     * {@code LOCAL_VARIABLE}, or {@code PARAMETER}.
+     * {@code LOCAL_VARIABLE}, {@code PARAMETER}, or {@code RESOURCE_VARIABLE}.
+     *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of the kind-specific visit method
@@ -223,10 +224,12 @@ public class ElementKindVisitor6<R, P>
         case PARAMETER:
             return visitVariableAsParameter(e, p);
 
+        case RESOURCE_VARIABLE:
+            return visitVariableAsResourceVariable(e, p);
+
         default:
             throw new AssertionError("Bad kind " + k + " for VariableElement" + e);
         }
-
     }
 
     /**
@@ -287,6 +290,20 @@ public class ElementKindVisitor6<R, P>
      */
     public R visitVariableAsParameter(VariableElement e, P p) {
         return defaultAction(e, p);
+    }
+
+    /**
+     * Visits a {@code RESOURCE_VARIABLE} variable element by calling
+     * {@code visitUnknown}.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code visitUnknown}
+     *
+     * @since 1.7
+     */
+    public R visitVariableAsResourceVariable(VariableElement e, P p) {
+        return visitUnknown(e, p);
     }
 
     /**

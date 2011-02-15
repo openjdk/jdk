@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,10 @@ import static javax.lang.model.SourceVersion.*;
  * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
  * source version.
  *
- * Visit methods corresponding to {@code RELEASE_7} language
- * constructs call {@link #defaultAction}, passing their arguments to
- * {@code defaultAction}'s corresponding parameters.
+ * Visit methods corresponding to {@code RELEASE_7} and earlier
+ * language constructs call {@link #defaultAction defaultAction},
+ * passing their arguments to {@code defaultAction}'s corresponding
+ * parameters.
  *
  * <p> Methods in this class may be overridden subject to their
  * general contract.  Note that annotating methods in concrete
@@ -88,5 +89,17 @@ public class SimpleElementVisitor7<R, P> extends SimpleElementVisitor6<R, P> {
      */
     protected SimpleElementVisitor7(R defaultValue){
         super(defaultValue);
+    }
+
+    /**
+     * This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitVariable(VariableElement e, P p) {
+        return defaultAction(e, p);
     }
 }
