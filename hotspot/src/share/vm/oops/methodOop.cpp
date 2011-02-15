@@ -985,9 +985,11 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
                                               IsUnsafeConc,
                                               CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
+  NOT_PRODUCT(int nmsz = newm->is_parsable() ? newm->size() : -1;)
   int new_method_size = newm->method_size();
   // Create a shallow copy of methodOopDesc part, but be careful to preserve the new constMethodOop
   constMethodOop newcm = newm->constMethod();
+  NOT_PRODUCT(int ncmsz = newcm->is_parsable() ? newcm->size() : -1;)
   int new_const_method_size = newm->constMethod()->object_size();
 
   memcpy(newm(), m(), sizeof(methodOopDesc));
@@ -999,9 +1001,19 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   // or concurrent marking but those phases will be correct.  Setting and
   // resetting is done in preference to a careful copying into newcm to
   // avoid having to know the precise layout of a constMethodOop.
-  m->constMethod()->set_is_conc_safe(false);
+  m->constMethod()->set_is_conc_safe(oopDesc::IsUnsafeConc);
+  assert(m->constMethod()->is_parsable(), "Should remain parsable");
+
+  // NOTE: this is a reachable object that transiently signals "conc_unsafe"
+  // However, no allocations are done during this window
+  // during which it is tagged conc_unsafe, so we are assured that any concurrent
+  // thread will not wait forever for the object to revert to "conc_safe".
+  // Further, any such conc_unsafe object will indicate a stable size
+  // through the transition.
   memcpy(newcm, m->constMethod(), sizeof(constMethodOopDesc));
-  m->constMethod()->set_is_conc_safe(true);
+  m->constMethod()->set_is_conc_safe(oopDesc::IsSafeConc);
+  assert(m->constMethod()->is_parsable(), "Should remain parsable");
+
   // Reset correct method/const method, method size, and parameter info
   newcm->set_method(newm());
   newm->set_constMethod(newcm);
@@ -1035,6 +1047,8 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
 
   // Only set is_conc_safe to true when changes to newcm are
   // complete.
+  assert(!newm->is_parsable()  || nmsz  < 0 || newm->size()  == nmsz,  "newm->size()  inconsistency");
+  assert(!newcm->is_parsable() || ncmsz < 0 || newcm->size() == ncmsz, "newcm->size() inconsistency");
   newcm->set_is_conc_safe(true);
   return newm;
 }

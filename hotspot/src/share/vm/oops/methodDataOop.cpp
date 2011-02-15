@@ -271,17 +271,6 @@ void ReceiverTypeData::update_pointers() {
     }
   }
 }
-
-void ReceiverTypeData::update_pointers(HeapWord* beg_addr, HeapWord* end_addr) {
-  // The loop bounds could be computed based on beg_addr/end_addr and the
-  // boundary test hoisted outside the loop (see klassVTable for an example);
-  // however, row_limit() is small enough (2) to make that less efficient.
-  for (uint row = 0; row < row_limit(); row++) {
-    if (receiver_unchecked(row) != NULL) {
-      PSParallelCompact::adjust_pointer(adr_receiver(row), beg_addr, end_addr);
-    }
-  }
-}
 #endif // SERIALGC
 
 #ifndef PRODUCT
