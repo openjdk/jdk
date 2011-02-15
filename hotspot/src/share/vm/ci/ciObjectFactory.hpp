@@ -48,6 +48,7 @@ private:
   GrowableArray<ciKlass*>* _unloaded_klasses;
   GrowableArray<ciInstance*>* _unloaded_instances;
   GrowableArray<ciReturnAddress*>* _return_addresses;
+  GrowableArray<ciSymbol*>* _symbols;  // keep list of symbols created
   int                       _next_ident;
 
 public:
@@ -76,6 +77,7 @@ private:
   void insert_non_perm(NonPermObject* &where, oop key, ciObject* obj);
 
   void init_ident_of(ciObject* obj);
+  void init_ident_of(ciSymbol* obj);
 
   Arena* arena() { return _arena; }
 
@@ -88,12 +90,14 @@ public:
 
   static void initialize();
   void init_shared_objects();
+  void remove_symbols();
 
   ciObjectFactory(Arena* arena, int expected_size);
 
-
   // Get the ciObject corresponding to some oop.
   ciObject* get(oop key);
+
+  ciSymbol* get_symbol(Symbol* key);
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
   static ciSymbol* vm_symbol_at(int index);

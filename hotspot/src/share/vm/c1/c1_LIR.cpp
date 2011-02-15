@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _should_profile(false)
 {
   if (code == lir_store_check) {
-    _stub = new ArrayStoreExceptionStub(info_for_exception);
+    _stub = new ArrayStoreExceptionStub(object, info_for_exception);
     assert(info_for_exception != NULL, "store_check throws exceptions");
   } else {
     ShouldNotReachHere();
