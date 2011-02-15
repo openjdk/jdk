@@ -1,0 +1,7 @@
+T6594914b.java:11:13: compiler.warn.sun.proprietary: sun.misc.Lock
+T6594914b.java:16:24: compiler.warn.sun.proprietary: sun.misc.Lock
+T6594914b.java:16:56: compiler.warn.sun.proprietary: sun.misc.Lock
+T6594914b.java:16:39: compiler.warn.sun.proprietary: sun.misc.Lock
+T6594914b.java:17:28: compiler.warn.sun.proprietary: sun.misc.CEFormatException
+T6594914b.java:24:17: compiler.warn.sun.proprietary: sun.misc.Lock
+6 warnings

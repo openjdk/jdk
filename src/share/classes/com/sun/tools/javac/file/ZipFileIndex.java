@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
@@ -50,24 +48,28 @@ import java.util.zip.ZipException;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 
-/** This class implements building of index of a zip archive and access to it's context.
- *  It also uses prebuild index if available. It supports invocations where it will
- *  serialize an optimized zip index file to disk.
+/**
+ * This class implements the building of index of a zip archive and access to
+ * its context. It also uses a prebuilt index if available.
+ * It supports invocations where it will serialize an optimized zip index file
+ * to disk.
  *
- *  In oreder to use secondary index file make sure the option "usezipindex" is in the Options object,
- *  when JavacFileManager is invoked. (You can pass "-XDusezipindex" on the command line.
+ * In order to use a secondary index file, set "usezipindex" in the Options
+ * object when JavacFileManager is invoked. (You can pass "-XDusezipindex" on
+ * the command line.)
  *
- *  Location where to look for/generate optimized zip index files can be provided using
- *  "-XDcachezipindexdir=<directory>". If this flag is not provided, the dfault location is
- *  the value of the "java.io.tmpdir" system property.
+ * Location where to look for/generate optimized zip index files can be
+ * provided using "-XDcachezipindexdir=<directory>". If this flag is not
+ * provided, the default location is the value of the "java.io.tmpdir" system
+ * property.
  *
- *  If key "-XDwritezipindexfiles" is specified, there will be new optimized index file
- *  created for each archive, used by the compiler for compilation, at location,
- *  specified by "cachezipindexdir" option.
+ * If "-XDwritezipindexfiles" is specified, there will be new optimized index
+ * file created for each archive, used by the compiler for compilation, at the
+ * location specified by the "cachezipindexdir" option.
  *
- * If nonBatchMode option is specified (-XDnonBatchMode) the compiler will use timestamp
- * checking to reindex the zip files if it is needed. In batch mode the timestamps are not checked
- * and the compiler uses the cached indexes.
+ * If system property nonBatchMode option is specified the compiler will use
+ * timestamp checking to reindex the zip files if it is needed. In batch mode
+ * the timestamps are not checked and the compiler uses the cached indexes.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -80,18 +82,18 @@ public class ZipFileIndex {
 
     public final static long NOT_MODIFIED = Long.MIN_VALUE;
 
-    private static Map<File, ZipFileIndex> zipFileIndexCache = new HashMap<File, ZipFileIndex>();
-    private static ReentrantLock lock = new ReentrantLock();
 
     private static boolean NON_BATCH_MODE = System.getProperty("nonBatchMode") != null;// TODO: Use -XD compiler switch for this.
 
-    private Map<RelativeDirectory, DirectoryEntry> directories = Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
-    private Set<RelativeDirectory> allDirs = Collections.<RelativeDirectory>emptySet();
+    private Map<RelativeDirectory, DirectoryEntry> directories =
+            Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
+    private Set<RelativeDirectory> allDirs =
+            Collections.<RelativeDirectory>emptySet();
 
     // ZipFileIndex data entries
-    private File zipFile;
+    final File zipFile;
     private Reference<File> absFileRef;
-    private long zipFileLastModified = NOT_MODIFIED;
+    long zipFileLastModified = NOT_MODIFIED;
     private RandomAccessFile zipRandomFile;
     private Entry[] entries;
 
@@ -99,156 +101,24 @@ public class ZipFileIndex {
     private File zipIndexFile = null;
     private boolean triedToReadIndex = false;
     final RelativeDirectory symbolFilePrefix;
-    private int symbolFilePrefixLength = 0;
+    private final int symbolFilePrefixLength;
     private boolean hasPopulatedData = false;
-    private long lastReferenceTimeStamp = NOT_MODIFIED;
+    long lastReferenceTimeStamp = NOT_MODIFIED;
 
-    private boolean usePreindexedCache = false;
-    private String preindexedCacheLocation = null;
+    private final boolean usePreindexedCache;
+    private final String preindexedCacheLocation;
 
     private boolean writeIndex = false;
 
-    private Map <String, SoftReference<RelativeDirectory>> relativeDirectoryCache =
+    private Map<String, SoftReference<RelativeDirectory>> relativeDirectoryCache =
             new HashMap<String, SoftReference<RelativeDirectory>>();
 
-    /**
-     * Returns a list of all ZipFileIndex entries
-     *
-     * @return A list of ZipFileIndex entries, or an empty list
-     */
-    public static List<ZipFileIndex> getZipFileIndexes() {
-        return getZipFileIndexes(false);
+
+    public synchronized boolean isOpen() {
+        return (zipRandomFile != null);
     }
 
-    /**
-     * Returns a list of all ZipFileIndex entries
-     *
-     * @param openedOnly If true it returns a list of only opened ZipFileIndex entries, otherwise
-     *                   all ZipFileEntry(s) are included into the list.
-     * @return A list of ZipFileIndex entries, or an empty list
-     */
-    public static List<ZipFileIndex> getZipFileIndexes(boolean openedOnly) {
-        List<ZipFileIndex> zipFileIndexes = new ArrayList<ZipFileIndex>();
-        lock.lock();
-        try {
-            zipFileIndexes.addAll(zipFileIndexCache.values());
-
-            if (openedOnly) {
-                for(ZipFileIndex elem : zipFileIndexes) {
-                    if (!elem.isOpen()) {
-                        zipFileIndexes.remove(elem);
-                    }
-                }
-            }
-        }
-        finally {
-            lock.unlock();
-        }
-        return zipFileIndexes;
-    }
-
-    public boolean isOpen() {
-        lock.lock();
-        try {
-            return zipRandomFile != null;
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public static ZipFileIndex getZipFileIndex(File zipFile,
-            RelativeDirectory symbolFilePrefix,
-            boolean useCache, String cacheLocation,
-            boolean writeIndex) throws IOException {
-        ZipFileIndex zi = null;
-        lock.lock();
-        try {
-            zi = getExistingZipIndex(zipFile);
-
-            if (zi == null || (zi != null && zipFile.lastModified() != zi.zipFileLastModified)) {
-                zi = new ZipFileIndex(zipFile, symbolFilePrefix, writeIndex,
-                        useCache, cacheLocation);
-                zipFileIndexCache.put(zipFile, zi);
-            }
-        }
-        finally {
-            lock.unlock();
-        }
-        return zi;
-    }
-
-    public static ZipFileIndex getExistingZipIndex(File zipFile) {
-        lock.lock();
-        try {
-            return zipFileIndexCache.get(zipFile);
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public static void clearCache() {
-        lock.lock();
-        try {
-            zipFileIndexCache.clear();
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public static void clearCache(long timeNotUsed) {
-        lock.lock();
-        try {
-            Iterator<File> cachedFileIterator = zipFileIndexCache.keySet().iterator();
-            while (cachedFileIterator.hasNext()) {
-                File cachedFile = cachedFileIterator.next();
-                ZipFileIndex cachedZipIndex = zipFileIndexCache.get(cachedFile);
-                if (cachedZipIndex != null) {
-                    long timeToTest = cachedZipIndex.lastReferenceTimeStamp + timeNotUsed;
-                    if (timeToTest < cachedZipIndex.lastReferenceTimeStamp || // Overflow...
-                            System.currentTimeMillis() > timeToTest) {
-                        zipFileIndexCache.remove(cachedFile);
-                    }
-                }
-            }
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public static void removeFromCache(File file) {
-        lock.lock();
-        try {
-            zipFileIndexCache.remove(file);
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    /** Sets already opened list of ZipFileIndexes from an outside client
-      * of the compiler. This functionality should be used in a non-batch clients of the compiler.
-      */
-    public static void setOpenedIndexes(List<ZipFileIndex>indexes) throws IllegalStateException {
-        lock.lock();
-        try {
-            if (zipFileIndexCache.isEmpty()) {
-                throw new IllegalStateException("Setting opened indexes should be called only when the ZipFileCache is empty. Call JavacFileManager.flush() before calling this method.");
-            }
-
-            for (ZipFileIndex zfi : indexes) {
-                zipFileIndexCache.put(zfi.zipFile, zfi);
-            }
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    private ZipFileIndex(File zipFile, RelativeDirectory symbolFilePrefix, boolean writeIndex,
+    ZipFileIndex(File zipFile, RelativeDirectory symbolFilePrefix, boolean writeIndex,
             boolean useCache, String cacheLocation) throws IOException {
         this.zipFile = zipFile;
         this.symbolFilePrefix = symbolFilePrefix;
@@ -266,19 +136,22 @@ public class ZipFileIndex {
         checkIndex();
     }
 
+    @Override
     public String toString() {
         return "ZipFileIndex[" + zipFile + "]";
     }
 
     // Just in case...
-    protected void finalize() {
+    @Override
+    protected void finalize() throws Throwable {
         closeFile();
+        super.finalize();
     }
 
     private boolean isUpToDate() {
-        if (zipFile != null &&
-                ((!NON_BATCH_MODE) || zipFileLastModified == zipFile.lastModified()) &&
-                hasPopulatedData) {
+        if (zipFile != null
+                && ((!NON_BATCH_MODE) || zipFileLastModified == zipFile.lastModified())
+                && hasPopulatedData) {
             return true;
         }
 
@@ -339,15 +212,9 @@ public class ZipFileIndex {
         allDirs = Collections.<RelativeDirectory>emptySet();
     }
 
-    public void close() {
-        lock.lock();
-        try {
-            writeIndex();
-            closeFile();
-        }
-        finally {
-            lock.unlock();
-        }
+    public synchronized void close() {
+        writeIndex();
+        closeFile();
     }
 
     private void closeFile() {
@@ -361,29 +228,24 @@ public class ZipFileIndex {
     }
 
     /**
-     * Returns the ZipFileIndexEntry for an absolute path, if there is one.
+     * Returns the ZipFileIndexEntry for a path, if there is one.
      */
-    Entry getZipIndexEntry(RelativePath path) {
-        lock.lock();
+    synchronized Entry getZipIndexEntry(RelativePath path) {
         try {
             checkIndex();
             DirectoryEntry de = directories.get(path.dirname());
             String lookFor = path.basename();
-            return de == null ? null : de.getEntry(lookFor);
+            return (de == null) ? null : de.getEntry(lookFor);
         }
         catch (IOException e) {
             return null;
         }
-        finally {
-            lock.unlock();
-        }
     }
 
     /**
-     * Returns a javac List of filenames within an absolute path in the ZipFileIndex.
+     * Returns a javac List of filenames within a directory in the ZipFileIndex.
      */
-    public com.sun.tools.javac.util.List<String> getFiles(RelativeDirectory path) {
-        lock.lock();
+    public synchronized com.sun.tools.javac.util.List<String> getFiles(RelativeDirectory path) {
         try {
             checkIndex();
 
@@ -398,13 +260,9 @@ public class ZipFileIndex {
         catch (IOException e) {
             return com.sun.tools.javac.util.List.<String>nil();
         }
-        finally {
-            lock.unlock();
-        }
     }
 
-    public List<String> getDirectories(RelativeDirectory path) {
-        lock.lock();
+    public synchronized List<String> getDirectories(RelativeDirectory path) {
         try {
             checkIndex();
 
@@ -420,13 +278,9 @@ public class ZipFileIndex {
         catch (IOException e) {
             return com.sun.tools.javac.util.List.<String>nil();
         }
-        finally {
-            lock.unlock();
-        }
     }
 
-    public Set<RelativeDirectory> getAllDirectories() {
-        lock.lock();
+    public synchronized Set<RelativeDirectory> getAllDirectories() {
         try {
             checkIndex();
             if (allDirs == Collections.EMPTY_SET) {
@@ -438,9 +292,6 @@ public class ZipFileIndex {
         catch (IOException e) {
             return Collections.<RelativeDirectory>emptySet();
         }
-        finally {
-            lock.unlock();
-        }
     }
 
     /**
@@ -450,8 +301,7 @@ public class ZipFileIndex {
      * @param path A path within the zip.
      * @return True if the path is a file or dir, false otherwise.
      */
-    public boolean contains(RelativePath path) {
-        lock.lock();
+    public synchronized boolean contains(RelativePath path) {
         try {
             checkIndex();
             return getZipIndexEntry(path) != null;
@@ -459,114 +309,69 @@ public class ZipFileIndex {
         catch (IOException e) {
             return false;
         }
-        finally {
-            lock.unlock();
+    }
+
+    public synchronized boolean isDirectory(RelativePath path) throws IOException {
+        // The top level in a zip file is always a directory.
+        if (path.getPath().length() == 0) {
+            lastReferenceTimeStamp = System.currentTimeMillis();
+            return true;
+        }
+
+        checkIndex();
+        return directories.get(path) != null;
+    }
+
+    public synchronized long getLastModified(RelativeFile path) throws IOException {
+        Entry entry = getZipIndexEntry(path);
+        if (entry == null)
+            throw new FileNotFoundException();
+        return entry.getLastModified();
+    }
+
+    public synchronized int length(RelativeFile path) throws IOException {
+        Entry entry = getZipIndexEntry(path);
+        if (entry == null)
+            throw new FileNotFoundException();
+
+        if (entry.isDir) {
+            return 0;
+        }
+
+        byte[] header = getHeader(entry);
+        // entry is not compressed?
+        if (get2ByteLittleEndian(header, 8) == 0) {
+            return entry.compressedSize;
+        } else {
+            return entry.size;
         }
     }
 
-    public boolean isDirectory(RelativePath path) throws IOException {
-        lock.lock();
-        try {
-            // The top level in a zip file is always a directory.
-            if (path.getPath().length() == 0) {
-                lastReferenceTimeStamp = System.currentTimeMillis();
-                return true;
-            }
-
-            checkIndex();
-            return directories.get(path) != null;
-        }
-        finally {
-            lock.unlock();
-        }
+    public synchronized byte[] read(RelativeFile path) throws IOException {
+        Entry entry = getZipIndexEntry(path);
+        if (entry == null)
+            throw new FileNotFoundException("Path not found in ZIP: " + path.path);
+        return read(entry);
     }
 
-    public long getLastModified(RelativeFile path) throws IOException {
-        lock.lock();
-        try {
-            Entry entry = getZipIndexEntry(path);
-            if (entry == null)
-                throw new FileNotFoundException();
-            return entry.getLastModified();
-        }
-        finally {
-            lock.unlock();
-        }
+    synchronized byte[] read(Entry entry) throws IOException {
+        openFile();
+        byte[] result = readBytes(entry);
+        closeFile();
+        return result;
     }
 
-    public int length(RelativeFile path) throws IOException {
-        lock.lock();
-        try {
-            Entry entry = getZipIndexEntry(path);
-            if (entry == null)
-                throw new FileNotFoundException();
-
-            if (entry.isDir) {
-                return 0;
-            }
-
-            byte[] header = getHeader(entry);
-            // entry is not compressed?
-            if (get2ByteLittleEndian(header, 8) == 0) {
-                return entry.compressedSize;
-            } else {
-                return entry.size;
-            }
-        }
-        finally {
-            lock.unlock();
-        }
+    public synchronized int read(RelativeFile path, byte[] buffer) throws IOException {
+        Entry entry = getZipIndexEntry(path);
+        if (entry == null)
+            throw new FileNotFoundException();
+        return read(entry, buffer);
     }
 
-    public byte[] read(RelativeFile path) throws IOException {
-        lock.lock();
-        try {
-            Entry entry = getZipIndexEntry(path);
-            if (entry == null)
-                throw new FileNotFoundException("Path not found in ZIP: " + path.path);
-            return read(entry);
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    byte[] read(Entry entry) throws IOException {
-        lock.lock();
-        try {
-            openFile();
-            byte[] result = readBytes(entry);
-            closeFile();
-            return result;
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    public int read(RelativeFile path, byte[] buffer) throws IOException {
-        lock.lock();
-        try {
-            Entry entry = getZipIndexEntry(path);
-            if (entry == null)
-                throw new FileNotFoundException();
-            return read(entry, buffer);
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    int read(Entry entry, byte[] buffer)
+    synchronized int read(Entry entry, byte[] buffer)
             throws IOException {
-        lock.lock();
-        try {
-            int result = readBytes(entry, buffer);
-            return result;
-        }
-        finally {
-            lock.unlock();
-        }
+        int result = readBytes(entry, buffer);
+        return  result;
     }
 
     private byte[] readBytes(Entry entry) throws IOException {
@@ -638,21 +443,20 @@ public class ZipFileIndex {
   /*
    * Inflate using the java.util.zip.Inflater class
    */
-    private static Inflater inflater;
+    private SoftReference<Inflater> inflaterRef;
     private int inflate(byte[] src, byte[] dest) {
+        Inflater inflater = (inflaterRef == null ? null : inflaterRef.get());
 
         // construct the inflater object or reuse an existing one
         if (inflater == null)
-            inflater = new Inflater(true);
+            inflaterRef = new SoftReference<Inflater>(inflater = new Inflater(true));
 
-        synchronized (inflater) {
-            inflater.reset();
-            inflater.setInput(src);
-            try {
-                return inflater.inflate(dest);
-            } catch (DataFormatException ex) {
-                return -1;
-            }
+        inflater.reset();
+        inflater.setInput(src);
+        try {
+            return inflater.inflate(dest);
+        } catch (DataFormatException ex) {
+            return -1;
         }
     }
 
@@ -855,13 +659,9 @@ public class ZipFileIndex {
      * @return long
      */
     public long getZipFileLastModified() throws IOException {
-        lock.lock();
-        try {
+        synchronized (this) {
             checkIndex();
             return zipFileLastModified;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -1028,8 +828,7 @@ public class ZipFileIndex {
         }
 
         boolean ret = false;
-        lock.lock();
-        try {
+        synchronized (this) {
             triedToReadIndex = true;
             RandomAccessFile raf = null;
             try {
@@ -1070,9 +869,6 @@ public class ZipFileIndex {
             if (ret == true) {
                 readFromIndex = true;
             }
-        }
-        finally {
-            lock.unlock();
         }
 
         return ret;
@@ -1144,8 +940,8 @@ public class ZipFileIndex {
                 raf.seek(currFP);
 
                 // Now write each of the files in the DirectoryEntry
-                List<Entry> entries = de.getEntriesAsCollection();
-                for (Entry zfie : entries) {
+                List<Entry> list = de.getEntriesAsCollection();
+                for (Entry zfie : list) {
                     // Write the name bytes
                     byte [] zfieNameBytes = zfie.name.getBytes("UTF-8");
                     int zfieNameBytesLen = zfieNameBytes.length;
@@ -1191,12 +987,8 @@ public class ZipFileIndex {
     }
 
     public boolean writeZipIndex() {
-        lock.lock();
-        try {
+        synchronized (this) {
             return writeIndex();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -1328,7 +1120,7 @@ public class ZipFileIndex {
             return hash;
         }
 
-
+        @Override
         public String toString() {
             return isDir ? ("Dir:" + dir + " : " + name) :
                 (dir + ":" + name);

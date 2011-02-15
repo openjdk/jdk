@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     }
 
     /**
-     * * Get a localized string represenation for all the symbols in the input list.
+     * * Get a localized string representation for all the symbols in the input list.
      *
      * @param ts symbols to be displayed
      * @param locale the locale in which the string is to be rendered

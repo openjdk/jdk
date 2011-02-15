@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import javax.annotation.processing.SupportedSourceVersion;
 /**
  * A simple visitor for annotation values with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
- * source version.  Visit methods call {@link
- * #defaultAction} passing their arguments to {@code defaultAction}'s
+ * source version.  Visit methods call {@link #defaultAction
+ * defaultAction} passing their arguments to {@code defaultAction}'s
  * corresponding parameters.
  *
  * <p> Methods in this class may be overridden subject to their
