@@ -314,13 +314,22 @@ public class Flow extends TreeScanner {
         for (PendingExit exit = pendingExits.next();
              exit != null;
              exit = pendingExits.next()) {
-            boolean synthetic = classDef != null &&
-                classDef.pos == exit.tree.pos;
-            log.error(exit.tree.pos(),
-                      synthetic
-                      ? "unreported.exception.default.constructor"
-                      : "unreported.exception.need.to.catch.or.throw",
-                      exit.thrown);
+            if (classDef != null &&
+                classDef.pos == exit.tree.pos) {
+                log.error(exit.tree.pos(),
+                        "unreported.exception.default.constructor",
+                        exit.thrown);
+            } else if (exit.tree.getTag() == JCTree.VARDEF &&
+                    ((JCVariableDecl)exit.tree).sym.isResourceVariable()) {
+                log.error(exit.tree.pos(),
+                        "unreported.exception.implicit.close",
+                        exit.thrown,
+                        ((JCVariableDecl)exit.tree).sym.name);
+            } else {
+                log.error(exit.tree.pos(),
+                        "unreported.exception.need.to.catch.or.throw",
+                        exit.thrown);
+            }
         }
     }
 
@@ -1021,7 +1030,7 @@ public class Flow extends TreeScanner {
                             List.<Type>nil());
                     if (closeMethod.kind == MTH) {
                         for (Type t : ((MethodSymbol)closeMethod).getThrownTypes()) {
-                            markThrown(tree.body, t);
+                            markThrown(resource, t);
                         }
                     }
                 }
