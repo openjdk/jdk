@@ -465,9 +465,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCImport> getImports() {
             ListBuffer<JCImport> imports = new ListBuffer<JCImport>();
             for (JCTree tree : defs) {
-                if (tree.getTag() == IMPORT)
+                int tag = tree.getTag();
+                if (tag == IMPORT)
                     imports.append((JCImport)tree);
-                else
+                else if (tag != SKIP)
                     break;
             }
             return imports.toList();

@@ -83,6 +83,7 @@ public class Attr extends JCTree.Visitor {
     final Types types;
     final JCDiagnostic.Factory diags;
     final Annotate annotate;
+    final DeferredLintHandler deferredLintHandler;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -108,6 +109,7 @@ public class Attr extends JCTree.Visitor {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
+        deferredLintHandler = DeferredLintHandler.instance(context);
 
         Options options = Options.instance(context);
 
@@ -125,7 +127,6 @@ public class Attr extends JCTree.Visitor {
         findDiamonds = options.get("findDiamond") != null &&
                  source.allowDiamond();
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
-        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -172,12 +173,6 @@ public class Attr extends JCTree.Visitor {
      * RFE: 6425594
      */
     boolean useBeforeDeclarationWarning;
-
-    /**
-     * Switch: allow lint infrastructure to control proprietary
-     * API warnings.
-     */
-    boolean enableSunApiLintControl;
 
     /**
      * Switch: allow strings in switch?
@@ -581,6 +576,41 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    /**
+     * Attribute a "lazy constant value".
+     *  @param env         The env for the const value
+     *  @param initializer The initializer for the const value
+     *  @param type        The expected type, or null
+     *  @see VarSymbol#setlazyConstValue
+     */
+    public Object attribLazyConstantValue(Env<AttrContext> env,
+                                      JCTree.JCExpression initializer,
+                                      Type type) {
+
+        // in case no lint value has been set up for this env, scan up
+        // env stack looking for smallest enclosing env for which it is set.
+        Env<AttrContext> lintEnv = env;
+        while (lintEnv.info.lint == null)
+            lintEnv = lintEnv.next;
+
+        // Having found the enclosing lint value, we can initialize the lint value for this class
+        env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
+
+        Lint prevLint = chk.setLint(env.info.lint);
+        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+
+        try {
+            Type itype = attribExpr(initializer, env, type);
+            if (itype.constValue() != null)
+                return coerce(itype, type).constValue();
+            else
+                return null;
+        } finally {
+            env.info.lint = prevLint;
+            log.useSource(prevSource);
+        }
+    }
+
     /** Attribute type reference in an `extends' or `implements' clause.
      *  Supertypes of anonymous inner classes are usually already attributed.
      *
@@ -672,13 +702,18 @@ public class Attr extends JCTree.Visitor {
         Lint prevLint = chk.setLint(lint);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
+            deferredLintHandler.flush(tree.pos());
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
             attribBounds(tree.typarams);
 
             // If we override any other methods, check that we do so properly.
             // JLS ???
-            chk.checkClashes(tree.pos(), env.enclClass.type, m);
+            if (m.isStatic()) {
+                chk.checkHideClashes(tree.pos(), env.enclClass.type, m);
+            } else {
+                chk.checkOverrideClashes(tree.pos(), env.enclClass.type, m);
+            }
             chk.checkOverride(tree, m);
 
             // Create a new environment with local scope
@@ -814,6 +849,7 @@ public class Attr extends JCTree.Visitor {
 
         // Check that the variable's declared type is well-formed.
         chk.validate(tree.vartype, env);
+        deferredLintHandler.flush(tree.pos());
 
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
@@ -1959,7 +1995,9 @@ public class Attr extends JCTree.Visitor {
             tree.pos(), tree.getTag() - JCTree.ASGOffset, env,
             owntype, operand);
 
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !owntype.isErroneous() &&
+                !operand.isErroneous()) {
             chk.checkOperator(tree.pos(),
                               (OperatorSymbol)operator,
                               tree.getTag() - JCTree.ASGOffset,
@@ -1984,7 +2022,8 @@ public class Attr extends JCTree.Visitor {
             rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
 
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !argtype.isErroneous()) {
             owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
                 ? tree.arg.type
                 : operator.type.getReturnType();
@@ -2020,7 +2059,9 @@ public class Attr extends JCTree.Visitor {
             rs.resolveBinaryOperator(tree.pos(), tree.getTag(), env, left, right);
 
         Type owntype = types.createErrorType(tree.type);
-        if (operator.kind == MTH) {
+        if (operator.kind == MTH &&
+                !left.isErroneous() &&
+                !right.isErroneous()) {
             owntype = operator.type.getReturnType();
             int opc = chk.checkOperator(tree.lhs.pos(),
                                         (OperatorSymbol)operator,
@@ -2337,7 +2378,6 @@ public class Attr extends JCTree.Visitor {
                                  int pkind) {
             DiagnosticPosition pos = tree.pos();
             Name name = tree.name;
-
             switch (site.tag) {
             case PACKAGE:
                 return rs.access(
@@ -2543,17 +2583,10 @@ public class Attr extends JCTree.Visitor {
             // Test (1): emit a `deprecation' warning if symbol is deprecated.
             // (for constructors, the error was given when the constructor was
             // resolved)
-            if (sym.name != names.init &&
-                (sym.flags() & DEPRECATED) != 0 &&
-                (env.info.scope.owner.flags() & DEPRECATED) == 0 &&
-                sym.outermostClass() != env.info.scope.owner.outermostClass())
-                chk.warnDeprecated(tree.pos(), sym);
 
-            if ((sym.flags() & PROPRIETARY) != 0) {
-                if (enableSunApiLintControl)
-                  chk.warnSunApi(tree.pos(), "sun.proprietary", sym);
-                else
-                  log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            if (sym.name != names.init) {
+                chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
+                chk.checkSunAPI(tree.pos(), sym);
             }
 
             // Test (3): if symbol is a variable, check that its type and
@@ -3156,7 +3189,7 @@ public class Attr extends JCTree.Visitor {
                 if (sym == null ||
                     sym.kind != VAR ||
                     ((VarSymbol) sym).getConstValue() == null)
-                    log.error(l.head.pos(), "icls.cant.have.static.decl", sym.location());
+                    log.error(l.head.pos(), "icls.cant.have.static.decl", c);
             }
         }
 

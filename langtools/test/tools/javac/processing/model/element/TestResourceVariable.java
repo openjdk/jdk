@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,13 @@
 
 /*
  * @test
- * @bug  6911256 6964740 6967842
+ * @bug  6911256 6964740 6967842 6961571
  * @summary Test that the resource variable kind is appropriately set
  * @author  Joseph D. Darcy
  * @library ../../../lib
  * @build   JavacTestingAbstractProcessor TestResourceVariable
  * @compile -processor TestResourceVariable -proc:only TestResourceVariable.java
  */
-
-// Bug should be filed for this misbehavior
 
 import java.io.*;
 import javax.annotation.processing.*;
@@ -82,6 +80,33 @@ public class TestResourceVariable extends JavacTestingAbstractProcessor implemen
         try(TestResourceVariable trv1 = this; TestResourceVariable trv2 = trv1) {}
     }
 
+    /**
+     * Verify that a resource variable modeled as an element behaves
+     * as expected under 6 and 7 specific visitors.
+     */
+    private static void testResourceVariable(Element element) {
+        ElementVisitor visitor6 = new ElementKindVisitor6<Void, Void>() {};
+
+        try {
+            visitor6.visit(element);
+            throw new RuntimeException("Expected UnknownElementException not thrown.");
+        } catch (UnknownElementException uee) {
+            ; // Expected.
+        }
+
+        ElementKindVisitor7 visitor7 = new ElementKindVisitor7<Object, Void>() {
+            @Override
+            public Object visitVariableAsResourceVariable(VariableElement e,
+                                                          Void p) {
+                return e; // a non-null value
+            }
+        };
+
+        if (visitor7.visit(element) == null) {
+            throw new RuntimeException("Null result of resource variable visitation.");
+        }
+    }
+
     class ResourceVariableScanner extends TreeScanner<Void, CompilationUnitTree> {
        private Trees trees;
 
@@ -92,17 +117,14 @@ public class TestResourceVariable extends JavacTestingAbstractProcessor implemen
        @Override
        public Void visitVariable(VariableTree node, CompilationUnitTree cu) {
            Element element = trees.getElement(trees.getPath(cu, node));
-           if (element == null) {
-               System.out.println("Null variable element: " + node);
-           } else {
-               System.out.println("Name: " + element.getSimpleName() +
-                                  "\tKind: " + element.getKind());
-           }
-           if (element != null &&
-               element.getKind() == ElementKind.RESOURCE_VARIABLE) {
+
+           System.out.println("Name: " + element.getSimpleName() +
+                              "\tKind: " + element.getKind());
+           if (element.getKind() == ElementKind.RESOURCE_VARIABLE) {
+               testResourceVariable(element);
                resourceVariableCount++;
            }
            return super.visitVariable(node, cu);
        }
-   }
+    }
 }
