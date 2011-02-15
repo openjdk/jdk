@@ -93,7 +93,7 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * and their result can be cast to any return type.
  * Formally this is accomplished by giving the invoker methods
  * {@code Object} return types and variable-arity {@code Object} arguments,
- * but they have an additional quality called "signature polymorphism"
+ * but they have an additional quality called <em>signature polymorphism</em>
  * which connects this freedom of invocation directly to the JVM execution stack.
  * <p>
  * As is usual with virtual methods, source-level calls to {@code invokeExact}
@@ -297,7 +297,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * throwables locally, rethrowing only those which are legal in the context,
  * and wrapping ones which are illegal.
  *
- * <h3><a name="polysig"></a>Signature polymorphism</h3>
+ * <h3><a name="sigpoly"></a>Signature polymorphism</h3>
  * The unusual compilation and linkage behavior of
  * {@code invokeExact} and {@code invokeGeneric}
  * is referenced by the term <em>signature polymorphism</em>.
@@ -322,6 +322,56 @@ mh.invokeExact(System.out, "Hello, world.");
  * untransformed type descriptors for these methods.
  * Tools which determine symbolic linkage are required to accept such
  * untransformed descriptors, without reporting linkage errors.
+ * <p>
+ * For the sake of tools (but not as a programming API), the signature polymorphic
+ * methods are marked with a private yet standard annotation,
+ * {@code @java.dyn.MethodHandle.PolymorphicSignature}.
+ * The annotation's retention is {@code RUNTIME}, so that all tools can see it.
+ *
+ * <h3>Formal rules for processing signature polymorphic methods</h3>
+ * <p>
+ * The following methods (and no others) are signature polymorphic:
+ * <ul>
+ * <li>{@link java.dyn.MethodHandle#invokeExact   MethodHandle.invokeExact}
+ * <li>{@link java.dyn.MethodHandle#invokeGeneric MethodHandle.invokeGeneric}
+ * </ul>
+ * <p>
+ * A signature polymorphic method will be declared with the following properties:
+ * <ul>
+ * <li>It must be native.
+ * <li>It must take a single varargs parameter of the form {@code Object...}.
+ * <li>It must produce a return value of type {@code Object}.
+ * <li>It must be contained within the {@code java.dyn} package.
+ * </ul>
+ * Because of these requirements, a signature polymorphic method is able to accept
+ * any number and type of actual arguments, and can, with a cast, produce a value of any type.
+ * However, the JVM will treat these declaration features as a documentation convention,
+ * rather than a description of the actual structure of the methods as executed.
+ * <p>
+ * When a call to a signature polymorphic method is compiled, the associated linkage information for
+ * its arguments is not array of {@code Object} (as for other similar varargs methods)
+ * but rather the erasure of the static types of all the arguments.
+ * <p>
+ * In an argument position of a method invocation on a signature polymorphic method,
+ * a null literal has type {@code java.lang.Void}, unless cast to a reference type.
+ * (Note: This typing rule allows the null type to have its own encoding in linkage information
+ * distinct from other types.
+ * <p>
+ * The linkage information for the return type is derived from a context-dependent target typing convention.
+ * The return type for a signature polymorphic method invocation is determined as follows:
+ * <ul>
+ * <li>If the method invocation expression is an expression statement, the method is {@code void}.
+ * <li>Otherwise, if the method invocation expression is the immediate operand of a cast,
+ * the return type is the erasure of the cast type.
+ * <li>Otherwise, the return type is the method's nominal return type, {@code Object}.
+ * </ul>
+ * (Programmers are encouraged to use explicit casts unless it is clear that a signature polymorphic
+ * call will be used as a plain {@code Object} expression.)
+ * <p>
+ * The linkage information for argument and return types is stored in the descriptor for the
+ * compiled (bytecode) call site. As for any invocation instruction, the arguments and return value
+ * will be passed directly on the JVM stack, in accordance with the descriptor,
+ * and without implicit boxing or unboxing.
  *
  * <h3>Interoperation between method handles and the Core Reflection API</h3>
  * Using factory methods in the {@link java.dyn.MethodHandles.Lookup Lookup} API,
@@ -399,9 +449,9 @@ public abstract class MethodHandle
 
     /**
      * Internal marker interface which distinguishes (to the Java compiler)
-     * those methods which are signature polymorphic.
+     * those methods which are <a href="MethodHandle.html#sigpoly">signature polymorphic</a>.
      */
-    @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD,java.lang.annotation.ElementType.TYPE})
+    @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
     @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
     @interface PolymorphicSignature { }
 
