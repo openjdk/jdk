@@ -25,7 +25,7 @@
 
 package java.nio.file.spi;
 
-import java.nio.file.FileRef;
+import java.nio.file.Path;
 import java.io.IOException;
 
 /**
@@ -42,7 +42,7 @@ import java.io.IOException;
  * href="../attribute/package-summary.html"> attribute</a> or the bytes in a
  * file may be examined to guess its file type.
  *
- * @see java.nio.file.Files#probeContentType(FileRef)
+ * @see java.nio.file.Files#probeContentType(Path)
  *
  * @since 1.7
  */
@@ -83,8 +83,8 @@ public abstract class FileTypeDetector {
      * Message Bodies</i></a>. The string must be parsable according to the
      * grammar in the RFC 2045.
      *
-     * @param   file
-     *          The file to probe
+     * @param   path
+     *          the path to the file to probe
      *
      * @return  The content type or {@code null} if the file type is not
      *          recognized
@@ -101,6 +101,6 @@ public abstract class FileTypeDetector {
      *
      * @see java.nio.file.Files#probeContentType
      */
-    public abstract String probeContentType(FileRef file)
+    public abstract String probeContentType(Path path)
         throws IOException;
 }

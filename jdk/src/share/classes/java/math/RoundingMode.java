@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ package java.math;
  *
  *<p>
  *<table border>
- * <caption top><h3>Summary of Rounding Operations Under Different Rounding Modes</h3></caption>
+ * <caption><b>Summary of Rounding Operations Under Different Rounding Modes</b></caption>
  * <tr><th></th><th colspan=8>Result of rounding input to one digit with the given
  *                           rounding mode</th>
  * <tr valign=top>

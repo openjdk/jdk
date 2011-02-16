@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,22 @@ import java.security.spec.InvalidParameterSpecException;
  * <code>AlgorithmParameters</code> object via a call to
  * <code>getParameterSpec</code>, and a byte encoding of the parameters is
  * obtained via a call to <code>getEncoded</code>.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>AlgorithmParameters</code> algorithms:
+ * <ul>
+ * <li><tt>AES</tt></li>
+ * <li><tt>DES</tt></li>
+ * <li><tt>DESede</tt></li>
+ * <li><tt>DiffieHellman</tt></li>
+ * <li><tt>DSA</tt></li>
+ * </ul>
+ * These algorithms are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameters">
+ * AlgorithmParameters section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
  * @author Jan Luehe
  *
@@ -111,9 +127,9 @@ public class AlgorithmParameters {
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameters section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameters">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new parameter object.
@@ -153,9 +169,9 @@ public class AlgorithmParameters {
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameters section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameters">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -200,9 +216,9 @@ public class AlgorithmParameters {
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the AlgorithmParameters section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameters">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.

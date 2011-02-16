@@ -57,8 +57,6 @@
 #ifndef _ECL_EXP_H
 #define _ECL_EXP_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* Curve field type */
 typedef enum {
         ECField_GFp,

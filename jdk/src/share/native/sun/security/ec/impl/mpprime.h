@@ -60,8 +60,6 @@
 #ifndef _MP_PRIME_H
 #define _MP_PRIME_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mpi.h"
 
 extern const int prime_tab_size;   /* number of primes available */

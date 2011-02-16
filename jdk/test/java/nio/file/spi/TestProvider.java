@@ -24,6 +24,7 @@
 import java.nio.file.spi.FileSystemProvider;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.nio.channels.SeekableByteChannel;
 import java.net.URI;
 import java.util.*;
 import java.io.IOException;
@@ -34,7 +35,6 @@ public class TestProvider extends FileSystemProvider {
 
     public TestProvider(FileSystemProvider defaultProvider) {
         theFileSystem = new TestFileSystem(this);
-
     }
 
     @Override
@@ -54,6 +54,124 @@ public class TestProvider extends FileSystemProvider {
 
     @Override
     public Path getPath(URI uri) {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void setAttribute(Path file, String attribute, Object value,
+                             LinkOption... options)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public Map<String,Object> readAttributes(Path file, String attributes,
+                                             LinkOption... options)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A readAttributes(Path file,
+                                                            Class<A> type,
+                                                            LinkOption... options)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public <V extends FileAttributeView> V getFileAttributeView(Path file,
+                                                                Class<V> type,
+                                                                LinkOption... options)
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+
+    @Override
+    public void delete(Path file) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void createLink(Path link, Path existing) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+
+    @Override
+    public void copy(Path source, Path target, CopyOption... options)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void move(Path source, Path target, CopyOption... options)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public DirectoryStream<Path> newDirectoryStream(Path dir,
+                                                    DirectoryStream.Filter<? super Path> filter)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void createDirectory(Path dir, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public SeekableByteChannel newByteChannel(Path file,
+                                              Set<? extends OpenOption> options,
+                                              FileAttribute<?>... attrs)
+        throws IOException
+    {
+        throw new RuntimeException("not implemented");
+    }
+
+
+    @Override
+    public boolean isHidden(Path file) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public FileStore getFileStore(Path file) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public boolean isSameFile(Path file, Path other) throws IOException {
+        throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public void checkAccess(Path file, AccessMode... modes)
+        throws IOException
+    {
         throw new RuntimeException("not implemented");
     }
 
@@ -105,7 +223,7 @@ public class TestProvider extends FileSystemProvider {
         }
 
         @Override
-        public Path getPath(String path) {
+        public Path getPath(String first, String... more) {
             throw new RuntimeException("not implemented");
         }
 
@@ -124,5 +242,4 @@ public class TestProvider extends FileSystemProvider {
             throw new RuntimeException("not implemented");
         }
     }
-
 }

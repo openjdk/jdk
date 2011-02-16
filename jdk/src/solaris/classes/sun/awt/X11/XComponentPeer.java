@@ -725,7 +725,21 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         XGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
 
-    public void pSetCursor(Cursor cursor) {
+    public final void pSetCursor(Cursor cursor) {
+        this.pSetCursor(cursor, true);
+    }
+
+    /*
+     * The method changes the cursor.
+     * @param cursor - a new cursor to change to.
+     * @param ignoreSubComponents - if {@code true} is passed then
+     *                              the new cursor will be installed on window.
+     *                              if {@code false} is passed then
+     *                              subsequent components will try to handle
+     *                              this request and install their cursor.
+     */
+    //ignoreSubComponents not used here
+    public void pSetCursor(Cursor cursor, boolean ignoreSubComponents) {
         XToolkit.awtLock();
         try {
             long xcursor = XGlobalCursorManager.getCursor(cursor);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,20 @@ import sun.security.jca.GetInstance.Instance;
  * vast repository of untrusted certificates and CRLs. For example, an LDAP
  * implementation of <code>CertStore</code> provides access to certificates
  * and CRLs stored in one or more directories using the LDAP protocol and the
- * schema as defined in the RFC service attribute. See Appendix A in the
- * <a href= "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
- * Java Certification Path API Programmer's Guide</a> for more information about
- * standard <code>CertStore</code> types.
+ * schema as defined in the RFC service attribute.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>CertStore</code> type:
+ * <ul>
+ * <li><tt>Collection</tt></li>
+ * </ul>
+ * This type is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
+ * CertStore section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other types are supported.
+ *
  * <p>
  * <b>Concurrent Access</b>
  * <p>
@@ -192,10 +202,10 @@ public class CertStore {
      * cloned.
      *
      * @param type the name of the requested <code>CertStore</code> type.
-     *  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard types.
+     * See the CertStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard types.
      *
      * @param params the initialization parameters (may be <code>null</code>).
      *
@@ -252,10 +262,10 @@ public class CertStore {
      * cloned.
      *
      * @param type the requested <code>CertStore</code> type.
-     *  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard types.
+     * See the CertStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard types.
      *
      * @param params the initialization parameters (may be <code>null</code>).
      *
@@ -310,10 +320,10 @@ public class CertStore {
      * cloned.
      *
      * @param type the requested <code>CertStore</code> type.
-     *  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard types.
+     * See the CertStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard types.
      *
      * @param params the initialization parameters (may be <code>null</code>).
      *

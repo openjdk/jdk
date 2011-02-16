@@ -35,11 +35,6 @@ import java.io.IOException;
 
 interface DynamicFileAttributeView {
     /**
-     * Reads the value of an attribute.
-     */
-    Object getAttribute(String attribute) throws IOException;
-
-    /**
      * Sets/updates the value of an attribute.
      */
     void setAttribute(String attribute, Object value) throws IOException;
@@ -47,5 +42,5 @@ interface DynamicFileAttributeView {
     /**
      * Reads a set of file attributes as a bulk operation.
      */
-    Map<String,?> readAttributes(String[] attributes) throws IOException;
+    Map<String,Object> readAttributes(String[] attributes) throws IOException;
 }

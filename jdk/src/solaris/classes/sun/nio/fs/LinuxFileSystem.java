@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 import java.security.AccessController;
@@ -76,39 +75,14 @@ class LinuxFileSystem extends UnixFileSystem {
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V extends FileAttributeView> V newFileAttributeView(Class<V> view,
-                                                                UnixPath file,
-                                                                LinkOption... options)
-    {
-        if (view == DosFileAttributeView.class)
-            return (V) new LinuxDosFileAttributeView(file, followLinks(options));
-        if (view == UserDefinedFileAttributeView.class)
-            return (V) new LinuxUserDefinedFileAttributeView(file, followLinks(options));
-        return super.newFileAttributeView(view, file, options);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public DynamicFileAttributeView newFileAttributeView(String name,
-                                                         UnixPath file,
-                                                         LinkOption... options)
-    {
-        if (name.equals("dos"))
-            return new LinuxDosFileAttributeView(file, followLinks(options));
-        if (name.equals("user"))
-            return new LinuxUserDefinedFileAttributeView(file, followLinks(options));
-        return super.newFileAttributeView(name, file, options);
-    }
 
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
         static final Set<String> supportedFileAttributeViews =
             supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
-            Set<String> result = new HashSet<String>();
-            result.addAll(UnixFileSystem.standardFileAttributeViews());
+            Set<String> result = new HashSet<>();
+            result.addAll(standardFileAttributeViews());
             // additional Linux-specific views
             result.add("dos");
             result.add("user");
@@ -130,7 +104,7 @@ class LinuxFileSystem extends UnixFileSystem {
      * Returns object to iterate over the mount entries in the given fstab file.
      */
     Iterable<UnixMountEntry> getMountEntries(String fstab) {
-        ArrayList<UnixMountEntry> entries = new ArrayList<UnixMountEntry>();
+        ArrayList<UnixMountEntry> entries = new ArrayList<>();
         try {
             long fp = setmntent(fstab.getBytes(), "r".getBytes());
             try {
@@ -159,10 +133,7 @@ class LinuxFileSystem extends UnixFileSystem {
         return getMountEntries("/etc/mtab");
     }
 
-    @Override
-    FileStore getFileStore(UnixPath path) throws IOException {
-        return new LinuxFileStore(path);
-    }
+
 
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
