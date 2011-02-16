@@ -2407,6 +2407,38 @@ public class Types {
         };
     // </editor-fold>
 
+    public Type createMethodTypeWithParameters(Type original, List<Type> newParams) {
+        return original.accept(methodWithParameters, newParams);
+    }
+    // where
+        private final MapVisitor<List<Type>> methodWithParameters = new MapVisitor<List<Type>>() {
+            public Type visitType(Type t, List<Type> newParams) {
+                throw new IllegalArgumentException("Not a method type: " + t);
+            }
+            public Type visitMethodType(MethodType t, List<Type> newParams) {
+                return new MethodType(newParams, t.restype, t.thrown, t.tsym);
+            }
+            public Type visitForAll(ForAll t, List<Type> newParams) {
+                return new ForAll(t.tvars, t.qtype.accept(this, newParams));
+            }
+        };
+
+    public Type createMethodTypeWithThrown(Type original, List<Type> newThrown) {
+        return original.accept(methodWithThrown, newThrown);
+    }
+    // where
+        private final MapVisitor<List<Type>> methodWithThrown = new MapVisitor<List<Type>>() {
+            public Type visitType(Type t, List<Type> newThrown) {
+                throw new IllegalArgumentException("Not a method type: " + t);
+            }
+            public Type visitMethodType(MethodType t, List<Type> newThrown) {
+                return new MethodType(t.argtypes, t.restype, newThrown, t.tsym);
+            }
+            public Type visitForAll(ForAll t, List<Type> newThrown) {
+                return new ForAll(t.tvars, t.qtype.accept(this, newThrown));
+            }
+        };
+
     // <editor-fold defaultstate="collapsed" desc="createErrorType">
     public Type createErrorType(Type originalType) {
         return new ErrorType(originalType, syms.errSymbol);
