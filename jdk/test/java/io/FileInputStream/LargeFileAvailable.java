@@ -31,6 +31,7 @@
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
 
 public class LargeFileAvailable {
@@ -85,7 +86,7 @@ public class LargeFileAvailable {
         // Create a large file as a sparse file if possible
         File largefile = File.createTempFile("largefile", null);
         // re-create as a sparse file
-        largefile.toPath().delete();
+        Files.delete(largefile.toPath());
         try (FileChannel fc =
                 FileChannel.open(largefile.toPath(),
                                  CREATE_NEW, WRITE, SPARSE)) {

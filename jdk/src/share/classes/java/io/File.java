@@ -35,8 +35,7 @@ import java.util.ArrayList;
 import java.security.AccessController;
 import java.security.SecureRandom;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.FileSystems;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -139,9 +138,10 @@ import sun.security.action.GetPropertyAction;
  * many of the limitations of the {@code java.io.File} class.
  * The {@link #toPath toPath} method may be used to obtain a {@link
  * Path} that uses the abstract path represented by a {@code File} object to
- * locate a file. The resulting {@code Path} provides more efficient and
- * extensive access to file attributes, additional file operations, and I/O
- * exceptions to help diagnose errors when an operation on a file fails.
+ * locate a file. The resulting {@code Path} may be used with the {@link
+ * java.nio.file.Files} class to provide more efficient and extensive access to
+ * additional file operations, file attributes, and I/O exceptions to help
+ * diagnose errors when an operation on a file fails.
  *
  * @author  unascribed
  * @since   JDK1.0
@@ -778,6 +778,12 @@ public class File
      * Tests whether the file denoted by this abstract pathname is a
      * directory.
      *
+     * <p> Where it is required to distinguish an I/O exception from the case
+     * that the file is not a directory, or where several attributes of the
+     * same file are required at the same time, then the {@link
+     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * Files.readAttributes} method may be used.
+     *
      * @return <code>true</code> if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a directory;
      *          <code>false</code> otherwise
@@ -786,8 +792,6 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
-     *
-     * @see java.nio.file.attribute.Attributes#readBasicFileAttributes
      */
     public boolean isDirectory() {
         SecurityManager security = System.getSecurityManager();
@@ -804,6 +808,12 @@ public class File
      * addition, satisfies other system-dependent criteria.  Any non-directory
      * file created by a Java application is guaranteed to be a normal file.
      *
+     * <p> Where it is required to distinguish an I/O exception from the case
+     * that the file is not a normal file, or where several attributes of the
+     * same file are required at the same time, then the {@link
+     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * Files.readAttributes} method may be used.
+     *
      * @return  <code>true</code> if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a normal file;
      *          <code>false</code> otherwise
@@ -812,8 +822,6 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
-     *
-     * @see java.nio.file.attribute.Attributes#readBasicFileAttributes
      */
     public boolean isFile() {
         SecurityManager security = System.getSecurityManager();
@@ -853,6 +861,13 @@ public class File
      * Returns the time that the file denoted by this abstract pathname was
      * last modified.
      *
+     * <p> Where it is required to distinguish an I/O exception from the case
+     * where {@code 0L} is returned, or where several attributes of the
+     * same file are required at the same time, or where the time of last
+     * access or the creation time are required, then the {@link
+     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * Files.readAttributes} method may be used.
+     *
      * @return  A <code>long</code> value representing the time the file was
      *          last modified, measured in milliseconds since the epoch
      *          (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
@@ -862,8 +877,6 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
-     *
-     * @see java.nio.file.attribute.Attributes#readBasicFileAttributes
      */
     public long lastModified() {
         SecurityManager security = System.getSecurityManager();
@@ -877,6 +890,12 @@ public class File
      * Returns the length of the file denoted by this abstract pathname.
      * The return value is unspecified if this pathname denotes a directory.
      *
+     * <p> Where it is required to distinguish an I/O exception from the case
+     * that {@code 0L} is returned, or where several attributes of the same file
+     * are required at the same time, then the {@link
+     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * Files.readAttributes} method may be used.
+     *
      * @return  The length, in bytes, of the file denoted by this abstract
      *          pathname, or <code>0L</code> if the file does not exist.  Some
      *          operating systems may return <code>0L</code> for pathnames
@@ -886,8 +905,6 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
-     *
-     * @see java.nio.file.attribute.Attributes#readBasicFileAttributes
      */
     public long length() {
         SecurityManager security = System.getSecurityManager();
@@ -937,11 +954,10 @@ public class File
      * this pathname denotes a directory, then the directory must be empty in
      * order to be deleted.
      *
-     * <p> Note that the {@link Path} class defines the {@link Path#delete
-     * delete} method to throw an {@link IOException} when a file cannot be
-     * deleted. This is useful for error reporting and to diagnose why a file
-     * cannot be deleted. The {@link #toPath toPath} method may be used to
-     * obtain a {@code Path} representing this abstract pathname.
+     * <p> Note that the {@link java.nio.file.Files} class defines the {@link
+     * java.nio.file.Files#delete(Path) delete} method to throw an {@link IOException}
+     * when a file cannot be deleted. This is useful for error reporting and to
+     * diagnose why a file cannot be deleted.
      *
      * @return  <code>true</code> if and only if the file or directory is
      *          successfully deleted; <code>false</code> otherwise
@@ -1009,12 +1025,11 @@ public class File
      * will appear in any specific order; they are not, in particular,
      * guaranteed to appear in alphabetical order.
      *
-     * <p> Note that the {@link Path} class defines the {@link
-     * Path#newDirectoryStream newDirectoryStream} method to open a directory
-     * and iterate over the names of the files in the directory. This may use
-     * less resources when working with very large directories. The {@link
-     * #toPath toPath} method may be used to obtain a {@code Path} representing
-     * this abstract pathname.
+     * <p> Note that the {@link java.nio.file.Files} class defines the {@link
+     * java.nio.file.Files#newDirectoryStream(Path) newDirectoryStream} method to
+     * open a directory and iterate over the names of the files in the directory.
+     * This may use less resources when working with very large directories, and
+     * may be more responsive when working with remote directories.
      *
      * @return  An array of strings naming the files and directories in the
      *          directory denoted by this abstract pathname.  The array will be
@@ -1061,6 +1076,8 @@ public class File
      *          If a security manager exists and its {@link
      *          SecurityManager#checkRead(String)} method denies read access to
      *          the directory
+     *
+     * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
     public String[] list(FilenameFilter filter) {
         String names[] = list();
@@ -1095,12 +1112,11 @@ public class File
      * will appear in any specific order; they are not, in particular,
      * guaranteed to appear in alphabetical order.
      *
-     * <p> Note that the {@link Path} class defines the {@link
-     * Path#newDirectoryStream newDirectoryStream} method to open a directory
-     * and iterate over the names of the files in the directory. This may use
-     * less resources when working with very large directories. The {@link
-     * #toPath toPath} method may be used to obtain a {@code Path} representing
-     * this abstract pathname.
+     * <p> Note that the {@link java.nio.file.Files} class defines the {@link
+     * java.nio.file.Files#newDirectoryStream(Path) newDirectoryStream} method
+     * to open a directory and iterate over the names of the files in the
+     * directory. This may use less resources when working with very large
+     * directories.
      *
      * @return  An array of abstract pathnames denoting the files and
      *          directories in the directory denoted by this abstract pathname.
@@ -1154,6 +1170,7 @@ public class File
      *          the directory
      *
      * @since  1.2
+     * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
     public File[] listFiles(FilenameFilter filter) {
         String ss[] = list();
@@ -1191,6 +1208,7 @@ public class File
      *          the directory
      *
      * @since  1.2
+     * @see java.nio.file.Files#newDirectoryStream(Path,java.nio.file.DirectoryStream.Filter)
      */
     public File[] listFiles(FileFilter filter) {
         String ss[] = list();
@@ -1206,12 +1224,6 @@ public class File
 
     /**
      * Creates the directory named by this abstract pathname.
-     *
-     * <p> Note that the {@link Path} class defines the {@link Path#createDirectory
-     * createDirectory} method to throw an {@link IOException} when a directory
-     * cannot be created. This is useful for error reporting and to diagnose why
-     * a directory cannot be created. The {@link #toPath toPath} method may be
-     * used to obtain a {@code Path} representing this abstract pathname.
      *
      * @return  <code>true</code> if and only if the directory was
      *          created; <code>false</code> otherwise
@@ -1278,10 +1290,9 @@ public class File
      * already exists.  The return value should always be checked to make sure
      * that the rename operation was successful.
      *
-     * <p> Note that the {@link Path} class defines the {@link Path#moveTo
-     * moveTo} method to move or rename a file in a platform independent manner.
-     * The {@link #toPath toPath} method may be used to obtain a {@code Path}
-     * representing this abstract pathname.
+     * <p> Note that the {@link java.nio.file.Files} class defines the {@link
+     * java.nio.file.Files#move move} method to move or rename a file in a
+     * platform independent manner.
      *
      * @param  dest  The new abstract pathname for the named file
      *
@@ -1369,10 +1380,9 @@ public class File
      * Sets the owner's or everybody's write permission for this abstract
      * pathname.
      *
-     * <p> The {@link java.nio.file.attribute.Attributes Attributes} class
-     * defines methods that operate on file attributes including file
-     * permissions. This may be used when finer manipulation of file permissions
-     * is required.
+     * <p> The {@link java.nio.file.Files} class defines methods that operate on
+     * file attributes including file permissions. This may be used when finer
+     * manipulation of file permissions is required.
      *
      * @param   writable
      *          If <code>true</code>, sets the access permission to allow write
@@ -1437,10 +1447,9 @@ public class File
      * Sets the owner's or everybody's read permission for this abstract
      * pathname.
      *
-     * <p> The {@link java.nio.file.attribute.Attributes  Attributes} class
-     * defines methods that operate on file attributes including file
-     * permissions. This may be used when finer manipulation of file permissions
-     * is required.
+     * <p> The {@link java.nio.file.Files} class defines methods that operate on
+     * file attributes including file permissions. This may be used when finer
+     * manipulation of file permissions is required.
      *
      * @param   readable
      *          If <code>true</code>, sets the access permission to allow read
@@ -1511,10 +1520,9 @@ public class File
      * Sets the owner's or everybody's execute permission for this abstract
      * pathname.
      *
-     * <p> The {@link java.nio.file.attribute.Attributes  Attributes} class
-     * defines methods that operate on file attributes including file
-     * permissions. This may be used when finer manipulation of file permissions
-     * is required.
+     * <p> The {@link java.nio.file.Files} class defines methods that operate on
+     * file attributes including file permissions. This may be used when finer
+     * manipulation of file permissions is required.
      *
      * @param   executable
      *          If <code>true</code>, sets the access permission to allow execute
@@ -1646,6 +1654,7 @@ public class File
      *          filesystem roots.
      *
      * @since  1.2
+     * @see java.nio.file.FileStore
      */
     public static File[] listRoots() {
         return fs.listRoots();
@@ -1753,7 +1762,7 @@ public class File
 
     /* -- Temporary files -- */
 
-    static class TempDirectory {
+    private static class TempDirectory {
         private TempDirectory() { }
 
         // temporary directory location
@@ -1880,11 +1889,12 @@ public class File
      * java.lang.String, java.io.File)
      * createTempFile(prefix,&nbsp;suffix,&nbsp;null)}</code>.
      *
-     * <p> The {@link #createTemporaryFile(String,String,FileAttribute[])} method
-     * provides an alternative method to create an empty file in the
-     * temporary-file directory. Files created by that method may have more
-     * restrictive access permissions to files created by this method and so
-     * may be more suited to security-sensitive applications.
+     * <p> The {@link
+     * java.nio.file.Files#createTempFile(String,String,java.nio.file.attribute.FileAttribute[])
+     * Files.createTempFile} method provides an alternative method to create an
+     * empty file in the temporary-file directory. Files created by that method
+     * may have more restrictive access permissions to files created by this
+     * method and so may be more suited to security-sensitive applications.
      *
      * @param  prefix     The prefix string to be used in generating the file's
      *                    name; must be at least three characters long
@@ -1907,66 +1917,12 @@ public class File
      *          method does not allow a file to be created
      *
      * @since 1.2
+     * @see java.nio.file.Files#createTempDirectory(String,FileAttribute[])
      */
     public static File createTempFile(String prefix, String suffix)
         throws IOException
     {
         return createTempFile(prefix, suffix, null);
-    }
-
-    /**
-     * Creates an empty file in the default temporary-file directory, using
-     * the given prefix and suffix to generate its name.
-     *
-     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
-     * attributes} to set atomically when creating the file. Each attribute is
-     * identified by its {@link FileAttribute#name name}. If more than one attribute
-     * of the same name is included in the array then all but the last occurrence
-     * is ignored.
-     *
-     * <p> Where the {@code attrs} parameter does not specify <i>access
-     * permissions</i> to set atomically when creating the file, then the
-     * resulting file may have more restrictive access permissions than files
-     * created by the {@link #createTempFile(java.lang.String, java.lang.String)}
-     * method.
-     *
-     * @param   prefix
-     *          The prefix string to be used in generating the file's
-     *          name; must be at least three characters long
-     * @param   suffix
-     *          The suffix string to be used in generating the file's
-     *          name; may be {@code null}, in which case the suffix
-     *          {@code ".tmp"} will be used
-     * @param   attrs
-     *          An optional list of file attributes to set atomically when creating
-     *          the file
-     *
-     * @return  An abstract pathname denoting a newly-created empty file
-     *
-     * @throws  IllegalArgumentException
-     *          If the {@code prefix} argument contains fewer than three
-     *          characters
-     * @throws  UnsupportedOperationException
-     *          If the array contains an attribute that cannot be set atomically
-     *          when creating the file
-     * @throws  IOException
-     *          If a file could not be created
-     * @throws  SecurityException
-     *          If a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}</code>
-     *          method does not allow a file to be created.
-     *
-     * @since 1.7
-     */
-    public static File createTemporaryFile(String prefix,
-                                           String suffix,
-                                           FileAttribute<?>... attrs)
-        throws IOException
-    {
-        if (prefix.length() < 3)
-            throw new IllegalArgumentException("Prefix string too short");
-        suffix = (suffix == null) ? ".tmp" : suffix;
-        return TempFileHelper.createFile(prefix, suffix, attrs);
     }
 
     /* -- Basic infrastructure -- */
@@ -2104,6 +2060,7 @@ public class File
      *          path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
      *
      * @since   1.7
+     * @see Path#toFile
      */
     public Path toPath() {
         Path result = filePath;
@@ -2111,12 +2068,7 @@ public class File
             synchronized (this) {
                 result = filePath;
                 if (result == null) {
-                    if (path.length() == 0) {
-                        // assume default file system treats "." as current directory
-                        result = Paths.get(".");
-                    } else {
-                        result = Paths.get(path);
-                    }
+                    result = FileSystems.getDefault().getPath(path);
                     filePath = result;
                 }
             }

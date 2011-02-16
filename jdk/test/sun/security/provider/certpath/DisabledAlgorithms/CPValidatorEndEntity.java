@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 /**
  * @test
  *
- * @bug 6861062
- * @summary Disable MD2 support
+ * @bug 6861062 7011497
+ * @summary Disable MD2 support.
+ *          New CertPathValidatorException.BasicReason enum constant for
+ *     constrained algorithm.
  *
  * @author Xuelei Fan
  */
@@ -35,6 +37,7 @@ import java.net.SocketException;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
+import java.security.cert.CertPathValidatorException.*;
 
 public class CPValidatorEndEntity {
 
@@ -329,6 +332,13 @@ public class CPValidatorEndEntity {
                                     intermediate_SHA1withRSA_1024_1024);
             throw new Exception("expected algorithm disabled exception");
         } catch (CertPathValidatorException cpve) {
+            // we may get ClassCastException here
+            BasicReason reason = (BasicReason)cpve.getReason();
+            if (reason != BasicReason.ALGORITHM_CONSTRAINED) {
+                throw new Exception(
+                    "Expect to get ALGORITHM_CONSTRAINED CPVE", cpve);
+            }
+
             System.out.println("Get the expected exception " + cpve);
         }
 
@@ -337,6 +347,13 @@ public class CPValidatorEndEntity {
                                     intermediate_SHA1withRSA_512_1024);
             throw new Exception("expected algorithm disabled exception");
         } catch (CertPathValidatorException cpve) {
+            // we may get ClassCastException here
+            BasicReason reason = (BasicReason)cpve.getReason();
+            if (reason != BasicReason.ALGORITHM_CONSTRAINED) {
+                throw new Exception(
+                    "Expect to get ALGORITHM_CONSTRAINED CPVE", cpve);
+            }
+
             System.out.println("Get the expected exception " + cpve);
         }
     }
