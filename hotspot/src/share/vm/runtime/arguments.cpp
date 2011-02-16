@@ -3103,6 +3103,19 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled.
   set_aggressive_opts_flags();
 
+  // Turn off biased locking for locking debug mode flags,
+  // which are subtlely different from each other but neither works with
+  // biased locking.
+  if (!UseFastLocking || UseHeavyMonitors) {
+    if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
+      // flag set to true on command line; warn the user that they
+      // can't enable biased locking here
+      warning("Biased Locking is not supported with locking debug flags"
+              "; ignoring UseBiasedLocking flag." );
+    }
+    UseBiasedLocking = false;
+  }
+
 #ifdef CC_INTERP
   // Clear flags not supported by the C++ interpreter
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
