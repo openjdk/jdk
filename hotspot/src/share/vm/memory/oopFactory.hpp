@@ -69,7 +69,6 @@ class oopFactory: AllStatic {
                                                     bool is_conc_safe,
                                                     TRAPS);
   static constantPoolCacheOop new_constantPoolCache(int length,
-                                                    bool is_conc_safe,
                                                     TRAPS);
 
   // Instance classes
@@ -103,6 +102,7 @@ public:
 
   // System object arrays
   static objArrayOop     new_system_objArray(int length, TRAPS);
+  static objArrayOop     new_system_objArray(int length, bool in_perm_gen, TRAPS);
 
   // Regular object arrays
   static objArrayOop     new_objArray(klassOop klass, int length, TRAPS);
