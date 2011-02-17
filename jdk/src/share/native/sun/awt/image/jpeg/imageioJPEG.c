@@ -1846,7 +1846,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
     cinfo = (j_decompress_ptr) data->jpegObj;
 
-    if ((numBands < 1) ||
+    if ((numBands < 1) || (numBands > MAX_BANDS) ||
         (sourceXStart < 0) || (sourceXStart >= (jint)cinfo->image_width) ||
         (sourceYStart < 0) || (sourceYStart >= (jint)cinfo->image_height) ||
         (sourceWidth < 1) || (sourceWidth > (jint)cinfo->image_width) ||
