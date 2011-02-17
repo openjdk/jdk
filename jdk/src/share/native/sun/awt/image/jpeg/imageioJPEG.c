@@ -1971,6 +1971,13 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
         return data->abortFlag;
     }
 
+    if (cinfo->output_components <= 0 ||
+        cinfo->image_width > (0xffffffffu / (unsigned int)cinfo->output_components))
+    {
+        JNU_ThrowByName(env, "javax/imageio/IIOException",
+                        "Invalid number of output components");
+        return data->abortFlag;
+    }
 
     // Allocate a 1-scanline buffer
     scanLinePtr = (JSAMPROW)malloc(cinfo->image_width*cinfo->output_components);
