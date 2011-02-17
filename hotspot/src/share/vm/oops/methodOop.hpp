@@ -144,9 +144,6 @@ class methodOopDesc : public oopDesc {
 
  public:
 
-  static const bool IsUnsafeConc         = false;
-  static const bool IsSafeConc           = true;
-
   // accessors for instance variables
   constMethodOop constMethod() const             { return _constMethod; }
   void set_constMethod(constMethodOop xconst)    { oop_store_without_check((oop*)&_constMethod, (oop)xconst); }

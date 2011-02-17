@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,6 @@ public:
   // Parallel old support
   virtual void follow_contents(ParCompactionManager* cm) {}
   virtual void update_pointers() {}
-  virtual void update_pointers(HeapWord* beg_addr, HeapWord* end_addr) {}
 #endif // SERIALGC
 
   // CI translation: ProfileData can represent both MethodDataOop data
@@ -748,7 +747,6 @@ public:
   // Parallel old support
   virtual void follow_contents(ParCompactionManager* cm);
   virtual void update_pointers();
-  virtual void update_pointers(HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   oop* adr_receiver(uint row) {
