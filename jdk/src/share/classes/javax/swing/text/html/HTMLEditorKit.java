@@ -123,7 +123,7 @@ import java.lang.ref.*;
  * to load.  By default, this kit produces documents that will be
  * loaded asynchronously if loaded using <code>JEditorPane.setPage</code>.
  * This is controlled by a property on the document.  The method
- * <a href="#createDefaultDocument">createDefaultDocument</a> can
+ * {@link #createDefaultDocument createDefaultDocument} can
  * be overriden to change this.  The batching of work is done
  * by the <code>HTMLDocument.HTMLReader</code> class.  The actual
  * work is done by the <code>DefaultStyledDocument</code> and
@@ -558,7 +558,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * automatically or only <code>FormSubmitEvent</code> is fired.
      * By default it is set to true.
      *
-     * @see #isAutoFormSubmission
+     * @see #isAutoFormSubmission()
      * @see FormSubmitEvent
      * @since 1.5
      */

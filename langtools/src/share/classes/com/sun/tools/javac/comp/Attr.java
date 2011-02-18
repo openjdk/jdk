@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,7 +563,7 @@ public class Attr extends JCTree.Visitor {
             if (bound != null && bound.tsym instanceof ClassSymbol) {
                 ClassSymbol c = (ClassSymbol)bound.tsym;
                 if ((c.flags_field & COMPOUND) != 0) {
-                    assert (c.flags_field & UNATTRIBUTED) != 0 : c;
+                    Assert.check((c.flags_field & UNATTRIBUTED) != 0, c);
                     attribClass(typaram.pos(), c);
                 }
             }
@@ -905,7 +905,10 @@ public class Attr extends JCTree.Visitor {
             // or perhaps expr implements Iterable<T>?
             Type base = types.asSuper(exprType, syms.iterableType.tsym);
             if (base == null) {
-                log.error(tree.expr.pos(), "foreach.not.applicable.to.type");
+                log.error(tree.expr.pos(),
+                        "foreach.not.applicable.to.type",
+                        exprType,
+                        diags.fragment("type.req.array.or.iterable"));
                 elemtype = types.createErrorType(exprType);
             } else {
                 List<Type> iterableParams = base.allparams();
@@ -970,7 +973,7 @@ public class Attr extends JCTree.Visitor {
                 if (enumSwitch) {
                     Symbol sym = enumConstant(c.pat, seltype);
                     if (sym == null) {
-                        log.error(c.pat.pos(), "enum.const.req");
+                        log.error(c.pat.pos(), "enum.label.must.be.unqualified.enum");
                     } else if (!labels.add(sym)) {
                         log.error(c.pos(), "duplicate.case.label");
                     }
@@ -1334,7 +1337,6 @@ public class Attr extends JCTree.Visitor {
 
         // The types of the actual method type arguments.
         List<Type> typeargtypes = null;
-        boolean typeargtypesNonRefOK = false;
 
         Name methName = TreeInfo.name(tree.meth);
 
@@ -1434,7 +1436,7 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.varArgs = false;
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
             if (localEnv.info.varArgs)
-                assert mtype.isErroneous() || tree.varargsElement != null;
+                Assert.check(mtype.isErroneous() || tree.varargsElement != null);
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
@@ -1463,21 +1465,7 @@ public class Attr extends JCTree.Visitor {
                               restype.tsym);
             }
 
-            // Special case logic for JSR 292 types.
-            if (rs.allowTransitionalJSR292 &&
-                    tree.meth.getTag() == JCTree.SELECT &&
-                    !typeargtypes.isEmpty()) {
-                JCFieldAccess mfield = (JCFieldAccess) tree.meth;
-                // MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
-                // has type <T>, and T can be a primitive type.
-                if (mfield.sym != null &&
-                        mfield.sym.isPolymorphicSignatureInstance())
-                    typeargtypesNonRefOK = true;
-            }
-
-            if (!(rs.allowTransitionalJSR292 && typeargtypesNonRefOK)) {
-                chk.checkRefTypes(tree.typeargs, typeargtypes);
-            }
+            chk.checkRefTypes(tree.typeargs, typeargtypes);
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
@@ -1667,7 +1655,7 @@ public class Attr extends JCTree.Visitor {
                         typeargtypes,
                         localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
-                    assert tree.constructorType.isErroneous() || tree.varargsElement != null;
+                    Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
             }
 
             if (cdef != null) {
@@ -1727,7 +1715,7 @@ public class Attr extends JCTree.Visitor {
                 Symbol sym = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes,
                     typeargtypes, true, tree.varargsElement != null);
-                assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
+                Assert.check(sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous());
                 tree.constructor = sym;
                 if (tree.constructor.kind > ERRONEOUS) {
                     tree.constructorType =  syms.errType;
@@ -2243,10 +2231,10 @@ public class Attr extends JCTree.Visitor {
 
         // Determine the symbol represented by the selection.
         env.info.varArgs = false;
-        Symbol sym = selectSym(tree, site, env, pt, pkind);
+        Symbol sym = selectSym(tree, sitesym, site, env, pt, pkind);
         if (sym.exists() && !isType(sym) && (pkind & (PCK | TYP)) != 0) {
             site = capture(site);
-            sym = selectSym(tree, site, env, pt, pkind);
+            sym = selectSym(tree, sitesym, site, env, pt, pkind);
         }
         boolean varArgs = env.info.varArgs;
         tree.sym = sym;
@@ -2335,6 +2323,14 @@ public class Attr extends JCTree.Visitor {
          *  @param pkind  The expected kind(s) of the Select expression.
          */
         private Symbol selectSym(JCFieldAccess tree,
+                                     Type site,
+                                     Env<AttrContext> env,
+                                     Type pt,
+                                     int pkind) {
+            return selectSym(tree, site.tsym, site, env, pt, pkind);
+        }
+        private Symbol selectSym(JCFieldAccess tree,
+                                 Symbol location,
                                  Type site,
                                  Env<AttrContext> env,
                                  Type pt,
@@ -2346,12 +2342,12 @@ public class Attr extends JCTree.Visitor {
             case PACKAGE:
                 return rs.access(
                     rs.findIdentInPackage(env, site.tsym, name, pkind),
-                    pos, site, name, true);
+                    pos, location, site, name, true);
             case ARRAY:
             case CLASS:
                 if (pt.tag == METHOD || pt.tag == FORALL) {
                     return rs.resolveQualifiedMethod(
-                        pos, env, site, name, pt.getParameterTypes(), pt.getTypeArguments());
+                        pos, env, location, site, name, pt.getParameterTypes(), pt.getTypeArguments());
                 } else if (name == names._this || name == names._super) {
                     return rs.resolveSelf(pos, env, site.tsym, name);
                 } else if (name == names._class) {
@@ -2368,7 +2364,7 @@ public class Attr extends JCTree.Visitor {
                     // We are seeing a plain identifier as selector.
                     Symbol sym = rs.findIdentInType(env, site, name, pkind);
                     if ((pkind & ERRONEOUS) == 0)
-                        sym = rs.access(sym, pos, site, name, true);
+                        sym = rs.access(sym, pos, location, site, name, true);
                     return sym;
                 }
             case WILDCARD:
@@ -2376,12 +2372,12 @@ public class Attr extends JCTree.Visitor {
             case TYPEVAR:
                 // Normally, site.getUpperBound() shouldn't be null.
                 // It should only happen during memberEnter/attribBase
-                // when determining the super type which *must* be
+                // when determining the super type which *must* beac
                 // done before attributing the type variables.  In
                 // other words, we are seeing this illegal program:
                 // class B<T> extends A<T.foo> {}
                 Symbol sym = (site.getUpperBound() != null)
-                    ? selectSym(tree, capture(site.getUpperBound()), env, pt, pkind)
+                    ? selectSym(tree, location, capture(site.getUpperBound()), env, pt, pkind)
                     : null;
                 if (sym == null) {
                     log.error(pos, "type.var.cant.be.deref");
@@ -2390,7 +2386,7 @@ public class Attr extends JCTree.Visitor {
                     Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
                         rs.new AccessError(env, site, sym) :
                                 sym;
-                    rs.access(sym2, pos, site, name, true);
+                    rs.access(sym2, pos, location, site, name, true);
                     return sym;
                 }
             case ERROR:
@@ -2961,7 +2957,7 @@ public class Attr extends JCTree.Visitor {
                 extending, implementing, List.<JCTree>nil());
 
             ClassSymbol c = (ClassSymbol)a.getUpperBound().tsym;
-            assert (c.flags() & COMPOUND) != 0;
+            Assert.check((c.flags() & COMPOUND) != 0);
             cd.sym = c;
             c.sourcefile = env.toplevel.sourcefile;
 
@@ -2987,10 +2983,6 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotation(JCAnnotation tree) {
         log.error(tree.pos(), "annotation.not.valid.for.type", pt);
         result = tree.type = syms.errType;
-    }
-
-    public void visitAnnotatedType(JCAnnotatedType tree) {
-        result = tree.type = attribType(tree.getUnderlyingType(), env);
     }
 
     public void visitErroneous(JCErroneous tree) {
@@ -3097,7 +3089,7 @@ public class Attr extends JCTree.Visitor {
     /** Finish the attribution of a class. */
     private void attribClassBody(Env<AttrContext> env, ClassSymbol c) {
         JCClassDecl tree = (JCClassDecl)env.tree;
-        assert c == tree.sym;
+        Assert.check(c == tree.sym);
 
         // Validate annotations
         chk.validateAnnotations(tree.mods.annotations, c);
@@ -3138,12 +3130,9 @@ public class Attr extends JCTree.Visitor {
 
         tree.type = c.type;
 
-        boolean assertsEnabled = false;
-        assert assertsEnabled = true;
-        if (assertsEnabled) {
-            for (List<JCTypeParameter> l = tree.typarams;
-                 l.nonEmpty(); l = l.tail)
-                assert env.info.scope.lookup(l.head.name).scope != null;
+        for (List<JCTypeParameter> l = tree.typarams;
+             l.nonEmpty(); l = l.tail) {
+             Assert.checkNonNull(env.info.scope.lookup(l.head.name).scope);
         }
 
         // Check that a generic class doesn't extend Throwable
@@ -3167,7 +3156,7 @@ public class Attr extends JCTree.Visitor {
                 if (sym == null ||
                     sym.kind != VAR ||
                     ((VarSymbol) sym).getConstValue() == null)
-                    log.error(l.head.pos(), "icls.cant.have.static.decl");
+                    log.error(l.head.pos(), "icls.cant.have.static.decl", sym.location());
             }
         }
 
@@ -3184,9 +3173,6 @@ public class Attr extends JCTree.Visitor {
             (c.flags() & ABSTRACT) == 0) {
             checkSerialVersionUID(tree, c);
         }
-
-        // Check type annotations applicability rules
-        validateTypeAnnotations(tree);
     }
         // where
         /** check if a class is a subtype of Serializable, if that is available. */
@@ -3233,35 +3219,6 @@ public class Attr extends JCTree.Visitor {
     private Type capture(Type type) {
         return types.capture(type);
     }
-
-    private void validateTypeAnnotations(JCTree tree) {
-        tree.accept(typeAnnotationsValidator);
-    }
-    //where
-    private final JCTree.Visitor typeAnnotationsValidator =
-        new TreeScanner() {
-        public void visitAnnotation(JCAnnotation tree) {
-            if (tree instanceof JCTypeAnnotation) {
-                chk.validateTypeAnnotation((JCTypeAnnotation)tree, false);
-            }
-            super.visitAnnotation(tree);
-        }
-        public void visitTypeParameter(JCTypeParameter tree) {
-            chk.validateTypeAnnotations(tree.annotations, true);
-            // don't call super. skip type annotations
-            scan(tree.bounds);
-        }
-        public void visitMethodDef(JCMethodDecl tree) {
-            // need to check static methods
-            if ((tree.sym.flags() & Flags.STATIC) != 0) {
-                for (JCTypeAnnotation a : tree.receiverAnnotations) {
-                    if (chk.isTypeAnnotation(a, false))
-                        log.error(a.pos(), "annotation.type.not.applicable");
-                }
-            }
-            super.visitMethodDef(tree);
-        }
-    };
 
     // <editor-fold desc="post-attribution visitor">
 

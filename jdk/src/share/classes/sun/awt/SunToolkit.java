@@ -696,7 +696,9 @@ public abstract class SunToolkit extends Toolkit
 
         synchronized (lock) {
             executeOnEventHandlerThread(event);
-            lock.wait();
+            while(!event.isDispatched()) {
+                lock.wait();
+            }
         }
 
         Throwable eventThrowable = event.getThrowable();

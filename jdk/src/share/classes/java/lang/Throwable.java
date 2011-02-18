@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,7 @@ public class Throwable implements Serializable {
     native StackTraceElement getStackTraceElement(int index);
 
     /**
-     * Read a {@code Throwable} from a stream, enforcing
+     * Reads a {@code Throwable} from a stream, enforcing
      * well-formedness constraints on fields.  Null entries and
      * self-pointers are not allowed in the list of {@code
      * suppressedExceptions}.  Null entries are not allowed for stack
@@ -865,9 +865,10 @@ public class Throwable implements Serializable {
     }
 
     /**
-     * Adds the specified exception to the list of exceptions that
-     * were suppressed, typically by the {@code try}-with-resources
-     * statement, in order to deliver this exception.
+     * Appends the specified exception to the exceptions that were
+     * suppressed in order to deliver this exception. This method is
+     * typically called (automatically and implicitly) by the {@code
+     * try}-with-resources statement.
      *
      * If the first exception to be suppressed is {@code null}, that
      * indicates suppressed exception information will <em>not</em> be

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class Scope {
      */
     private Scope(Scope next, Symbol owner, Entry[] table, ScopeCounter scopeCounter) {
         this.next = next;
-        assert emptyScope == null || owner != null;
+        Assert.check(emptyScope == null || owner != null);
         this.owner = owner;
         this.table = table;
         this.hashMask = table.length - 1;
@@ -191,16 +191,16 @@ public class Scope {
      *  with next.
      */
     public Scope leave() {
-        assert shared == 0;
+        Assert.check(shared == 0);
         if (table != next.table) return next;
         while (elems != null) {
             int hash = getIndex(elems.sym.name);
             Entry e = table[hash];
-            assert e == elems : elems.sym;
+            Assert.check(e == elems, elems.sym);
             table[hash] = elems.shadowed;
             elems = elems.sibling;
         }
-        assert next.shared > 0;
+        Assert.check(next.shared > 0);
         next.shared--;
         next.nelems = nelems;
         // System.out.println("====> leaving scope " + this.hashCode() + " owned by " + this.owner + " to " + next.hashCode());
@@ -211,12 +211,12 @@ public class Scope {
     /** Double size of hash table.
      */
     private void dble() {
-        assert shared == 0;
+        Assert.check(shared == 0);
         Entry[] oldtable = table;
         Entry[] newtable = new Entry[oldtable.length * 2];
         for (Scope s = this; s != null; s = s.next) {
             if (s.table == oldtable) {
-                assert s == this || s.shared != 0;
+                Assert.check(s == this || s.shared != 0);
                 s.table = newtable;
                 s.hashMask = newtable.length - 1;
             }
@@ -237,7 +237,7 @@ public class Scope {
     /** Enter symbol sym in this scope.
      */
     public void enter(Symbol sym) {
-        assert shared == 0;
+        Assert.check(shared == 0);
         enter(sym, this);
     }
 
@@ -251,7 +251,7 @@ public class Scope {
      * arguments are only used in import scopes.
      */
     public void enter(Symbol sym, Scope s, Scope origin) {
-        assert shared == 0;
+        Assert.check(shared == 0);
         if (nelems * 3 >= hashMask * 2)
             dble();
         int hash = getIndex(sym.name);
@@ -274,7 +274,7 @@ public class Scope {
      *  attribute tells us that the class isn't a package member.
      */
     public void remove(Symbol sym) {
-        assert shared == 0;
+        Assert.check(shared == 0);
         Entry e = lookup(sym.name);
         if (e.scope == null) return;
 
@@ -314,7 +314,7 @@ public class Scope {
     /** Enter symbol sym in this scope if not already there.
      */
     public void enterIfAbsent(Symbol sym) {
-        assert shared == 0;
+        Assert.check(shared == 0);
         Entry e = lookup(sym.name);
         while (e.scope == this && e.sym.kind != sym.kind) e = e.next();
         if (e.scope != this) enter(sym);

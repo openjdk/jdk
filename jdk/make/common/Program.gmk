@@ -160,6 +160,7 @@ $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o) $(JLI_LC
 ifdef MT
 	$(MT) /manifest $(OBJDIR)/$(PROGRAM).exe.manifest /outputresource:$@;#1
 endif
+	@$(call binary_file_verification,$@)
 
 else # PLATFORM
 
@@ -184,6 +185,7 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	@$(MKDIR) -p $(TEMPDIR)
 	$(LINK_PRE_CMD) $(CC) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
 	    $(FILES_o) $(THREADLIBS) $(LDLIBS)
+	@$(call binary_file_verification,$@)
 	$(install-module-file)
 
 endif # PLATFORM
