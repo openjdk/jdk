@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import java.util.*;
 import java.util.zip.*;
 import javax.tools.*;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.main.OptionName;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Options;
 
 public class T6838467 {
     boolean fileSystemIsCaseSignificant = !new File("a").equals(new File("A"));
@@ -176,33 +178,13 @@ public class T6838467 {
         return fm;
     }
 
-    JavacFileManager createFileManager(boolean useJavaUtilZip) {
-        // javac should really not be using system properties like this
-        // -- it should really be using (hidden) options -- but until then
-        // take care to leave system properties as we find them, so as not
-        // to adversely affect other tests that might follow.
-        String prev = System.getProperty("useJavaUtilZip");
-        boolean resetProperties = false;
-        try {
-            if (useJavaUtilZip) {
-                System.setProperty("useJavaUtilZip", "true");
-                resetProperties = true;
-            } else if (System.getProperty("useJavaUtilZip") != null) {
-                System.getProperties().remove("useJavaUtilZip");
-                resetProperties = true;
-            }
-
-            Context c = new Context();
-            return new JavacFileManager(c, false, null);
-        } finally {
-            if (resetProperties) {
-                if (prev == null) {
-                    System.getProperties().remove("useJavaUtilZip");
-                } else {
-                    System.setProperty("useJavaUtilZip", prev);
-                }
-            }
+    JavacFileManager createFileManager(boolean useOptimedZipIndex) {
+        Context ctx = new Context();
+        if (useOptimedZipIndex) {
+            Options options = Options.instance(ctx);
+            options.put("useOptimizedZip", "true");
         }
+        return new JavacFileManager(ctx, false, null);
     }
 
     // create a directory containing a given set of paths
