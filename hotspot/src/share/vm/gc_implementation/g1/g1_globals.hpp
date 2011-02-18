@@ -89,6 +89,11 @@
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
                                                                             \
+  experimental(bool, G1UseConcMarkReferenceProcessing, false,               \
+          "If true, enable reference discovery during concurrent "          \
+          "marking and reference processing at the end of remark "          \
+          "(unsafe).")                                                      \
+                                                                            \
   develop(bool, G1SATBBarrierPrintNullPreVals, false,                       \
           "If true, count frac of ptr writes with null pre-vals.")          \
                                                                             \

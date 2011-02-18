@@ -3203,8 +3203,12 @@ public:
                CMTask* task)
     : _g1h(g1h), _cm(cm), _task(task)
   {
-    _ref_processor = g1h->ref_processor();
-    assert(_ref_processor != NULL, "should not be NULL");
+    assert(_ref_processor == NULL, "should be initialized to NULL");
+
+    if (G1UseConcMarkReferenceProcessing) {
+      _ref_processor = g1h->ref_processor();
+      assert(_ref_processor != NULL, "should not be NULL");
+    }
   }
 };
 
