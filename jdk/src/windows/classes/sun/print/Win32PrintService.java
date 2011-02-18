@@ -1325,7 +1325,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             }
             if (trays != null) {
                 System.arraycopy(trays, 0, arr,
-                                 mediaSizeNames.length, trays.length);
+                                 len - trays.length, trays.length);
             }
             return arr;
         } else if (category == MediaPrintableArea.class) {
