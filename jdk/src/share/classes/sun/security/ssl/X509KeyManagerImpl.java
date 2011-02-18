@@ -307,7 +307,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 (keyTypes.length == 0) || (keyTypes[0] == null)) {
             return null;
         }
-        List<KeyType> list = new ArrayList<KeyType>(keyTypes.length);
+        List<KeyType> list = new ArrayList<>(keyTypes.length);
         for (String keyType : keyTypes) {
             list.add(new KeyType(keyType));
         }
@@ -429,7 +429,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // make a Set out of the array
     private Set<Principal> getIssuerSet(Principal[] issuers) {
         if ((issuers != null) && (issuers.length != 0)) {
-            return new HashSet<Principal>(Arrays.asList(issuers));
+            return new HashSet<>(Arrays.asList(issuers));
         } else {
             return null;
         }

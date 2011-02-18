@@ -1,2 +1,2 @@
-FailOver04.java:11:10: compiler.err.cant.resolve.location: kindname.class, Unknown, , , kindname.class, Test
+FailOver04.java:11:10: compiler.err.cant.resolve.location: kindname.class, Unknown, , , (compiler.misc.location: kindname.class, Test, null)
 1 error

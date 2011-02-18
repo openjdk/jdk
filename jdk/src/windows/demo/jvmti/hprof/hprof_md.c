@@ -29,12 +29,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// To ensure winsock2.h is used, it has to be included ahead of
+// windows.h, which includes winsock.h by default.
+#include <winsock2.h>
 #include <windows.h>
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <mmsystem.h>
-#include <winsock2.h>
 #include <fcntl.h>
 #include <process.h>
 
@@ -147,7 +149,7 @@ md_seek(int filedes, jlong pos)
 void
 md_close(int filedes)
 {
-    (void)close(filedes);
+    (void)closesocket(filedes);
 }
 
 int

@@ -1335,7 +1335,6 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @param a the button's action
      * @since 1.3
-     * @see <a href="#actions">Actions</a>
      * @see Action
      * @see #setAction
      */

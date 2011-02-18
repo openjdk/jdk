@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,9 @@ public class ClassFile {
     public final static int CONSTANT_Methodref = 10;
     public final static int CONSTANT_InterfaceMethodref = 11;
     public final static int CONSTANT_NameandType = 12;
+    public final static int CONSTANT_MethodHandle = 15;
+    public final static int CONSTANT_MethodType = 16;
+    public final static int CONSTANT_InvokeDynamic = 18;
 
     public final static int MAX_PARAMETERS = 0xff;
     public final static int MAX_DIMENSIONS = 0xff;

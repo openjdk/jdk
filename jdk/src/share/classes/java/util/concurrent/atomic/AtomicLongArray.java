@@ -47,28 +47,37 @@ import java.util.*;
 public class AtomicLongArray implements java.io.Serializable {
     private static final long serialVersionUID = -2308431214976778248L;
 
-    // setup to use Unsafe.compareAndSwapInt for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final int base = unsafe.arrayBaseOffset(long[].class);
-    private static final int scale = unsafe.arrayIndexScale(long[].class);
+    private static final int shift;
     private final long[] array;
 
-    private long rawIndex(int i) {
+    static {
+        int scale = unsafe.arrayIndexScale(long[].class);
+        if ((scale & (scale - 1)) != 0)
+            throw new Error("data type scale not a power of two");
+        shift = 31 - Integer.numberOfLeadingZeros(scale);
+    }
+
+    private long checkedByteOffset(int i) {
         if (i < 0 || i >= array.length)
             throw new IndexOutOfBoundsException("index " + i);
-        return base + (long) i * scale;
+
+        return byteOffset(i);
+    }
+
+    private static long byteOffset(int i) {
+        return ((long) i << shift) + base;
     }
 
     /**
-     * Creates a new AtomicLongArray of given length.
+     * Creates a new AtomicLongArray of the given length, with all
+     * elements initially zero.
      *
      * @param length the length of the array
      */
     public AtomicLongArray(int length) {
         array = new long[length];
-        // must perform at least one volatile write to conform to JMM
-        if (length > 0)
-            unsafe.putLongVolatile(array, rawIndex(0), 0);
     }
 
     /**
@@ -79,17 +88,8 @@ public class AtomicLongArray implements java.io.Serializable {
      * @throws NullPointerException if array is null
      */
     public AtomicLongArray(long[] array) {
-        if (array == null)
-            throw new NullPointerException();
-        int length = array.length;
-        this.array = new long[length];
-        if (length > 0) {
-            int last = length-1;
-            for (int i = 0; i < last; ++i)
-                this.array[i] = array[i];
-            // Do the last write as volatile
-            unsafe.putLongVolatile(this.array, rawIndex(last), array[last]);
-        }
+        // Visibility guaranteed by final field guarantees
+        this.array = array.clone();
     }
 
     /**
@@ -108,7 +108,11 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the current value
      */
     public final long get(int i) {
-        return unsafe.getLongVolatile(array, rawIndex(i));
+        return getRaw(checkedByteOffset(i));
+    }
+
+    private long getRaw(long offset) {
+        return unsafe.getLongVolatile(array, offset);
     }
 
     /**
@@ -118,7 +122,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @param newValue the new value
      */
     public final void set(int i, long newValue) {
-        unsafe.putLongVolatile(array, rawIndex(i), newValue);
+        unsafe.putLongVolatile(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -129,7 +133,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int i, long newValue) {
-        unsafe.putOrderedLong(array, rawIndex(i), newValue);
+        unsafe.putOrderedLong(array, checkedByteOffset(i), newValue);
     }
 
 
@@ -142,16 +146,17 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndSet(int i, long newValue) {
+        long offset = checkedByteOffset(i);
         while (true) {
-            long current = get(i);
-            if (compareAndSet(i, current, newValue))
+            long current = getRaw(offset);
+            if (compareAndSetRaw(offset, current, newValue))
                 return current;
         }
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Atomically sets the element at position {@code i} to the given
+     * updated value if the current value {@code ==} the expected value.
      *
      * @param i the index
      * @param expect the expected value
@@ -160,13 +165,16 @@ public class AtomicLongArray implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(int i, long expect, long update) {
-        return unsafe.compareAndSwapLong(array, rawIndex(i),
-                                         expect, update);
+        return compareAndSetRaw(checkedByteOffset(i), expect, update);
+    }
+
+    private boolean compareAndSetRaw(long offset, long expect, long update) {
+        return unsafe.compareAndSwapLong(array, offset, expect, update);
     }
 
     /**
-     * Atomically sets the value to the given updated value
-     * if the current value {@code ==} the expected value.
+     * Atomically sets the element at position {@code i} to the given
+     * updated value if the current value {@code ==} the expected value.
      *
      * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
      * and does not provide ordering guarantees, so is only rarely an
@@ -188,12 +196,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndIncrement(int i) {
-        while (true) {
-            long current = get(i);
-            long next = current + 1;
-            if (compareAndSet(i, current, next))
-                return current;
-        }
+        return getAndAdd(i, 1);
     }
 
     /**
@@ -203,12 +206,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndDecrement(int i) {
-        while (true) {
-            long current = get(i);
-            long next = current - 1;
-            if (compareAndSet(i, current, next))
-                return current;
-        }
+        return getAndAdd(i, -1);
     }
 
     /**
@@ -219,10 +217,10 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndAdd(int i, long delta) {
+        long offset = checkedByteOffset(i);
         while (true) {
-            long current = get(i);
-            long next = current + delta;
-            if (compareAndSet(i, current, next))
+            long current = getRaw(offset);
+            if (compareAndSetRaw(offset, current, current + delta))
                 return current;
         }
     }
@@ -234,12 +232,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long incrementAndGet(int i) {
-        while (true) {
-            long current = get(i);
-            long next = current + 1;
-            if (compareAndSet(i, current, next))
-                return next;
-        }
+        return addAndGet(i, 1);
     }
 
     /**
@@ -249,12 +242,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long decrementAndGet(int i) {
-        while (true) {
-            long current = get(i);
-            long next = current - 1;
-            if (compareAndSet(i, current, next))
-                return next;
-        }
+        return addAndGet(i, -1);
     }
 
     /**
@@ -265,22 +253,32 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public long addAndGet(int i, long delta) {
+        long offset = checkedByteOffset(i);
         while (true) {
-            long current = get(i);
+            long current = getRaw(offset);
             long next = current + delta;
-            if (compareAndSet(i, current, next))
+            if (compareAndSetRaw(offset, current, next))
                 return next;
         }
     }
 
     /**
      * Returns the String representation of the current values of array.
-     * @return the String representation of the current values of array.
+     * @return the String representation of the current values of array
      */
     public String toString() {
-        if (array.length > 0) // force volatile read
-            get(0);
-        return Arrays.toString(array);
+        int iMax = array.length - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = 0; ; i++) {
+            b.append(getRaw(byteOffset(i)));
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(',').append(' ');
+        }
     }
 
 }

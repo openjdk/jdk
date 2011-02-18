@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -831,11 +831,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       // much like trying to deopt at a poll return. In that has we simply
       // get out of here
       //
-      if ( Bytecodes::code_at(pc, METHOD) == Bytecodes::_return_register_finalizer) {
+      if ( Bytecodes::code_at(METHOD, pc) == Bytecodes::_return_register_finalizer) {
         // this will do the right thing even if an exception is pending.
         goto handle_return;
       }
-      UPDATE_PC(Bytecodes::length_at(pc));
+      UPDATE_PC(Bytecodes::length_at(METHOD, pc));
       if (THREAD->has_pending_exception()) goto handle_exception;
       goto run;
     }

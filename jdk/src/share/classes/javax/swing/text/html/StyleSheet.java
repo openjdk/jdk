@@ -51,7 +51,7 @@ import javax.swing.text.*;
  * <p>
  * The primary entry point for HTML View implementations
  * to get their attributes is the
- * <a href="#getViewAttributes">getViewAttributes</a>
+ * {@link #getViewAttributes getViewAttributes}
  * method.  This should be implemented to establish the
  * desired policy used to associate attributes with the view.
  * Each HTMLEditorKit (i.e. and therefore each associated

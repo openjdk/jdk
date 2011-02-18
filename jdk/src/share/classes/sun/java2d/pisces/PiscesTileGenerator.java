@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import sun.java2d.pipe.AATileGenerator;
 
-public final class PiscesTileGenerator implements AATileGenerator {
+final class PiscesTileGenerator implements AATileGenerator {
     public static final int TILE_SIZE = PiscesCache.TILE_SIZE;
 
     // perhaps we should be using weak references here, but right now
