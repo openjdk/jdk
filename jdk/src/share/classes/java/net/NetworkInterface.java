@@ -547,13 +547,8 @@ public final class NetworkInterface {
         if (displayName != null) {
             result += " (" + displayName + ")";
         }
-        result += " index: "+index+" addresses:\n";
-        for (Enumeration e = getInetAddresses(); e.hasMoreElements(); ) {
-            InetAddress addr = (InetAddress)e.nextElement();
-            result += addr+";\n";
-        }
         return result;
     }
-    private static native void init();
 
+    private static native void init();
 }
