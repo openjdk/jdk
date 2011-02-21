@@ -670,6 +670,12 @@ public class AudioSystem {
      * <p>The returned <code>TargetDataLine</code>'s default
      * audio format will be initialized with <code>format</code>.
      *
+     * <p>If the system property
+     * {@code javax.sound.sampled.TargetDataLine}
+     * is defined or it is defined in the file &quot;sound.properties&quot;,
+     * it is used to retrieve the default target data line.
+     * For details, refer to the {@link AudioSystem class description}.
+     *
      * @param format an <code>AudioFormat</code> object specifying
      *        the supported audio format of the returned line,
      *        or <code>null</code> for any audio format
@@ -711,12 +717,6 @@ public class AudioSystem {
      *
      * <p>The returned <code>TargetDataLine</code>'s default
      * audio format will be initialized with <code>format</code>.
-     *
-     * <p>If the system property
-     * <code>javax.sound.sampled.TargetDataLine</code>
-     * is defined or it is defined in the file &quot;sound.properties&quot;,
-     * it is used to retrieve the default target data line.
-     * For details, refer to the {@link AudioSystem class description}.
      *
      * @param format an <code>AudioFormat</code> object specifying
      *        the supported audio format of the returned line,
