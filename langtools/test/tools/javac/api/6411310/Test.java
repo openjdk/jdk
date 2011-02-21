@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ public class Test {
         test(createFileManager(), createDir("dir", entries), "p", entries);
         test(createFileManager(), createDir("a b/dir", entries), "p", entries);
 
-        for (boolean useJavaUtilZip: new boolean[] { false, true }) {
-            test(createFileManager(useJavaUtilZip), createJar("jar", entries), "p", entries);
-            test(createFileManager(useJavaUtilZip), createJar("jar jar", entries), "p", entries);
+        for (boolean useOptimizedZip: new boolean[] { false, true }) {
+            test(createFileManager(useOptimizedZip), createJar("jar", entries), "p", entries);
+            test(createFileManager(useOptimizedZip), createJar("jar jar", entries), "p", entries);
 
             for (boolean useSymbolFile: new boolean[] { false, true }) {
-                test(createFileManager(useJavaUtilZip, useSymbolFile), rt_jar, "java.lang.ref", null);
+                test(createFileManager(useOptimizedZip, useSymbolFile), rt_jar, "java.lang.ref", null);
             }
         }
 
@@ -145,42 +145,22 @@ public class Test {
         return createFileManager(false, false);
     }
 
-    JavacFileManager createFileManager(boolean useJavaUtilZip) {
-        return createFileManager(useJavaUtilZip, false);
+    JavacFileManager createFileManager(boolean useOptimizedZip) {
+        return createFileManager(useOptimizedZip, false);
     }
 
-    JavacFileManager createFileManager(boolean useJavaUtilZip, boolean useSymbolFile) {
-        // javac should really not be using system properties like this
-        // -- it should really be using (hidden) options -- but until then
-        // take care to leave system properties as we find them, so as not
-        // to adversely affect other tests that might follow.
-        String prev = System.getProperty("useJavaUtilZip");
-        boolean resetProperties = false;
-        try {
-            if (useJavaUtilZip) {
-                System.setProperty("useJavaUtilZip", "true");
-                resetProperties = true;
-            } else if (System.getProperty("useJavaUtilZip") != null) {
-                System.getProperties().remove("useJavaUtilZip");
-                resetProperties = true;
+    JavacFileManager createFileManager(boolean useOptimizedZip, boolean useSymbolFile) {
+        Context c = new Context();
+        Options options = Options.instance(c);
+
+            if (useOptimizedZip) {
+                options.put("useOptimizedZip", "true");
             }
 
-            Context c = new Context();
             if (!useSymbolFile) {
-                Options options = Options.instance(c);
                 options.put("ignore.symbol.file", "true");
             }
-
             return new JavacFileManager(c, false, null);
-        } finally {
-            if (resetProperties) {
-                if (prev == null) {
-                    System.getProperties().remove("useJavaUtilZip");
-                } else {
-                    System.setProperty("useJavaUtilZip", prev);
-                }
-            }
-        }
     }
 
     File createDir(String name, String... entries) throws Exception {
