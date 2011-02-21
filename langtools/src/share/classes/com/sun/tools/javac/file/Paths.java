@@ -247,10 +247,16 @@ public class Paths {
         public Path() { super(); }
 
         public Path addDirectories(String dirs, boolean warn) {
-            if (dirs != null)
-                for (File dir : getPathEntries(dirs))
-                    addDirectory(dir, warn);
-            return this;
+            boolean prev = expandJarClassPaths;
+            expandJarClassPaths = true;
+            try {
+                if (dirs != null)
+                    for (File dir : getPathEntries(dirs))
+                        addDirectory(dir, warn);
+                return this;
+            } finally {
+                expandJarClassPaths = prev;
+            }
         }
 
         public Path addDirectories(String dirs) {
