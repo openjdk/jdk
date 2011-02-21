@@ -92,21 +92,12 @@ objArrayOop oopFactory::new_objArray(klassOop klass, int length, TRAPS) {
   }
 }
 
-objArrayOop oopFactory::new_system_objArray(int length, bool in_perm_gen, TRAPS) {
+objArrayOop oopFactory::new_system_objArray(int length, TRAPS) {
   int size = objArrayOopDesc::object_size(length);
   KlassHandle klass (THREAD, Universe::systemObjArrayKlassObj());
-  oop o;
-  if (in_perm_gen) {
-    o = Universe::heap()->permanent_array_allocate(klass, size, length, CHECK_NULL);
-  } else {
-    o = Universe::heap()->array_allocate(klass, size, length, CHECK_NULL);
-  }
+  objArrayOop o = (objArrayOop)
+    Universe::heap()->permanent_array_allocate(klass, size, length, CHECK_NULL);
   // initialization not needed, allocated cleared
-  return (objArrayOop) o;
-}
-
-objArrayOop oopFactory::new_system_objArray(int length, TRAPS) {
-  objArrayOop o = oopFactory::new_system_objArray(length, true, CHECK_NULL);
   return o;
 }
 
