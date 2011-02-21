@@ -164,8 +164,13 @@ public abstract class InputStreamImageSource implements ImageProducer,
 
     private synchronized void startProduction() {
         if (!awaitingFetch) {
-            ImageFetcher.add(this);
-            awaitingFetch = true;
+            if (ImageFetcher.add(this)) {
+                awaitingFetch = true;
+            } else {
+                ImageConsumerQueue cq = consumers;
+                consumers = null;
+                errorAllConsumers(cq, false);
+            }
         }
     }
 

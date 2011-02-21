@@ -104,10 +104,10 @@ EXTERN(void) jpeg_free_large JPP((j_common_ptr cinfo, void FAR * object,
  * Conversely, zero may be returned to always use the minimum amount of memory.
  */
 
-EXTERN(long) jpeg_mem_available JPP((j_common_ptr cinfo,
-                                     long min_bytes_needed,
-                                     long max_bytes_needed,
-                                     long already_allocated));
+EXTERN(size_t) jpeg_mem_available JPP((j_common_ptr cinfo,
+                                     size_t min_bytes_needed,
+                                     size_t max_bytes_needed,
+                                     size_t already_allocated));
 
 
 /*
@@ -198,5 +198,5 @@ EXTERN(void) jpeg_open_backing_store JPP((j_common_ptr cinfo,
  * all opened backing-store objects have been closed.
  */
 
-EXTERN(long) jpeg_mem_init JPP((j_common_ptr cinfo));
+EXTERN(size_t) jpeg_mem_init JPP((j_common_ptr cinfo));
 EXTERN(void) jpeg_mem_term JPP((j_common_ptr cinfo));

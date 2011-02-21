@@ -133,7 +133,7 @@ typedef struct {
   jvirt_barray_ptr virt_barray_list;
 
   /* This counts total space obtained from jpeg_get_small/large */
-  long total_space_allocated;
+  size_t total_space_allocated;
 
   /* alloc_sarray and alloc_barray set this value for use by virtual
    * array routines.
@@ -588,8 +588,8 @@ realize_virt_arrays (j_common_ptr cinfo)
 /* Allocate the in-memory buffers for any unrealized virtual arrays */
 {
   my_mem_ptr mem = (my_mem_ptr) cinfo->mem;
-  long space_per_minheight, maximum_space, avail_mem;
-  long minheights, max_minheights;
+  size_t space_per_minheight, maximum_space, avail_mem;
+  size_t minheights, max_minheights;
   jvirt_sarray_ptr sptr;
   jvirt_barray_ptr bptr;
 
@@ -1032,7 +1032,7 @@ GLOBAL(void)
 jinit_memory_mgr (j_common_ptr cinfo)
 {
   my_mem_ptr mem;
-  long max_to_use;
+  size_t max_to_use;
   int pool;
   size_t test_mac;
 
@@ -1109,8 +1109,10 @@ jinit_memory_mgr (j_common_ptr cinfo)
 
     if ((memenv = getenv("JPEGMEM")) != NULL) {
       char ch = 'x';
+      unsigned int mem_max = 0u;
 
-      if (sscanf(memenv, "%ld%c", &max_to_use, &ch) > 0) {
+      if (sscanf(memenv, "%u%c", &mem_max, &ch) > 0) {
+        max_to_use = (size_t)mem_max;
         if (ch == 'm' || ch == 'M')
           max_to_use *= 1000L;
         mem->pub.max_memory_to_use = max_to_use * 1000L;

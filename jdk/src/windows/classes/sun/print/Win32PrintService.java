@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import java.util.Vector;
+import java.util.HashMap;
 
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
@@ -205,6 +206,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private MediaPrintableArea[] mediaPrintables;
     private MediaTray[] mediaTrays;
     private PrinterResolution[] printRes;
+    private HashMap mpaMap;
     private int nCopies;
     private int prnCaps;
     private int[] defaultSettings;
@@ -212,6 +214,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private boolean gotTrays;
     private boolean gotCopies;
     private boolean mediaInitialized;
+    private boolean mpaListInitialized;
 
     private ArrayList idList;
     private MediaSize[] mediaSizes;
@@ -380,42 +383,114 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             // Add mediaName to the msnList
             if (mediaName != null) {
                 added = addToUniqueList(msnList, mediaName);
-
-                // get MediaPrintableArea only for supported MediaSizeName ?
-                if (added && !queryFailure) {
-                    prnArea=getMediaPrintableArea(printer,
-                                                  ((Integer)idList.get(i)).intValue());
-                    if (prnArea != null) {
-                        try {
-                            MediaPrintableArea mpa =
-                                new MediaPrintableArea(prnArea[0],
-                                                       prnArea[1],
-                                                       prnArea[2],
-                                                       prnArea[3],
-                                                       MediaPrintableArea.INCH);
-                            printableList.add(mpa);
-                        } catch (IllegalArgumentException iae) {
-                        }
-                    } else {
-                        // Calling getMediaPrintableArea causes
-                        // much overhead so if first attempt failed, we should
-                        // just bail out.
-                        if (i==0) {
-                            queryFailure = true;
-                        }
-                    }
-                }
             }
         }
 
         // init mediaSizeNames
         mediaSizeNames = new MediaSizeName[msnList.size()];
         msnList.toArray(mediaSizeNames);
-
-        // init mediaPrintables
-        mediaPrintables = new MediaPrintableArea[printableList.size()];
-        printableList.toArray(mediaPrintables);
     }
+
+
+    /*
+     * Gets a list of MediaPrintableAreas using a call to native function.
+     *  msn is MediaSizeName used to get a specific printable area.  If null,
+     *  it will get all the supported MediPrintableAreas.
+     */
+    private synchronized MediaPrintableArea[] getMediaPrintables(MediaSizeName msn)
+    {
+        if (msn == null)  {
+            if (mpaListInitialized == true) {
+                return mediaPrintables;
+            }
+        } else {
+            // get from cached mapping of MPAs
+            if (mpaMap != null && (mpaMap.get(msn) != null)) {
+                MediaPrintableArea[] mpaArr = new MediaPrintableArea[1];
+                mpaArr[0] = (MediaPrintableArea)mpaMap.get(msn);
+                return mpaArr;
+            }
+        }
+
+        initMedia();
+
+        if ((mediaSizeNames == null) && (mediaSizeNames.length == 0)) {
+            return null;
+        }
+
+        MediaSizeName[] loopNames;
+        if (msn != null) {
+            loopNames = new MediaSizeName[1];
+            loopNames[0] = msn;
+        } else {
+            loopNames = mediaSizeNames;
+        }
+
+        if (mpaMap == null) {
+            mpaMap = new HashMap();
+        }
+
+        for (int i=0; i < loopNames.length; i++) {
+            MediaSizeName mediaName = loopNames[i];
+
+            if (mpaMap.get(mediaName) != null) {
+                continue;
+             }
+
+            if (mediaName != null) {
+                int defPaper = findPaperID(mediaName);
+                float[] prnArea = getMediaPrintableArea(printer, defPaper);
+                MediaPrintableArea printableArea = null;
+                if (prnArea != null) {
+                    try {
+                        printableArea = new MediaPrintableArea(prnArea[0],
+                                                               prnArea[1],
+                                                               prnArea[2],
+                                                               prnArea[3],
+                                                 MediaPrintableArea.INCH);
+
+                        mpaMap.put(mediaName, printableArea);
+                    }
+                    catch (IllegalArgumentException e) {
+                    }
+                } else {
+                    // if getting  MPA failed, we use MediaSize
+                    MediaSize ms =
+                        MediaSize.getMediaSizeForName((MediaSizeName)mediaName);
+
+                    if (ms != null) {
+                        try {
+                            printableArea = new MediaPrintableArea(0, 0,
+                                                     ms.getX(MediaSize.INCH),
+                                                     ms.getY(MediaSize.INCH),
+                                                     MediaPrintableArea.INCH);
+                            mpaMap.put(mediaName, printableArea);
+                        } catch (IllegalArgumentException e) {
+                        }
+                    }
+                }
+            } //mediaName != null
+        }
+
+       if (mpaMap.size() == 0) {
+           return null;
+       }
+
+       if (msn != null) {
+           if (mpaMap.get(msn) == null) {
+               return null;
+           }
+           MediaPrintableArea[] mpaArr = new MediaPrintableArea[1];
+           // by this time, we've already gotten the desired MPA
+           mpaArr[0] = (MediaPrintableArea)mpaMap.get(msn);
+           return mpaArr;
+       } else {
+           mediaPrintables = (MediaPrintableArea[])mpaMap.values().toArray(new MediaPrintableArea[0]);
+           mpaListInitialized = true;
+           return mediaPrintables;
+       }
+    }
+
 
     private synchronized MediaTray[] getMediaTrays() {
         if (gotTrays == true && mediaTrays != null) {
@@ -626,7 +701,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
     private boolean isSupportedMediaPrintableArea(MediaPrintableArea mpa) {
 
-        initMedia();
+        getMediaPrintables(null);
 
         if (mediaPrintables != null) {
             for (int i=0; i<mediaPrintables.length; i++) {
@@ -1250,57 +1325,32 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             }
             if (trays != null) {
                 System.arraycopy(trays, 0, arr,
-                                 mediaSizeNames.length, trays.length);
+                                 len - trays.length, trays.length);
             }
             return arr;
         } else if (category == MediaPrintableArea.class) {
-            initMedia();
-
-            if (mediaPrintables == null) {
-                return null;
-            }
-
             // if getting printable area for a specific media size
-            Media mediaName;
+            Media mediaName = null;
             if ((attributes != null) &&
                 ((mediaName =
                   (Media)attributes.get(Media.class)) != null)) {
 
-                if (mediaName instanceof MediaSizeName) {
-                    MediaPrintableArea []arr = new MediaPrintableArea[1];
-
-                    if (mediaSizeNames.length == mediaPrintables.length) {
-
-                        for (int j=0; j < mediaSizeNames.length; j++) {
-
-                            if (mediaName.equals(mediaSizeNames[j])) {
-                                arr[0] = mediaPrintables[j];
-                                return arr;
-                            }
-                        }
-                    }
-
-                    MediaSize ms =
-                      MediaSize.getMediaSizeForName((MediaSizeName)mediaName);
-
-                    if (ms != null) {
-                        arr[0] = new MediaPrintableArea(0, 0,
-                                                        ms.getX(MediaSize.INCH),
-                                                        ms.getY(MediaSize.INCH),
-                                                        MediaPrintableArea.INCH);
-                        return arr;
-                    } else {
-                        return null;
-                    }
+                if (!(mediaName instanceof MediaSizeName)) {
+                    // if an instance of MediaTray, fall thru returning
+                    // all MediaPrintableAreas
+                    mediaName = null;
                 }
-                // else an instance of MediaTray, fall thru returning
-                // all MediaPrintableAreas
             }
 
-            MediaPrintableArea []arr =
-                new MediaPrintableArea[mediaPrintables.length];
-            System.arraycopy(mediaPrintables, 0, arr, 0, mediaPrintables.length);
-            return arr;
+            MediaPrintableArea[] mpas =
+                                  getMediaPrintables((MediaSizeName)mediaName);
+            if (mpas != null) {
+                MediaPrintableArea[] arr = new MediaPrintableArea[mpas.length];
+                System.arraycopy(mpas, 0, arr, 0, mpas.length);
+                return arr;
+            } else {
+                return null;
+            }
         } else if (category == SunAlternateMedia.class) {
             return new SunAlternateMedia(
                               (Media)getDefaultAttributeValue(Media.class));
