@@ -374,13 +374,10 @@ class PushbackInputStream extends FilterInputStream {
      * @exception  IOException  if an I/O error occurs.
      */
     public synchronized void close() throws IOException {
-        if (in != null) {
-            try {
-                in.close();
-            } finally {
-                in = null;
-                buf = null;
-            }
-        }
+        if (in == null)
+            return;
+        in.close();
+        in = null;
+        buf = null;
     }
 }
