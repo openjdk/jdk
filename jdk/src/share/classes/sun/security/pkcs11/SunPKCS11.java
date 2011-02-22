@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,6 +621,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_CBC_PAD, CKM_AES_CBC));
         d(CIP, "AES/ECB",                       P11Cipher,      s("AES"),
                 m(CKM_AES_ECB));
+        d(CIP, "AES/CTR/NoPadding",             P11Cipher,
+                m(CKM_AES_CTR));
         d(CIP, "Blowfish/CBC",                  P11Cipher,
                 m(CKM_BLOWFISH_CBC));
 
