@@ -255,9 +255,10 @@ class UnixAsynchronousSocketChannelImpl
             // close channel if connection cannot be established
             try {
                 close();
-            } catch (IOException ignore) { }
+            } catch (Throwable suppressed) {
+                e.addSuppressed(suppressed);
+            }
         }
-
 
         // invoke handler and set result
         CompletionHandler<Void,Object> handler = connectHandler;
@@ -345,7 +346,9 @@ class UnixAsynchronousSocketChannelImpl
         if (e != null) {
             try {
                 close();
-            } catch (IOException ignore) { }
+            } catch (Throwable suppressed) {
+                e.addSuppressed(suppressed);
+            }
         }
         if (handler == null) {
             return CompletedFuture.withResult(null, e);

@@ -1762,9 +1762,9 @@ public class Basic {
 
             equal(p.exitValue(), 5);
 
-            p.getInputStream().close();
-            p.getErrorStream().close();
-            p.getOutputStream().close();
+            try { p.getInputStream().close(); } catch (IOException ignore) { }
+            try  {p.getErrorStream().close(); } catch (IOException ignore) { }
+            try { p.getOutputStream().close(); } catch (IOException ignore) { }
 
             InputStream[] streams = { p.getInputStream(), p.getErrorStream() };
             for (final InputStream in : streams) {

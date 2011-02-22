@@ -129,17 +129,18 @@ public final class Files {
      * <pre>
      *     Path path = ...
      *
-     *     // replace an existing file or create the file if it doesn't initially exist
+     *     // truncate and overwrite an existing file, or create the file if
+     *     // it doesn't initially exist
      *     OutputStream out = Files.newOutputStream(path);
      *
      *     // append to an existing file, fail if the file does not exist
      *     out = Files.newOutputStream(path, APPEND);
      *
      *     // append to an existing file, create file if it doesn't initially exist
-     *     out = Files.newOutputStream(CREATE, APPEND);
+     *     out = Files.newOutputStream(path, CREATE, APPEND);
      *
      *     // always create new file, failing if it already exists
-     *     out = Files.newOutputStream(CREATE_NEW);
+     *     out = Files.newOutputStream(path, CREATE_NEW);
      * </pre>
      *
      * @param   path
@@ -895,8 +896,8 @@ public final class Files {
 
     /**
      * Creates a new directory in the default temporary-file directory, using
-     * the given prefix and suffix to generate its name. The resulting {@code
-     * Path} is associated with the default {@code FileSystem}.
+     * the given prefix to generate its name. The resulting {@code Path} is
+     * associated with the default {@code FileSystem}.
      *
      * <p> This method works in exactly the manner specified by {@link
      * #createTempDirectory(Path,String,FileAttribute[])} method for the case
@@ -2583,7 +2584,7 @@ public final class Files {
      * walkFileTree(start, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, visitor)
      * </pre></blockquote>
      * In other words, it does not follow symbolic links, and visits all levels
-     * of the file level.
+     * of the file tree.
      *
      * @param   start
      *          the starting file
@@ -3005,7 +3006,7 @@ public final class Files {
      * or after some bytes have been written to the file.
      *
      * <p> <b>Usage example</b>: By default the method creates a new file or
-     * overrides an existing file. Suppose you instead want to append bytes
+     * overwrites an existing file. Suppose you instead want to append bytes
      * to an existing file:
      * <pre>
      *     Path path = ...
