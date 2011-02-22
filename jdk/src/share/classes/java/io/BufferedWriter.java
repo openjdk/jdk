@@ -255,16 +255,17 @@ public class BufferedWriter extends Writer {
         }
     }
 
-    @SuppressWarnings("try")
     public void close() throws IOException {
         synchronized (lock) {
-            if (out != null) {
-                try (Writer w = out) {
-                    flushBuffer();
-                } finally {
-                    out = null;
-                    cb = null;
-                }
+            if (out == null) {
+                return;
+            }
+            try {
+                flushBuffer();
+            } finally {
+                out.close();
+                out = null;
+                cb = null;
             }
         }
     }

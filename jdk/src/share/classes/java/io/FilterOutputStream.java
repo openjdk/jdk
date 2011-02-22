@@ -152,10 +152,11 @@ class FilterOutputStream extends OutputStream {
      * @see        java.io.FilterOutputStream#flush()
      * @see        java.io.FilterOutputStream#out
      */
-    @SuppressWarnings("try")
     public void close() throws IOException {
-        try (OutputStream ostream = out) {
-            flush();
+        try {
+          flush();
+        } catch (IOException ignored) {
         }
+        out.close();
     }
 }
