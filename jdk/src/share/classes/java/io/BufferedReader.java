@@ -512,11 +512,14 @@ public class BufferedReader extends Reader {
 
     public void close() throws IOException {
         synchronized (lock) {
-            if (in == null)
-                return;
-            in.close();
-            in = null;
-            cb = null;
+            if (in != null) {
+                try {
+                    in.close();
+                } finally {
+                    in = null;
+                    cb = null;
+                }
+            }
         }
     }
 }

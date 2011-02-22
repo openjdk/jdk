@@ -245,8 +245,11 @@ public class PushbackReader extends FilterReader {
      * @exception  IOException  If an I/O error occurs
      */
     public void close() throws IOException {
-        super.close();
-        buf = null;
+        try {
+            super.close();
+        } finally {
+            buf = null;
+        }
     }
 
     /**

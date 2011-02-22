@@ -53,7 +53,7 @@ import java.util.Collections;
  * operation. This class also defines read and write methods that initiate
  * asynchronous operations, returning a {@link Future} to represent the pending
  * result of the operation. The {@code Future} may be used to check if the
- * operation has completed, to wait for its completion.
+ * operation has completed, wait for its completion, and retrieve the result.
  *
  * <p> In addition to read and write operations, this class defines the
  * following operations: </p>
@@ -79,7 +79,7 @@ import java.util.Collections;
  * itself a thread in the thread pool, then the completion handler may be invoked
  * directly by the initiating thread. When an {@code AsynchronousFileChannel} is
  * created without specifying a thread pool then the channel is associated with
- * a system-dependent and default thread pool that may be shared with other
+ * a system-dependent default thread pool that may be shared with other
  * channels. The default thread pool is configured by the system properties
  * defined by the {@link AsynchronousChannelGroup} class.
  *
