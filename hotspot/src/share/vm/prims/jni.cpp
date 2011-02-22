@@ -40,7 +40,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "prims/jni.h"
@@ -338,16 +338,15 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
 
   // Since exceptions can be thrown, class initialization can take place
   // if name is NULL no check for class name in .class stream has to be made.
-  symbolHandle class_name;
   if (name != NULL) {
     const int str_len = (int)strlen(name);
-    if (str_len > symbolOopDesc::max_length()) {
+    if (str_len > Symbol::max_length()) {
       // It's impossible to create this class;  the name cannot fit
       // into the constant pool.
       THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
     }
-    class_name = oopFactory::new_symbol_handle(name, str_len, CHECK_NULL);
   }
+  TempNewSymbol class_name = SymbolTable::new_symbol(name, THREAD);
 
   ResourceMark rm(THREAD);
   ClassFileStream st((u1*) buf, bufLen, NULL);
@@ -394,7 +393,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   // Sanity check the name:  it cannot be null or larger than the maximum size
   // name we can fit in the constant pool.
-  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
   }
 
@@ -411,8 +410,8 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
         k->name() == vmSymbols::java_lang_ClassLoader_NativeLibrary()) {
       JavaValue result(T_OBJECT);
       JavaCalls::call_static(&result, k,
-                                      vmSymbolHandles::getFromClass_name(),
-                                      vmSymbolHandles::void_class_signature(),
+                                      vmSymbols::getFromClass_name(),
+                                      vmSymbols::void_class_signature(),
                                       thread);
       if (HAS_PENDING_EXCEPTION) {
         Handle ex(thread, thread->pending_exception());
@@ -430,7 +429,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     loader = Handle(THREAD, SystemDictionary::java_system_loader());
   }
 
-  symbolHandle sym = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  TempNewSymbol sym = SymbolTable::new_symbol(name, CHECK_NULL);
   result = find_class_from_class_loader(env, sym, true, loader,
                                         protection_domain, true, thread);
 
@@ -609,7 +608,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   DT_RETURN_MARK(ThrowNew, jint, (const jint&)ret);
 
   instanceKlass* k = instanceKlass::cast(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
-  symbolHandle name = symbolHandle(THREAD, k->name());
+  Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
   Handle protection_domain (THREAD, k->protection_domain());
   THROW_MSG_LOADER_(name, (char *)message, class_loader, protection_domain, JNI_OK);
@@ -663,8 +662,8 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
                                 ex,
                                 KlassHandle(THREAD,
                                   SystemDictionary::Throwable_klass()),
-                                vmSymbolHandles::printStackTrace_name(),
-                                vmSymbolHandles::void_method_signature(),
+                                vmSymbols::printStackTrace_name(),
+                                vmSymbols::void_method_signature(),
                                 THREAD);
         // If an exception is thrown in the call it gets thrown away. Not much
         // we can do with it. The native code that calls this, does not check
@@ -838,8 +837,7 @@ class JNI_ArgumentPusher : public SignatureIterator {
   virtual void get_double () = 0;
   virtual void get_object () = 0;
 
-  JNI_ArgumentPusher(Thread *thread, symbolOop signature)
-       : SignatureIterator(thread, signature) {
+  JNI_ArgumentPusher(Symbol* signature) : SignatureIterator(signature) {
     this->_return_type = T_ILLEGAL;
     _arguments = NULL;
   }
@@ -895,12 +893,12 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
   }
 
  public:
-  JNI_ArgumentPusherVaArg(Thread *thread, symbolOop signature, va_list rap)
-       : JNI_ArgumentPusher(thread, signature) {
+  JNI_ArgumentPusherVaArg(Symbol* signature, va_list rap)
+       : JNI_ArgumentPusher(signature) {
     set_ap(rap);
   }
-  JNI_ArgumentPusherVaArg(Thread *thread, jmethodID method_id, va_list rap)
-      : JNI_ArgumentPusher(thread, JNIHandles::resolve_jmethod_id(method_id)->signature()) {
+  JNI_ArgumentPusherVaArg(jmethodID method_id, va_list rap)
+      : JNI_ArgumentPusher(JNIHandles::resolve_jmethod_id(method_id)->signature()) {
     set_ap(rap);
   }
 
@@ -966,12 +964,12 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
   inline void set_ap(const jvalue *rap) { _ap = rap; }
 
  public:
-  JNI_ArgumentPusherArray(Thread *thread, symbolOop signature, const jvalue *rap)
-       : JNI_ArgumentPusher(thread, signature) {
+  JNI_ArgumentPusherArray(Symbol* signature, const jvalue *rap)
+       : JNI_ArgumentPusher(signature) {
     set_ap(rap);
   }
-  JNI_ArgumentPusherArray(Thread *thread, jmethodID method_id, const jvalue *rap)
-      : JNI_ArgumentPusher(thread, JNIHandles::resolve_jmethod_id(method_id)->signature()) {
+  JNI_ArgumentPusherArray(jmethodID method_id, const jvalue *rap)
+      : JNI_ArgumentPusher(JNIHandles::resolve_jmethod_id(method_id)->signature()) {
     set_ap(rap);
   }
 
@@ -1038,8 +1036,8 @@ static methodHandle jni_resolve_interface_call(Handle recv, methodHandle method,
   KlassHandle recv_klass; // Default to NULL (use of ?: can confuse gcc)
   if (recv.not_null()) recv_klass = KlassHandle(THREAD, recv->klass());
   KlassHandle spec_klass (THREAD, method->method_holder());
-  symbolHandle name (THREAD, method->name());
-  symbolHandle signature (THREAD, method->signature());
+  Symbol*  name  = method->name();
+  Symbol*  signature  = method->signature();
   CallInfo info;
   LinkResolver::resolve_interface_call(info, recv, recv_klass,  spec_klass, name, signature, KlassHandle(), false, true, CHECK_(methodHandle()));
   return info.selected_method();
@@ -1051,8 +1049,8 @@ static methodHandle jni_resolve_virtual_call(Handle recv, methodHandle method, T
   KlassHandle recv_klass; // Default to NULL (use of ?: can confuse gcc)
   if (recv.not_null()) recv_klass = KlassHandle(THREAD, recv->klass());
   KlassHandle spec_klass (THREAD, method->method_holder());
-  symbolHandle name (THREAD, method->name());
-  symbolHandle signature (THREAD, method->signature());
+  Symbol*  name  = method->name();
+  Symbol*  signature  = method->signature();
   CallInfo info;
   LinkResolver::resolve_virtual_call(info, recv, recv_klass,  spec_klass, name, signature, KlassHandle(), false, true, CHECK_(methodHandle()));
   return info.selected_method();
@@ -1073,7 +1071,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
   assert(method->is_static(), "method should be static");
 
   // Fill out JavaCallArguments object
-  args->iterate( Fingerprinter(THREAD, method).fingerprint() );
+  args->iterate( Fingerprinter(method).fingerprint() );
   // Initialize result type
   result->set_type(args->get_ret_type());
 
@@ -1149,7 +1147,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   args->push_receiver(h_recv); // Push jobject handle
 
   // Fill out JavaCallArguments object
-  args->iterate( Fingerprinter(THREAD, method).fingerprint() );
+  args->iterate( Fingerprinter(method).fingerprint() );
   // Initialize result type
   result->set_type(args->get_ret_type());
 
@@ -1196,7 +1194,7 @@ JNI_ENTRY(jobject, jni_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   instanceOop i = alloc_object(clazz, CHECK_NULL);
   obj = JNIHandles::make_local(env, i);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args);
+  JNI_ArgumentPusherArray ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_NULL);
   return obj;
 JNI_END
@@ -1212,7 +1210,7 @@ JNI_ENTRY(jobject, jni_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
   instanceOop i = alloc_object(clazz, CHECK_NULL);
   obj = JNIHandles::make_local(env, i);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_NULL);
   return obj;
 JNI_END
@@ -1230,7 +1228,7 @@ JNI_ENTRY(jobject, jni_NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, 
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_NULL);
   va_end(args);
   return obj;
@@ -1271,16 +1269,13 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // The class should have been loaded (we have an instance of the class
   // passed in) so the method and signature should already be in the symbol
   // table.  If they're not there, the method doesn't exist.
-  symbolHandle signature =
-           symbolHandle(THREAD, SymbolTable::probe(sig, (int)strlen(sig)));
-  symbolHandle name;
-  if (name_str == NULL) {
-    name = vmSymbolHandles::object_initializer_name();
-  } else {
-    name = symbolHandle(THREAD,
-                        SymbolTable::probe(name_str, (int)strlen(name_str)));
-  }
-  if (name.is_null() || signature.is_null()) {
+  const char *name_to_probe = (name_str == NULL)
+                        ? vmSymbols::object_initializer_name()->as_C_string()
+                        : name_str;
+  TempNewSymbol name = SymbolTable::probe(name_to_probe, (int)strlen(name_to_probe));
+  TempNewSymbol signature = SymbolTable::probe(sig, (int)strlen(sig));
+
+  if (name == NULL || signature == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), name_str);
   }
 
@@ -1298,20 +1293,20 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   Klass::cast(klass())->initialize(CHECK_NULL);
 
   methodOop m;
-  if (name() == vmSymbols::object_initializer_name() ||
-      name() == vmSymbols::class_initializer_name()) {
+  if (name == vmSymbols::object_initializer_name() ||
+      name == vmSymbols::class_initializer_name()) {
     // Never search superclasses for constructors
     if (klass->oop_is_instance()) {
-      m = instanceKlass::cast(klass())->find_method(name(), signature());
+      m = instanceKlass::cast(klass())->find_method(name, signature);
     } else {
       m = NULL;
     }
   } else {
-    m = klass->lookup_method(name(), signature());
+    m = klass->lookup_method(name, signature);
     // Look up interfaces
     if (m == NULL && klass->oop_is_instance()) {
-      m = instanceKlass::cast(klass())->lookup_method_in_all_interfaces(name(),
-                                                                   signature());
+      m = instanceKlass::cast(klass())->lookup_method_in_all_interfaces(name,
+                                                                   signature);
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
@@ -1365,7 +1360,7 @@ JNI_ENTRY(ResultType, \
   va_list args; \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
@@ -1383,7 +1378,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1399,7 +1394,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherArray ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1429,7 +1424,7 @@ JNI_ENTRY(void, jni_CallVoidMethod(JNIEnv *env, jobject obj, jmethodID methodID,
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK);
   va_end(args);
 JNI_END
@@ -1441,7 +1436,7 @@ JNI_ENTRY(void, jni_CallVoidMethodV(JNIEnv *env, jobject obj, jmethodID methodID
   DT_VOID_RETURN_MARK(CallVoidMethodV);
 
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK);
 JNI_END
 
@@ -1452,7 +1447,7 @@ JNI_ENTRY(void, jni_CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID
   DT_VOID_RETURN_MARK(CallVoidMethodA);
 
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args);
+  JNI_ArgumentPusherArray ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK);
 JNI_END
 
@@ -1475,7 +1470,7 @@ JNI_ENTRY(ResultType, \
   va_list args; \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
@@ -1491,7 +1486,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1506,7 +1501,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherArray ap(methodID, args); \
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1539,7 +1534,7 @@ JNI_ENTRY(void, jni_CallNonvirtualVoidMethod(JNIEnv *env, jobject obj, jclass cl
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK);
   va_end(args);
 JNI_END
@@ -1553,7 +1548,7 @@ JNI_ENTRY(void, jni_CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj, jclass c
   DT_VOID_RETURN_MARK(CallNonvirtualVoidMethodV);
 
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK);
 JNI_END
 
@@ -1564,7 +1559,7 @@ JNI_ENTRY(void, jni_CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass c
                 env, obj, cls, methodID);
   DT_VOID_RETURN_MARK(CallNonvirtualVoidMethodA);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args);
+  JNI_ArgumentPusherArray ap(methodID, args);
   jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK);
 JNI_END
 
@@ -1587,7 +1582,7 @@ JNI_ENTRY(ResultType, \
   va_list args; \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
@@ -1603,7 +1598,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherVaArg ap(methodID, args); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1618,7 +1613,7 @@ JNI_ENTRY(ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args); \
+  JNI_ArgumentPusherArray ap(methodID, args); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1649,7 +1644,7 @@ JNI_ENTRY(void, jni_CallStaticVoidMethod(JNIEnv *env, jclass cls, jmethodID meth
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK);
   va_end(args);
 JNI_END
@@ -1661,7 +1656,7 @@ JNI_ENTRY(void, jni_CallStaticVoidMethodV(JNIEnv *env, jclass cls, jmethodID met
   DT_VOID_RETURN_MARK(CallStaticVoidMethodV);
 
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherVaArg ap(THREAD, methodID, args);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK);
 JNI_END
 
@@ -1672,7 +1667,7 @@ JNI_ENTRY(void, jni_CallStaticVoidMethodA(JNIEnv *env, jclass cls, jmethodID met
   DT_VOID_RETURN_MARK(CallStaticVoidMethodA);
 
   JavaValue jvalue(T_VOID);
-  JNI_ArgumentPusherArray ap(THREAD, methodID, args);
+  JNI_ArgumentPusherArray ap(methodID, args);
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK);
 JNI_END
 
@@ -1694,11 +1689,9 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   // The class should have been loaded (we have an instance of the class
   // passed in) so the field and signature should already be in the symbol
   // table.  If they're not there, the field doesn't exist.
-  symbolHandle fieldname =
-            symbolHandle(THREAD, SymbolTable::probe(name, (int)strlen(name)));
-  symbolHandle signame   =
-            symbolHandle(THREAD, SymbolTable::probe(sig, (int)strlen(sig)));
-  if (fieldname.is_null() || signame.is_null()) {
+  TempNewSymbol fieldname = SymbolTable::probe(name, (int)strlen(name));
+  TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
+  if (fieldname == NULL || signame == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   KlassHandle k(THREAD,
@@ -1708,7 +1701,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
 
   fieldDescriptor fd;
   if (!Klass::cast(k())->oop_is_instance() ||
-      !instanceKlass::cast(k())->find_field(fieldname(), signame(), false, &fd)) {
+      !instanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
@@ -1893,11 +1886,9 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   // The class should have been loaded (we have an instance of the class
   // passed in) so the field and signature should already be in the symbol
   // table.  If they're not there, the field doesn't exist.
-  symbolHandle fieldname =
-           symbolHandle(THREAD, SymbolTable::probe(name, (int)strlen(name)));
-  symbolHandle signame   =
-           symbolHandle(THREAD, SymbolTable::probe(sig, (int)strlen(sig)));
-  if (fieldname.is_null() || signame.is_null()) {
+  TempNewSymbol fieldname = SymbolTable::probe(name, (int)strlen(name));
+  TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
+  if (fieldname == NULL || signame == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   KlassHandle k(THREAD,
@@ -1907,7 +1898,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
 
   fieldDescriptor fd;
   if (!Klass::cast(k())->oop_is_instance() ||
-      !instanceKlass::cast(k())->find_field(fieldname(), signame(), true, &fd)) {
+      !instanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
@@ -2389,7 +2380,7 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double)
 // to see if the native method is now wrapped with the prefixes.  See the
 // SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
 static methodOop find_prefixed_native(KlassHandle k,
-                                      symbolHandle name, symbolHandle signature, TRAPS) {
+                                      Symbol* name, Symbol* signature, TRAPS) {
   ResourceMark rm(THREAD);
   methodOop method;
   int name_len = name->utf8_length();
@@ -2405,11 +2396,11 @@ static methodOop find_prefixed_native(KlassHandle k,
     char* trial_name_str = NEW_RESOURCE_ARRAY(char, trial_len + 1);
     strcpy(trial_name_str, prefix);
     strcat(trial_name_str, name_str);
-    symbolHandle trial_name(THREAD, SymbolTable::probe(trial_name_str, trial_len));
-    if (trial_name.is_null()) {
+    TempNewSymbol trial_name = SymbolTable::probe(trial_name_str, trial_len);
+    if (trial_name == NULL) {
       continue; // no such symbol, so this prefix wasn't used, try the next prefix
     }
-    method = Klass::cast(k())->lookup_method(trial_name(), signature());
+    method = Klass::cast(k())->lookup_method(trial_name, signature);
     if (method == NULL) {
       continue; // signature doesn't match, try the next prefix
     }
@@ -2424,13 +2415,13 @@ static methodOop find_prefixed_native(KlassHandle k,
   return NULL; // not found
 }
 
-static bool register_native(KlassHandle k, symbolHandle name, symbolHandle signature, address entry, TRAPS) {
-  methodOop method = Klass::cast(k())->lookup_method(name(), signature());
+static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, address entry, TRAPS) {
+  methodOop method = Klass::cast(k())->lookup_method(name, signature);
   if (method == NULL) {
     ResourceMark rm;
     stringStream st;
     st.print("Method %s name or signature does not match",
-             methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name(), signature()));
+             methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
   }
   if (!method->is_native()) {
@@ -2440,7 +2431,7 @@ static bool register_native(KlassHandle k, symbolHandle name, symbolHandle signa
       ResourceMark rm;
       stringStream st;
       st.print("Method %s is not declared as native",
-               methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name(), signature()));
+               methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
     }
   }
@@ -2480,10 +2471,10 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     // The class should have been loaded (we have an instance of the class
     // passed in) so the method and signature should already be in the symbol
     // table.  If they're not there, the method doesn't exist.
-    symbolHandle name(THREAD, SymbolTable::probe(meth_name, meth_name_len));
-    symbolHandle signature(THREAD, SymbolTable::probe(meth_sig, (int)strlen(meth_sig)));
+    TempNewSymbol  name = SymbolTable::probe(meth_name, meth_name_len);
+    TempNewSymbol  signature = SymbolTable::probe(meth_sig, (int)strlen(meth_sig));
 
-    if (name.is_null() || signature.is_null()) {
+    if (name == NULL || signature == NULL) {
       ResourceMark rm;
       stringStream st;
       st.print("Method %s.%s%s not found", Klass::cast(h_k())->external_name(), meth_name, meth_sig);
@@ -2717,7 +2708,7 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle loader;            // null (bootstrap) loader
   Handle protection_domain; // null protection domain
 
-  symbolHandle sym = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  TempNewSymbol sym = SymbolTable::new_symbol(name, CHECK_NULL);
   jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
 
   if (TraceClassResolution && result != NULL) {

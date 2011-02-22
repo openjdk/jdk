@@ -122,9 +122,9 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
 
   // generating _signature may allow GC and therefore move m.
   // These fields are always filled in.
-  _name = env->get_object(h_m()->name())->as_symbol();
+  _name = env->get_symbol(h_m()->name());
   _holder = env->get_object(h_m()->method_holder())->as_instance_klass();
-  ciSymbol* sig_symbol = env->get_object(h_m()->signature())->as_symbol();
+  ciSymbol* sig_symbol = env->get_symbol(h_m()->signature());
   _signature = new (env->arena()) ciSignature(_holder, sig_symbol);
   _method_data = NULL;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
@@ -649,8 +649,8 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver) {
    KlassHandle caller_klass (THREAD, caller->get_klassOop());
    KlassHandle h_recv       (THREAD, exact_receiver->get_klassOop());
    KlassHandle h_resolved   (THREAD, holder()->get_klassOop());
-   symbolHandle h_name      (THREAD, name()->get_symbolOop());
-   symbolHandle h_signature (THREAD, signature()->get_symbolOop());
+   Symbol* h_name      = name()->get_symbol();
+   Symbol* h_signature = signature()->get_symbol();
 
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
@@ -702,8 +702,8 @@ int ciMethod::resolve_vtable_index(ciKlass* caller, ciKlass* receiver) {
 
      KlassHandle caller_klass (THREAD, caller->get_klassOop());
      KlassHandle h_recv       (THREAD, receiver->get_klassOop());
-     symbolHandle h_name      (THREAD, name()->get_symbolOop());
-     symbolHandle h_signature (THREAD, signature()->get_symbolOop());
+     Symbol* h_name = name()->get_symbol();
+     Symbol* h_signature = signature()->get_symbol();
 
      vtable_index = LinkResolver::resolve_virtual_vtable_index(h_recv, h_recv, h_name, h_signature, caller_klass);
      if (vtable_index == methodOopDesc::nonvirtual_vtable_index) {

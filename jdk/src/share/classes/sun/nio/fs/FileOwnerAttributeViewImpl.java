@@ -58,13 +58,6 @@ final class FileOwnerAttributeViewImpl
     }
 
     @Override
-    public Object getAttribute(String attribute) throws IOException {
-        if (attribute.equals(OWNER_NAME))
-            return getOwner();
-        return null;
-    }
-
-    @Override
     public void setAttribute(String attribute, Object value)
         throws IOException
     {
@@ -77,8 +70,8 @@ final class FileOwnerAttributeViewImpl
     }
 
     @Override
-    public Map<String,?> readAttributes(String[] attributes) throws IOException {
-        Map<String,Object> result = new HashMap<String,Object>();
+    public Map<String,Object> readAttributes(String[] attributes) throws IOException {
+        Map<String,Object> result = new HashMap<>();
         for (String attribute: attributes) {
             if (attribute.equals("*") || attribute.equals(OWNER_NAME)) {
                 result.put(OWNER_NAME, getOwner());

@@ -41,7 +41,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
@@ -69,6 +69,12 @@
 #endif
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
@@ -615,7 +621,7 @@ void vm_exit_during_initialization(Handle exception) {
   vm_abort(false);
 }
 
-void vm_exit_during_initialization(symbolHandle ex, const char* message) {
+void vm_exit_during_initialization(Symbol* ex, const char* message) {
   ResourceMark rm;
   vm_notify_during_shutdown(ex->as_C_string(), message);
 

@@ -46,7 +46,7 @@
 #define SERVICES_KERNEL
 
 #define KERNEL_RETURN        {}
-#define KERNEL_RETURN_(code) { code }
+#define KERNEL_RETURN_(code) { return code; }
 
 #else  // KERNEL
 

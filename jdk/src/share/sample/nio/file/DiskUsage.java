@@ -43,11 +43,9 @@ public class DiskUsage {
     static final long K = 1024;
 
     static void printFileStore(FileStore store) throws IOException {
-        FileStoreSpaceAttributes attrs = Attributes.readFileStoreSpaceAttributes(store);
-
-        long total = attrs.totalSpace() / K;
-        long used = (attrs.totalSpace() - attrs.unallocatedSpace()) / K;
-        long avail = attrs.usableSpace() / K;
+        long total = store.getTotalSpace() / K;
+        long used = (store.getTotalSpace() - store.getUnallocatedSpace()) / K;
+        long avail = store.getUsableSpace() / K;
 
         String s = store.toString();
         if (s.length() > 20) {
@@ -66,7 +64,7 @@ public class DiskUsage {
             }
         } else {
             for (String file: args) {
-                FileStore store = Paths.get(file).getFileStore();
+                FileStore store = Files.getFileStore(Paths.get(file));
                 printFileStore(store);
             }
         }

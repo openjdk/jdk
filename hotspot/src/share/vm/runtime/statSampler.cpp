@@ -42,6 +42,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
+#endif
 
 // --------------------------------------------------------
 // StatSamplerTask
@@ -196,8 +202,8 @@ const char* StatSampler::get_system_property(const char* name, TRAPS) {
   // public static String getProperty(String key, String def);
   JavaCalls::call_static(&result,
                          KlassHandle(THREAD, SystemDictionary::System_klass()),
-                         vmSymbolHandles::getProperty_name(),
-                         vmSymbolHandles::string_string_signature(),
+                         vmSymbols::getProperty_name(),
+                         vmSymbols::string_string_signature(),
                          key_str,
                          CHECK_NULL);
 

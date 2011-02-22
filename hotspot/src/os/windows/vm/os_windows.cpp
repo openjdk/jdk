@@ -1,5 +1,5 @@
 /*
- * CopyrighT (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -914,6 +914,85 @@ void os::shutdown() {
     abort_hook();
   }
 }
+
+
+static BOOL  (WINAPI *_MiniDumpWriteDump)  ( HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+                                            PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
+
+void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize) {
+  HINSTANCE dbghelp;
+  EXCEPTION_POINTERS ep;
+  MINIDUMP_EXCEPTION_INFORMATION mei;
+  HANDLE hProcess = GetCurrentProcess();
+  DWORD processId = GetCurrentProcessId();
+  HANDLE dumpFile;
+  MINIDUMP_TYPE dumpType;
+  static const char* cwd;
+
+  // If running on a client version of Windows and user has not explicitly enabled dumping
+  if (!os::win32::is_windows_server() && !CreateMinidumpOnCrash) {
+    VMError::report_coredump_status("Minidumps are not enabled by default on client versions of Windows", false);
+    return;
+    // If running on a server version of Windows and user has explictly disabled dumping
+  } else if (os::win32::is_windows_server() && !FLAG_IS_DEFAULT(CreateMinidumpOnCrash) && !CreateMinidumpOnCrash) {
+    VMError::report_coredump_status("Minidump has been disabled from the command line", false);
+    return;
+  }
+
+  dbghelp = LoadLibrary("DBGHELP.DLL");
+
+  if (dbghelp == NULL) {
+    VMError::report_coredump_status("Failed to load dbghelp.dll", false);
+    return;
+  }
+
+  _MiniDumpWriteDump = CAST_TO_FN_PTR(
+    BOOL(WINAPI *)( HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+    PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION),
+    GetProcAddress(dbghelp, "MiniDumpWriteDump"));
+
+  if (_MiniDumpWriteDump == NULL) {
+    VMError::report_coredump_status("Failed to find MiniDumpWriteDump() in module dbghelp.dll", false);
+    return;
+  }
+
+  dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData);
+
+// Older versions of dbghelp.h doesn't contain all the dumptypes we want, dbghelp.h with
+// API_VERSION_NUMBER 11 or higher contains the ones we want though
+#if API_VERSION_NUMBER >= 11
+  dumpType = (MINIDUMP_TYPE)(dumpType | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo |
+    MiniDumpWithUnloadedModules);
+#endif
+
+  cwd = get_current_directory(NULL, 0);
+  jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp",cwd, current_process_id());
+  dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+  if (dumpFile == INVALID_HANDLE_VALUE) {
+    VMError::report_coredump_status("Failed to create file for dumping", false);
+    return;
+  }
+
+  ep.ContextRecord = (PCONTEXT) contextRecord;
+  ep.ExceptionRecord = (PEXCEPTION_RECORD) exceptionRecord;
+
+  mei.ThreadId = GetCurrentThreadId();
+  mei.ExceptionPointers = &ep;
+
+  // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
+  // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
+  if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, &mei, NULL, NULL) == false &&
+      _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, &mei, NULL, NULL) == false) {
+    VMError::report_coredump_status("Call to MiniDumpWriteDump() failed", false);
+  } else {
+    VMError::report_coredump_status(buffer, true);
+  }
+
+  CloseHandle(dumpFile);
+}
+
+
 
 void os::abort(bool dump_core)
 {
@@ -3274,7 +3353,7 @@ volatile intx os::win32::_os_thread_count    = 0;
 
 bool   os::win32::_is_nt              = false;
 bool   os::win32::_is_windows_2003    = false;
-
+bool   os::win32::_is_windows_server  = false;
 
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
@@ -3293,9 +3372,9 @@ void os::win32::initialize_system_info() {
   GlobalMemoryStatusEx(&ms);
   _physical_memory = ms.ullTotalPhys;
 
-  OSVERSIONINFO oi;
-  oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-  GetVersionEx(&oi);
+  OSVERSIONINFOEX oi;
+  oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+  GetVersionEx((OSVERSIONINFO*)&oi);
   switch(oi.dwPlatformId) {
     case VER_PLATFORM_WIN32_WINDOWS: _is_nt = false; break;
     case VER_PLATFORM_WIN32_NT:
@@ -3304,6 +3383,10 @@ void os::win32::initialize_system_info() {
         int os_vers = oi.dwMajorVersion * 1000 + oi.dwMinorVersion;
         if (os_vers == 5002) {
           _is_windows_2003 = true;
+        }
+        if (oi.wProductType == VER_NT_DOMAIN_CONTROLLER ||
+          oi.wProductType == VER_NT_SERVER) {
+            _is_windows_server = true;
         }
       }
       break;

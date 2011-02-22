@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,11 @@ import static javax.lang.model.SourceVersion.*;
  * source version.
  *
  * Visit methods corresponding to {@code RELEASE_6} language
- * constructs call {@link #defaultAction}, passing their arguments to
- * {@code defaultAction}'s corresponding parameters.
+ * constructs call {@link #defaultAction defaultAction}, passing their
+ * arguments to {@code defaultAction}'s corresponding parameters.
+ *
+ * For constructs introduced in {@code RELEASE_7} and later, {@code
+ * visitUnknown} is called instead.
  *
  * <p> Methods in this class may be overridden subject to their
  * general contract.  Note that annotating methods in concrete
@@ -137,14 +140,21 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * This implementation calls {@code defaultAction}, unless the
+     * element is a {@code RESOURCE_VARIABLE} in which case {@code
+     * visitUnknown} is called.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  the result of {@code defaultAction} or {@code visitUnknown}
      */
     public R visitVariable(VariableElement e, P p) {
-        return defaultAction(e, p);
+        if (e.getKind() != ElementKind.RESOURCE_VARIABLE)
+            return defaultAction(e, p);
+        else
+            return visitUnknown(e, p);
     }
 
     /**

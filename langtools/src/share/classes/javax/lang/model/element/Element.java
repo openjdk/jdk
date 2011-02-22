@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,17 +159,25 @@ public interface Element {
     Set<Modifier> getModifiers();
 
     /**
-     * Returns the simple (unqualified) name of this element.
-     * The name of a generic type does not include any reference
-     * to its formal type parameters.
-     * For example, the simple name of the type element
-     * {@code java.util.Set<E>} is {@code "Set"}.
-     * If this element represents an unnamed package, an empty name is
-     * returned.  If it represents a constructor, the name "{@code
-     * <init>}" is returned.  If it represents a static initializer,
-     * the name "{@code <clinit>}" is returned.  If it represents an
-     * anonymous class or instance initializer, an empty name is
+     * Returns the simple (unqualified) name of this element.  The
+     * name of a generic type does not include any reference to its
+     * formal type parameters.
+     *
+     * For example, the simple name of the type element {@code
+     * java.util.Set<E>} is {@code "Set"}.
+     *
+     * If this element represents an unnamed {@linkplain
+     * PackageElement#getSimpleName package}, an empty name is
      * returned.
+     *
+     * If it represents a {@linkplain ExecutableElement#getSimpleName
+     * constructor}, the name "{@code <init>}" is returned.  If it
+     * represents a {@linkplain ExecutableElement#getSimpleName static
+     * initializer}, the name "{@code <clinit>}" is returned.
+     *
+     * If it represents an {@linkplain TypeElement#getSimpleName
+     * anonymous class} or {@linkplain ExecutableElement#getSimpleName
+     * instance initializer}, an empty name is returned.
      *
      * @return the simple name of this element
      */
@@ -182,9 +190,18 @@ public interface Element {
      * <li> If this element is one whose declaration is lexically enclosed
      * immediately within the declaration of another element, that other
      * element is returned.
-     * <li> If this is a top-level type, its package is returned.
-     * <li> If this is a package, {@code null} is returned.
-     * <li> If this is a type parameter, {@code null} is returned.
+     *
+     * <li> If this is a {@linkplain TypeElement#getEnclosingElement
+     * top-level type}, its package is returned.
+     *
+     * <li> If this is a {@linkplain
+     * PackageElement#getEnclosingElement package}, {@code null} is
+     * returned.
+
+     * <li> If this is a {@linkplain
+     * TypeParameterElement#getEnclosingElement type parameter},
+     * {@code null} is returned.
+
      * </ul>
      *
      * @return the enclosing element, or {@code null} if there is none

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,16 @@ public interface PackageElement extends Element, QualifiedNameable {
     Name getQualifiedName();
 
     /**
+     * Returns the simple name of this package.  For an unnamed
+     * package, an empty name is returned
+     *
+     * @return the simple name of this package or an empty name if
+     * this is an unnamed package
+     */
+    @Override
+    Name getSimpleName();
+
+    /**
      * Returns {@code true} is this is an unnamed package and {@code
      * false} otherwise.
      *
@@ -56,4 +66,13 @@ public interface PackageElement extends Element, QualifiedNameable {
      * @jls3 7.4.2 Unnamed Packages
      */
     boolean isUnnamed();
+
+    /**
+     * Returns {@code null} since a package is not enclosed by another
+     * element.
+     *
+     * @return {@code null}
+     */
+    @Override
+    Element getEnclosingElement();
 }

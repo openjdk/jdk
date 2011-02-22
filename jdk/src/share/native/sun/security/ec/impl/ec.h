@@ -57,8 +57,6 @@
 #ifndef __ec_h_
 #define __ec_h_
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #define EC_DEBUG                          0
 #define EC_POINT_FORM_COMPRESSED_Y0    0x02
 #define EC_POINT_FORM_COMPRESSED_Y1    0x03

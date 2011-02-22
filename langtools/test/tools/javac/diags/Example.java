@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ class Example implements Comparable<Example> {
         try {
             run(null, keys, true, verbose);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
         }
         return keys;
     }
@@ -293,10 +293,15 @@ class Example implements Comparable<Example> {
     }
 
     abstract static class Compiler {
-        static Compiler getCompiler(List<String> opts, boolean verbose) {
+        interface Factory {
+            Compiler getCompiler(List<String> opts, boolean verbose);
+        }
+
+        static class DefaultFactory implements Factory {
+            public Compiler getCompiler(List<String> opts, boolean verbose) {
             String first;
             String[] rest;
-            if (opts == null || opts.size() == 0) {
+                if (opts == null || opts.isEmpty()) {
                 first = null;
                 rest = new String[0];
             } else {
@@ -311,6 +316,16 @@ class Example implements Comparable<Example> {
                 return new BackdoorCompiler(verbose);
             else
                 throw new IllegalArgumentException(first);
+                }
+        }
+
+        static Factory factory;
+
+        static Compiler getCompiler(List<String> opts, boolean verbose) {
+            if (factory == null)
+                factory = new DefaultFactory();
+
+            return factory.getCompiler(opts, verbose);
         }
 
         protected Compiler(boolean verbose) {

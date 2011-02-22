@@ -37,14 +37,17 @@ public class Force {
         Random random = new Random();
         long filesize = random.nextInt(3*1024*1024);
         int cut = random.nextInt((int)filesize);
-        File file = new File("Blah");
-        RandomAccessFile raf = new RandomAccessFile(file, "rw");
-        raf.setLength(filesize);
-        FileChannel fc = raf.getChannel();
-        MappedByteBuffer buf1 = fc.map(
-                        FileChannel.MapMode.READ_WRITE, cut, filesize-cut);
-        buf1.force();
-        fc.close();
-        raf.close();
+        File file = File.createTempFile("Blah", null);
+        file.deleteOnExit();
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+            raf.setLength(filesize);
+            FileChannel fc = raf.getChannel();
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, cut, filesize-cut);
+            mbb.force();
+        }
+
+        // improve chance that mapped buffer will be unmapped
+        System.gc();
+        Thread.sleep(500);
     }
 }

@@ -34,6 +34,7 @@
 #include "interpreter/bytecode.hpp"
 #include "oops/methodDataOop.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/jvmtiImpl.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/dtrace.hpp"
@@ -57,9 +58,9 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
   {                                                                       \
     methodOop m = (method);                                               \
     if (m != NULL) {                                                      \
-      symbolOop klass_name = m->klass_name();                             \
-      symbolOop name = m->name();                                         \
-      symbolOop signature = m->signature();                               \
+      Symbol* klass_name = m->klass_name();                               \
+      Symbol* name = m->name();                                           \
+      Symbol* signature = m->signature();                                 \
       HS_DTRACE_PROBE6(hotspot, compiled__method__unload,                 \
         klass_name->bytes(), klass_name->utf8_length(),                   \
         name->bytes(), name->utf8_length(),                               \
@@ -1533,7 +1534,10 @@ void nmethod::post_compiled_method_load_event() {
   }
 
   if (JvmtiExport::should_post_compiled_method_load()) {
-    JvmtiExport::post_compiled_method_load(this);
+    // Let the Service thread (which is a real Java thread) post the event
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    JvmtiDeferredEventQueue::enqueue(
+      JvmtiDeferredEvent::compiled_method_load_event(this));
   }
 }
 
@@ -1566,8 +1570,17 @@ void nmethod::post_compiled_method_unload() {
   // ref will have been cleared.
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
-    HandleMark hm;
-    JvmtiExport::post_compiled_method_unload(_jmethod_id, insts_begin());
+    JvmtiDeferredEvent event =
+      JvmtiDeferredEvent::compiled_method_unload_event(
+          _jmethod_id, insts_begin());
+    if (SafepointSynchronize::is_at_safepoint()) {
+      // Don't want to take the queueing lock. Add it as pending and
+      // it will get enqueued later.
+      JvmtiDeferredEventQueue::add_pending_event(event);
+    } else {
+      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      JvmtiDeferredEventQueue::enqueue(event);
+    }
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
@@ -1865,7 +1878,7 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke call(ssd.method(), ssd.bci());
     bool has_receiver = call.has_receiver();
-    symbolOop signature = call.signature();
+    Symbol* signature = call.signature();
     fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 #endif // !SHARK
@@ -2636,7 +2649,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
         } else {
           bool did_name = false;
           if (!at_this && ss.is_object()) {
-            symbolOop name = ss.as_symbol_or_null();
+            Symbol* name = ss.as_symbol_or_null();
             if (name != NULL) {
               name->print_value_on(stream);
               did_name = true;

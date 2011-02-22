@@ -56,8 +56,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mpmontg.c,v 1.20 2006/08/29 02:41:38 nelson%bolyard.com Exp $ */
 
 /* This file implements moduluar exponentiation using Montgomery's

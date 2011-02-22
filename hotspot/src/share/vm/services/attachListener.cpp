@@ -43,7 +43,7 @@ volatile bool AttachListener::_initialized;
 // Invokes sun.misc.VMSupport.serializePropertiesToByteArray to serialize
 // the system properties into a byte array.
 
-static klassOop load_and_initialize_klass(symbolHandle sh, TRAPS) {
+static klassOop load_and_initialize_klass(Symbol* sh, TRAPS) {
   klassOop k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {
@@ -52,12 +52,12 @@ static klassOop load_and_initialize_klass(symbolHandle sh, TRAPS) {
   return ik();
 }
 
-static jint get_properties(AttachOperation* op, outputStream* out, symbolHandle serializePropertiesMethod) {
+static jint get_properties(AttachOperation* op, outputStream* out, Symbol* serializePropertiesMethod) {
   Thread* THREAD = Thread::current();
   HandleMark hm;
 
   // load sun.misc.VMSupport
-  symbolHandle klass = vmSymbolHandles::sun_misc_VMSupport();
+  Symbol* klass = vmSymbols::sun_misc_VMSupport();
   klassOop k = load_and_initialize_klass(klass, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
@@ -71,7 +71,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, symbolHandle 
   JavaCallArguments args;
 
 
-  symbolHandle signature = vmSymbolHandles::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
   JavaCalls::call_static(&result,
                            ik,
                            serializePropertiesMethod,
@@ -99,12 +99,12 @@ static jint get_properties(AttachOperation* op, outputStream* out, symbolHandle 
 
 // Implementation of "properties" command.
 static jint get_system_properties(AttachOperation* op, outputStream* out) {
-  return get_properties(op, out, vmSymbolHandles::serializePropertiesToByteArray_name());
+  return get_properties(op, out, vmSymbols::serializePropertiesToByteArray_name());
 }
 
 // Implementation of "agent_properties" command.
 static jint get_agent_properties(AttachOperation* op, outputStream* out) {
-  return get_properties(op, out, vmSymbolHandles::serializeAgentPropertiesToByteArray_name());
+  return get_properties(op, out, vmSymbols::serializeAgentPropertiesToByteArray_name());
 }
 
 // Implementation of "datadump" command.
@@ -430,7 +430,7 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
 // Starts the Attach Listener thread
 void AttachListener::init() {
   EXCEPTION_MARK;
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_Thread(), true, CHECK);
+  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
   instanceKlassHandle klass (THREAD, k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
@@ -442,8 +442,8 @@ void AttachListener::init() {
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result, thread_oop,
                        klass,
-                       vmSymbolHandles::object_initializer_name(),
-                       vmSymbolHandles::threadgroup_string_void_signature(),
+                       vmSymbols::object_initializer_name(),
+                       vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
                        CHECK);
@@ -452,8 +452,8 @@ void AttachListener::init() {
   JavaCalls::call_special(&result,
                         thread_group,
                         group,
-                        vmSymbolHandles::add_method_name(),
-                        vmSymbolHandles::thread_void_signature(),
+                        vmSymbols::add_method_name(),
+                        vmSymbols::thread_void_signature(),
                         thread_oop,             // ARG 1
                         CHECK);
 

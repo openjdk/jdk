@@ -164,7 +164,7 @@ public class BasicObjectsTest {
 
         // Test 1-arg variant
         try {
-            s = Objects.nonNull("pants");
+            s = Objects.requireNonNull("pants");
             if (s != "pants") {
                 System.err.printf("1-arg non-null failed to return its arg");
                 errors++;
@@ -175,7 +175,7 @@ public class BasicObjectsTest {
         }
 
         try {
-            s = Objects.nonNull(null);
+            s = Objects.requireNonNull(null);
             System.err.printf("1-arg nonNull failed to throw NPE");
             errors++;
         } catch (NullPointerException e) {
@@ -184,7 +184,7 @@ public class BasicObjectsTest {
 
         // Test 2-arg variant
         try {
-            s = Objects.nonNull("pants", "trousers");
+            s = Objects.requireNonNull("pants", "trousers");
             if (s != "pants") {
                 System.err.printf("2-arg nonNull failed to return its arg");
                 errors++;
@@ -195,7 +195,7 @@ public class BasicObjectsTest {
         }
 
         try {
-            s = Objects.nonNull(null, "pantaloons");
+            s = Objects.requireNonNull(null, "pantaloons");
             System.err.printf("2-arg nonNull failed to throw NPE");
             errors++;
         } catch (NullPointerException e) {

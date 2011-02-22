@@ -164,7 +164,7 @@ void UTF8::convert_to_unicode(const char* utf8_str, jchar* unicode_str, int unic
 
 // Returns NULL if 'c' it not found. This only works as long
 // as 'c' is an ASCII character
-jbyte* UTF8::strrchr(jbyte* base, int length, jbyte c) {
+const jbyte* UTF8::strrchr(const jbyte* base, int length, jbyte c) {
   assert(length >= 0, "sanity check");
   assert(c >= 0, "does not work for non-ASCII characters");
   // Skip backwards in string until 'c' is found or end is reached
@@ -172,7 +172,7 @@ jbyte* UTF8::strrchr(jbyte* base, int length, jbyte c) {
   return (length < 0) ? NULL : &base[length];
 }
 
-bool UTF8::equal(jbyte* base1, int length1, jbyte* base2, int length2) {
+bool UTF8::equal(const jbyte* base1, int length1, const jbyte* base2, int length2) {
   // Length must be the same
   if (length1 != length2) return false;
   for (int i = 0; i < length1; i++) {

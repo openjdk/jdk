@@ -17,7 +17,7 @@ Neg01.java:28:28: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Neg01
 Neg01.java:29:15: compiler.err.not.within.bounds: ? extends java.lang.String, X
 Neg01.java:29:39: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Neg01), null
 Neg01.java:30:24: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Neg01), null
-Neg01.java:31:9: compiler.err.cant.resolve.location: kindname.class, Foo, , , (compiler.misc.location: kindname.class, Neg01, null)
+Neg01.java:31:9: compiler.err.cant.resolve.location: kindname.class, Foo, , , (compiler.misc.location: kindname.class, Neg01<X>, null)
 Neg01.java:31:35: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Neg01), null
 Neg01.java:33:15: compiler.err.not.within.bounds: java.lang.String, X
 Neg01.java:33:29: compiler.err.cant.apply.diamond: (compiler.misc.diamond: Neg01), null

@@ -159,9 +159,6 @@ public class BorderFactory
      * Creates a beveled border of the specified type, using
      * the specified colors for the inner and outer highlight
      * and shadow areas.
-     * <p>
-     * Note: The shadow inner and outer colors are
-     * switched for a lowered bevel border.
      *
      * @param type  an integer specifying either
      *          <code>BevelBorder.LOWERED</code> or

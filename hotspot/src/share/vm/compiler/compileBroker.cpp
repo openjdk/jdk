@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 #define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)              \
   {                                                                      \
     char* comp_name = (char*)(compiler)->name();                         \
-    symbolOop klass_name = (method)->klass_name();                       \
-    symbolOop name = (method)->name();                                   \
-    symbolOop signature = (method)->signature();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
     HS_DTRACE_PROBE8(hotspot, method__compile__begin,                    \
       comp_name, strlen(comp_name),                                      \
       klass_name->bytes(), klass_name->utf8_length(),                    \
@@ -79,9 +79,9 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 #define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)       \
   {                                                                      \
     char* comp_name = (char*)(compiler)->name();                         \
-    symbolOop klass_name = (method)->klass_name();                       \
-    symbolOop name = (method)->name();                                   \
-    symbolOop signature = (method)->signature();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
     HS_DTRACE_PROBE9(hotspot, method__compile__end,                      \
       comp_name, strlen(comp_name),                                      \
       klass_name->bytes(), klass_name->utf8_length(),                    \
@@ -689,7 +689,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
   CompilerThread* compiler_thread = NULL;
 
   klassOop k =
-    SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_Thread(),
+    SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(),
                                       true, CHECK_0);
   instanceKlassHandle klass (THREAD, k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_0);
@@ -700,8 +700,8 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result, thread_oop,
                        klass,
-                       vmSymbolHandles::object_initializer_name(),
-                       vmSymbolHandles::threadgroup_string_void_signature(),
+                       vmSymbols::object_initializer_name(),
+                       vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
                        CHECK_0);
@@ -1210,7 +1210,17 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  return !BackgroundCompilation;
+  if (!BackgroundCompilation) {
+    Symbol* class_name = method->method_holder()->klass_part()->name();
+    if (class_name->starts_with("java/lang/ref/Reference", 23)) {
+      // The reference handler thread can dead lock with the GC if compilation is blocking,
+      // so we avoid blocking compiles for anything in the java.lang.ref.Reference class,
+      // including inner classes such as ReferenceHandler.
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 

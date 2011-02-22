@@ -60,8 +60,6 @@
 #ifndef _MPI_H
 #define _MPI_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mpi.h,v 1.22 2004/04/27 23:04:36 gerv%gerv.net Exp $ */
 
 #include "mpi-config.h"

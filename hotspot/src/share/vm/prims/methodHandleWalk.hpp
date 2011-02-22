@@ -258,14 +258,18 @@ private:
     int       _tag;   // Constant pool tag type.
     JavaValue _value;
     Handle    _handle;
+    Symbol*   _sym;
 
   public:
     // Constructor for oop types.
     ConstantValue(int tag, Handle con) : _tag(tag), _handle(con) {
-      assert(tag == JVM_CONSTANT_Utf8   ||
-             tag == JVM_CONSTANT_Class  ||
+      assert(tag == JVM_CONSTANT_Class  ||
              tag == JVM_CONSTANT_String ||
              tag == JVM_CONSTANT_Object, "must be oop type");
+    }
+
+    ConstantValue(int tag, Symbol* con) : _tag(tag), _sym(con) {
+      assert(tag == JVM_CONSTANT_Utf8, "must be symbol type");
     }
 
     // Constructor for oop reference types.
@@ -291,7 +295,7 @@ private:
     }
 
     int       tag()          const { return _tag; }
-    symbolOop symbol_oop()   const { return (symbolOop) _handle(); }
+    Symbol*   symbol()       const { return _sym; }
     klassOop  klass_oop()    const { return (klassOop)  _handle(); }
     oop       object_oop()   const { return _handle(); }
     int       index()        const { return _value.get_jint(); }
@@ -336,6 +340,12 @@ private:
     return _constants.append(cv);
   }
 
+  int cpool_symbol_put(int tag, Symbol* con) {
+    if (con == NULL)  return 0;
+    ConstantValue* cv = new ConstantValue(tag, con);
+    return _constants.append(cv);
+  }
+
   int cpool_oop_reference_put(int tag, int first_index, int second_index) {
     if (first_index == 0 && second_index == 0)  return 0;
     assert(first_index != 0 && second_index != 0, "no zero indexes");
@@ -365,8 +375,8 @@ private:
   int cpool_object_put(Handle obj) {
     return cpool_oop_put(JVM_CONSTANT_Object, obj);
   }
-  int cpool_symbol_put(symbolOop sym) {
-    return cpool_oop_put(JVM_CONSTANT_Utf8, sym);
+  int cpool_symbol_put(Symbol* sym) {
+    return cpool_symbol_put(JVM_CONSTANT_Utf8, sym);
   }
   int cpool_klass_put(klassOop klass) {
     return cpool_oop_put(JVM_CONSTANT_Class, klass);

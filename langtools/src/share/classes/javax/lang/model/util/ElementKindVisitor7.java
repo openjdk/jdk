@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.lang.model.SourceVersion;
 /**
  * A visitor of program elements based on their {@linkplain
  * ElementKind kind} with default behavior appropriate for the {@link
- * SourceVersion#RELEASE_6 RELEASE_6} source version.  For {@linkplain
+ * SourceVersion#RELEASE_7 RELEASE_7} source version.  For {@linkplain
  * Element elements} <tt><i>XYZ</i></tt> that may have more than one
  * kind, the <tt>visit<i>XYZ</i></tt> methods in this class delegate
  * to the <tt>visit<i>XYZKind</i></tt> method corresponding to the
@@ -93,5 +93,18 @@ public class ElementKindVisitor7<R, P> extends ElementKindVisitor6<R, P> {
      */
     protected ElementKindVisitor7(R defaultValue) {
         super(defaultValue);
+    }
+
+    /**
+     * Visits a {@code RESOURCE_VARIABLE} variable element by calling
+     * {@code defaultAction}.
+     *
+     * @param e {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitVariableAsResourceVariable(VariableElement e, P p) {
+        return defaultAction(e, p);
     }
 }

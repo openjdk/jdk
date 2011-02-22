@@ -31,19 +31,25 @@
 #include "utilities/hashtable.inline.hpp"
 
 LoaderConstraintTable::LoaderConstraintTable(int nof_buckets)
-  : Hashtable(nof_buckets, sizeof(LoaderConstraintEntry)) {};
+  : Hashtable<klassOop>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
 
 
 LoaderConstraintEntry* LoaderConstraintTable::new_entry(
-                                 unsigned int hash, symbolOop name,
+                                 unsigned int hash, Symbol* name,
                                  klassOop klass, int num_loaders,
                                  int max_loaders) {
   LoaderConstraintEntry* entry;
-  entry = (LoaderConstraintEntry*)Hashtable::new_entry(hash, klass);
+  entry = (LoaderConstraintEntry*)Hashtable<klassOop>::new_entry(hash, klass);
   entry->set_name(name);
   entry->set_num_loaders(num_loaders);
   entry->set_max_loaders(max_loaders);
   return entry;
+}
+
+void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
+  // decrement name refcount before freeing
+  entry->name()->decrement_refcount();
+  Hashtable<klassOop>::free_entry(entry);
 }
 
 
@@ -52,7 +58,6 @@ void LoaderConstraintTable::oops_do(OopClosure* f) {
     for (LoaderConstraintEntry* probe = bucket(index);
                                 probe != NULL;
                                 probe = probe->next()) {
-      f->do_oop((oop*)(probe->name_addr()));
       if (probe->klass() != NULL) {
         f->do_oop((oop*)probe->klass_addr());
       }
@@ -65,27 +70,13 @@ void LoaderConstraintTable::oops_do(OopClosure* f) {
   }
 }
 
-// We must keep the symbolOop used in the name alive.  We'll use the
-// loaders to decide if a particular entry can be purged.
-void LoaderConstraintTable::always_strong_classes_do(OopClosure* blk) {
-  // We must keep the symbolOop used in the name alive.
-  for (int cindex = 0; cindex < table_size(); cindex++) {
-    for (LoaderConstraintEntry* lc_probe = bucket(cindex);
-                                lc_probe != NULL;
-                                lc_probe = lc_probe->next()) {
-      assert (lc_probe->name() != NULL,  "corrupted loader constraint table");
-      blk->do_oop((oop*)lc_probe->name_addr());
-    }
-  }
-}
-
 
 // The loaderConstraintTable must always be accessed with the
 // SystemDictionary lock held. This is true even for readers as
 // entries in the table could be being dynamically resized.
 
 LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
-                                    symbolHandle name, Handle loader) {
+                                    Symbol* name, Handle loader) {
 
   unsigned int hash = compute_hash(name);
   int index = hash_to_index(hash);
@@ -93,7 +84,7 @@ LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
   while (*pp) {
     LoaderConstraintEntry* p = *pp;
     if (p->hash() == hash) {
-      if (p->name() == name()) {
+      if (p->name() == name) {
         for (int i = p->num_loaders() - 1; i >= 0; i--) {
           if (p->loader(i) == loader()) {
             return pp;
@@ -177,7 +168,6 @@ void LoaderConstraintTable::purge_loader_constraints(BoolObjectClosure* is_alive
         free_entry(probe);
       } else {
 #ifdef ASSERT
-        assert(is_alive->do_object_b(probe->name()), "name should be live");
         if (probe->klass() != NULL) {
           assert(is_alive->do_object_b(probe->klass()), "klass should be live");
         }
@@ -194,7 +184,7 @@ void LoaderConstraintTable::purge_loader_constraints(BoolObjectClosure* is_alive
   }
 }
 
-bool LoaderConstraintTable::add_entry(symbolHandle class_name,
+bool LoaderConstraintTable::add_entry(Symbol* class_name,
                                       klassOop klass1, Handle class_loader1,
                                       klassOop klass2, Handle class_loader2) {
   int failure_code = 0; // encode different reasons for failing
@@ -233,7 +223,7 @@ bool LoaderConstraintTable::add_entry(symbolHandle class_name,
         unsigned int hash = compute_hash(class_name);
         int index = hash_to_index(hash);
         LoaderConstraintEntry* p;
-        p = new_entry(hash, class_name(), klass, 2, 2);
+        p = new_entry(hash, class_name, klass, 2, 2);
         p->set_loaders(NEW_C_HEAP_ARRAY(oop, 2));
         p->set_loader(0, class_loader1());
         p->set_loader(1, class_loader2());
@@ -244,7 +234,7 @@ bool LoaderConstraintTable::add_entry(symbolHandle class_name,
           ResourceMark rm;
           tty->print("[Adding new constraint for name: %s, loader[0]: %s,"
                      " loader[1]: %s ]\n",
-                     class_name()->as_C_string(),
+                     class_name->as_C_string(),
                      SystemDictionary::loader_name(class_loader1()),
                      SystemDictionary::loader_name(class_loader2())
                      );
@@ -257,7 +247,7 @@ bool LoaderConstraintTable::add_entry(symbolHandle class_name,
             ResourceMark rm;
             tty->print("[Setting class object in existing constraint for"
                        " name: %s and loader %s ]\n",
-                       class_name()->as_C_string(),
+                       class_name->as_C_string(),
                        SystemDictionary::loader_name(class_loader1())
                        );
           }
@@ -288,7 +278,7 @@ bool LoaderConstraintTable::add_entry(symbolHandle class_name,
     }
     tty->print("[Failed to add constraint for name: %s, loader[0]: %s,"
                " loader[1]: %s, Reason: %s ]\n",
-               class_name()->as_C_string(),
+               class_name->as_C_string(),
                SystemDictionary::loader_name(class_loader1()),
                SystemDictionary::loader_name(class_loader2()),
                reason
@@ -303,14 +293,14 @@ bool LoaderConstraintTable::add_entry(symbolHandle class_name,
 // violated
 bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
                                                    Handle loader,
-                                                   symbolHandle name) {
+                                                   Symbol* name) {
   LoaderConstraintEntry* p = *(find_loader_constraint(name, loader));
   if (p && p->klass() != NULL && p->klass() != k()) {
     if (TraceLoaderConstraints) {
       ResourceMark rm;
       tty->print("[Constraint check failed for name %s, loader %s: "
                  "the presented class object differs from that stored ]\n",
-                 name()->as_C_string(),
+                 name->as_C_string(),
                  SystemDictionary::loader_name(loader()));
     }
     return false;
@@ -321,7 +311,7 @@ bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
         ResourceMark rm;
         tty->print("[Updating constraint for name %s, loader %s, "
                    "by setting class object ]\n",
-                   name()->as_C_string(),
+                   name->as_C_string(),
                    SystemDictionary::loader_name(loader()));
       }
     }
@@ -329,7 +319,7 @@ bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
   }
 }
 
-klassOop LoaderConstraintTable::find_constrained_klass(symbolHandle name,
+klassOop LoaderConstraintTable::find_constrained_klass(Symbol* name,
                                                        Handle loader) {
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
   if (p != NULL && p->klass() != NULL)
@@ -442,11 +432,10 @@ void LoaderConstraintTable::verify(Dictionary* dictionary,
     for (LoaderConstraintEntry* probe = bucket(cindex);
                                 probe != NULL;
                                 probe = probe->next()) {
-      guarantee(probe->name()->is_symbol(), "should be symbol");
       if (probe->klass() != NULL) {
         instanceKlass* ik = instanceKlass::cast(probe->klass());
         guarantee(ik->name() == probe->name(), "name should match");
-        symbolHandle name (thread, ik->name());
+        Symbol* name = ik->name();
         Handle loader(thread, ik->class_loader());
         unsigned int d_hash = dictionary->compute_hash(name, loader);
         int d_index = dictionary->hash_to_index(d_hash);

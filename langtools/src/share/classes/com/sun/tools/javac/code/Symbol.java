@@ -729,6 +729,10 @@ public abstract class Symbol implements Element {
          */
         public Pool pool;
 
+        /** members closure cache (set by Types.membersClosure)
+         */
+        Scope membersClosure;
+
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(flags, name, type, owner);
             this.members_field = null;
@@ -961,22 +965,12 @@ public abstract class Symbol implements Element {
         }
 
         public void setLazyConstValue(final Env<AttrContext> env,
-                                      final Log log,
                                       final Attr attr,
                                       final JCTree.JCExpression initializer)
         {
             setData(new Callable<Object>() {
                 public Object call() {
-                    JavaFileObject source = log.useSource(env.toplevel.sourcefile);
-                    try {
-                        Type itype = attr.attribExpr(initializer, env, type);
-                        if (itype.constValue() != null)
-                            return attr.coerce(itype, type).constValue();
-                        else
-                            return null;
-                    } finally {
-                        log.useSource(source);
-                    }
+                    return attr.attribLazyConstantValue(env, initializer, type);
                 }
             });
         }
@@ -1010,6 +1004,7 @@ public abstract class Symbol implements Element {
                 try {
                     data = eval.call();
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     throw new AssertionError(ex);
                 }
             }
@@ -1231,7 +1226,7 @@ public abstract class Symbol implements Element {
             };
 
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
-            MethodSymbol res = types.implementation(this, origin, types, checkResult, implFilter);
+            MethodSymbol res = types.implementation(this, origin, checkResult, implFilter);
             if (res != null)
                 return res;
             // if origin is derived from a raw type, we might have missed

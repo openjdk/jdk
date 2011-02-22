@@ -33,6 +33,12 @@
 #ifdef TARGET_ARCH_zero
 # include "jni_zero.h"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "jni_arm.h"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "jni_ppc.h"
+#endif
 
 
 /*

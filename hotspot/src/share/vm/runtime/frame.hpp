@@ -44,6 +44,12 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
+#endif
 #endif
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
@@ -261,10 +267,10 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
-  oop interpreter_callee_receiver(symbolHandle signature)     { return *interpreter_callee_receiver_addr(signature); }
+  oop interpreter_callee_receiver(Symbol* signature)     { return *interpreter_callee_receiver_addr(signature); }
 
 
-  oop* interpreter_callee_receiver_addr(symbolHandle signature);
+  oop* interpreter_callee_receiver_addr(Symbol* signature);
 
 
   // expression stack (may go up or down, direction == 1 or -1)
@@ -386,11 +392,11 @@ class frame VALUE_OBJ_CLASS_SPEC {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* regmap) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(symbolHandle signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
+  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
   void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:
-  void oops_interpreted_arguments_do(symbolHandle signature, bool has_receiver, OopClosure* f);
+  void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f);
 
   // Iteration of oops
   void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);
@@ -456,6 +462,12 @@ class frame VALUE_OBJ_CLASS_SPEC {
 #endif
 #ifdef TARGET_ARCH_zero
 # include "frame_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "frame_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "frame_ppc.hpp"
 #endif
 
 };

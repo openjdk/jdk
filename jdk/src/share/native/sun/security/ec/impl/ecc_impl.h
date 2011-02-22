@@ -51,14 +51,12 @@
  *
  *********************************************************************** */
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  */
 
 #ifndef _ECC_IMPL_H
 #define _ECC_IMPL_H
-
-#pragma ident   "%Z%%M% %I%     %E% SMI"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +80,7 @@ typedef enum { B_FALSE, B_TRUE } boolean_t;
 typedef unsigned char uint8_t;
 typedef unsigned long ulong_t;
 typedef enum boolean { B_FALSE, B_TRUE } boolean_t;
+#define strdup _strdup          /* Replace POSIX name with ISO C++ name */
 #endif /* _WIN32 */
 
 #ifndef _KERNEL

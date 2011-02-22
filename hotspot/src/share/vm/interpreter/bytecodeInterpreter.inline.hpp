@@ -52,6 +52,12 @@
 #ifdef TARGET_ARCH_zero
 # include "bytecodeInterpreter_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "bytecodeInterpreter_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "bytecodeInterpreter_ppc.inline.hpp"
+#endif
 
 #endif // CC_INTERP
 

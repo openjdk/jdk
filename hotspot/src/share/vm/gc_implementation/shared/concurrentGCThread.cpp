@@ -187,7 +187,7 @@ SurrogateLockerThread::SurrogateLockerThread() :
 
 SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
   klassOop k =
-    SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_Thread(),
+    SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(),
                                       true, CHECK_NULL);
   instanceKlassHandle klass (THREAD, k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_NULL);
@@ -200,8 +200,8 @@ SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result, thread_oop,
                           klass,
-                          vmSymbolHandles::object_initializer_name(),
-                          vmSymbolHandles::threadgroup_string_void_signature(),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,
                           CHECK_NULL);

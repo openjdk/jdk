@@ -55,7 +55,7 @@ class Reflection: public AllStatic {
   static objArrayHandle get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS);
   static objArrayHandle get_exception_types(methodHandle method, TRAPS);
   // Creating new java.lang.reflect.xxx wrappers
-  static Handle new_type(symbolHandle signature, KlassHandle k, TRAPS);
+  static Handle new_type(Symbol* signature, KlassHandle k, TRAPS);
 
  public:
   // Constants defined by java reflection api classes
@@ -157,11 +157,11 @@ public:
   static void      field_set(jvalue* value, fieldDescriptor* fd, Handle receiver, BasicType value_type, TRAPS);
 
   // Reflective lookup of fields. Returns java.lang.reflect.Field instances.
-  static oop         reflect_field(oop mirror, symbolOop field_name, jint which, TRAPS);
+  static oop         reflect_field(oop mirror, Symbol* field_name, jint which, TRAPS);
   static objArrayOop reflect_fields(oop mirror, jint which, TRAPS);
 
   // Reflective lookup of methods. Returns java.lang.reflect.Method instances.
-  static oop         reflect_method(oop mirror, symbolHandle method_name, objArrayHandle types, jint which, TRAPS);
+  static oop         reflect_method(oop mirror, Symbol* method_name, objArrayHandle types, jint which, TRAPS);
   static objArrayOop reflect_methods(oop mirror, jint which, TRAPS);
 
   // Reflective lookup of constructors. Returns java.lang.reflect.Constructor instances.

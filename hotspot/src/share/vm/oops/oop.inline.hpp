@@ -52,6 +52,12 @@
 #ifdef TARGET_ARCH_zero
 # include "bytes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "bytes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "bytes_ppc.hpp"
+#endif
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
@@ -140,7 +146,6 @@ inline bool oopDesc::is_array()              const { return blueprint()->oop_is_
 inline bool oopDesc::is_objArray()           const { return blueprint()->oop_is_objArray(); }
 inline bool oopDesc::is_typeArray()          const { return blueprint()->oop_is_typeArray(); }
 inline bool oopDesc::is_javaArray()          const { return blueprint()->oop_is_javaArray(); }
-inline bool oopDesc::is_symbol()             const { return blueprint()->oop_is_symbol(); }
 inline bool oopDesc::is_klass()              const { return blueprint()->oop_is_klass(); }
 inline bool oopDesc::is_thread()             const { return blueprint()->oop_is_thread(); }
 inline bool oopDesc::is_method()             const { return blueprint()->oop_is_method(); }

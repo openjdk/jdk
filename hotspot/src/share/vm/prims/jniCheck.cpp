@@ -27,7 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jni.h"
 #include "prims/jniCheck.hpp"
 #include "prims/jvm_misc.hpp"
@@ -44,6 +44,12 @@
 #endif
 #ifdef TARGET_ARCH_zero
 # include "jniTypes_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "jniTypes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "jniTypes_ppc.hpp"
 #endif
 
 

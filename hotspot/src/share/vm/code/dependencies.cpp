@@ -628,8 +628,8 @@ class ClassHierarchyWalker {
 
  private:
   // optional method descriptor to check for:
-  symbolOop _name;
-  symbolOop _signature;
+  Symbol* _name;
+  Symbol* _signature;
 
   // special classes which are not allowed to be witnesses:
   klassOop  _participants[PARTICIPANT_LIMIT+1];

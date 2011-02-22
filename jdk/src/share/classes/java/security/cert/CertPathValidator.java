@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,19 @@ import sun.security.jca.GetInstance.Instance;
  * and an algorithm-specific set of parameters. If successful, the result is
  * returned in an object that implements the
  * <code>CertPathValidatorResult</code> interface.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>CertPathValidator</code> algorithm:
+ * <ul>
+ * <li><tt>PKIX</tt></li>
+ * </ul>
+ * This algorithm is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathValidator">
+ * CertPathValidator section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
+ *
  * <p>
  * <b>Concurrent Access</b>
  * <p>
@@ -118,10 +131,10 @@ public class CertPathValidator {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested <code>CertPathValidator</code>
-     *  algorithm.  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     *  algorithm. See the CertPathValidator section in the <a href=
+     *  "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathValidator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @return a <code>CertPathValidator</code> object that implements the
      *          specified algorithm.
@@ -153,10 +166,10 @@ public class CertPathValidator {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested <code>CertPathValidator</code>
-     *  algorithm.  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     *  algorithm. See the CertPathValidator section in the <a href=
+     *  "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathValidator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
      *
@@ -193,12 +206,11 @@ public class CertPathValidator {
      * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
-     * @param algorithm the name of the requested
-     *  <code>CertPathValidator</code> algorithm.
-     *  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     * @param algorithm the name of the requested <code>CertPathValidator</code>
+     * algorithm. See the CertPathValidator section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathValidator">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @param provider the provider.
      *

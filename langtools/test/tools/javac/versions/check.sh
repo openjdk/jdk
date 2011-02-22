@@ -32,7 +32,7 @@ TC=${TESTCLASSES-.}
 
 J="$TESTJAVA/bin/java" 
 JC="$TESTJAVA/bin/javac" 
-CFV="$J ${TESTVMOPTS} -cp $TC CheckClassFileVersion"
+CFV="${TESTVMOPTS} -cp $TC CheckClassFileVersion"
 
 rm -f $TC/X.java $TC/X.java
 echo 'public class X { }' > $TC/X.java
@@ -44,7 +44,7 @@ echo 'public enum Y { }' > $TC/Y.java
 check() {
   V=$1; shift
   echo "+ javac $* [$V]"
-  $JC ${TESTTOOLVMOPTS} -d $TC $* $TC/X.java && $CFV $TC/X.class $V || exit 2
+  "$JC" ${TESTTOOLVMOPTS} -d $TC $* $TC/X.java && "$J" $CFV $TC/X.class $V || exit 2
 }
 
 check 48.0 -source 1.4
@@ -73,7 +73,7 @@ check 51.0 -target 7
 
 fail() {
   echo "+ javac $*"
-  if $JC ${TESTTOOLVMOPTS} -d $TC $*; then
+  if "$JC" ${TESTTOOLVMOPTS} -d $TC $*; then
     echo "-- did not fail as expected"
     exit 3
   else
@@ -83,7 +83,7 @@ fail() {
 
 pass() {
   echo "+ javac $*"
-  if $JC ${TESTTOOLVMOPTS} -d $TC $*; then
+  if "$JC" ${TESTTOOLVMOPTS} -d $TC $*; then
     echo "-- passed"
   else
     echo "-- failed"

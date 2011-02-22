@@ -185,6 +185,9 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                         cleanerThread = new Thread(grp, queue, "Keep-Alive-SocketCleaner");
                         cleanerThread.setDaemon(true);
                         cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
+                        // Set the context class loader to null in order to avoid
+                        // keeping a strong reference to an application classloader.
+                        cleanerThread.setContextClassLoader(null);
                         cleanerThread.start();
                         return null;
                     }
