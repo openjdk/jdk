@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1057,20 +1057,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  static address disjoint_byte_copy_entry;
-  static address disjoint_short_copy_entry;
-  static address disjoint_int_copy_entry;
-  static address disjoint_long_copy_entry;
-  static address disjoint_oop_copy_entry;
-
-  static address byte_copy_entry;
-  static address short_copy_entry;
-  static address int_copy_entry;
-  static address long_copy_entry;
-  static address oop_copy_entry;
-
-  static address checkcast_copy_entry;
-
   //
   // Verify that a register contains clean 32-bits positive value
   // (high 32-bits are 0) so it could be used in 64-bits shifts.
@@ -1379,7 +1365,7 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_byte_copy_entry is set to the no-overlap entry point
   //   used by generate_conjoint_byte_copy().
   //
-  address generate_disjoint_byte_copy(bool aligned, const char *name) {
+  address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1399,9 +1385,11 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    disjoint_byte_copy_entry = __ pc();
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    if (entry != NULL) {
+      *entry = __ pc();
+       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
 
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
@@ -1479,7 +1467,8 @@ class StubGenerator: public StubCodeGenerator {
   // dwords or qwords that span cache line boundaries will still be loaded
   // and stored atomically.
   //
-  address generate_conjoint_byte_copy(bool aligned, const char *name) {
+  address generate_conjoint_byte_copy(bool aligned, address nooverlap_target,
+                                      address* entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1494,11 +1483,13 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    byte_copy_entry = __ pc();
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
 
-    array_overlap_test(disjoint_byte_copy_entry, Address::times_1);
+    array_overlap_test(nooverlap_target, Address::times_1);
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
 
@@ -1574,7 +1565,7 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_short_copy_entry is set to the no-overlap entry point
   //   used by generate_conjoint_short_copy().
   //
-  address generate_disjoint_short_copy(bool aligned, const char *name) {
+  address generate_disjoint_short_copy(bool aligned, address *entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1593,9 +1584,11 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    disjoint_short_copy_entry = __ pc();
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
 
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
@@ -1686,7 +1679,8 @@ class StubGenerator: public StubCodeGenerator {
   // or qwords that span cache line boundaries will still be loaded
   // and stored atomically.
   //
-  address generate_conjoint_short_copy(bool aligned, const char *name) {
+  address generate_conjoint_short_copy(bool aligned, address nooverlap_target,
+                                       address *entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1701,11 +1695,13 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    short_copy_entry = __ pc();
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
 
-    array_overlap_test(disjoint_short_copy_entry, Address::times_2);
+    array_overlap_test(nooverlap_target, Address::times_2);
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
 
@@ -1773,7 +1769,7 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_int_copy_entry is set to the no-overlap entry point
   //   used by generate_conjoint_int_oop_copy().
   //
-  address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, const char *name) {
+  address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1793,21 +1789,17 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    (is_oop ? disjoint_oop_copy_entry : disjoint_int_copy_entry) = __ pc();
-
-    if (is_oop) {
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(/* dest */ c_rarg1, /* count */ c_rarg2);
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
     }
-
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
 
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
-
     if (is_oop) {
       __ movq(saved_to, to);
+      gen_write_ref_array_pre_barrier(to, count);
     }
 
     // 'from', 'to' and 'count' are now valid
@@ -1867,7 +1859,8 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomicly.
   //
-  address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, const char *name) {
+  address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
+                                         address *entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1882,19 +1875,20 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    if (is_oop) {
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(/* dest */ c_rarg1, /* count */ c_rarg2);
+    if (entry != NULL) {
+      *entry = __ pc();
+       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
     }
 
-    (is_oop ? oop_copy_entry : int_copy_entry) = __ pc();
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
-
-    array_overlap_test(is_oop ? disjoint_oop_copy_entry : disjoint_int_copy_entry,
-                       Address::times_4);
+    array_overlap_test(nooverlap_target, Address::times_4);
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
+
+    if (is_oop) {
+      // no registers are destroyed by this call
+      gen_write_ref_array_pre_barrier(to, count);
+    }
 
     assert_clean_int(count, rax); // Make sure 'count' is clean int.
     // 'from', 'to' and 'count' are now valid
@@ -1959,7 +1953,7 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_oop_copy_entry or disjoint_long_copy_entry is set to the
   //   no-overlap entry point used by generate_conjoint_long_oop_copy().
   //
-  address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, const char *name) {
+  address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1978,20 +1972,19 @@ class StubGenerator: public StubCodeGenerator {
     // Save no-overlap entry point for generate_conjoint_long_oop_copy()
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    if (is_oop) {
-      disjoint_oop_copy_entry  = __ pc();
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(/* dest */ c_rarg1, /* count */ c_rarg2);
-    } else {
-      disjoint_long_copy_entry = __ pc();
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
     }
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
 
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
-
     // 'from', 'to' and 'qword_count' are now valid
+    if (is_oop) {
+      // no registers are destroyed by this call
+      gen_write_ref_array_pre_barrier(to, qword_count);
+    }
 
     // Copy from low to high addresses.  Use 'to' as scratch.
     __ lea(end_from, Address(from, qword_count, Address::times_8, -8));
@@ -2045,7 +2038,8 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg1   - destination array address
   //   c_rarg2   - element count, treated as ssize_t, can be zero
   //
-  address generate_conjoint_long_oop_copy(bool aligned, bool is_oop, const char *name) {
+  address generate_conjoint_long_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
+                                          address *entry, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2059,26 +2053,16 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    address disjoint_copy_entry = NULL;
-    if (is_oop) {
-      assert(!UseCompressedOops, "shouldn't be called for compressed oops");
-      disjoint_copy_entry = disjoint_oop_copy_entry;
-      oop_copy_entry  = __ pc();
-      array_overlap_test(disjoint_oop_copy_entry, Address::times_8);
-    } else {
-      disjoint_copy_entry = disjoint_long_copy_entry;
-      long_copy_entry = __ pc();
-      array_overlap_test(disjoint_long_copy_entry, Address::times_8);
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
     }
-    BLOCK_COMMENT("Entry:");
-    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
 
-    array_overlap_test(disjoint_copy_entry, Address::times_8);
+    array_overlap_test(nooverlap_target, Address::times_8);
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
-
     // 'from', 'to' and 'qword_count' are now valid
-
     if (is_oop) {
       // Save to and count for store barrier
       __ movptr(saved_count, qword_count);
@@ -2162,7 +2146,7 @@ class StubGenerator: public StubCodeGenerator {
   //    rax ==  0  -  success
   //    rax == -1^K - failure, where K is partial transfer count
   //
-  address generate_checkcast_copy(const char *name) {
+  address generate_checkcast_copy(const char *name, address *entry) {
 
     Label L_load_element, L_store_element, L_do_card_marks, L_done;
 
@@ -2216,8 +2200,10 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // Caller of this entry point must set up the argument registers.
-    checkcast_copy_entry  = __ pc();
-    BLOCK_COMMENT("Entry:");
+    if (entry != NULL) {
+      *entry = __ pc();
+      BLOCK_COMMENT("Entry:");
+    }
 
     // allocate spill slots for r13, r14
     enum {
@@ -2334,7 +2320,9 @@ class StubGenerator: public StubCodeGenerator {
   // Examines the alignment of the operands and dispatches
   // to a long, int, short, or byte copy loop.
   //
-  address generate_unsafe_copy(const char *name) {
+  address generate_unsafe_copy(const char *name,
+                               address byte_copy_entry, address short_copy_entry,
+                               address int_copy_entry, address long_copy_entry) {
 
     Label L_long_aligned, L_int_aligned, L_short_aligned;
 
@@ -2432,7 +2420,10 @@ class StubGenerator: public StubCodeGenerator {
   //    rax ==  0  -  success
   //    rax == -1^K - failure, where K is partial transfer count
   //
-  address generate_generic_copy(const char *name) {
+  address generate_generic_copy(const char *name,
+                                address byte_copy_entry, address short_copy_entry,
+                                address int_copy_entry, address long_copy_entry,
+                                address oop_copy_entry, address checkcast_copy_entry) {
 
     Label L_failed, L_failed_0, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
@@ -2725,33 +2716,60 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_arraycopy_stubs() {
-    // Call the conjoint generation methods immediately after
-    // the disjoint ones so that short branches from the former
-    // to the latter can be generated.
-    StubRoutines::_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(false, "jbyte_disjoint_arraycopy");
-    StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy(false, "jbyte_arraycopy");
+    address entry;
+    address entry_jbyte_arraycopy;
+    address entry_jshort_arraycopy;
+    address entry_jint_arraycopy;
+    address entry_oop_arraycopy;
+    address entry_jlong_arraycopy;
+    address entry_checkcast_arraycopy;
 
-    StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(false, "jshort_disjoint_arraycopy");
-    StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(false, "jshort_arraycopy");
+    StubRoutines::_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(false, &entry,
+                                                                           "jbyte_disjoint_arraycopy");
+    StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy(false, entry, &entry_jbyte_arraycopy,
+                                                                           "jbyte_arraycopy");
 
-    StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(false, false, "jint_disjoint_arraycopy");
-    StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(false, false, "jint_arraycopy");
+    StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(false, &entry,
+                                                                            "jshort_disjoint_arraycopy");
+    StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(false, entry, &entry_jshort_arraycopy,
+                                                                            "jshort_arraycopy");
 
-    StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, false, "jlong_disjoint_arraycopy");
-    StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(false, false, "jlong_arraycopy");
+    StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(false, false, &entry,
+                                                                              "jint_disjoint_arraycopy");
+    StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(false, false, entry,
+                                                                              &entry_jint_arraycopy, "jint_arraycopy");
+
+    StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, false, &entry,
+                                                                               "jlong_disjoint_arraycopy");
+    StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(false, false, entry,
+                                                                               &entry_jlong_arraycopy, "jlong_arraycopy");
 
 
     if (UseCompressedOops) {
-      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(false, true, "oop_disjoint_arraycopy");
-      StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(false, true, "oop_arraycopy");
+      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(false, true, &entry,
+                                                                              "oop_disjoint_arraycopy");
+      StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(false, true, entry,
+                                                                              &entry_oop_arraycopy, "oop_arraycopy");
     } else {
-      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, true, "oop_disjoint_arraycopy");
-      StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(false, true, "oop_arraycopy");
+      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, true, &entry,
+                                                                               "oop_disjoint_arraycopy");
+      StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(false, true, entry,
+                                                                               &entry_oop_arraycopy, "oop_arraycopy");
     }
 
-    StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy");
-    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy");
-    StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy");
+    StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
+    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
+                                                              entry_jbyte_arraycopy,
+                                                              entry_jshort_arraycopy,
+                                                              entry_jint_arraycopy,
+                                                              entry_jlong_arraycopy);
+    StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy",
+                                                               entry_jbyte_arraycopy,
+                                                               entry_jshort_arraycopy,
+                                                               entry_jint_arraycopy,
+                                                               entry_oop_arraycopy,
+                                                               entry_jlong_arraycopy,
+                                                               entry_checkcast_arraycopy);
 
     StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill");
     StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill");
@@ -3068,20 +3086,6 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 }; // end class declaration
-
-address StubGenerator::disjoint_byte_copy_entry  = NULL;
-address StubGenerator::disjoint_short_copy_entry = NULL;
-address StubGenerator::disjoint_int_copy_entry   = NULL;
-address StubGenerator::disjoint_long_copy_entry  = NULL;
-address StubGenerator::disjoint_oop_copy_entry   = NULL;
-
-address StubGenerator::byte_copy_entry  = NULL;
-address StubGenerator::short_copy_entry = NULL;
-address StubGenerator::int_copy_entry   = NULL;
-address StubGenerator::long_copy_entry  = NULL;
-address StubGenerator::oop_copy_entry   = NULL;
-
-address StubGenerator::checkcast_copy_entry = NULL;
 
 void StubGenerator_generate(CodeBuffer* code, bool all) {
   StubGenerator g(code, all);

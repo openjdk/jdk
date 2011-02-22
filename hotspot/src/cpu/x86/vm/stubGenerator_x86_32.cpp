@@ -945,15 +945,18 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(from , Address(rsp, 12+ 4));
     __ movptr(to   , Address(rsp, 12+ 8));
     __ movl(count, Address(rsp, 12+ 12));
+
+    if (entry != NULL) {
+      *entry = __ pc(); // Entry point from conjoint arraycopy stub.
+      BLOCK_COMMENT("Entry:");
+    }
+
     if (t == T_OBJECT) {
       __ testl(count, count);
       __ jcc(Assembler::zero, L_0_count);
       gen_write_ref_array_pre_barrier(to, count);
       __ mov(saved_to, to);          // save 'to'
     }
-
-    *entry = __ pc(); // Entry point from conjoint arraycopy stub.
-    BLOCK_COMMENT("Entry:");
 
     __ subptr(to, from); // to --> to_from
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1108,29 +1111,29 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(src  , Address(rsp, 12+ 4));   // from
     __ movptr(dst  , Address(rsp, 12+ 8));   // to
     __ movl2ptr(count, Address(rsp, 12+12)); // count
-    if (t == T_OBJECT) {
-       gen_write_ref_array_pre_barrier(dst, count);
-    }
 
     if (entry != NULL) {
       *entry = __ pc(); // Entry point from generic arraycopy stub.
       BLOCK_COMMENT("Entry:");
     }
 
-    if (t == T_OBJECT) {
-      __ testl(count, count);
-      __ jcc(Assembler::zero, L_0_count);
-    }
+    // nooverlap_target expects arguments in rsi and rdi.
     __ mov(from, src);
     __ mov(to  , dst);
 
-    // arrays overlap test
+    // arrays overlap test: dispatch to disjoint stub if necessary.
     RuntimeAddress nooverlap(nooverlap_target);
     __ cmpptr(dst, src);
     __ lea(end, Address(src, count, sf, 0)); // src + count * elem_size
     __ jump_cc(Assembler::belowEqual, nooverlap);
     __ cmpptr(dst, end);
     __ jump_cc(Assembler::aboveEqual, nooverlap);
+
+    if (t == T_OBJECT) {
+      __ testl(count, count);
+      __ jcc(Assembler::zero, L_0_count);
+       gen_write_ref_array_pre_barrier(dst, count);
+    }
 
     // copy from high to low
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1451,8 +1454,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(to,         to_arg);
     __ movl2ptr(length, length_arg);
 
-    *entry = __ pc(); // Entry point from generic arraycopy stub.
-    BLOCK_COMMENT("Entry:");
+    if (entry != NULL) {
+      *entry = __ pc(); // Entry point from generic arraycopy stub.
+      BLOCK_COMMENT("Entry:");
+    }
 
     //---------------------------------------------------------------
     // Assembler stub will be used for this call to arraycopy
