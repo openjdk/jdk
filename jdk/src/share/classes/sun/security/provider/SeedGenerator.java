@@ -63,13 +63,14 @@ package sun.security.provider;
  * @author Gadi Guy
  */
 
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.security.*;
 import java.io.*;
 import java.util.Properties;
 import java.util.Enumeration;
 import java.net.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Random;
 import sun.security.util.Debug;
 
@@ -177,37 +178,21 @@ abstract class SeedGenerator {
 
                         // The temporary dir
                         File f = new File(p.getProperty("java.io.tmpdir"));
-
-                        // Go thru files in the tmp dir using NIO's
-                        // DirectoryStream. Fallback to File.list()
-                        // if NIO is not available.
-                        if (NIODirectoryStream.isAvailable()) {
-                            int count = 0;
-                            Iterable<?> stream =
-                                    NIODirectoryStream.newDirectoryStream(f);
+                        int count = 0;
+                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(f.toPath())) {
                             // We use a Random object to choose what file names
                             // should be used. Otherwise on a machine with too
                             // many files, the same first 1024 files always get
                             // used. Any, We make sure the first 512 files are
                             // always used.
                             Random r = new Random();
-                            try {
-                                for (Object entry: stream) {
-                                    if (count < 512 || r.nextBoolean()) {
-                                        md.update(NIODirectoryStream.getName(
-                                                entry).getBytes());
-                                    }
-                                    if (count++ > 1024) {
-                                        break;
-                                    }
+                            for (Path entry: stream) {
+                                if (count < 512 || r.nextBoolean()) {
+                                    md.update(entry.getFileName().toString().getBytes());
                                 }
-                            } finally {
-                                ((Closeable)stream).close();
-                            }
-                        } else {
-                            String[] sa = f.list();
-                            for(int i = 0; i < sa.length; i++) {
-                                md.update(sa[i].getBytes());
+                                if (count++ > 1024) {
+                                    break;
+                                }
                             }
                         }
                     } catch (Exception ex) {
@@ -553,77 +538,4 @@ abstract class SeedGenerator {
         }
 
     }
-
-    /**
-     * A wrapper of NIO DirectoryStream using reflection.
-     */
-    private static class NIODirectoryStream {
-        private static final Class<?> pathClass =
-                getClass("java.nio.file.Path");
-
-        private static final Method toPathMethod =
-                (pathClass == null) ? null : getMethod(File.class, "toPath");
-        private static final Method getNameMethod =
-                getMethod(pathClass, "getName");
-        private static final Method newDirectoryStreamMethod =
-                getMethod(pathClass, "newDirectoryStream");
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-
-        private static Method getMethod(Class<?> clazz,
-                                        String name,
-                                        Class<?>... paramTypes) {
-            if (clazz != null) {
-                try {
-                    return clazz.getMethod(name, paramTypes);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(e);
-                }
-            } else {
-                return null;
-            }
-        }
-
-        static boolean isAvailable() {
-            return pathClass != null;
-        }
-
-        static Iterable<?> newDirectoryStream(File dir) throws IOException {
-            assert pathClass != null;
-            try {
-                Object path = toPathMethod.invoke(dir);
-                return (Iterable<?>)newDirectoryStreamMethod.invoke(path);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof IOException)
-                    throw (IOException)cause;
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                if (cause instanceof Error)
-                    throw (Error)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
-        }
-
-        static String getName(Object path) {
-            assert pathClass != null;
-            try {
-                Object name = getNameMethod.invoke(path);
-                return name.toString();
-            } catch (InvocationTargetException e) {
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
-        }
-    }
 }
-

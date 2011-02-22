@@ -32,11 +32,10 @@
 
 package com.sun.nio.zipfs;
 
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /*
  * @author  Xueming Shen, Rajendra Gutupalli, Jaya Hangal
@@ -122,25 +121,19 @@ public class ZipFileAttributeView implements BasicFileAttributeView
             "' is unknown or read-only attribute");
     }
 
-    public Object getAttribute(String attribute, boolean domap)
+    Map<String, Object> readAttributes(String attributes)
         throws IOException
     {
         ZipFileAttributes zfas = readAttributes();
-        if (!domap) {
-            try {
-                return attribute(AttrID.valueOf(attribute), zfas);
-            } catch (IllegalArgumentException x) {}
-            return null;
-        }
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        if ("*".equals(attribute)) {
+        if ("*".equals(attributes)) {
             for (AttrID id : AttrID.values()) {
                 try {
                     map.put(id.name(), attribute(id, zfas));
                 } catch (IllegalArgumentException x) {}
             }
         } else {
-            String[] as = attribute.split(",");
+            String[] as = attributes.split(",");
             for (String a : as) {
                 try {
                     map.put(a, attribute(AttrID.valueOf(a), zfas));

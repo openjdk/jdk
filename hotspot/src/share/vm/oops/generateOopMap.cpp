@@ -26,7 +26,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"
@@ -123,7 +123,7 @@ class ComputeCallStack : public SignatureIterator {
                                            set(CellTypeState::value); }
 
 public:
-  ComputeCallStack(symbolOop signature) : SignatureIterator(signature) {};
+  ComputeCallStack(Symbol* signature) : SignatureIterator(signature) {};
 
   // Compute methods
   int compute_for_parameters(bool is_static, CellTypeState *effect) {
@@ -177,7 +177,7 @@ class ComputeEntryStack : public SignatureIterator {
                                           set(CellTypeState::value); }
 
 public:
-  ComputeEntryStack(symbolOop signature) : SignatureIterator(signature) {};
+  ComputeEntryStack(Symbol* signature) : SignatureIterator(signature) {};
 
   // Compute methods
   int compute_for_parameters(bool is_static, CellTypeState *effect) {
@@ -660,7 +660,7 @@ void GenerateOopMap::make_context_uninitialized() {
   _monitor_top = 0;
 }
 
-int GenerateOopMap::methodsig_to_effect(symbolOop signature, bool is_static, CellTypeState* effect) {
+int GenerateOopMap::methodsig_to_effect(Symbol* signature, bool is_static, CellTypeState* effect) {
   ComputeEntryStack ces(signature);
   return ces.compute_for_parameters(is_static, effect);
 }
@@ -1265,7 +1265,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-        symbolOop signature   = cp->symbol_at(signatureIdx);
+        Symbol* signature     = cp->symbol_at(signatureIdx);
         os->print("%s", signature->as_C_string());
     }
     os->cr();
@@ -1297,7 +1297,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-        symbolOop signature   = cp->symbol_at(signatureIdx);
+        Symbol* signature     = cp->symbol_at(signatureIdx);
         os->print("%s", signature->as_C_string());
     }
     os->cr();
@@ -1844,7 +1844,7 @@ void GenerateOopMap::do_ldc(int bci) {
   // Make sure bt==T_OBJECT is the same as old code (is_pointer_entry).
   // Note that CONSTANT_MethodHandle entries are u2 index pairs, not pointer-entries,
   // and they are processed by _fast_aldc and the CP cache.
-  assert((ldc.has_cache_index() || cp->is_pointer_entry(ldc.pool_index()))
+  assert((ldc.has_cache_index() || cp->is_object_entry(ldc.pool_index()))
          ? (bt == T_OBJECT) : true, "expected object type");
   ppush1(cts);
 }
@@ -1884,7 +1884,7 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   constantPoolOop cp     = method()->constants();
   int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
-  symbolOop signature    = cp->symbol_at(signatureIdx);
+  Symbol* signature      = cp->symbol_at(signatureIdx);
 
   // Parse signature (espcially simple for fields)
   assert(signature->utf8_length() > 0, "field signatures cannot have zero length");
@@ -1912,7 +1912,7 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
 void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci) {
  // Dig up signature for field in constant pool
   constantPoolOop cp  = _method->constants();
-  symbolOop signature = cp->signature_ref_at(idx);
+  Symbol* signature   = cp->signature_ref_at(idx);
 
   // Parse method signature
   CellTypeState out[4];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.swing.border;
 
 import java.awt.Graphics;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Component;
 import java.beans.ConstructorProperties;
@@ -82,9 +81,6 @@ public class BevelBorder extends AbstractBorder
     /**
      * Creates a bevel border with the specified type, highlight and
      * shadow colors.
-     * <p>
-     * Note: The shadow inner and outer colors are
-     * switched for a lowered bevel border.
      *
      * @param bevelType the type of bevel for the border
      * @param highlightOuterColor the color to use for the bevel outer highlight

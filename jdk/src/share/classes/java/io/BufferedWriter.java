@@ -57,6 +57,7 @@ package java.io;
  * @see PrintWriter
  * @see FileWriter
  * @see OutputStreamWriter
+ * @see java.nio.file.Files#newBufferedWriter
  *
  * @author      Mark Reinhold
  * @since       JDK1.1

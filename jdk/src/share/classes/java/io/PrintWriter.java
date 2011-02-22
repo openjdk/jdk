@@ -82,7 +82,7 @@ public class PrintWriter extends Writer {
     private static Charset toCharset(String csn)
         throws UnsupportedEncodingException
     {
-        Objects.nonNull(csn, "charsetName");
+        Objects.requireNonNull(csn, "charsetName");
         try {
             return Charset.forName(csn);
         } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {

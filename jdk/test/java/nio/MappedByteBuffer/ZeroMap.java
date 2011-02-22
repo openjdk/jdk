@@ -37,16 +37,19 @@ public class ZeroMap {
         Random random = new Random();
         long filesize = random.nextInt(1024*1024);
         int cut = random.nextInt((int)filesize);
-        File file = new File("Blah");
-        RandomAccessFile raf = new RandomAccessFile(file, "rw");
-        raf.setLength(filesize);
-        FileChannel fc = raf.getChannel();
-        MappedByteBuffer buf1 = fc.map(
-                        FileChannel.MapMode.READ_WRITE, cut, 0);
-        buf1.force();
-        buf1.load();
-        buf1.isLoaded();
-        fc.close();
-        raf.close();
+        File file = File.createTempFile("Blah", null);
+        file.deleteOnExit();
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+            raf.setLength(filesize);
+            FileChannel fc = raf.getChannel();
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, cut, 0);
+            mbb.force();
+            mbb.load();
+            mbb.isLoaded();
+       }
+
+        // improve chance that mapped buffer will be unmapped
+        System.gc();
+        Thread.sleep(500);
     }
 }

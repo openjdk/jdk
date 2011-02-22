@@ -53,16 +53,15 @@ klassOop typeArrayKlass::create_klass(BasicType type, int scale,
                                       const char* name_str, TRAPS) {
   typeArrayKlass o;
 
-  symbolHandle sym(symbolOop(NULL));
-  // bootstrapping: don't create sym if symbolKlass not created yet
-  if (Universe::symbolKlassObj() != NULL && name_str != NULL) {
-    sym = oopFactory::new_symbol_handle(name_str, CHECK_NULL);
+  Symbol* sym = NULL;
+  if (name_str != NULL) {
+    sym = SymbolTable::new_symbol(name_str, CHECK_NULL);
   }
   KlassHandle klassklass (THREAD, Universe::typeArrayKlassKlassObj());
 
   arrayKlassHandle k = base_create_array_klass(o.vtbl_value(), header_size(), klassklass, CHECK_NULL);
   typeArrayKlass* ak = typeArrayKlass::cast(k());
-  ak->set_name(sym());
+  ak->set_name(sym);
   ak->set_layout_helper(array_layout_helper(type));
   assert(scale == (1 << ak->log2_element_size()), "scale must check out");
   assert(ak->oop_is_javaArray(), "sanity");

@@ -32,14 +32,13 @@
 package com.sun.nio.zipfs;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
-import java.nio.file.attribute.FileStoreSpaceAttributeView;
-import java.nio.file.attribute.FileStoreSpaceAttributes;
-import java.nio.file.attribute.Attributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.Formatter;
 
@@ -87,71 +86,61 @@ public class ZipFileStore extends FileStore {
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
         if (type == null)
             throw new NullPointerException();
-        if (type == FileStoreSpaceAttributeView.class)
-            return (V) new ZipFileStoreAttributeView(this);
-        return null;
+        return (V)null;
+    }
+
+    @Override
+    public long getTotalSpace() throws IOException {
+         return new ZipFileStoreAttributes(this).totalSpace();
+    }
+
+    @Override
+    public long getUsableSpace() throws IOException {
+         return new ZipFileStoreAttributes(this).usableSpace();
+    }
+
+    @Override
+    public long getUnallocatedSpace() throws IOException {
+         return new ZipFileStoreAttributes(this).unallocatedSpace();
     }
 
     @Override
     public Object getAttribute(String attribute) throws IOException {
-         if (attribute.equals("space:totalSpace"))
-               return new ZipFileStoreAttributeView(this).readAttributes().totalSpace();
-         if (attribute.equals("space:usableSpace"))
-               return new ZipFileStoreAttributeView(this).readAttributes().usableSpace();
-         if (attribute.equals("space:unallocatedSpace"))
-               return new ZipFileStoreAttributeView(this).readAttributes().unallocatedSpace();
+         if (attribute.equals("totalSpace"))
+               return getTotalSpace();
+         if (attribute.equals("usableSpace"))
+               return getUsableSpace();
+         if (attribute.equals("unallocatedSpace"))
+               return getUnallocatedSpace();
          throw new UnsupportedOperationException("does not support the given attribute");
     }
 
-    private static class ZipFileStoreAttributeView implements FileStoreSpaceAttributeView {
+    private static class ZipFileStoreAttributes {
+        final FileStore fstore;
+        final long size;
 
-        private final ZipFileStore fileStore;
-
-        public ZipFileStoreAttributeView(ZipFileStore fileStore) {
-            this.fileStore = fileStore;
+        public ZipFileStoreAttributes(ZipFileStore fileStore)
+            throws IOException
+        {
+            Path path = FileSystems.getDefault().getPath(fileStore.name());
+            this.size = Files.size(path);
+            this.fstore = Files.getFileStore(path);
         }
 
-        @Override
-        public String name() {
-            return "space";
+        public long totalSpace() {
+            return size;
         }
 
-        @Override
-        public FileStoreSpaceAttributes readAttributes() throws IOException {
-            final String file = fileStore.name();
-            Path path = FileSystems.getDefault().getPath(file);
-            final long size = Attributes.readBasicFileAttributes(path).size();
-            final FileStore fstore = path.getFileStore();
-            final FileStoreSpaceAttributes fstoreAttrs =
-                Attributes.readFileStoreSpaceAttributes(fstore);
-            return new FileStoreSpaceAttributes() {
-                public long totalSpace() {
-                    return size;
-                }
+        public long usableSpace() throws IOException {
+            if (!fstore.isReadOnly())
+                return fstore.getUsableSpace();
+            return 0;
+        }
 
-                public long usableSpace() {
-                    if (!fstore.isReadOnly())
-                        return fstoreAttrs.usableSpace();
-                    return 0;
-                }
-
-                public long unallocatedSpace() {
-                    if (!fstore.isReadOnly())
-                        return fstoreAttrs.unallocatedSpace();
-                    return 0;
-                }
-
-                public String toString() {
-                    StringBuilder sb = new StringBuilder();
-                    Formatter fm = new Formatter(sb);
-                    fm.format("FileStoreSpaceAttributes[%s]%n", file);
-                    fm.format("      totalSpace: %d%n", totalSpace());
-                    fm.format("     usableSpace: %d%n", usableSpace());
-                    fm.format("    unallocSpace: %d%n", unallocatedSpace());
-                    fm.close();
-                    return sb.toString();
-                }
-            };
+        public long unallocatedSpace()  throws IOException {
+            if (!fstore.isReadOnly())
+                return fstore.getUnallocatedSpace();
+            return 0;
         }
     }
 }

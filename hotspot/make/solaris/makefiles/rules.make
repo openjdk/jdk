@@ -146,6 +146,8 @@ ifndef LP64
 include $(GAMMADIR)/make/pic.make
 endif
 
+include $(GAMMADIR)/make/altsrc.make
+
 # Sun compiler for 64 bit Solaris does not support building non-PIC object files.
 ifdef LP64
 %.o: %.cpp

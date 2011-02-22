@@ -39,7 +39,7 @@
 #include "oops/methodDataOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -64,6 +64,12 @@
 #endif
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
 #endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -295,7 +301,7 @@ IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     if (s == vmSymbols::java_lang_ArithmeticException()) {
       note_trap(thread, Deoptimization::Reason_div0_check, CHECK);
@@ -304,7 +310,7 @@ IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* n
     }
   }
   // create exception
-  Handle exception = Exceptions::new_exception(thread, s(), message);
+  Handle exception = Exceptions::new_exception(thread, s, message);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -313,12 +319,12 @@ IRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, c
   ResourceMark rm(thread);
   const char* klass_name = Klass::cast(obj->klass())->external_name();
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);
   }
   // create exception, with klass name as detail message
-  Handle exception = Exceptions::new_exception(thread, s(), klass_name);
+  Handle exception = Exceptions::new_exception(thread, s, klass_name);
   thread->set_vm_result(exception());
 IRT_END
 
@@ -326,13 +332,13 @@ IRT_END
 IRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index))
   char message[jintAsStringSize];
   // lookup exception klass
-  symbolHandle s = oopFactory::new_symbol_handle(name, CHECK);
+  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_range_check, CHECK);
   }
   // create exception
   sprintf(message, "%d", index);
-  THROW_MSG(s(), message);
+  THROW_MSG(s, message);
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
@@ -673,7 +679,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
     ResourceMark rm(thread);
     methodHandle m (thread, method(thread));
     Bytecode_invoke call(m, bci(thread));
-    symbolHandle signature (thread, call.signature());
+    Symbol* signature = call.signature();
     receiver = Handle(thread,
                   thread->last_frame().interpreter_callee_receiver(signature));
     assert(Universe::heap()->is_in_reserved_or_null(receiver()),
@@ -797,7 +803,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
   if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
     return;
 
-  symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
+  Symbol*  call_site_name = pool->name_ref_at(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,
@@ -1178,9 +1184,7 @@ void SignatureHandlerLibrary::add(methodHandle method) {
           handler_index = _fingerprints->length() - 1;
         }
       }
-    } else {
-      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
-    }
+      // Set handler under SignatureHandlerLibrary_lock
     if (handler_index < 0) {
       // use generic signature handler
       method->set_signature_handler(Interpreter::slow_signature_handler());
@@ -1188,21 +1192,29 @@ void SignatureHandlerLibrary::add(methodHandle method) {
       // set handler
       method->set_signature_handler(_handlers->at(handler_index));
     }
+    } else {
+      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+      // use generic signature handler
+      method->set_signature_handler(Interpreter::slow_signature_handler());
+    }
   }
 #ifdef ASSERT
-  int handler_index, fingerprint_index;
+  int handler_index = -1;
+  int fingerprint_index = -2;
   {
     // '_handlers' and '_fingerprints' are 'GrowableArray's and are NOT synchronized
     // in any way if accessed from multiple threads. To avoid races with another
     // thread which may change the arrays in the above, mutex protected block, we
     // have to protect this read access here with the same mutex as well!
     MutexLocker mu(SignatureHandlerLibrary_lock);
+    if (_handlers != NULL) {
     handler_index = _handlers->find(method->signature_handler());
     fingerprint_index = _fingerprints->find(Fingerprinter(method).fingerprint());
   }
+  }
   assert(method->signature_handler() == Interpreter::slow_signature_handler() ||
          handler_index == fingerprint_index, "sanity check");
-#endif
+#endif // ASSERT
 }
 
 

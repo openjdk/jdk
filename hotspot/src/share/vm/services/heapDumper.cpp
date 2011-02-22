@@ -425,6 +425,7 @@ class DumpWriter : public StackObj {
   void write_u4(u4 x);
   void write_u8(u8 x);
   void write_objectID(oop o);
+  void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
 };
@@ -568,6 +569,15 @@ void DumpWriter::write_objectID(oop o) {
 #endif
 }
 
+void DumpWriter::write_symbolID(Symbol* s) {
+  address a = (address)((uintptr_t)s);
+#ifdef _LP64
+  write_u8((u8)a);
+#else
+  write_u4((u4)a);
+#endif
+}
+
 void DumpWriter::write_id(u4 x) {
 #ifdef _LP64
   write_u8((u8) x);
@@ -592,7 +602,7 @@ class DumperSupport : AllStatic {
   static void write_header(DumpWriter* writer, hprofTag tag, u4 len);
 
   // returns hprof tag for the given type signature
-  static hprofTag sig2tag(symbolOop sig);
+  static hprofTag sig2tag(Symbol* sig);
   // returns hprof tag for the given basic type
   static hprofTag type2tag(BasicType type);
 
@@ -636,7 +646,7 @@ void DumperSupport:: write_header(DumpWriter* writer, hprofTag tag, u4 len) {
 }
 
 // returns hprof tag for the given type signature
-hprofTag DumperSupport::sig2tag(symbolOop sig) {
+hprofTag DumperSupport::sig2tag(Symbol* sig) {
   switch (sig->byte_at(0)) {
     case JVM_SIGNATURE_CLASS    : return HPROF_NORMAL_OBJECT;
     case JVM_SIGNATURE_ARRAY    : return HPROF_NORMAL_OBJECT;
@@ -775,7 +785,7 @@ u4 DumperSupport::instance_size(klassOop k) {
 
   for (FieldStream fld(ikh, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
-      symbolOop sig = fld.signature();
+      Symbol* sig = fld.signature();
       switch (sig->byte_at(0)) {
         case JVM_SIGNATURE_CLASS   :
         case JVM_SIGNATURE_ARRAY   : size += oopSize; break;
@@ -815,9 +825,9 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, klassOop k) {
   // pass 2 - dump the field descriptors and raw values
   for (FieldStream fld(ikh, true, true); !fld.eos(); fld.next()) {
     if (fld.access_flags().is_static()) {
-      symbolOop sig = fld.signature();
+      Symbol* sig = fld.signature();
 
-      writer->write_objectID(fld.name());   // name
+      writer->write_symbolID(fld.name());   // name
       writer->write_u1(sig2tag(sig));       // type
 
       // value
@@ -836,7 +846,7 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
 
   for (FieldStream fld(ikh, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
-      symbolOop sig = fld.signature();
+      Symbol* sig = fld.signature();
       address addr = (address)o + fld.offset();
 
       dump_field_value(writer, sig->byte_at(0), addr);
@@ -860,9 +870,9 @@ void DumperSupport::dump_instance_field_descriptors(DumpWriter* writer, klassOop
   // pass 2 - dump the field descriptors
   for (FieldStream fld(ikh, true, true); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
-      symbolOop sig = fld.signature();
+      Symbol* sig = fld.signature();
 
-      writer->write_objectID(fld.name());                   // name
+      writer->write_symbolID(fld.name());                   // name
       writer->write_u1(sig2tag(sig));       // type
     }
   }
@@ -1115,41 +1125,39 @@ void DumperSupport::dump_stack_frame(DumpWriter* writer,
 
   write_header(writer, HPROF_FRAME, 4*oopSize + 2*sizeof(u4));
   writer->write_id(frame_serial_num);               // frame serial number
-  writer->write_objectID(m->name());                // method's name
-  writer->write_objectID(m->signature());           // method's signature
+  writer->write_symbolID(m->name());                // method's name
+  writer->write_symbolID(m->signature());           // method's signature
 
   assert(Klass::cast(m->method_holder())->oop_is_instance(), "not instanceKlass");
-  writer->write_objectID(instanceKlass::cast(m->method_holder())->source_file_name());  // source file name
+  writer->write_symbolID(instanceKlass::cast(m->method_holder())->source_file_name());  // source file name
   writer->write_u4(class_serial_num);               // class serial number
   writer->write_u4((u4) line_number);               // line number
 }
 
+
 // Support class used to generate HPROF_UTF8 records from the entries in the
 // SymbolTable.
 
-class SymbolTableDumper : public OopClosure {
+class SymbolTableDumper : public SymbolClosure {
  private:
   DumpWriter* _writer;
   DumpWriter* writer() const                { return _writer; }
  public:
   SymbolTableDumper(DumpWriter* writer)     { _writer = writer; }
-  void do_oop(oop* obj_p);
-  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
+  void do_symbol(Symbol** p);
 };
 
-void SymbolTableDumper::do_oop(oop* obj_p) {
+void SymbolTableDumper::do_symbol(Symbol** p) {
   ResourceMark rm;
-  symbolOop sym = (symbolOop)*obj_p;
-
+  Symbol* sym = load_symbol(p);
   int len = sym->utf8_length();
   if (len > 0) {
     char* s = sym->as_utf8();
     DumperSupport::write_header(writer(), HPROF_UTF8, oopSize + len);
-    writer()->write_objectID(sym);
+    writer()->write_symbolID(sym);
     writer()->write_raw(s, len);
   }
 }
-
 
 // Support class used to generate HPROF_GC_ROOT_JNI_LOCAL records
 
@@ -1548,8 +1556,8 @@ void VM_HeapDumper::do_load_class(klassOop k) {
     writer()->write_u4(STACK_TRACE_ID);
 
     // class name ID
-    symbolOop name = klass->name();
-    writer()->write_objectID(name);
+    Symbol* name = klass->name();
+    writer()->write_symbolID(name);
 
     // write a LOAD_CLASS record for the array type (if it exists)
     k = klass->array_klass_or_null();
@@ -1727,7 +1735,7 @@ void VM_HeapDumper::doit() {
 
   // HPROF_UTF8 records
   SymbolTableDumper sym_dumper(writer());
-  SymbolTable::oops_do(&sym_dumper);
+  SymbolTable::symbols_do(&sym_dumper);
 
   // write HPROF_LOAD_CLASS records
   SystemDictionary::classes_do(&do_load_class);

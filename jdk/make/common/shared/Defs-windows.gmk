@@ -86,17 +86,25 @@ override INCREMENTAL_BUILD = false
 #
 
 ifdef USING_CYGWIN
+# Macro to effectively do a toupper without an exec
+define ToUpper
+$(subst a,A,$(subst b,B,$(subst c,C,$(subst d,D,$(subst e,E,$(subst f,F,\
+$(subst g,G,$(subst h,H,$(subst i,I,$(subst j,J,$(subst k,K,$(subst l,L,\
+$(subst m,M,$(subst n,N,$(subst o,O,$(subst p,P,$(subst q,Q,$(subst r,R,\
+$(subst s,S,$(subst t,T,$(subst u,U,$(subst v,V,$(subst w,W,$(subst x,X,\
+$(subst y,Y,$(subst z,Z,$1))))))))))))))))))))))))))
+endef
 # All possible drive letters
 drives=a b c d e f g h i j k l m n o p q r s t v u w x y z
 # Convert /cygdrive/ paths to the mixed style without an exec of cygpath
-#   Must be a path with no spaces.
+#   Must be a path with no spaces. /cygdrive/letter is always lowercase
+#   and letter:/ is always uppercase coming from cygpath.
 define MixedPath
-$(patsubst /%,c:/cygwin/%,$(sort $(filter-out /cygdrive/%,$(foreach drive,$(drives),$(patsubst /cygdrive/$(drive)/%,$(drive):/%,$1)))))
+$(patsubst /%,$(CYGWIN_HOME)/%,$(sort $(filter-out /cygdrive/%,$(foreach drive,$(drives),$(patsubst /cygdrive/$(drive)/%,$(call ToUpper,$(drive)):/%,$1)))))
 endef
 # Use FullPath to get C:/ style non-spaces path. Never ends with a /!
 # We assume cygpath is available in the search path
 #    NOTE: Use of 'pwd' with CYGWIN will not get you a mixed style path!
-CYGPATH_CMD=cygpath -a -s -m
 define FullPath
 $(if $(word 2,$1),$(shell $(CYGPATH_CMD) $1 2> $(DEV_NULL)),$(call MixedPath,$(realpath $(subst ",,$1))))
 endef
@@ -125,10 +133,15 @@ _system_drive:=$(call CheckValue,_system_drive,C:)
 
 # UNIXCOMMAND_PATH: path to where the most common Unix commands are.
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+#        With cygwin, just use this as is don't use FullPath on it.
 ifdef ALT_UNIXCOMMAND_PATH
-  xALT_UNIXCOMMAND_PATH  :="$(subst \,/,$(ALT_UNIXCOMMAND_PATH))"
-  fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
-  UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
+  ifdef USING_CYGWIN
+    UNIXCOMMAND_PATH       :=$(call PrefixPath,$(ALT_UNIXCOMMAND_PATH))
+  else
+    xALT_UNIXCOMMAND_PATH  :="$(subst \,/,$(ALT_UNIXCOMMAND_PATH))"
+    fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
+    UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
+  endif
 else
   ifdef USING_CYGWIN
     UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
@@ -459,9 +472,11 @@ else
 endif
 
 # SLASH_JAVA: location of all network accessable files
+# NOTE: Do not use FullPath on this because it's often a drive letter and
+#       plain drive letters are ambiguous, so just use this 'as is'.
 ifdef ALT_SLASH_JAVA
   xALT_SLASH_JAVA :="$(subst \,/,$(ALT_SLASH_JAVA))"
-  SLASH_JAVA      :=$(call FullPath,$(xALT_SLASH_JAVA))
+  SLASH_JAVA      :=$(xALT_SLASH_JAVA)
 else
   ifdef ALT_JDK_JAVA_DRIVE
     SLASH_JAVA  =$(JDK_JAVA_DRIVE)
@@ -751,7 +766,11 @@ ifeq ($(VS2010_EXISTS),true)
 #   we do not or cannot redistribute.
 
 # List of filenames we should NOT be dependent on
-BANNED_DLLS=msvcp100[.]dll|msvcr100d[.]dll|msvcrtd[.]dll
+ifeq ($(MFC_DEBUG),true)
+  BANNED_DLLS=msvcp100[.]dll
+else
+  BANNED_DLLS=msvcp100[.]dll|msvcr100d[.]dll|msvcrtd[.]dll
+endif
 
 # Macro to check it's input file for banned dependencies and verify the
 #   binary was built properly. Relies on process exit code.
@@ -771,7 +790,7 @@ define binary_file_verification # binary_file
   fi ; \
   $(ECHO) "Checking for banned dependencies in: $1" && \
   if [ "`$(DUMPBIN) /dependents $1 | $(EGREP) -i '$(BANNED_DLLS)'`" != "" ] ; then \
-    $(ECHO) "ERROR: Found us of $(BANNED_DLLS)"; \
+    $(ECHO) "ERROR: Found use of $(BANNED_DLLS)"; \
     $(DUMPBIN) /dependents $1 ; \
     exit 9 ; \
   fi ; \

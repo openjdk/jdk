@@ -59,9 +59,9 @@ import java.io.IOException;
  * attributes.
  *
  * <p> Where dynamic access to file attributes is required, the {@link
- * java.nio.file.FileRef#getAttribute getAttribute} method may be used to read
+ * java.nio.file.Files#getAttribute getAttribute} method may be used to read
  * the attribute value. The attribute value is returned as a byte array (byte[]).
- * The {@link java.nio.file.FileRef#setAttribute setAttribute} method may be used
+ * The {@link java.nio.file.Files#setAttribute setAttribute} method may be used
  * to write the value of a user-defined attribute from a buffer (as if by
  * invoking the {@link #write write} method), or byte array (byte[]).
  *
@@ -132,8 +132,8 @@ public interface UserDefinedFileAttributeView
      * Suppose we want to read a file's MIME type that is stored as a user-defined
      * attribute with the name "{@code user.mimetype}".
      * <pre>
-     *    UserDefinedFileAttributeView view = file
-     *        .getFileAttributeView(UserDefinedFileAttributeView.class);
+     *    UserDefinedFileAttributeView view =
+     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
      *    String name = "user.mimetype";
      *    ByteBuffer buf = ByteBuffer.allocate(view.size(name));
      *    view.read(name, buf);
@@ -189,8 +189,8 @@ public interface UserDefinedFileAttributeView
      * <p> <b>Usage Example:</b>
      * Suppose we want to write a file's MIME type as a user-defined attribute:
      * <pre>
-     *    UserDefinedFileAttributeView view = file
-     *        .getFileAttributeView(UserDefinedFileAttributeView.class);
+     *    UserDefinedFileAttributeView view =
+     *        FIles.getFileAttributeView(path, UserDefinedFileAttributeView.class);
      *    view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
      * </pre>
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,19 @@ import sun.security.jca.GetInstance.Instance;
  * result (including the <code>CertPath</code> that was built) is returned
  * in an object that implements the <code>CertPathBuilderResult</code>
  * interface.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>CertPathBuilder</code> algorithm:
+ * <ul>
+ * <li><tt>PKIX</tt></li>
+ * </ul>
+ * This algorithm is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathBuilder">
+ * CertPathBuilder section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
+ *
  * <p>
  * <b>Concurrent Access</b>
  * <p>
@@ -118,10 +131,10 @@ public class CertPathBuilder {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested <code>CertPathBuilder</code>
-     *  algorithm.  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     *  algorithm.  See the CertPathBuilder section in the <a href=
+     *  "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathBuilder">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @return a <code>CertPathBuilder</code> object that implements the
      *          specified algorithm.
@@ -153,10 +166,10 @@ public class CertPathBuilder {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the requested <code>CertPathBuilder</code>
-     *  algorithm.  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     *  algorithm.  See the CertPathBuilder section in the <a href=
+     *  "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathBuilder">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
      *
@@ -193,10 +206,10 @@ public class CertPathBuilder {
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the requested <code>CertPathBuilder</code>
-     *  algorithm.  See Appendix A in the <a href=
-     *  "../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     *  Java Certification Path API Programmer's Guide </a>
-     *  for information about standard algorithm names.
+     *  algorithm.  See the CertPathBuilder section in the <a href=
+     *  "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathBuilder">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
      *
      * @param provider the provider.
      *

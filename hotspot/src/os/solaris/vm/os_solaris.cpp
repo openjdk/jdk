@@ -4221,7 +4221,9 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" int JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized);
+extern "C" JNIEXPORT int
+JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext,
+                          int abort_if_unrecognized);
 
 
 void signalHandler(int sig, siginfo_t* info, void* ucVoid) {

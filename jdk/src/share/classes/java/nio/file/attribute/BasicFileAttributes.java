@@ -34,8 +34,8 @@ package java.nio.file.attribute;
  *
  * <p> <b>Usage Example:</b>
  * <pre>
- *    FileRef file = ...
- *    BasicFileAttributes attrs = Attributes.readBasicFileAttributes(file);
+ *    Path file = ...
+ *    BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
  * </pre>
  *
  * @since 1.7
@@ -48,25 +48,40 @@ public interface BasicFileAttributes {
     /**
      * Returns the time of last modification.
      *
+     * <p> If the file system implementation does not support a time stamp
+     * to indicate the time of last modification then this method returns an
+     * implementation specific default value, typically a {@code FileTime}
+     * representing the epoch (1970-01-01T00:00:00Z).
+     *
      * @return  a {@code FileTime} representing the time the file was last
-     *          modified or {@code null} if the attribute is not supported.
+     *          modified
      */
     FileTime lastModifiedTime();
 
     /**
-     * Returns the time of last access if supported.
+     * Returns the time of last access.
      *
-     * @return  a {@code FileTime} representing the time of last access or
-     *          {@code null} if the attribute is not supported.
+     * <p> If the file system implementation does not support a time stamp
+     * to indicate the time of last access then this method returns
+     * an implementation specific default value, typically the {@link
+     * #lastModifiedTime() last-modified-time} or a {@code FileTime}
+     * representing the epoch (1970-01-01T00:00:00Z).
+     *
+     * @return  a {@code FileTime} representing the time of last access
      */
     FileTime lastAccessTime();
 
     /**
-     * Returns the creation time if supported. The creation time is the time
-     * that the file was created.
+     * Returns the creation time. The creation time is the time that the file
+     * was created.
      *
-     * @return   a {@code FileTime} representing the time  the file was created
-     *           or {@code null} if the attribute is not supported.
+     * <p> If the file system implementation does not support a time stamp
+     * to indicate the time when the file was created then this method returns
+     * an implementation specific default value, typically the {@link
+     * #lastModifiedTime() last-modified-time} or a {@code FileTime}
+     * representing the epoch (1970-01-01T00:00:00Z).
+     *
+     * @return   a {@code FileTime} representing the time the file was created
      */
     FileTime creationTime();
 
@@ -120,7 +135,7 @@ public interface BasicFileAttributes {
      *
      * <p> File keys returned by this method can be compared for equality and are
      * suitable for use in collections. If the file system and files remain static,
-     * and two files are the {@link java.nio.file.Path#isSameFile same} with
+     * and two files are the {@link java.nio.file.Files#isSameFile same} with
      * non-{@code null} file keys, then their file keys are equal.
      *
      * @see java.nio.file.Files#walkFileTree

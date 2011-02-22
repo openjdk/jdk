@@ -83,8 +83,7 @@
 #include "oops/objArrayKlassKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolKlass.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayKlassKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -94,6 +93,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/virtualspace.hpp"
@@ -108,6 +108,12 @@
 #endif
 #ifdef TARGET_ARCH_zero
 # include "vmStructs_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vmStructs_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmStructs_ppc.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
@@ -135,6 +141,12 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "vmStructs_windows_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "vmStructs_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "vmStructs_linux_ppc.hpp"
 #endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
@@ -166,6 +178,12 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
 #endif
 #endif
 
@@ -246,8 +264,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _class_loader,                                 oop)                                   \
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
   nonstatic_field(instanceKlass,               _signers,                                      objArrayOop)                           \
-  nonstatic_field(instanceKlass,               _source_file_name,                             symbolOop)                             \
-  nonstatic_field(instanceKlass,               _source_debug_extension,                       symbolOop)                             \
+  nonstatic_field(instanceKlass,               _source_file_name,                             Symbol*)                               \
+  nonstatic_field(instanceKlass,               _source_debug_extension,                       Symbol*)                               \
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
@@ -265,7 +283,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(instanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
   nonstatic_field(instanceKlass,               _breakpoints,                                  BreakpointInfo*)                       \
-  nonstatic_field(instanceKlass,               _generic_signature,                            symbolOop)                             \
+  nonstatic_field(instanceKlass,               _generic_signature,                            Symbol*)                               \
   nonstatic_field(instanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
   nonstatic_field(instanceKlass,               _methods_cached_itable_indices,                int*)                                  \
   volatile_nonstatic_field(instanceKlass,      _idnum_allocated_count,                        u2)                                    \
@@ -282,7 +300,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _super,                                        klassOop)                              \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
-  nonstatic_field(Klass,                       _name,                                         symbolOop)                             \
+  nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _subklass,                                     klassOop)                              \
   nonstatic_field(Klass,                       _next_sibling,                                 klassOop)                              \
@@ -326,9 +344,10 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(constMethodOopDesc,          _generic_signature_index,                      u2)                                    \
   nonstatic_field(objArrayKlass,               _element_klass,                                klassOop)                              \
   nonstatic_field(objArrayKlass,               _bottom_klass,                                 klassOop)                              \
-  nonstatic_field(symbolKlass,                 _alloc_size,                                   juint)                                 \
-  nonstatic_field(symbolOopDesc,               _length,                                       unsigned short)                        \
-  unchecked_nonstatic_field(symbolOopDesc,     _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
+  volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
+  nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
+  nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
+  unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
   nonstatic_field(typeArrayKlass,              _max_length,                                   int)                                   \
                                                                                                                                      \
   /***********************/                                                                                                          \
@@ -375,7 +394,6 @@ static inline uint64_t cast_uint64_t(size_t x)
      static_field(Universe,                    _longArrayKlassObj,                            klassOop)                              \
      static_field(Universe,                    _singleArrayKlassObj,                          klassOop)                              \
      static_field(Universe,                    _doubleArrayKlassObj,                          klassOop)                              \
-     static_field(Universe,                    _symbolKlassObj,                               klassOop)                              \
      static_field(Universe,                    _methodKlassObj,                               klassOop)                              \
      static_field(Universe,                    _constMethodKlassObj,                          klassOop)                              \
      static_field(Universe,                    _methodDataKlassObj,                           klassOop)                              \
@@ -648,7 +666,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                                                                                      \
   nonstatic_field(BasicHashtableEntry,         _next,                                         BasicHashtableEntry*)                  \
   nonstatic_field(BasicHashtableEntry,         _hash,                                         unsigned int)                          \
-  nonstatic_field(HashtableEntry,              _literal,                                      oop)                                   \
+  nonstatic_field(HashtableEntry<intptr_t>,    _literal,                                      intptr_t) \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* Hashtable */                                                                                                                    \
@@ -683,7 +701,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* LoaderConstraintEntry */                                                                                                        \
   /*************************/                                                                                                        \
                                                                                                                                      \
-  nonstatic_field(LoaderConstraintEntry,       _name,                                         symbolOop)                             \
+  nonstatic_field(LoaderConstraintEntry,       _name,                                         Symbol*)                               \
   nonstatic_field(LoaderConstraintEntry,       _num_loaders,                                  int)                                   \
   nonstatic_field(LoaderConstraintEntry,       _max_loaders,                                  int)                                   \
   nonstatic_field(LoaderConstraintEntry,       _loaders,                                      oop*)                                  \
@@ -1088,11 +1106,11 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(objArrayKlassKlass, arrayKlassKlass)              \
            declare_type(objArrayOopDesc, arrayOopDesc)                    \
            declare_type(constMethodOopDesc, oopDesc)                      \
-           declare_type(symbolKlass, Klass)                               \
-           declare_type(symbolOopDesc, oopDesc)                           \
            declare_type(typeArrayKlass, arrayKlass)                       \
            declare_type(typeArrayKlassKlass, arrayKlassKlass)             \
            declare_type(typeArrayOopDesc, arrayOopDesc)                   \
+           declare_toplevel_type(Symbol)                                  \
+           declare_toplevel_type(Symbol*)                                 \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \
@@ -1109,7 +1127,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_oop_type(narrowOop)                                             \
   declare_oop_type(wideKlassOop)                                          \
   declare_oop_type(constMethodOop)                                        \
-  declare_oop_type(symbolOop)                                             \
   declare_oop_type(typeArrayOop)                                          \
                                                                           \
   /*************************************/                                 \
@@ -1207,33 +1224,21 @@ static inline uint64_t cast_uint64_t(size_t x)
   /*********************************/                                     \
                                                                           \
   declare_toplevel_type(BasicHashtable)                                   \
-    declare_type(Hashtable, BasicHashtable)                               \
-    declare_type(SymbolTable, Hashtable)                                  \
-    declare_type(StringTable, Hashtable)                                  \
-    declare_type(LoaderConstraintTable, Hashtable)                        \
-    declare_type(TwoOopHashtable, Hashtable)                              \
-    declare_type(Dictionary, TwoOopHashtable)                             \
-    declare_type(PlaceholderTable, TwoOopHashtable)                       \
-  declare_toplevel_type(Hashtable*)                                       \
-  declare_toplevel_type(SymbolTable*)                                     \
-  declare_toplevel_type(StringTable*)                                     \
-  declare_toplevel_type(LoaderConstraintTable*)                           \
-  declare_toplevel_type(TwoOopHashtable*)                                 \
-  declare_toplevel_type(Dictionary*)                                      \
-  declare_toplevel_type(PlaceholderTable*)                                \
+    declare_type(Hashtable<intptr_t>, BasicHashtable)                     \
+  declare_type(SymbolTable, Hashtable<Symbol*>)                           \
+  declare_type(StringTable, Hashtable<oop>)                               \
+    declare_type(LoaderConstraintTable, Hashtable<klassOop>)              \
+    declare_type(TwoOopHashtable<klassOop>, Hashtable<klassOop>)          \
+    declare_type(Dictionary, TwoOopHashtable<klassOop>)                   \
+    declare_type(PlaceholderTable, TwoOopHashtable<Symbol*>)              \
   declare_toplevel_type(BasicHashtableEntry)                              \
-  declare_toplevel_type(BasicHashtableEntry*)                             \
-    declare_type(HashtableEntry, BasicHashtableEntry)                     \
-    declare_type(DictionaryEntry, HashtableEntry)                         \
-    declare_type(PlaceholderEntry, HashtableEntry)                        \
-    declare_type(LoaderConstraintEntry, HashtableEntry)                   \
-  declare_toplevel_type(HashtableEntry*)                                  \
-  declare_toplevel_type(DictionaryEntry*)                                 \
+  declare_type(HashtableEntry<intptr_t>, BasicHashtableEntry)             \
+    declare_type(DictionaryEntry, HashtableEntry<klassOop>)               \
+    declare_type(PlaceholderEntry, HashtableEntry<Symbol*>)               \
+    declare_type(LoaderConstraintEntry, HashtableEntry<klassOop>)         \
   declare_toplevel_type(HashtableBucket)                                  \
-  declare_toplevel_type(HashtableBucket*)                                 \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(ProtectionDomainEntry)                            \
-  declare_toplevel_type(ProtectionDomainEntry*)                           \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
@@ -1246,7 +1251,7 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(WatcherThread, Thread)                            \
            declare_type(JavaThread, Thread)                               \
            declare_type(JvmtiAgentThread, JavaThread)                     \
-           declare_type(LowMemoryDetectorThread, JavaThread)              \
+           declare_type(ServiceThread, JavaThread)                        \
   declare_type(CompilerThread, JavaThread)                        \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
@@ -1667,10 +1672,10 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(instanceKlass::initialization_error)                   \
                                                                           \
   /*********************************/                                     \
-  /* symbolOop - symbol max length */                                     \
+  /* Symbol* - symbol max length */                                     \
   /*********************************/                                     \
                                                                           \
-  declare_constant(symbolOopDesc::max_symbol_length)                      \
+  declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
   /*************************************************/                     \
   /* constantPoolOop layout enum for InvokeDynamic */                     \
@@ -2431,17 +2436,69 @@ ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMLongConstantEntryArrayStride, gHotSpotVMLon
 }
 
 #ifdef ASSERT
+static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool isRecurse) {
+  {
+    VMTypeEntry* types = origtypes;
+    while (types->typeName != NULL) {
+      if (!strcmp(typeName, types->typeName)) {
+        return 1;
+      }
+      ++types;
+    }
+  }
+  size_t len = strlen(typeName);
+  if (typeName[len-1] == '*') {
+    char * s = new char[len];
+    strncpy(s, typeName, len - 1);
+    s[len-1] = '\0';
+    // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
+    if (recursiveFindType(origtypes, s, true) == 1) {
+      delete s;
+      return 1;
+    }
+    delete s;
+  }
+  if (strstr(typeName, "GrowableArray<") == typeName) {
+    const char * start = typeName + strlen("GrowableArray<");
+    const char * end = strrchr(typeName, '>');
+    int len = end - start + 1;
+    char * s = new char[len];
+    strncpy(s, start, len - 1);
+    s[len-1] = '\0';
+    // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
+    if (recursiveFindType(origtypes, s, true) == 1) {
+      delete s;
+      return 1;
+    }
+    delete s;
+  }
+  if (strstr(typeName, "const ") == typeName) {
+    const char * s = typeName + strlen("const ");
+    // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
+    if (recursiveFindType(origtypes, s, true) == 1) {
+      return 1;
+    }
+  }
+  if (strstr(typeName, " const") == typeName + len - 6) {
+    char * s = strdup(typeName);
+    s[len - 6] = '\0';
+    // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
+    if (recursiveFindType(origtypes, s, true) == 1) {
+      return 1;
+    }
+  }
+  if (!isRecurse) {
+    tty->print_cr("type \"%s\" not found", typeName);
+  }
+  return 2;
+}
+
+
 int
 VMStructs::findType(const char* typeName) {
   VMTypeEntry* types = gHotSpotVMTypes;
 
-  while (types->typeName != NULL) {
-    if (!strcmp(typeName, types->typeName)) {
-      return 1;
-    }
-    ++types;
-  }
-  return 0;
+  return recursiveFindType(types, typeName, false);
 }
 #endif
 

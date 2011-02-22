@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ OS = $(Platform_os_family)
 
 SOURCE.AD = $(OUTDIR)/$(OS)_$(Platform_arch_model).ad 
 
-SOURCES.AD = $(GAMMADIR)/src/cpu/$(ARCH)/vm/$(Platform_arch_model).ad \
-	     $(GAMMADIR)/src/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad 
+SOURCES.AD = \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(ARCH)/vm/$(Platform_arch_model).ad) \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad)
 
 EXEC	= $(OUTDIR)/adlc
 
