@@ -43,9 +43,9 @@ public class ShutdownHooks {
         file = new File(dir, args[1]);
         // write to file
         System.out.println("writing to "+ file);
-        PrintWriter pw = new PrintWriter(file);
-        pw.println("Shutdown begins");
-        pw.close();
+        try (PrintWriter pw = new PrintWriter(file)) {
+            pw.println("Shutdown begins");
+        }
     }
 
     public static class Cleaner extends Thread {
@@ -56,10 +56,8 @@ public class ShutdownHooks {
             // register the DeleteOnExitHook while the application
             // shutdown hook is running
             file.deleteOnExit();
-            try {
-                PrintWriter pw = new PrintWriter(file);
+            try (PrintWriter pw = new PrintWriter(file)) {
                 pw.println("file is being deleted");
-                pw.close();
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
