@@ -126,7 +126,7 @@ public final class PosixFilePermissions {
     public static Set<PosixFilePermission> fromString(String perms) {
         if (perms.length() != 9)
             throw new IllegalArgumentException("Invalid mode");
-        Set<PosixFilePermission> result = new HashSet<PosixFilePermission>();
+        Set<PosixFilePermission> result = EnumSet.noneOf(PosixFilePermission.class);
         if (isR(perms.charAt(0))) result.add(OWNER_READ);
         if (isW(perms.charAt(1))) result.add(OWNER_WRITE);
         if (isX(perms.charAt(2))) result.add(OWNER_EXECUTE);
@@ -141,8 +141,8 @@ public final class PosixFilePermissions {
 
     /**
      * Creates a {@link FileAttribute}, encapsulating a copy of the given file
-     * permissions, suitable for passing to the {@link java.nio.file.Path#createFile
-     * createFile} or {@link java.nio.file.Path#createDirectory createDirectory}
+     * permissions, suitable for passing to the {@link java.nio.file.Files#createFile
+     * createFile} or {@link java.nio.file.Files#createDirectory createDirectory}
      * methods.
      *
      * @param   perms

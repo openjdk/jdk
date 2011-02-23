@@ -58,14 +58,14 @@ public class Xdd {
             Paths.get(args[0]) : Paths.get(args[2]);
 
         // check that user defined attributes are supported by the file store
-        FileStore store = file.getFileStore();
+        FileStore store = Files.getFileStore(file);
         if (!store.supportsFileAttributeView(UserDefinedFileAttributeView.class)) {
             System.err.format("UserDefinedFileAttributeView not supported on %s\n", store);
             System.exit(-1);
 
         }
-        UserDefinedFileAttributeView view = file.
-            getFileAttributeView(UserDefinedFileAttributeView.class);
+        UserDefinedFileAttributeView view =
+            Files.getFileAttributeView(file, UserDefinedFileAttributeView.class);
 
         // list user defined attributes
         if (args.length == 1) {

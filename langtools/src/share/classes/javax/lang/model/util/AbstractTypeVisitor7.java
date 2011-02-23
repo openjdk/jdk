@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import javax.lang.model.type.*;
 
 /**
  * A skeletal visitor of types with default behavior appropriate for
- * the version 7 language level.
+ * the {@link javax.lang.model.SourceVersion#RELEASE_7 RELEASE_7}
+ * source version.
  *
  * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
  * by this class may have methods added to it in the future to
@@ -64,4 +65,13 @@ public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R,
     protected AbstractTypeVisitor7() {
         super();
     }
+
+    /**
+     * Visits a {@code DisjunctiveType} in a manner defined by a subclass.
+     *
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of the visit as defined by a subclass
+     */
+    public abstract R visitDisjunctive(DisjunctiveType t, P p);
 }

@@ -220,19 +220,19 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
         /*we estimate the max length of memory needed as
           "currentDir. length + pathname.length"
          */
-        int len = wcslen(path);
+        int len = (int)wcslen(path);
         len += currentDirLength(path, len);
         if (len  > MAX_PATH_LENGTH - 1) {
             WCHAR *cp = (WCHAR*)malloc(len * sizeof(WCHAR));
             if (cp != NULL) {
                 if (wcanonicalize(path, cp, len) >= 0) {
-                    rv = (*env)->NewString(env, cp, wcslen(cp));
+                    rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
                 }
                 free(cp);
             }
         } else
         if (wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH) >= 0) {
-            rv = (*env)->NewString(env, canonicalPath, wcslen(canonicalPath));
+            rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
         }
     } END_UNICODE_STRING(env, path);
     if (rv == NULL) {
@@ -251,14 +251,14 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
     WCHAR canonicalPath[MAX_PATH_LENGTH];
     WITH_UNICODE_STRING(env, canonicalPrefixString, canonicalPrefix) {
         WITH_UNICODE_STRING(env, pathWithCanonicalPrefixString, pathWithCanonicalPrefix) {
-            int len = wcslen(canonicalPrefix) + MAX_PATH;
+            int len = (int)wcslen(canonicalPrefix) + MAX_PATH;
             if (len > MAX_PATH_LENGTH) {
                 WCHAR *cp = (WCHAR*)malloc(len * sizeof(WCHAR));
                 if (cp != NULL) {
                     if (wcanonicalizeWithPrefix(canonicalPrefix,
                                                 pathWithCanonicalPrefix,
                                                 cp, len) >= 0) {
-                      rv = (*env)->NewString(env, cp, wcslen(cp));
+                      rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
                     }
                     free(cp);
                 }
@@ -266,7 +266,7 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
             if (wcanonicalizeWithPrefix(canonicalPrefix,
                                         pathWithCanonicalPrefix,
                                         canonicalPath, MAX_PATH_LENGTH) >= 0) {
-                rv = (*env)->NewString(env, canonicalPath, wcslen(canonicalPath));
+                rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
             }
         } END_UNICODE_STRING(env, pathWithCanonicalPrefix);
     } END_UNICODE_STRING(env, canonicalPrefix);
@@ -358,7 +358,7 @@ Java_java_io_WinNTFileSystem_getBooleanAttributes(JNIEnv *env, jobject this,
         } else { /* pagefile.sys is a special case */
             if (GetLastError() == ERROR_SHARING_VIOLATION) {
                 rv = java_io_FileSystem_BA_EXISTS;
-                if ((pathlen = wcslen(pathbuf)) >= SPECIALFILE_NAMELEN &&
+                if ((pathlen = (jint)wcslen(pathbuf)) >= SPECIALFILE_NAMELEN &&
                     (_wcsicmp(pathbuf + pathlen - SPECIALFILE_NAMELEN,
                               L"pagefile.sys") == 0) ||
                     (_wcsicmp(pathbuf + pathlen - SPECIALFILE_NAMELEN,
@@ -625,7 +625,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
     }
 
     /* Remove trailing space chars from directory name */
-    len = wcslen(search_path);
+    len = (int)wcslen(search_path);
     while (search_path[len-1] == ' ') {
         len--;
     }
@@ -668,7 +668,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
                                 || !wcscmp(find_data.cFileName, L".."))
            continue;
         name = (*env)->NewString(env, find_data.cFileName,
-                                 wcslen(find_data.cFileName));
+                                 (jsize)wcslen(find_data.cFileName));
         if (name == NULL)
             return NULL; // error;
         if (len == maxlen) {
@@ -819,7 +819,7 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
     jchar *pf = p;
     if (p == NULL) return NULL;
     if (iswalpha(*p) && (p[1] == L':')) p += 2;
-    ret = (*env)->NewString(env, p, wcslen(p));
+    ret = (*env)->NewString(env, p, (jsize)wcslen(p));
     free (pf);
     return ret;
 }

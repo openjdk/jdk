@@ -28,6 +28,7 @@
  */
 
 import java.nio.file.*;
+import static java.nio.file.Files.*;
 import java.util.*;
 import java.io.IOException;
 
@@ -38,29 +39,26 @@ public class Basic {
         DirectoryStream<Path> stream;
 
         // test that directory is empty
-        stream = dir.newDirectoryStream();
-        try {
-            if (stream.iterator().hasNext())
+        try (DirectoryStream<Path> ds = newDirectoryStream(dir)) {
+            if (ds.iterator().hasNext())
                 throw new RuntimeException("directory not empty");
-        } finally {
-            stream.close();
         }
 
         // create file in directory
         final Path foo = Paths.get("foo");
-        dir.resolve(foo).createFile();
+        createFile(dir.resolve(foo));
 
         // iterate over directory and check there is one entry
-        stream = dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         found = false;
         try {
             for (Path entry: stream) {
-                if (entry.getName().equals(foo)) {
+                if (entry.getFileName().equals(foo)) {
                     if (found)
                         throw new RuntimeException("entry already found");
                     found = true;
                 } else {
-                    throw new RuntimeException("entry " + entry.getName() +
+                    throw new RuntimeException("entry " + entry.getFileName() +
                         " not expected");
                 }
             }
@@ -71,21 +69,18 @@ public class Basic {
             throw new RuntimeException("entry not found");
 
         // check filtering: f* should match foo
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<>() {
             private PathMatcher matcher =
                 dir.getFileSystem().getPathMatcher("glob:f*");
             public boolean accept(Path file) {
                 return matcher.matches(file);
             }
         };
-        stream = dir.newDirectoryStream(filter);
-        try {
-            for (Path entry: stream) {
-                if (!entry.getName().equals(foo))
+        try (DirectoryStream<Path> ds = newDirectoryStream(dir, filter)) {
+            for (Path entry: ds) {
+                if (!entry.getFileName().equals(foo))
                     throw new RuntimeException("entry not expected");
             }
-        } finally {
-            stream.close();
         }
 
         // check filtering: z* should not match any files
@@ -96,12 +91,9 @@ public class Basic {
                 return matcher.matches(file);
             }
         };
-        stream = dir.newDirectoryStream(filter);
-        try {
-            if (stream.iterator().hasNext())
+        try (DirectoryStream<Path> ds = newDirectoryStream(dir, filter)) {
+            if (ds.iterator().hasNext())
                 throw new RuntimeException("no matching entries expected");
-        } finally {
-            stream.close();
         }
 
         // check that an IOException thrown by a filter is propagated
@@ -110,7 +102,7 @@ public class Basic {
                 throw new java.util.zip.ZipException();
             }
         };
-        stream = dir.newDirectoryStream(filter);
+        stream = newDirectoryStream(dir, filter);
         try {
             stream.iterator().hasNext();
             throw new RuntimeException("DirectoryIteratorException expected");
@@ -124,7 +116,7 @@ public class Basic {
 
         // check that exception or error thrown by filter is not thrown
         // by newDirectoryStream or iterator method.
-        stream = dir.newDirectoryStream(new DirectoryStream.Filter<Path>() {
+        stream = newDirectoryStream(dir, new DirectoryStream.Filter<Path>() {
             public boolean accept(Path file) {
                 throw new RuntimeException("Should not be visible");
             }
@@ -137,13 +129,13 @@ public class Basic {
 
         // test NotDirectoryException
         try {
-            dir.resolve(foo).newDirectoryStream();
+            newDirectoryStream(dir.resolve(foo));
             throw new RuntimeException("NotDirectoryException not thrown");
         } catch (NotDirectoryException x) {
         }
 
         // test UnsupportedOperationException
-        stream =  dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         Iterator<Path> i = stream.iterator();
         i.next();
         try {
@@ -153,7 +145,7 @@ public class Basic {
         }
 
         // test IllegalStateException
-        stream =  dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         stream.iterator();
         try {
             // attempt to obtain second iterator
@@ -163,7 +155,7 @@ public class Basic {
         }
         stream.close();
 
-        stream =  dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         stream.close();
         try {
             // attempt to obtain iterator after stream is closed
@@ -173,13 +165,13 @@ public class Basic {
         }
 
         // test that iterator reads to end of stream when closed
-        stream =  dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         i = stream.iterator();
         stream.close();
         while (i.hasNext())
             i.next();
 
-        stream =  dir.newDirectoryStream();
+        stream = newDirectoryStream(dir);
         i = stream.iterator();
         stream.close();
         try {

@@ -138,6 +138,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     protected synchronized void create(boolean stream) throws IOException {
         impl.create(stream);
+
+        // set fd to delegate's fd to be compatible with older releases
+        this.fd = impl.fd;
     }
 
     protected void connect(String host, int port)
@@ -166,7 +169,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         impl.doConnect(address, port, timeout);
     }
 
-     protected synchronized void bind(InetAddress address, int lport)
+    protected synchronized void bind(InetAddress address, int lport)
         throws IOException
     {
         impl.bind(address, lport);
@@ -174,9 +177,13 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     protected synchronized void accept(SocketImpl s) throws IOException {
         // pass in the real impl not the wrapper.
-        ((PlainSocketImpl)s).impl.address = new InetAddress();
-        ((PlainSocketImpl)s).impl.fd = new FileDescriptor();
-        impl.accept(((PlainSocketImpl)s).impl);
+        SocketImpl delegate = ((PlainSocketImpl)s).impl;
+        delegate.address = new InetAddress();
+        delegate.fd = new FileDescriptor();
+        impl.accept(delegate);
+
+        // set fd to delegate's fd to be compatible with older releases
+        s.fd = delegate.fd;
     }
 
     void setFileDescriptor(FileDescriptor fd) {
@@ -208,11 +215,21 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     protected void close() throws IOException {
-        impl.close();
+        try {
+            impl.close();
+        } finally {
+            // set fd to delegate's fd to be compatible with older releases
+            this.fd = null;
+        }
     }
 
     void reset() throws IOException {
-        impl.reset();
+        try {
+            impl.reset();
+        } finally {
+            // set fd to delegate's fd to be compatible with older releases
+            this.fd = null;
+        }
     }
 
     protected void shutdownInput() throws IOException {

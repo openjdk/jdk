@@ -56,7 +56,7 @@ public final class DirectoryIteratorException
      *          if the cause is {@code null}
      */
     public DirectoryIteratorException(IOException cause) {
-        super(Objects.nonNull(cause));
+        super(Objects.requireNonNull(cause));
     }
 
     /**

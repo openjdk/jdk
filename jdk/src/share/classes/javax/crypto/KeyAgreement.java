@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,18 @@ import sun.security.jca.GetInstance.Instance;
  * the first time setting the <code>lastPhase</code> flag to
  * <code>false</code>, and the second time setting it to <code>true</code>.
  * There may be any number of parties involved in a key exchange.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>KeyAgreement</code> algorithm:
+ * <ul>
+ * <li><tt>DiffieHellman</tt></li>
+ * </ul>
+ * This algorithm is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
+ * KeyAgreement section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
  *
  * @author Jan Luehe
  *
@@ -135,10 +147,9 @@ public class KeyAgreement {
      *
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyAgreement section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation
      * for information about standard algorithm names.
      *
      * @return the new <code>KeyAgreement</code> object.
@@ -182,10 +193,9 @@ public class KeyAgreement {
      *
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyAgreement section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -227,10 +237,9 @@ public class KeyAgreement {
      *
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the KeyAgreement section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation
      * for information about standard algorithm names.
      *
      * @param provider the provider.

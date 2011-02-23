@@ -72,9 +72,10 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_Iocp_createIoCompletionPort(JNIEnv* env, jclass this,
     jlong handle, jlong existingPort, jint completionKey, jint concurrency)
 {
+    ULONG_PTR ck = completionKey;
     HANDLE port = CreateIoCompletionPort((HANDLE)jlong_to_ptr(handle),
                                          (HANDLE)jlong_to_ptr(existingPort),
-                                         (DWORD)completionKey,
+                                         ck,
                                          (DWORD)concurrency);
     if (port == NULL) {
         JNU_ThrowIOExceptionWithLastError(env, "CreateIoCompletionPort failed");
@@ -96,7 +97,7 @@ Java_sun_nio_ch_Iocp_getQueuedCompletionStatus(JNIEnv* env, jclass this,
     jlong completionPort, jobject obj)
 {
     DWORD bytesTransferred;
-    DWORD completionKey;
+    ULONG_PTR completionKey;
     OVERLAPPED *lpOverlapped;
     BOOL res;
 

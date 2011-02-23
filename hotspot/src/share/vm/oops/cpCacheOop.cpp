@@ -368,16 +368,6 @@ void ConstantPoolCacheEntry::update_pointers() {
     PSParallelCompact::adjust_pointer((oop*)&_f2);
   }
 }
-
-void ConstantPoolCacheEntry::update_pointers(HeapWord* beg_addr,
-                                             HeapWord* end_addr) {
-  assert(in_words(size()) == 4, "check code below - may need adjustment");
-  // field[1] is always oop or NULL
-  PSParallelCompact::adjust_pointer((oop*)&_f1, beg_addr, end_addr);
-  if (is_vfinal()) {
-    PSParallelCompact::adjust_pointer((oop*)&_f2, beg_addr, end_addr);
-  }
-}
 #endif // SERIALGC
 
 // RedefineClasses() API support:

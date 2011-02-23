@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,8 +132,7 @@ class VM_GenCollectFullConcurrent: public VM_GC_Operation {
   VM_GenCollectFullConcurrent(unsigned int gc_count_before,
                               unsigned int full_gc_count_before,
                               GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, full_gc_count_before, true /* full */) {
-    _gc_cause = gc_cause;
+    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */) {
     assert(FullGCCount_lock != NULL, "Error");
     assert(UseAsyncConcMarkSweepGC, "Else will hang caller");
   }
