@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class Messages_sv extends java.util.ListResourceBundle {
     }
 
     private static final Object[][] contents = {
-        { "optpkg.versionerror", "FEL: Ogiltigt versionsformat i {0} JAR-fil. Kontrollera i dokumentationen vilket versionsformat som st\u00f6ds." },
-        { "optpkg.attributeerror", "FEL: Det JAR manifest-attribut {0} som kr\u00e4vs \u00e4r inte angivet i {1} JAR-filen." },
-        { "optpkg.attributeserror", "FEL: Vissa JAR manifest-attribut som kr\u00e4vs \u00e4r inte angivna i {0} JAR-filen." }
+        { "optpkg.versionerror", "FEL: Ogiltigt versionsformat i {0} JAR-fil. Kontrollera i dokumentationen vilket versionsformat som st\u00F6ds." },
+        { "optpkg.attributeerror", "FEL: Obligatoriskt JAR manifest-attribut {0} \u00E4r inte inst\u00E4llt i {1} JAR-filen." },
+        { "optpkg.attributeserror", "FEL: Vissa obligatoriska JAR manifest-attribut \u00E4r inte inst\u00E4llda i {0} JAR-filen." }
     };
 
 }

@@ -1,0 +1,7 @@
+T6554097.java:18:46: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$5
+T6554097.java:19:46: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$6
+T6554097.java:22:50: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$7
+T6554097.java:23:54: compiler.warn.missing.SVUID: compiler.misc.anonymous.class: T6554097$8
+- compiler.err.warnings.and.werror
+1 error
+4 warnings

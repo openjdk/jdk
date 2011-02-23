@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6968063
  * @summary provide examples of code that generate diagnostics
- * @build Example HTMLWriter RunExamples
+ * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples
  * @run main RunExamples
  */
 
@@ -97,6 +97,7 @@ public class RunExamples {
         boolean raw = false;
         boolean showFiles = false;
         boolean verbose = false;
+        boolean argTypes = false;
         String title = null;
 
         for (int i = 0; i < args.length; i++) {
@@ -115,6 +116,8 @@ public class RunExamples {
                 outFile = new File(args[++i]);
             else if (arg.equals("-title") && (i + 1) < args.length)
                 title = args[++i];
+            else if (arg.equals("-argtypes"))
+                argTypes = true;
             else if (arg.startsWith("-")) {
                 error("unknown option: " + arg);
                 return false;
@@ -127,6 +130,11 @@ public class RunExamples {
             }
         }
 
+        // special mode to show message keys and the types of the args that
+        // are used.
+        if (argTypes)
+            Example.Compiler.factory = new ArgTypeCompilerFactory();
+
         if (selectedKeys.size() > 0) {
             Set<Example> examples = getExamples(examplesDir);
         nextKey:
@@ -138,7 +146,7 @@ public class RunExamples {
                 error("Key " + k + ": no examples found");
             }
         } else {
-            if (selectedExamples.size() == 0)
+            if (selectedExamples.isEmpty())
                 selectedExamples = getExamples(examplesDir);
         }
 

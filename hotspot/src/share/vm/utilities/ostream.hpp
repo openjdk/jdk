@@ -159,10 +159,17 @@ class fileStream : public outputStream {
   bool  _need_close;
  public:
   fileStream(const char* file_name);
+  fileStream(const char* file_name, const char* opentype);
   fileStream(FILE* file) { _file = file; _need_close = false; }
   ~fileStream();
   bool is_open() const { return _file != NULL; }
+  void set_need_close(bool b) { _need_close = b;}
   virtual void write(const char* c, size_t len);
+  size_t read(void *data, size_t size, size_t count) { return ::fread(data, size, count, _file); }
+  char* readln(char *data, int count);
+  int eof() { return feof(_file); }
+  long fileSize();
+  void rewind() { ::rewind(_file); }
   void flush();
 };
 

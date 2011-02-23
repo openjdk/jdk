@@ -619,8 +619,10 @@ protected:
 
 public:
   // Expand the garbage-first heap by at least the given size (in bytes!).
+  // Returns true if the heap was expanded by the requested amount;
+  // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  virtual void expand(size_t expand_bytes);
+  bool expand(size_t expand_bytes);
 
   // Do anything common to GC's.
   virtual void gc_prologue(bool full);
@@ -981,9 +983,6 @@ public:
   // Reference Processing accessor
   ReferenceProcessor* ref_processor() { return _ref_processor; }
 
-  // Reserved (g1 only; super method includes perm), capacity and the used
-  // portion in bytes.
-  size_t g1_reserved_obj_bytes() const { return _g1_reserved.byte_size(); }
   virtual size_t capacity() const;
   virtual size_t used() const;
   // This should be called when we're not holding the heap lock. The

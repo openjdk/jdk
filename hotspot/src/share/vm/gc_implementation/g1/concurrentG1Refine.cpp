@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ void ConcurrentG1Refine::init() {
   if (G1ConcRSLogCacheSize > 0) {
     _g1h = G1CollectedHeap::heap();
     _max_n_card_counts =
-      (unsigned) (_g1h->g1_reserved_obj_bytes() >> CardTableModRefBS::card_shift);
+      (unsigned) (_g1h->max_capacity() >> CardTableModRefBS::card_shift);
 
     size_t max_card_num = ((size_t)1 << (sizeof(unsigned)*BitsPerByte-1)) - 1;
     guarantee(_max_n_card_counts < max_card_num, "card_num representation");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.ZipFileIndex;
 import com.sun.tools.javac.file.ZipFileIndexArchive;
+import com.sun.tools.javac.file.ZipFileIndexCache;
 import com.sun.tools.javac.util.Context;
 
 public class T6725036 {
@@ -57,8 +58,8 @@ public class T6725036 {
         JarEntry je = j.getJarEntry(TEST_ENTRY_NAME.getPath());
         long jarEntryTime = je.getTime();
 
-        ZipFileIndex zfi =
-                ZipFileIndex.getZipFileIndex(rt_jar, null, false, null, false);
+        ZipFileIndexCache zfic = ZipFileIndexCache.getSharedInstance();
+        ZipFileIndex zfi = zfic.getZipFileIndex(rt_jar, null, false, null, false);
         long zfiTime = zfi.getLastModified(TEST_ENTRY_NAME);
 
         check(je, jarEntryTime, zfi + ":" + TEST_ENTRY_NAME.getPath(), zfiTime);

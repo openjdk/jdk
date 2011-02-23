@@ -76,8 +76,6 @@ import static com.sun.tools.javac.main.OptionName.*;
  */
 public class JavacFileManager extends BaseFileManager implements StandardJavaFileManager {
 
-    boolean useZipFileIndex;
-
     public static char[] toArray(CharBuffer buffer) {
         if (buffer.hasArray())
             return ((CharBuffer)buffer.compact().flip()).array();
@@ -90,6 +88,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private Paths paths;
 
     private FSInfo fsInfo;
+
+    private boolean useZipFileIndex;
+    private ZipFileIndexCache zipFileIndexCache;
 
     private final File uninited = new File("U N I N I T E D");
 
@@ -163,7 +164,11 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         fsInfo = FSInfo.instance(context);
 
-        useZipFileIndex = System.getProperty("useJavaUtilZip") == null;// TODO: options.get("useJavaUtilZip") == null;
+        // retain check for system property for compatibility
+        useZipFileIndex = options.isUnset("useJavaUtilZip")
+                && System.getProperty("useJavaUtilZip") == null;
+        if (useZipFileIndex)
+            zipFileIndexCache = ZipFileIndexCache.getSharedInstance();
 
         mmappedIO = options.isSet("mmappedIO");
         ignoreSymbolFile = options.isSet("ignore.symbol.file");
@@ -526,7 +531,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     archive = new ZipArchive(this, zdir);
                 } else {
                     archive = new ZipFileIndexArchive(this,
-                                ZipFileIndex.getZipFileIndex(zipFileName,
+                                zipFileIndexCache.getZipFileIndex(zipFileName,
                                     null,
                                     usePreindexedCache,
                                     preindexCacheLocation,
@@ -538,7 +543,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
                 else {
                     archive = new ZipFileIndexArchive(this,
-                                ZipFileIndex.getZipFileIndex(zipFileName,
+                                zipFileIndexCache.getZipFileIndex(zipFileName,
                                     symbolFilePrefix,
                                     usePreindexedCache,
                                     preindexCacheLocation,
