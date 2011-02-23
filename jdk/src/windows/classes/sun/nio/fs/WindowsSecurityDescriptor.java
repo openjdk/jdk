@@ -214,7 +214,7 @@ class WindowsSecurityDescriptor {
 
         // map flags
         byte aceFlags = unsafe.getByte(aceAddress + OFFSETOF_FLAGS);
-        Set<AclEntryFlag> flags = new HashSet<AclEntryFlag>();
+        Set<AclEntryFlag> flags = EnumSet.noneOf(AclEntryFlag.class);
         if ((aceFlags & OBJECT_INHERIT_ACE) != 0)
             flags.add(AclEntryFlag.FILE_INHERIT);
         if ((aceFlags & CONTAINER_INHERIT_ACE) != 0)
@@ -226,7 +226,7 @@ class WindowsSecurityDescriptor {
 
         // map access mask
         int mask = unsafe.getInt(aceAddress + OFFSETOF_ACCESS_MASK);
-        Set<AclEntryPermission> perms = new HashSet<AclEntryPermission>();
+        Set<AclEntryPermission> perms = EnumSet.noneOf(AclEntryPermission.class);
         if ((mask & FILE_READ_DATA) > 0)
             perms.add(AclEntryPermission.READ_DATA);
         if ((mask & FILE_WRITE_DATA) > 0)
@@ -378,7 +378,7 @@ class WindowsSecurityDescriptor {
             AclInformation aclInfo = GetAclInformation(aclAddress);
             aceCount = aclInfo.aceCount();
         }
-        ArrayList<AclEntry> result = new ArrayList<AclEntry>(aceCount);
+        ArrayList<AclEntry> result = new ArrayList<>(aceCount);
 
         // decode each of the ACEs to AclEntry objects
         for (int i=0; i<aceCount; i++) {

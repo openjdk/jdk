@@ -31,7 +31,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
+<java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/3">
     <compilation-unit>
         <package-root>${root}/src/share/classes</package-root>
         <package-root>${root}/src/windows/classes</package-root>
@@ -39,6 +39,6 @@
         <classpath mode="boot">${bootstrap.jdk}/jre/lib/rt.jar</classpath>
         <built-to>${root}/build/${platform}-${arch}/classes</built-to>
         <javadoc-built-to>${root}/build/javadoc/${name}</javadoc-built-to>
-        <source-level>1.5</source-level>
+        <source-level>1.7</source-level>
     </compilation-unit>
 </java-data>

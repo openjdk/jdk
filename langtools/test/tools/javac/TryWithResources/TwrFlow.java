@@ -1,26 +1,16 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 6911256 6964740
+ * @bug 6911256 6964740 7013420
  * @author Joseph D. Darcy
- * @summary Test exception analysis of ARM blocks
+ * @summary Test exception analysis of try-with-resources blocks
  * @compile/fail/ref=TwrFlow.out -XDrawDiagnostics TwrFlow.java
  */
 
 import java.io.IOException;
 public class TwrFlow implements AutoCloseable {
     public static void main(String... args) {
-        try(TwrFlow armflow = new TwrFlow()) {
-            System.out.println(armflow.toString());
-        } catch (IOException ioe) { // Not reachable
-            throw new AssertionError("Shouldn't reach here", ioe);
-        }
-        // CustomCloseException should be caught or added to throws clause
-
-        // Also check behavior on a resource expression rather than a
-        // declaration.
-        TwrFlow armflowexpr = new TwrFlow();
-        try(armflowexpr) {
-            System.out.println(armflowexpr.toString());
+        try(TwrFlow twrFlow = new TwrFlow()) {
+            System.out.println(twrFlow.toString());
         } catch (IOException ioe) { // Not reachable
             throw new AssertionError("Shouldn't reach here", ioe);
         }

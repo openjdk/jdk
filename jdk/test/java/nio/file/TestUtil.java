@@ -31,17 +31,12 @@ public class TestUtil {
     }
 
     static Path createTemporaryDirectory(String where) throws IOException {
-        Path top = FileSystems.getDefault().getPath(where);
-        Random r = new Random();
-        Path dir;
-        do {
-            dir = top.resolve("name" + r.nextInt());
-        } while (dir.exists());
-        return dir.createDirectory();
+        Path dir = FileSystems.getDefault().getPath(where);
+        return Files.createTempDirectory(dir, "name");
     }
 
     static Path createTemporaryDirectory() throws IOException {
-        return createTemporaryDirectory(System.getProperty("java.io.tmpdir"));
+        return Files.createTempDirectory("name");
     }
 
     static void removeAll(Path dir) throws IOException {
@@ -53,7 +48,7 @@ public class TestUtil {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 try {
-                    file.delete();
+                    Files.delete(file);
                 } catch (IOException x) {
                     System.err.format("Unable to delete %s: %s\n", file, x);
                 }
@@ -62,7 +57,7 @@ public class TestUtil {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                 try {
-                    dir.delete();
+                    Files.delete(dir);
                 } catch (IOException x) {
                     System.err.format("Unable to delete %s: %s\n", dir, x);
                 }
@@ -78,7 +73,7 @@ public class TestUtil {
 
     static void deleteUnchecked(Path file) {
         try {
-            file.delete();
+            Files.delete(file);
         } catch (IOException exc) {
             System.err.format("Unable to delete %s: %s\n", file, exc);
         }
@@ -99,7 +94,7 @@ public class TestUtil {
         String name = sb.toString();
         do {
             dir = dir.resolve(name).resolve(".");
-            dir.createDirectory();
+            Files.createDirectory(dir);
         } while (dir.toString().length() < 2048);
         return dir;
     }
@@ -111,8 +106,8 @@ public class TestUtil {
         Path link = dir.resolve("testlink");
         Path target = dir.resolve("testtarget");
         try {
-            link.createSymbolicLink(target);
-            link.delete();
+            Files.createSymbolicLink(link, target);
+            Files.delete(link);
             return true;
         } catch (UnsupportedOperationException x) {
             return false;

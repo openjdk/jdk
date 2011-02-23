@@ -3661,10 +3661,10 @@ class CommandLineFlags {
   manageable(bool, PrintConcurrentLocks, false,                             \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \
-  diagnostic(bool, TransmitErrorReport, false,                              \
+  product(bool, TransmitErrorReport, false,                                 \
           "Enable error report transmission on erroneous termination")      \
                                                                             \
-  diagnostic(ccstr, ErrorReportServer, NULL,                                \
+  product(ccstr, ErrorReportServer, NULL,                                   \
           "Override built-in error report server address")                  \
                                                                             \
   /* Shared spaces */                                                       \
@@ -3695,7 +3695,7 @@ class CommandLineFlags {
   product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
-  product(uintx, SharedMiscDataSize,    4*M,                                \
+  product(uintx, SharedMiscDataSize,    NOT_LP64(4*M) LP64_ONLY(5*M),       \
           "Size of the shared data area adjacent to the heap (in bytes)")   \
                                                                             \
   product(uintx, SharedMiscCodeSize,    4*M,                                \

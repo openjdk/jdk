@@ -40,8 +40,8 @@ set -u
 
 DiagnosticsInEnglishPlease
 
-HELP="`$javac ${TESTTOOLVMOPTS} -help 2>&1`"
-XHELP="`$javac ${TESTTOOLVMOPTS} -X 2>&1`"
+HELP="`\"$javac\" ${TESTTOOLVMOPTS} -help 2>&1`"
+XHELP="`\"$javac\" ${TESTTOOLVMOPTS} -X 2>&1`"
 
 #----------------------------------------------------------------
 # Standard options

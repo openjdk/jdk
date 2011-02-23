@@ -1547,7 +1547,7 @@ public class FloatingDecimal{
                 if ( (cmpResult = bigB.cmp( bigD ) ) > 0 ){
                     overvalue = true; // our candidate is too big.
                     diff = bigB.sub( bigD );
-                    if ( (bigIntNBits == 1) && (bigIntExp > -expBias) ){
+                    if ( (bigIntNBits == 1) && (bigIntExp > -expBias+1) ){
                         // candidate is a normalized exact power of 2 and
                         // is too big. We will be subtracting.
                         // For our purposes, ulp is the ulp of the

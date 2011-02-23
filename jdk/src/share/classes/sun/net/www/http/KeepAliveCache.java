@@ -106,6 +106,9 @@ public class KeepAliveCache
                     keepAliveTimer = new Thread(grp, cache, "Keep-Alive-Timer");
                     keepAliveTimer.setDaemon(true);
                     keepAliveTimer.setPriority(Thread.MAX_PRIORITY - 2);
+                    // Set the context class loader to null in order to avoid
+                    // keeping a strong reference to an application classloader.
+                    keepAliveTimer.setContextClassLoader(null);
                     keepAliveTimer.start();
                     return null;
                 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ ProjectCreatorSources=\
         $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTree.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTreeNode.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\FileFormatException.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\Macro.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\MacroDefinitions.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\ProjectCreator.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatform.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC6.java \
@@ -50,6 +48,10 @@ ProjectCreatorSources=\
 
 # This is only used internally
 ProjectCreatorIncludesPRIVATE=\
+        -relativeInclude src\closed\share\vm \
+        -relativeInclude src\closed\os\windows\vm \
+        -relativeInclude src\closed\os_cpu\windows_$(Platform_arch)\vm \
+        -relativeInclude src\closed\cpu\$(Platform_arch)\vm \
         -relativeInclude src\share\vm \
         -relativeInclude src\share\vm\prims \
         -relativeInclude src\os\windows\vm \
@@ -84,7 +86,7 @@ ProjectCreatorIDEOptions=\
         -buildBase $(HOTSPOTBUILDSPACE)\%f\%b \
         -startAt src \
         -compiler $(VcVersion) \
-        -projectFileName $(HOTSPOTBUILDROOT)\$(ProjectFile) \
+        -projectFileName $(HOTSPOTBUILDSPACE)\$(ProjectFile) \
         -jdkTargetRoot $(HOTSPOTJDKDIST) \
         -define ALIGN_STACK_FRAMES \
         -define VM_LITTLE_ENDIAN \
@@ -106,13 +108,20 @@ ProjectCreatorIDEOptions=\
 # Add in build-specific options
 !if "$(BUILDARCH)" == "i486"
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
+	-platformName Win32 \
         -define IA32 \
         -ignorePath x86_64 \
         -define TARGET_ARCH_MODEL_x86_32
 !else
+!if "$(BUILDARCH)" == "amd64"
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
+	-platformName x64 \
+        -define AMD64 \
+	-define _LP64 \
         -ignorePath x86_32 \
-        -define TARGET_ARCH_MODEL_x86_64
+        -define TARGET_ARCH_MODEL_x86_64 \
+	-define TARGET_OS_ARCH_MODEL_windows_x86_64
+!endif
 !endif
 
 ProjectCreatorIDEOptionsIgnoreCompiler1=\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,19 +182,6 @@ int klassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 
   oop* const beg_oop = k->oop_block_beg();
   oop* const end_oop = k->oop_block_end();
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
-
-  return oop_size(obj);
-}
-
-int klassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                    HeapWord* beg_addr, HeapWord* end_addr) {
-  Klass* k = Klass::cast(klassOop(obj));
-
-  oop* const beg_oop = MAX2((oop*)beg_addr, k->oop_block_beg());
-  oop* const end_oop = MIN2((oop*)end_addr, k->oop_block_end());
   for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
     PSParallelCompact::adjust_pointer(cur_oop);
   }

@@ -100,8 +100,7 @@ void CollectedHeap::check_for_bad_heap_word_value(HeapWord* addr, size_t size) {
   }
 }
 
-void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
- {
+void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
   if (CheckMemoryInitialization && ZapUnusedHeapArea) {
     for (size_t slot = 0; slot < size; slot += 1) {
       assert((*(intptr_t*) (addr + slot)) == ((intptr_t) badHeapWordVal),

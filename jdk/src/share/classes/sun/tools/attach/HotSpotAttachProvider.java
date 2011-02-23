@@ -138,7 +138,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
      */
     void testAttachable(String id) throws AttachNotSupportedException {
         MonitoredVm mvm = null;
-        boolean isKernelVM = false;
         try {
             VmIdentifier vmid = new VmIdentifier(id);
             MonitoredHost host = MonitoredHost.getMonitoredHost(vmid);
@@ -148,7 +147,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                 // it's attachable; so return false
                 return;
             }
-            isKernelVM = MonitoredVmUtil.isKernelVM(mvm);
         } catch (Throwable t) {
             if (t instanceof ThreadDeath) {
                 ThreadDeath td = (ThreadDeath)t;
@@ -163,11 +161,8 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
         }
 
         // we're sure it's not attachable; throw exception
-        if (isKernelVM) {
-            throw new AttachNotSupportedException("Kernel VM does not support the attach mechanism");
-        } else {
-            throw new AttachNotSupportedException("The VM does not support the attach mechanism");
-        }
+        throw new AttachNotSupportedException(
+                  "The VM does not support the attach mechanism");
     }
 
 

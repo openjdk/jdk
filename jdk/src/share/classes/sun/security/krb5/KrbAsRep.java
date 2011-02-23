@@ -173,7 +173,7 @@ class KrbAsRep extends KrbKdcRep {
     }
 
     Credentials getCreds() {
-        return Objects.nonNull(creds, "Creds not available yet.");
+        return Objects.requireNonNull(creds, "Creds not available yet.");
     }
 
     sun.security.krb5.internal.ccache.Credentials getCCreds() {
