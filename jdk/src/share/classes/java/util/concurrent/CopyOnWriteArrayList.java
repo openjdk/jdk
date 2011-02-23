@@ -1318,16 +1318,19 @@ public class CopyOnWriteArrayList<E>
     }
 
     // Support for resetting lock while deserializing
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private void resetLock() {
+        UNSAFE.putObjectVolatile(this, lockOffset, new ReentrantLock());
+    }
+    private static final sun.misc.Unsafe UNSAFE;
     private static final long lockOffset;
     static {
         try {
-            lockOffset = unsafe.objectFieldOffset
-                (CopyOnWriteArrayList.class.getDeclaredField("lock"));
-            } catch (Exception ex) { throw new Error(ex); }
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class k = CopyOnWriteArrayList.class;
+            lockOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("lock"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
     }
-    private void resetLock() {
-        unsafe.putObjectVolatile(this, lockOffset, new ReentrantLock());
-    }
-
 }
