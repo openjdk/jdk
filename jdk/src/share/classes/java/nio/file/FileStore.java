@@ -32,16 +32,13 @@ import java.io.IOException;
  * Storage for files. A {@code FileStore} represents a storage pool, device,
  * partition, volume, concrete file system or other implementation specific means
  * of file storage. The {@code FileStore} for where a file is stored is obtained
- * by invoking the {@link Path#getFileStore getFileStore} method, or all file
+ * by invoking the {@link Files#getFileStore getFileStore} method, or all file
  * stores can be enumerated by invoking the {@link FileSystem#getFileStores
  * getFileStores} method.
  *
  * <p> In addition to the methods defined by this class, a file store may support
  * one or more {@link FileStoreAttributeView FileStoreAttributeView} classes
  * that provide a read-only or updatable view of a set of file store attributes.
- * File stores associated with the default provider support the {@link
- * FileStoreSpaceAttributeView} to read the space related attributes of the
- * file store.
  *
  * @since 1.7
  */
@@ -85,6 +82,51 @@ public abstract class FileStore {
      * @return  {@code true} if, and only if, this file store is read-only
      */
     public abstract boolean isReadOnly();
+
+    /**
+     * Returns the size, in bytes, of the file store.
+     *
+     * @return  the size of the file store, in bytes
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    public abstract long getTotalSpace() throws IOException;
+
+    /**
+     * Returns the number of bytes available to this Java virtual machine on the
+     * file store.
+     *
+     * <p> The returned number of available bytes is a hint, but not a
+     * guarantee, that it is possible to use most or any of these bytes.  The
+     * number of usable bytes is most likely to be accurate immediately
+     * after the space attributes are obtained. It is likely to be made inaccurate
+     * by any external I/O operations including those made on the system outside
+     * of this Java virtual machine.
+     *
+     * @return  the number of bytes available
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    public abstract long getUsableSpace() throws IOException;
+
+    /**
+     * Returns the number of unallocated bytes in the file store.
+     *
+     * <p> The returned number of unallocated bytes is a hint, but not a
+     * guarantee, that it is possible to use most or any of these bytes.  The
+     * number of unallocated bytes is most likely to be accurate immediately
+     * after the space attributes are obtained. It is likely to be
+     * made inaccurate by any external I/O operations including those made on
+     * the system outside of this virtual machine.
+     *
+     * @return  the number of unallocated bytes
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    public abstract long getUnallocatedSpace() throws IOException;
 
     /**
      * Tells whether or not this file store supports the file attributes
@@ -131,12 +173,6 @@ public abstract class FileStore {
      * The {@code type} parameter is the type of the attribute view required and
      * the method returns an instance of that type if supported.
      *
-     * <p> For {@code FileStore} objects created by the default provider, then
-     * the file stores support the {@link FileStoreSpaceAttributeView} that
-     * provides access to space attributes. In that case invoking this method
-     * with a parameter value of {@code FileStoreSpaceAttributeView.class} will
-     * always return an instance of that class.
-     *
      * @param   type
      *          the {@code Class} object corresponding to the attribute view
      *
@@ -159,10 +195,6 @@ public abstract class FileStore {
      * <p> <i>view-name</i> is the {@link FileStoreAttributeView#name name} of
      * a {@link FileStore AttributeView} that identifies a set of file attributes.
      * <i>attribute-name</i> is the name of the attribute.
-     *
-     * <p> For {@code FileStore} objects created by the default provider, then
-     * the file stores support the {@link FileStoreSpaceAttributeView} that
-     * provides access to space attributes.
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to know if ZFS compression is enabled (assuming the "zfs"

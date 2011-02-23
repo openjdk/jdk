@@ -116,10 +116,8 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
       _demand_rate_estimate.sample(rate);
       float new_rate = _demand_rate_estimate.padded_average();
       ssize_t old_desired = _desired;
-      _desired = (ssize_t)(new_rate * (inter_sweep_estimate
-                                       + CMSExtrapolateSweep
-                                         ? intra_sweep_estimate
-                                         : 0.0));
+      float delta_ise = (CMSExtrapolateSweep ? intra_sweep_estimate : 0.0);
+      _desired = (ssize_t)(new_rate * (inter_sweep_estimate + delta_ise));
       if (PrintFLSStatistics > 1) {
         gclog_or_tty->print_cr("demand: %d, old_rate: %f, current_rate: %f, new_rate: %f, old_desired: %d, new_desired: %d",
                                 demand,     old_rate,     rate,             new_rate,     old_desired,     _desired);

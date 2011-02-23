@@ -77,7 +77,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * is "Cyrl" and <code>locale</code> is fr_FR, getDisplayScript() will return "cyrillique".
      * If the name returned cannot be localized according to <code>locale</code>,
      * (say, the provider does not have a Japanese name for Cyrillic),
-     * this method returns null.
+     * this method returns null. The default implementation returns null.
      * @param scriptCode the four letter script code string in the form of title-case
      *     letters (the first letter is upper-case character between 'A' (U+0041) and
      *     'Z' (U+005A) followed by three lower-case character between 'a' (U+0061)

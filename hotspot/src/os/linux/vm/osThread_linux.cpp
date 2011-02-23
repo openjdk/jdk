@@ -39,6 +39,12 @@
 #ifdef TARGET_ARCH_zero
 # include "assembler_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "assembler_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "assembler_ppc.inline.hpp"
+#endif
 
 
 void OSThread::pd_initialize() {

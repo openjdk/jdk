@@ -55,8 +55,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -90,7 +88,7 @@ hexString2SECItem(PRArenaPool *arena, SECItem *item, const char *str,
 {
     int i = 0;
     int byteval = 0;
-    int tmp = strlen(str);
+    int tmp = (int)strlen(str);
 
     if ((tmp % 2) != 0) return NULL;
 
@@ -134,7 +132,8 @@ gf_populate_params(ECCurveName name, ECFieldType field_type, ECParams *params,
     /* 2 ['0'+'4'] + MAX_ECKEY_LEN * 2 [x,y] * 2 [hex string] + 1 ['\0'] */
     char genenc[3 + 2 * 2 * MAX_ECKEY_LEN];
 
-    if ((name < ECCurve_noName) || (name > ECCurve_pastLastCurve)) goto cleanup;
+    if (((int)name < ECCurve_noName) || (name > ECCurve_pastLastCurve))
+        goto cleanup;
     params->name = name;
     curveParams = ecCurve_map[params->name];
     CHECK_OK(curveParams);

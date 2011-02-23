@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecp.h"
 #include "mpi.h"
 #include "mplogic.h"
@@ -210,15 +208,15 @@ ec_GFp_nistp192_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
 
                 /* implement r = (a2,a1,a0)+(a5,a5,a5)+(a4,a4,0)+(0,a3,a3) */
 #ifndef MPI_AMD64_ADD
-                MP_ADD_CARRY(r0, a3, r0, 0,     carry);
+                MP_ADD_CARRY_ZERO(r0, a3, r0, carry);
                 MP_ADD_CARRY(r1, a3, r1, carry, carry);
                 MP_ADD_CARRY(r2, a4, r2, carry, carry);
                 r3 = carry;
-                MP_ADD_CARRY(r0, a5, r0, 0,     carry);
+                MP_ADD_CARRY_ZERO(r0, a5, r0, carry);
                 MP_ADD_CARRY(r1, a5, r1, carry, carry);
                 MP_ADD_CARRY(r2, a5, r2, carry, carry);
                 r3 += carry;
-                MP_ADD_CARRY(r1, a4, r1, 0,     carry);
+                MP_ADD_CARRY_ZERO(r1, a4, r1, carry);
                 MP_ADD_CARRY(r2,  0, r2, carry, carry);
                 r3 += carry;
 
@@ -251,7 +249,7 @@ ec_GFp_nistp192_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
                 /* reduce out the carry */
                 while (r3) {
 #ifndef MPI_AMD64_ADD
-                        MP_ADD_CARRY(r0, r3, r0, 0,     carry);
+                        MP_ADD_CARRY_ZERO(r0, r3, r0, carry);
                         MP_ADD_CARRY(r1, r3, r1, carry, carry);
                         MP_ADD_CARRY(r2,  0, r2, carry, carry);
                         r3 = carry;
@@ -335,7 +333,7 @@ ec_GFp_nistp192_add(const mp_int *a, const mp_int *b, mp_int *r,
         }
 
 #ifndef MPI_AMD64_ADD
-        MP_ADD_CARRY(a0, r0, r0, 0,     carry);
+        MP_ADD_CARRY_ZERO(a0, r0, r0, carry);
         MP_ADD_CARRY(a1, r1, r1, carry, carry);
         MP_ADD_CARRY(a2, r2, r2, carry, carry);
 #else
@@ -357,7 +355,7 @@ ec_GFp_nistp192_add(const mp_int *a, const mp_int *b, mp_int *r,
                       ((r1 == MP_DIGIT_MAX) ||
                         ((r1 == (MP_DIGIT_MAX-1)) && (r0 == MP_DIGIT_MAX))))) {
 #ifndef MPI_AMD64_ADD
-                MP_ADD_CARRY(r0, 1, r0, 0,     carry);
+                MP_ADD_CARRY_ZERO(r0, 1, r0, carry);
                 MP_ADD_CARRY(r1, 1, r1, carry, carry);
                 MP_ADD_CARRY(r2, 0, r2, carry, carry);
 #else

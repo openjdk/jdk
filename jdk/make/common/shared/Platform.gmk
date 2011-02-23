@@ -72,7 +72,11 @@ PLATFORM_SHARED=done
 #     USING_CYGWIN                windows only: true or false
 #     ISHIELD_TEMP_MIN            windows only: minimum disk space in temp area
 
-SYSTEM_UNAME := $(shell uname)
+# Only run uname once in this make session.
+ifndef SYSTEM_UNAME
+  SYSTEM_UNAME := $(shell uname)
+  export SYSTEM_UNAME
+endif
 
 #
 # Prune out all known SCM (Source Code Management) directories
@@ -222,6 +226,12 @@ ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
   PLATFORM = windows
   USING_CYGWIN = true
   export USING_CYGWIN
+  CYGPATH_CMD=cygpath -a -s -m
+  # Only run "cygpath /" once in this make session.
+  ifndef CYGWIN_HOME
+    CYGWIN_HOME := $(shell $(CYGPATH_CMD) /)
+    export CYGWIN_HOME
+  endif
 endif
 
 # Platform settings specific to Windows
@@ -235,7 +245,12 @@ ifeq ($(PLATFORM), windows)
   #  And sometimes PROCESSOR_IDENTIFIER is not defined at all
   #  (in some restricted shells), so we use uname if we have to.
   ifeq ($(PROCESSOR_IDENTIFIER),)
-    PROC_ARCH:=$(shell uname -m)
+    # Only run uname -m once in this make session.
+    ifndef SYSTEM_UNAME_M
+      SYSTEM_UNAME_M := $(shell uname -m)
+      export SYSTEM_UNAME_M
+    endif
+    PROC_ARCH:=$(SYSTEM_UNAME_M)
   else
     PROC_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
   endif

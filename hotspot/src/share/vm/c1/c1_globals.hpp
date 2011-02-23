@@ -32,6 +32,12 @@
 #ifdef TARGET_ARCH_sparc
 # include "c1_globals_sparc.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "c1_globals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "c1_globals_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c1_globals_linux.hpp"
 #endif

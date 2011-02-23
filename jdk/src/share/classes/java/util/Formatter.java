@@ -47,9 +47,6 @@ import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1859,7 +1856,7 @@ public final class Formatter implements Closeable, Flushable {
     private static Charset toCharset(String csn)
         throws UnsupportedEncodingException
     {
-        Objects.nonNull(csn, "charsetName");
+        Objects.requireNonNull(csn, "charsetName");
         try {
             return Charset.forName(csn);
         } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
@@ -2179,7 +2176,7 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter(PrintStream ps) {
         this(Locale.getDefault(Locale.Category.FORMAT),
-             (Appendable)Objects.nonNull(ps));
+             (Appendable)Objects.requireNonNull(ps));
     }
 
     /**

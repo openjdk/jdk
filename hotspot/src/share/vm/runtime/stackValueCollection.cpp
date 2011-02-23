@@ -33,6 +33,12 @@
 #ifdef TARGET_ARCH_zero
 # include "jniTypes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "jniTypes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "jniTypes_ppc.hpp"
+#endif
 
 jint StackValueCollection::int_at(int slot) const {
   intptr_t val =  at(slot)->get_int();
