@@ -51,21 +51,48 @@ Platform_os_arch=windows_$Platform_arch
 WorkSpace=$4
 GENERATED=$5
 
-BASE_PATHS="` $FIND ${WorkSpace}/src/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \)`"
-BASE_PATHS="${BASE_PATHS} ${WorkSpace}/src/share/vm/gc_implementation/shared"
-BASE_PATHS="${BASE_PATHS} ${WorkSpace}/src/os/${Platform_os_family}/vm"
-BASE_PATHS="${BASE_PATHS} ${WorkSpace}/src/cpu/${Platform_arch}/vm"
-BASE_PATHS="${BASE_PATHS} ${WorkSpace}/src/os_cpu/${Platform_os_arch}/vm"
+COMMONSRC_REL=src
+ALTSRC_REL=src/closed # Change this to pick up alt sources from somewhere else
+
+COMMONSRC=${WorkSpace}/${COMMONSRC_REL}
+ALTSRC=${WorkSpace}/${ALTSRC_REL}
+
+BASE_PATHS="`if [ -d ${ALTSRC}/share/vm ]; then $FIND ${ALTSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \); fi`"
+BASE_PATHS="${BASE_PATHS} ` $FIND ${COMMONSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \)`"
+
+for sd in \
+    share/vm/gc_implementation/shared \
+    os/${Platform_os_family}/vm \
+    cpu/${Platform_arch}/vm \
+    os_cpu/${Platform_os_arch}/vm; do 
+  if [ -d "${ALTSRC}/${sd}" ]; then
+    BASE_PATHS="${BASE_PATHS} ${ALTSRC}/${sd}"
+  fi
+  BASE_PATHS="${BASE_PATHS} ${COMMONSRC}/${sd}"
+done
+
 BASE_PATHS="${BASE_PATHS} ${GENERATED}/jvmtifiles"
 
 CORE_PATHS="${BASE_PATHS}"
 # shared is already in BASE_PATHS. Should add vm/memory but that one is also in BASE_PATHS.
-CORE_PATHS="${CORE_PATHS} `$FIND ${WorkSpace}/src/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+if [ -d "${ALTSRC}/share/vm/gc_implementation" ]; then
+  CORE_PATHS="${CORE_PATHS} `$FIND ${ALTSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+fi
+CORE_PATHS="${CORE_PATHS} `$FIND ${COMMONSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
 
-COMPILER1_PATHS="${WorkSpace}/src/share/vm/c1"
+if [ -d "${ALTSRC}/share/vm/c1" ]; then
+  COMPILER1_PATHS="${ALTSRC}/share/vm/c1"
+fi
+COMPILER1_PATHS="${COMPILER1_PATHS} ${COMMONSRC}/share/vm/c1"
 
-COMPILER2_PATHS="${WorkSpace}/src/share/vm/opto"
-COMPILER2_PATHS="${COMPILER2_PATHS} ${WorkSpace}/src/share/vm/libadt"
+if [ -d "${ALTSRC}/share/vm/opto" ]; then
+  COMPILER2_PATHS="${ALTSRC}/share/vm/opto"
+fi
+COMPILER2_PATHS="${COMPILER2_PATHS} ${COMMONSRC}/share/vm/opto"
+if [ -d "${ALTSRC}/share/vm/libadt" ]; then
+  COMPILER2_PATHS="${COMPILER2_PATHS} ${ALTSRC}/share/vm/libadt"
+fi
+COMPILER2_PATHS="${COMPILER2_PATHS} ${COMMONSRC}/share/vm/libadt"
 COMPILER2_PATHS="${COMPILER2_PATHS} ${GENERATED}/adfiles"
 
 # Include dirs per type.

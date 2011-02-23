@@ -237,7 +237,7 @@ class UnixCopyFile {
                 fo = open(target,
                            (O_WRONLY |
                             O_CREAT |
-                            O_TRUNC),
+                            O_EXCL),
                            attrs.mode());
             } catch (UnixException x) {
                 x.rethrowAsIOException(target);
@@ -435,10 +435,8 @@ class UnixCopyFile {
                 if (targetAttrs.isDirectory() &&
                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
                 {
-                    throw new FileAlreadyExistsException(
-                        source.getPathForExecptionMessage(),
-                        target.getPathForExecptionMessage(),
-                        x.getMessage());
+                    throw new DirectoryNotEmptyException(
+                        target.getPathForExecptionMessage());
                 }
                 x.rethrowAsIOException(target);
             }
@@ -556,10 +554,8 @@ class UnixCopyFile {
                 if (targetAttrs.isDirectory() &&
                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
                 {
-                    throw new FileAlreadyExistsException(
-                        source.getPathForExecptionMessage(),
-                        target.getPathForExecptionMessage(),
-                        x.getMessage());
+                    throw new DirectoryNotEmptyException(
+                        target.getPathForExecptionMessage());
                 }
                 x.rethrowAsIOException(target);
             }

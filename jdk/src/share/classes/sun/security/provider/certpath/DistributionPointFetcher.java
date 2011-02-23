@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ class DistributionPointFetcher {
 
             // we accept the case that a CRL issuer provide status
             // information for itself.
-            if (ForwardBuilder.issues(certImpl, crlImpl, provider)) {
+            if (issues(certImpl, crlImpl, provider)) {
                 // reset the public key used to verify the CRL's signature
                 prevKey = certImpl.getPublicKey();
             } else {
@@ -338,7 +338,7 @@ class DistributionPointFetcher {
             if (!Arrays.equals(certAKID, crlAKID)) {
                 // we accept the case that a CRL issuer provide status
                 // information for itself.
-                if (ForwardBuilder.issues(certImpl, crlImpl, provider)) {
+                if (issues(certImpl, crlImpl, provider)) {
                     // reset the public key used to verify the CRL's signature
                     prevKey = certImpl.getPublicKey();
                 } else {
@@ -686,5 +686,42 @@ class DistributionPointFetcher {
         GeneralNames fullNames = new GeneralNames();
         fullNames.add(new GeneralName(fullName));
         return fullNames;
+    }
+
+    /** Verifies whether a CRL is issued by a certain certificate
+     *
+     * @param cert the certificate
+     * @param crl the CRL to be verified
+     * @param provider the name of the signature provider
+     */
+    private static boolean issues(X509CertImpl cert, X509CRLImpl crl,
+            String provider) throws IOException {
+
+        AdaptableX509CertSelector issuerSelector =
+                                    new AdaptableX509CertSelector();
+
+        // check certificate's key usage
+        boolean[] usages = cert.getKeyUsage();
+        if (usages != null) {
+            usages[6] = true;       // cRLSign
+            issuerSelector.setKeyUsage(usages);
+        }
+
+        // check certificate's subject
+        X500Principal crlIssuer = crl.getIssuerX500Principal();
+        issuerSelector.setSubject(crlIssuer);
+
+        /*
+         * Facilitate certification path construction with authority
+         * key identifier and subject key identifier.
+         *
+         * In practice, conforming CAs MUST use the key identifier method,
+         * and MUST include authority key identifier extension in all CRLs
+         * issued. [section 5.2.1, RFC 2459]
+         */
+        issuerSelector.parseAuthorityKeyIdentifierExtension(
+                                        crl.getAuthKeyIdExtension());
+
+        return issuerSelector.match(cert);
     }
 }

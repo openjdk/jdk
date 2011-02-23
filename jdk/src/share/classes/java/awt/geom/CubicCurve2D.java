@@ -31,6 +31,10 @@ import java.util.Arrays;
 import java.io.Serializable;
 import sun.awt.geom.Curve;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+import static java.lang.Math.ulp;
+
 /**
  * The <code>CubicCurve2D</code> class defines a cubic parametric curve
  * segment in {@code (x,y)} coordinate space.
@@ -1083,95 +1087,286 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * @since 1.3
      */
     public static int solveCubic(double eqn[], double res[]) {
-        // From Numerical Recipes, 5.6, Quadratic and Cubic Equations
-        double d = eqn[3];
-        if (d == 0.0) {
-            // The cubic has degenerated to quadratic (or line or ...).
+        // From Graphics Gems:
+        // http://tog.acm.org/resources/GraphicsGems/gems/Roots3And4.c
+        final double d = eqn[3];
+        if (d == 0) {
             return QuadCurve2D.solveQuadratic(eqn, res);
         }
-        double a = eqn[2] / d;
-        double b = eqn[1] / d;
-        double c = eqn[0] / d;
-        int roots = 0;
-        double Q = (a * a - 3.0 * b) / 9.0;
-        double R = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0;
-        double R2 = R * R;
-        double Q3 = Q * Q * Q;
-        a = a / 3.0;
-        if (R2 < Q3) {
-            double theta = Math.acos(R / Math.sqrt(Q3));
-            Q = -2.0 * Math.sqrt(Q);
+
+        /* normal form: x^3 + Ax^2 + Bx + C = 0 */
+        final double A = eqn[2] / d;
+        final double B = eqn[1] / d;
+        final double C = eqn[0] / d;
+
+
+        //  substitute x = y - A/3 to eliminate quadratic term:
+        //     x^3 +Px + Q = 0
+        //
+        // Since we actually need P/3 and Q/2 for all of the
+        // calculations that follow, we will calculate
+        // p = P/3
+        // q = Q/2
+        // instead and use those values for simplicity of the code.
+        double sq_A = A * A;
+        double p = 1.0/3 * (-1.0/3 * sq_A + B);
+        double q = 1.0/2 * (2.0/27 * A * sq_A - 1.0/3 * A * B + C);
+
+        /* use Cardano's formula */
+
+        double cb_p = p * p * p;
+        double D = q * q + cb_p;
+
+        final double sub = 1.0/3 * A;
+
+        int num;
+        if (D < 0) { /* Casus irreducibilis: three real solutions */
+            // see: http://en.wikipedia.org/wiki/Cubic_function#Trigonometric_.28and_hyperbolic.29_method
+            double phi = 1.0/3 * Math.acos(-q / Math.sqrt(-cb_p));
+            double t = 2 * Math.sqrt(-p);
+
             if (res == eqn) {
-                // Copy the eqn so that we don't clobber it with the
-                // roots.  This is needed so that fixRoots can do its
-                // work with the original equation.
-                eqn = new double[4];
-                System.arraycopy(res, 0, eqn, 0, 4);
+                eqn = Arrays.copyOf(eqn, 4);
             }
-            res[roots++] = Q * Math.cos(theta / 3.0) - a;
-            res[roots++] = Q * Math.cos((theta + Math.PI * 2.0)/ 3.0) - a;
-            res[roots++] = Q * Math.cos((theta - Math.PI * 2.0)/ 3.0) - a;
-            fixRoots(res, eqn);
+
+            res[ 0 ] =  ( t * Math.cos(phi));
+            res[ 1 ] =  (-t * Math.cos(phi + Math.PI / 3));
+            res[ 2 ] =  (-t * Math.cos(phi - Math.PI / 3));
+            num = 3;
+
+            for (int i = 0; i < num; ++i) {
+                res[ i ] -= sub;
+            }
+
         } else {
-            boolean neg = (R < 0.0);
-            double S = Math.sqrt(R2 - Q3);
-            if (neg) {
-                R = -R;
+            // Please see the comment in fixRoots marked 'XXX' before changing
+            // any of the code in this case.
+            double sqrt_D = Math.sqrt(D);
+            double u = Math.cbrt(sqrt_D - q);
+            double v = - Math.cbrt(sqrt_D + q);
+            double uv = u+v;
+
+            num = 1;
+
+            double err = 1200000000*ulp(abs(uv) + abs(sub));
+            if (iszero(D, err) || within(u, v, err)) {
+                if (res == eqn) {
+                    eqn = Arrays.copyOf(eqn, 4);
+                }
+                res[1] = -(uv / 2) - sub;
+                num = 2;
             }
-            double A = Math.pow(R + S, 1.0 / 3.0);
-            if (!neg) {
-                A = -A;
-            }
-            double B = (A == 0.0) ? 0.0 : (Q / A);
-            res[roots++] = (A + B) - a;
+            // this must be done after the potential Arrays.copyOf
+            res[ 0 ] =  uv - sub;
         }
-        return roots;
+
+        if (num > 1) { // num == 3 || num == 2
+            num = fixRoots(eqn, res, num);
+        }
+        if (num > 2 && (res[2] == res[1] || res[2] == res[0])) {
+            num--;
+        }
+        if (num > 1 && res[1] == res[0]) {
+            res[1] = res[--num]; // Copies res[2] to res[1] if needed
+        }
+        return num;
     }
 
-    /*
-     * This pruning step is necessary since solveCubic uses the
-     * cosine function to calculate the roots when there are 3
-     * of them.  Since the cosine method can have an error of
-     * +/- 1E-14 we need to make sure that we don't make any
-     * bad decisions due to an error.
-     *
-     * If the root is not near one of the endpoints, then we will
-     * only have a slight inaccuracy in calculating the x intercept
-     * which will only cause a slightly wrong answer for some
-     * points very close to the curve.  While the results in that
-     * case are not as accurate as they could be, they are not
-     * disastrously inaccurate either.
-     *
-     * On the other hand, if the error happens near one end of
-     * the curve, then our processing to reject values outside
-     * of the t=[0,1] range will fail and the results of that
-     * failure will be disastrous since for an entire horizontal
-     * range of test points, we will either overcount or undercount
-     * the crossings and get a wrong answer for all of them, even
-     * when they are clearly and obviously inside or outside the
-     * curve.
-     *
-     * To work around this problem, we try a couple of Newton-Raphson
-     * iterations to see if the true root is closer to the endpoint
-     * or further away.  If it is further away, then we can stop
-     * since we know we are on the right side of the endpoint.  If
-     * we change direction, then either we are now being dragged away
-     * from the endpoint in which case the first condition will cause
-     * us to stop, or we have passed the endpoint and are headed back.
-     * In the second case, we simply evaluate the slope at the
-     * endpoint itself and place ourselves on the appropriate side
-     * of it or on it depending on that result.
-     */
-    private static void fixRoots(double res[], double eqn[]) {
-        final double EPSILON = 1E-5;
-        for (int i = 0; i < 3; i++) {
-            double t = res[i];
-            if (Math.abs(t) < EPSILON) {
-                res[i] = findZero(t, 0, eqn);
-            } else if (Math.abs(t - 1) < EPSILON) {
-                res[i] = findZero(t, 1, eqn);
-            }
+    // preconditions: eqn != res && eqn[3] != 0 && num > 1
+    // This method tries to improve the accuracy of the roots of eqn (which
+    // should be in res). It also might eliminate roots in res if it decideds
+    // that they're not real roots. It will not check for roots that the
+    // computation of res might have missed, so this method should only be
+    // used when the roots in res have been computed using an algorithm
+    // that never underestimates the number of roots (such as solveCubic above)
+    private static int fixRoots(double[] eqn, double[] res, int num) {
+        double[] intervals = {eqn[1], 2*eqn[2], 3*eqn[3]};
+        int critCount = QuadCurve2D.solveQuadratic(intervals, intervals);
+        if (critCount == 2 && intervals[0] == intervals[1]) {
+            critCount--;
         }
+        if (critCount == 2 && intervals[0] > intervals[1]) {
+            double tmp = intervals[0];
+            intervals[0] = intervals[1];
+            intervals[1] = tmp;
+        }
+
+        // below we use critCount to possibly filter out roots that shouldn't
+        // have been computed. We require that eqn[3] != 0, so eqn is a proper
+        // cubic, which means that its limits at -/+inf are -/+inf or +/-inf.
+        // Therefore, if critCount==2, the curve is shaped like a sideways S,
+        // and it could have 1-3 roots. If critCount==0 it is monotonic, and
+        // if critCount==1 it is monotonic with a single point where it is
+        // flat. In the last 2 cases there can only be 1 root. So in cases
+        // where num > 1 but critCount < 2, we eliminate all roots in res
+        // except one.
+
+        if (num == 3) {
+            double xe = getRootUpperBound(eqn);
+            double x0 = -xe;
+
+            Arrays.sort(res, 0, num);
+            if (critCount == 2) {
+                // this just tries to improve the accuracy of the computed
+                // roots using Newton's method.
+                res[0] = refineRootWithHint(eqn, x0, intervals[0], res[0]);
+                res[1] = refineRootWithHint(eqn, intervals[0], intervals[1], res[1]);
+                res[2] = refineRootWithHint(eqn, intervals[1], xe, res[2]);
+                return 3;
+            } else if (critCount == 1) {
+                // we only need fx0 and fxe for the sign of the polynomial
+                // at -inf and +inf respectively, so we don't need to do
+                // fx0 = solveEqn(eqn, 3, x0); fxe = solveEqn(eqn, 3, xe)
+                double fxe = eqn[3];
+                double fx0 = -fxe;
+
+                double x1 = intervals[0];
+                double fx1 = solveEqn(eqn, 3, x1);
+
+                // if critCount == 1 or critCount == 0, but num == 3 then
+                // something has gone wrong. This branch and the one below
+                // would ideally never execute, but if they do we can't know
+                // which of the computed roots is closest to the real root;
+                // therefore, we can't use refineRootWithHint. But even if
+                // we did know, being here most likely means that the
+                // curve is very flat close to two of the computed roots
+                // (or maybe even all three). This might make Newton's method
+                // fail altogether, which would be a pain to detect and fix.
+                // This is why we use a very stable bisection method.
+                if (oppositeSigns(fx0, fx1)) {
+                    res[0] = bisectRootWithHint(eqn, x0, x1, res[0]);
+                } else if (oppositeSigns(fx1, fxe)) {
+                    res[0] = bisectRootWithHint(eqn, x1, xe, res[2]);
+                } else /* fx1 must be 0 */ {
+                    res[0] = x1;
+                }
+                // return 1
+            } else if (critCount == 0) {
+                res[0] = bisectRootWithHint(eqn, x0, xe, res[1]);
+                // return 1
+            }
+        } else if (num == 2 && critCount == 2) {
+            // XXX: here we assume that res[0] has better accuracy than res[1].
+            // This is true because this method is only used from solveCubic
+            // which puts in res[0] the root that it would compute anyway even
+            // if num==1. If this method is ever used from any other method, or
+            // if the solveCubic implementation changes, this assumption should
+            // be reevaluated, and the choice of goodRoot might have to become
+            // goodRoot = (abs(eqn'(res[0])) > abs(eqn'(res[1]))) ? res[0] : res[1]
+            // where eqn' is the derivative of eqn.
+            double goodRoot = res[0];
+            double badRoot = res[1];
+            double x1 = intervals[0];
+            double x2 = intervals[1];
+            // If a cubic curve really has 2 roots, one of those roots must be
+            // at a critical point. That can't be goodRoot, so we compute x to
+            // be the farthest critical point from goodRoot. If there are two
+            // roots, x must be the second one, so we evaluate eqn at x, and if
+            // it is zero (or close enough) we put x in res[1] (or badRoot, if
+            // |solveEqn(eqn, 3, badRoot)| < |solveEqn(eqn, 3, x)| but this
+            // shouldn't happen often).
+            double x = abs(x1 - goodRoot) > abs(x2 - goodRoot) ? x1 : x2;
+            double fx = solveEqn(eqn, 3, x);
+
+            if (iszero(fx, 10000000*ulp(x))) {
+                double badRootVal = solveEqn(eqn, 3, badRoot);
+                res[1] = abs(badRootVal) < abs(fx) ? badRoot : x;
+                return 2;
+            }
+        } // else there can only be one root - goodRoot, and it is already in res[0]
+
+        return 1;
+    }
+
+    // use newton's method.
+    private static double refineRootWithHint(double[] eqn, double min, double max, double t) {
+        if (!inInterval(t, min, max)) {
+            return t;
+        }
+        double[] deriv = {eqn[1], 2*eqn[2], 3*eqn[3]};
+        double origt = t;
+        for (int i = 0; i < 3; i++) {
+            double slope = solveEqn(deriv, 2, t);
+            double y = solveEqn(eqn, 3, t);
+            double delta = - (y / slope);
+            double newt = t + delta;
+
+            if (slope == 0 || y == 0 || t == newt) {
+                break;
+            }
+
+            t = newt;
+        }
+        if (within(t, origt, 1000*ulp(origt)) && inInterval(t, min, max)) {
+            return t;
+        }
+        return origt;
+    }
+
+    private static double bisectRootWithHint(double[] eqn, double x0, double xe, double hint) {
+        double delta1 = Math.min(abs(hint - x0) / 64, 0.0625);
+        double delta2 = Math.min(abs(hint - xe) / 64, 0.0625);
+        double x02 = hint - delta1;
+        double xe2 = hint + delta2;
+        double fx02 = solveEqn(eqn, 3, x02);
+        double fxe2 = solveEqn(eqn, 3, xe2);
+        while (oppositeSigns(fx02, fxe2)) {
+            if (x02 >= xe2) {
+                return x02;
+            }
+            x0 = x02;
+            xe = xe2;
+            delta1 /= 64;
+            delta2 /= 64;
+            x02 = hint - delta1;
+            xe2 = hint + delta2;
+            fx02 = solveEqn(eqn, 3, x02);
+            fxe2 = solveEqn(eqn, 3, xe2);
+        }
+        if (fx02 == 0) {
+            return x02;
+        }
+        if (fxe2 == 0) {
+            return xe2;
+        }
+
+        return bisectRoot(eqn, x0, xe);
+    }
+
+    private static double bisectRoot(double[] eqn, double x0, double xe) {
+        double fx0 = solveEqn(eqn, 3, x0);
+        double m = x0 + (xe - x0) / 2;
+        while (m != x0 && m != xe) {
+            double fm = solveEqn(eqn, 3, m);
+            if (fm == 0) {
+                return m;
+            }
+            if (oppositeSigns(fx0, fm)) {
+                xe = m;
+            } else {
+                fx0 = fm;
+                x0 = m;
+            }
+            m = x0 + (xe-x0)/2;
+        }
+        return m;
+    }
+
+    private static boolean inInterval(double t, double min, double max) {
+        return min <= t && t <= max;
+    }
+
+    private static boolean within(double x, double y, double err) {
+        double d = y - x;
+        return (d <= err && d >= -err);
+    }
+
+    private static boolean iszero(double x, double err) {
+        return within(x, 0, err);
+    }
+
+    private static boolean oppositeSigns(double x1, double x2) {
+        return (x1 < 0 && x2 > 0) || (x1 > 0 && x2 < 0);
     }
 
     private static double solveEqn(double eqn[], int order, double t) {
@@ -1182,59 +1377,25 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
         return v;
     }
 
-    private static double findZero(double t, double target, double eqn[]) {
-        double slopeqn[] = {eqn[1], 2*eqn[2], 3*eqn[3]};
-        double slope;
-        double origdelta = 0;
-        double origt = t;
-        while (true) {
-            slope = solveEqn(slopeqn, 2, t);
-            if (slope == 0) {
-                // At a local minima - must return
-                return t;
-            }
-            double y = solveEqn(eqn, 3, t);
-            if (y == 0) {
-                // Found it! - return it
-                return t;
-            }
-            // assert(slope != 0 && y != 0);
-            double delta = - (y / slope);
-            // assert(delta != 0);
-            if (origdelta == 0) {
-                origdelta = delta;
-            }
-            if (t < target) {
-                if (delta < 0) return t;
-            } else if (t > target) {
-                if (delta > 0) return t;
-            } else { /* t == target */
-                return (delta > 0
-                        ? (target + java.lang.Double.MIN_VALUE)
-                        : (target - java.lang.Double.MIN_VALUE));
-            }
-            double newt = t + delta;
-            if (t == newt) {
-                // The deltas are so small that we aren't moving...
-                return t;
-            }
-            if (delta * origdelta < 0) {
-                // We have reversed our path.
-                int tag = (origt < t
-                           ? getTag(target, origt, t)
-                           : getTag(target, t, origt));
-                if (tag != INSIDE) {
-                    // Local minima found away from target - return the middle
-                    return (origt + t) / 2;
-                }
-                // Local minima somewhere near target - move to target
-                // and let the slope determine the resulting t.
-                t = target;
-            } else {
-                t = newt;
-            }
-        }
+    /*
+     * Computes M+1 where M is an upper bound for all the roots in of eqn.
+     * See: http://en.wikipedia.org/wiki/Sturm%27s_theorem#Applications.
+     * The above link doesn't contain a proof, but I [dlila] proved it myself
+     * so the result is reliable. The proof isn't difficult, but it's a bit
+     * long to include here.
+     * Precondition: eqn must represent a cubic polynomial
+     */
+    private static double getRootUpperBound(double[] eqn) {
+        double d = eqn[3];
+        double a = eqn[2];
+        double b = eqn[1];
+        double c = eqn[0];
+
+        double M = 1 + max(max(abs(a), abs(b)), abs(c)) / abs(d);
+        M += ulp(M) + 1;
+        return M;
     }
+
 
     /**
      * {@inheritDoc}
@@ -1271,110 +1432,6 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      */
     public boolean contains(Point2D p) {
         return contains(p.getX(), p.getY());
-    }
-
-    /*
-     * Fill an array with the coefficients of the parametric equation
-     * in t, ready for solving against val with solveCubic.
-     * We currently have:
-     * <pre>
-     *   val = P(t) = C1(1-t)^3 + 3CP1 t(1-t)^2 + 3CP2 t^2(1-t) + C2 t^3
-     *              = C1 - 3C1t + 3C1t^2 - C1t^3 +
-     *                3CP1t - 6CP1t^2 + 3CP1t^3 +
-     *                3CP2t^2 - 3CP2t^3 +
-     *                C2t^3
-     *            0 = (C1 - val) +
-     *                (3CP1 - 3C1) t +
-     *                (3C1 - 6CP1 + 3CP2) t^2 +
-     *                (C2 - 3CP2 + 3CP1 - C1) t^3
-     *            0 = C + Bt + At^2 + Dt^3
-     *     C = C1 - val
-     *     B = 3*CP1 - 3*C1
-     *     A = 3*CP2 - 6*CP1 + 3*C1
-     *     D = C2 - 3*CP2 + 3*CP1 - C1
-     * </pre>
-     */
-    private static void fillEqn(double eqn[], double val,
-                                double c1, double cp1, double cp2, double c2) {
-        eqn[0] = c1 - val;
-        eqn[1] = (cp1 - c1) * 3.0;
-        eqn[2] = (cp2 - cp1 - cp1 + c1) * 3.0;
-        eqn[3] = c2 + (cp1 - cp2) * 3.0 - c1;
-        return;
-    }
-
-    /*
-     * Evaluate the t values in the first num slots of the vals[] array
-     * and place the evaluated values back into the same array.  Only
-     * evaluate t values that are within the range <0, 1>, including
-     * the 0 and 1 ends of the range iff the include0 or include1
-     * booleans are true.  If an "inflection" equation is handed in,
-     * then any points which represent a point of inflection for that
-     * cubic equation are also ignored.
-     */
-    private static int evalCubic(double vals[], int num,
-                                 boolean include0,
-                                 boolean include1,
-                                 double inflect[],
-                                 double c1, double cp1,
-                                 double cp2, double c2) {
-        int j = 0;
-        for (int i = 0; i < num; i++) {
-            double t = vals[i];
-            if ((include0 ? t >= 0 : t > 0) &&
-                (include1 ? t <= 1 : t < 1) &&
-                (inflect == null ||
-                 inflect[1] + (2*inflect[2] + 3*inflect[3]*t)*t != 0))
-            {
-                double u = 1 - t;
-                vals[j++] = c1*u*u*u + 3*cp1*t*u*u + 3*cp2*t*t*u + c2*t*t*t;
-            }
-        }
-        return j;
-    }
-
-    private static final int BELOW = -2;
-    private static final int LOWEDGE = -1;
-    private static final int INSIDE = 0;
-    private static final int HIGHEDGE = 1;
-    private static final int ABOVE = 2;
-
-    /*
-     * Determine where coord lies with respect to the range from
-     * low to high.  It is assumed that low <= high.  The return
-     * value is one of the 5 values BELOW, LOWEDGE, INSIDE, HIGHEDGE,
-     * or ABOVE.
-     */
-    private static int getTag(double coord, double low, double high) {
-        if (coord <= low) {
-            return (coord < low ? BELOW : LOWEDGE);
-        }
-        if (coord >= high) {
-            return (coord > high ? ABOVE : HIGHEDGE);
-        }
-        return INSIDE;
-    }
-
-    /*
-     * Determine if the pttag represents a coordinate that is already
-     * in its test range, or is on the border with either of the two
-     * opttags representing another coordinate that is "towards the
-     * inside" of that test range.  In other words, are either of the
-     * two "opt" points "drawing the pt inward"?
-     */
-    private static boolean inwards(int pttag, int opt1tag, int opt2tag) {
-        switch (pttag) {
-        case BELOW:
-        case ABOVE:
-        default:
-            return false;
-        case LOWEDGE:
-            return (opt1tag >= INSIDE || opt2tag >= INSIDE);
-        case INSIDE:
-            return true;
-        case HIGHEDGE:
-            return (opt1tag <= INSIDE || opt2tag <= INSIDE);
-        }
     }
 
     /**

@@ -120,6 +120,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * {@code Runnable} for execution.
      * @param args the arguments to accumulate
      */
+    @SafeVarargs
     public final synchronized void add(T... args) {
         boolean isSubmitted = true;
         if (arguments == null) {

@@ -55,8 +55,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mpi.h"
 #include "mp_gf2m.h"
 #include "ecl-priv.h"
@@ -307,7 +305,7 @@ ec_GFp_add_3(const mp_int *a, const mp_int *b, mp_int *r,
         }
 
 #ifndef MPI_AMD64_ADD
-        MP_ADD_CARRY(a0, r0, r0, 0,     carry);
+        MP_ADD_CARRY_ZERO(a0, r0, r0, carry);
         MP_ADD_CARRY(a1, r1, r1, carry, carry);
         MP_ADD_CARRY(a2, r2, r2, carry, carry);
 #else
@@ -394,7 +392,7 @@ ec_GFp_add_4(const mp_int *a, const mp_int *b, mp_int *r,
         }
 
 #ifndef MPI_AMD64_ADD
-        MP_ADD_CARRY(a0, r0, r0, 0,     carry);
+        MP_ADD_CARRY_ZERO(a0, r0, r0, carry);
         MP_ADD_CARRY(a1, r1, r1, carry, carry);
         MP_ADD_CARRY(a2, r2, r2, carry, carry);
         MP_ADD_CARRY(a3, r3, r3, carry, carry);
@@ -491,7 +489,7 @@ ec_GFp_add_5(const mp_int *a, const mp_int *b, mp_int *r,
                 r0 = MP_DIGIT(b,0);
         }
 
-        MP_ADD_CARRY(a0, r0, r0, 0,     carry);
+        MP_ADD_CARRY_ZERO(a0, r0, r0, carry);
         MP_ADD_CARRY(a1, r1, r1, carry, carry);
         MP_ADD_CARRY(a2, r2, r2, carry, carry);
         MP_ADD_CARRY(a3, r3, r3, carry, carry);
@@ -572,7 +570,7 @@ ec_GFp_add_6(const mp_int *a, const mp_int *b, mp_int *r,
                 r0 = MP_DIGIT(b,0);
         }
 
-        MP_ADD_CARRY(a0, r0, r0, 0,     carry);
+        MP_ADD_CARRY_ZERO(a0, r0, r0, carry);
         MP_ADD_CARRY(a1, r1, r1, carry, carry);
         MP_ADD_CARRY(a2, r2, r2, carry, carry);
         MP_ADD_CARRY(a3, r3, r3, carry, carry);
@@ -675,7 +673,7 @@ ec_GFp_sub_3(const mp_int *a, const mp_int *b, mp_int *r,
                 b1 = MP_DIGIT(&meth->irr,1);
                 b0 = MP_DIGIT(&meth->irr,0);
 #ifndef MPI_AMD64_ADD
-                MP_ADD_CARRY(b0, r0, r0, 0,      borrow);
+                MP_ADD_CARRY_ZERO(b0, r0, r0, borrow);
                 MP_ADD_CARRY(b1, r1, r1, borrow, borrow);
                 MP_ADD_CARRY(b2, r2, r2, borrow, borrow);
 #else
@@ -766,7 +764,7 @@ ec_GFp_sub_4(const mp_int *a, const mp_int *b, mp_int *r,
                 b1 = MP_DIGIT(&meth->irr,1);
                 b0 = MP_DIGIT(&meth->irr,0);
 #ifndef MPI_AMD64_ADD
-                MP_ADD_CARRY(b0, r0, r0, 0,      borrow);
+                MP_ADD_CARRY_ZERO(b0, r0, r0, borrow);
                 MP_ADD_CARRY(b1, r1, r1, borrow, borrow);
                 MP_ADD_CARRY(b2, r2, r2, borrow, borrow);
                 MP_ADD_CARRY(b3, r3, r3, borrow, borrow);
@@ -850,7 +848,7 @@ ec_GFp_sub_5(const mp_int *a, const mp_int *b, mp_int *r,
                 b2 = MP_DIGIT(&meth->irr,2);
                 b1 = MP_DIGIT(&meth->irr,1);
                 b0 = MP_DIGIT(&meth->irr,0);
-                MP_ADD_CARRY(b0, r0, r0, 0,      borrow);
+                MP_ADD_CARRY_ZERO(b0, r0, r0, borrow);
                 MP_ADD_CARRY(b1, r1, r1, borrow, borrow);
                 MP_ADD_CARRY(b2, r2, r2, borrow, borrow);
                 MP_ADD_CARRY(b3, r3, r3, borrow, borrow);
@@ -924,7 +922,7 @@ ec_GFp_sub_6(const mp_int *a, const mp_int *b, mp_int *r,
                 b2 = MP_DIGIT(&meth->irr,2);
                 b1 = MP_DIGIT(&meth->irr,1);
                 b0 = MP_DIGIT(&meth->irr,0);
-                MP_ADD_CARRY(b0, r0, r0, 0,      borrow);
+                MP_ADD_CARRY_ZERO(b0, r0, r0, borrow);
                 MP_ADD_CARRY(b1, r1, r1, borrow, borrow);
                 MP_ADD_CARRY(b2, r2, r2, borrow, borrow);
                 MP_ADD_CARRY(b3, r3, r3, borrow, borrow);

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6925932
+ * @bug 4313887 6838333 6925932 7006126
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -36,15 +36,15 @@ public class PathOps {
     private Path path;
     private Exception exc;
 
-    private PathOps(String s) {
+    private PathOps(String first, String... more) {
         out.println();
-        input = s;
+        input = first;
         try {
-            path = FileSystems.getDefault().getPath(s);
-            out.format("%s -> %s", s, path);
+            path = FileSystems.getDefault().getPath(first, more);
+            out.format("%s -> %s", first, path);
         } catch (Exception x) {
             exc = x;
-            out.format("%s -> %s", s, x);
+            out.format("%s -> %s", first, x);
         }
         out.println();
     }
@@ -97,7 +97,7 @@ public class PathOps {
     PathOps name(String expected) {
         out.println("check name");
         checkPath();
-        check(path.getName(), expected);
+        check(path.getFileName(), expected);
         return this;
     }
 
@@ -168,6 +168,13 @@ public class PathOps {
         return this;
     }
 
+    PathOps resolveSibling(String other, String expected) {
+        out.format("test resolveSibling %s\n", other);
+        checkPath();
+        check(path.resolveSibling(other), expected);
+        return this;
+    }
+
     PathOps relativize(String other, String expected) {
         out.format("test relativize %s\n", other);
         checkPath();
@@ -198,8 +205,8 @@ public class PathOps {
         return this;
     }
 
-    static PathOps test(String s) {
-        return new PathOps(s);
+    static PathOps test(String first, String... more) {
+        return new PathOps(first, more);
     }
 
     // -- PathOpss --
@@ -212,6 +219,26 @@ public class PathOps {
 
     static void doWindowsTests() {
         header("Windows specific tests");
+
+        // construction
+        test("C:\\")
+            .string("C:\\");
+        test("C:\\", "")
+            .string("C:\\");
+        test("C:\\", "foo")
+            .string("C:\\foo");
+        test("C:\\", "\\foo")
+            .string("C:\\foo");
+        test("C:\\", "foo\\")
+            .string("C:\\foo");
+        test("foo", "bar", "gus")
+            .string("foo\\bar\\gus");
+        test("")
+            .string("");
+        test("", "C:\\")
+            .string("C:\\");
+        test("", "foo", "", "bar", "", "\\gus")
+            .string("foo\\bar\\gus");
 
         // all components present
         test("C:\\a\\b\\c")
@@ -252,17 +279,23 @@ public class PathOps {
             .root(null)
             .parent(null)
             .name("foo");
+        test("")
+            .root(null)
+            .parent(null)
+            .name("");
 
         // startsWith
         test("C:\\")
             .starts("C:\\")
             .starts("c:\\")
             .notStarts("C")
-            .notStarts("C:");
+            .notStarts("C:")
+            .notStarts("");
         test("C:")
             .starts("C:")
             .starts("c:")
-            .notStarts("C");
+            .notStarts("C")
+            .notStarts("");
         test("\\")
             .starts("\\");
         test("C:\\foo\\bar")
@@ -273,7 +306,8 @@ public class PathOps {
             .starts("C:\\Foo\\Bar")
             .notStarts("C:")
             .notStarts("C")
-            .notStarts("C:foo");
+            .notStarts("C:foo")
+            .notStarts("");
         test("\\foo\\bar")
             .starts("\\")
             .starts("\\foo")
@@ -281,26 +315,35 @@ public class PathOps {
             .starts("\\foo\\bar")
             .starts("\\fOo\\BaR")
             .notStarts("foo")
-            .notStarts("foo\\bar");
+            .notStarts("foo\\bar")
+            .notStarts("");
         test("foo\\bar")
             .starts("foo")
             .starts("foo\\bar")
-            .notStarts("\\");
+            .notStarts("\\")
+            .notStarts("");
         test("\\\\server\\share")
             .starts("\\\\server\\share")
             .starts("\\\\server\\share\\")
+            .notStarts("\\")
+            .notStarts("");
+        test("")
+            .starts("")
             .notStarts("\\");
 
         // endsWith
         test("C:\\")
             .ends("C:\\")
             .ends("c:\\")
-            .notEnds("\\");
+            .notEnds("\\")
+            .notEnds("");
         test("C:")
             .ends("C:")
-            .ends("c:");
+            .ends("c:")
+            .notEnds("");
         test("\\")
-            .ends("\\");
+            .ends("\\")
+            .notEnds("");
         test("C:\\foo\\bar")
             .ends("bar")
             .ends("BAR")
@@ -309,7 +352,8 @@ public class PathOps {
             .ends("C:\\foo\\bar")
             .ends("c:\\foO\\baR")
             .notEnds("r")
-            .notEnds("\\foo\\bar");
+            .notEnds("\\foo\\bar")
+            .notEnds("");
         test("\\foo\\bar")
             .ends("bar")
             .ends("BaR")
@@ -317,17 +361,23 @@ public class PathOps {
             .ends("foO\\baR")
             .ends("\\foo\\bar")
             .ends("\\Foo\\Bar")
-            .notEnds("oo\\bar");
+            .notEnds("oo\\bar")
+            .notEnds("");
         test("foo\\bar")
             .ends("bar")
             .ends("BAR")
             .ends("foo\\bar")
             .ends("Foo\\Bar")
-            .notEnds("ar");
+            .notEnds("ar")
+            .notEnds("");
         test("\\\\server\\share")
             .ends("\\\\server\\share")
             .ends("\\\\server\\share\\")
             .notEnds("shared")
+            .notEnds("\\")
+            .notEnds("");
+        test("")
+            .ends("")
             .notEnds("\\");
 
         // elements
@@ -338,6 +388,8 @@ public class PathOps {
         test("foo.bar\\gus.alice")
             .element(0, "foo.bar")
             .element(1, "gus.alice");
+        test("")
+            .element(0, "");
 
         // subpath
         test("C:\\foo")
@@ -355,6 +407,8 @@ public class PathOps {
             .subpath(2, 3, "gus");
         test("\\\\server\\share\\foo")
             .subpath(0, 1, "foo");
+        test("")
+            .subpath(0, 1, "");
 
         // isAbsolute
         test("foo").notAbsolute();
@@ -362,6 +416,7 @@ public class PathOps {
         test("C:\\").absolute();
         test("C:\\abc").absolute();
         test("\\\\server\\share\\").absolute();
+        test("").notAbsolute();
 
         // resolve
         test("C:\\")
@@ -369,42 +424,99 @@ public class PathOps {
             .resolve("D:\\bar", "D:\\bar")
             .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar")
             .resolve("C:foo", "C:\\foo")
-            .resolve("D:foo", "D:foo");
+            .resolve("D:foo", "D:foo")
+            .resolve("", "C:\\");
         test("\\")
             .resolve("foo", "\\foo")
             .resolve("D:bar", "D:bar")
             .resolve("C:\\bar", "C:\\bar")
             .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar")
-            .resolve("\\foo", "\\foo");
+            .resolve("\\foo", "\\foo")
+            .resolve("", "\\");
         test("\\foo")
             .resolve("bar", "\\foo\\bar")
             .resolve("D:bar", "D:bar")
             .resolve("C:\\bar", "C:\\bar")
             .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar")
-            .resolve("\\bar", "\\bar");
+            .resolve("\\bar", "\\bar")
+            .resolve("", "\\foo");
         test("foo")
             .resolve("bar", "foo\\bar")
             .resolve("D:\\bar", "D:\\bar")
             .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar")
             .resolve("C:bar", "C:bar")
-            .resolve("D:foo", "D:foo");
+            .resolve("D:foo", "D:foo")
+            .resolve("", "foo");
         test("C:")
-            .resolve("foo", "C:foo");
+            .resolve("foo", "C:foo")
+            .resolve("", "C:");
         test("\\\\server\\share\\foo")
             .resolve("bar", "\\\\server\\share\\foo\\bar")
             .resolve("\\bar", "\\\\server\\share\\bar")
             .resolve("D:\\bar", "D:\\bar")
             .resolve("\\\\other\\share\\bar", "\\\\other\\share\\bar")
-            .resolve("D:bar", "D:bar");
+            .resolve("D:bar", "D:bar")
+            .resolve("", "\\\\server\\share\\foo");
+        test("")
+            .resolve("", "")
+            .resolve("foo", "foo")
+            .resolve("C:\\", "C:\\")
+            .resolve("C:foo", "C:foo")
+            .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar");
+
+        // resolveSibling
+        test("foo")
+            .resolveSibling("bar", "bar")
+            .resolveSibling("D:\\bar", "D:\\bar")
+            .resolveSibling("\\\\server\\share\\bar", "\\\\server\\share\\bar")
+            .resolveSibling("C:bar", "C:bar")
+            .resolveSibling("D:foo", "D:foo")
+            .resolveSibling("", "");
+        test("foo\\bar")
+            .resolveSibling("gus", "foo\\gus")
+            .resolveSibling("D:\\bar", "D:\\bar")
+            .resolveSibling("\\\\server\\share\\bar", "\\\\server\\share\\bar")
+            .resolveSibling("C:bar", "C:bar")
+            .resolveSibling("D:foo", "D:foo")
+            .resolveSibling("", "foo");
+        test("C:\\foo")
+            .resolveSibling("gus", "C:\\gus")
+            .resolveSibling("D:\\bar", "D:\\bar")
+            .resolveSibling("\\\\server\\share\\bar", "\\\\server\\share\\bar")
+            .resolveSibling("C:bar", "C:\\bar")
+            .resolveSibling("D:foo", "D:foo")
+            .resolveSibling("", "C:\\");
+        test("C:\\foo\\bar")
+            .resolveSibling("gus", "C:\\foo\\gus")
+            .resolveSibling("D:\\bar", "D:\\bar")
+            .resolveSibling("\\\\server\\share\\bar", "\\\\server\\share\\bar")
+            .resolveSibling("C:bar", "C:\\foo\\bar")
+            .resolveSibling("D:foo", "D:foo")
+            .resolveSibling("", "C:\\foo");
+        test("\\\\server\\share\\foo")
+            .resolveSibling("bar", "\\\\server\\share\\bar")
+            .resolveSibling("\\bar", "\\\\server\\share\\bar")
+            .resolveSibling("D:\\bar", "D:\\bar")
+            .resolveSibling("\\\\other\\share\\bar", "\\\\other\\share\\bar")
+            .resolveSibling("D:bar", "D:bar")
+            .resolveSibling("", "\\\\server\\share\\");
+        test("")
+            .resolveSibling("", "")
+            .resolveSibling("foo", "foo")
+            .resolveSibling("C:\\", "C:\\");
 
         // relativize
         test("foo\\bar")
-            .relativize("foo\\bar", null)
+            .relativize("foo\\bar", "")
             .relativize("foo", "..");
         test("C:\\a\\b\\c")
-            .relativize("C:\\a", "..\\..");
+            .relativize("C:\\a", "..\\..")
+            .relativize("C:\\a\\b\\c", "");
         test("\\\\server\\share\\foo")
-            .relativize("\\\\server\\share\\bar", "..\\bar");
+            .relativize("\\\\server\\share\\bar", "..\\bar")
+            .relativize("\\\\server\\share\\foo", "");
+        test("")
+            .relativize("", "");
 
         // normalize
         test("C:\\")
@@ -436,7 +548,7 @@ public class PathOps {
         test("foo\\.")
             .normalize("foo");
         test("foo\\..")
-            .normalize(null);
+            .normalize("");
         test("C:\\foo")
             .normalize("C:\\foo");
         test("C:\\foo\\.")
@@ -478,7 +590,7 @@ public class PathOps {
         test("\\..\\foo")
             .normalize("\\foo");
         test(".")
-            .normalize(null);
+            .normalize("");
         test("..")
             .normalize("..");
         test("\\..\\..")
@@ -493,6 +605,8 @@ public class PathOps {
             .normalize("foo");
         test(".\\foo\\.\\bar\\.\\gus\\..\\.\\..")
             .normalize("foo");
+        test("")
+            .normalize("");
 
         // UNC corner cases
         test("\\\\server\\share\\")
@@ -557,6 +671,26 @@ public class PathOps {
     static void doUnixTests() {
         header("Unix specific tests");
 
+        // construction
+        test("/")
+            .string("/");
+        test("/", "")
+            .string("/");
+        test("/", "foo")
+            .string("/foo");
+        test("/", "/foo")
+            .string("/foo");
+        test("/", "foo/")
+            .string("/foo");
+        test("foo", "bar", "gus")
+            .string("foo/bar/gus");
+        test("")
+            .string("");
+        test("", "/")
+            .string("/");
+        test("", "foo", "", "bar", "", "/gus")
+            .string("foo/bar/gus");
+
         // all components
         test("/a/b/c")
             .root("/")
@@ -580,10 +714,15 @@ public class PathOps {
             .root(null)
             .parent(null)
             .name("foo");
+        test("")
+             .root(null)
+             .parent(null)
+             .name("");
 
         // startsWith
         test("/")
             .starts("/")
+            .notStarts("")
             .notStarts("/foo");
         test("/foo")
             .starts("/")
@@ -598,6 +737,7 @@ public class PathOps {
             .notStarts("foo/bar");
         test("foo")
             .starts("foo")
+            .notStarts("")
             .notStarts("f");
         test("foo/bar")
             .starts("foo")
@@ -605,10 +745,14 @@ public class PathOps {
             .notStarts("f")
             .notStarts("/foo")
             .notStarts("/foo/bar");
+        test("")
+             .starts("")
+             .notStarts("/");
 
         // endsWith
         test("/")
             .ends("/")
+            .notEnds("")
             .notEnds("foo")
             .notEnds("/foo");
         test("/foo")
@@ -625,6 +769,7 @@ public class PathOps {
             .notEnds("o/bar");
         test("foo")
             .ends("foo")
+            .notEnds("")
             .notEnds("oo")
             .notEnds("oola");
         test("foo/bar")
@@ -642,12 +787,47 @@ public class PathOps {
             .notEnds("r/gus")
             .notEnds("barack/gus")
             .notEnds("bar/gust");
+        test("")
+            .ends("")
+            .notEnds("/");
 
         // elements
         test("a/b/c")
-            .element(0,"a")
-            .element(1,"b")
-            .element(2,"c");
+            .element(0, "a")
+            .element(1, "b")
+            .element(2, "c");
+        test("")
+            .element(0, "");
+
+        // subpath
+        test("/foo")
+            .subpath(0, 1, "foo");
+        test("foo")
+            .subpath(0, 1, "foo");
+        test("/foo/bar")
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(0, 2, "foo/bar");
+        test("foo/bar")
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(0, 2, "foo/bar");
+        test("/foo/bar/gus")
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(2, 3, "gus")
+            .subpath(0, 2, "foo/bar")
+            .subpath(1, 3, "bar/gus")
+            .subpath(0, 3, "foo/bar/gus");
+        test("foo/bar/gus")
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(2, 3, "gus")
+            .subpath(0, 2, "foo/bar")
+            .subpath(1, 3, "bar/gus")
+            .subpath(0, 3, "foo/bar/gus");
+        test("")
+            .subpath(0, 1, "");
 
         // isAbsolute
         test("/")
@@ -656,20 +836,61 @@ public class PathOps {
             .absolute();
         test("tmp")
             .notAbsolute();
+        test("")
+            .notAbsolute();
+
 
         // resolve
         test("/tmp")
             .resolve("foo", "/tmp/foo")
-            .resolve("/foo", "/foo");
+            .resolve("/foo", "/foo")
+            .resolve("", "/tmp");
         test("tmp")
             .resolve("foo", "tmp/foo")
+            .resolve("/foo", "/foo")
+            .resolve("", "tmp");
+        test("")
+            .resolve("", "")
+            .resolve("foo", "foo")
             .resolve("/foo", "/foo");
+
+        // resolveSibling
+        test("foo")
+            .resolveSibling("bar", "bar")
+            .resolveSibling("/bar", "/bar")
+            .resolveSibling("", "");
+        test("foo/bar")
+            .resolveSibling("gus", "foo/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "foo");
+        test("/foo")
+            .resolveSibling("gus", "/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "/");
+        test("/foo/bar")
+            .resolveSibling("gus", "/foo/gus")
+            .resolveSibling("/gus", "/gus")
+            .resolveSibling("", "/foo");
+        test("")
+            .resolveSibling("foo", "foo")
+            .resolveSibling("/foo", "/foo")
+            .resolve("", "");
 
         // relativize
         test("/a/b/c")
-            .relativize("/a/b/c", null)
+            .relativize("/a/b/c", "")
             .relativize("/a/b/c/d/e", "d/e")
-            .relativize("/a/x", "../../x");
+            .relativize("/a/x", "../../x")
+            .relativize("/x", "../../../x");
+        test("a/b/c")
+            .relativize("a/b/c/d", "d")
+            .relativize("a/x", "../../x")
+            .relativize("x", "../../../x")
+            .relativize("", "../../..");
+        test("")
+            .relativize("a", "a")
+            .relativize("a/b/c", "a/b/c")
+            .relativize("", "");
 
         // normalize
         test("/")
@@ -679,7 +900,7 @@ public class PathOps {
         test("/foo")
             .normalize("/foo");
         test(".")
-            .normalize(null);
+            .normalize("");
         test("..")
             .normalize("..");
         test("/..")
@@ -691,7 +912,7 @@ public class PathOps {
         test("./foo")
             .normalize("foo");
         test("foo/..")
-            .normalize(null);
+            .normalize("");
         test("../foo")
             .normalize("../foo");
         test("../../foo")
@@ -717,7 +938,7 @@ public class PathOps {
         test("//bar\u0000")
             .invalid();
 
-        // normalization
+        // normalization of input
         test("//foo//bar")
             .string("/foo/bar")
             .root("/")
@@ -749,13 +970,13 @@ public class PathOps {
         }
 
         try {
-            path.startsWith(null);
+            path.startsWith((Path)null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }
 
         try {
-            path.endsWith(null);
+            path.endsWith((Path)null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }

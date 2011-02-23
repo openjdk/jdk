@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ include $(TOPDIR)/make/common/Defs-$(PLATFORM).gmk
 # Localizations for the different parts of the product beyond English
 #
 
-JRE_LOCALES   = de es fr it ja ko sv zh_CN zh_TW zh_HK
-PLUGIN_LOCALES = de es fr it ja ko sv zh_CN zh_TW zh_HK
+JRE_LOCALES   = de es fr it ja ko pt_BR sv zh_CN zh_TW zh_HK
+PLUGIN_LOCALES = de es fr it ja ko pt_BR sv zh_CN zh_TW zh_HK
 JDK_LOCALES  = ja zh_CN
 
 #

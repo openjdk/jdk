@@ -39,6 +39,8 @@
 # Instead, use "gmake" (or "gnumake") from the command line.  --Rose
 #MAKE = gmake
 
+include $(GAMMADIR)/make/altsrc.make
+
 TOPDIR      = $(shell echo `pwd`)
 GENERATED   = $(TOPDIR)/../generated
 VM          = $(GAMMADIR)/src/share/vm
@@ -57,8 +59,8 @@ Cached_plat = $(GENERATED)/platform.current
 
 AD_Dir   = $(GENERATED)/adfiles
 ADLC     = $(AD_Dir)/adlc
-AD_Spec  = $(GAMMADIR)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad
-AD_Src   = $(GAMMADIR)/src/share/vm/adlc
+AD_Spec  = $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad)
+AD_Src   = $(call altsrc-replace,$(HS_COMMON_SRC)/share/vm/adlc)
 AD_Names = ad_$(Platform_arch_model).hpp ad_$(Platform_arch_model).cpp
 AD_Files = $(AD_Names:%=$(AD_Dir)/%)
 

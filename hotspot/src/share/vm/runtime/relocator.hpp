@@ -36,6 +36,12 @@
 #ifdef TARGET_ARCH_zero
 # include "bytes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "bytes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "bytes_ppc.hpp"
+#endif
 
 // This code has been converted from the 1.1E java virtual machine
 // Thanks to the JavaTopics group for using the code

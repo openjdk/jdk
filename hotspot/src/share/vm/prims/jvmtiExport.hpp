@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,25 +141,6 @@ class JvmtiExport : public AllStatic {
 
 
  private:
-  // CompiledMethodUnload events are reported from the VM thread so they
-  // are collected in lists (of jmethodID/addresses) and the events are posted later
-  // from threads posting CompieldMethodLoad or DynamicCodeGenerated events.
-  static bool _have_pending_compiled_method_unload_events;
-  static GrowableArray<jmethodID>* _pending_compiled_method_unload_method_ids;
-  static GrowableArray<const void *>* _pending_compiled_method_unload_code_begins;
-  static JavaThread* _current_poster;
-
-  // tests if there are CompiledMethodUnload events pending
-  inline static bool have_pending_compiled_method_unload_events() {
-    return _have_pending_compiled_method_unload_events;
-  }
-
-  // posts any pending CompiledMethodUnload events.
-  static void post_pending_compiled_method_unload_events();
-
-  // Perform the actual notification to interested JvmtiEnvs.
-  static void post_compiled_method_unload_internal(JavaThread* self, jmethodID mid, const void* code_begin);
-
   // posts a DynamicCodeGenerated event (internal/private implementation).
   // The public post_dynamic_code_generated* functions make use of the
   // internal implementation.
@@ -256,7 +237,7 @@ class JvmtiExport : public AllStatic {
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, methodOop method, address location) KERNEL_RETURN;
   static void expose_single_stepping(JavaThread *thread) KERNEL_RETURN;
-  static bool hide_single_stepping(JavaThread *thread) KERNEL_RETURN_(return false;);
+  static bool hide_single_stepping(JavaThread *thread) KERNEL_RETURN_(false);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_vm_start              ();
@@ -271,20 +252,20 @@ class JvmtiExport : public AllStatic {
 
   static oop jni_GetField_probe          (JavaThread *thread, jobject jobj,
     oop obj, klassOop klass, jfieldID fieldID, bool is_static)
-    KERNEL_RETURN_(return NULL;);
+    KERNEL_RETURN_(NULL);
   static oop jni_GetField_probe_nh       (JavaThread *thread, jobject jobj,
     oop obj, klassOop klass, jfieldID fieldID, bool is_static)
-    KERNEL_RETURN_(return NULL;);
+    KERNEL_RETURN_(NULL);
   static void post_field_access_by_jni   (JavaThread *thread, oop obj,
     klassOop klass, jfieldID fieldID, bool is_static) KERNEL_RETURN;
   static void post_field_access          (JavaThread *thread, methodOop method,
     address location, KlassHandle field_klass, Handle object, jfieldID field) KERNEL_RETURN;
   static oop jni_SetField_probe          (JavaThread *thread, jobject jobj,
     oop obj, klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
-    jvalue *value) KERNEL_RETURN_(return NULL;);
+    jvalue *value) KERNEL_RETURN_(NULL);
   static oop jni_SetField_probe_nh       (JavaThread *thread, jobject jobj,
     oop obj, klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
-    jvalue *value) KERNEL_RETURN_(return NULL;);
+    jvalue *value) KERNEL_RETURN_(NULL);
   static void post_field_modification_by_jni(JavaThread *thread, oop obj,
     klassOop klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value);

@@ -57,8 +57,6 @@
 #ifndef _EC2_H
 #define _EC2_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecl-priv.h"
 
 /* Checks if point P(px, py) is at infinity.  Uses affine coordinates. */

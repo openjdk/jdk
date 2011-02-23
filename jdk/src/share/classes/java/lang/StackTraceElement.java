@@ -68,8 +68,8 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     public StackTraceElement(String declaringClass, String methodName,
                              String fileName, int lineNumber) {
-        this.declaringClass = Objects.nonNull(declaringClass, "Declaring class is null");
-        this.methodName     = Objects.nonNull(methodName, "Method name is null");
+        this.declaringClass = Objects.requireNonNull(declaringClass, "Declaring class is null");
+        this.methodName     = Objects.requireNonNull(methodName, "Method name is null");
         this.fileName       = fileName;
         this.lineNumber     = lineNumber;
     }
