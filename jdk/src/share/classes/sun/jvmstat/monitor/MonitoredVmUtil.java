@@ -179,18 +179,4 @@ public class MonitoredVmUtil {
         }
     }
 
-    /**
-     * Returns true if the target VM is a kernel VM
-     *
-     * @param vm the target MonitoredVm
-     */
-    public static boolean isKernelVM(MonitoredVm vm) throws MonitorException {
-        StringMonitor jvmCapabilities =
-               (StringMonitor)vm.findByName("sun.rt.jvmCapabilities");
-        if (jvmCapabilities == null) {
-             return false;
-        } else {
-             return jvmCapabilities.stringValue().charAt(IS_KERNEL_VM) == '1';
-        }
-    }
 }

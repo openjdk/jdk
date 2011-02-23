@@ -100,7 +100,7 @@ testJavac() {
 	expectedResult="$1"; shift
 	cleanup
 	echo $javac ${TESTTOOLVMOPTS} "$@"
-	$javac ${TESTTOOLVMOPTS} "$@"
+	"$javac" ${TESTTOOLVMOPTS} "$@"
 	report $expectedResult $?
 }
 

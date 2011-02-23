@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,4 +97,17 @@ public interface ExecutableElement extends Element, Parameterizable {
      * @return the default value, or {@code null} if none
      */
     AnnotationValue getDefaultValue();
+
+    /**
+     * Returns the simple name of a constructor, method, or
+     * initializer.  For a constructor, the name {@code "<init>"} is
+     * returned, for a static initializer, the name {@code "<clinit>"}
+     * is returned, and for an anonymous class or instance
+     * initializer, an empty name is returned.
+     *
+     * @return the simple name of a constructor, method, or
+     * initializer
+     */
+    @Override
+    Name getSimpleName();
 }

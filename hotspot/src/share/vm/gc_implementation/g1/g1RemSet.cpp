@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,7 +735,7 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   MemRegion dirtyRegion(start, end);
 
 #if CARD_REPEAT_HISTO
-  init_ct_freq_table(_g1->g1_reserved_obj_bytes());
+  init_ct_freq_table(_g1->max_capacity());
   ct_freq_note_card(_ct_bs->index_for(start));
 #endif
 

@@ -478,6 +478,23 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             Locale locale = new Locale(test[0], test[1], test[2]);
             assertEquals("case " + i, test[3], locale.toLanguageTag());
         }
+
+        // test locales created from forLanguageTag
+        String[][] tests1 = {
+            // case is normalized during the round trip
+            { "EN-us", "en-US" },
+            { "en-Latn-US", "en-Latn-US" },
+            // reordering Unicode locale extensions
+            { "de-u-co-phonebk-ca-gregory", "de-u-ca-gregory-co-phonebk" },
+            // private use only language tag is preserved (no extra "und")
+            { "x-elmer", "x-elmer" },
+            { "x-lvariant-JP", "x-lvariant-JP" },
+        };
+        for (String[] test : tests1) {
+            Locale locale = Locale.forLanguageTag(test[0]);
+            assertEquals("case " + test[0], test[1], locale.toLanguageTag());
+        }
+
     }
 
     public void testForLanguageTag() {
@@ -488,9 +505,9 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
 
         String[][] tests = {
             // private use tags only
-            { "x-abc", "und-x-abc" },
-            { "x-a-b-c", "und-x-a-b-c" },
-            { "x-a-12345678", "und-x-a-12345678" },
+            { "x-abc", "x-abc" },
+            { "x-a-b-c", "x-a-b-c" },
+            { "x-a-12345678", "x-a-12345678" },
 
             // grandfathered tags with preferred mappings
             { "i-ami", "ami" },
@@ -517,7 +534,7 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             // grandfathered irregular tags, no preferred mappings, drop illegal fields
             // from end.  If no subtag is mappable, fallback to 'und'
             { "i-default", "en-x-i-default" },
-            { "i-enochian", "und-x-i-enochian" },
+            { "i-enochian", "x-i-enochian" },
             { "i-mingo", "see-x-i-mingo" },
             { "en-GB-oed", "en-GB-x-oed" },
             { "zh-min", "nan-x-zh-min" },

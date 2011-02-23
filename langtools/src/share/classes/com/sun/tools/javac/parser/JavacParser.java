@@ -142,7 +142,7 @@ public class JavacParser implements Parser {
      */
     boolean allowAnnotations;
 
-    /** Switch: should we recognize automatic resource management?
+    /** Switch: should we recognize try-with-resources?
      */
     boolean allowTWR;
 
@@ -1639,7 +1639,7 @@ public class JavacParser implements Parser {
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
-     *     | TRY "(" ResourceSpecification ")" Block [Catches] [FinallyPart]
+     *     | TRY "(" ResourceSpecification ";"opt ")" Block [Catches] [FinallyPart]
      *     | SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
      *     | SYNCHRONIZED ParExpression Block
      *     | RETURN [Expression] ";"
@@ -2182,31 +2182,24 @@ public class JavacParser implements Parser {
         ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
         defs.append(resource());
         while (S.token() == SEMI) {
-            // All but last of multiple declarators subsume a semicolon
+            // All but last of multiple declarators must subsume a semicolon
             storeEnd(defs.elems.last(), S.endPos());
+            int semiColonPos = S.pos();
             S.nextToken();
+            if (S.token() == RPAREN) { // Optional trailing semicolon
+                                       // after last resource
+                break;
+            }
             defs.append(resource());
         }
         return defs.toList();
     }
 
-    /** Resource =
-     *    VariableModifiers Type VariableDeclaratorId = Expression
-     *  | Expression
+    /** Resource = VariableModifiersOpt Type VariableDeclaratorId = Expression
      */
     JCTree resource() {
-        int pos = S.pos();
-        if (S.token() == FINAL || S.token() == MONKEYS_AT) {
-            return variableDeclaratorRest(pos, optFinal(0), parseType(),
-                                          ident(), true, null);
-        } else {
-            JCExpression t = term(EXPR | TYPE);
-            if ((lastmode & TYPE) != 0 && S.token() == IDENTIFIER)
-                return variableDeclaratorRest(pos, toP(F.at(pos).Modifiers(Flags.FINAL)), t,
-                                              ident(), true, null);
-            else
-                return t;
-        }
+        return variableDeclaratorRest(S.pos(), optFinal(Flags.FINAL),
+                                      parseType(), ident(), true, null);
     }
 
     /** CompilationUnit = [ { "@" Annotation } PACKAGE Qualident ";"] {ImportDeclaration} {TypeDeclaration}

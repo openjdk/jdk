@@ -88,6 +88,12 @@ class FrameMap : public CompilationResourceObj {
 #ifdef TARGET_ARCH_sparc
 # include "c1_FrameMap_sparc.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "c1_FrameMap_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "c1_FrameMap_ppc.hpp"
+#endif
 
 
   friend class LIR_OprDesc;

@@ -38,7 +38,7 @@ import sun.awt.geom.PathConsumer2D;
  * semantics are unclear.
  *
  */
-public class Dasher implements sun.awt.geom.PathConsumer2D {
+final class Dasher implements sun.awt.geom.PathConsumer2D {
 
     private final PathConsumer2D out;
     private final float[] dash;
@@ -169,7 +169,7 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
         float dx = x1 - x0;
         float dy = y1 - y0;
 
-        float len = (float) Math.hypot(dx, dy);
+        float len = (float) Math.sqrt(dx*dx + dy*dy);
 
         if (len == 0) {
             return;
@@ -226,7 +226,7 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
             return;
         }
         if (li == null) {
-            li = new LengthIterator(4, 0.0001f);
+            li = new LengthIterator(4, 0.01f);
         }
         li.initializeIterationOnCurve(curCurvepts, type);
 
@@ -237,9 +237,9 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
         while ((t = li.next(leftInThisDashSegment)) < 1) {
             if (t != 0) {
                 Helpers.subdivideAt((t - lastSplitT) / (1 - lastSplitT),
-                        curCurvepts, curCurveoff,
-                        curCurvepts, 0,
-                        curCurvepts, type, type);
+                                    curCurvepts, curCurveoff,
+                                    curCurvepts, 0,
+                                    curCurvepts, type, type);
                 lastSplitT = t;
                 goTo(curCurvepts, 2, type);
                 curCurveoff = type;
@@ -307,6 +307,11 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
         private int recLevel;
         private boolean done;
 
+        // the lengths of the lines of the control polygon. Only its first
+        // curveType/2 - 1 elements are valid. This is an optimization. See
+        // next(float) for more detail.
+        private float[] curLeafCtrlPolyLengths = new float[3];
+
         public LengthIterator(int reclimit, float err) {
             this.limit = reclimit;
             this.minTincrement = 1f / (1 << limit);
@@ -344,11 +349,52 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
             this.lastSegLen = 0;
         }
 
+        // 0 == false, 1 == true, -1 == invalid cached value.
+        private int cachedHaveLowAcceleration = -1;
+
+        private boolean haveLowAcceleration(float err) {
+            if (cachedHaveLowAcceleration == -1) {
+                final float len1 = curLeafCtrlPolyLengths[0];
+                final float len2 = curLeafCtrlPolyLengths[1];
+                // the test below is equivalent to !within(len1/len2, 1, err).
+                // It is using a multiplication instead of a division, so it
+                // should be a bit faster.
+                if (!Helpers.within(len1, len2, err*len2)) {
+                    cachedHaveLowAcceleration = 0;
+                    return false;
+                }
+                if (curveType == 8) {
+                    final float len3 = curLeafCtrlPolyLengths[2];
+                    // if len1 is close to 2 and 2 is close to 3, that probably
+                    // means 1 is close to 3 so the second part of this test might
+                    // not be needed, but it doesn't hurt to include it.
+                    if (!(Helpers.within(len2, len3, err*len3) &&
+                          Helpers.within(len1, len3, err*len3))) {
+                        cachedHaveLowAcceleration = 0;
+                        return false;
+                    }
+                }
+                cachedHaveLowAcceleration = 1;
+                return true;
+            }
+
+            return (cachedHaveLowAcceleration == 1);
+        }
+
+        // we want to avoid allocations/gc so we keep this array so we
+        // can put roots in it,
+        private float[] nextRoots = new float[4];
+
+        // caches the coefficients of the current leaf in its flattened
+        // form (see inside next() for what that means). The cache is
+        // invalid when it's third element is negative, since in any
+        // valid flattened curve, this would be >= 0.
+        private float[] flatLeafCoefCache = new float[] {0, 0, -1, 0};
         // returns the t value where the remaining curve should be split in
         // order for the left subdivided curve to have length len. If len
         // is >= than the length of the uniterated curve, it returns 1.
-        public float next(float len) {
-            float targetLength = lenAtLastSplit + len;
+        public float next(final float len) {
+            final float targetLength = lenAtLastSplit + len;
             while(lenAtNextT < targetLength) {
                 if (done) {
                     lastSegLen = lenAtNextT - lenAtLastSplit;
@@ -357,8 +403,46 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
                 goToNextLeaf();
             }
             lenAtLastSplit = targetLength;
-            float t = binSearchForLen(lenAtLastSplit - lenAtLastT,
-                    recCurveStack[recLevel], curveType, lenAtNextT - lenAtLastT, ERR);
+            final float leaflen = lenAtNextT - lenAtLastT;
+            float t = (targetLength - lenAtLastT) / leaflen;
+
+            // cubicRootsInAB is a fairly expensive call, so we just don't do it
+            // if the acceleration in this section of the curve is small enough.
+            if (!haveLowAcceleration(0.05f)) {
+                // We flatten the current leaf along the x axis, so that we're
+                // left with a, b, c which define a 1D Bezier curve. We then
+                // solve this to get the parameter of the original leaf that
+                // gives us the desired length.
+
+                if (flatLeafCoefCache[2] < 0) {
+                    float x = 0+curLeafCtrlPolyLengths[0],
+                          y = x+curLeafCtrlPolyLengths[1];
+                    if (curveType == 8) {
+                        float z = y + curLeafCtrlPolyLengths[2];
+                        flatLeafCoefCache[0] = 3*(x - y) + z;
+                        flatLeafCoefCache[1] = 3*(y - 2*x);
+                        flatLeafCoefCache[2] = 3*x;
+                        flatLeafCoefCache[3] = -z;
+                    } else if (curveType == 6) {
+                        flatLeafCoefCache[0] = 0f;
+                        flatLeafCoefCache[1] = y - 2*x;
+                        flatLeafCoefCache[2] = 2*x;
+                        flatLeafCoefCache[3] = -y;
+                    }
+                }
+                float a = flatLeafCoefCache[0];
+                float b = flatLeafCoefCache[1];
+                float c = flatLeafCoefCache[2];
+                float d = t*flatLeafCoefCache[3];
+
+                // we use cubicRootsInAB here, because we want only roots in 0, 1,
+                // and our quadratic root finder doesn't filter, so it's just a
+                // matter of convenience.
+                int n = Helpers.cubicRootsInAB(a, b, c, d, nextRoots, 0, 0, 1);
+                if (n == 1 && !Float.isNaN(nextRoots[0])) {
+                    t = nextRoots[0];
+                }
+            }
             // t is relative to the current leaf, so we must make it a valid parameter
             // of the original curve.
             t = t * (nextT - lastT) + lastT;
@@ -377,36 +461,6 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
 
         public float lastSegLen() {
             return lastSegLen;
-        }
-
-        // Returns t such that if leaf is subdivided at t the left
-        // curve will have length len. leafLen must be the length of leaf.
-        private static Curve bsc = new Curve();
-        private static float binSearchForLen(float len, float[] leaf, int type,
-                                             float leafLen, float err)
-        {
-            assert len <= leafLen;
-            bsc.set(leaf, type);
-            float errBound = err*len;
-            float left = 0, right = 1;
-            while (left < right) {
-                float m = (left + right) / 2;
-                if (m == left || m == right) {
-                    return m;
-                }
-                float x = bsc.xat(m);
-                float y = bsc.yat(m);
-                float leftLen = Helpers.linelen(leaf[0], leaf[1], x, y);
-                if (Math.abs(leftLen - len) < errBound) {
-                    return m;
-                }
-                if (leftLen < len) {
-                    left = m;
-                } else {
-                    right = m;
-                }
-            }
-            return left;
         }
 
         // go to the next leaf (in an inorder traversal) in the recursion tree
@@ -437,6 +491,9 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
                 lenAtLastT = lenAtNextT;
                 nextT += (1 << (limit - recLevel)) * minTincrement;
                 lenAtNextT += len;
+                // invalidate caches
+                flatLeafCoefCache[2] = -1;
+                cachedHaveLowAcceleration = -1;
             } else {
                 Helpers.subdivide(recCurveStack[recLevel], 0,
                                   recCurveStack[recLevel+1], 0,
@@ -450,11 +507,24 @@ public class Dasher implements sun.awt.geom.PathConsumer2D {
         // this is a bit of a hack. It returns -1 if we're not on a leaf, and
         // the length of the leaf if we are on a leaf.
         private float onLeaf() {
-            float polylen = Helpers.polyLineLength(recCurveStack[recLevel], 0, curveType);
-            float linelen = Helpers.linelen(recCurveStack[recLevel][0], recCurveStack[recLevel][1],
-                    recCurveStack[recLevel][curveType - 2], recCurveStack[recLevel][curveType - 1]);
-            return (polylen - linelen < ERR || recLevel == limit) ?
-                   (polylen + linelen)/2 : -1;
+            float[] curve = recCurveStack[recLevel];
+            float polyLen = 0;
+
+            float x0 = curve[0], y0 = curve[1];
+            for (int i = 2; i < curveType; i += 2) {
+                final float x1 = curve[i], y1 = curve[i+1];
+                final float len = Helpers.linelen(x0, y0, x1, y1);
+                polyLen += len;
+                curLeafCtrlPolyLengths[i/2 - 1] = len;
+                x0 = x1;
+                y0 = y1;
+            }
+
+            final float lineLen = Helpers.linelen(curve[0], curve[1], curve[curveType-2], curve[curveType-1]);
+            if (polyLen - lineLen < ERR || recLevel == limit) {
+                return (polyLen + lineLen)/2;
+            }
+            return -1;
         }
     }
 

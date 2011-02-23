@@ -421,11 +421,11 @@ public class LanguageTag {
         String region = baseLocale.getRegion();
         String variant = baseLocale.getVariant();
 
+        boolean hasSubtag = false;
+
         String privuseVar = null;   // store ill-formed variant subtags
 
-        if (language.length() == 0 || !isLanguage(language)) {
-            tag._language = UNDETERMINED;
-        } else {
+        if (language.length() > 0 && isLanguage(language)) {
             // Convert a deprecated language code used by Java to
             // a new code
             if (language.equals("iw")) {
@@ -440,10 +440,12 @@ public class LanguageTag {
 
         if (script.length() > 0 && isScript(script)) {
             tag._script = canonicalizeScript(script);
+            hasSubtag = true;
         }
 
         if (region.length() > 0 && isRegion(region)) {
             tag._region = canonicalizeRegion(region);
+            hasSubtag = true;
         }
 
         // Special handling for no_NO_NY - use nn_NO for language tag
@@ -468,6 +470,7 @@ public class LanguageTag {
             }
             if (variants != null) {
                 tag._variants = variants;
+                hasSubtag = true;
             }
             if (!varitr.isDone()) {
                 // ill-formed variant subtags
@@ -508,6 +511,7 @@ public class LanguageTag {
 
         if (extensions != null) {
             tag._extensions = extensions;
+            hasSubtag = true;
         }
 
         // append ill-formed variant subtags to private use
@@ -521,8 +525,12 @@ public class LanguageTag {
 
         if (privateuse != null) {
             tag._privateuse = privateuse;
-        } else if (tag._language.length() == 0) {
-            // use "und" if neither language nor privateuse is available
+        }
+
+        if (tag._language.length() == 0 && (hasSubtag || privateuse == null)) {
+            // use lang "und" when 1) no language is available AND
+            // 2) any of other subtags other than private use are available or
+            // no private use tag is available
             tag._language = UNDETERMINED;
         }
 

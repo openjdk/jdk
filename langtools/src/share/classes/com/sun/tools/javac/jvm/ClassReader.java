@@ -138,9 +138,6 @@ public class ClassReader implements Completer {
     /** The symbol table. */
     Symtab syms;
 
-    /** The scope counter */
-    Scope.ScopeCounter scopeCounter;
-
     Types types;
 
     /** The name table. */
@@ -264,7 +261,6 @@ public class ClassReader implements Completer {
 
         names = Names.instance(context);
         syms = Symtab.instance(context);
-        scopeCounter = Scope.ScopeCounter.instance(context);
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null)
@@ -1321,7 +1317,9 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
-                if (majorVersion >= V51.major && proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
+                if (majorVersion >= V51.major &&
+                        (proxy.type.tsym == syms.polymorphicSignatureType.tsym ||
+                         proxy.type.tsym == syms.transientPolymorphicSignatureType.tsym)) {
                     sym.flags_field |= POLYMORPHIC_SIGNATURE;
                 }
             }
@@ -1879,7 +1877,7 @@ public class ClassReader implements Completer {
         ClassType ct = (ClassType)c.type;
 
         // allocate scope for members
-        c.members_field = new Scope.ClassScope(c, scopeCounter);
+        c.members_field = new Scope(c);
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
