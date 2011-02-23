@@ -1679,7 +1679,8 @@ public class Check {
                             "(" + types.memberType(t2, s2).getParameterTypes() + ")");
                         return s2;
                     }
-                } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2)) {
+                } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
+                        !checkCommonOverriderIn(s1, s2, site)) {
                     log.error(pos,
                             "name.clash.same.erasure.no.override",
                             s1, s1.location(),
