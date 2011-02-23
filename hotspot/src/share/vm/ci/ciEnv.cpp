@@ -413,6 +413,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
   KlassHandle found_klass;
   {
+    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
     MutexLocker ml(Compile_lock);
     klassOop kls;
     if (!require_local) {
