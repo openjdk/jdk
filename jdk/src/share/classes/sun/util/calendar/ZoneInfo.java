@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +297,13 @@ public class ZoneInfo extends TimeZone {
             if (type != UTC_TIME) {
                 msec -= rawOffset;
             }
-            int dstoffset = tz.inDaylightTime(new Date(msec)) ? tz.getDSTSavings() : 0;
+            int dstoffset = tz.getOffset(msec) - rawOffset;
+
+            // Check if it's in a standard-to-daylight transition.
+            if (dstoffset > 0 && tz.getOffset(msec - dstoffset) == rawoffset) {
+                dstoffset = 0;
+            }
+
             if (offsets != null) {
                 offsets[0] = rawoffset;
                 offsets[1] = dstoffset;
