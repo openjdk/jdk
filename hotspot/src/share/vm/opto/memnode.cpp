@@ -4077,6 +4077,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
     n = base_memory();
     assert(Node::in_dump()
            || n == NULL || n->bottom_type() == Type::TOP
+           || n->adr_type() == NULL // address is TOP
            || n->adr_type() == TypePtr::BOTTOM
            || n->adr_type() == TypeRawPtr::BOTTOM
            || Compile::current()->AliasLevel() == 0,
