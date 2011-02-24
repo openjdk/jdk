@@ -273,6 +273,20 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                 return DMPAPER_B6_JIS;
             }
         }
+
+        // If not found in predefined Windows ID, then we search through
+        // the returned IDs of the driver because they can define their own
+        // unique IDs.
+        initMedia();
+
+        if ((idList != null) && (mediaSizes != null) &&
+            (idList.size() == mediaSizes.length)) {
+            for (int i=0; i< idList.size(); i++) {
+                if (mediaSizes[i].getMediaSizeName() == msn) {
+                    return ((Integer)idList.get(i)).intValue();
+                }
+            }
+        }
         return 0;
     }
 
@@ -439,7 +453,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
             if (mediaName != null) {
                 int defPaper = findPaperID(mediaName);
-                float[] prnArea = getMediaPrintableArea(printer, defPaper);
+                float[] prnArea = (defPaper != 0) ? getMediaPrintableArea(printer, defPaper) : null;
                 MediaPrintableArea printableArea = null;
                 if (prnArea != null) {
                     try {
