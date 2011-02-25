@@ -312,7 +312,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Construct a new compiler using a shared context.
      */
-    public JavaCompiler(final Context context) {
+    public JavaCompiler(Context context) {
         this.context = context;
         context.put(compilerKey, this);
 

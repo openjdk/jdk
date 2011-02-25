@@ -1045,7 +1045,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
          * other values are implicitly reset.
          */
         private Context nextContext() {
-            Context next = new Context();
+            Context next = new Context(context);
 
             Options options = Options.instance(context);
             Assert.checkNonNull(options);
