@@ -88,7 +88,7 @@ public class Linkage {
         MethodHandle bootstrapMethod;
         try {
             bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException("no such bootstrap method in "+runtime+": "+name, ex);
         }
         MethodHandleImpl.registerBootstrap(IMPL_TOKEN, callerClass, bootstrapMethod);
@@ -101,8 +101,9 @@ public class Linkage {
     /**
      * <em>METHOD WILL BE REMOVED FOR PFD:</em>
      * Invalidate all <code>invokedynamic</code> call sites everywhere.
-     * @deprecated Use {@linkplain CallSite#setTarget call site target setting}
-     * and {@link VolatileCallSite#invalidateAll call site invalidation} instead.
+     * @deprecated Use {@linkplain MutableCallSite#setTarget call site target setting},
+     * {@link MutableCallSite#syncAll call site update pushing},
+     * and {@link SwitchPoint#guardWithTest target switching} instead.
      */
     public static
     Object invalidateAll() {
@@ -113,8 +114,9 @@ public class Linkage {
      * <em>METHOD WILL BE REMOVED FOR PFD:</em>
      * Invalidate all {@code invokedynamic} call sites in the bytecodes
      * of any methods of the given class.
-     * @deprecated Use {@linkplain CallSite#setTarget call site target setting}
-     * and {@link VolatileCallSite#invalidateAll call site invalidation} instead.
+     * @deprecated Use {@linkplain MutableCallSite#setTarget call site target setting},
+     * {@link MutableCallSite#syncAll call site update pushing},
+     * and {@link SwitchPoint#guardWithTest target switching} instead.
      */
     public static
     Object invalidateCallerClass(Class<?> callerClass) {
