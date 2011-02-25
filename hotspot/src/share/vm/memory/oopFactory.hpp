@@ -102,7 +102,6 @@ public:
 
   // System object arrays
   static objArrayOop     new_system_objArray(int length, TRAPS);
-  static objArrayOop     new_system_objArray(int length, bool in_perm_gen, TRAPS);
 
   // Regular object arrays
   static objArrayOop     new_objArray(klassOop klass, int length, TRAPS);
