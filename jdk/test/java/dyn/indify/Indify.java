@@ -98,8 +98,9 @@ $ $JAVA_HOME/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic 
 (same output as above)
  * </pre></blockquote>
  * <p>
- * Until the format of {@code CONSTANT_InvokeDynamic} entries is finalized,
- * the {@code --transitionalJSR292} switch is recommended (and turned on by default).
+ * Before OpenJDK build b123, the format of {@code CONSTANT_InvokeDynamic} is in transition,
+ * and the switch {@code --transitionalJSR292=yes} is recommended.
+ * It is turned <em>off</em> by default, but users of earlier builds may need to turn it on.
  * <p>
  * A version of this transformation built on top of <a href="http://asm.ow2.org/">http://asm.ow2.org/</a> would be welcome.
  * @author John Rose
@@ -116,7 +117,7 @@ public class Indify {
     public boolean overwrite = false;
     public boolean quiet = false;
     public boolean verbose = false;
-    public boolean transitionalJSR292 = true;  // default to false later
+    public boolean transitionalJSR292 = false;  // final version is distributed
     public boolean all = false;
     public int verifySpecifierCount = -1;
 
@@ -158,6 +159,7 @@ public class Indify {
         av = avl.toArray(new String[0]);
         Class<?> mainClass = Class.forName(mainClassName, true, makeClassLoader());
         java.lang.reflect.Method main = mainClass.getMethod("main", String[].class);
+        try { main.setAccessible(true); } catch (SecurityException ex) { }
         main.invoke(null, (Object) av);
     }
 
@@ -223,8 +225,8 @@ public class Indify {
     private boolean booleanOption(String s) {
         if (s == null)  return true;
         switch (s) {
-        case "true":  case "yes": case "1": return true;
-        case "false": case "no":  case "0": return false;
+        case "true":  case "yes": case "on":  case "1": return true;
+        case "false": case "no":  case "off": case "0": return false;
         }
         throw new IllegalArgumentException("unrecognized boolean flag="+s);
     }
@@ -284,7 +286,7 @@ public class Indify {
     }
 
     File classPathFile(File pathDir, String className) {
-        String qualname = className+".class";
+        String qualname = className.replace('.','/')+".class";
         qualname = qualname.replace('/', File.separatorChar);
         return new File(pathDir, qualname);
     }
@@ -339,6 +341,7 @@ public class Indify {
         private File findClassInPath(String name) {
             for (String s : classpath) {
                 File f = classPathFile(new File(s), name);
+                //System.out.println("Checking for "+f);
                 if (f.exists() && f.canRead()) {
                     return f;
                 }
@@ -353,11 +356,11 @@ public class Indify {
             }
         }
         private Class<?> transformAndLoadClass(File f) throws ClassNotFoundException, IOException {
-            if (verbose)  System.out.println("Loading class from "+f);
+            if (verbose)  System.err.println("Loading class from "+f);
             ClassFile cf = new ClassFile(f);
             Logic logic = new Logic(cf);
             boolean changed = logic.transform();
-            if (verbose && !changed)  System.out.println("(no change)");
+            if (verbose && !changed)  System.err.println("(no change)");
             logic.reportPatternMethods(!verbose, keepgoing);
             byte[] bytes = cf.toByteArray();
             return defineClass(null, bytes, 0, bytes.length);
@@ -525,6 +528,7 @@ public class Indify {
                     throw new IllegalArgumentException("BootstrapMethods length is "+specsLen+" but should be "+verifySpecifierCount);
                 }
             }
+            if (!quiet)  System.err.flush();
         }
 
         // mark constant pool entries according to participation in patterns
@@ -696,6 +700,18 @@ public class Indify {
                     args.clear();
                     break;
 
+                case opc_new:
+                {
+                    String type = pool.getString(CONSTANT_Class, (short)i.u2At(1));
+                    //System.out.println("new "+type);
+                    switch (type) {
+                    case "java/lang/StringBuilder":
+                        jvm.push("StringBuilder");
+                        continue decode;  // go to next instruction
+                    }
+                    break decode;  // bail out
+                }
+
                 case opc_getstatic:
                 {
                     // int.class compiles to getstatic Integer.TYPE
@@ -732,8 +748,9 @@ public class Indify {
 
                 case opc_invokestatic:
                 case opc_invokevirtual:
+                case opc_invokespecial:
                 {
-                    boolean hasRecv = (bc == opc_invokevirtual);
+                    boolean hasRecv = (bc != opc_invokestatic);
                     int methi = i.u2At(1);
                     char mark = poolMarks[methi];
                     Short[] ref = pool.getMemberRef((short)methi);
@@ -770,6 +787,7 @@ public class Indify {
                     if (mark == 'T' || mark == 'H' || mark == 'I') {
                         ownMethod = findMember(cf.methods, ref[1], ref[2]);
                     }
+                    //if (intrinsic != null)  System.out.println("intrinsic = "+intrinsic);
                     switch (intrinsic == null ? "" : intrinsic) {
                     case "fromMethodDescriptorString":
                         con = makeMethodTypeCon(args.get(0));
@@ -860,6 +878,15 @@ public class Indify {
                             }
                         }
                         break decode;
+                    case "StringBuilder.append":
+                        // allow calls like ("value = "+x)
+                        removeEmptyJVMSlots(args);
+                        args.subList(1, args.size()).clear();
+                        continue;
+                    case "StringBuilder.toString":
+                        args.clear();
+                        args.add(intrinsic);
+                        continue;
                     }
                     if (!hasRecv && ownMethod != null && patternMark != 0) {
                         con = constants.get(ownMethod);
@@ -1506,6 +1533,7 @@ public class Indify {
                 out.write(bytes);
             } else {
                 trueSize = flatten(out);
+                //if (!(item instanceof Code))  System.err.println("wrote complex attr name="+(int)(char)name+" size="+trueSize+" data="+Arrays.toString(flatten()));
             }
             if (trueSize != size && size >= 0)
                 System.err.println("warning: attribute size changed "+size+" to "+trueSize);
@@ -1525,7 +1553,7 @@ public class Indify {
         }
         public List<Attr> attrs() { return null; }  // Code overrides this
         public byte[] flatten() {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream(size);
+            ByteArrayOutputStream buf = new ByteArrayOutputStream(Math.max(20, size));
             flatten(buf);
             return buf.toByteArray();
         }
@@ -1642,6 +1670,7 @@ public class Indify {
         opc_invokestatic           = 184,
         opc_invokeinterface        = 185,
         opc_invokedynamic          = 186,
+        opc_new                    = 187,
         opc_anewarray              = 189,
         opc_checkcast              = 192,
         opc_ifnull                 = 198,
