@@ -4910,14 +4910,17 @@ public abstract class JComponent extends Container implements Serializable,
      * Returns {@code true} if a paint triggered on a child component should cause
      * painting to originate from this Component, or one of its ancestors.
      * <p/>
-     * Calling {@link JComponent#repaint} on a Swing component will be delegated to
-     * the first ancestor which {@code isPaintingOrigin()} returns {@code true},
-     * if there are any.
+     * Calling {@link #repaint} or {@link #paintImmediately(int, int, int, int)}
+     * on a Swing component will result in calling
+     * the {@link JComponent#paintImmediately(int, int, int, int)} method of
+     * the first ancestor which {@code isPaintingOrigin()} returns {@code true}, if there are any.
      * <p/>
-     * {@code JComponent} subclasses that need to be repainted when any of their
+     * {@code JComponent} subclasses that need to be painted when any of their
      * children are repainted should override this method to return {@code true}.
      *
      * @return always returns {@code false}
+     *
+     * @see #paintImmediately(int, int, int, int)
      */
     protected boolean isPaintingOrigin() {
         return false;
@@ -4932,12 +4935,16 @@ public abstract class JComponent extends Container implements Serializable,
      * and can collapse redundant requests into a single paint call.
      * This method is useful if one needs to update the display while
      * the current event is being dispatched.
+     * <p>
+     * This method is to be overridden when the dirty region needs to be changed
+     * for components that are painting origins.
      *
      * @param x  the x value of the region to be painted
      * @param y  the y value of the region to be painted
      * @param w  the width of the region to be painted
      * @param h  the height of the region to be painted
      * @see #repaint
+     * @see #isPaintingOrigin()
      */
     public void paintImmediately(int x,int y,int w, int h) {
         Component c = this;
@@ -4946,6 +4953,15 @@ public abstract class JComponent extends Container implements Serializable,
         if(!isShowing()) {
             return;
         }
+
+        JComponent paintingOigin = SwingUtilities.getPaintingOrigin(this);
+        if (paintingOigin != null) {
+            Rectangle rectangle = SwingUtilities.convertRectangle(
+                    c, new Rectangle(x, y, w, h), paintingOigin);
+            paintingOigin.paintImmediately(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+            return;
+        }
+
         while(!c.isOpaque()) {
             parent = c.getParent();
             if(parent != null) {

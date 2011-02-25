@@ -308,17 +308,29 @@ public final class Console implements Flushable
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                if (fmt.length() != 0)
-                    pw.format(fmt, args);
                 try {
                     echoOff = echo(false);
-                    passwd = readline(true);
                 } catch (IOException x) {
                     throw new IOError(x);
+                }
+                IOError ioe = null;
+                try {
+                    if (fmt.length() != 0)
+                        pw.format(fmt, args);
+                    passwd = readline(true);
+                } catch (IOException x) {
+                    ioe = new IOError(x);
                 } finally {
                     try {
                         echoOff = echo(true);
-                    } catch (IOException xx) {}
+                    } catch (IOException x) {
+                        if (ioe == null)
+                            ioe = new IOError(x);
+                        else
+                            ioe.addSuppressed(x);
+                    }
+                    if (ioe != null)
+                        throw ioe;
                 }
                 pw.println();
             }
