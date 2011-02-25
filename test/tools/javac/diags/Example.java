@@ -522,10 +522,10 @@ class Example implements Comparable<Example> {
                 super(context);
             }
 
-            static void preRegister(final Context c, final Set<String> keys) {
+            static void preRegister(Context c, final Set<String> keys) {
                 if (keys != null) {
                     c.put(JavacMessages.messagesKey, new Context.Factory<JavacMessages>() {
-                        public JavacMessages make() {
+                        public JavacMessages make(Context c) {
                             return new MessageTracker(c) {
                                 @Override
                                 public String getLocalizedString(Locale l, String key, Object... args) {
