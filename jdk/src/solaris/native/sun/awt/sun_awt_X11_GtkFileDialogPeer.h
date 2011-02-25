@@ -20,10 +20,10 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
 /*
  * Class:     sun_awt_X11_GtkFileDialogPeer
  * Method:    run
- * Signature: (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/io/FilenameFilter;Z;)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/io/FilenameFilter;ZII)V
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_run
-(JNIEnv *, jobject, jstring, jint, jstring, jstring, jobject, jboolean);
+(JNIEnv *, jobject, jstring, jint, jstring, jstring, jobject, jboolean, jint, jint);
 
 /*
  * Class:     sun_awt_X11_GtkFileDialogPeer
@@ -40,6 +40,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_toFront
 (JNIEnv *, jobject);
+
+/*
+ * Class:     sun_awt_X11_GtkFileDialogPeer
+ * Method:    setBounds
+ * Signature: (IIIII)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_setBounds
+(JNIEnv * env, jobject jpeer, jint x, jint y, jint width, jint height, jint op);
 
 #ifdef __cplusplus
 }
