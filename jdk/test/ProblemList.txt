@@ -717,6 +717,7 @@ sun/tools/jconsole/ResourceCheckTest.sh				generic-all
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 
+# Filed 7022325
 # Fails with assertion error on windows
 #   11 separate stacktraces created... file reuse problem?
 java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
