@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,14 +189,22 @@ int VM_Version::platform_features(int features) {
               tty->print_cr("cpu_info.implementation: %s", implementation);
             }
 #endif
-            if (strncmp(implementation, "SPARC64", 7) == 0) {
+            // Convert to UPPER case before compare.
+            char* impl = strdup(implementation);
+
+            for (int i = 0; impl[i] != 0; i++)
+              impl[i] = (char)toupper((uint)impl[i]);
+            if (strstr(impl, "SPARC64") != NULL) {
               features |= sparc64_family_m;
-            } else if (strncmp(implementation, "UltraSPARC-T", 12) == 0) {
+            } else if (strstr(impl, "SPARC-T") != NULL) {
               features |= T_family_m;
-              if (strncmp(implementation, "UltraSPARC-T1", 13) == 0) {
+              if (strstr(impl, "SPARC-T1") != NULL) {
                 features |= T1_model_m;
               }
+            } else {
+              assert(strstr(impl, "SPARC") != NULL, "should be sparc");
             }
+            free((void*)impl);
             break;
           }
         } // for(

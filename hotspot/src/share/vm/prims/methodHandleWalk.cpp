@@ -1134,8 +1134,9 @@ int MethodHandleCompiler::cpool_primitive_put(BasicType bt, jvalue* con) {
 
 constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
   constantPoolHandle nullHandle;
-  bool is_conc_safe = true;
-  constantPoolOop cpool_oop = oopFactory::new_constantPool(_constants.length(), is_conc_safe, CHECK_(nullHandle));
+  constantPoolOop cpool_oop = oopFactory::new_constantPool(_constants.length(),
+                                                           oopDesc::IsSafeConc,
+                                                           CHECK_(nullHandle));
   constantPoolHandle cpool(THREAD, cpool_oop);
 
   // Fill the real constant pool skipping the zero element.
@@ -1180,10 +1181,9 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   else
     flags_bits = (/*JVM_MH_INVOKE_BITS |*/ JVM_ACC_PUBLIC | JVM_ACC_FINAL | JVM_ACC_SYNTHETIC);
 
-  bool is_conc_safe = true;
   methodOop m_oop = oopFactory::new_method(bytecode_length(),
                                            accessFlags_from(flags_bits),
-                                           0, 0, 0, is_conc_safe, CHECK_(nullHandle));
+                                           0, 0, 0, oopDesc::IsSafeConc, CHECK_(nullHandle));
   methodHandle m(THREAD, m_oop);
   m_oop = NULL;  // oop not GC safe
 

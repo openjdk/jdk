@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ protected:
   void set_c1_count(int x) { _c1_count = x;    }
   void set_c2_count(int x) { _c2_count = x;    }
 
-  enum EventType { CALL, LOOP, COMPILE };
+  enum EventType { CALL, LOOP, COMPILE, KILL, UPDATE, REPROFILE };
   void print_event(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
   // Print policy-specific information if necessary
   virtual void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level) { }
@@ -103,7 +103,7 @@ public:
   virtual void disable_compilation(methodOop method) { }
   // TODO: we should honour reprofiling requests in the future. Currently reprofiling
   // would happen but not to the extent we would ideally like.
-  virtual void reprofile(ScopeDesc* trap_scope, bool is_osr) { }
+  virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(methodHandle method, methodHandle inlinee,
                          int branch_bci, int bci, CompLevel comp_level, TRAPS);
   // Select task is called by CompileBroker. We should return a task or NULL.
