@@ -6101,3 +6101,45 @@ LocaleNames/nl/ZM=Zambia
 
 # bug 6919624
 CalendarData/hu/minimalDaysInFirstWeek=4
+
+# bug 6998391
+CalendarData/sr-Latn/firstDayOfWeek=2
+CalendarData/sr-Latn-BA/firstDayOfWeek=2
+CalendarData/sr-Latn-ME/firstDayOfWeek=2
+CalendarData/sr-Latn-RS/firstDayOfWeek=2
+#
+CalendarData/sr-Latn/minimalDaysInFirstWeek=1
+CalendarData/sr-Latn-BA/minimalDaysInFirstWeek=4
+CalendarData/sr-Latn-ME/minimalDaysInFirstWeek=4
+CalendarData/sr-Latn-RS/minimalDaysInFirstWeek=4
+#
+LocaleNames/sr-Latn/SR=Surinam
+LocaleNames/sr-Latn-BA/SR=Surinam
+LocaleNames/sr-Latn-ME/SR=Surinam
+LocaleNames/sr-Latn-RS/SR=Surinam
+#
+FormatData/sr-Latn/MonthNames/2=mart
+FormatData/sr-Latn-BA/MonthNames/4=maj
+FormatData/sr-Latn-ME/MonthNames/7=avgust
+FormatData/sr-Latn-RS/MonthNames/8=septembar
+#
+FormatData/sr-Latn/DayNames/1=ponedeljak
+FormatData/sr-Latn-BA/DayNames/2=utorak
+FormatData/sr-Latn-ME/DayNames/3=sreda
+FormatData/sr-Latn-RS/DayNames/4=\u010detvrtak
+#
+FormatData/sr-Latn/DayAbbreviations/1=pon
+FormatData/sr-Latn-BA/DayAbbreviations/2=uto
+FormatData/sr-Latn-ME/DayAbbreviations/3=sre
+FormatData/sr-Latn-RS/DayAbbreviations/4=\u010det
+#
+CurrencyNames/sr-Latn/EUR=EUR
+CurrencyNames/sr-Latn-BA/EUR=\u20ac
+CurrencyNames/sr-Latn-BA/BAM=KM
+CurrencyNames/sr-Latn-ME/EUR=\u20ac
+CurrencyNames/sr-Latn-RS/EUR=EUR
+#
+FormatData/sr-Latn/DateTimePatterns/1=HH.mm.ss z
+FormatData/sr-Latn-BA/DateTimePatterns/2=HH.mm.ss
+FormatData/sr-Latn-ME/DateTimePatterns/5=d.MM.yyyy.
+FormatData/sr-Latn-RS/DateTimePatterns/5=dd. MMMM y.
