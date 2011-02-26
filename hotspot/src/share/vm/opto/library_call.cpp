@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1193,7 +1193,7 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node* result;
   // Disable the use of pcmpestri until it can be guaranteed that
   // the load doesn't cross into the uncommited space.
-  if (false && Matcher::has_match_rule(Op_StrIndexOf) &&
+  if (Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
     // We currently only have match rules that use SSE4.2
@@ -1211,13 +1211,13 @@ bool LibraryCallKit::inline_string_indexOf() {
       return true;
     }
 
-    // Make the merge point
-    RegionNode* result_rgn = new (C, 3) RegionNode(3);
-    Node*       result_phi = new (C, 3) PhiNode(result_rgn, TypeInt::INT);
-    Node* no_ctrl  = NULL;
+    ciInstanceKlass* str_klass = env()->String_klass();
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(str_klass);
 
-    ciInstanceKlass* klass = env()->String_klass();
-    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+    // Make the merge point
+    RegionNode* result_rgn = new (C, 4) RegionNode(4);
+    Node*       result_phi = new (C, 4) PhiNode(result_rgn, TypeInt::INT);
+    Node* no_ctrl  = NULL;
 
     // Get counts for string and substr
     Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
@@ -1236,6 +1236,17 @@ bool LibraryCallKit::inline_string_indexOf() {
     }
 
     if (!stopped()) {
+      // Check for substr count == 0
+      cmp = _gvn.transform( new(C, 3) CmpINode(substr_cnt, intcon(0)) );
+      bol = _gvn.transform( new(C, 2) BoolNode(cmp, BoolTest::eq) );
+      Node* if_zero = generate_slow_guard(bol, NULL);
+      if (if_zero != NULL) {
+        result_phi->init_req(3, intcon(0));
+        result_rgn->init_req(3, if_zero);
+      }
+    }
+
+    if (!stopped()) {
       result = make_string_method_node(Op_StrIndexOf, receiver, source_cnt, argument, substr_cnt);
       result_phi->init_req(1, result);
       result_rgn->init_req(1, control());
@@ -1244,8 +1255,8 @@ bool LibraryCallKit::inline_string_indexOf() {
     record_for_igvn(result_rgn);
     result = _gvn.transform(result_phi);
 
-  } else { //Use LibraryCallKit::string_indexOf
-    // don't intrinsify is argument isn't a constant string.
+  } else { // Use LibraryCallKit::string_indexOf
+    // don't intrinsify if argument isn't a constant string.
     if (!argument->is_Con()) {
      return false;
     }
@@ -1281,7 +1292,7 @@ bool LibraryCallKit::inline_string_indexOf() {
     // No null check on the argument is needed since it's a constant String oop.
     _sp -= 2;
     if (stopped()) {
-     return true;
+      return true;
     }
 
     // The null string as a pattern always returns 0 (match at beginning of string)

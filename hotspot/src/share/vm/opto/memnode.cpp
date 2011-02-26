@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1559,21 +1559,24 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
             phase->C->has_unsafe_access(),
             "Field accesses must be precise" );
     // For oop loads, we expect the _type to be precise
-    if (OptimizeStringConcat && klass == phase->C->env()->String_klass() &&
+    if (klass == phase->C->env()->String_klass() &&
         adr->is_AddP() && off != Type::OffsetBot) {
-      // For constant Strings treat the fields as compile time constants.
+      // For constant Strings treat the final fields as compile time constants.
       Node* base = adr->in(AddPNode::Base);
       const TypeOopPtr* t = phase->type(base)->isa_oopptr();
       if (t != NULL && t->singleton()) {
-        ciObject* string = t->const_oop();
-        ciConstant constant = string->as_instance()->field_value_by_offset(off);
-        if (constant.basic_type() == T_INT) {
-          return TypeInt::make(constant.as_int());
-        } else if (constant.basic_type() == T_ARRAY) {
-          if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-            return TypeNarrowOop::make_from_constant(constant.as_object());
-          } else {
-            return TypeOopPtr::make_from_constant(constant.as_object());
+        ciField* field = phase->C->env()->String_klass()->get_field_by_offset(off, false);
+        if (field != NULL && field->is_final()) {
+          ciObject* string = t->const_oop();
+          ciConstant constant = string->as_instance()->field_value(field);
+          if (constant.basic_type() == T_INT) {
+            return TypeInt::make(constant.as_int());
+          } else if (constant.basic_type() == T_ARRAY) {
+            if (adr->bottom_type()->is_ptr_to_narrowoop()) {
+              return TypeNarrowOop::make_from_constant(constant.as_object());
+            } else {
+              return TypeOopPtr::make_from_constant(constant.as_object());
+            }
           }
         }
       }
