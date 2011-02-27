@@ -316,6 +316,8 @@ class Instruction: public CompilationResourceObj {
     return res;
   }
 
+  static const int no_bci = -99;
+
   enum InstructionFlag {
     NeedsNullCheckFlag = 0,
     CanTrapFlag,

@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
 
 public class AtomicAppend {
@@ -55,7 +56,7 @@ public class AtomicAppend {
         if (rand.nextBoolean()) {
             return new FileOutputStream(file, true);
         } else {
-            return file.toPath().newOutputStream(APPEND);
+            return Files.newOutputStream(file.toPath(), APPEND);
         }
     }
 

@@ -59,8 +59,6 @@
 #ifndef _MPLOGIC_H
 #define _MPLOGIC_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mplogic.h,v 1.7 2004/04/27 23:04:36 gerv%gerv.net Exp $ */
 
 #include "mpi.h"

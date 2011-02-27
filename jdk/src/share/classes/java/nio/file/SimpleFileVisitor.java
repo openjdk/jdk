@@ -57,8 +57,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     public FileVisitResult preVisitDirectory(T dir, BasicFileAttributes attrs)
         throws IOException
     {
-        Objects.nonNull(dir);
-        Objects.nonNull(attrs);
+        Objects.requireNonNull(dir);
+        Objects.requireNonNull(attrs);
         return FileVisitResult.CONTINUE;
     }
 
@@ -72,8 +72,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     public FileVisitResult visitFile(T file, BasicFileAttributes attrs)
         throws IOException
     {
-        Objects.nonNull(file);
-        Objects.nonNull(attrs);
+        Objects.requireNonNull(file);
+        Objects.requireNonNull(attrs);
         return FileVisitResult.CONTINUE;
     }
 
@@ -87,7 +87,7 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     public FileVisitResult visitFileFailed(T file, IOException exc)
         throws IOException
     {
-        Objects.nonNull(file);
+        Objects.requireNonNull(file);
         throw exc;
     }
 
@@ -104,7 +104,7 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     public FileVisitResult postVisitDirectory(T dir, IOException exc)
         throws IOException
     {
-        Objects.nonNull(dir);
+        Objects.requireNonNull(dir);
         if (exc != null)
             throw exc;
         return FileVisitResult.CONTINUE;

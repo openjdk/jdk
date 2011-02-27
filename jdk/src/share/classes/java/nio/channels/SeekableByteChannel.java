@@ -47,7 +47,7 @@ import java.io.IOException;
  * so that method invocations on the implementation class can be chained.
  *
  * @since 1.7
- * @see java.nio.file.Path#newByteChannel
+ * @see java.nio.file.Files#newByteChannel
  */
 
 public interface SeekableByteChannel

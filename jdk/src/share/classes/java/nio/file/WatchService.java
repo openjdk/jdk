@@ -103,13 +103,9 @@ import java.util.concurrent.TimeUnit;
  * @see FileSystem#newWatchService
  */
 
-public abstract class WatchService
-    implements Closeable
+public interface WatchService
+    extends Closeable
 {
-    /**
-     * Initializes a new instance of this class.
-     */
-    protected WatchService() { }
 
     /**
      * Closes this watch service.
@@ -129,7 +125,7 @@ public abstract class WatchService
      *          if an I/O error occurs
      */
     @Override
-    public abstract void close() throws IOException;
+    void close() throws IOException;
 
     /**
      * Retrieves and removes the next watch key, or {@code null} if none are
@@ -140,7 +136,7 @@ public abstract class WatchService
      * @throws  ClosedWatchServiceException
      *          if this watch service is closed
      */
-    public abstract WatchKey poll();
+    WatchKey poll();
 
     /**
      * Retrieves and removes the next watch key, waiting if necessary up to the
@@ -160,7 +156,7 @@ public abstract class WatchService
      * @throws  InterruptedException
      *          if interrupted while waiting
      */
-    public abstract WatchKey poll(long timeout, TimeUnit unit)
+    WatchKey poll(long timeout, TimeUnit unit)
         throws InterruptedException;
 
     /**
@@ -174,5 +170,5 @@ public abstract class WatchService
      * @throws  InterruptedException
      *          if interrupted while waiting
      */
-    public abstract WatchKey take() throws InterruptedException;
+    WatchKey take() throws InterruptedException;
 }

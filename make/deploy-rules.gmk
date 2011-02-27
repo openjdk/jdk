@@ -64,19 +64,17 @@ ifneq ($(JQS), off)
     endif
   endif
 endif
-  
-ifneq ($(KERNEL), off)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    ifeq ($(PLATFORM), windows)
-      # Only set up to use UPX compression if it is available
-      UP_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/upx ] ; then \
-        $(ECHO) true ; \
-      else \
-        $(ECHO) false ; \
-      fi )
-      ifeq ($(UP_TMP), true)
-        DEPLOY_BUILD_TARGETS += cmd-comp-all
-      endif
+
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifeq ($(PLATFORM), windows)
+    # Only set up to use UPX compression if it is available
+    UP_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/upx ] ; then \
+      $(ECHO) true ; \
+    else \
+      $(ECHO) false ; \
+    fi )
+    ifeq ($(UP_TMP), true)
+      DEPLOY_BUILD_TARGETS += cmd-comp-all
     endif
   endif
 endif

@@ -317,6 +317,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      *     or if <tt>rest</tt> is null
      * @return an enum set initially containing the specified elements
      */
+    @SafeVarargs
     public static <E extends Enum<E>> EnumSet<E> of(E first, E... rest) {
         EnumSet<E> result = noneOf(first.getDeclaringClass());
         result.add(first);

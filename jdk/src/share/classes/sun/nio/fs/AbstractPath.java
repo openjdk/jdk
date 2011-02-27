@@ -26,391 +26,81 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import static java.nio.file.StandardOpenOption.*;
-import java.nio.file.attribute.*;
-import java.nio.channels.*;
-import java.nio.ByteBuffer;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
- * Base implementation class for a {@code Path}.
+ * Base implementation class of {@code Path}.
  */
 
-abstract class AbstractPath extends Path {
+abstract class AbstractPath implements Path {
     protected AbstractPath() { }
 
     @Override
-    public final Path createFile(FileAttribute<?>... attrs)
-        throws IOException
-    {
-        EnumSet<StandardOpenOption> options = EnumSet.of(CREATE_NEW, WRITE);
-        SeekableByteChannel sbc = newByteChannel(options, attrs);
-        try {
-            sbc.close();
-        } catch (IOException x) {
-            // ignore
-        }
-        return this;
-    }
-
-    /**
-     * Deletes a file. The {@code failIfNotExists} parameters determines if an
-     * {@code IOException} is thrown when the file does not exist.
-     */
-    abstract void implDelete(boolean failIfNotExists) throws IOException;
-
-    @Override
-    public final void delete() throws IOException {
-        implDelete(true);
+    public final boolean startsWith(String other) {
+        return startsWith(getFileSystem().getPath(other));
     }
 
     @Override
-    public final void deleteIfExists() throws IOException {
-        implDelete(false);
+    public final boolean endsWith(String other) {
+        return endsWith(getFileSystem().getPath(other));
     }
 
     @Override
-    public final InputStream newInputStream(OpenOption... options)
-        throws IOException
-    {
-        if (options.length > 0) {
-            for (OpenOption opt: options) {
-                if (opt != READ)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
-        }
-        return Channels.newInputStream(newByteChannel());
+    public final Path resolve(String other) {
+        return resolve(getFileSystem().getPath(other));
     }
 
     @Override
-    public final OutputStream newOutputStream(OpenOption... options)
-        throws IOException
-    {
-        int len = options.length;
-        Set<OpenOption> opts = new HashSet<OpenOption>(len + 3);
-        if (len == 0) {
-            opts.add(CREATE);
-            opts.add(TRUNCATE_EXISTING);
-        } else {
-            for (OpenOption opt: options) {
-                if (opt == READ)
-                    throw new IllegalArgumentException("READ not allowed");
-                opts.add(opt);
-            }
-        }
-        opts.add(WRITE);
-        return Channels.newOutputStream(newByteChannel(opts));
+    public final Path resolveSibling(Path other) {
+        if (other == null)
+            throw new NullPointerException();
+        Path parent = getParent();
+        return (parent == null) ? other : parent.resolve(other);
     }
 
     @Override
-    public final SeekableByteChannel newByteChannel(OpenOption... options)
-        throws IOException
-    {
-        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
-        Collections.addAll(set, options);
-        return newByteChannel(set);
-    }
-
-    private static final DirectoryStream.Filter<Path> acceptAllFilter =
-        new DirectoryStream.Filter<Path>() {
-            @Override public boolean accept(Path entry) { return true; }
-        };
-
-    @Override
-    public final DirectoryStream<Path> newDirectoryStream() throws IOException {
-        return newDirectoryStream(acceptAllFilter);
+    public final Path resolveSibling(String other) {
+        return resolveSibling(getFileSystem().getPath(other));
     }
 
     @Override
-    public final DirectoryStream<Path> newDirectoryStream(String glob)
-        throws IOException
-    {
-        // avoid creating a matcher if all entries are required.
-        if (glob.equals("*"))
-            return newDirectoryStream();
-
-        // create a matcher and return a filter that uses it.
-        final PathMatcher matcher = getFileSystem().getPathMatcher("glob:" + glob);
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+    public final Iterator<Path> iterator() {
+        return new Iterator<Path>() {
+            private int i = 0;
             @Override
-            public boolean accept(Path entry)  {
-                return matcher.matches(entry.getName());
+            public boolean hasNext() {
+                return (i < getNameCount());
+            }
+            @Override
+            public Path next() {
+                if (i < getNameCount()) {
+                    Path result = getName(i);
+                    i++;
+                    return result;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
             }
         };
-        return newDirectoryStream(filter);
     }
 
     @Override
-    public final boolean exists() {
-        try {
-            checkAccess();
-            return true;
-        } catch (IOException x) {
-            // unable to determine if file exists
-        }
-        return false;
+    public final File toFile() {
+        return new File(toString());
     }
-
-    @Override
-    public final boolean notExists() {
-        try {
-            checkAccess();
-            return false;
-        } catch (NoSuchFileException x) {
-            // file confirmed not to exist
-            return true;
-        } catch (IOException x) {
-            return false;
-        }
-    }
-
-    private static final WatchEvent.Modifier[] NO_MODIFIERS = new WatchEvent.Modifier[0];
 
     @Override
     public final WatchKey register(WatchService watcher,
                                    WatchEvent.Kind<?>... events)
         throws IOException
     {
-        return register(watcher, events, NO_MODIFIERS);
-    }
-
-    abstract void implCopyTo(Path target, CopyOption... options)
-        throws IOException;
-
-    @Override
-    public final Path copyTo(Path target, CopyOption... options)
-        throws IOException
-    {
-        if ((getFileSystem().provider() == target.getFileSystem().provider())) {
-            implCopyTo(target, options);
-        } else {
-            copyToForeignTarget(target, options);
-        }
-        return target;
-    }
-
-    abstract void implMoveTo(Path target, CopyOption... options)
-        throws IOException;
-
-    @Override
-    public final Path moveTo(Path target, CopyOption... options)
-        throws IOException
-    {
-        if ((getFileSystem().provider() == target.getFileSystem().provider())) {
-            implMoveTo(target, options);
-        } else {
-            // different providers so copy + delete
-            copyToForeignTarget(target, convertMoveToCopyOptions(options));
-            delete();
-        }
-        return target;
-    }
-
-    /**
-     * Converts the given array of options for moving a file to options suitable
-     * for copying the file when a move is implemented as copy + delete.
-     */
-    private static CopyOption[] convertMoveToCopyOptions(CopyOption... options)
-        throws AtomicMoveNotSupportedException
-    {
-        int len = options.length;
-        CopyOption[] newOptions = new CopyOption[len+2];
-        for (int i=0; i<len; i++) {
-            CopyOption option = options[i];
-            if (option == StandardCopyOption.ATOMIC_MOVE) {
-                throw new AtomicMoveNotSupportedException(null, null,
-                    "Atomic move between providers is not supported");
-            }
-            newOptions[i] = option;
-        }
-        newOptions[len] = LinkOption.NOFOLLOW_LINKS;
-        newOptions[len+1] = StandardCopyOption.COPY_ATTRIBUTES;
-        return newOptions;
-    }
-
-    /**
-     * Parses the arguments for a file copy operation.
-     */
-    private static class CopyOptions {
-        boolean replaceExisting = false;
-        boolean copyAttributes = false;
-        boolean followLinks = true;
-
-        private CopyOptions() { }
-
-        static CopyOptions parse(CopyOption... options) {
-            CopyOptions result = new CopyOptions();
-            for (CopyOption option: options) {
-                if (option == StandardCopyOption.REPLACE_EXISTING) {
-                    result.replaceExisting = true;
-                    continue;
-                }
-                if (option == LinkOption.NOFOLLOW_LINKS) {
-                    result.followLinks = false;
-                    continue;
-                }
-                if (option == StandardCopyOption.COPY_ATTRIBUTES) {
-                    result.copyAttributes = true;
-                    continue;
-                }
-                if (option == null)
-                    throw new NullPointerException();
-                throw new UnsupportedOperationException("'" + option +
-                    "' is not a recognized copy option");
-            }
-            return result;
-        }
-    }
-
-    /**
-     * Simple cross-provider copy where the target is a Path.
-     */
-    private void copyToForeignTarget(Path target, CopyOption... options)
-        throws IOException
-    {
-        CopyOptions opts = CopyOptions.parse(options);
-        LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
-            new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
-
-        // attributes of source file
-        BasicFileAttributes attrs = Attributes
-            .readBasicFileAttributes(this, linkOptions);
-        if (attrs.isSymbolicLink())
-            throw new IOException("Copying of symbolic links not supported");
-
-        // check if target exists
-        boolean exists;
-        if (opts.replaceExisting) {
-            try {
-                target.deleteIfExists();
-                exists = false;
-            } catch (DirectoryNotEmptyException x) {
-                // let exception translate to FileAlreadyExistsException (6895012)
-                exists = true;
-            }
-        } else {
-            exists = target.exists();
-        }
-        if (exists)
-            throw new FileAlreadyExistsException(target.toString());
-
-        // create directory or file
-        if (attrs.isDirectory()) {
-            target.createDirectory();
-        } else {
-            copyRegularFileToForeignTarget(target);
-        }
-
-        // copy basic attributes to target
-        if (opts.copyAttributes) {
-            BasicFileAttributeView view = target
-                .getFileAttributeView(BasicFileAttributeView.class, linkOptions);
-            try {
-                view.setTimes(attrs.lastModifiedTime(),
-                              attrs.lastAccessTime(),
-                              attrs.creationTime());
-            } catch (IOException x) {
-                // rollback
-                try {
-                    target.delete();
-                } catch (IOException ignore) { }
-                throw x;
-            }
-        }
-    }
-
-
-   /**
-     * Simple copy of regular file to a target file that exists.
-     */
-    private void copyRegularFileToForeignTarget(Path target)
-        throws IOException
-    {
-        ReadableByteChannel rbc = newByteChannel();
-        try {
-            // open target file for writing
-            SeekableByteChannel sbc = target.newByteChannel(CREATE_NEW, WRITE);
-
-            // simple copy loop
-            try {
-                ByteBuffer buf = ByteBuffer.wrap(new byte[8192]);
-                int n = 0;
-                for (;;) {
-                    n = rbc.read(buf);
-                    if (n < 0)
-                        break;
-                    assert n > 0;
-                    buf.flip();
-                    while (buf.hasRemaining()) {
-                        sbc.write(buf);
-                    }
-                    buf.rewind();
-                }
-
-            } finally {
-                sbc.close();
-            }
-        } finally {
-            rbc.close();
-        }
-    }
-
-    /**
-     * Splits the given attribute name into the name of an attribute view and
-     * the attribute. If the attribute view is not identified then it assumed
-     * to be "basic".
-     */
-    private static String[] split(String attribute) {
-        String[] s = new String[2];
-        int pos = attribute.indexOf(':');
-        if (pos == -1) {
-            s[0] = "basic";
-            s[1] = attribute;
-        } else {
-            s[0] = attribute.substring(0, pos++);
-            s[1] = (pos == attribute.length()) ? "" : attribute.substring(pos);
-        }
-        return s;
-    }
-
-    /**
-     * Gets a DynamicFileAttributeView by name. Returns {@code null} if the
-     * view is not available.
-     */
-    abstract DynamicFileAttributeView getFileAttributeView(String name,
-                                                           LinkOption... options);
-
-    @Override
-    public final void setAttribute(String attribute,
-                                   Object value,
-                                   LinkOption... options)
-        throws IOException
-    {
-        String[] s = split(attribute);
-        DynamicFileAttributeView view = getFileAttributeView(s[0], options);
-        if (view == null)
-            throw new UnsupportedOperationException("View '" + s[0] + "' not available");
-        view.setAttribute(s[1], value);
-    }
-
-    @Override
-    public final Object getAttribute(String attribute, LinkOption... options)
-        throws IOException
-    {
-        String[] s = split(attribute);
-        DynamicFileAttributeView view = getFileAttributeView(s[0], options);
-        return (view == null) ? null : view.getAttribute(s[1]);
-    }
-
-    @Override
-    public final Map<String,?> readAttributes(String attributes, LinkOption... options)
-        throws IOException
-    {
-        String[] s = split(attributes);
-        DynamicFileAttributeView view = getFileAttributeView(s[0], options);
-        if (view == null)
-            return Collections.emptyMap();
-        return view.readAttributes(s[1].split(","));
+        return register(watcher, events, new WatchEvent.Modifier[0]);
     }
 }

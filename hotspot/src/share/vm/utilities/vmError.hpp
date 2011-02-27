@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,14 @@ class VMError : public StackObj {
   static VMError* volatile first_error;
   static volatile jlong    first_error_tid;
 
+  // Core dump status, false if we have been unable to write a core/minidump for some reason
+  static bool coredump_status;
+
+  // When coredump_status is set to true this will contain the name/path to the core/minidump,
+  // if coredump_status if false, this will (hopefully) contain a useful error explaining why
+  // no core/minidump has been written to disk
+  static char coredump_message[O_BUFLEN];
+
   // used by reporting about OOM
   size_t       _size;
 
@@ -105,6 +113,9 @@ public:
 
   // return a string to describe the error
   char *error_string(char* buf, int buflen);
+
+  // Report status of core/minidump
+  static void report_coredump_status(const char* message, bool status);
 
   // main error reporting function
   void report_and_die();

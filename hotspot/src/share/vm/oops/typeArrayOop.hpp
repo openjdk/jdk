@@ -45,6 +45,12 @@
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "orderAccess_windows_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "orderAccess_linux_arm.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "orderAccess_linux_ppc.inline.hpp"
+#endif
 
 // A typeArrayOop is an array containing basic types (non oop elements).
 // It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}

@@ -31,23 +31,18 @@
 
 package com.sun.nio.zipfs;
 
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.file.FileRef;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.FileSystemAlreadyExistsException;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.ProviderMismatchException;
-import java.nio.file.attribute.FileAttribute;
+import java.io.*;
+import java.nio.channels.*;
+import java.nio.file.*;
+import java.nio.file.DirectoryStream.Filter;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 /*
  *
@@ -87,28 +82,25 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     public FileSystem newFileSystem(URI uri, Map<String, ?> env)
         throws IOException
     {
-        return newFileSystem(uriToPath(uri), env);
+        return newFileSystem(uriToPath(uri), env, true);
     }
 
     @Override
-    public FileSystem newFileSystem(FileRef file, Map<String, ?> env)
+    public FileSystem newFileSystem(Path path, Map<String, ?> env)
         throws IOException
     {
-        if (!(file instanceof Path))
-            throw new UnsupportedOperationException();
-        Path path = (Path)file;
         if (!path.toUri().getScheme().equalsIgnoreCase("file")) {
             throw new UnsupportedOperationException();
         }
-        return newFileSystem(path, env);
+        return newFileSystem(path, env, false);
     }
 
-    private FileSystem newFileSystem(Path path, Map<String, ?> env)
+    private FileSystem newFileSystem(Path path, Map<String, ?> env, boolean checkIfFSExists)
         throws IOException
     {
         synchronized(filesystems) {
             Path realPath = null;
-            if (path.exists()) {
+            if (checkIfFSExists && Files.exists(path)) {
                 realPath = path.toRealPath(true);
                 if (filesystems.containsKey(realPath))
                     throw new FileSystemAlreadyExistsException();
@@ -116,7 +108,8 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             ZipFileSystem zipfs = new ZipFileSystem(this, path, env);
             if (realPath == null)
                 realPath = path.toRealPath(true);
-            filesystems.put(realPath, zipfs);
+            if (!filesystems.containsKey(realPath))
+                filesystems.put(realPath, zipfs);
             return zipfs;
         }
     }
@@ -133,18 +126,6 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         return getFileSystem(uri).getPath(spec.substring(sep + 1));
     }
 
-    @Override
-    public FileChannel newFileChannel(Path path,
-            Set<? extends OpenOption> options,
-            FileAttribute<?>... attrs)
-            throws IOException
-    {
-        if (path == null)
-            throw new NullPointerException("path is null");
-        if (path instanceof ZipPath)
-            return ((ZipPath)path).newFileChannel(options, attrs);
-        throw new ProviderMismatchException();
-    }
 
     @Override
     public FileSystem getFileSystem(URI uri) {
@@ -161,9 +142,155 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         }
     }
 
-    void removeFileSystem(Path zfpath) throws IOException {
+    // Checks that the given file is a UnixPath
+    static final ZipPath toZipPath(Path path) {
+        if (path == null)
+            throw new NullPointerException();
+        if (!(path instanceof ZipPath))
+            throw new ProviderMismatchException();
+        return (ZipPath)path;
+    }
+
+    @Override
+    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+        toZipPath(path).checkAccess(modes);
+    }
+
+    @Override
+    public void copy(Path src, Path target, CopyOption... options)
+        throws IOException
+    {
+        toZipPath(src).copy(toZipPath(target), options);
+    }
+
+    @Override
+    public void createDirectory(Path path, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        toZipPath(path).createDirectory(attrs);
+    }
+
+    @Override
+    public final void delete(Path path) throws IOException {
+        toZipPath(path).delete();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <V extends FileAttributeView> V
+        getFileAttributeView(Path path, Class<V> type, LinkOption... options)
+    {
+        return (V)ZipFileAttributeView.get(toZipPath(path), type);
+    }
+
+    @Override
+    public FileStore getFileStore(Path path) throws IOException {
+        return toZipPath(path).getFileStore();
+    }
+
+    @Override
+    public boolean isHidden(Path path) {
+        return toZipPath(path).isHidden();
+    }
+
+    @Override
+    public boolean isSameFile(Path path, Path other) throws IOException {
+        return toZipPath(path).isSameFile(other);
+    }
+
+    @Override
+    public void move(Path src, Path target, CopyOption... options)
+        throws IOException
+    {
+        toZipPath(src).move(toZipPath(target), options);
+    }
+
+    @Override
+    public AsynchronousFileChannel newAsynchronousFileChannel(Path path,
+            Set<? extends OpenOption> options,
+            ExecutorService exec,
+            FileAttribute<?>... attrs)
+            throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SeekableByteChannel newByteChannel(Path path,
+                                              Set<? extends OpenOption> options,
+                                              FileAttribute<?>... attrs)
+        throws IOException
+    {
+        return toZipPath(path).newByteChannel(options, attrs);
+    }
+
+    @Override
+    public DirectoryStream<Path> newDirectoryStream(
+        Path path, Filter<? super Path> filter) throws IOException
+    {
+        return toZipPath(path).newDirectoryStream(filter);
+    }
+
+    @Override
+    public FileChannel newFileChannel(Path path,
+                                      Set<? extends OpenOption> options,
+                                      FileAttribute<?>... attrs)
+        throws IOException
+    {
+        return toZipPath(path).newFileChannel(options, attrs);
+    }
+
+    @Override
+    public InputStream newInputStream(Path path, OpenOption... options)
+        throws IOException
+    {
+        return toZipPath(path).newInputStream(options);
+    }
+
+    @Override
+    public OutputStream newOutputStream(Path path, OpenOption... options)
+        throws IOException
+    {
+        return toZipPath(path).newOutputStream(options);
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A
+        readAttributes(Path path, Class<A> type, LinkOption... options)
+        throws IOException
+    {
+        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class)
+            return (A)toZipPath(path).getAttributes();
+        return null;
+    }
+
+    @Override
+    public Map<String, Object>
+        readAttributes(Path path, String attribute, LinkOption... options)
+        throws IOException
+    {
+        return toZipPath(path).readAttributes(attribute, options);
+    }
+
+    @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public void setAttribute(Path path, String attribute,
+                             Object value, LinkOption... options)
+        throws IOException
+    {
+        toZipPath(path).setAttribute(attribute, value, options);
+    }
+
+    //////////////////////////////////////////////////////////////
+    void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            filesystems.remove(zfpath.toRealPath(true));
+            zfpath = zfpath.toRealPath(true);
+            if (filesystems.get(zfpath) == zfs)
+                filesystems.remove(zfpath);
         }
     }
 }

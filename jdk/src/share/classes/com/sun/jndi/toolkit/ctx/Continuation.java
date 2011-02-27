@@ -143,7 +143,7 @@ public class Continuation extends ResolveResult {
         e.setRemainingName(remainingName);
         e.setResolvedObj(resolvedObj);
 
-        if (starter == null)
+        if (starter == null || starter.isEmpty())
             e.setResolvedName(null);
         else if (remainingName == null)
             e.setResolvedName(starter);

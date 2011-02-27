@@ -58,8 +58,6 @@
 #ifndef _ECL_PRIV_H
 #define _ECL_PRIV_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecl.h"
 #include "mpi.h"
 #include "mplogic.h"
@@ -90,6 +88,10 @@
     s = ACCUM(w); \
     cout = CARRYOUT(w); }
 
+/* Handle case when carry-in value is zero */
+#define MP_ADD_CARRY_ZERO(a1, a2, s, cout)   \
+    MP_ADD_CARRY(a1, a2, s, 0, cout);
+
 #define MP_SUB_BORROW(a1, a2, s, bin, bout)   \
     { mp_word w; \
     w = ((mp_word)(a1)) - (a2) - (bin); \
@@ -110,6 +112,15 @@
     tmp = (sum < tmp);                     /* detect overflow */ \
     s = sum += (cin); \
     cout = tmp + (sum < (cin)); }
+
+/* Handle case when carry-in value is zero */
+#define MP_ADD_CARRY_ZERO(a1, a2, s, cout)   \
+    { mp_digit tmp,sum; \
+    tmp = (a1); \
+    sum = tmp + (a2); \
+    tmp = (sum < tmp);                     /* detect overflow */ \
+    s = sum; \
+    cout = tmp; }
 
 #define MP_SUB_BORROW(a1, a2, s, bin, bout)   \
     { mp_digit tmp; \

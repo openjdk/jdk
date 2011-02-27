@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class win32 {
   static size_t _default_stack_size;
   static bool   _is_nt;
   static bool   _is_windows_2003;
+  static bool   _is_windows_server;
 
  public:
   // Windows-specific interface:
@@ -63,6 +64,9 @@ class win32 {
 
   // Tells whether the platform is NT or Windown95
   static bool is_nt() { return _is_nt; }
+
+  // Tells whether this is a server version of Windows
+  static bool is_windows_server() { return _is_windows_server; }
 
   // Tells whether the platform is Windows 2003
   static bool is_windows_2003() { return _is_windows_2003; }
