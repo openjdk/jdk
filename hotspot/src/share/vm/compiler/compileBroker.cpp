@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1210,7 +1210,17 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  return !BackgroundCompilation;
+  if (!BackgroundCompilation) {
+    Symbol* class_name = method->method_holder()->klass_part()->name();
+    if (class_name->starts_with("java/lang/ref/Reference", 23)) {
+      // The reference handler thread can dead lock with the GC if compilation is blocking,
+      // so we avoid blocking compiles for anything in the java.lang.ref.Reference class,
+      // including inner classes such as ReferenceHandler.
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 

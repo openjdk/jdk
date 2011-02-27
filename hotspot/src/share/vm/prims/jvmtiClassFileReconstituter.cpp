@@ -36,6 +36,12 @@
 #ifdef TARGET_ARCH_zero
 # include "bytes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "bytes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "bytes_ppc.hpp"
+#endif
 // FIXME: add Deprecated, LVT, LVTT attributes
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for constantPoolOopDesc::copy_cpool_bytes()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,11 @@ import static javax.lang.model.SourceVersion.*;
  * {@link SourceVersion#RELEASE_6 RELEASE_6} source version.
  *
  * Visit methods corresponding to {@code RELEASE_6} language
- * constructs call {@link #defaultAction}, passing their arguments to
- * {@code defaultAction}'s corresponding parameters.
+ * constructs call {@link #defaultAction defaultAction}, passing their
+ * arguments to {@code defaultAction}'s corresponding parameters.
+ *
+ * For constructs introduced in {@code RELEASE_7} and later, {@code
+ * visitUnknown} is called instead.
  *
  * <p> Methods in this class may be overridden subject to their
  * general contract.  Note that annotating methods in concrete

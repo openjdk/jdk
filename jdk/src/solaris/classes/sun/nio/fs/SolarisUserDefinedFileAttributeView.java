@@ -83,7 +83,7 @@ class SolarisUserDefinedFileAttributeView
                 }
 
                 // read list of extended attributes
-                final List<String> list = new ArrayList<String>();
+                List<String> list = new ArrayList<>();
                 try {
                     byte[] name;
                     while ((name = readdir(dp)) != null) {

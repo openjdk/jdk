@@ -301,9 +301,13 @@
   develop(uintx, G1StressConcRegionFreeingDelayMillis, 0,                   \
           "Artificial delay during concurrent region freeing")              \
                                                                             \
-   develop(bool, ReduceInitialCardMarksForG1, false,                        \
+  develop(bool, ReduceInitialCardMarksForG1, false,                         \
           "When ReduceInitialCardMarks is true, this flag setting "         \
-          " controls whether G1 allows the RICM optimization")
+          " controls whether G1 allows the RICM optimization")              \
+                                                                            \
+  develop(bool, G1ExitOnExpansionFailure, false,                            \
+          "Raise a fatal VM exit out of memory failure in the event "       \
+          " that heap expansion fails due to running out of swap.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 

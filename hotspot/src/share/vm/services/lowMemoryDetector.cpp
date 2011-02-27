@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,55 +34,11 @@
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 
-LowMemoryDetectorThread* LowMemoryDetector::_detector_thread = NULL;
 volatile bool LowMemoryDetector::_enabled_for_collected_pools = false;
 volatile jint LowMemoryDetector::_disabled_count = 0;
 
-void LowMemoryDetector::initialize() {
-  EXCEPTION_MARK;
-
-  instanceKlassHandle klass (THREAD,  SystemDictionary::Thread_klass());
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
-
-  const char thread_name[] = "Low Memory Detector";
-  Handle string = java_lang_String::create_from_str(thread_name, CHECK);
-
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_oop,
-                          klass,
-                          vmSymbols::object_initializer_name(),
-                          vmSymbols::threadgroup_string_void_signature(),
-                          thread_group,
-                          string,
-                          CHECK);
-
-  {
-    MutexLocker mu(Threads_lock);
-    _detector_thread = new LowMemoryDetectorThread(&low_memory_detector_thread_entry);
-
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
-    if (_detector_thread == NULL || _detector_thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    "unable to create new native thread");
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), _detector_thread);
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    java_lang_Thread::set_daemon(thread_oop());
-    _detector_thread->set_threadObj(thread_oop());
-
-    Threads::add(_detector_thread);
-    Thread::start(_detector_thread);
-  }
-}
-
 bool LowMemoryDetector::has_pending_requests() {
-  assert(LowMemory_lock->owned_by_self(), "Must own LowMemory_lock");
+  assert(Service_lock->owned_by_self(), "Must own Service_lock");
   bool has_requests = false;
   int num_memory_pools = MemoryService::num_memory_pools();
   for (int i = 0; i < num_memory_pools; i++) {
@@ -100,47 +56,21 @@ bool LowMemoryDetector::has_pending_requests() {
   return has_requests;
 }
 
-void LowMemoryDetector::low_memory_detector_thread_entry(JavaThread* jt, TRAPS) {
-  while (true) {
-    bool   sensors_changed = false;
+void LowMemoryDetector::process_sensor_changes(TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
 
-    {
-      // _no_safepoint_check_flag is used here as LowMemory_lock is a
-      // special lock and the VMThread may acquire this lock at safepoint.
-      // Need state transition ThreadBlockInVM so that this thread
-      // will be handled by safepoint correctly when this thread is
-      // notified at a safepoint.
-
-      // This ThreadBlockInVM object is not also considered to be
-      // suspend-equivalent because LowMemoryDetector threads are
-      // not visible to external suspension.
-
-      ThreadBlockInVM tbivm(jt);
-
-      MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
-      while (!(sensors_changed = has_pending_requests())) {
-        // wait until one of the sensors has pending requests
-        LowMemory_lock->wait(Mutex::_no_safepoint_check_flag);
-      }
+  // No need to hold Service_lock to call out to Java
+  int num_memory_pools = MemoryService::num_memory_pools();
+  for (int i = 0; i < num_memory_pools; i++) {
+    MemoryPool* pool = MemoryService::get_memory_pool(i);
+    SensorInfo* sensor = pool->usage_sensor();
+    SensorInfo* gc_sensor = pool->gc_usage_sensor();
+    if (sensor != NULL && sensor->has_pending_requests()) {
+      sensor->process_pending_requests(CHECK);
     }
-
-    {
-      ResourceMark rm(THREAD);
-      HandleMark hm(THREAD);
-
-      // No need to hold LowMemory_lock to call out to Java
-      int num_memory_pools = MemoryService::num_memory_pools();
-      for (int i = 0; i < num_memory_pools; i++) {
-        MemoryPool* pool = MemoryService::get_memory_pool(i);
-        SensorInfo* sensor = pool->usage_sensor();
-        SensorInfo* gc_sensor = pool->gc_usage_sensor();
-        if (sensor != NULL && sensor->has_pending_requests()) {
-          sensor->process_pending_requests(CHECK);
-        }
-        if (gc_sensor != NULL && gc_sensor->has_pending_requests()) {
-          gc_sensor->process_pending_requests(CHECK);
-        }
-      }
+    if (gc_sensor != NULL && gc_sensor->has_pending_requests()) {
+      gc_sensor->process_pending_requests(CHECK);
     }
   }
 }
@@ -148,7 +78,7 @@ void LowMemoryDetector::low_memory_detector_thread_entry(JavaThread* jt, TRAPS) 
 // This method could be called from any Java threads
 // and also VMThread.
 void LowMemoryDetector::detect_low_memory() {
-  MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
+  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
 
   bool has_pending_requests = false;
   int num_memory_pools = MemoryService::num_memory_pools();
@@ -166,7 +96,7 @@ void LowMemoryDetector::detect_low_memory() {
   }
 
   if (has_pending_requests) {
-    LowMemory_lock->notify_all();
+    Service_lock->notify_all();
   }
 }
 
@@ -181,14 +111,14 @@ void LowMemoryDetector::detect_low_memory(MemoryPool* pool) {
   }
 
   {
-    MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
 
     MemoryUsage usage = pool->get_memory_usage();
     sensor->set_gauge_sensor_level(usage,
                                    pool->usage_threshold());
     if (sensor->has_pending_requests()) {
       // notify sensor state update
-      LowMemory_lock->notify_all();
+      Service_lock->notify_all();
     }
   }
 }
@@ -203,14 +133,14 @@ void LowMemoryDetector::detect_after_gc_memory(MemoryPool* pool) {
   }
 
   {
-    MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
 
     MemoryUsage usage = pool->get_last_collection_usage();
     sensor->set_counter_sensor_level(usage, pool->gc_usage_threshold());
 
     if (sensor->has_pending_requests()) {
       // notify sensor state update
-      LowMemory_lock->notify_all();
+      Service_lock->notify_all();
     }
   }
 }
@@ -384,8 +314,8 @@ void SensorInfo::trigger(int count, TRAPS) {
   }
 
   {
-    // Holds LowMemory_lock and update the sensor state
-    MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
+    // Holds Service_lock and update the sensor state
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
     _sensor_on = true;
     _sensor_count += count;
     _pending_trigger_count = _pending_trigger_count - count;
@@ -410,8 +340,8 @@ void SensorInfo::clear(int count, TRAPS) {
   }
 
   {
-    // Holds LowMemory_lock and update the sensor state
-    MutexLockerEx ml(LowMemory_lock, Mutex::_no_safepoint_check_flag);
+    // Holds Service_lock and update the sensor state
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
     _sensor_on = false;
     _pending_clear_count = 0;
     _pending_trigger_count = _pending_trigger_count - count;

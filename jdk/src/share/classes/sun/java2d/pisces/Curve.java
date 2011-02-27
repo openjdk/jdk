@@ -27,7 +27,7 @@ package sun.java2d.pisces;
 
 import java.util.Iterator;
 
-class Curve {
+final class Curve {
 
     float ax, ay, bx, by, cx, cy, dx, dy;
     float dax, day, dbx, dby;
@@ -101,14 +101,6 @@ class Curve {
         return t * (t * day + dby) + cy;
     }
 
-    private float ddxat(float t) {
-        return 2 * dax * t + dbx;
-    }
-
-    private float ddyat(float t) {
-        return 2 * day * t + dby;
-    }
-
     int dxRoots(float[] roots, int off) {
         return Helpers.quadraticRoots(dax, dbx, cx, roots, off);
     }
@@ -131,17 +123,17 @@ class Curve {
     // finds points where the first and second derivative are
     // perpendicular. This happens when g(t) = f'(t)*f''(t) == 0 (where
     // * is a dot product). Unfortunately, we have to solve a cubic.
-    private int perpendiculardfddf(float[] pts, int off, final float err) {
+    private int perpendiculardfddf(float[] pts, int off) {
         assert pts.length >= off + 4;
 
-        // these are the coefficients of g(t):
+        // these are the coefficients of some multiple of g(t) (not g(t),
+        // because the roots of a polynomial are not changed after multiplication
+        // by a constant, and this way we save a few multiplications).
         final float a = 2*(dax*dax + day*day);
         final float b = 3*(dax*dbx + day*dby);
         final float c = 2*(dax*cx + day*cy) + dbx*dbx + dby*dby;
         final float d = dbx*cx + dby*cy;
-        // TODO: We might want to divide the polynomial by a to make the
-        // coefficients smaller. This won't change the roots.
-        return Helpers.cubicRootsInAB(a, b, c, d, pts, off, err, 0f, 1f);
+        return Helpers.cubicRootsInAB(a, b, c, d, pts, off, 0f, 1f);
     }
 
     // Tries to find the roots of the function ROC(t)-w in [0, 1). It uses
@@ -161,7 +153,7 @@ class Curve {
         // no OOB exception, because by now off<=6, and roots.length >= 10
         assert off <= 6 && roots.length >= 10;
         int ret = off;
-        int numPerpdfddf = perpendiculardfddf(roots, off, err);
+        int numPerpdfddf = perpendiculardfddf(roots, off);
         float t0 = 0, ft0 = ROCsq(t0) - w*w;
         roots[off + numPerpdfddf] = 1f; // always check interval end points
         numPerpdfddf++;
@@ -189,8 +181,9 @@ class Curve {
     // A slight modification of the false position algorithm on wikipedia.
     // This only works for the ROCsq-x functions. It might be nice to have
     // the function as an argument, but that would be awkward in java6.
-    // It is something to consider for java7, depending on how closures
-    // and function objects turn out. Same goes for the newton's method
+    // TODO: It is something to consider for java8 (or whenever lambda
+    // expressions make it into the language), depending on how closures
+    // and turn out. Same goes for the newton's method
     // algorithm in Helpers.java
     private float falsePositionROCsqMinusX(float x0, float x1,
                                            final float x, final float err)
@@ -203,7 +196,7 @@ class Curve {
         for (int i = 0; i < iterLimit && Math.abs(t - s) > err * Math.abs(t + s); i++) {
             r = (fs * t - ft * s) / (fs - ft);
             fr = ROCsq(r) - x;
-            if (fr * ft > 0) {// have the same sign
+            if (sameSign(fr, ft)) {
                 ft = fr; t = r;
                 if (side < 0) {
                     fs /= (1 << (-side));
@@ -226,55 +219,65 @@ class Curve {
         return r;
     }
 
+    private static boolean sameSign(double x, double y) {
+        // another way is to test if x*y > 0. This is bad for small x, y.
+        return (x < 0 && y < 0) || (x > 0 && y > 0);
+    }
+
     // returns the radius of curvature squared at t of this curve
     // see http://en.wikipedia.org/wiki/Radius_of_curvature_(applications)
     private float ROCsq(final float t) {
-        final float dx = dxat(t);
-        final float dy = dyat(t);
-        final float ddx = ddxat(t);
-        final float ddy = ddyat(t);
+        // dx=xat(t) and dy=yat(t). These calls have been inlined for efficiency
+        final float dx = t * (t * dax + dbx) + cx;
+        final float dy = t * (t * day + dby) + cy;
+        final float ddx = 2 * dax * t + dbx;
+        final float ddy = 2 * day * t + dby;
         final float dx2dy2 = dx*dx + dy*dy;
         final float ddx2ddy2 = ddx*ddx + ddy*ddy;
         final float ddxdxddydy = ddx*dx + ddy*dy;
-        float ret = ((dx2dy2*dx2dy2) / (dx2dy2 * ddx2ddy2 - ddxdxddydy*ddxdxddydy))*dx2dy2;
-        return ret;
+        return dx2dy2*((dx2dy2*dx2dy2) / (dx2dy2 * ddx2ddy2 - ddxdxddydy*ddxdxddydy));
     }
 
-    // curve to be broken should be in pts[0]
-    // this will change the contents of both pts and Ts
+    // curve to be broken should be in pts
+    // this will change the contents of pts but not Ts
     // TODO: There's no reason for Ts to be an array. All we need is a sequence
     // of t values at which to subdivide. An array statisfies this condition,
     // but is unnecessarily restrictive. Ts should be an Iterator<Float> instead.
     // Doing this will also make dashing easier, since we could easily make
     // LengthIterator an Iterator<Float> and feed it to this function to simplify
     // the loop in Dasher.somethingTo.
-    static Iterator<float[]> breakPtsAtTs(final float[][] pts, final int type,
+    static Iterator<Integer> breakPtsAtTs(final float[] pts, final int type,
                                           final float[] Ts, final int numTs)
     {
-        assert pts.length >= 2 && pts[0].length >= 8 && numTs <= Ts.length;
-        return new Iterator<float[]>() {
-            int nextIdx = 0;
+        assert pts.length >= 2*type && numTs <= Ts.length;
+        return new Iterator<Integer>() {
+            // these prevent object creation and destruction during autoboxing.
+            // Because of this, the compiler should be able to completely
+            // eliminate the boxing costs.
+            final Integer i0 = 0;
+            final Integer itype = type;
             int nextCurveIdx = 0;
+            Integer curCurveOff = i0;
             float prevT = 0;
 
             @Override public boolean hasNext() {
                 return nextCurveIdx < numTs + 1;
             }
 
-            @Override public float[] next() {
-                float[] ret;
+            @Override public Integer next() {
+                Integer ret;
                 if (nextCurveIdx < numTs) {
                     float curT = Ts[nextCurveIdx];
                     float splitT = (curT - prevT) / (1 - prevT);
                     Helpers.subdivideAt(splitT,
-                                        pts[nextIdx], 0,
-                                        pts[nextIdx], 0,
-                                        pts[1-nextIdx], 0, type);
-                    updateTs(Ts, Ts[nextCurveIdx], nextCurveIdx + 1, numTs - nextCurveIdx - 1);
-                    ret = pts[nextIdx];
-                    nextIdx = 1 - nextIdx;
+                                        pts, curCurveOff,
+                                        pts, 0,
+                                        pts, type, type);
+                    prevT = curT;
+                    ret = i0;
+                    curCurveOff = itype;
                 } else {
-                    ret = pts[nextIdx];
+                    ret = curCurveOff;
                 }
                 nextCurveIdx++;
                 return ret;
@@ -282,13 +285,6 @@ class Curve {
 
             @Override public void remove() {}
         };
-    }
-
-    // precondition: ts[off]...ts[off+len-1] must all be greater than t.
-    private static void updateTs(float[] ts, final float t, final int off, final int len) {
-        for (int i = off; i < off + len; i++) {
-            ts[i] = (ts[i] - t) / (1 - t);
-        }
     }
 }
 

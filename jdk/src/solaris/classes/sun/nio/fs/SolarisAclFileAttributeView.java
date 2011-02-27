@@ -198,7 +198,7 @@ class SolarisAclFileAttributeView
      * Decode the buffer, returning an ACL
      */
     private static List<AclEntry> decode(long address, int n) {
-        ArrayList<AclEntry> acl = new ArrayList<AclEntry>(n);
+        ArrayList<AclEntry> acl = new ArrayList<>(n);
         for (int i=0; i<n; i++) {
             long offset = address + i*SIZEOF_ACE_T;
 
@@ -244,7 +244,7 @@ class SolarisAclFileAttributeView
                     assert false;
             }
 
-            HashSet<AclEntryPermission> aceMask = new HashSet<AclEntryPermission>();
+            Set<AclEntryPermission> aceMask = EnumSet.noneOf(AclEntryPermission.class);
             if ((mask & ACE_READ_DATA) > 0)
                 aceMask.add(AclEntryPermission.READ_DATA);
             if ((mask & ACE_WRITE_DATA) > 0)
@@ -274,7 +274,7 @@ class SolarisAclFileAttributeView
             if ((mask & ACE_SYNCHRONIZE) > 0)
                 aceMask.add(AclEntryPermission.SYNCHRONIZE);
 
-            HashSet<AclEntryFlag> aceFlags = new HashSet<AclEntryFlag>();
+            Set<AclEntryFlag> aceFlags = EnumSet.noneOf(AclEntryFlag.class);
             if ((flags & ACE_FILE_INHERIT_ACE) > 0)
                 aceFlags.add(AclEntryFlag.FILE_INHERIT);
             if ((flags & ACE_DIRECTORY_INHERIT_ACE) > 0)

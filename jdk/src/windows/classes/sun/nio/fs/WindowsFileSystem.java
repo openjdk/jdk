@@ -127,7 +127,7 @@ class WindowsFileSystem
         }
 
         // iterate over roots, ignoring those that the security manager denies
-        ArrayList<Path> result = new ArrayList<Path>();
+        ArrayList<Path> result = new ArrayList<>();
         SecurityManager sm = System.getSecurityManager();
         for (int i = 0; i <= 25; i++) {  // 0->A, 1->B, 2->C...
             if ((drives & (1 << i)) != 0) {
@@ -235,33 +235,50 @@ class WindowsFileSystem
     }
 
     @Override
-    public Path getPath(String path) {
+    public final Path getPath(String first, String... more) {
+        String path;
+        if (more.length == 0) {
+            path = first;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(first);
+            for (String segment: more) {
+                if (segment.length() > 0) {
+                    if (sb.length() > 0)
+                        sb.append('\\');
+                    sb.append(segment);
+                }
+            }
+            path = sb.toString();
+        }
         return WindowsPath.parse(this, path);
     }
 
     @Override
     public UserPrincipalLookupService getUserPrincipalLookupService() {
-        return theLookupService;
+        return LookupService.instance;
     }
 
-    private static final UserPrincipalLookupService theLookupService =
-        new UserPrincipalLookupService() {
-            @Override
-            public UserPrincipal lookupPrincipalByName(String name)
-                throws IOException
-            {
-                return WindowsUserPrincipals.lookup(name);
-            }
-            @Override
-            public GroupPrincipal lookupPrincipalByGroupName(String group)
-                throws IOException
-            {
-                UserPrincipal user = WindowsUserPrincipals.lookup(group);
-                if (!(user instanceof GroupPrincipal))
-                    throw new UserPrincipalNotFoundException(group);
-                return (GroupPrincipal)user;
-            }
-        };
+    private static class LookupService {
+        static final UserPrincipalLookupService instance =
+            new UserPrincipalLookupService() {
+                @Override
+                public UserPrincipal lookupPrincipalByName(String name)
+                    throws IOException
+                {
+                    return WindowsUserPrincipals.lookup(name);
+                }
+                @Override
+                public GroupPrincipal lookupPrincipalByGroupName(String group)
+                    throws IOException
+                {
+                    UserPrincipal user = WindowsUserPrincipals.lookup(group);
+                    if (!(user instanceof GroupPrincipal))
+                        throw new UserPrincipalNotFoundException(group);
+                    return (GroupPrincipal)user;
+                }
+            };
+    }
 
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {

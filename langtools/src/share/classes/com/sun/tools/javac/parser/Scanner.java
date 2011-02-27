@@ -138,7 +138,7 @@ public class Scanner implements Lexer {
         source = fac.source;
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
-        allowUnderscoresInLiterals = source.allowBinaryLiterals();
+        allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();

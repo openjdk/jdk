@@ -39,7 +39,6 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.Attributes;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -223,9 +222,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         Path path = pathIter.next();
         if (pathIter.hasNext())
             throw new IllegalArgumentException("path too long for directory");
-        if (!path.exists())
-            throw new FileNotFoundException(path + ": does not exist");
-        else if (!isDirectory(path))
+        if (!isDirectory(path))
             throw new IOException(path + ": not a directory");
     }
 
@@ -326,7 +323,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
     private void list(Path path, String packageName, final Set<Kind> kinds,
             boolean recurse, final ListBuffer<JavaFileObject> results)
             throws IOException {
-        if (!path.exists())
+        if (!Files.exists(path))
             return;
 
         final Path pathDir;
@@ -341,7 +338,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         String sep = path.getFileSystem().getSeparator();
         Path packageDir = packageName.isEmpty() ? pathDir
                 : pathDir.resolve(packageName.replace(".", sep));
-        if (!packageDir.exists())
+        if (!Files.exists(packageDir))
             return;
 
 /* Alternate impl of list, superceded by use of Files.walkFileTree */
@@ -353,7 +350,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 //            DirectoryStream<Path> ds = dir.newDirectoryStream();
 //            try {
 //                for (Path p: ds) {
-//                    String name = p.getName().toString();
+//                    String name = p.getFileName().toString();
 //                    if (isDirectory(p)) {
 //                        if (recurse && SourceVersion.isIdentifier(name)) {
 //                            queue.add(p);
@@ -376,7 +373,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
                 new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                Path name = dir.getName();
+                Path name = dir.getFileName();
                 if (name == null || SourceVersion.isIdentifier(name.toString())) // JSR 292?
                     return FileVisitResult.CONTINUE;
                 else
@@ -385,7 +382,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (attrs.isRegularFile() && kinds.contains(getKind(file.getName().toString()))) {
+                if (attrs.isRegularFile() && kinds.contains(getKind(file.getFileName().toString()))) {
                     JavaFileObject fe =
                         PathFileObject.createDirectoryPathFileObject(
                             JavacPathFileManager.this, file, pathDir);
@@ -431,13 +428,13 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         for (Path p: getLocation(location)) {
             if (isDirectory(p)) {
                 Path f = resolve(p, relativePath);
-                if (f.exists())
+                if (Files.exists(f))
                     return PathFileObject.createDirectoryPathFileObject(this, f, p);
             } else {
                 FileSystem fs = getFileSystem(p);
                 if (fs != null) {
                     Path file = getPath(fs, relativePath);
-                    if (file.exists())
+                    if (Files.exists(file))
                         return PathFileObject.createJarPathFileObject(this, file);
                 }
             }
@@ -504,7 +501,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
     private FileSystem getFileSystem(Path p) throws IOException {
         FileSystem fs = fileSystems.get(p);
         if (fs == null) {
-            fs = FileSystems.newFileSystem(p, Collections.<String,Void>emptyMap(), null);
+            fs = FileSystems.newFileSystem(p, null);
             fileSystems.put(p, fs);
         }
         return fs;
@@ -530,7 +527,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
     }
 
     private static boolean isDirectory(Path path) throws IOException {
-        BasicFileAttributes attrs = Attributes.readBasicFileAttributes(path);
+        BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
         return attrs.isDirectory();
     }
 

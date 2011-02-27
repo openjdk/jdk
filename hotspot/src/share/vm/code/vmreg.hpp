@@ -36,6 +36,12 @@
 #ifdef TARGET_ARCH_zero
 # include "register_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "register_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "register_ppc.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/adlcVMDeps.hpp"
 #include "utilities/ostream.hpp"
@@ -50,6 +56,12 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
 #endif
 #endif
 
@@ -163,6 +175,12 @@ public:
 #endif
 #ifdef TARGET_ARCH_zero
 # include "vmreg_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vmreg_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmreg_ppc.hpp"
 #endif
 
 

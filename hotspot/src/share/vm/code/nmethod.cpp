@@ -34,6 +34,7 @@
 #include "interpreter/bytecode.hpp"
 #include "oops/methodDataOop.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/jvmtiImpl.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/dtrace.hpp"
@@ -1533,7 +1534,10 @@ void nmethod::post_compiled_method_load_event() {
   }
 
   if (JvmtiExport::should_post_compiled_method_load()) {
-    JvmtiExport::post_compiled_method_load(this);
+    // Let the Service thread (which is a real Java thread) post the event
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    JvmtiDeferredEventQueue::enqueue(
+      JvmtiDeferredEvent::compiled_method_load_event(this));
   }
 }
 
@@ -1566,8 +1570,17 @@ void nmethod::post_compiled_method_unload() {
   // ref will have been cleared.
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
-    HandleMark hm;
-    JvmtiExport::post_compiled_method_unload(_jmethod_id, insts_begin());
+    JvmtiDeferredEvent event =
+      JvmtiDeferredEvent::compiled_method_unload_event(
+          _jmethod_id, insts_begin());
+    if (SafepointSynchronize::is_at_safepoint()) {
+      // Don't want to take the queueing lock. Add it as pending and
+      // it will get enqueued later.
+      JvmtiDeferredEventQueue::add_pending_event(event);
+    } else {
+      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      JvmtiDeferredEventQueue::enqueue(event);
+    }
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at

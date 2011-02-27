@@ -25,7 +25,7 @@
 
 package sun.nio.fs;
 
-import java.nio.file.FileRef;
+import java.nio.file.Path;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -57,7 +57,7 @@ public class GnomeFileTypeDetector
     }
 
     @Override
-    public String implProbeContentType(FileRef obj) throws IOException {
+    public String implProbeContentType(Path obj) throws IOException {
         if (!gioAvailable && !gnomeVfsAvailable)
             return null;
         if (!(obj instanceof UnixPath))

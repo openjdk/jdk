@@ -63,7 +63,7 @@ class LinuxUserDefinedFileAttributeView
 
     // Parses buffer as array of NULL-terminated C strings.
     private List<String> asList(long address, int size) {
-        final List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         int start = 0;
         int pos = 0;
         while (pos < size) {
