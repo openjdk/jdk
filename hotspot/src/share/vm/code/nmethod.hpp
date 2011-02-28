@@ -34,7 +34,6 @@
 class ExceptionCache : public CHeapObj {
   friend class VMStructs;
  private:
-  static address _unwind_handler;
   enum { cache_size = 16 };
   klassOop _exception_type;
   address  _pc[cache_size];
@@ -62,8 +61,6 @@ class ExceptionCache : public CHeapObj {
   bool    match_exception_with_space(Handle exception) ;
   address test_address(address addr);
   bool    add_address_and_handler(address addr, address handler) ;
-
-  static address unwind_handler() { return _unwind_handler; }
 };
 
 

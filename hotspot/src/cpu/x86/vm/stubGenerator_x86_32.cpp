@@ -439,10 +439,6 @@ class StubGenerator: public StubCodeGenerator {
     // Verify that there is really a valid exception in RAX.
     __ verify_oop(exception_oop);
 
-    // Restore SP from BP if the exception PC is a MethodHandle call site.
-    __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
-    __ cmovptr(Assembler::notEqual, rsp, rbp);
-
     // continue at exception handler (return address removed)
     // rax: exception
     // rbx: exception handler
