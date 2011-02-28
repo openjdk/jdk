@@ -551,6 +551,7 @@ void notify_vm_shutdown() {
 
 void vm_direct_exit(int code) {
   notify_vm_shutdown();
+  os::wait_for_keypress_at_exit();
   ::exit(code);
 }
 
@@ -577,11 +578,13 @@ void vm_perform_shutdown_actions() {
 void vm_shutdown()
 {
   vm_perform_shutdown_actions();
+  os::wait_for_keypress_at_exit();
   os::shutdown();
 }
 
 void vm_abort(bool dump_core) {
   vm_perform_shutdown_actions();
+  os::wait_for_keypress_at_exit();
   os::abort(dump_core);
   ShouldNotReachHere();
 }
