@@ -135,6 +135,7 @@ UNAME          = $(UTILS_COMMAND_PATH)uname
 UNIQ           = $(UTILS_USR_BIN_PATH)uniq
 UNZIP          = $(UTILS_USR_BIN_PATH)unzip
 UNZIPSFX       = $(UTILS_DEVTOOL_PATH)unzipsfx
+XARGS          = $(UTILS_USR_BIN_PATH)xargs
 WC             = $(UTILS_USR_BIN_PATH)wc
 WHICH          = $(UTILS_USR_BIN_PATH)which
 YACC           = $(UTILS_CCS_BIN_PATH)yacc
