@@ -3730,6 +3730,9 @@ class CommandLineFlags {
           "The file to create and for whose removal to await when pausing " \
           "at startup. (default: ./vm.paused.<pid>)")                       \
                                                                             \
+  diagnostic(bool, PauseAtExit, false,                                      \
+          "Pause and wait for keypress on exit if a debugger is attached")  \
+                                                                            \
   product(bool, ExtendedDTraceProbes,    false,                             \
           "Enable performance-impacting dtrace probes")                     \
                                                                             \

@@ -1788,7 +1788,7 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  if (strcmp(Arguments::sun_java_launcher(), "gamma") == 0) {
+  if (Arguments::created_by_gamma_launcher()) {
      // Support for the gamma launcher. Check for an
      // JAVA_HOME environment variable
      // and fix up the path so it looks like
@@ -3415,6 +3415,19 @@ void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
   _setmode(_fileno(stdout), _O_BINARY);
   _setmode(_fileno(stderr), _O_BINARY);
+}
+
+
+bool os::is_debugger_attached() {
+  return IsDebuggerPresent() ? true : false;
+}
+
+
+void os::wait_for_keypress_at_exit(void) {
+  if (PauseAtExit) {
+    fprintf(stderr, "Press any key to continue...\n");
+    fgetc(stdin);
+  }
 }
 
 
