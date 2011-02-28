@@ -299,6 +299,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     protected JavaCompiler delegateCompiler;
 
     /**
+     * Command line options.
+     */
+    protected Options options;
+
+    protected Context context;
+
+    /**
      * Flag set if any annotation processing occurred.
      **/
     protected boolean annotationProcessingOccurred;
@@ -307,8 +314,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * Flag set if any implicit source files read.
      **/
     protected boolean implicitSourceFilesRead;
-
-    protected Context context;
 
     /** Construct a new compiler using a shared context.
      */
@@ -354,7 +359,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         reader.sourceCompleter = this;
 
-        Options options = Options.instance(context);
+        options = Options.instance(context);
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -792,6 +797,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             throw new AssertionError("attempt to reuse JavaCompiler");
         hasBeenUsed = true;
 
+        // forcibly set the equivalent of -Xlint:-options, so that no further
+        // warnings about command line options are generated from this point on
+        options.put(XLINT_CUSTOM + "-" + LintCategory.OPTIONS.option, "true");
+        options.remove(XLINT_CUSTOM + LintCategory.OPTIONS.option);
+
         start_msec = now();
 
         try {
@@ -963,7 +973,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public void initProcessAnnotations(Iterable<? extends Processor> processors) {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
-        Options options = Options.instance(context);
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
@@ -1022,7 +1031,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             // If there are no annotation processors present, and
             // annotation processing is to occur with compilation,
             // emit a warning.
-            Options options = Options.instance(context);
             if (options.isSet(PROC, "only")) {
                 log.warning("proc.proc-only.requested.no.procs");
                 todo.clear();
@@ -1108,7 +1116,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     boolean explicitAnnotationProcessingRequested() {
-        Options options = Options.instance(context);
         return
             explicitAnnotationProcessingRequested ||
             options.isSet(PROCESSOR) ||
