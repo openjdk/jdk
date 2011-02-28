@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package com.sun.jarsigner;
 
 import java.net.URI;
-import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.util.Set;
 import java.util.zip.ZipFile;
 
 /**
@@ -81,13 +79,6 @@ public interface ContentSignerParameters {
      * @return The non-null array of X.509 public-key certificates.
      */
     public X509Certificate[] getSignerCertificateChain();
-
-    /**
-     * Retrieves the signer's X.509 CRLs.
-     *
-     * @return An unmodifiable set of X.509 CRLs (never <code>null</code>)
-     */
-    public Set<X509CRL> getCRLs();
 
     /**
      * Retrieves the content that was signed.

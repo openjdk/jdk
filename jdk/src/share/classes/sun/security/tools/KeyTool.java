@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.tools;
 
-import sun.misc.SharedSecrets;
 import java.io.*;
 import java.security.CodeSigner;
 import java.security.KeyStore;
@@ -2309,16 +2308,6 @@ public final class KeyTool {
                                         printX509Cert(x, out);
                                     }
                                     out.println();
-                                }
-                            }
-                            CRL[] crls = SharedSecrets
-                                    .getJavaSecurityCodeSignerAccess()
-                                    .getCRLs(signer);
-                            if (crls != null) {
-                                out.println(rb.getString("CRLs."));
-                                out.println();
-                                for (CRL crl: crls) {
-                                    printCRL(crl, out);
                                 }
                             }
                         }
