@@ -2832,12 +2832,26 @@ public class Types {
             while (ts.head.tag != CLASS && ts.head.tag != TYPEVAR)
                 ts = ts.tail;
             Assert.check(!ts.isEmpty());
-            List<Type> cl = closure(ts.head);
+            //step 1 - compute erased candidate set (EC)
+            List<Type> cl = erasedSupertypes(ts.head);
             for (Type t : ts.tail) {
                 if (t.tag == CLASS || t.tag == TYPEVAR)
-                    cl = intersect(cl, closure(t));
+                    cl = intersect(cl, erasedSupertypes(t));
             }
-            return compoundMin(cl);
+            //step 2 - compute minimal erased candidate set (MEC)
+            List<Type> mec = closureMin(cl);
+            //step 3 - for each element G in MEC, compute lci(Inv(G))
+            List<Type> candidates = List.nil();
+            for (Type erasedSupertype : mec) {
+                List<Type> lci = List.of(asSuper(ts.head, erasedSupertype.tsym));
+                for (Type t : ts) {
+                    lci = intersect(lci, List.of(asSuper(t, erasedSupertype.tsym)));
+                }
+                candidates = candidates.appendList(lci);
+            }
+            //step 4 - let MEC be { G1, G2 ... Gn }, then we have that
+            //lub = lci(Inv(G1)) & lci(Inv(G2)) & ... & lci(Inv(Gn))
+            return compoundMin(candidates);
 
         default:
             // calculate lub(A, B[])
@@ -2851,6 +2865,18 @@ public class Types {
         }
     }
     // where
+        List<Type> erasedSupertypes(Type t) {
+            ListBuffer<Type> buf = lb();
+            for (Type sup : closure(t)) {
+                if (sup.tag == TYPEVAR) {
+                    buf.append(sup);
+                } else {
+                    buf.append(erasure(sup));
+                }
+            }
+            return buf.toList();
+        }
+
         private Type arraySuperType = null;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
