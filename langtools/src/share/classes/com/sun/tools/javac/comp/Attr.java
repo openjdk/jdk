@@ -2806,7 +2806,7 @@ public class Attr extends JCTree.Visitor {
                                   sym.location());
                 owntype = new MethodType(owntype.getParameterTypes(),
                                          types.erasure(owntype.getReturnType()),
-                                         owntype.getThrownTypes(),
+                                         types.erasure(owntype.getThrownTypes()),
                                          syms.methodClass);
             }
             if (useVarargs) {
