@@ -625,9 +625,6 @@ sun/security/tools/keytool/emptysubject.sh			generic-all
 # Timeout on solaris-sparcv9 or exception thrown
 com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
 
-# File 6535697.test input stream left open? windows samevm
-java/security/cert/CertificateFactory/openssl/OpenSSLCert.java	generic-all
-
 # Leaving file open: SerialVersion.current, windows samevm
 java/security/BasicPermission/SerialVersion.java		generic-all
 
