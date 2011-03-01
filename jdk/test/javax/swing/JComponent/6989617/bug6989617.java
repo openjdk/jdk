@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,76 +28,107 @@
    @run main bug6989617
 */
 
+import sun.awt.SunToolkit;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class bug6989617 {
-
-    private boolean isPaintingOrigin;
-    private boolean innerPanelRepainted, outerPanelRepainted;
-
-    public bug6989617() {
-
-        final JButton button = new JButton("button");
-
-        JPanel innerPanel = new JPanel() {
-            protected boolean isPaintingOrigin() {
-                return isPaintingOrigin;
-            }
-
-            public void repaint(long tm, int x, int y, int width, int height) {
-                if (button.getParent() != null) {
-                    innerPanelRepainted = true;
-                    if (!button.getSize().equals(new Dimension(width, height))) {
-                        throw new RuntimeException("Wrong size of the dirty area");
-                    }
-                    if (!button.getLocation().equals(new Point(x, y))) {
-                        throw new RuntimeException("Wrong location of the dirty area");
-                    }
-                }
-                super.repaint(tm, x, y, width, height);
-            }
-        };
-
-        JPanel outerPanel = new JPanel() {
-            protected boolean isPaintingOrigin() {
-                return isPaintingOrigin;
-            }
-
-            public void repaint(long tm, int x, int y, int width, int height) {
-                if (button.getParent() != null) {
-                    outerPanelRepainted = true;
-                    if (!button.getSize().equals(new Dimension(width, height))) {
-                        throw new RuntimeException("Wrong size of the dirty area");
-                    }
-                }
-                super.repaint(tm, x, y, width, height);
-            }
-        };
-
-
-        outerPanel.add(innerPanel);
-        innerPanel.add(button);
-
-        outerPanel.setSize(100, 100);
-        innerPanel.setBounds(10, 10, 50, 50);
-        button.setBounds(10, 10, 20, 20);
-
-        if (innerPanelRepainted || outerPanelRepainted) {
-            throw new RuntimeException("Repainted flag is unexpectedly on");
-        }
-        button.repaint();
-        if (innerPanelRepainted || outerPanelRepainted) {
-            throw new RuntimeException("Repainted flag is unexpectedly on");
-        }
-        isPaintingOrigin = true;
-        button.repaint();
-        if (!innerPanelRepainted || !outerPanelRepainted) {
-            throw new RuntimeException("Repainted flag is unexpectedly off");
-        }
-    }
+    private static MyPanel panel;
+    private static JButton button;
 
     public static void main(String... args) throws Exception {
-        new bug6989617();
+        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                JFrame frame = new JFrame();
+                frame. setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                panel = new MyPanel();
+
+                button = new JButton("Hello");
+                panel.add(button);
+                frame.add(panel);
+
+                frame.setSize(200, 300);
+                frame.setVisible(true);
+            }
+        });
+        // Testing the panel as a painting origin,
+        // the panel.paintImmediately() must be triggered
+        // when button.repaint() is called
+        toolkit.realSync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                if (panel.getPaintRectangle() != null) {
+                    throw new RuntimeException("paint rectangle is not null");
+                }
+                button.repaint();
+            }
+        });
+        toolkit.realSync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                Rectangle pr = panel.getPaintRectangle();
+                if (!pr.getSize().equals(button.getSize())) {
+                    throw new RuntimeException("wrong size of the dirty area");
+                }
+                if (!pr.getLocation().equals(button.getLocation())) {
+                    throw new RuntimeException("wrong location of the dirty area");
+                }
+            }
+        });
+        // Testing the panel as NOT a painting origin
+        // the panel.paintImmediately() must NOT be triggered
+        // when button.repaint() is called
+        toolkit.realSync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                panel.resetPaintRectangle();
+                panel.setPaintingOrigin(false);
+                if (panel.getPaintRectangle() != null) {
+                    throw new RuntimeException("paint rectangle is not null");
+                }
+                button.repaint();
+            }
+        });
+        toolkit.realSync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                if(panel.getPaintRectangle() != null) {
+                    throw new RuntimeException("paint rectangle is not null");
+                }
+                System.out.println("Test passed...");
+            }
+        });
+    }
+
+    static class MyPanel extends JPanel {
+        private boolean isPaintingOrigin = true;
+        private Rectangle paintRectangle;
+
+        {
+            setLayout(new GridBagLayout());
+        }
+
+        public boolean isPaintingOrigin() {
+            return isPaintingOrigin;
+        }
+
+        public void setPaintingOrigin(boolean paintingOrigin) {
+            isPaintingOrigin = paintingOrigin;
+        }
+
+        public void paintImmediately(int x, int y, int w, int h) {
+            super.paintImmediately(x, y, w, h);
+            paintRectangle = new Rectangle(x, y, w, h);
+        }
+
+        public Rectangle getPaintRectangle() {
+            return paintRectangle == null? null: new Rectangle(paintRectangle);
+        }
+
+        public void resetPaintRectangle() {
+            this.paintRectangle = null;
+        }
     }
 }

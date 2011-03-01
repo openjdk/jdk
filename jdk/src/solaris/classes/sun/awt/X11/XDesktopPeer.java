@@ -44,11 +44,27 @@ import java.awt.peer.DesktopPeer;
 public class XDesktopPeer implements DesktopPeer {
 
     private static boolean nativeLibraryLoaded = false;
-    static {
-        nativeLibraryLoaded = init();
+    private static boolean initExecuted = false;
+
+    private static void initWithLock(){
+        XToolkit.awtLock();
+        try {
+            if (!initExecuted) {
+                nativeLibraryLoaded = init();
+            }
+        } finally {
+            initExecuted = true;
+            XToolkit.awtUnlock();
+        }
+    }
+
+    //package-private
+    XDesktopPeer(){
+        initWithLock();
     }
 
     static boolean isDesktopSupported() {
+        initWithLock();
         return nativeLibraryLoaded;
     }
 
@@ -83,12 +99,17 @@ public class XDesktopPeer implements DesktopPeer {
     }
 
     private void launch(URI uri) throws IOException {
-        if (!nativeLibraryLoaded) {
-            throw new IOException("Failed to load native libraries.");
-        }
-
         byte[] uriByteArray = ( uri.toString() + '\0' ).getBytes();
-        boolean result = gnome_url_show(uriByteArray);
+        boolean result = false;
+        XToolkit.awtLock();
+        try {
+            if (!nativeLibraryLoaded) {
+                throw new IOException("Failed to load native libraries.");
+            }
+            result = gnome_url_show(uriByteArray);
+        } finally {
+            XToolkit.awtUnlock();
+        }
         if (!result) {
             throw new IOException("Failed to show URI:" + uri);
         }

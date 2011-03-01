@@ -233,8 +233,8 @@ HT	+1832-07220	America/Port-au-Prince
 HU	+4730+01905	Europe/Budapest
 ID	-0610+10648	Asia/Jakarta	Java & Sumatra
 ID	-0002+10920	Asia/Pontianak	west & central Borneo
-ID	-0507+11924	Asia/Makassar	east & south Borneo, Celebes, Bali, Nusa Tengarra, west Timor
-ID	-0232+14042	Asia/Jayapura	Irian Jaya & the Moluccas
+ID	-0507+11924	Asia/Makassar	east & south Borneo, Sulawesi (Celebes), Bali, Nusa Tengarra, west Timor
+ID	-0232+14042	Asia/Jayapura	west New Guinea (Irian Jaya) & Malukus (Moluccas)
 IE	+5320-00615	Europe/Dublin
 IL	+3146+03514	Asia/Jerusalem
 IM	+5409-00428	Europe/Isle_of_Man
@@ -426,6 +426,7 @@ US	+411745-0863730	America/Indiana/Knox	Central Time - Indiana - Starke County
 US	+450628-0873651	America/Menominee	Central Time - Michigan - Dickinson, Gogebic, Iron & Menominee Counties
 US	+470659-1011757	America/North_Dakota/Center	Central Time - North Dakota - Oliver County
 US	+465042-1012439	America/North_Dakota/New_Salem	Central Time - North Dakota - Morton County (except Mandan area)
+US	+471551-1014640	America/North_Dakota/Beulah	Central Time - North Dakota - Mercer County
 US	+394421-1045903	America/Denver	Mountain Time
 US	+433649-1161209	America/Boise	Mountain Time - south Idaho & east Oregon
 US	+364708-1084111	America/Shiprock	Mountain Time - Navajo
