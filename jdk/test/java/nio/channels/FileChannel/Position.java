@@ -22,13 +22,16 @@
  */
 
 /* @test
+ * @bug 4429043 6526860
  * @summary Test position method of FileChannel
  */
 
 import java.io.*;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.*;
+import static java.nio.file.StandardOpenOption.*;
+import java.nio.charset.Charset;
 import java.util.Random;
 
 
@@ -38,32 +41,42 @@ import java.util.Random;
 
 public class Position {
 
-    private static PrintStream err = System.err;
+    private static final Charset ISO8859_1 = Charset.forName("8859_1");
 
-    private static Random generator = new Random();
-
-    private static int CHARS_PER_LINE = File.separatorChar == '/' ? 5 : 6;
-
-    private static File blah;
+    private static final Random generator = new Random();
 
     public static void main(String[] args) throws Exception {
-        blah = File.createTempFile("blah", null);
-        blah.deleteOnExit();
+        Path blah = Files.createTempFile("blah", null);
+        blah.toFile().deleteOnExit();
         initTestFile(blah);
 
-        FileInputStream fis = new FileInputStream(blah);
-        FileChannel c = fis.getChannel();
-
-        for(int i=0; i<100; i++) {
-            long newPos = generator.nextInt(1000);
-            c.position(newPos);
-            if (c.position() != newPos)
-                throw new RuntimeException("Position failed");
+        for (int i=0; i<10; i++) {
+            try (FileChannel fc = (generator.nextBoolean()) ?
+                    FileChannel.open(blah, READ) :
+                    new FileInputStream(blah.toFile()).getChannel()) {
+                for (int j=0; j<100; j++) {
+                    long newPos = generator.nextInt(1000);
+                    fc.position(newPos);
+                    if (fc.position() != newPos)
+                        throw new RuntimeException("Position failed");
+                }
+            }
         }
 
-        c.close();
-        fis.close();
-        blah.delete();
+        for (int i=0; i<10; i++) {
+            try (FileChannel fc = (generator.nextBoolean()) ?
+                     FileChannel.open(blah, APPEND) :
+                     new FileOutputStream(blah.toFile(), true).getChannel()) {
+                for (int j=0; j<10; j++) {
+                    if (fc.position() != fc.size())
+                        throw new RuntimeException("Position expected to be size");
+                    byte[] buf = new byte[generator.nextInt(100)];
+                    fc.write(ByteBuffer.wrap(buf));
+                }
+            }
+        }
+
+        Files.delete(blah);
     }
 
     /**
@@ -78,19 +91,15 @@ public class Position {
      * 3999
      *
      */
-    private static void initTestFile(File blah) throws Exception {
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
-
-        for(int i=0; i<4000; i++) {
-            String number = new Integer(i).toString();
-            for (int h=0; h<4-number.length(); h++)
-                awriter.write("0");
-            awriter.write(""+i);
-            awriter.newLine();
+    private static void initTestFile(Path blah) throws IOException {
+        try (BufferedWriter awriter = Files.newBufferedWriter(blah, ISO8859_1)) {
+            for(int i=0; i<4000; i++) {
+                String number = new Integer(i).toString();
+                for (int h=0; h<4-number.length(); h++)
+                    awriter.write("0");
+                awriter.write(""+i);
+                awriter.newLine();
+            }
         }
-       awriter.flush();
-       awriter.close();
     }
 }
