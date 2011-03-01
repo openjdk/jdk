@@ -2610,9 +2610,6 @@ class CommandLineFlags {
   develop(bool, CompileTheWorldPreloadClasses, true,                        \
           "Preload all classes used by a class before start loading")       \
                                                                             \
-  notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
-          "Compile all methods although class initializer failed")          \
-                                                                            \
   notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
           "Force a safepoint every n compiles so sweeper can keep up")      \
                                                                             \
