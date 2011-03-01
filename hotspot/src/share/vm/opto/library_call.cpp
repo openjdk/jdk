@@ -97,7 +97,7 @@ class LibraryCallKit : public GraphKit {
                              RegionNode* region);
   Node* generate_current_thread(Node* &tls_output);
   address basictype2arraycopy(BasicType t, Node *src_offset, Node *dest_offset,
-                              bool disjoint_bases, const char* &name);
+                              bool disjoint_bases, const char* &name, bool dest_uninitialized);
   Node* load_mirror_from_klass(Node* klass);
   Node* load_klass_from_mirror_common(Node* mirror, bool never_see_null,
                                       int nargs,
@@ -212,26 +212,26 @@ class LibraryCallKit : public GraphKit {
                                 AllocateNode* alloc,
                                 Node* src,  Node* src_offset,
                                 Node* dest, Node* dest_offset,
-                                Node* dest_size);
+                                Node* dest_size, bool dest_uninitialized);
   void generate_slow_arraycopy(const TypePtr* adr_type,
                                Node* src,  Node* src_offset,
                                Node* dest, Node* dest_offset,
-                               Node* copy_length);
+                               Node* copy_length, bool dest_uninitialized);
   Node* generate_checkcast_arraycopy(const TypePtr* adr_type,
                                      Node* dest_elem_klass,
                                      Node* src,  Node* src_offset,
                                      Node* dest, Node* dest_offset,
-                                     Node* copy_length);
+                                     Node* copy_length, bool dest_uninitialized);
   Node* generate_generic_arraycopy(const TypePtr* adr_type,
                                    Node* src,  Node* src_offset,
                                    Node* dest, Node* dest_offset,
-                                   Node* copy_length);
+                                   Node* copy_length, bool dest_uninitialized);
   void generate_unchecked_arraycopy(const TypePtr* adr_type,
                                     BasicType basic_elem_type,
                                     bool disjoint_bases,
                                     Node* src,  Node* src_offset,
                                     Node* dest, Node* dest_offset,
-                                    Node* copy_length);
+                                    Node* copy_length, bool dest_uninitialized);
   bool inline_unsafe_CAS(BasicType type);
   bool inline_unsafe_ordered_store(BasicType type);
   bool inline_fp_conversions(vmIntrinsics::ID id);
@@ -4092,7 +4092,8 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
   bool disjoint_bases = true;
   generate_unchecked_arraycopy(raw_adr_type, T_LONG, disjoint_bases,
-                               src, NULL, dest, NULL, countx);
+                               src, NULL, dest, NULL, countx,
+                               /*dest_uninitialized*/true);
 
   // If necessary, emit some card marks afterwards.  (Non-arrays only.)
   if (card_mark) {
@@ -4306,7 +4307,7 @@ enum {
 // Note:  The condition "disjoint" applies also for overlapping copies
 // where an descending copy is permitted (i.e., dest_offset <= src_offset).
 static address
-select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name) {
+select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized) {
   int selector =
     (aligned  ? COPYFUNC_ALIGNED  : COPYFUNC_UNALIGNED) +
     (disjoint ? COPYFUNC_DISJOINT : COPYFUNC_CONJOINT);
@@ -4314,6 +4315,10 @@ select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* 
 #define RETURN_STUB(xxx_arraycopy) { \
   name = #xxx_arraycopy; \
   return StubRoutines::xxx_arraycopy(); }
+
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
+  name = #xxx_arraycopy; \
+  return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {
   case T_BYTE:
@@ -4351,10 +4356,10 @@ select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* 
   case T_ARRAY:
   case T_OBJECT:
     switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(oop_arraycopy);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_oop_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(oop_disjoint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_oop_disjoint_arraycopy);
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_arraycopy, dest_uninitialized);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_arraycopy, dest_uninitialized);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_disjoint_arraycopy, dest_uninitialized);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_disjoint_arraycopy, dest_uninitialized);
     }
   default:
     ShouldNotReachHere();
@@ -4362,6 +4367,7 @@ select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* 
   }
 
 #undef RETURN_STUB
+#undef RETURN_STUB_PARM
 }
 
 //------------------------------basictype2arraycopy----------------------------
@@ -4369,7 +4375,8 @@ address LibraryCallKit::basictype2arraycopy(BasicType t,
                                             Node* src_offset,
                                             Node* dest_offset,
                                             bool disjoint_bases,
-                                            const char* &name) {
+                                            const char* &name,
+                                            bool dest_uninitialized) {
   const TypeInt* src_offset_inttype  = gvn().find_int_type(src_offset);;
   const TypeInt* dest_offset_inttype = gvn().find_int_type(dest_offset);;
 
@@ -4395,7 +4402,7 @@ address LibraryCallKit::basictype2arraycopy(BasicType t,
     disjoint = true;
   }
 
-  return select_arraycopy_function(t, aligned, disjoint, name);
+  return select_arraycopy_function(t, aligned, disjoint, name, dest_uninitialized);
 }
 
 
@@ -4451,7 +4458,8 @@ bool LibraryCallKit::inline_arraycopy() {
     // The component types are not the same or are not recognized.  Punt.
     // (But, avoid the native method wrapper to JVM_ArrayCopy.)
     generate_slow_arraycopy(TypePtr::BOTTOM,
-                            src, src_offset, dest, dest_offset, length);
+                            src, src_offset, dest, dest_offset, length,
+                            /*dest_uninitialized*/false);
     return true;
   }
 
@@ -4564,7 +4572,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
 
   Node* original_dest      = dest;
   AllocateArrayNode* alloc = NULL;  // used for zeroing, if needed
-  bool  must_clear_dest    = false;
+  bool  dest_uninitialized = false;
 
   // See if this is the initialization of a newly-allocated array.
   // If so, we will take responsibility here for initializing it to zero.
@@ -4587,12 +4595,14 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
     // From this point on, every exit path is responsible for
     // initializing any non-copied parts of the object to zero.
-    must_clear_dest = true;
+    // Also, if this flag is set we make sure that arraycopy interacts properly
+    // with G1, eliding pre-barriers. See CR 6627983.
+    dest_uninitialized = true;
   } else {
     // No zeroing elimination here.
     alloc             = NULL;
     //original_dest   = dest;
-    //must_clear_dest = false;
+    //dest_uninitialized = false;
   }
 
   // Results are placed here:
@@ -4624,10 +4634,10 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   Node* checked_value   = NULL;
 
   if (basic_elem_type == T_CONFLICT) {
-    assert(!must_clear_dest, "");
+    assert(!dest_uninitialized, "");
     Node* cv = generate_generic_arraycopy(adr_type,
                                           src, src_offset, dest, dest_offset,
-                                          copy_length);
+                                          copy_length, dest_uninitialized);
     if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
     checked_control = control();
     checked_i_o     = i_o();
@@ -4647,7 +4657,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     }
 
     // copy_length is 0.
-    if (!stopped() && must_clear_dest) {
+    if (!stopped() && dest_uninitialized) {
       Node* dest_length = alloc->in(AllocateNode::ALength);
       if (_gvn.eqv_uncast(copy_length, dest_length)
           || _gvn.find_int_con(dest_length, 1) <= 0) {
@@ -4673,7 +4683,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     result_memory->init_req(zero_path, memory(adr_type));
   }
 
-  if (!stopped() && must_clear_dest) {
+  if (!stopped() && dest_uninitialized) {
     // We have to initialize the *uncopied* part of the array to zero.
     // The copy destination is the slice dest[off..off+len].  The other slices
     // are dest_head = dest[0..off] and dest_tail = dest[off+len..dest.length].
@@ -4709,7 +4719,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       { PreserveJVMState pjvms(this);
         didit = generate_block_arraycopy(adr_type, basic_elem_type, alloc,
                                          src, src_offset, dest, dest_offset,
-                                         dest_size);
+                                         dest_size, dest_uninitialized);
         if (didit) {
           // Present the results of the block-copying fast call.
           result_region->init_req(bcopy_path, control());
@@ -4785,7 +4795,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,
                                               src, src_offset, dest, dest_offset,
-                                              ConvI2X(copy_length));
+                                              ConvI2X(copy_length), dest_uninitialized);
       if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
       checked_control = control();
       checked_i_o     = i_o();
@@ -4808,7 +4818,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     PreserveJVMState pjvms(this);
     generate_unchecked_arraycopy(adr_type, copy_type, disjoint_bases,
                                  src, src_offset, dest, dest_offset,
-                                 ConvI2X(copy_length));
+                                 ConvI2X(copy_length), dest_uninitialized);
 
     // Present the results of the fast call.
     result_region->init_req(fast_path, control());
@@ -4887,7 +4897,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     set_memory(slow_mem, adr_type);
     set_i_o(slow_i_o);
 
-    if (must_clear_dest) {
+    if (dest_uninitialized) {
       generate_clear_array(adr_type, dest, basic_elem_type,
                            intcon(0), NULL,
                            alloc->in(AllocateNode::AllocSize));
@@ -4895,7 +4905,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
 
     generate_slow_arraycopy(adr_type,
                             src, src_offset, dest, dest_offset,
-                            copy_length);
+                            copy_length, /*dest_uninitialized*/false);
 
     result_region->init_req(slow_call_path, control());
     result_i_o   ->init_req(slow_call_path, i_o());
@@ -5139,7 +5149,7 @@ LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
                                          AllocateNode* alloc,
                                          Node* src,  Node* src_offset,
                                          Node* dest, Node* dest_offset,
-                                         Node* dest_size) {
+                                         Node* dest_size, bool dest_uninitialized) {
   // See if there is an advantage from block transfer.
   int scale = exact_log2(type2aelembytes(basic_elem_type));
   if (scale >= LogBytesPerLong)
@@ -5184,7 +5194,7 @@ LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
 
   bool disjoint_bases = true;   // since alloc != NULL
   generate_unchecked_arraycopy(adr_type, T_LONG, disjoint_bases,
-                               sptr, NULL, dptr, NULL, countx);
+                               sptr, NULL, dptr, NULL, countx, dest_uninitialized);
 
   return true;
 }
@@ -5197,7 +5207,8 @@ void
 LibraryCallKit::generate_slow_arraycopy(const TypePtr* adr_type,
                                         Node* src,  Node* src_offset,
                                         Node* dest, Node* dest_offset,
-                                        Node* copy_length) {
+                                        Node* copy_length, bool dest_uninitialized) {
+  assert(!dest_uninitialized, "Invariant");
   Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
                                  OptoRuntime::slow_arraycopy_Type(),
                                  OptoRuntime::slow_arraycopy_Java(),
@@ -5215,10 +5226,10 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
                                              Node* dest_elem_klass,
                                              Node* src,  Node* src_offset,
                                              Node* dest, Node* dest_offset,
-                                             Node* copy_length) {
+                                             Node* copy_length, bool dest_uninitialized) {
   if (stopped())  return NULL;
 
-  address copyfunc_addr = StubRoutines::checkcast_arraycopy();
+  address copyfunc_addr = StubRoutines::checkcast_arraycopy(dest_uninitialized);
   if (copyfunc_addr == NULL) { // Stub was not generated, go slow path.
     return NULL;
   }
@@ -5256,9 +5267,9 @@ Node*
 LibraryCallKit::generate_generic_arraycopy(const TypePtr* adr_type,
                                            Node* src,  Node* src_offset,
                                            Node* dest, Node* dest_offset,
-                                           Node* copy_length) {
+                                           Node* copy_length, bool dest_uninitialized) {
+  assert(!dest_uninitialized, "Invariant");
   if (stopped())  return NULL;
-
   address copyfunc_addr = StubRoutines::generic_arraycopy();
   if (copyfunc_addr == NULL) { // Stub was not generated, go slow path.
     return NULL;
@@ -5279,7 +5290,7 @@ LibraryCallKit::generate_unchecked_arraycopy(const TypePtr* adr_type,
                                              bool disjoint_bases,
                                              Node* src,  Node* src_offset,
                                              Node* dest, Node* dest_offset,
-                                             Node* copy_length) {
+                                             Node* copy_length, bool dest_uninitialized) {
   if (stopped())  return;               // nothing to do
 
   Node* src_start  = src;
@@ -5294,7 +5305,7 @@ LibraryCallKit::generate_unchecked_arraycopy(const TypePtr* adr_type,
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr =
       basictype2arraycopy(basic_elem_type, src_offset, dest_offset,
-                          disjoint_bases, copyfunc_name);
+                          disjoint_bases, copyfunc_name, dest_uninitialized);
 
   // Call it.  Note that the count_ix value is not scaled to a byte-size.
   make_runtime_call(RC_LEAF|RC_NO_FP,

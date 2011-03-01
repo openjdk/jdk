@@ -35,9 +35,9 @@ void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {
                    start,            count);
 #endif
   if (UseCompressedOops) {
-    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count);
+    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count, false);
   } else {
-    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count);
+    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count, false);
   }
 }
 

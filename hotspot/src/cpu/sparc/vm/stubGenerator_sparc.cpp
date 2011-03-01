@@ -1033,31 +1033,40 @@ class StubGenerator: public StubCodeGenerator {
   //
   //  The input registers are overwritten.
   //
-  void gen_write_ref_array_pre_barrier(Register addr, Register count) {
+  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
     BarrierSet* bs = Universe::heap()->barrier_set();
-    if (bs->has_write_ref_pre_barrier()) {
-      assert(bs->has_write_ref_array_pre_opt(),
-             "Else unsupported barrier set.");
-
-      __ save_frame(0);
-      // Save the necessary global regs... will be used after.
-      if (addr->is_global()) {
-        __ mov(addr, L0);
-      }
-      if (count->is_global()) {
-        __ mov(count, L1);
-      }
-      __ mov(addr->after_save(), O0);
-      // Get the count into O1
-      __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
-      __ delayed()->mov(count->after_save(), O1);
-      if (addr->is_global()) {
-        __ mov(L0, addr);
-      }
-      if (count->is_global()) {
-        __ mov(L1, count);
-      }
-      __ restore();
+    switch (bs->kind()) {
+      case BarrierSet::G1SATBCT:
+      case BarrierSet::G1SATBCTLogging:
+        // With G1, don't generate the call if we statically know that the target in uninitialized
+        if (!dest_uninitialized) {
+          __ save_frame(0);
+          // Save the necessary global regs... will be used after.
+          if (addr->is_global()) {
+            __ mov(addr, L0);
+          }
+          if (count->is_global()) {
+            __ mov(count, L1);
+          }
+          __ mov(addr->after_save(), O0);
+          // Get the count into O1
+          __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
+          __ delayed()->mov(count->after_save(), O1);
+          if (addr->is_global()) {
+            __ mov(L0, addr);
+          }
+          if (count->is_global()) {
+            __ mov(L1, count);
+          }
+          __ restore();
+        }
+        break;
+      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableExtension:
+      case BarrierSet::ModRef:
+        break;
+      default:
+        ShouldNotReachHere();
     }
   }
   //
@@ -1071,7 +1080,7 @@ class StubGenerator: public StubCodeGenerator {
   //  The input registers are overwritten.
   //
   void gen_write_ref_array_post_barrier(Register addr, Register count,
-                                   Register tmp) {
+                                        Register tmp) {
     BarrierSet* bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
@@ -2406,7 +2415,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    assert(!aligned, "usage");
+    assert(aligned, "Should always be aligned");
 
     assert_clean_int(O2, O3);     // Make sure 'count' is clean int.
 
@@ -2435,7 +2444,8 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    O1
   //      count: O2 treated as signed
   //
-  address generate_disjoint_oop_copy(bool aligned, address *entry, const char *name) {
+  address generate_disjoint_oop_copy(bool aligned, address *entry, const char *name,
+                                     bool dest_uninitialized = false) {
 
     const Register from  = O0;  // source array address
     const Register to    = O1;  // destination array address
@@ -2456,7 +2466,7 @@ class StubGenerator: public StubCodeGenerator {
     // save arguments for barrier generation
     __ mov(to, G1);
     __ mov(count, G5);
-    gen_write_ref_array_pre_barrier(G1, G5);
+    gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
   #ifdef _LP64
     assert_clean_int(count, O3);     // Make sure 'count' is clean int.
     if (UseCompressedOops) {
@@ -2486,7 +2496,8 @@ class StubGenerator: public StubCodeGenerator {
   //      count: O2 treated as signed
   //
   address generate_conjoint_oop_copy(bool aligned, address nooverlap_target,
-                                     address *entry, const char *name) {
+                                     address *entry, const char *name,
+                                     bool dest_uninitialized = false) {
 
     const Register from  = O0;  // source array address
     const Register to    = O1;  // destination array address
@@ -2509,7 +2520,7 @@ class StubGenerator: public StubCodeGenerator {
     // save arguments for barrier generation
     __ mov(to, G1);
     __ mov(count, G5);
-    gen_write_ref_array_pre_barrier(G1, G5);
+    gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
 
   #ifdef _LP64
     if (UseCompressedOops) {
@@ -2578,7 +2589,7 @@ class StubGenerator: public StubCodeGenerator {
   //      ckval: O4 (super_klass)
   //      ret:   O0 zero for success; (-1^K) where K is partial transfer count
   //
-  address generate_checkcast_copy(const char *name, address *entry) {
+  address generate_checkcast_copy(const char *name, address *entry, bool dest_uninitialized = false) {
 
     const Register O0_from   = O0;      // source array address
     const Register O1_to     = O1;      // destination array address
@@ -2624,8 +2635,7 @@ class StubGenerator: public StubCodeGenerator {
       // caller can pass a 64-bit byte count here (from generic stub)
       BLOCK_COMMENT("Entry:");
     }
-
-    gen_write_ref_array_pre_barrier(O1_to, O2_count);
+    gen_write_ref_array_pre_barrier(O1_to, O2_count, dest_uninitialized);
 
     Label load_element, store_element, do_card_marks, fail, done;
     __ addcc(O2_count, 0, G1_remain);   // initialize loop index, and test it
@@ -3083,56 +3093,104 @@ class StubGenerator: public StubCodeGenerator {
     address entry_jlong_arraycopy;
     address entry_checkcast_arraycopy;
 
-    StubRoutines::_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(false, &entry,
-                                                                           "jbyte_disjoint_arraycopy");
-    StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy(false, entry, &entry_jbyte_arraycopy,
-                                                                           "jbyte_arraycopy");
-    StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(false, &entry,
-                                                                            "jshort_disjoint_arraycopy");
-    StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(false, entry, &entry_jshort_arraycopy,
-                                                                            "jshort_arraycopy");
-    StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_copy(false, &entry,
-                                                                          "jint_disjoint_arraycopy");
-    StubRoutines::_jint_arraycopy            = generate_conjoint_int_copy(false, entry, &entry_jint_arraycopy,
-                                                                          "jint_arraycopy");
-    StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_copy(false, &entry,
-                                                                           "jlong_disjoint_arraycopy");
-    StubRoutines::_jlong_arraycopy           = generate_conjoint_long_copy(false, entry, &entry_jlong_arraycopy,
-                                                                           "jlong_arraycopy");
-    StubRoutines::_oop_disjoint_arraycopy    = generate_disjoint_oop_copy(false, &entry,
-                                                                          "oop_disjoint_arraycopy");
-    StubRoutines::_oop_arraycopy             = generate_conjoint_oop_copy(false, entry, &entry_oop_arraycopy,
-                                                                          "oop_arraycopy");
+    //*** jbyte
+    // Always need aligned and unaligned versions
+    StubRoutines::_jbyte_disjoint_arraycopy         = generate_disjoint_byte_copy(false, &entry,
+                                                                                  "jbyte_disjoint_arraycopy");
+    StubRoutines::_jbyte_arraycopy                  = generate_conjoint_byte_copy(false, entry,
+                                                                                  &entry_jbyte_arraycopy,
+                                                                                  "jbyte_arraycopy");
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy = generate_disjoint_byte_copy(true, &entry,
+                                                                                  "arrayof_jbyte_disjoint_arraycopy");
+    StubRoutines::_arrayof_jbyte_arraycopy          = generate_conjoint_byte_copy(true, entry, NULL,
+                                                                                  "arrayof_jbyte_arraycopy");
 
-
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(true, &entry,
-                                                                                   "arrayof_jbyte_disjoint_arraycopy");
-    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_byte_copy(true, entry, NULL,
-                                                                                   "arrayof_jbyte_arraycopy");
-
+    //*** jshort
+    // Always need aligned and unaligned versions
+    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_short_copy(false, &entry,
+                                                                                    "jshort_disjoint_arraycopy");
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_short_copy(false, entry,
+                                                                                    &entry_jshort_arraycopy,
+                                                                                    "jshort_arraycopy");
     StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_short_copy(true, &entry,
                                                                                     "arrayof_jshort_disjoint_arraycopy");
     StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_short_copy(true, entry, NULL,
                                                                                     "arrayof_jshort_arraycopy");
 
-    StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_int_copy(true, &entry,
-                                                                                  "arrayof_jint_disjoint_arraycopy");
+    //*** jint
+    // Aligned versions
+    StubRoutines::_arrayof_jint_disjoint_arraycopy = generate_disjoint_int_copy(true, &entry,
+                                                                                "arrayof_jint_disjoint_arraycopy");
+    StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_int_copy(true, entry, &entry_jint_arraycopy,
+                                                                                "arrayof_jint_arraycopy");
 #ifdef _LP64
-    // since sizeof(jint) < sizeof(HeapWord), there's a different flavor:
-    StubRoutines::_arrayof_jint_arraycopy     = generate_conjoint_int_copy(true, entry, NULL, "arrayof_jint_arraycopy");
-  #else
-    StubRoutines::_arrayof_jint_arraycopy     = StubRoutines::_jint_arraycopy;
+    // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
+    // entry_jint_arraycopy always points to the unaligned version (notice that we overwrite it).
+    StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_int_copy(false, &entry,
+                                                                                "jint_disjoint_arraycopy");
+    StubRoutines::_jint_arraycopy                  = generate_conjoint_int_copy(false, entry,
+                                                                                &entry_jint_arraycopy,
+                                                                                "jint_arraycopy");
+#else
+    // In 32 bit jints are always HeapWordSize aligned, so always use the aligned version
+    // (in fact in 32bit we always have a pre-loop part even in the aligned version,
+    //  because it uses 64-bit loads/stores, so the aligned flag is actually ignored).
+    StubRoutines::_jint_disjoint_arraycopy = StubRoutines::_arrayof_jint_disjoint_arraycopy;
+    StubRoutines::_jint_arraycopy          = StubRoutines::_arrayof_jint_arraycopy;
 #endif
 
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy  = generate_disjoint_long_copy(true, NULL,
-                                                                                   "arrayof_jlong_disjoint_arraycopy");
-    StubRoutines::_arrayof_oop_disjoint_arraycopy    =  generate_disjoint_oop_copy(true, NULL,
-                                                                                   "arrayof_oop_disjoint_arraycopy");
 
-    StubRoutines::_arrayof_jlong_arraycopy    = StubRoutines::_jlong_arraycopy;
-    StubRoutines::_arrayof_oop_arraycopy      = StubRoutines::_oop_arraycopy;
+    //*** jlong
+    // It is always aligned
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_long_copy(true, &entry,
+                                                                                  "arrayof_jlong_disjoint_arraycopy");
+    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_long_copy(true, entry, &entry_jlong_arraycopy,
+                                                                                  "arrayof_jlong_arraycopy");
+    StubRoutines::_jlong_disjoint_arraycopy         = StubRoutines::_arrayof_jlong_disjoint_arraycopy;
+    StubRoutines::_jlong_arraycopy                  = StubRoutines::_arrayof_jlong_arraycopy;
 
-    StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
+
+    //*** oops
+    // Aligned versions
+    StubRoutines::_arrayof_oop_disjoint_arraycopy        = generate_disjoint_oop_copy(true, &entry,
+                                                                                      "arrayof_oop_disjoint_arraycopy");
+    StubRoutines::_arrayof_oop_arraycopy                 = generate_conjoint_oop_copy(true, entry, &entry_oop_arraycopy,
+                                                                                      "arrayof_oop_arraycopy");
+    // Aligned versions without pre-barriers
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy(true, &entry,
+                                                                                      "arrayof_oop_disjoint_arraycopy_uninit",
+                                                                                      /*dest_uninitialized*/true);
+    StubRoutines::_arrayof_oop_arraycopy_uninit          = generate_conjoint_oop_copy(true, entry, NULL,
+                                                                                      "arrayof_oop_arraycopy_uninit",
+                                                                                      /*dest_uninitialized*/true);
+#ifdef _LP64
+    if (UseCompressedOops) {
+      // With compressed oops we need unaligned versions, notice that we overwrite entry_oop_arraycopy.
+      StubRoutines::_oop_disjoint_arraycopy            = generate_disjoint_oop_copy(false, &entry,
+                                                                                    "oop_disjoint_arraycopy");
+      StubRoutines::_oop_arraycopy                     = generate_conjoint_oop_copy(false, entry, &entry_oop_arraycopy,
+                                                                                    "oop_arraycopy");
+      // Unaligned versions without pre-barriers
+      StubRoutines::_oop_disjoint_arraycopy_uninit     = generate_disjoint_oop_copy(false, &entry,
+                                                                                    "oop_disjoint_arraycopy_uninit",
+                                                                                    /*dest_uninitialized*/true);
+      StubRoutines::_oop_arraycopy_uninit              = generate_conjoint_oop_copy(false, entry, NULL,
+                                                                                    "oop_arraycopy_uninit",
+                                                                                    /*dest_uninitialized*/true);
+    } else
+#endif
+    {
+      // oop arraycopy is always aligned on 32bit and 64bit without compressed oops
+      StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
+      StubRoutines::_oop_arraycopy                     = StubRoutines::_arrayof_oop_arraycopy;
+      StubRoutines::_oop_disjoint_arraycopy_uninit     = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit;
+      StubRoutines::_oop_arraycopy_uninit              = StubRoutines::_arrayof_oop_arraycopy_uninit;
+    }
+
+    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
+    StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", NULL,
+                                                                        /*dest_uninitialized*/true);
+
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
                                                               entry_jbyte_arraycopy,
                                                               entry_jshort_arraycopy,
