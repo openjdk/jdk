@@ -2790,10 +2790,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
   }
-  // Temporary disable bulk zeroing reduction with G1. See CR 6627983.
-  if (UseG1GC) {
-    FLAG_SET_DEFAULT(ReduceBulkZeroing, false);
-  }
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
