@@ -794,7 +794,8 @@ public final class Files {
                                       FileAttribute<?>... attrs)
         throws IOException
     {
-        return TempFileHelper.createTempFile(dir, prefix, suffix, attrs);
+        return TempFileHelper.createTempFile(Objects.requireNonNull(dir),
+                                             prefix, suffix, attrs);
     }
 
     /**
@@ -891,7 +892,8 @@ public final class Files {
                                            FileAttribute<?>... attrs)
         throws IOException
     {
-        return TempFileHelper.createTempDirectory(dir, prefix, attrs);
+        return TempFileHelper.createTempDirectory(Objects.requireNonNull(dir),
+                                                  prefix, attrs);
     }
 
     /**
