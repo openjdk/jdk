@@ -22,10 +22,8 @@
  *
  */
 
-#ifdef _WIN64
-// Must be at least Windows 2000 or XP to use VectoredExceptions
+// Must be at least Windows 2000 or XP to use VectoredExceptions and IsDebuggerPresent
 #define _WIN32_WINNT 0x500
-#endif
 
 // no precompiled headers
 #include "classfile/classLoader.hpp"
