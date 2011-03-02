@@ -115,7 +115,6 @@ NM             = $(UTILS_CCS_BIN_PATH)nm
 PKGMK          = $(UTILS_COMMAND_PATH)pkgmk
 PRINTF         = $(UTILS_USR_BIN_PATH)printf
 PWD            = $(UTILS_COMMAND_PATH)pwd
-RC             = $(UTILS_COMMAND_PATH)rc
 READELF        = $(UTILS_USR_BIN_PATH)readelf
 RMDIR          = $(UTILS_COMMAND_PATH)rmdir
 RPM            = $(UTILS_COMMAND_PATH)rpm
