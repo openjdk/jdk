@@ -1118,6 +1118,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     boolean explicitAnnotationProcessingRequested() {
         return
             explicitAnnotationProcessingRequested ||
+            explicitAnnotationProcessingRequested(options);
+    }
+
+    static boolean explicitAnnotationProcessingRequested(Options options) {
+        return
             options.isSet(PROCESSOR) ||
             options.isSet(PROCESSORPATH) ||
             options.isSet(PROC, "only") ||
