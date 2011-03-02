@@ -422,6 +422,9 @@ size_t Arena::used() const {
   return sum;                   // Return total consumed space.
 }
 
+void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
+  vm_exit_out_of_memory(sz, whence);
+}
 
 // Grow a new Chunk
 void* Arena::grow( size_t x ) {
@@ -431,8 +434,9 @@ void* Arena::grow( size_t x ) {
   Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (len) Chunk(len);
 
-  if (_chunk == NULL)
-      vm_exit_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+  if (_chunk == NULL) {
+    signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+  }
 
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
   else _first = _chunk;
@@ -529,6 +533,7 @@ void* Arena::malloc(size_t size) {
 // for debugging with UseMallocOnly
 void* Arena::internal_malloc_4(size_t x) {
   assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
+  check_for_overflow(x, "Arena::internal_malloc_4");
   if (_hwm + x > _max) {
     return grow(x);
   } else {
