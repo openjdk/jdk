@@ -1425,7 +1425,7 @@ public class Attr extends JCTree.Visitor {
                             // qualifier omitted; check for existence
                             // of an appropriate implicit qualifier.
                             rs.resolveImplicitThis(tree.meth.pos(),
-                                                   localEnv, site);
+                                                   localEnv, site, true);
                         }
                     } else if (tree.meth.getTag() == JCTree.SELECT) {
                         log.error(tree.meth.pos(), "illegal.qual.not.icls",

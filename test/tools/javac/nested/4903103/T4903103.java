@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
  * @test
  * @bug     4903103
  * @summary Can't compile subclasses of inner classes
- * @compile T4903103.java
  */
 
 public class T4903103 {
     private class InnerSuperclass extends T4903103 {}
 
     private class InnerSubclass extends InnerSuperclass {}
+
+    public static void main(String[] args) {
+        new T4903103().new InnerSubclass();
+    }
 }

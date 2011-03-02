@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,32 @@
 
 /**
  * @test
- * @bug 4704371 6313120
- * @summary compiler generates unverifiable code for implicit reference to uninit'd this
+ * @bug 6541876 6569091
+ * @summary  "Enclosing Instance" error new in 1.6
+ *
  */
 
-public class NewBeforeOuterConstructed3 {
-    class Two extends NewBeforeOuterConstructed3 {
-        {
-            System.out.println(NewBeforeOuterConstructed3.this);
+public class T6541876b {
+
+    enum ENUM {
+        ENUM_CONST {
+            public AbstractClass method() {
+                return new AbstractClass() {
+                    public boolean method() {
+                        return true;
+                    }
+                };
+            }
+        };
+
+        public abstract AbstractClass method();
+
+        private abstract class AbstractClass {
+            public abstract boolean method();
         }
     }
-    class Three extends Two {
-        {
-            new Two();
-        }
-    }
+
     public static void main(String[] args) {
-        NewBeforeOuterConstructed3 o = new NewBeforeOuterConstructed3();
-        System.out.println(o + " " + o.new Three());
+        ENUM.ENUM_CONST.method();
     }
 }
