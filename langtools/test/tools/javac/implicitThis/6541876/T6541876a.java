@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,21 @@
 
 /**
  * @test
- * @bug 4704371 6313120
- * @summary compiler generates unverifiable code for implicit reference to uninit'd this
+ * @bug 6541876
+ * @summary  "Enclosing Instance" error new in 1.6
+ *
  */
 
-public class NewBeforeOuterConstructed3 {
-    class Two extends NewBeforeOuterConstructed3 {
-        {
-            System.out.println(NewBeforeOuterConstructed3.this);
-        }
+public class T6541876a {
+    class X {
+        class Y {}
     }
-    class Three extends Two {
-        {
-            new Two();
-        }
+
+    class A extends X {
+        class B extends X.Y {}
     }
+
     public static void main(String[] args) {
-        NewBeforeOuterConstructed3 o = new NewBeforeOuterConstructed3();
-        System.out.println(o + " " + o.new Three());
+        new T6541876a().new A().new B();
     }
 }
