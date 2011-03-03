@@ -804,14 +804,16 @@ public class Flow extends TreeScanner {
         ListBuffer<PendingExit> prevPendingExits = pendingExits;
         boolean prevLoopPassTwo = loopPassTwo;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanStat(tree.body);
             alive |= resolveContinues(tree);
             scanCond(tree.cond);
-            if (log.nerrors != 0 ||
+            if (log.nerrors !=  prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninitsWhenTrue).nextBit(firstadr)==-1)
+                uninitsEntry.dup().diffSet(uninitsWhenTrue).nextBit(firstadr)==-1)
                 break;
             inits = initsWhenTrue;
             uninits = uninitsEntry.andSet(uninitsWhenTrue);
@@ -831,8 +833,10 @@ public class Flow extends TreeScanner {
         Bits initsCond;
         Bits uninitsCond;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanCond(tree.cond);
             initsCond = initsWhenFalse;
             uninitsCond = uninitsWhenFalse;
@@ -841,9 +845,9 @@ public class Flow extends TreeScanner {
             alive = !tree.cond.type.isFalse();
             scanStat(tree.body);
             alive |= resolveContinues(tree);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninits).nextBit(firstadr) == -1)
+                uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
             uninits = uninitsEntry.andSet(uninits);
             loopPassTwo = true;
@@ -864,8 +868,10 @@ public class Flow extends TreeScanner {
         Bits initsCond;
         Bits uninitsCond;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             if (tree.cond != null) {
                 scanCond(tree.cond);
                 initsCond = initsWhenFalse;
@@ -883,7 +889,7 @@ public class Flow extends TreeScanner {
             scanStat(tree.body);
             alive |= resolveContinues(tree);
             scan(tree.step);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
                 uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
@@ -897,8 +903,6 @@ public class Flow extends TreeScanner {
         alive = resolveBreaks(tree, prevPendingExits) ||
             tree.cond != null && !tree.cond.type.isTrue();
         nextadr = nextadrPrev;
-        inits.excludeFrom(nextadr);
-        uninits.excludeFrom(nextadr);
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -913,13 +917,15 @@ public class Flow extends TreeScanner {
 
         letInit(tree.pos(), tree.var.sym);
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanStat(tree.body);
             alive |= resolveContinues(tree);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninits).nextBit(firstadr) == -1)
+                uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
             uninits = uninitsEntry.andSet(uninits);
             loopPassTwo = true;
