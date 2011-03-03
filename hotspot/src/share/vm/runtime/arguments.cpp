@@ -78,6 +78,7 @@ bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
+bool   Arguments::_created_by_gamma_launcher    = false;
 
 // These parameters are reset in method parse_vm_init_args(JavaVMInitArgs*)
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -1656,11 +1657,18 @@ void Arguments::process_java_compiler_argument(char* arg) {
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   _sun_java_launcher = strdup(launcher);
+  if (strcmp("gamma", _sun_java_launcher) == 0) {
+    _created_by_gamma_launcher = true;
+  }
 }
 
 bool Arguments::created_by_java_launcher() {
   assert(_sun_java_launcher != NULL, "property must have value");
   return strcmp(DEFAULT_JAVA_LAUNCHER, _sun_java_launcher) != 0;
+}
+
+bool Arguments::created_by_gamma_launcher() {
+  return _created_by_gamma_launcher;
 }
 
 //===========================================================================================================
@@ -3152,6 +3160,16 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     if (!VM_Version::use_biased_locking() &&
         !(FLAG_IS_CMDLINE(UseBiasedLocking))) {
       UseBiasedLocking = false;
+    }
+  }
+
+  // set PauseAtExit if the gamma launcher was used and a debugger is attached
+  // but only if not already set on the commandline
+  if (Arguments::created_by_gamma_launcher() && os::is_debugger_attached()) {
+    bool set = false;
+    CommandLineFlags::wasSetOnCmdline("PauseAtExit", &set);
+    if (!set) {
+      FLAG_SET_DEFAULT(PauseAtExit, true);
     }
   }
 
