@@ -307,7 +307,7 @@ public:
     // is during RSet updating within an evacuation pause.
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-    assert(worker_i < (int) DirtyCardQueueSet::num_par_ids(), "should be a GC worker");
+    assert(worker_i < (int) (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "should be a GC worker");
 
     if (_g1rs->concurrentRefineOneCard(card_ptr, worker_i, true)) {
       // 'card_ptr' contains references that point into the collection
