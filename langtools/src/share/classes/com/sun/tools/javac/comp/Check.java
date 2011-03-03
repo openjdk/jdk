@@ -2114,7 +2114,7 @@ public class Check {
                 if (s1 == s2 || !sym.overrides(s2, site.tsym, types, false)) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, s1)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, s1), false) &&
                         types.hasSameArgs(s1.erasure(types), s2.erasure(types))) {
                     sym.flags_field |= CLASH;
                     String key = s2 == sym ?
@@ -2146,7 +2146,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s)) &&
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), false) &&
                     types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                 log.error(pos,
                         "name.clash.same.erasure.no.hide",
@@ -2667,7 +2667,7 @@ public class Check {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
                     return true;
-                } else if (sym.kind == MTH && !hasSameSignature(sym.type, e.sym.type)) {
+                } else if (sym.kind == MTH && !types.hasSameArgs(sym.type, e.sym.type, false)) {
                     duplicateErasureError(pos, sym, e.sym);
                     sym.flags_field |= CLASH;
                     return true;
@@ -2679,15 +2679,6 @@ public class Check {
         }
         return true;
     }
-    //where
-        boolean hasSameSignature(Type mt1, Type mt2) {
-            if (mt1.tag == FORALL && mt2.tag == FORALL) {
-                ForAll fa1 = (ForAll)mt1;
-                ForAll fa2 = (ForAll)mt2;
-                mt2 = types.subst(fa2, fa2.tvars, fa1.tvars);
-            }
-            return types.hasSameArgs(mt1.asMethodType(), mt2.asMethodType());
-        }
 
     /** Report duplicate declaration error.
      */
