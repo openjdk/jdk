@@ -140,12 +140,12 @@ class JvmtiExport : public AllStatic {
                                       char sig_type, jvalue *value);
 
 
- private:
   // posts a DynamicCodeGenerated event (internal/private implementation).
   // The public post_dynamic_code_generated* functions make use of the
-  // internal implementation.
+  // internal implementation.  Also called from JvmtiDeferredEvent::post()
   static void post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) KERNEL_RETURN;
 
+ private:
 
   // GenerateEvents support to allow posting of CompiledMethodLoad and
   // DynamicCodeGenerated events for a given environment.

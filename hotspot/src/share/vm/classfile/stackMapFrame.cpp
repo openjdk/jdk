@@ -170,6 +170,44 @@ bool StackMapFrame::is_assignable_to(
   return true;
 }
 
+bool StackMapFrame::has_flag_match_exception(
+    const StackMapFrame* target) const {
+  // We allow flags of {UninitThis} to assign to {} if-and-only-if the
+  // target frame does not depend upon the current type.
+  // This is slightly too strict, as we need only enforce that the
+  // slots that were initialized by the <init> (the things that were
+  // UninitializedThis before initialize_object() converted them) are unused.
+  // However we didn't save that information so we'll enforce this upon
+  // anything that might have been initialized.  This is a rare situation
+  // and javac never generates code that would end up here, but some profilers
+  // (such as NetBeans) might, when adding exception handlers in <init>
+  // methods to cover the invokespecial instruction.  See 7020118.
+
+  assert(max_locals() == target->max_locals() &&
+         stack_size() == target->stack_size(), "StackMap sizes must match");
+
+  VerificationType top = VerificationType::top_type();
+  VerificationType this_type = verifier()->current_type();
+
+  if (!flag_this_uninit() || target->flags() != 0) {
+    return false;
+  }
+
+  for (int i = 0; i < target->locals_size(); ++i) {
+    if (locals()[i] == this_type && target->locals()[i] != top) {
+      return false;
+    }
+  }
+
+  for (int i = 0; i < target->stack_size(); ++i) {
+    if (stack()[i] == this_type && target->stack()[i] != top) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool StackMapFrame::is_assignable_to(const StackMapFrame* target, TRAPS) const {
   if (_max_locals != target->max_locals() || _stack_size != target->stack_size()) {
     return false;
@@ -182,7 +220,9 @@ bool StackMapFrame::is_assignable_to(const StackMapFrame* target, TRAPS) const {
   bool match_stack = is_assignable_to(
     _stack, target->stack(), _stack_size, CHECK_false);
   bool match_flags = (_flags | target->flags()) == target->flags();
-  return (match_locals && match_stack && match_flags);
+
+  return match_locals && match_stack &&
+    (match_flags || has_flag_match_exception(target));
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {

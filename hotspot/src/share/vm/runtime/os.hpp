@@ -492,6 +492,12 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
 
+  // Determines whether the calling process is being debugged by a user-mode debugger.
+  static bool is_debugger_attached();
+
+  // wait for a key press if PauseAtExit is set
+  static void wait_for_keypress_at_exit(void);
+
   // The following two functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
   // frame.hpp/cpp assume thread is JavaThread, and also because different
