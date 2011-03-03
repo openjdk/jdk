@@ -2980,7 +2980,7 @@ public class Attr extends JCTree.Visitor {
             // (see comment for TypeVar.bound).
             // In this case, generate a class tree that represents the
             // bound class, ...
-            JCTree extending;
+            JCExpression extending;
             List<JCExpression> implementing;
             if ((bs.head.tsym.flags() & INTERFACE) == 0) {
                 extending = tree.bounds.head;

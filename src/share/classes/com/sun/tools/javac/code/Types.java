@@ -2534,7 +2534,7 @@ public class Types {
     }
     // where
         private String typaramsString(List<Type> tvars) {
-            StringBuffer s = new StringBuffer();
+            StringBuilder s = new StringBuilder();
             s.append('<');
             boolean first = true;
             for (Type t : tvars) {
@@ -2545,7 +2545,7 @@ public class Types {
             s.append('>');
             return s.toString();
         }
-        private void appendTyparamString(TypeVar t, StringBuffer buf) {
+        private void appendTyparamString(TypeVar t, StringBuilder buf) {
             buf.append(t);
             if (t.bound == null ||
                 t.bound.tsym.getQualifiedName() == names.java_lang_Object)
