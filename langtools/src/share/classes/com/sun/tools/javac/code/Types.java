@@ -1992,7 +1992,11 @@ public class Types {
      * @return true if t is a sub signature of s.
      */
     public boolean isSubSignature(Type t, Type s) {
-        return hasSameArgs(t, s) || hasSameArgs(t, erasure(s));
+        return isSubSignature(t, s, true);
+    }
+
+    public boolean isSubSignature(Type t, Type s, boolean strict) {
+        return hasSameArgs(t, s, strict) || hasSameArgs(t, erasure(s), strict);
     }
 
     /**
@@ -2129,10 +2133,24 @@ public class Types {
      * where correspondence is by position in the type parameter list.
      */
     public boolean hasSameArgs(Type t, Type s) {
+        return hasSameArgs(t, s, true);
+    }
+
+    public boolean hasSameArgs(Type t, Type s, boolean strict) {
+        return hasSameArgs(t, s, strict ? hasSameArgs_strict : hasSameArgs_nonstrict);
+    }
+
+    private boolean hasSameArgs(Type t, Type s, TypeRelation hasSameArgs) {
         return hasSameArgs.visit(t, s);
     }
     // where
-        private TypeRelation hasSameArgs = new TypeRelation() {
+        private class HasSameArgs extends TypeRelation {
+
+            boolean strict;
+
+            public HasSameArgs(boolean strict) {
+                this.strict = strict;
+            }
 
             public Boolean visitType(Type t, Type s) {
                 throw new AssertionError();
@@ -2147,7 +2165,7 @@ public class Types {
             @Override
             public Boolean visitForAll(ForAll t, Type s) {
                 if (s.tag != FORALL)
-                    return false;
+                    return strict ? false : visitMethodType(t.asMethodType(), s);
 
                 ForAll forAll = (ForAll)s;
                 return hasSameBounds(t, forAll)
@@ -2159,6 +2177,10 @@ public class Types {
                 return false;
             }
         };
+
+        TypeRelation hasSameArgs_strict = new HasSameArgs(true);
+        TypeRelation hasSameArgs_nonstrict = new HasSameArgs(false);
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="subst">
