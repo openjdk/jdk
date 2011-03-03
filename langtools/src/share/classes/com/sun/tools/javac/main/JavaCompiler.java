@@ -1520,7 +1520,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
 
     public void reportDeferredDiagnostics() {
-        if (annotationProcessingOccurred
+        if (errorCount() == 0
+                && annotationProcessingOccurred
                 && implicitSourceFilesRead
                 && implicitSourcePolicy == ImplicitSourcePolicy.UNSET) {
             if (explicitAnnotationProcessingRequested())
