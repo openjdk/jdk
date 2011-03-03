@@ -328,7 +328,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
-    if (ret <= src->remaining_skip) {
+    if (ret < 0 || (unsigned int)ret <= src->remaining_skip) {
         return;
     }
     if (src->remaining_skip) {
@@ -397,7 +397,7 @@ sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
     }
     num_bytes += src->remaining_skip;
     src->remaining_skip = 0;
-    ret = src->pub.bytes_in_buffer;
+    ret = (int)src->pub.bytes_in_buffer; /* this conversion is safe, because capacity of the buffer is limited by jnit */
     if (ret >= num_bytes) {
         src->pub.next_input_byte += num_bytes;
         src->pub.bytes_in_buffer -= num_bytes;

@@ -1,2 +1,2 @@
-ResourceInterface.java:38:34: compiler.err.unreported.exception.need.to.catch.or.throw: ResourceInterface.E1
+ResourceInterface.java:38:13: compiler.err.unreported.exception.implicit.close: ResourceInterface.E1, r2
 1 error

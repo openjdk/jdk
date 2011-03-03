@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,12 +138,11 @@ public class TestInferBinaryName {
                                    boolean zipFileIndexKind)
             throws IOException {
         Context ctx = new Context();
+        Options options = Options.instance(ctx);
         // uugh, ugly back door, should be cleaned up, someday
         if (zipFileIndexKind == USE_ZIP_FILE_INDEX)
-            System.clearProperty("useJavaUtilZip");
-        else
-            System.setProperty("useJavaUtilZip", "true");
-        Options options = Options.instance(ctx);
+            options.put("useOptimizedZip", "true");
+
         if (symFileKind == IGNORE_SYMBOL_FILE)
             options.put("ignore.symbol.file", "true");
         JavacFileManager fm = new JavacFileManager(ctx, false, null);

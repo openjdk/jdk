@@ -167,7 +167,7 @@ class SpreadGeneric {
             MethodHandle entryPoint = null;
             try {
                 entryPoint = MethodHandleImpl.IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
             }
             if (entryPoint == null)  continue;
             Constructor<? extends Adapter> ctor = null;
