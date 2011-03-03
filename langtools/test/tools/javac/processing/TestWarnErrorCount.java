@@ -161,7 +161,7 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
             "-d", testDir.getPath(),
             "-processor", myName,
 //            "-XprintRounds",
-            "-Xlint",
+            "-Xlint:all,-path",
             "-AerrKind=" + ek,
             "-AmsgrWarnKind=" + mwk,
             "-AjavaWarnKind=" + jwk));
