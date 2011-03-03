@@ -991,7 +991,7 @@ public final class URI
      *   authority and path are taken from the given URI. </p></li>
      *
      *   <li><p> Otherwise the new URI's authority component is copied from
-     *   this URI, and its path is computed as follows: </p></li>
+     *   this URI, and its path is computed as follows: </p>
      *
      *   <ol type=a>
      *
@@ -1005,7 +1005,7 @@ public final class URI
      *     path and then normalizing the result as if by invoking the {@link
      *     #normalize() normalize} method. </p></li>
      *
-     *   </ol>
+     *   </ol></li>
      *
      * </ol>
      *
@@ -1511,7 +1511,7 @@ public final class URI
      *   fragments. </p></li>
      *
      *   <li><p> Two hierarchical URIs with identical schemes are ordered
-     *   according to the ordering of their authority components: </p></li>
+     *   according to the ordering of their authority components: </p>
      *
      *   <ul type=disc>
      *
@@ -1526,7 +1526,7 @@ public final class URI
      *     the URIs are ordered according to the ordering of their authority
      *     components. </p></li>
      *
-     *   </ul>
+     *   </ul></li>
      *
      *   <li><p> Finally, two hierarchical URIs with identical schemes and
      *   authority components are ordered according to the ordering of their
