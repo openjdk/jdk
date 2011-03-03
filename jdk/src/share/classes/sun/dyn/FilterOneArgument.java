@@ -56,7 +56,7 @@ public class FilterOneArgument extends BoundMethodHandle {
             INVOKE =
                 MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke",
                                                          MethodType.genericMethodType(1));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw uncaughtException(ex);
         }
     }

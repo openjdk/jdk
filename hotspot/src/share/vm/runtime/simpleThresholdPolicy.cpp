@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/simpleThresholdPolicy.hpp"
 #include "runtime/simpleThresholdPolicy.inline.hpp"
+#include "code/scopeDesc.hpp"
 
 // Print an event.
 void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodHandle imh,
@@ -48,6 +49,18 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
     break;
   case COMPILE:
     tty->print("compile");
+    break;
+  case KILL:
+    tty->print("kill");
+    break;
+  case UPDATE:
+    tty->print("update");
+    break;
+  case REPROFILE:
+    tty->print("reprofile");
+    break;
+  default:
+    tty->print("unknown");
   }
 
   tty->print(" level: %d ", level);
@@ -69,13 +82,17 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
   if (type != COMPILE) {
     methodDataHandle mdh = mh->method_data();
     int mdo_invocations = 0, mdo_backedges = 0;
+    int mdo_invocations_start = 0, mdo_backedges_start = 0;
     if (mdh() != NULL) {
       mdo_invocations = mdh->invocation_count();
       mdo_backedges = mdh->backedge_count();
+      mdo_invocations_start = mdh->invocation_count_start();
+      mdo_backedges_start = mdh->backedge_count_start();
     }
-    tty->print(" total: %d,%d mdo: %d,%d",
+    tty->print(" total: %d,%d mdo: %d(%d),%d(%d)",
                invocation_count, backedge_count,
-               mdo_invocations, mdo_backedges);
+               mdo_invocations, mdo_invocations_start,
+               mdo_backedges, mdo_backedges_start);
     tty->print(" max levels: %d,%d",
                 mh->highest_comp_level(), mh->highest_osr_comp_level());
     if (inlinee_event) {
@@ -136,6 +153,20 @@ void SimpleThresholdPolicy::handle_counter_overflow(methodOop method) {
 // Called with the queue locked and with at least one element
 CompileTask* SimpleThresholdPolicy::select_task(CompileQueue* compile_queue) {
   return compile_queue->first();
+}
+
+void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
+  for (ScopeDesc* sd = trap_scope;; sd = sd->sender()) {
+    if (PrintTieredEvents) {
+      methodHandle mh(sd->method());
+      print_event(REPROFILE, mh, mh, InvocationEntryBci, CompLevel_none);
+    }
+    methodDataOop mdo = sd->method()->method_data();
+    if (mdo != NULL) {
+      mdo->reset_start_counters();
+    }
+    if (sd->is_top()) break;
+  }
 }
 
 nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
@@ -254,46 +285,35 @@ bool SimpleThresholdPolicy::is_mature(methodOop method) {
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
 CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel cur_level) {
+  if (is_trivial(method)) return CompLevel_simple;
+
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
 
   switch(cur_level) {
   case CompLevel_none:
-    {
-      methodDataOop mdo = method->method_data();
-      if (mdo != NULL) {
-        int mdo_i = mdo->invocation_count();
-        int mdo_b = mdo->backedge_count();
-        // If we were at full profile level, would we switch to full opt?
-        if ((this->*p)(mdo_i, mdo_b, CompLevel_full_profile)) {
-          next_level = CompLevel_full_optimization;
-        }
-      }
-    }
-    if (next_level == cur_level && (this->*p)(i, b, cur_level)) {
-      if (is_trivial(method)) {
-        next_level = CompLevel_simple;
-      } else {
-        next_level = CompLevel_full_profile;
-      }
+    // If we were at full profile level, would we switch to full opt?
+    if (common(p, method, CompLevel_full_profile) == CompLevel_full_optimization) {
+      next_level = CompLevel_full_optimization;
+    } else if ((this->*p)(i, b, cur_level)) {
+      next_level = CompLevel_full_profile;
     }
     break;
   case CompLevel_limited_profile:
   case CompLevel_full_profile:
-    if (is_trivial(method)) {
-      next_level = CompLevel_simple;
-    } else {
+    {
       methodDataOop mdo = method->method_data();
-      guarantee(mdo != NULL, "MDO should always exist");
-      if (mdo->would_profile()) {
-        int mdo_i = mdo->invocation_count();
-        int mdo_b = mdo->backedge_count();
-        if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+      if (mdo != NULL) {
+        if (mdo->would_profile()) {
+          int mdo_i = mdo->invocation_count_delta();
+          int mdo_b = mdo->backedge_count_delta();
+          if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+            next_level = CompLevel_full_optimization;
+          }
+        } else {
           next_level = CompLevel_full_optimization;
         }
-      } else {
-        next_level = CompLevel_full_optimization;
       }
     }
     break;
@@ -303,12 +323,6 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel
 
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_level) {
-  CompLevel highest_level = (CompLevel)method->highest_comp_level();
-  if (cur_level == CompLevel_none && highest_level > cur_level) {
-    // TODO: We may want to try to do more extensive reprofiling in this case.
-    return highest_level;
-  }
-
   CompLevel osr_level = (CompLevel) method->highest_osr_comp_level();
   CompLevel next_level = common(&SimpleThresholdPolicy::call_predicate, method, cur_level);
 

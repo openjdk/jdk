@@ -2407,14 +2407,23 @@ void MacroAssembler::lcmp( Register Ra, Register Rb, Register Rresult) {
 #endif
 
 
-void MacroAssembler::load_sized_value(Address src, Register dst,
-                                      size_t size_in_bytes, bool is_signed) {
+void MacroAssembler::load_sized_value(Address src, Register dst, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
-  case  8: ldx(src, dst); break;
-  case  4: ld( src, dst); break;
-  case  2: is_signed ? ldsh(src, dst) : lduh(src, dst); break;
-  case  1: is_signed ? ldsb(src, dst) : ldub(src, dst); break;
-  default: ShouldNotReachHere();
+  case  8:  ld_long(src, dst); break;
+  case  4:  ld(     src, dst); break;
+  case  2:  is_signed ? ldsh(src, dst) : lduh(src, dst); break;
+  case  1:  is_signed ? ldsb(src, dst) : ldub(src, dst); break;
+  default:  ShouldNotReachHere();
+  }
+}
+
+void MacroAssembler::store_sized_value(Register src, Address dst, size_t size_in_bytes) {
+  switch (size_in_bytes) {
+  case  8:  st_long(src, dst); break;
+  case  4:  st(     src, dst); break;
+  case  2:  sth(    src, dst); break;
+  case  1:  stb(    src, dst); break;
+  default:  ShouldNotReachHere();
   }
 }
 

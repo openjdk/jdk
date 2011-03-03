@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,43 +49,31 @@ int constantPoolCacheKlass::oop_size(oop obj) const {
 
 
 constantPoolCacheOop constantPoolCacheKlass::allocate(int length,
-                                                      bool is_conc_safe,
                                                       TRAPS) {
   // allocate memory
   int size = constantPoolCacheOopDesc::object_size(length);
 
   KlassHandle klass (THREAD, as_klassOop());
 
-  // This is the original code.  The code from permanent_obj_allocate()
-  // was in-lined to allow the setting of is_conc_safe before the klass
-  // is installed.
+  // Commented out below is the original code.  The code from
+  // permanent_obj_allocate() was in-lined so that we could
+  // set the _length field, necessary to correctly compute its
+  // size(), before setting its klass word further below.
   // constantPoolCacheOop cache = (constantPoolCacheOop)
   //   CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
 
   oop obj = CollectedHeap::permanent_obj_allocate_no_klass_install(klass, size, CHECK_NULL);
-  constantPoolCacheOop cache = (constantPoolCacheOop) obj;
-  cache->set_is_conc_safe(is_conc_safe);
-  // The store to is_conc_safe must be visible before the klass
-  // is set.  This should be done safely because _is_conc_safe has
-  // been declared volatile.  If there are any problems, consider adding
-  // OrderAccess::storestore();
-  CollectedHeap::post_allocation_install_obj_klass(klass, obj, size);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value((HeapWord*) obj,
                                                               size));
-
-  // The length field affects the size of the object.  The allocation
-  // above allocates the correct size (see calculation of "size") but
-  // the size() method of the constant pool cache oop will not reflect
-  // that size until the correct length is set.
-  cache->set_length(length);
-
-  // The store of the length must be visible before is_conc_safe is
-  // set to a safe state.
-  // This should be done safely because _is_conc_safe has
-  // been declared volatile.  If there are any problems, consider adding
-  // OrderAccess::storestore();
-  cache->set_is_conc_safe(methodOopDesc::IsSafeConc);
+  constantPoolCacheOop cache = (constantPoolCacheOop) obj;
+  assert(!UseConcMarkSweepGC || obj->klass_or_null() == NULL,
+         "klass should be NULL here when using CMS");
+  cache->set_length(length);  // should become visible before klass is set below.
   cache->set_constant_pool(NULL);
+
+  OrderAccess::storestore();
+  obj->set_klass(klass());
+  assert(cache->size() == size, "Incorrect cache->size()");
   return cache;
 }
 
@@ -176,11 +164,6 @@ int constantPoolCacheKlass::oop_adjust_pointers(oop obj) {
   return size;
 }
 
-bool constantPoolCacheKlass::oop_is_conc_safe(oop obj) const {
-  assert(obj->is_constantPoolCache(), "should be constant pool");
-  return constantPoolCacheOop(obj)->is_conc_safe();
-}
-
 #ifndef SERIALGC
 void constantPoolCacheKlass::oop_push_contents(PSPromotionManager* pm,
                                                oop obj) {
@@ -218,25 +201,6 @@ constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
     cache->entry_at(i)->update_pointers();
   }
 
-  return cache->object_size();
-}
-
-int
-constantPoolCacheKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                            HeapWord* beg_addr,
-                                            HeapWord* end_addr) {
-  assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
-  constantPoolCacheOop cache = (constantPoolCacheOop)obj;
-
-  // Iteration over constant pool cache instance variables
-  oop* p;
-  p = (oop*)cache->constant_pool_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
-  // Iteration over constant pool cache entries
-  for (int i = 0; i < cache->length(); ++i) {
-    cache->entry_at(i)->update_pointers(beg_addr, end_addr);
-  }
   return cache->object_size();
 }
 #endif // SERIALGC
