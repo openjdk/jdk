@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,14 @@ final public class LdapCtx extends ComponentDirContext
     // Environment property for the domain name (derived from this context's DN)
     private static final String DOMAIN_NAME = "com.sun.jndi.ldap.domainname";
 
+    // Block until the first search reply is received
+    private static final String WAIT_FOR_REPLY =
+        "com.sun.jndi.ldap.search.waitForReply";
+
+    // Size of the queue of unprocessed search replies
+    private static final String REPLY_QUEUE_SIZE =
+        "com.sun.jndi.ldap.search.replyQueueSize";
+
     // ----------------- Fields that don't change -----------------------
     private static final NameParser parser = new LdapNameParser();
 
@@ -246,6 +254,8 @@ final public class LdapCtx extends ComponentDirContext
     private Hashtable binaryAttrs = null;    // attr values returned as byte[]
     private int connectTimeout = -1;         // no timeout value
     private int readTimeout = -1;            // no timeout value
+    private boolean waitForReply = true;     // wait for search response
+    private int replyQueueSize  = -1;        // unlimited queue size
     private boolean useSsl = false;          // true if SSL protocol is active
     private boolean useDefaultPortNumber = false; // no port number was supplied
 
@@ -1759,8 +1769,8 @@ final public class LdapCtx extends ComponentDirContext
                                          SearchControls cons,
                                          Continuation cont)
             throws NamingException {
-        return searchAux(name, filter, cloneSearchControls(cons), true, true,
-                         cont);
+        return searchAux(name, filter, cloneSearchControls(cons), true,
+                 waitForReply, cont);
     }
 
     protected NamingEnumeration c_search(Name name,
@@ -1928,7 +1938,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
     private LdapResult doSearch(Name name, String filter, SearchControls cons,
-        boolean relative, boolean waitFirstReply) throws NamingException {
+        boolean relative, boolean waitForReply) throws NamingException {
             ensureOpen();
             try {
                 int scope;
@@ -1984,7 +1994,8 @@ final public class LdapCtx extends ComponentDirContext
                         batchSize,
                         reqCtls,
                         binaryAttrs,
-                        waitFirstReply);
+                        waitForReply,
+                        replyQueueSize);
                 respCtls = answer.resControls; // retrieve response controls
                 return answer;
 
@@ -2170,6 +2181,10 @@ final public class LdapCtx extends ComponentDirContext
             connectTimeout = -1;
         } else if (propName.equals(READ_TIMEOUT)) {
             readTimeout = -1;
+        } else if (propName.equals(WAIT_FOR_REPLY)) {
+            waitForReply = true;
+        } else if (propName.equals(REPLY_QUEUE_SIZE)) {
+            replyQueueSize = -1;
 
 // The following properties affect the connection
 
@@ -2225,6 +2240,11 @@ final public class LdapCtx extends ComponentDirContext
                 setConnectTimeout((String)propVal);
             } else if (propName.equals(READ_TIMEOUT)) {
                 setReadTimeout((String)propVal);
+            } else if (propName.equals(WAIT_FOR_REPLY)) {
+                setWaitForReply((String)propVal);
+            } else if (propName.equals(REPLY_QUEUE_SIZE)) {
+                setReplyQueueSize((String)propVal);
+
 // The following properties affect the connection
 
             } else if (propName.equals(Context.SECURITY_PROTOCOL)) {
@@ -2311,6 +2331,13 @@ final public class LdapCtx extends ComponentDirContext
 
         // Set the read timeout
         setReadTimeout((String)envprops.get(READ_TIMEOUT));
+
+        // Set the flag that controls whether to block until the first reply
+        // is received
+        setWaitForReply((String)envprops.get(WAIT_FOR_REPLY));
+
+        // Set the size of the queue of unprocessed search replies
+        setReplyQueueSize((String)envprops.get(REPLY_QUEUE_SIZE));
 
         // When connection is created, it will use these and other
         // properties from the environment
@@ -2438,6 +2465,34 @@ final public class LdapCtx extends ComponentDirContext
             connectTimeout = Integer.parseInt(connectTimeoutProp);
         } else {
             connectTimeout = -1;
+        }
+    }
+
+    /**
+     * Sets the size of the queue of unprocessed search replies
+     */
+    private void setReplyQueueSize(String replyQueueSizeProp) {
+        if (replyQueueSizeProp != null) {
+           replyQueueSize = Integer.parseInt(replyQueueSizeProp);
+            // disallow an empty queue
+            if (replyQueueSize <= 0) {
+                replyQueueSize = -1;    // unlimited
+            }
+        } else {
+            replyQueueSize = -1;        // unlimited
+        }
+    }
+
+    /**
+     * Sets the flag that controls whether to block until the first search
+     * reply is received
+     */
+    private void setWaitForReply(String waitForReplyProp) {
+        if (waitForReplyProp != null &&
+            (waitForReplyProp.equalsIgnoreCase("false"))) {
+            waitForReply = false;
+        } else {
+            waitForReply = true;
         }
     }
 
