@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class Test6987555 {
         if (DEBUG)  System.out.println("boolean=" + x);
         MethodHandle mh1 = MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(boolean.class, boolean.class));
         MethodHandle mh2 = mh1.asType(MethodType.methodType(boolean.class, Boolean.class));
-        boolean a = mh1.<boolean>invokeExact(x);
-        boolean b = mh2.<boolean>invokeExact(Boolean.valueOf(x));
+        boolean a = (boolean) mh1.invokeExact(x);
+        boolean b = (boolean) mh2.invokeExact(Boolean.valueOf(x));
         assert a == b : a + " != " + b;
     }
 
@@ -80,8 +80,8 @@ public class Test6987555 {
         if (DEBUG)  System.out.println("byte=" + x);
         MethodHandle mh1 = MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(byte.class, byte.class));
         MethodHandle mh2 = mh1.asType(MethodType.methodType(byte.class, Byte.class));
-        byte a = mh1.<byte>invokeExact(x);
-        byte b = mh2.<byte>invokeExact(Byte.valueOf(x));
+        byte a = (byte) mh1.invokeExact(x);
+        byte b = (byte) mh2.invokeExact(Byte.valueOf(x));
         assert a == b : a + " != " + b;
     }
 
@@ -104,8 +104,8 @@ public class Test6987555 {
         if (DEBUG)  System.out.println("char=" + x);
         MethodHandle mh1 = MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(char.class, char.class));
         MethodHandle mh2 = mh1.asType(MethodType.methodType(char.class, Character.class));
-        char a = mh1.<char>invokeExact(x);
-        char b = mh2.<char>invokeExact(Character.valueOf(x));
+        char a = (char) mh1.invokeExact(x);
+        char b = (char) mh2.invokeExact(Character.valueOf(x));
         assert a == b : a + " != " + b;
     }
 
@@ -134,8 +134,8 @@ public class Test6987555 {
         if (DEBUG)  System.out.println("short=" + x);
         MethodHandle mh1 = MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(short.class, short.class));
         MethodHandle mh2 = mh1.asType(MethodType.methodType(short.class, Short.class));
-        short a = mh1.<short>invokeExact(x);
-        short b = mh2.<short>invokeExact(Short.valueOf(x));
+        short a = (short) mh1.invokeExact(x);
+        short b = (short) mh2.invokeExact(Short.valueOf(x));
         assert a == b : a + " != " + b;
     }
 
@@ -164,8 +164,8 @@ public class Test6987555 {
         if (DEBUG)  System.out.println("int=" + x);
         MethodHandle mh1 = MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(int.class, int.class));
         MethodHandle mh2 = mh1.asType(MethodType.methodType(int.class, Integer.class));
-        int a = mh1.<int>invokeExact(x);
-        int b = mh2.<int>invokeExact(Integer.valueOf(x));
+        int a = (int) mh1.invokeExact(x);
+        int b = (int) mh2.invokeExact(Integer.valueOf(x));
         assert a == b : a + " != " + b;
     }
 

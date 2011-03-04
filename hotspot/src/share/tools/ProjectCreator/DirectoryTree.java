@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ public class DirectoryTree {
         private Vector nodes = new Vector();
 
         public FileIterator(Node rootNode) {
+            if(rootNode == null) {
+                return;
+            }
             nodes.add(rootNode);
             prune();
         }
@@ -112,10 +115,7 @@ public class DirectoryTree {
         throws IllegalArgumentException {
         File root = new File(Util.normalize(baseDirectory));
         if (!root.isDirectory()) {
-            throw new IllegalArgumentException("baseDirectory \"" +
-                                               baseDirectory +
-                                               "\" does not exist or " +
-                                               "is not a directory");
+            return;
         }
         try {
             root = root.getCanonicalFile();
