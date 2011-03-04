@@ -48,7 +48,7 @@ import java.util.Collections;
  *
  * <p> An asynchronous file channel does not have a <i>current position</i>
  * within the file. Instead, the file position is specified to each read and
- * write methd that initiate asynchronous operations. A {@link CompletionHandler}
+ * write method that initiates asynchronous operations. A {@link CompletionHandler}
  * is specified as a parameter and is invoked to consume the result of the I/O
  * operation. This class also defines read and write methods that initiate
  * asynchronous operations, returning a {@link Future} to represent the pending
@@ -73,7 +73,7 @@ import java.util.Collections;
  * which tasks are submitted to handle I/O events and dispatch to completion
  * handlers that consume the results of I/O operations on the channel. The
  * completion handler for an I/O operation initiated on a channel is guaranteed
- * to be invoked by one threads in the thread pool (This ensures that the
+ * to be invoked by one of the threads in the thread pool (This ensures that the
  * completion handler is run by a thread with the expected <em>identity</em>).
  * Where an I/O operation completes immediately, and the initiating thread is
  * itself a thread in the thread pool, then the completion handler may be invoked
