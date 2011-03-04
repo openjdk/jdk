@@ -207,6 +207,15 @@ protected:
   debug_only(void* malloc(size_t size);)
   debug_only(void* internal_malloc_4(size_t x);)
   NOT_PRODUCT(void inc_bytes_allocated(size_t x);)
+
+  void signal_out_of_memory(size_t request, const char* whence) const;
+
+  void check_for_overflow(size_t request, const char* whence) const {
+    if (UINTPTR_MAX - request < (uintptr_t)_hwm) {
+      signal_out_of_memory(request, whence);
+    }
+ }
+
  public:
   Arena();
   Arena(size_t init_size);
@@ -220,6 +229,7 @@ protected:
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
+    check_for_overflow(x, "Arena::Amalloc");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x);
@@ -233,6 +243,7 @@ protected:
   void *Amalloc_4(size_t x) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
+    check_for_overflow(x, "Arena::Amalloc_4");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x);
@@ -253,6 +264,7 @@ protected:
     size_t delta = (((size_t)_hwm + DALIGN_M1) & ~DALIGN_M1) - (size_t)_hwm;
     x += delta;
 #endif
+    check_for_overflow(x, "Arena::Amalloc_D");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x); // grow() returns a result aligned >= 8 bytes.
