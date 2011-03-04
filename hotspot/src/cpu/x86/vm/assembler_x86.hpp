@@ -1121,6 +1121,7 @@ private:
 
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
+  void movdl(XMMRegister dst, Address src);
 
   // Move Double Quadword
   void movdq(XMMRegister dst, Register src);
@@ -1288,8 +1289,11 @@ private:
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
 
-  // Shift Right Logical Quadword Immediate
+  // Shift Right by bits Logical Quadword Immediate
   void psrlq(XMMRegister dst, int shift);
+
+  // Shift Right by bytes Logical DoubleQuadword Immediate
+  void psrldq(XMMRegister dst, int shift);
 
   // Logical Compare Double Quadword
   void ptest(XMMRegister dst, XMMRegister src);
@@ -2290,9 +2294,21 @@ public:
   void movl2ptr(Register dst, Register src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(if (dst != src) movl(dst, src)); }
 
   // IndexOf strings.
+  // Small strings are loaded through stack if they cross page boundary.
   void string_indexof(Register str1, Register str2,
-                      Register cnt1, Register cnt2, Register result,
+                      Register cnt1, Register cnt2,
+                      int int_cnt2,  Register result,
                       XMMRegister vec, Register tmp);
+
+  // IndexOf for constant substrings with size >= 8 elements
+  // which don't need to be loaded through stack.
+  void string_indexofC8(Register str1, Register str2,
+                      Register cnt1, Register cnt2,
+                      int int_cnt2,  Register result,
+                      XMMRegister vec, Register tmp);
+
+    // Smallest code: we don't need to load through stack,
+    // check string tail.
 
   // Compare strings.
   void string_compare(Register str1, Register str2,

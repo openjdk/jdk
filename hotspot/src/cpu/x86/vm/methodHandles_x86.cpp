@@ -419,6 +419,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
   // some handy addresses
   Address rbx_method_fie(     rbx,      methodOopDesc::from_interpreted_offset() );
+  Address rbx_method_fce(     rbx,      methodOopDesc::from_compiled_offset() );
 
   Address rcx_mh_vmtarget(    rcx_recv, java_dyn_MethodHandle::vmtarget_offset_in_bytes() );
   Address rcx_dmh_vmindex(    rcx_recv, sun_dyn_DirectMethodHandle::vmindex_offset_in_bytes() );
@@ -448,12 +449,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _raise_exception:
     {
       // Not a real MH entry, but rather shared code for raising an
-      // exception.  Since we use a C2I adapter to set up the
-      // interpreter state, arguments are expected in compiler
-      // argument registers.
+      // exception.  Since we use the compiled entry, arguments are
+      // expected in compiler argument registers.
       assert(raise_exception_method(), "must be set");
-      address c2i_entry = raise_exception_method()->get_c2i_entry();
-      assert(c2i_entry, "method must be linked");
+      assert(raise_exception_method()->from_compiled_entry(), "method must be linked");
 
       const Register rdi_pc = rax;
       __ pop(rdi_pc);  // caller PC
@@ -472,13 +471,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ jccb(Assembler::zero, L_no_method);
       __ verify_oop(rbx_method);
 
-      // 32-bit: push remaining arguments as if coming from the compiler.
       NOT_LP64(__ push(rarg2_required));
+      __ push(rdi_pc);         // restore caller PC
+      __ jmp(rbx_method_fce);  // jump to compiled entry
 
-      __ push(rdi_pc);  // restore caller PC
-      __ jump(ExternalAddress(c2i_entry));  // do C2I transition
-
-      // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
       __ bind(L_no_method);
       __ push(rarg2_required);
