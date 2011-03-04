@@ -26,7 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220
+ *      4947220 7018606
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @author Martin Buchholz
@@ -46,6 +46,9 @@ import static java.lang.Boolean.TRUE;
 import static java.util.AbstractMap.SimpleImmutableEntry;
 
 public class Basic {
+
+    /* used for Windows only */
+    static final String systemRoot = System.getenv("SystemRoot");
 
     private static String commandOutput(Reader r) throws Throwable {
         StringBuilder sb = new StringBuilder();
@@ -1073,7 +1076,11 @@ public class Basic {
         try {
             ProcessBuilder pb = new ProcessBuilder();
             pb.environment().clear();
-            equal(getenvInChild(pb), "");
+            String expected = Windows.is() ? "SystemRoot="+systemRoot+",": "";
+            if (Windows.is()) {
+                pb.environment().put("SystemRoot", systemRoot);
+            }
+            equal(getenvInChild(pb), expected);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -1561,13 +1568,21 @@ public class Basic {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("System.getenv()");
             String[] cmdp = childArgs.toArray(new String[childArgs.size()]);
-            String[] envp = {"=ExitValue=3", "=C:=\\"};
+            String[] envp;
+            String[] envpWin = {"=ExitValue=3", "=C:=\\", "SystemRoot="+systemRoot};
+            String[] envpOth = {"=ExitValue=3", "=C:=\\"};
+            if (Windows.is()) {
+                envp = envpWin;
+            } else {
+                envp = envpOth;
+            }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
-            String expected = Windows.is() ? "=C:=\\,=ExitValue=3," : "=C:=\\,";
+            String expected = Windows.is() ? "=C:=\\,SystemRoot="+systemRoot+",=ExitValue=3," : "=C:=\\,";
             equal(commandOutput(p), expected);
             if (Windows.is()) {
                 ProcessBuilder pb = new ProcessBuilder(childArgs);
                 pb.environment().clear();
+                pb.environment().put("SystemRoot", systemRoot);
                 pb.environment().put("=ExitValue", "3");
                 pb.environment().put("=C:", "\\");
                 equal(commandOutput(pb), expected);
@@ -1591,10 +1606,18 @@ public class Basic {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("System.getenv()");
             String[] cmdp = childArgs.toArray(new String[childArgs.size()]);
-            String[] envp = {"LC_ALL=C\u0000\u0000", // Yuck!
+            String[] envpWin = {"SystemRoot="+systemRoot, "LC_ALL=C\u0000\u0000", // Yuck!
                              "FO\u0000=B\u0000R"};
+            String[] envpOth = {"LC_ALL=C\u0000\u0000", // Yuck!
+                             "FO\u0000=B\u0000R"};
+            String[] envp;
+            if (Windows.is()) {
+                envp = envpWin;
+            } else {
+                envp = envpOth;
+            }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
-            check(commandOutput(p).equals("LC_ALL=C,"),
+            check(commandOutput(p).equals(Windows.is() ? "SystemRoot="+systemRoot+",LC_ALL=C," : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
 
@@ -2144,6 +2167,7 @@ public class Basic {
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
+
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
