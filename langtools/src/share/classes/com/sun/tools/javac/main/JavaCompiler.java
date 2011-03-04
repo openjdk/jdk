@@ -585,7 +585,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                       null, List.<JCTree>nil());
         if (content != null) {
             if (verbose) {
-                printVerbose("parsing.started", filename);
+                log.printVerbose("parsing.started", filename);
             }
             if (taskListener != null) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
@@ -594,7 +594,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();
             if (verbose) {
-                printVerbose("parsing.done", Long.toString(elapsed(msec)));
+                log.printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
         }
 
@@ -681,7 +681,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             try {
                 new Pretty(out, true).printUnit(env.toplevel, cdef);
                 if (verbose)
-                    printVerbose("wrote.file", outFile);
+                    log.printVerbose("wrote.file", outFile);
             } finally {
                 out.close();
             }
@@ -867,7 +867,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         if (verbose) {
             elapsed_msec = elapsed(start_msec);
-            printVerbose("total", Long.toString(elapsed_msec));
+            log.printVerbose("total", Long.toString(elapsed_msec));
         }
 
         reportDeferredDiagnostics();
@@ -1154,7 +1154,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (verboseCompilePolicy)
             printNote("[attribute " + env.enclClass.sym + "]");
         if (verbose)
-            printVerbose("checking.attribution", env.enclClass.sym);
+            log.printVerbose("checking.attribution", env.enclClass.sym);
 
         if (taskListener != null) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
@@ -1573,14 +1573,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     protected void printNote(String lines) {
         Log.printLines(log.noticeWriter, lines);
-    }
-
-    /** Output for "-verbose" option.
-     *  @param key The key to look up the correct internationalized string.
-     *  @param arg An argument for substitution into the output string.
-     */
-    protected void printVerbose(String key, Object arg) {
-        log.printNoteLines("verbose." + key, arg);
     }
 
     /** Print numbers of errors and warnings.
