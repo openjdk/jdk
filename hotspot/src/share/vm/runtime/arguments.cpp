@@ -3114,7 +3114,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Turn off biased locking for locking debug mode flags,
   // which are subtlely different from each other but neither works with
   // biased locking.
-  if (!UseFastLocking || UseHeavyMonitors) {
+  if (UseHeavyMonitors
+#ifdef COMPILER1
+      || !UseFastLocking
+#endif // COMPILER1
+    ) {
     if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
       // flag set to true on command line; warn the user that they
       // can't enable biased locking here
