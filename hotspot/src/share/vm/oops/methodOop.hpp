@@ -497,6 +497,13 @@ class methodOopDesc : public oopDesc {
   // returns true if the method is an initializer (<init> or <clinit>).
   bool is_initializer() const;
 
+  // returns true if the method is static OR if the classfile version < 51
+  bool has_valid_initializer_flags() const;
+
+  // returns true if the method name is <clinit> and the method has
+  // valid static initializer flags.
+  bool is_static_initializer() const;
+
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.
