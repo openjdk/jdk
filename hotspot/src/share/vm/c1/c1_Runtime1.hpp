@@ -54,6 +54,7 @@ class StubAssembler;
   stub(new_multi_array)              \
   stub(handle_exception_nofpu)         /* optimized version that does not preserve fpu registers */ \
   stub(handle_exception)             \
+  stub(handle_exception_from_callee) \
   stub(throw_array_store_exception)  \
   stub(throw_class_cast_exception)   \
   stub(throw_incompatible_class_change_error)   \
@@ -116,11 +117,11 @@ class Runtime1: public AllStatic {
   static const char* _blob_names[];
 
   // stub generation
-  static void generate_blob_for(BufferBlob* blob, StubID id);
-  static OopMapSet* generate_code_for(StubID id, StubAssembler* masm);
+  static void       generate_blob_for(BufferBlob* blob, StubID id);
+  static OopMapSet* generate_code_for(StubID id, StubAssembler* sasm);
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
-  static void generate_handle_exception(StubAssembler *sasm, OopMapSet* oop_maps, OopMap* oop_map, bool ignore_fpu_registers = false);
-  static void generate_unwind_exception(StubAssembler *sasm);
+  static OopMapSet* generate_handle_exception(StubID id, StubAssembler* sasm);
+  static void       generate_unwind_exception(StubAssembler *sasm);
   static OopMapSet* generate_patching(StubAssembler* sasm, address target);
 
   static OopMapSet* generate_stub_call(StubAssembler* sasm, Register result, address entry,
