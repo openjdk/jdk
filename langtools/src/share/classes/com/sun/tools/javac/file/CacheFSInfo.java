@@ -49,15 +49,12 @@ public class CacheFSInfo extends FSInfo {
     public static void preRegister(final Context context) {
         context.put(FSInfo.class, new Context.Factory<FSInfo>() {
             public FSInfo make() {
-                if (singleton == null)
-                    singleton = new CacheFSInfo();
-                context.put(FSInfo.class, singleton);
-                return singleton;
+                FSInfo instance = new CacheFSInfo();
+                context.put(FSInfo.class, instance);
+                return instance;
             }
         });
     }
-
-    static CacheFSInfo singleton;
 
     public void clearCache() {
         cache.clear();

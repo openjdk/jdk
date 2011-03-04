@@ -231,13 +231,6 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
         AdaptableX509CertSelector issuerSelector =
                         new AdaptableX509CertSelector();
 
-        // check trusted certificate's key usage
-        boolean[] usages = trustedCert.getKeyUsage();
-        if (usages != null) {
-            usages[5] = true;    // keyCertSign
-            issuerSelector.setKeyUsage(usages);
-        }
-
         // check trusted certificate's subject
         issuerSelector.setSubject(firstCert.getIssuerX500Principal());
 
