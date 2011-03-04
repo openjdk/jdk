@@ -1026,8 +1026,9 @@ void Arguments::check_compressed_oops_compat() {
 }
 
 void Arguments::set_tiered_flags() {
+  // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
-    FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
+    FLAG_SET_DEFAULT(CompilationPolicyChoice, 3);
   }
   if (CompilationPolicyChoice < 2) {
     vm_exit_during_initialization(

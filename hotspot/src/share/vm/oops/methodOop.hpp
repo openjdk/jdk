@@ -84,6 +84,11 @@
 // | invocation_counter                                   |
 // | backedge_counter                                     |
 // |------------------------------------------------------|
+// |           prev_time (tiered only, 64 bit wide)       |
+// |                                                      |
+// |------------------------------------------------------|
+// |                  rate (tiered)                       |
+// |------------------------------------------------------|
 // | code                           (pointer)             |
 // | i2i                            (pointer)             |
 // | adapter                        (pointer)             |
@@ -123,6 +128,11 @@ class methodOopDesc : public oopDesc {
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
+
+#ifdef TIERED
+  jlong             _prev_time;                   // Previous time the rate was acquired
+  float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
+#endif
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -303,6 +313,17 @@ class methodOopDesc : public oopDesc {
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }
   InvocationCounter* backedge_counter()   { return &_backedge_counter; }
+
+#ifdef TIERED
+  // We are reusing interpreter_invocation_count as a holder for the previous event count!
+  // We can do that since interpreter_invocation_count is not used in tiered.
+  int prev_event_count() const                   { return _interpreter_invocation_count;  }
+  void set_prev_event_count(int count)           { _interpreter_invocation_count = count; }
+  jlong prev_time() const                        { return _prev_time; }
+  void set_prev_time(jlong time)                 { _prev_time = time; }
+  float rate() const                             { return _rate; }
+  void set_rate(float rate)                      { _rate = rate; }
+#endif
 
   int invocation_count();
   int backedge_count();
