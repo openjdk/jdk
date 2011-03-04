@@ -479,7 +479,7 @@ G1CollectedHeap* G1CollectedHeap::_g1h;
 // Private methods.
 
 HeapRegion*
-G1CollectedHeap::new_region_try_secondary_free_list(size_t word_size) {
+G1CollectedHeap::new_region_try_secondary_free_list() {
   MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
   while (!_secondary_free_list.is_empty() || free_regions_coming()) {
     if (!_secondary_free_list.is_empty()) {
@@ -531,7 +531,7 @@ HeapRegion* G1CollectedHeap::new_region_work(size_t word_size,
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "forced to look at the secondary_free_list");
       }
-      res = new_region_try_secondary_free_list(word_size);
+      res = new_region_try_secondary_free_list();
       if (res != NULL) {
         return res;
       }
@@ -543,7 +543,7 @@ HeapRegion* G1CollectedHeap::new_region_work(size_t word_size,
       gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                              "res == NULL, trying the secondary_free_list");
     }
-    res = new_region_try_secondary_free_list(word_size);
+    res = new_region_try_secondary_free_list();
   }
   if (res == NULL && do_expand) {
     if (expand(word_size * HeapWordSize)) {
@@ -579,6 +579,9 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(int purpose,
 
 int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
                                                        size_t word_size) {
+  assert(isHumongous(word_size), "word_size should be humongous");
+  assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
+
   int first = -1;
   if (num_regions == 1) {
     // Only one region to allocate, no need to go through the slower
@@ -600,7 +603,7 @@ int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
     // request. If we are only allocating one region we use the common
     // region allocation code (see above).
     wait_while_free_regions_coming();
-    append_secondary_free_list_if_not_empty();
+    append_secondary_free_list_if_not_empty_with_lock();
 
     if (free_regions() >= num_regions) {
       first = _hrs->find_contiguous(num_regions);
@@ -608,7 +611,7 @@ int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
         for (int i = first; i < first + (int) num_regions; ++i) {
           HeapRegion* hr = _hrs->at(i);
           assert(hr->is_empty(), "sanity");
-          assert(is_on_free_list(hr), "sanity");
+          assert(is_on_master_free_list(hr), "sanity");
           hr->set_pending_removal(true);
         }
         _free_list.remove_all_pending(num_regions);
@@ -616,6 +619,126 @@ int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
     }
   }
   return first;
+}
+
+HeapWord*
+G1CollectedHeap::humongous_obj_allocate_initialize_regions(int first,
+                                                           size_t num_regions,
+                                                           size_t word_size) {
+  assert(first != -1, "pre-condition");
+  assert(isHumongous(word_size), "word_size should be humongous");
+  assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
+
+  // Index of last region in the series + 1.
+  int last = first + (int) num_regions;
+
+  // We need to initialize the region(s) we just discovered. This is
+  // a bit tricky given that it can happen concurrently with
+  // refinement threads refining cards on these regions and
+  // potentially wanting to refine the BOT as they are scanning
+  // those cards (this can happen shortly after a cleanup; see CR
+  // 6991377). So we have to set up the region(s) carefully and in
+  // a specific order.
+
+  // The word size sum of all the regions we will allocate.
+  size_t word_size_sum = num_regions * HeapRegion::GrainWords;
+  assert(word_size <= word_size_sum, "sanity");
+
+  // This will be the "starts humongous" region.
+  HeapRegion* first_hr = _hrs->at(first);
+  // The header of the new object will be placed at the bottom of
+  // the first region.
+  HeapWord* new_obj = first_hr->bottom();
+  // This will be the new end of the first region in the series that
+  // should also match the end of the last region in the seriers.
+  HeapWord* new_end = new_obj + word_size_sum;
+  // This will be the new top of the first region that will reflect
+  // this allocation.
+  HeapWord* new_top = new_obj + word_size;
+
+  // First, we need to zero the header of the space that we will be
+  // allocating. When we update top further down, some refinement
+  // threads might try to scan the region. By zeroing the header we
+  // ensure that any thread that will try to scan the region will
+  // come across the zero klass word and bail out.
+  //
+  // NOTE: It would not have been correct to have used
+  // CollectedHeap::fill_with_object() and make the space look like
+  // an int array. The thread that is doing the allocation will
+  // later update the object header to a potentially different array
+  // type and, for a very short period of time, the klass and length
+  // fields will be inconsistent. This could cause a refinement
+  // thread to calculate the object size incorrectly.
+  Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
+
+  // We will set up the first region as "starts humongous". This
+  // will also update the BOT covering all the regions to reflect
+  // that there is a single object that starts at the bottom of the
+  // first region.
+  first_hr->set_startsHumongous(new_top, new_end);
+
+  // Then, if there are any, we will set up the "continues
+  // humongous" regions.
+  HeapRegion* hr = NULL;
+  for (int i = first + 1; i < last; ++i) {
+    hr = _hrs->at(i);
+    hr->set_continuesHumongous(first_hr);
+  }
+  // If we have "continues humongous" regions (hr != NULL), then the
+  // end of the last one should match new_end.
+  assert(hr == NULL || hr->end() == new_end, "sanity");
+
+  // Up to this point no concurrent thread would have been able to
+  // do any scanning on any region in this series. All the top
+  // fields still point to bottom, so the intersection between
+  // [bottom,top] and [card_start,card_end] will be empty. Before we
+  // update the top fields, we'll do a storestore to make sure that
+  // no thread sees the update to top before the zeroing of the
+  // object header and the BOT initialization.
+  OrderAccess::storestore();
+
+  // Now that the BOT and the object header have been initialized,
+  // we can update top of the "starts humongous" region.
+  assert(first_hr->bottom() < new_top && new_top <= first_hr->end(),
+         "new_top should be in this region");
+  first_hr->set_top(new_top);
+
+  // Now, we will update the top fields of the "continues humongous"
+  // regions. The reason we need to do this is that, otherwise,
+  // these regions would look empty and this will confuse parts of
+  // G1. For example, the code that looks for a consecutive number
+  // of empty regions will consider them empty and try to
+  // re-allocate them. We can extend is_empty() to also include
+  // !continuesHumongous(), but it is easier to just update the top
+  // fields here. The way we set top for all regions (i.e., top ==
+  // end for all regions but the last one, top == new_top for the
+  // last one) is actually used when we will free up the humongous
+  // region in free_humongous_region().
+  hr = NULL;
+  for (int i = first + 1; i < last; ++i) {
+    hr = _hrs->at(i);
+    if ((i + 1) == last) {
+      // last continues humongous region
+      assert(hr->bottom() < new_top && new_top <= hr->end(),
+             "new_top should fall on this region");
+      hr->set_top(new_top);
+    } else {
+      // not last one
+      assert(new_top > hr->end(), "new_top should be above this region");
+      hr->set_top(hr->end());
+    }
+  }
+  // If we have continues humongous regions (hr != NULL), then the
+  // end of the last one should match new_end and its top should
+  // match new_top.
+  assert(hr == NULL ||
+         (hr->end() == new_end && hr->top() == new_top), "sanity");
+
+  assert(first_hr->used() == word_size * HeapWordSize, "invariant");
+  _summary_bytes_used += first_hr->used();
+  _humongous_set.add(first_hr);
+
+  return new_obj;
 }
 
 // If could fit into free regions w/o expansion, try.
@@ -653,121 +776,16 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     }
   }
 
+  HeapWord* result = NULL;
   if (first != -1) {
-    // Index of last region in the series + 1.
-    int last = first + (int) num_regions;
-
-    // We need to initialize the region(s) we just discovered. This is
-    // a bit tricky given that it can happen concurrently with
-    // refinement threads refining cards on these regions and
-    // potentially wanting to refine the BOT as they are scanning
-    // those cards (this can happen shortly after a cleanup; see CR
-    // 6991377). So we have to set up the region(s) carefully and in
-    // a specific order.
-
-    // The word size sum of all the regions we will allocate.
-    size_t word_size_sum = num_regions * HeapRegion::GrainWords;
-    assert(word_size <= word_size_sum, "sanity");
-
-    // This will be the "starts humongous" region.
-    HeapRegion* first_hr = _hrs->at(first);
-    // The header of the new object will be placed at the bottom of
-    // the first region.
-    HeapWord* new_obj = first_hr->bottom();
-    // This will be the new end of the first region in the series that
-    // should also match the end of the last region in the seriers.
-    HeapWord* new_end = new_obj + word_size_sum;
-    // This will be the new top of the first region that will reflect
-    // this allocation.
-    HeapWord* new_top = new_obj + word_size;
-
-    // First, we need to zero the header of the space that we will be
-    // allocating. When we update top further down, some refinement
-    // threads might try to scan the region. By zeroing the header we
-    // ensure that any thread that will try to scan the region will
-    // come across the zero klass word and bail out.
-    //
-    // NOTE: It would not have been correct to have used
-    // CollectedHeap::fill_with_object() and make the space look like
-    // an int array. The thread that is doing the allocation will
-    // later update the object header to a potentially different array
-    // type and, for a very short period of time, the klass and length
-    // fields will be inconsistent. This could cause a refinement
-    // thread to calculate the object size incorrectly.
-    Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
-
-    // We will set up the first region as "starts humongous". This
-    // will also update the BOT covering all the regions to reflect
-    // that there is a single object that starts at the bottom of the
-    // first region.
-    first_hr->set_startsHumongous(new_top, new_end);
-
-    // Then, if there are any, we will set up the "continues
-    // humongous" regions.
-    HeapRegion* hr = NULL;
-    for (int i = first + 1; i < last; ++i) {
-      hr = _hrs->at(i);
-      hr->set_continuesHumongous(first_hr);
-    }
-    // If we have "continues humongous" regions (hr != NULL), then the
-    // end of the last one should match new_end.
-    assert(hr == NULL || hr->end() == new_end, "sanity");
-
-    // Up to this point no concurrent thread would have been able to
-    // do any scanning on any region in this series. All the top
-    // fields still point to bottom, so the intersection between
-    // [bottom,top] and [card_start,card_end] will be empty. Before we
-    // update the top fields, we'll do a storestore to make sure that
-    // no thread sees the update to top before the zeroing of the
-    // object header and the BOT initialization.
-    OrderAccess::storestore();
-
-    // Now that the BOT and the object header have been initialized,
-    // we can update top of the "starts humongous" region.
-    assert(first_hr->bottom() < new_top && new_top <= first_hr->end(),
-           "new_top should be in this region");
-    first_hr->set_top(new_top);
-
-    // Now, we will update the top fields of the "continues humongous"
-    // regions. The reason we need to do this is that, otherwise,
-    // these regions would look empty and this will confuse parts of
-    // G1. For example, the code that looks for a consecutive number
-    // of empty regions will consider them empty and try to
-    // re-allocate them. We can extend is_empty() to also include
-    // !continuesHumongous(), but it is easier to just update the top
-    // fields here. The way we set top for all regions (i.e., top ==
-    // end for all regions but the last one, top == new_top for the
-    // last one) is actually used when we will free up the humongous
-    // region in free_humongous_region().
-    hr = NULL;
-    for (int i = first + 1; i < last; ++i) {
-      hr = _hrs->at(i);
-      if ((i + 1) == last) {
-        // last continues humongous region
-        assert(hr->bottom() < new_top && new_top <= hr->end(),
-               "new_top should fall on this region");
-        hr->set_top(new_top);
-      } else {
-        // not last one
-        assert(new_top > hr->end(), "new_top should be above this region");
-        hr->set_top(hr->end());
-      }
-    }
-    // If we have continues humongous regions (hr != NULL), then the
-    // end of the last one should match new_end and its top should
-    // match new_top.
-    assert(hr == NULL ||
-           (hr->end() == new_end && hr->top() == new_top), "sanity");
-
-    assert(first_hr->used() == word_size * HeapWordSize, "invariant");
-    _summary_bytes_used += first_hr->used();
-    _humongous_set.add(first_hr);
-
-    return new_obj;
+    result =
+      humongous_obj_allocate_initialize_regions(first, num_regions, word_size);
+    assert(result != NULL, "it should always return a valid result");
   }
 
   verify_region_sets_optional();
-  return NULL;
+
+  return result;
 }
 
 void
@@ -1389,7 +1407,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     g1_policy()->record_full_collection_start();
 
     wait_while_free_regions_coming();
-    append_secondary_free_list_if_not_empty();
+    append_secondary_free_list_if_not_empty_with_lock();
 
     gc_prologue(true);
     increment_total_collections(true /* full gc */);
@@ -3377,15 +3395,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceMemoryManagerStats tms(false /* fullGC */);
 
-    // If there are any free regions available on the secondary_free_list
-    // make sure we append them to the free_list. However, we don't
-    // have to wait for the rest of the cleanup operation to
-    // finish. If it's still going on that's OK. If we run out of
-    // regions, the region allocation code will check the
-    // secondary_free_list and potentially wait if more free regions
-    // are coming (see new_region_try_secondary_free_list()).
+    // If the secondary_free_list is not empty, append it to the
+    // free_list. No need to wait for the cleanup operation to finish;
+    // the region allocation code will check the secondary_free_list
+    // and wait if necessary. If the G1StressConcRegionFreeing flag is
+    // set, skip this step so that the region allocation code has to
+    // get entries from the secondary_free_list.
     if (!G1StressConcRegionFreeing) {
-      append_secondary_free_list_if_not_empty();
+      append_secondary_free_list_if_not_empty_with_lock();
     }
 
     increment_gc_time_stamp();
@@ -5199,7 +5216,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
   size_t rs_lengths = 0;
 
   while (cur != NULL) {
-    assert(!is_on_free_list(cur), "sanity");
+    assert(!is_on_master_free_list(cur), "sanity");
 
     if (non_young) {
       if (cur->is_young()) {
@@ -5543,13 +5560,10 @@ void G1CollectedHeap::verify_region_sets() {
     return;
   }
 
-  {
-    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    // Make sure we append the secondary_free_list on the free_list so
-    // that all free regions we will come across can be safely
-    // attributed to the free_list.
-    append_secondary_free_list();
-  }
+  // Make sure we append the secondary_free_list on the free_list so
+  // that all free regions we will come across can be safely
+  // attributed to the free_list.
+  append_secondary_free_list_if_not_empty_with_lock();
 
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.

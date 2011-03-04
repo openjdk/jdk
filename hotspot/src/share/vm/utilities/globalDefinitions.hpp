@@ -1185,7 +1185,7 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 // '%d' formats to indicate a 64-bit quantity; commonly "l" (in LP64) or "ll"
 // (in ILP32).
 
-#define BOOL_TO_STR(__b) (__b) ? "true" : "false"
+#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 // Format 32-bit quantities.
 #define INT32_FORMAT  "%d"

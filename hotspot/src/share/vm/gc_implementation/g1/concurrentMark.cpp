@@ -1828,7 +1828,7 @@ void ConcurrentMark::completeCleanup() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   _cleanup_list.verify_optional();
-  FreeRegionList local_free_list("Local Cleanup List");
+  FreeRegionList tmp_free_list("Tmp Free List");
 
   if (G1ConcRegionFreeingVerbose) {
     gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
@@ -1842,7 +1842,7 @@ void ConcurrentMark::completeCleanup() {
     HeapRegion* hr = _cleanup_list.remove_head();
     assert(hr != NULL, "the list was not empty");
     hr->rem_set()->clear();
-    local_free_list.add_as_tail(hr);
+    tmp_free_list.add_as_tail(hr);
 
     // Instead of adding one region at a time to the secondary_free_list,
     // we accumulate them in the local list and move them a few at a
@@ -1850,20 +1850,20 @@ void ConcurrentMark::completeCleanup() {
     // we do during this process. We'll also append the local list when
     // _cleanup_list is empty (which means we just removed the last
     // region from the _cleanup_list).
-    if ((local_free_list.length() % G1SecondaryFreeListAppendLength == 0) ||
+    if ((tmp_free_list.length() % G1SecondaryFreeListAppendLength == 0) ||
         _cleanup_list.is_empty()) {
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
                                "appending "SIZE_FORMAT" entries to the "
                                "secondary_free_list, clean list still has "
                                SIZE_FORMAT" entries",
-                               local_free_list.length(),
+                               tmp_free_list.length(),
                                _cleanup_list.length());
       }
 
       {
         MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-        g1h->secondary_free_list_add_as_tail(&local_free_list);
+        g1h->secondary_free_list_add_as_tail(&tmp_free_list);
         SecondaryFreeList_lock->notify_all();
       }
 
@@ -1874,7 +1874,7 @@ void ConcurrentMark::completeCleanup() {
       }
     }
   }
-  assert(local_free_list.is_empty(), "post-condition");
+  assert(tmp_free_list.is_empty(), "post-condition");
 }
 
 // Support closures for reference procssing in G1
@@ -3182,7 +3182,7 @@ public:
 
   template <class T> void do_oop_work(T* p) {
     assert( _g1h->is_in_g1_reserved((HeapWord*) p), "invariant");
-    assert(!_g1h->is_on_free_list(
+    assert(!_g1h->is_on_master_free_list(
                     _g1h->heap_region_containing((HeapWord*) p)), "invariant");
 
     oop obj = oopDesc::load_decode_heap_oop(p);
@@ -3403,7 +3403,7 @@ void CMTask::deal_with_reference(oop obj) {
 void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
-  assert(!_g1h->is_on_free_list(
+  assert(!_g1h->is_on_master_free_list(
               _g1h->heap_region_containing((HeapWord*) objAddr)), "invariant");
   assert(!_g1h->is_obj_ill(obj), "invariant");
   assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
@@ -3649,7 +3649,7 @@ void CMTask::drain_local_queue(bool partially) {
                                (void*) obj);
 
       assert(_g1h->is_in_g1_reserved((HeapWord*) obj), "invariant" );
-      assert(!_g1h->is_on_free_list(
+      assert(!_g1h->is_on_master_free_list(
                   _g1h->heap_region_containing((HeapWord*) obj)), "invariant");
 
       scan_object(obj);
