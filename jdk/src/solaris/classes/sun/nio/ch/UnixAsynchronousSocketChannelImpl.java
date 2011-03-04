@@ -137,7 +137,7 @@ class UnixAsynchronousSocketChannelImpl
         return port;
     }
 
-    // register for events if there are outstanding I/O operations
+    // register events for outstanding I/O operations, caller already owns updateLock
     private void updateEvents() {
         assert Thread.holdsLock(updateLock);
         int events = 0;
@@ -147,6 +147,13 @@ class UnixAsynchronousSocketChannelImpl
             events |= Port.POLLOUT;
         if (events != 0)
             port.startPoll(fdVal, events);
+    }
+
+    // register events for outstanding I/O operations
+    private void lockAndUpdateEvents() {
+        synchronized (updateLock) {
+            updateEvents();
+        }
     }
 
     // invoke to finish read and/or write operations
@@ -402,9 +409,8 @@ class UnixAsynchronousSocketChannelImpl
             exc = x;
         } finally {
             // restart poll in case of concurrent write
-            synchronized (updateLock) {
-                updateEvents();
-            }
+            if (!(exc instanceof AsynchronousCloseException))
+                lockAndUpdateEvents();
             end();
         }
 
@@ -598,9 +604,8 @@ class UnixAsynchronousSocketChannelImpl
             exc = x;
         } finally {
             // restart poll in case of concurrent write
-            synchronized (updateLock) {
-                updateEvents();
-            }
+            if (!(exc instanceof AsynchronousCloseException))
+                lockAndUpdateEvents();
             end();
         }
 
