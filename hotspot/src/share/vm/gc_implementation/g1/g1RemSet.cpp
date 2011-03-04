@@ -86,28 +86,6 @@ public:
   bool idempotent() { return true; }
 };
 
-class IntoCSRegionClosure: public HeapRegionClosure {
-  IntoCSOopClosure _blk;
-  G1CollectedHeap* _g1;
-public:
-  IntoCSRegionClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* blk) :
-    _g1(g1), _blk(g1, blk) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->in_collection_set()) {
-      _blk.set_region(r);
-      if (r->isHumongous()) {
-        if (r->startsHumongous()) {
-          oop obj = oop(r->bottom());
-          obj->oop_iterate(&_blk);
-        }
-      } else {
-        r->oop_before_save_marks_iterate(&_blk);
-      }
-    }
-    return false;
-  }
-};
-
 class VerifyRSCleanCardOopClosure: public OopClosure {
   G1CollectedHeap* _g1;
 public:
