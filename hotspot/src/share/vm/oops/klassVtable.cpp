@@ -883,7 +883,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   int ime_num = 0;
 
   // Skip first methodOop if it is a class initializer
-  int i = ((methodOop)methods()->obj_at(0))->name() != vmSymbols::class_initializer_name() ? 0 : 1;
+  int i = ((methodOop)methods()->obj_at(0))->is_static_initializer() ? 1 : 0;
 
   // m, method_name, method_signature, klass reset each loop so they
   // don't need preserving across check_signature_loaders call
@@ -1121,7 +1121,7 @@ int klassItable::compute_itable_index(methodOop m) {
     assert(index < methods->length(), "should find index for resolve_invoke");
   }
   // Adjust for <clinit>, which is left out of table if first method
-  if (methods->length() > 0 && ((methodOop)methods->obj_at(0))->name() == vmSymbols::class_initializer_name()) {
+  if (methods->length() > 0 && ((methodOop)methods->obj_at(0))->is_static_initializer()) {
     index--;
   }
   return index;
@@ -1135,7 +1135,7 @@ methodOop klassItable::method_for_itable_index(klassOop intf, int itable_index) 
 
   int index = itable_index;
   // Adjust for <clinit>, which is left out of table if first method
-  if (methods->length() > 0 && ((methodOop)methods->obj_at(0))->name() == vmSymbols::class_initializer_name()) {
+  if (methods->length() > 0 && ((methodOop)methods->obj_at(0))->is_static_initializer()) {
     index++;
   }
 
