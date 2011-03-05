@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,14 +358,14 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
 
         String parameters;
 
-        StringBuffer typeId;
+        StringBuilder typeId;
 
         ListBuffer<String> paramList;
 
         ParameterParseMachine(String parameters) {
             this.parameters = parameters;
             this.paramList = new ListBuffer<String>();
-            typeId = new StringBuffer();
+            typeId = new StringBuilder();
         }
 
         public String[] parseParameters() {
@@ -464,6 +464,7 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
     /**
      * Return the kind of this tag.
      */
+    @Override
     public String kind() {
         return "@see";
     }
