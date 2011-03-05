@@ -143,11 +143,9 @@ public class Messager extends Log implements DocErrorReporter {
      * if needed.
      */
     private String getString(String key) {
-        ResourceBundle messageRB = this.messageRB;
         if (messageRB == null) {
             try {
-                this.messageRB = messageRB =
-                    ResourceBundle.getBundle(
+                messageRB = ResourceBundle.getBundle(
                           "com.sun.tools.javadoc.resources.javadoc");
             } catch (MissingResourceException e) {
                 throw new Error("Fatal: Resource for javadoc is missing");
@@ -456,8 +454,6 @@ public class Messager extends Log implements DocErrorReporter {
      * Print exit message.
      */
     public void exitNotice() {
-        int nerrors = nerrors();
-        int nwarnings = nwarnings();
         if (nerrors > 0) {
             notice((nerrors > 1) ? "main.errors" : "main.error",
                    "" + nerrors);
