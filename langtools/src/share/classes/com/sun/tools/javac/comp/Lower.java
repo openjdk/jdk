@@ -68,7 +68,6 @@ public class Lower extends TreeTranslator {
     private Names names;
     private Log log;
     private Symtab syms;
-    private Scope.ScopeCounter scopeCounter;
     private Resolve rs;
     private Check chk;
     private Attr attr;
@@ -91,7 +90,6 @@ public class Lower extends TreeTranslator {
         names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
-        scopeCounter = Scope.ScopeCounter.instance(context);
         rs = Resolve.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
@@ -571,7 +569,7 @@ public class Lower extends TreeTranslator {
         c.flatname = chk.localClassName(c);
         c.sourcefile = owner.sourcefile;
         c.completer = null;
-        c.members_field = new Scope.ClassScope(c, scopeCounter);
+        c.members_field = new Scope(c);
         c.flags_field = flags;
         ClassType ctype = (ClassType) c.type;
         ctype.supertype_field = syms.objectType;
@@ -1427,25 +1425,55 @@ public class Lower extends TreeTranslator {
         }
     }
 
-    /** Optionally replace a try statement with an automatic resource
-     *  management (ARM) block.
+    /**
+     * Optionally replace a try statement with the desugaring of a
+     * try-with-resources statement.  The canonical desugaring of
+     *
+     * try ResourceSpecification
+     *   Block
+     *
+     * is
+     *
+     * {
+     *   final VariableModifiers_minus_final R #resource = Expression;
+     *   Throwable #primaryException = null;
+     *
+     *   try ResourceSpecificationtail
+     *     Block
+     *   catch (Throwable #t) {
+     *     #primaryException = t;
+     *     throw #t;
+     *   } finally {
+     *     if (#resource != null) {
+     *       if (#primaryException != null) {
+     *         try {
+     *           #resource.close();
+     *         } catch(Throwable #suppressedException) {
+     *           #primaryException.addSuppressed(#suppressedException);
+     *         }
+     *       } else {
+     *         #resource.close();
+     *       }
+     *     }
+     *   }
+     *
      * @param tree  The try statement to inspect.
-     * @return      An ARM block, or the original try block if there are no
-     *              resources to manage.
+     * @return A a desugared try-with-resources tree, or the original
+     * try block if there are no resources to manage.
      */
-    JCTree makeArmTry(JCTry tree) {
+    JCTree makeTwrTry(JCTry tree) {
         make_at(tree.pos());
         twrVars = twrVars.dup();
-        JCBlock armBlock = makeArmBlock(tree.resources, tree.body, 0);
+        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body, 0);
         if (tree.catchers.isEmpty() && tree.finalizer == null)
-            result = translate(armBlock);
+            result = translate(twrBlock);
         else
-            result = translate(make.Try(armBlock, tree.catchers, tree.finalizer));
+            result = translate(make.Try(twrBlock, tree.catchers, tree.finalizer));
         twrVars = twrVars.leave();
         return result;
     }
 
-    private JCBlock makeArmBlock(List<JCTree> resources, JCBlock block, int depth) {
+    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block, int depth) {
         if (resources.isEmpty())
             return block;
 
@@ -1499,16 +1527,16 @@ public class Lower extends TreeTranslator {
 
         int oldPos = make.pos;
         make.at(TreeInfo.endPos(block));
-        JCBlock finallyClause = makeArmFinallyClause(primaryException, expr);
+        JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr);
         make.at(oldPos);
-        JCTry outerTry = make.Try(makeArmBlock(resources.tail, block, depth + 1),
+        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block, depth + 1),
                                   List.<JCCatch>of(catchClause),
                                   finallyClause);
         stats.add(outerTry);
         return make.Block(0L, stats.toList());
     }
 
-    private JCBlock makeArmFinallyClause(Symbol primaryException, JCExpression resource) {
+    private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource) {
         // primaryException.addSuppressed(catchException);
         VarSymbol catchException =
             new VarSymbol(0, make.paramName(2),
@@ -1527,20 +1555,28 @@ public class Lower extends TreeTranslator {
         List<JCCatch> catchClauses = List.<JCCatch>of(make.Catch(catchExceptionDecl, catchBlock));
         JCTry tryTree = make.Try(tryBlock, catchClauses, null);
 
-        // if (resource != null) resourceClose;
-        JCExpression nullCheck = makeBinary(JCTree.NE,
-                                            make.Ident(primaryException),
-                                            makeNull());
-        JCIf closeIfStatement = make.If(nullCheck,
+        // if (primaryException != null) {try...} else resourceClose;
+        JCIf closeIfStatement = make.If(makeNonNullCheck(make.Ident(primaryException)),
                                         tryTree,
                                         makeResourceCloseInvocation(resource));
-        return make.Block(0L, List.<JCStatement>of(closeIfStatement));
+
+        // if (#resource != null) { if (primaryException ...  }
+        return make.Block(0L,
+                          List.<JCStatement>of(make.If(makeNonNullCheck(resource),
+                                                       closeIfStatement,
+                                                       null)));
     }
 
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {
         // create resource.close() method invocation
-        JCExpression resourceClose = makeCall(resource, names.close, List.<JCExpression>nil());
+        JCExpression resourceClose = makeCall(resource,
+                                              names.close,
+                                              List.<JCExpression>nil());
         return make.Exec(resourceClose);
+    }
+
+    private JCExpression makeNonNullCheck(JCExpression expression) {
+        return makeBinary(JCTree.NE, expression, makeNull());
     }
 
     /** Construct a tree that represents the outer instance
@@ -3575,7 +3611,7 @@ public class Lower extends TreeTranslator {
         if (tree.resources.isEmpty()) {
             super.visitTry(tree);
         } else {
-            result = makeArmTry(tree);
+            result = makeTwrTry(tree);
         }
     }
 

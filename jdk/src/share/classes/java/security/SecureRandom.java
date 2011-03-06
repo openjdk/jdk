@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,9 @@ public class SecureRandom extends java.util.Random {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * <p> See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * <p> See the SecureRandom section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
      * <p> The returned SecureRandom object has not been seeded.  To seed the
@@ -171,9 +171,9 @@ public class SecureRandom extends java.util.Random {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * <p> See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * <p> See the SecureRandom section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
      * @param seed the seed.
@@ -256,9 +256,9 @@ public class SecureRandom extends java.util.Random {
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the SecureRandom section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
      * @return the new SecureRandom object.
@@ -299,9 +299,9 @@ public class SecureRandom extends java.util.Random {
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the SecureRandom section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
      * @param provider the name of the provider.
@@ -347,9 +347,9 @@ public class SecureRandom extends java.util.Random {
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the SecureRandom section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard RNG algorithm names.
      *
      * @param provider the provider.

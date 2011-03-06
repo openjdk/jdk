@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,8 +298,8 @@ static char* get_user_name() {
 static char* get_user_name_slow(int vmid) {
 
   // directory search
-  char* oldest_user = NULL;
-  time_t oldest_ctime = 0;
+  char* latest_user = NULL;
+  time_t latest_ctime = 0;
 
   const char* tmpdirname = os::get_temp_directory();
 
@@ -375,18 +375,29 @@ static char* get_user_name_slow(int vmid) {
           continue;
         }
 
-        // compare and save filename with latest creation time
-        if (statbuf.st_size > 0 && statbuf.st_ctime > oldest_ctime) {
+        // If we found a matching file with a newer creation time, then
+        // save the user name. The newer creation time indicates that
+        // we found a newer incarnation of the process associated with
+        // vmid. Due to the way that Windows recycles pids and the fact
+        // that we can't delete the file from the file system namespace
+        // until last close, it is possible for there to be more than
+        // one hsperfdata file with a name matching vmid (diff users).
+        //
+        // We no longer ignore hsperfdata files where (st_size == 0).
+        // In this function, all we're trying to do is determine the
+        // name of the user that owns the process associated with vmid
+        // so the size doesn't matter. Very rarely, we have observed
+        // hsperfdata files where (st_size == 0) and the st_size field
+        // later becomes the expected value.
+        //
+        if (statbuf.st_ctime > latest_ctime) {
+          char* user = strchr(dentry->d_name, '_') + 1;
 
-          if (statbuf.st_ctime > oldest_ctime) {
-            char* user = strchr(dentry->d_name, '_') + 1;
+          if (latest_user != NULL) FREE_C_HEAP_ARRAY(char, latest_user);
+          latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1);
 
-            if (oldest_user != NULL) FREE_C_HEAP_ARRAY(char, oldest_user);
-            oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1);
-
-            strcpy(oldest_user, user);
-            oldest_ctime = statbuf.st_ctime;
-          }
+          strcpy(latest_user, user);
+          latest_ctime = statbuf.st_ctime;
         }
 
         FREE_C_HEAP_ARRAY(char, filename);
@@ -399,7 +410,7 @@ static char* get_user_name_slow(int vmid) {
   os::closedir(tmpdirp);
   FREE_C_HEAP_ARRAY(char, tdbuf);
 
-  return(oldest_user);
+  return(latest_user);
 }
 
 // return the name of the user that owns the process identified by vmid.
@@ -1339,6 +1350,38 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     CloseHandle(fh);
     fh = NULL;
     return NULL;
+  } else {
+    // We created the file mapping, but rarely the size of the
+    // backing store file is reported as zero (0) which can cause
+    // failures when trying to use the hsperfdata file.
+    struct stat statbuf;
+    int ret_code = ::stat(filename, &statbuf);
+    if (ret_code == OS_ERR) {
+      if (PrintMiscellaneous && Verbose) {
+        warning("Could not get status information from file %s: %s\n",
+            filename, strerror(errno));
+      }
+      CloseHandle(fmh);
+      CloseHandle(fh);
+      fh = NULL;
+      fmh = NULL;
+      return NULL;
+    }
+
+    // We could always call FlushFileBuffers() but the Microsoft
+    // docs indicate that it is considered expensive so we only
+    // call it when we observe the size as zero (0).
+    if (statbuf.st_size == 0 && FlushFileBuffers(fh) != TRUE) {
+      DWORD lasterror = GetLastError();
+      if (PrintMiscellaneous && Verbose) {
+        warning("could not flush file %s: %d\n", filename, lasterror);
+      }
+      CloseHandle(fmh);
+      CloseHandle(fh);
+      fh = NULL;
+      fmh = NULL;
+      return NULL;
+    }
   }
 
   // the file has been successfully created and the file mapping

@@ -67,7 +67,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Check chk;
     private final Attr attr;
     private final Symtab syms;
-    private final Scope.ScopeCounter scopeCounter;
     private final TreeMaker make;
     private final ClassReader reader;
     private final Todo todo;
@@ -75,9 +74,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final Target target;
+    private final DeferredLintHandler deferredLintHandler;
 
     private final boolean skipAnnotations;
-    private final boolean allowSimplifiedVarargs;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -94,7 +93,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         chk = Check.instance(context);
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
-        scopeCounter = Scope.ScopeCounter.instance(context);
         make = TreeMaker.instance(context);
         reader = ClassReader.instance(context);
         todo = Todo.instance(context);
@@ -102,10 +100,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         target = Target.instance(context);
+        deferredLintHandler = DeferredLintHandler.instance(context);
         Options options = Options.instance(context);
         skipAnnotations = options.isSet("skipAnnotations");
-        Source source = Source.instance(context);
-        allowSimplifiedVarargs = source.allowSimplifiedVarargs();
     }
 
     /** A queue for classes whose members still need to be entered into the
@@ -571,10 +568,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = m;
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
-        // Compute the method type
-        m.type = signature(tree.typarams, tree.params,
-                           tree.restype, tree.thrown,
-                           localEnv);
+        DeferredLintHandler prevLintHandler =
+                chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
+        try {
+            // Compute the method type
+            m.type = signature(tree.typarams, tree.params,
+                               tree.restype, tree.thrown,
+                               localEnv);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
 
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
@@ -618,7 +621,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
-        attr.attribType(tree.vartype, localEnv);
+        DeferredLintHandler prevLintHandler =
+                chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
+        try {
+            attr.attribType(tree.vartype, localEnv);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
+
         if ((tree.mods.flags & VARARGS) != 0) {
             //if we are entering a varargs parameter, we need to replace its type
             //(a plain array type) with the more precise VarargsType --- we need
@@ -637,7 +647,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             if ((v.flags_field & FINAL) != 0 && tree.init.getTag() != JCTree.NEWCLASS) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
-                v.setLazyConstValue(initEnv(tree, initEnv), log, attr, tree.init);
+                v.setLazyConstValue(initEnv(tree, initEnv), attr, tree.init);
             }
         }
         if (chk.checkUnique(tree.pos(), v, enclScope)) {
@@ -775,10 +785,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && s.owner.kind != MTH
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
-            // Internally to java.dyn, a @PolymorphicSignature annotation
+            // Internally to java.lang.invoke, a @PolymorphicSignature annotation
             // acts like a classfile attribute.
             if (!c.type.isErroneous() &&
-                    types.isSameType(c.type, syms.polymorphicSignatureType)) {
+                    (types.isSameType(c.type, syms.polymorphicSignatureType) ||
+                     types.isSameType(c.type, syms.transientPolymorphicSignatureType))) {
                 if (!target.hasMethodHandles()) {
                     // Somebody is compiling JDK7 source code to a JDK6 target.
                     // Make it an error, since it is unlikely but important.
@@ -1010,7 +1021,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
-        Scope baseScope = new Scope.ClassScope(tree.sym, scopeCounter);
+        Scope baseScope = new Scope(tree.sym);
         //import already entered local classes into base scope
         for (Scope.Entry e = env.outer.info.scope.elems ; e != null ; e = e.sibling) {
             if (e.sym.isLocal()) {

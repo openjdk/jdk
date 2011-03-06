@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719
+ *      6894719 6968053
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java TestHelper.java
  * @run main Arrrghs
@@ -250,13 +250,11 @@ public class Arrrghs {
         TestHelper.createJar("MIA", new File("some.jar"), new File("Foo"),
                 (String[])null);
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
-        tr.contains("Error: Could not find main class MIA");
-        tr.contains("java.lang.NoClassDefFoundError: MIA");
+        tr.contains("Error: Could not find or load main class MIA");
         System.out.println(tr);
         // use classpath to check
         tr = TestHelper.doExec(TestHelper.javaCmd, "-cp", "some.jar", "MIA");
-        tr.contains("Error: Could not find main class MIA");
-        tr.contains("java.lang.NoClassDefFoundError: MIA");
+        tr.contains("Error: Could not find or load main class MIA");
         System.out.println(tr);
 
         // incorrect method access
@@ -305,12 +303,12 @@ public class Arrrghs {
 
         // amongst a potpourri of kindred main methods, is the right one chosen ?
         TestHelper.createJar(new File("some.jar"), new File("Foo"),
-        "void main(Object[] args){}",
-        "int  main(Float[] args){return 1;}",
-        "private void main() {}",
-        "private static void main(int x) {}",
-        "public int main(int argc, String[] argv) {return 1;}",
-        "public static void main(String[] args) {System.out.println(\"THE_CHOSEN_ONE\");}");
+            "void main(Object[] args){}",
+            "int  main(Float[] args){return 1;}",
+            "private void main() {}",
+            "private static void main(int x) {}",
+            "public int main(int argc, String[] argv) {return 1;}",
+            "public static void main(String[] args) {System.out.println(\"THE_CHOSEN_ONE\");}");
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
         tr.contains("THE_CHOSEN_ONE");
         System.out.println(tr);
@@ -324,6 +322,30 @@ public class Arrrghs {
                 "public static void main(String... args){}");
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
         tr.checkPositive();
+        System.out.println(tr);
+    }
+    // tests 6968053, ie. we turn on the -Xdiag (for now) flag and check if
+    // the suppressed stack traces are exposed.
+    static void runDiagOptionTests() throws FileNotFoundException {
+        TestHelper.TestResult tr = null;
+        // a missing class
+        TestHelper.createJar("MIA", new File("some.jar"), new File("Foo"),
+                (String[])null);
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xdiag", "-jar", "some.jar");
+        tr.contains("Error: Could not find or load main class MIA");
+        tr.contains("java.lang.ClassNotFoundException: MIA");
+        System.out.println(tr);
+
+        // use classpath to check
+        tr = TestHelper.doExec(TestHelper.javaCmd,  "-Xdiag", "-cp", "some.jar", "MIA");
+        tr.contains("Error: Could not find or load main class MIA");
+        tr.contains("java.lang.ClassNotFoundException: MIA");
+        System.out.println(tr);
+
+        // a missing class on the classpath
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xdiag", "NonExistentClass");
+        tr.contains("Error: Could not find or load main class NonExistentClass");
+        tr.contains("java.lang.ClassNotFoundException: NonExistentClass");
         System.out.println(tr);
     }
 
@@ -352,6 +374,7 @@ public class Arrrghs {
         runBasicErrorMessageTests();
         runMainMethodTests();
         test6894719();
+        runDiagOptionTests();
         if (TestHelper.testExitValue > 0) {
             System.out.println("Total of " + TestHelper.testExitValue + " failed");
             System.exit(1);

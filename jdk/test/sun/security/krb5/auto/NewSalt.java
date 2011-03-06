@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6960894
  * @summary Better AS-REQ creation and processing
- * @run main NewSalt
+ * @run main/othervm NewSalt
  * @run main/othervm -Dnopreauth NewSalt
  * @run main/othervm -Donlyonepreauth NewSalt
  */

@@ -67,13 +67,11 @@ void Rewriter::compute_index_maps() {
 
 
 // Creates a constant pool cache given a CPC map
-// This creates the constant pool cache initially in a state
-// that is unsafe for concurrent GC processing but sets it to
-// a safe mode before the constant pool cache is returned.
 void Rewriter::make_constant_pool_cache(TRAPS) {
   const int length = _cp_cache_map.length();
   constantPoolCacheOop cache =
-      oopFactory::new_constantPoolCache(length, methodOopDesc::IsUnsafeConc, CHECK);
+      oopFactory::new_constantPoolCache(length, CHECK);
+  No_Safepoint_Verifier nsv;
   cache->initialize(_cp_cache_map);
 
   // Don't bother with the next pass if there is no JVM_CONSTANT_InvokeDynamic.

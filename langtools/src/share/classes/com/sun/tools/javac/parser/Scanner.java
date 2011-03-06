@@ -138,7 +138,7 @@ public class Scanner implements Lexer {
         source = fac.source;
         allowBinaryLiterals = source.allowBinaryLiterals();
         allowHexFloats = source.allowHexFloats();
-        allowUnderscoresInLiterals = source.allowBinaryLiterals();
+        allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
     }
 
     private static final boolean hexFloatsWork = hexFloatsWork();
@@ -280,12 +280,6 @@ public class Scanner implements Lexer {
             sbuf = newsbuf;
         }
         sbuf[sp++] = ch;
-    }
-
-    /** For debugging purposes: print character.
-     */
-    private void dch() {
-        System.err.print(ch); System.out.flush();
     }
 
     /** Read next character in character or string literal and copy into sbuf.

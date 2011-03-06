@@ -129,7 +129,7 @@ Mutex*   HotCardCache_lock            = NULL;
 Monitor* GCTaskManager_lock           = NULL;
 
 Mutex*   Management_lock              = NULL;
-Monitor* LowMemory_lock               = NULL;
+Monitor* Service_lock               = NULL;
 
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
@@ -203,7 +203,7 @@ void mutex_init() {
 
   def(Patching_lock                , Mutex  , special,     true ); // used for safepointing and code patching.
   def(ObjAllocPost_lock            , Monitor, special,     false);
-  def(LowMemory_lock               , Monitor, special,     true ); // used for low memory detection
+  def(Service_lock                 , Monitor, special,     true ); // used for service thread operations
   def(JmethodIdCreation_lock       , Mutex  , leaf,        true ); // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , Monitor, leaf,        true ); // lookups done by VM thread

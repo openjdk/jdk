@@ -98,6 +98,10 @@ abstract class UnixFileSystem
         return false;
     }
 
+    static List<String> standardFileAttributeViews() {
+        return Arrays.asList("basic", "posix", "unix", "owner");
+    }
+
     @Override
     public final FileSystemProvider provider() {
         return provider;
@@ -167,12 +171,6 @@ abstract class UnixFileSystem
      * Returns object to iterate over entries in mounttab or equivalent
      */
     abstract Iterable<UnixMountEntry> getMountEntries();
-
-    /**
-     * Returns a FileStore to represent the file system where the given file
-     * reside.
-     */
-    abstract FileStore getFileStore(UnixPath path) throws IOException;
 
     /**
      * Returns a FileStore to represent the file system for the given mount
@@ -264,7 +262,22 @@ abstract class UnixFileSystem
     }
 
     @Override
-    public final UnixPath getPath(String path) {
+    public final Path getPath(String first, String... more) {
+        String path;
+        if (more.length == 0) {
+            path = first;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(first);
+            for (String segment: more) {
+                if (segment.length() > 0) {
+                    if (sb.length() > 0)
+                        sb.append('/');
+                    sb.append(segment);
+                }
+            }
+            path = sb.toString();
+        }
         return new UnixPath(this, path);
     }
 
@@ -300,77 +313,30 @@ abstract class UnixFileSystem
     private static final String GLOB_SYNTAX = "glob";
     private static final String REGEX_SYNTAX = "regex";
 
-    protected boolean followLinks(LinkOption... options) {
-        boolean followLinks = true;
-        for (LinkOption option: options) {
-            if (option == LinkOption.NOFOLLOW_LINKS) {
-                followLinks = false;
-                continue;
-            }
-            if (option == null)
-                throw new NullPointerException();
-            throw new AssertionError("Should not get here");
-        }
-        return followLinks;
-    }
 
-    @SuppressWarnings("unchecked")
-    protected <V extends FileAttributeView> V newFileAttributeView(Class<V> view,
-                                                                   UnixPath file,
-                                                                   LinkOption... options)
-    {
-        if (view == null)
-            throw new NullPointerException();
-        boolean followLinks = followLinks(options);
-        Class<?> c = view;
-        if (c == BasicFileAttributeView.class)
-            return (V) UnixFileAttributeViews.createBasicView(file, followLinks);
-        if (c == PosixFileAttributeView.class)
-            return (V) UnixFileAttributeViews.createPosixView(file, followLinks);
-        if (c == FileOwnerAttributeView.class)
-            return (V) UnixFileAttributeViews.createOwnerView(file, followLinks);
-        return (V) null;
-    }
-
-    static List<String> standardFileAttributeViews() {
-        return Arrays.asList("basic", "posix", "unix", "owner");
-    }
-
-    protected DynamicFileAttributeView newFileAttributeView(String name,
-                                                            UnixPath file,
-                                                            LinkOption... options)
-    {
-        boolean followLinks = followLinks(options);
-        if (name.equals("basic"))
-            return UnixFileAttributeViews.createBasicView(file, followLinks);
-        if (name.equals("posix"))
-            return UnixFileAttributeViews.createPosixView(file, followLinks);
-        if (name.equals("unix"))
-            return UnixFileAttributeViews.createUnixView(file, followLinks);
-        if (name.equals("owner"))
-            return UnixFileAttributeViews.createOwnerView(file, followLinks);
-        return null;
-    }
 
     @Override
     public final UserPrincipalLookupService getUserPrincipalLookupService() {
-        return theLookupService;
+        return LookupService.instance;
     }
 
-    private static final UserPrincipalLookupService theLookupService =
-        new UserPrincipalLookupService() {
-            @Override
-            public UserPrincipal lookupPrincipalByName(String name)
-                throws IOException
-            {
-                return UnixUserPrincipals.lookupUser(name);
-            }
+    private static class LookupService {
+        static final UserPrincipalLookupService instance =
+            new UserPrincipalLookupService() {
+                @Override
+                public UserPrincipal lookupPrincipalByName(String name)
+                    throws IOException
+                {
+                    return UnixUserPrincipals.lookupUser(name);
+                }
 
-            @Override
-            public GroupPrincipal lookupPrincipalByGroupName(String group)
-                throws IOException
-            {
-                return UnixUserPrincipals.lookupGroup(group);
-            }
-        };
+                @Override
+                public GroupPrincipal lookupPrincipalByGroupName(String group)
+                    throws IOException
+                {
+                    return UnixUserPrincipals.lookupGroup(group);
+                }
+            };
+    }
+
 }

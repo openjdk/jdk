@@ -1277,6 +1277,9 @@ private:
   void prefetcht2(Address src);
   void prefetchw(Address src);
 
+  // POR - Bitwise logical OR
+  void por(XMMRegister dst, XMMRegister src);
+
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
   void pshufd(XMMRegister dst, Address src,     int mode);
@@ -1522,8 +1525,9 @@ class MacroAssembler: public Assembler {
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
 
-  // Loading values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  // Load and store values by size and signed-ness
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
@@ -2293,7 +2297,7 @@ public:
   // Compare strings.
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      XMMRegister vec1, XMMRegister vec2);
+                      XMMRegister vec1);
 
   // Compare char[] arrays.
   void char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,

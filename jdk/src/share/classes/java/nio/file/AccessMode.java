@@ -29,8 +29,6 @@ package java.nio.file;
  * Defines access modes used to test the accessibility of a file.
  *
  * @since 1.7
- *
- * @see Path#checkAccess
  */
 
 public enum AccessMode {

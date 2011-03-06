@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,9 +559,10 @@ class os: AllStatic {
   static char* strdup(const char *);  // Like strdup
 
 #ifndef PRODUCT
-  static int  num_mallocs;            // # of calls to malloc/realloc
-  static size_t  alloc_bytes;         // # of bytes allocated
-  static int  num_frees;              // # of calls to free
+  static julong num_mallocs;         // # of calls to malloc/realloc
+  static julong alloc_bytes;         // # of bytes allocated
+  static julong num_frees;           // # of calls to free
+  static julong free_bytes;          // # of bytes freed
 #endif
 
   // SocketInterface (ex HPI SocketInterface )
@@ -613,6 +614,9 @@ class os: AllStatic {
 
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
+
+  // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
+  static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
 
   // JVMTI & JVM monitoring and management support
   // The thread_cpu_time() and current_thread_cpu_time() are only
@@ -675,6 +679,12 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "os_windows_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "os_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "os_linux_ppc.hpp"
 #endif
 
 

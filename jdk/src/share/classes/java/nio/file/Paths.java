@@ -39,14 +39,27 @@ public final class Paths {
     private Paths() { }
 
     /**
-     * Constructs a {@code Path} by converting the given path string.
+     * Converts a path string, or a sequence of strings that when joined form
+     * a path string, to a {@code Path}. If {@code more} does not specify any
+     * elements then the value of the {@code first} parameter is the path string
+     * to convert. If {@code more} specifies one or more elements then each
+     * non-empty string, including {@code first}, is considered to be a sequence
+     * of name elements (see {@link Path}) and is joined to form a path string.
+     * The details as to how the Strings are joined is provider specific but
+     * typically they will be joined using the {@link FileSystem#getSeparator
+     * name-separator} as the separator. For example, if the name separator is
+     * "{@code /}" and {@code getPath("/foo","bar","gus")} is invoked, then the
+     * path string {@code "/foo/bar/gus"} is converted to a {@code Path}.
+     * A {@code Path} representing an empty path is returned if {@code first}
+     * is the empty string and {@code more} does not contain any non-empty
+     * strings.
      *
      * <p> The {@code Path} is obtained by invoking the {@link FileSystem#getPath
      * getPath} method of the {@link FileSystems#getDefault default} {@link
      * FileSystem}.
      *
-     * <p> Note that while this method is very convenient, using it will
-     * imply an assumed reference to the default FileSystem and limit the
+     * <p> Note that while this method is very convenient, using it will imply
+     * an assumed reference to the default {@code FileSystem} and limit the
      * utility of the calling code. Hence it should not be used in library code
      * intended for flexible reuse. A more flexible alternative is to use an
      * existing {@code Path} instance as an anchor, such as:
@@ -55,8 +68,10 @@ public final class Paths {
      *     Path path = dir.resolve("file");
      * </pre>
      *
-     * @param   path
-     *          the path string to convert
+     * @param   first
+     *          the path string or initial part of the path string
+     * @param   more
+     *          additional strings to be joined to form the path string
      *
      * @return  the resulting {@code Path}
      *
@@ -65,8 +80,8 @@ public final class Paths {
      *
      * @see FileSystem#getPath
      */
-    public static Path get(String path) {
-        return FileSystems.getDefault().getPath(path);
+    public static Path get(String first, String... more) {
+        return FileSystems.getDefault().getPath(first, more);
     }
 
     /**

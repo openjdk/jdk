@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import javax.lang.model.type.*;
 
 /**
  * A skeletal visitor of types with default behavior appropriate for
- * the version 6 language level.
+ * the {@link javax.lang.model.SourceVersion#RELEASE_6 RELEASE_6}
+ * source version.
  *
  * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
  * by this class may have methods added to it in the future to
@@ -92,6 +93,20 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
      */
     public final R visit(TypeMirror t) {
         return t.accept(this, null);
+    }
+
+    /**
+     * Visits a {@code DisjunctiveType} element by calling {@code
+     * visitUnknown}.
+
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     *
+     * @since 1.7
+     */
+    public R visitDisjunctive(DisjunctiveType t, P p) {
+        return visitUnknown(t, p);
     }
 
     /**

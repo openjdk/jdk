@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,7 +768,9 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 // Initialize the compilation queue
 void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
+#ifndef ZERO
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
+#endif // !ZERO
   if (c2_compiler_count > 0) {
     _c2_method_queue  = new CompileQueue("C2MethodQueue",  MethodCompileQueue_lock);
   }
@@ -1210,7 +1212,17 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  return !BackgroundCompilation;
+  if (!BackgroundCompilation) {
+    Symbol* class_name = method->method_holder()->klass_part()->name();
+    if (class_name->starts_with("java/lang/ref/Reference", 23)) {
+      // The reference handler thread can dead lock with the GC if compilation is blocking,
+      // so we avoid blocking compiles for anything in the java.lang.ref.Reference class,
+      // including inner classes such as ReferenceHandler.
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 

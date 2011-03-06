@@ -30,8 +30,8 @@ import java.io.IOException;
 
 /**
  * A visitor of files. An implementation of this interface is provided to the
- * {@link Files#walkFileTree walkFileTree} utility method to visit each file
- * in a tree.
+ * {@link Files#walkFileTree Files.walkFileTree} methods to visit each file in
+ * a file tree.
  *
  * <p> <b>Usage Examples:</b>
  * Suppose we want to delete a file tree. In that case, each directory should
@@ -43,19 +43,20 @@ import java.io.IOException;
  *         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
  *             throws IOException
  *         {
- *             file.delete();
+ *             Files.delete(file);
  *             return FileVisitResult.CONTINUE;
  *         }
  *         &#64;Override
  *         public FileVisitResult postVisitDirectory(Path dir, IOException e)
  *             throws IOException
  *         {
- *             if (e != null) {
+ *             if (e == null) {
+ *                 Files.delete(dir);
+ *                 return FileVisitResult.CONTINUE;
+ *             } else {
  *                 // directory iteration failed
  *                 throw e;
  *             }
- *             dir.delete();
- *             return FileVisitResult.CONTINUE;
  *         }
  *     });
  * </pre>
@@ -72,10 +73,12 @@ import java.io.IOException;
  *             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
  *                 throws IOException
  *             {
+ *                 Path targetdir = target.resolve(source.relativize(dir));
  *                 try {
- *                     dir.copyTo(target.resolve(source.relativize(dir)));
+ *                     Files.copy(dir, targetdir);
  *                 } catch (FileAlreadyExistsException e) {
- *                      // ignore
+ *                      if (!Files.isDirectory(targetdir))
+ *                          throw e;
  *                 }
  *                 return CONTINUE;
  *             }
@@ -83,7 +86,7 @@ import java.io.IOException;
  *             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
  *                 throws IOException
  *             {
- *                 file.copyTo(target.resolve(source.relativize(file)));
+ *                 Files.copy(file, target.resolve(source.relativize(file)));
  *                 return CONTINUE;
  *             }
  *         });

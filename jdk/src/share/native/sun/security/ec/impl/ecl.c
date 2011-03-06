@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mpi.h"
 #include "mplogic.h"
 #include "ecl.h"

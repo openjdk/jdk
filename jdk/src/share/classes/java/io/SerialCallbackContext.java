@@ -54,5 +54,3 @@
           thread = null;
       }
   }
-
-

@@ -38,6 +38,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/serviceThread.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -112,8 +113,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  // Start the low memory detector thread
-  LowMemoryDetector::initialize();
+  // Start the service thread
+  ServiceThread::initialize();
 
   if (ManagementServer) {
     ResourceMark rm(THREAD);
@@ -1310,7 +1311,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
     if (locked_monitors) {
       // Constructs Object[] and int[] to contain the object monitor and the stack depth
       // where the thread locked it
-      objArrayOop array = oopFactory::new_system_objArray(num_locked_monitors, CHECK_NULL);
+      objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_monitors, CHECK_NULL);
       objArrayHandle mh(THREAD, array);
       monitors_array = mh;
 
@@ -1352,7 +1353,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       GrowableArray<instanceOop>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
       int num_locked_synchronizers = (locks != NULL ? locks->length() : 0);
 
-      objArrayOop array = oopFactory::new_system_objArray(num_locked_synchronizers, CHECK_NULL);
+      objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_synchronizers, CHECK_NULL);
       objArrayHandle sh(THREAD, array);
       synchronizers_array = sh;
 

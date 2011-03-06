@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,37 +478,60 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return new AdapterMethodHandle(target, newType, makeConv(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY));
     }
 
-    static MethodHandle makeTypeHandler(Access token,
-                MethodHandle target, MethodHandle typeHandler) {
+    static MethodHandle makeVarargsCollector(Access token,
+                MethodHandle target, Class<?> arrayType) {
         Access.check(token);
-        return new WithTypeHandler(target, typeHandler);
+        return new AsVarargsCollector(target, arrayType);
     }
 
-    static class WithTypeHandler extends AdapterMethodHandle {
-        final MethodHandle target, typeHandler;
-        WithTypeHandler(MethodHandle target, MethodHandle typeHandler) {
+    static class AsVarargsCollector extends AdapterMethodHandle {
+        final MethodHandle target;
+        final Class<?> arrayType;
+        MethodHandle cache;
+
+        AsVarargsCollector(MethodHandle target, Class<?> arrayType) {
             super(target, target.type(), makeConv(OP_RETYPE_ONLY));
             this.target = target;
-            this.typeHandler = typeHandler.asType(TYPE_HANDLER_TYPE);
+            this.arrayType = arrayType;
+            this.cache = target.asCollector(arrayType, 0);
         }
 
-        public MethodHandle asType(MethodType newType) {
-            if (this.type() == newType)
-                return this;
-            try {
-                MethodHandle retyped = (MethodHandle) typeHandler.invokeExact(target, newType);
-                // Contract:  Must return the desired type, or throw WMT
-                if (retyped.type() != newType)
-                    throw new WrongMethodTypeException(retyped.toString());
-                return retyped;
-            } catch (Throwable ex) {
-                if (ex instanceof Error)  throw (Error)ex;
-                if (ex instanceof RuntimeException)  throw (RuntimeException)ex;
-                throw new RuntimeException(ex);
-            }
+        @Override
+        public boolean isVarargsCollector() {
+            return true;
         }
-        private static final MethodType TYPE_HANDLER_TYPE
-            = MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class);
+
+        @Override
+        public MethodHandle asType(MethodType newType) {
+            MethodType type = this.type();
+            int collectArg = type.parameterCount() - 1;
+            int newArity = newType.parameterCount();
+            if (newArity == collectArg+1 &&
+                type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
+                // if arity and trailing parameter are compatible, do normal thing
+                return super.asType(newType);
+            }
+            // check cache
+            if (cache.type().parameterCount() == newArity)
+                return cache.asType(newType);
+            // build and cache a collector
+            int arrayLength = newArity - collectArg;
+            MethodHandle collector;
+            try {
+                collector = target.asCollector(arrayType, arrayLength);
+            } catch (IllegalArgumentException ex) {
+                throw new WrongMethodTypeException("cannot build collector");
+            }
+            cache = collector;
+            return collector.asType(newType);
+        }
+
+        public MethodHandle asVarargsCollector(Class<?> arrayType) {
+            MethodType type = this.type();
+            if (type.parameterType(type.parameterCount()-1) == arrayType)
+                return this;
+            return super.asVarargsCollector(arrayType);
+        }
     }
 
     /** Can a checkcast adapter validly convert the target to newType?
@@ -939,7 +962,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
     @Override
     public String toString() {
-        return nonAdapter((MethodHandle)vmtarget).toString();
+        return MethodHandleImpl.getNameString(IMPL_TOKEN, nonAdapter((MethodHandle)vmtarget), this);
     }
 
     private static MethodHandle nonAdapter(MethodHandle mh) {

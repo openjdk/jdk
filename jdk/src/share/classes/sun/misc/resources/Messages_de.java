@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class Messages_de extends java.util.ListResourceBundle {
     }
 
     private static final Object[][] contents = {
-        { "optpkg.versionerror", "FEHLER: In der JAR-Datei {0} wurde ein ung\u00fcltiges Versionsformat verwendet. Pr\u00fcfen Sie in der Dokumentation, welches Versionsformat unterst\u00fctzt wird." },
-        { "optpkg.attributeerror", "FEHLER: In der JAR-Datei {1} ist das erforderliche JAR-Manifestattribut {0} nicht gesetzt." },
-        { "optpkg.attributeserror", "FEHLER: In der JAR-Datei {0} sind einige erforderliche JAR-Manifestattribute nicht gesetzt." }
+        { "optpkg.versionerror", "ERROR: In JAR-Datei {0} wurde ein ung\u00FCltiges Versionsformat verwendet. Pr\u00FCfen Sie in der Dokumentation, welches Versionsformat unterst\u00FCtzt wird." },
+        { "optpkg.attributeerror", "ERROR: In JAR-Datei {1} ist das erforderliche JAR-Manifestattribut {0} nicht festgelegt." },
+        { "optpkg.attributeserror", "ERROR: In JAR-Datei {0} sind einige erforderliche JAR-Manifestattribute nicht festgelegt." }
     };
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,6 @@ class GCCause : public AllStatic {
 
   // Return a string describing the GCCause.
   static const char* to_string(GCCause::Cause cause);
-  // Return true if the GCCause is for a full collection.
-  static bool is_for_full_collection(GCCause::Cause cause) PRODUCT_RETURN0;
 };
 
 #endif // SHARE_VM_GC_INTERFACE_GCCAUSE_HPP
