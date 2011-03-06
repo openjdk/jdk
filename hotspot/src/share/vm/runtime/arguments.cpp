@@ -242,6 +242,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
+  { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1003,28 +1004,6 @@ static void no_shared_spaces() {
   }
 }
 
-void Arguments::check_compressed_oops_compat() {
-#ifdef _LP64
-  assert(UseCompressedOops, "Precondition");
-  // Is it on by default or set on ergonomically
-  bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
-
-  // If dumping an archive or forcing its use, disable compressed oops if possible
-  if (DumpSharedSpaces || RequireSharedSpaces) {
-    if (is_on_by_default) {
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      return;
-    } else {
-      vm_exit_during_initialization(
-        "Class Data Sharing is not supported with compressed oops yet", NULL);
-    }
-  } else if (UseSharedSpaces) {
-    // UseSharedSpaces is on by default. With compressed oops, we turn it off.
-    FLAG_SET_DEFAULT(UseSharedSpaces, false);
-  }
-#endif
-}
-
 void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
     FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
@@ -1382,7 +1361,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
 void Arguments::set_ergonomics_flags() {
   // Parallel GC is not compatible with sharing. If one specifies
   // that they want sharing explicitly, do not set ergonomics flags.
-  if (DumpSharedSpaces || ForceSharedSpaces) {
+  if (DumpSharedSpaces || RequireSharedSpaces) {
     return;
   }
 
@@ -1844,33 +1823,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
-
-  // Check whether user-specified sharing option conflicts with GC or page size.
-  // Both sharing and large pages are enabled by default on some platforms;
-  // large pages override sharing only if explicitly set on the command line.
-  const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
-          UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
-          UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
-  if (cannot_share) {
-    // Either force sharing on by forcing the other options off, or
-    // force sharing off.
-    if (DumpSharedSpaces || ForceSharedSpaces) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Using Serial GC and default page size because of %s\n",
-                  ForceSharedSpaces ? "-Xshare:on" : "-Xshare:dump");
-      force_serial_gc();
-      FLAG_SET_DEFAULT(UseLargePages, false);
-    } else {
-      if (UseSharedSpaces && Verbose) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Turning off use of shared archive because of "
-                    "choice of garbage collector or large pages\n");
-      }
-      no_shared_spaces();
-    }
-  } else if (UseLargePages && (UseSharedSpaces || DumpSharedSpaces)) {
-    FLAG_SET_DEFAULT(UseLargePages, false);
-  }
 
   status = status && check_gc_consistency();
   status = status && check_stack_pages();
@@ -2412,9 +2364,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xshare:on", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true);
-#ifdef TIERED
-      FLAG_SET_CMDLINE(bool, ForceSharedSpaces, true);
-#endif // TIERED
     // -Xshare:auto
     } else if (match_option(option, "-Xshare:auto", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
@@ -2915,6 +2864,36 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
   return JNI_OK;
 }
 
+void Arguments::set_shared_spaces_flags() {
+  // Check whether class data sharing settings conflict with GC, compressed oops
+  // or page size, and fix them up.  Explicit sharing options override other
+  // settings.
+  const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
+    UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
+    UseCompressedOops || UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
+  const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
+  const bool might_share = must_share || UseSharedSpaces;
+  if (cannot_share) {
+    if (must_share) {
+      warning("selecting serial gc and disabling large pages %s"
+              "because of %s", "" LP64_ONLY("and compressed oops "),
+              DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
+      force_serial_gc();
+      FLAG_SET_CMDLINE(bool, UseLargePages, false);
+      LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedOops, false));
+    } else {
+      if (UseSharedSpaces && Verbose) {
+        warning("turning off use of shared archive because of "
+                "choice of garbage collector or large pages");
+      }
+      no_shared_spaces();
+    }
+  } else if (UseLargePages && might_share) {
+    // Disable large pages to allow shared spaces.  This is sub-optimal, since
+    // there may not even be a shared archive to use.
+    FLAG_SET_DEFAULT(UseLargePages, false);
+  }
+}
 
 // Parse entry point called from JNI_CreateJavaVM
 
@@ -3062,9 +3041,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
-  if (UseCompressedOops) {
-    check_compressed_oops_compat();
-  }
+  set_shared_spaces_flags();
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

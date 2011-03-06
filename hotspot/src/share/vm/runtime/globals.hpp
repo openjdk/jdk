@@ -3656,9 +3656,6 @@ class CommandLineFlags {
   product(bool, RequireSharedSpaces, false,                                 \
           "Require shared spaces in the permanent generation")              \
                                                                             \
-  product(bool, ForceSharedSpaces, false,                                   \
-          "Require shared spaces in the permanent generation")              \
-                                                                            \
   product(bool, DumpSharedSpaces, false,                                    \
            "Special mode: JVM reads a class list, loads classes, builds "   \
             "shared spaces, and dumps the shared spaces to a file to be "   \
