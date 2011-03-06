@@ -1975,7 +1975,11 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       #ifndef RTLD_DL_SYMENT
       #define RTLD_DL_SYMENT 1
       #endif
-      Sym * info;
+#ifdef _LP64
+      Elf64_Sym * info;
+#else
+      Elf32_Sym * info;
+#endif
       if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
                        RTLD_DL_SYMENT)) {
         if ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
@@ -4221,7 +4225,9 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" int JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized);
+extern "C" JNIEXPORT int
+JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext,
+                          int abort_if_unrecognized);
 
 
 void signalHandler(int sig, siginfo_t* info, void* ucVoid) {
@@ -6422,4 +6428,3 @@ int os::bind(int fd, struct sockaddr *him, int len) {
    INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
      os::Solaris::clear_interrupted);
 }
-

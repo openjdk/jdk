@@ -4913,7 +4913,7 @@ public abstract class JComponent extends Container implements Serializable,
      * Calling {@link #repaint} or {@link #paintImmediately(int, int, int, int)}
      * on a Swing component will result in calling
      * the {@link JComponent#paintImmediately(int, int, int, int)} method of
-     * the first ancestor which {@code isPaintingOrigin()} returns {@true}, if there are any.
+     * the first ancestor which {@code isPaintingOrigin()} returns {@code true}, if there are any.
      * <p/>
      * {@code JComponent} subclasses that need to be painted when any of their
      * children are repainted should override this method to return {@code true}.

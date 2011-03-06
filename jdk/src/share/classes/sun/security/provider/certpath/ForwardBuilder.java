@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class ForwardBuilder extends Builder {
     private final Set<X500Principal> trustedSubjectDNs;
     private final Set<TrustAnchor> trustAnchors;
     private X509CertSelector eeSelector;
-    private X509CertSelector caSelector;
+    private AdaptableX509CertSelector caSelector;
     private X509CertSelector caTargetSelector;
     TrustAnchor trustAnchor;
     private Comparator<X509Certificate> comparator;
@@ -230,9 +230,11 @@ class ForwardBuilder extends Builder {
                     targetCertConstraints.clone();
 
                 /*
-                 * Match on certificate validity date
+                 * Since we don't check the validity period of trusted
+                 * certificates, please don't set the certificate valid
+                 * criterion unless the trusted certificate matching is
+                 * completed.
                  */
-                caTargetSelector.setCertificateValid(date);
 
                 /*
                  * Policy processing optimizations
@@ -246,17 +248,19 @@ class ForwardBuilder extends Builder {
              * at least as many CA certs that have already been traversed
              */
             caTargetSelector.setBasicConstraints(currentState.traversedCACerts);
-            sel = caTargetSelector;
 
+            sel = caTargetSelector;
         } else {
 
             if (caSelector == null) {
                 caSelector = new AdaptableX509CertSelector();
 
                 /*
-                 * Match on certificate validity date.
+                 * Since we don't check the validity period of trusted
+                 * certificates, please don't set the certificate valid
+                 * criterion unless the trusted certificate matching is
+                 * completed.
                  */
-                caSelector.setCertificateValid(date);
 
                 /*
                  * Policy processing optimizations
@@ -290,42 +294,19 @@ class ForwardBuilder extends Builder {
              */
             AuthorityKeyIdentifierExtension akidext =
                     currentState.cert.getAuthorityKeyIdentifierExtension();
-            if (akidext != null) {
-                KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
-                if (akid != null) {
-                    DerOutputStream derout = new DerOutputStream();
-                    derout.putOctetString(akid.getIdentifier());
-                    caSelector.setSubjectKeyIdentifier(derout.toByteArray());
-                }
+            caSelector.parseAuthorityKeyIdentifierExtension(akidext);
 
-                SerialNumber asn =
-                    (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
-                if (asn != null) {
-                    caSelector.setSerialNumber(asn.getNumber());
-                }
-                // the subject criterion was set previously.
-            }
+            /*
+             * check the validity period
+             */
+            caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
+                                            currentState.cert.getNotAfter());
 
             sel = caSelector;
         }
 
-        /*
-         * Check if any of the trusted certs could be a match.
-         * Since we are not validating the trusted cert, we can't
-         * re-use the selector we've built up (sel) - we need
-         * to use a new selector (trustedSel)
-         */
-        X509CertSelector trustedSel = null;
-        if (currentState.isInitial()) {
-            trustedSel = targetCertConstraints;
-        } else {
-            trustedSel = new X509CertSelector();
-            trustedSel.setSubject(currentState.issuerDN);
-        }
-
-        boolean foundMatchingCert = false;
         for (X509Certificate trustedCert : trustedCerts) {
-            if (trustedSel.match(trustedCert)) {
+            if (sel.match(trustedCert)) {
                 if (debug != null) {
                     debug.println("ForwardBuilder.getMatchingCACerts: "
                         + "found matching trust anchor");
@@ -336,6 +317,11 @@ class ForwardBuilder extends Builder {
             }
         }
 
+        /*
+         * The trusted certificate matching is completed. We need to match
+         * on certificate validity date.
+         */
+        sel.setCertificateValid(date);
 
         /*
          * If we have already traversed as many CA certs as the maxPathLength
@@ -348,8 +334,8 @@ class ForwardBuilder extends Builder {
            (buildParams.getMaxPathLength() == -1) ||
            (buildParams.getMaxPathLength() > currentState.traversedCACerts))
         {
-            if (addMatchingCerts(sel, certStores, caCerts, searchAllCertStores)
-                && !searchAllCertStores) {
+            if (addMatchingCerts(sel, certStores,
+                    caCerts, searchAllCertStores) && !searchAllCertStores) {
                 return;
             }
         }
@@ -938,121 +924,5 @@ class ForwardBuilder extends Builder {
      */
     void removeFinalCertFromPath(LinkedList<X509Certificate> certPathList) {
         certPathList.removeFirst();
-    }
-
-    /** Verifies whether a CRL is issued by a certain certificate
-     *
-     * @param cert the certificate
-     * @param crl the CRL to be verified
-     * @param provider the name of the signature provider
-     */
-    static boolean issues(X509CertImpl cert, X509CRLImpl crl, String provider)
-            throws IOException {
-
-        boolean kidmatched = false;
-
-        // check certificate's key usage
-        boolean[] usages = cert.getKeyUsage();
-        if (usages != null && !usages[6]) {
-            return false;
-        }
-
-        // check certificate's SKID and CRL's AKID
-        AuthorityKeyIdentifierExtension akidext = crl.getAuthKeyIdExtension();
-        if (akidext != null) {
-            // the highest priority, matching KID
-            KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
-            if (akid != null) {
-                SubjectKeyIdentifierExtension skidext =
-                            cert.getSubjectKeyIdentifierExtension();
-                if (skidext != null) {
-                    KeyIdentifier skid =
-                            (KeyIdentifier)skidext.get(skidext.KEY_ID);
-                    if (!akid.equals(skid)) {
-                        return false;
-                    }
-
-                    kidmatched = true;
-                }
-                // conservatively, in case of X509 V1 certificate,
-                // does return false here if no SKID extension.
-            }
-
-            // the medium priority, matching issuer name/serial number
-            SerialNumber asn = (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
-            GeneralNames anames = (GeneralNames)akidext.get(akidext.AUTH_NAME);
-            if (asn != null && anames != null) {
-                X500Name subject = (X500Name)cert.getSubjectDN();
-                BigInteger serial = cert.getSerialNumber();
-
-                if (serial != null && subject != null) {
-                    if (serial.equals(asn.getNumber())) {
-                        return false;
-                    }
-
-                    for (GeneralName name : anames.names()) {
-                        GeneralNameInterface gni = name.getName();
-                        if (subject.equals(gni)) {
-                            return true;
-                        }
-                    }
-                }
-
-                return false;
-            }
-
-            if (kidmatched) {
-                return true;
-            }
-        }
-
-        // the last priority, verify the CRL signature with the cert.
-        X500Principal crlIssuer = crl.getIssuerX500Principal();
-        X500Principal certSubject = cert.getSubjectX500Principal();
-        if (certSubject != null && certSubject.equals(crlIssuer)) {
-            try {
-                crl.verify(cert.getPublicKey(), provider);
-                return true;
-            } catch (Exception e) {
-                // ignore all exceptions.
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * An adaptable X509 certificate selector for forward certification path
-     * building.
-     */
-    private static class AdaptableX509CertSelector extends X509CertSelector {
-        public AdaptableX509CertSelector() {
-            super();
-        }
-
-        /**
-         * Decides whether a <code>Certificate</code> should be selected.
-         *
-         * For the purpose of compatibility, when a certificate is of
-         * version 1 and version 2, or the certificate does not include
-         * a subject key identifier extension, the selection criterion
-         * of subjectKeyIdentifier will be disabled.
-         *
-         * @Override
-         */
-        public boolean match(Certificate cert) {
-            if (!(cert instanceof X509Certificate)) {
-                return false;
-            }
-            X509Certificate xcert = (X509Certificate)cert;
-
-            if (xcert.getVersion() < 3 ||
-                xcert.getExtensionValue("2.5.29.14") == null) {
-                // disable the subjectKeyIdentifier criterion
-                setSubjectKeyIdentifier(null);
-            }
-
-            return super.match(cert);
-        }
     }
 }

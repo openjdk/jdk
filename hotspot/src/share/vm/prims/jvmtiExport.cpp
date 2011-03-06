@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,15 +750,12 @@ public:
 // pending CompiledMethodUnload support
 //
 
-bool JvmtiExport::_have_pending_compiled_method_unload_events;
-GrowableArray<jmethodID>* JvmtiExport::_pending_compiled_method_unload_method_ids;
-GrowableArray<const void *>* JvmtiExport::_pending_compiled_method_unload_code_begins;
-JavaThread* JvmtiExport::_current_poster;
-
-void JvmtiExport::post_compiled_method_unload_internal(JavaThread* self, jmethodID method, const void *code_begin) {
+void JvmtiExport::post_compiled_method_unload(
+       jmethodID method, const void *code_begin) {
+  JavaThread* thread = JavaThread::current();
   EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
                  ("JVMTI [%s] method compile unload event triggered",
-                  JvmtiTrace::safe_get_thread_name(self)));
+                  JvmtiTrace::safe_get_thread_name(thread)));
 
   // post the event for each environment that has this event enabled.
   JvmtiEnvIterator it;
@@ -767,100 +764,16 @@ void JvmtiExport::post_compiled_method_unload_internal(JavaThread* self, jmethod
 
       EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
                 ("JVMTI [%s] class compile method unload event sent jmethodID " PTR_FORMAT,
-                 JvmtiTrace::safe_get_thread_name(self), method));
+                 JvmtiTrace::safe_get_thread_name(thread), method));
 
-      ResourceMark rm(self);
+      ResourceMark rm(thread);
 
-      JvmtiEventMark jem(self);
-      JvmtiJavaThreadEventTransition jet(self);
+      JvmtiEventMark jem(thread);
+      JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventCompiledMethodUnload callback = env->callbacks()->CompiledMethodUnload;
       if (callback != NULL) {
         (*callback)(env->jvmti_external(), method, code_begin);
       }
-    }
-  }
-}
-
-// post any pending CompiledMethodUnload events
-
-void JvmtiExport::post_pending_compiled_method_unload_events() {
-  JavaThread* self = JavaThread::current();
-  assert(!self->owns_locks(), "can't hold locks");
-
-  // Indicates if this is the first activiation of this function.
-  // In theory the profiler's callback could call back into VM and provoke
-  // another CompiledMethodLoad event to be posted from this thread. As the
-  // stack rewinds we need to ensure that the original activation does the
-  // completion and notifies any waiters.
-  bool first_activation = false;
-
-  // the jmethodID (may not be valid) to be used for a single event
-  jmethodID method;
-  const void *code_begin;
-
-  // grab the monitor and check if another thread is already posting
-  // events. If there is another thread posting events then we wait
-  // until it completes. (In theory we could check the pending events to
-  // see if any of the addresses overlap with the event that we want to
-  // post but as it will happen so rarely we just block any thread waiting
-  // to post a CompiledMethodLoad or DynamicCodeGenerated event until all
-  // pending CompiledMethodUnload events have been posted).
-  //
-  // If another thread isn't posting we examine the list of pending jmethodIDs.
-  // If the list is empty then we are done. If it's not empty then this thread
-  // (self) becomes the pending event poster and we remove the top (last)
-  // event from the list. Note that this means we remove the newest event first
-  // but as they are all CompiledMethodUnload events the order doesn't matter.
-  // Once we have removed a jmethodID then we exit the monitor. Any other thread
-  // wanting to post a CompiledMethodLoad or DynamicCodeGenerated event will
-  // be forced to wait on the monitor.
-  {
-    MutexLocker mu(JvmtiPendingEvent_lock);
-    if (_current_poster != self) {
-      while (_current_poster != NULL) {
-        JvmtiPendingEvent_lock->wait();
-      }
-    }
-    if ((_pending_compiled_method_unload_method_ids == NULL) ||
-        (_pending_compiled_method_unload_method_ids->length() == 0)) {
-      return;
-    }
-    if (_current_poster == NULL) {
-      _current_poster = self;
-      first_activation = true;
-    } else {
-      // re-entrant
-      guarantee(_current_poster == self, "checking");
-    }
-    method = _pending_compiled_method_unload_method_ids->pop();
-    code_begin = _pending_compiled_method_unload_code_begins->pop();
-  }
-
-  // This thread is the pending event poster so it first posts the CompiledMethodUnload
-  // event for the jmethodID that has been removed from the list. Once posted it
-  // re-grabs the monitor and checks the list again. If the list is empty then and this
-  // is the first activation of the function then we reset the _have_pending_events
-  // flag, cleanup _current_poster to indicate that no thread is now servicing the
-  // pending events list, and finally notify any thread that might be waiting.
-  for (;;) {
-    post_compiled_method_unload_internal(self, method, code_begin);
-
-    // event posted, now re-grab monitor and get the next event
-    // If there's no next event then we are done. If this is the first
-    // activiation of this function by this thread notify any waiters
-    // so that they can post.
-    {
-      MutexLocker ml(JvmtiPendingEvent_lock);
-      if (_pending_compiled_method_unload_method_ids->length() == 0) {
-        if (first_activation) {
-          _have_pending_compiled_method_unload_events = false;
-          _current_poster = NULL;
-          JvmtiPendingEvent_lock->notify_all();
-        }
-        return;
-      }
-      method = _pending_compiled_method_unload_method_ids->pop();
-      code_begin = _pending_compiled_method_unload_code_begins->pop();
     }
   }
 }
@@ -1830,16 +1743,7 @@ jvmtiCompiledMethodLoadInlineRecord* create_inline_record(nmethod* nm) {
 }
 
 void JvmtiExport::post_compiled_method_load(nmethod *nm) {
-  // If there are pending CompiledMethodUnload events then these are
-  // posted before this CompiledMethodLoad event. We "lock" the nmethod and
-  // maintain a handle to the methodOop to ensure that the nmethod isn't
-  // flushed or unloaded while posting the events.
   JavaThread* thread = JavaThread::current();
-  if (have_pending_compiled_method_unload_events()) {
-    methodHandle mh(thread, nm->method());
-    nmethodLocker nml(nm);
-    post_pending_compiled_method_unload_events();
-  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
                  ("JVMTI [%s] method compile load event triggered",
@@ -1854,8 +1758,8 @@ void JvmtiExport::post_compiled_method_load(nmethod *nm) {
                 JvmtiTrace::safe_get_thread_name(thread),
                 (nm->method() == NULL) ? "NULL" : nm->method()->klass_name()->as_C_string(),
                 (nm->method() == NULL) ? "NULL" : nm->method()->name()->as_C_string()));
-
       ResourceMark rm(thread);
+      HandleMark hm(thread);
 
       // Add inlining information
       jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
@@ -1899,28 +1803,6 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, const jmethodID metho
   }
 }
 
-// used at a safepoint to post a CompiledMethodUnload event
-void JvmtiExport::post_compiled_method_unload(jmethodID mid, const void *code_begin) {
-  if (SafepointSynchronize::is_at_safepoint()) {
-    // Class unloading can cause nmethod unloading which is reported
-    // by the VMThread.  These must be batched to be processed later.
-    if (_pending_compiled_method_unload_method_ids == NULL) {
-      // create list lazily
-      _pending_compiled_method_unload_method_ids = new (ResourceObj::C_HEAP) GrowableArray<jmethodID>(10,true);
-      _pending_compiled_method_unload_code_begins = new (ResourceObj::C_HEAP) GrowableArray<const void *>(10,true);
-    }
-    _pending_compiled_method_unload_method_ids->append(mid);
-    _pending_compiled_method_unload_code_begins->append(code_begin);
-    _have_pending_compiled_method_unload_events = true;
-  } else {
-    // Unloading caused by the sweeper can be reported synchronously.
-    if (have_pending_compiled_method_unload_events()) {
-      post_pending_compiled_method_unload_events();
-    }
-    post_compiled_method_unload_internal(JavaThread::current(), mid, code_begin);
-  }
-}
-
 void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) {
   JavaThread* thread = JavaThread::current();
   EVT_TRIG_TRACE(JVMTI_EVENT_DYNAMIC_CODE_GENERATED,
@@ -1953,9 +1835,9 @@ void JvmtiExport::post_dynamic_code_generated(const char *name, const void *code
     return;
   }
 
-  if (have_pending_compiled_method_unload_events()) {
-    post_pending_compiled_method_unload_events();
-  }
+  // Blocks until everything now in the queue has been posted
+  JvmtiDeferredEventQueue::flush_queue(Thread::current());
+
   post_dynamic_code_generated_internal(name, code_begin, code_end);
 }
 

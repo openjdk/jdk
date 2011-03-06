@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ class CompilerInterfaceVC6  extends CompilerInterface {
         return rv;
     }
 
-    Vector getBaseLinkerFlags(String outDir, String outDll) {
+    Vector getBaseLinkerFlags(String outDir, String outDll, String platformName) {
         Vector rv = new Vector();
 
         rv.add("PROP Ignore_Export_Lib 0");
@@ -231,8 +231,12 @@ class CompilerInterfaceVC6  extends CompilerInterface {
         rv.add("ADD CPP /MD");
         rv.add("ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib " +
                "           advapi32.lib shell32.lib ole32.lib oleaut32.lib winmm.lib");
+        String machine = "/machine:I386";
+        if (platformName.equals("x64")) {
+                machine = "/machine:X64";
+        }
         rv.add("ADD LINK32      /out:\""+outDll+"\" "+
-               "                /nologo /subsystem:windows /machine:I386" +
+               "                /nologo /subsystem:windows /machine:" + machine +
                "                /nologo /base:\"0x8000000\" /subsystem:windows /dll" +
                "                /export:JNI_GetDefaultJavaVMInitArgs /export:JNI_CreateJavaVM /export:JNI_GetCreatedJavaVMs "+
                "                /export:jio_snprintf /export:jio_printf /export:jio_fprintf /export:jio_vfprintf "+
@@ -287,7 +291,7 @@ class CompilerInterfaceVC6  extends CompilerInterface {
         return "d";
     }
 
-    String makeCfgName(String flavourBuild) {
-        return "vm - "+ Util.os + " " + flavourBuild;
+    String makeCfgName(String flavourBuild, String platform) {
+        return "vm - "+ platform + " " + flavourBuild;
     }
 }

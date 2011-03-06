@@ -31,8 +31,7 @@ case `uname -s` in
       mydir=`cygpath -m $mydir`
       ;;
 esac
-
-mylib="`dirname $mydir`"/lib
+mylib="$mydir/../lib"
 
 # By default, put the jar file and its dependencies on the bootclasspath.
 # This is always required on a Mac, because the system langtools classes
@@ -73,4 +72,4 @@ done
 unset DUALCASE
 
 IFS=$nl
-"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} -jar "${mydir}"/../lib/#PROGRAM#.jar ${toolOpts}
+"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} -jar "${mylib}/#PROGRAM#.jar" ${toolOpts}

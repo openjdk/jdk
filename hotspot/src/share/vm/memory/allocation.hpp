@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,10 +202,11 @@ protected:
   char *_hwm, *_max;            // High water mark and max in current chunk
   void* grow(size_t x);         // Get a new Chunk of at least size x
   NOT_PRODUCT(size_t _size_in_bytes;) // Size of arena (used for memory usage tracing)
-  NOT_PRODUCT(static size_t _bytes_allocated;) // total #bytes allocated since start
+  NOT_PRODUCT(static julong _bytes_allocated;) // total #bytes allocated since start
   friend class AllocStats;
   debug_only(void* malloc(size_t size);)
   debug_only(void* internal_malloc_4(size_t x);)
+  NOT_PRODUCT(void inc_bytes_allocated(size_t x);)
  public:
   Arena();
   Arena(size_t init_size);
@@ -219,7 +220,7 @@ protected:
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
-    NOT_PRODUCT(_bytes_allocated += x);
+    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x);
     } else {
@@ -232,7 +233,7 @@ protected:
   void *Amalloc_4(size_t x) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
-    NOT_PRODUCT(_bytes_allocated += x);
+    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x);
     } else {
@@ -252,7 +253,7 @@ protected:
     size_t delta = (((size_t)_hwm + DALIGN_M1) & ~DALIGN_M1) - (size_t)_hwm;
     x += delta;
 #endif
-    NOT_PRODUCT(_bytes_allocated += x);
+    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x); // grow() returns a result aligned >= 8 bytes.
     } else {
@@ -406,15 +407,16 @@ extern bool warn_new_operator;
 // for statistics
 #ifndef PRODUCT
 class AllocStats : StackObj {
-  int    start_mallocs, start_frees;
-  size_t start_malloc_bytes, start_res_bytes;
+  julong start_mallocs, start_frees;
+  julong start_malloc_bytes, start_mfree_bytes, start_res_bytes;
  public:
   AllocStats();
 
-  int    num_mallocs();    // since creation of receiver
-  size_t alloc_bytes();
-  size_t resource_bytes();
-  int    num_frees();
+  julong num_mallocs();    // since creation of receiver
+  julong alloc_bytes();
+  julong num_frees();
+  julong free_bytes();
+  julong resource_bytes();
   void   print();
 };
 #endif

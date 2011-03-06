@@ -29,7 +29,7 @@ package java.dyn;
  * Thrown to indicate that code has attempted to call a method handle
  * via the wrong method type.  As with the bytecode representation of
  * normal Java method calls, method handle calls are strongly typed
- * to a specific signature associated with a call site.
+ * to a specific type descriptor associated with a call site.
  * <p>
  * This exception may also be thrown when two method handles are
  * composed, and the system detects that their types cannot be

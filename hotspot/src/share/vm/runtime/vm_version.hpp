@@ -59,6 +59,7 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_info_string();
   static const char* vm_release();
   static const char* vm_platform_string();
+  static const char* vm_build_user();
 
   static int vm_major_version()               { assert(_initialized, "not initialized"); return _vm_major_version; }
   static int vm_minor_version()               { assert(_initialized, "not initialized"); return _vm_minor_version; }

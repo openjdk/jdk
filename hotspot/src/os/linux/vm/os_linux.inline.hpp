@@ -39,6 +39,14 @@
 # include "atomic_linux_zero.inline.hpp"
 # include "orderAccess_linux_zero.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "atomic_linux_arm.inline.hpp"
+# include "orderAccess_linux_arm.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "atomic_linux_ppc.inline.hpp"
+# include "orderAccess_linux_ppc.inline.hpp"
+#endif
 
 // System includes
 

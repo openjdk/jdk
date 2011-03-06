@@ -47,6 +47,12 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/ad_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/ad_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/ad_ppc.hpp"
+#endif
 
 // Portions of code courtesy of Clifford Click
 

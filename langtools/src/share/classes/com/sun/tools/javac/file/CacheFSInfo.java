@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ package com.sun.tools.javac.file;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
-import com.sun.tools.javac.util.Context;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.sun.tools.javac.util.Context;
 
 /**
  * Caching implementation of FSInfo.
@@ -49,15 +49,12 @@ public class CacheFSInfo extends FSInfo {
     public static void preRegister(final Context context) {
         context.put(FSInfo.class, new Context.Factory<FSInfo>() {
             public FSInfo make() {
-                if (singleton == null)
-                    singleton = new CacheFSInfo();
-                context.put(FSInfo.class, singleton);
-                return singleton;
+                FSInfo instance = new CacheFSInfo();
+                context.put(FSInfo.class, instance);
+                return instance;
             }
         });
     }
-
-    static CacheFSInfo singleton;
 
     public void clearCache() {
         cache.clear();

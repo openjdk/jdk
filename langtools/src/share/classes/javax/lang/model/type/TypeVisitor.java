@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,4 +162,14 @@ public interface TypeVisitor<R, P> {
      *  a visitor implementation may optionally throw this exception
      */
     R visitUnknown(TypeMirror t, P p);
+
+    /**
+     * Visits a disjunctive type.
+     *
+     * @param t the type to visit
+     * @param p a visitor-specified parameter
+     * @return  a visitor-specified result
+     * @since 1.7
+     */
+    R visitDisjunctive(DisjunctiveType t, P p);
 }

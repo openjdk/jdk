@@ -35,6 +35,12 @@
 #ifdef TARGET_ARCH_zero
 # include "bytes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "bytes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "bytes_ppc.hpp"
+#endif
 
 
 #if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))

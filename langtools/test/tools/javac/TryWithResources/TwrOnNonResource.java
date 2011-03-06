@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 6911256 6964740
+ * @bug 6911256 6964740 7013420
  * @author Joseph D. Darcy
  * @summary Verify invalid TWR block is not accepted.
  * @compile/fail -source 6 TwrOnNonResource.java
@@ -16,18 +16,6 @@ class TwrOnNonResource {
             System.out.println(aonr.toString());
         } finally {;}
         try(TwrOnNonResource aonr = new TwrOnNonResource()) {
-            System.out.println(aonr.toString());
-        } catch (Exception e) {;}
-
-        // Also check expression form
-        TwrOnNonResource aonr = new TwrOnNonResource();
-        try(aonr) {
-            System.out.println(aonr.toString());
-        }
-        try(aonr) {
-            System.out.println(aonr.toString());
-        } finally {;}
-        try(aonr) {
             System.out.println(aonr.toString());
         } catch (Exception e) {;}
     }

@@ -58,7 +58,7 @@ public class WatchDir {
     private void register(Path dir) throws IOException {
         WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         if (trace) {
-            FileRef prev = keys.get(key);
+            Path prev = keys.get(key);
             if (prev == null) {
                 System.out.format("register: %s\n", dir);
             } else {
@@ -147,7 +147,7 @@ public class WatchDir {
                 // register it and its sub-directories
                 if (recursive && (kind == ENTRY_CREATE)) {
                     try {
-                        if (Attributes.readBasicFileAttributes(child, NOFOLLOW_LINKS).isDirectory()) {
+                        if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
                             registerAll(child);
                         }
                     } catch (IOException x) {

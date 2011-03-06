@@ -74,8 +74,7 @@ SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
                      $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
                      jawt font jpeg cmm applet beans
 SUBDIRS_management = management
-SUBDIRS_misc       = jkernel $(ORG_SUBDIR) \
-                     rmi $(JDBC_SUBDIR) tracing
+SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole
 include $(BUILDDIR)/common/Subdirs.gmk
 

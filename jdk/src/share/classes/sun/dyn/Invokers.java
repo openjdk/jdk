@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class Invokers {
     private /*lazy*/ MethodHandle genericInvoker;
 
     // generic (untyped) invoker for the outgoing call; accepts a single Object[]
-    private final /*lazy*/ MethodHandle[] varargsInvokers;
+    private final /*lazy*/ MethodHandle[] spreadInvokers;
 
     // invoker for an unbound callsite
     private /*lazy*/ MethodHandle uninitializedCallSite;
@@ -55,10 +55,9 @@ public class Invokers {
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
      */
-    public Invokers(Access token, MethodType targetType) {
-        Access.check(token);
+    /*non-public*/ Invokers(MethodType targetType) {
         this.targetType = targetType;
-        this.varargsInvokers = new MethodHandle[targetType.parameterCount()+1];
+        this.spreadInvokers = new MethodHandle[targetType.parameterCount()+1];
     }
 
     public static MethodType invokerType(MethodType targetType) {
@@ -69,8 +68,8 @@ public class Invokers {
         MethodHandle invoker = exactInvoker;
         if (invoker != null)  return invoker;
         try {
-            invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invoke", targetType);
-        } catch (NoAccessException ex) {
+            invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invokeExact", targetType);
+        } catch (ReflectiveOperationException ex) {
             throw new InternalError("JVM cannot find invoker for "+targetType);
         }
         assert(invokerType(targetType) == invoker.type());
@@ -101,13 +100,12 @@ public class Invokers {
         return invoker;
     }
 
-    public MethodHandle varargsInvoker(int objectArgCount) {
-        MethodHandle vaInvoker = varargsInvokers[objectArgCount];
+    public MethodHandle spreadInvoker(int objectArgCount) {
+        MethodHandle vaInvoker = spreadInvokers[objectArgCount];
         if (vaInvoker != null)  return vaInvoker;
         MethodHandle gInvoker = genericInvoker();
-        MethodType vaType = MethodType.genericMethodType(objectArgCount, true);
-        vaInvoker = MethodHandles.spreadArguments(gInvoker, invokerType(vaType));
-        varargsInvokers[objectArgCount] = vaInvoker;
+        vaInvoker = gInvoker.asSpreader(Object[].class, targetType.parameterCount() - objectArgCount);
+        spreadInvokers[objectArgCount] = vaInvoker;
         return vaInvoker;
     }
 
@@ -118,7 +116,7 @@ public class Invokers {
         if (invoker != null)  return invoker;
         if (targetType.parameterCount() > 0) {
             MethodType type0 = targetType.dropParameterTypes(0, targetType.parameterCount());
-            Invokers invokers0 = MethodTypeImpl.invokers(Access.TOKEN, type0);
+            Invokers invokers0 = MethodTypeImpl.invokers(type0);
             invoker = MethodHandles.dropArguments(invokers0.uninitializedCallSite(),
                                                   0, targetType.parameterList());
             assert(invoker.type().equals(targetType));
@@ -130,7 +128,7 @@ public class Invokers {
                 THROW_UCS = MethodHandleImpl.IMPL_LOOKUP
                     .findStatic(CallSite.class, "uninitializedCallSite",
                                 MethodType.methodType(Empty.class));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw new RuntimeException(ex);
             }
         }

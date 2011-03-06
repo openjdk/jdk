@@ -331,7 +331,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
     length, CHECK_(nullHandle));
   constantPoolOop constant_pool =
                       oopFactory::new_constantPool(length,
-                                                   methodOopDesc::IsSafeConc,
+                                                   oopDesc::IsSafeConc,
                                                    CHECK_(nullHandle));
   constantPoolHandle cp (THREAD, constant_pool);
 
@@ -1929,10 +1929,9 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
   }
 
   // All sizing information for a methodOop is finally available, now create it
-  methodOop m_oop  = oopFactory::new_method(
-    code_length, access_flags, linenumber_table_length,
-    total_lvt_length, checked_exceptions_length,
-    methodOopDesc::IsSafeConc, CHECK_(nullHandle));
+  methodOop m_oop  = oopFactory::new_method(code_length, access_flags, linenumber_table_length,
+                                            total_lvt_length, checked_exceptions_length,
+                                            oopDesc::IsSafeConc, CHECK_(nullHandle));
   methodHandle m (THREAD, m_oop);
 
   ClassLoadingService::add_class_method_size(m_oop->size()*HeapWordSize);

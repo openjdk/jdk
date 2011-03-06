@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 import java.security.AccessController;
@@ -71,38 +70,14 @@ class SolarisFileSystem extends UnixFileSystem {
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V extends FileAttributeView> V newFileAttributeView(Class<V> view,
-                                                                UnixPath file, LinkOption... options)
-    {
-        if (view == AclFileAttributeView.class)
-            return (V) new SolarisAclFileAttributeView(file, followLinks(options));
-        if (view == UserDefinedFileAttributeView.class) {
-            return(V) new SolarisUserDefinedFileAttributeView(file, followLinks(options));
-        }
-        return super.newFileAttributeView(view, file, options);
-    }
-
-    @Override
-    protected DynamicFileAttributeView newFileAttributeView(String name,
-                                                            UnixPath file,
-                                                            LinkOption... options)
-    {
-        if (name.equals("acl"))
-            return new SolarisAclFileAttributeView(file, followLinks(options));
-        if (name.equals("user"))
-            return new SolarisUserDefinedFileAttributeView(file, followLinks(options));
-        return super.newFileAttributeView(name, file, options);
-    }
 
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
         static final Set<String> supportedFileAttributeViews =
             supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
-            Set<String> result = new HashSet<String>();
-            result.addAll(UnixFileSystem.standardFileAttributeViews());
+            Set<String> result = new HashSet<>();
+            result.addAll(standardFileAttributeViews());
             // additional Solaris-specific views
             result.add("acl");
             result.add("user");
@@ -126,7 +101,7 @@ class SolarisFileSystem extends UnixFileSystem {
      */
     @Override
     Iterable<UnixMountEntry> getMountEntries() {
-        ArrayList<UnixMountEntry> entries = new ArrayList<UnixMountEntry>();
+        ArrayList<UnixMountEntry> entries = new ArrayList<>();
         try {
             UnixPath mnttab = new UnixPath(this, "/etc/mnttab");
             long fp = fopen(mnttab, "r");
@@ -145,11 +120,6 @@ class SolarisFileSystem extends UnixFileSystem {
             // nothing we can do
         }
         return entries;
-    }
-
-    @Override
-    FileStore getFileStore(UnixPath path) throws IOException {
-        return new SolarisFileStore(path);
     }
 
     @Override

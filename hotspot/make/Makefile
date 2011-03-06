@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #  ALT_OUTPUTDIR              Output directory to use for hotspot build
 #  ALT_EXPORT_PATH            Directory to export hotspot build to
 #  ALT_JDK_IMPORT_PATH        Current JDK build (only for create_jdk rules)
+#  ALT_JDK_TARGET_IMPORT_PATH Current JDK build when cross-compiling
 #  ALT_BUILD_WIN_SA           Building SA on Windows is disabled by default.
 #                             Set ALT_BUILD_WIN_SA=1 to enable building SA on
 #                             Windows.
@@ -73,6 +74,7 @@ else
   include defs.make
 endif
 
+include $(GAMMADIR)/make/altsrc.make
 
 ifneq ($(ALT_OUTPUTDIR),)
   ALT_OUT=ALT_OUTPUTDIR=$(ALT_OUTPUTDIR)
@@ -361,7 +363,8 @@ $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/code/%
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/prims/%
 	$(install-file)
 
-$(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h:  $(HS_SRC_DIR)/cpu/$(HS_ARCH)/vm/jni_$(HS_ARCH).h
+HS_JNI_ARCH_SRC=$(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(HS_ARCH)/vm/jni_$(HS_ARCH).h)
+$(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h: $(HS_JNI_ARCH_SRC)
 	$(install-file)
 
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/services/%

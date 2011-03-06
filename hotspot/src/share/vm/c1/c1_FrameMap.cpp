@@ -35,6 +35,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vmreg_zero.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vmreg_arm.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmreg_ppc.inline.hpp"
+#endif
 
 
 

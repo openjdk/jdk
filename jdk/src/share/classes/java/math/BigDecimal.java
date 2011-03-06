@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,8 +121,8 @@ import static java.math.BigInteger.LONG_MASK;
  * scale for each operation is listed in the table below.
  *
  * <table border>
- * <caption top><h3>Preferred Scales for Results of Arithmetic Operations
- * </h3></caption>
+ * <caption><b>Preferred Scales for Results of Arithmetic Operations
+ * </b></caption>
  * <tr><th>Operation</th><th>Preferred Scale of Result</th></tr>
  * <tr><td>Add</td><td>max(addend.scale(), augend.scale())</td>
  * <tr><td>Subtract</td><td>max(minuend.scale(), subtrahend.scale())</td>
@@ -661,25 +661,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <dd>{@code .} <i>FractionPart</i>
      * <dd><i>IntegerPart</i>
      * <p>
-     * <dt><i>IntegerPart:
-     * <dd>Digits</i>
+     * <dt><i>IntegerPart:</i>
+     * <dd><i>Digits</i>
      * <p>
-     * <dt><i>FractionPart:
-     * <dd>Digits</i>
+     * <dt><i>FractionPart:</i>
+     * <dd><i>Digits</i>
      * <p>
-     * <dt><i>Exponent:
-     * <dd>ExponentIndicator SignedInteger</i>
+     * <dt><i>Exponent:</i>
+     * <dd><i>ExponentIndicator SignedInteger</i>
      * <p>
      * <dt><i>ExponentIndicator:</i>
      * <dd>{@code e}
      * <dd>{@code E}
      * <p>
-     * <dt><i>SignedInteger:
-     * <dd>Sign<sub>opt</sub> Digits</i>
+     * <dt><i>SignedInteger:</i>
+     * <dd><i>Sign<sub>opt</sub> Digits</i>
      * <p>
-     * <dt><i>Digits:
-     * <dd>Digit
-     * <dd>Digits Digit</i>
+     * <dt><i>Digits:</i>
+     * <dd><i>Digit</i>
+     * <dd><i>Digits Digit</i>
      * <p>
      * <dt><i>Digit:</i>
      * <dd>any character for which {@link Character#isDigit}

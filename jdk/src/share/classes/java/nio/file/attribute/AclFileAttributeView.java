@@ -65,7 +65,7 @@ import java.io.IOException;
  * UserPrincipalLookupService} may be used to obtain a {@link UserPrincipal}
  * to represent these special identities by invoking the {@link
  * UserPrincipalLookupService#lookupPrincipalByName lookupPrincipalByName}
- * method.
+ * method. </p>
  *
  * <p> <b>Usage Example:</b>
  * Suppose we wish to add an entry to an existing ACL to grant "joe" access:
@@ -75,7 +75,7 @@ import java.io.IOException;
  *         .lookupPrincipalByName("joe");
  *
  *     // get view
- *     AclFileAttributeView view = file.getFileAttributeView(AclFileAttributeView.class);
+ *     AclFileAttributeView view = Files.getFileAttributeView(file, AclFileAttributeView.class);
  *
  *     // create ACE to give "joe" read access
  *     AclEntry entry = AclEntry.newBuilder()
@@ -110,11 +110,11 @@ import java.io.IOException;
  * </table>
  * </blockquote>
  *
- * <p> The {@link FileRef#getAttribute getAttribute} method may be used to read
+ * <p> The {@link Files#getAttribute getAttribute} method may be used to read
  * the ACL or owner attributes as if by invoking the {@link #getAcl getAcl} or
  * {@link #getOwner getOwner} methods.
  *
- * <p> The {@link FileRef#setAttribute setAttribute} method may be used to
+ * <p> The {@link Files#setAttribute setAttribute} method may be used to
  * update the ACL or owner attributes as if by invoking the {@link #setAcl setAcl}
  * or {@link #setOwner setOwner} methods.
  *
@@ -122,8 +122,8 @@ import java.io.IOException;
  *
  * <p> Implementations supporting this attribute view may also support setting
  * the initial ACL when creating a file or directory. The initial ACL
- * may be provided to methods such as {@link Path#createFile createFile} or {@link
- * Path#createDirectory createDirectory} as an {@link FileAttribute} with {@link
+ * may be provided to methods such as {@link Files#createFile createFile} or {@link
+ * Files#createDirectory createDirectory} as an {@link FileAttribute} with {@link
  * FileAttribute#name name} {@code "acl:acl"} and a {@link FileAttribute#value
  * value} that is the list of {@code AclEntry} objects.
  *
@@ -135,8 +135,6 @@ import java.io.IOException;
  * translation.
  *
  * @since 1.7
- * @see Attributes#getAcl
- * @see Attributes#setAcl
  */
 
 public interface AclFileAttributeView

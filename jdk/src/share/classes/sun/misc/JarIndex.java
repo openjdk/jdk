@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,14 @@ public class JarIndex {
     public static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
     /**
+     * true if, and only if, sun.misc.JarIndex.metaInfFilenames is set to true.
+     * If true, the names of the files in META-INF, and its subdirectories, will
+     * be added to the index. Otherwise, just the directory names are added.
+     */
+    private static final boolean metaInfFilenames =
+        "true".equals(System.getProperty("sun.misc.JarIndex.metaInfFilenames"));
+
+    /**
      * Constructs a new, empty jar index.
      */
     public JarIndex() {
@@ -93,6 +101,19 @@ public class JarIndex {
         this();
         this.jarFiles = files;
         parseJars(files);
+    }
+
+    /**
+     * Returns the jar index, or <code>null</code> if none.
+     *
+     * This single parameter version of the method is retained
+     * for binary compatibility with earlier releases.
+     *
+     * @param jar the JAR file to get the index from.
+     * @exception IOException if an I/O error has occurred.
+     */
+    public static JarIndex getJarIndex(JarFile jar) throws IOException {
+        return getJarIndex(jar, null);
     }
 
     /**
@@ -187,6 +208,18 @@ public class JarIndex {
     }
 
     /**
+     * Same as add(String,String) except that it doesn't strip off from the
+     * last index of '/'. It just adds the filename.
+     */
+    private void addExplicit(String fileName, String jarName) {
+        // add the mapping to indexMap
+        addToList(fileName, jarName, indexMap);
+
+        // add the mapping to jarMap
+        addToList(jarName, fileName, jarMap);
+     }
+
+    /**
      * Go through all the jar files and construct the
      * index table.
      */
@@ -204,15 +237,31 @@ public class JarIndex {
 
             Enumeration entries = zrf.entries();
             while(entries.hasMoreElements()) {
-                String fileName = ((ZipEntry)(entries.nextElement())).getName();
-                // Index the META-INF directory, but not the index or manifest.
-                if (!fileName.startsWith("META-INF/") ||
-                        !(fileName.equals("META-INF/") ||
-                          fileName.equals(INDEX_NAME) ||
-                          fileName.equals(JarFile.MANIFEST_NAME))) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                String fileName = entry.getName();
+
+                // Skip the META-INF directory, the index, and manifest.
+                // Any files in META-INF/ will be indexed explicitly
+                if (fileName.equals("META-INF/") ||
+                    fileName.equals(INDEX_NAME) ||
+                    fileName.equals(JarFile.MANIFEST_NAME))
+                    continue;
+
+                if (!metaInfFilenames) {
                     add(fileName, currentJar);
+                } else {
+                    if (!fileName.startsWith("META-INF/")) {
+                        add(fileName, currentJar);
+                    } else if (!entry.isDirectory()) {
+                        // Add files under META-INF explicitly so that certain
+                        // services, like ServiceLoader, etc, can be located
+                        // with greater accuracy. Directories can be skipped
+                        // since each file will be added explicitly.
+                        addExplicit(fileName, currentJar);
+                    }
                 }
             }
+
             zrf.close();
         }
     }

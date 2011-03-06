@@ -404,6 +404,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * @see #process
      *
      */
+    @SafeVarargs
     protected final void publish(V... chunks) {
         synchronized (this) {
             if (doProcess == null) {
