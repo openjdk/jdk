@@ -627,8 +627,10 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_BLOWFISH_CBC));
 
         // XXX RSA_X_509, RSA_OAEP not yet supported
-        d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,
+        d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,   s("RSA"),
                 m(CKM_RSA_PKCS));
+        d(CIP, "RSA/ECB/NoPadding",             P11RSACipher,
+                m(CKM_RSA_X_509));
 
         d(SIG, "RawDSA",        P11Signature,           s("NONEwithDSA"),
                 m(CKM_DSA));
