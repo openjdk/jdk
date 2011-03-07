@@ -466,7 +466,20 @@ bool methodOopDesc::is_accessor() const {
 
 
 bool methodOopDesc::is_initializer() const {
-  return name() == vmSymbols::object_initializer_name() || name() == vmSymbols::class_initializer_name();
+  return name() == vmSymbols::object_initializer_name() || is_static_initializer();
+}
+
+bool methodOopDesc::has_valid_initializer_flags() const {
+  return (is_static() ||
+          instanceKlass::cast(method_holder())->major_version() < 51);
+}
+
+bool methodOopDesc::is_static_initializer() const {
+  // For classfiles version 51 or greater, ensure that the clinit method is
+  // static.  Non-static methods with the name "<clinit>" are not static
+  // initializers. (older classfiles exempted for backward compatibility)
+  return name() == vmSymbols::class_initializer_name() &&
+         has_valid_initializer_flags();
 }
 
 

@@ -735,7 +735,12 @@ void instanceKlass::call_class_initializer(TRAPS) {
 static int call_class_initializer_impl_counter = 0;   // for debugging
 
 methodOop instanceKlass::class_initializer() {
-  return find_method(vmSymbols::class_initializer_name(), vmSymbols::void_method_signature());
+  methodOop clinit = find_method(
+      vmSymbols::class_initializer_name(), vmSymbols::void_method_signature());
+  if (clinit != NULL && clinit->has_valid_initializer_flags()) {
+    return clinit;
+  }
+  return NULL;
 }
 
 void instanceKlass::call_class_initializer_impl(instanceKlassHandle this_oop, TRAPS) {
