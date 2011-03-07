@@ -57,59 +57,58 @@ public class ZipCoding {
                                    String name, String comment, byte[] bb)
         throws Exception
     {
-        ZipInputStream zis = new ZipInputStream(is, cs);
-        ZipEntry e = zis.getNextEntry();
-        if (e == null || ! name.equals(e.getName()))
-            throw new RuntimeException("ZipIS name doesn't match!");
-        byte[] bBuf = new byte[bb.length << 1];
-        int n = zis.read(bBuf, 0, bBuf.length);
-        if (n != bb.length ||
-            !Arrays.equals(bb, Arrays.copyOf(bBuf, n))) {
-            throw new RuntimeException("ZipIS content doesn't match!");
+        try (ZipInputStream zis = new ZipInputStream(is, cs)) {
+            ZipEntry e = zis.getNextEntry();
+            if (e == null || ! name.equals(e.getName()))
+                throw new RuntimeException("ZipIS name doesn't match!");
+            byte[] bBuf = new byte[bb.length << 1];
+            int n = zis.read(bBuf, 0, bBuf.length);
+            if (n != bb.length ||
+                !Arrays.equals(bb, Arrays.copyOf(bBuf, n))) {
+                throw new RuntimeException("ZipIS content doesn't match!");
+            }
         }
-        zis.close();
     }
 
     static void testZipFile(File f, Charset cs,
                             String name, String comment, byte[] bb)
         throws Exception
     {
-        ZipFile zf = new ZipFile(f, cs);
-        Enumeration<? extends ZipEntry> zes = zf.entries();
-        ZipEntry e = (ZipEntry)zes.nextElement();
-        if (! name.equals(e.getName()) ||
-            ! comment.equals(e.getComment()))
-            throw new RuntimeException("ZipFile: name/comment doesn't match!");
-        InputStream is = zf.getInputStream(e);
-        if (is == null)
-            throw new RuntimeException("ZipFile: getIS failed!");
-        byte[] bBuf = new byte[bb.length << 1];
-        int n = 0;
-        int nn =0;
-        while ((nn = is.read(bBuf, n, bBuf.length-n)) != -1) {
-            n += nn;
+        try (ZipFile zf = new ZipFile(f, cs)) {
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            ZipEntry e = (ZipEntry)zes.nextElement();
+            if (! name.equals(e.getName()) ||
+                ! comment.equals(e.getComment()))
+                throw new RuntimeException("ZipFile: name/comment doesn't match!");
+            InputStream is = zf.getInputStream(e);
+            if (is == null)
+                throw new RuntimeException("ZipFile: getIS failed!");
+            byte[] bBuf = new byte[bb.length << 1];
+            int n = 0;
+            int nn =0;
+            while ((nn = is.read(bBuf, n, bBuf.length-n)) != -1) {
+                n += nn;
+            }
+            if (n != bb.length ||
+                !Arrays.equals(bb, Arrays.copyOf(bBuf, n))) {
+                throw new RuntimeException("ZipFile content doesn't match!");
+            }
         }
-        if (n != bb.length ||
-            !Arrays.equals(bb, Arrays.copyOf(bBuf, n))) {
-            throw new RuntimeException("ZipFile content doesn't match!");
-        }
-        zf.close();
     }
 
     static void test(String csn, String name, String comment)
         throws Exception
     {
-        byte[] bb = "This is the conent of the zipfile".getBytes("ISO-8859-1");
+        byte[] bb = "This is the content of the zipfile".getBytes("ISO-8859-1");
         Charset cs = Charset.forName(csn);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos, cs);
-
-        ZipEntry e = new ZipEntry(name);
-        e.setComment(comment);
-        zos.putNextEntry(e);
-        zos.write(bb, 0, bb.length);
-        zos.closeEntry();
-        zos.close();
+        try (ZipOutputStream zos = new ZipOutputStream(baos, cs)) {
+            ZipEntry e = new ZipEntry(name);
+            e.setComment(comment);
+            zos.putNextEntry(e);
+            zos.write(bb, 0, bb.length);
+            zos.closeEntry();
+        }
         ByteArrayInputStream bis = new ByteArrayInputStream(baos.toByteArray());
         testZipInputStream(bis, cs, name, comment, bb);
 
@@ -121,9 +120,9 @@ public class ZipCoding {
 
         File f = new File(new File(System.getProperty("test.dir", ".")),
                           "zfcoding.zip");
-        FileOutputStream fos = new FileOutputStream(f);
-        baos.writeTo(fos);
-        fos.close();
+        try (FileOutputStream fos = new FileOutputStream(f)) {
+            baos.writeTo(fos);
+        }
         testZipFile(f, cs, name, comment, bb);
         if ("utf-8".equals(csn)) {
             testZipFile(f, Charset.forName("MS932"), name, comment, bb);

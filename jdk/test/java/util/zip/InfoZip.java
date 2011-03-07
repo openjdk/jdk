@@ -85,41 +85,37 @@ public class InfoZip {
         //----------------------------------------------------------------
         File f = new File("InfoZip.zip");
 
-        OutputStream os = new FileOutputStream(f);
-        os.write(new byte[]
-            {'P', 'K', 3, 4, 10, 0, 0, 0, 0, 0, -68, 8, 'k',
-             '2', 'V', -7, 'm', 9, 20, 0, 0, 0, 20, 0, 0, 0,
-             8, 0, 21, 0, 's', 'o', 'm', 'e', 'F', 'i', 'l', 'e', 'U',
-             'T', 9, 0, 3, 't', '_', '1', 'B', 't', '_', '1', 'B', 'U',
-             'x', 4, 0, -14, 'v', 26, 4, 'M', 'e', 's', 's', 'a', 'g',
-             'e', ' ', 'i', 'n', ' ', 'a', ' ', 'B', 'o', 't', 't', 'l', 'e',
-             10, 'P', 'K', 1, 2, 23, 3, 10, 0, 0, 0, 0, 0,
-             -68, 8, 'k', '2', 'V', -7, 'm', 9, 20, 0, 0, 0, 20,
-             0, 0, 0, 8, 0, 13, 0, 0, 0, 0, 0, 1, 0,
-             0, 0, -92, -127, 0, 0, 0, 0, 's', 'o', 'm', 'e', 'F',
-             'i', 'l', 'e', 'U', 'T', 5, 0, 3, 't', '_', '1', 'B', 'U',
-             'x', 0, 0, 'P', 'K', 5, 6, 0, 0, 0, 0, 1, 0,
-             1, 0, 'C', 0, 0, 0, 'O', 0, 0, 0, 0, 0, });
-        os.close();
+        try (OutputStream os = new FileOutputStream(f)) {
+            os.write(new byte[]
+                {'P', 'K', 3, 4, 10, 0, 0, 0, 0, 0, -68, 8, 'k',
+                 '2', 'V', -7, 'm', 9, 20, 0, 0, 0, 20, 0, 0, 0,
+                 8, 0, 21, 0, 's', 'o', 'm', 'e', 'F', 'i', 'l', 'e', 'U',
+                 'T', 9, 0, 3, 't', '_', '1', 'B', 't', '_', '1', 'B', 'U',
+                 'x', 4, 0, -14, 'v', 26, 4, 'M', 'e', 's', 's', 'a', 'g',
+                 'e', ' ', 'i', 'n', ' ', 'a', ' ', 'B', 'o', 't', 't', 'l', 'e',
+                 10, 'P', 'K', 1, 2, 23, 3, 10, 0, 0, 0, 0, 0,
+                 -68, 8, 'k', '2', 'V', -7, 'm', 9, 20, 0, 0, 0, 20,
+                 0, 0, 0, 8, 0, 13, 0, 0, 0, 0, 0, 1, 0,
+                 0, 0, -92, -127, 0, 0, 0, 0, 's', 'o', 'm', 'e', 'F',
+                 'i', 'l', 'e', 'U', 'T', 5, 0, 3, 't', '_', '1', 'B', 'U',
+                 'x', 0, 0, 'P', 'K', 5, 6, 0, 0, 0, 0, 1, 0,
+                 1, 0, 'C', 0, 0, 0, 'O', 0, 0, 0, 0, 0, });
+        }
 
-        ZipFile zf = new ZipFile(f);
         ZipEntry ze = null;
-        try {
+        try (ZipFile zf = new ZipFile(f)) {
             Enumeration<? extends ZipEntry> entries = zf.entries();
             ze = entries.nextElement();
             check(! entries.hasMoreElements());
             checkZipEntry(ze, contents(zf, ze));
-        } finally {
-            zf.close();
         }
 
-        ZipInputStream is = new ZipInputStream(new FileInputStream(f));
-        try {
+        try (FileInputStream fis = new FileInputStream(f);
+             ZipInputStream is = new ZipInputStream(fis))
+        {
             ze = is.getNextEntry();
             checkZipEntry(ze, contents(is));
             check(is.getNextEntry() == null);
-        } finally {
-            is.close();
         }
         f.delete();
         System.out.printf("passed = %d, failed = %d%n", passed, failed);

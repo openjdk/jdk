@@ -34,11 +34,11 @@ public class EncodingConstructor {
 
     public static void main(String args[]) throws Exception {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(bo, false, "UTF-8");
         String s = "xyzzy";
         int n = s.length();
-        ps.print(s);
-        ps.close();
+        try (PrintStream ps = new PrintStream(bo, false, "UTF-8")) {
+            ps.print(s);
+        }
         byte[] ba = bo.toByteArray();
         if (ba.length != n)
             throw new Exception("Length mismatch: " + n + " " + ba.length);

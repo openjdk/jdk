@@ -134,14 +134,14 @@ public class InflateIn_DeflateOut {
 
         PairedOutputStream pos = new PairedOutputStream(pis);
         pis.setPairedOutputStream(pos);
-        DeflaterOutputStream dos = new DeflaterOutputStream(pos, true);
 
         byte[] data = new byte[random.nextInt(1024 * 1024)];
         byte[] buf = new byte[data.length];
         random.nextBytes(data);
 
-        dos.write(data);
-        dos.close();
+        try (DeflaterOutputStream dos = new DeflaterOutputStream(pos, true)) {
+            dos.write(data);
+        }
         check(readFully(iis, buf, buf.length));
         check(Arrays.equals(data, buf));
     }

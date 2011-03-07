@@ -22,11 +22,14 @@
  */
 
 /*
- * @test
- * @bug 6379235
- * @ignore until 6721694 is fixed
- * @run main/othervm -server -Xmx32m -Xms32m -Xss256m StartOOMTest
- * @summary ThreadGroup accounting mistake possible with failure of Thread.start()
+ * This test is relatively useful for verifying 6379235, but
+ * is too resource intensive, especially on 64 bit systems,
+ * to be run automatically, see 6721694.
+ *
+ * When run it should be typically be run with the server vm
+ * and a relatively small java heap, and a large stack size
+ * ( to provoke the OOM quicker ).
+ *    java -server -Xmx32m -Xms32m -Xss256m StartOOMTest
  */
 
 import java.util.*;
