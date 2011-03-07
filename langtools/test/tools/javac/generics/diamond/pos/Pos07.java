@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,23 @@
 
 /*
  * @test
- * @bug 6939620 7020044
+ * @bug 6939620 6894753 7020044
  *
- * @summary  basic test for diamond (generic/non-generic constructors)
+ * @summary  Diamond and intersection types
  * @author mcimadamore
- * @compile Pos01.java
- * @run main Pos01
+ * @compile Pos07.java
  *
  */
 
-public class Pos01<X> {
+class Pos07 {
+    static class Foo<X extends Number & Comparable<Number>> {}
+    static class DoubleFoo<X extends Number & Comparable<Number>,
+                           Y extends Number & Comparable<Number>> {}
+    static class TripleFoo<X extends Number & Comparable<Number>,
+                           Y extends Number & Comparable<Number>,
+                           Z> {}
 
-    Pos01(X x) {}
-
-    <Z> Pos01(X x, Z z) {}
-
-    void test() {
-        Pos01<Integer> p1 = new Pos01<>(1);
-        Pos01<? extends Integer> p2 = new Pos01<>(1);
-        Pos01<?> p3 = new Pos01<>(1);
-        Pos01<? super Integer> p4 = new Pos01<>(1);
-
-        Pos01<Integer> p5 = new Pos01<>(1, "");
-        Pos01<? extends Integer> p6 = new Pos01<>(1, "");
-        Pos01<?> p7 = new Pos01<>(1, "");
-        Pos01<? super Integer> p8 = new Pos01<>(1, "");
-    }
-
-    public static void main(String[] args) {
-        Pos01<String> p1 = new Pos01<>("");
-        p1.test();
-    }
+    Foo<?> fw = new Foo<>();
+    DoubleFoo<?,?> dw = new DoubleFoo<>();
+    TripleFoo<?,?,?> tw = new TripleFoo<>();
 }
