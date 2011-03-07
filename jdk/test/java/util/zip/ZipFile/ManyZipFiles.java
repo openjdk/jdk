@@ -51,14 +51,14 @@ public class ManyZipFiles {
 
         // Create some zip data
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos);
-        ZipEntry ze = new ZipEntry("test");
-        zos.putNextEntry(ze);
-        byte[] hello = "hello, world".getBytes("ASCII");
-        zos.write(hello, 0, hello.length);
-        zos.closeEntry();
-        zos.finish();
-        zos.close();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry ze = new ZipEntry("test");
+            zos.putNextEntry(ze);
+            byte[] hello = "hello, world".getBytes("ASCII");
+            zos.write(hello, 0, hello.length);
+            zos.closeEntry();
+            zos.finish();
+        }
         byte[] data = baos.toByteArray();
 
         ZipFile zips[] = new ZipFile[numFiles];
@@ -90,9 +90,9 @@ public class ManyZipFiles {
             for (int i = 0; i < numFiles; i++) {
                 File f = File.createTempFile("test", ".zip", tmpdir);
                 f.deleteOnExit();
-                FileOutputStream fos = new FileOutputStream(f);
-                fos.write(data, 0, data.length);
-                fos.close();
+                try (FileOutputStream fos = new FileOutputStream(f)) {
+                    fos.write(data, 0, data.length);
+                }
                 try {
                     zips[i] = new ZipFile(f);
                 } catch (Throwable t) {
@@ -102,11 +102,12 @@ public class ManyZipFiles {
                 }
             }
         } finally {
-            // This finally block is due to bug 4171239.  On windows, if the
+            // This finally block is due to bug 4171239.  On Windows, if the
             // file is still open at the end of the VM, deleteOnExit won't
             // take place.  "new ZipFile(...)" opens the zip file, so we have
-            // to explicity close those opened above.  This finally block can
-            // be removed when 4171239 is fixed.
+            // to explicitly close those opened above.  This finally block can
+            // be removed when 4171239 is fixed. See also 6357433, against which
+            // 4171239 was closed as a duplicate.
             for (int i = 0; i < numFiles; i++) {
                 if (zips[i] != null) {
                     try {

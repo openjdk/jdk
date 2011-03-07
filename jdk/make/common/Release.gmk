@@ -62,7 +62,8 @@ EXCLUDE_PROPWARN_PKGS += sun.dyn
 # This is an interim solution until the ct.sym is replaced
 # with a new module system (being discussed for JDK 7).
 #
-EXPORTED_PRIVATE_PKGS = com.sun.servicetag
+EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
+                        com.oracle.net
 
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases

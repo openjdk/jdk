@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -46,8 +46,6 @@
  */
 
 package sun.security.pkcs11.wrapper;
-
-
 
 /**
  * This interface holds constants of the PKCS#11 v2.11 standard.
@@ -305,6 +303,10 @@ public interface PKCS11Constants {
     public static final long  CKK_BLOWFISH        = 0x00000020L;
 
     public static final long  CKK_VENDOR_DEFINED  = 0x80000000L;
+
+    // new for v2.20 amendment 3
+    //public static final long  CKK_CAMELLIA          = 0x00000025L;
+    //public static final long  CKK_ARIA              = 0x00000026L;
 
     // pseudo key type ANY (for template manager)
     public static final long  PCKK_ANY            = 0x7FFFFF22L;
@@ -690,6 +692,34 @@ public interface PKCS11Constants {
 
     public static final long  CKM_VENDOR_DEFINED             = 0x80000000L;
 
+    // new for v2.20 amendment 3
+    public static final long  CKM_SHA224                     = 0x00000255L;
+    public static final long  CKM_SHA224_HMAC                = 0x00000256L;
+    public static final long  CKM_SHA224_HMAC_GENERAL        = 0x00000257L;
+    public static final long  CKM_SHA224_KEY_DERIVATION      = 0x00000396L;
+    public static final long  CKM_SHA224_RSA_PKCS            = 0x00000046L;
+    public static final long  CKM_SHA224_RSA_PKCS_PSS        = 0x00000047L;
+    public static final long  CKM_AES_CTR                    = 0x00001086L;
+    /*
+    public static final long  CKM_CAMELLIA_KEY_GEN           = 0x00000550L;
+    public static final long  CKM_CAMELLIA_ECB               = 0x00000551L;
+    public static final long  CKM_CAMELLIA_CBC               = 0x00000552L;
+    public static final long  CKM_CAMELLIA_MAC               = 0x00000553L;
+    public static final long  CKM_CAMELLIA_MAC_GENERAL       = 0x00000554L;
+    public static final long  CKM_CAMELLIA_CBC_PAD           = 0x00000555L;
+    public static final long  CKM_CAMELLIA_ECB_ENCRYPT_DATA  = 0x00000556L;
+    public static final long  CKM_CAMELLIA_CBC_ENCRYPT_DATA  = 0x00000557L;
+    public static final long  CKM_CAMELLIA_CTR               = 0x00000558L;
+    public static final long  CKM_ARIA_KEY_GEN               = 0x00000560L;
+    public static final long  CKM_ARIA_ECB                   = 0x00000561L;
+    public static final long  CKM_ARIA_CBC                   = 0x00000562L;
+    public static final long  CKM_ARIA_MAC                   = 0x00000563L;
+    public static final long  CKM_ARIA_MAC_GENERAL           = 0x00000564L;
+    public static final long  CKM_ARIA_CBC_PAD               = 0x00000565L;
+    public static final long  CKM_ARIA_ECB_ENCRYPT_DATA      = 0x00000566L;
+    public static final long  CKM_ARIA_CBC_ENCRYPT_DATA      = 0x00000567L;
+    */
+
     // NSS private
     public static final long  CKM_NSS_TLS_PRF_GENERAL        = 0x80000373L;
 
@@ -881,7 +911,8 @@ public interface PKCS11Constants {
 
     /* The following MGFs are defined */
     public static final long  CKG_MGF1_SHA1       =  0x00000001L;
-
+    // new for v2.20 amendment 3
+    public static final long  CKG_MGF1_SHA224     = 0x00000005L;
 
     /* The following encoding parameter sources are defined */
     public static final long  CKZ_DATA_SPECIFIED   = 0x00000001L;

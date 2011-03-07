@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.misc;
 
-import java.security.CodeSigner;
-import java.security.cert.CRL;
+package sun.security.pkcs11.wrapper;
 
-public interface JavaSecurityCodeSignerAccess {
-    void setCRLs(CodeSigner signer, CRL[] crls);
-    CRL[] getCRLs(CodeSigner signer);
+/**
+ * This class represents the necessary parameters required by
+ * the CKM_AES_CTR mechanism as defined in CK_AES_CTR_PARAMS structure.<p>
+ * <B>PKCS#11 structure:</B>
+ * <PRE>
+ * typedef struct CK_AES_CTR_PARAMS {
+ *   CK_ULONG ulCounterBits;
+ *   CK_BYTE cb[16];
+ * } CK_AES_CTR_PARAMS;
+ * </PRE>
+ *
+ * @author Yu-Ching Valerie Peng
+ * @since   1.7
+ */
+public class CK_AES_CTR_PARAMS {
+
+    private final long ulCounterBits;
+    private final byte cb[];
+
+    public CK_AES_CTR_PARAMS(byte[] cb) {
+        ulCounterBits = 128;
+        this.cb = cb.clone();
+    }
+
+    public String toString() {
+        StringBuffer buffer = new StringBuffer();
+
+        buffer.append(Constants.INDENT);
+        buffer.append("ulCounterBits: ");
+        buffer.append(ulCounterBits);
+        buffer.append(Constants.NEWLINE);
+
+        buffer.append(Constants.INDENT);
+        buffer.append("cb: ");
+        buffer.append(Functions.toHexString(cb));
+
+        return buffer.toString();
+    }
 }

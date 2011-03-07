@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ import sun.security.jca.GetInstance.Instance;
  * <p> Every implementation of the Java platform is required to support the
  * following standard <code>SecretKeyFactory</code> algorithms:
  * <ul>
- * <li><tt>AES</tt></li>
  * <li><tt>DES</tt></li>
  * <li><tt>DESede</tt></li>
  * </ul>

@@ -37,7 +37,6 @@ import java.util.jar.*;
 import sun.security.pkcs.*;
 import sun.security.timestamp.TimestampToken;
 import sun.misc.BASE64Decoder;
-import sun.misc.SharedSecrets;
 
 import sun.security.jca.Providers;
 
@@ -486,12 +485,7 @@ public class SignatureFileVerifier {
                 signers = new ArrayList<CodeSigner>();
             }
             // Append the new code signer
-            CodeSigner signer = new CodeSigner(certChain, getTimestamp(info));
-            if (block.getCRLs() != null) {
-                SharedSecrets.getJavaSecurityCodeSignerAccess().setCRLs(
-                        signer, block.getCRLs());
-            }
-            signers.add(signer);
+            signers.add(new CodeSigner(certChain, getTimestamp(info)));
 
             if (debug != null) {
                 debug.println("Signature Block Certificate: " +

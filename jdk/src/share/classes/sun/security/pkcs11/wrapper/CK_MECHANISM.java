@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -48,6 +48,7 @@
 package sun.security.pkcs11.wrapper;
 
 import java.math.BigInteger;
+import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * class CK_MECHANISM specifies a particular mechanism and any parameters it
@@ -124,6 +125,10 @@ public class CK_MECHANISM {
     }
 
     public CK_MECHANISM(long mechanism, Long params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_AES_CTR_PARAMS params) {
         init(mechanism, params);
     }
 

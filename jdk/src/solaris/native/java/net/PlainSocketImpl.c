@@ -42,8 +42,8 @@
 #include <fcntl.h>
 #endif
 #ifdef __linux__
-#include <linux/unistd.h>
-#include <linux/sysctl.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
 #endif
 
 #include "jvm.h"
