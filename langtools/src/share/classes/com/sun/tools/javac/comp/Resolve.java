@@ -45,7 +45,9 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import javax.lang.model.element.ElementVisitor;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -896,7 +898,8 @@ public class Resolve {
                           bestSoFar,
                           allowBoxing,
                           useVarargs,
-                          operator);
+                          operator,
+                          new HashSet<TypeSymbol>());
     }
     // where
     private Symbol findMethod(Env<AttrContext> env,
@@ -909,11 +912,13 @@ public class Resolve {
                               Symbol bestSoFar,
                               boolean allowBoxing,
                               boolean useVarargs,
-                              boolean operator) {
+                              boolean operator,
+                              Set<TypeSymbol> seen) {
         for (Type ct = intype; ct.tag == CLASS || ct.tag == TYPEVAR; ct = types.supertype(ct)) {
             while (ct.tag == TYPEVAR)
                 ct = ct.getUpperBound();
             ClassSymbol c = (ClassSymbol)ct.tsym;
+            if (!seen.add(c)) return bestSoFar;
             if ((c.flags() & (ABSTRACT | INTERFACE | ENUM)) == 0)
                 abstractok = false;
             for (Scope.Entry e = c.members().lookup(name);
@@ -942,7 +947,7 @@ public class Resolve {
                     bestSoFar = findMethod(env, site, name, argtypes,
                                            typeargtypes,
                                            l.head, abstractok, bestSoFar,
-                                           allowBoxing, useVarargs, operator);
+                                           allowBoxing, useVarargs, operator, seen);
                 }
                 if (concrete != bestSoFar &&
                     concrete.kind < ERR  && bestSoFar.kind < ERR &&
