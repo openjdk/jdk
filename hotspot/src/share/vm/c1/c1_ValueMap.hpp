@@ -141,7 +141,8 @@ class ValueNumberingVisitor: public InstructionVisitor {
 
   // visitor functions
   void do_StoreField     (StoreField*      x) {
-    if (!x->is_initialized()) {
+    if (x->is_init_point()) {
+      // putstatic is an initialization point so treat it as a wide kill
       kill_memory();
     } else {
       kill_field(x->field());
@@ -159,7 +160,8 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_Local          (Local*           x) { /* nothing to do */ }
   void do_Constant       (Constant*        x) { /* nothing to do */ }
   void do_LoadField      (LoadField*       x) {
-    if (!x->is_initialized()) {
+    if (x->is_init_point()) {
+      // getstatic is an initialization point so treat it as a wide kill
       kill_memory();
     }
   }
