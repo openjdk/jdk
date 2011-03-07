@@ -1616,8 +1616,13 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
 
   AccessFlags access_flags;
   if (name == vmSymbols::class_initializer_name()) {
-    // We ignore the access flags for a class initializer. (JVM Spec. p. 116)
-    flags = JVM_ACC_STATIC;
+    // We ignore the other access flags for a valid class initializer.
+    // (JVM Spec 2nd ed., chapter 4.6)
+    if (_major_version < 51) { // backward compatibility
+      flags = JVM_ACC_STATIC;
+    } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
+      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+    }
   } else {
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
   }
