@@ -136,7 +136,7 @@ class UnixChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(dfd, path, pathForPermissionCheck, flags, mode);
-        return FileChannelImpl.open(fdObj, flags.read, flags.write, null);
+        return FileChannelImpl.open(fdObj, flags.read, flags.write, flags.append, null);
     }
 
     /**

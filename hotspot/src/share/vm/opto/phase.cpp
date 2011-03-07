@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,16 +99,18 @@ void Phase::print_timers() {
   tty->print_cr ("    stub compilation     : %3.3f sec.", Phase::_t_stubCompilation.seconds());
   tty->print_cr ("  Phases:");
   tty->print_cr ("    parse          : %3.3f sec", Phase::_t_parser.seconds());
-  if (DoEscapeAnalysis) {
-    tty->print_cr ("    escape analysis   : %3.3f sec", Phase::_t_escapeAnalysis.seconds());
-  }
   tty->print_cr ("    optimizer      : %3.3f sec", Phase::_t_optimizer.seconds());
   if( Verbose || WizardMode ) {
+    if (DoEscapeAnalysis) {
+      // EA is part of Optimizer.
+      tty->print_cr ("      escape analysis: %3.3f sec", Phase::_t_escapeAnalysis.seconds());
+    }
     tty->print_cr ("      iterGVN        : %3.3f sec", Phase::_t_iterGVN.seconds());
     tty->print_cr ("      idealLoop      : %3.3f sec", Phase::_t_idealLoop.seconds());
     tty->print_cr ("      idealLoopVerify: %3.3f sec", Phase::_t_idealLoopVerify.seconds());
     tty->print_cr ("      ccp            : %3.3f sec", Phase::_t_ccp.seconds());
     tty->print_cr ("      iterGVN2       : %3.3f sec", Phase::_t_iterGVN2.seconds());
+    tty->print_cr ("      macroExpand    : %3.3f sec", Phase::_t_macroExpand.seconds());
     tty->print_cr ("      graphReshape   : %3.3f sec", Phase::_t_graphReshaping.seconds());
     double optimizer_subtotal = Phase::_t_iterGVN.seconds() +
       Phase::_t_idealLoop.seconds() + Phase::_t_ccp.seconds() +
@@ -133,18 +135,15 @@ void Phase::print_timers() {
     double percent_of_regalloc = ((regalloc_subtotal == 0.0) ? 0.0 : (regalloc_subtotal / Phase::_t_registerAllocation.seconds() * 100.0));
     tty->print_cr ("      subtotal       : %3.3f sec,  %3.2f %%", regalloc_subtotal, percent_of_regalloc);
   }
-  tty->print_cr ("    macroExpand    : %3.3f sec", Phase::_t_macroExpand.seconds());
   tty->print_cr ("    blockOrdering  : %3.3f sec", Phase::_t_blockOrdering.seconds());
   tty->print_cr ("    peephole       : %3.3f sec", Phase::_t_peephole.seconds());
   tty->print_cr ("    codeGen        : %3.3f sec", Phase::_t_codeGeneration.seconds());
   tty->print_cr ("    install_code   : %3.3f sec", Phase::_t_registerMethod.seconds());
   tty->print_cr ("    -------------- : ----------");
   double phase_subtotal = Phase::_t_parser.seconds() +
-    (DoEscapeAnalysis ? Phase::_t_escapeAnalysis.seconds() : 0.0) +
     Phase::_t_optimizer.seconds() + Phase::_t_graphReshaping.seconds() +
     Phase::_t_matcher.seconds() + Phase::_t_scheduler.seconds() +
     Phase::_t_registerAllocation.seconds() + Phase::_t_blockOrdering.seconds() +
-    Phase::_t_macroExpand.seconds() + Phase::_t_peephole.seconds() +
     Phase::_t_codeGeneration.seconds() + Phase::_t_registerMethod.seconds();
   double percent_of_method_compile = ((phase_subtotal == 0.0) ? 0.0 : phase_subtotal / Phase::_t_methodCompilation.seconds()) * 100.0;
   // counters inside Compile::CodeGen include time for adapters and stubs

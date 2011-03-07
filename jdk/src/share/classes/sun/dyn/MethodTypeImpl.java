@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,9 +498,12 @@ public class MethodTypeImpl {
 
     public static Invokers invokers(Access token, MethodType type) {
         Access.check(token);
+        return invokers(type);
+    }
+    /*non-public*/ static Invokers invokers(MethodType type) {
         Invokers inv = METHOD_TYPE_FRIEND.getInvokers(type);
         if (inv != null)  return inv;
-        inv = new Invokers(token, type);
+        inv = new Invokers(type);
         METHOD_TYPE_FRIEND.setInvokers(type, inv);
         return inv;
     }

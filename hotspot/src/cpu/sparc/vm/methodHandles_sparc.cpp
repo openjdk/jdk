@@ -596,16 +596,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ st_ptr(O1_scratch, Address(O0_argslot, 0));
       } else {
         Address prim_value_addr(O1_scratch, java_lang_boxing_object::value_offset_in_bytes(arg_type));
-        __ load_sized_value(prim_value_addr, O2_scratch, type2aelembytes(arg_type), is_signed_subword_type(arg_type));
-        if (arg_slots == 2) {
-          __ unimplemented("not yet tested");
-#ifndef _LP64
-          __ signx(O2_scratch, O3_scratch);  // Sign extend
-#endif
-          __ st_long(O2_scratch, Address(O0_argslot, 0));  // Uses O2/O3 on !_LP64
-        } else {
-          __ st_ptr( O2_scratch, Address(O0_argslot, 0));
-        }
+        const int arg_size = type2aelembytes(arg_type);
+        __ load_sized_value(prim_value_addr, O2_scratch, arg_size, is_signed_subword_type(arg_type));
+        __ store_sized_value(O2_scratch, Address(O0_argslot, 0), arg_size);  // long store uses O2/O3 on !_LP64
       }
 
       if (direct_to_method) {
@@ -784,11 +777,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       switch (ek) {
       case _adapter_opt_i2l:
         {
-          __ ldsw(arg_lsw, O2_scratch);      // Load LSW
-#ifndef _LP64
-          __ signx(O2_scratch, O3_scratch);  // Sign extend
-#endif
-          __ st_long(O2_scratch, arg_msw);   // Uses O2/O3 on !_LP64
+          __ ldsw(arg_lsw, O2_scratch);                           // Load LSW
+          NOT_LP64(__ srlx(O2_scratch, BitsPerInt, O3_scratch));  // Move high bits to lower bits for std
+          __ st_long(O2_scratch, arg_msw);                        // Uses O2/O3 on !_LP64
         }
         break;
       case _adapter_opt_unboxl:

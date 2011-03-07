@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,6 @@ public:
   // Parallel old support
   virtual void follow_contents(ParCompactionManager* cm) {}
   virtual void update_pointers() {}
-  virtual void update_pointers(HeapWord* beg_addr, HeapWord* end_addr) {}
 #endif // SERIALGC
 
   // CI translation: ProfileData can represent both MethodDataOop data
@@ -748,7 +747,6 @@ public:
   // Parallel old support
   virtual void follow_contents(ParCompactionManager* cm);
   virtual void update_pointers();
-  virtual void update_pointers(HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   oop* adr_receiver(uint row) {
@@ -1224,6 +1222,9 @@ private:
   InvocationCounter _invocation_counter;
   // Same for backedges.
   InvocationCounter _backedge_counter;
+  // Counter values at the time profiling started.
+  int               _invocation_counter_start;
+  int               _backedge_counter_start;
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -1331,6 +1332,28 @@ public:
       return InvocationCounter::count_limit;
     }
     return backedge_counter()->count();
+  }
+
+  int invocation_count_start() {
+    if (invocation_counter()->carry()) {
+      return 0;
+    }
+    return _invocation_counter_start;
+  }
+
+  int backedge_count_start() {
+    if (backedge_counter()->carry()) {
+      return 0;
+    }
+    return _backedge_counter_start;
+  }
+
+  int invocation_count_delta() { return invocation_count() - invocation_count_start(); }
+  int backedge_count_delta()   { return backedge_count()   - backedge_count_start();   }
+
+  void reset_start_counters() {
+    _invocation_counter_start = invocation_count();
+    _backedge_counter_start = backedge_count();
   }
 
   InvocationCounter* invocation_counter()     { return &_invocation_counter; }

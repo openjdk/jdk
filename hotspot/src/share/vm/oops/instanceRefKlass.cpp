@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,33 +341,6 @@ int instanceRefKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
     specialized_oop_update_pointers<narrowOop>(this, cm, obj);
   } else {
     specialized_oop_update_pointers<oop>(this, cm, obj);
-  }
-  return size_helper();
-}
-
-
-template <class T> void
-specialized_oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                HeapWord* beg_addr, HeapWord* end_addr) {
-  T* p;
-  T* referent_addr = p = (T*)java_lang_ref_Reference::referent_addr(obj);
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  T* next_addr = p = (T*)java_lang_ref_Reference::next_addr(obj);
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  T* discovered_addr = p = (T*)java_lang_ref_Reference::discovered_addr(obj);
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  debug_only(trace_reference_gc("instanceRefKlass::oop_update_ptrs", obj,
-                                referent_addr, next_addr, discovered_addr);)
-}
-
-int
-instanceRefKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                      HeapWord* beg_addr, HeapWord* end_addr) {
-  instanceKlass::oop_update_pointers(cm, obj, beg_addr, end_addr);
-  if (UseCompressedOops) {
-    specialized_oop_update_pointers<narrowOop>(cm, obj, beg_addr, end_addr);
-  } else {
-    specialized_oop_update_pointers<oop>(cm, obj, beg_addr, end_addr);
   }
   return size_helper();
 }
