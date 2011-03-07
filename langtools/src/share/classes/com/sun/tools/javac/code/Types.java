@@ -2023,18 +2023,22 @@ public class Types {
             final MethodSymbol cachedImpl;
             final Filter<Symbol> implFilter;
             final boolean checkResult;
+            final int prevMark;
 
             public Entry(MethodSymbol cachedImpl,
                     Filter<Symbol> scopeFilter,
-                    boolean checkResult) {
+                    boolean checkResult,
+                    int prevMark) {
                 this.cachedImpl = cachedImpl;
                 this.implFilter = scopeFilter;
                 this.checkResult = checkResult;
+                this.prevMark = prevMark;
             }
 
-            boolean matches(Filter<Symbol> scopeFilter, boolean checkResult) {
+            boolean matches(Filter<Symbol> scopeFilter, boolean checkResult, int mark) {
                 return this.implFilter == scopeFilter &&
-                        this.checkResult == checkResult;
+                        this.checkResult == checkResult &&
+                        this.prevMark == mark;
             }
         }
 
@@ -2046,10 +2050,11 @@ public class Types {
                 _map.put(ms, new SoftReference<Map<TypeSymbol, Entry>>(cache));
             }
             Entry e = cache.get(origin);
+            CompoundScope members = membersClosure(origin.type);
             if (e == null ||
-                    !e.matches(implFilter, checkResult)) {
-                MethodSymbol impl = implementationInternal(ms, origin, Types.this, checkResult, implFilter);
-                cache.put(origin, new Entry(impl, implFilter, checkResult));
+                    !e.matches(implFilter, checkResult, members.getMark())) {
+                MethodSymbol impl = implementationInternal(ms, origin, checkResult, implFilter);
+                cache.put(origin, new Entry(impl, implFilter, checkResult, members.getMark()));
                 return impl;
             }
             else {
@@ -2057,8 +2062,8 @@ public class Types {
             }
         }
 
-        private MethodSymbol implementationInternal(MethodSymbol ms, TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
-            for (Type t = origin.type; t.tag == CLASS || t.tag == TYPEVAR; t = types.supertype(t)) {
+        private MethodSymbol implementationInternal(MethodSymbol ms, TypeSymbol origin, boolean checkResult, Filter<Symbol> implFilter) {
+            for (Type t = origin.type; t.tag == CLASS || t.tag == TYPEVAR; t = supertype(t)) {
                 while (t.tag == TYPEVAR)
                     t = t.getUpperBound();
                 TypeSymbol c = t.tsym;
@@ -2066,7 +2071,7 @@ public class Types {
                      e.scope != null;
                      e = e.next(implFilter)) {
                     if (e.sym != null &&
-                             e.sym.overrides(ms, origin, types, checkResult))
+                             e.sym.overrides(ms, origin, Types.this, checkResult))
                         return (MethodSymbol)e.sym;
                 }
             }
@@ -2082,45 +2087,34 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="compute transitive closure of all members in given site">
-    public Scope membersClosure(Type site) {
+    public CompoundScope membersClosure(Type site) {
         return membersClosure.visit(site);
     }
 
-    UnaryVisitor<Scope> membersClosure = new UnaryVisitor<Scope>() {
+    UnaryVisitor<CompoundScope> membersClosure = new UnaryVisitor<CompoundScope>() {
 
-        public Scope visitType(Type t, Void s) {
+        public CompoundScope visitType(Type t, Void s) {
             return null;
         }
 
         @Override
-        public Scope visitClassType(ClassType t, Void s) {
+        public CompoundScope visitClassType(ClassType t, Void s) {
             ClassSymbol csym = (ClassSymbol)t.tsym;
             if (csym.membersClosure == null) {
-                Scope membersClosure = new Scope(csym);
+                CompoundScope membersClosure = new CompoundScope(csym);
                 for (Type i : interfaces(t)) {
-                    enterAll(visit(i), membersClosure);
+                    membersClosure.addSubScope(visit(i));
                 }
-                enterAll(visit(supertype(t)), membersClosure);
-                enterAll(csym.members(), membersClosure);
+                membersClosure.addSubScope(visit(supertype(t)));
+                membersClosure.addSubScope(csym.members());
                 csym.membersClosure = membersClosure;
             }
             return csym.membersClosure;
         }
 
         @Override
-        public Scope visitTypeVar(TypeVar t, Void s) {
+        public CompoundScope visitTypeVar(TypeVar t, Void s) {
             return visit(t.getUpperBound());
-        }
-
-        public void enterAll(Scope s, Scope to) {
-            if (s == null) return;
-            List<Symbol> syms = List.nil();
-            for (Scope.Entry e = s.elems ; e != null ; e = e.sibling) {
-                syms = syms.prepend(e.sym);
-            }
-            for (Symbol sym : syms) {
-                to.enter(sym);
-            }
         }
     };
     // </editor-fold>
@@ -2412,6 +2406,38 @@ public class Types {
             public Type apply(Type t) { return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound()); }
         };
     // </editor-fold>
+
+    public Type createMethodTypeWithParameters(Type original, List<Type> newParams) {
+        return original.accept(methodWithParameters, newParams);
+    }
+    // where
+        private final MapVisitor<List<Type>> methodWithParameters = new MapVisitor<List<Type>>() {
+            public Type visitType(Type t, List<Type> newParams) {
+                throw new IllegalArgumentException("Not a method type: " + t);
+            }
+            public Type visitMethodType(MethodType t, List<Type> newParams) {
+                return new MethodType(newParams, t.restype, t.thrown, t.tsym);
+            }
+            public Type visitForAll(ForAll t, List<Type> newParams) {
+                return new ForAll(t.tvars, t.qtype.accept(this, newParams));
+            }
+        };
+
+    public Type createMethodTypeWithThrown(Type original, List<Type> newThrown) {
+        return original.accept(methodWithThrown, newThrown);
+    }
+    // where
+        private final MapVisitor<List<Type>> methodWithThrown = new MapVisitor<List<Type>>() {
+            public Type visitType(Type t, List<Type> newThrown) {
+                throw new IllegalArgumentException("Not a method type: " + t);
+            }
+            public Type visitMethodType(MethodType t, List<Type> newThrown) {
+                return new MethodType(t.argtypes, t.restype, newThrown, t.tsym);
+            }
+            public Type visitForAll(ForAll t, List<Type> newThrown) {
+                return new ForAll(t.tvars, t.qtype.accept(this, newThrown));
+            }
+        };
 
     // <editor-fold defaultstate="collapsed" desc="createErrorType">
     public Type createErrorType(Type originalType) {

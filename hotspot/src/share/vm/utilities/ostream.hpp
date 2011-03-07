@@ -123,16 +123,34 @@ extern outputStream* gclog_or_tty;  // stream for gc log if -Xloggc:<f>, or tty
 
 // advisory locking for the shared tty stream:
 class ttyLocker: StackObj {
+  friend class ttyUnlocker;
  private:
   intx _holder;
 
  public:
   static intx  hold_tty();                // returns a "holder" token
   static void  release_tty(intx holder);  // must witness same token
+  static bool  release_tty_if_locked();   // returns true if lock was released
   static void  break_tty_lock_for_safepoint(intx holder);
 
   ttyLocker()  { _holder = hold_tty(); }
   ~ttyLocker() { release_tty(_holder); }
+};
+
+// Release the tty lock if it's held and reacquire it if it was
+// locked.  Used to avoid lock ordering problems.
+class ttyUnlocker: StackObj {
+ private:
+  bool _was_locked;
+ public:
+  ttyUnlocker()  {
+    _was_locked = ttyLocker::release_tty_if_locked();
+  }
+  ~ttyUnlocker() {
+    if (_was_locked) {
+      ttyLocker::hold_tty();
+    }
+  }
 };
 
 // for writing to strings; buffer will expand automatically

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import sun.dyn.util.ValueConversions;
 import sun.dyn.util.Wrapper;
 import static sun.dyn.MemberName.newIllegalArgumentException;
+import static sun.dyn.MethodTypeImpl.invokers;
 
 /**
  * Adapters which mediate between incoming calls which are not generic
@@ -72,7 +73,7 @@ class ToGeneric {
         assert(entryType.erase() == entryType); // for now
         // incoming call will first "forget" all reference types except Object
         this.entryType = entryType;
-        MethodHandle invoker0 = MethodHandles.exactInvoker(entryType.generic());
+        MethodHandle invoker0 = invokers(entryType.generic()).exactInvoker();
         MethodType rawEntryTypeInit;
         Adapter ad = findAdapter(rawEntryTypeInit = entryType);
         if (ad != null) {
@@ -284,7 +285,7 @@ class ToGeneric {
                 try {
                     entryPoint = MethodHandleImpl.IMPL_LOOKUP.
                                     findSpecial(acls, iname, entryPointType, acls);
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (entryPoint == null)  continue;
                 Constructor<? extends Adapter> ctor = null;

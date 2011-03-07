@@ -74,7 +74,7 @@ public class Scope {
 
     /** A list of scopes to be notified if items are to be removed from this scope.
      */
-    List<Scope> listeners = List.nil();
+    List<ScopeListener> listeners = List.nil();
 
     /** Use as a "not-found" result for lookup.
      * Also used to mark deleted entries in the table.
@@ -219,10 +219,25 @@ public class Scope {
         Entry e = makeEntry(sym, old, elems, s, origin);
         table[hash] = e;
         elems = e;
+
+        //notify listeners
+        for (List<ScopeListener> l = listeners; l.nonEmpty(); l = l.tail) {
+            l.head.symbolAdded(sym, this);
+        }
     }
 
     Entry makeEntry(Symbol sym, Entry shadowed, Entry sibling, Scope scope, Scope origin) {
         return new Entry(sym, shadowed, sibling, scope);
+    }
+
+
+    public interface ScopeListener {
+        public void symbolAdded(Symbol sym, Scope s);
+        public void symbolRemoved(Symbol sym, Scope s);
+    }
+
+    public void addScopeListener(ScopeListener sl) {
+        listeners = listeners.prepend(sl);
     }
 
     /** Remove symbol from this scope.  Used when an inner class
@@ -258,9 +273,9 @@ public class Scope {
             te = te.sibling;
         }
 
-        // remove items from scopes that have done importAll
-        for (List<Scope> l = listeners; l.nonEmpty(); l = l.tail) {
-            l.head.remove(sym);
+        //notify listeners
+        for (List<ScopeListener> l = listeners; l.nonEmpty(); l = l.tail) {
+            l.head.symbolRemoved(sym, this);
         }
     }
 
@@ -393,7 +408,32 @@ public class Scope {
                 };
             }
         };
+    }
 
+    public Iterable<Symbol> getElementsByName(Name name) {
+        return getElementsByName(name, noFilter);
+    }
+
+    public Iterable<Symbol> getElementsByName(final Name name, final Filter<Symbol> sf) {
+        return new Iterable<Symbol>() {
+            public Iterator<Symbol> iterator() {
+                 return new Iterator<Symbol>() {
+                    Scope.Entry currentEntry = lookup(name, sf);
+
+                    public boolean hasNext() {
+                        return currentEntry.scope != null;
+                    }
+                    public Symbol next() {
+                        Scope.Entry prevEntry = currentEntry;
+                        currentEntry = currentEntry.next(sf);
+                        return prevEntry.sym;
+                    }
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
     }
 
     public String toString() {
@@ -488,7 +528,7 @@ public class Scope {
         }
     }
 
-    public static class StarImportScope extends ImportScope {
+    public static class StarImportScope extends ImportScope implements ScopeListener {
 
         public StarImportScope(Symbol owner) {
             super(owner);
@@ -500,8 +540,13 @@ public class Scope {
                     enter(e.sym, fromScope);
             }
             // Register to be notified when imported items are removed
-            fromScope.listeners = fromScope.listeners.prepend(this);
+            fromScope.addScopeListener(this);
         }
+
+        public void symbolRemoved(Symbol sym, Scope s) {
+            remove(sym);
+        }
+        public void symbolAdded(Symbol sym, Scope s) { }
     }
 
     /** An empty scope, into which you can't place anything.  Used for
@@ -535,6 +580,151 @@ public class Scope {
         }
         public Entry lookup(Name name) {
             return delegatee.lookup(name);
+        }
+    }
+
+    /** A class scope adds capabilities to keep track of changes in related
+     *  class scopes - this allows client to realize whether a class scope
+     *  has changed, either directly (because a new member has been added/removed
+     *  to this scope) or indirectly (i.e. because a new member has been
+     *  added/removed into a supertype scope)
+     */
+    public static class CompoundScope extends Scope implements ScopeListener {
+
+        public static final Entry[] emptyTable = new Entry[0];
+
+        private List<Scope> subScopes = List.nil();
+        private int mark = 0;
+
+        public CompoundScope(Symbol owner) {
+            super(null, owner, emptyTable);
+        }
+
+        public void addSubScope(Scope that) {
+           if (that != null) {
+                subScopes = subScopes.prepend(that);
+                that.addScopeListener(this);
+                mark++;
+                for (ScopeListener sl : listeners) {
+                    sl.symbolAdded(null, this); //propagate upwards in case of nested CompoundScopes
+                }
+           }
+         }
+
+        public void symbolAdded(Symbol sym, Scope s) {
+            mark++;
+            for (ScopeListener sl : listeners) {
+                sl.symbolAdded(sym, s);
+            }
+        }
+
+        public void symbolRemoved(Symbol sym, Scope s) {
+            mark++;
+            for (ScopeListener sl : listeners) {
+                sl.symbolRemoved(sym, s);
+            }
+        }
+
+        public int getMark() {
+            return mark;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder buf = new StringBuilder();
+            buf.append("CompoundScope{");
+            String sep = "";
+            for (Scope s : subScopes) {
+                buf.append(sep);
+                buf.append(s);
+                sep = ",";
+            }
+            buf.append("}");
+            return buf.toString();
+        }
+
+        @Override
+        public Iterable<Symbol> getElements(final Filter<Symbol> sf) {
+            return new Iterable<Symbol>() {
+                public Iterator<Symbol> iterator() {
+                    return new CompoundScopeIterator(subScopes) {
+                        Iterator<Symbol> nextIterator(Scope s) {
+                            return s.getElements().iterator();
+                        }
+                    };
+                }
+            };
+        }
+
+        @Override
+        public Iterable<Symbol> getElementsByName(final Name name, final Filter<Symbol> sf) {
+            return new Iterable<Symbol>() {
+                public Iterator<Symbol> iterator() {
+                    return new CompoundScopeIterator(subScopes) {
+                        Iterator<Symbol> nextIterator(Scope s) {
+                            return s.getElementsByName(name, sf).iterator();
+                        }
+                    };
+                }
+            };
+        }
+
+        abstract class CompoundScopeIterator implements Iterator<Symbol> {
+
+            private Iterator<Symbol> currentIterator;
+            private List<Scope> scopesToScan;
+
+            public CompoundScopeIterator(List<Scope> scopesToScan) {
+                this.scopesToScan = scopesToScan;
+                update();
+            }
+
+            abstract Iterator<Symbol> nextIterator(Scope s);
+
+            public boolean hasNext() {
+                return currentIterator != null;
+            }
+
+            public Symbol next() {
+                Symbol sym = currentIterator.next();
+                if (!currentIterator.hasNext()) {
+                    update();
+                }
+                return sym;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+            private void update() {
+                while (scopesToScan.nonEmpty()) {
+                    currentIterator = nextIterator(scopesToScan.head);
+                    scopesToScan = scopesToScan.tail;
+                    if (currentIterator.hasNext()) return;
+                }
+                currentIterator = null;
+            }
+        }
+
+        @Override
+        public Entry lookup(Name name, Filter<Symbol> sf) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Scope dup(Symbol newOwner) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void enter(Symbol sym, Scope s, Scope origin) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void remove(Symbol sym) {
+            throw new UnsupportedOperationException();
         }
     }
 

@@ -776,10 +776,12 @@ public class Resolve {
                     // due to error recovery or mixing incompatible class files
                     return ambiguityError(m1, m2);
                 }
+                List<Type> allThrown = chk.intersect(mt1.getThrownTypes(), mt2.getThrownTypes());
+                Type newSig = types.createMethodTypeWithThrown(mostSpecific.type, allThrown);
                 MethodSymbol result = new MethodSymbol(
                         mostSpecific.flags(),
                         mostSpecific.name,
-                        null,
+                        newSig,
                         mostSpecific.owner) {
                     @Override
                     public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
@@ -789,9 +791,6 @@ public class Resolve {
                             return super.implementation(origin, types, checkResult);
                     }
                 };
-                result.type = (Type)mostSpecific.type.clone();
-                result.type.setThrown(chk.intersect(mt1.getThrownTypes(),
-                                                    mt2.getThrownTypes()));
                 return result;
             }
             if (m1SignatureMoreSpecific) return m1;
@@ -852,13 +851,8 @@ public class Resolve {
             }
             //append varargs element type as last synthetic formal
             args.append(types.elemtype(varargsTypeTo));
-            MethodSymbol msym = new MethodSymbol(to.flags_field,
-                                                 to.name,
-                                                 (Type)to.type.clone(), //see: 6990136
-                                                 to.owner);
-            MethodType mtype = msym.type.asMethodType();
-            mtype.argtypes = args.toList();
-            return msym;
+            Type mtype = types.createMethodTypeWithParameters(to.type, args.toList());
+            return new MethodSymbol(to.flags_field, to.name, mtype, to.owner);
         } else {
             return to;
         }

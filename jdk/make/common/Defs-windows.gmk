@@ -359,7 +359,13 @@ ifeq ($(CC_VERSION),msvc)
 
   # VS2008 has bufferoverflow baked in:
   LFLAGS_VS2008 = 
-  LFLAGS_VS2010 = 
+
+  # VS2010, always need safe exception handlers, not needed on 64bit
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    LFLAGS_VS2010 =  -SAFESEH
+  else
+    LFLAGS_VS2010 =
+  endif
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no
