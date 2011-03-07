@@ -96,6 +96,8 @@ public:
     AwtMenuBar* GetMenuBar();
     void SetMenuBar(AwtMenuBar*);
 
+    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+
     MsgRouting WmGetMinMaxInfo(LPMINMAXINFO lpmmi);
     MsgRouting WmSize(UINT type, int w, int h);
     MsgRouting WmActivate(UINT nState, BOOL fMinimized, HWND opposite);
@@ -117,10 +119,7 @@ public:
     INLINE BOOL IsUndecorated() { return m_isUndecorated; }
 
     INLINE HWND GetProxyFocusOwner() {
-        if (m_proxyFocusOwner == NULL) {
-            CreateProxyFocusOwner();
-        }
-        return m_proxyFocusOwner;
+        return GetHWnd();
     }
 
     void SetMaximizedBounds(int x, int y, int w, int h);
@@ -159,15 +158,7 @@ protected:
     BOOL m_isUndecorated;
 
 private:
-    static LRESULT CALLBACK ProxyWindowProc(HWND hwnd, UINT message,
-                                            WPARAM wParam, LPARAM lParam);
-    void CreateProxyFocusOwner();
-    void DestroyProxyFocusOwner();
-
-    /* creates proxy focus owner, called on Toolkit thread */
-    static void _CreateProxyFocusOwner(void *param);
-    /* destroys proxy focus owner, called on Toolkit thread */
-    static void _DestroyProxyFocusOwner(void *param);
+    LRESULT ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, MsgRouting &mr);
 
     /* The frame's embedding parent (if any) */
     HWND m_parentWnd;
@@ -187,10 +178,6 @@ private:
 
     /* The frame is an InputMethodWindow */
     BOOL m_isInputMethodWindow;
-
-    /* Receives all keyboard input when an AwtWindow which is not an AwtFrame
-       or an AwtDialog (or one of its children) has the logical input focus. */
-    HWND m_proxyFocusOwner;
 
     /* Retains the last/current sm_focusOwner proxied. Actually, it should be
      * a component of an owned window last/currently active. */
