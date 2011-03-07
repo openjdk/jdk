@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipError;
 import java.util.concurrent.ExecutorService;
 
 /*
@@ -78,39 +79,60 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         }
     }
 
+    private boolean ensureFile(Path path) {
+        try {
+            BasicFileAttributes attrs =
+                Files.readAttributes(path, BasicFileAttributes.class);
+            if (!attrs.isRegularFile())
+                throw new UnsupportedOperationException();
+            return true;
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
     @Override
     public FileSystem newFileSystem(URI uri, Map<String, ?> env)
         throws IOException
     {
-        return newFileSystem(uriToPath(uri), env, true);
+        Path path = uriToPath(uri);
+        synchronized(filesystems) {
+            Path realPath = null;
+            if (ensureFile(path)) {
+                realPath = path.toRealPath(true);
+                if (filesystems.containsKey(realPath))
+                    throw new FileSystemAlreadyExistsException();
+            }
+            ZipFileSystem zipfs = null;
+            try {
+                zipfs = new ZipFileSystem(this, path, env);
+            } catch (ZipError ze) {
+                String pname = path.toString();
+                if (pname.endsWith(".zip") || pname.endsWith(".jar"))
+                    throw ze;
+                // assume NOT a zip/jar file
+                throw new UnsupportedOperationException();
+            }
+            filesystems.put(realPath, zipfs);
+            return zipfs;
+        }
     }
 
     @Override
     public FileSystem newFileSystem(Path path, Map<String, ?> env)
         throws IOException
     {
-        if (!path.toUri().getScheme().equalsIgnoreCase("file")) {
+        if (path.getFileSystem() != FileSystems.getDefault()) {
             throw new UnsupportedOperationException();
         }
-        return newFileSystem(path, env, false);
-    }
-
-    private FileSystem newFileSystem(Path path, Map<String, ?> env, boolean checkIfFSExists)
-        throws IOException
-    {
-        synchronized(filesystems) {
-            Path realPath = null;
-            if (checkIfFSExists && Files.exists(path)) {
-                realPath = path.toRealPath(true);
-                if (filesystems.containsKey(realPath))
-                    throw new FileSystemAlreadyExistsException();
-            }
-            ZipFileSystem zipfs = new ZipFileSystem(this, path, env);
-            if (realPath == null)
-                realPath = path.toRealPath(true);
-            if (!filesystems.containsKey(realPath))
-                filesystems.put(realPath, zipfs);
-            return zipfs;
+        ensureFile(path);
+        try {
+            return new ZipFileSystem(this, path, env);
+        } catch (ZipError ze) {
+            String pname = path.toString();
+            if (pname.endsWith(".zip") || pname.endsWith(".jar"))
+                throw ze;
+            throw new UnsupportedOperationException();
         }
     }
 

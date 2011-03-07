@@ -105,6 +105,18 @@ public class ZipFSTester {
             os.write(bits);
             os.close();
 
+            try {
+                provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
+                                       new HashMap<String, Object>());
+                throw new RuntimeException("newFileSystem() opens a directory as zipfs");
+            } catch (UnsupportedOperationException uoe) {}
+
+            try {
+                provider.newFileSystem(src, new HashMap<String, Object>());
+                throw new RuntimeException("newFileSystem() opens a non-zip file as zipfs");
+            } catch (UnsupportedOperationException uoe) {}
+
+
             // copyin
             Path dst = getPathWithParents(fs, tmpName);
             Files.copy(src, dst);

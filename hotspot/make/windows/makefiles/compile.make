@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -140,9 +140,6 @@ COMPILER_NAME=VS2008
 COMPILER_NAME=VS2010
 !endif
 !endif
-
-# Add what version of the compiler we think this is to the compile line
-CPP_FLAGS=$(CPP_FLAGS) /D "MSC_VER=$(MSC_VER)"
 
 # By default, we do not want to use the debug version of the msvcrt.dll file
 #   but if MFC_DEBUG is defined in the environment it will be used.

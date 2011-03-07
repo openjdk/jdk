@@ -55,6 +55,7 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.file.FSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.JavaCompiler;
@@ -1068,6 +1069,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             TaskListener tl = context.get(TaskListener.class);
             if (tl != null)
                 next.put(TaskListener.class, tl);
+
+            FSInfo fsInfo = context.get(FSInfo.class);
+            if (fsInfo != null)
+                next.put(FSInfo.class, fsInfo);
 
             JavaFileManager jfm = context.get(JavaFileManager.class);
             Assert.checkNonNull(jfm);

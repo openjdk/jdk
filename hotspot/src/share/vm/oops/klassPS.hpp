@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,13 @@
    objects that do (or may) cross chunk boundaries; it updates only those   \
    oops that are in the region [beg_addr, end_addr).  */                    \
   virtual void oop_follow_contents(ParCompactionManager* cm, oop obj);      \
-  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj);      \
-  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj,       \
-                                   HeapWord* beg_addr, HeapWord* end_addr);
+  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj);
 
 // Pure virtual version for klass.hpp
 #define PARALLEL_GC_DECLS_PV \
   virtual void oop_push_contents(PSPromotionManager* pm, oop obj) = 0;      \
   virtual void oop_follow_contents(ParCompactionManager* cm, oop obj) = 0;  \
-  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj) = 0;  \
-  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj,       \
-                                   HeapWord* beg_addr, HeapWord* end_addr) = 0;
+  virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj) = 0;
 #else  // SERIALGC
 #define PARALLEL_GC_DECLS
 #define PARALLEL_GC_DECLS_PV

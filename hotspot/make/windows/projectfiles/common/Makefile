@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@ BootStrapDir=$(HOTSPOTJDKDIST)
 JvmtiOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\jvmtifiles
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/jvmti.make
 
-Platform=$(HOTSPOTWORKSPACE)/make/windows/platform_$(BUILDARCH)
-
 !if "$(Variant)" == "compiler2"
 # Pick up rules for building adlc
 !include $(HOTSPOTWORKSPACE)/make/windows/makefiles/adlc.make
@@ -105,17 +103,16 @@ HOTSPOT_VM_DISTRO="OpenJDK"
 !endif
 
 ProjectCreatorIDEOptions =       $(ProjectCreatorIDEOptions) \
-      -platform            $(Platform) \
       -define              HOTSPOT_RELEASE_VERSION=\\\"$(HOTSPOT_RELEASE_VERSION)\\\" \
       -define              JRE_RELEASE_VERSION=\\\"$(JRE_RELEASE_VERSION)\\\" \
       -define              HOTSPOT_VM_DISTRO=\\\"$(HOTSPOT_VM_DISTRO)\\\"
 
-$(HOTSPOTBUILDROOT)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
+$(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
 	@$(RUN_JAVA) -Djava.class.path=$(HOTSPOTBUILDSPACE)/classes ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:
 	@rm -rf $(HOTSPOTBUILDSPACE)/classes
-	@rm -r ../$(ProjectFile)
+	@rm -r $(HOTSPOTBUILDSPACE)/$(ProjectFile)
 
 $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class: $(ProjectCreatorSources)
 	@if exist $(HOTSPOTBUILDSPACE)\classes rmdir /s /q $(HOTSPOTBUILDSPACE)\classes
