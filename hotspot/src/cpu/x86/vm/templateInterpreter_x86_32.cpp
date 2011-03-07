@@ -177,9 +177,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
   TosState incoming_state = state;
-
-  Label interpreter_entry;
-  address compiled_entry = __ pc();
+  address entry = __ pc();
 
 #ifdef COMPILER2
   // The FPU stack is clean if UseSSE >= 2 but must be cleaned in other cases
@@ -196,14 +194,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   } else {
     __ MacroAssembler::verify_FPU(0, "generate_return_entry_for compiled");
   }
-
-  __ jmp(interpreter_entry, relocInfo::none);
-  // emit a sentinel we can test for when converting an interpreter
-  // entry point to a compiled entry point.
-  __ a_long(Interpreter::return_sentinel);
-  __ a_long((int)compiled_entry);
-  address entry = __ pc();
-  __ bind(interpreter_entry);
 
   // In SSE mode, interpreter returns FP results in xmm0 but they need
   // to end up back on the FPU so it can operate on them.

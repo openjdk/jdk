@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1480,6 +1480,8 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
+  ResourceMark rm;
+
   int old_progress = C->major_progress();
 
   // Reset major-progress flag for the driver's heuristics
@@ -2013,7 +2015,7 @@ void PhaseIdealLoop::recompute_dom_depth() {
   if (_dom_stk == NULL) {
     uint init_size = C->unique() / 100; // Guess that 1/100 is a reasonable initial size.
     if (init_size < 10) init_size = 10;
-    _dom_stk = new (C->node_arena()) GrowableArray<uint>(C->node_arena(), init_size, 0, 0);
+    _dom_stk = new GrowableArray<uint>(init_size);
   }
   // Compute new depth for each node.
   for (i = 0; i < _idom_size; i++) {

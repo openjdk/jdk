@@ -1584,6 +1584,11 @@ public class Attr extends JCTree.Visitor {
         if (!TreeInfo.isDiamond(tree)) {
             clazztype = chk.checkClassType(
                 tree.clazz.pos(), clazztype, true);
+        } else if (!clazztype.isErroneous() &&
+                !clazztype.tsym.type.isParameterized()) {
+            log.error(tree.clazz.pos(),
+                    "cant.apply.diamond.1",
+                    clazztype, diags.fragment("diamond.non.generic", clazztype));
         }
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
@@ -1609,7 +1614,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> argtypes = attribArgs(tree.args, localEnv);
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
-        if (TreeInfo.isDiamond(tree)) {
+        if (TreeInfo.isDiamond(tree) && clazztype.tsym.type.isParameterized()) {
             clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
             clazz.type = clazztype;
         } else if (allowDiamondFinder &&

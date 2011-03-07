@@ -51,9 +51,12 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
+import java.awt.image.ComponentSampleModel;
+import java.awt.image.MultiPixelPackedSampleModel;
+import java.awt.image.SampleModel;
+
 import sun.awt.image.ByteComponentRaster;
 import sun.awt.image.BytePackedRaster;
-
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -1272,6 +1275,25 @@ class WPathGraphics extends PathGraphics {
                         return false;
                     }
 
+                    int bitsPerPixel = 24;
+                    SampleModel sm = deepImage.getSampleModel();
+                    if (sm instanceof ComponentSampleModel) {
+                        ComponentSampleModel csm = (ComponentSampleModel)sm;
+                        bitsPerPixel = csm.getPixelStride() * 8;
+                    } else if (sm instanceof MultiPixelPackedSampleModel) {
+                        MultiPixelPackedSampleModel mppsm =
+                            (MultiPixelPackedSampleModel)sm;
+                        bitsPerPixel = mppsm.getPixelBitStride();
+                    } else {
+                        if (icm != null) {
+                            int diw = deepImage.getWidth();
+                            int dih = deepImage.getHeight();
+                            if (diw > 0 && dih > 0) {
+                                bitsPerPixel = data.length*8/diw/dih;
+                            }
+                        }
+                    }
+
                     /* Because the caller's image has been rotated
                      * and sheared into our BufferedImage and because
                      * we will be handing that BufferedImage directly to
@@ -1289,7 +1311,7 @@ class WPathGraphics extends PathGraphics {
                          (float)Math.rint(scaledBounds.height+0.5),
                          0f, 0f,
                          deepImage.getWidth(), deepImage.getHeight(),
-                         icm);
+                         bitsPerPixel, icm);
 
                     setClip(holdClip);
                 }

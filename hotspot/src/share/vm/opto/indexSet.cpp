@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ IndexSet::BitBlock  IndexSet::_empty_block     = IndexSet::BitBlock();
 
 #ifdef ASSERT
 // Initialize statistics counters
-uint IndexSet::_alloc_new = 0;
-uint IndexSet::_alloc_total = 0;
+julong IndexSet::_alloc_new = 0;
+julong IndexSet::_alloc_total = 0;
 
-long IndexSet::_total_bits = 0;
-long IndexSet::_total_used_blocks = 0;
-long IndexSet::_total_unused_blocks = 0;
+julong IndexSet::_total_bits = 0;
+julong IndexSet::_total_used_blocks = 0;
+julong IndexSet::_total_unused_blocks = 0;
 
 // Per set, or all sets operation tracing
 int IndexSet::_serial_count = 1;
@@ -141,7 +141,7 @@ void IndexSet::populate_free_list() {
 
 #ifdef ASSERT
   if (CollectIndexSetStatistics) {
-    _alloc_new += bitblock_alloc_chunk_size;
+    inc_stat_counter(&_alloc_new, bitblock_alloc_chunk_size);
   }
 #endif
 }
@@ -154,7 +154,7 @@ void IndexSet::populate_free_list() {
 IndexSet::BitBlock *IndexSet::alloc_block() {
 #ifdef ASSERT
   if (CollectIndexSetStatistics) {
-    _alloc_total++;
+    inc_stat_counter(&_alloc_total, 1);
   }
 #endif
   Compile *compile = Compile::current();
@@ -391,13 +391,13 @@ void IndexSet::dump() const {
 // Update block/bit counts to reflect that this set has been iterated over.
 
 void IndexSet::tally_iteration_statistics() const {
-  _total_bits += count();
+  inc_stat_counter(&_total_bits, count());
 
   for (uint i = 0; i < _max_blocks; i++) {
     if (_blocks[i] != &_empty_block) {
-      _total_used_blocks++;
+      inc_stat_counter(&_total_used_blocks, 1);
     } else {
-      _total_unused_blocks++;
+      inc_stat_counter(&_total_unused_blocks, 1);
     }
   }
 }
@@ -406,17 +406,17 @@ void IndexSet::tally_iteration_statistics() const {
 // Print statistics about IndexSet usage.
 
 void IndexSet::print_statistics() {
-  long total_blocks = _total_used_blocks + _total_unused_blocks;
+  julong total_blocks = _total_used_blocks + _total_unused_blocks;
   tty->print_cr ("Accumulated IndexSet usage statistics:");
   tty->print_cr ("--------------------------------------");
   tty->print_cr ("  Iteration:");
-  tty->print_cr ("    blocks visited: %d", total_blocks);
-  tty->print_cr ("    blocks empty: %4.2f%%", 100.0*_total_unused_blocks/total_blocks);
-  tty->print_cr ("    bit density (bits/used blocks): %4.2f%%", (double)_total_bits/_total_used_blocks);
-  tty->print_cr ("    bit density (bits/all blocks): %4.2f%%", (double)_total_bits/total_blocks);
+  tty->print_cr ("    blocks visited: " UINT64_FORMAT, total_blocks);
+  tty->print_cr ("    blocks empty: %4.2f%%", 100.0*(double)_total_unused_blocks/total_blocks);
+  tty->print_cr ("    bit density (bits/used blocks): %4.2f", (double)_total_bits/_total_used_blocks);
+  tty->print_cr ("    bit density (bits/all blocks): %4.2f", (double)_total_bits/total_blocks);
   tty->print_cr ("  Allocation:");
-  tty->print_cr ("    blocks allocated: %d", _alloc_new);
-  tty->print_cr ("    blocks used/reused: %d", _alloc_total);
+  tty->print_cr ("    blocks allocated: " UINT64_FORMAT, _alloc_new);
+  tty->print_cr ("    blocks used/reused: " UINT64_FORMAT, _alloc_total);
 }
 
 //---------------------------- IndexSet::verify() -----------------------------

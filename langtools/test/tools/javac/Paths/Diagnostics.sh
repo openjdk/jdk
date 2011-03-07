@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -182,12 +182,12 @@ No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint      -classpath   classesRefRef.jar
 No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -Xbootclasspath/p:classesRefRef.jar Main.java
 
 #----------------------------------------------------------------
-# Class-Path attribute ignored in extdirs or endorseddirs
+# Class-Path attribute followed in extdirs or endorseddirs
 #----------------------------------------------------------------
 Sys mkdir jars
 Sys cp -p classesRefRef.jar jars/.
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -extdirs      jars Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -endorseddirs jars Main.java
+   Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -extdirs      jars Main.java
+   Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -endorseddirs jars Main.java
 
 #----------------------------------------------------------------
 # Bad Jar file in extdirs and endorseddirs should not be ignored

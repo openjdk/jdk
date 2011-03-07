@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2010 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2011 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ CACERTS_BUILD = $(LIBDIR)/security/cacerts
 ifndef OPENJDK
   BLACKLIST_SRC =	$(CLOSED_SHARE_SRC)/lib/security/blacklist
   BLACKLIST_BUILD = $(LIBDIR)/security/blacklist
+  TRUSTEDLIBS_SRC = $(CLOSED_SHARE_SRC)/lib/security/trusted.libraries
+  TRUSTEDLIBS_BUILD = $(LIBDIR)/security/trusted.libraries
 endif
 
 FILES_class = $(FILES_java:%.java=$(CLASSBINDIR)/%.class)
@@ -77,7 +79,7 @@ include $(BUILDDIR)/common/Rules.gmk
 ifdef OPENJDK
 build: properties policy cacerts
 else
-build: properties policy cacerts blacklist
+build: properties policy cacerts blacklist trustedlibs
 endif
 
 install: all
@@ -89,6 +91,8 @@ policy: classes  $(POLICY_BUILD)
 cacerts: classes $(CACERTS_BUILD)
 
 blacklist: classes $(BLACKLIST_BUILD)
+
+trustedlibs: classes $(TRUSTEDLIBS_BUILD)
 
 $(PROPS_BUILD): $(PROPS_SRC)
 	$(install-file)
@@ -102,9 +106,12 @@ $(CACERTS_BUILD): $(CACERTS_SRC)
 $(BLACKLIST_BUILD): $(BLACKLIST_SRC)
 	$(install-file)
 
+$(TRUSTEDLIBS_BUILD): $(TRUSTEDLIBS_SRC)
+	$(install-file)
+
 clean clobber:: .delete.classlist
 	$(RM) -r $(CLASSBINDIR)/java/security
-	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD) $(BLACKLIST_BUILD)
+	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD) $(BLACKLIST_BUILD) $(TRUSTEDLIBS_BUILD)
 
 # Additional Rule for building sun.security.util
 $(CLASSBINDIR)/%.class: $(SHARE_SRC)/sun/%.java

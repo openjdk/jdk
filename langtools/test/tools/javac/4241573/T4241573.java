@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class T4241573 {
         if (!dir.mkdirs())
             throw new Exception("cannot create directories " + dir);
         for (String e: entries) {
-            writeFile(new File(dir, getPathForEntry(e)), getBodyForEntry(e));
+            writeFile(new File(dir, getPathForDirEntry(e)), getBodyForEntry(e));
         }
         return dir;
     }
@@ -134,7 +134,7 @@ public class T4241573 {
         try {
             JarOutputStream jos = new JarOutputStream(out);
             for (String e: entries) {
-                jos.putNextEntry(new JarEntry(getPathForEntry(e)));
+                jos.putNextEntry(new JarEntry(getPathForZipEntry(e)));
                 jos.write(getBodyForEntry(e).getBytes());
             }
             jos.close();
@@ -144,9 +144,14 @@ public class T4241573 {
         return jar;
     }
 
-    /** Return the path for an entry given to createDir or createJar. */
-    String getPathForEntry(String e) {
+    /** Return the path for an entry given to createDir */
+    String getPathForDirEntry(String e) {
         return e.replace(".", File.separator) + ".java";
+    }
+
+    /** Return the path for an entry given to createJar. */
+    String getPathForZipEntry(String e) {
+        return e.replace(".", "/") + ".java";
     }
 
     /** Return the body text for an entry given to createDir or createJar. */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,8 +451,6 @@ public final class MemberName implements Member, Cloneable {
             return type.toString();  // class java.lang.String
         // else it is a field, method, or constructor
         StringBuilder buf = new StringBuilder();
-        if (!isResolved())
-            buf.append("*.");
         if (getDeclaringClass() != null) {
             buf.append(getName(clazz));
             buf.append('.');
@@ -512,14 +510,24 @@ public final class MemberName implements Member, Cloneable {
     public static RuntimeException newIllegalArgumentException(String message) {
         return new IllegalArgumentException(message);
     }
-    public static NoAccessException newNoAccessException(MemberName name, Class<?> lookupClass) {
-        return newNoAccessException("cannot access", name, lookupClass);
+    public static IllegalAccessException newNoAccessException(MemberName name, Object from) {
+        return newNoAccessException("cannot access", name, from);
     }
-    public static NoAccessException newNoAccessException(String message,
-            MemberName name, Class<?> lookupClass) {
+    public static IllegalAccessException newNoAccessException(String message,
+            MemberName name, Object from) {
         message += ": " + name;
-        if (lookupClass != null)  message += ", from " + lookupClass.getName();
-        return new NoAccessException(message);
+        if (from != null)  message += ", from " + from;
+        return new IllegalAccessException(message);
+    }
+    public static ReflectiveOperationException newNoAccessException(MemberName name) {
+        if (name.isResolved())
+            return new IllegalAccessException(name.toString());
+        else if (name.isConstructor())
+            return new NoSuchMethodException(name.toString());
+        else if (name.isMethod())
+            return new NoSuchMethodException(name.toString());
+        else
+            return new NoSuchFieldException(name.toString());
     }
     public static Error uncaughtException(Exception ex) {
         Error err = new InternalError("uncaught exception");
@@ -643,14 +651,20 @@ public final class MemberName implements Member, Cloneable {
         /** Produce a resolved version of the given member.
          *  Super types are searched (for inherited members) if {@code searchSupers} is true.
          *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  If lookup fails or access is not permitted, a {@linkplain NoAccessException} is thrown.
+         *  If lookup fails or access is not permitted, a {@linkplain ReflectiveOperationException} is thrown.
          *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
          */
-        public MemberName resolveOrFail(MemberName m, boolean searchSupers, Class<?> lookupClass) throws NoAccessException {
+        public
+        <NoSuchMemberException extends ReflectiveOperationException>
+        MemberName resolveOrFail(MemberName m, boolean searchSupers, Class<?> lookupClass,
+                                 Class<NoSuchMemberException> nsmClass)
+                throws IllegalAccessException, NoSuchMemberException {
             MemberName result = resolveOrNull(m, searchSupers, lookupClass);
             if (result != null)
                 return result;
-            throw newNoAccessException(m, lookupClass);
+            ReflectiveOperationException ex = newNoAccessException(m);
+            if (ex instanceof IllegalAccessException)  throw (IllegalAccessException) ex;
+            throw nsmClass.cast(ex);
         }
         /** Return a list of all methods defined by the given class.
          *  Super types are searched (for inherited members) if {@code searchSupers} is true.

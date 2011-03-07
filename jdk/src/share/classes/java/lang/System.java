@@ -1102,6 +1102,18 @@ public final class System {
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initializeSystemClass() {
+
+        // VM might invoke JNU_NewStringPlatform() to set those encoding
+        // sensitive properties (user.home, user.name, boot.class.path, etc.)
+        // during "props" initialization, in which it may need access, via
+        // System.getProperty(), to the related system encoding property that
+        // have been initialized (put into "props") at early stage of the
+        // initialization. So make sure the "props" is available at the
+        // very beginning of the initialization and all system properties to
+        // be put into it directly.
+        props = new Properties();
+        initProperties(props);  // initialized by the VM
+
         // There are certain system configurations that may be controlled by
         // VM options such as the maximum amount of direct memory and
         // Integer cache size used to support the object identity semantics
@@ -1112,7 +1124,12 @@ public final class System {
         //
         // See java.lang.Integer.IntegerCache and the
         // sun.misc.VM.saveAndRemoveProperties method for example.
-        props = initSystemProperties();
+        //
+        // Save a private copy of the system properties object that
+        // can only be accessed by the internal implementation.  Remove
+        // certain system properties that are not intended for public access.
+        sun.misc.VM.saveAndRemoveProperties(props);
+
 
         lineSeparator = props.getProperty("line.separator");
         sun.misc.Version.init();
@@ -1123,7 +1140,6 @@ public final class System {
         setIn0(new BufferedInputStream(fdIn));
         setOut0(new PrintStream(new BufferedOutputStream(fdOut, 128), true));
         setErr0(new PrintStream(new BufferedOutputStream(fdErr, 128), true));
-
         // Load the zip library now in order to keep java.util.zip.ZipFile
         // from trying to use itself to load this library later.
         loadLibrary("zip");
@@ -1149,18 +1165,6 @@ public final class System {
 
         // register shared secrets
         setJavaLangAccess();
-    }
-
-    private static Properties initSystemProperties() {
-        Properties props = new Properties();
-        initProperties(props);  // initialized by the VM
-
-        // Save a private copy of the system properties object that
-        // can only be accessed by the internal implementation.  Remove
-        // certain system properties that are not intended for public access.
-        sun.misc.VM.saveAndRemoveProperties(props);
-
-        return props;
     }
 
     private static void setJavaLangAccess() {
