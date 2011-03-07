@@ -38,81 +38,94 @@ public class NoWaitForReplyTest {
 
     public static void main(String[] args) throws Exception {
 
-    boolean passed = false;
-
-    // Set up the environment for creating the initial context
-    Hashtable env = new Hashtable(11);
-        env.put(Context.PROVIDER_URL, "ldap://localhost:22001");
-    env.put(Context.INITIAL_CONTEXT_FACTORY,
-        "com.sun.jndi.ldap.LdapCtxFactory");
-
-    // Wait up to 10 seconds for a response from the LDAP server
-    env.put("com.sun.jndi.ldap.read.timeout", "10000");
-
-    // Don't wait until the first search reply is received
-    env.put("com.sun.jndi.ldap.search.waitForReply", "false");
-
-    // Send the LDAP search request without first authenticating (no bind)
-    env.put("java.naming.ldap.version", "3");
-
-    DummyServer ldapServer = new DummyServer();
-
-    try {
+        boolean passed = false;
 
         // start the LDAP server
+        DummyServer ldapServer = new DummyServer();
         ldapServer.start();
 
-        // Create initial context
-        System.out.println("Client: connecting to the server");
-        DirContext ctx = new InitialDirContext(env);
+        // Set up the environment for creating the initial context
+        Hashtable env = new Hashtable(11);
+        env.put(Context.PROVIDER_URL, "ldap://localhost:" +
+            ldapServer.getPortNumber());
+        env.put(Context.INITIAL_CONTEXT_FACTORY,
+            "com.sun.jndi.ldap.LdapCtxFactory");
 
-        SearchControls scl = new SearchControls();
-        scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        System.out.println("Client: performing search");
-        NamingEnumeration answer =
-        ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
+        // Wait up to 10 seconds for a response from the LDAP server
+        env.put("com.sun.jndi.ldap.read.timeout", "10000");
 
-        // Server will never reply: either we waited in the call above until
-        // the timeout (fail) or we did not wait and reached here (pass).
-        passed = true;
-        System.out.println("Client: did not wait until first reply");
+        // Don't wait until the first search reply is received
+        env.put("com.sun.jndi.ldap.search.waitForReply", "false");
 
-        // Close the context when we're done
-        ctx.close();
+        // Send the LDAP search request without first authenticating (no bind)
+        env.put("java.naming.ldap.version", "3");
 
-    } catch (NamingException e) {
-        // timeout (ignore)
-    }
-    ldapServer.interrupt();
 
-    if (!passed) {
-        throw new Exception(
-        "Test FAILED: should not have waited until first search reply");
-    }
-    System.out.println("Test PASSED");
+        try {
+
+            // Create initial context
+            System.out.println("Client: connecting to the server");
+            DirContext ctx = new InitialDirContext(env);
+
+            SearchControls scl = new SearchControls();
+            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            System.out.println("Client: performing search");
+            NamingEnumeration answer =
+            ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
+
+            // Server will never reply: either we waited in the call above until
+            // the timeout (fail) or we did not wait and reached here (pass).
+            passed = true;
+            System.out.println("Client: did not wait until first reply");
+
+            // Close the context when we're done
+            ctx.close();
+
+        } catch (NamingException e) {
+            // timeout (ignore)
+        }
+        ldapServer.interrupt();
+
+        if (!passed) {
+            throw new Exception(
+                "Test FAILED: should not have waited until first search reply");
+        }
+        System.out.println("Test PASSED");
     }
 
     static class DummyServer extends Thread {
 
-        static int serverPort = 22001;
+        private final ServerSocket serverSocket;
 
-    DummyServer() {
-    }
+        DummyServer() throws IOException {
+            this.serverSocket = new ServerSocket(0);
+            System.out.println("Server: listening on port " + serverSocket.getLocalPort());
+        }
 
-    public void run() {
-        try {
-        ServerSocket serverSock = new ServerSocket(serverPort);
-                Socket socket = serverSock.accept();
+        public int getPortNumber() {
+            return serverSocket.getLocalPort();
+        }
+
+        public void run() {
+            try (Socket socket = serverSocket.accept()) {
                 System.out.println("Server: accepted a connection");
-                BufferedInputStream bin =
-            new BufferedInputStream(socket.getInputStream());
+                InputStream in = socket.getInputStream();
 
-                while (true) {
-                    bin.read();
+                while (!isInterrupted()) {
+                   in.skip(in.available());
                 }
-        } catch (IOException e) {
-        // ignore
+
+            } catch (Exception e) {
+                // ignore
+
+            } finally {
+                System.out.println("Server: shutting down");
+                try {
+                    serverSocket.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
     }
-}
 }
