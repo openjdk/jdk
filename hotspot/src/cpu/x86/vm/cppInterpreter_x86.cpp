@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1899,8 +1899,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   Label do_double;
   Label done_conv;
 
-  address compiled_entry = __ pc();
-
   // The FPU stack is clean if UseSSE >= 2 but must be cleaned in other cases
   if (UseSSE < 2) {
     __ lea(state, Address(rbp,  -(int)sizeof(BytecodeInterpreter)));
@@ -1934,15 +1932,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ jmp(done_conv);
   }
 
-#if 0
-  // emit a sentinel we can test for when converting an interpreter
-  // entry point to a compiled entry point.
-  __ a_long(Interpreter::return_sentinel);
-  __ a_long((int)compiled_entry);
-#endif
-
   // Return point to interpreter from compiled/native method
-
   InternalAddress return_from_native_method(__ pc());
 
   __ bind(done_conv);

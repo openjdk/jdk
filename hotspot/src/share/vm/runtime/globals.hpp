@@ -740,6 +740,9 @@ class CommandLineFlags {
   develop(bool, PrintMalloc, false,                                         \
           "print all malloc/free calls")                                    \
                                                                             \
+  develop(bool, PrintMallocStatistics, false,                               \
+          "print malloc/free statistics")                                   \
+                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \
                                                                             \
@@ -2664,25 +2667,6 @@ class CommandLineFlags {
   product(bool, UseStringCache, false,                                      \
           "Enable String cache capabilities on String.java")                \
                                                                             \
-  /* byte strings */                                                        \
-  product(bool, UseCompressedStrings, false,                                \
-          "Enable byte-valued strings")                                     \
-                                                                            \
-  product(bool, SpecialStringCompress, true,                                \
-          "special version of string compress")                             \
-                                                                            \
-  product(bool, SpecialStringInflate, true,                                 \
-          "special version of string inflate")                              \
-                                                                            \
-  product(bool, SpecialStringCompareToCC, true,                             \
-          "special version of string compareToCC")                          \
-                                                                            \
-  product(bool, SpecialStringIndexOfCC, true,                               \
-          "special version of string indexOfCC")                            \
-                                                                            \
-  product(bool, SpecialStringEqualsCC, true,                                \
-          "special version of string equalsCC")                             \
-                                                                            \
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "counts method invocations")                                      \
@@ -3692,7 +3676,7 @@ class CommandLineFlags {
   product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
-  product(uintx, SharedMiscDataSize,    4*M,                                \
+  product(uintx, SharedMiscDataSize,    NOT_LP64(4*M) LP64_ONLY(5*M),       \
           "Size of the shared data area adjacent to the heap (in bytes)")   \
                                                                             \
   product(uintx, SharedMiscCodeSize,    4*M,                                \

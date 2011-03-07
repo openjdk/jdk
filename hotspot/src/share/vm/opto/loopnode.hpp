@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,7 +700,7 @@ private:
   PhaseIdealLoop( PhaseIterGVN &igvn) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
-    _dom_lca_tags(C->comp_arena()),
+    _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(true) {
     build_and_optimize(false, false);
@@ -721,7 +721,7 @@ public:
   PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool do_loop_pred) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
-    _dom_lca_tags(C->comp_arena()),
+    _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(false) {
     build_and_optimize(do_split_ifs, do_loop_pred);
@@ -731,7 +731,7 @@ public:
   PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
-    _dom_lca_tags(C->comp_arena()),
+    _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(verify_me),
     _verify_only(false) {
     build_and_optimize(false, false);

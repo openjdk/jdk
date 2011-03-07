@@ -320,7 +320,7 @@ public class InvokeGenericTest {
     MethodHandle callable(List<Class<?>> params) {
         MethodHandle mh = CALLABLES.get(params);
         if (mh == null) {
-            mh = collectArguments(collector_MH, methodType(Object.class, params));
+            mh = collector_MH.asType(methodType(Object.class, params));
             CALLABLES.put(params, mh);
         }
         return mh;
@@ -338,7 +338,7 @@ public class InvokeGenericTest {
                 = LOOKUP.findStatic(LOOKUP.lookupClass(),
                                     "collector",
                                     methodType(Object.class, Object[].class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
     }

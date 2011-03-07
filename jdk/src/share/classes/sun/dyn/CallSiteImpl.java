@@ -37,17 +37,17 @@ public class CallSiteImpl {
     static CallSite makeSite(MethodHandle bootstrapMethod,
                              // Callee information:
                              String name, MethodType type,
-                             // Call-site attributes, if any:
+                             // Extra arguments for BSM, if any:
                              Object info,
                              // Caller information:
                              MemberName callerMethod, int callerBCI) {
         Class<?> callerClass = callerMethod.getDeclaringClass();
         Object caller;
-        if (bootstrapMethod.type().parameterType(0) == Class.class)
+        if (bootstrapMethod.type().parameterType(0) == Class.class && TRANSITIONAL_BEFORE_PFD)
             caller = callerClass;  // remove for PFD
         else
             caller = MethodHandleImpl.IMPL_LOOKUP.in(callerClass);
-        if (bootstrapMethod == null) {
+        if (bootstrapMethod == null && TRANSITIONAL_BEFORE_PFD) {
             // If there is no bootstrap method, throw IncompatibleClassChangeError.
             // This is a valid generic error type for resolution (JLS 12.3.3).
             throw new IncompatibleClassChangeError
@@ -56,30 +56,35 @@ public class CallSiteImpl {
         CallSite site;
         try {
             Object binding;
+            info = maybeReBox(info);
             if (info == null) {
-                if (false)  // switch when invokeGeneric works
-                    binding = bootstrapMethod.invokeGeneric(caller, name, type);
-                else
-                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type });
+                binding = bootstrapMethod.invokeGeneric(caller, name, type);
+            } else if (!info.getClass().isArray()) {
+                binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
             } else {
-                info = maybeReBox(info);
-                if (false)  // switch when invokeGeneric works
-                    binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
+                Object[] argv = (Object[]) info;
+                if (3 + argv.length > 255)
+                    new InvokeDynamicBootstrapError("too many bootstrap method arguments");
+                MethodType bsmType = bootstrapMethod.type();
+                if (bsmType.parameterCount() == 4 && bsmType.parameterType(3) == Object[].class)
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type, argv);
                 else
-                    binding = bootstrapMethod.invokeVarargs(new Object[]{ caller, name, type, info });
+                    binding = MethodHandles.spreadInvoker(bsmType, 3)
+                        .invokeGeneric(bootstrapMethod, caller, name, type, argv);
             }
             //System.out.println("BSM for "+name+type+" => "+binding);
             if (binding instanceof CallSite) {
                 site = (CallSite) binding;
-            } else if (binding instanceof MethodHandle) {
+            } else if (binding instanceof MethodHandle && TRANSITIONAL_BEFORE_PFD) {
                 // Transitional!
                 MethodHandle target = (MethodHandle) binding;
                 site = new ConstantCallSite(target);
             } else {
-                throw new ClassCastException("bootstrap method failed to produce a MethodHandle or CallSite");
+                throw new ClassCastException("bootstrap method failed to produce a CallSite");
             }
-            PRIVATE_INITIALIZE_CALL_SITE.invokeExact(site, name, type,
-                                                     callerMethod, callerBCI);
+            if (TRANSITIONAL_BEFORE_PFD)
+                PRIVATE_INITIALIZE_CALL_SITE.invokeExact(site, name, type,
+                                                         callerMethod, callerBCI);
             assert(site.getTarget() != null);
             assert(site.getTarget().type().equals(type));
         } catch (Throwable ex) {
@@ -92,6 +97,8 @@ public class CallSiteImpl {
         }
         return site;
     }
+
+    private static boolean TRANSITIONAL_BEFORE_PFD = true;  // FIXME: remove for PFD
 
     private static Object maybeReBox(Object x) {
         if (x instanceof Integer) {
@@ -117,11 +124,12 @@ public class CallSiteImpl {
     static {
         try {
             PRIVATE_INITIALIZE_CALL_SITE =
+            !TRANSITIONAL_BEFORE_PFD ? null :
             MethodHandleImpl.IMPL_LOOKUP.findVirtual(CallSite.class, "initializeFromJVM",
                 MethodType.methodType(void.class,
                                       String.class, MethodType.class,
                                       MemberName.class, int.class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw uncaughtException(ex);
         }
     }

@@ -800,10 +800,10 @@ struct jpeg_memory_mgr {
    * used for virtual-array buffers.)  May be changed by outer application
    * after creating the JPEG object.
    */
-  long max_memory_to_use;
+  size_t max_memory_to_use;
 
   /* Maximum allocation request accepted by alloc_large. */
-  long max_alloc_chunk;
+  size_t max_alloc_chunk;
 };
 
 

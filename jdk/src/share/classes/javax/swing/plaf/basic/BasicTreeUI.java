@@ -1965,18 +1965,18 @@ public class BasicTreeUI extends TreeUI
     }
 
     /** Returns the preferred size to properly display the tree,
-      * this is a cover method for getPreferredSize(c, false).
+      * this is a cover method for getPreferredSize(c, true).
       */
     public Dimension getPreferredSize(JComponent c) {
         return getPreferredSize(c, true);
     }
 
     /** Returns the preferred size to represent the tree in
-      * <I>c</I>.  If <I>checkConsistancy</I> is true
-      * <b>checkConsistancy</b> is messaged first.
+      * <I>c</I>.  If <I>checkConsistency</I> is true
+      * <b>checkConsistency</b> is messaged first.
       */
     public Dimension getPreferredSize(JComponent c,
-                                      boolean checkConsistancy) {
+                                      boolean checkConsistency) {
         Dimension       pSize = this.getPreferredMinSize();
 
         if(!validCachedPreferredSize)

@@ -250,13 +250,6 @@ typeArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
   return typeArrayOop(obj)->object_size();
 }
-
-int
-typeArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                    HeapWord* beg_addr, HeapWord* end_addr) {
-  assert(obj->is_typeArray(),"must be a type array");
-  return typeArrayOop(obj)->object_size();
-}
 #endif // SERIALGC
 
 void typeArrayKlass::initialize(TRAPS) {

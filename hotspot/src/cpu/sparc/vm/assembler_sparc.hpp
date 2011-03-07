@@ -2330,8 +2330,9 @@ public:
   void lcmp( Register Ra, Register Rb, Register Rresult);
 #endif
 
-  // Loading values by size and signed-ness
-  void load_sized_value(Address src, Register dst, size_t size_in_bytes, bool is_signed);
+  // Load and store values by size and signed-ness
+  void load_sized_value( Address src, Register dst, size_t size_in_bytes, bool is_signed);
+  void store_sized_value(Register src, Address dst, size_t size_in_bytes);
 
   void float_cmp( bool is_float, int unordered_result,
                   FloatRegister Fa, FloatRegister Fb,

@@ -31,8 +31,8 @@ package java.dyn;
  * {@linkplain BootstrapMethod bootstrap method},
  * or the bootstrap method has
  * failed to provide a
- * {@linkplain CallSite} call site with a non-null {@linkplain MethodHandle target}
- * of the correct {@linkplain MethodType method type}.
+ * {@linkplain CallSite call site} with a {@linkplain CallSite#getTarget target}
+ * of the correct {@linkplain MethodHandle#type method type}.
  *
  * @author John Rose, JSR 292 EG
  * @since 1.7

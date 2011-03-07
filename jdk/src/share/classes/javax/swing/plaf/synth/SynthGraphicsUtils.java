@@ -510,7 +510,6 @@ public class SynthGraphicsUtils {
         Font holdf = g.getFont();
         Color holdc = g.getColor();
 
-        paintBackground(g, lh);
         paintCheckIcon(g, lh, lr);
         paintIcon(g, lh, lr);
         paintText(g, lh, lr);

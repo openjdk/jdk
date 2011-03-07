@@ -2106,31 +2106,31 @@ public class Check {
     void checkOverrideClashes(DiagnosticPosition pos, Type site, MethodSymbol sym) {
          ClashFilter cf = new ClashFilter(site);
          //for each method m1 that is a member of 'site'...
-         for (Scope.Entry e1 = types.membersClosure(site).lookup(sym.name, cf) ;
-                e1.scope != null ; e1 = e1.next(cf)) {
+         for (Symbol s1 : types.membersClosure(site).getElementsByName(sym.name, cf)) {
             //...find another method m2 that is overridden (directly or indirectly)
             //by method 'sym' in 'site'
-            for (Scope.Entry e2 = types.membersClosure(site).lookup(sym.name, cf) ;
-                    e2.scope != null ; e2 = e2.next(cf)) {
-                if (e1.sym == e2.sym || !sym.overrides(e2.sym, site.tsym, types, false)) continue;
+            for (Symbol s2 : types.membersClosure(site).getElementsByName(sym.name, cf)) {
+                if (s1 == s2 || !sym.overrides(s2, site.tsym, types, false)) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, e1.sym)) &&
-                        types.hasSameArgs(e1.sym.erasure(types), e2.sym.erasure(types))) {
+                if (!types.isSubSignature(sym.type, types.memberType(site, s1)) &&
+                        types.hasSameArgs(s1.erasure(types), s2.erasure(types))) {
                     sym.flags_field |= CLASH;
-                    String key = e2.sym == sym ?
+                    String key = s2 == sym ?
                             "name.clash.same.erasure.no.override" :
                             "name.clash.same.erasure.no.override.1";
                     log.error(pos,
                             key,
                             sym, sym.location(),
-                            e1.sym, e1.sym.location(),
-                            e2.sym, e2.sym.location());
+                            s1, s1.location(),
+                            s2, s2.location());
                     return;
                 }
             }
         }
     }
+
+
 
     /** Check that all static methods accessible from 'site' are
      *  mutually compatible (JLS 8.4.8).
@@ -2142,16 +2142,15 @@ public class Check {
     void checkHideClashes(DiagnosticPosition pos, Type site, MethodSymbol sym) {
         ClashFilter cf = new ClashFilter(site);
         //for each method m1 that is a member of 'site'...
-        for (Scope.Entry e = types.membersClosure(site).lookup(sym.name, cf) ;
-                e.scope != null ; e = e.next(cf)) {
+        for (Symbol s : types.membersClosure(site).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, e.sym)) &&
-                    types.hasSameArgs(e.sym.erasure(types), sym.erasure(types))) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s)) &&
+                    types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                 log.error(pos,
                         "name.clash.same.erasure.no.hide",
                         sym, sym.location(),
-                        e.sym, e.sym.location());
+                        s, s.location());
                 return;
              }
          }

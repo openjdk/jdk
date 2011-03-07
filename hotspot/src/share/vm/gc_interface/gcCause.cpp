@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,28 +92,3 @@ const char* GCCause::to_string(GCCause::Cause cause) {
   }
   ShouldNotReachHere();
 }
-
-#ifndef PRODUCT
-
-bool GCCause::is_for_full_collection(GCCause::Cause cause) {
-  bool result;
-
-  // There are more GCCause::Cause types than listed here.
-  // For brevity, we list only those that cause full collections.
-  switch (cause) {
-    case _allocation_failure:
-    case _tenured_generation_full:
-    case _permanent_generation_full:
-    case _cms_generation_full:
-    case _last_ditch_collection:
-      result = true;
-      break;
-
-    default:
-      result = false;
-      break;
-  }
-  return result;
-}
-
-#endif // PRODUCT
