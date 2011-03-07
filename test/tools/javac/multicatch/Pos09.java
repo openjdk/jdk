@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,36 @@
  * questions.
  */
 
-// key: compiler.misc.diamond.invalid.args
-// key: compiler.misc.diamond
-// key: compiler.err.cant.apply.diamond.1
+/*
+ * @test
+ * @bug 6943289 7020044
+ *
+ * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
+ * @author mcimadamore
+ * @compile Pos09.java
+ *
+ */
 
-class DiamondInvalidArgs {
-    static class Foo<X extends Number & Comparable<Number>,
-                           Y extends Number & Comparable<Number>> { }
-    Foo<?,?> foo = new Foo<>();
+class Pos09 {
+
+    static class Foo<X> {
+       Foo(X x) {}
+    }
+
+    static interface Base<X> {}
+    static class A extends Exception implements Base<String> {}
+    static class B extends Exception implements Base<Integer> {}
+
+    void m() {
+        try {
+            if (true) {
+                throw new A();
+            }
+            else {
+                throw new B();
+            }
+        } catch (A | B ex) {
+            Foo<?> f = new Foo<>(ex);
+        }
+    }
 }

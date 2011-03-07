@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,31 @@
 
 /*
  * @test
- * @bug 6939620 7020044
+ * @bug 6939620 6894753 7020044
  *
- * @summary  basic test for diamond (generic/non-generic constructors)
+ * @summary  Diamond and subtyping
  * @author mcimadamore
- * @compile Pos01.java
- * @run main Pos01
+ * @compile Pos06.java
  *
  */
 
-public class Pos01<X> {
-
-    Pos01(X x) {}
-
-    <Z> Pos01(X x, Z z) {}
-
-    void test() {
-        Pos01<Integer> p1 = new Pos01<>(1);
-        Pos01<? extends Integer> p2 = new Pos01<>(1);
-        Pos01<?> p3 = new Pos01<>(1);
-        Pos01<? super Integer> p4 = new Pos01<>(1);
-
-        Pos01<Integer> p5 = new Pos01<>(1, "");
-        Pos01<? extends Integer> p6 = new Pos01<>(1, "");
-        Pos01<?> p7 = new Pos01<>(1, "");
-        Pos01<? super Integer> p8 = new Pos01<>(1, "");
+class Pos06 {
+    static class Foo<X> {
+        Foo(X x) {  }
     }
 
-    public static void main(String[] args) {
-        Pos01<String> p1 = new Pos01<>("");
-        p1.test();
+    static class DoubleFoo<X,Y> {
+        DoubleFoo(X x,Y y) {  }
     }
+
+    static class TripleFoo<X,Y,Z> {
+        TripleFoo(X x,Y y,Z z) {  }
+    }
+
+    Foo<? extends Integer> fi = new Foo<>(1);
+    Foo<?> fw = new Foo<>(fi);
+    Foo<? extends Double> fd = new Foo<>(3.0);
+    DoubleFoo<?,?> dw = new DoubleFoo<>(fi,fd);
+    Foo<String> fs = new Foo<>("one");
+    TripleFoo<?,?,?> tw = new TripleFoo<>(fi,fd,fs);
 }

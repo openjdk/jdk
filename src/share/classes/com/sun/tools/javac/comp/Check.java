@@ -664,40 +664,25 @@ public class Check {
             return true;
     }
 
-    /** Check that the type inferred using the diamond operator does not contain
-     *  non-denotable types such as captured types or intersection types.
-     *  @param t the type inferred using the diamond operator
+    /** Check that usage of diamond operator is correct (i.e. diamond should not
+     * be used with non-generic classes or in anonymous class creation expressions)
      */
-    List<Type> checkDiamond(ClassType t) {
-        DiamondTypeChecker dtc = new DiamondTypeChecker();
-        ListBuffer<Type> buf = ListBuffer.lb();
-        for (Type arg : t.getTypeArguments()) {
-            if (!dtc.visit(arg, null)) {
-                buf.append(arg);
-            }
-        }
-        return buf.toList();
-    }
-
-    static class DiamondTypeChecker extends Types.SimpleVisitor<Boolean, Void> {
-        public Boolean visitType(Type t, Void s) {
-            return true;
-        }
-        @Override
-        public Boolean visitClassType(ClassType t, Void s) {
-            if (t.isCompound()) {
-                return false;
-            }
-            for (Type targ : t.getTypeArguments()) {
-                if (!visit(targ, s)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        @Override
-        public Boolean visitCapturedType(CapturedType t, Void s) {
-            return false;
+    Type checkDiamond(JCNewClass tree, Type t) {
+        if (!TreeInfo.isDiamond(tree) ||
+                t.isErroneous()) {
+            return checkClassType(tree.clazz.pos(), t, true);
+        } else if (tree.def != null) {
+            log.error(tree.clazz.pos(),
+                    "cant.apply.diamond.1",
+                    t, diags.fragment("diamond.and.anon.class", t));
+            return types.createErrorType(t);
+        } else if (!t.tsym.type.isParameterized()) {
+            log.error(tree.clazz.pos(),
+                "cant.apply.diamond.1",
+                t, diags.fragment("diamond.non.generic", t));
+            return types.createErrorType(t);
+        } else {
+            return t;
         }
     }
 

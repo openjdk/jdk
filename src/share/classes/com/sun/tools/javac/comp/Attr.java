@@ -1581,15 +1581,7 @@ public class Attr extends JCTree.Visitor {
         // symbol + type back into the attributed tree.
         Type clazztype = attribType(clazz, env);
         Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype, cdef != null);
-        if (!TreeInfo.isDiamond(tree)) {
-            clazztype = chk.checkClassType(
-                tree.clazz.pos(), clazztype, true);
-        } else if (!clazztype.isErroneous() &&
-                !clazztype.tsym.type.isParameterized()) {
-            log.error(tree.clazz.pos(),
-                    "cant.apply.diamond.1",
-                    clazztype, diags.fragment("diamond.non.generic", clazztype));
-        }
+        clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
             // We have to work in this case to store
@@ -1614,10 +1606,12 @@ public class Attr extends JCTree.Visitor {
         List<Type> argtypes = attribArgs(tree.args, localEnv);
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
-        if (TreeInfo.isDiamond(tree) && clazztype.tsym.type.isParameterized()) {
+        if (TreeInfo.isDiamond(tree) && !clazztype.isErroneous()) {
             clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
             clazz.type = clazztype;
         } else if (allowDiamondFinder &&
+                tree.def == null &&
+                !clazztype.isErroneous() &&
                 clazztype.getTypeArguments().nonEmpty() &&
                 findDiamonds) {
             boolean prevDeferDiags = log.deferDiagnostics;
@@ -1641,8 +1635,7 @@ public class Attr extends JCTree.Visitor {
             if (inferred != null &&
                     !inferred.isErroneous() &&
                     inferred.tag == CLASS &&
-                    types.isAssignable(inferred, pt.tag == NONE ? clazztype : pt, Warner.noWarnings) &&
-                    chk.checkDiamond((ClassType)inferred).isEmpty()) {
+                    types.isAssignable(inferred, pt.tag == NONE ? clazztype : pt, Warner.noWarnings)) {
                 String key = types.isSameType(clazztype, inferred) ?
                     "diamond.redundant.args" :
                     "diamond.redundant.args.1";
@@ -1857,34 +1850,9 @@ public class Attr extends JCTree.Visitor {
                         ex.diagnostic);
             }
         }
-        clazztype = chk.checkClassType(tree.clazz.pos(),
+        return chk.checkClassType(tree.clazz.pos(),
                 clazztype,
                 true);
-        if (clazztype.tag == CLASS) {
-            List<Type> invalidDiamondArgs = chk.checkDiamond((ClassType)clazztype);
-            if (!clazztype.isErroneous() && invalidDiamondArgs.nonEmpty()) {
-                //one or more types inferred in the previous steps is either a
-                //captured type or an intersection type --- we need to report an error.
-                String subkey = invalidDiamondArgs.size() > 1 ?
-                    "diamond.invalid.args" :
-                    "diamond.invalid.arg";
-                //The error message is of the kind:
-                //
-                //cannot infer type arguments for {clazztype}<>;
-                //reason: {subkey}
-                //
-                //where subkey is a fragment of the kind:
-                //
-                //type argument(s) {invalidDiamondArgs} inferred for {clazztype}<> is not allowed in this context
-                log.error(tree.clazz.pos(),
-                            "cant.apply.diamond.1",
-                            diags.fragment("diamond", clazztype.tsym),
-                            diags.fragment(subkey,
-                                           invalidDiamondArgs,
-                                           diags.fragment("diamond", clazztype.tsym)));
-            }
-        }
-        return clazztype;
     }
 
     /** Creates a synthetic scope containing fake generic constructors.
