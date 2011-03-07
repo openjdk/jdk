@@ -65,6 +65,19 @@ ifeq ($(PLATFORM), solaris)
     FILES_reorder += reorder-$(ARCH)
   endif
 endif
+
+ifeq ($(PLATFORM), linux)
+
+  # Suppress gcc warnings like "variable might be clobbered by 'longjmp'
+  # or 'vfork'": this warning indicates that some variable is placed to
+  # a register by optimized compiler and it's value might be lost on longjmp().
+  # Recommended way to avoid such warning is to declare the variable as
+  # volatile to prevent the optimization. However, this approach does not
+  # work because we have to declare all variables as volatile in result.
+
+  OTHER_CFLAGS += -Wno-clobbered
+endif
+
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 include $(BUILDDIR)/common/Library.gmk
 

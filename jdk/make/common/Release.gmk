@@ -125,8 +125,10 @@ JRE_MAN_PAGES =         \
 	tnameserv.1     \
 	unpack200.1
 
+ifndef OPENJDK
 ifeq ($(ARCH_DATA_MODEL),32)
   JRE_MAN_PAGES += javaws.1
+endif
 endif
 
 JDK_MAN_PAGES =            \

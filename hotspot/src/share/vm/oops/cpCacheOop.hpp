@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 #endif // SERIALGC
 
   void update_pointers();
-  void update_pointers(HeapWord* beg_addr, HeapWord* end_addr);
 
   // RedefineClasses() API support:
   // If this constantPoolCacheEntry refers to old_method then update it
@@ -321,9 +320,6 @@ class constantPoolCacheOopDesc: public oopDesc {
  private:
   int             _length;
   constantPoolOop _constant_pool;                // the corresponding constant pool
-  // If true, safe for concurrent GC processing,
-  // Set unconditionally in constantPoolCacheKlass::allocate()
-  volatile bool        _is_conc_safe;
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -389,12 +385,6 @@ class constantPoolCacheOopDesc: public oopDesc {
     assert(!entry_at(primary_index)->is_secondary_entry(), "only one level of indirection");
     return entry_at(primary_index);
   }
-
-  // GC support
-  // If the _length field has not been set, the size of the
-  // constantPoolCache cannot be correctly calculated.
-  bool is_conc_safe()                            { return _is_conc_safe; }
-  void set_is_conc_safe(bool v)                  { _is_conc_safe = v; }
 
   // Code generation
   static ByteSize base_offset()                  { return in_ByteSize(sizeof(constantPoolCacheOopDesc)); }

@@ -23,14 +23,18 @@
 
 /* @test
  * @summary smoke test for invokedynamic instructions
- * @library indify
+ * @build indify.Indify
  * @compile InvokeDynamicPrintArgs.java
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic
  *      indify.Indify
  *      --verify-specifier-count=3 --transitionalJSR292=false
  *      --expand-properties --classpath ${test.classes}
- *      --java InvokeDynamicPrintArgs --check-output
+ *      --java test.java.dyn.InvokeDynamicPrintArgs --check-output
  */
+
+package test.java.dyn;
+
+import org.junit.Test;
 
 import java.util.*;
 import java.io.*;
@@ -51,6 +55,20 @@ public class InvokeDynamicPrintArgs {
         // Hence, BSM specifier count should be 3.  See "--verify-specifier-count=3" above.
         System.out.println("Done printing argument lists.");
         closeBuf();
+    }
+
+    @Test
+    public void testInvokeDynamicPrintArgs() throws IOException {
+        System.err.println(System.getProperties());
+        String testClassPath = System.getProperty("build.test.classes.dir");
+        if (testClassPath == null)  throw new RuntimeException();
+        String[] args = new String[]{
+            "--verify-specifier-count=3", "--transitionalJSR292=false",
+            "--expand-properties", "--classpath", testClassPath,
+            "--java", "test.java.dyn.InvokeDynamicPrintArgs", "--check-output"
+        };
+        System.err.println("Indify: "+Arrays.toString(args));
+        indify.Indify.main(args);
     }
 
     private static PrintStream oldOut;
@@ -79,11 +97,11 @@ public class InvokeDynamicPrintArgs {
     }
     private static final String[] EXPECT_OUTPUT = {
         "Printing some argument lists, starting with a empty one:",
-        "[InvokeDynamicPrintArgs, nothing, ()void][]",
-        "[InvokeDynamicPrintArgs, bar, (java.lang.String,int)void, class java.lang.Void, void type!, 1, 234.5, 67.5, 89][bar arg, 1]",
-        "[InvokeDynamicPrintArgs, bar2, (java.lang.String,int)void, class java.lang.Void, void type!, 1, 234.5, 67.5, 89][bar2 arg, 222]",
-        "[InvokeDynamicPrintArgs, baz, (java.lang.String,int,double)void, 1234.5][baz arg, 2, 3.14]",
-        "[InvokeDynamicPrintArgs, foo, (java.lang.String)void][foo arg]",
+        "[test.java.dyn.InvokeDynamicPrintArgs, nothing, ()void][]",
+        "[test.java.dyn.InvokeDynamicPrintArgs, bar, (String,int)void, class java.lang.Void, void type!, 1, 234.5, 67.5, 89][bar arg, 1]",
+        "[test.java.dyn.InvokeDynamicPrintArgs, bar2, (String,int)void, class java.lang.Void, void type!, 1, 234.5, 67.5, 89][bar2 arg, 222]",
+        "[test.java.dyn.InvokeDynamicPrintArgs, baz, (String,int,double)void, 1234.5][baz arg, 2, 3.14]",
+        "[test.java.dyn.InvokeDynamicPrintArgs, foo, (String)void][foo arg]",
         "Done printing argument lists."
     };
 
@@ -110,18 +128,15 @@ public class InvokeDynamicPrintArgs {
         return lookup().findStatic(lookup().lookupClass(), "bsm", MT_bsm());
     }
 
-    private static CallSite bsm2(Lookup caller, String name, MethodType type, Object arg) throws ReflectiveOperationException {
+    private static CallSite bsm2(Lookup caller, String name, MethodType type, Object... arg) throws ReflectiveOperationException {
         // ignore caller and name, but match the type:
         List<Object> bsmInfo = new ArrayList<>(Arrays.asList(caller, name, type));
-        if (arg instanceof Object[])
-            bsmInfo.addAll(Arrays.asList((Object[])arg));
-        else
-            bsmInfo.add(arg);
+        bsmInfo.addAll(Arrays.asList((Object[])arg));
         return new ConstantCallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
     }
     private static MethodType MT_bsm2() {
         shouldNotCallThis();
-        return methodType(CallSite.class, Lookup.class, String.class, MethodType.class, Object.class);
+        return methodType(CallSite.class, Lookup.class, String.class, MethodType.class, Object[].class);
     }
     private static MethodHandle MH_bsm2() throws ReflectiveOperationException {
         shouldNotCallThis();

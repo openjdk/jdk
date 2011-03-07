@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,9 +212,9 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     //    may change.  The three examples are java.lang.System.in,
     //    java.lang.System.out, and java.lang.System.err.
 
-    klassOop k = _holder->get_klassOop();
+    Handle k = _holder->get_klassOop();
     assert( SystemDictionary::System_klass() != NULL, "Check once per vm");
-    if( k == SystemDictionary::System_klass() ) {
+    if( k() == SystemDictionary::System_klass() ) {
       // Check offsets for case 2: System.in, System.out, or System.err
       if( _offset == java_lang_System::in_offset_in_bytes()  ||
           _offset == java_lang_System::out_offset_in_bytes() ||
