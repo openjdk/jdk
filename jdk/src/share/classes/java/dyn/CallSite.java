@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ static {
 }
 private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String name, MethodType type) {
   // ignore caller and name, but match the type:
-  return new ConstantCallSite(MethodHandles.collectArguments(printArgs, type));
+  return new ConstantCallSite(printArgs.asType(type));
 }
 </pre></blockquote>
  * @author John Rose, JSR 292 EG
@@ -86,6 +86,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
 abstract
 public class CallSite {
     private static final Access IMPL_TOKEN = Access.getToken();
+    static { MethodHandleImpl.initStatics(); }
 
     // Fields used only by the JVM.  Do not use or change.
     private MemberName vmmethod; // supplied by the JVM (ref. to calling method)
@@ -125,8 +126,8 @@ public class CallSite {
     }
 
     /**
-     * Report the type of this call site's target.
-     * Although targets may change, the call site's type can never change.
+     * Returns the type of this call site's target.
+     * Although targets may change, any call site's type is permanent, and can never change to an unequal type.
      * The {@code setTarget} method enforces this invariant by refusing any new target that does
      * not have the previous target's type.
      * @return the type of the current target, which is also the type of any future target
@@ -154,73 +155,40 @@ public class CallSite {
     }
 
     /**
-     * Report the current linkage state of the call site, a value which may change over time.
-     * <p>
-     * If a {@code CallSite} object is returned
-     * from the bootstrap method of the {@code invokedynamic} instruction,
-     * the {@code CallSite} is permanently bound to that instruction.
-     * When the {@code invokedynamic} instruction is executed, the target method
-     * of its associated call site object is invoked directly.
-     * It is as if the instruction calls {@code getTarget} and then
-     * calls {@link MethodHandle#invokeExact invokeExact} on the result.
-     * <p>
-     * Unless specified differently by a subclass,
-     * the interactions of {@code getTarget} with memory are the same
-     * as of a read from an ordinary variable, such as an array element or a
-     * non-volatile, non-final field.
-     * <p>
-     * In particular, the current thread may choose to reuse the result
-     * of a previous read of the target from memory, and may fail to see
-     * a recent update to the target by another thread.
-     * <p>
-     * In a {@linkplain ConstantCallSite constant call site}, the {@code getTarget} method behaves
-     * like a read from a {@code final} field of the {@code CallSite}.
-     * <p>
-     * In a {@linkplain VolatileCallSite volatile call site}, the {@code getTarget} method behaves
-     * like a read from a {@code volatile} field of the {@code CallSite}.
-     * <p>
-     * This method may not be overridden by application code.
+     * Returns the target method of the call site, according to the
+     * behavior defined by this call site's specific class.
+     * The immediate subclasses of {@code CallSite} document the
+     * class-specific behaviors of this method.
+     *
      * @return the current linkage state of the call site, its target method handle
      * @see ConstantCallSite
      * @see VolatileCallSite
      * @see #setTarget
+     * @see ConstantCallSite#getTarget
+     * @see MutableCallSite#getTarget
+     * @see VolatileCallSite#getTarget
      */
-    public final MethodHandle getTarget() {
-        return getTarget0();
-    }
+    public abstract MethodHandle getTarget();
 
     /**
-     * Privileged implementations can override this to force final or volatile semantics on getTarget.
-     */
-    /*package-private*/
-    MethodHandle getTarget0() {
-        return target;
-    }
-
-    /**
-     * Set the target method of this call site.
+     * Updates the target method of this call site, according to the
+     * behavior defined by this call site's specific class.
+     * The immediate subclasses of {@code CallSite} document the
+     * class-specific behaviors of this method.
      * <p>
-     * Unless a subclass of CallSite documents otherwise,
-     * the interactions of {@code setTarget} with memory are the same
-     * as of a write to an ordinary variable, such as an array element or a
-     * non-volatile, non-final field.
-     * <p>
-     * In particular, unrelated threads may fail to see the updated target
-     * until they perform a read from memory.
-     * Stronger guarantees can be created by putting appropriate operations
-     * into the bootstrap method and/or the target methods used
-     * at any given call site.
+     * The type of the new target must be {@linkplain MethodType#equals equal to}
+     * the type of the old target.
+     *
      * @param newTarget the new target
      * @throws NullPointerException if the proposed new target is null
      * @throws WrongMethodTypeException if the proposed new target
      *         has a method type that differs from the previous target
-     * @throws UnsupportedOperationException if the call site is
-     *         in fact a {@link ConstantCallSite}
+     * @see CallSite#getTarget
+     * @see ConstantCallSite#setTarget
+     * @see MutableCallSite#setTarget
+     * @see VolatileCallSite#setTarget
      */
-    public void setTarget(MethodHandle newTarget) {
-        checkTargetChange(this.target, newTarget);
-        setTargetNormal(newTarget);
-    }
+    public abstract void setTarget(MethodHandle newTarget);
 
     void checkTargetChange(MethodHandle oldTarget, MethodHandle newTarget) {
         MethodType oldType = oldTarget.type();
@@ -236,31 +204,31 @@ public class CallSite {
     /**
      * Produce a method handle equivalent to an invokedynamic instruction
      * which has been linked to this call site.
-     * <p>If this call site is a {@linkplain ConstantCallSite constant call site},
-     * this method simply returns the call site's target, since that will never change.
-     * <p>Otherwise, this method is equivalent to the following code:
-     * <p><blockquote><pre>
+     * <p>
+     * This method is equivalent to the following code:
+     * <blockquote><pre>
      * MethodHandle getTarget, invoker, result;
-     * getTarget = MethodHandles.lookup().bind(this, "getTarget", MethodType.methodType(MethodHandle.class));
+     * getTarget = MethodHandles.publicLookup().bind(this, "getTarget", MethodType.methodType(MethodHandle.class));
      * invoker = MethodHandles.exactInvoker(this.type());
      * result = MethodHandles.foldArguments(invoker, getTarget)
      * </pre></blockquote>
+     *
      * @return a method handle which always invokes this call site's current target
      */
-    public final MethodHandle dynamicInvoker() {
-        if (this instanceof ConstantCallSite) {
-            return getTarget0();  // will not change dynamically
-        }
+    public abstract MethodHandle dynamicInvoker();
+
+    /*non-public*/ MethodHandle makeDynamicInvoker() {
         MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
+
     private static final MethodHandle GET_TARGET;
     static {
         try {
             GET_TARGET = MethodHandles.Lookup.IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
-        } catch (NoAccessException ignore) {
+        } catch (ReflectiveOperationException ignore) {
             throw new InternalError();
         }
     }

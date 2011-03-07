@@ -124,7 +124,7 @@ JRE_MAN_PAGES =         \
 	tnameserv.1     \
 	unpack200.1
 
-ifeq ($(ARCH_DATA_MODEL),32)
+ifndef OPENJDK
   JRE_MAN_PAGES += javaws.1
 endif
 
@@ -1098,7 +1098,7 @@ JRE_INFO_FILE = $(JRE_IMAGE_DIR)/release
 
 # Common way to emit a line into the release or info file
 define info-file-item # name value
-$(PRINTF) "%s=\"%s\"\n" $1 $2 >> $@
+$(PRINTF) '%s="%s"\n' $1 $2 >> $@
 endef
 
 # Values to emit

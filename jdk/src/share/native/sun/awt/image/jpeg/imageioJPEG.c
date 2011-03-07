@@ -109,8 +109,8 @@ typedef struct streamBufferStruct {
     jobject stream;            // ImageInputStream or ImageOutputStream
     jbyteArray hstreamBuffer;  // Handle to a Java buffer for the stream
     JOCTET *buf;               // Pinned buffer pointer */
-    int bufferOffset;          // holds offset between unpin and the next pin
-    int bufferLength;          // Allocated, nut just used
+    size_t bufferOffset;          // holds offset between unpin and the next pin
+    size_t bufferLength;          // Allocated, nut just used
     int suspendable;           // Set to true to suspend input
     long remaining_skip;       // Used only on input
 } streamBuffer, *streamBufferPtr;
@@ -129,7 +129,7 @@ typedef struct streamBufferStruct {
  * Used to signal that no data need be restored from an unpin to a pin.
  * I.e. the buffer is empty.
  */
-#define NO_DATA -1
+#define NO_DATA ((size_t)-1)
 
 // Forward reference
 static void resetStreamBuffer(JNIEnv *env, streamBufferPtr sb);
@@ -389,7 +389,6 @@ typedef struct imageIODataStruct {
 static imageIODataPtr initImageioData (JNIEnv *env,
                                        j_common_ptr cinfo,
                                        jobject obj) {
-    int i, j;
 
     imageIODataPtr data = (imageIODataPtr) malloc (sizeof(imageIOData));
     if (data == NULL) {
@@ -982,7 +981,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
     streamBufferPtr sb = &data->streamBuf;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jint ret;
-    int offset, buflen;
+    size_t offset, buflen;
 
     /*
      * The original (jpegdecoder.c) had code here that called
@@ -1520,7 +1519,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_initJPEGImageReader
         imageio_dispose((j_common_ptr)cinfo);
         return 0;
     }
-    return (jlong) ret;
+    return ptr_to_jlong(ret);
 }
 
 /*
@@ -1535,7 +1534,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_setSource
      jlong ptr,
      jobject source) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_common_ptr cinfo;
 
     if (data == NULL) {
@@ -1574,7 +1573,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
     int h_samp0, h_samp1, h_samp2;
     int v_samp0, v_samp1, v_samp2;
     jboolean retval = JNI_FALSE;
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
     struct jpeg_source_mgr *src;
     sun_jpeg_error_ptr jerr;
@@ -1772,7 +1771,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_setOutColorSpace
      jlong ptr,
      jint code) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
 
     if (data == NULL) {
@@ -1814,7 +1813,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
     struct jpeg_source_mgr *src;
     JSAMPROW scanLinePtr = NULL;
     jint bands[MAX_BANDS];
-    int i, j;
+    int i;
     jint *body;
     int scanlineLimit;
     int pixelStride;
@@ -1824,14 +1823,12 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
     pixelBufferPtr pb;
     sun_jpeg_error_ptr jerr;
     boolean done;
-    jint *bandSize;
-    int maxBandValue, halfMaxBandValue;
     boolean mustScale = FALSE;
     boolean progressive = FALSE;
     boolean orderedBands = TRUE;
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
-    unsigned int numBytes;
+    size_t numBytes;
 
     /* verify the inputs */
 
@@ -1849,7 +1846,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
     cinfo = (j_decompress_ptr) data->jpegObj;
 
-    if ((numBands < 1) ||
+    if ((numBands < 1) || (numBands > MAX_BANDS) ||
         (sourceXStart < 0) || (sourceXStart >= (jint)cinfo->image_width) ||
         (sourceYStart < 0) || (sourceYStart >= (jint)cinfo->image_height) ||
         (sourceWidth < 1) || (sourceWidth > (jint)cinfo->image_width) ||
@@ -1863,10 +1860,10 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
         return JNI_FALSE;
     }
 
-    if (stepX > cinfo->image_width) {
+    if (stepX > (jint)cinfo->image_width) {
         stepX = cinfo->image_width;
     }
-    if (stepY > cinfo->image_height) {
+    if (stepY > (jint)cinfo->image_height) {
         stepY = cinfo->image_height;
     }
 
@@ -2119,7 +2116,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_abortRead
      jobject this,
      jlong ptr) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
 
     if (data == NULL) {
         JNU_ThrowByName(env,
@@ -2137,7 +2134,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_resetLibraryState
     (JNIEnv *env,
      jobject this,
      jlong ptr) {
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
 
     if (data == NULL) {
@@ -2159,7 +2156,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_resetReader
      jobject this,
      jlong ptr) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
     sun_jpeg_error_ptr jerr;
 
@@ -2232,7 +2229,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_disposeReader
      jclass reader,
      jlong ptr) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_common_ptr info = destroyImageioData(env, data);
 
     imageio_dispose(info);
@@ -2317,8 +2314,8 @@ imageio_term_destination (j_compress_ptr cinfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     /* find out how much needs to be written */
-    jint datacount = sb->bufferLength - dest->free_in_buffer;
-
+    /* this conversion from size_t to jint is safe, because the lenght of the buffer is limited by jint */
+    jint datacount = (jint)(sb->bufferLength - dest->free_in_buffer);
     if (datacount != 0) {
         RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
 
@@ -2485,7 +2482,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_initJPEGImageWriter
         imageio_dispose((j_common_ptr)cinfo);
         return 0;
     }
-    return (jlong) ret;
+    return ptr_to_jlong(ret);
 }
 
 JNIEXPORT void JNICALL
@@ -2495,7 +2492,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_setDest
      jlong ptr,
      jobject destination) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_compress_ptr cinfo;
 
     if (data == NULL) {
@@ -2526,7 +2523,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeTables
 
     struct jpeg_destination_mgr *dest;
     sun_jpeg_error_ptr jerr;
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_compress_ptr cinfo;
 
     if (data == NULL) {
@@ -2625,9 +2622,10 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
     jint *scanData;
     jint *bandSize;
     int maxBandValue, halfMaxBandValue;
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_compress_ptr cinfo;
     UINT8** scale = NULL;
+
 
     /* verify the inputs */
 
@@ -2740,6 +2738,16 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
                                           buffer);
             JNU_ThrowByName(env, "javax/imageio/IIOException", buffer);
         }
+
+        if (scale != NULL) {
+            for (i = 0; i < numBands; i++) {
+                if (scale[i] != NULL) {
+                    free(scale[i]);
+                }
+            }
+            free(scale);
+        }
+
         free(scanLinePtr);
         return data->abortFlag;
     }
@@ -2953,7 +2961,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_abortWrite
      jobject this,
      jlong ptr) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
 
     if (data == NULL) {
         JNU_ThrowByName(env,
@@ -2970,7 +2978,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_resetWriter
     (JNIEnv *env,
      jobject this,
      jlong ptr) {
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_compress_ptr cinfo;
 
     if (data == NULL) {
@@ -3002,7 +3010,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_disposeWriter
      jclass writer,
      jlong ptr) {
 
-    imageIODataPtr data = (imageIODataPtr) ptr;
+    imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_common_ptr info = destroyImageioData(env, data);
 
     imageio_dispose(info);

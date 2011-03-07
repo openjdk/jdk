@@ -67,7 +67,6 @@ extern "C" void _Atomic_move_long_v9(volatile jlong* src, volatile jlong* dst);
 inline void Atomic_move_long(volatile jlong* src, volatile jlong* dst) {
 #ifdef COMPILER2
   // Compiler2 does not support v8, it is used only for v9.
-  assert (VM_Version::v9_instructions_work(), "only supported on v9");
   _Atomic_move_long_v9(src, dst);
 #else
   // The branch is cheaper then emulated LDD.

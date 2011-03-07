@@ -27,6 +27,9 @@ package sun.net.www.protocol.jar;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.ZipFile;
@@ -208,38 +211,23 @@ public class URLJarFile extends JarFile {
             JarFile result = null;
 
             /* get the stream before asserting privileges */
-            final InputStream in =  url.openConnection().getInputStream();
-
-            try {
+            try (final InputStream in = url.openConnection().getInputStream()) {
                 result = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<JarFile>() {
                         public JarFile run() throws IOException {
-                            OutputStream out = null;
-                            File tmpFile = null;
+                            Path tmpFile = Files.createTempFile("jar_cache", null);
                             try {
-                                tmpFile = File.createTempFile("jar_cache", null);
-                                tmpFile.deleteOnExit();
-                                out  = new FileOutputStream(tmpFile);
-                                int read = 0;
-                                byte[] buf = new byte[BUF_SIZE];
-                                while ((read = in.read(buf)) != -1) {
-                                    out.write(buf, 0, read);
+                                Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController);
+                                tmpFile.toFile().deleteOnExit();
+                                return jarFile;
+                            } catch (Throwable thr) {
+                                try {
+                                    Files.delete(tmpFile);
+                                } catch (IOException ioe) {
+                                    thr.addSuppressed(ioe);
                                 }
-                                out.close();
-                                out = null;
-                                return new URLJarFile(tmpFile, closeController);
-                            } catch (IOException e) {
-                                if (tmpFile != null) {
-                                    tmpFile.delete();
-                                }
-                                throw e;
-                            } finally {
-                                if (in != null) {
-                                    in.close();
-                                }
-                                if (out != null) {
-                                    out.close();
-                                }
+                                throw thr;
                             }
                         }
                     });

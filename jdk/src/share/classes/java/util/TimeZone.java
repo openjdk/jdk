@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,17 +455,28 @@ abstract public class TimeZone implements Serializable, Cloneable {
     /**
      * Returns the amount of time to be added to local standard time
      * to get local wall clock time.
-     * <p>
-     * The default implementation always returns 3600000 milliseconds
-     * (i.e., one hour) if this time zone observes Daylight Saving
-     * Time. Otherwise, 0 (zero) is returned.
-     * <p>
-     * If an underlying TimeZone implementation subclass supports
-     * historical Daylight Saving Time changes, this method returns
-     * the known latest daylight saving value.
+     *
+     * <p>The default implementation returns 3600000 milliseconds
+     * (i.e., one hour) if a call to {@link #useDaylightTime()}
+     * returns {@code true}. Otherwise, 0 (zero) is returned.
+     *
+     * <p>If an underlying {@code TimeZone} implementation subclass
+     * supports historical and future Daylight Saving Time schedule
+     * changes, this method returns the amount of saving time of the
+     * last known Daylight Saving Time rule that can be a future
+     * prediction.
+     *
+     * <p>If the amount of saving time at any given time stamp is
+     * required, construct a {@link Calendar} with this {@code
+     * TimeZone} and the time stamp, and call {@link Calendar#get(int)
+     * Calendar.get}{@code (}{@link Calendar#DST_OFFSET}{@code )}.
      *
      * @return the amount of saving time in milliseconds
      * @since 1.4
+     * @see #inDaylightTime(Date)
+     * @see #getOffset(long)
+     * @see #getOffset(int,int,int,int,int,int)
+     * @see Calendar#ZONE_OFFSET
      */
     public int getDSTSavings() {
         if (useDaylightTime()) {
@@ -475,24 +486,51 @@ abstract public class TimeZone implements Serializable, Cloneable {
     }
 
     /**
-     * Queries if this time zone uses daylight savings time.
-     * <p>
-     * If an underlying <code>TimeZone</code> implementation subclass
-     * supports historical Daylight Saving Time schedule changes, the
-     * method refers to the latest Daylight Saving Time schedule
-     * information.
+     * Queries if this {@code TimeZone} uses Daylight Saving Time.
      *
-     * @return true if this time zone uses daylight savings time,
-     * false, otherwise.
+     * <p>If an underlying {@code TimeZone} implementation subclass
+     * supports historical and future Daylight Saving Time schedule
+     * changes, this method refers to the last known Daylight Saving Time
+     * rule that can be a future prediction and may not be the same as
+     * the current rule. Consider calling {@link #observesDaylightTime()}
+     * if the current rule should also be taken into account.
+     *
+     * @return {@code true} if this {@code TimeZone} uses Daylight Saving Time,
+     *         {@code false}, otherwise.
+     * @see #inDaylightTime(Date)
+     * @see Calendar#DST_OFFSET
      */
     public abstract boolean useDaylightTime();
 
     /**
-     * Queries if the given date is in daylight savings time in
-     * this time zone.
-     * @param date the given Date.
-     * @return true if the given date is in daylight savings time,
-     * false, otherwise.
+     * Returns {@code true} if this {@code TimeZone} is currently in
+     * Daylight Saving Time, or if a transition from Standard Time to
+     * Daylight Saving Time occurs at any future time.
+     *
+     * <p>The default implementation returns {@code true} if
+     * {@code useDaylightTime()} or {@code inDaylightTime(new Date())}
+     * returns {@code true}.
+     *
+     * @return {@code true} if this {@code TimeZone} is currently in
+     * Daylight Saving Time, or if a transition from Standard Time to
+     * Daylight Saving Time occurs at any future time; {@code false}
+     * otherwise.
+     * @since 1.7
+     * @see #useDaylightTime()
+     * @see #inDaylightTime(Date)
+     * @see Calendar#DST_OFFSET
+     */
+    public boolean observesDaylightTime() {
+        return useDaylightTime() || inDaylightTime(new Date());
+    }
+
+    /**
+     * Queries if the given {@code date} is in Daylight Saving Time in
+     * this {@code TimeZone}.
+     *
+     * @param date the given {@code Date}.
+     * @return {@code true} if the given {@code date} is in Daylight Saving Time,
+     *         {@code false}, otherwise.
      */
     abstract public boolean inDaylightTime(Date date);
 
