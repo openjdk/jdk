@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.dyn.MethodHandles.Lookup;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.dyn.util.VerifyType;
-import java.dyn.NoAccessException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -136,6 +135,8 @@ public abstract class MethodHandleImpl {
     }
 
     static {
+        if (!MethodHandleNatives.JVM_SUPPORT)  // force init of native API
+            throw new InternalError("No JVM support for JSR 292");
         // Force initialization of Lookup, so it calls us back as initLookup:
         MethodHandles.publicLookup();
         if (IMPL_LOOKUP_INIT == null)
@@ -167,11 +168,11 @@ public abstract class MethodHandleImpl {
      * @param doDispatch whether the method handle will test the receiver type
      * @param lookupClass access-check relative to this class
      * @return a direct handle to the matching method
-     * @throws NoAccessException if the given method cannot be accessed by the lookup class
+     * @throws IllegalAccessException if the given method cannot be accessed by the lookup class
      */
     public static
     MethodHandle findMethod(Access token, MemberName method,
-            boolean doDispatch, Class<?> lookupClass) throws NoAccessException {
+                            boolean doDispatch, Class<?> lookupClass) throws IllegalAccessException {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
         if (!method.isStatic()) {
@@ -184,7 +185,10 @@ public abstract class MethodHandleImpl {
         if (!mh.isValid())
             throw newNoAccessException(method, lookupClass);
         assert(mh.type() == mtype);
-        return mh;
+        if (!method.isVarargs())
+            return mh;
+        else
+            return mh.asVarargsCollector(mtype.parameterType(mtype.parameterCount()-1));
     }
 
     public static
@@ -302,7 +306,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(AllocateObject.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -317,7 +321,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -469,7 +473,7 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findVirtual(FieldAccessor.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
             if (evclass != vclass || (!isStatic && ecclass != cclass)) {
@@ -537,7 +541,7 @@ public abstract class MethodHandleImpl {
             MethodHandle mh;
             try {
                 mh = IMPL_LOOKUP.findStatic(FieldAccessor.class, name, type);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
             if (caclass != null) {
@@ -1009,7 +1013,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(GuardWithTest.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -1024,7 +1028,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithTest.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -1145,7 +1149,7 @@ public abstract class MethodHandleImpl {
                 MethodHandle invoke = null;
                 try {
                     invoke = lookup.findVirtual(GuardWithCatch.class, name, MethodType.genericMethodType(nargs));
-                } catch (NoAccessException ex) {
+                } catch (ReflectiveOperationException ex) {
                 }
                 if (invoke == null)  break;
                 invokes.add(invoke);
@@ -1160,7 +1164,7 @@ public abstract class MethodHandleImpl {
         static {
             try {
                 VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithCatch.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
         }
@@ -1207,20 +1211,30 @@ public abstract class MethodHandleImpl {
             THROW_EXCEPTION
             = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
                     MethodType.methodType(Empty.class, Throwable.class));
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
-    public static String getNameString(Access token, MethodHandle target) {
+    public static String getNameString(Access token, MethodHandle target, Object type) {
         Access.check(token);
+        if (!(type instanceof MethodType)) {
+            if (type == null)
+                type = target.type();
+            else if (type instanceof MethodHandle)
+                type = ((MethodHandle)type).type();
+        }
         MemberName name = null;
         if (target != null)
             name = MethodHandleNatives.getMethodName(target);
         if (name == null)
-            return "invoke" + target.type();
-        return name.getName() + target.type();
+            return "invoke" + type;
+        return name.getName() + type;
+    }
+
+    public static String getNameString(Access token, MethodHandle target) {
+        return getNameString(token, target, null);
     }
 
     static String addTypeString(Object obj, MethodHandle target) {
@@ -1263,8 +1277,8 @@ public abstract class MethodHandleImpl {
         return MethodHandleNatives.getBootstrap(callerClass);
     }
 
-    public static MethodHandle withTypeHandler(Access token, MethodHandle target, MethodHandle typeHandler) {
+    public static MethodHandle asVarargsCollector(Access token, MethodHandle target, Class<?> arrayType) {
         Access.check(token);
-        return AdapterMethodHandle.makeTypeHandler(token, target, typeHandler);
+        return AdapterMethodHandle.makeVarargsCollector(token, target, arrayType);
     }
 }

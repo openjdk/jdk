@@ -743,6 +743,9 @@ void Node::add_req_batch( Node *n, uint m ) {
 //------------------------------del_req----------------------------------------
 // Delete the required edge and compact the edge array
 void Node::del_req( uint idx ) {
+  assert( idx < _cnt, "oob");
+  assert( !VerifyHashTableKeys || _hash_lock == 0,
+          "remove node from hash table before modifying it");
   // First remove corresponding def-use edge
   Node *n = in(idx);
   if (n != NULL) n->del_out((Node *)this);

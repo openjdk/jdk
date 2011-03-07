@@ -124,11 +124,11 @@ public class CancelledProducerConsumerLoops {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
         oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
 
-        /* PriorityBlockingQueue is unbounded
+        /* unbounded queue implementations are prone to OOME
         oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
+        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
         */
     }
 

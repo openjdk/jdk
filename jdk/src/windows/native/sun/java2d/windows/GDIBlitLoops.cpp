@@ -107,8 +107,16 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
         // could retain their own DIB info and we would not need to
         // recreate it every time.
 
+        // GetRasInfo implicitly calls GetPrimitiveArrayCritical
+        // and since GetDC uses JNI it needs to be called first.
+        HDC hDC = dstOps->GetDC(env, dstOps, 0, NULL, clip, NULL, 0);
+        if (hDC == NULL) {
+            SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+            return;
+        }
         srcOps->GetRasInfo(env, srcOps, &srcInfo);
         if (srcInfo.rasBase == NULL) {
+            dstOps->ReleaseDC(env, dstOps, hDC);
             SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
             return;
         }
@@ -172,13 +180,6 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
             bmi.colors.dwMasks[0] = rmask;
             bmi.colors.dwMasks[1] = gmask;
             bmi.colors.dwMasks[2] = bmask;
-        }
-
-        HDC hDC = dstOps->GetDC(env, dstOps, 0, NULL, clip, NULL, 0);
-        if (hDC == NULL) {
-            SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
-            SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
-            return;
         }
 
         if (fastBlt) {

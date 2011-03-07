@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,10 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-public class Macro {
-    public String name;
-    public String contents;
+/**
+ * @test
+ * @bug 7017746
+ * @summary Regression : C2 compiler crash due to SIGSEGV in PhaseCFG::schedule_early()
+ *
+ * @run main/othervm -Xbatch Test
+ */
+
+public class Test {
+
+  int i;
+
+  static int test(Test t, int a, int b) {
+    int j = t.i;
+    int x = a - b;
+    if (a < b) x = x + j;
+    return x - j;
+  }
+
+  public static void main(String args[]) {
+    Test t = new Test();
+    for (int n = 0; n < 1000000; n++) {
+      int i = test(t, 1, 2);
+    }
+  }
 }
+

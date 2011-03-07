@@ -1040,9 +1040,10 @@ const {
     } else {
       // must read from what 'p' points to in each loop.
       klassOop k = ((volatile oopDesc*)p)->klass_or_null();
-      if (k != NULL &&
-          ((oopDesc*)p)->is_parsable() &&
-          ((oopDesc*)p)->is_conc_safe()) {
+      // We trust the size of any object that has a non-NULL
+      // klass and (for those in the perm gen) is parsable
+      // -- irrespective of its conc_safe-ty.
+      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
         assert(k->is_oop(), "Should really be klass oop.");
         oop o = (oop)p;
         assert(o->is_oop(), "Should be an oop");
@@ -1051,6 +1052,7 @@ const {
         assert(res != 0, "Block size should not be 0");
         return res;
       } else {
+        // May return 0 if P-bits not present.
         return c->block_size_if_printezis_bits(p);
       }
     }

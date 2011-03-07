@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,14 +610,6 @@ static void gen_i2c_adapter(MacroAssembler *masm,
                             const BasicType *sig_bt,
                             const VMRegPair *regs) {
 
-  //
-  // We will only enter here from an interpreted frame and never from after
-  // passing thru a c2i. Azul allowed this but we do not. If we lose the
-  // race and use a c2i we will remain interpreted for the race loser(s).
-  // This removes all sorts of headaches on the x86 side and also eliminates
-  // the possibility of having c2i -> i2c -> c2i -> ... endless transitions.
-
-
   // Note: r13 contains the senderSP on entry. We must preserve it since
   // we may do a i2c -> c2i transition if we lose a race where compiled
   // code goes non-entrant while we get args ready.
@@ -627,6 +619,7 @@ static void gen_i2c_adapter(MacroAssembler *masm,
   // save code can segv when fxsave instructions find improperly
   // aligned stack pointer.
 
+  // Pick up the return address
   __ movptr(rax, Address(rsp, 0));
 
   // Must preserve original SP for loading incoming arguments because

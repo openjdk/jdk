@@ -699,6 +699,17 @@ void ttyLocker::release_tty(intx holder) {
   defaultStream::instance->release(holder);
 }
 
+bool ttyLocker::release_tty_if_locked() {
+  intx thread_id = os::current_thread_id();
+  if (defaultStream::instance->writer() == thread_id) {
+    // release the lock and return true so callers know if was
+    // previously held.
+    release_tty(thread_id);
+    return true;
+  }
+  return false;
+}
+
 void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
   if (defaultStream::instance != NULL &&
       defaultStream::instance->writer() == holder) {
