@@ -350,7 +350,7 @@ class MethodHandleNatives {
             case REF_invokeInterface:   return lookup.findVirtual(      defc, name, (MethodType) type );
             }
             throw new IllegalArgumentException("bad MethodHandle constant "+name+" : "+type);
-        } catch (NoAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
             err.initCause(ex);
             throw err;

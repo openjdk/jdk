@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.dyn;
 import java.dyn.*;
 import java.lang.reflect.*;
 import sun.dyn.util.*;
+import static sun.dyn.MethodTypeImpl.invokers;
 
 /**
  * Adapters which manage MethodHanndle.invokeGeneric calls.
@@ -43,7 +44,7 @@ class InvokeGeneric {
     /** Compute and cache information for this adapter, so that it can
      *  call out to targets of the erasure-family of the given erased type.
      */
-    private InvokeGeneric(MethodType erasedCallerType) throws NoAccessException {
+    private InvokeGeneric(MethodType erasedCallerType) throws ReflectiveOperationException {
         this.erasedCallerType = erasedCallerType;
         this.initialInvoker = makeInitialInvoker();
         assert initialInvoker.type().equals(erasedCallerType
@@ -63,14 +64,14 @@ class InvokeGeneric {
             try {
                 InvokeGeneric gen = new InvokeGeneric(form.erasedType());
                 form.genericInvoker = genericInvoker = gen.initialInvoker;
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
                 throw new RuntimeException(ex);
             }
         }
         return genericInvoker;
     }
 
-    private MethodHandle makeInitialInvoker() throws NoAccessException {
+    private MethodHandle makeInitialInvoker() throws ReflectiveOperationException {
         // postDispatch = #(MH'; MT, MH; A...){MH'(MT, MH; A)}
         MethodHandle postDispatch = makePostDispatchInvoker();
         MethodHandle invoker;
@@ -87,14 +88,14 @@ class InvokeGeneric {
     private MethodHandle makePostDispatchInvoker() {
         // Take (MH'; MT, MH; A...) and run MH'(MT, MH; A...).
         MethodType invokerType = erasedCallerType.insertParameterTypes(0, EXTRA_ARGS);
-        return MethodHandles.exactInvoker(invokerType);
+        return invokers(invokerType).exactInvoker();
     }
     private MethodHandle dropDispatchArguments(MethodHandle targetInvoker) {
         assert(targetInvoker.type().parameterType(0) == MethodHandle.class);
         return MethodHandles.dropArguments(targetInvoker, 1, EXTRA_ARGS);
     }
 
-    private MethodHandle dispatcher(String dispatchName) throws NoAccessException {
+    private MethodHandle dispatcher(String dispatchName) throws ReflectiveOperationException {
         return lookup().bind(this, dispatchName,
                              MethodType.methodType(MethodHandle.class,
                                                    MethodType.class, MethodHandle.class));
@@ -108,7 +109,7 @@ class InvokeGeneric {
      */
     private MethodHandle dispatch(MethodType callerType, MethodHandle target) {
         MethodType targetType = target.type();
-        if (USE_AS_TYPE_PATH || target instanceof AdapterMethodHandle.WithTypeHandler) {
+        if (USE_AS_TYPE_PATH || target.isVarargsCollector()) {
             MethodHandle newTarget = target.asType(callerType);
             targetType = callerType;
             Invokers invokers = MethodTypeImpl.invokers(Access.TOKEN, targetType);

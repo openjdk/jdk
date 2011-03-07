@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,35 +353,6 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   return ik->object_size();
 }
 
-int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                            HeapWord* beg_addr,
-                                            HeapWord* end_addr) {
-  assert(obj->is_klass(),"must be a klass");
-  assert(klassOop(obj)->klass_part()->oop_is_instance_slow(),
-         "must be instance klass");
-
-  instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->update_static_fields(beg_addr, end_addr);
-  ik->vtable()->oop_update_pointers(cm, beg_addr, end_addr);
-  ik->itable()->oop_update_pointers(cm, beg_addr, end_addr);
-
-  oop* const beg_oop = MAX2((oop*)beg_addr, ik->oop_block_beg());
-  oop* const end_oop = MIN2((oop*)end_addr, ik->oop_block_end());
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
-
-  // The oop_map_cache, jni_ids and jni_id_map are allocated from the C heap,
-  // and so don't lie within any 'Chunk' boundaries.  Update them when the
-  // lowest addressed oop in the instanceKlass 'oop_block' is updated.
-  if (beg_oop == ik->oop_block_beg()) {
-    OopClosure* closure = PSParallelCompact::adjust_root_pointer_closure();
-    iterate_c_heap_oops(ik, closure);
-  }
-
-  klassKlass::oop_update_pointers(cm, obj, beg_addr, end_addr);
-  return ik->object_size();
-}
 #endif // SERIALGC
 
 klassOop

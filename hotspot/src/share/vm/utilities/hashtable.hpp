@@ -276,7 +276,7 @@ public:
   }
 
   int index_for(Symbol* name, Handle loader) {
-    return hash_to_index(compute_hash(name, loader));
+    return this->hash_to_index(compute_hash(name, loader));
   }
 };
 

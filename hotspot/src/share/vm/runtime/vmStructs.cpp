@@ -748,7 +748,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
-     IA32_ONLY(static_field(StubRoutines::x86,_call_stub_compiled_return,                     address))                              \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \

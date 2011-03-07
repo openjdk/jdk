@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,12 @@ private:
   // walk the connection graph starting at the node corresponding to "n" and
   // add the index of everything it could point to, to "ptset".  This may cause
   // Phi's encountered to get (re)processed  (which requires "phase".)
-  void PointsTo(VectorSet &ptset, Node * n);
+  VectorSet* PointsTo(Node * n);
+
+  // Reused structures for PointsTo().
+  VectorSet            pt_ptset;
+  VectorSet            pt_visited;
+  GrowableArray<uint>  pt_worklist;
 
   //  Edge manipulation.  The "from_i" and "to_i" arguments are the
   //  node indices of the source and destination of the edge
@@ -334,8 +339,11 @@ private:
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
 
-  // Search for objects which are not scalar replaceable.
-  void verify_escape_state(int nidx, VectorSet& ptset, PhaseTransform* phase);
+  // Adjust escape state after Connection Graph is built.
+  void adjust_escape_state(int nidx, PhaseTransform* phase);
+
+  // Compute the escape information
+  bool compute_escape();
 
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn);
@@ -345,9 +353,6 @@ public:
 
   // Perform escape analysis
   static void do_analysis(Compile *C, PhaseIterGVN *igvn);
-
-  // Compute the escape information
-  bool compute_escape();
 
   // escape state of a node
   PointsToNode::EscapeState escape_state(Node *n);

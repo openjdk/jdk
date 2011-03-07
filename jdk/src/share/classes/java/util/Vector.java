@@ -1050,13 +1050,21 @@ public class Vector<E>
 
     /**
      * Save the state of the {@code Vector} instance to a stream (that
-     * is, serialize it).  This method is present merely for synchronization.
-     * It just calls the default writeObject method.
+     * is, serialize it).
+     * This method performs synchronization to ensure the consistency
+     * of the serialized data.
      */
-    private synchronized void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException
-    {
-        s.defaultWriteObject();
+    private void writeObject(java.io.ObjectOutputStream s)
+            throws java.io.IOException {
+        final java.io.ObjectOutputStream.PutField fields = s.putFields();
+        final Object[] data;
+        synchronized (this) {
+            fields.put("capacityIncrement", capacityIncrement);
+            fields.put("elementCount", elementCount);
+            data = elementData.clone();
+        }
+        fields.put("elementData", data);
+        s.writeFields();
     }
 
     /**

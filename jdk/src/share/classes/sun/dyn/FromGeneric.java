@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.dyn;
 import java.dyn.*;
 import java.lang.reflect.*;
 import sun.dyn.util.*;
+import static sun.dyn.MethodTypeImpl.invokers;
 
 /**
  * Adapters which mediate between incoming calls which are generic
@@ -128,7 +129,7 @@ class FromGeneric {
             MethodType targetType, MethodType internalType) {
         // All the adapters we have here have reference-untyped internal calls.
         assert(internalType == internalType.erase());
-        MethodHandle invoker = MethodHandles.exactInvoker(targetType);
+        MethodHandle invoker = invokers(targetType).exactInvoker();
         // cast all narrow reference types, unbox all primitive arguments:
         MethodType fixArgsType = internalType.changeReturnType(targetType.returnType());
         MethodHandle fixArgs = AdapterMethodHandle.convertArguments(Access.TOKEN,
@@ -203,7 +204,7 @@ class FromGeneric {
             MethodHandle entryPoint = null;
             try {
                 entryPoint = MethodHandleImpl.IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
-            } catch (NoAccessException ex) {
+            } catch (ReflectiveOperationException ex) {
             }
             if (entryPoint == null)  continue;
             Constructor<? extends Adapter> ctor = null;
