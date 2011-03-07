@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1196,11 +1196,6 @@ class PSParallelCompact : AllStatic {
   static inline void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
   static inline void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
 
-  template <class T>
-  static inline void adjust_pointer(T* p,
-                                    HeapWord* beg_addr,
-                                    HeapWord* end_addr);
-
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
 
@@ -1406,15 +1401,6 @@ inline ObjectStartArray* PSParallelCompact::start_array(SpaceId id) {
 
 inline bool PSParallelCompact::should_update_klass(klassOop k) {
   return ((HeapWord*) k) >= dense_prefix(perm_space_id);
-}
-
-template <class T>
-inline void PSParallelCompact::adjust_pointer(T* p,
-                                              HeapWord* beg_addr,
-                                              HeapWord* end_addr) {
-  if (is_in((HeapWord*)p, beg_addr, end_addr)) {
-    adjust_pointer(p);
-  }
 }
 
 #ifdef ASSERT

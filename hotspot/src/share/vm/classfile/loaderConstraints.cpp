@@ -322,8 +322,14 @@ bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
 klassOop LoaderConstraintTable::find_constrained_klass(Symbol* name,
                                                        Handle loader) {
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
-  if (p != NULL && p->klass() != NULL)
+  if (p != NULL && p->klass() != NULL) {
+    if (Klass::cast(p->klass())->oop_is_instance() && !instanceKlass::cast(p->klass())->is_loaded()) {
+      // Only return fully loaded classes.  Classes found through the
+      // constraints might still be in the process of loading.
+      return NULL;
+    }
     return p->klass();
+  }
 
   // No constraints, or else no klass loaded yet.
   return NULL;

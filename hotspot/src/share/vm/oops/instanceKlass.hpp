@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -740,7 +740,6 @@ class instanceKlass: public Klass {
   void follow_static_fields(ParCompactionManager* cm);
   void copy_static_fields(ParCompactionManager* cm);
   void update_static_fields();
-  void update_static_fields(HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   // Naming

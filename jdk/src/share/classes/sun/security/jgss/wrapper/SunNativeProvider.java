@@ -87,6 +87,7 @@ public final class SunNativeProvider extends Provider {
                                 gssLibs = new String[]{
                                     "libgssapi.so",
                                     "libgssapi_krb5.so",
+                                    "libgssapi_krb5.so.2",
                                 };
                             }
                         } else {
