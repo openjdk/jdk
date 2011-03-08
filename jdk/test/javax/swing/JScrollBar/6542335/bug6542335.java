@@ -69,8 +69,6 @@ public class bug6542335 {
 
                 frame.setSize(200, 100);
                 frame.setVisible(true);
-
-                thumbBounds[0] = new Rectangle(ui.getThumbBounds());
             }
         });
 
@@ -78,6 +76,8 @@ public class bug6542335 {
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
+                thumbBounds[0] = new Rectangle(ui.getThumbBounds());
+
                 Point l = sb.getLocationOnScreen();
 
                 robot.mouseMove(l.x + (int) (0.75 * sb.getWidth()), l.y + sb.getHeight() / 2);

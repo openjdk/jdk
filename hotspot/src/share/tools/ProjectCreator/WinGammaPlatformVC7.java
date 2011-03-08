@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
     public void writeProjectFile(String projectFileName, String projectName,
                                  Vector allConfigs) throws IOException {
         System.out.println();
-        System.out.println("    Writing .vcproj file...");
+        System.out.println("    Writing .vcproj file: "+projectFileName);
         // If we got this far without an error, we're safe to actually
         // write the .vcproj file
         printWriter = new PrintWriter(new FileWriter(projectFileName));
@@ -54,9 +54,8 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
                 "SccLocalPath", ""
             }
             );
-
         startTag("Platforms", null);
-        tag("Platform", new String[] {"Name", Util.os});
+        tag("Platform", new String[] {"Name", (String) BuildConfig.getField(null, "PlatformName")});
         endTag("Platforms");
 
         startTag("Configurations", null);
@@ -81,12 +80,47 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
 
     abstract class NameFilter {
-        protected String fname;
+                protected String fname;
 
         abstract boolean match(FileInfo fi);
 
         String  filterString() { return ""; }
         String name() { return this.fname;}
+
+        @Override
+        // eclipse auto-generated
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + ((fname == null) ? 0 : fname.hashCode());
+            return result;
+        }
+
+        @Override
+        // eclipse auto-generated
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            NameFilter other = (NameFilter) obj;
+            if (!getOuterType().equals(other.getOuterType()))
+                return false;
+            if (fname == null) {
+                if (other.fname != null)
+                    return false;
+            } else if (!fname.equals(other.fname))
+                return false;
+            return true;
+        }
+
+        // eclipse auto-generated
+        private WinGammaPlatformVC7 getOuterType() {
+            return WinGammaPlatformVC7.this;
+        }
     }
 
     class DirectoryFilter extends NameFilter {
@@ -109,9 +143,50 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
 
         boolean match(FileInfo fi) {
-           int lastSlashIndex = fi.full.lastIndexOf('/');
-           String fullDir = fi.full.substring(0, lastSlashIndex);
-           return fullDir.endsWith(dir);
+            int lastSlashIndex = fi.full.lastIndexOf('/');
+            String fullDir = fi.full.substring(0, lastSlashIndex);
+            return fullDir.endsWith(dir);
+        }
+
+        @Override
+        // eclipse auto-generated
+        public int hashCode() {
+            final int prime = 31;
+            int result = super.hashCode();
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + baseLen;
+            result = prime * result + ((dir == null) ? 0 : dir.hashCode());
+            result = prime * result + dirLen;
+            return result;
+        }
+
+        @Override
+        // eclipse auto-generated
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            DirectoryFilter other = (DirectoryFilter) obj;
+            if (!getOuterType().equals(other.getOuterType()))
+                return false;
+            if (baseLen != other.baseLen)
+                return false;
+            if (dir == null) {
+                if (other.dir != null)
+                    return false;
+            } else if (!dir.equals(other.dir))
+                return false;
+            if (dirLen != other.dirLen)
+                return false;
+            return true;
+        }
+
+        // eclipse auto-generated
+        private WinGammaPlatformVC7 getOuterType() {
+            return WinGammaPlatformVC7.this;
         }
     }
 
@@ -232,32 +307,39 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
         DirectoryFilter container = null;
         for(FileInfo fileInfo : files) {
 
-           if (!fileInfo.full.startsWith(sbase)) {
-              continue;
-           }
+            if (!fileInfo.full.startsWith(sbase)) {
+                continue;
+            }
 
-           int lastSlash = fileInfo.full.lastIndexOf('/');
-           String dir = fileInfo.full.substring(sbase.length(), lastSlash);
-           if(dir.equals("share/vm")) {
-              // skip files directly in share/vm - should only be precompiled.hpp which is handled below
-              continue;
-           }
-           if (!dir.equals(currentDir)) {
-              currentDir = dir;
-              if (container != null) {
-                 rv.add(container);
-              }
+            int lastSlash = fileInfo.full.lastIndexOf('/');
+            String dir = fileInfo.full.substring(sbase.length(), lastSlash);
+            if(dir.equals("share/vm")) {
+                // skip files directly in share/vm - should only be precompiled.hpp which is handled below
+                continue;
+            }
+            if (!dir.equals(currentDir)) {
+                currentDir = dir;
+                if (container != null && !rv.contains(container)) {
+                    rv.add(container);
+                }
 
-              // remove "share/vm/" from names
-              String name = dir;
-              if (dir.startsWith("share/vm/")) {
-                 name = dir.substring("share/vm/".length(), dir.length());
-              }
-              container = new DirectoryFilter(name, dir, sbase);
-           }
+                // remove "share/vm/" from names
+                String name = dir;
+                if (dir.startsWith("share/vm/")) {
+                    name = dir.substring("share/vm/".length(), dir.length());
+                }
+                DirectoryFilter newfilter = new DirectoryFilter(name, dir, sbase);
+                int i = rv.indexOf(newfilter);
+                if(i == -1) {
+                    container = newfilter;
+                } else {
+                    // if the filter already exists, reuse it
+                    container = (DirectoryFilter) rv.get(i);
+                }
+            }
         }
-        if (container != null) {
-           rv.add(container);
+        if (container != null && !rv.contains(container)) {
+            rv.add(container);
         }
 
         ContainerFilter generated = new ContainerFilter("Generated");
@@ -583,7 +665,7 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         return rv;
     }
 
-    Vector getBaseLinkerFlags(String outDir, String outDll) {
+    Vector getBaseLinkerFlags(String outDir, String outDll, String platformName) {
         Vector rv = new Vector();
 
         addAttr(rv, "Name", "VCLinkerTool");
@@ -610,8 +692,13 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "SubSystem", "2");
         addAttr(rv, "BaseAddress", "0x8000000");
         addAttr(rv, "ImportLibrary", outDir+Util.sep+"jvm.lib");
-        // Set /MACHINE option. 1 is machineX86
-        addAttr(rv, "TargetMachine", "1");
+        if(platformName.equals("Win32")) {
+            // Set /MACHINE option. 1 is X86
+            addAttr(rv, "TargetMachine", "1");
+        } else {
+            // Set /MACHINE option. 17 is X64
+            addAttr(rv, "TargetMachine", "17");
+        }
 
         return rv;
     }
@@ -656,12 +743,6 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "Optimization", "2");
         // Set /Oy- option
         addAttr(rv, "OmitFramePointers", "FALSE");
-    }
-
-    Vector getProductCompilerFlags() {
-        Vector rv = new Vector();
-
-        getProductCompilerFlags_common(rv);
         // Set /Ob option.  1 is expandOnlyInline
         addAttr(rv, "InlineFunctionExpansion", "1");
         // Set /GF option.
@@ -670,6 +751,12 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         addAttr(rv, "RuntimeLibrary", "2");
         // Set /Gy option
         addAttr(rv, "EnableFunctionLevelLinking", "TRUE");
+    }
+
+    Vector getProductCompilerFlags() {
+        Vector rv = new Vector();
+
+        getProductCompilerFlags_common(rv);
 
         return rv;
     }
@@ -693,7 +780,7 @@ class CompilerInterfaceVC7 extends CompilerInterface {
         return "0";
     }
 
-    String makeCfgName(String flavourBuild) {
-        return  flavourBuild + "|" + Util.os;
+    String makeCfgName(String flavourBuild, String platform) {
+        return  flavourBuild + "|" + platform;
     }
 }

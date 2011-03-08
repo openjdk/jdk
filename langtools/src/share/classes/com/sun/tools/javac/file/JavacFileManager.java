@@ -164,9 +164,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         fsInfo = FSInfo.instance(context);
 
-        // retain check for system property for compatibility
-        useZipFileIndex = options.isUnset("useJavaUtilZip")
-                && System.getProperty("useJavaUtilZip") == null;
+        useZipFileIndex = options.isSet("useOptimizedZip");
         if (useZipFileIndex)
             zipFileIndexCache = ZipFileIndexCache.getSharedInstance();
 
@@ -499,8 +497,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
             if (!useZipFileIndex) {
                 zdir = new ZipFile(zipFileName);
-            }
-            else {
+            } else {
                 usePreindexedCache = options.isSet("usezipindex");
                 preindexCacheLocation = options.get("java.io.tmpdir");
                 String optCacheLoc = options.get("cachezipindexdir");

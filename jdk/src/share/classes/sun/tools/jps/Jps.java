@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,52 @@ public class Jps {
                 MonitoredVm vm = null;
                 String vmidString = "//" + lvmid + "?mode=r";
 
+                String errorString = null;
+
                 try {
+                    // Note: The VM associated with the current VM id may
+                    // no longer be running so these queries may fail. We
+                    // already added the VM id to the output stream above.
+                    // If one of the queries fails, then we try to add a
+                    // reasonable message to indicate that the requested
+                    // info is not available.
+
+                    errorString = " -- process information unavailable";
                     VmIdentifier id = new VmIdentifier(vmidString);
                     vm = monitoredHost.getMonitoredVm(id, 0);
+
+                    errorString = " -- main class information unavailable";
+                    output.append(" " + MonitoredVmUtil.mainClass(vm,
+                            arguments.showLongPaths()));
+
+                    if (arguments.showMainArgs()) {
+                        errorString = " -- main args information unavailable";
+                        String mainArgs = MonitoredVmUtil.mainArgs(vm);
+                        if (mainArgs != null && mainArgs.length() > 0) {
+                            output.append(" " + mainArgs);
+                        }
+                    }
+                    if (arguments.showVmArgs()) {
+                        errorString = " -- jvm args information unavailable";
+                        String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
+                        if (jvmArgs != null && jvmArgs.length() > 0) {
+                          output.append(" " + jvmArgs);
+                        }
+                    }
+                    if (arguments.showVmFlags()) {
+                        errorString = " -- jvm flags information unavailable";
+                        String jvmFlags = MonitoredVmUtil.jvmFlags(vm);
+                        if (jvmFlags != null && jvmFlags.length() > 0) {
+                            output.append(" " + jvmFlags);
+                        }
+                    }
+
+                    errorString = " -- detach failed";
+                    monitoredHost.detach(vm);
+
+                    System.out.println(output);
+
+                    errorString = null;
                 } catch (URISyntaxException e) {
                     // unexpected as vmidString is based on a validated hostid
                     lastError = e;
@@ -87,7 +130,7 @@ public class Jps {
                 } catch (Exception e) {
                     lastError = e;
                 } finally {
-                    if (vm == null) {
+                    if (errorString != null) {
                         /*
                          * we ignore most exceptions, as there are race
                          * conditions where a JVM in 'jvms' may terminate
@@ -95,7 +138,7 @@ public class Jps {
                          * Other errors, such as access and I/O exceptions
                          * should stop us from iterating over the complete set.
                          */
-                        output.append(" -- process information unavailable");
+                        output.append(errorString);
                         if (arguments.isDebug()) {
                             if ((lastError != null)
                                     && (lastError.getMessage() != null)) {
@@ -110,33 +153,6 @@ public class Jps {
                         continue;
                     }
                 }
-
-                output.append(" ");
-                output.append(MonitoredVmUtil.mainClass(vm,
-                        arguments.showLongPaths()));
-
-                if (arguments.showMainArgs()) {
-                    String mainArgs = MonitoredVmUtil.mainArgs(vm);
-                    if (mainArgs != null && mainArgs.length() > 0) {
-                        output.append(" ").append(mainArgs);
-                    }
-                }
-                if (arguments.showVmArgs()) {
-                    String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
-                    if (jvmArgs != null && jvmArgs.length() > 0) {
-                      output.append(" ").append(jvmArgs);
-                    }
-                }
-                if (arguments.showVmFlags()) {
-                    String jvmFlags = MonitoredVmUtil.jvmFlags(vm);
-                    if (jvmFlags != null && jvmFlags.length() > 0) {
-                        output.append(" ").append(jvmFlags);
-                    }
-                }
-
-                System.out.println(output);
-
-                monitoredHost.detach(vm);
             }
         } catch (MonitorException e) {
             if (e.getMessage() != null) {
