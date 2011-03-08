@@ -492,8 +492,30 @@ public class ZipFileIndex {
         public ZipDirectory(RandomAccessFile zipRandomFile, long start, long end, ZipFileIndex index) throws IOException {
             this.zipRandomFile = zipRandomFile;
             this.zipFileIndex = index;
-
+            hasValidHeader();
             findCENRecord(start, end);
+        }
+
+        /*
+         * the zip entry signature should be at offset 0, otherwise allow the
+         * calling logic to take evasive action by throwing ZipFormatException.
+         */
+        private boolean hasValidHeader() throws IOException {
+            final long pos = zipRandomFile.getFilePointer();
+            try {
+                if (zipRandomFile.read() == 'P') {
+                    if (zipRandomFile.read() == 'K') {
+                        if (zipRandomFile.read() == 0x03) {
+                            if (zipRandomFile.read() == 0x04) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } finally {
+                zipRandomFile.seek(pos);
+            }
+            throw new ZipFormatException("invalid zip magic");
         }
 
         /*
@@ -529,7 +551,13 @@ public class ZipFileIndex {
                     zipDir = new byte[get4ByteLittleEndian(endbuf, i + 12) + 2];
                     zipDir[0] = endbuf[i + 10];
                     zipDir[1] = endbuf[i + 11];
-                    zipRandomFile.seek(start + get4ByteLittleEndian(endbuf, i + 16));
+                    int sz = get4ByteLittleEndian(endbuf, i + 16);
+                    // a negative offset or the entries field indicates a
+                    // potential zip64 archive
+                    if (sz < 0 || get2ByteLittleEndian(zipDir, 0) == 0xffff) {
+                        throw new ZipFormatException("detected a zip64 archive");
+                    }
+                    zipRandomFile.seek(start + sz);
                     zipRandomFile.readFully(zipDir, 2, zipDir.length - 2);
                     return;
                 } else {
@@ -1127,4 +1155,18 @@ public class ZipFileIndex {
         }
     }
 
+    /*
+     * Exception primarily used to implement a failover, used exclusively here.
+     */
+
+    static final class ZipFormatException extends IOException {
+        private static final long serialVersionUID = 8000196834066748623L;
+        protected ZipFormatException(String message) {
+            super(message);
+        }
+
+        protected ZipFormatException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

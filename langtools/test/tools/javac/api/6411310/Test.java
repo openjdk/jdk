@@ -153,14 +153,12 @@ public class Test {
         Context c = new Context();
         Options options = Options.instance(c);
 
-            if (useOptimizedZip) {
-                options.put("useOptimizedZip", "true");
-            }
+        options.put("useOptimizedZip", Boolean.toString(useOptimizedZip));
 
-            if (!useSymbolFile) {
-                options.put("ignore.symbol.file", "true");
-            }
-            return new JavacFileManager(c, false, null);
+        if (!useSymbolFile) {
+            options.put("ignore.symbol.file", "true");
+        }
+        return new JavacFileManager(c, false, null);
     }
 
     File createDir(String name, String... entries) throws Exception {

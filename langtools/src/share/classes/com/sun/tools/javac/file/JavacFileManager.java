@@ -89,7 +89,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private FSInfo fsInfo;
 
-    private boolean useZipFileIndex;
+    private boolean contextUseOptimizedZip;
     private ZipFileIndexCache zipFileIndexCache;
 
     private final File uninited = new File("U N I N I T E D");
@@ -164,8 +164,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         fsInfo = FSInfo.instance(context);
 
-        useZipFileIndex = options.isSet("useOptimizedZip");
-        if (useZipFileIndex)
+        contextUseOptimizedZip = options.getBoolean("useOptimizedZip", true);
+        if (contextUseOptimizedZip)
             zipFileIndexCache = ZipFileIndexCache.getSharedInstance();
 
         mmappedIO = options.isSet("mmappedIO");
@@ -471,9 +471,27 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private static final RelativeDirectory symbolFilePrefix
             = new RelativeDirectory("META-INF/sym/rt.jar/");
 
+    /*
+     * This method looks for a ZipFormatException and takes appropriate
+     * evasive action. If there is a failure in the fast mode then we
+     * fail over to the platform zip, and allow it to deal with a potentially
+     * non compliant zip file.
+     */
+    protected Archive openArchive(File zipFilename) throws IOException {
+        try {
+            return openArchive(zipFilename, contextUseOptimizedZip);
+        } catch (IOException ioe) {
+            if (ioe instanceof ZipFileIndex.ZipFormatException) {
+                return openArchive(zipFilename, false);
+            } else {
+                throw ioe;
+            }
+        }
+    }
+
     /** Open a new zip file directory, and cache it.
      */
-    protected Archive openArchive(File zipFileName) throws IOException {
+    private Archive openArchive(File zipFileName, boolean useOptimizedZip) throws IOException {
         File origZipFileName = zipFileName;
         if (!ignoreSymbolFile && paths.isDefaultBootClassPathRtJar(zipFileName)) {
             File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
@@ -495,7 +513,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             boolean usePreindexedCache = false;
             String preindexCacheLocation = null;
 
-            if (!useZipFileIndex) {
+            if (!useOptimizedZip) {
                 zdir = new ZipFile(zipFileName);
             } else {
                 usePreindexedCache = options.isSet("usezipindex");
@@ -524,23 +542,22 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             }
 
             if (origZipFileName == zipFileName) {
-                if (!useZipFileIndex) {
+                if (!useOptimizedZip) {
                     archive = new ZipArchive(this, zdir);
                 } else {
                     archive = new ZipFileIndexArchive(this,
-                                zipFileIndexCache.getZipFileIndex(zipFileName,
+                                    zipFileIndexCache.getZipFileIndex(zipFileName,
                                     null,
                                     usePreindexedCache,
                                     preindexCacheLocation,
                                     options.isSet("writezipindexfiles")));
                 }
             } else {
-                if (!useZipFileIndex) {
+                if (!useOptimizedZip) {
                     archive = new SymbolArchive(this, origZipFileName, zdir, symbolFilePrefix);
-                }
-                else {
+                } else {
                     archive = new ZipFileIndexArchive(this,
-                                zipFileIndexCache.getZipFileIndex(zipFileName,
+                                    zipFileIndexCache.getZipFileIndex(zipFileName,
                                     symbolFilePrefix,
                                     usePreindexedCache,
                                     preindexCacheLocation,
@@ -549,6 +566,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             }
         } catch (FileNotFoundException ex) {
             archive = new MissingArchive(zipFileName);
+        } catch (ZipFileIndex.ZipFormatException zfe) {
+            throw zfe;
         } catch (IOException ex) {
             if (zipFileName.exists())
                 log.error("error.reading.file", zipFileName, getMessage(ex));
