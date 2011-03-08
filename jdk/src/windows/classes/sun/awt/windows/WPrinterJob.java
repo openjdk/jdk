@@ -1212,13 +1212,14 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
                                 float destWidth, float destHeight,
                                 float srcX, float srcY,
                                 float srcWidth, float srcHeight,
+                                int sampleBitsPerPixel,
                                 IndexColorModel icm) {
         int bitCount = 24;
         byte[] bmiColors = null;
 
         if (icm != null) {
-            bitCount = icm.getPixelSize();
-            bmiColors = new byte[(1<<bitCount)*4];
+            bitCount = sampleBitsPerPixel;
+            bmiColors = new byte[(1<<icm.getPixelSize())*4];
             for (int i=0;i<icm.getMapSize(); i++) {
                 bmiColors[i*4+0]=(byte)(icm.getBlue(i)&0xff);
                 bmiColors[i*4+1]=(byte)(icm.getGreen(i)&0xff);

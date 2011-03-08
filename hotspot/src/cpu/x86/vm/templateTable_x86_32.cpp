@@ -1710,39 +1710,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ pop(rdi);                               // get return address
       __ mov(rsp, rdx);                          // set sp to sender sp
 
-
-      Label skip;
-      Label chkint;
-
-      // The interpreter frame we have removed may be returning to
-      // either the callstub or the interpreter. Since we will
-      // now be returning from a compiled (OSR) nmethod we must
-      // adjust the return to the return were it can handler compiled
-      // results and clean the fpu stack. This is very similar to
-      // what a i2c adapter must do.
-
-      // Are we returning to the call stub?
-
-      __ cmp32(rdi, ExternalAddress(StubRoutines::_call_stub_return_address));
-      __ jcc(Assembler::notEqual, chkint);
-
-      // yes adjust to the specialized call stub  return.
-      assert(StubRoutines::x86::get_call_stub_compiled_return() != NULL, "must be set");
-      __ lea(rdi, ExternalAddress(StubRoutines::x86::get_call_stub_compiled_return()));
-      __ jmp(skip);
-
-      __ bind(chkint);
-
-      // Are we returning to the interpreter? Look for sentinel
-
-      __ cmpl(Address(rdi, -2*wordSize), Interpreter::return_sentinel);
-      __ jcc(Assembler::notEqual, skip);
-
-      // Adjust to compiled return back to interpreter
-
-      __ movptr(rdi, Address(rdi, -wordSize));
-      __ bind(skip);
-
       // Align stack pointer for compiled code (note that caller is
       // responsible for undoing this fixup by remembering the old SP
       // in an rbp,-relative location)

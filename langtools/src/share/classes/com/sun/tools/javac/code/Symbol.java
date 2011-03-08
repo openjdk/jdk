@@ -731,7 +731,7 @@ public abstract class Symbol implements Element {
 
         /** members closure cache (set by Types.membersClosure)
          */
-        Scope membersClosure;
+        Scope.CompoundScope membersClosure;
 
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(flags, name, type, owner);

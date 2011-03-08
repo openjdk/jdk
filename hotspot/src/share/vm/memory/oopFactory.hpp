@@ -69,7 +69,6 @@ class oopFactory: AllStatic {
                                                     bool is_conc_safe,
                                                     TRAPS);
   static constantPoolCacheOop new_constantPoolCache(int length,
-                                                    bool is_conc_safe,
                                                     TRAPS);
 
   // Instance classes

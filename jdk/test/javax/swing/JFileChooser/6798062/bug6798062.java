@@ -28,6 +28,7 @@
    @run applet/manual=done bug6798062.html
 */
 
+import sun.awt.OSInfo;
 import sun.awt.shell.ShellFolder;
 
 import javax.swing.*;
@@ -68,13 +69,23 @@ public class bug6798062 extends JApplet {
         add(initialize());
     }
 
-    private JPanel initialize() {
-        File file = new File("c:/");
+    private JComponent initialize() {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            return new JLabel("The test is suitable only for Windows");
+        }
+
+        String tempDir = System.getProperty("java.io.tmpdir");
+
+        if (tempDir.length() == 0) { // 'java.io.tmpdir' isn't guaranteed to be defined
+            tempDir = System.getProperty("user.home");
+        }
+
+        System.out.println("Temp directory: " + tempDir);
 
         try {
-            folder = ShellFolder.getShellFolder(file);
+            folder = ShellFolder.getShellFolder(new File(tempDir));
         } catch (FileNotFoundException e) {
-            fail("Directory " + file.getPath() + " not found");
+            fail("Directory " + tempDir + " not found");
         }
 
         slider.setMajorTickSpacing(10);

@@ -270,10 +270,6 @@ public class Type implements PrimitiveType {
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    public void setThrown(List<Type> ts) {
-        throw new AssertionError();
-    }
-
     /** Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
@@ -387,14 +383,6 @@ public class Type implements PrimitiveType {
     /** Complete loading all classes in this type.
      */
     public void complete() {}
-
-    public Object clone() {
-        try {
-            return super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError(e);
-        }
-    }
 
     public TypeSymbol asElement() {
         return tsym;
@@ -817,8 +805,7 @@ public class Type implements PrimitiveType {
         }
     }
 
-    public static class MethodType extends Type
-                    implements Cloneable, ExecutableType {
+    public static class MethodType extends Type implements ExecutableType {
 
         public List<Type> argtypes;
         public Type restype;
@@ -879,10 +866,6 @@ public class Type implements PrimitiveType {
         public List<Type>        getParameterTypes() { return argtypes; }
         public Type              getReturnType()     { return restype; }
         public List<Type>        getThrownTypes()    { return thrown; }
-
-        public void setThrown(List<Type> t) {
-            thrown = t;
-        }
 
         public boolean isErroneous() {
             return
@@ -1068,12 +1051,10 @@ public class Type implements PrimitiveType {
         public List<Type> getThrownTypes() { return qtype.getThrownTypes(); }
         public List<Type> allparams() { return qtype.allparams(); }
         public Type getUpperBound() { return qtype.getUpperBound(); }
-        public Object clone() { DelegatedType t = (DelegatedType)super.clone(); t.qtype = (Type)qtype.clone(); return t; }
         public boolean isErroneous() { return qtype.isErroneous(); }
     }
 
-    public static class ForAll extends DelegatedType
-            implements Cloneable, ExecutableType {
+    public static class ForAll extends DelegatedType implements ExecutableType {
         public List<Type> tvars;
 
         public ForAll(List<Type> tvars, Type qtype) {
@@ -1091,16 +1072,6 @@ public class Type implements PrimitiveType {
         }
 
         public List<Type> getTypeArguments()   { return tvars; }
-
-        public void setThrown(List<Type> t) {
-            qtype.setThrown(t);
-        }
-
-        public Object clone() {
-            ForAll result = (ForAll)super.clone();
-            result.qtype = (Type)result.qtype.clone();
-            return result;
-        }
 
         public boolean isErroneous()  {
             return qtype.isErroneous();

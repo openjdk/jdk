@@ -61,8 +61,10 @@ class ImageFetcher extends Thread {
     /**
       * Adds an ImageFetchable to the queue of items to fetch.  Instantiates
       * a new ImageFetcher if it's reasonable to do so.
+      * If there is no available fetcher to process an ImageFetchable, then
+      * reports failure to caller.
       */
-    public static void add(ImageFetchable src) {
+    public static boolean add(ImageFetchable src) {
         final FetcherInfo info = FetcherInfo.getFetcherInfo();
         synchronized(info.waitList) {
             if (!info.waitList.contains(src)) {
@@ -71,9 +73,23 @@ class ImageFetcher extends Thread {
                             info.numFetchers < info.fetchers.length) {
                     createFetchers(info);
                 }
-                info.waitList.notify();
+                /* Creation of new fetcher may fail due to high vm load
+                 * or some other reason.
+                 * If there is already exist, but busy, fetcher, we leave
+                 * the src in queue (it will be handled by existing
+                 * fetcher later).
+                 * Otherwise, we report failure: there is no fetcher
+                 * to handle the src.
+                 */
+                if (info.numFetchers > 0) {
+                    info.waitList.notify();
+                } else {
+                    info.waitList.removeElement(src);
+                    return false;
+                }
             }
         }
+        return true;
     }
 
     /**
@@ -291,11 +307,15 @@ class ImageFetcher extends Thread {
          public Object run() {
              for (int i = 0; i < info.fetchers.length; i++) {
                if (info.fetchers[i] == null) {
-                   info.fetchers[i] = new ImageFetcher(
+                   ImageFetcher f = new ImageFetcher(
                            fetcherGroup, i);
-                   info.fetchers[i].start();
-                   info.numFetchers++;
-                   break;
+                   try {
+                       f.start();
+                       info.fetchers[i] = f;
+                       info.numFetchers++;
+                       break;
+                   } catch (Error e) {
+                   }
                }
              }
           return null;

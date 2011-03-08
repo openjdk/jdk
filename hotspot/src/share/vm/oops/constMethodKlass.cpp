@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,21 +182,6 @@ int constMethodKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
     PSParallelCompact::adjust_pointer(cur_oop);
   }
-  return cm_oop->object_size();
-}
-
-int constMethodKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                          HeapWord* beg_addr,
-                                          HeapWord* end_addr) {
-  assert(obj->is_constMethod(), "should be constMethod");
-  constMethodOop cm_oop = constMethodOop(obj);
-
-  oop* const beg_oop = MAX2((oop*)beg_addr, cm_oop->oop_block_beg());
-  oop* const end_oop = MIN2((oop*)end_addr, cm_oop->oop_block_end());
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
-
   return cm_oop->object_size();
 }
 #endif // SERIALGC

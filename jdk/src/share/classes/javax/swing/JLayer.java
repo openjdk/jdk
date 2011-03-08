@@ -156,8 +156,9 @@ public final class JLayer<V extends Component>
     // when layerUI is serializable
     private LayerUI<? super V> layerUI;
     private JPanel glassPane;
-    private boolean isPainting;
     private long eventMask;
+    private transient boolean isPainting;
+    private transient boolean isPaintingImmediately;
 
     private static final LayerEventController eventController =
             new LayerEventController();
@@ -393,17 +394,25 @@ public final class JLayer<V extends Component>
     }
 
     /**
-     * Delegates repainting to {@link javax.swing.plaf.LayerUI#repaint} method.
+     * Delegates its functionality to the
+     * {@link javax.swing.plaf.LayerUI#paintImmediately(int, int, int, int, JLayer)} method,
+     * if {@code LayerUI} is set.
      *
-     * @param tm  this parameter is not used
-     * @param x  the x value of the dirty region
-     * @param y  the y value of the dirty region
-     * @param width  the width of the dirty region
-     * @param height  the height of the dirty region
+     * @param x  the x value of the region to be painted
+     * @param y  the y value of the region to be painted
+     * @param w  the width of the region to be painted
+     * @param h  the height of the region to be painted
      */
-    public void repaint(long tm, int x, int y, int width, int height) {
-        if (getUI() != null) {
-            getUI().repaint(tm, x, y, width, height, this);
+    public void paintImmediately(int x, int y, int w, int h) {
+        if (!isPaintingImmediately && getUI() != null) {
+            isPaintingImmediately = true;
+            try {
+                getUI().paintImmediately(x, y, w, h, this);
+            } finally {
+                isPaintingImmediately = false;
+            }
+        } else {
+            super.paintImmediately(x, y, w, h);
         }
     }
 
@@ -415,8 +424,11 @@ public final class JLayer<V extends Component>
     public void paint(Graphics g) {
         if (!isPainting) {
             isPainting = true;
-            super.paintComponent(g);
-            isPainting = false;
+            try {
+                super.paintComponent(g);
+            } finally {
+                isPainting = false;
+            }
         } else {
             super.paint(g);
         }

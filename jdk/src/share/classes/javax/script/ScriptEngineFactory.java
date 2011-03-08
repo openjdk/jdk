@@ -115,20 +115,19 @@ public interface ScriptEngineFactory {
      * with respect to concurrent execution of scripts and maintenance of state is also defined.
      * These values for the <code><b>THREADING</b></code> key are:<br><br>
      * <ul>
-     * <p><code>null</code> - The engine implementation is not thread safe, and cannot
+     * <li><code>null</code> - The engine implementation is not thread safe, and cannot
      * be used to execute scripts concurrently on multiple threads.
-     * <p><code>&quot;MULTITHREADED&quot;</code> - The engine implementation is internally
+     * <li><code>&quot;MULTITHREADED&quot;</code> - The engine implementation is internally
      * thread-safe and scripts may execute concurrently although effects of script execution
      * on one thread may be visible to scripts on other threads.
-     * <p><code>&quot;THREAD-ISOLATED&quot;</code> - The implementation satisfies the requirements
+     * <li><code>&quot;THREAD-ISOLATED&quot;</code> - The implementation satisfies the requirements
      * of &quot;MULTITHREADED&quot;, and also, the engine maintains independent values
      * for symbols in scripts executing on different threads.
-     * <p><code>&quot;STATELESS&quot;</code> - The implementation satisfies the requirements of
-     * <code>&quot;THREAD-ISOLATED&quot;</code>.  In addition, script executions do not alter the
+     * <li><code>&quot;STATELESS&quot;</code> - The implementation satisfies the requirements of
+     * <li><code>&quot;THREAD-ISOLATED&quot;</code>.  In addition, script executions do not alter the
      * mappings in the <code>Bindings</code> which is the engine scope of the
      * <code>ScriptEngine</code>.  In particular, the keys in the <code>Bindings</code>
      * and their associated values are the same before and after the execution of the script.
-     * </li>
      * </ul>
      * <br><br>
      * Implementations may define implementation-specific keys.
@@ -145,22 +144,23 @@ public interface ScriptEngineFactory {
      * of the supported scripting language.  For instance, an implementaton for a Javascript
      * engine might be;
      * <p>
-     * <code><pre>
+     * <pre>
+     * <code>
      * public String getMethodCallSyntax(String obj,
      *                                   String m, String... args) {
      *      String ret = obj;
      *      ret += "." + m + "(";
      *      for (int i = 0; i < args.length; i++) {
      *          ret += args[i];
-     *          if (i == args.length - 1) {
-     *              ret += ")";
-     *          } else {
+     *          if (i < args.length - 1) {
      *              ret += ",";
      *          }
      *      }
+     *      ret += ")";
      *      return ret;
      * }
-     *</pre></code>
+     *</code>
+     *</pre>
      * <p>
      *
      * @param obj The name representing the object whose method is to be invoked. The
