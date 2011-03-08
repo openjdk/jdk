@@ -69,7 +69,7 @@ public class Basic {
             throw new RuntimeException("entry not found");
 
         // check filtering: f* should match foo
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<>() {
+        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
             private PathMatcher matcher =
                 dir.getFileSystem().getPathMatcher("glob:f*");
             public boolean accept(Path file) {
