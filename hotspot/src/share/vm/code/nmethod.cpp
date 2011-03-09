@@ -762,7 +762,7 @@ nmethod::nmethod(
 
 void* nmethod::operator new(size_t size, int nmethod_size) {
   // Always leave some room in the CodeCache for I2C/C2I adapters
-  if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) return NULL;
+  if (CodeCache::largest_free_block() < CodeCacheMinimumFreeSpace) return NULL;
   return CodeCache::allocate(nmethod_size);
 }
 
