@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 6836682
+ * @ignore
+ * @bug 6836682 7025988
  * @summary JavacFileManager handles zip64 archives (64K+ entries and large file support)
  * @compile  -XDignore.symbol.file T6836682.java Utils.java
  * @run main T6836682
