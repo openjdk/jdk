@@ -136,7 +136,7 @@ ifdef ANT_HOME
 else
   ANT = ant
   ifneq ($(shell which $(ANT) > /dev/null; echo $$?), 0)
-    $(error "\"ant\" not found; please set ANT_HOME or put \"ant\" on your PATH")
+    $(error "'ant' not found; please set ANT_HOME or put 'ant' on your PATH")
   endif
 endif
 
