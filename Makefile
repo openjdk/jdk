@@ -63,6 +63,8 @@ endif
 
 all:: all_product_build 
 
+all_product_build::
+
 # Everything for a full product build
 ifeq ($(SKIP_PRODUCT_BUILD), false)
 
