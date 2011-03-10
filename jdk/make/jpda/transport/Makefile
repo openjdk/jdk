@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = debugging
 PRODUCT = jpda
 include $(BUILDDIR)/common/Defs.gmk
 
