@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = awt
 PACKAGE = java.awt
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
