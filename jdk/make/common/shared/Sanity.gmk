@@ -113,7 +113,7 @@ ifeq ($(PLATFORM), linux)
   ALSA_INCLUDE=/usr/include/alsa/version.h
   ALSA_LIBRARY=/usr/lib/libasound.so
   _ALSA_VERSION := $(shell $(EGREP) SND_LIB_VERSION_STR $(ALSA_INCLUDE) | \
-           $(SED) -e 's@.*\"\(.*\)\".*@\1@' )
+           $(SED) -e 's@.*"\(.*\)".*@\1@' )
   ALSA_VERSION := $(call GetVersion,$(_ALSA_VERSION))
 endif
 
@@ -333,12 +333,12 @@ sane-locale:
 ifneq ($(PLATFORM), windows)
 	@if [ "$(LC_ALL)" != "" -a "$(LC_ALL)" != "C" ]; then \
 	  $(ECHO) "WARNING: LC_ALL has been set to $(LC_ALL), this can cause build failures. \n" \
-	    "        Try setting LC_ALL to \"C\". \n" \
+	    "        Try setting LC_ALL to 'C'. \n" \
 	    "" >> $(WARNING_FILE) ; \
         fi
 	@if [ "$(LANG)" != "" -a "$(LANG)" != "C" ]; then \
 	  $(ECHO) "WARNING: LANG has been set to $(LANG), this can cause build failures. \n" \
-	    "        Try setting LANG to \"C\". \n" \
+	    "        Try setting LANG to 'C'. \n" \
 	    "" >> $(WARNING_FILE) ; \
         fi
 endif
@@ -1327,9 +1327,9 @@ ifdef LINK_VER
 	fi
 	@if [ "$(LINK_CHECK)" != "same" ]; then \
 	  $(ECHO) "WARNING: To build Java 2 SDK $(JDK_VERSION) you need : \n" \
-	    "      $(REQUIRED_COMPILER_VERSION) - link.exe version \"$(REQUIRED_LINK_VER)\" \n" \
+	    "      $(REQUIRED_COMPILER_VERSION) - link.exe version '$(REQUIRED_LINK_VER)' \n" \
 	      "      Specifically the $(REQUIRED_COMPILER_NAME) link.exe. \n " \
-	    "      $(YOU_ARE_USING) Linker version \"$(LINK_VER)\" \n" \
+	    "      $(YOU_ARE_USING) Linker version '$(LINK_VER)' \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
 endif
