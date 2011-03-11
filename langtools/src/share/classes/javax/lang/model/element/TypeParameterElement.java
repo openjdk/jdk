@@ -64,9 +64,9 @@ public interface TypeParameterElement extends Element {
     List<? extends TypeMirror> getBounds();
 
     /**
-     * Returns {@code null}.
+     * Returns the {@linkplain TypeParameterElement#getGenericElement generic element} of this type parameter.
      *
-     * @return {@code null}
+     * @return the generic element of this type parameter
      */
     @Override
     Element getEnclosingElement();
