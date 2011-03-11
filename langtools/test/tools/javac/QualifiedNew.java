@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 4406966
+ * @bug 4406966 6969184
  * @summary null qualifying inner instance creation should be error.
  * @author gafter
  *

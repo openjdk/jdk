@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 6939620
+ * @bug 6939620 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
+ * @summary  basic test for diamond (simple/qualified type-expressions, local class)
  * @author mcimadamore
  * @compile Pos04.java
  * @run main Pos04
@@ -44,20 +44,10 @@ public class Pos04<U> {
         Foo<?> p3 = new Foo<>(1);
         Foo<? super Integer> p4 = new Foo<>(1);
 
-        Foo<Integer> p5 = new Foo<>(1){};
-        Foo<? extends Integer> p6 = new Foo<>(1){};
-        Foo<?> p7 = new Foo<>(1){};
-        Foo<? super Integer> p8 = new Foo<>(1){};
-
-        Foo<Integer> p9 = new Foo<>(1, "");
-        Foo<? extends Integer> p10 = new Foo<>(1, "");
-        Foo<?> p11 = new Foo<>(1, "");
-        Foo<? super Integer> p12 = new Foo<>(1, "");
-
-        Foo<Integer> p13 = new Foo<>(1, ""){};
-        Foo<? extends Integer> p14 = new Foo<>(1, ""){};
-        Foo<?> p15 = new Foo<>(1, ""){};
-        Foo<? super Integer> p16 = new Foo<>(1, ""){};
+        Foo<Integer> p5 = new Foo<>(1, "");
+        Foo<? extends Integer> p6 = new Foo<>(1, "");
+        Foo<?> p7 = new Foo<>(1, "");
+        Foo<? super Integer> p8 = new Foo<>(1, "");
     }
 
     public static void main(String[] args) {

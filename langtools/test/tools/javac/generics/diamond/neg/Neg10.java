@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620
+ * @bug 6939620 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
+ * @summary  Check that 'complex' diamond can infer type that is too specific
  * @author mcimadamore
  * @compile/fail/ref=Neg10.out Neg10.java -XDrawDiagnostics
  *

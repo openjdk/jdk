@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public class SourceToHTMLConverter {
     private static void addLine(Content pre, String line, int tabLength,
             int currentLineNo) {
         if (line != null) {
-            StringBuffer lineBuffer = new StringBuffer(Util.escapeHtmlChars(line));
+            StringBuilder lineBuffer = new StringBuilder(Util.escapeHtmlChars(line));
             Util.replaceTabs(tabLength, lineBuffer);
             pre.addContent(new RawHtml(lineBuffer.toString()));
             Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));

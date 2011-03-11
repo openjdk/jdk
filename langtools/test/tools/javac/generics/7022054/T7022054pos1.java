@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,20 @@
  * questions.
  */
 
-// key: compiler.misc.diamond.invalid.args
-// key: compiler.misc.diamond
-// key: compiler.err.cant.apply.diamond.1
+/*
+ * @test
+ * @bug 7022054
+ *
+ * @summary  Invalid compiler error on covariant overriding methods with the same erasure
+ * @compile T7022054pos1.java
+ *
+ */
 
-class DiamondInvalidArgs {
-    static class Foo<X extends Number & Comparable<Number>,
-                           Y extends Number & Comparable<Number>> { }
-    Foo<?,?> foo = new Foo<>();
+class T7022054pos1 {
+    static class A {
+        A m(String s) { return null; }
+    }
+    static class B extends A {
+        <X extends B> X m(String s) { return null; }
+    }
 }

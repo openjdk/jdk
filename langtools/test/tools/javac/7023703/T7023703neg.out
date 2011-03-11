@@ -1,0 +1,5 @@
+T7023703neg.java:37:13: compiler.err.var.might.be.assigned.in.loop: bug2
+T7023703neg.java:47:13: compiler.err.var.might.be.assigned.in.loop: bug2
+T7023703neg.java:57:13: compiler.err.var.might.be.assigned.in.loop: bug2
+T7023703neg.java:67:13: compiler.err.var.might.be.assigned.in.loop: bug2
+4 errors
