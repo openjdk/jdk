@@ -465,10 +465,9 @@ public class Infer {
             // quantify result type with them
             final List<Type> inferredTypes = insttypes.toList();
             final List<Type> all_tvars = tvars; //this is the wrong tvars
-            final MethodType mt2 = new MethodType(mt.argtypes, null, mt.thrown, syms.methodClass);
-            mt2.restype = new ForAll(restvars.toList(), mt.restype) {
+            return new UninferredMethodType(mt, restvars.toList()) {
                 @Override
-                public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
+                List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
                     for (Type t : restundet.toList()) {
                         UndetVar uv = (UndetVar)t;
                         if (uv.qtype == tv) {
@@ -481,21 +480,17 @@ public class Infer {
                     }
                     return List.nil();
                 }
-
                 @Override
-                public Type inst(List<Type> inferred, Types types) throws NoInstanceException {
-                    List<Type> formals = types.subst(mt2.argtypes, tvars, inferred);
+                void check(List<Type> inferred, Types types) throws NoInstanceException {
                     // check that actuals conform to inferred formals
-                    checkArgumentsAcceptable(env, capturedArgs, formals, allowBoxing, useVarargs, warn);
+                    checkArgumentsAcceptable(env, capturedArgs, getParameterTypes(), allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), formals, msym);
+                        chk.checkVararg(env.tree.pos(), getParameterTypes(), msym);
                     }
-                    return super.inst(inferred, types);
             }};
-            return mt2;
         }
         else {
             // check that actuals conform to inferred formals
@@ -505,6 +500,62 @@ public class Infer {
         }
     }
     //where
+
+        /**
+         * A delegated type representing a partially uninferred method type.
+         * The return type of a partially uninferred method type is a ForAll
+         * type - when the return type is instantiated (see Infer.instantiateExpr)
+         * the underlying method type is also updated.
+         */
+        static abstract class UninferredMethodType extends DelegatedType {
+
+            final List<Type> tvars;
+
+            public UninferredMethodType(MethodType mtype, List<Type> tvars) {
+                super(METHOD, new MethodType(mtype.argtypes, null, mtype.thrown, mtype.tsym));
+                this.tvars = tvars;
+                asMethodType().restype = new UninferredReturnType(tvars, mtype.restype);
+            }
+
+            @Override
+            public MethodType asMethodType() {
+                return qtype.asMethodType();
+            }
+
+            @Override
+            public Type map(Mapping f) {
+                return qtype.map(f);
+            }
+
+            void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
+                //update method type with newly inferred type-arguments
+                qtype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
+                                       restype,
+                                       types.subst(UninferredMethodType.this.getThrownTypes(), tvars, inferred),
+                                       UninferredMethodType.this.qtype.tsym);
+                check(inferred, types);
+            }
+
+            abstract void check(List<Type> inferred, Types types) throws NoInstanceException;
+
+            abstract List<Type> getConstraints(TypeVar tv, ConstraintKind ck);
+
+            class UninferredReturnType extends ForAll {
+                public UninferredReturnType(List<Type> tvars, Type restype) {
+                    super(tvars, restype);
+                }
+                @Override
+                public Type inst(List<Type> actuals, Types types) {
+                    Type newRestype = super.inst(actuals, types);
+                    instantiateReturnType(newRestype, actuals, types);
+                    return newRestype;
+                }
+                @Override
+                public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
+                    return UninferredMethodType.this.getConstraints(tv, ck);
+                }
+            }
+        }
 
         private void checkArgumentsAcceptable(Env<AttrContext> env, List<Type> actuals, List<Type> formals,
                 boolean allowBoxing, boolean useVarargs, Warner warn) {
@@ -518,25 +569,25 @@ public class Infer {
             }
         }
 
-        /** Try to instantiate argument type `that' to given type `to'.
-         *  If this fails, try to insantiate `that' to `to' where
-         *  every occurrence of a type variable in `tvars' is replaced
-         *  by an unknown type.
-         */
-        private Type instantiateArg(ForAll that,
-                                    Type to,
-                                    List<Type> tvars,
-                                    Warner warn) throws InferenceException {
-            List<Type> targs;
-            try {
-                return instantiateExpr(that, to, warn);
-            } catch (NoInstanceException ex) {
-                Type to1 = to;
-                for (List<Type> l = tvars; l.nonEmpty(); l = l.tail)
-                    to1 = types.subst(to1, List.of(l.head), List.of(syms.unknownType));
-                return instantiateExpr(that, to1, warn);
-            }
+    /** Try to instantiate argument type `that' to given type `to'.
+     *  If this fails, try to insantiate `that' to `to' where
+     *  every occurrence of a type variable in `tvars' is replaced
+     *  by an unknown type.
+     */
+    private Type instantiateArg(ForAll that,
+                                Type to,
+                                List<Type> tvars,
+                                Warner warn) throws InferenceException {
+        List<Type> targs;
+        try {
+            return instantiateExpr(that, to, warn);
+        } catch (NoInstanceException ex) {
+            Type to1 = to;
+            for (List<Type> l = tvars; l.nonEmpty(); l = l.tail)
+                to1 = types.subst(to1, List.of(l.head), List.of(syms.unknownType));
+            return instantiateExpr(that, to1, warn);
         }
+    }
 
     /** check that type parameters are within their bounds.
      */
@@ -616,4 +667,4 @@ public class Infer {
                     return t;
                 }
         };
-}
+    }
