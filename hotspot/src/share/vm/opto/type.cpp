@@ -3781,7 +3781,7 @@ ciKlass* TypeAryPtr::klass() const {
   // Oops, need to compute _klass and cache it
   ciKlass* k_ary = compute_klass();
 
-  if( this != TypeAryPtr::OOPS ) {
+  if( this != TypeAryPtr::OOPS && this->dual() != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying
     // ciKlass for this array type.  In order to set the field,
     // we need to cast away const-ness.
