@@ -1668,13 +1668,13 @@ bool Arguments::verify_interval(uintx val, uintx min,
 }
 
 bool Arguments::verify_min_value(intx val, intx min, const char* name) {
-  // Returns true if given value is greater than specified min threshold
+  // Returns true if given value is at least specified min threshold
   // false, otherwise.
   if (val >= min ) {
       return true;
   }
   jio_fprintf(defaultStream::error_stream(),
-              "%s of " INTX_FORMAT " is invalid; must be greater than " INTX_FORMAT "\n",
+              "%s of " INTX_FORMAT " is invalid; must be at least " INTX_FORMAT "\n",
               name, val, min);
   return false;
 }
@@ -1900,6 +1900,8 @@ bool Arguments::check_vm_args_consistency() {
                 " with -UseAsyncConcMarkSweepGC");
     status = false;
   }
+
+  status = status && verify_min_value(ParGCArrayScanChunk, 1, "ParGCArrayScanChunk");
 
 #ifndef SERIALGC
   if (UseG1GC) {
