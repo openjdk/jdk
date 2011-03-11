@@ -190,6 +190,7 @@ FILES_compiled_properties = \
         sun/util/resources/CurrencyNames_nl_NL.properties \
         sun/util/resources/CurrencyNames_no_NO.properties \
         sun/util/resources/CurrencyNames_pl_PL.properties \
+        sun/util/resources/CurrencyNames_pt.properties \
         sun/util/resources/CurrencyNames_pt_BR.properties \
         sun/util/resources/CurrencyNames_pt_PT.properties \
         sun/util/resources/CurrencyNames_ro_RO.properties \
