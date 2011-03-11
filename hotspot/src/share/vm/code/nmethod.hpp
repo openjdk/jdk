@@ -69,14 +69,13 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
  private:
   enum { cache_size = 4 };
-  PcDesc* _last_pc_desc;         // most recent pc_desc found
   PcDesc* _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_last_pc_desc = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
-  PcDesc* last_pc_desc() { return _last_pc_desc; }
+  PcDesc* last_pc_desc() { return _pc_descs[0]; }
 };
 
 
@@ -178,7 +177,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
 
   // Protected by Patching_lock
-  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded)
+  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section

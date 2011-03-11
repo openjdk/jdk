@@ -170,7 +170,7 @@ struct nmethod_stats_struct {
   int pc_desc_resets;   // number of resets (= number of caches)
   int pc_desc_queries;  // queries to nmethod::find_pc_desc
   int pc_desc_approx;   // number of those which have approximate true
-  int pc_desc_repeats;  // number of _last_pc_desc hits
+  int pc_desc_repeats;  // number of _pc_descs[0] hits
   int pc_desc_hits;     // number of LRU cache hits
   int pc_desc_tests;    // total number of PcDesc examinations
   int pc_desc_searches; // total number of quasi-binary search steps
@@ -278,40 +278,44 @@ static inline bool match_desc(PcDesc* pc, int pc_offset, bool approximate) {
 
 void PcDescCache::reset_to(PcDesc* initial_pc_desc) {
   if (initial_pc_desc == NULL) {
-    _last_pc_desc = NULL;  // native method
+    _pc_descs[0] = NULL; // native method; no PcDescs at all
     return;
   }
   NOT_PRODUCT(++nmethod_stats.pc_desc_resets);
   // reset the cache by filling it with benign (non-null) values
   assert(initial_pc_desc->pc_offset() < 0, "must be sentinel");
-  _last_pc_desc = initial_pc_desc + 1;  // first valid one is after sentinel
   for (int i = 0; i < cache_size; i++)
     _pc_descs[i] = initial_pc_desc;
 }
 
 PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
   NOT_PRODUCT(++nmethod_stats.pc_desc_queries);
-  NOT_PRODUCT(if (approximate)  ++nmethod_stats.pc_desc_approx);
+  NOT_PRODUCT(if (approximate) ++nmethod_stats.pc_desc_approx);
+
+  // Note: one might think that caching the most recently
+  // read value separately would be a win, but one would be
+  // wrong.  When many threads are updating it, the cache
+  // line it's in would bounce between caches, negating
+  // any benefit.
 
   // In order to prevent race conditions do not load cache elements
   // repeatedly, but use a local copy:
   PcDesc* res;
 
-  // Step one:  Check the most recently returned value.
-  res = _last_pc_desc;
-  if (res == NULL)  return NULL;  // native method; no PcDescs at all
+  // Step one:  Check the most recently added value.
+  res = _pc_descs[0];
+  if (res == NULL) return NULL;  // native method; no PcDescs at all
   if (match_desc(res, pc_offset, approximate)) {
     NOT_PRODUCT(++nmethod_stats.pc_desc_repeats);
     return res;
   }
 
-  // Step two:  Check the LRU cache.
-  for (int i = 0; i < cache_size; i++) {
+  // Step two:  Check the rest of the LRU cache.
+  for (int i = 1; i < cache_size; ++i) {
     res = _pc_descs[i];
-    if (res->pc_offset() < 0)  break;  // optimization: skip empty cache
+    if (res->pc_offset() < 0) break;  // optimization: skip empty cache
     if (match_desc(res, pc_offset, approximate)) {
       NOT_PRODUCT(++nmethod_stats.pc_desc_hits);
-      _last_pc_desc = res;  // record this cache hit in case of repeat
       return res;
     }
   }
@@ -322,24 +326,23 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
   NOT_PRODUCT(++nmethod_stats.pc_desc_adds);
-  // Update the LRU cache by shifting pc_desc forward:
+  // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {
     PcDesc* next = _pc_descs[i];
     _pc_descs[i] = pc_desc;
     pc_desc = next;
   }
-  // Note:  Do not update _last_pc_desc.  It fronts for the LRU cache.
 }
 
 // adjust pcs_size so that it is a multiple of both oopSize and
 // sizeof(PcDesc) (assumes that if sizeof(PcDesc) is not a multiple
 // of oopSize, then 2*sizeof(PcDesc) is)
-static int  adjust_pcs_size(int pcs_size) {
+static int adjust_pcs_size(int pcs_size) {
   int nsize = round_to(pcs_size,   oopSize);
   if ((nsize % sizeof(PcDesc)) != 0) {
     nsize = pcs_size + sizeof(PcDesc);
   }
-  assert((nsize %  oopSize) == 0, "correct alignment");
+  assert((nsize % oopSize) == 0, "correct alignment");
   return nsize;
 }
 
