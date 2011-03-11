@@ -424,6 +424,7 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_xr_XRSurfaceData_initXRPicture;
 		Java_sun_java2d_xr_XRSurfaceData_initIDs;
 		Java_sun_java2d_xr_XRSurfaceData_XRInitSurface;
+		Java_sun_java2d_xr_XRSurfaceData_freeXSDOPicture;
 		Java_sun_java2d_xr_XRBackendNative_initIDs;
 		Java_sun_java2d_xr_XIDGenerator_bufferXIDs;
 		Java_sun_java2d_xr_XRBackendNative_freeGC;

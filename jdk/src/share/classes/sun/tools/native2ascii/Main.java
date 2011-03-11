@@ -94,7 +94,7 @@ public class Main {
      * Run the converter
      */
     public synchronized boolean convert(String argv[]){
-        Vector v = new Vector(2);
+        List<String> v = new ArrayList<>(2);
         File outputFile = null;
         boolean createOutputFile = false;
 
@@ -115,7 +115,7 @@ public class Main {
                     usage();
                     return false;
                 }
-                v.addElement(argv[i]);
+                v.add(argv[i]);
             }
         }
         if (encodingString == null)
@@ -126,11 +126,11 @@ public class Main {
             initializeConverter();
 
             if (v.size() == 1)
-                inputFileName = (String)v.elementAt(0);
+                inputFileName = v.get(0);
 
             if (v.size() == 2) {
-                inputFileName = (String)v.elementAt(0);
-                outputFileName = (String)v.elementAt(1);
+                inputFileName = v.get(0);
+                outputFileName = v.get(1);
                 createOutputFile = true;
             }
 
@@ -363,9 +363,7 @@ public class Main {
 
     private String formatMsg(String key, String arg) {
         String msg = getMsg(key);
-        String[] args = new String[1];
-        args[0] = arg;
-        return MessageFormat.format(msg, (Object)args);
+        return MessageFormat.format(msg, arg);
     }
 
 

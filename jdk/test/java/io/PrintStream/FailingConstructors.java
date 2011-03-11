@@ -35,6 +35,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class FailingConstructors {
     static final String fileName = "FailingConstructorsTest";
@@ -45,14 +47,13 @@ public class FailingConstructors {
         test(false, new File(fileName));
 
         /* create the file and write its contents */
-        File file = File.createTempFile(fileName, null);
-        file.deleteOnExit();
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(FILE_CONTENTS.getBytes());
-        fos.close();
-
-        test(true, file);
-        file.delete();
+        Path path = Files.createTempFile(fileName, null);
+        try {
+            Files.write(path, FILE_CONTENTS.getBytes());
+            test(true, path.toFile());
+        } finally {
+            Files.delete(path);
+        }
     }
 
     private static void test(boolean exists, File file) throws Throwable {

@@ -439,6 +439,7 @@ public class WindowsAsynchronousFileChannelImpl
                 address = ((DirectBuffer)buf).address();
             }
 
+            boolean pending = false;
             try {
                 begin();
 
@@ -449,6 +450,7 @@ public class WindowsAsynchronousFileChannelImpl
                 n = readFile(handle, address, rem, position, overlapped);
                 if (n == IOStatus.UNAVAILABLE) {
                     // I/O is pending
+                    pending = true;
                     return;
                 } else if (n == IOStatus.EOF) {
                     result.setResult(n);
@@ -460,13 +462,14 @@ public class WindowsAsynchronousFileChannelImpl
                 // failed to initiate read
                 result.setFailure(toIOException(x));
             } finally {
+                if (!pending) {
+                    // release resources
+                    if (overlapped != 0L)
+                        ioCache.remove(overlapped);
+                    releaseBufferIfSubstituted();
+                }
                 end();
             }
-
-            // release resources
-            if (overlapped != 0L)
-                ioCache.remove(overlapped);
-            releaseBufferIfSubstituted();
 
             // invoke completion handler
             Invoker.invoke(result);

@@ -368,7 +368,7 @@ else
 FONTCONFIGS_SRC	= $(CLOSED_SRC)/solaris/classes/sun/awt/fontconfigs
 _FONTCONFIGS	= \
 	fontconfig.properties				\
-	fontconfig.RedHat.properties			\
+	fontconfig.RedHat.5.5.properties		\
 	fontconfig.Turbo.properties			\
 	fontconfig.SuSE.10.properties                   \
 	fontconfig.SuSE.11.properties
