@@ -53,34 +53,34 @@ public class DeleteTempJar
     {
         final File zf = File.createTempFile("deletetemp", ".jar");
         zf.deleteOnExit();
-        JarOutputStream jos = new JarOutputStream(
-                new FileOutputStream(zf));
-        JarEntry je = new JarEntry("entry");
-        jos.putNextEntry(je);
-        jos.write("hello, world".getBytes("ASCII"));
-        jos.close();
+        try (FileOutputStream fos = new FileOutputStream(zf);
+             JarOutputStream jos = new JarOutputStream(fos))
+        {
+            JarEntry je = new JarEntry("entry");
+            jos.putNextEntry(je);
+            jos.write("hello, world".getBytes("ASCII"));
+        }
 
         HttpServer server = HttpServer.create(
                 new InetSocketAddress((InetAddress) null, 0), 0);
         HttpContext context = server.createContext("/",
             new HttpHandler() {
                 public void handle(HttpExchange e) {
-                try {
-                    FileInputStream fis = new FileInputStream(zf);
-                    e.sendResponseHeaders(200, zf.length());
-                    OutputStream os = e.getResponseBody();
-                    byte[] buf = new byte[1024];
-                    int count = 0;
-                    while ((count = fis.read(buf)) != -1) {
-                        os.write(buf, 0, count);
+                    try (FileInputStream fis = new FileInputStream(zf)) {
+                        e.sendResponseHeaders(200, zf.length());
+                        OutputStream os = e.getResponseBody();
+                        byte[] buf = new byte[1024];
+                        int count = 0;
+                        while ((count = fis.read(buf)) != -1) {
+                            os.write(buf, 0, count);
+                        }
+                    } catch (Exception ex) {
+                        unexpected(ex);
+                    } finally {
+                        e.close();
                     }
-                    fis.close();
-                    e.close();
-                } catch (Exception ex) {
-                    unexpected(ex);
                 }
-            }
-        });
+            });
         server.start();
 
         URL url = new URL("jar:http://localhost:"

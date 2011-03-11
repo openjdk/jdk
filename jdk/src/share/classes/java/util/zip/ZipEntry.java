@@ -26,7 +26,6 @@
 package java.util.zip;
 
 import java.util.Date;
-import sun.misc.BootClassLoaderHook;
 
 /**
  * This class is used to represent a ZIP file entry.

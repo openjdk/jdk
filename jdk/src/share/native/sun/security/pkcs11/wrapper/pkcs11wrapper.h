@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -153,6 +153,7 @@
 #include "p11_md.h"
 
 #include "pkcs11.h"
+#include "pkcs-11v2-20a3.h"
 #include <jni.h>
 #include <jni_util.h>
 
@@ -272,6 +273,7 @@
 #define CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_MASTER_KEY_DERIVE_PARAMS"
 #define CLASS_SSL3_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_PARAMS"
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
+#define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
 
 /* function to convert a PKCS#11 return value other than CK_OK into a Java Exception
  * or to throw a PKCS11RuntimeException
