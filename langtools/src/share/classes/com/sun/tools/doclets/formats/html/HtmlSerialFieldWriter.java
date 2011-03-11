@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
@@ -53,7 +52,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     }
 
     public List<FieldDoc> members(ClassDoc cd) {
-        return Util.asList(cd.serializableFields());
+        return Arrays.asList(cd.serializableFields());
     }
 
     protected void printTypeLinkNoDimension(Type type) {

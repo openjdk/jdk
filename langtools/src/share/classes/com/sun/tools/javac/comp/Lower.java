@@ -2817,8 +2817,8 @@ public class Lower extends TreeTranslator {
                     // local class or this() call
                     thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
                 } else {
-                    // super() call of nested class
-                    thisArg = makeOwnerThis(tree.meth.pos(), c, false);
+                    // super() call of nested class - never pick 'this'
+                    thisArg = makeOwnerThisN(tree.meth.pos(), c, false);
                 }
                 tree.args = tree.args.prepend(thisArg);
             }

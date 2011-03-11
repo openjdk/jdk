@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,11 @@
 
 package com.sun.tools.javadoc;
 
-
 import com.sun.javadoc.*;
-
-import static com.sun.javadoc.LanguageVersion.*;
 
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.TypeTags.*;
 
@@ -55,6 +51,7 @@ public class ParameterizedTypeImpl
     /**
      * Return the generic class or interface that declared this type.
      */
+    @Override
     public ClassDoc asClassDoc() {
         return env.getClassDoc((ClassSymbol)type.tsym);
     }
@@ -111,14 +108,17 @@ public class ParameterizedTypeImpl
     // Asking for the "name" of a parameterized type doesn't exactly make
     // sense.  It's a type expression.  Return the name of its generic
     // type.
+    @Override
     public String typeName() {
         return TypeMaker.getTypeName(type, false);
     }
 
+    @Override
     public ParameterizedType asParameterizedType() {
         return this;
     }
 
+    @Override
     public String toString() {
         return parameterizedTypeToString(env, (ClassType)type, true);
     }
@@ -128,7 +128,7 @@ public class ParameterizedTypeImpl
         if (env.legacyDoclet) {
             return TypeMaker.getTypeName(cl, full);
         }
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         if (cl.getEnclosingType().tag != CLASS) {               // if not an inner class...
             s.append(TypeMaker.getTypeName(cl, full));
         } else {

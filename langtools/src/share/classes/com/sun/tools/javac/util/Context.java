@@ -108,7 +108,7 @@ public class Context {
      * instance.
      */
     public static interface Factory<T> {
-        T make();
+        T make(Context c);
     };
 
     /**
@@ -124,6 +124,8 @@ public class Context {
         Object old = ht.put(key, fac);
         if (old != null)
             throw new AssertionError("duplicate context value");
+        checkState(ft);
+        ft.put(key, fac); // cannot be duplicate if unique in ht
     }
 
     /** Set the value for the key in this context. */
@@ -142,7 +144,7 @@ public class Context {
         Object o = ht.get(key);
         if (o instanceof Factory<?>) {
             Factory<?> fac = (Factory<?>)o;
-            o = fac.make();
+            o = fac.make(this);
             if (o instanceof Factory<?>)
                 throw new AssertionError("T extends Context.Factory");
             Assert.check(ht.get(key) == o);
@@ -158,6 +160,20 @@ public class Context {
 
     public Context() {}
 
+    /**
+     * The table of preregistered factories.
+     */
+    private Map<Key<?>,Factory<?>> ft = new HashMap<Key<?>,Factory<?>>();
+
+    public Context(Context prev) {
+        kt.putAll(prev.kt);     // retain all implicit keys
+        ft.putAll(prev.ft);     // retain all factory objects
+        ht.putAll(prev.ft);     // init main table with factories
+    }
+
+    /*
+     * The key table, providing a unique Key<T> for each Class<T>.
+     */
     private Map<Class<?>, Key<?>> kt = new HashMap<Class<?>, Key<?>>();
 
     private <T> Key<T> key(Class<T> clss) {
@@ -198,6 +214,7 @@ public class Context {
     public void clear() {
         ht = null;
         kt = null;
+        ft = null;
     }
 
     private static void checkState(Map<?,?> t) {
