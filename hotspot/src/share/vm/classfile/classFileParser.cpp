@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,12 +146,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
         break;
       case JVM_CONSTANT_MethodHandle :
       case JVM_CONSTANT_MethodType :
-        if (!EnableMethodHandles ||
-            _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+        if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
           classfile_parse_error(
-            (!EnableMethodHandles ?
-             "This JVM does not support constant tag %u in class file %s" :
-             "Class file version does not support constant tag %u in class file %s"),
+            "Class file version does not support constant tag %u in class file %s",
+            tag, CHECK);
+        }
+        if (!EnableMethodHandles) {
+          classfile_parse_error(
+            "This JVM does not support constant tag %u in class file %s",
             tag, CHECK);
         }
         if (tag == JVM_CONSTANT_MethodHandle) {
@@ -170,12 +172,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
       case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
-          if (!EnableInvokeDynamic ||
-              _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+          if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
             classfile_parse_error(
-              (!EnableInvokeDynamic ?
-               "This JVM does not support constant tag %u in class file %s" :
-               "Class file version does not support constant tag %u in class file %s"),
+              "Class file version does not support constant tag %u in class file %s",
+              tag, CHECK);
+          }
+          if (!EnableInvokeDynamic) {
+            classfile_parse_error(
+              "This JVM does not support constant tag %u in class file %s",
               tag, CHECK);
           }
           cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
@@ -2823,6 +2827,7 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && word_sig_index == 0)  return;
   if (word_sig_index == 0)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
@@ -2862,6 +2867,7 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && !found_vmentry)  return;
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing vmentry byte field in java.dyn.MethodHandle");
@@ -3230,7 +3236,12 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     // adjust the vmentry field declaration in java.dyn.MethodHandle
-    if (EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
+    if (EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
+      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    }
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
+      // allow vmentry field in MethodHandleImpl also
       java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 

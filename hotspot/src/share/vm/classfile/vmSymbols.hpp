@@ -240,13 +240,18 @@
   /* internal classes known only to the JVM: */                                                   \
   template(java_dyn_MethodTypeForm,                   "java/dyn/MethodTypeForm")                  \
   template(java_dyn_MethodTypeForm_signature,         "Ljava/dyn/MethodTypeForm;")                \
-  template(sun_dyn_MemberName,                        "sun/dyn/MemberName")                       \
-  template(sun_dyn_MemberName_signature,              "Lsun/dyn/MemberName;")                     \
-  template(sun_dyn_MethodHandleImpl,                  "sun/dyn/MethodHandleImpl")                 \
-  template(sun_dyn_MethodHandleNatives,               "sun/dyn/MethodHandleNatives")              \
-  template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")              \
-  template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")                \
-  template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")               \
+  template(java_dyn_MemberName,                       "java/dyn/MemberName")                      \
+  template(java_dyn_MethodHandleImpl,                 "java/dyn/MethodHandleImpl")                \
+  template(java_dyn_MethodHandleNatives,              "java/dyn/MethodHandleNatives")             \
+  template(java_dyn_AdapterMethodHandle,              "java/dyn/AdapterMethodHandle")             \
+  template(java_dyn_BoundMethodHandle,                "java/dyn/BoundMethodHandle")               \
+  template(java_dyn_DirectMethodHandle,               "java/dyn/DirectMethodHandle")              \
+  template(sun_dyn_MemberName,                        "sun/dyn/MemberName")             /* AllowTransitionalJSR292 ONLY */ \
+  template(sun_dyn_MethodHandleImpl,                  "sun/dyn/MethodHandleImpl")       /* AllowTransitionalJSR292 ONLY */ \
+  template(sun_dyn_MethodHandleNatives,               "sun/dyn/MethodHandleNatives")    /* AllowTransitionalJSR292 ONLY */ \
+  template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")    /* AllowTransitionalJSR292 ONLY */ \
+  template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")      /* AllowTransitionalJSR292 ONLY */ \
+  template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")     /* AllowTransitionalJSR292 ONLY */ \
   /* internal up-calls made only by the JVM, via class sun.dyn.MethodHandleNatives: */            \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature, "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/dyn/MethodType;") \
@@ -255,7 +260,8 @@
   template(linkMethodHandleConstant_name,             "linkMethodHandleConstant")                 \
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/dyn/MethodHandle;") \
   template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
-  template(makeDynamicCallSite_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Lsun/dyn/MemberName;I)Ljava/dyn/CallSite;") \
+  template(makeDynamicCallSite_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Ljava/dyn/MemberName;I)Ljava/dyn/CallSite;") \
+  template(makeDynamicCallSite_TRANS_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Lsun/dyn/MemberName;I)Ljava/dyn/CallSite;") /* AllowTransitionalJSR292 ONLY */ \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
                                                                                                   \
@@ -882,7 +888,8 @@
                                                                                                                           \
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_object_array_object_signature, F_R) \
   /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
-  do_intrinsic(_checkSpreadArgument,      sun_dyn_MethodHandleImpl, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) \
+  do_intrinsic(_checkSpreadArgument,      java_dyn_MethodHandleNatives, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) \
+  do_intrinsic(_checkSpreadArgument_TRANS, sun_dyn_MethodHandleImpl,    checkSpreadArgument_name, checkSpreadArgument_signature, F_S) /* AllowTransitionalJSR292 ONLY */ \
    do_name(    checkSpreadArgument_name,       "checkSpreadArgument")                                                   \
    do_name(    checkSpreadArgument_signature,  "(Ljava/lang/Object;I)V")                                                \
   do_intrinsic(_invokeExact,              java_dyn_MethodHandle, invokeExact_name,   object_array_object_signature, F_RN) \
@@ -995,6 +1002,7 @@ class vmSymbols: AllStatic {
 
   // Returns symbol's SID if one is assigned, else NO_SID.
   static SID find_sid(Symbol* symbol);
+  static SID find_sid(const char* symbol_name);
 
 #ifndef PRODUCT
   // No need for this in the product:

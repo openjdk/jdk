@@ -855,7 +855,7 @@ bool methodOopDesc::is_method_handle_invoke_name(vmSymbols::SID name_sid) {
   case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
     return true;
   }
-  if (AllowTransitionalJSR292
+  if ((AllowTransitionalJSR292 || AllowInvokeForInvokeGeneric)
       && name_sid == vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name))
     return true;
   return false;
@@ -1127,7 +1127,8 @@ void methodOopDesc::init_intrinsic_id() {
       id = vmIntrinsics::_invokeExact;
       break;
     case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):
-      if (AllowTransitionalJSR292)  id = vmIntrinsics::_invokeExact;
+      if (AllowInvokeForInvokeGeneric)   id = vmIntrinsics::_invokeGeneric;
+      else if (AllowTransitionalJSR292)  id = vmIntrinsics::_invokeExact;
       break;
     }
     break;

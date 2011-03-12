@@ -3719,6 +3719,13 @@ class CommandLineFlags {
   experimental(bool, AllowTransitionalJSR292, true,                         \
           "recognize pre-PFD formats of invokedynamic")                     \
                                                                             \
+  experimental(bool, PreferTransitionalJSR292, false,                       \
+          "prefer pre-PFD APIs on boot class path, if they exist")          \
+                                                                            \
+  experimental(bool, AllowInvokeForInvokeGeneric, false,                    \
+          "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
+          "as equivalent methods")                                          \
+                                                                            \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
                                                                             \
