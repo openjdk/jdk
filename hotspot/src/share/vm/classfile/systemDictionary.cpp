@@ -2450,7 +2450,7 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
   }
 }
 
-// Ask Java code to find or construct a java.dyn.MethodType for the given
+// Ask Java code to find or construct a java.lang.invoke.MethodType for the given
 // signature, as interpreted relative to the given class loader.
 // Because of class loader constraints, all method handle usage must be
 // consistent with this loader.
@@ -2504,25 +2504,33 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   }
   assert(arg == npts, "");
 
-  // call sun.dyn.MethodHandleNatives::findMethodType(Class rt, Class[] pts) -> MethodType
+  // call java.lang.invoke.MethodHandleNatives::findMethodType(Class rt, Class[] pts) -> MethodType
   JavaCallArguments args(Handle(THREAD, rt()));
   args.push_oop(pts());
   JavaValue result(T_OBJECT);
+  Symbol* findMethodHandleType_signature = vmSymbols::findMethodHandleType_signature();
+  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodType_klass()->name() == vmSymbols::java_dyn_MethodType()) {
+    findMethodHandleType_signature = vmSymbols::findMethodHandleType_TRANS_signature();
+  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::findMethodHandleType_name(),
-                         vmSymbols::findMethodHandleType_signature(),
+                         findMethodHandleType_signature,
                          &args, CHECK_(empty));
   Handle method_type(THREAD, (oop) result.get_jobject());
 
   if (for_invokeGeneric) {
-    // call sun.dyn.MethodHandleNatives::notifyGenericMethodType(MethodType) -> void
+    // call java.lang.invoke.MethodHandleNatives::notifyGenericMethodType(MethodType) -> void
     JavaCallArguments args(Handle(THREAD, method_type()));
     JavaValue no_result(T_VOID);
+    Symbol* notifyGenericMethodType_signature = vmSymbols::notifyGenericMethodType_signature();
+    if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodType_klass()->name() == vmSymbols::java_dyn_MethodType()) {
+      notifyGenericMethodType_signature = vmSymbols::notifyGenericMethodType_TRANS_signature();
+    }
     JavaCalls::call_static(&no_result,
                            SystemDictionary::MethodHandleNatives_klass(),
                            vmSymbols::notifyGenericMethodType_name(),
-                           vmSymbols::notifyGenericMethodType_signature(),
+                           notifyGenericMethodType_signature,
                            &args, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If the notification fails, just kill it.
@@ -2563,7 +2571,7 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
     THROW_MSG_(vmSymbols::java_lang_LinkageError(), "bad signature", empty);
   }
 
-  // call sun.dyn.MethodHandleNatives::linkMethodHandleConstant(Class caller, int refKind, Class callee, String name, Object type) -> MethodHandle
+  // call java.lang.invoke.MethodHandleNatives::linkMethodHandleConstant(Class caller, int refKind, Class callee, String name, Object type) -> MethodHandle
   JavaCallArguments args;
   args.push_oop(caller->java_mirror());  // the referring class
   args.push_int(ref_kind);
@@ -2571,15 +2579,19 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   args.push_oop(name());
   args.push_oop(type());
   JavaValue result(T_OBJECT);
+  Symbol* linkMethodHandleConstant_signature = vmSymbols::linkMethodHandleConstant_signature();
+  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandle_klass()->name() == vmSymbols::java_dyn_MethodHandle()) {
+    linkMethodHandleConstant_signature = vmSymbols::linkMethodHandleConstant_TRANS_signature();
+  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::linkMethodHandleConstant_name(),
-                         vmSymbols::linkMethodHandleConstant_signature(),
+                         linkMethodHandleConstant_signature,
                          &args, CHECK_(empty));
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
-// Ask Java code to find or construct a java.dyn.CallSite for the given
+// Ask Java code to find or construct a java.lang.invoke.CallSite for the given
 // name and signature, as interpreted relative to the given class loader.
 Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
                                                 Symbol* name,
@@ -2590,13 +2602,13 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
                                                 TRAPS) {
   Handle empty;
   guarantee(bootstrap_method.not_null() &&
-            java_dyn_MethodHandle::is_instance(bootstrap_method()),
+            java_lang_invoke_MethodHandle::is_instance(bootstrap_method()),
             "caller must supply a valid BSM");
 
   Handle caller_mname = MethodHandles::new_MemberName(CHECK_(empty));
   MethodHandles::init_MemberName(caller_mname(), caller_method());
 
-  // call sun.dyn.MethodHandleNatives::makeDynamicCallSite(bootm, name, mtype, info, caller_mname, caller_pos)
+  // call java.lang.invoke.MethodHandleNatives::makeDynamicCallSite(bootm, name, mtype, info, caller_mname, caller_pos)
   oop name_str_oop = StringTable::intern(name, CHECK_(empty)); // not a handle!
   JavaCallArguments args(Handle(THREAD, bootstrap_method()));
   args.push_oop(name_str_oop);
@@ -2609,6 +2621,9 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
   if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandleNatives_klass()->name() == vmSymbols::sun_dyn_MethodHandleNatives()) {
     makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_TRANS_signature();
   }
+  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandleNatives_klass()->name() == vmSymbols::java_dyn_MethodHandleNatives()) {
+    makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_TRANS2_signature();
+  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::makeDynamicCallSite_name(),
@@ -2616,7 +2631,7 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
   assert(call_site_oop->is_oop()
-         /*&& java_dyn_CallSite::is_instance(call_site_oop)*/, "must be sane");
+         /*&& java_lang_invoke_CallSite::is_instance(call_site_oop)*/, "must be sane");
   if (TraceMethodHandles) {
 #ifndef PRODUCT
     tty->print_cr("Linked invokedynamic bci=%d site="INTPTR_FORMAT":", caller_bci, call_site_oop);

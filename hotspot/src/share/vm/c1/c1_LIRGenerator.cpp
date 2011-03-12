@@ -2512,7 +2512,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       __ load(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
 
       // Load target MethodHandle from CallSite object.
-      __ load(new LIR_Address(tmp, java_dyn_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
+      __ load(new LIR_Address(tmp, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
 
       __ call_dynamic(target, receiver, result_register,
                       SharedRuntime::get_resolve_opt_virtual_call_stub(),

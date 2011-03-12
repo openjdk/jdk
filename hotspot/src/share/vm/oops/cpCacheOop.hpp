@@ -190,7 +190,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   );
 
   void set_dynamic_call(
-    Handle call_site,                            // Resolved java.dyn.CallSite (f1)
+    Handle call_site,                            // Resolved java.lang.invoke.CallSite (f1)
     methodHandle signature_invoker               // determines signature information
   );
 

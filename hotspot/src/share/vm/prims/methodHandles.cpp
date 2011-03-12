@@ -163,9 +163,9 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
     // or it may use the klass/index form; both forms mean the same thing.
     methodOop m = decode_methodOop(methodOop(vmtarget), decode_flags_result);
     if ((decode_flags_result & _dmf_has_receiver) != 0
-        && java_dyn_MethodType::is_instance(mtype)) {
+        && java_lang_invoke_MethodType::is_instance(mtype)) {
       // Extract receiver type restriction from mtype.ptypes[0].
-      objArrayOop ptypes = java_dyn_MethodType::ptypes(mtype);
+      objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(mtype);
       oop ptype0 = (ptypes == NULL || ptypes->length() < 1) ? oop(NULL) : ptypes->obj_at(0);
       if (java_lang_Class::is_instance(ptype0))
         receiver_limit_result = java_lang_Class::as_klassOop(ptype0);
@@ -199,18 +199,18 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
 // (MemberName is the non-operational name used for queries and setup.)
 
 methodOop MethodHandles::decode_DirectMethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result) {
-  oop vmtarget = sun_dyn_DirectMethodHandle::vmtarget(mh);
-  int vmindex  = sun_dyn_DirectMethodHandle::vmindex(mh);
-  oop mtype    = sun_dyn_DirectMethodHandle::type(mh);
+  oop vmtarget = java_lang_invoke_DirectMethodHandle::vmtarget(mh);
+  int vmindex  = java_lang_invoke_DirectMethodHandle::vmindex(mh);
+  oop mtype    = java_lang_invoke_DirectMethodHandle::type(mh);
   return decode_vmtarget(vmtarget, vmindex, mtype, receiver_limit_result, decode_flags_result);
 }
 
 methodOop MethodHandles::decode_BoundMethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result) {
-  assert(sun_dyn_BoundMethodHandle::is_instance(mh), "");
+  assert(java_lang_invoke_BoundMethodHandle::is_instance(mh), "");
   assert(mh->klass() != SystemDictionary::AdapterMethodHandle_klass(), "");
   for (oop bmh = mh;;) {
     // Bound MHs can be stacked to bind several arguments.
-    oop target = java_dyn_MethodHandle::vmtarget(bmh);
+    oop target = java_lang_invoke_MethodHandle::vmtarget(bmh);
     if (target == NULL)  return NULL;
     decode_flags_result |= MethodHandles::_dmf_binds_argument;
     klassOop tk = target->klass();
@@ -218,7 +218,7 @@ methodOop MethodHandles::decode_BoundMethodHandle(oop mh, klassOop& receiver_lim
       bmh = target;
       continue;
     } else {
-      if (java_dyn_MethodHandle::is_subclass(tk)) {
+      if (java_lang_invoke_MethodHandle::is_subclass(tk)) {
         //assert(tk == SystemDictionary::DirectMethodHandle_klass(), "end of BMH chain must be DMH");
         return decode_MethodHandle(target, receiver_limit_result, decode_flags_result);
       } else {
@@ -240,9 +240,9 @@ methodOop MethodHandles::decode_AdapterMethodHandle(oop mh, klassOop& receiver_l
   assert(mh->klass() == SystemDictionary::AdapterMethodHandle_klass(), "");
   for (oop amh = mh;;) {
     // Adapter MHs can be stacked to convert several arguments.
-    int conv_op = adapter_conversion_op(sun_dyn_AdapterMethodHandle::conversion(amh));
+    int conv_op = adapter_conversion_op(java_lang_invoke_AdapterMethodHandle::conversion(amh));
     decode_flags_result |= (_dmf_adapter_lsb << conv_op) & _DMF_ADAPTER_MASK;
-    oop target = java_dyn_MethodHandle::vmtarget(amh);
+    oop target = java_lang_invoke_MethodHandle::vmtarget(amh);
     if (target == NULL)  return NULL;
     klassOop tk = target->klass();
     if (tk == SystemDictionary::AdapterMethodHandle_klass()) {
@@ -258,14 +258,14 @@ methodOop MethodHandles::decode_AdapterMethodHandle(oop mh, klassOop& receiver_l
 methodOop MethodHandles::decode_MethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result) {
   if (mh == NULL)  return NULL;
   klassOop mhk = mh->klass();
-  assert(java_dyn_MethodHandle::is_subclass(mhk), "must be a MethodHandle");
+  assert(java_lang_invoke_MethodHandle::is_subclass(mhk), "must be a MethodHandle");
   if (mhk == SystemDictionary::DirectMethodHandle_klass()) {
     return decode_DirectMethodHandle(mh, receiver_limit_result, decode_flags_result);
   } else if (mhk == SystemDictionary::BoundMethodHandle_klass()) {
     return decode_BoundMethodHandle(mh, receiver_limit_result, decode_flags_result);
   } else if (mhk == SystemDictionary::AdapterMethodHandle_klass()) {
     return decode_AdapterMethodHandle(mh, receiver_limit_result, decode_flags_result);
-  } else if (sun_dyn_BoundMethodHandle::is_subclass(mhk)) {
+  } else if (java_lang_invoke_BoundMethodHandle::is_subclass(mhk)) {
     // could be a JavaMethodHandle (but not an adapter MH)
     return decode_BoundMethodHandle(mh, receiver_limit_result, decode_flags_result);
   } else {
@@ -308,7 +308,7 @@ methodOop MethodHandles::decode_method(oop x, klassOop& receiver_limit_result, i
   } else if (xk == SystemDictionary::MemberName_klass()) {
     // Note: This only works if the MemberName has already been resolved.
     return decode_MemberName(x, receiver_limit_result, decode_flags_result);
-  } else if (java_dyn_MethodHandle::is_subclass(xk)) {
+  } else if (java_lang_invoke_MethodHandle::is_subclass(xk)) {
     return decode_MethodHandle(x, receiver_limit_result, decode_flags_result);
   } else if (xk == SystemDictionary::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(x);
@@ -327,7 +327,7 @@ methodOop MethodHandles::decode_method(oop x, klassOop& receiver_limit_result, i
   } else {
     // unrecognized object
     assert(!x->is_method(), "already checked");
-    assert(!sun_dyn_MemberName::is_instance(x), "already checked");
+    assert(!java_lang_invoke_MemberName::is_instance(x), "already checked");
   }
   return NULL;
 }
@@ -336,15 +336,15 @@ methodOop MethodHandles::decode_method(oop x, klassOop& receiver_limit_result, i
 int MethodHandles::decode_MethodHandle_stack_pushes(oop mh) {
   if (mh->klass() == SystemDictionary::DirectMethodHandle_klass())
     return 0;                   // no push/pop
-  int this_vmslots = java_dyn_MethodHandle::vmslots(mh);
+  int this_vmslots = java_lang_invoke_MethodHandle::vmslots(mh);
   int last_vmslots = 0;
   oop last_mh = mh;
   for (;;) {
-    oop target = java_dyn_MethodHandle::vmtarget(last_mh);
+    oop target = java_lang_invoke_MethodHandle::vmtarget(last_mh);
     if (target->klass() == SystemDictionary::DirectMethodHandle_klass()) {
-      last_vmslots = java_dyn_MethodHandle::vmslots(target);
+      last_vmslots = java_lang_invoke_MethodHandle::vmslots(target);
       break;
-    } else if (!java_dyn_MethodHandle::is_instance(target)) {
+    } else if (!java_lang_invoke_MethodHandle::is_instance(target)) {
       // might be klass or method
       assert(target->is_method(), "must get here with a direct ref to method");
       last_vmslots = methodOop(target)->size_of_parameters();
@@ -361,16 +361,16 @@ int MethodHandles::decode_MethodHandle_stack_pushes(oop mh) {
 
 // MemberName support
 
-// import sun_dyn_MemberName.*
+// import java_lang_invoke_MemberName.*
 enum {
-  IS_METHOD      = sun_dyn_MemberName::MN_IS_METHOD,
-  IS_CONSTRUCTOR = sun_dyn_MemberName::MN_IS_CONSTRUCTOR,
-  IS_FIELD       = sun_dyn_MemberName::MN_IS_FIELD,
-  IS_TYPE        = sun_dyn_MemberName::MN_IS_TYPE,
-  SEARCH_SUPERCLASSES = sun_dyn_MemberName::MN_SEARCH_SUPERCLASSES,
-  SEARCH_INTERFACES   = sun_dyn_MemberName::MN_SEARCH_INTERFACES,
+  IS_METHOD      = java_lang_invoke_MemberName::MN_IS_METHOD,
+  IS_CONSTRUCTOR = java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR,
+  IS_FIELD       = java_lang_invoke_MemberName::MN_IS_FIELD,
+  IS_TYPE        = java_lang_invoke_MemberName::MN_IS_TYPE,
+  SEARCH_SUPERCLASSES = java_lang_invoke_MemberName::MN_SEARCH_SUPERCLASSES,
+  SEARCH_INTERFACES   = java_lang_invoke_MemberName::MN_SEARCH_INTERFACES,
   ALL_KINDS      = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE,
-  VM_INDEX_UNINITIALIZED = sun_dyn_MemberName::VM_INDEX_UNINITIALIZED
+  VM_INDEX_UNINITIALIZED = java_lang_invoke_MemberName::VM_INDEX_UNINITIALIZED
 };
 
 Handle MethodHandles::new_MemberName(TRAPS) {
@@ -405,10 +405,10 @@ void MethodHandles::init_MemberName(oop mname_oop, methodOop m, bool do_dispatch
   if (!do_dispatch || (flags & IS_CONSTRUCTOR) || m->can_be_statically_bound())
     vmindex = methodOopDesc::nonvirtual_vtable_index; // implies never any dispatch
   assert(vmindex != VM_INDEX_UNINITIALIZED, "Java sentinel value");
-  sun_dyn_MemberName::set_vmtarget(mname_oop, vmtarget);
-  sun_dyn_MemberName::set_vmindex(mname_oop,  vmindex);
-  sun_dyn_MemberName::set_flags(mname_oop,    flags);
-  sun_dyn_MemberName::set_clazz(mname_oop,    Klass::cast(m->method_holder())->java_mirror());
+  java_lang_invoke_MemberName::set_vmtarget(mname_oop, vmtarget);
+  java_lang_invoke_MemberName::set_vmindex(mname_oop,  vmindex);
+  java_lang_invoke_MemberName::set_flags(mname_oop,    flags);
+  java_lang_invoke_MemberName::set_clazz(mname_oop,    Klass::cast(m->method_holder())->java_mirror());
 }
 
 void MethodHandles::init_MemberName(oop mname_oop, klassOop field_holder, AccessFlags mods, int offset) {
@@ -416,21 +416,21 @@ void MethodHandles::init_MemberName(oop mname_oop, klassOop field_holder, Access
   oop vmtarget = field_holder;
   int vmindex  = offset;  // determines the field uniquely when combined with static bit
   assert(vmindex != VM_INDEX_UNINITIALIZED, "bad alias on vmindex");
-  sun_dyn_MemberName::set_vmtarget(mname_oop, vmtarget);
-  sun_dyn_MemberName::set_vmindex(mname_oop,  vmindex);
-  sun_dyn_MemberName::set_flags(mname_oop,    flags);
-  sun_dyn_MemberName::set_clazz(mname_oop,    Klass::cast(field_holder)->java_mirror());
+  java_lang_invoke_MemberName::set_vmtarget(mname_oop, vmtarget);
+  java_lang_invoke_MemberName::set_vmindex(mname_oop,  vmindex);
+  java_lang_invoke_MemberName::set_flags(mname_oop,    flags);
+  java_lang_invoke_MemberName::set_clazz(mname_oop,    Klass::cast(field_holder)->java_mirror());
 }
 
 
 methodOop MethodHandles::decode_MemberName(oop mname, klassOop& receiver_limit_result, int& decode_flags_result) {
-  int flags  = sun_dyn_MemberName::flags(mname);
+  int flags  = java_lang_invoke_MemberName::flags(mname);
   if ((flags & (IS_METHOD | IS_CONSTRUCTOR)) == 0)  return NULL;  // not invocable
-  oop vmtarget = sun_dyn_MemberName::vmtarget(mname);
-  int vmindex  = sun_dyn_MemberName::vmindex(mname);
+  oop vmtarget = java_lang_invoke_MemberName::vmtarget(mname);
+  int vmindex  = java_lang_invoke_MemberName::vmindex(mname);
   if (vmindex == VM_INDEX_UNINITIALIZED)  return NULL; // not resolved
   methodOop m = decode_vmtarget(vmtarget, vmindex, NULL, receiver_limit_result, decode_flags_result);
-  oop clazz = sun_dyn_MemberName::clazz(mname);
+  oop clazz = java_lang_invoke_MemberName::clazz(mname);
   if (clazz != NULL && java_lang_Class::is_instance(clazz)) {
     klassOop klass = java_lang_Class::as_klassOop(clazz);
     if (klass != NULL)  receiver_limit_result = klass;
@@ -442,8 +442,8 @@ methodOop MethodHandles::decode_MemberName(oop mname, klassOop& receiver_limit_r
 Symbol* MethodHandles::convert_to_signature(oop type_str,
                                             bool polymorphic,
                                             TRAPS) {
-  if (java_dyn_MethodType::is_instance(type_str)) {
-    return java_dyn_MethodType::as_signature(type_str, polymorphic, CHECK_NULL);
+  if (java_lang_invoke_MethodType::is_instance(type_str)) {
+    return java_lang_invoke_MethodType::as_signature(type_str, polymorphic, CHECK_NULL);
   } else if (java_lang_Class::is_instance(type_str)) {
     return java_lang_Class::as_signature(type_str, false, CHECK_NULL);
   } else if (java_lang_String::is_instance(type_str)) {
@@ -461,7 +461,7 @@ Symbol* MethodHandles::convert_to_signature(oop type_str,
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers dirctly to JVM internals.
 void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
-  assert(sun_dyn_MemberName::is_instance(mname()), "");
+  assert(java_lang_invoke_MemberName::is_instance(mname()), "");
 #ifdef ASSERT
   // If this assert throws, renegotiate the sentinel value used by the Java code,
   // so that it is distinct from any valid vtable index value, and any special
@@ -472,12 +472,12 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   const int sentinel_limit = methodOopDesc::highest_unused_vtable_index_value - sentinel_slop;
   assert(VM_INDEX_UNINITIALIZED < sentinel_limit, "Java sentinel != JVM sentinels");
 #endif
-  if (sun_dyn_MemberName::vmindex(mname()) != VM_INDEX_UNINITIALIZED)
+  if (java_lang_invoke_MemberName::vmindex(mname()) != VM_INDEX_UNINITIALIZED)
     return;  // already resolved
-  oop defc_oop = sun_dyn_MemberName::clazz(mname());
-  oop name_str = sun_dyn_MemberName::name(mname());
-  oop type_str = sun_dyn_MemberName::type(mname());
-  int flags    = sun_dyn_MemberName::flags(mname());
+  oop defc_oop = java_lang_invoke_MemberName::clazz(mname());
+  oop name_str = java_lang_invoke_MemberName::name(mname());
+  oop type_str = java_lang_invoke_MemberName::type(mname());
+  int flags    = java_lang_invoke_MemberName::flags(mname());
 
   if (defc_oop == NULL || name_str == NULL || type_str == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to resolve");
@@ -510,7 +510,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
 
   // convert the external string or reflective type to an internal signature
   TempNewSymbol type = convert_to_signature(type_str, polymorphic_signature, CHECK);
-  if (java_dyn_MethodType::is_instance(type_str) && polymorphic_signature) {
+  if (java_lang_invoke_MethodType::is_instance(type_str) && polymorphic_signature) {
     polymorphic_method_type = Handle(THREAD, type_str);  //preserve exactly
   }
 
@@ -557,9 +557,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         vmtarget = result.resolved_klass()->as_klassOop();
       }
       int mods = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
-      sun_dyn_MemberName::set_vmtarget(mname(), vmtarget);
-      sun_dyn_MemberName::set_vmindex(mname(),  vmindex);
-      sun_dyn_MemberName::set_modifiers(mname(), mods);
+      java_lang_invoke_MemberName::set_vmtarget(mname(), vmtarget);
+      java_lang_invoke_MemberName::set_vmindex(mname(),  vmindex);
+      java_lang_invoke_MemberName::set_modifiers(mname(), mods);
       DEBUG_ONLY(int junk; klassOop junk2);
       assert(decode_MemberName(mname(), junk2, junk) == result.resolved_method()(),
              "properly stored for later decoding");
@@ -586,9 +586,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       oop vmtarget = m();
       int vmindex  = methodOopDesc::nonvirtual_vtable_index;
       int mods     = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
-      sun_dyn_MemberName::set_vmtarget(mname(), vmtarget);
-      sun_dyn_MemberName::set_vmindex(mname(),  vmindex);
-      sun_dyn_MemberName::set_modifiers(mname(), mods);
+      java_lang_invoke_MemberName::set_vmtarget(mname(), vmtarget);
+      java_lang_invoke_MemberName::set_vmindex(mname(),  vmindex);
+      java_lang_invoke_MemberName::set_modifiers(mname(), mods);
       DEBUG_ONLY(int junk; klassOop junk2);
       assert(decode_MemberName(mname(), junk2, junk) == result.resolved_method()(),
              "properly stored for later decoding");
@@ -605,9 +605,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       int vmindex  = fd.offset();
       int mods     = (fd.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS);
       if (vmindex == VM_INDEX_UNINITIALIZED)  break;  // should not happen
-      sun_dyn_MemberName::set_vmtarget(mname(),  vmtarget);
-      sun_dyn_MemberName::set_vmindex(mname(),   vmindex);
-      sun_dyn_MemberName::set_modifiers(mname(), mods);
+      java_lang_invoke_MemberName::set_vmtarget(mname(),  vmtarget);
+      java_lang_invoke_MemberName::set_vmindex(mname(),   vmindex);
+      java_lang_invoke_MemberName::set_modifiers(mname(), mods);
       return;
     }
   default:
@@ -618,11 +618,11 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   if (polymorphic_method_type.not_null()) {
     // Look on a non-null class loader.
     Handle cur_class_loader;
-    const int nptypes = java_dyn_MethodType::ptype_count(polymorphic_method_type());
+    const int nptypes = java_lang_invoke_MethodType::ptype_count(polymorphic_method_type());
     for (int i = 0; i <= nptypes; i++) {
       oop type_mirror;
-      if (i < nptypes)  type_mirror = java_dyn_MethodType::ptype(polymorphic_method_type(), i);
-      else              type_mirror = java_dyn_MethodType::rtype(polymorphic_method_type());
+      if (i < nptypes)  type_mirror = java_lang_invoke_MethodType::ptype(polymorphic_method_type(), i);
+      else              type_mirror = java_lang_invoke_MethodType::rtype(polymorphic_method_type());
       klassOop example_type = java_lang_Class::as_klassOop(type_mirror);
       if (example_type == NULL)  continue;
       oop class_loader = Klass::cast(example_type)->class_loader();
@@ -639,9 +639,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       }
       if (m != NULL) {
         int mods = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
-        sun_dyn_MemberName::set_vmtarget(mname(),  m);
-        sun_dyn_MemberName::set_vmindex(mname(),   m->vtable_index());
-        sun_dyn_MemberName::set_modifiers(mname(), mods);
+        java_lang_invoke_MemberName::set_vmtarget(mname(),  m);
+        java_lang_invoke_MemberName::set_vmindex(mname(),   m->vtable_index());
+        java_lang_invoke_MemberName::set_modifiers(mname(), mods);
         return;
       }
     }
@@ -653,17 +653,17 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers directly to JVM internals.
 void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
-  assert(sun_dyn_MemberName::is_instance(mname()), "");
-  oop vmtarget = sun_dyn_MemberName::vmtarget(mname());
-  int vmindex  = sun_dyn_MemberName::vmindex(mname());
+  assert(java_lang_invoke_MemberName::is_instance(mname()), "");
+  oop vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
+  int vmindex  = java_lang_invoke_MemberName::vmindex(mname());
   if (vmtarget == NULL || vmindex == VM_INDEX_UNINITIALIZED) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to expand");
   }
 
-  bool have_defc = (sun_dyn_MemberName::clazz(mname()) != NULL);
-  bool have_name = (sun_dyn_MemberName::name(mname()) != NULL);
-  bool have_type = (sun_dyn_MemberName::type(mname()) != NULL);
-  int flags      = sun_dyn_MemberName::flags(mname());
+  bool have_defc = (java_lang_invoke_MemberName::clazz(mname()) != NULL);
+  bool have_name = (java_lang_invoke_MemberName::name(mname()) != NULL);
+  bool have_type = (java_lang_invoke_MemberName::type(mname()) != NULL);
+  int flags      = java_lang_invoke_MemberName::flags(mname());
 
   if (suppress != 0) {
     if (suppress & _suppress_defc)  have_defc = true;
@@ -687,16 +687,16 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
         if (receiver_limit != NULL && receiver_limit != defc
             && Klass::cast(receiver_limit)->is_subtype_of(defc))
           defc = receiver_limit;
-        sun_dyn_MemberName::set_clazz(mname(), Klass::cast(defc)->java_mirror());
+        java_lang_invoke_MemberName::set_clazz(mname(), Klass::cast(defc)->java_mirror());
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
         Handle name = StringTable::intern(m->name(), CHECK);
-        sun_dyn_MemberName::set_name(mname(), name());
+        java_lang_invoke_MemberName::set_name(mname(), name());
       }
       if (!have_type) {
         Handle type = java_lang_String::create_from_symbol(m->signature(), CHECK);
-        sun_dyn_MemberName::set_type(mname(), type());
+        java_lang_invoke_MemberName::set_type(mname(), type());
       }
       return;
     }
@@ -711,16 +711,16 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       if (!defc->find_field_from_offset(vmindex, is_static, &fd))
         break;                  // cannot expand
       if (!have_defc) {
-        sun_dyn_MemberName::set_clazz(mname(), defc->java_mirror());
+        java_lang_invoke_MemberName::set_clazz(mname(), defc->java_mirror());
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
         Handle name = StringTable::intern(fd.name(), CHECK);
-        sun_dyn_MemberName::set_name(mname(), name());
+        java_lang_invoke_MemberName::set_name(mname(), name());
       }
       if (!have_type) {
         Handle type = java_lang_String::create_from_symbol(fd.signature(), CHECK);
-        sun_dyn_MemberName::set_type(mname(), type());
+        java_lang_invoke_MemberName::set_type(mname(), type());
       }
       return;
     }
@@ -775,7 +775,7 @@ int MethodHandles::find_MemberNames(klassOop k,
         --rskip;
       } else if (rfill < rlimit) {
         oop result = results->obj_at(rfill++);
-        if (!sun_dyn_MemberName::is_instance(result))
+        if (!java_lang_invoke_MemberName::is_instance(result))
           return -99;  // caller bug!
         MethodHandles::init_MemberName(result, st.klass()->as_klassOop(), st.access_flags(), st.offset());
       } else if (++overflow >= overflow_limit) {
@@ -823,7 +823,7 @@ int MethodHandles::find_MemberNames(klassOop k,
         --rskip;
       } else if (rfill < rlimit) {
         oop result = results->obj_at(rfill++);
-        if (!sun_dyn_MemberName::is_instance(result))
+        if (!java_lang_invoke_MemberName::is_instance(result))
           return -99;  // caller bug!
         MethodHandles::init_MemberName(result, m, true);
       } else if (++overflow >= overflow_limit) {
@@ -857,9 +857,9 @@ instanceKlassHandle MethodHandles::resolve_instance_klass(oop java_mirror_oop, T
 // Sanitize out methodOops, klassOops, and any other non-Java data.
 // This is for debugging and reflection.
 oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
-  assert(java_dyn_MethodHandle::is_instance(mh()), "must be a MH");
+  assert(java_lang_invoke_MethodHandle::is_instance(mh()), "must be a MH");
   if (format == ETF_HANDLE_OR_METHOD_NAME) {
-    oop target = java_dyn_MethodHandle::vmtarget(mh());
+    oop target = java_lang_invoke_MethodHandle::vmtarget(mh());
     if (target == NULL) {
       return NULL;                // unformed MH
     }
@@ -874,10 +874,10 @@ oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
       if (target->klass() == SystemDictionary::DirectMethodHandle_klass()) {
         return target;
       }
-      if (!java_dyn_MethodHandle::is_instance(target)){
+      if (!java_lang_invoke_MethodHandle::is_instance(target)){
         return NULL;                // unformed MH
       }
-      target = java_dyn_MethodHandle::vmtarget(target);
+      target = java_lang_invoke_MethodHandle::vmtarget(target);
     }
   }
   // cases of metadata in MH.vmtarget:
@@ -904,7 +904,7 @@ oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
       instanceKlassHandle mname_klass(THREAD, SystemDictionary::MemberName_klass());
       mname_klass->initialize(CHECK_NULL);
       Handle mname = mname_klass->allocate_instance_handle(CHECK_NULL);
-      sun_dyn_MemberName::set_vmindex(mname(), VM_INDEX_UNINITIALIZED);
+      java_lang_invoke_MemberName::set_vmindex(mname(), VM_INDEX_UNINITIALIZED);
       bool do_dispatch = ((decode_flags & MethodHandles::_dmf_does_dispatch) != 0);
       init_MemberName(mname(), m, do_dispatch);
       expand_MemberName(mname, 0, CHECK_NULL);
@@ -923,6 +923,7 @@ static const char* always_null_names[] = {
   "java/lang/Null",
   //"java/lang/Nothing",
   "sun/dyn/empty/Empty",
+  "sun/invoke/empty/Empty",
   NULL
 };
 
@@ -1025,7 +1026,7 @@ void MethodHandles::verify_method_signature(methodHandle m,
                                             int first_ptype_pos,
                                             KlassHandle insert_ptype,
                                             TRAPS) {
-  objArrayHandle ptypes(THREAD, java_dyn_MethodType::ptypes(mtype()));
+  objArrayHandle ptypes(THREAD, java_lang_invoke_MethodType::ptypes(mtype()));
   int pnum = first_ptype_pos;
   int pmax = ptypes->length();
   int mnum = 0;                 // method argument
@@ -1036,7 +1037,7 @@ void MethodHandles::verify_method_signature(methodHandle m,
     if (ss.at_return_type()) {
       if (pnum != pmax)
         { err = "too many arguments"; break; }
-      ptype_oop = java_dyn_MethodType::rtype(mtype());
+      ptype_oop = java_lang_invoke_MethodType::rtype(mtype());
     } else {
       if (pnum >= pmax)
         { err = "not enough arguments"; break; }
@@ -1111,7 +1112,7 @@ void MethodHandles::verify_method_type(methodHandle m,
   }
 
   if (m_needs_receiver && err == NULL) {
-    objArrayOop ptypes = java_dyn_MethodType::ptypes(mtype());
+    objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(mtype());
     if (ptypes->length() < first_ptype_pos)
       { err = "receiver argument is missing"; goto die; }
     if (has_bound_recv)
@@ -1131,15 +1132,15 @@ void MethodHandles::verify_method_type(methodHandle m,
 
 void MethodHandles::verify_vmslots(Handle mh, TRAPS) {
   // Verify vmslots.
-  int check_slots = argument_slot_count(java_dyn_MethodHandle::type(mh()));
-  if (java_dyn_MethodHandle::vmslots(mh()) != check_slots) {
+  int check_slots = argument_slot_count(java_lang_invoke_MethodHandle::type(mh()));
+  if (java_lang_invoke_MethodHandle::vmslots(mh()) != check_slots) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "bad vmslots in BMH");
   }
 }
 
 void MethodHandles::verify_vmargslot(Handle mh, int argnum, int argslot, TRAPS) {
   // Verify that argslot points at the given argnum.
-  int check_slot = argument_slot(java_dyn_MethodHandle::type(mh()), argnum);
+  int check_slot = argument_slot(java_lang_invoke_MethodHandle::type(mh()), argnum);
   if (argslot != check_slot || argslot < 0) {
     const char* fmt = "for argnum of %d, vmargslot is %d, should be %d";
     size_t msglen = strlen(fmt) + 3*11 + 1;
@@ -1160,8 +1161,8 @@ const char* MethodHandles::check_method_type_change(oop src_mtype, int src_beg, 
                                                     int delete_argnum,
                                                     oop dst_mtype, int dst_beg, int dst_end,
                                                     bool raw) {
-  objArrayOop src_ptypes = java_dyn_MethodType::ptypes(src_mtype);
-  objArrayOop dst_ptypes = java_dyn_MethodType::ptypes(dst_mtype);
+  objArrayOop src_ptypes = java_lang_invoke_MethodType::ptypes(src_mtype);
+  objArrayOop dst_ptypes = java_lang_invoke_MethodType::ptypes(dst_mtype);
 
   int src_max = src_ptypes->length();
   int dst_max = dst_ptypes->length();
@@ -1224,8 +1225,8 @@ const char* MethodHandles::check_method_type_change(oop src_mtype, int src_beg, 
   }
 
   // Now compare return types also.
-  oop src_rtype = java_dyn_MethodType::rtype(src_mtype);
-  oop dst_rtype = java_dyn_MethodType::rtype(dst_mtype);
+  oop src_rtype = java_lang_invoke_MethodType::rtype(src_mtype);
+  oop dst_rtype = java_lang_invoke_MethodType::rtype(dst_mtype);
   if (src_rtype != dst_rtype) {
     err = check_return_type_change(dst_rtype, src_rtype, raw); // note reversal!
     if (err != NULL)  return err;
@@ -1314,7 +1315,7 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
 // then return a negative number.  Otherwise, the result
 // is in the range [0..vmslots] inclusive.
 int MethodHandles::argument_slot(oop method_type, int arg) {
-  objArrayOop ptypes = java_dyn_MethodType::ptypes(method_type);
+  objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(method_type);
   int argslot = 0;
   int len = ptypes->length();
   if (arg < -1 || arg >= len)  return -99;
@@ -1328,7 +1329,7 @@ int MethodHandles::argument_slot(oop method_type, int arg) {
 
 // Given a slot number, return the argument number.
 int MethodHandles::argument_slot_to_argnum(oop method_type, int query_argslot) {
-  objArrayOop ptypes = java_dyn_MethodType::ptypes(method_type);
+  objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(method_type);
   int argslot = 0;
   int len = ptypes->length();
   for (int i = len-1; i >= 0; i--) {
@@ -1394,11 +1395,11 @@ methodHandle MethodHandles::dispatch_decoded_method(methodHandle m,
 
 void MethodHandles::verify_DirectMethodHandle(Handle mh, methodHandle m, TRAPS) {
   // Verify type.
-  Handle mtype(THREAD, java_dyn_MethodHandle::type(mh()));
+  Handle mtype(THREAD, java_lang_invoke_MethodHandle::type(mh()));
   verify_method_type(m, mtype, false, KlassHandle(), CHECK);
 
   // Verify vmslots.
-  if (java_dyn_MethodHandle::vmslots(mh()) != m->size_of_parameters()) {
+  if (java_lang_invoke_MethodHandle::vmslots(mh()) != m->size_of_parameters()) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "bad vmslots in DMH");
   }
 }
@@ -1410,7 +1411,7 @@ void MethodHandles::init_DirectMethodHandle(Handle mh, methodHandle m, bool do_d
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_dyn_MethodHandle::init_vmslots(mh());
+  java_lang_invoke_MethodHandle::init_vmslots(mh());
 
   if (VerifyMethodHandles) {
     // The privileged code which invokes this routine should not make
@@ -1470,8 +1471,8 @@ void MethodHandles::init_DirectMethodHandle(Handle mh, methodHandle m, bool do_d
 
   if (me == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
 
-  sun_dyn_DirectMethodHandle::set_vmtarget(mh(), vmtarget);
-  sun_dyn_DirectMethodHandle::set_vmindex(mh(),  vmindex);
+  java_lang_invoke_DirectMethodHandle::set_vmtarget(mh(), vmtarget);
+  java_lang_invoke_DirectMethodHandle::set_vmindex(mh(),  vmindex);
   DEBUG_ONLY(int flags; klassOop rlimit);
   assert(MethodHandles::decode_method(mh(), rlimit, flags) == m(),
          "properly stored for later decoding");
@@ -1482,15 +1483,15 @@ void MethodHandles::init_DirectMethodHandle(Handle mh, methodHandle m, bool do_d
   assert(decode_MethodHandle_stack_pushes(mh()) == 0, "DMH does not move stack");
 
   // Done!
-  java_dyn_MethodHandle::set_vmentry(mh(), me);
+  java_lang_invoke_MethodHandle::set_vmentry(mh(), me);
 }
 
 void MethodHandles::verify_BoundMethodHandle_with_receiver(Handle mh,
                                                            methodHandle m,
                                                            TRAPS) {
   // Verify type.
-  oop receiver = sun_dyn_BoundMethodHandle::argument(mh());
-  Handle mtype(THREAD, java_dyn_MethodHandle::type(mh()));
+  oop receiver = java_lang_invoke_BoundMethodHandle::argument(mh());
+  Handle mtype(THREAD, java_lang_invoke_MethodHandle::type(mh()));
   KlassHandle bound_recv_type;
   if (receiver != NULL)  bound_recv_type = KlassHandle(THREAD, receiver->klass());
   verify_method_type(m, mtype, true, bound_recv_type, CHECK);
@@ -1498,11 +1499,11 @@ void MethodHandles::verify_BoundMethodHandle_with_receiver(Handle mh,
   int receiver_pos = m->size_of_parameters() - 1;
 
   // Verify MH.vmargslot, which should point at the bound receiver.
-  verify_vmargslot(mh, -1, sun_dyn_BoundMethodHandle::vmargslot(mh()), CHECK);
+  verify_vmargslot(mh, -1, java_lang_invoke_BoundMethodHandle::vmargslot(mh()), CHECK);
   //verify_vmslots(mh, CHECK);
 
   // Verify vmslots.
-  if (java_dyn_MethodHandle::vmslots(mh()) != receiver_pos) {
+  if (java_lang_invoke_MethodHandle::vmslots(mh()) != receiver_pos) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "bad vmslots in BMH (receiver)");
   }
 }
@@ -1520,7 +1521,7 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
 
   KlassHandle receiver_klass;
   {
-    oop receiver_oop = sun_dyn_BoundMethodHandle::argument(mh());
+    oop receiver_oop = java_lang_invoke_BoundMethodHandle::argument(mh());
     if (receiver_oop != NULL)
       receiver_klass = KlassHandle(THREAD, receiver_oop->klass());
   }
@@ -1531,31 +1532,31 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
   if (m.is_null())      { THROW(vmSymbols::java_lang_InternalError()); }
   if (m->is_abstract()) { THROW(vmSymbols::java_lang_AbstractMethodError()); }
 
-  java_dyn_MethodHandle::init_vmslots(mh());
+  java_lang_invoke_MethodHandle::init_vmslots(mh());
 
   if (VerifyMethodHandles) {
     verify_BoundMethodHandle_with_receiver(mh, m, CHECK);
   }
 
-  sun_dyn_BoundMethodHandle::set_vmtarget(mh(), m());
+  java_lang_invoke_BoundMethodHandle::set_vmtarget(mh(), m());
 
   DEBUG_ONLY(int junk; klassOop junk2);
   assert(MethodHandles::decode_method(mh(), junk2, junk) == m(), "properly stored for later decoding");
   assert(decode_MethodHandle_stack_pushes(mh()) == 1, "BMH pushes one stack slot");
 
   // Done!
-  java_dyn_MethodHandle::set_vmentry(mh(), MethodHandles::entry(MethodHandles::_bound_ref_direct_mh));
+  java_lang_invoke_MethodHandle::set_vmentry(mh(), MethodHandles::entry(MethodHandles::_bound_ref_direct_mh));
 }
 
 void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnum,
                                              bool direct_to_method, TRAPS) {
   Handle ptype_handle(THREAD,
-                           java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum));
+                           java_lang_invoke_MethodType::ptype(java_lang_invoke_MethodHandle::type(target()), argnum));
   KlassHandle ptype_klass;
   BasicType ptype = java_lang_Class::as_BasicType(ptype_handle(), &ptype_klass);
   int slots_pushed = type2size[ptype];
 
-  oop argument = sun_dyn_BoundMethodHandle::argument(mh());
+  oop argument = java_lang_invoke_BoundMethodHandle::argument(mh());
 
   const char* err = NULL;
 
@@ -1623,9 +1624,9 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
 
   if (err == NULL) {
     // Verify the rest of the method type.
-    err = check_method_type_insertion(java_dyn_MethodHandle::type(mh()),
+    err = check_method_type_insertion(java_lang_invoke_MethodHandle::type(mh()),
                                       argnum, ptype_handle(),
-                                      java_dyn_MethodHandle::type(target()));
+                                      java_lang_invoke_MethodHandle::type(target()));
   }
 
   if (err != NULL) {
@@ -1635,20 +1636,20 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
 
 void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum, TRAPS) {
   // Check arguments.
-  if (mh.is_null() || target.is_null() || !java_dyn_MethodHandle::is_instance(target())) {
+  if (mh.is_null() || target.is_null() || !java_lang_invoke_MethodHandle::is_instance(target())) {
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_dyn_MethodHandle::init_vmslots(mh());
+  java_lang_invoke_MethodHandle::init_vmslots(mh());
 
   if (VerifyMethodHandles) {
     int insert_after = argnum - 1;
-    verify_vmargslot(mh, insert_after, sun_dyn_BoundMethodHandle::vmargslot(mh()), CHECK);
+    verify_vmargslot(mh, insert_after, java_lang_invoke_BoundMethodHandle::vmargslot(mh()), CHECK);
     verify_vmslots(mh, CHECK);
   }
 
   // Get bound type and required slots.
-  oop ptype_oop = java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum);
+  oop ptype_oop = java_lang_invoke_MethodType::ptype(java_lang_invoke_MethodHandle::type(target()), argnum);
   BasicType ptype = java_lang_Class::as_BasicType(ptype_oop);
   int slots_pushed = type2size[ptype];
 
@@ -1659,12 +1660,12 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   bool direct_to_method = false;
   if (OptimizeMethodHandles &&
       target->klass() == SystemDictionary::DirectMethodHandle_klass() &&
-      (argnum == 0 || sun_dyn_DirectMethodHandle::vmindex(target()) < 0)) {
+      (argnum == 0 || java_lang_invoke_DirectMethodHandle::vmindex(target()) < 0)) {
     int decode_flags = 0; klassOop receiver_limit_oop = NULL;
     methodHandle m(THREAD, decode_method(target(), receiver_limit_oop, decode_flags));
     if (m.is_null()) { THROW_MSG(vmSymbols::java_lang_InternalError(), "DMH failed to decode"); }
     DEBUG_ONLY(int m_vmslots = m->size_of_parameters() - slots_pushed); // pos. of 1st arg.
-    assert(sun_dyn_BoundMethodHandle::vmslots(mh()) == m_vmslots, "type w/ m sig");
+    assert(java_lang_invoke_BoundMethodHandle::vmslots(mh()) == m_vmslots, "type w/ m sig");
     if (argnum == 0 && (decode_flags & _dmf_has_receiver) != 0) {
       KlassHandle receiver_limit(THREAD, receiver_limit_oop);
       init_BoundMethodHandle_with_receiver(mh, m,
@@ -1677,11 +1678,11 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     // to bind another argument and still invoke the methodOop directly.
     if (!(decode_flags & _dmf_does_dispatch)) {
       direct_to_method = true;
-      sun_dyn_BoundMethodHandle::set_vmtarget(mh(), m());
+      java_lang_invoke_BoundMethodHandle::set_vmtarget(mh(), m());
     }
   }
   if (!direct_to_method)
-    sun_dyn_BoundMethodHandle::set_vmtarget(mh(), target());
+    java_lang_invoke_BoundMethodHandle::set_vmtarget(mh(), target());
 
   if (VerifyMethodHandles) {
     verify_BoundMethodHandle(mh, target, argnum, direct_to_method, CHECK);
@@ -1703,7 +1704,7 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   }
 
   // Done!
-  java_dyn_MethodHandle::set_vmentry(mh(), me);
+  java_lang_invoke_MethodHandle::set_vmentry(mh(), me);
 }
 
 static void throw_InternalError_for_bad_conversion(int conversion, const char* err, TRAPS) {
@@ -1713,8 +1714,8 @@ static void throw_InternalError_for_bad_conversion(int conversion, const char* e
 }
 
 void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
-  jint conversion = sun_dyn_AdapterMethodHandle::conversion(mh());
-  int  argslot    = sun_dyn_AdapterMethodHandle::vmargslot(mh());
+  jint conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
+  int  argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
 
   verify_vmargslot(mh, argnum, argslot, CHECK);
   verify_vmslots(mh, CHECK);
@@ -1731,10 +1732,10 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
   BasicType dest = adapter_conversion_dest_type(conversion);
   int vminfo     = adapter_conversion_vminfo(conversion); // should be zero
 
-  Handle argument(THREAD,  sun_dyn_AdapterMethodHandle::argument(mh()));
-  Handle target(THREAD,    sun_dyn_AdapterMethodHandle::vmtarget(mh()));
-  Handle src_mtype(THREAD, java_dyn_MethodHandle::type(mh()));
-  Handle dst_mtype(THREAD, java_dyn_MethodHandle::type(target()));
+  Handle argument(THREAD,  java_lang_invoke_AdapterMethodHandle::argument(mh()));
+  Handle target(THREAD,    java_lang_invoke_AdapterMethodHandle::vmtarget(mh()));
+  Handle src_mtype(THREAD, java_lang_invoke_MethodHandle::type(mh()));
+  Handle dst_mtype(THREAD, java_lang_invoke_MethodHandle::type(target()));
 
   const char* err = NULL;
 
@@ -1760,7 +1761,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
       break;
     case _adapter_flyby:
     case _adapter_ricochet:
-      if (!java_dyn_MethodHandle::is_instance(argument()))
+      if (!java_lang_invoke_MethodHandle::is_instance(argument()))
         { err = "MethodHandle adapter argument required"; break; }
       break;
     default:
@@ -1806,9 +1807,9 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
           err = "adapter requires src/dest conversion subfields for swap"; break;
         }
         int swap_size = type2size[src];
-        oop src_mtype  = sun_dyn_AdapterMethodHandle::type(mh());
-        oop dest_mtype = sun_dyn_AdapterMethodHandle::type(target());
-        int slot_limit = sun_dyn_AdapterMethodHandle::vmslots(target());
+        oop src_mtype  = java_lang_invoke_AdapterMethodHandle::type(mh());
+        oop dest_mtype = java_lang_invoke_AdapterMethodHandle::type(target());
+        int slot_limit = java_lang_invoke_AdapterMethodHandle::vmslots(target());
         int src_slot   = argslot;
         int dest_slot  = vminfo;
         bool rotate_up = (src_slot > dest_slot); // upward rotation
@@ -1821,8 +1822,8 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
         } else if (ek == _adapter_swap_args && !(src_slot > dest_slot)) {
           err = "source of swap must be deeper in stack";
         } else if (ek == _adapter_swap_args) {
-          err = check_argument_type_change(java_dyn_MethodType::ptype(src_mtype, dest_arg),
-                                           java_dyn_MethodType::ptype(dest_mtype, src_arg),
+          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, dest_arg),
+                                           java_lang_invoke_MethodType::ptype(dest_mtype, src_arg),
                                            dest_arg);
         } else if (ek == _adapter_rot_args) {
           if (rotate_up) {
@@ -1830,8 +1831,8 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
             // rotate up: [dest_slot..src_slot-ss] --> [dest_slot+ss..src_slot]
             // that is:   [src_arg+1..dest_arg] --> [src_arg..dest_arg-1]
             for (int i = src_arg+1; i <= dest_arg && err == NULL; i++) {
-              err = check_argument_type_change(java_dyn_MethodType::ptype(src_mtype, i),
-                                               java_dyn_MethodType::ptype(dest_mtype, i-1),
+              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, i),
+                                               java_lang_invoke_MethodType::ptype(dest_mtype, i-1),
                                                i);
             }
           } else { // rotate down
@@ -1839,15 +1840,15 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
             // rotate down: [src_slot+ss..dest_slot] --> [src_slot..dest_slot-ss]
             // that is:     [dest_arg..src_arg-1] --> [dst_arg+1..src_arg]
             for (int i = dest_arg; i <= src_arg-1 && err == NULL; i++) {
-              err = check_argument_type_change(java_dyn_MethodType::ptype(src_mtype, i),
-                                               java_dyn_MethodType::ptype(dest_mtype, i+1),
+              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, i),
+                                               java_lang_invoke_MethodType::ptype(dest_mtype, i+1),
                                                i);
             }
           }
         }
         if (err == NULL)
-          err = check_argument_type_change(java_dyn_MethodType::ptype(src_mtype, src_arg),
-                                           java_dyn_MethodType::ptype(dest_mtype, dest_arg),
+          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, src_arg),
+                                           java_lang_invoke_MethodType::ptype(dest_mtype, dest_arg),
                                            src_arg);
       }
       break;
@@ -1918,8 +1919,8 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
   if (err == NULL) {
     // Make sure this adapter does not push too deeply.
     int slots_pushed = stack_move / stack_move_unit();
-    int this_vmslots = java_dyn_MethodHandle::vmslots(mh());
-    int target_vmslots = java_dyn_MethodHandle::vmslots(target());
+    int this_vmslots = java_lang_invoke_MethodHandle::vmslots(mh());
+    int target_vmslots = java_lang_invoke_MethodHandle::vmslots(target());
     if (slots_pushed != (target_vmslots - this_vmslots)) {
       err = "stack_move inconsistent with previous and current MethodType vmslots";
     } else if (slots_pushed > 0)  {
@@ -1961,7 +1962,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
     case _adapter_check_cast:
       {
         // The actual value being checked must be a reference:
-        err = check_argument_type_change(java_dyn_MethodType::ptype(src_mtype(), argnum),
+        err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), argnum),
                                          object_java_mirror(), argnum);
         if (err != NULL)  break;
 
@@ -1985,9 +1986,9 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
 }
 
 void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnum, TRAPS) {
-  oop  argument   = sun_dyn_AdapterMethodHandle::argument(mh());
-  int  argslot    = sun_dyn_AdapterMethodHandle::vmargslot(mh());
-  jint conversion = sun_dyn_AdapterMethodHandle::conversion(mh());
+  oop  argument   = java_lang_invoke_AdapterMethodHandle::argument(mh());
+  int  argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
+  jint conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
   jint conv_op    = adapter_conversion_op(conversion);
 
   // adjust the adapter code to the internal EntryKind enumeration:
@@ -1995,11 +1996,11 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   EntryKind ek_opt  = ek_orig;  // may be optimized
 
   // Finalize the vmtarget field (Java initialized it to null).
-  if (!java_dyn_MethodHandle::is_instance(target())) {
+  if (!java_lang_invoke_MethodHandle::is_instance(target())) {
     throw_InternalError_for_bad_conversion(conversion, "bad target", THREAD);
     return;
   }
-  sun_dyn_AdapterMethodHandle::set_vmtarget(mh(), target());
+  java_lang_invoke_AdapterMethodHandle::set_vmtarget(mh(), target());
 
   if (VerifyMethodHandles) {
     verify_AdapterMethodHandle(mh, argnum, CHECK);
@@ -2083,7 +2084,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   case _adapter_rot_args:
     {
       int swap_slots = type2size[src];
-      int slot_limit = sun_dyn_AdapterMethodHandle::vmslots(mh());
+      int slot_limit = java_lang_invoke_AdapterMethodHandle::vmslots(mh());
       int src_slot   = argslot;
       int dest_slot  = vminfo;
       int rotate     = (ek_orig == _adapter_swap_args) ? 0 : (src_slot > dest_slot) ? 1 : -1;
@@ -2147,10 +2148,10 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   jint new_conversion = adapter_conversion(conv_op, src, dest, stack_move, vminfo);
 
   // Finalize the conversion field.  (Note that it is final to Java code.)
-  sun_dyn_AdapterMethodHandle::set_conversion(mh(), new_conversion);
+  java_lang_invoke_AdapterMethodHandle::set_conversion(mh(), new_conversion);
 
   // Done!
-  java_dyn_MethodHandle::set_vmentry(mh(), entry(ek_opt));
+  java_lang_invoke_MethodHandle::set_vmentry(mh(), entry(ek_opt));
 
   // There should be enough memory barriers on exit from native methods
   // to ensure that the MH is fully initialized to all threads before
@@ -2158,7 +2159,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 }
 
 //
-// Here are the native methods on sun.dyn.MethodHandleImpl.
+// Here are the native methods on sun.invoke.MethodHandleImpl.
 // They are the private interface between this JVM and the HotSpot-specific
 // Java code that implements JSR 292 method handles.
 //
@@ -2168,7 +2169,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 
 // direct method handles for invokestatic or invokespecial
 // void init(DirectMethodHandle self, MemberName ref, boolean doDispatch, Class<?> caller);
-JVM_ENTRY(void, MHI_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
+JVM_ENTRY(void, MHN_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                              jobject target_jh, jboolean do_dispatch, jobject caller_jh)) {
   ResourceMark rm;              // for error messages
 
@@ -2177,13 +2178,13 @@ JVM_ENTRY(void, MHI_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the DMH in an unfinished state.
-  assert(java_dyn_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
+  assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   // which method are we really talking about?
   if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   oop target_oop = JNIHandles::resolve_non_null(target_jh);
-  if (sun_dyn_MemberName::is_instance(target_oop) &&
-      sun_dyn_MemberName::vmindex(target_oop) == VM_INDEX_UNINITIALIZED) {
+  if (java_lang_invoke_MemberName::is_instance(target_oop) &&
+      java_lang_invoke_MemberName::vmindex(target_oop) == VM_INDEX_UNINITIALIZED) {
     Handle mname(THREAD, target_oop);
     MethodHandles::resolve_MemberName(mname, CHECK);
     target_oop = mname(); // in case of GC
@@ -2232,7 +2233,7 @@ JVM_ENTRY(void, MHI_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
 JVM_END
 
 // bound method handles
-JVM_ENTRY(void, MHI_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
+JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                              jobject target_jh, int argnum)) {
   ResourceMark rm;              // for error messages
 
@@ -2241,12 +2242,12 @@ JVM_ENTRY(void, MHI_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the BMH in an unfinished state.
-  assert(java_dyn_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
+  assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
-  if (!java_dyn_MethodHandle::is_instance(target())) {
+  if (!java_lang_invoke_MethodHandle::is_instance(target())) {
     // Target object is a reflective method.  (%%% Do we need this alternate path?)
     Untested("init_BMH of non-MH");
     if (argnum != 0) { THROW(vmSymbols::java_lang_InternalError()); }
@@ -2269,7 +2270,7 @@ JVM_ENTRY(void, MHI_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
 JVM_END
 
 // adapter method handles
-JVM_ENTRY(void, MHI_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
+JVM_ENTRY(void, MHN_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                              jobject target_jh, int argnum)) {
   // This is the guy we are initializing:
   if (mh_jh == NULL || target_jh == NULL) {
@@ -2279,14 +2280,14 @@ JVM_ENTRY(void, MHI_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
   // Early returns out of this method leave the AMH in an unfinished state.
-  assert(java_dyn_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
+  assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   MethodHandles::init_AdapterMethodHandle(mh, target, argnum, CHECK);
 }
 JVM_END
 
 // method type forms
-JVM_ENTRY(void, MHI_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
+JVM_ENTRY(void, MHN_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
   if (erased_jh == NULL)  return;
   if (TraceMethodHandles) {
     tty->print("creating MethodType form ");
@@ -2307,9 +2308,9 @@ JVM_ENTRY(void, MHI_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
 JVM_END
 
 // debugging and reflection
-JVM_ENTRY(jobject, MHI_getTarget(JNIEnv *env, jobject igcls, jobject mh_jh, jint format)) {
+JVM_ENTRY(jobject, MHN_getTarget(JNIEnv *env, jobject igcls, jobject mh_jh, jint format)) {
   Handle mh(THREAD, JNIHandles::resolve(mh_jh));
-  if (!java_dyn_MethodHandle::is_instance(mh())) {
+  if (!java_lang_invoke_MethodHandle::is_instance(mh())) {
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
   oop target = MethodHandles::encode_target(mh, format, CHECK_NULL);
@@ -2317,7 +2318,7 @@ JVM_ENTRY(jobject, MHI_getTarget(JNIEnv *env, jobject igcls, jobject mh_jh, jint
 }
 JVM_END
 
-JVM_ENTRY(jint, MHI_getConstant(JNIEnv *env, jobject igcls, jint which)) {
+JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
   switch (which) {
   case MethodHandles::GC_JVM_PUSH_LIMIT:
     guarantee(MethodHandlePushLimit >= 2 && MethodHandlePushLimit <= 0xFF,
@@ -2341,36 +2342,36 @@ JVM_END
     template(MethodHandles,ETF_DIRECT_HANDLE) \
     template(MethodHandles,ETF_METHOD_NAME) \
     template(MethodHandles,ETF_REFLECT_METHOD) \
-    template(sun_dyn_MemberName,MN_IS_METHOD) \
-    template(sun_dyn_MemberName,MN_IS_CONSTRUCTOR) \
-    template(sun_dyn_MemberName,MN_IS_FIELD) \
-    template(sun_dyn_MemberName,MN_IS_TYPE) \
-    template(sun_dyn_MemberName,MN_SEARCH_SUPERCLASSES) \
-    template(sun_dyn_MemberName,MN_SEARCH_INTERFACES) \
-    template(sun_dyn_MemberName,VM_INDEX_UNINITIALIZED) \
-    template(sun_dyn_AdapterMethodHandle,OP_RETYPE_ONLY) \
-    template(sun_dyn_AdapterMethodHandle,OP_RETYPE_RAW) \
-    template(sun_dyn_AdapterMethodHandle,OP_CHECK_CAST) \
-    template(sun_dyn_AdapterMethodHandle,OP_PRIM_TO_PRIM) \
-    template(sun_dyn_AdapterMethodHandle,OP_REF_TO_PRIM) \
-    template(sun_dyn_AdapterMethodHandle,OP_PRIM_TO_REF) \
-    template(sun_dyn_AdapterMethodHandle,OP_SWAP_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_ROT_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_DUP_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_DROP_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_COLLECT_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_SPREAD_ARGS) \
-    template(sun_dyn_AdapterMethodHandle,OP_FLYBY) \
-    template(sun_dyn_AdapterMethodHandle,OP_RICOCHET) \
-    template(sun_dyn_AdapterMethodHandle,CONV_OP_LIMIT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_OP_MASK) \
-    template(sun_dyn_AdapterMethodHandle,CONV_VMINFO_MASK) \
-    template(sun_dyn_AdapterMethodHandle,CONV_VMINFO_SHIFT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_OP_SHIFT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_DEST_TYPE_SHIFT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_SRC_TYPE_SHIFT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_STACK_MOVE_SHIFT) \
-    template(sun_dyn_AdapterMethodHandle,CONV_STACK_MOVE_MASK) \
+    template(java_lang_invoke_MemberName,MN_IS_METHOD) \
+    template(java_lang_invoke_MemberName,MN_IS_CONSTRUCTOR) \
+    template(java_lang_invoke_MemberName,MN_IS_FIELD) \
+    template(java_lang_invoke_MemberName,MN_IS_TYPE) \
+    template(java_lang_invoke_MemberName,MN_SEARCH_SUPERCLASSES) \
+    template(java_lang_invoke_MemberName,MN_SEARCH_INTERFACES) \
+    template(java_lang_invoke_MemberName,VM_INDEX_UNINITIALIZED) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_RETYPE_ONLY) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_RETYPE_RAW) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_CHECK_CAST) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_PRIM_TO_PRIM) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_REF_TO_PRIM) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_PRIM_TO_REF) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_SWAP_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_ROT_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_DUP_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_DROP_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_COLLECT_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_SPREAD_ARGS) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_FLYBY) \
+    template(java_lang_invoke_AdapterMethodHandle,OP_RICOCHET) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_OP_LIMIT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_OP_MASK) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_VMINFO_MASK) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_VMINFO_SHIFT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_OP_SHIFT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_DEST_TYPE_SHIFT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_SRC_TYPE_SHIFT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_STACK_MOVE_SHIFT) \
+    template(java_lang_invoke_AdapterMethodHandle,CONV_STACK_MOVE_MASK) \
     /*end*/
 
 #define ONE_PLUS(scope,value) 1+
@@ -2386,7 +2387,7 @@ static const char con_names[] = { EACH_NAMED_CON(STRING_NULL) };
 #undef EACH_NAMED_CON
 #endif
 
-JVM_ENTRY(jint, MHI_getNamedCon(JNIEnv *env, jobject igcls, jint which, jobjectArray box_jh)) {
+JVM_ENTRY(jint, MHN_getNamedCon(JNIEnv *env, jobject igcls, jint which, jobjectArray box_jh)) {
 #ifndef PRODUCT
   if (which >= 0 && which < con_value_count) {
     int con = con_values[which];
@@ -2406,7 +2407,7 @@ JVM_ENTRY(jint, MHI_getNamedCon(JNIEnv *env, jobject igcls, jint which, jobjectA
 JVM_END
 
 // void init(MemberName self, AccessibleObject ref)
-JVM_ENTRY(void, MHI_init_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jobject target_jh)) {
+JVM_ENTRY(void, MHN_init_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jobject target_jh)) {
   if (mname_jh == NULL || target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   oop target_oop = JNIHandles::resolve_non_null(target_jh);
@@ -2415,7 +2416,7 @@ JVM_ENTRY(void, MHI_init_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jobje
 JVM_END
 
 // void expand(MemberName self)
-JVM_ENTRY(void, MHI_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
+JVM_ENTRY(void, MHN_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
   if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   MethodHandles::expand_MemberName(mname, 0, CHECK);
@@ -2423,14 +2424,14 @@ JVM_ENTRY(void, MHI_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
 JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
-JVM_ENTRY(void, MHI_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
+JVM_ENTRY(void, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
   if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
   // The trusted Java code that calls this method should already have performed
   // access checks on behalf of the given caller.  But, we can verify this.
   if (VerifyMethodHandles && caller_jh != NULL) {
-    klassOop reference_klass = java_lang_Class::as_klassOop(sun_dyn_MemberName::clazz(mname()));
+    klassOop reference_klass = java_lang_Class::as_klassOop(java_lang_invoke_MemberName::clazz(mname()));
     if (reference_klass != NULL) {
       // Emulate LinkResolver::check_klass_accessability.
       klassOop caller = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(caller_jh));
@@ -2448,7 +2449,7 @@ JVM_END
 
 //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
 //          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-JVM_ENTRY(jint, MHI_getMembers(JNIEnv *env, jobject igcls,
+JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
                                jclass clazz_jh, jstring name_jh, jstring sig_jh,
                                int mflags, jclass caller_jh, jint skip, jobjectArray results_jh)) {
   if (clazz_jh == NULL || results_jh == NULL)  return -1;
@@ -2487,14 +2488,14 @@ JVM_ENTRY(jint, MHI_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
-JVM_ENTRY(void, MHI_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh, jobject bsm_jh)) {
+JVM_ENTRY(void, MHN_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh, jobject bsm_jh)) {
   instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
   if (!AllowTransitionalJSR292) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "registerBootstrapMethod is only supported in JSR 292 EDR");
   }
   ik->link_class(CHECK);
-  if (!java_dyn_MethodHandle::is_instance(JNIHandles::resolve(bsm_jh))) {
+  if (!java_lang_invoke_MethodHandle::is_instance(JNIHandles::resolve(bsm_jh))) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "method handle");
   }
   const char* err = NULL;
@@ -2522,7 +2523,7 @@ JVM_ENTRY(void, MHI_registerBootstrap(JNIEnv *env, jobject igcls, jclass caller_
 }
 JVM_END
 
-JVM_ENTRY(jobject, MHI_getBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh)) {
+JVM_ENTRY(jobject, MHN_getBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh)) {
   if (!AllowTransitionalJSR292)
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "getBootstrap: transitional only");
   instanceKlassHandle ik = MethodHandles::resolve_instance_klass(caller_jh, THREAD);
@@ -2530,7 +2531,7 @@ JVM_ENTRY(jobject, MHI_getBootstrap(JNIEnv *env, jobject igcls, jclass caller_jh
 }
 JVM_END
 
-JVM_ENTRY(void, MHI_setCallSiteTarget(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
+JVM_ENTRY(void, MHN_setCallSiteTarget(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
   if (!AllowTransitionalJSR292)
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "setCallSite: transitional only");
 }
@@ -2538,8 +2539,6 @@ JVM_END
 
 
 /// JVM_RegisterMethodHandleMethods
-
-#define ADR "J"
 
 #define LANG "Ljava/lang/"
 #define JLINV "Ljava/lang/invoke/" /* standard package */
@@ -2561,31 +2560,31 @@ JVM_END
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
-// These are the native methods on sun.dyn.MethodHandleNatives.
+// These are the native methods on sun.invoke.MethodHandleNatives.
 static JNINativeMethod methods[] = {
   // void init(MemberName self, AccessibleObject ref)
-  {CC"init",                    CC"("AMH""MH"I)V",              FN_PTR(MHI_init_AMH)},
-  {CC"init",                    CC"("BMH""OBJ"I)V",             FN_PTR(MHI_init_BMH)},
-  {CC"init",                    CC"("DMH""OBJ"Z"CLS")V",        FN_PTR(MHI_init_DMH)},
-  {CC"init",                    CC"("MT")V",                    FN_PTR(MHI_init_MT)},
-  {CC"init",                    CC"("MEM""OBJ")V",              FN_PTR(MHI_init_Mem)},
-  {CC"expand",                  CC"("MEM")V",                   FN_PTR(MHI_expand_Mem)},
-  {CC"resolve",                 CC"("MEM""CLS")V",              FN_PTR(MHI_resolve_Mem)},
-  {CC"getTarget",               CC"("MH"I)"OBJ,                 FN_PTR(MHI_getTarget)},
-  {CC"getConstant",             CC"(I)I",                       FN_PTR(MHI_getConstant)},
+  {CC"init",                    CC"("AMH""MH"I)V",              FN_PTR(MHN_init_AMH)},
+  {CC"init",                    CC"("BMH""OBJ"I)V",             FN_PTR(MHN_init_BMH)},
+  {CC"init",                    CC"("DMH""OBJ"Z"CLS")V",        FN_PTR(MHN_init_DMH)},
+  {CC"init",                    CC"("MT")V",                    FN_PTR(MHN_init_MT)},
+  {CC"init",                    CC"("MEM""OBJ")V",              FN_PTR(MHN_init_Mem)},
+  {CC"expand",                  CC"("MEM")V",                   FN_PTR(MHN_expand_Mem)},
+  {CC"resolve",                 CC"("MEM""CLS")V",              FN_PTR(MHN_resolve_Mem)},
+  {CC"getTarget",               CC"("MH"I)"OBJ,                 FN_PTR(MHN_getTarget)},
+  {CC"getConstant",             CC"(I)I",                       FN_PTR(MHN_getConstant)},
   //  static native int getNamedCon(int which, Object[] name)
-  {CC"getNamedCon",             CC"(I["OBJ")I",                 FN_PTR(MHI_getNamedCon)},
+  {CC"getNamedCon",             CC"(I["OBJ")I",                 FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
   //          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-  {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHI_getMembers)}
+  {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
 };
 
 // More entry points specifically for EnableInvokeDynamic.
 // FIXME: Remove methods2 after AllowTransitionalJSR292 is removed.
 static JNINativeMethod methods2[] = {
-  {CC"registerBootstrap",       CC"("CLS MH")V",                FN_PTR(MHI_registerBootstrap)},
-  {CC"getBootstrap",            CC"("CLS")"MH,                  FN_PTR(MHI_getBootstrap)},
-  {CC"setCallSiteTarget",       CC"("CST MH")V",                FN_PTR(MHI_setCallSiteTarget)}
+  {CC"registerBootstrap",       CC"("CLS MH")V",                FN_PTR(MHN_registerBootstrap)},
+  {CC"getBootstrap",            CC"("CLS")"MH,                  FN_PTR(MHN_getBootstrap)},
+  {CC"setCallSiteTarget",       CC"("CST MH")V",                FN_PTR(MHN_setCallSiteTarget)}
 };
 
 static void hack_signatures(JNINativeMethod* methods, jint num_methods, const char* from_sig, const char* to_sig) {
@@ -2692,9 +2691,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
       // We need to link the MethodHandleImpl klass before we generate
       // the method handle adapters as the _raise_exception adapter uses
       // one of its methods (and its c2i-adapter).
-      KlassHandle    k  = SystemDictionaryHandles::MethodHandleImpl_klass();
-      instanceKlass* ik = instanceKlass::cast(k());
-      ik->link_class(CHECK);
+      klassOop k = SystemDictionary::MethodHandleImpl_klass();
+      if (k != NULL) {
+        instanceKlass* ik = instanceKlass::cast(k);
+        ik->link_class(CHECK);
+      }
     }
 
     MethodHandles::generate_adapters();
@@ -2711,8 +2712,8 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
 
     int status = env->RegisterNatives(MHN_class, methods2, sizeof(methods2)/sizeof(JNINativeMethod));
     if (env->ExceptionOccurred()) {
-      MethodHandles::set_enabled(false);
-      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+      // Don't do this, since it's too late:
+      //   MethodHandles::set_enabled(false)
       env->ExceptionClear();
     }
   }
