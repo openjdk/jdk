@@ -47,21 +47,19 @@ public class CorruptedZipFiles {
     }
 
     public static void main(String[] args) throws Exception {
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("x.zip"));
-        try {
+        try (FileOutputStream fos = new FileOutputStream("x.zip");
+             ZipOutputStream zos = new ZipOutputStream(fos))
+        {
             ZipEntry e = new ZipEntry("x");
             zos.putNextEntry(e);
             zos.write((int)'x');
-        } finally {
-            zos.close();
         }
 
         int len = (int)(new File("x.zip").length());
         byte[] good = new byte[len];
-        FileInputStream fis = new FileInputStream("x.zip");
-        fis.read(good);
-        fis.close();
-        fis = null;
+        try (FileInputStream fis = new FileInputStream("x.zip")) {
+            fis.read(good);
+        }
         new File("x.zip").delete();
 
         int endpos = len - ENDHDR;
@@ -150,17 +148,14 @@ public class CorruptedZipFiles {
                                       boolean getInputStream) {
         String zipName = "bad" + (uniquifier++) + ".zip";
         try {
-            FileOutputStream fos = new FileOutputStream(zipName);
-            fos.write(data);
-            fos.close();
-            ZipFile zf = new ZipFile(zipName);
-            try {
+            try (FileOutputStream fos = new FileOutputStream(zipName)) {
+                fos.write(data);
+            }
+            try (ZipFile zf = new ZipFile(zipName)) {
                 if (getInputStream) {
                     InputStream is = zf.getInputStream(new ZipEntry("x"));
                     is.read();
                 }
-            } finally {
-                zf.close();
             }
             fail("Failed to throw expected ZipException");
         } catch (ZipException e) {
@@ -170,8 +165,7 @@ public class CorruptedZipFiles {
                 unexpected(e);
         } catch (Throwable t) {
             unexpected(t);
-        }
-        finally {
+        } finally {
             new File(zipName).delete();
         }
     }

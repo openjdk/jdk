@@ -29,6 +29,7 @@
  * @run main Warn5
  */
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTool;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 public class Warn5 {
@@ -207,12 +209,15 @@ public class Warn5 {
         }
     }
 
+    // Create a single file manager and reuse it for each compile to save time.
+    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+
     static void test(SourceLevel sourceLevel, XlintOption xlint, TrustMe trustMe, SuppressLevel suppressLevel,
             ModifierKind modKind, MethodKind methKind, SignatureKind sig, BodyKind body) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaSource source = new JavaSource(trustMe, suppressLevel, modKind, methKind, sig, body);
         DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, dc,
+        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
                 Arrays.asList(xlint.getXlintOption(), "-source", sourceLevel.sourceKey), null, Arrays.asList(source));
         ct.analyze();
         check(sourceLevel, dc, source, xlint, trustMe,

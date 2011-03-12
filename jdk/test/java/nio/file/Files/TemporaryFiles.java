@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 7006126
+ * @bug 4313887 6838333 7006126 7023034
  * @summary Unit test for Files.createTempXXX
  * @library ..
  */
@@ -167,5 +167,31 @@ public class TemporaryFiles {
         testInvalidFileTemp("../blah", null);
         testInvalidFileTemp("dir/blah", null);
         testInvalidFileTemp("blah", ".dat/foo");
+
+        // nulls
+        try {
+            Files.createTempFile("blah", ".tmp", (FileAttribute<?>[])null);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            Files.createTempFile("blah", ".tmp", new FileAttribute<?>[] { null });
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            Files.createTempDirectory("blah", (FileAttribute<?>[])null);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            Files.createTempDirectory("blah", new FileAttribute<?>[] { null });
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            Files.createTempFile((Path)null, "blah", ".tmp");
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            Files.createTempDirectory((Path)null, "blah");
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
     }
 }

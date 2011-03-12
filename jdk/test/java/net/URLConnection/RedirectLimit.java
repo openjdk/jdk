@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,105 +36,81 @@ import java.io.*;
 import java.net.*;
 
 class RedirLimitServer extends Thread {
+    static final int TIMEOUT = 10 * 1000;
+    static final int NUM_REDIRECTS = 9;
 
-    ServerSocket s;
-    Socket   s1;
-    InputStream  is;
-    OutputStream os;
-    int port;
-    int nredirects = 9;
-
-    String reply1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
+    static final String reply1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Location: http://localhost:";
-    String reply2 = ".html\r\n" +
+    static final String reply2 = ".html\r\n" +
         "Connection: close\r\n" +
         "Content-Type: text/html; charset=iso-8859-1\r\n\r\n" +
         "<html>Hello</html>";
-
-    RedirLimitServer (ServerSocket y) {
-        s = y;
-        port = s.getLocalPort();
-    }
-
-    String reply3 = "HTTP/1.1 200 Ok\r\n" +
+    static final String reply3 = "HTTP/1.1 200 Ok\r\n" +
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Connection: close\r\n" +
         "Content-Type: text/html; charset=iso-8859-1\r\n\r\n" +
         "World";
 
-    public void run () {
+    final ServerSocket ss;
+    final int port;
+
+    RedirLimitServer(ServerSocket ss) {
+        this.ss = ss;
+        port = ss.getLocalPort();
+    }
+
+    public void run() {
         try {
-            s.setSoTimeout (2000);
-            for (int i=0; i<nredirects; i++) {
-                s1 = s.accept ();
-                s1.setSoTimeout (2000);
-                is = s1.getInputStream ();
-                os = s1.getOutputStream ();
-                is.read ();
-                String reply = reply1 + port + "/redirect" + i + reply2;
-                os.write (reply.getBytes());
-                os.close();
+            ss.setSoTimeout(TIMEOUT);
+            for (int i=0; i<NUM_REDIRECTS; i++) {
+                try (Socket s = ss.accept()) {
+                    s.setSoTimeout(TIMEOUT);
+                    InputStream is = s.getInputStream();
+                    OutputStream os = s.getOutputStream();
+                    is.read();
+                    String reply = reply1 + port + "/redirect" + i + reply2;
+                    os.write(reply.getBytes());
+                }
             }
-            s1 = s.accept ();
-            is = s1.getInputStream ();
-            os = s1.getOutputStream ();
-            is.read ();
-            os.write (reply3.getBytes());
-            os.close();
-        }
-        catch (Exception e) {
-            /* Just need thread to terminate */
+            try (Socket s = ss.accept()) {
+                InputStream is = s.getInputStream();
+                OutputStream os = s.getOutputStream();
+                is.read();
+                os.write(reply3.getBytes());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
-            try { s.close(); } catch (IOException unused) {}
+            try { ss.close(); } catch (IOException unused) {}
         }
     }
 };
 
-
 public class RedirectLimit {
-
-    public static final int DELAY = 10;
-
     public static void main(String[] args) throws Exception {
-        int nLoops = 1;
-        int nSize = 10;
-        int port, n =0;
-        byte b[] = new byte[nSize];
-        RedirLimitServer server;
-        ServerSocket sock;
+        ServerSocket ss = new ServerSocket (0);
+        int port = ss.getLocalPort();
+        RedirLimitServer server = new RedirLimitServer(ss);
+        server.start();
 
+        InputStream in = null;
         try {
-            sock = new ServerSocket (0);
-            port = sock.getLocalPort ();
-        }
-        catch (Exception e) {
-            System.out.println ("Exception: " + e);
-            return;
-        }
-
-        server = new RedirLimitServer(sock);
-        server.start ();
-
-        try  {
-
-            String s = "http://localhost:" + port;
-            URL url = new URL(s);
+            URL url = new URL("http://localhost:" + port);
             URLConnection conURL =  url.openConnection();
 
             conURL.setDoInput(true);
             conURL.setAllowUserInteraction(false);
             conURL.setUseCaches(false);
 
-            InputStream in = conURL.getInputStream();
+            in = conURL.getInputStream();
             if ((in.read() != (int)'W') || (in.read()!=(int)'o')) {
-                throw new RuntimeException ("Unexpected string read");
+                throw new RuntimeException("Unexpected string read");
             }
-        }
-        catch(IOException e) {
-            throw new RuntimeException ("Exception caught " + e);
+        } finally {
+            if ( in != null ) { in.close(); }
         }
     }
 }

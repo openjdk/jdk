@@ -64,7 +64,7 @@ COPYRIGHT_SYMBOL = &\#x00a9;
 # Macro to construct the copyright line
 #   (The GNU make 3.78.1 "if" conditional is broken, fixed in GNU make 3.81)
 define CopyrightLine # optionalurl optionalfirstyear optionaladdress
-$(if $(strip $1),<a href=\"$(strip $1)\">Copyright</a>,Copyright) \
+$(if $(strip $1),<a href="$(strip $1)">Copyright</a>,Copyright) \
 $(COPYRIGHT_SYMBOL) $(if $2,$2${COMMA},) $(COPYRIGHT_YEAR),\
 $(FULL_COMPANY_NAME). $3 All rights reserved.
 endef

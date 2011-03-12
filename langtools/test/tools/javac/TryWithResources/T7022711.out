@@ -1,0 +1,2 @@
+T7022711.java:14:19: compiler.err.cant.resolve.location.args: kindname.method, getChar, , , (compiler.misc.location.1: kindname.variable, is, java.io.DataInputStream)
+1 error

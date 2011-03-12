@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@ if [ "${TESTJAVA}" = "" ] ; then
 fi
 
 # set platform-dependent variables
-# PF: platform name, say, solaris-sparc
-
-PF=""
 
 OS=`uname -s`
 case "$OS" in
@@ -47,54 +44,28 @@ case "$OS" in
 esac
 
 KS=crl.jks
-JFILE=crl.jar
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
 
-rm $KS $JFILE 2> /dev/null
+rm $KS 2> /dev/null
 
-# Generates some crl files, each containing two entries
+# Test keytool -gencrl
 
 $KT -alias a -dname CN=a -keyalg rsa -genkey -validity 300
-$KT -alias a -gencrl -id 1:1 -id 2:2 -file crl1
-$KT -alias a -gencrl -id 3:3 -id 4:4 -file crl2
-$KT -alias b -dname CN=b -keyalg rsa -genkey -validity 300
-$KT -alias b -gencrl -id 5:1 -id 6:2 -file crl3
+$KT -alias a -gencrl -id 1:1 -id 2:2 -file crl1 || exit 1
+$KT -alias a -gencrl -id 3:3 -id 4:4 -file crl2 || exit 2
+$KT -alias a -gencrl -id 5:1 -id 6:2 -file crl3 || exit 4
 
-cat > ToURI.java <<EOF
-class ToURI {
-    public static void main(String[] args) throws Exception {
-        System.out.println(new java.io.File("crl1").toURI());
-    }
-}
-EOF
-$TESTJAVA${FS}bin${FS}javac ToURI.java
-$TESTJAVA${FS}bin${FS}java ToURI > uri
-$KT -alias c -dname CN=c -keyalg rsa -genkey -validity 300 \
-    -ext crl=uri:`cat uri`
+# Test keytool -printcrl
 
-echo A > A
+$KT -printcrl -file crl1 || exit 5
+$KT -printcrl -file crl2 || exit 6
+$KT -printcrl -file crl3 || exit 7
 
-# Test -crl:auto, cRLDistributionPoints is a local file
 
-$JAR cvf $JFILE A
-$JARSIGNER -keystore $KS -storepass changeit $JFILE c \
-        -crl:auto || exit 1
-$JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 6
-$KT -printcert -jarfile $JFILE | grep CRLs || exit 7
+# Test keytool -ext crl
 
-# Test -crl <file>
-
-$JAR cvf $JFILE A
-$JARSIGNER -keystore $KS -storepass changeit $JFILE a \
-        -crl crl1 -crl crl2 || exit 2
-$JARSIGNER -keystore $KS -storepass changeit $JFILE b \
-        -crl crl3 -crl crl2 || exit 3
-$JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 3
-$KT -printcert -jarfile $JFILE | grep CRLs || exit 4
-CRLCOUNT=`$KT -printcert -jarfile $JFILE | grep SerialNumber | wc -l`
-if [ $CRLCOUNT != 8 ]; then exit 5; fi
+$KT -alias b -dname CN=c -keyalg rsa -genkey -validity 300 \
+    -ext crl=uri:http://www.example.com/crl || exit 10
 
 exit 0

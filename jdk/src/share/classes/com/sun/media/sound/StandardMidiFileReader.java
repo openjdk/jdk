@@ -127,7 +127,7 @@ public class StandardMidiFileReader extends MidiFileReader {
                 resolution = timing;
             } else {
                 // SMPTE based timing.  first decipher the frame code.
-                int frameCode = (-1 * timing) >> 8;
+                int frameCode = -1 * (timing >> 8);
                 switch(frameCode) {
                 case 24:
                     divisionType = Sequence.SMPTE_24;
