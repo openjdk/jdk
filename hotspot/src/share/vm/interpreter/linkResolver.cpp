@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,9 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
       // Make sure the Java part of the runtime has been booted up.
       klassOop natives = SystemDictionary::MethodHandleNatives_klass();
       if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
-        SystemDictionary::resolve_or_fail(vmSymbols::sun_dyn_MethodHandleNatives(),
+        Symbol* natives_name = vmSymbols::java_dyn_MethodHandleNatives();
+        if (natives != NULL && AllowTransitionalJSR292)  natives_name = Klass::cast(natives)->name();
+        SystemDictionary::resolve_or_fail(natives_name,
                                           Handle(),
                                           Handle(),
                                           true,

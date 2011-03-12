@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1887,27 +1887,99 @@ static const short wk_init_info[] = {
   0
 };
 
+Symbol* SystemDictionary::find_backup_symbol(Symbol* symbol,
+                                             const char* from_prefix,
+                                             const char* to_prefix) {
+  assert(AllowTransitionalJSR292, "");  // delete this subroutine
+  Symbol* backup_symbol = NULL;
+  size_t from_len = strlen(from_prefix);
+  if (strncmp((const char*) symbol->base(), from_prefix, from_len) != 0)
+    return NULL;
+  char buf[100];
+  size_t to_len = strlen(to_prefix);
+  size_t tail_len = symbol->utf8_length() - from_len;
+  size_t new_len = to_len + tail_len;
+  guarantee(new_len < sizeof(buf), "buf too small");
+  memcpy(buf, to_prefix, to_len);
+  memcpy(buf + to_len, symbol->base() + from_len, tail_len);
+  buf[new_len] = '\0';
+  vmSymbols::SID backup_sid = vmSymbols::find_sid(buf);
+  if (backup_sid != vmSymbols::NO_SID) {
+    backup_symbol = vmSymbols::symbol_at(backup_sid);
+  }
+  return backup_symbol;
+}
+
+Symbol* SystemDictionary::find_backup_class_name(Symbol* symbol) {
+  assert(AllowTransitionalJSR292, "");  // delete this subroutine
+  if (symbol == NULL)  return NULL;
+  Symbol* backup_symbol = find_backup_symbol(symbol, "java/lang/invoke/", "java/dyn/");  // AllowTransitionalJSR292 ONLY
+  if (backup_symbol == NULL)
+    backup_symbol = find_backup_symbol(symbol, "java/dyn/", "sun/dyn/");  // AllowTransitionalJSR292 ONLY
+  return backup_symbol;
+}
+
+Symbol* SystemDictionary::find_backup_signature(Symbol* symbol) {
+  assert(AllowTransitionalJSR292, "");  // delete this subroutine
+  if (symbol == NULL)  return NULL;
+  return find_backup_symbol(symbol, "Ljava/lang/invoke/", "Ljava/dyn/");
+}
+
 bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int  info = wk_init_info[id - FIRST_WKID];
   int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   klassOop*    klassp = &_well_known_klasses[id];
-  bool must_load = (init_opt < SystemDictionary::Opt);
-  bool try_load  = true;
+  bool pre_load = (init_opt < SystemDictionary::Opt);
+  bool try_load = true;
   if (init_opt == SystemDictionary::Opt_Kernel) {
 #ifndef KERNEL
     try_load = false;
 #endif //KERNEL
   }
-  if ((*klassp) == NULL && try_load) {
+  Symbol* backup_symbol = NULL;  // symbol to try if the current symbol fails
+  if (init_opt == SystemDictionary::Pre_JSR292) {
+    if (!EnableMethodHandles)  try_load = false;  // do not bother to load such classes
+    if (AllowTransitionalJSR292) {
+      backup_symbol = find_backup_class_name(symbol);
+      if (try_load && PreferTransitionalJSR292) {
+        while (backup_symbol != NULL) {
+          (*klassp) = resolve_or_null(backup_symbol, CHECK_0); // try backup early
+          if (TraceMethodHandles) {
+            ResourceMark rm;
+            tty->print_cr("MethodHandles: try backup first for %s => %s (%s)",
+                          symbol->as_C_string(), backup_symbol->as_C_string(),
+                          ((*klassp) == NULL) ? "no such class" : "backup load succeeded");
+          }
+          if ((*klassp) != NULL)  return true;
+          backup_symbol = find_backup_class_name(backup_symbol);  // find next backup
+        }
+      }
+    }
+  }
+  if ((*klassp) != NULL)  return true;
+  if (!try_load)          return false;
+  while (symbol != NULL) {
+    bool must_load = (pre_load && (backup_symbol == NULL));
     if (must_load) {
       (*klassp) = resolve_or_fail(symbol, true, CHECK_0); // load required class
     } else {
       (*klassp) = resolve_or_null(symbol,       CHECK_0); // load optional klass
     }
+    if ((*klassp) != NULL)  return true;
+    // Go around again.  Example of long backup sequence:
+    // java.lang.invoke.MemberName, java.dyn.MemberName, sun.dyn.MemberName, ONLY if AllowTransitionalJSR292
+    if (TraceMethodHandles && (backup_symbol != NULL)) {
+      ResourceMark rm;
+      tty->print_cr("MethodHandles: backup for %s => %s",
+                    symbol->as_C_string(), backup_symbol->as_C_string());
+    }
+    symbol = backup_symbol;
+    if (AllowTransitionalJSR292)
+      backup_symbol = find_backup_class_name(symbol);
   }
-  return ((*klassp) != NULL);
+  return false;
 }
 
 void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS) {
@@ -2348,6 +2420,8 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
     if (THREAD->is_Compiler_thread())
       return NULL;              // do not attempt from within compiler
     bool for_invokeGeneric = (name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name));
+    if (AllowInvokeForInvokeGeneric && name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name))
+      for_invokeGeneric = true;
     bool found_on_bcp = false;
     Handle mt = find_method_handle_type(signature, accessing_klass,
                                         for_invokeGeneric,
@@ -2531,10 +2605,14 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
   args.push_oop(caller_mname());
   args.push_int(caller_bci);
   JavaValue result(T_OBJECT);
+  Symbol* makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_signature();
+  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandleNatives_klass()->name() == vmSymbols::sun_dyn_MethodHandleNatives()) {
+    makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_TRANS_signature();
+  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::makeDynamicCallSite_name(),
-                         vmSymbols::makeDynamicCallSite_signature(),
+                         makeDynamicCallSite_signature,
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
   assert(call_site_oop->is_oop()

@@ -100,7 +100,6 @@ void MethodHandleChain::set_last_method(oop target, TRAPS) {
 BasicType MethodHandleChain::compute_bound_arg_type(oop target, methodOop m, int arg_slot, TRAPS) {
   // There is no direct indication of whether the argument is primitive or not.
   // It is implied by the _vmentry code, and by the MethodType of the target.
-  // FIXME: Make it explicit MethodHandleImpl refactors out from MethodHandle
   BasicType arg_type = T_VOID;
   if (target != NULL) {
     oop mtype = java_dyn_MethodHandle::type(target);
@@ -960,6 +959,13 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   if (m == NULL) {
     // Get the intrinsic methodOop.
     m = vmIntrinsics::method_for(iid);
+    if (m == NULL && iid == vmIntrinsics::_checkSpreadArgument && AllowTransitionalJSR292) {
+      m = vmIntrinsics::method_for(vmIntrinsics::_checkSpreadArgument_TRANS);
+    }
+    if (m == NULL) {
+      ArgToken zero;
+      lose(vmIntrinsics::name_at(iid), CHECK_(zero));
+    }
   }
 
   klassOop  klass   = m->method_holder();
