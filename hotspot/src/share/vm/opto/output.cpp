@@ -1028,7 +1028,7 @@ void NonSafepointEmitter::emit_non_safepoint() {
 
 // helper for Fill_buffer bailout logic
 static void turn_off_compiler(Compile* C) {
-  if (CodeCache::unallocated_capacity() >= CodeCacheMinimumFreeSpace*10) {
+  if (CodeCache::largest_free_block() >= CodeCacheMinimumFreeSpace*10) {
     // Do not turn off compilation if a single giant method has
     // blown the code cache size.
     C->record_failure("excessive request to CodeCache");
