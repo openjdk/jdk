@@ -12,40 +12,43 @@ import java.lang.Character.UnicodeScript;
 
 public class CheckScript {
 
-    public static void main(String[] args) throws Exception {
-
-        BufferedReader sbfr = null;
+    static BufferedReader open(String[] args) throws FileNotFoundException {
         if (args.length == 0) {
-            sbfr = new BufferedReader(new FileReader(new File(System.getProperty("test.src", "."), "Scripts.txt")));
+            return new BufferedReader(new FileReader(new File(System.getProperty("test.src", "."), "Scripts.txt")));
         } else if (args.length == 1) {
-            sbfr = new BufferedReader(new FileReader(args[0]));
+            return new BufferedReader(new FileReader(args[0]));
         } else {
             System.out.println("java CharacterScript Scripts.txt");
             throw new RuntimeException("Datafile name should be specified.");
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+
         Matcher m = Pattern.compile("(\\p{XDigit}+)(?:\\.{2}(\\p{XDigit}+))?\\s+;\\s+(\\w+)\\s+#.*").matcher("");
         String line = null;
         HashMap<String,ArrayList<Integer>> scripts = new HashMap<>();
-        while ((line = sbfr.readLine()) != null) {
-            if (line.length() <= 1 || line.charAt(0) == '#') {
-                continue;
-            }
-            m.reset(line);
-            if (m.matches()) {
-                int start = Integer.parseInt(m.group(1), 16);
-                int end = (m.group(2)==null)?start
-                                            :Integer.parseInt(m.group(2), 16);
-                String name = m.group(3).toLowerCase(Locale.ENGLISH);
-                ArrayList<Integer> ranges = scripts.get(name);
-                if (ranges == null) {
-                    ranges = new ArrayList<Integer>();
-                    scripts.put(name, ranges);
+        try (BufferedReader sbfr = open(args)) {
+            while ((line = sbfr.readLine()) != null) {
+                if (line.length() <= 1 || line.charAt(0) == '#') {
+                    continue;
                 }
-                ranges.add(start);
-                ranges.add(end);
+                m.reset(line);
+                if (m.matches()) {
+                    int start = Integer.parseInt(m.group(1), 16);
+                    int end = (m.group(2)==null)?start
+                                                :Integer.parseInt(m.group(2), 16);
+                    String name = m.group(3).toLowerCase(Locale.ENGLISH);
+                    ArrayList<Integer> ranges = scripts.get(name);
+                    if (ranges == null) {
+                        ranges = new ArrayList<Integer>();
+                        scripts.put(name, ranges);
+                    }
+                    ranges.add(start);
+                    ranges.add(end);
+                }
             }
         }
-        sbfr.close();
         // check all defined ranges
         Integer[] ZEROSIZEARRAY = new Integer[0];
         for (String name : scripts.keySet()) {

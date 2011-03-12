@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (index < 0) {
             return htmlstr;
         }
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
             // Search for lowercase version of {@docRoot}
@@ -2279,7 +2279,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public String commentTagsToString(Tag holderTag, Doc doc, Tag[] tags,
             boolean isFirstSentence) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         // Array of all possible inline tags for this javadoc run
         configuration.tagletManager.checkTags(doc, tags, true);
         for (int i = 0; i < tags.length; i++) {
@@ -2315,7 +2315,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 StringTokenizer lines = new StringTokenizer(text, "\r\n", true);
                 StringBuffer textBuff = new StringBuffer();
                 while (lines.hasMoreTokens()) {
-                    StringBuffer line = new StringBuffer(lines.nextToken());
+                    StringBuilder line = new StringBuilder(lines.nextToken());
                     Util.replaceTabs(configuration.sourcetab, line);
                     textBuff.append(line.toString());
                 }
@@ -2473,7 +2473,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 return text;
             }
             int endindex = startindex + tobe.length();
-            StringBuffer replaced = new StringBuffer();
+            StringBuilder replaced = new StringBuilder();
             if (startindex > 0) {
                 replaced.append(text.substring(0, startindex));
             }

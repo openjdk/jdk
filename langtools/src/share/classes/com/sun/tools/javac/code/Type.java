@@ -93,6 +93,22 @@ public class Type implements PrimitiveType {
         return null;
     }
 
+    /**
+     * Get the representation of this type used for modelling purposes.
+     * By default, this is itself. For ErrorType, a different value
+     * may be provided,
+     */
+    public Type getModelType() {
+        return this;
+    }
+
+    public static List<Type> getModelTypes(List<Type> ts) {
+        ListBuffer<Type> lb = new ListBuffer<Type>();
+        for (Type t: ts)
+            lb.append(t.getModelType());
+        return lb.toList();
+    }
+
     public <R,S> R accept(Type.Visitor<R,S> v, S s) { return v.visitType(this, s); }
 
     /** Define a type given its tag and type symbol
@@ -190,7 +206,7 @@ public class Type implements PrimitiveType {
         if (ts.isEmpty()) {
             return "";
         } else {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             buf.append(ts.head.toString());
             for (List<Type> l = ts.tail; l.nonEmpty(); l = l.tail)
                 buf.append(",").append(l.head.toString());
@@ -464,7 +480,7 @@ public class Type implements PrimitiveType {
 
         boolean isPrintingBound = false;
         public String toString() {
-            StringBuffer s = new StringBuffer();
+            StringBuilder s = new StringBuilder();
             s.append(kind.toString());
             if (kind != UNBOUND)
                 s.append(type);
@@ -538,6 +554,10 @@ public class Type implements PrimitiveType {
          */
         public List<Type> interfaces_field;
 
+        /** All the interfaces of this class, including missing ones.
+         */
+        public List<Type> all_interfaces_field;
+
         public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym) {
             super(CLASS, tsym);
             this.outer_field = outer;
@@ -578,7 +598,7 @@ public class Type implements PrimitiveType {
         /** The Java source which this type represents.
          */
         public String toString() {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             if (getEnclosingType().tag == CLASS && tsym.owner.kind == TYP) {
                 buf.append(getEnclosingType().toString());
                 buf.append(".");
@@ -596,7 +616,7 @@ public class Type implements PrimitiveType {
 //where
             private String className(Symbol sym, boolean longform) {
                 if (sym.name.isEmpty() && (sym.flags() & COMPOUND) != 0) {
-                    StringBuffer s = new StringBuffer(supertype_field.toString());
+                    StringBuilder s = new StringBuilder(supertype_field.toString());
                     for (List<Type> is=interfaces_field; is.nonEmpty(); is = is.tail) {
                         s.append("&");
                         s.append(is.head.toString());

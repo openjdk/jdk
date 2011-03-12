@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,23 +57,23 @@ public class Messager extends Log implements DocErrorReporter {
         return (Messager)instance;
     }
 
-    public static void preRegister(final Context context,
+    public static void preRegister(Context context,
                                    final String programName) {
         context.put(logKey, new Context.Factory<Log>() {
-            public Log make() {
-                return new Messager(context,
+            public Log make(Context c) {
+                return new Messager(c,
                                     programName);
             }
         });
     }
-    public static void preRegister(final Context context,
+    public static void preRegister(Context context,
                                    final String programName,
                                    final PrintWriter errWriter,
                                    final PrintWriter warnWriter,
                                    final PrintWriter noticeWriter) {
         context.put(logKey, new Context.Factory<Log>() {
-            public Log make() {
-                return new Messager(context,
+            public Log make(Context c) {
+                return new Messager(c,
                                     programName,
                                     errWriter,
                                     warnWriter,
@@ -143,11 +143,9 @@ public class Messager extends Log implements DocErrorReporter {
      * if needed.
      */
     private String getString(String key) {
-        ResourceBundle messageRB = this.messageRB;
         if (messageRB == null) {
             try {
-                this.messageRB = messageRB =
-                    ResourceBundle.getBundle(
+                messageRB = ResourceBundle.getBundle(
                           "com.sun.tools.javadoc.resources.javadoc");
             } catch (MissingResourceException e) {
                 throw new Error("Fatal: Resource for javadoc is missing");
@@ -456,8 +454,6 @@ public class Messager extends Log implements DocErrorReporter {
      * Print exit message.
      */
     public void exitNotice() {
-        int nerrors = nerrors();
-        int nwarnings = nwarnings();
         if (nerrors > 0) {
             notice((nerrors > 1) ? "main.errors" : "main.error",
                    "" + nerrors);

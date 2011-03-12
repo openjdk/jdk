@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620
+ * @bug 6939620 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
+ * @summary  Check that unresolved symbols doesn't cause spurious diamond diagnostics
  * @author mcimadamore
  * @compile/fail/ref=Neg11.out Neg11.java -XDrawDiagnostics
  *
