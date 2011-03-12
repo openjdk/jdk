@@ -2806,11 +2806,11 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 
 // Force MethodHandle.vmentry to be an unmanaged pointer.
 // There is no way for a classfile to express this, so we must help it.
-void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
+void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle cp,
                                                     typeArrayHandle fields,
                                                     FieldAllocationCount *fac_ptr,
                                                     TRAPS) {
-  // Add fake fields for java.dyn.MethodHandle instances
+  // Add fake fields for java.lang.invoke.MethodHandle instances
   //
   // This is not particularly nice, but since there is no way to express
   // a native wordSize field in Java, we must do it at this level.
@@ -2830,7 +2830,7 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
   if (AllowTransitionalJSR292 && word_sig_index == 0)  return;
   if (word_sig_index == 0)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
+              "missing I or J signature (for vmentry) in java.lang.invoke.MethodHandle");
 
   // Find vmentry field and change the signature.
   bool found_vmentry = false;
@@ -2870,7 +2870,7 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
   if (AllowTransitionalJSR292 && !found_vmentry)  return;
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing vmentry byte field in java.dyn.MethodHandle");
+              "missing vmentry byte field in java.lang.invoke.MethodHandle");
 }
 
 
@@ -3235,14 +3235,18 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       java_lang_Class_fix_pre(&methods, &fac, CHECK_(nullHandle));
     }
 
-    // adjust the vmentry field declaration in java.dyn.MethodHandle
-    if (EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
-      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    // adjust the vmentry field declaration in java.lang.invoke.MethodHandle
+    if (EnableMethodHandles && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    }
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
     if (AllowTransitionalJSR292 &&
         EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
       // allow vmentry field in MethodHandleImpl also
-      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 
     // Add a fake "discovered" field if it is not present

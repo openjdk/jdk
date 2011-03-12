@@ -116,6 +116,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_java_io_ObjectInputStream_setPrimitiveFieldValues",    NULL, FN_PTR(JVM_SetPrimitiveFieldValues)     },  // intercept ObjectInputStream setPrimitiveFieldValues for faster serialization
 
   { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
+  { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_sun_dyn_MethodHandleNatives_registerNatives",          NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },  // AllowTransitionalJSR292
   { CC"Java_java_dyn_MethodHandleNatives_registerNatives",         NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },  // AllowTransitionalJSR292
   { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         }

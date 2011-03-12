@@ -2420,7 +2420,7 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
   } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
     st->print(BULLET"signature: ");
-    java_dyn_MethodType::print_signature(obj, st);
+    java_lang_invoke_MethodType::print_signature(obj, st);
     st->cr();
   }
 }
@@ -2451,7 +2451,7 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     }
   } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
     st->print(" = ");
-    java_dyn_MethodType::print_signature(obj, st);
+    java_lang_invoke_MethodType::print_signature(obj, st);
   } else if (java_lang_boxing_object::is_instance(obj)) {
     st->print(" = ");
     java_lang_boxing_object::print(obj, st);

@@ -193,7 +193,7 @@ class instanceKlass: public Klass {
   typeArrayOop    _inner_classes;
   // Implementors of this interface (not valid if it overflows)
   klassOop        _implementors[implementors_limit];
-  // invokedynamic bootstrap method (a java.dyn.MethodHandle)
+  // invokedynamic bootstrap method (a java.lang.invoke.MethodHandle)
   oop             _bootstrap_method;  // AllowTransitionalJSR292 ONLY
   // Annotations for this class, or null if none.
   typeArrayOop    _class_annotations;

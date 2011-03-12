@@ -36,7 +36,7 @@
 // MethodHandleChain
 
 void MethodHandleChain::set_method_handle(Handle mh, TRAPS) {
-  if (!java_dyn_MethodHandle::is_instance(mh()))  lose("bad method handle", CHECK);
+  if (!java_lang_invoke_MethodHandle::is_instance(mh()))  lose("bad method handle", CHECK);
 
   // set current method handle and unpack partially
   _method_handle = mh;
@@ -47,21 +47,21 @@ void MethodHandleChain::set_method_handle(Handle mh, TRAPS) {
   _conversion    = -1;
   _last_invoke   = Bytecodes::_nop;  //arbitrary non-garbage
 
-  if (sun_dyn_DirectMethodHandle::is_instance(mh())) {
+  if (java_lang_invoke_DirectMethodHandle::is_instance(mh())) {
     set_last_method(mh(), THREAD);
     return;
   }
-  if (sun_dyn_AdapterMethodHandle::is_instance(mh())) {
+  if (java_lang_invoke_AdapterMethodHandle::is_instance(mh())) {
     _conversion = AdapterMethodHandle_conversion();
     assert(_conversion != -1, "bad conv value");
-    assert(sun_dyn_BoundMethodHandle::is_instance(mh()), "also BMH");
+    assert(java_lang_invoke_BoundMethodHandle::is_instance(mh()), "also BMH");
   }
-  if (sun_dyn_BoundMethodHandle::is_instance(mh())) {
+  if (java_lang_invoke_BoundMethodHandle::is_instance(mh())) {
     if (!is_adapter())          // keep AMH and BMH separate in this model
       _is_bound = true;
     _arg_slot = BoundMethodHandle_vmargslot();
     oop target = MethodHandle_vmtarget_oop();
-    if (!is_bound() || java_dyn_MethodHandle::is_instance(target)) {
+    if (!is_bound() || java_lang_invoke_MethodHandle::is_instance(target)) {
       _arg_type = compute_bound_arg_type(target, NULL, _arg_slot, CHECK);
     } else if (target != NULL && target->is_method()) {
       methodOop m = (methodOop) target;
@@ -102,10 +102,10 @@ BasicType MethodHandleChain::compute_bound_arg_type(oop target, methodOop m, int
   // It is implied by the _vmentry code, and by the MethodType of the target.
   BasicType arg_type = T_VOID;
   if (target != NULL) {
-    oop mtype = java_dyn_MethodHandle::type(target);
+    oop mtype = java_lang_invoke_MethodHandle::type(target);
     int arg_num = MethodHandles::argument_slot_to_argnum(mtype, arg_slot);
     if (arg_num >= 0) {
-      oop ptype = java_dyn_MethodType::ptype(mtype, arg_num);
+      oop ptype = java_lang_invoke_MethodType::ptype(mtype, arg_num);
       arg_type = java_lang_Class::as_BasicType(ptype);
     }
   } else if (m != NULL) {
@@ -204,28 +204,28 @@ MethodHandleWalker::walk(TRAPS) {
       int arg_slot = chain().adapter_arg_slot();
       SlotState* arg_state = slot_state(arg_slot);
       if (arg_state == NULL
-          && conv_op > sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW) {
+          && conv_op > java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW) {
         lose("bad argument index", CHECK_(empty));
       }
 
       // perform the adapter action
       switch (chain().adapter_conversion_op()) {
-      case sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY:
+      case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY:
         // No changes to arguments; pass the bits through.
         break;
 
-      case sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW: {
+      case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW: {
         // To keep the verifier happy, emit bitwise ("raw") conversions as needed.
         // See MethodHandles::same_basic_type_for_arguments for allowed conversions.
         Handle incoming_mtype(THREAD, chain().method_type_oop());
         oop outgoing_mh_oop = chain().vmtarget_oop();
-        if (!java_dyn_MethodHandle::is_instance(outgoing_mh_oop))
+        if (!java_lang_invoke_MethodHandle::is_instance(outgoing_mh_oop))
           lose("outgoing target not a MethodHandle", CHECK_(empty));
-        Handle outgoing_mtype(THREAD, java_dyn_MethodHandle::type(outgoing_mh_oop));
+        Handle outgoing_mtype(THREAD, java_lang_invoke_MethodHandle::type(outgoing_mh_oop));
         outgoing_mh_oop = NULL;  // GC safety
 
-        int nptypes = java_dyn_MethodType::ptype_count(outgoing_mtype());
-        if (nptypes != java_dyn_MethodType::ptype_count(incoming_mtype()))
+        int nptypes = java_lang_invoke_MethodType::ptype_count(outgoing_mtype());
+        if (nptypes != java_lang_invoke_MethodType::ptype_count(incoming_mtype()))
           lose("incoming and outgoing parameter count do not agree", CHECK_(empty));
 
         for (int i = 0, slot = _outgoing.length() - 1; slot >= 0; slot--) {
@@ -235,8 +235,8 @@ MethodHandleWalker::walk(TRAPS) {
 
           klassOop  in_klass  = NULL;
           klassOop  out_klass = NULL;
-          BasicType inpbt  = java_lang_Class::as_BasicType(java_dyn_MethodType::ptype(incoming_mtype(), i), &in_klass);
-          BasicType outpbt = java_lang_Class::as_BasicType(java_dyn_MethodType::ptype(outgoing_mtype(), i), &out_klass);
+          BasicType inpbt  = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(incoming_mtype(), i), &in_klass);
+          BasicType outpbt = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(outgoing_mtype(), i), &out_klass);
           assert(inpbt == arg.basic_type(), "sanity");
 
           if (inpbt != outpbt) {
@@ -254,8 +254,8 @@ MethodHandleWalker::walk(TRAPS) {
           i++;  // We need to skip void slots at the top of the loop.
         }
 
-        BasicType inrbt  = java_lang_Class::as_BasicType(java_dyn_MethodType::rtype(incoming_mtype()));
-        BasicType outrbt = java_lang_Class::as_BasicType(java_dyn_MethodType::rtype(outgoing_mtype()));
+        BasicType inrbt  = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(incoming_mtype()));
+        BasicType outrbt = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(outgoing_mtype()));
         if (inrbt != outrbt) {
           if (inrbt == T_INT && outrbt == T_VOID) {
             // See comments in MethodHandles::same_basic_type_for_arguments.
@@ -267,7 +267,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_CHECK_CAST: {
+      case java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST: {
         // checkcast the Nth outgoing argument in place
         klassOop dest_klass = NULL;
         BasicType dest = java_lang_Class::as_BasicType(chain().adapter_arg_oop(), &dest_klass);
@@ -280,7 +280,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM: {
+      case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM: {
         // i2l, etc., on the Nth outgoing argument in place
         BasicType src = chain().adapter_conversion_src_type(),
                   dest = chain().adapter_conversion_dest_type();
@@ -305,7 +305,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM: {
+      case java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM: {
         // checkcast to wrapper type & call intValue, etc.
         BasicType dest = chain().adapter_conversion_dest_type();
         ArgToken arg = arg_state->_arg;
@@ -323,7 +323,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_PRIM_TO_REF: {
+      case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF: {
         // call wrapper type.valueOf
         BasicType src = chain().adapter_conversion_src_type();
         ArgToken arg = arg_state->_arg;
@@ -339,7 +339,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_SWAP_ARGS: {
+      case java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS: {
         int dest_arg_slot = chain().adapter_conversion_vminfo();
         if (!slot_has_argument(dest_arg_slot)) {
           lose("bad swap index", CHECK_(empty));
@@ -352,7 +352,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_ROT_ARGS: {
+      case java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS: {
         int dest_arg_slot = chain().adapter_conversion_vminfo();
         if (!slot_has_argument(dest_arg_slot) || arg_slot == dest_arg_slot) {
           lose("bad rotate index", CHECK_(empty));
@@ -378,7 +378,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_DUP_ARGS: {
+      case java_lang_invoke_AdapterMethodHandle::OP_DUP_ARGS: {
         int dup_slots = chain().adapter_conversion_stack_pushes();
         if (dup_slots <= 0) {
           lose("bad dup count", CHECK_(empty));
@@ -392,7 +392,7 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_DROP_ARGS: {
+      case java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS: {
         int drop_slots = -chain().adapter_conversion_stack_pushes();
         if (drop_slots <= 0) {
           lose("bad drop count", CHECK_(empty));
@@ -406,12 +406,12 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_COLLECT_ARGS: { //NYI, may GC
+      case java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS: { //NYI, may GC
         lose("unimplemented", CHECK_(empty));
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_SPREAD_ARGS: {
+      case java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS: {
         klassOop array_klass_oop = NULL;
         BasicType array_type = java_lang_Class::as_BasicType(chain().adapter_arg_oop(),
                                                              &array_klass_oop);
@@ -469,8 +469,8 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case sun_dyn_AdapterMethodHandle::OP_FLYBY: //NYI, runs Java code
-      case sun_dyn_AdapterMethodHandle::OP_RICOCHET: //NYI, runs Java code
+      case java_lang_invoke_AdapterMethodHandle::OP_FLYBY: //NYI, runs Java code
+      case java_lang_invoke_AdapterMethodHandle::OP_RICOCHET: //NYI, runs Java code
         lose("unimplemented", CHECK_(empty));
         break;
 
@@ -532,7 +532,7 @@ MethodHandleWalker::walk(TRAPS) {
 //
 void MethodHandleWalker::walk_incoming_state(TRAPS) {
   Handle mtype(THREAD, chain().method_type_oop());
-  int nptypes = java_dyn_MethodType::ptype_count(mtype());
+  int nptypes = java_lang_invoke_MethodType::ptype_count(mtype());
   _outgoing_argc = nptypes;
   int argp = nptypes - 1;
   if (argp >= 0) {
@@ -541,7 +541,7 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   for (int i = 0; i < nptypes; i++) {
     klassOop  arg_type_klass = NULL;
     BasicType arg_type = java_lang_Class::as_BasicType(
-                java_dyn_MethodType::ptype(mtype(), i), &arg_type_klass);
+                java_lang_invoke_MethodType::ptype(mtype(), i), &arg_type_klass);
     int index = new_local_index(arg_type);
     ArgToken arg = make_parameter(arg_type, arg_type_klass, index, CHECK);
     debug_only(arg_type_klass = (klassOop) NULL);
@@ -555,7 +555,7 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   // call make_parameter at the end of the list for the return type
   klassOop  ret_type_klass = NULL;
   BasicType ret_type = java_lang_Class::as_BasicType(
-              java_dyn_MethodType::rtype(mtype()), &ret_type_klass);
+              java_lang_invoke_MethodType::rtype(mtype()), &ret_type_klass);
   ArgToken  ret = make_parameter(ret_type, ret_type_klass, -1, CHECK);
   // ignore ret; client can catch it if needed
 }
@@ -630,7 +630,7 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, methodHandle callee, boo
   // Get return type klass.
   Handle first_mtype(THREAD, chain().method_type_oop());
   // _rklass is NULL for primitives.
-  _rtype = java_lang_Class::as_BasicType(java_dyn_MethodType::rtype(first_mtype()), &_rklass);
+  _rtype = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(first_mtype()), &_rklass);
   if (_rtype == T_ARRAY)  _rtype = T_OBJECT;
 
   int params = _callee->size_of_parameters();  // Incoming arguments plus receiver.
@@ -961,6 +961,9 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     m = vmIntrinsics::method_for(iid);
     if (m == NULL && iid == vmIntrinsics::_checkSpreadArgument && AllowTransitionalJSR292) {
       m = vmIntrinsics::method_for(vmIntrinsics::_checkSpreadArgument_TRANS);
+      if (m == NULL)
+        // sun.dyn.MethodHandleImpl not found, look for java.dyn.MethodHandleNatives:
+        m = vmIntrinsics::method_for(vmIntrinsics::_checkSpreadArgument_TRANS2);
     }
     if (m == NULL) {
       ArgToken zero;
@@ -1402,7 +1405,7 @@ extern "C"
 void print_method_handle(oop mh) {
   if (!mh->is_oop()) {
     tty->print_cr("*** not a method handle: "INTPTR_FORMAT, (intptr_t)mh);
-  } else if (java_dyn_MethodHandle::is_instance(mh)) {
+  } else if (java_lang_invoke_MethodHandle::is_instance(mh)) {
     //MethodHandlePrinter::print(mh);
   } else {
     tty->print("*** not a method handle: ");
