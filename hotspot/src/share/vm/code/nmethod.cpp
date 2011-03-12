@@ -762,7 +762,7 @@ nmethod::nmethod(
 
 void* nmethod::operator new(size_t size, int nmethod_size) {
   // Always leave some room in the CodeCache for I2C/C2I adapters
-  if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) return NULL;
+  if (CodeCache::largest_free_block() < CodeCacheMinimumFreeSpace) return NULL;
   return CodeCache::allocate(nmethod_size);
 }
 
@@ -1881,7 +1881,7 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 
 
 oop nmethod::embeddedOop_at(u_char* p) {
-  RelocIterator iter(this, p, p + oopSize);
+  RelocIterator iter(this, p, p + 1);
   while (iter.next())
     if (iter.type() == relocInfo::oop_type) {
       return iter.oop_reloc()->oop_value();
