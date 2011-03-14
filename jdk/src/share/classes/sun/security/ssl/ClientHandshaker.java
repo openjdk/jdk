@@ -377,8 +377,8 @@ final class ClientHandshaker extends Handshaker {
         ProtocolVersion mesgVersion = mesg.protocolVersion;
         if (!isNegotiable(mesgVersion)) {
             throw new SSLHandshakeException(
-                    "Server chose unsupported or disabled protocol: " +
-                    mesgVersion);
+                "Server chose " + mesgVersion +
+                ", but client does not support or disables " + mesgVersion);
         }
 
         handshakeHash.protocolDetermined(mesgVersion);
