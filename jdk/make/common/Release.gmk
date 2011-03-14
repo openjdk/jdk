@@ -60,7 +60,7 @@ EXCLUDE_PROPWARN_PKGS += sun.dyn
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced
-# with a new module system (being discussed for JDK 7).
+# with a new module system (being discussed for JDK 8).
 #
 EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
                         com.oracle.net
