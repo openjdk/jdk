@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6856415 6981001
- * @summary Miscellaneous tests, Exceptions, EnsureJRE etc.
+ * @bug 6856415
+ * @summary Miscellaneous tests, Exceptions
  * @compile -XDignore.symbol.file MiscTests.java TestHelper.java
  * @run main MiscTests
  */
@@ -32,9 +32,6 @@
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
-
 
 public class MiscTests {
 
@@ -67,22 +64,9 @@ public class MiscTests {
             System.out.println(tr.status);
         }
     }
-    // 6981001 : Check EnsureJreInstallation is ok, note we cannot
-    // thoroughly test this function, we simply do our best.
-    static void test6981001() {
-        if (TestHelper.is64Bit || !TestHelper.isWindows) {
-            return;
-        }
-        Map<String, String> env = new HashMap<String, String>();
-        env.put("_JAVA_LAUNCHER_DEBUG", "true");
-        TestHelper.TestResult tr = TestHelper.doExec(env, TestHelper.javaCmd);
-        if (!tr.contains(TestHelper.JAVAHOME + "\\lib\\bundles")) {
-            System.out.println(tr.status);
-        }
-    }
+
     public static void main(String... args) {
         test6856415();
-        test6981001();
         if (TestHelper.testExitValue != 0) {
             throw new Error(TestHelper.testExitValue + " tests failed");
     }
