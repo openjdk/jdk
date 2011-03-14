@@ -138,8 +138,11 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
         public void remove() {
             if (lastReturned == 0)
                 throw new IllegalStateException();
-            elements[lastReturnedIndex] -= lastReturned;
-            size--;
+            final long oldElements = elements[lastReturnedIndex];
+            elements[lastReturnedIndex] &= ~lastReturned;
+            if (oldElements != elements[lastReturnedIndex]) {
+                size--;
+            }
             lastReturned = 0;
         }
     }
