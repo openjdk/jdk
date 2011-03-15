@@ -218,7 +218,11 @@ ifdef OPENJDK
 else
   LAUNCHER_NAME = java
   PRODUCT_NAME = Java(TM)
-  PRODUCT_SUFFIX = SE Runtime Environment
+  ifeq ($(J4B), true)
+    PRODUCT_SUFFIX = SE Runtime Environment for Business
+  else
+    PRODUCT_SUFFIX = SE Runtime Environment
+  endif
   JDK_RC_PLATFORM_NAME = Platform SE
   COMPANY_NAME = Oracle Corporation
 endif

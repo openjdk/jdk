@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = base
 PACKAGE = java.text
 PRODUCT = sun
 

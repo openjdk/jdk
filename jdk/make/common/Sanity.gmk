@@ -71,8 +71,7 @@ sanity-base: pre-sanity \
     sane-cacerts \
     sane-ant_version \
     sane-zip_version \
-    sane-msvcrt_path \
-    sane-build_modules
+    sane-msvcrt_path
 
 # The rules sanity-* have a one-to-one correspondence with the major targets
 # Each sanity-* rule should have no body to ensure that the post-sanity-* is the
