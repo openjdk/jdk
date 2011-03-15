@@ -1180,14 +1180,17 @@ void nmethod::mark_as_seen_on_stack() {
   set_stack_traversal_mark(NMethodSweeper::traversal_count());
 }
 
-// Tell if a non-entrant method can be converted to a zombie (i.e., there is no activations on the stack)
+// Tell if a non-entrant method can be converted to a zombie (i.e.,
+// there are no activations on the stack, not in use by the VM,
+// and not in use by the ServiceThread)
 bool nmethod::can_not_entrant_be_converted() {
   assert(is_not_entrant(), "must be a non-entrant method");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the
   // nmethod for the second time.
-  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count();
+  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count() &&
+         !is_locked_by_vm();
 }
 
 void nmethod::inc_decompile_count() {
@@ -1294,6 +1297,7 @@ void nmethod::log_state_change() const {
 // Common functionality for both make_not_entrant and make_zombie
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
+  assert(!is_zombie(), "should not already be a zombie");
 
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
@@ -1301,11 +1305,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   No_Safepoint_Verifier nsv;
 
   {
-    // If the method is already zombie there is nothing to do
-    if (is_zombie()) {
-      return false;
-    }
-
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
@@ -1375,13 +1374,12 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       flush_dependencies(NULL);
     }
 
-    {
-      // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
-      // and it hasn't already been reported for this nmethod then report it now.
-      // (the event may have been reported earilier if the GC marked it for unloading).
-      Pause_No_Safepoint_Verifier pnsv(&nsv);
-      post_compiled_method_unload();
-    }
+    // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
+    // event and it hasn't already been reported for this nmethod then
+    // report it now. The event may have been reported earilier if the GC
+    // marked it for unloading). JvmtiDeferredEventQueue support means
+    // we no longer go to a safepoint here.
+    post_compiled_method_unload();
 
 #ifdef ASSERT
     // It's no longer safe to access the oops section since zombie
@@ -1566,7 +1564,7 @@ void nmethod::post_compiled_method_unload() {
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     JvmtiDeferredEvent event =
-      JvmtiDeferredEvent::compiled_method_unload_event(
+      JvmtiDeferredEvent::compiled_method_unload_event(this,
           _jmethod_id, insts_begin());
     if (SafepointSynchronize::is_at_safepoint()) {
       // Don't want to take the queueing lock. Add it as pending and
@@ -2171,10 +2169,12 @@ nmethodLocker::nmethodLocker(address pc) {
   lock_nmethod(_nm);
 }
 
-void nmethodLocker::lock_nmethod(nmethod* nm) {
+// Only JvmtiDeferredEvent::compiled_method_unload_event()
+// should pass zombie_ok == true.
+void nmethodLocker::lock_nmethod(nmethod* nm, bool zombie_ok) {
   if (nm == NULL)  return;
   Atomic::inc(&nm->_lock_count);
-  guarantee(!nm->is_zombie(), "cannot lock a zombie method");
+  guarantee(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
 }
 
 void nmethodLocker::unlock_nmethod(nmethod* nm) {
