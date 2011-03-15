@@ -1166,7 +1166,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                   env.enclClass.sym.sourcefile :
                                   env.toplevel.sourcefile);
         try {
-            attr.attribClass(env.tree.pos(), env.enclClass.sym);
+            attr.attrib(env);
             if (errorCount() > 0 && !shouldStop(CompileState.ATTR)) {
                 //if in fail-over mode, ensure that AST expression nodes
                 //are correctly initialized (e.g. they have a type/symbol)
