@@ -755,11 +755,14 @@ class DatagramChannelImpl
             throw new IllegalArgumentException("Group not a multicast address");
 
         // check multicast address is compatible with this socket
-        if (!(group instanceof Inet4Address)) {
-            if (family == StandardProtocolFamily.INET)
-                throw new IllegalArgumentException("Group is not IPv4 address");
-            if (!(group instanceof Inet6Address))
-                throw new IllegalArgumentException("Address type not supported");
+        if (group instanceof Inet4Address) {
+            if (family == StandardProtocolFamily.INET6 && !Net.canIPv6SocketJoinIPv4Group())
+                throw new IllegalArgumentException("Group is not IPv4 multicast address");
+        } else if (group instanceof Inet6Address) {
+            if (family != StandardProtocolFamily.INET6)
+                throw new IllegalArgumentException("Group is not IPv6 multicast address");
+        } else {
+            throw new IllegalArgumentException("Address type not supported");
         }
 
         // check source address
@@ -791,7 +794,9 @@ class DatagramChannelImpl
             }
 
             MembershipKeyImpl key;
-            if (family == StandardProtocolFamily.INET6) {
+            if ((family == StandardProtocolFamily.INET6) &&
+                ((group instanceof Inet6Address) || Net.canJoin6WithIPv4Group()))
+            {
                 int index = interf.getIndex();
                 if (index == -1)
                     throw new IOException("Network interface cannot be identified");
@@ -861,7 +866,7 @@ class DatagramChannelImpl
                 return;
 
             try {
-                if (family == StandardProtocolFamily.INET6) {
+                if (key instanceof MembershipKeyImpl.Type6) {
                     MembershipKeyImpl.Type6 key6 =
                         (MembershipKeyImpl.Type6)key;
                     Net.drop6(fd, key6.groupAddress(), key6.index(), key6.source());
@@ -901,7 +906,7 @@ class DatagramChannelImpl
                 throw new IllegalArgumentException("Source address is different type to group");
 
             int n;
-            if (family == StandardProtocolFamily.INET6) {
+            if (key instanceof MembershipKeyImpl.Type6) {
                  MembershipKeyImpl.Type6 key6 =
                     (MembershipKeyImpl.Type6)key;
                 n = Net.block6(fd, key6.groupAddress(), key6.index(),
@@ -931,7 +936,7 @@ class DatagramChannelImpl
                 throw new IllegalStateException("key is no longer valid");
 
             try {
-                if (family == StandardProtocolFamily.INET6) {
+                if (key instanceof MembershipKeyImpl.Type6) {
                     MembershipKeyImpl.Type6 key6 =
                         (MembershipKeyImpl.Type6)key;
                     Net.unblock6(fd, key6.groupAddress(), key6.index(),
