@@ -3004,6 +3004,30 @@ public class Attr extends JCTree.Visitor {
         throw new AssertionError();
     }
 
+    /**
+     * Attribute an env for either a top level tree or class declaration.
+     */
+    public void attrib(Env<AttrContext> env) {
+        if (env.tree.getTag() == JCTree.TOPLEVEL)
+            attribTopLevel(env);
+        else
+            attribClass(env.tree.pos(), env.enclClass.sym);
+    }
+
+    /**
+     * Attribute a top level tree. These trees are encountered when the
+     * package declaration has annotations.
+     */
+    public void attribTopLevel(Env<AttrContext> env) {
+        JCCompilationUnit toplevel = env.toplevel;
+        try {
+            annotate.flush();
+            chk.validateAnnotations(toplevel.packageAnnotations, toplevel.packge);
+        } catch (CompletionFailure ex) {
+            chk.completionError(toplevel.pos(), ex);
+        }
+    }
+
     /** Main method: attribute class definition associated with given class symbol.
      *  reporting completion failures at the given position.
      *  @param pos The source position at which completion errors are to be
