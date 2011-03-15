@@ -193,7 +193,10 @@ class nmethod : public CodeBlob {
 
   NOT_PRODUCT(bool _has_debug_info; )
 
-  // Nmethod Flushing lock (if non-zero, then the nmethod is not removed)
+  // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
+  // and is not made into a zombie. However, once the nmethod is made into
+  // a zombie, it will be locked one final time if CompiledMethodUnload
+  // event processing needs to be done.
   jint  _lock_count;
 
   // not_entrant method removal. Each mark_sweep pass will update
@@ -521,8 +524,9 @@ public:
   void flush();
 
  public:
-  // If returning true, it is unsafe to remove this nmethod even though it is a zombie
-  // nmethod, since the VM might have a reference to it. Should only be called from a  safepoint.
+  // When true is returned, it is unsafe to remove this nmethod even if
+  // it is a zombie, since the VM or the ServiceThread might still be
+  // using it.
   bool is_locked_by_vm() const                    { return _lock_count >0; }
 
   // See comment at definition of _last_seen_on_stack
@@ -688,13 +692,20 @@ public:
 
 };
 
-// Locks an nmethod so its code will not get removed, even if it is a zombie/not_entrant method
+// Locks an nmethod so its code will not get removed and it will not
+// be made into a zombie, even if it is a not_entrant method. After the
+// nmethod becomes a zombie, if CompiledMethodUnload event processing
+// needs to be done, then lock_nmethod() is used directly to keep the
+// generated code from being reused too early.
 class nmethodLocker : public StackObj {
   nmethod* _nm;
 
  public:
 
-  static void lock_nmethod(nmethod* nm);   // note: nm can be NULL
+  // note: nm can be NULL
+  // Only JvmtiDeferredEvent::compiled_method_unload_event()
+  // should pass zombie_ok == true.
+  static void lock_nmethod(nmethod* nm, bool zombie_ok = false);
   static void unlock_nmethod(nmethod* nm); // (ditto)
 
   nmethodLocker(address pc); // derive nm from pc
