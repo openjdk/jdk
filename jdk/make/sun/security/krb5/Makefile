@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = security-kerberos
 PACKAGE = sun.security.krb5
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = font
 PACKAGE = sun.font
 LIBRARY = fontmanager
 PRODUCT = sun
@@ -136,7 +135,6 @@ library:: $(FREETYPE_LIB)
 
 $(FREETYPE_LIB):
 	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@
-	$(install-module-file)
 endif
 
 #ifeq ($(PLATFORM), solaris)
