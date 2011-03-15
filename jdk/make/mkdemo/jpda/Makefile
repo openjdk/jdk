@@ -32,6 +32,8 @@ DEMO_ROOT       = $(SHARE_SRC)/classes
 DEMO_PKGDIR     = com/sun/tools/example
 DEMO_TOPFILES   = ./com/sun/tools/example/README
 DEMO_DESTDIR    = $(DEMODIR)/jpda
+DEMO_JAR_NAME   = examples.jar
+DEMO_ONLY_SRC   = true
 
 #
 # Demo jar building rules.
