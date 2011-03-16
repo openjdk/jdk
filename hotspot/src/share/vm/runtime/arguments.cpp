@@ -1101,40 +1101,28 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     set_parnew_gc_flags();
   }
 
-  // Now make adjustments for CMS
-  size_t young_gen_per_worker;
-  intx new_ratio;
-  size_t min_new_default;
-  intx tenuring_default;
-  if (CMSUseOldDefaults) {  // old defaults: "old" as of 6.0
-    if FLAG_IS_DEFAULT(CMSYoungGenPerWorker) {
-      FLAG_SET_ERGO(intx, CMSYoungGenPerWorker, 4*M);
-    }
-    young_gen_per_worker = 4*M;
-    new_ratio = (intx)15;
-    min_new_default = 4*M;
-    tenuring_default = (intx)0;
-  } else { // new defaults: "new" as of 6.0
-    young_gen_per_worker = CMSYoungGenPerWorker;
-    new_ratio = (intx)7;
-    min_new_default = 16*M;
-    tenuring_default = (intx)4;
-  }
+  // MaxHeapSize is aligned down in collectorPolicy
+  size_t max_heap = align_size_down(MaxHeapSize,
+                                    CardTableRS::ct_max_alignment_constraint());
 
-  // Preferred young gen size for "short" pauses
+  // Now make adjustments for CMS
+  intx   tenuring_default = (intx)6;
+  size_t young_gen_per_worker = CMSYoungGenPerWorker;
+
+  // Preferred young gen size for "short" pauses:
+  // upper bound depends on # of threads and NewRatio.
   const uintx parallel_gc_threads =
     (ParallelGCThreads == 0 ? 1 : ParallelGCThreads);
   const size_t preferred_max_new_size_unaligned =
-    ScaleForWordSize(young_gen_per_worker * parallel_gc_threads);
-  const size_t preferred_max_new_size =
+    MIN2(max_heap/(NewRatio+1), ScaleForWordSize(young_gen_per_worker * parallel_gc_threads));
+  size_t preferred_max_new_size =
     align_size_up(preferred_max_new_size_unaligned, os::vm_page_size());
 
   // Unless explicitly requested otherwise, size young gen
-  // for "short" pauses ~ 4M*ParallelGCThreads
+  // for "short" pauses ~ CMSYoungGenPerWorker*ParallelGCThreads
 
   // If either MaxNewSize or NewRatio is set on the command line,
   // assume the user is trying to set the size of the young gen.
-
   if (FLAG_IS_DEFAULT(MaxNewSize) && FLAG_IS_DEFAULT(NewRatio)) {
 
     // Set MaxNewSize to our calculated preferred_max_new_size unless
@@ -1147,49 +1135,13 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     }
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
-      tty->print_cr("Ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
+      tty->print_cr("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
     }
-
-    // Unless explicitly requested otherwise, prefer a large
-    // Old to Young gen size so as to shift the collection load
-    // to the old generation concurrent collector
-
-    // If this is only guarded by FLAG_IS_DEFAULT(NewRatio)
-    // then NewSize and OldSize may be calculated.  That would
-    // generally lead to some differences with ParNewGC for which
-    // there was no obvious reason.  Also limit to the case where
-    // MaxNewSize has not been set.
-
-    FLAG_SET_ERGO(intx, NewRatio, MAX2(NewRatio, new_ratio));
 
     // Code along this path potentially sets NewSize and OldSize
 
-    // Calculate the desired minimum size of the young gen but if
-    // NewSize has been set on the command line, use it here since
-    // it should be the final value.
-    size_t min_new;
-    if (FLAG_IS_DEFAULT(NewSize)) {
-      min_new = align_size_up(ScaleForWordSize(min_new_default),
-                              os::vm_page_size());
-    } else {
-      min_new = NewSize;
-    }
-    size_t prev_initial_size = InitialHeapSize;
-    if (prev_initial_size != 0 && prev_initial_size < min_new + OldSize) {
-      FLAG_SET_ERGO(uintx, InitialHeapSize, min_new + OldSize);
-      // Currently minimum size and the initial heap sizes are the same.
-      set_min_heap_size(InitialHeapSize);
-      if (PrintGCDetails && Verbose) {
-        warning("Initial heap size increased to " SIZE_FORMAT " M from "
-                SIZE_FORMAT " M; use -XX:NewSize=... for finer control.",
-                InitialHeapSize/M, prev_initial_size/M);
-      }
-    }
-
-    // MaxHeapSize is aligned down in collectorPolicy
-    size_t max_heap =
-      align_size_down(MaxHeapSize,
-                      CardTableRS::ct_max_alignment_constraint());
+    assert(max_heap >= InitialHeapSize, "Error");
+    assert(max_heap >= NewSize, "Error");
 
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
@@ -1198,7 +1150,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
            " max_heap: " SIZE_FORMAT,
            min_heap_size(), InitialHeapSize, max_heap);
     }
-    if (max_heap > min_new) {
+    size_t min_new = preferred_max_new_size;
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      min_new = NewSize;
+    }
+    if (max_heap > min_new && min_heap_size() > min_new) {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
@@ -1206,18 +1162,17 @@ void Arguments::set_cms_and_parnew_gc_flags() {
         FLAG_SET_ERGO(uintx, NewSize, MIN2(preferred_max_new_size, NewSize));
         if (PrintGCDetails && Verbose) {
           // Too early to use gclog_or_tty
-          tty->print_cr("Ergo set NewSize: " SIZE_FORMAT, NewSize);
+          tty->print_cr("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
         }
       }
       // Unless explicitly requested otherwise, size old gen
-      // so that it's at least 3X of NewSize to begin with;
-      // later NewRatio will decide how it grows; see above.
+      // so it's NewRatio x of NewSize.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_ERGO(uintx, OldSize, MIN2(3*NewSize, max_heap - NewSize));
+          FLAG_SET_ERGO(uintx, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
           if (PrintGCDetails && Verbose) {
             // Too early to use gclog_or_tty
-            tty->print_cr("Ergo set OldSize: " SIZE_FORMAT, OldSize);
+            tty->print_cr("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
           }
         }
       }
@@ -3061,22 +3016,17 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
 #ifndef KERNEL
-  if (UseConcMarkSweepGC) {
-    // Set flags for CMS and ParNew.  Check UseConcMarkSweep first
-    // to ensure that when both UseConcMarkSweepGC and UseParNewGC
-    // are true, we don't call set_parnew_gc_flags() as well.
+  // Set heap size based on available physical memory
+  set_heap_size();
+  // Set per-collector flags
+  if (UseParallelGC || UseParallelOldGC) {
+    set_parallel_gc_flags();
+  } else if (UseConcMarkSweepGC) { // should be done before ParNew check below
     set_cms_and_parnew_gc_flags();
-  } else {
-    // Set heap size based on available physical memory
-    set_heap_size();
-    // Set per-collector flags
-    if (UseParallelGC || UseParallelOldGC) {
-      set_parallel_gc_flags();
-    } else if (UseParNewGC) {
-      set_parnew_gc_flags();
-    } else if (UseG1GC) {
-      set_g1_gc_flags();
-    }
+  } else if (UseParNewGC) {  // skipped if CMS is set above
+    set_parnew_gc_flags();
+  } else if (UseG1GC) {
+    set_g1_gc_flags();
   }
 #endif // KERNEL
 
