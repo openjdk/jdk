@@ -25,12 +25,10 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.DataInputStream;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -398,7 +396,8 @@ public class AiffFileWriter extends SunFileWriter {
         header = baos.toByteArray();
         headerStream = new ByteArrayInputStream( header );
 
-        aiffStream = new SequenceInputStream(headerStream,codedAudioStream);
+        aiffStream = new SequenceInputStream(headerStream,
+                            new NoCloseInputStream(codedAudioStream));
 
         return aiffStream;
 

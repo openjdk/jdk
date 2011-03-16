@@ -30,7 +30,6 @@
 BUILDDIR = ../../..
 
 # charsets should be separated from nio module 
-MODULE  = charsets
 PACKAGE = sun.nio
 PRODUCT = sun
 

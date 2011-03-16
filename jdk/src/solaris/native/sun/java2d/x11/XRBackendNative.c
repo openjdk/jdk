@@ -304,23 +304,27 @@ Java_sun_java2d_xr_XRBackendNative_XRenderRectanglesNative
     color.blue = blue;
 
     if (rectCnt <= 256) {
-      xRects = &sRects[0];
+        xRects = &sRects[0];
     } else {
-      xRects = (XRectangle *) malloc(sizeof(XRectangle) * rectCnt);
-      if (xRects == NULL) {
-        return;
-      }
+        xRects = (XRectangle *) malloc(sizeof(XRectangle) * rectCnt);
+        if (xRects == NULL) {
+            return;
+        }
     }
 
-    if ((rects = (jint *) (*env)->GetPrimitiveArrayCritical(env, rectArray, NULL)) == NULL) {
-      return;
+    if ((rects = (jint *)
+         (*env)->GetPrimitiveArrayCritical(env, rectArray, NULL)) == NULL) {
+        if (xRects != &sRects[0]) {
+            free(xRects);
+        }
+        return;
     }
 
     for (i=0; i < rectCnt; i++) {
-      xRects[i].x = rects[i*4 + 0];
-      xRects[i].y = rects[i*4 + 1];
-      xRects[i].width = rects[i*4 + 2];
-      xRects[i].height = rects[i*4 + 3];
+        xRects[i].x = rects[i*4 + 0];
+        xRects[i].y = rects[i*4 + 1];
+        xRects[i].width = rects[i*4 + 2];
+        xRects[i].height = rects[i*4 + 3];
     }
 
     XRenderFillRectangles(awt_display, op,
@@ -328,7 +332,7 @@ Java_sun_java2d_xr_XRBackendNative_XRenderRectanglesNative
 
     (*env)->ReleasePrimitiveArrayCritical(env, rectArray, rects, JNI_ABORT);
     if (xRects != &sRects[0]) {
-      free(xRects);
+        free(xRects);
     }
 }
 
@@ -610,17 +614,30 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
     Glyph *gid = (Glyph *) malloc(sizeof(Glyph) * glyphCnt);
 
     if (xginfo == NULL || gid == NULL) {
-      return;
+        if (xginfo != NULL) {
+            free(xginfo);
+        }
+        if (gid != NULL) {
+            free(gid);
+        }
+        return;
     }
 
-    if ((glyphInfoPtrs = (jlong *) (*env)->GetPrimitiveArrayCritical(env, glyphInfoPtrsArray, NULL)) == NULL) {
+    if ((glyphInfoPtrs = (jlong *)(*env)->
+        GetPrimitiveArrayCritical(env, glyphInfoPtrsArray, NULL)) == NULL)
+    {
+        free(xginfo);
+        free(gid);
         return;
     }
 
     if ((pixelData = (unsigned char *)
-        (*env)->GetPrimitiveArrayCritical(env, pixelDataArray, NULL)) == NULL) {
+        (*env)->GetPrimitiveArrayCritical(env, pixelDataArray, NULL)) == NULL)
+    {
         (*env)->ReleasePrimitiveArrayCritical(env,
-                                  glyphInfoPtrsArray, glyphInfoPtrs, JNI_ABORT);
+                                glyphInfoPtrsArray, glyphInfoPtrs, JNI_ABORT);
+        free(xginfo);
+        free(gid);
         return;
     }
 
@@ -637,7 +654,7 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
     }
 
     XRenderAddGlyphs(awt_display, glyphSet, &gid[0], &xginfo[0], glyphCnt,
-                     pixelData, pixelDataLength);
+                     (const char*)pixelData, pixelDataLength);
 
     (*env)->ReleasePrimitiveArrayCritical(env, glyphInfoPtrsArray, glyphInfoPtrs, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, pixelDataArray, pixelData, JNI_ABORT);
@@ -684,22 +701,44 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
       xelts = &selts[0];
     }else {
       xelts = (XGlyphElt32 *) malloc(sizeof(XGlyphElt32) * eltCnt);
+      if (xelts == NULL) {
+          return;
+      }
     }
 
     if (glyphCnt <= 256) {
       xids = &sids[0];
-    }else {
+    } else {
       xids = (Glyph *) malloc(sizeof(Glyph) * glyphCnt);
+      if (xids == NULL) {
+          if (xelts != &selts[0]) {
+            free(xelts);
+          }
+          return;
+      }
     }
 
-    if ((ids = (jint *) (*env)->GetPrimitiveArrayCritical(env, glyphIDArray, NULL)) == NULL) {
-      return;
+    if ((ids = (jint *)
+         (*env)->GetPrimitiveArrayCritical(env, glyphIDArray, NULL)) == NULL) {
+        if (xelts != &selts[0]) {
+            free(xelts);
+        }
+        if (xids != &sids[0]) {
+            free(xids);
+        }
+        return;
     }
     if ((elts = (jint *)
           (*env)->GetPrimitiveArrayCritical(env, eltArray, NULL)) == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env,
                                               glyphIDArray, ids, JNI_ABORT);
-      return;
+        if (xelts != &selts[0]) {
+            free(xelts);
+        }
+        if (xids != &sids[0]) {
+            free(xids);
+        }
+        return;
     }
 
     for (i=0; i < glyphCnt; i++) {
@@ -724,11 +763,11 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
     (*env)->ReleasePrimitiveArrayCritical(env, eltArray, elts, JNI_ABORT);
 
     if (xelts != &selts[0]) {
-      free(xelts);
+        free(xelts);
     }
 
     if (xids != &sids[0]) {
-      free(xids);
+        free(xids);
     }
 }
 
@@ -762,8 +801,12 @@ Java_sun_java2d_xr_XRBackendNative_GCRectanglesNative
       }
     }
 
-    if ((rects = (jint *) (*env)->GetPrimitiveArrayCritical(env, rectArray, NULL)) == NULL) {
-      return;
+    if ((rects = (jint*)
+         (*env)->GetPrimitiveArrayCritical(env, rectArray, NULL)) == NULL) {
+        if (xRects != &sRects[0]) {
+            free(xRects);
+        }
+        return;
     }
 
     for (i=0; i < rectCnt; i++) {

@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = security-smartcardio
 PACKAGE = sun.security.smartcardio
 LIBRARY = j2pcsc
 PRODUCT = sun

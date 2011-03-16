@@ -30,7 +30,6 @@
 # its manifestations (java, javaw, javac, ...).
 #
 BUILDDIR = ../..
-MODULE  = base
 LIBRARY = jli
 PRODUCT = java
 

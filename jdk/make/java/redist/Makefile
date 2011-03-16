@@ -35,7 +35,6 @@
 # 
 
 BUILDDIR = ../..
-MODULE   = base
 PRODUCT  = java
 include $(BUILDDIR)/common/Defs.gmk
 
@@ -128,35 +127,29 @@ $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)  $@
-	@$(install-module-file)
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMMAP_NAME)  $@
-	@$(install-module-file)
 
 ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
-	@$(install-module-file)
 endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMPDB_NAME)  $@
-	@$(install-module-file)
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)  $@
-	@$(install-module-file)
 
 ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME) $@
-	@$(install-module-file)
 endif
 
 #  Windows     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  Windows
@@ -316,7 +309,7 @@ INTERNAL_IMPORT_LIST += \
 
 $(LIBDIR)/jce.jar: \
 	    $(BUILDDIR)/closed/tools/crypto/jce/jce.jar
-	$(install-non-module-file)
+	$(install-file)
 $(LIBDIR)/security/US_export_policy.jar: \
 	    $(BUILDDIR)/closed/tools/crypto/jce/US_export_policy.jar
 	$(install-file)

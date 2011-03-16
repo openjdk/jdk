@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = jdb
 PACKAGE = com.sun.tools.example.debug.tty
 PRODUCT = jpda
 PROGRAM = jdb
