@@ -1985,8 +1985,22 @@ public class Font implements java.io.Serializable
      * @since 1.2
      */
     public int canDisplayUpTo(String str) {
-        return canDisplayUpTo(new StringCharacterIterator(str), 0,
-            str.length());
+        Font2D font2d = getFont2D();
+        int len = str.length();
+        for (int i = 0; i < len; i++) {
+            char c = str.charAt(i);
+            if (font2d.canDisplay(c)) {
+                continue;
+            }
+            if (!Character.isHighSurrogate(c)) {
+                return i;
+            }
+            if (!font2d.canDisplay(str.codePointAt(i))) {
+                return i;
+            }
+            i++;
+        }
+        return -1;
     }
 
     /**
@@ -2009,11 +2023,21 @@ public class Font implements java.io.Serializable
      * @since 1.2
      */
     public int canDisplayUpTo(char[] text, int start, int limit) {
-        while (start < limit && canDisplay(text[start])) {
-            ++start;
+        Font2D font2d = getFont2D();
+        for (int i = start; i < limit; i++) {
+            char c = text[i];
+            if (font2d.canDisplay(c)) {
+                continue;
+            }
+            if (!Character.isHighSurrogate(c)) {
+                return i;
+            }
+            if (!font2d.canDisplay(Character.codePointAt(text, i, limit))) {
+                return i;
+            }
+            i++;
         }
-
-        return start == limit ? -1 : start;
+        return -1;
     }
 
     /**
@@ -2034,13 +2058,26 @@ public class Font implements java.io.Serializable
      * @since 1.2
      */
     public int canDisplayUpTo(CharacterIterator iter, int start, int limit) {
-        for (char c = iter.setIndex(start);
-             iter.getIndex() < limit && canDisplay(c);
-             c = iter.next()) {
+        Font2D font2d = getFont2D();
+        char c = iter.setIndex(start);
+        for (int i = start; i < limit; i++, c = iter.next()) {
+            if (font2d.canDisplay(c)) {
+                continue;
+            }
+            if (!Character.isHighSurrogate(c)) {
+                return i;
+            }
+            char c2 = iter.next();
+            // c2 could be CharacterIterator.DONE which is not a low surrogate.
+            if (!Character.isLowSurrogate(c2)) {
+                return i;
+            }
+            if (!font2d.canDisplay(Character.toCodePoint(c, c2))) {
+                return i;
+            }
+            i++;
         }
-
-        int result = iter.getIndex();
-        return result == limit ? -1 : result;
+        return -1;
     }
 
     /**

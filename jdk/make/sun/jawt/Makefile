@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = awt
 PACKAGE = sun.awt
 LIBRARY = jawt
 PRODUCT = sun

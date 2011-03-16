@@ -319,8 +319,7 @@ public final class StrikeCache {
                 ArrayList<Long> gids = null;
 
                 for (int i = 0; i < glyphPtrs.length; i++) {
-                    if (glyphPtrs[i] != 0 && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0
-                            && unsafe.getInt(glyphPtrs[i] + cacheCellOffset) != 0) {
+                    if (glyphPtrs[i] != 0 && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0) {
 
                         if (gids == null) {
                             gids = new ArrayList<Long>();
@@ -330,6 +329,8 @@ public final class StrikeCache {
                 }
 
                 if (gids != null) {
+                    // Any reference by the disposers to the native glyph ptrs
+                    // must be done before this returns.
                     notifyDisposeListeners(gids);
                 }
             }
@@ -345,8 +346,7 @@ public final class StrikeCache {
 
                 for (int i=0; i < glyphPtrs.length; i++) {
                     if (glyphPtrs[i] != 0
-                            && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0
-                            && unsafe.getInt(glyphPtrs[i] + cacheCellOffset) != 0) {
+                            && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0) {
 
                         if (gids == null) {
                             gids = new ArrayList<Long>();
@@ -356,6 +356,8 @@ public final class StrikeCache {
                 }
 
                 if (gids != null) {
+                    // Any reference by the disposers to the native glyph ptrs
+                    // must be done before this returns.
                     notifyDisposeListeners(gids);
                 }
         }

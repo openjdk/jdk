@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = base
 PACKAGE = sun.launcher
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
