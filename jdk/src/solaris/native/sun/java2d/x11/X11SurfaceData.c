@@ -375,6 +375,12 @@ X11SD_Dispose(JNIEnv *env, SurfaceDataOps *ops)
     AWT_LOCK();
 
     xsdo->invalid = JNI_TRUE;
+
+    if (xsdo->xrPic != None) {
+        XRenderFreePicture(awt_display, xsdo->xrPic);
+        xsdo->xrPic = None;
+     }
+
     if (xsdo->isPixmap == JNI_TRUE && xsdo->drawable != 0) {
 #ifdef MITSHM
         if (xsdo->shmPMData.shmSegInfo != NULL) {

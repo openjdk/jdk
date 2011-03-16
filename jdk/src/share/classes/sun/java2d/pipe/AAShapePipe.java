@@ -109,7 +109,7 @@ public class AAShapePipe
         Region clip = sg.getCompClip();
         int abox[] = new int[4];
         AATileGenerator aatg =
-            renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
+            renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, lw1, lw2,
                                             clip, abox);
         if (aatg == null) {
             // Nothing to render

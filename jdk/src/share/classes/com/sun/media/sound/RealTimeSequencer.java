@@ -775,15 +775,22 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
         Receiver rec = null;
         // first try to connect to the default synthesizer
         // IMPORTANT: this code needs to be synch'ed with
-        //            MidiSystem.getReceiver(boolean), because the same
+        //            MidiSystem.getSequencer(boolean), because the same
         //            algorithm needs to be used!
         try {
             Synthesizer synth = MidiSystem.getSynthesizer();
-            synth.open();
             if (synth instanceof ReferenceCountingDevice) {
                 rec = ((ReferenceCountingDevice) synth).getReceiverReferenceCounting();
             } else {
-                rec = synth.getReceiver();
+                synth.open();
+                try {
+                    rec = synth.getReceiver();
+                } finally {
+                    // make sure that the synth is properly closed
+                    if (rec == null) {
+                        synth.close();
+                    }
+                }
             }
         } catch (Exception e) {
             // something went wrong with synth

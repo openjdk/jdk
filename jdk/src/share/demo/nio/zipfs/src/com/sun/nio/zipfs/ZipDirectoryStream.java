@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,7 +76,7 @@ public class ZipDirectoryStream implements DirectoryStream<Path> {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        return new Iterator<>() {
+        return new Iterator<Path>() {
             private Path next;
             @Override
             public boolean hasNext() {

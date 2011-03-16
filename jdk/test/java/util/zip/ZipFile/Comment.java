@@ -57,16 +57,15 @@ public class Comment {
     private static void writeZipFile(String name, String comment)
         throws IOException
     {
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(name));
-        try {
+        try (FileOutputStream fos = new FileOutputStream(name);
+             ZipOutputStream zos = new ZipOutputStream(fos))
+        {
             zos.setComment(comment);
             ZipEntry ze = new ZipEntry(entryName);
             ze.setMethod(ZipEntry.DEFLATED);
             zos.putNextEntry(ze);
             new DataOutputStream(zos).writeUTF(entryContents);
             zos.closeEntry();
-        } finally {
-            zos.close();
         }
     }
 
@@ -74,30 +73,30 @@ public class Comment {
         throws Exception
     {
         // Check that Zip entry was correctly written.
-        ZipFile zipFile = new ZipFile(name);
-        ZipEntry zipEntry = zipFile.getEntry(entryName);
-        InputStream is = zipFile.getInputStream(zipEntry);
-        String result = new DataInputStream(is).readUTF();
-        if (!result.equals(entryContents))
-            throw new Exception("Entry contents corrupted");
+        try (ZipFile zipFile = new ZipFile(name)) {
+            ZipEntry zipEntry = zipFile.getEntry(entryName);
+            InputStream is = zipFile.getInputStream(zipEntry);
+            String result = new DataInputStream(is).readUTF();
+            if (!result.equals(entryContents))
+                throw new Exception("Entry contents corrupted");
+        }
 
-        // Check that comment length was correctly written.
-        RandomAccessFile file = new RandomAccessFile(name, "r");
-        file.seek(file.length() - comment.length()
-                  - ZipFile.ENDHDR + ZipFile.ENDCOM);
-        int b1 = file.readUnsignedByte();
-        int b2 = file.readUnsignedByte();
-        if (b1 + (b2 << 8) != comment.length())
-            throw new Exception("Zip file comment length corrupted");
+        try (RandomAccessFile file = new RandomAccessFile(name, "r")) {
+            // Check that comment length was correctly written.
+            file.seek(file.length() - comment.length()
+                      - ZipFile.ENDHDR + ZipFile.ENDCOM);
+            int b1 = file.readUnsignedByte();
+            int b2 = file.readUnsignedByte();
+            if (b1 + (b2 << 8) != comment.length())
+                throw new Exception("Zip file comment length corrupted");
 
-        // Check that comment was correctly written.
-        file.seek(file.length() - comment.length());
-        byte [] bytes = new byte [comment.length()];
-        file.readFully(bytes);
-        zipFile.close();
-        file.close();
-        if (! comment.equals(new String(bytes, "UTF8")))
-            throw new Exception("Zip file comment corrupted");
+            // Check that comment was correctly written.
+            file.seek(file.length() - comment.length());
+            byte [] bytes = new byte [comment.length()];
+            file.readFully(bytes);
+            if (! comment.equals(new String(bytes, "UTF8")))
+                throw new Exception("Zip file comment corrupted");
+        }
     }
 
     private static String buildComment(int length) {
