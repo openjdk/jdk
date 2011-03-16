@@ -61,7 +61,7 @@ ifneq ($(PLATFORM), windows)
   #    ODBC_LIBRARY_LOCATION, and delete the variable assignments below.
   #
   # Tell linker to ignore missing externals when building this shared library.
-  LDFLAGS_DEFS_OPTION = -z nodefs
+  LDFLAGS_DEFS_OPTION = -Xlinker -z -Xlinker nodefs
   # Define a place to create the fake libraries and their names.
   ODBC_LIBRARY_LOCATION = $(TEMPDIR)
   ODBC_FAKE_LIBRARIES = $(ODBC_LIBRARY_LOCATION)/libodbcinst.so $(ODBC_LIBRARY_LOCATION)/libodbc.so
