@@ -72,7 +72,8 @@ $(SERVICEDIR)/%: $(CLOSED_SRC)/share/classes/sun/java2d/cmm/kcms/META-INF/servic
 # Extra rules
 #
 ifeq  ($(PLATFORM), linux)
-LDLIBS += -lpthread
+    LDLIBS += -lpthread
+    OTHER_CFLAGS += -Wno-missing-field-initializers
 endif
 
 clean clobber:: 
@@ -104,6 +105,5 @@ CPPFLAGS += -I$(CLASSHDRDIR) \
 
 endif # PLATFORM
 
-#CFLAGS += -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST
-CFLAGS += -DFUT_CALC_EX -DNO_FUT_GCONST
+CFLAGS += -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST
 
