@@ -817,23 +817,26 @@ sane-cacerts:
 ######################################################
 
 ifdef OPENJDK
-
-# The freetypecheck Makefile prints out "Failed" if not good enough
-$(TEMPDIR)/freetypeinfo: FRC
+  ifndef CROSS_COMPILE_ARCH
+    # The freetypecheck Makefile prints out "Failed" if not good enough
+    $(TEMPDIR)/freetypeinfo: FRC
 	@$(prep-target)
 	@(($(CD) $(BUILDDIR)/tools/freetypecheck && $(MAKE)) || \
 	    $(ECHO) "Failed to build freetypecheck." ) > $@
 
-sane-freetype: $(TEMPDIR)/freetypeinfo
+    sane-freetype: $(TEMPDIR)/freetypeinfo
 	@if [ "`$(CAT) $< | $(GREP) Fail`" != "" ]; then \
 	  $(ECHO) "ERROR: FreeType version " $(REQUIRED_FREETYPE_VERSION) \
 	          " or higher is required. \n" \
 		  "`$(CAT) $<`  \n" >> $(ERROR_FILE) ; \
 	fi
-
+  else
+    #do nothing  (cross-compiling)
+    sane-freetype: 
+  endif
 else
-#do nothing  (not OpenJDK)
-sane-freetype: 
+  #do nothing  (not OpenJDK)
+  sane-freetype: 
 endif
 
 ######################################################
@@ -1343,13 +1346,16 @@ endif
 ######################################################
 # Check the compiler version(s)
 ######################################################
-CC_CHECK  :=$(call CheckVersions,$(CC_VER),$(REQUIRED_CC_VER))
+ifdef REQUIRED_CC_VER
+  CC_CHECK  :=$(call CheckVersions,$(CC_VER),$(REQUIRED_CC_VER))
+endif
 sane-compiler: sane-link
+ifdef REQUIRED_CC_VER
 	@if [ "$(CC_CHECK)" = "missing" ]; then \
 	  $(ECHO) "ERROR: The Compiler version is undefined. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-ifndef OPENJDK
+  ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
 	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(REQUIRED_COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
 	      "      Specifically the $(REQUIRED_COMPILER_NAME) compiler. \n " \
@@ -1358,6 +1364,7 @@ ifndef OPENJDK
 	      "          $(COMPILER_PATH) \n" \
 	      "" >> $(WARNING_FILE) ; \
          fi
+  endif
 endif
 
 ######################################################

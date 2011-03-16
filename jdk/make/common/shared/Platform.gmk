@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 20010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,11 @@ endif
 ifeq ($(SYSTEM_UNAME), Linux)
   PLATFORM = linux
   # Arch and OS name/version
-  mach := $(shell uname -m)
+  ifdef CROSS_COMPILE_ARCH
+    mach := $(CROSS_COMPILE_ARCH)
+  else
+    mach := $(shell uname -m)
+  endif
   archExpr = case "$(mach)" in \
                 i[3-9]86) \
                     echo i586 \
@@ -192,11 +196,13 @@ ifeq ($(SYSTEM_UNAME), Linux)
       ARCH=sparcv9
     endif
   else
-    # i586 is 32-bit, amd64 is 64-bit
+    # Most archs are 32-bit
     ifndef ARCH_DATA_MODEL
-      ifeq ($(ARCH), i586)
-        ARCH_DATA_MODEL=32
-      else
+      ARCH_DATA_MODEL=32
+      ifeq ($(ARCH), amd64)
+        ARCH_DATA_MODEL=64
+      endif
+      ifeq ($(ARCH), ia64)
         ARCH_DATA_MODEL=64
       endif
     endif
