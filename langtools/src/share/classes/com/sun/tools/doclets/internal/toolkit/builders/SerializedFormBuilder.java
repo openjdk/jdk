@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,8 +375,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     public void buildFieldSerializationOverview(ClassDoc classDoc, Content classContentTree) {
         if (classDoc.definesSerializableFields()) {
-            FieldDoc serialPersistentField =
-                Util.asList(classDoc.serializableFields()).get(0);
+            FieldDoc serialPersistentField = classDoc.serializableFields()[0];
             // Check to see if there are inline comments, tags or deprecation
             // information to be printed.
             if (fieldWriter.shouldPrintOverview(serialPersistentField)) {

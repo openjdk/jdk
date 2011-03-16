@@ -608,7 +608,10 @@ gboolean gtk2_load()
         fp_gtk_viewport_new = dl_symbol("gtk_viewport_new");
         fp_gtk_window_new = dl_symbol("gtk_window_new");
         fp_gtk_window_present = dl_symbol("gtk_window_present");
-        fp_gtk_dialog_new = dl_symbol("gtk_dialog_new");
+        fp_gtk_window_move = dl_symbol("gtk_window_move");
+        fp_gtk_window_resize = dl_symbol("gtk_window_resize");
+
+          fp_gtk_dialog_new = dl_symbol("gtk_dialog_new");
         fp_gtk_frame_new = dl_symbol("gtk_frame_new");
 
         fp_gtk_adjustment_new = dl_symbol("gtk_adjustment_new");

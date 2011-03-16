@@ -44,9 +44,9 @@ public class GZIPInputStreamRead {
                 rnd.nextBytes(src);
                 srcBAOS.write(src);
 
-                GZIPOutputStream gzos = new GZIPOutputStream(dstBAOS);
-                gzos.write(src);
-                gzos.close();
+                try (GZIPOutputStream gzos = new GZIPOutputStream(dstBAOS)) {
+                    gzos.write(src);
+                }
             }
             byte[] srcBytes = srcBAOS.toByteArray();
             byte[] dstBytes = dstBAOS.toByteArray();
@@ -75,26 +75,26 @@ public class GZIPInputStreamRead {
                              int readBufSize, int gzisBufSize)
         throws Throwable
     {
-        GZIPInputStream gzis = new GZIPInputStream(
-                                   new ByteArrayInputStream(dst),
-                                   gzisBufSize);
-        byte[] result = new byte[src.length + 10];
-        byte[] buf = new byte[readBufSize];
-        int n = 0;
-        int off = 0;
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(dst);
+             GZIPInputStream gzis = new GZIPInputStream(bais, gzisBufSize))
+        {
+            byte[] result = new byte[src.length + 10];
+            byte[] buf = new byte[readBufSize];
+            int n = 0;
+            int off = 0;
 
-        while ((n = gzis.read(buf, 0, buf.length)) != -1) {
-            System.arraycopy(buf, 0, result, off, n);
-            off += n;
-            // no range check, if overflow, let it fail
+            while ((n = gzis.read(buf, 0, buf.length)) != -1) {
+                System.arraycopy(buf, 0, result, off, n);
+                off += n;
+                // no range check, if overflow, let it fail
+            }
+            if (off != src.length || gzis.available() != 0 ||
+                !Arrays.equals(src, Arrays.copyOf(result, off))) {
+                throw new RuntimeException(
+                    "GZIPInputStream reading failed! " +
+                    ", src.len=" + src.length +
+                    ", read=" + off);
+            }
         }
-        if (off != src.length || gzis.available() != 0 ||
-            !Arrays.equals(src, Arrays.copyOf(result, off))) {
-            throw new RuntimeException(
-                "GZIPInputStream reading failed! " +
-                ", src.len=" + src.length +
-                ", read=" + off);
-        }
-        gzis.close();
     }
 }

@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = base
 PACKAGE = java.security
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

@@ -93,51 +93,50 @@ public class LargeZipFile {
             baos.write(bb.array(), 0, DATA_SIZE);
         }
         data = baos.toByteArray();
-
-        ZipOutputStream zos = new ZipOutputStream(
-            new BufferedOutputStream(new FileOutputStream(largeFile)));
-        long length = 0;
-        while (length < fileSize) {
-            ZipEntry ze = new ZipEntry("entry-" + length);
-            lastEntryName = ze.getName();
-            zos.putNextEntry(ze);
-            zos.write(data, 0, data.length);
-            zos.closeEntry();
-            length = largeFile.length();
+        try (FileOutputStream fos = new FileOutputStream(largeFile);
+             BufferedOutputStream bos = new BufferedOutputStream(fos);
+             ZipOutputStream zos = new ZipOutputStream(bos))
+        {
+            long length = 0;
+            while (length < fileSize) {
+                ZipEntry ze = new ZipEntry("entry-" + length);
+                lastEntryName = ze.getName();
+                zos.putNextEntry(ze);
+                zos.write(data, 0, data.length);
+                zos.closeEntry();
+                length = largeFile.length();
+            }
+            System.out.println("Last entry written is " + lastEntryName);
         }
-        System.out.println("Last entry written is " + lastEntryName);
-        zos.close();
     }
 
     static void readLargeZip() throws Throwable {
-        ZipFile zipFile = new ZipFile(largeFile);
-        ZipEntry entry = null;
-        String entryName = null;
-        int count = 0;
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            entry = entries.nextElement();
-            entryName = entry.getName();
-            count++;
-        }
-        System.out.println("Number of entries read: " + count);
-        System.out.println("Last entry read is " + entryName);
-        check(!entry.isDirectory());
-        if (check(entryName.equals(lastEntryName))) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            InputStream is = zipFile.getInputStream(entry);
-            byte buf[] = new byte[4096];
-            int len;
-            while ((len = is.read(buf)) >= 0) {
-                baos.write(buf, 0, len);
+        try (ZipFile zipFile = new ZipFile(largeFile)) {
+            ZipEntry entry = null;
+            String entryName = null;
+            int count = 0;
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                entry = entries.nextElement();
+                entryName = entry.getName();
+                count++;
             }
-            baos.close();
-            is.close();
-            check(Arrays.equals(data, baos.toByteArray()));
+            System.out.println("Number of entries read: " + count);
+            System.out.println("Last entry read is " + entryName);
+            check(!entry.isDirectory());
+            if (check(entryName.equals(lastEntryName))) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream is = zipFile.getInputStream(entry);
+                byte buf[] = new byte[4096];
+                int len;
+                while ((len = is.read(buf)) >= 0) {
+                    baos.write(buf, 0, len);
+                }
+                baos.close();
+                is.close();
+                check(Arrays.equals(data, baos.toByteArray()));
+            }
         }
-        try {
-          zipFile.close();
-        } catch (IOException ioe) {/* what can you do */ }
     }
 
     //--------------------- Infrastructure ---------------------------

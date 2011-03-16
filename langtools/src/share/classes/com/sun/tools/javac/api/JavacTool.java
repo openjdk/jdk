@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,19 +157,19 @@ public final class JavacTool implements JavaCompiler {
     /**
      * Register that a compilation is about to start.
      */
-    void beginContext(final Context context) {
+    void beginContext(Context context) {
         if (compilationInProgress)
             throw new IllegalStateException("Compilation in progress");
         compilationInProgress = true;
         final JavaFileManager givenFileManager = context.get(JavaFileManager.class);
         context.put(JavaFileManager.class, (JavaFileManager)null);
         context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            public JavaFileManager make() {
+            public JavaFileManager make(Context c) {
                 if (givenFileManager != null) {
-                    context.put(JavaFileManager.class, givenFileManager);
+                    c.put(JavaFileManager.class, givenFileManager);
                     return givenFileManager;
                 } else {
-                    return new JavacFileManager(context, true, null);
+                    return new JavacFileManager(c, true, null);
                 }
             }
         });

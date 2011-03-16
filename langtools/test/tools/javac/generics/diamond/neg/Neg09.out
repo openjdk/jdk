@@ -1,4 +1,5 @@
-Neg09.java:19:24: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg09.Foo), (compiler.misc.diamond.invalid.arg: java.lang.Number&java.lang.Comparable<java.lang.Number>, (compiler.misc.diamond: Neg09.Foo))
-Neg09.java:20:38: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg09.DoubleFoo), (compiler.misc.diamond.invalid.args: java.lang.Number&java.lang.Comparable<java.lang.Number>,java.lang.Number&java.lang.Comparable<java.lang.Number>, (compiler.misc.diamond: Neg09.DoubleFoo))
-Neg09.java:21:40: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg09.TripleFoo), (compiler.misc.diamond.invalid.args: java.lang.Number&java.lang.Comparable<java.lang.Number>,java.lang.Number&java.lang.Comparable<java.lang.Number>, (compiler.misc.diamond: Neg09.TripleFoo))
-3 errors
+Neg09.java:17:34: compiler.err.cant.apply.diamond.1: Neg09.Member, (compiler.misc.diamond.and.anon.class: Neg09.Member)
+Neg09.java:18:34: compiler.err.cant.apply.diamond.1: Neg09.Nested, (compiler.misc.diamond.and.anon.class: Neg09.Nested)
+Neg09.java:22:39: compiler.err.cant.apply.diamond.1: Neg09.Member, (compiler.misc.diamond.and.anon.class: Neg09.Member)
+Neg09.java:23:40: compiler.err.cant.apply.diamond.1: Neg09.Nested, (compiler.misc.diamond.and.anon.class: Neg09.Nested)
+4 errors

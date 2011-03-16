@@ -33,10 +33,12 @@ import java.util.Enumeration;
 
 public class EnumAfterClose {
     public static void main(String args[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                          "input.zip"));
-        Enumeration e = zf.entries();
-        zf.close();
+        Enumeration e;
+        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
+                                               "input.zip"))) {
+            e = zf.entries();
+        }
+        // ensure that the ZipFile is closed before checking the Enumeration
         try {
             if (e.hasMoreElements()) {
                 ZipEntry ze = (ZipEntry)e.nextElement();

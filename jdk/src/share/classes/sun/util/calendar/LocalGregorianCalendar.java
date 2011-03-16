@@ -127,7 +127,9 @@ public class LocalGregorianCalendar extends BaseCalendar {
             calendarProps = (Properties) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws IOException {
                     Properties props = new Properties();
-                    props.load(new FileInputStream(fname));
+                    try (FileInputStream fis = new FileInputStream(fname)) {
+                        props.load(fis);
+                    }
                     return props;
                 }
             });

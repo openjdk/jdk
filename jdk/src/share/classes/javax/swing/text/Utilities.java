@@ -390,35 +390,21 @@ public class Utilities {
             }
             if ((x >= currX) && (x < nextX)) {
                 // found the hit position... return the appropriate side
-                if ((round == false) || ((x - currX) < (nextX - x))) {
-                    return i - txtOffset;
-                } else {
-                    return i + 1 - txtOffset;
+                int offset = ((round == false) || ((x - currX) < (nextX - x))) ?
+                        (i - txtOffset) : (i + 1 - txtOffset);
+                // the length of the string measured as a whole may differ from
+                // the sum of individual character lengths, for example if
+                // fractional metrics are enabled; and we must guard from this.
+                while (metrics.charsWidth(txt, txtOffset, offset + 1) > (x - x0)) {
+                    offset--;
                 }
+                return (offset < 0 ? 0 : offset);
             }
             currX = nextX;
         }
 
         // didn't find, return end offset
         return txtCount;
-    }
-
-    /**
-     * Adjust text offset so that the length of a resulting string as a whole
-     * fits into the specified width.
-     */
-    static int adjustOffsetForFractionalMetrics(
-            Segment s, FontMetrics fm, int offset, int width) {
-        // Sometimes the offset returned by getTabbedTextOffset is beyond the
-        // available area, when fractional metrics are enabled. We should
-        // guard against this.
-        if (offset < s.count) {
-            while (offset > 0 &&
-                    fm.charsWidth(s.array, s.offset, offset + 1) > width) {
-                offset--;
-            }
-        }
-        return offset;
     }
 
     /**
@@ -443,7 +429,6 @@ public class Utilities {
         int txtCount = s.count;
         int index = Utilities.getTabbedTextOffset(s, metrics, x0, x,
                                                   e, startOffset, false);
-        index = adjustOffsetForFractionalMetrics(s, metrics, index, x - x0);
 
         if (index >= txtCount - 1) {
             return txtCount;

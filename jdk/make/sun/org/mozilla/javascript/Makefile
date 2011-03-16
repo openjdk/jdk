@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../../..
-MODULE  = scripting-rhino
 PACKAGE = sun.org.mozilla.javascript.internal
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

@@ -28,6 +28,8 @@
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
+ * @run main MOAT
+ * @run main/othervm -XX:+AggressiveOpts MOAT
  */
 
 /* Mother Of All (Collection) Tests
