@@ -102,6 +102,33 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_toFront
     fp_gdk_threads_leave();
 }
 
+/*
+ * Class:     sun_awt_X11_GtkFileDialogPeer
+ * Method:    setBounds
+ * Signature: (IIIII)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_setBounds
+(JNIEnv * env, jobject jpeer, jint x, jint y, jint width, jint height, jint op)
+{
+    GtkWindow* dialog;
+
+    fp_gdk_threads_enter();
+
+    dialog = (GtkWindow*)jlong_to_ptr(
+        (*env)->GetLongField(env, jpeer, widgetFieldID));
+
+    if (dialog != NULL) {
+        if (x >= 0 && y >= 0) {
+            fp_gtk_window_move(dialog, (gint)x, (gint)y);
+        }
+        if (width > 0 && height > 0) {
+            fp_gtk_window_resize(dialog, (gint)width, (gint)height);
+        }
+    }
+
+    fp_gdk_threads_leave();
+}
+
 /**
  * Convert a GSList to an array of filenames (without the parent folder)
  */
@@ -175,12 +202,12 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
 /*
  * Class:     sun_awt_X11_GtkFileDialogPeer
  * Method:    run
- * Signature: (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/io/FilenameFilter;Z;)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/io/FilenameFilter;ZII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
         jstring jtitle, jint mode, jstring jdir, jstring jfile,
-        jobject jfilter, jboolean multiple)
+        jobject jfilter, jboolean multiple, int x, int y)
 {
     GtkWidget *dialog = NULL;
     GtkFileFilter *filter;
@@ -242,6 +269,14 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     if (fp_gtk_check_version(2, 8, 0) == NULL) {
         fp_gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(
                 dialog), TRUE);
+    }
+
+    /* Set the initial location */
+    if (x >= 0 && y >= 0) {
+        fp_gtk_window_move((GtkWindow*)dialog, (gint)x, (gint)y);
+
+        // NOTE: it doesn't set the initial size for the file chooser
+        // as it seems like the file chooser overrides the size internally
     }
 
     fp_g_signal_connect(G_OBJECT(dialog), "response", G_CALLBACK(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  */
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.security.cert.CertificateFactory;
 
@@ -46,24 +48,20 @@ public class OpenSSLCert {
     }
 
     static void test(String... files) throws Exception {
-        FileOutputStream fout = new FileOutputStream(OUTFILE);
-        for (String file: files) {
-            FileInputStream fin = new FileInputStream(
-                new File(System.getProperty("test.src", "."), file));
-            byte[] buffer = new byte[4096];
-            while (true) {
-                int len = fin.read(buffer);
-                if (len < 0) break;
-                fout.write(buffer, 0, len);
+        try (FileOutputStream fout = new FileOutputStream(OUTFILE)) {
+            String here = System.getProperty("test.src", "");
+            for (String file: files) {
+                Files.copy(Paths.get(here, file), fout);
             }
-            fin.close();
         }
-        fout.close();
-        System.out.println("Testing " + Arrays.toString(files) + "...");
-        if (CertificateFactory.getInstance("X509")
-                .generateCertificates(new FileInputStream(OUTFILE))
-                .size() != files.length) {
-            throw new Exception("Not same number");
+        try (FileInputStream fin = new FileInputStream(OUTFILE)) {
+            System.out.println("Testing " + Arrays.toString(files) + "...");
+            if (CertificateFactory.getInstance("X509")
+                    .generateCertificates(fin)
+                    .size() != files.length) {
+                throw new Exception("Not same number");
+            }
         }
+        Files.delete(Paths.get(OUTFILE));
     }
 }
