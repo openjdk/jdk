@@ -1,0 +1,9 @@
+- compiler.warn.source.no.bootclasspath: 1.6
+T6558548.java:159:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+T6558548.java:168:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+T6558548.java:239:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+T6558548.java:249:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+T6558548.java:291:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+T6558548.java:298:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
+6 errors
+1 warning
