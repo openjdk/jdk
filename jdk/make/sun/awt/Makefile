@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = awt
 PACKAGE = sun.awt
 LIBRARY = awt
 PRODUCT = sun
@@ -368,7 +367,7 @@ else
 FONTCONFIGS_SRC	= $(CLOSED_SRC)/solaris/classes/sun/awt/fontconfigs
 _FONTCONFIGS	= \
 	fontconfig.properties				\
-	fontconfig.RedHat.properties			\
+	fontconfig.RedHat.5.5.properties		\
 	fontconfig.Turbo.properties			\
 	fontconfig.SuSE.10.properties                   \
 	fontconfig.SuSE.11.properties
@@ -405,7 +404,6 @@ $(LIBDIR)/%.bfc: $(FONTCONFIGS_SRC)/$(FONTCONFIGS_SRC_PREFIX)%.properties \
     $(COMPILEFONTCONFIG_JARFILE)
 	$(prep-target)
 	$(BOOT_JAVA_CMD) -jar $(COMPILEFONTCONFIG_JARFILE) $(COMPILEFONTCONFIG_FLAGS) $< $@
-	$(install-module-file)
 	$(call chmod-file, 444)
 	@$(java-vm-cleanup)
 

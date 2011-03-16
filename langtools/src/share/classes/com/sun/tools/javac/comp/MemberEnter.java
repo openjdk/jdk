@@ -889,10 +889,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 : (c.fullname == names.java_lang_Object)
                 ? Type.noType
                 : syms.objectType;
-            ct.supertype_field = supertype;
+            ct.supertype_field = modelMissingTypes(supertype, tree.extending, false);
 
             // Determine interfaces.
             ListBuffer<Type> interfaces = new ListBuffer<Type>();
+            ListBuffer<Type> all_interfaces = null; // lazy init
             Set<Type> interfaceSet = new HashSet<Type>();
             List<JCExpression> interfaceTrees = tree.implementing;
             if ((tree.mods.flags & Flags.ENUM) != 0 && target.compilerBootstrap(c)) {
@@ -909,13 +910,22 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 Type i = attr.attribBase(iface, baseEnv, false, true, true);
                 if (i.tag == CLASS) {
                     interfaces.append(i);
+                    if (all_interfaces != null) all_interfaces.append(i);
                     chk.checkNotRepeated(iface.pos(), types.erasure(i), interfaceSet);
+                } else {
+                    if (all_interfaces == null)
+                        all_interfaces = new ListBuffer<Type>().appendList(interfaces);
+                    all_interfaces.append(modelMissingTypes(i, iface, true));
                 }
             }
-            if ((c.flags_field & ANNOTATION) != 0)
+            if ((c.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
-            else
+                ct.all_interfaces_field = ct.interfaces_field;
+            }  else {
                 ct.interfaces_field = interfaces.toList();
+                ct.all_interfaces_field = (all_interfaces == null)
+                        ? ct.interfaces_field : all_interfaces.toList();
+            }
 
             if (c.fullname == names.java_lang_Object) {
                 if (tree.extending != null) {
@@ -1065,6 +1075,125 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       List.<JCExpression>of(make.Type(c.type)));
         return result;
     }
+
+    Type modelMissingTypes(Type t, final JCExpression tree, final boolean interfaceExpected) {
+        if (t.tag != ERROR)
+            return t;
+
+        return new ErrorType(((ErrorType) t).getOriginalType(), t.tsym) {
+            private Type modelType;
+
+            @Override
+            public Type getModelType() {
+                if (modelType == null)
+                    modelType = new Synthesizer(getOriginalType(), interfaceExpected).visit(tree);
+                return modelType;
+            }
+        };
+    }
+    // where
+    private class Synthesizer extends JCTree.Visitor {
+        Type originalType;
+        boolean interfaceExpected;
+        List<ClassSymbol> synthesizedSymbols = List.nil();
+        Type result;
+
+        Synthesizer(Type originalType, boolean interfaceExpected) {
+            this.originalType = originalType;
+            this.interfaceExpected = interfaceExpected;
+        }
+
+        Type visit(JCTree tree) {
+            tree.accept(this);
+            return result;
+        }
+
+        List<Type> visit(List<? extends JCTree> trees) {
+            ListBuffer<Type> lb = new ListBuffer<Type>();
+            for (JCTree t: trees)
+                lb.append(visit(t));
+            return lb.toList();
+        }
+
+        @Override
+        public void visitTree(JCTree tree) {
+            result = syms.errType;
+        }
+
+        @Override
+        public void visitIdent(JCIdent tree) {
+            if (tree.type.tag != ERROR) {
+                result = tree.type;
+            } else {
+                result = synthesizeClass(tree.name, syms.unnamedPackage).type;
+            }
+        }
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            if (tree.type.tag != ERROR) {
+                result = tree.type;
+            } else {
+                Type selectedType;
+                boolean prev = interfaceExpected;
+                try {
+                    interfaceExpected = false;
+                    selectedType = visit(tree.selected);
+                } finally {
+                    interfaceExpected = prev;
+                }
+                ClassSymbol c = synthesizeClass(tree.name, selectedType.tsym);
+                result = c.type;
+            }
+        }
+
+        @Override
+        public void visitTypeApply(JCTypeApply tree) {
+            if (tree.type.tag != ERROR) {
+                result = tree.type;
+            } else {
+                ClassType clazzType = (ClassType) visit(tree.clazz);
+                if (synthesizedSymbols.contains(clazzType.tsym))
+                    synthesizeTyparams((ClassSymbol) clazzType.tsym, tree.arguments.size());
+                final List<Type> actuals = visit(tree.arguments);
+                result = new ErrorType(tree.type, clazzType.tsym) {
+                    @Override
+                    public List<Type> getTypeArguments() {
+                        return actuals;
+                    }
+                };
+            }
+        }
+
+        ClassSymbol synthesizeClass(Name name, Symbol owner) {
+            int flags = interfaceExpected ? INTERFACE : 0;
+            ClassSymbol c = new ClassSymbol(flags, name, owner);
+            c.members_field = new Scope.ErrorScope(c);
+            c.type = new ErrorType(originalType, c) {
+                @Override
+                public List<Type> getTypeArguments() {
+                    return typarams_field;
+                }
+            };
+            synthesizedSymbols = synthesizedSymbols.prepend(c);
+            return c;
+        }
+
+        void synthesizeTyparams(ClassSymbol sym, int n) {
+            ClassType ct = (ClassType) sym.type;
+            Assert.check(ct.typarams_field.isEmpty());
+            if (n == 1) {
+                TypeVar v = new TypeVar(names.fromString("T"), sym, syms.botType);
+                ct.typarams_field = ct.typarams_field.prepend(v);
+            } else {
+                for (int i = n; i > 0; i--) {
+                    TypeVar v = new TypeVar(names.fromString("T" + i), sym, syms.botType);
+                    ct.typarams_field = ct.typarams_field.prepend(v);
+                }
+            }
+        }
+    }
+
 
 /* ***************************************************************************
  * tree building

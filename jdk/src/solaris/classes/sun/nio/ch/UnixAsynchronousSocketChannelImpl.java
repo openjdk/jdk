@@ -137,7 +137,7 @@ class UnixAsynchronousSocketChannelImpl
         return port;
     }
 
-    // register for events if there are outstanding I/O operations
+    // register events for outstanding I/O operations, caller already owns updateLock
     private void updateEvents() {
         assert Thread.holdsLock(updateLock);
         int events = 0;
@@ -147,6 +147,13 @@ class UnixAsynchronousSocketChannelImpl
             events |= Port.POLLOUT;
         if (events != 0)
             port.startPoll(fdVal, events);
+    }
+
+    // register events for outstanding I/O operations
+    private void lockAndUpdateEvents() {
+        synchronized (updateLock) {
+            updateEvents();
+        }
     }
 
     // invoke to finish read and/or write operations
@@ -255,9 +262,10 @@ class UnixAsynchronousSocketChannelImpl
             // close channel if connection cannot be established
             try {
                 close();
-            } catch (IOException ignore) { }
+            } catch (Throwable suppressed) {
+                e.addSuppressed(suppressed);
+            }
         }
-
 
         // invoke handler and set result
         CompletionHandler<Void,Object> handler = connectHandler;
@@ -345,7 +353,9 @@ class UnixAsynchronousSocketChannelImpl
         if (e != null) {
             try {
                 close();
-            } catch (IOException ignore) { }
+            } catch (Throwable suppressed) {
+                e.addSuppressed(suppressed);
+            }
         }
         if (handler == null) {
             return CompletedFuture.withResult(null, e);
@@ -399,9 +409,8 @@ class UnixAsynchronousSocketChannelImpl
             exc = x;
         } finally {
             // restart poll in case of concurrent write
-            synchronized (updateLock) {
-                updateEvents();
-            }
+            if (!(exc instanceof AsynchronousCloseException))
+                lockAndUpdateEvents();
             end();
         }
 
@@ -595,9 +604,8 @@ class UnixAsynchronousSocketChannelImpl
             exc = x;
         } finally {
             // restart poll in case of concurrent write
-            synchronized (updateLock) {
-                updateEvents();
-            }
+            if (!(exc instanceof AsynchronousCloseException))
+                lockAndUpdateEvents();
             end();
         }
 

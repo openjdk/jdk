@@ -118,23 +118,24 @@ public class Inject implements RuntimeConstants {
         }
 
         void dump(File outDir, String filename) throws IOException {
-            FileOutputStream fileOut = new FileOutputStream(new File(outDir, filename));
-            DataOutputStream dataOut = new DataOutputStream(fileOut);
+            try (FileOutputStream fileOut =
+                     new FileOutputStream(new File(outDir, filename));
+                 DataOutputStream dataOut = new DataOutputStream(fileOut))
+            {
+                String currentClassName = null;
 
-            String currentClassName = null;
-
-            dataOut.writeInt(infoList.size());
-            for (Iterator<Info> it = infoList.iterator(); it.hasNext(); ) {
-                Info info = it.next();
-                if (!info.className.equals(currentClassName)) {
-                    dataOut.writeInt(123456); // class name marker
-                    currentClassName = info.className;
-                    dataOut.writeUTF(currentClassName);
+                dataOut.writeInt(infoList.size());
+                for (Iterator<Info> it = infoList.iterator(); it.hasNext(); ) {
+                    Info info = it.next();
+                    if (!info.className.equals(currentClassName)) {
+                        dataOut.writeInt(123456); // class name marker
+                        currentClassName = info.className;
+                        dataOut.writeUTF(currentClassName);
+                    }
+                    dataOut.writeInt(info.location);
+                    dataOut.writeUTF(info.methodName);
                 }
-                dataOut.writeInt(info.location);
-                dataOut.writeUTF(info.methodName);
             }
-            dataOut.close();
         }
 
         public byte[] bytecodes(String className, String methodName, int location) {

@@ -73,6 +73,13 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
+ *  <td>getNetworkInformation</td>
+ *  <td>The ability to retrieve all information about local network interfaces.</td>
+ *  <td>Malicious code can read information about network hardware such as
+ *  MAC addresses, which could be used to construct local IPv6 addresses.</td>
+ * </tr>
+ *
+ * <tr>
  *   <td>getProxySelector</td>
  *   <td>The ability to get the proxy selector used to make decisions
  *   on which proxies to use when making network connections.</td>

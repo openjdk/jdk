@@ -89,7 +89,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = security-sunpkcs11
 PACKAGE = sun.security.pkcs11
 LIBRARY = j2pkcs11
 PRODUCT = sun
@@ -288,7 +287,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/sunpkcs11.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/sunpkcs11.jar
 endif
-	$(install-non-module-file)
+	$(install-file)
 
 ifndef OPENJDK
 install-prebuilt:

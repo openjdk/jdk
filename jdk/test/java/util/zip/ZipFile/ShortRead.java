@@ -38,27 +38,29 @@ public class ShortRead {
         try {
             final String entryName = "abc";
             final String data = "Data disponible";
-            final ZipOutputStream zos =
-                new ZipOutputStream(new FileOutputStream(zFile));
-            zos.putNextEntry(new ZipEntry(entryName));
-            zos.write(data.getBytes("ASCII"));
-            zos.closeEntry();
-            zos.close();
+            try (FileOutputStream fos = new FileOutputStream(zFile);
+                 ZipOutputStream zos = new ZipOutputStream(fos))
+            {
+                zos.putNextEntry(new ZipEntry(entryName));
+                zos.write(data.getBytes("ASCII"));
+                zos.closeEntry();
+            }
 
-            final ZipFile zipFile = new ZipFile(zFile);
-            final ZipEntry zentry = zipFile.getEntry(entryName);
-            final InputStream inputStream = zipFile.getInputStream(zentry);
-            System.out.printf("size=%d csize=%d available=%d%n",
-                              zentry.getSize(),
-                              zentry.getCompressedSize(),
-                              inputStream.available());
-            byte[] buf = new byte[data.length()];
-            final int count = inputStream.read(buf);
-            if (! new String(buf, "ASCII").equals(data) ||
-                count != data.length())
-                throw new Exception("short read?");
-            zipFile.close();
+            try (ZipFile zipFile = new ZipFile(zFile)) {
+                final ZipEntry zentry = zipFile.getEntry(entryName);
+                final InputStream inputStream = zipFile.getInputStream(zentry);
+                System.out.printf("size=%d csize=%d available=%d%n",
+                                  zentry.getSize(),
+                                  zentry.getCompressedSize(),
+                                  inputStream.available());
+                byte[] buf = new byte[data.length()];
+                final int count = inputStream.read(buf);
+                if (! new String(buf, "ASCII").equals(data) ||
+                    count != data.length())
+                    throw new Exception("short read?");
+            }
+        } finally {
+            zFile.delete();
         }
-        finally { zFile.delete(); }
     }
 }

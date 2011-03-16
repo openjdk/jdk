@@ -34,6 +34,7 @@ import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.file.*;
 import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.parser.Token;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
@@ -107,8 +108,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos);
             Context c = t.getContext();
             ArgTypeMessages.preRegister(c);
-            Options options = Options.instance(c);
-            Log.instance(c).setDiagnosticFormatter(new ArgTypeDiagnosticFormatter(options));
+            ArgTypeJavaCompiler.preRegister(c);
             Boolean ok = t.call();
 
             return ok;
@@ -144,7 +144,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
                 }
             };
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            ArgTypeDiagnosticFormatter.preRegister(c);
+            ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
             int result = main.compile(args.toArray(new String[args.size()]), c);
 
@@ -170,7 +170,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
 
             Context c = new Context();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            ArgTypeDiagnosticFormatter.preRegister(c);
+            ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
             com.sun.tools.javac.main.Main m = new com.sun.tools.javac.main.Main("javac", out);
             int rc = m.compile(args.toArray(new String[args.size()]), c);
@@ -189,17 +189,6 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
      * arg types.
      */
     static class ArgTypeDiagnosticFormatter extends AbstractDiagnosticFormatter {
-        static void preRegister(final Context context) {
-            context.put(Log.logKey, new Context.Factory<Log>() {
-                public Log make() {
-                    Log log = new Log(context) { };
-                    Options options = Options.instance(context);
-                    log.setDiagnosticFormatter(new ArgTypeDiagnosticFormatter(options));
-                    return log;
-                }
-            });
-
-        }
 
         ArgTypeDiagnosticFormatter(Options options) {
             super(null, new SimpleConfiguration(options,
@@ -246,14 +235,37 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
     }
 
     /**
+     * Trivial subtype of JavaCompiler to get access to the protected compilerKey field.
+     * The factory is used to ensure that the log is initialized with an instance of
+     * ArgTypeDiagnosticFormatter before we create the required JavaCompiler.
+     */
+    static class ArgTypeJavaCompiler extends JavaCompiler {
+        static void preRegister(Context context) {
+            context.put(compilerKey, new Context.Factory<JavaCompiler>() {
+                public JavaCompiler make(Context c) {
+                    Log log = Log.instance(c);
+                    Options options = Options.instance(c);
+                    log.setDiagnosticFormatter(new ArgTypeDiagnosticFormatter(options));
+                    return new JavaCompiler(c);
+                }
+            });
+        }
+
+        // not used
+        private ArgTypeJavaCompiler() {
+            super(null);
+        }
+    }
+
+    /**
      * Diagnostic formatter which "localizes" a message as a line
      * containing a key, and a possibly empty set of descriptive strings for the
      * arg types.
      */
     static class ArgTypeMessages extends JavacMessages {
-        static void preRegister(final Context c) {
-            c.put(JavacMessages.messagesKey, new Context.Factory<JavacMessages>() {
-                public JavacMessages make() {
+        static void preRegister(Context context) {
+            context.put(JavacMessages.messagesKey, new Context.Factory<JavacMessages>() {
+                public JavacMessages make(Context c) {
                     return new ArgTypeMessages(c) {
                         @Override
                         public String getLocalizedString(Locale l, String key, Object... args) {

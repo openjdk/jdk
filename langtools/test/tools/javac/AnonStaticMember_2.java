@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 4279339
+ * @bug 4279339 6969184
  * @summary Verify that an anonymous class cannot contain a static method.
  * @author maddox
  *

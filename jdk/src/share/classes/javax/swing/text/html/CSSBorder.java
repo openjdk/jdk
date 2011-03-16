@@ -203,10 +203,11 @@ class CSSBorder extends AbstractBorder {
 
     public void paintBorder(Component c, Graphics g,
                                         int x, int y, int width, int height) {
-        assert (g instanceof Graphics2D) : "need Graphics2D instanse";
-        Graphics2D g2 = (Graphics2D) g;
-        Color savedColor = g2.getColor();
-        Shape savedClip = g2.getClip();
+        if (!(g instanceof Graphics2D)) {
+            return;
+        }
+
+        Graphics2D g2 = (Graphics2D) g.create();
 
         int[] widths = getWidths();
 
@@ -238,16 +239,16 @@ class CSSBorder extends AbstractBorder {
                 BorderPainter painter = getBorderPainter(i);
 
                 double angle = i * Math.PI / 2;
+                g2.setClip(g.getClip()); // Restore initial clip
                 g2.translate(intCorners[i][0], intCorners[i][1]);
                 g2.rotate(angle);
-                g2.setClip(shape);
-                painter.paint(shape, g, color, i);
+                g2.clip(shape);
+                painter.paint(shape, g2, color, i);
                 g2.rotate(-angle);
                 g2.translate(-intCorners[i][0], -intCorners[i][1]);
             }
         }
-        g2.setColor(savedColor);
-        g2.setClip(savedClip);
+        g2.dispose();
     }
 
 

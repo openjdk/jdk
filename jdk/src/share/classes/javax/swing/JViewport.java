@@ -1111,6 +1111,8 @@ public class JViewport extends JComponent implements Accessible
                 view.setLocation(newX, newY);
                 repaintAll = false;
             }
+            // we must validate the hierarchy to not break the hw/lw mixing
+            revalidate();
             fireStateChanged();
         }
     }

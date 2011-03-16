@@ -170,7 +170,7 @@ struct nmethod_stats_struct {
   int pc_desc_resets;   // number of resets (= number of caches)
   int pc_desc_queries;  // queries to nmethod::find_pc_desc
   int pc_desc_approx;   // number of those which have approximate true
-  int pc_desc_repeats;  // number of _last_pc_desc hits
+  int pc_desc_repeats;  // number of _pc_descs[0] hits
   int pc_desc_hits;     // number of LRU cache hits
   int pc_desc_tests;    // total number of PcDesc examinations
   int pc_desc_searches; // total number of quasi-binary search steps
@@ -278,40 +278,44 @@ static inline bool match_desc(PcDesc* pc, int pc_offset, bool approximate) {
 
 void PcDescCache::reset_to(PcDesc* initial_pc_desc) {
   if (initial_pc_desc == NULL) {
-    _last_pc_desc = NULL;  // native method
+    _pc_descs[0] = NULL; // native method; no PcDescs at all
     return;
   }
   NOT_PRODUCT(++nmethod_stats.pc_desc_resets);
   // reset the cache by filling it with benign (non-null) values
   assert(initial_pc_desc->pc_offset() < 0, "must be sentinel");
-  _last_pc_desc = initial_pc_desc + 1;  // first valid one is after sentinel
   for (int i = 0; i < cache_size; i++)
     _pc_descs[i] = initial_pc_desc;
 }
 
 PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
   NOT_PRODUCT(++nmethod_stats.pc_desc_queries);
-  NOT_PRODUCT(if (approximate)  ++nmethod_stats.pc_desc_approx);
+  NOT_PRODUCT(if (approximate) ++nmethod_stats.pc_desc_approx);
+
+  // Note: one might think that caching the most recently
+  // read value separately would be a win, but one would be
+  // wrong.  When many threads are updating it, the cache
+  // line it's in would bounce between caches, negating
+  // any benefit.
 
   // In order to prevent race conditions do not load cache elements
   // repeatedly, but use a local copy:
   PcDesc* res;
 
-  // Step one:  Check the most recently returned value.
-  res = _last_pc_desc;
-  if (res == NULL)  return NULL;  // native method; no PcDescs at all
+  // Step one:  Check the most recently added value.
+  res = _pc_descs[0];
+  if (res == NULL) return NULL;  // native method; no PcDescs at all
   if (match_desc(res, pc_offset, approximate)) {
     NOT_PRODUCT(++nmethod_stats.pc_desc_repeats);
     return res;
   }
 
-  // Step two:  Check the LRU cache.
-  for (int i = 0; i < cache_size; i++) {
+  // Step two:  Check the rest of the LRU cache.
+  for (int i = 1; i < cache_size; ++i) {
     res = _pc_descs[i];
-    if (res->pc_offset() < 0)  break;  // optimization: skip empty cache
+    if (res->pc_offset() < 0) break;  // optimization: skip empty cache
     if (match_desc(res, pc_offset, approximate)) {
       NOT_PRODUCT(++nmethod_stats.pc_desc_hits);
-      _last_pc_desc = res;  // record this cache hit in case of repeat
       return res;
     }
   }
@@ -322,24 +326,23 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
   NOT_PRODUCT(++nmethod_stats.pc_desc_adds);
-  // Update the LRU cache by shifting pc_desc forward:
+  // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {
     PcDesc* next = _pc_descs[i];
     _pc_descs[i] = pc_desc;
     pc_desc = next;
   }
-  // Note:  Do not update _last_pc_desc.  It fronts for the LRU cache.
 }
 
 // adjust pcs_size so that it is a multiple of both oopSize and
 // sizeof(PcDesc) (assumes that if sizeof(PcDesc) is not a multiple
 // of oopSize, then 2*sizeof(PcDesc) is)
-static int  adjust_pcs_size(int pcs_size) {
+static int adjust_pcs_size(int pcs_size) {
   int nsize = round_to(pcs_size,   oopSize);
   if ((nsize % sizeof(PcDesc)) != 0) {
     nsize = pcs_size + sizeof(PcDesc);
   }
-  assert((nsize %  oopSize) == 0, "correct alignment");
+  assert((nsize % oopSize) == 0, "correct alignment");
   return nsize;
 }
 
@@ -1180,14 +1183,17 @@ void nmethod::mark_as_seen_on_stack() {
   set_stack_traversal_mark(NMethodSweeper::traversal_count());
 }
 
-// Tell if a non-entrant method can be converted to a zombie (i.e., there is no activations on the stack)
+// Tell if a non-entrant method can be converted to a zombie (i.e.,
+// there are no activations on the stack, not in use by the VM,
+// and not in use by the ServiceThread)
 bool nmethod::can_not_entrant_be_converted() {
   assert(is_not_entrant(), "must be a non-entrant method");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the
   // nmethod for the second time.
-  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count();
+  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count() &&
+         !is_locked_by_vm();
 }
 
 void nmethod::inc_decompile_count() {
@@ -1294,6 +1300,7 @@ void nmethod::log_state_change() const {
 // Common functionality for both make_not_entrant and make_zombie
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
+  assert(!is_zombie(), "should not already be a zombie");
 
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
@@ -1301,11 +1308,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   No_Safepoint_Verifier nsv;
 
   {
-    // If the method is already zombie there is nothing to do
-    if (is_zombie()) {
-      return false;
-    }
-
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
@@ -1375,13 +1377,12 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       flush_dependencies(NULL);
     }
 
-    {
-      // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
-      // and it hasn't already been reported for this nmethod then report it now.
-      // (the event may have been reported earilier if the GC marked it for unloading).
-      Pause_No_Safepoint_Verifier pnsv(&nsv);
-      post_compiled_method_unload();
-    }
+    // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
+    // event and it hasn't already been reported for this nmethod then
+    // report it now. The event may have been reported earilier if the GC
+    // marked it for unloading). JvmtiDeferredEventQueue support means
+    // we no longer go to a safepoint here.
+    post_compiled_method_unload();
 
 #ifdef ASSERT
     // It's no longer safe to access the oops section since zombie
@@ -1566,7 +1567,7 @@ void nmethod::post_compiled_method_unload() {
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     JvmtiDeferredEvent event =
-      JvmtiDeferredEvent::compiled_method_unload_event(
+      JvmtiDeferredEvent::compiled_method_unload_event(this,
           _jmethod_id, insts_begin());
     if (SafepointSynchronize::is_at_safepoint()) {
       // Don't want to take the queueing lock. Add it as pending and
@@ -2171,10 +2172,12 @@ nmethodLocker::nmethodLocker(address pc) {
   lock_nmethod(_nm);
 }
 
-void nmethodLocker::lock_nmethod(nmethod* nm) {
+// Only JvmtiDeferredEvent::compiled_method_unload_event()
+// should pass zombie_ok == true.
+void nmethodLocker::lock_nmethod(nmethod* nm, bool zombie_ok) {
   if (nm == NULL)  return;
   Atomic::inc(&nm->_lock_count);
-  guarantee(!nm->is_zombie(), "cannot lock a zombie method");
+  guarantee(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
 }
 
 void nmethodLocker::unlock_nmethod(nmethod* nm) {
