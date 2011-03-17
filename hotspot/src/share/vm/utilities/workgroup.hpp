@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,20 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+
+// Task class hierarchy:
+//   AbstractGangTask
+//     AbstractGangTaskWOopQueues
+//
+// Gang/Group class hierarchy:
+//   AbstractWorkGang
+//     WorkGang
+//       FlexibleWorkGang
+//         YieldingFlexibleWorkGang (defined in another file)
+//
+// Worker class hierarchy:
+//   GangWorker (subclass of WorkerThread)
+//     YieldingFlexibleGangWorker   (defined in another file)
 
 // Forward declarations of classes defined here
 

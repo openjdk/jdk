@@ -2141,13 +2141,14 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
   G1CMDrainMarkingStackClosure
     g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
-
   // We use the work gang from the G1CollectedHeap and we utilize all
   // the worker threads.
-  int active_workers = MAX2(MIN2(g1h->workers()->total_workers(), (int)_max_task_num), 1);
+  int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
+  active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
 
   G1RefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
                                           g1h->workers(), active_workers);
+
 
   if (rp->processing_is_mt()) {
     // Set the degree of MT here.  If the discovery is done MT, there
@@ -2155,7 +2156,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // and a different number of discovered lists may have Ref objects.
     // That is OK as long as the Reference lists are balanced (see
     // balance_all_queues() and balance_queues()).
-    rp->set_mt_degree(active_workers);
+    rp->set_active_mt_degree(active_workers);
 
     rp->process_discovered_references(&g1_is_alive,
                                       &g1_keep_alive,

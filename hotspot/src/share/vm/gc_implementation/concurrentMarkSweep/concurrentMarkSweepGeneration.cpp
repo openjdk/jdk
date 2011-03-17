@@ -292,13 +292,15 @@ void ConcurrentMarkSweepGeneration::ref_processor_init() {
 void CMSCollector::ref_processor_init() {
   if (_ref_processor == NULL) {
     // Allocate and initialize a reference processor
-    _ref_processor = ReferenceProcessor::create_ref_processor(
-        _span,                               // span
-        _cmsGen->refs_discovery_is_atomic(), // atomic_discovery
-        _cmsGen->refs_discovery_is_mt(),     // mt_discovery
-        &_is_alive_closure,
-        ParallelGCThreads,
-        ParallelRefProcEnabled);
+    _ref_processor =
+      new ReferenceProcessor(_span,                               // span
+                             (ParallelGCThreads > 1) && ParallelRefProcEnabled, // mt processing
+                             (int) ParallelGCThreads,             // mt processing degree
+                             _cmsGen->refs_discovery_is_mt(),     // mt discovery
+                             (int) MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
+                             _cmsGen->refs_discovery_is_atomic(), // discovery is not atomic
+                             &_is_alive_closure,                  // closure for liveness info
+                             false);                              // next field updates do not need write barrier
     // Initialize the _ref_processor field of CMSGen
     _cmsGen->set_ref_processor(_ref_processor);
 
@@ -641,7 +643,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
 
   // Support for multi-threaded concurrent phases
-  if (CollectedHeap::use_parallel_gc_threads() && CMSConcurrentMTEnabled) {
+  if (CMSConcurrentMTEnabled) {
     if (FLAG_IS_DEFAULT(ConcGCThreads)) {
       // just for now
       FLAG_SET_DEFAULT(ConcGCThreads, (ParallelGCThreads + 3)/4);
@@ -1990,17 +1992,16 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   // Temporarily widen the span of the weak reference processing to
   // the entire heap.
   MemRegion new_span(GenCollectedHeap::heap()->reserved_region());
-  ReferenceProcessorSpanMutator x(ref_processor(), new_span);
-
+  ReferenceProcessorSpanMutator rp_mut_span(ref_processor(), new_span);
   // Temporarily, clear the "is_alive_non_header" field of the
   // reference processor.
-  ReferenceProcessorIsAliveMutator y(ref_processor(), NULL);
-
+  ReferenceProcessorIsAliveMutator rp_mut_closure(ref_processor(), NULL);
   // Temporarily make reference _processing_ single threaded (non-MT).
-  ReferenceProcessorMTProcMutator z(ref_processor(), false);
-
+  ReferenceProcessorMTProcMutator rp_mut_mt_processing(ref_processor(), false);
   // Temporarily make refs discovery atomic
-  ReferenceProcessorAtomicMutator w(ref_processor(), true);
+  ReferenceProcessorAtomicMutator rp_mut_atomic(ref_processor(), true);
+  // Temporarily make reference _discovery_ single threaded (non-MT)
+  ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
 
   ref_processor()->set_enqueuing_is_done(false);
   ref_processor()->enable_discovery();
@@ -4265,9 +4266,7 @@ bool CMSCollector::do_marking_mt(bool asynch) {
 
   // Refs discovery is already non-atomic.
   assert(!ref_processor()->discovery_is_atomic(), "Should be non-atomic");
-  // Mutate the Refs discovery so it is MT during the
-  // multi-threaded marking phase.
-  ReferenceProcessorMTMutator mt(ref_processor(), num_workers > 1);
+  assert(ref_processor()->discovery_is_mt(), "Discovery should be MT");
   DEBUG_ONLY(RememberKlassesChecker cmx(should_unload_classes());)
   conc_workers()->start_task(&tsk);
   while (tsk.yielded()) {
@@ -4320,6 +4319,8 @@ bool CMSCollector::do_marking_st(bool asynch) {
   ResourceMark rm;
   HandleMark   hm;
 
+  // Temporarily make refs discovery single threaded (non-MT)
+  ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
   MarkFromRootsClosure markFromRootsClosure(this, _span, &_markBitMap,
     &_markStack, &_revisitStack, CMSYield && asynch);
   // the last argument to iterate indicates whether the iteration
@@ -4358,10 +4359,6 @@ void CMSCollector::preclean() {
   verify_overflow_empty();
   _abort_preclean = false;
   if (CMSPrecleaningEnabled) {
-    // Precleaning is currently not MT but the reference processor
-    // may be set for MT.  Disable it temporarily here.
-    ReferenceProcessor* rp = ref_processor();
-    ReferenceProcessorMTProcMutator z(rp, false);
     _eden_chunk_index = 0;
     size_t used = get_eden_used();
     size_t capacity = get_eden_capacity();
@@ -4504,11 +4501,16 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
          _collectorState == AbortablePreclean, "incorrect state");
   ResourceMark rm;
   HandleMark   hm;
+
+  // Precleaning is currently not MT but the reference processor
+  // may be set for MT.  Disable it temporarily here.
+  ReferenceProcessor* rp = ref_processor();
+  ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
+
   // Do one pass of scrubbing the discovered reference lists
   // to remove any reference objects with strongly-reachable
   // referents.
   if (clean_refs) {
-    ReferenceProcessor* rp = ref_processor();
     CMSPrecleanRefsYieldClosure yield_cl(this);
     assert(rp->span().equals(_span), "Spans should be equal");
     CMSKeepAliveClosure keep_alive(this, _span, &_markBitMap,
@@ -5578,8 +5580,10 @@ void CMSCollector::do_remark_parallel() {
   // in the multi-threaded case, but we special-case n=1 here to get
   // repeatable measurements of the 1-thread overhead of the parallel code.
   if (n_workers > 1) {
-    // Make refs discovery MT-safe
-    ReferenceProcessorMTMutator mt(ref_processor(), true);
+    // Make refs discovery MT-safe, if it isn't already: it may not
+    // necessarily be so, since it's possible that we are doing
+    // ST marking.
+    ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), true);
     GenCollectedHeap::StrongRootsScope srs(gch);
     workers->run_task(&tsk);
   } else {
@@ -5705,14 +5709,19 @@ public:
                       CMSBitMap*       mark_bit_map,
                       AbstractWorkGang* workers,
                       OopTaskQueueSet* task_queues):
+    // XXX Should superclass AGTWOQ also know about AWG since it knows
+    // about the task_queues used by the AWG? Then it could initialize
+    // the terminator() object. See 6984287. The set_for_termination()
+    // below is a temporary band-aid for the regression in 6984287.
     AbstractGangTaskWOopQueues("Process referents by policy in parallel",
       task_queues),
     _task(task),
     _collector(collector), _span(span), _mark_bit_map(mark_bit_map)
-    {
-      assert(_collector->_span.equals(_span) && !_span.is_empty(),
-             "Inconsistency in _span");
-    }
+  {
+    assert(_collector->_span.equals(_span) && !_span.is_empty(),
+           "Inconsistency in _span");
+    set_for_termination(workers->active_workers());
+  }
 
   OopTaskQueueSet* task_queues() { return queues(); }
 
@@ -5874,8 +5883,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
       // That is OK as long as the Reference lists are balanced (see
       // balance_all_queues() and balance_queues()).
 
-
-      rp->set_mt_degree(ParallelGCThreads);
+      rp->set_active_mt_degree(ParallelGCThreads);
       CMSRefProcTaskExecutor task_executor(*this);
       rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
