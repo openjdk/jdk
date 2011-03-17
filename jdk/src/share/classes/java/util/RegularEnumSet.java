@@ -34,6 +34,7 @@ package java.util;
  * @serial exclude
  */
 class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
+    private static final long serialVersionUID = 3411599620347842686L;
     /**
      * Bit vector representation of this set.  The 2^k bit indicates the
      * presence of universe[k] in this set.
