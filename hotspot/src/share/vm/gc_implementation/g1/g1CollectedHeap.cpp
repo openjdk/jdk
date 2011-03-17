@@ -1462,7 +1462,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     // how reference processing currently works in G1.
 
     // Temporarily make reference _discovery_ single threaded (non-MT).
-    ReferenceProcessorMTMutator rp_disc_ser(ref_processor(), false);
+    ReferenceProcessorMTDiscoveryMutator rp_disc_ser(ref_processor(), false);
 
     // Temporarily make refs discovery atomic
     ReferenceProcessorAtomicMutator rp_disc_atomic(ref_processor(), true);
@@ -2219,16 +2219,16 @@ void G1CollectedHeap::ref_processing_init() {
 
   SharedHeap::ref_processing_init();
   MemRegion mr = reserved_region();
-  _ref_processor = ReferenceProcessor::create_ref_processor(
-                                         mr,    // span
-                                         false, // Reference discovery is not atomic
-                                         true,  // mt_discovery
-                                         &_is_alive_closure, // is alive closure
-                                                             // for efficiency
-                                         ParallelGCThreads,
-                                         ParallelRefProcEnabled,
-                                         true); // Setting next fields of discovered
-                                                // lists requires a barrier.
+  _ref_processor =
+    new ReferenceProcessor(mr,    // span
+                           ParallelRefProcEnabled && (ParallelGCThreads > 1),    // mt processing
+                           (int) ParallelGCThreads,   // degree of mt processing
+                           ParallelGCThreads > 1 || ConcGCThreads > 1,  // mt discovery
+                           (int) MAX2(ParallelGCThreads, ConcGCThreads), // degree of mt discovery
+                           false,                     // Reference discovery is not atomic
+                           &_is_alive_closure,        // is alive closure for efficiency
+                           true);                     // Setting next fields of discovered
+                                                      // lists requires a barrier.
 }
 
 size_t G1CollectedHeap::capacity() const {

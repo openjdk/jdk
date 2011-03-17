@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,40 +102,17 @@ void ReferenceProcessor::init_statics() {
             "Unrecongnized RefDiscoveryPolicy");
 }
 
-ReferenceProcessor*
-ReferenceProcessor::create_ref_processor(MemRegion          span,
-                                         bool               atomic_discovery,
-                                         bool               mt_discovery,
-                                         BoolObjectClosure* is_alive_non_header,
-                                         int                parallel_gc_threads,
-                                         bool               mt_processing,
-                                         bool               dl_needs_barrier) {
-  int mt_degree = 1;
-  if (parallel_gc_threads > 1) {
-    mt_degree = parallel_gc_threads;
-  }
-  ReferenceProcessor* rp =
-    new ReferenceProcessor(span, atomic_discovery,
-                           mt_discovery, mt_degree,
-                           mt_processing && (parallel_gc_threads > 0),
-                           dl_needs_barrier);
-  if (rp == NULL) {
-    vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
-  }
-  rp->set_is_alive_non_header(is_alive_non_header);
-  rp->setup_policy(false /* default soft ref policy */);
-  return rp;
-}
-
 ReferenceProcessor::ReferenceProcessor(MemRegion span,
-                                       bool      atomic_discovery,
-                                       bool      mt_discovery,
-                                       int       mt_degree,
                                        bool      mt_processing,
+                                       int       mt_processing_degree,
+                                       bool      mt_discovery,
+                                       int       mt_discovery_degree,
+                                       bool      atomic_discovery,
+                                       BoolObjectClosure* is_alive_non_header,
                                        bool      discovered_list_needs_barrier)  :
   _discovering_refs(false),
   _enqueuing_is_done(false),
-  _is_alive_non_header(NULL),
+  _is_alive_non_header(is_alive_non_header),
   _discovered_list_needs_barrier(discovered_list_needs_barrier),
   _bs(NULL),
   _processing_is_mt(mt_processing),
@@ -144,8 +121,8 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _span = span;
   _discovery_is_atomic = atomic_discovery;
   _discovery_is_mt     = mt_discovery;
-  _num_q               = mt_degree;
-  _max_num_q           = mt_degree;
+  _num_q               = MAX2(1, mt_processing_degree);
+  _max_num_q           = MAX2(_num_q, mt_discovery_degree);
   _discoveredSoftRefs  = NEW_C_HEAP_ARRAY(DiscoveredList, _max_num_q * subclasses_of_ref);
   if (_discoveredSoftRefs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
@@ -163,6 +140,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   if (discovered_list_needs_barrier) {
     _bs = Universe::heap()->barrier_set();
   }
+  setup_policy(false /* default soft ref policy */);
 }
 
 #ifndef PRODUCT
@@ -405,15 +383,14 @@ public:
   { }
 
   virtual void work(unsigned int work_id) {
-    assert(work_id < (unsigned int)_ref_processor.num_q(), "Index out-of-bounds");
+    assert(work_id < (unsigned int)_ref_processor.max_num_q(), "Index out-of-bounds");
     // Simplest first cut: static partitioning.
     int index = work_id;
     // The increment on "index" must correspond to the maximum number of queues
     // (n_queues) with which that ReferenceProcessor was created.  That
     // is because of the "clever" way the discovered references lists were
-    // allocated and are indexed into.  That number is ParallelGCThreads
-    // currently.  Assert that.
-    assert(_n_queues == (int) ParallelGCThreads, "Different number not expected");
+    // allocated and are indexed into.
+    assert(_n_queues == (int) _ref_processor.max_num_q(), "Different number not expected");
     for (int j = 0;
          j < subclasses_of_ref;
          j++, index += _n_queues) {
@@ -672,7 +649,7 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
     }
   }
   NOT_PRODUCT(
-    if (PrintGCDetails && TraceReferenceGC) {
+    if (PrintGCDetails && TraceReferenceGC && (iter.processed() > 0)) {
       gclog_or_tty->print_cr(" Dropped %d active Refs out of %d "
         "Refs in discovered list " INTPTR_FORMAT,
         iter.removed(), iter.processed(), (address)refs_list.head());
@@ -711,7 +688,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
   // Now close the newly reachable set
   complete_gc->do_void();
   NOT_PRODUCT(
-    if (PrintGCDetails && TraceReferenceGC) {
+    if (PrintGCDetails && TraceReferenceGC && (iter.processed() > 0)) {
       gclog_or_tty->print_cr(" Dropped %d active Refs out of %d "
         "Refs in discovered list " INTPTR_FORMAT,
         iter.removed(), iter.processed(), (address)refs_list.head());
@@ -951,7 +928,7 @@ ReferenceProcessor::process_discovered_reflist(
   }
   if (PrintReferenceGC && PrintGCDetails) {
     size_t total = 0;
-    for (int i = 0; i < _num_q; ++i) {
+    for (int i = 0; i < _max_num_q; ++i) {
       total += refs_lists[i].length();
     }
     gclog_or_tty->print(", %u refs", total);
@@ -967,7 +944,7 @@ ReferenceProcessor::process_discovered_reflist(
       RefProcPhase1Task phase1(*this, refs_lists, policy, true /*marks_oops_alive*/);
       task_executor->execute(phase1);
     } else {
-      for (int i = 0; i < _num_q; i++) {
+      for (int i = 0; i < _max_num_q; i++) {
         process_phase1(refs_lists[i], policy,
                        is_alive, keep_alive, complete_gc);
       }
@@ -983,7 +960,7 @@ ReferenceProcessor::process_discovered_reflist(
     RefProcPhase2Task phase2(*this, refs_lists, !discovery_is_atomic() /*marks_oops_alive*/);
     task_executor->execute(phase2);
   } else {
-    for (int i = 0; i < _num_q; i++) {
+    for (int i = 0; i < _max_num_q; i++) {
       process_phase2(refs_lists[i], is_alive, keep_alive, complete_gc);
     }
   }
@@ -994,7 +971,7 @@ ReferenceProcessor::process_discovered_reflist(
     RefProcPhase3Task phase3(*this, refs_lists, clear_referent, true /*marks_oops_alive*/);
     task_executor->execute(phase3);
   } else {
-    for (int i = 0; i < _num_q; i++) {
+    for (int i = 0; i < _max_num_q; i++) {
       process_phase3(refs_lists[i], clear_referent,
                      is_alive, keep_alive, complete_gc);
     }
@@ -1008,7 +985,7 @@ void ReferenceProcessor::clean_up_discovered_references() {
   //   for (int j = 0; j < _num_q; j++) {
   //     int index = i * _max_num_q + j;
   for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-    if (TraceReferenceGC && PrintGCDetails && ((i % _num_q) == 0)) {
+    if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr(
         "\nScrubbing %s discovered list of Null referents",
         list_name(i));
@@ -1350,7 +1327,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean WeakReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _num_q; i++) {
+    for (int i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1363,7 +1340,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean FinalReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _num_q; i++) {
+    for (int i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1376,7 +1353,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean PhantomReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _num_q; i++) {
+    for (int i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1433,7 +1410,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
   complete_gc->do_void();
 
   NOT_PRODUCT(
-    if (PrintGCDetails && PrintReferenceGC) {
+    if (PrintGCDetails && PrintReferenceGC && (iter.processed() > 0)) {
       gclog_or_tty->print_cr(" Dropped %d Refs out of %d "
         "Refs in discovered list " INTPTR_FORMAT,
         iter.removed(), iter.processed(), (address)refs_list.head());
