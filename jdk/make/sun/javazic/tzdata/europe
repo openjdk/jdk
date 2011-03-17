@@ -2505,25 +2505,18 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
 # (on a non-government server though) describing dates between 2002 and 2006:
 # http://www.alomaliye.com/bkk_2002_3769.htm
 
-# From Sue Williams (2008-08-11):
-# I spotted this news article about a potential change in Turkey.
-#
-# <a href="http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1">
-# http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1
+# From G&ouml;kdeniz Karada&#x011f; (2011-03-10):
+# 
+# According to the articles linked below, Turkey will change into summer
+# time zone (GMT+3) on March 28, 2011 at 3:00 a.m. instead of March 27.
+# This change is due to a nationwide exam on 27th.
+# 
+# <a href="http://www.worldbulletin.net/?aType=haber&ArticleID=70872">
+# http://www.worldbulletin.net/?aType=haber&ArticleID=70872
 # </a>
-
-# From Sue Williams (2008-08-20):
-# This article says that around the end of March 2011, Turkey wants to
-# adjust the clocks forward by 1/2 hour and stay that way permanently.
-# The article indicates that this is a change in timezone offset in addition
-# to stopping observance of DST.
-# This proposal has not yet been approved.
-#
-# Read more here...
-#
-# Turkey to abandon daylight saving time in 2011
-# <a href="http://www.turkishdailynews.com.tr/article.php?enewsid=112989">
-# http://www.turkishdailynews.com.tr/article.php?enewsid=112989
+# Turkish:
+# <a href="http://www.hurriyet.com.tr/ekonomi/17230464.asp?gid=373">
+# http://www.hurriyet.com.tr/ekonomi/17230464.asp?gid=373
 # </a>
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -2591,6 +2584,8 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	Turkey	EE%sT	1978 Oct 15
 			3:00	Turkey	TR%sT	1985 Apr 20 # Turkey Time
 			2:00	Turkey	EE%sT	2007
+			2:00	EU	EE%sT	2011 Mar 27 1:00u
+			2:00	-	EET	2011 Mar 28 1:00u
 			2:00	EU	EE%sT
 Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 

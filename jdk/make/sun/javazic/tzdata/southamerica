@@ -1176,6 +1176,23 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # From Arthur Daivd Olson (2010-03-06):
 # Angel Chiang's message confirmed by Julio Pacheco; Julio provided a patch.
 
+# From Glenn Eychaner (2011-03-02): [geychaner@mac.com]
+# It appears that the Chilean government has decided to postpone the
+# change from summer time to winter time again, by three weeks to April
+# 2nd:
+# <a href="http://www.emol.com/noticias/nacional/detalle/detallenoticias.asp?idnoticia=467651">
+# http://www.emol.com/noticias/nacional/detalle/detallenoticias.asp?idnoticia=467651
+# </a>
+#
+# This is not yet reflected in the offical "cambio de hora" site, but
+# probably will be soon:
+# <a href="http://www.horaoficial.cl/cambio.htm">
+# http://www.horaoficial.cl/cambio.htm
+# </a>
+
+# From Arthur David Olson (2011-03-02):
+# The emol.com article mentions a water shortage as the cause of the
+# postponement, which may mean that it's not a permanent change.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1932	-	Sep	 1	0:00	1:00	S
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
@@ -1211,8 +1228,8 @@ Rule	Chile	2000	2007	-	Mar	Sun>=9	3:00u	0	-
 # which is used below in specifying the transition.
 Rule	Chile	2008	only	-	Mar	30	3:00u	0	-
 Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
-Rule	Chile	2010	only	-	Apr	 4	3:00u	0	-
-Rule	Chile	2011	max	-	Mar	Sun>=9	3:00u	0	-
+Rule	Chile	2010	2011	-	Apr	Sun>=1	3:00u	0	-
+Rule	Chile	2012	max	-	Mar	Sun>=9	3:00u	0	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
