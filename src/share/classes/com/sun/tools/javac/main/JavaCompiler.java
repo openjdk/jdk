@@ -638,6 +638,19 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
     }
 
+    /** Resolve an identifier which may be the binary name of a class or
+     * the Java name of a class or package.
+     * @param name      The name to resolve
+     */
+    public Symbol resolveBinaryNameOrIdent(String name) {
+        try {
+            Name flatname = names.fromString(name.replace("/", "."));
+            return reader.loadClass(flatname);
+        } catch (CompletionFailure ignore) {
+            return resolveIdent(name);
+        }
+    }
+
     /** Resolve an identifier.
      * @param name      The identifier to resolve
      */
@@ -1058,7 +1071,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 } else {
                     boolean errors = false;
                     for (String nameStr : classnames) {
-                        Symbol sym = resolveIdent(nameStr);
+                        Symbol sym = resolveBinaryNameOrIdent(nameStr);
                         if (sym == null || (sym.kind == Kinds.PCK && !processPcks)) {
                             log.error("proc.cant.find.class", nameStr);
                             errors = true;
