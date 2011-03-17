@@ -58,8 +58,7 @@ Link	Etc/GMT				Etc/GMT0
 # (i.e. west of Greenwich) even though many people would expect it to
 # mean 4 hours ahead of UTC (i.e. east of Greenwich).
 #
-# In the draft 5 of POSIX 1003.1-200x, the angle bracket notation
-# (which is not yet supported by the tz code) allows for
+# In the draft 5 of POSIX 1003.1-200x, the angle bracket notation allows for
 # TZ='<GMT-4>+4'; if you want time zone abbreviations conforming to
 # ISO 8601 you can use TZ='<-0400>+4'.  Thus the commonly-expected
 # offset is kept within the angle bracket (and is used for display)
