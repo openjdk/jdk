@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -794,11 +794,11 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
 };
 
 
-// Interface to java.dyn.MethodHandle objects
+// Interface to java.lang.invoke.MethodHandle objects
 
 class MethodHandleEntry;
 
-class java_dyn_MethodHandle: AllStatic {
+class java_lang_invoke_MethodHandle: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -839,7 +839,7 @@ class java_dyn_MethodHandle: AllStatic {
   static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
 };
 
-class sun_dyn_DirectMethodHandle: public java_dyn_MethodHandle {
+class java_lang_invoke_DirectMethodHandle: public java_lang_invoke_MethodHandle {
   friend class JavaClasses;
 
  private:
@@ -864,7 +864,7 @@ class sun_dyn_DirectMethodHandle: public java_dyn_MethodHandle {
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
 };
 
-class sun_dyn_BoundMethodHandle: public java_dyn_MethodHandle {
+class java_lang_invoke_BoundMethodHandle: public java_lang_invoke_MethodHandle {
   friend class JavaClasses;
 
  private:
@@ -891,7 +891,7 @@ public:
   static int vmargslot_offset_in_bytes()        { return _vmargslot_offset; }
 };
 
-class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
+class java_lang_invoke_AdapterMethodHandle: public java_lang_invoke_BoundMethodHandle {
   friend class JavaClasses;
 
  private:
@@ -942,14 +942,14 @@ class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
 };
 
 
-// Interface to sun.dyn.MemberName objects
+// Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 
-class sun_dyn_MemberName: AllStatic {
+class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
 
  private:
-  // From java.dyn.MemberName:
+  // From java.lang.invoke.MemberName:
   //    private Class<?>   clazz;       // class in which the method is defined
   //    private String     name;        // may be null if not yet materialized
   //    private Object     type;        // may be null if not yet materialized
@@ -1018,9 +1018,9 @@ class sun_dyn_MemberName: AllStatic {
 };
 
 
-// Interface to java.dyn.MethodType objects
+// Interface to java.lang.invoke.MethodType objects
 
-class java_dyn_MethodType: AllStatic {
+class java_lang_invoke_MethodType: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -1052,7 +1052,7 @@ class java_dyn_MethodType: AllStatic {
   static int form_offset_in_bytes()             { return _form_offset; }
 };
 
-class java_dyn_MethodTypeForm: AllStatic {
+class java_lang_invoke_MethodTypeForm: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -1075,9 +1075,9 @@ class java_dyn_MethodTypeForm: AllStatic {
 };
 
 
-// Interface to java.dyn.CallSite objects
+// Interface to java.lang.invoke.CallSite objects
 
-class java_dyn_CallSite: AllStatic {
+class java_lang_invoke_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:

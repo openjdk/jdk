@@ -88,7 +88,7 @@ int SymbolTable::symbols_counted = 0;
 void SymbolTable::unlink() {
   int removed = 0;
   int total = 0;
-  int memory_total = 0;
+  size_t memory_total = 0;
   for (int i = 0; i < the_table()->table_size(); ++i) {
     for (HashtableEntry<Symbol*>** p = the_table()->bucket_addr(i); *p != NULL; ) {
       HashtableEntry<Symbol*>* entry = *p;
@@ -112,8 +112,10 @@ void SymbolTable::unlink() {
   }
   symbols_removed += removed;
   symbols_counted += total;
-  if (PrintGCDetails) {
-    gclog_or_tty->print(" [Symbols=%d size=%dK] ", total,
+  // Exclude printing for normal PrintGCDetails because people parse
+  // this output.
+  if (PrintGCDetails && Verbose && WizardMode) {
+    gclog_or_tty->print(" [Symbols=%d size=" SIZE_FORMAT "K] ", total,
                         (memory_total*HeapWordSize)/1024);
   }
 }
