@@ -33,6 +33,11 @@ import java.lang.reflect.Field;
 import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.io.ObjectInputStream;
+import java.io.IOException;
+
 /**
  * The root event class for all AWT events.
  * This class and its subclasses supercede the original
@@ -96,6 +101,22 @@ public abstract class AWTEvent extends EventObject {
      * @see #isConsumed
      */
     protected boolean consumed = false;
+
+   /*
+    * The event's AccessControlContext.
+    */
+    private transient volatile AccessControlContext acc =
+        AccessController.getContext();
+
+   /*
+    * Returns the acc this event was constructed with.
+    */
+    final AccessControlContext getAccessControlContext() {
+        if (acc == null) {
+            throw new SecurityException("AWTEvent is missing AccessControlContext");
+        }
+        return acc;
+    }
 
     transient boolean focusManagerIsDispatching = false;
     transient boolean isPosted;
@@ -246,6 +267,10 @@ public abstract class AWTEvent extends EventObject {
                 }
                 public boolean isSystemGenerated(AWTEvent ev) {
                     return ev.isSystemGenerated;
+                }
+
+                public AccessControlContext getAccessControlContext(AWTEvent ev) {
+                    return ev.getAccessControlContext();
                 }
             });
     }
