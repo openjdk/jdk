@@ -29,12 +29,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import sun.dyn.Access;
-import sun.dyn.Invokers;
-import sun.dyn.MethodHandleImpl;
-import sun.dyn.MethodTypeImpl;
 import sun.dyn.util.BytecodeDescriptor;
-import static sun.dyn.MemberName.newIllegalArgumentException;
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * A method type represents the arguments and return type accepted and
@@ -96,34 +92,6 @@ class MethodType implements java.io.Serializable {
     private MethodType wrapAlt;  // alternative wrapped/unwrapped version
     private Invokers invokers;   // cache of handy higher-order adapters
 
-    private static final Access IMPL_TOKEN = Access.getToken();
-
-    // share a cache with a friend in this package
-    Invokers getInvokers() { return invokers; }
-    void setInvokers(Invokers inv) { invokers = inv; }
-
-    static {
-        // This hack allows the implementation package special access to
-        // the internals of MethodType.  In particular, the MTImpl has all sorts
-        // of cached information useful to the implementation code.
-        MethodTypeImpl.setMethodTypeFriend(IMPL_TOKEN, new MethodTypeImpl.MethodTypeFriend() {
-            public Class<?>[] ptypes(MethodType mt)        { return mt.ptypes; }
-            public MethodTypeImpl form(MethodType mt)      { return mt.form; }
-            public void setForm(MethodType mt, MethodTypeImpl form) {
-                assert(mt.form == null);
-                mt.form = (MethodTypeForm) form;
-            }
-            public MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
-                return MethodType.makeImpl(rtype, ptypes, trusted);
-            }
-            public MethodTypeImpl newMethodTypeForm(MethodType mt) {
-                return new MethodTypeForm(mt);
-            }
-            public Invokers getInvokers(MethodType mt)    { return mt.invokers; }
-            public void setInvokers(MethodType mt, Invokers inv) { mt.invokers = inv; }
-        });
-    }
-
     /**
      * Check the given parameters for validity and store them into the final fields.
      */
@@ -133,6 +101,10 @@ class MethodType implements java.io.Serializable {
         this.rtype = rtype;
         this.ptypes = ptypes;
     }
+
+    /*trusted*/ MethodTypeForm form() { return form; }
+    /*trusted*/ Class<?> rtype() { return rtype; }
+    /*trusted*/ Class<?>[] ptypes() { return ptypes; }
 
     private static void checkRtype(Class<?> rtype) {
         rtype.equals(rtype);  // null check
@@ -253,7 +225,7 @@ class MethodType implements java.io.Serializable {
      * @param trusted whether the ptypes can be used without cloning
      * @return the unique method type of the desired structure
      */
-    private static
+    /*trusted*/ static
     MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
         if (ptypes == null || ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
@@ -269,7 +241,12 @@ class MethodType implements java.io.Serializable {
             // defensively copy the array passed in by the user
             mt1 = new MethodType(rtype, ptypes.clone());
         // promote the object to the Real Thing, and reprobe
-        MethodTypeImpl.initForm(IMPL_TOKEN, mt1);
+        MethodTypeForm form = MethodTypeForm.findForm(mt1);
+        mt1.form = form;
+        if (form.erasedType == mt1) {
+            // This is a principal (erased) type; show it to the JVM.
+            MethodHandleNatives.init(mt1);
+        }
         synchronized (internTable) {
             mt0 = internTable.get(mt1);
             if (mt0 != null)
@@ -277,12 +254,6 @@ class MethodType implements java.io.Serializable {
             internTable.put(mt1, mt1);
         }
         return mt1;
-    }
-
-    // Entry point from JVM.  TODO: Change the name & signature.
-    private static MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes,
-            boolean ignore1, boolean ignore2) {
-        return makeImpl(rtype, ptypes, true);
     }
 
     private static final MethodType[] objectOnlyTypes = new MethodType[20];
@@ -535,7 +506,7 @@ class MethodType implements java.io.Serializable {
         MethodType wt = pt.wrapAlt;
         if (wt == null) {
             // fill in lazily
-            wt = MethodTypeImpl.canonicalize(pt, MethodTypeImpl.WRAP, MethodTypeImpl.WRAP);
+            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP, MethodTypeForm.WRAP);
             assert(wt != null);
             pt.wrapAlt = wt;
         }
@@ -547,7 +518,7 @@ class MethodType implements java.io.Serializable {
         MethodType uwt = wt.wrapAlt;
         if (uwt == null) {
             // fill in lazily
-            uwt = MethodTypeImpl.canonicalize(wt, MethodTypeImpl.UNWRAP, MethodTypeImpl.UNWRAP);
+            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP, MethodTypeForm.UNWRAP);
             if (uwt == null)
                 uwt = wt;    // type has no wrappers or prims at all
             wt.wrapAlt = uwt;
@@ -666,10 +637,16 @@ class MethodType implements java.io.Serializable {
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots for this type's parameters
-     * @deprecated Will be removed for PFD.
      */
-    public int parameterSlotCount() {
+    /*non-public*/ int parameterSlotCount() {
         return form.parameterSlotCount();
+    }
+
+    /*non-public*/ Invokers invokers() {
+        Invokers inv = invokers;
+        if (inv != null)  return inv;
+        invokers = inv = new Invokers(this);
+        return inv;
     }
 
     /** Reports the number of JVM stack slots which carry all parameters including and after
@@ -694,9 +671,8 @@ class MethodType implements java.io.Serializable {
      * @return the index of the (shallowest) JVM stack slot transmitting the
      *         given parameter
      * @throws IllegalArgumentException if {@code num} is negative or greater than {@code parameterCount()}
-     * @deprecated Will be removed for PFD.
      */
-    public int parameterSlotDepth(int num) {
+    /*non-public*/ int parameterSlotDepth(int num) {
         if (num < 0 || num > ptypes.length)
             parameterType(num);  // force a range check
         return form.parameterToArgSlot(num-1);
@@ -710,9 +686,9 @@ class MethodType implements java.io.Serializable {
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots (0, 1, or 2) for this type's return value
-     * @deprecated Will be removed for PFD.
+     * Will be removed for PFD.
      */
-    public int returnSlotCount() {
+    /*non-public*/ int returnSlotCount() {
         return form.returnSlotCount();
     }
 

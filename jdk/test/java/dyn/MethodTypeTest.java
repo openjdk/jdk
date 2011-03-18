@@ -31,7 +31,6 @@
 
 package test.java.dyn;
 
-import sun.dyn.MemberName;
 import java.dyn.MethodType;
 import java.lang.reflect.Method;
 
@@ -160,18 +159,6 @@ public class MethodTypeTest {
         int objectArgCount = 2;
         MethodType expResult = mt_OO2;
         MethodType result = MethodType.genericMethodType(objectArgCount);
-        assertSame(expResult, result);
-    }
-
-    /**
-     * Test of make method, of class MethodType.
-     */
-    @Test
-    public void testMake_Method() {
-        System.out.println("make (via MemberName.getMethodType)");
-        MethodType expResult = MethodType.methodType(int.class, String.class);
-        MemberName name = new MemberName(compareTo);
-        MethodType result = name.getMethodType();
         assertSame(expResult, result);
     }
 

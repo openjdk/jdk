@@ -23,15 +23,13 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
-import java.lang.reflect.*;
 import sun.dyn.util.*;
-import static sun.dyn.MethodTypeImpl.invokers;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
- * Adapters which manage MethodHanndle.invokeGeneric calls.
+ * Adapters which manage MethodHandle.invokeGeneric calls.
  * The JVM calls one of these when the exact type match fails.
  * @author jrose
  */
@@ -44,7 +42,8 @@ class InvokeGeneric {
     /** Compute and cache information for this adapter, so that it can
      *  call out to targets of the erasure-family of the given erased type.
      */
-    private InvokeGeneric(MethodType erasedCallerType) throws ReflectiveOperationException {
+    /*non-public*/ InvokeGeneric(MethodType erasedCallerType) throws ReflectiveOperationException {
+        assert(erasedCallerType.equals(erasedCallerType.erase()));
         this.erasedCallerType = erasedCallerType;
         this.initialInvoker = makeInitialInvoker();
         assert initialInvoker.type().equals(erasedCallerType
@@ -53,22 +52,13 @@ class InvokeGeneric {
     }
 
     private static MethodHandles.Lookup lookup() {
-        return MethodHandleImpl.IMPL_LOOKUP;
+        return IMPL_LOOKUP;
     }
 
     /** Return the adapter information for this type's erasure. */
-    static MethodHandle genericInvokerOf(MethodType type) {
-        MethodTypeImpl form = MethodTypeImpl.of(type);
-        MethodHandle genericInvoker = form.genericInvoker;
-        if (genericInvoker == null) {
-            try {
-                InvokeGeneric gen = new InvokeGeneric(form.erasedType());
-                form.genericInvoker = genericInvoker = gen.initialInvoker;
-            } catch (ReflectiveOperationException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        return genericInvoker;
+    /*non-public*/ static MethodHandle genericInvokerOf(MethodType erasedCallerType) throws ReflectiveOperationException {
+        InvokeGeneric gen = new InvokeGeneric(erasedCallerType);
+        return gen.initialInvoker;
     }
 
     private MethodHandle makeInitialInvoker() throws ReflectiveOperationException {
@@ -88,7 +78,7 @@ class InvokeGeneric {
     private MethodHandle makePostDispatchInvoker() {
         // Take (MH'; MT, MH; A...) and run MH'(MT, MH; A...).
         MethodType invokerType = erasedCallerType.insertParameterTypes(0, EXTRA_ARGS);
-        return invokers(invokerType).exactInvoker();
+        return invokerType.invokers().exactInvoker();
     }
     private MethodHandle dropDispatchArguments(MethodHandle targetInvoker) {
         assert(targetInvoker.type().parameterType(0) == MethodHandle.class);
@@ -112,7 +102,7 @@ class InvokeGeneric {
         if (USE_AS_TYPE_PATH || target.isVarargsCollector()) {
             MethodHandle newTarget = target.asType(callerType);
             targetType = callerType;
-            Invokers invokers = MethodTypeImpl.invokers(Access.TOKEN, targetType);
+            Invokers invokers = targetType.invokers();
             MethodHandle invoker = invokers.erasedInvokerWithDrops;
             if (invoker == null) {
                 invokers.erasedInvokerWithDrops = invoker =

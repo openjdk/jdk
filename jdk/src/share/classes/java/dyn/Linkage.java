@@ -25,13 +25,9 @@
 
 package java.dyn;
 
-import java.dyn.MethodHandles.Lookup;
-import java.util.WeakHashMap;
-import sun.dyn.Access;
-import sun.dyn.MethodHandleImpl;
 import sun.dyn.util.VerifyAccess;
+import java.dyn.MethodHandles.Lookup;
 import sun.reflect.Reflection;
-import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
  * <em>CLASS WILL BE REMOVED FOR PFD:</em>
@@ -41,8 +37,6 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * @deprecated This class will be removed in the Public Final Draft.
  */
 public class Linkage {
-    private static final Access IMPL_TOKEN = Access.getToken();
-
     private Linkage() {}  // do not instantiate
 
     /**
@@ -56,7 +50,7 @@ public class Linkage {
         Class callc = Reflection.getCallerClass(2);
         if (callc != null && !VerifyAccess.isSamePackage(callerClass, callc))
             throw new IllegalArgumentException("cannot set bootstrap method on "+callerClass);
-        MethodHandleImpl.registerBootstrap(IMPL_TOKEN, callerClass, bootstrapMethod);
+        MethodHandleImpl.registerBootstrap(callerClass, bootstrapMethod);
     }
 
     /**
@@ -84,14 +78,14 @@ public class Linkage {
 
     private static
     void registerBootstrapMethodLookup(Class<?> callerClass, Class<?> runtime, String name) {
-        Lookup lookup = new Lookup(IMPL_TOKEN, callerClass);
+        Lookup lookup = new Lookup(callerClass);
         MethodHandle bootstrapMethod;
         try {
             bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
         } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException("no such bootstrap method in "+runtime+": "+name, ex);
         }
-        MethodHandleImpl.registerBootstrap(IMPL_TOKEN, callerClass, bootstrapMethod);
+        MethodHandleImpl.registerBootstrap(callerClass, bootstrapMethod);
     }
 
     private static final MethodType BOOTSTRAP_METHOD_TYPE

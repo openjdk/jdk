@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
 import java.dyn.MethodHandles.Lookup;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
-import static sun.dyn.MethodHandleNatives.Constants.*;
-import static sun.dyn.MethodHandleImpl.IMPL_LOOKUP;
+import static java.dyn.MethodHandleNatives.Constants.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * The JVM interface for the method handles package is all here.
@@ -81,14 +80,12 @@ class MethodHandleNatives {
      *  This routine is for debugging and reflection.
      */
     static MemberName getMethodName(MethodHandle self) {
-        if (!JVM_SUPPORT)  return null;
         return (MemberName) getTarget(self, ETF_METHOD_NAME);
     }
 
     /** Fetch the reflective version of the handled method, if available.
      */
     static AccessibleObject getTargetMethod(MethodHandle self) {
-        if (!JVM_SUPPORT)  return null;
         return (AccessibleObject) getTarget(self, ETF_REFLECT_METHOD);
     }
 
@@ -97,7 +94,6 @@ class MethodHandleNatives {
      *  If it is chained to another method handle, return that handle.
      */
     static Object getTargetInfo(MethodHandle self) {
-        if (!JVM_SUPPORT)  return null;
         return getTarget(self, ETF_HANDLE_OR_METHOD_NAME);
     }
 
@@ -111,11 +107,6 @@ class MethodHandleNatives {
      */
     static native int getConstant(int which);
 
-    /** True iff this HotSpot JVM has built-in support for method handles.
-     * If false, some test cases might run, but functionality will be missing.
-     */
-    public static final boolean JVM_SUPPORT;
-
     /** Java copy of MethodHandlePushLimit in range 2..255. */
     static final int JVM_PUSH_LIMIT;
     /** JVM stack motion (in words) after one slot is pushed, usually -1.
@@ -127,31 +118,24 @@ class MethodHandleNatives {
 
     private static native void registerNatives();
     static {
-        boolean JVM_SUPPORT_;
         int     JVM_PUSH_LIMIT_;
         int     JVM_STACK_MOVE_UNIT_;
         int     CONV_OP_IMPLEMENTED_MASK_;
         try {
             registerNatives();
-            JVM_SUPPORT_ = true;
             JVM_PUSH_LIMIT_ = getConstant(Constants.GC_JVM_PUSH_LIMIT);
             JVM_STACK_MOVE_UNIT_ = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
             CONV_OP_IMPLEMENTED_MASK_ = getConstant(Constants.GC_CONV_OP_IMPLEMENTED_MASK);
             //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
         } catch (UnsatisfiedLinkError ee) {
             // ignore; if we use init() methods later we'll see linkage errors
-            JVM_SUPPORT_ = false;
             JVM_PUSH_LIMIT_ = 3;  // arbitrary
             JVM_STACK_MOVE_UNIT_ = -1;  // arbitrary
             CONV_OP_IMPLEMENTED_MASK_ = 0;
-            //System.out.println("Warning: Running with JVM_SUPPORT=false");
-            //System.out.println(ee);
-            JVM_SUPPORT = JVM_SUPPORT_;
             JVM_PUSH_LIMIT = JVM_PUSH_LIMIT_;
             JVM_STACK_MOVE_UNIT = JVM_STACK_MOVE_UNIT_;
             throw ee;  // just die; hopeless to try to run with an older JVM
         }
-        JVM_SUPPORT = JVM_SUPPORT_;
         JVM_PUSH_LIMIT = JVM_PUSH_LIMIT_;
         JVM_STACK_MOVE_UNIT = JVM_STACK_MOVE_UNIT_;
         if (CONV_OP_IMPLEMENTED_MASK_ == 0)
@@ -191,7 +175,7 @@ class MethodHandleNatives {
 
         // AdapterMethodHandle
         /** Conversions recognized by the JVM.
-         *  They must align with the constants in sun.dyn_AdapterMethodHandle,
+         *  They must align with the constants in java.dyn_AdapterMethodHandle,
          *  in the JVM file hotspot/src/share/vm/classfile/javaClasses.hpp.
          */
         static final int
@@ -292,7 +276,7 @@ class MethodHandleNatives {
         return true;
     }
     static {
-        if (JVM_SUPPORT)  verifyConstants();
+        verifyConstants();
     }
 
     // Up-calls from the JVM.
@@ -305,28 +289,47 @@ class MethodHandleNatives {
                                         String name, MethodType type,
                                         Object info,
                                         MemberName callerMethod, int callerBCI) {
-        return CallSiteImpl.makeSite(bootstrapMethod, name, type, info, callerMethod, callerBCI);
+        return CallSite.makeSite(bootstrapMethod, name, type, info, callerMethod, callerBCI);
+    }
+
+    /**
+     * Called by the JVM to check the length of a spread array.
+     */
+    static void checkSpreadArgument(Object av, int n) {
+        MethodHandleStatics.checkSpreadArgument(av, n);
     }
 
     /**
      * The JVM wants a pointer to a MethodType.  Oblige it by finding or creating one.
      */
     static MethodType findMethodHandleType(Class<?> rtype, Class<?>[] ptypes) {
-        MethodType.genericMethodType(0);  // trigger initialization
-        return MethodTypeImpl.makeImpl(Access.TOKEN, rtype, ptypes, true);
+        return MethodType.makeImpl(rtype, ptypes, true);
     }
 
     /**
      * The JVM wants to use a MethodType with invokeGeneric.  Give the runtime fair warning.
      */
     static void notifyGenericMethodType(MethodType type) {
-        try {
-            // Trigger adapter creation.
-            InvokeGeneric.genericInvokerOf(type);
-        } catch (Exception ex) {
-            Error err = new InternalError("Exception while resolving invokeGeneric");
-            err.initCause(ex);
-            throw err;
+        type.form().notifyGenericMethodType();
+    }
+
+    /**
+     * The JVM wants to raise an exception.  Here's the path.
+     */
+    static void raiseException(int code, Object actual, Object required) {
+        String message;
+        // disregard the identity of the actual object, if it is not a class:
+        if (!(actual instanceof Class) && !(actual instanceof MethodType))
+            actual = actual.getClass();
+        if (actual != null)
+            message = "required "+required+" but encountered "+actual;
+        else
+            message = "required "+required;
+        switch (code) {
+        case 192: // checkcast
+            throw new ClassCastException(message);
+        default:
+            throw new InternalError("unexpected code "+code+": "+message);
         }
     }
 

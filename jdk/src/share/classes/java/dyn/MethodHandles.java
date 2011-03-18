@@ -26,9 +26,6 @@
 package java.dyn;
 
 import java.lang.reflect.*;
-import sun.dyn.Access;
-import sun.dyn.MemberName;
-import sun.dyn.MethodHandleImpl;
 import sun.dyn.WrapperInstance;
 import sun.dyn.util.ValueConversions;
 import sun.dyn.util.VerifyAccess;
@@ -36,11 +33,8 @@ import sun.dyn.util.Wrapper;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import sun.dyn.Invokers;
-import sun.dyn.MethodTypeImpl;
 import sun.reflect.Reflection;
-import static sun.dyn.MemberName.newIllegalArgumentException;
-import static sun.dyn.MemberName.newNoAccessException;
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -58,8 +52,7 @@ public class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
 
-    private static final Access IMPL_TOKEN = Access.getToken();
-    private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory(IMPL_TOKEN);
+    private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
     static { MethodHandleImpl.initStatics(); }
     // See IMPL_LOOKUP below.
 
@@ -410,9 +403,8 @@ public class MethodHandles {
             checkUnprivilegedlookupClass(lookupClass);
         }
 
-        Lookup(Access token, Class<?> lookupClass) {
+        Lookup(Class<?> lookupClass) {
             this(lookupClass, ALL_MODES);
-            Access.check(token);
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
@@ -471,7 +463,7 @@ public class MethodHandles {
         }
 
         // Make sure outer class is initialized first.
-        static { IMPL_TOKEN.getClass(); }
+        static { IMPL_NAMES.getClass(); }
 
         /** Version of lookup which is trusted minimally.
          *  It can only be used to create method handles to
@@ -481,11 +473,10 @@ public class MethodHandles {
 
         /** Package-private version of lookup which is trusted. */
         static final Lookup IMPL_LOOKUP = new Lookup(Object.class, TRUSTED);
-        static { MethodHandleImpl.initLookup(IMPL_TOKEN, IMPL_LOOKUP); }
 
         private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
             String name = lookupClass.getName();
-            if (name.startsWith("java.dyn.") || name.startsWith("sun.dyn."))
+            if (name.startsWith("java.dyn."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
         }
 
@@ -577,7 +568,7 @@ public class MethodHandles {
         MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, true);
             checkMethod(refc, method, true);
-            return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClassOrNull());
+            return MethodHandleImpl.findMethod(method, false, lookupClassOrNull());
         }
 
         /**
@@ -618,7 +609,7 @@ public class MethodHandles {
         public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, false);
             checkMethod(refc, method, false);
-            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
+            MethodHandle mh = MethodHandleImpl.findMethod(method, true, lookupClassOrNull());
             return restrictProtectedReceiver(method, mh);
         }
 
@@ -651,8 +642,8 @@ public class MethodHandles {
             MemberName ctor = resolveOrFail(refc, name, type, false, false, lookupClassOrNull());
             assert(ctor.isConstructor());
             checkAccess(refc, ctor);
-            MethodHandle rawMH = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
-            MethodHandle allocMH = MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawMH);
+            MethodHandle rawMH = MethodHandleImpl.findMethod(ctor, false, lookupClassOrNull());
+            MethodHandle allocMH = MethodHandleImpl.makeAllocator(rawMH);
             return fixVarargs(allocMH, rawMH);
         }
 
@@ -708,7 +699,7 @@ public class MethodHandles {
             checkSpecialCaller(specialCaller);
             MemberName method = resolveOrFail(refc, name, type, false, false, specialCaller);
             checkMethod(refc, method, false);
-            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, specialCaller);
+            MethodHandle mh = MethodHandleImpl.findMethod(method, false, specialCaller);
             return restrictReceiver(method, mh, specialCaller);
         }
 
@@ -839,10 +830,10 @@ return mh1;
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(refc, name, type, false);
             checkMethod(refc, method, false);
-            MethodHandle dmh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
-            MethodHandle bmh = MethodHandleImpl.bindReceiver(IMPL_TOKEN, dmh, receiver);
+            MethodHandle dmh = MethodHandleImpl.findMethod(method, true, lookupClassOrNull());
+            MethodHandle bmh = MethodHandleImpl.bindReceiver(dmh, receiver);
             if (bmh == null)
-                throw newNoAccessException(method, this);
+                throw method.makeAccessException("no access", this);
             if (dmh.type().parameterCount() == 0)
                 return dmh;  // bound the trailing parameter; no varargs possible
             return fixVarargs(bmh, dmh);
@@ -871,7 +862,7 @@ return mh1;
             MemberName method = new MemberName(m);
             assert(method.isMethod());
             if (!m.isAccessible())  checkMethod(method.getDeclaringClass(), method, method.isStatic());
-            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
+            MethodHandle mh = MethodHandleImpl.findMethod(method, true, lookupClassOrNull());
             if (!m.isAccessible())  mh = restrictProtectedReceiver(method, mh);
             return mh;
         }
@@ -901,7 +892,7 @@ return mh1;
             assert(method.isMethod());
             // ignore m.isAccessible:  this is a new kind of access
             checkMethod(m.getDeclaringClass(), method, false);
-            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClassOrNull());
+            MethodHandle mh = MethodHandleImpl.findMethod(method, false, lookupClassOrNull());
             return restrictReceiver(method, mh, specialCaller);
         }
 
@@ -928,8 +919,8 @@ return mh1;
             MemberName ctor = new MemberName(c);
             assert(ctor.isConstructor());
             if (!c.isAccessible())  checkAccess(c.getDeclaringClass(), ctor);
-            MethodHandle rawCtor = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
-            MethodHandle allocator = MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawCtor);
+            MethodHandle rawCtor = MethodHandleImpl.findMethod(ctor, false, lookupClassOrNull());
+            MethodHandle allocator = MethodHandleImpl.makeAllocator(rawCtor);
             return fixVarargs(allocator, rawCtor);
         }
 
@@ -999,7 +990,7 @@ return mh1;
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller))
-                throw newNoAccessException("symbolic reference class is not public", new MemberName(refc), this);
+                throw new MemberName(refc).makeAccessException("symbolic reference class is not public", this);
         }
 
         void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) throws IllegalAccessException {
@@ -1012,7 +1003,7 @@ return mh1;
                 message = wantStatic ? "expected a static method" : "expected a non-static method";
             else
                 { checkAccess(refc, m); return; }
-            throw newNoAccessException(message, m, this);
+            throw m.makeAccessException(message, this);
         }
 
         void checkAccess(Class<?> refc, MemberName m) throws IllegalAccessException {
@@ -1030,7 +1021,7 @@ return mh1;
                 && VerifyAccess.isSamePackage(m.getDeclaringClass(), lookupClass()))
                 // Protected members can also be checked as if they were package-private.
                 return;
-            throw newNoAccessException(accessFailedMessage(refc, m), m, this);
+            throw m.makeAccessException(accessFailedMessage(refc, m), this);
         }
 
         String accessFailedMessage(Class<?> refc, MemberName m) {
@@ -1064,8 +1055,8 @@ return mh1;
                 || (specialCaller != lookupClass()
                     && !(ALLOW_NESTMATE_ACCESS &&
                          VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))))
-                throw newNoAccessException("no private access for invokespecial",
-                                           new MemberName(specialCaller), this);
+                throw new MemberName(specialCaller).
+                    makeAccessException("no private access for invokespecial", this);
         }
 
         MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) throws IllegalAccessException {
@@ -1084,12 +1075,12 @@ return mh1;
             assert(!method.isStatic());
             Class<?> defc = method.getDeclaringClass();  // receiver type of mh is too wide
             if (defc.isInterface() || !defc.isAssignableFrom(caller)) {
-                throw newNoAccessException("caller class must be a subclass below the method", method, caller);
+                throw method.makeAccessException("caller class must be a subclass below the method", caller);
             }
             MethodType rawType = mh.type();
             if (rawType.parameterType(0) == caller)  return mh;
             MethodType narrowType = rawType.changeParameterType(0, caller);
-            MethodHandle narrowMH = MethodHandleImpl.convertArguments(IMPL_TOKEN, mh, narrowType, rawType, null);
+            MethodHandle narrowMH = MethodHandleImpl.convertArguments(mh, narrowType, rawType, null);
             return fixVarargs(narrowMH, mh);
         }
 
@@ -1097,10 +1088,9 @@ return mh1;
                                   boolean isStatic, boolean isSetter) throws NoSuchFieldException, IllegalAccessException {
             MemberName field = resolveOrFail(refc, name, type, isStatic);
             if (isStatic != field.isStatic())
-                throw newNoAccessException(isStatic
-                                           ? "expected a static field"
-                                           : "expected a non-static field",
-                                           field, this);
+                throw field.makeAccessException(isStatic
+                                                ? "expected a static field"
+                                                : "expected a non-static field", this);
             return makeAccessor(refc, field, false, isSetter);
         }
 
@@ -1108,9 +1098,9 @@ return mh1;
                                   boolean trusted, boolean isSetter) throws IllegalAccessException {
             assert(field.isField());
             if (trusted)
-                return MethodHandleImpl.accessField(IMPL_TOKEN, field, isSetter, lookupClassOrNull());
+                return MethodHandleImpl.accessField(field, isSetter, lookupClassOrNull());
             checkAccess(refc, field);
-            MethodHandle mh = MethodHandleImpl.accessField(IMPL_TOKEN, field, isSetter, lookupClassOrNull());
+            MethodHandle mh = MethodHandleImpl.accessField(field, isSetter, lookupClassOrNull());
             return restrictProtectedReceiver(field, mh);
         }
     }
@@ -1127,7 +1117,7 @@ return mh1;
      */
     public static
     MethodHandle arrayElementGetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.accessArrayElement(IMPL_TOKEN, arrayClass, false);
+        return MethodHandleImpl.accessArrayElement(arrayClass, false);
     }
 
     /**
@@ -1141,7 +1131,7 @@ return mh1;
      */
     public static
     MethodHandle arrayElementSetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.accessArrayElement(IMPL_TOKEN, arrayClass, true);
+        return MethodHandleImpl.accessArrayElement(arrayClass, true);
     }
 
     /// method handle invocation (reflective style)
@@ -1191,7 +1181,7 @@ return invoker;
     MethodHandle spreadInvoker(MethodType type, int objectArgCount) {
         if (objectArgCount < 0 || objectArgCount > type.parameterCount())
             throw new IllegalArgumentException("bad argument count "+objectArgCount);
-        return invokers(type).spreadInvoker(objectArgCount);
+        return type.invokers().spreadInvoker(objectArgCount);
     }
 
     /**
@@ -1231,7 +1221,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      */
     static public
     MethodHandle exactInvoker(MethodType type) {
-        return invokers(type).exactInvoker();
+        return type.invokers().exactInvoker();
     }
 
     /**
@@ -1258,11 +1248,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
      */
     static public
     MethodHandle genericInvoker(MethodType type) {
-        return invokers(type).genericInvoker();
-    }
-
-    static Invokers invokers(MethodType type) {
-        return MethodTypeImpl.invokers(IMPL_TOKEN, type);
+        return type.invokers().genericInvoker();
     }
 
     /**
@@ -1387,7 +1373,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
             return target;
         MethodHandle res = null;
         try {
-            res = MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
+            res = MethodHandleImpl.convertArguments(target,
                                                     newType, oldType, null);
         } catch (IllegalArgumentException ex) {
         }
@@ -1531,7 +1517,7 @@ assert((int)twice.invokeExact(21) == 42);
     MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
         MethodType oldType = target.type();
         checkReorder(reorder, newType, oldType);
-        return MethodHandleImpl.convertArguments(IMPL_TOKEN, target,
+        return MethodHandleImpl.convertArguments(target,
                                                  newType, oldType,
                                                  reorder);
     }
@@ -1574,7 +1560,7 @@ assert((int)twice.invokeExact(21) == 42);
         int numSpread = (outargs - spreadPos);
         MethodHandle res = null;
         if (spreadPos >= 0 && numSpread >= 0) {
-            res = MethodHandleImpl.spreadArguments(IMPL_TOKEN, target, newType, spreadPos);
+            res = MethodHandleImpl.spreadArguments(target, newType, spreadPos);
         }
         if (res == null) {
             throw newIllegalArgumentException("cannot spread "+newType+" to " +oldType);
@@ -1607,7 +1593,7 @@ assert((int)twice.invokeExact(21) == 42);
         int numCollect = (inargs - collectPos);
         if (collectPos < 0 || numCollect < 0)
             throw newIllegalArgumentException("wrong number of arguments");
-        MethodHandle res = MethodHandleImpl.collectArguments(IMPL_TOKEN, target, newType, collectPos, null);
+        MethodHandle res = MethodHandleImpl.collectArguments(target, newType, collectPos, null);
         if (res == null) {
             throw newIllegalArgumentException("cannot collect from "+newType+" to " +oldType);
         }
@@ -1654,7 +1640,13 @@ assert((int)twice.invokeExact(21) == 42);
     MethodHandle identity(Class<?> type) {
         if (type == void.class)
             throw newIllegalArgumentException("void type");
-        return ValueConversions.identity(type);
+        else if (type == Object.class)
+            return ValueConversions.identity();
+        else if (type.isPrimitive())
+            return ValueConversions.identity(Wrapper.forPrimitiveType(type));
+        else
+            return AdapterMethodHandle.makeRetypeRaw(
+                    MethodType.methodType(type, type), ValueConversions.identity());
     }
 
     /**
@@ -1701,14 +1693,14 @@ assert((int)twice.invokeExact(21) == 42);
             value = checkValue(valueType, value);
             if (pos == 0 && !valueType.isPrimitive()) {
                 // At least for now, make bound method handles a special case.
-                MethodHandle bmh = MethodHandleImpl.bindReceiver(IMPL_TOKEN, result, value);
+                MethodHandle bmh = MethodHandleImpl.bindReceiver(result, value);
                 if (bmh != null) {
                     result = bmh;
                     continue;
                 }
                 // else fall through to general adapter machinery
             }
-            result = MethodHandleImpl.bindArgument(IMPL_TOKEN, result, pos, value);
+            result = MethodHandleImpl.bindArgument(result, pos, value);
         }
         return result;
     }
@@ -1762,7 +1754,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
                 new ArrayList<Class<?>>(oldType.parameterList());
         ptypes.addAll(pos, valueTypes);
         MethodType newType = MethodType.methodType(oldType.returnType(), ptypes);
-        return MethodHandleImpl.dropArguments(IMPL_TOKEN, target, newType, pos);
+        return MethodHandleImpl.dropArguments(target, newType, pos);
     }
 
     /**
@@ -1855,11 +1847,11 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
                 || filterType.returnType() != targetType.parameterType(curPos))
                 throw newIllegalArgumentException("target and filter types do not match");
             adapterType = adapterType.changeParameterType(curPos, filterType.parameterType(0));
-            adapter = MethodHandleImpl.filterArgument(IMPL_TOKEN, adapter, curPos, filter);
+            adapter = MethodHandleImpl.filterArgument(adapter, curPos, filter);
         }
         MethodType midType = adapter.type();
         if (midType != adapterType)
-            adapter = MethodHandleImpl.convertArguments(IMPL_TOKEN, adapter, adapterType, midType, null);
+            adapter = MethodHandleImpl.convertArguments(adapter, adapterType, midType, null);
         return adapter;
     }
 
@@ -1966,7 +1958,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         if (!ok)
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
         MethodType newType = targetType.dropParameterTypes(0, 1);
-        return MethodHandleImpl.foldArguments(IMPL_TOKEN, target, newType, combiner);
+        return MethodHandleImpl.foldArguments(target, newType, combiner);
     }
 
     /**
@@ -2021,7 +2013,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
             test = dropArguments(test, gpc, targs.subList(gpc, tpc));
             gtype = test.type();
         }
-        return MethodHandleImpl.makeGuardWithTest(IMPL_TOKEN, test, target, fallback);
+        return MethodHandleImpl.makeGuardWithTest(test, target, fallback);
     }
 
     static RuntimeException misMatchedTypes(String what, MethodType t1, MethodType t2) {
@@ -2092,7 +2084,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
             handler = dropArguments(handler, hpc, hargs.subList(hpc, tpc));
             htype = handler.type();
         }
-        return MethodHandleImpl.makeGuardWithCatch(IMPL_TOKEN, target, exType, handler);
+        return MethodHandleImpl.makeGuardWithCatch(target, exType, handler);
     }
 
     /**
@@ -2107,7 +2099,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      */
     public static
     MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType) {
-        return MethodHandleImpl.throwException(IMPL_TOKEN, MethodType.methodType(returnType, exType));
+        return MethodHandleImpl.throwException(MethodType.methodType(returnType, exType));
     }
 
     /**
@@ -2334,6 +2326,6 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
 
     /*non-public*/
     static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
-        return MethodHandleImpl.asVarargsCollector(IMPL_TOKEN, target, arrayType);
+        return MethodHandleImpl.asVarargsCollector(target, arrayType);
     }
 }

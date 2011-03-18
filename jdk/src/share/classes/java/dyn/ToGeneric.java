@@ -23,15 +23,14 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import sun.dyn.util.ValueConversions;
 import sun.dyn.util.Wrapper;
-import static sun.dyn.MemberName.newIllegalArgumentException;
-import static sun.dyn.MethodTypeImpl.invokers;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * Adapters which mediate between incoming calls which are not generic
@@ -73,7 +72,7 @@ class ToGeneric {
         assert(entryType.erase() == entryType); // for now
         // incoming call will first "forget" all reference types except Object
         this.entryType = entryType;
-        MethodHandle invoker0 = invokers(entryType.generic()).exactInvoker();
+        MethodHandle invoker0 = entryType.generic().invokers().exactInvoker();
         MethodType rawEntryTypeInit;
         Adapter ad = findAdapter(rawEntryTypeInit = entryType);
         if (ad != null) {
@@ -89,15 +88,15 @@ class ToGeneric {
         }
 
         // next, it will reorder primitives after references
-        MethodType primsAtEnd = MethodTypeImpl.of(entryType).primsAtEnd();
+        MethodType primsAtEnd = entryType.form().primsAtEnd();
         // at the same time, it will "forget" all primitive types except int/long
-        this.primsAtEndOrder = MethodTypeImpl.primsAtEndOrder(entryType);
+        this.primsAtEndOrder = MethodTypeForm.primsAtEndOrder(entryType);
         if (primsAtEndOrder != null) {
             // reordering is required; build on top of a simpler ToGeneric
             ToGeneric va2 = ToGeneric.of(primsAtEnd);
             this.adapter = va2.adapter;
             if (true) throw new UnsupportedOperationException("NYI: primitive parameters must follow references; entryType = "+entryType);
-            this.entryPoint = MethodHandleImpl.convertArguments(Access.TOKEN,
+            this.entryPoint = MethodHandleImpl.convertArguments(
                     va2.entryPoint, primsAtEnd, entryType, primsAtEndOrder);
             // example: for entryType of (int,Object,Object), the reordered
             // type is (Object,Object,int) and the order is {1,2,0},
@@ -107,7 +106,7 @@ class ToGeneric {
 
         // after any needed argument reordering, it will reinterpret
         // primitive arguments according to their "raw" types int/long
-        MethodType intsAtEnd = MethodTypeImpl.of(primsAtEnd).primsAsInts();
+        MethodType intsAtEnd = primsAtEnd.form().primsAsInts();
         ad = findAdapter(rawEntryTypeInit = intsAtEnd);
         MethodHandle rawEntryPoint;
         if (ad != null) {
@@ -116,7 +115,7 @@ class ToGeneric {
             // Perhaps the adapter is available only for longs.
             // If so, we can use it, but there will have to be a little
             // more stack motion on each call.
-            MethodType longsAtEnd = MethodTypeImpl.of(primsAtEnd).primsAsLongs();
+            MethodType longsAtEnd = primsAtEnd.form().primsAsLongs();
             ad = findAdapter(rawEntryTypeInit = longsAtEnd);
             if (ad != null) {
                 MethodType eptWithLongs = longsAtEnd.insertParameterTypes(0, ad.getClass());
@@ -128,7 +127,7 @@ class ToGeneric {
                         assert(midType.parameterType(i) == long.class);
                         assert(eptWithInts.parameterType(i) == int.class);
                         MethodType nextType = midType.changeParameterType(i, int.class);
-                        rawEntryPoint = MethodHandle.convertArguments(Access.TOKEN,
+                        rawEntryPoint = MethodHandleImpl.convertArguments(
                                 rawEntryPoint, nextType, midType, null);
                         midType = nextType;
                     }
@@ -143,7 +142,7 @@ class ToGeneric {
         }
         MethodType tepType = entryType.insertParameterTypes(0, ad.getClass());
         this.entryPoint =
-            AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, tepType, rawEntryPoint);
+            AdapterMethodHandle.makeRetypeRaw(tepType, rawEntryPoint);
         if (this.entryPoint == null)
             throw new UnsupportedOperationException("cannot retype to "+entryType
                     +" from "+rawEntryPoint.type().dropParameterTypes(0, 1));
@@ -168,7 +167,7 @@ class ToGeneric {
             assert(src.isPrimitive() && dst.isPrimitive());
             if (filteredInvoker == null) {
                 filteredInvoker =
-                        AdapterMethodHandle.makeCheckCast(Access.TOKEN,
+                        AdapterMethodHandle.makeCheckCast(
                             invoker.type().generic(), invoker, 0, MethodHandle.class);
                 if (filteredInvoker == null)  throw new UnsupportedOperationException("NYI");
             }
@@ -177,7 +176,7 @@ class ToGeneric {
             if (filteredInvoker == null)  throw new InternalError();
         }
         if (filteredInvoker == null)  return invoker;
-        return AdapterMethodHandle.makeRetypeOnly(Access.TOKEN, invoker.type(), filteredInvoker);
+        return AdapterMethodHandle.makeRetypeOnly(invoker.type(), filteredInvoker);
     }
 
     /**
@@ -227,7 +226,7 @@ class ToGeneric {
         // retype erased reference arguments (the cast makes it safe to do this)
         MethodType tepType = type.insertParameterTypes(0, adapter.getClass());
         MethodHandle typedEntryPoint =
-            AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, tepType, entryPoint);
+            AdapterMethodHandle.makeRetypeRaw(tepType, entryPoint);
         return adapter.makeInstance(typedEntryPoint, invoker, convert, genericTarget);
     }
 
@@ -248,7 +247,7 @@ class ToGeneric {
 
     /** Return the adapter information for this type's erasure. */
     static ToGeneric of(MethodType type) {
-        MethodTypeImpl form = MethodTypeImpl.of(type);
+        MethodTypeForm form = type.form();
         ToGeneric toGen = form.toGeneric;
         if (toGen == null)
             form.toGeneric = toGen = new ToGeneric(form.erasedType());
@@ -262,7 +261,7 @@ class ToGeneric {
 
     /* Create an adapter for the given incoming call type. */
     static Adapter findAdapter(MethodType entryPointType) {
-        MethodTypeImpl form = MethodTypeImpl.of(entryPointType);
+        MethodTypeForm form = entryPointType.form();
         Class<?> rtype = entryPointType.returnType();
         int argc = form.parameterCount();
         int lac = form.longPrimitiveParameterCount();
@@ -283,7 +282,7 @@ class ToGeneric {
             for (String iname : inames) {
                 MethodHandle entryPoint = null;
                 try {
-                    entryPoint = MethodHandleImpl.IMPL_LOOKUP.
+                    entryPoint = IMPL_LOOKUP.
                                     findSpecial(acls, iname, entryPointType, acls);
                 } catch (ReflectiveOperationException ex) {
                 }
@@ -338,13 +337,13 @@ class ToGeneric {
 
         @Override
         public String toString() {
-            return target == null ? "prototype:"+convert : MethodHandleImpl.addTypeString(target, this);
+            return target == null ? "prototype:"+convert : addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
         /* Prototype constructor. */
         protected Adapter(MethodHandle entryPoint) {
-            super(Access.TOKEN, entryPoint);
+            super(entryPoint);
             this.invoker = null;
             this.convert = entryPoint;
             this.target = null;
@@ -356,7 +355,7 @@ class ToGeneric {
         }
 
         protected Adapter(MethodHandle entryPoint, MethodHandle invoker, MethodHandle convert, MethodHandle target) {
-            super(Access.TOKEN, entryPoint);
+            super(entryPoint);
             this.invoker = invoker;
             this.convert = convert;
             this.target = target;
@@ -396,7 +395,7 @@ class ToGeneric {
         protected float  return_F(Object res) throws Throwable { return (float) convert.invokeExact(res); }
         protected double return_D(Object res) throws Throwable { return (double)convert.invokeExact(res); }
 
-        static private final String CLASS_PREFIX; // "sun.dyn.ToGeneric$"
+        static private final String CLASS_PREFIX; // "java.dyn.ToGeneric$"
         static {
             String aname = Adapter.class.getName();
             String sname = Adapter.class.getSimpleName();

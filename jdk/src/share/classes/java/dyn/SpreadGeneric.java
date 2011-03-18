@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
+import sun.dyn.util.ValueConversions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import sun.dyn.util.ValueConversions;
-import static sun.dyn.MemberName.newIllegalArgumentException;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * Generic spread adapter.
@@ -110,7 +110,7 @@ class SpreadGeneric {
     static SpreadGeneric of(MethodType targetType, int spreadCount) {
         if (targetType != targetType.generic())
             throw new UnsupportedOperationException("NYI type="+targetType);
-        MethodTypeImpl form = MethodTypeImpl.of(targetType);
+        MethodTypeForm form = targetType.form();
         int outcount = form.parameterCount();
         assert(spreadCount <= outcount);
         SpreadGeneric[] spreadGens = form.spreadGeneric;
@@ -129,7 +129,7 @@ class SpreadGeneric {
     // This mini-api is called from an Adapter to manage the spread.
     /** A check/coercion that happens once before any selections. */
     protected Object check(Object av, int n) {
-        MethodHandleImpl.checkSpreadArgument(av, n);
+        checkSpreadArgument(av, n);
         return av;
     }
 
@@ -166,7 +166,7 @@ class SpreadGeneric {
             // see if it has the required invoke method
             MethodHandle entryPoint = null;
             try {
-                entryPoint = MethodHandleImpl.IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
+                entryPoint = IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
             } catch (ReflectiveOperationException ex) {
             }
             if (entryPoint == null)  continue;
@@ -221,21 +221,21 @@ class SpreadGeneric {
 
         @Override
         public String toString() {
-            return MethodHandleImpl.addTypeString(target, this);
+            return addTypeString(target, this);
         }
 
         static final MethodHandle NO_ENTRY = ValueConversions.identity();
 
         protected boolean isPrototype() { return target == null; }
         protected Adapter(SpreadGeneric outer) {
-            super(Access.TOKEN, NO_ENTRY);
+            super(NO_ENTRY);
             this.outer = outer;
             this.target = null;
             assert(isPrototype());
         }
 
         protected Adapter(SpreadGeneric outer, MethodHandle target) {
-            super(Access.TOKEN, outer.entryPoint);
+            super(outer.entryPoint);
             this.outer = outer;
             this.target = target;
         }
@@ -251,7 +251,7 @@ class SpreadGeneric {
             return outer.select(av, n);
         }
 
-        static private final String CLASS_PREFIX; // "sun.dyn.SpreadGeneric$"
+        static private final String CLASS_PREFIX; // "java.dyn.SpreadGeneric$"
         static {
             String aname = Adapter.class.getName();
             String sname = Adapter.class.getSimpleName();

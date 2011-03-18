@@ -25,8 +25,6 @@
 
 package java.dyn;
 
-import sun.dyn.*;
-import sun.dyn.empty.Empty;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

@@ -23,10 +23,9 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
 import sun.dyn.util.BytecodeDescriptor;
-import java.dyn.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,7 +36,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import static sun.dyn.MethodHandleNatives.Constants.*;
+import static java.dyn.MethodHandleNatives.Constants.*;
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * A {@code MemberName} is a compact symbolic datum which fully characterizes
@@ -66,7 +66,7 @@ import static sun.dyn.MethodHandleNatives.Constants.*;
  * and those seven fields omit much of the information in Method.
  * @author jrose
  */
-public final class MemberName implements Member, Cloneable {
+/*non-public*/ final class MemberName implements Member, Cloneable {
     private Class<?>   clazz;       // class in which the method is defined
     private String     name;        // may be null if not yet materialized
     private Object     type;        // may be null if not yet materialized
@@ -435,7 +435,7 @@ public final class MemberName implements Member, Cloneable {
     /** Query whether this member name is resolved to a non-static, non-final method.
      */
     public boolean hasReceiverTypeDispatch() {
-        return (isMethod() && getVMIndex(Access.TOKEN) >= 0);
+        return (isMethod() && getVMIndex() >= 0);
     }
 
     /** Produce a string form of this member name.
@@ -490,58 +490,37 @@ public final class MemberName implements Member, Cloneable {
 
     // Queries to the JVM:
     /** Document? */
-    public int getVMIndex(Access token) {
-        Access.check(token);
+    /*non-public*/ int getVMIndex() {
         if (!isResolved())
-            throw newIllegalStateException("not resolved");
+            throw newIllegalStateException("not resolved", this);
         return vmindex;
     }
-//    public Object getVMTarget(Access token) {
-//        Access.check(token);
+//    /*non-public*/ Object getVMTarget() {
 //        if (!isResolved())
-//            throw newIllegalStateException("not resolved");
+//            throw newIllegalStateException("not resolved", this);
 //        return vmtarget;
 //    }
-    private RuntimeException newIllegalStateException(String message) {
-        return new IllegalStateException(message+": "+this);
-    }
 
-    // handy shared exception makers (they simplify the common case code)
-    public static RuntimeException newIllegalArgumentException(String message) {
-        return new IllegalArgumentException(message);
-    }
-    public static IllegalAccessException newNoAccessException(MemberName name, Object from) {
-        return newNoAccessException("cannot access", name, from);
-    }
-    public static IllegalAccessException newNoAccessException(String message,
-            MemberName name, Object from) {
-        message += ": " + name;
+    public IllegalAccessException makeAccessException(String message, Object from) {
+        message = message + ": "+ toString();
         if (from != null)  message += ", from " + from;
         return new IllegalAccessException(message);
     }
-    public static ReflectiveOperationException newNoAccessException(MemberName name) {
-        if (name.isResolved())
-            return new IllegalAccessException(name.toString());
-        else if (name.isConstructor())
-            return new NoSuchMethodException(name.toString());
-        else if (name.isMethod())
-            return new NoSuchMethodException(name.toString());
+    public ReflectiveOperationException makeAccessException(String message) {
+        message = message + ": "+ toString();
+        if (isResolved())
+            return new IllegalAccessException(message);
+        else if (isConstructor())
+            return new NoSuchMethodException(message);
+        else if (isMethod())
+            return new NoSuchMethodException(message);
         else
-            return new NoSuchFieldException(name.toString());
-    }
-    public static Error uncaughtException(Exception ex) {
-        Error err = new InternalError("uncaught exception");
-        err.initCause(ex);
-        return err;
+            return new NoSuchFieldException(message);
     }
 
     /** Actually making a query requires an access check. */
-    public static Factory getFactory(Access token) {
-        Access.check(token);
+    /*non-public*/ static Factory getFactory() {
         return Factory.INSTANCE;
-    }
-    public static Factory getFactory() {
-        return getFactory(Access.getToken());
     }
     /** A factory type for resolving member names with the help of the VM.
      *  TBD: Define access-safe public constructors for this factory.
@@ -662,7 +641,7 @@ public final class MemberName implements Member, Cloneable {
             MemberName result = resolveOrNull(m, searchSupers, lookupClass);
             if (result != null)
                 return result;
-            ReflectiveOperationException ex = newNoAccessException(m);
+            ReflectiveOperationException ex = m.makeAccessException("no access");
             if (ex instanceof IllegalAccessException)  throw (IllegalAccessException) ex;
             throw nsmClass.cast(ex);
         }

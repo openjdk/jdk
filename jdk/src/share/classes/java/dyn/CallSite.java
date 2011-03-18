@@ -25,10 +25,10 @@
 
 package java.dyn;
 
-import sun.dyn.*;
 import sun.dyn.empty.Empty;
 import sun.misc.Unsafe;
-import java.util.Collection;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * A {@code CallSite} is a holder for a variable {@link MethodHandle},
@@ -85,7 +85,6 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
  */
 abstract
 public class CallSite {
-    private static final Access IMPL_TOKEN = Access.getToken();
     static { MethodHandleImpl.initStatics(); }
 
     // Fields used only by the JVM.  Do not use or change.
@@ -111,7 +110,7 @@ public class CallSite {
      */
     /*package-private*/
     CallSite(MethodType type) {
-        target = MethodHandles.invokers(type).uninitializedCallSite();
+        target = type.invokers().uninitializedCallSite();
     }
 
     /**
@@ -218,7 +217,7 @@ public class CallSite {
     public abstract MethodHandle dynamicInvoker();
 
     /*non-public*/ MethodHandle makeDynamicInvoker() {
-        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
+        MethodHandle getTarget = MethodHandleImpl.bindReceiver(GET_TARGET, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
@@ -226,7 +225,7 @@ public class CallSite {
     private static final MethodHandle GET_TARGET;
     static {
         try {
-            GET_TARGET = MethodHandles.Lookup.IMPL_LOOKUP.
+            GET_TARGET = IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
         } catch (ReflectiveOperationException ignore) {
             throw new InternalError();
@@ -252,7 +251,6 @@ public class CallSite {
     /*package-private*/
     void setTargetNormal(MethodHandle newTarget) {
         target = newTarget;
-        //CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
@@ -261,6 +259,105 @@ public class CallSite {
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {
         unsafe.putObjectVolatile(this, TARGET_OFFSET, newTarget);
-        //CallSiteImpl.setCallSiteTarget(IMPL_TOKEN, this, newTarget);
+    }
+
+    // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:
+    static CallSite makeSite(MethodHandle bootstrapMethod,
+                             // Callee information:
+                             String name, MethodType type,
+                             // Extra arguments for BSM, if any:
+                             Object info,
+                             // Caller information:
+                             MemberName callerMethod, int callerBCI) {
+        Class<?> callerClass = callerMethod.getDeclaringClass();
+        Object caller;
+        if (bootstrapMethod.type().parameterType(0) == Class.class && TRANSITIONAL_BEFORE_PFD)
+            caller = callerClass;  // remove for PFD
+        else
+            caller = IMPL_LOOKUP.in(callerClass);
+        if (bootstrapMethod == null && TRANSITIONAL_BEFORE_PFD) {
+            // If there is no bootstrap method, throw IncompatibleClassChangeError.
+            // This is a valid generic error type for resolution (JLS 12.3.3).
+            throw new IncompatibleClassChangeError
+                ("Class "+callerClass.getName()+" has not declared a bootstrap method for invokedynamic");
+        }
+        CallSite site;
+        try {
+            Object binding;
+            info = maybeReBox(info);
+            if (info == null) {
+                binding = bootstrapMethod.invokeGeneric(caller, name, type);
+            } else if (!info.getClass().isArray()) {
+                binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
+            } else {
+                Object[] argv = (Object[]) info;
+                maybeReBoxElements(argv);
+                if (3 + argv.length > 255)
+                    throw new InvokeDynamicBootstrapError("too many bootstrap method arguments");
+                MethodType bsmType = bootstrapMethod.type();
+                if (bsmType.parameterCount() == 4 && bsmType.parameterType(3) == Object[].class)
+                    binding = bootstrapMethod.invokeGeneric(caller, name, type, argv);
+                else
+                    binding = MethodHandles.spreadInvoker(bsmType, 3)
+                        .invokeGeneric(bootstrapMethod, caller, name, type, argv);
+            }
+            //System.out.println("BSM for "+name+type+" => "+binding);
+            if (binding instanceof CallSite) {
+                site = (CallSite) binding;
+            } else if (binding instanceof MethodHandle && TRANSITIONAL_BEFORE_PFD) {
+                // Transitional!
+                MethodHandle target = (MethodHandle) binding;
+                site = new ConstantCallSite(target);
+            } else {
+                throw new ClassCastException("bootstrap method failed to produce a CallSite");
+            }
+            if (TRANSITIONAL_BEFORE_PFD)
+                PRIVATE_INITIALIZE_CALL_SITE.invokeExact(site, name, type,
+                                                         callerMethod, callerBCI);
+            assert(site.getTarget() != null);
+            assert(site.getTarget().type().equals(type));
+        } catch (Throwable ex) {
+            InvokeDynamicBootstrapError bex;
+            if (ex instanceof InvokeDynamicBootstrapError)
+                bex = (InvokeDynamicBootstrapError) ex;
+            else
+                bex = new InvokeDynamicBootstrapError("call site initialization exception", ex);
+            throw bex;
+        }
+        return site;
+    }
+
+    private static final boolean TRANSITIONAL_BEFORE_PFD = true;  // FIXME: remove for PFD
+    // booby trap to force removal after package rename:
+    static { if (TRANSITIONAL_BEFORE_PFD)  assert(CallSite.class.getName().startsWith("java.dyn.")); }
+
+    private static Object maybeReBox(Object x) {
+        if (x instanceof Integer) {
+            int xi = (int) x;
+            if (xi == (byte) xi)
+                x = xi;  // must rebox; see JLS 5.1.7
+        }
+        return x;
+    }
+    private static void maybeReBoxElements(Object[] xa) {
+        for (int i = 0; i < xa.length; i++) {
+            xa[i] = maybeReBox(xa[i]);
+        }
+    }
+
+    // This method is private in CallSite because it touches private fields in CallSite.
+    // These private fields (vmmethod, vmindex) are specific to the JVM.
+    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE;
+    static {
+        try {
+            PRIVATE_INITIALIZE_CALL_SITE =
+            !TRANSITIONAL_BEFORE_PFD ? null :
+            IMPL_LOOKUP.findVirtual(CallSite.class, "initializeFromJVM",
+                MethodType.methodType(void.class,
+                                      String.class, MethodType.class,
+                                      MemberName.class, int.class));
+        } catch (ReflectiveOperationException ex) {
+            throw uncaughtException(ex);
+        }
     }
 }
