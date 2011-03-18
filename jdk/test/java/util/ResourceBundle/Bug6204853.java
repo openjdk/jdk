@@ -39,23 +39,18 @@ import java.util.PropertyResourceBundle;
 public final class Bug6204853 {
 
     public Bug6204853() {
-        try {
-            String srcDir = System.getProperty("test.src", ".");
-            FileInputStream  fis8859_1 =
-                new FileInputStream(new File(srcDir, "Bug6204853.properties"));
-            FileInputStream fisUtf8 =
-                new FileInputStream(new File(srcDir, "Bug6204853_Utf8.properties"));
-            InputStreamReader isrUtf8 = new InputStreamReader(fisUtf8, "UTF-8");
-
+        String srcDir = System.getProperty("test.src", ".");
+        try (FileInputStream fis8859_1 =
+                 new FileInputStream(new File(srcDir, "Bug6204853.properties"));
+             FileInputStream fisUtf8 =
+                 new FileInputStream(new File(srcDir, "Bug6204853_Utf8.properties"));
+             InputStreamReader isrUtf8 = new InputStreamReader(fisUtf8, "UTF-8"))
+        {
             PropertyResourceBundle bundleUtf8 = new PropertyResourceBundle(isrUtf8);
             PropertyResourceBundle bundle = new PropertyResourceBundle(fis8859_1);
 
             String[] arrayUtf8 = createKeyValueArray(bundleUtf8);
             String[] array = createKeyValueArray(bundle);
-
-            isrUtf8.close();
-            fisUtf8.close();
-            fis8859_1.close();
 
             if (!Arrays.equals(arrayUtf8, array)) {
                 throw new RuntimeException("PropertyResourceBundle constructed from a UTF-8 encoded property file is not equal to the one constructed from ISO-8859-1 encoded property file.");

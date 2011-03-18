@@ -466,7 +466,6 @@ JAVA_JAVA_java = \
     java/security/ProtectionDomain.java \
     java/net/URLClassLoader.java \
     java/net/URLConnection.java \
-    sun/misc/BootClassLoaderHook.java \
     sun/misc/Launcher.java \
     sun/misc/MetaIndex.java \
     sun/misc/URLClassPath.java \

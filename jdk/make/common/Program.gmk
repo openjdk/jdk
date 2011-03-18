@@ -186,7 +186,6 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	$(LINK_PRE_CMD) $(CC) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
 	    $(FILES_o) $(THREADLIBS) $(LDLIBS)
 	@$(call binary_file_verification,$@)
-	$(install-module-file)
 
 endif # PLATFORM
 

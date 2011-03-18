@@ -148,6 +148,17 @@ typedef unsigned int            uintptr_t;
 #endif
 #endif
 
+// On solaris 8, UINTPTR_MAX is defined as empty.
+// Everywhere else it's an actual value.
+#if UINTPTR_MAX - 1 == -1
+#undef UINTPTR_MAX
+#ifdef _LP64
+#define UINTPTR_MAX UINT64_MAX
+#else
+#define UINTPTR_MAX UINT32_MAX
+#endif /* ifdef _LP64 */
+#endif
+
 // Additional Java basic types
 
 typedef unsigned char      jubyte;

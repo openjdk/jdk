@@ -299,6 +299,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     protected JavaCompiler delegateCompiler;
 
     /**
+     * Command line options.
+     */
+    protected Options options;
+
+    protected Context context;
+
+    /**
      * Flag set if any annotation processing occurred.
      **/
     protected boolean annotationProcessingOccurred;
@@ -308,11 +315,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      **/
     protected boolean implicitSourceFilesRead;
 
-    protected Context context;
-
     /** Construct a new compiler using a shared context.
      */
-    public JavaCompiler(final Context context) {
+    public JavaCompiler(Context context) {
         this.context = context;
         context.put(compilerKey, this);
 
@@ -354,7 +359,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         reader.sourceCompleter = this;
 
-        Options options = Options.instance(context);
+        options = Options.instance(context);
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -580,7 +585,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                       null, List.<JCTree>nil());
         if (content != null) {
             if (verbose) {
-                printVerbose("parsing.started", filename);
+                log.printVerbose("parsing.started", filename);
             }
             if (taskListener != null) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
@@ -589,7 +594,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();
             if (verbose) {
-                printVerbose("parsing.done", Long.toString(elapsed(msec)));
+                log.printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
         }
 
@@ -676,7 +681,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             try {
                 new Pretty(out, true).printUnit(env.toplevel, cdef);
                 if (verbose)
-                    printVerbose("wrote.file", outFile);
+                    log.printVerbose("wrote.file", outFile);
             } finally {
                 out.close();
             }
@@ -792,6 +797,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             throw new AssertionError("attempt to reuse JavaCompiler");
         hasBeenUsed = true;
 
+        // forcibly set the equivalent of -Xlint:-options, so that no further
+        // warnings about command line options are generated from this point on
+        options.put(XLINT_CUSTOM + "-" + LintCategory.OPTIONS.option, "true");
+        options.remove(XLINT_CUSTOM + LintCategory.OPTIONS.option);
+
         start_msec = now();
 
         try {
@@ -857,7 +867,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         if (verbose) {
             elapsed_msec = elapsed(start_msec);
-            printVerbose("total", Long.toString(elapsed_msec));
+            log.printVerbose("total", Long.toString(elapsed_msec));
         }
 
         reportDeferredDiagnostics();
@@ -963,7 +973,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public void initProcessAnnotations(Iterable<? extends Processor> processors) {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
-        Options options = Options.instance(context);
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
@@ -1022,7 +1031,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             // If there are no annotation processors present, and
             // annotation processing is to occur with compilation,
             // emit a warning.
-            Options options = Options.instance(context);
             if (options.isSet(PROC, "only")) {
                 log.warning("proc.proc-only.requested.no.procs");
                 todo.clear();
@@ -1108,9 +1116,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     boolean explicitAnnotationProcessingRequested() {
-        Options options = Options.instance(context);
         return
             explicitAnnotationProcessingRequested ||
+            explicitAnnotationProcessingRequested(options);
+    }
+
+    static boolean explicitAnnotationProcessingRequested(Options options) {
+        return
             options.isSet(PROCESSOR) ||
             options.isSet(PROCESSORPATH) ||
             options.isSet(PROC, "only") ||
@@ -1142,7 +1154,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (verboseCompilePolicy)
             printNote("[attribute " + env.enclClass.sym + "]");
         if (verbose)
-            printVerbose("checking.attribution", env.enclClass.sym);
+            log.printVerbose("checking.attribution", env.enclClass.sym);
 
         if (taskListener != null) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
@@ -1508,7 +1520,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
 
     public void reportDeferredDiagnostics() {
-        if (annotationProcessingOccurred
+        if (errorCount() == 0
+                && annotationProcessingOccurred
                 && implicitSourceFilesRead
                 && implicitSourcePolicy == ImplicitSourcePolicy.UNSET) {
             if (explicitAnnotationProcessingRequested())
@@ -1560,14 +1573,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     protected void printNote(String lines) {
         Log.printLines(log.noticeWriter, lines);
-    }
-
-    /** Output for "-verbose" option.
-     *  @param key The key to look up the correct internationalized string.
-     *  @param arg An argument for substitution into the output string.
-     */
-    protected void printVerbose(String key, Object arg) {
-        log.printNoteLines("verbose." + key, arg);
     }
 
     /** Print numbers of errors and warnings.

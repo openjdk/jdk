@@ -53,7 +53,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 public class NoNulls {
     void test(String[] args) throws Throwable {
         final Comparator<String> nullTolerantComparator
-            = new Comparator<>() {
+            = new Comparator<String>() {
             public int compare(String x, String y) {
                 return (x == null ? -1 :
                         y == null ? 1 :
@@ -65,7 +65,7 @@ public class NoNulls {
         nullSortedSet.add(null);
 
         final PriorityQueue<String> nullPriorityQueue
-            = new PriorityQueue<>() {
+            = new PriorityQueue<String>() {
             public Object[] toArray() { return new Object[] { null };}};
 
         final Collection<String> nullCollection = new ArrayList<>();

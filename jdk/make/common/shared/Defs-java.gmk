@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ else
   JAVA_MEM_FLAGS   += -Xms$(MIN_VM_MEMORY)m -XX:PermSize=32m -XX:MaxPermSize=160m
 endif
 
-# 
+#
 # All java tools (javac, javah, and javadoc) run faster with certain java
 #    options, this macro should be used with all these tools.
 #    In particular, the client VM makes these tools run faster when
@@ -122,6 +122,17 @@ ifeq ($(JAVAC_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
 
+#
+# Some licensees do not get the Security Source bundles.  We will
+# fall back on the prebuilt jce.jar so that we can do a best
+# attempt at building.  If sources exist, we always want to
+# build/use the most recent source instead of an older jce.jar, whether
+# built implicitly/explicitly.
+#
+ifeq ($(wildcard $(SHARE_SRC)/classes/javax/crypto/Cipher.java),)
+  JCEFLAGS = $(CLASSPATH_SEPARATOR)$(LIBDIR)/jce.jar
+endif
+
 # Add the source level
 SOURCE_LANGUAGE_VERSION = 7
 LANGUAGE_VERSION = -source $(SOURCE_LANGUAGE_VERSION)
@@ -132,11 +143,11 @@ TARGET_CLASS_VERSION = 7
 CLASS_VERSION = -target $(TARGET_CLASS_VERSION)
 JAVACFLAGS  += $(CLASS_VERSION)
 JAVACFLAGS  += -encoding ascii
-JAVACFLAGS  += "-Xbootclasspath:$(CLASSBINDIR)"
+JAVACFLAGS  += "-Xbootclasspath:$(CLASSBINDIR)$(JCEFLAGS)"
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
 # Needed for javah
-JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
+JAVAHFLAGS += -bootclasspath "$(CLASSBINDIR)$(JCEFLAGS)"
 
 # Needed for javadoc to ensure it builds documentation
 # against the newly built classes

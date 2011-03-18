@@ -40,9 +40,6 @@
 #
 # By default, subdirs specified in the SUBDIRS and all SUBDIRS_* 
 # variables will be built.
-# 
-# BUILD_MODULES variable can be used to specify one or more groups
-# to be built (BUILD_MODULES=all will build all groups).
 #
 # Variables of the currently supported groups are:
 #  SUBDIRS_desktop    
@@ -53,14 +50,11 @@
 # 
 # Change to the above list also need to update 
 # make/common/shared/Sanity.gmk.  NOTE: this list is subject
-# to change till the JDK 7 SE profiles/modules are finalized.
+# to change.
 # 
 # Eventually we want to restructure the make directory
 # according to these grouping (e.g. make/desktop/...) and
 # the SUBDIRS_<group> variables would not be needed.
-# 
-# To build the desktop and tools groups only, you can do:
-# gnumake BUILD_MODULES="desktop tools" ...
 # 
 
 # Iterate the subdirectories specified in $1.
@@ -96,77 +90,51 @@ endef
 
 #
 # Iterate the list specified in SUBDIRS_<group> only if
-# SUBDIRS_<group> is set and <group> or "all" is specified
-# in the BUILD_MODULES variable
+# SUBDIRS_<group> is set.
 #
 ifdef SUBDIRS_desktop 
-  ifneq (,$(findstring desktop, $(BUILD_MODULES)))
-      define subdirs-desktop-loop
-         @$(call subdirs-group-loop,SUBDIRS_desktop)
-      endef
-  else
-    define subdirs-desktop-loop
-    endef
-  endif
+  define subdirs-desktop-loop
+      @$(call subdirs-group-loop,SUBDIRS_desktop)
+  endef
 else   
   define subdirs-desktop-loop
   endef
 endif   # SUBDIRS_desktop 
 
 ifdef SUBDIRS_enterprise 
-  ifneq (,$(findstring enterprise, $(BUILD_MODULES)))
-      define subdirs-enterprise-loop
-         @$(call subdirs-group-loop,SUBDIRS_enterprise)
-      endef
-  else
-    define subdirs-enterprise-loop
-    endef
-  endif
+  define subdirs-enterprise-loop
+      @$(call subdirs-group-loop,SUBDIRS_enterprise)
+  endef
 else   
 define subdirs-enterprise-loop
 endef
 endif   # SUBDIRS_enterprise 
 
 ifdef SUBDIRS_management 
-  ifneq (,$(findstring management, $(BUILD_MODULES)))
-      define subdirs-management-loop
-         @$(call subdirs-group-loop,SUBDIRS_management)
-      endef
-  else
-    define subdirs-management-loop
-    endef
-  endif
+  define subdirs-management-loop
+      @$(call subdirs-group-loop,SUBDIRS_management)
+  endef
 else   
-define subdirs-management-loop
-endef
+  define subdirs-management-loop
+  endef
 endif   # SUBDIRS_management 
 
 ifdef SUBDIRS_misc 
-  ifneq (,$(findstring misc, $(BUILD_MODULES)))
-      define subdirs-misc-loop
-         @$(call subdirs-group-loop,SUBDIRS_misc)
-      endef
-  else
-    define subdirs-misc-loop
-    endef
-  endif
+  define subdirs-misc-loop
+      @$(call subdirs-group-loop,SUBDIRS_misc)
+  endef
 else   
-define subdirs-misc-loop
-endef
+  define subdirs-misc-loop
+  endef
 endif   # SUBDIRS_misc 
 
 ifdef SUBDIRS_tools 
-  ifneq (,$(findstring tools, $(BUILD_MODULES)))
-      define subdirs-tools-loop
-         @$(call subdirs-group-loop,SUBDIRS_tools)
-      endef
-  else
-    define subdirs-tools-loop
-    endef
-  endif
+  define subdirs-tools-loop
+      @$(call subdirs-group-loop,SUBDIRS_tools)
+  endef
 else   
-define subdirs-tools-loop
-endef
+  define subdirs-tools-loop
+  endef
 endif   # SUBDIRS_tools 
 
 #
@@ -175,30 +143,6 @@ endif   # SUBDIRS_tools
 SUBDIRS_all = $(SUBDIRS) $(SUBDIRS_desktop) $(SUBDIRS_enterprise) \
 	      $(SUBDIRS_management) $(SUBDIRS_misc) $(SUBDIRS_tools)
 
-ifndef BUILD_MODULES
 define SUBDIRS-loop
   @$(call subdirs-group-loop,SUBDIRS_all)
 endef
-
-else
-
-ifneq (,$(findstring all, $(BUILD_MODULES)))
-define SUBDIRS-loop
-  @$(call subdirs-group-loop,SUBDIRS_all)
-endef
-
-else # BUILD_MODULES set 
-#
-# Iterate SUBDIRS and the groups specified in BUILD_MODULES
-#
-define SUBDIRS-loop
-  @$(call subdirs-group-loop,SUBDIRS)
-  @$(subdirs-desktop-loop)
-  @$(subdirs-enterprise-loop)
-  @$(subdirs-management-loop)
-  @$(subdirs-misc-loop)
-  @$(subdirs-tools-loop)
-endef
-
-endif
-endif # BUILD_MODULES

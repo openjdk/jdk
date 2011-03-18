@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE   = java2d
 PRODUCT  = sun
 include $(BUILDDIR)/common/Defs.gmk
 
