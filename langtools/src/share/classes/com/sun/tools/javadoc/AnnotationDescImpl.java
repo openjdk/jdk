@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,9 @@ public class AnnotationDescImpl implements AnnotationDesc {
      *     @com.example.foo
      * Omit parens for marker annotations, and omit "value=" when allowed.
      */
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("@");
+        StringBuilder sb = new StringBuilder("@");
         sb.append(annotation.type.tsym);
 
         ElementValuePair vals[] = elementValues();
@@ -153,6 +154,7 @@ public class AnnotationDescImpl implements AnnotationDesc {
          * Returns a string representation of this pair
          * of the form "name=value".
          */
+        @Override
         public String toString() {
             return meth.name + "=" + value();
         }

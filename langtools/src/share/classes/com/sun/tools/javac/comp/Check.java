@@ -664,40 +664,25 @@ public class Check {
             return true;
     }
 
-    /** Check that the type inferred using the diamond operator does not contain
-     *  non-denotable types such as captured types or intersection types.
-     *  @param t the type inferred using the diamond operator
+    /** Check that usage of diamond operator is correct (i.e. diamond should not
+     * be used with non-generic classes or in anonymous class creation expressions)
      */
-    List<Type> checkDiamond(ClassType t) {
-        DiamondTypeChecker dtc = new DiamondTypeChecker();
-        ListBuffer<Type> buf = ListBuffer.lb();
-        for (Type arg : t.getTypeArguments()) {
-            if (!dtc.visit(arg, null)) {
-                buf.append(arg);
-            }
-        }
-        return buf.toList();
-    }
-
-    static class DiamondTypeChecker extends Types.SimpleVisitor<Boolean, Void> {
-        public Boolean visitType(Type t, Void s) {
-            return true;
-        }
-        @Override
-        public Boolean visitClassType(ClassType t, Void s) {
-            if (t.isCompound()) {
-                return false;
-            }
-            for (Type targ : t.getTypeArguments()) {
-                if (!visit(targ, s)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        @Override
-        public Boolean visitCapturedType(CapturedType t, Void s) {
-            return false;
+    Type checkDiamond(JCNewClass tree, Type t) {
+        if (!TreeInfo.isDiamond(tree) ||
+                t.isErroneous()) {
+            return checkClassType(tree.clazz.pos(), t, true);
+        } else if (tree.def != null) {
+            log.error(tree.clazz.pos(),
+                    "cant.apply.diamond.1",
+                    t, diags.fragment("diamond.and.anon.class", t));
+            return types.createErrorType(t);
+        } else if (!t.tsym.type.isParameterized()) {
+            log.error(tree.clazz.pos(),
+                "cant.apply.diamond.1",
+                t, diags.fragment("diamond.non.generic", t));
+            return types.createErrorType(t);
+        } else {
+            return t;
         }
     }
 
@@ -1679,7 +1664,8 @@ public class Check {
                             "(" + types.memberType(t2, s2).getParameterTypes() + ")");
                         return s2;
                     }
-                } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2)) {
+                } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
+                        !checkCommonOverriderIn(s1, s2, site)) {
                     log.error(pos,
                             "name.clash.same.erasure.no.override",
                             s1, s1.location(),
@@ -2113,7 +2099,7 @@ public class Check {
                 if (s1 == s2 || !sym.overrides(s2, site.tsym, types, false)) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, s1)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, s1), false) &&
                         types.hasSameArgs(s1.erasure(types), s2.erasure(types))) {
                     sym.flags_field |= CLASH;
                     String key = s2 == sym ?
@@ -2145,7 +2131,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s)) &&
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), false) &&
                     types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                 log.error(pos,
                         "name.clash.same.erasure.no.hide",
@@ -2666,7 +2652,7 @@ public class Check {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
                     return true;
-                } else if (sym.kind == MTH && !hasSameSignature(sym.type, e.sym.type)) {
+                } else if (sym.kind == MTH && !types.hasSameArgs(sym.type, e.sym.type, false)) {
                     duplicateErasureError(pos, sym, e.sym);
                     sym.flags_field |= CLASH;
                     return true;
@@ -2678,15 +2664,6 @@ public class Check {
         }
         return true;
     }
-    //where
-        boolean hasSameSignature(Type mt1, Type mt2) {
-            if (mt1.tag == FORALL && mt2.tag == FORALL) {
-                ForAll fa1 = (ForAll)mt1;
-                ForAll fa2 = (ForAll)mt2;
-                mt2 = types.subst(fa2, fa2.tvars, fa1.tvars);
-            }
-            return types.hasSameArgs(mt1.asMethodType(), mt2.asMethodType());
-        }
 
     /** Report duplicate declaration error.
      */

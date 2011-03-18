@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939780
+ * @bug 6939780 7020044
  *
  * @summary  add a warning to detect diamond sites
  * @author mcimadamore

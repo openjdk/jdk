@@ -55,6 +55,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     native void initXRPicture(long xsdo, int pictForm);
 
+    native void freeXSDOPicture(long xsdo);
+
     public static final String DESC_BYTE_A8_X11 = "Byte A8 Pixmap";
     public static final String DESC_INT_RGB_X11 = "Integer RGB Pixmap";
     public static final String DESC_INT_ARGB_X11 = "Integer ARGB-Pre Pixmap";
@@ -531,6 +533,17 @@ public abstract class XRSurfaceData extends XSurfaceData {
         public Object getDestination() {
             return peer.getTarget();
         }
+
+       public void invalidate() {
+           try {
+               SunToolkit.awtLock();
+               freeXSDOPicture(getNativeOps());
+           }finally {
+               SunToolkit.awtUnlock();
+           }
+
+           super.invalidate();
+       }
     }
 
     public static class XRInternalSurfaceData extends XRSurfaceData {

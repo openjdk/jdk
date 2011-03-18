@@ -135,11 +135,13 @@ class CopyMoveHelper {
                 view.setTimes(attrs.lastModifiedTime(),
                               attrs.lastAccessTime(),
                               attrs.creationTime());
-            } catch (IOException x) {
+            } catch (Throwable x) {
                 // rollback
                 try {
                     Files.delete(target);
-                } catch (IOException ignore) { }
+                } catch (Throwable suppressed) {
+                    x.addSuppressed(suppressed);
+                }
                 throw x;
             }
         }

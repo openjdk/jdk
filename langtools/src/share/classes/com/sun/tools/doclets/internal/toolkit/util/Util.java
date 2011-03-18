@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ public class Util {
                 out.close();
             }
         } catch (IOException ie) {
-            ie.printStackTrace();
+            ie.printStackTrace(System.err);
             throw new DocletAbortException();
         }
     }
@@ -399,12 +399,12 @@ public class Util {
             String pkgPath = DirectoryManager.getDirectoryPath(pkgDoc);
             String completePath = new SourcePath(configuration.sourcepath).
                 getDirectory(pkgPath) + DirectoryManager.URL_FILE_SEPARATOR;
-            //Make sure that both paths are using the same seperators.
+            //Make sure that both paths are using the same separators.
             completePath = Util.replaceText(completePath, File.separator,
                     DirectoryManager.URL_FILE_SEPARATOR);
             pkgPath = Util.replaceText(pkgPath, File.separator,
                     DirectoryManager.URL_FILE_SEPARATOR);
-            return completePath.substring(0, completePath.indexOf(pkgPath));
+            return completePath.substring(0, completePath.lastIndexOf(pkgPath));
         } catch (Exception e){
             return "";
         }
@@ -536,15 +536,6 @@ public class Util {
             findAllInterfaceTypes(results, (ClassDoc) type, true, configuration);
     }
 
-
-    public static <T extends ProgramElementDoc> List<T> asList(T[] members) {
-        List<T> list = new ArrayList<T>();
-        for (int i = 0; i < members.length; i++) {
-            list.add(members[i]);
-        }
-        return list;
-    }
-
     /**
      * Enclose in quotes, used for paths and filenames that contains spaces
      */
@@ -583,14 +574,7 @@ public class Util {
         if (oldStr == null || newStr == null || oldStr.equals(newStr)) {
             return originalStr;
         }
-        StringBuffer result = new StringBuffer(originalStr);
-        int startIndex = 0;
-        while ((startIndex = result.indexOf(oldStr, startIndex)) != -1) {
-            result = result.replace(startIndex, startIndex + oldStr.length(),
-                    newStr);
-            startIndex += newStr.length();
-        }
-        return result.toString();
+        return originalStr.replace(oldStr, newStr);
     }
 
     /**
@@ -833,19 +817,17 @@ public class Util {
      * @param tabLength the length of each tab.
      * @param s the String to scan.
      */
-    public static void replaceTabs(int tabLength, StringBuffer s) {
-        int index, col;
-        StringBuffer whitespace;
-        while ((index = s.indexOf("\t")) != -1) {
-            whitespace = new StringBuffer();
-            col = index;
-            do {
-                whitespace.append(" ");
-                col++;
-            } while ((col%tabLength) != 0);
-            s.replace(index, index+1, whitespace.toString());
+    public static void replaceTabs(int tabLength, StringBuilder s) {
+        if (whitespace == null || whitespace.length() < tabLength)
+            whitespace = String.format("%" + tabLength + "s", " ");
+        int index = 0;
+        while ((index = s.indexOf("\t", index)) != -1) {
+            int spaceCount = tabLength - index % tabLength;
+            s.replace(index, index+1, whitespace.substring(0, spaceCount));
+            index += spaceCount;
         }
     }
+    private static String whitespace;
 
     /**
      * The documentation for values() and valueOf() in Enums are set by the

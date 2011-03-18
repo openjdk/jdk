@@ -201,13 +201,12 @@ class WindowsFileStore
         if (!(ob instanceof WindowsFileStore))
             return false;
         WindowsFileStore other = (WindowsFileStore)ob;
-        return this.volInfo.volumeSerialNumber() == other.volInfo.volumeSerialNumber();
+        return root.equals(other.root);
     }
 
     @Override
     public int hashCode() {
-        // reveals VSN without permission check - okay?
-        return volInfo.volumeSerialNumber();
+        return root.hashCode();
     }
 
     @Override

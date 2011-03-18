@@ -750,7 +750,8 @@ int (*fp_gdk_pixbuf_get_width)(const GdkPixbuf *pixbuf);
 GdkPixbuf *(*fp_gdk_pixbuf_new_from_file)(const char *filename, GError **error);
 void (*fp_gtk_widget_destroy)(GtkWidget *widget);
 void (*fp_gtk_window_present)(GtkWindow *window);
-
+void (*fp_gtk_window_move)(GtkWindow *window, gint x, gint y);
+void (*fp_gtk_window_resize)(GtkWindow *window, gint width, gint height);
 
 /**
  * Function Pointers for GtkFileChooser

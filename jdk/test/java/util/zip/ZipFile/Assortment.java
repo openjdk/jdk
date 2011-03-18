@@ -201,13 +201,12 @@ public class Assortment {
         //----------------------------------------------------------------
         // Write zip file using ZipOutputStream
         //----------------------------------------------------------------
-        ZipOutputStream zos = new ZipOutputStream(
-            new FileOutputStream(zipName));
-
-        for (Entry e : entries)
-            e.write(zos);
-
-        zos.close();
+        try (FileOutputStream fos = new FileOutputStream(zipName);
+             ZipOutputStream zos = new ZipOutputStream(fos))
+        {
+            for (Entry e : entries)
+                e.write(zos);
+        }
 
         //----------------------------------------------------------------
         // Verify zip file contents using JarFile class

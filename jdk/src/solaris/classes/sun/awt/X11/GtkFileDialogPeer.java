@@ -56,12 +56,14 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
     }
 
     private native void run(String title, int mode, String dir, String file,
-            FilenameFilter filter, boolean isMultipleMode);
+                            FilenameFilter filter, boolean isMultipleMode, int x, int y);
     private native void quit();
 
     @Override
     public native void toFront();
 
+    @Override
+    public native void setBounds(int x, int y, int width, int height, int op);
 
     /**
      * Called exclusively by the native C code.
@@ -106,9 +108,8 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
                 Thread t = new Thread() {
                     public void run() {
                         GtkFileDialogPeer.this.run(fd.getTitle(), fd.getMode(),
-                                fd.getDirectory(), fd.getFile(), fd
-                                        .getFilenameFilter(), fd
-                                        .isMultipleMode());
+                                   fd.getDirectory(), fd.getFile(), fd.getFilenameFilter(), fd.isMultipleMode(),
+                                   fd.getX(), fd.getY());
                         fd.setVisible(false);
                     }
                 };

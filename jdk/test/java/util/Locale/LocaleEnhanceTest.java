@@ -1204,14 +1204,12 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
                 locale = new Locale(lang, country, variant);
             }
 
-            // desrialize
-            try {
-                FileInputStream fis = new FileInputStream(testfile);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-
+            // deserialize
+            try (FileInputStream fis = new FileInputStream(testfile);
+                 ObjectInputStream ois = new ObjectInputStream(fis))
+            {
                 Object o = ois.readObject();
                 assertEquals("Deserialize Java 6 Locale " + locale, o, locale);
-                ois.close();
             } catch (Exception e) {
                 errln("Exception while reading " + testfile.getAbsolutePath() + " - " + e.getMessage());
             }

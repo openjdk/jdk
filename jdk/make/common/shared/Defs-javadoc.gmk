@@ -61,33 +61,11 @@ COMMA:= ,
 EMPTY:=
 SPACE:=$(EMPTY) $(EMPTY)
 COPYRIGHT_SYMBOL = &\#x00a9;
-# Macros to handle the optional empty args.
+# Macro to construct the copyright line
 #   (The GNU make 3.78.1 "if" conditional is broken, fixed in GNU make 3.81)
-define OptionalCopyrightUrl # url
-$(shell \
-  if [ "$1" != "" ] ; then \
-    printf "<a href=\"%s\">Copyright</a>" "$1"; \
-  else \
-    printf "Copyright"; \
-  fi)
-endef
-define OptionalCopyrightFirstYear # year
-$(shell \
-  if [ "$1" != "" ] ; then \
-    printf "%s," "$1";\
-  fi)
-endef
-define OptionalCompanyAddress # address
-$(shell \
-  if [ "$1" != "" ] ; then \
-    printf "%s" "$1";\
-  fi)
-endef
 define CopyrightLine # optionalurl optionalfirstyear optionaladdress
-$(call OptionalCopyrightUrl,$1) $(COPYRIGHT_SYMBOL)\
-$(call OptionalCopyrightFirstYear,$2) $(COPYRIGHT_YEAR),\
-$(COMPANY_NAME).\
-$(call OptionalCompanyAddress,$3)\
-All rights reserved.
+$(if $(strip $1),<a href="$(strip $1)">Copyright</a>,Copyright) \
+$(COPYRIGHT_SYMBOL) $(if $2,$2${COMMA},) $(COPYRIGHT_YEAR),\
+$(FULL_COMPANY_NAME). $3 All rights reserved.
 endef
 
