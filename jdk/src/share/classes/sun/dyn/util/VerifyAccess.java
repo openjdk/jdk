@@ -26,9 +26,6 @@
 package sun.dyn.util;
 
 import java.lang.reflect.Modifier;
-import sun.dyn.MemberName;
-import sun.dyn.MethodHandleImpl;
-import sun.dyn.empty.Empty;
 import static java.lang.reflect.Modifier.*;
 
 /**

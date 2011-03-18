@@ -25,13 +25,8 @@
 
 package java.dyn;
 
-//import sun.dyn.*;
 
-import sun.dyn.Access;
-import sun.dyn.MethodHandleImpl;
-
-import static java.dyn.MethodHandles.invokers;  // package-private API
-import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * A method handle is a typed, directly executable reference to an underlying method,
@@ -436,12 +431,35 @@ mh.invokeExact(System.out, "Hello, world.");
  * @see MethodHandles
  * @author John Rose, JSR 292 EG
  */
-public abstract class MethodHandle
-        // Note: This is an implementation inheritance hack, and will be removed
-        // with a JVM change which moves the required hidden state onto this class.
-        extends MethodHandleImpl
-{
-    private static Access IMPL_TOKEN = Access.getToken();
+public abstract class MethodHandle {
+    // { JVM internals:
+
+    private byte       vmentry;    // adapter stub or method entry point
+    //private int      vmslots;    // optionally, hoist type.form.vmslots
+    /*non-public*/ Object vmtarget;   // VM-specific, class-specific target value
+
+    // TO DO:  vmtarget should be invisible to Java, since the JVM puts internal
+    // managed pointers into it.  Making it visible exposes it to debuggers,
+    // which can cause errors when they treat the pointer as an Object.
+
+    // These two dummy fields are present to force 'I' and 'J' signatures
+    // into this class's constant pool, so they can be transferred
+    // to vmentry when this class is loaded.
+    static final int  INT_FIELD = 0;
+    static final long LONG_FIELD = 0;
+
+    // vmentry (a void* field) is used *only* by the JVM.
+    // The JVM adjusts its type to int or long depending on system wordsize.
+    // Since it is statically typed as neither int nor long, it is impossible
+    // to use this field from Java bytecode.  (Please don't try to, either.)
+
+    // The vmentry is an assembly-language stub which is jumped to
+    // immediately after the method type is verified.
+    // For a direct MH, this stub loads the vmtarget's entry point
+    // and jumps to it.
+
+    // } End of JVM internals.
+
     static { MethodHandleImpl.initStatics(); }
 
     // interface MethodHandle<R throws X extends Exception,A...>
@@ -467,35 +485,14 @@ public abstract class MethodHandle
     }
 
     /**
-     * <em>CONSTRUCTOR WILL BE REMOVED FOR PFD:</em>
-     * Temporary constructor in early versions of the Reference Implementation.
-     * Method handle inheritance (if any) will be contained completely within
+     * Package-private constructor for the method handle implementation hierarchy.
+     * Method handle inheritance will be contained completely within
      * the {@code java.dyn} package.
      */
-    // The constructor for MethodHandle may only be called by privileged code.
-    // Subclasses may be in other packages, but must possess
-    // a token which they obtained from MH with a security check.
-    // @param token non-null object which proves access permission
     // @param type type (permanently assigned) of the new method handle
-    protected MethodHandle(Access token, MethodType type) {
-        super(token);
-        Access.check(token);
-        this.type = type;
-    }
-
-    private void initType(MethodType type) {
+    /*non-public*/ MethodHandle(MethodType type) {
         type.getClass();  // elicit NPE
-        if (this.type != null)  throw new InternalError();
         this.type = type;
-    }
-
-    static {
-        // This hack allows the implementation package special access to
-        // the internals of MethodHandle.  In particular, the MTImpl has all sorts
-        // of cached information useful to the implementation code.
-        MethodHandleImpl.setMethodHandleFriend(IMPL_TOKEN, new MethodHandleImpl.MethodHandleFriend() {
-            public void initType(MethodHandle mh, MethodType type) { mh.initType(type); }
-        });
     }
 
     /**
@@ -608,7 +605,7 @@ public abstract class MethodHandle
             return asType(MethodType.genericMethodType(argc)).invokeWithArguments(arguments);
         }
         if (argc <= 10) {
-            MethodHandle invoker = invokers(type).genericInvoker();
+            MethodHandle invoker = type.invokers().genericInvoker();
             switch (argc) {
                 case 0:  return invoker.invokeExact(this);
                 case 1:  return invoker.invokeExact(this,
@@ -647,7 +644,7 @@ public abstract class MethodHandle
         }
 
         // more than ten arguments get boxed in a varargs list:
-        MethodHandle invoker = invokers(type).spreadInvoker(0);
+        MethodHandle invoker = type.invokers().spreadInvoker(0);
         return invoker.invokeExact(this, arguments);
     }
     /** Equivalent to {@code invokeWithArguments(arguments.toArray())}. */
@@ -1004,6 +1001,6 @@ assert(failed);
      */
     @Override
     public String toString() {
-        return MethodHandleImpl.getNameString(IMPL_TOKEN, this);
+        return getNameString(this);
     }
 }

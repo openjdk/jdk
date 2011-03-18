@@ -23,16 +23,16 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
 import sun.dyn.empty.Empty;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * Construction and caching of often-used invokers.
  * @author jrose
  */
-public class Invokers {
+class Invokers {
     // exact type (sans leading taget MH) for the outgoing call
     private final MethodType targetType;
 
@@ -60,15 +60,15 @@ public class Invokers {
         this.spreadInvokers = new MethodHandle[targetType.parameterCount()+1];
     }
 
-    public static MethodType invokerType(MethodType targetType) {
+    /*non-public*/ static MethodType invokerType(MethodType targetType) {
         return targetType.insertParameterTypes(0, MethodHandle.class);
     }
 
-    public MethodHandle exactInvoker() {
+    /*non-public*/ MethodHandle exactInvoker() {
         MethodHandle invoker = exactInvoker;
         if (invoker != null)  return invoker;
         try {
-            invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invokeExact", targetType);
+            invoker = IMPL_LOOKUP.findVirtual(MethodHandle.class, "invokeExact", targetType);
         } catch (ReflectiveOperationException ex) {
             throw new InternalError("JVM cannot find invoker for "+targetType);
         }
@@ -77,7 +77,7 @@ public class Invokers {
         return invoker;
     }
 
-    public MethodHandle genericInvoker() {
+    /*non-public*/ MethodHandle genericInvoker() {
         MethodHandle invoker1 = exactInvoker();
         MethodHandle invoker = genericInvoker;
         if (invoker != null)  return invoker;
@@ -87,7 +87,7 @@ public class Invokers {
         return invoker;
     }
 
-    public MethodHandle erasedInvoker() {
+    /*non-public*/ MethodHandle erasedInvoker() {
         MethodHandle invoker1 = exactInvoker();
         MethodHandle invoker = erasedInvoker;
         if (invoker != null)  return invoker;
@@ -100,7 +100,7 @@ public class Invokers {
         return invoker;
     }
 
-    public MethodHandle spreadInvoker(int objectArgCount) {
+    /*non-public*/ MethodHandle spreadInvoker(int objectArgCount) {
         MethodHandle vaInvoker = spreadInvokers[objectArgCount];
         if (vaInvoker != null)  return vaInvoker;
         MethodHandle gInvoker = genericInvoker();
@@ -111,12 +111,12 @@ public class Invokers {
 
     private static MethodHandle THROW_UCS = null;
 
-    public MethodHandle uninitializedCallSite() {
+    /*non-public*/ MethodHandle uninitializedCallSite() {
         MethodHandle invoker = uninitializedCallSite;
         if (invoker != null)  return invoker;
         if (targetType.parameterCount() > 0) {
             MethodType type0 = targetType.dropParameterTypes(0, targetType.parameterCount());
-            Invokers invokers0 = MethodTypeImpl.invokers(type0);
+            Invokers invokers0 = type0.invokers();
             invoker = MethodHandles.dropArguments(invokers0.uninitializedCallSite(),
                                                   0, targetType.parameterList());
             assert(invoker.type().equals(targetType));
@@ -125,14 +125,14 @@ public class Invokers {
         }
         if (THROW_UCS == null) {
             try {
-                THROW_UCS = MethodHandleImpl.IMPL_LOOKUP
+                THROW_UCS = IMPL_LOOKUP
                     .findStatic(CallSite.class, "uninitializedCallSite",
                                 MethodType.methodType(Empty.class));
             } catch (ReflectiveOperationException ex) {
                 throw new RuntimeException(ex);
             }
         }
-        invoker = AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, targetType, THROW_UCS);
+        invoker = AdapterMethodHandle.makeRetypeRaw(targetType, THROW_UCS);
         assert(invoker.type().equals(targetType));
         uninitializedCallSite = invoker;
         return invoker;

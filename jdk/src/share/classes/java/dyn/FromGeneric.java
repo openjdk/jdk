@@ -23,12 +23,13 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
+import sun.dyn.util.ValueConversions;
+import sun.dyn.util.Wrapper;
 import java.lang.reflect.*;
-import sun.dyn.util.*;
-import static sun.dyn.MethodTypeImpl.invokers;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * Adapters which mediate between incoming calls which are generic
@@ -82,8 +83,8 @@ class FromGeneric {
         }
 
         // outgoing primitive arguments will be wrapped; unwrap them
-        MethodType primsAsObj = MethodTypeImpl.of(targetType).primArgsAsBoxes();
-        MethodType objArgsRawRet = MethodTypeImpl.of(primsAsObj).primsAsInts();
+        MethodType primsAsObj = targetType.form().primArgsAsBoxes();
+        MethodType objArgsRawRet = primsAsObj.form().primsAsInts();
         if (objArgsRawRet != targetType)
             ad = findAdapter(internalType0 = objArgsRawRet);
         if (ad == null) {
@@ -129,16 +130,16 @@ class FromGeneric {
             MethodType targetType, MethodType internalType) {
         // All the adapters we have here have reference-untyped internal calls.
         assert(internalType == internalType.erase());
-        MethodHandle invoker = invokers(targetType).exactInvoker();
+        MethodHandle invoker = targetType.invokers().exactInvoker();
         // cast all narrow reference types, unbox all primitive arguments:
         MethodType fixArgsType = internalType.changeReturnType(targetType.returnType());
-        MethodHandle fixArgs = AdapterMethodHandle.convertArguments(Access.TOKEN,
+        MethodHandle fixArgs = MethodHandleImpl.convertArguments(
                                  invoker, Invokers.invokerType(fixArgsType),
                                  invoker.type(), null);
         if (fixArgs == null)
             throw new InternalError("bad fixArgs");
         // reinterpret the calling sequence as raw:
-        MethodHandle retyper = AdapterMethodHandle.makeRetypeRaw(Access.TOKEN,
+        MethodHandle retyper = AdapterMethodHandle.makeRetypeRaw(
                                         Invokers.invokerType(internalType), fixArgs);
         if (retyper == null)
             throw new InternalError("bad retyper");
@@ -171,7 +172,7 @@ class FromGeneric {
 
     /** Return the adapter information for this type's erasure. */
     static FromGeneric of(MethodType type) {
-        MethodTypeImpl form = MethodTypeImpl.of(type);
+        MethodTypeForm form = type.form();
         FromGeneric fromGen = form.fromGeneric;
         if (fromGen == null)
             form.fromGeneric = fromGen = new FromGeneric(form.erasedType());
@@ -185,7 +186,7 @@ class FromGeneric {
     /* Create an adapter that handles spreading calls for the given type. */
     static Adapter findAdapter(MethodType internalType) {
         MethodType entryType = internalType.generic();
-        MethodTypeImpl form = MethodTypeImpl.of(internalType);
+        MethodTypeForm form = internalType.form();
         Class<?> rtype = internalType.returnType();
         int argc = form.parameterCount();
         int lac = form.longPrimitiveParameterCount();
@@ -203,7 +204,7 @@ class FromGeneric {
             // see if it has the required invoke method
             MethodHandle entryPoint = null;
             try {
-                entryPoint = MethodHandleImpl.IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
+                entryPoint = IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
             } catch (ReflectiveOperationException ex) {
             }
             if (entryPoint == null)  continue;
@@ -257,7 +258,7 @@ class FromGeneric {
 
         @Override
         public String toString() {
-            return MethodHandleImpl.addTypeString(target, this);
+            return addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -272,7 +273,7 @@ class FromGeneric {
 
         protected Adapter(MethodHandle entryPoint,
                           MethodHandle invoker, MethodHandle convert, MethodHandle target) {
-            super(Access.TOKEN, entryPoint);
+            super(entryPoint);
             this.invoker = invoker;
             this.convert = convert;
             this.target  = target;
@@ -290,7 +291,7 @@ class FromGeneric {
         protected Object convert_F(float  result) throws Throwable { return convert.invokeExact(result); }
         protected Object convert_D(double result) throws Throwable { return convert.invokeExact(result); }
 
-        static private final String CLASS_PREFIX; // "sun.dyn.FromGeneric$"
+        static private final String CLASS_PREFIX; // "java.dyn.FromGeneric$"
         static {
             String aname = Adapter.class.getName();
             String sname = Adapter.class.getSimpleName();

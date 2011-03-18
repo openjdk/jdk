@@ -23,133 +23,33 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
-import java.dyn.MethodHandles.Lookup;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sun.dyn.util.VerifyType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import sun.dyn.empty.Empty;
 import sun.dyn.util.ValueConversions;
 import sun.dyn.util.Wrapper;
 import sun.misc.Unsafe;
-import static sun.dyn.MemberName.newIllegalArgumentException;
-import static sun.dyn.MemberName.newNoAccessException;
-import static sun.dyn.MemberName.uncaughtException;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
- * Base class for method handles, containing JVM-specific fields and logic.
- * TO DO:  It should not be a base class.
+ * Trusted implementation code for MethodHandle.
  * @author jrose
  */
-public abstract class MethodHandleImpl {
-
-    // Fields which really belong in MethodHandle:
-    private byte       vmentry;    // adapter stub or method entry point
-    //private int      vmslots;    // optionally, hoist type.form.vmslots
-    protected Object   vmtarget;   // VM-specific, class-specific target value
-    //MethodType       type;       // defined in MethodHandle
-
-    // TO DO:  vmtarget should be invisible to Java, since the JVM puts internal
-    // managed pointers into it.  Making it visible exposes it to debuggers,
-    // which can cause errors when they treat the pointer as an Object.
-
-    // These two dummy fields are present to force 'I' and 'J' signatures
-    // into this class's constant pool, so they can be transferred
-    // to vmentry when this class is loaded.
-    static final int  INT_FIELD = 0;
-    static final long LONG_FIELD = 0;
-
-    /** Access methods for the internals of MethodHandle, supplied to
-     *  MethodHandleImpl as a trusted agent.
-     */
-    static public interface MethodHandleFriend {
-        void initType(MethodHandle mh, MethodType type);
-    }
-    public static void setMethodHandleFriend(Access token, MethodHandleFriend am) {
-        Access.check(token);
-        if (METHOD_HANDLE_FRIEND != null)
-            throw new InternalError();  // just once
-        METHOD_HANDLE_FRIEND = am;
-    }
-    static private MethodHandleFriend METHOD_HANDLE_FRIEND;
-
-    // NOT public
-    static void initType(MethodHandle mh, MethodType type) {
-        METHOD_HANDLE_FRIEND.initType(mh, type);
-    }
-
-    // type is defined in java.dyn.MethodHandle, which is platform-independent
-
-    // vmentry (a void* field) is used *only* by by the JVM.
-    // The JVM adjusts its type to int or long depending on system wordsize.
-    // Since it is statically typed as neither int nor long, it is impossible
-    // to use this field from Java bytecode.  (Please don't try to, either.)
-
-    // The vmentry is an assembly-language stub which is jumped to
-    // immediately after the method type is verified.
-    // For a direct MH, this stub loads the vmtarget's entry point
-    // and jumps to it.
-
-    /**
-     * VM-based method handles must have a security token.
-     * This security token can only be obtained by trusted code.
-     * Do not create method handles directly; use factory methods.
-     */
-    public MethodHandleImpl(Access token) {
-        Access.check(token);
-    }
-
-    /** Initialize the method type form to participate in JVM calls.
-     *  This is done once for each erased type.
-     */
-    public static void init(Access token, MethodType self) {
-        Access.check(token);
-        if (MethodHandleNatives.JVM_SUPPORT)
-            MethodHandleNatives.init(self);
-    }
-
+/*non-public*/ abstract class MethodHandleImpl {
     /// Factory methods to create method handles:
 
     private static final MemberName.Factory LOOKUP = MemberName.Factory.INSTANCE;
 
-    static private Lookup IMPL_LOOKUP_INIT;
-
-    public static void initLookup(Access token, Lookup lookup) {
-        Access.check(token);
-        if (IMPL_LOOKUP_INIT != null)
-            throw new InternalError();
-        IMPL_LOOKUP_INIT = lookup;
-    }
-
-    public static Lookup getLookup(Access token) {
-        Access.check(token);
-        return IMPL_LOOKUP;
-    }
-
-    static {
-        if (!MethodHandleNatives.JVM_SUPPORT)  // force init of native API
-            throw new InternalError("No JVM support for JSR 292");
-        // Force initialization of Lookup, so it calls us back as initLookup:
-        MethodHandles.publicLookup();
-        if (IMPL_LOOKUP_INIT == null)
-            throw new InternalError();
-    }
-
-    public static void initStatics() {
+    static void initStatics() {
         // Trigger preceding sequence.
     }
-
-    /** Shared secret with MethodHandles.Lookup, a copy of Lookup.IMPL_LOOKUP. */
-    static final Lookup IMPL_LOOKUP = IMPL_LOOKUP_INIT;
-
 
     /** Look up a given method.
      * Callable only from java.dyn and related packages.
@@ -170,10 +70,9 @@ public abstract class MethodHandleImpl {
      * @return a direct handle to the matching method
      * @throws IllegalAccessException if the given method cannot be accessed by the lookup class
      */
-    public static
-    MethodHandle findMethod(Access token, MemberName method,
+    static
+    MethodHandle findMethod(MemberName method,
                             boolean doDispatch, Class<?> lookupClass) throws IllegalAccessException {
-        Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
         if (!method.isStatic()) {
             // adjust the advertised receiver type to be exactly the one requested
@@ -183,7 +82,7 @@ public abstract class MethodHandleImpl {
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
-            throw newNoAccessException(method, lookupClass);
+            throw method.makeAccessException("no access", lookupClass);
         assert(mh.type() == mtype);
         if (!method.isVarargs())
             return mh;
@@ -191,13 +90,12 @@ public abstract class MethodHandleImpl {
             return mh.asVarargsCollector(mtype.parameterType(mtype.parameterCount()-1));
     }
 
-    public static
-    MethodHandle makeAllocator(Access token, MethodHandle rawConstructor) {
-        Access.check(token);
+    static
+    MethodHandle makeAllocator(MethodHandle rawConstructor) {
         MethodType rawConType = rawConstructor.type();
         // Wrap the raw (unsafe) constructor with the allocation of a suitable object.
         MethodHandle allocator
-            = AllocateObject.make(token, rawConType.parameterType(0), rawConstructor);
+            = AllocateObject.make(rawConType.parameterType(0), rawConstructor);
         assert(allocator.type()
                .equals(rawConType.dropParameterTypes(0, 1).changeReturnType(rawConType.parameterType(0))));
         return allocator;
@@ -211,13 +109,11 @@ public abstract class MethodHandleImpl {
 
         private AllocateObject(MethodHandle invoker,
                                Class<C> allocateClass, MethodHandle rawConstructor) {
-            super(Access.TOKEN, invoker);
+            super(invoker);
             this.allocateClass = allocateClass;
             this.rawConstructor = rawConstructor;
         }
-        static MethodHandle make(Access token,
-                                 Class<?> allocateClass, MethodHandle rawConstructor) {
-            Access.check(token);
+        static MethodHandle make(Class<?> allocateClass, MethodHandle rawConstructor) {
             MethodType rawConType = rawConstructor.type();
             assert(rawConType.parameterType(0) == allocateClass);
             MethodType newType = rawConType.dropParameterTypes(0, 1).changeReturnType(allocateClass);
@@ -225,18 +121,18 @@ public abstract class MethodHandleImpl {
             if (nargs < INVOKES.length) {
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType conType = CON_TYPES[nargs];
-                MethodHandle gcon = convertArguments(token, rawConstructor, conType, rawConType, null);
+                MethodHandle gcon = convertArguments(rawConstructor, conType, rawConType, null);
                 if (gcon == null)  return null;
                 MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
                 assert(galloc.type() == newType.generic());
-                return convertArguments(token, galloc, newType, galloc.type(), null);
+                return convertArguments(galloc, newType, galloc.type(), null);
             } else {
                 MethodHandle invoke = VARARGS_INVOKE;
                 MethodType conType = CON_TYPES[nargs];
-                MethodHandle gcon = spreadArguments(token, rawConstructor, conType, 1);
+                MethodHandle gcon = spreadArguments(rawConstructor, conType, 1);
                 if (gcon == null)  return null;
                 MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
-                return collectArguments(token, galloc, newType, 1, null);
+                return collectArguments(galloc, newType, 1, null);
             }
         }
         @Override
@@ -338,20 +234,16 @@ public abstract class MethodHandleImpl {
         }
     }
 
-    public static
-    MethodHandle accessField(Access token,
-                             MemberName member, boolean isSetter,
+    static
+    MethodHandle accessField(MemberName member, boolean isSetter,
                              Class<?> lookupClass) {
-        Access.check(token);
         // Use sun. misc.Unsafe to dig up the dirt on the field.
-        MethodHandle mh = new FieldAccessor(token, member, isSetter);
+        MethodHandle mh = new FieldAccessor(member, isSetter);
         return mh;
     }
 
-    public static
-    MethodHandle accessArrayElement(Access token,
-                                    Class<?> arrayClass, boolean isSetter) {
-        Access.check(token);
+    static
+    MethodHandle accessArrayElement(Class<?> arrayClass, boolean isSetter) {
         if (!arrayClass.isArray())
             throw newIllegalArgumentException("not an array: "+arrayClass);
         Class<?> elemClass = arrayClass.getComponentType();
@@ -379,12 +271,13 @@ public abstract class MethodHandleImpl {
         final long offset;
         final String name;
 
-        public FieldAccessor(Access token, MemberName field, boolean isSetter) {
-            super(Access.TOKEN, fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
-            this.offset = (long) field.getVMIndex(token);
+        FieldAccessor(MemberName field, boolean isSetter) {
+            super(fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
+            this.offset = (long) field.getVMIndex();
             this.name = field.getName();
             this.base = staticBase(field);
         }
+        @Override
         public String toString() { return addTypeString(name, this); }
 
         int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
@@ -560,10 +453,8 @@ public abstract class MethodHandleImpl {
      * @param receiver Receiver (or first static method argument) to pre-bind.
      * @return a BoundMethodHandle for the given DirectMethodHandle, or null if it does not exist
      */
-    public static
-    MethodHandle bindReceiver(Access token,
-                              MethodHandle target, Object receiver) {
-        Access.check(token);
+    static
+    MethodHandle bindReceiver(MethodHandle target, Object receiver) {
         if (target instanceof AdapterMethodHandle &&
             ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
             ) {
@@ -574,7 +465,7 @@ public abstract class MethodHandleImpl {
                     dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
                     MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
                     MethodType newType = target.type().dropParameterTypes(0, 1);
-                    return convertArguments(token, bmh, newType, bmh.type(), null);
+                    return convertArguments(bmh, newType, bmh.type(), null);
                 }
             }
         }
@@ -590,19 +481,15 @@ public abstract class MethodHandleImpl {
      * @param receiver Argument (which can be a boxed primitive) to pre-bind.
      * @return a suitable BoundMethodHandle
      */
-    public static
-    MethodHandle bindArgument(Access token,
-                              MethodHandle target, int argnum, Object receiver) {
-        Access.check(token);
+    static
+    MethodHandle bindArgument(MethodHandle target, int argnum, Object receiver) {
         return new BoundMethodHandle(target, receiver, argnum);
     }
 
-    public static MethodHandle convertArguments(Access token,
-                                                MethodHandle target,
+    static MethodHandle convertArguments(MethodHandle target,
                                                 MethodType newType,
                                                 MethodType oldType,
                                                 int[] permutationOrNull) {
-        Access.check(token);
         assert(oldType.parameterCount() == target.type().parameterCount());
         if (permutationOrNull != null) {
             int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
@@ -613,7 +500,7 @@ public abstract class MethodHandleImpl {
             for (int i = 0; i < outargs; i++)
                 callTypeArgs[i] = newType.parameterType(permutationOrNull[i]);
             MethodType callType = MethodType.methodType(oldType.returnType(), callTypeArgs);
-            target = convertArguments(token, target, callType, oldType, null);
+            target = convertArguments(target, callType, oldType, null);
             assert(target != null);
             oldType = target.type();
             List<Integer> goal = new ArrayList<Integer>();  // i*TOKEN
@@ -710,7 +597,7 @@ public abstract class MethodHandleImpl {
                         Collections.rotate(ptypes.subList(rotBeg, rotEnd+1), -rotBy);
                         MethodType rotType = MethodType.methodType(oldType.returnType(), ptypes);
                         MethodHandle nextTarget
-                                = AdapterMethodHandle.makeRotateArguments(token, rotType, target,
+                                = AdapterMethodHandle.makeRotateArguments(rotType, target,
                                         rotBeg, rotSpan.size(), rotBy);
                         if (nextTarget != null) {
                             //System.out.println("Rot: "+rotSpan+" by "+rotBy);
@@ -733,7 +620,7 @@ public abstract class MethodHandleImpl {
                         int j = state.indexOf(arg);
                         Collections.swap(ptypes, i, j);
                         MethodType swapType = MethodType.methodType(oldType.returnType(), ptypes);
-                        target = AdapterMethodHandle.makeSwapArguments(token, swapType, target, i, j);
+                        target = AdapterMethodHandle.makeSwapArguments(swapType, target, i, j);
                         if (target == null)  throw newIllegalArgumentException("cannot swap");
                         assert(target.type() == swapType);
                         oldType = swapType;
@@ -760,7 +647,7 @@ public abstract class MethodHandleImpl {
                 List<Class<?>> ptypes = oldType.parameterList();
                 ptypes = ptypes.subList(0, ptypes.size() - dupArgCount);
                 MethodType dupType = MethodType.methodType(oldType.returnType(), ptypes);
-                target = AdapterMethodHandle.makeDupArguments(token, dupType, target, dupArgPos, dupArgCount);
+                target = AdapterMethodHandle.makeDupArguments(dupType, target, dupArgPos, dupArgCount);
                 if (target == null)
                     throw newIllegalArgumentException("cannot dup");
                 oldType = target.type();
@@ -778,7 +665,7 @@ public abstract class MethodHandleImpl {
                 List<Class<?>> dropTypes = newType.parameterList()
                         .subList(dropArgPos, dropArgPos + dropArgCount);
                 MethodType dropType = oldType.insertParameterTypes(dropArgPos, dropTypes);
-                target = AdapterMethodHandle.makeDropArguments(token, dropType, target, dropArgPos, dropArgCount);
+                target = AdapterMethodHandle.makeDropArguments(dropType, target, dropArgPos, dropArgCount);
                 if (target == null)  throw newIllegalArgumentException("cannot drop");
                 oldType = target.type();
             }
@@ -787,7 +674,7 @@ public abstract class MethodHandleImpl {
             return target;
         if (oldType.parameterCount() != newType.parameterCount())
             throw newIllegalArgumentException("mismatched parameter count");
-        MethodHandle res = AdapterMethodHandle.makePairwiseConvert(token, newType, target);
+        MethodHandle res = AdapterMethodHandle.makePairwiseConvert(newType, target);
         if (res != null)
             return res;
         int argc = oldType.parameterCount();
@@ -797,26 +684,24 @@ public abstract class MethodHandleImpl {
         // then back to the desired types.  We might have to use Java-based
         // method handles to do this.
         MethodType objType = MethodType.genericMethodType(argc);
-        MethodHandle objTarget = AdapterMethodHandle.makePairwiseConvert(token, objType, target);
+        MethodHandle objTarget = AdapterMethodHandle.makePairwiseConvert(objType, target);
         if (objTarget == null)
             objTarget = FromGeneric.make(target);
-        res = AdapterMethodHandle.makePairwiseConvert(token, newType, objTarget);
+        res = AdapterMethodHandle.makePairwiseConvert(newType, objTarget);
         if (res != null)
             return res;
         return ToGeneric.make(newType, objTarget);
     }
 
-    public static MethodHandle spreadArguments(Access token,
-                                               MethodHandle target,
+    static MethodHandle spreadArguments(MethodHandle target,
                                                MethodType newType,
                                                int spreadArg) {
-        Access.check(token);
         // TO DO: maybe allow the restarg to be Object and implicitly cast to Object[]
         MethodType oldType = target.type();
         // spread the last argument of newType to oldType
         int spreadCount = oldType.parameterCount() - spreadArg;
         Class<Object[]> spreadArgType = Object[].class;
-        MethodHandle res = AdapterMethodHandle.makeSpreadArguments(token, newType, target, spreadArgType, spreadArg, spreadCount);
+        MethodHandle res = AdapterMethodHandle.makeSpreadArguments(newType, target, spreadArgType, spreadArg, spreadCount);
         if (res != null)
             return res;
         // try an intermediate adapter
@@ -829,20 +714,19 @@ public abstract class MethodHandleImpl {
             ptypes[spreadArg + i] = VerifyType.spreadArgElementType(spreadType, i);
         MethodType midType = MethodType.methodType(newType.returnType(), ptypes);
         // after spreading, some arguments may need further conversion
-        MethodHandle target2 = convertArguments(token, target, midType, oldType, null);
+        MethodHandle target2 = convertArguments(target, midType, oldType, null);
         if (target2 == null)
             throw new UnsupportedOperationException("NYI: convert "+midType+" =calls=> "+oldType);
-        res = AdapterMethodHandle.makeSpreadArguments(token, newType, target2, spreadArgType, spreadArg, spreadCount);
+        res = AdapterMethodHandle.makeSpreadArguments(newType, target2, spreadArgType, spreadArg, spreadCount);
         if (res != null)
             return res;
         res = SpreadGeneric.make(target2, spreadCount);
         if (res != null)
-            res = convertArguments(token, res, newType, res.type(), null);
+            res = convertArguments(res, newType, res.type(), null);
         return res;
     }
 
-    public static MethodHandle collectArguments(Access token,
-                                                MethodHandle target,
+    static MethodHandle collectArguments(MethodHandle target,
                                                 MethodType newType,
                                                 int collectArg,
                                                 MethodHandle collector) {
@@ -856,29 +740,27 @@ public abstract class MethodHandleImpl {
         //         oldType                      // (a..., b...)=>r
         assert(newType.parameterCount() == collectArg + colType.parameterCount());
         assert(oldType.parameterCount() == collectArg + 1);
-        MethodHandle gtarget = convertArguments(token, target, oldType.generic(), oldType, null);
-        MethodHandle gcollector = convertArguments(token, collector, colType.generic(), colType, null);
+        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, null);
+        MethodHandle gcollector = convertArguments(collector, colType.generic(), colType, null);
         if (gtarget == null || gcollector == null)  return null;
         MethodHandle gresult = FilterGeneric.makeArgumentCollector(gcollector, gtarget);
-        MethodHandle result = convertArguments(token, gresult, newType, gresult.type(), null);
+        MethodHandle result = convertArguments(gresult, newType, gresult.type(), null);
         return result;
     }
 
-    public static MethodHandle filterArgument(Access token,
-                                              MethodHandle target,
+    static MethodHandle filterArgument(MethodHandle target,
                                               int pos,
                                               MethodHandle filter) {
-        Access.check(token);
         MethodType ttype = target.type(), gttype = ttype.generic();
         if (ttype != gttype) {
-            target = convertArguments(token, target, gttype, ttype, null);
+            target = convertArguments(target, gttype, ttype, null);
             ttype = gttype;
         }
         MethodType ftype = filter.type(), gftype = ftype.generic();
         if (ftype.parameterCount() != 1)
             throw new InternalError();
         if (ftype != gftype) {
-            filter = convertArguments(token, filter, gftype, ftype, null);
+            filter = convertArguments(filter, gftype, ftype, null);
             ftype = gftype;
         }
         if (ftype == ttype) {
@@ -888,27 +770,24 @@ public abstract class MethodHandleImpl {
         return FilterGeneric.makeArgumentFilter(pos, filter, target);
     }
 
-    public static MethodHandle foldArguments(Access token,
-                                             MethodHandle target,
+    static MethodHandle foldArguments(MethodHandle target,
                                              MethodType newType,
                                              MethodHandle combiner) {
-        Access.check(token);
         MethodType oldType = target.type();
         MethodType ctype = combiner.type();
-        MethodHandle gtarget = convertArguments(token, target, oldType.generic(), oldType, null);
-        MethodHandle gcombiner = convertArguments(token, combiner, ctype.generic(), ctype, null);
+        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, null);
+        MethodHandle gcombiner = convertArguments(combiner, ctype.generic(), ctype, null);
         if (gtarget == null || gcombiner == null)  return null;
         MethodHandle gresult = FilterGeneric.makeArgumentFolder(gcombiner, gtarget);
-        MethodHandle result = convertArguments(token, gresult, newType, gresult.type(), null);
+        MethodHandle result = convertArguments(gresult, newType, gresult.type(), null);
         return result;
     }
 
-    public static
-    MethodHandle dropArguments(Access token, MethodHandle target,
+    static
+    MethodHandle dropArguments(MethodHandle target,
                                MethodType newType, int argnum) {
-        Access.check(token);
         int drops = newType.parameterCount() - target.type().parameterCount();
-        MethodHandle res = AdapterMethodHandle.makeDropArguments(token, newType, target, argnum, drops);
+        MethodHandle res = AdapterMethodHandle.makeDropArguments(newType, target, argnum, drops);
         if (res != null)
             return res;
         throw new UnsupportedOperationException("NYI");
@@ -918,36 +797,34 @@ public abstract class MethodHandleImpl {
         private final MethodHandle test, target, fallback;
         private GuardWithTest(MethodHandle invoker,
                               MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            super(Access.TOKEN, invoker);
+            super(invoker);
             this.test = test;
             this.target = target;
             this.fallback = fallback;
         }
-        static MethodHandle make(Access token,
-                                 MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            Access.check(token);
+        static MethodHandle make(MethodHandle test, MethodHandle target, MethodHandle fallback) {
             MethodType type = target.type();
             int nargs = type.parameterCount();
             if (nargs < INVOKES.length) {
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType gtype = type.generic();
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = convertArguments(token, test, gtype.changeReturnType(boolean.class), test.type(), null);
-                MethodHandle gtarget = convertArguments(token, target, gtype, type, null);
-                MethodHandle gfallback = convertArguments(token, fallback, gtype, type, null);
+                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), null);
+                MethodHandle gtarget = convertArguments(target, gtype, type, null);
+                MethodHandle gfallback = convertArguments(fallback, gtype, type, null);
                 if (gtest == null || gtarget == null || gfallback == null)  return null;
                 MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
-                return convertArguments(token, gguard, type, gtype, null);
+                return convertArguments(gguard, type, gtype, null);
             } else {
                 MethodHandle invoke = VARARGS_INVOKE;
                 MethodType gtype = MethodType.genericMethodType(1);
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = spreadArguments(token, test, gtype.changeReturnType(boolean.class), 0);
-                MethodHandle gtarget = spreadArguments(token, target, gtype, 0);
-                MethodHandle gfallback = spreadArguments(token, fallback, gtype, 0);
+                MethodHandle gtest = spreadArguments(test, gtype.changeReturnType(boolean.class), 0);
+                MethodHandle gtarget = spreadArguments(target, gtype, 0);
+                MethodHandle gfallback = spreadArguments(fallback, gtype, 0);
                 MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
                 if (gtest == null || gtarget == null || gfallback == null)  return null;
-                return collectArguments(token, gguard, type, 0, null);
+                return collectArguments(gguard, type, 0, null);
             }
         }
         @Override
@@ -1034,24 +911,23 @@ public abstract class MethodHandleImpl {
         }
     }
 
-    public static
-    MethodHandle makeGuardWithTest(Access token,
-                                   MethodHandle test,
+    static
+    MethodHandle makeGuardWithTest(MethodHandle test,
                                    MethodHandle target,
                                    MethodHandle fallback) {
-        return GuardWithTest.make(token, test, target, fallback);
+        return GuardWithTest.make(test, target, fallback);
     }
 
     private static class GuardWithCatch extends BoundMethodHandle {
         private final MethodHandle target;
         private final Class<? extends Throwable> exType;
         private final MethodHandle catcher;
-        public GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
+        GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
             this(INVOKES[target.type().parameterCount()], target, exType, catcher);
         }
-        public GuardWithCatch(MethodHandle invoker,
-                              MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            super(Access.TOKEN, invoker);
+       GuardWithCatch(MethodHandle invoker,
+                      MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
+            super(invoker);
             this.target = target;
             this.exType = exType;
             this.catcher = catcher;
@@ -1171,42 +1047,40 @@ public abstract class MethodHandleImpl {
     }
 
 
-    public static
-    MethodHandle makeGuardWithCatch(Access token,
-                                    MethodHandle target,
+    static
+    MethodHandle makeGuardWithCatch(MethodHandle target,
                                     Class<? extends Throwable> exType,
                                     MethodHandle catcher) {
-        Access.check(token);
         MethodType type = target.type();
         MethodType ctype = catcher.type();
         int nargs = type.parameterCount();
         if (nargs < GuardWithCatch.INVOKES.length) {
             MethodType gtype = type.generic();
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = convertArguments(token, target, gtype, type, null);
-            MethodHandle gcatcher = convertArguments(token, catcher, gcatchType, ctype, null);
+            MethodHandle gtarget = convertArguments(target, gtype, type, null);
+            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, null);
             MethodHandle gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return convertArguments(token, gguard, type, gtype, null);
+            return convertArguments(gguard, type, gtype, null);
         } else {
             MethodType gtype = MethodType.genericMethodType(0, true);
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = spreadArguments(token, target, gtype, 0);
-            MethodHandle gcatcher = spreadArguments(token, catcher, gcatchType, 1);
+            MethodHandle gtarget = spreadArguments(target, gtype, 0);
+            MethodHandle gcatcher = spreadArguments(catcher, gcatchType, 1);
             MethodHandle gguard = new GuardWithCatch(GuardWithCatch.VARARGS_INVOKE, gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return collectArguments(token, gguard, type, 0, null);
+            return collectArguments(gguard, type, 0, null);
         }
     }
 
-    public static
-    MethodHandle throwException(Access token, MethodType type) {
-        Access.check(token);
-        return AdapterMethodHandle.makeRetypeRaw(token, type, THROW_EXCEPTION);
+    static
+    MethodHandle throwException(MethodType type) {
+        return AdapterMethodHandle.makeRetypeRaw(type, throwException());
     }
 
-    static final MethodHandle THROW_EXCEPTION;
-    static {
+    static MethodHandle THROW_EXCEPTION;
+    static MethodHandle throwException() {
+        if (THROW_EXCEPTION != null)  return THROW_EXCEPTION;
         try {
             THROW_EXCEPTION
             = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
@@ -1214,71 +1088,19 @@ public abstract class MethodHandleImpl {
         } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
+        return THROW_EXCEPTION;
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
-    public static String getNameString(Access token, MethodHandle target, Object type) {
-        Access.check(token);
-        if (!(type instanceof MethodType)) {
-            if (type == null)
-                type = target.type();
-            else if (type instanceof MethodHandle)
-                type = ((MethodHandle)type).type();
-        }
-        MemberName name = null;
-        if (target != null)
-            name = MethodHandleNatives.getMethodName(target);
-        if (name == null)
-            return "invoke" + type;
-        return name.getName() + type;
-    }
-
-    public static String getNameString(Access token, MethodHandle target) {
-        return getNameString(token, target, null);
-    }
-
-    static String addTypeString(Object obj, MethodHandle target) {
-        String str = String.valueOf(obj);
-        if (target == null)  return str;
-        int paren = str.indexOf('(');
-        if (paren >= 0) str = str.substring(0, paren);
-        return str + target.type();
-    }
-
-    static void checkSpreadArgument(Object av, int n) {
-        if (av == null ? n != 0 : ((Object[])av).length != n)
-            throw newIllegalArgumentException("Array is not of length "+n);
-    }
-
-    static void raiseException(int code, Object actual, Object required) {
-        String message;
-        // disregard the identity of the actual object, if it is not a class:
-        if (!(actual instanceof Class) && !(actual instanceof MethodType))
-            actual = actual.getClass();
-        if (actual != null)
-            message = "required "+required+" but encountered "+actual;
-        else
-            message = "required "+required;
-        switch (code) {
-        case 192: // checkcast
-            throw new ClassCastException(message);
-        default:
-            throw new InternalError("unexpected code "+code+": "+message);
-        }
-    }
-
     // Linkage support:
-    public static void registerBootstrap(Access token, Class<?> callerClass, MethodHandle bootstrapMethod) {
-        Access.check(token);
+    static void registerBootstrap(Class<?> callerClass, MethodHandle bootstrapMethod) {
         MethodHandleNatives.registerBootstrap(callerClass, bootstrapMethod);
     }
-    public static MethodHandle getBootstrap(Access token, Class<?> callerClass) {
-        Access.check(token);
+    static MethodHandle getBootstrap(Class<?> callerClass) {
         return MethodHandleNatives.getBootstrap(callerClass);
     }
 
-    public static MethodHandle asVarargsCollector(Access token, MethodHandle target, Class<?> arrayType) {
-        Access.check(token);
-        return AdapterMethodHandle.makeVarargsCollector(token, target, arrayType);
+    static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
+        return AdapterMethodHandle.makeVarargsCollector(target, arrayType);
     }
 }

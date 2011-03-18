@@ -27,8 +27,6 @@ package java.dyn;
 
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * Lazily associate a computed value with (potentially) every type.

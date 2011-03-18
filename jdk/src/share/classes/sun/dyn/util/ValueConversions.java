@@ -25,20 +25,17 @@
 
 package sun.dyn.util;
 
-import java.dyn.*;
+import java.dyn.MethodHandle;
+import java.dyn.MethodHandles;
 import java.dyn.MethodHandles.Lookup;
+import java.dyn.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
-import sun.dyn.Access;
-import sun.dyn.AdapterMethodHandle;
-import sun.dyn.MethodHandleImpl;
-import static sun.dyn.MemberName.uncaughtException;
 
 public class ValueConversions {
-    private static final Access IMPL_TOKEN = Access.getToken();
-    private static final Lookup IMPL_LOOKUP = MethodHandleImpl.getLookup(IMPL_TOKEN);
+    private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
     private static EnumMap<Wrapper, MethodHandle>[] newWrapperCaches(int n) {
         @SuppressWarnings("unchecked")
@@ -157,7 +154,7 @@ public class ValueConversions {
                 mh = null;
             }
         } else {
-            mh = retype(type, unbox(wrap, !exact, raw));
+            mh = unbox(wrap, !exact, raw).asType(type);
         }
         if (mh != null) {
             cache.put(wrap, mh);
@@ -293,7 +290,7 @@ public class ValueConversions {
                 mh = null;
             }
         } else {
-            mh = retype(type.erase(), box(wrap, !exact, raw));
+            mh = box(wrap, !exact, raw).asType(type.erase());
         }
         if (mh != null) {
             cache.put(wrap, mh);
@@ -412,7 +409,7 @@ public class ValueConversions {
                 mh = null;
             }
         } else {
-            mh = retype(IDENTITY.type(), rebox(wrap, !exact));
+            mh = rebox(wrap, !exact).asType(IDENTITY.type());
         }
         if (mh != null) {
             cache.put(wrap, mh);
@@ -504,8 +501,8 @@ public class ValueConversions {
 
         // use the raw method
         Wrapper rawWrap = wrap.rawPrimitive();
-        if (rawWrap != wrap) {
-            mh = retype(type, zeroConstantFunction(rawWrap));
+        if (mh == null && rawWrap != wrap) {
+            mh = MethodHandles.explicitCastArguments(zeroConstantFunction(rawWrap), type);
         }
         if (mh != null) {
             cache.put(wrap, mh);
@@ -552,12 +549,36 @@ public class ValueConversions {
         return x;
     }
 
+    static byte identity(byte x) {
+        return x;
+    }
+
+    static short identity(short x) {
+        return x;
+    }
+
+    static boolean identity(boolean x) {
+        return x;
+    }
+
+    static char identity(char x) {
+        return x;
+    }
+
     /**
      * Identity function on longs.
      * @param x an arbitrary long value
      * @return the same value x
      */
     static long identity(long x) {
+        return x;
+    }
+
+    static float identity(float x) {
+        return x;
+    }
+
+    static double identity(double x) {
         return x;
     }
 
@@ -590,7 +611,9 @@ public class ValueConversions {
             IGNORE = IMPL_LOOKUP.findStatic(ValueConversions.class, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(ValueConversions.class, "empty", ignoreType.dropParameterTypes(0, 1));
         } catch (Exception ex) {
-            throw uncaughtException(ex);
+            Error err = new InternalError("uncaught exception");
+            err.initCause(ex);
+            throw err;
         }
     }
 
@@ -622,7 +645,8 @@ public class ValueConversions {
             mh = MethodHandles.insertArguments(CAST_REFERENCE, 0, type);
         if (exact) {
             MethodType xmt = MethodType.methodType(type, Object.class);
-            mh = AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, xmt, mh);
+            mh = MethodHandles.explicitCastArguments(mh, xmt);
+            //mh = AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, xmt, mh);
         }
         if (cache != null)
             cache.put(wrap, mh);
@@ -634,15 +658,11 @@ public class ValueConversions {
     }
 
     public static MethodHandle identity(Class<?> type) {
-        if (type == Object.class)
-            return IDENTITY;
-        else if (!type.isPrimitive())
-            return retype(MethodType.methodType(type, type), IDENTITY);
-        else
-            return identity(Wrapper.forPrimitiveType(type));
+        // This stuff has been moved into MethodHandles:
+        return MethodHandles.identity(type);
     }
 
-    static MethodHandle identity(Wrapper wrap) {
+    public static MethodHandle identity(Wrapper wrap) {
         EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[1];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
@@ -665,21 +685,11 @@ public class ValueConversions {
             return mh;
         }
 
-        // use a raw conversion
-        if (wrap.isSingleWord() && wrap != Wrapper.INT) {
-            mh = retype(type, identity(Wrapper.INT));
-        } else if (wrap.isDoubleWord() && wrap != Wrapper.LONG) {
-            mh = retype(type, identity(Wrapper.LONG));
-        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
         }
         throw new IllegalArgumentException("cannot find identity for " + wrap);
-    }
-
-    private static MethodHandle retype(MethodType type, MethodHandle mh) {
-        return AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, type, mh);
     }
 
     private static final Object[] NO_ARGS_ARRAY = {};

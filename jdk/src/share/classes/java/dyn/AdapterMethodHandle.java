@@ -23,20 +23,19 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
 import sun.dyn.util.VerifyType;
 import sun.dyn.util.Wrapper;
-import java.dyn.*;
 import java.util.Arrays;
-import static sun.dyn.MethodHandleNatives.Constants.*;
-import static sun.dyn.MemberName.newIllegalArgumentException;
+import static java.dyn.MethodHandleNatives.Constants.*;
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * This method handle performs simple conversion or checking of a single argument.
  * @author jrose
  */
-public class AdapterMethodHandle extends BoundMethodHandle {
+class AdapterMethodHandle extends BoundMethodHandle {
 
     //MethodHandle vmtarget;   // next AMH or BMH in chain or final DMH
     //Object       argument;   // parameter to the conversion if needed
@@ -48,17 +47,13 @@ public class AdapterMethodHandle extends BoundMethodHandle {
                 long conv, Object convArg) {
         super(newType, convArg, newType.parameterSlotDepth(1+convArgPos(conv)));
         this.conversion = convCode(conv);
-        if (MethodHandleNatives.JVM_SUPPORT) {
-            // JVM might update VM-specific bits of conversion (ignore)
-            MethodHandleNatives.init(this, target, convArgPos(conv));
-        }
+        // JVM might update VM-specific bits of conversion (ignore)
+        MethodHandleNatives.init(this, target, convArgPos(conv));
     }
     private AdapterMethodHandle(MethodHandle target, MethodType newType,
                 long conv) {
         this(target, newType, conv, null);
     }
-
-    private static final Access IMPL_TOKEN = Access.getToken();
 
     // TO DO:  When adapting another MH with a null conversion, clone
     // the target and change its type, instead of adding another layer.
@@ -66,7 +61,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Can a JVM-level adapter directly implement the proposed
      *  argument conversions, as if by MethodHandles.convertArguments?
      */
-    public static boolean canPairwiseConvert(MethodType newType, MethodType oldType) {
+    static boolean canPairwiseConvert(MethodType newType, MethodType oldType) {
         // same number of args, of course
         int len = newType.parameterCount();
         if (len != oldType.parameterCount())
@@ -92,7 +87,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Can a JVM-level adapter directly implement the proposed
      *  argument conversion, as if by MethodHandles.convertArguments?
      */
-    public static boolean canConvertArgument(Class<?> src, Class<?> dst) {
+    static boolean canConvertArgument(Class<?> src, Class<?> dst) {
         // ? Retool this logic to use RETYPE_ONLY, CHECK_CAST, etc., as opcodes,
         // so we don't need to repeat so much decision making.
         if (VerifyType.isNullConversion(src, dst)) {
@@ -118,16 +113,13 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      * the JVM supports ricochet adapters).
      * The argument conversions allowed are casting, unboxing,
      * integral widening or narrowing, and floating point widening or narrowing.
-     * @param token access check
      * @param newType required call type
      * @param target original method handle
      * @return an adapter to the original handle with the desired new type,
      *          or the original target if the types are already identical
      *          or null if the adaptation cannot be made
      */
-    public static MethodHandle makePairwiseConvert(Access token,
-                MethodType newType, MethodHandle target) {
-        Access.check(token);
+    static MethodHandle makePairwiseConvert(MethodType newType, MethodHandle target) {
         MethodType oldType = target.type();
         if (newType == oldType)  return target;
 
@@ -170,9 +162,9 @@ public class AdapterMethodHandle extends BoundMethodHandle {
             // It parallels canConvertArgument() above.
             if (src.isPrimitive()) {
                 if (dst.isPrimitive()) {
-                    adapter = makePrimCast(token, midType, adapter, i, dst);
+                    adapter = makePrimCast(midType, adapter, i, dst);
                 } else {
-                    adapter = makeBoxArgument(token, midType, adapter, i, dst);
+                    adapter = makeBoxArgument(midType, adapter, i, dst);
                 }
             } else {
                 if (dst.isPrimitive()) {
@@ -182,13 +174,13 @@ public class AdapterMethodHandle extends BoundMethodHandle {
                     // conversions supported by reflect.Method.invoke.
                     // Those conversions require a big nest of if/then/else logic,
                     // which we prefer to make a user responsibility.
-                    adapter = makeUnboxArgument(token, midType, adapter, i, dst);
+                    adapter = makeUnboxArgument(midType, adapter, i, dst);
                 } else {
                     // Simple reference conversion.
                     // Note:  Do not check for a class hierarchy relation
                     // between src and dst.  In all cases a 'null' argument
                     // will pass the cast conversion.
-                    adapter = makeCheckCast(token, midType, adapter, i, dst);
+                    adapter = makeCheckCast(midType, adapter, i, dst);
                 }
             }
             assert(adapter != null);
@@ -196,7 +188,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         }
         if (adapter.type() != newType) {
             // Only trivial conversions remain.
-            adapter = makeRetypeOnly(IMPL_TOKEN, newType, adapter);
+            adapter = makeRetypeOnly(newType, adapter);
             assert(adapter != null);
             // Actually, that's because there were no non-trivial ones:
             assert(lastConv == -1);
@@ -208,7 +200,6 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /**
      * Create a JVM-level adapter method handle to permute the arguments
      * of the given method.
-     * @param token access check
      * @param newType required call type
      * @param target original method handle
      * @param argumentMap for each target argument, position of its source in newType
@@ -218,8 +209,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      * @throws IllegalArgumentException if the adaptation cannot be made
      *          directly by a JVM-level adapter, without help from Java code
      */
-    public static MethodHandle makePermutation(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makePermutation(MethodType newType, MethodHandle target,
                 int[] argumentMap) {
         MethodType oldType = target.type();
         boolean nullPermutation = true;
@@ -234,7 +224,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         if (argumentMap.length != oldType.parameterCount())
             throw newIllegalArgumentException("bad permutation: "+Arrays.toString(argumentMap));
         if (nullPermutation) {
-            MethodHandle res = makePairwiseConvert(token, newType, target);
+            MethodHandle res = makePairwiseConvert(newType, target);
             // well, that was easy
             if (res == null)
                 throw newIllegalArgumentException("cannot convert pairwise: "+newType);
@@ -435,7 +425,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Can a retyping adapter (alone) validly convert the target to newType? */
-    public static boolean canRetypeOnly(MethodType newType, MethodType targetType) {
+    static boolean canRetypeOnly(MethodType newType, MethodType targetType) {
         return canRetype(newType, targetType, false);
     }
     /** Can a retyping adapter (alone) convert the target to newType?
@@ -444,7 +434,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  reference conversions on return.  This last feature requires that the
      *  caller be trusted, and perform explicit cast conversions on return values.
      */
-    public static boolean canRetypeRaw(MethodType newType, MethodType targetType) {
+    static boolean canRetypeRaw(MethodType newType, MethodType targetType) {
         return canRetype(newType, targetType, true);
     }
     static boolean canRetype(MethodType newType, MethodType targetType, boolean raw) {
@@ -459,17 +449,13 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  Allows unchecked argument conversions pairwise, if they are safe.
      *  Returns null if not possible.
      */
-    public static MethodHandle makeRetypeOnly(Access token,
-                MethodType newType, MethodHandle target) {
-        return makeRetype(token, newType, target, false);
+    static MethodHandle makeRetypeOnly(MethodType newType, MethodHandle target) {
+        return makeRetype(newType, target, false);
     }
-    public static MethodHandle makeRetypeRaw(Access token,
-                MethodType newType, MethodHandle target) {
-        return makeRetype(token, newType, target, true);
+    static MethodHandle makeRetypeRaw(MethodType newType, MethodHandle target) {
+        return makeRetype(newType, target, true);
     }
-    static MethodHandle makeRetype(Access token,
-                MethodType newType, MethodHandle target, boolean raw) {
-        Access.check(token);
+    static MethodHandle makeRetype(MethodType newType, MethodHandle target, boolean raw) {
         MethodType oldType = target.type();
         if (oldType == newType)  return target;
         if (!canRetype(newType, oldType, raw))
@@ -478,9 +464,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return new AdapterMethodHandle(target, newType, makeConv(raw ? OP_RETYPE_RAW : OP_RETYPE_ONLY));
     }
 
-    static MethodHandle makeVarargsCollector(Access token,
-                MethodHandle target, Class<?> arrayType) {
-        Access.check(token);
+    static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
         return new AsVarargsCollector(target, arrayType);
     }
 
@@ -526,6 +510,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
             return collector.asType(newType);
         }
 
+        @Override
         public MethodHandle asVarargsCollector(Class<?> arrayType) {
             MethodType type = this.type();
             if (type.parameterType(type.parameterCount()-1) == arrayType)
@@ -537,7 +522,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Can a checkcast adapter validly convert the target to newType?
      *  The JVM supports all kind of reference casts, even silly ones.
      */
-    public static boolean canCheckCast(MethodType newType, MethodType targetType,
+    static boolean canCheckCast(MethodType newType, MethodType targetType,
                 int arg, Class<?> castType) {
         if (!convOpSupported(OP_CHECK_CAST))  return false;
         Class<?> src = newType.parameterType(arg);
@@ -549,7 +534,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return (diff == arg+1);  // arg is sole non-trivial diff
     }
     /** Can an primitive conversion adapter validly convert src to dst? */
-    public static boolean canCheckCast(Class<?> src, Class<?> dst) {
+    static boolean canCheckCast(Class<?> src, Class<?> dst) {
         return (!src.isPrimitive() && !dst.isPrimitive());
     }
 
@@ -558,10 +543,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  with a null conversion to the corresponding target parameter.
      *  Return null if this cannot be done.
      */
-    public static MethodHandle makeCheckCast(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeCheckCast(MethodType newType, MethodHandle target,
                 int arg, Class<?> castType) {
-        Access.check(token);
         if (!canCheckCast(newType, target.type(), arg, castType))
             return null;
         long conv = makeConv(OP_CHECK_CAST, arg, T_OBJECT, T_OBJECT);
@@ -572,7 +555,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  The JVM currently supports all conversions except those between
      *  floating and integral types.
      */
-    public static boolean canPrimCast(MethodType newType, MethodType targetType,
+    static boolean canPrimCast(MethodType newType, MethodType targetType,
                 int arg, Class<?> convType) {
         if (!convOpSupported(OP_PRIM_TO_PRIM))  return false;
         Class<?> src = newType.parameterType(arg);
@@ -584,7 +567,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return (diff == arg+1);  // arg is sole non-trivial diff
     }
     /** Can an primitive conversion adapter validly convert src to dst? */
-    public static boolean canPrimCast(Class<?> src, Class<?> dst) {
+    static boolean canPrimCast(Class<?> src, Class<?> dst) {
         if (src == dst || !src.isPrimitive() || !dst.isPrimitive()) {
             return false;
         } else if (Wrapper.forPrimitiveType(dst).isFloating()) {
@@ -604,10 +587,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  with a null conversion to the corresponding target parameter.
      *  Return null if this cannot be done.
      */
-    public static MethodHandle makePrimCast(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makePrimCast(MethodType newType, MethodHandle target,
                 int arg, Class<?> convType) {
-        Access.check(token);
         MethodType oldType = target.type();
         if (!canPrimCast(newType, oldType, arg, convType))
             return null;
@@ -620,7 +601,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  The JVM currently supports all kinds of casting and unboxing.
      *  The convType is the unboxed type; it can be either a primitive or wrapper.
      */
-    public static boolean canUnboxArgument(MethodType newType, MethodType targetType,
+    static boolean canUnboxArgument(MethodType newType, MethodType targetType,
                 int arg, Class<?> convType) {
         if (!convOpSupported(OP_REF_TO_PRIM))  return false;
         Class<?> src = newType.parameterType(arg);
@@ -635,15 +616,14 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         return (diff == arg+1);  // arg is sole non-trivial diff
     }
     /** Can an primitive unboxing adapter validly convert src to dst? */
-    public static boolean canUnboxArgument(Class<?> src, Class<?> dst) {
+    static boolean canUnboxArgument(Class<?> src, Class<?> dst) {
         return (!src.isPrimitive() && Wrapper.asPrimitiveType(dst).isPrimitive());
     }
 
     /** Factory method:  Unbox the given argument.
      *  Return null if this cannot be done.
      */
-    public static MethodHandle makeUnboxArgument(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeUnboxArgument(MethodType newType, MethodHandle target,
                 int arg, Class<?> convType) {
         MethodType oldType = target.type();
         Class<?> src = newType.parameterType(arg);
@@ -659,11 +639,11 @@ public class AdapterMethodHandle extends BoundMethodHandle {
         MethodHandle adapter = new AdapterMethodHandle(target, castDone, conv, boxType);
         if (castDone == newType)
             return adapter;
-        return makeCheckCast(token, newType, adapter, arg, boxType);
+        return makeCheckCast(newType, adapter, arg, boxType);
     }
 
     /** Can an primitive boxing adapter validly convert src to dst? */
-    public static boolean canBoxArgument(Class<?> src, Class<?> dst) {
+    static boolean canBoxArgument(Class<?> src, Class<?> dst) {
         if (!convOpSupported(OP_PRIM_TO_REF))  return false;
         throw new UnsupportedOperationException("NYI");
     }
@@ -671,15 +651,14 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Factory method:  Unbox the given argument.
      *  Return null if this cannot be done.
      */
-    public static MethodHandle makeBoxArgument(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeBoxArgument(MethodType newType, MethodHandle target,
                 int arg, Class<?> convType) {
         // this is difficult to do in the JVM because it must GC
         return null;
     }
 
     /** Can an adapter simply drop arguments to convert the target to newType? */
-    public static boolean canDropArguments(MethodType newType, MethodType targetType,
+    static boolean canDropArguments(MethodType newType, MethodType targetType,
                 int dropArgPos, int dropArgCount) {
         if (dropArgCount == 0)
             return canRetypeOnly(newType, targetType);
@@ -706,12 +685,10 @@ public class AdapterMethodHandle extends BoundMethodHandle {
      *  Allow unchecked retyping of remaining arguments, pairwise.
      *  Return null if this is not possible.
      */
-    public static MethodHandle makeDropArguments(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeDropArguments(MethodType newType, MethodHandle target,
                 int dropArgPos, int dropArgCount) {
-        Access.check(token);
         if (dropArgCount == 0)
-            return makeRetypeOnly(IMPL_TOKEN, newType, target);
+            return makeRetypeOnly(newType, target);
         if (!canDropArguments(newType, target.type(), dropArgPos, dropArgCount))
             return null;
         // in  arglist: [0: ...keep1 | dpos: drop... | dpos+dcount: keep2... ]
@@ -727,7 +704,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Can an adapter duplicate an argument to convert the target to newType? */
-    public static boolean canDupArguments(MethodType newType, MethodType targetType,
+    static boolean canDupArguments(MethodType newType, MethodType targetType,
                 int dupArgPos, int dupArgCount) {
         if (!convOpSupported(OP_DUP_ARGS))  return false;
         if (diffReturnTypes(newType, targetType, false) != 0)
@@ -749,10 +726,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Factory method:  Duplicate the selected argument.
      *  Return null if this is not possible.
      */
-    public static MethodHandle makeDupArguments(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeDupArguments(MethodType newType, MethodHandle target,
                 int dupArgPos, int dupArgCount) {
-        Access.check(token);
         if (!canDupArguments(newType, target.type(), dupArgPos, dupArgCount))
             return null;
         if (dupArgCount == 0)
@@ -769,7 +744,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Can an adapter swap two arguments to convert the target to newType? */
-    public static boolean canSwapArguments(MethodType newType, MethodType targetType,
+    static boolean canSwapArguments(MethodType newType, MethodType targetType,
                 int swapArg1, int swapArg2) {
         if (!convOpSupported(OP_SWAP_ARGS))  return false;
         if (diffReturnTypes(newType, targetType, false) != 0)
@@ -796,10 +771,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Factory method:  Swap the selected arguments.
      *  Return null if this is not possible.
      */
-    public static MethodHandle makeSwapArguments(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeSwapArguments(MethodType newType, MethodHandle target,
                 int swapArg1, int swapArg2) {
-        Access.check(token);
         if (swapArg1 == swapArg2)
             return target;
         if (swapArg1 > swapArg2) { int t = swapArg1; swapArg1 = swapArg2; swapArg2 = t; }
@@ -829,7 +802,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     final static int MAX_ARG_ROTATION = 1;
 
     /** Can an adapter rotate arguments to convert the target to newType? */
-    public static boolean canRotateArguments(MethodType newType, MethodType targetType,
+    static boolean canRotateArguments(MethodType newType, MethodType targetType,
                 int firstArg, int argCount, int rotateBy) {
         if (!convOpSupported(OP_ROT_ARGS))  return false;
         if (argCount <= 2)  return false;  // must be a swap, not a rotate
@@ -861,10 +834,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     /** Factory method:  Rotate the selected argument range.
      *  Return null if this is not possible.
      */
-    public static MethodHandle makeRotateArguments(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeRotateArguments(MethodType newType, MethodHandle target,
                 int firstArg, int argCount, int rotateBy) {
-        Access.check(token);
         rotateBy = positiveRotation(argCount, rotateBy);
         if (!canRotateArguments(newType, target.type(), firstArg, argCount, rotateBy))
             return null;
@@ -904,7 +875,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Can an adapter spread an argument to convert the target to newType? */
-    public static boolean canSpreadArguments(MethodType newType, MethodType targetType,
+    static boolean canSpreadArguments(MethodType newType, MethodType targetType,
                 Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
         if (!convOpSupported(OP_SPREAD_ARGS))  return false;
         if (diffReturnTypes(newType, targetType, false) != 0)
@@ -937,10 +908,8 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
 
     /** Factory method:  Spread selected argument. */
-    public static MethodHandle makeSpreadArguments(Access token,
-                MethodType newType, MethodHandle target,
+    static MethodHandle makeSpreadArguments(MethodType newType, MethodHandle target,
                 Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
-        Access.check(token);
         MethodType targetType = target.type();
         if (!canSpreadArguments(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount))
             return null;
@@ -962,7 +931,7 @@ public class AdapterMethodHandle extends BoundMethodHandle {
 
     @Override
     public String toString() {
-        return MethodHandleImpl.getNameString(IMPL_TOKEN, nonAdapter((MethodHandle)vmtarget), this);
+        return getNameString(nonAdapter((MethodHandle)vmtarget), this);
     }
 
     private static MethodHandle nonAdapter(MethodHandle mh) {

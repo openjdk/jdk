@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,11 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
 import sun.dyn.util.VerifyType;
 import sun.dyn.util.Wrapper;
-import java.dyn.*;
-import java.util.List;
-import sun.dyn.MethodHandleNatives.Constants;
-import static sun.dyn.MethodHandleImpl.IMPL_LOOKUP;
-import static sun.dyn.MemberName.newIllegalArgumentException;
+import static java.dyn.MethodHandleStatics.*;
 
 /**
  * The flavor of method handle which emulates an invoke instruction
@@ -39,37 +35,29 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * when the handle is created, not when it is invoked.
  * @author jrose
  */
-public class BoundMethodHandle extends MethodHandle {
+class BoundMethodHandle extends MethodHandle {
     //MethodHandle vmtarget;           // next BMH or final DMH or methodOop
     private final Object argument;     // argument to insert
     private final int    vmargslot;    // position at which it is inserted
-
-    private static final Access IMPL_TOKEN = Access.getToken();
-    private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory(IMPL_TOKEN);
 
     // Constructors in this class *must* be package scoped or private.
 
     /** Bind a direct MH to its receiver (or first ref. argument).
      *  The JVM will pre-dispatch the MH if it is not already static.
      */
-    BoundMethodHandle(DirectMethodHandle mh, Object argument) {
-        super(Access.TOKEN, mh.type().dropParameterTypes(0, 1));
+    /*non-public*/ BoundMethodHandle(DirectMethodHandle mh, Object argument) {
+        super(mh.type().dropParameterTypes(0, 1));
         // check the type now, once for all:
         this.argument = checkReferenceArgument(argument, mh, 0);
         this.vmargslot = this.type().parameterSlotCount();
-        if (MethodHandleNatives.JVM_SUPPORT) {
-            this.vmtarget = null;  // maybe updated by JVM
-            MethodHandleNatives.init(this, mh, 0);
-        } else {
-            this.vmtarget = mh;
-        }
+        initTarget(mh, 0);
     }
 
     /** Insert an argument into an arbitrary method handle.
      *  If argnum is zero, inserts the first argument, etc.
      *  The argument type must be a reference.
      */
-    BoundMethodHandle(MethodHandle mh, Object argument, int argnum) {
+    /*non-public*/ BoundMethodHandle(MethodHandle mh, Object argument, int argnum) {
         this(mh.type().dropParameterTypes(argnum, argnum+1),
              mh, argument, argnum);
     }
@@ -77,8 +65,8 @@ public class BoundMethodHandle extends MethodHandle {
     /** Insert an argument into an arbitrary method handle.
      *  If argnum is zero, inserts the first argument, etc.
      */
-    BoundMethodHandle(MethodType type, MethodHandle mh, Object argument, int argnum) {
-        super(Access.TOKEN, type);
+    /*non-public*/ BoundMethodHandle(MethodType type, MethodHandle mh, Object argument, int argnum) {
+        super(type);
         if (mh.type().parameterType(argnum).isPrimitive())
             this.argument = bindPrimitiveArgument(argument, mh, argnum);
         else {
@@ -89,18 +77,14 @@ public class BoundMethodHandle extends MethodHandle {
     }
 
     private void initTarget(MethodHandle mh, int argnum) {
-        if (MethodHandleNatives.JVM_SUPPORT) {
-            this.vmtarget = null; // maybe updated by JVM
-            MethodHandleNatives.init(this, mh, argnum);
-        } else {
-            this.vmtarget = mh;
-        }
+        //this.vmtarget = mh;  // maybe updated by JVM
+        MethodHandleNatives.init(this, mh, argnum);
     }
 
     /** For the AdapterMethodHandle subclass.
      */
-    BoundMethodHandle(MethodType type, Object argument, int vmargslot) {
-        super(Access.TOKEN, type);
+    /*non-public*/ BoundMethodHandle(MethodType type, Object argument, int vmargslot) {
+        super(type);
         this.argument = argument;
         this.vmargslot = vmargslot;
         assert(this instanceof AdapterMethodHandle);
@@ -112,8 +96,8 @@ public class BoundMethodHandle extends MethodHandle {
      *  same as {@code entryPoint},  except that the first argument
      *  type will be dropped.
      */
-    protected BoundMethodHandle(Access token, MethodHandle entryPoint) {
-        super(token, entryPoint.type().dropParameterTypes(0, 1));
+    /*non-public*/ BoundMethodHandle(MethodHandle entryPoint) {
+        super(entryPoint.type().dropParameterTypes(0, 1));
         this.argument = this; // kludge; get rid of
         this.vmargslot = this.type().parameterSlotDepth(0);
         initTarget(entryPoint, 0);
@@ -172,7 +156,7 @@ public class BoundMethodHandle extends MethodHandle {
 
     @Override
     public String toString() {
-        return MethodHandleImpl.addTypeString(baseName(), this);
+        return addTypeString(baseName(), this);
     }
 
     /** Component of toString() before the type string. */

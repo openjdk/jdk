@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
  * questions.
  */
 
-package sun.dyn;
+package java.dyn;
 
-import java.dyn.*;
 import java.lang.reflect.*;
-import static sun.dyn.MemberName.newIllegalArgumentException;
+import static java.dyn.MethodHandleStatics.*;
+import static java.dyn.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * These adapters apply arbitrary conversions to arguments
@@ -123,7 +123,7 @@ class FilterGeneric {
         MethodType entryType = entryType(kind, pos, filterType, targetType);
         if (entryType.generic() != entryType)
             throw newIllegalArgumentException("must be generic: "+entryType);
-        MethodTypeImpl form = MethodTypeImpl.of(entryType);
+        MethodTypeForm form = entryType.form();
         FilterGeneric filterGen = form.filterGeneric;
         if (filterGen == null)
             form.filterGeneric = filterGen = new FilterGeneric(entryType);
@@ -186,7 +186,7 @@ class FilterGeneric {
             // see if it has the required invoke method
             MethodHandle entryPoint = null;
             try {
-                entryPoint = MethodHandleImpl.IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
+                entryPoint = IMPL_LOOKUP.findSpecial(acls, iname, entryType, acls);
             } catch (ReflectiveOperationException ex) {
             }
             if (entryPoint == null)  continue;
@@ -231,7 +231,7 @@ class FilterGeneric {
 
         @Override
         public String toString() {
-            return MethodHandleImpl.addTypeString(target, this);
+            return addTypeString(target, this);
         }
 
         protected boolean isPrototype() { return target == null; }
@@ -246,7 +246,7 @@ class FilterGeneric {
 
         protected Adapter(MethodHandle entryPoint,
                           MethodHandle filter, MethodHandle target) {
-            super(Access.TOKEN, entryPoint);
+            super(entryPoint);
             this.filter = filter;
             this.target = target;
         }
@@ -256,7 +256,7 @@ class FilterGeneric {
                 MethodHandle filter, MethodHandle target);
         // { return new ThisType(entryPoint, filter, target); }
 
-        static private final String CLASS_PREFIX; // "sun.dyn.FilterGeneric$"
+        static private final String CLASS_PREFIX; // "java.dyn.FilterGeneric$"
         static {
             String aname = Adapter.class.getName();
             String sname = Adapter.class.getSimpleName();
