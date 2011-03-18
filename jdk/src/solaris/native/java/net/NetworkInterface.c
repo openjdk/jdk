@@ -45,7 +45,6 @@
 #ifdef __linux__
 #include <sys/ioctl.h>
 #include <bits/ioctls.h>
-#include <linux/sockios.h>
 #include <sys/utsname.h>
 #include <stdio.h>
 #endif
@@ -1100,7 +1099,7 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
 #ifdef AF_INET6
 static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     FILE *f;
-    char addr6[40], devname[20];
+    char addr6[40], devname[21];
     char addr6p[8][5];
     int plen, scope, dad_status, if_idx;
     uint8_t ipv6addr[16];

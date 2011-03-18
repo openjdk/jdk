@@ -322,57 +322,57 @@ public class zip {
 
     void create(OutputStream out) throws IOException
     {
-        ZipOutputStream zos = new ZipOutputStream(out, cs);
-        if (flag0) {
-            zos.setMethod(ZipOutputStream.STORED);
+        try (ZipOutputStream zos = new ZipOutputStream(out, cs)) {
+            if (flag0) {
+                zos.setMethod(ZipOutputStream.STORED);
+            }
+            for (File file: entries) {
+                addFile(zos, file);
+            }
         }
-        for (File file: entries) {
-            addFile(zos, file);
-        }
-        zos.close();
     }
 
     boolean update(InputStream in, OutputStream out) throws IOException
     {
-        ZipInputStream zis = new ZipInputStream(in, cs);
-        ZipOutputStream zos = new ZipOutputStream(out, cs);
-        ZipEntry e = null;
-        byte[] buf = new byte[1024];
-        int n = 0;
-        boolean updateOk = true;
+        try (ZipInputStream zis = new ZipInputStream(in, cs);
+             ZipOutputStream zos = new ZipOutputStream(out, cs))
+        {
+            ZipEntry e = null;
+            byte[] buf = new byte[1024];
+            int n = 0;
+            boolean updateOk = true;
 
-        // put the old entries first, replace if necessary
-        while ((e = zis.getNextEntry()) != null) {
-            String name = e.getName();
-            if (!entryMap.containsKey(name)) { // copy the old stuff
-                // do our own compression
-                ZipEntry e2 = new ZipEntry(name);
-                e2.setMethod(e.getMethod());
-                e2.setTime(e.getTime());
-                e2.setComment(e.getComment());
-                e2.setExtra(e.getExtra());
-                if (e.getMethod() == ZipEntry.STORED) {
-                    e2.setSize(e.getSize());
-                    e2.setCrc(e.getCrc());
+            // put the old entries first, replace if necessary
+            while ((e = zis.getNextEntry()) != null) {
+                String name = e.getName();
+                if (!entryMap.containsKey(name)) { // copy the old stuff
+                    // do our own compression
+                    ZipEntry e2 = new ZipEntry(name);
+                    e2.setMethod(e.getMethod());
+                    e2.setTime(e.getTime());
+                    e2.setComment(e.getComment());
+                    e2.setExtra(e.getExtra());
+                    if (e.getMethod() == ZipEntry.STORED) {
+                        e2.setSize(e.getSize());
+                        e2.setCrc(e.getCrc());
+                    }
+                    zos.putNextEntry(e2);
+                    while ((n = zis.read(buf, 0, buf.length)) != -1) {
+                        zos.write(buf, 0, n);
+                    }
+                } else { // replace with the new files
+                    File f = entryMap.get(name);
+                    addFile(zos, f);
+                    entryMap.remove(name);
+                    entries.remove(f);
                 }
-                zos.putNextEntry(e2);
-                while ((n = zis.read(buf, 0, buf.length)) != -1) {
-                    zos.write(buf, 0, n);
-                }
-            } else { // replace with the new files
-                File f = entryMap.get(name);
+            }
+
+            // add the remaining new files
+            for (File f: entries) {
                 addFile(zos, f);
-                entryMap.remove(name);
-                entries.remove(f);
             }
         }
-
-        // add the remaining new files
-        for (File f: entries) {
-            addFile(zos, f);
-        }
-        zis.close();
-        zos.close();
         return updateOk;
     }
 
@@ -517,25 +517,25 @@ public class zip {
     }
 
     void extract(String fname, String files[]) throws IOException {
-        ZipFile zf = new ZipFile(fname, cs);
-        Set<ZipEntry> dirs = newDirSet();
-        Enumeration<? extends ZipEntry> zes = zf.entries();
-        while (zes.hasMoreElements()) {
-            ZipEntry e = zes.nextElement();
-            InputStream is;
-            if (files == null) {
-                dirs.add(extractFile(zf.getInputStream(e), e));
-            } else {
-                String name = e.getName();
-                for (String file : files) {
-                    if (name.startsWith(file)) {
-                        dirs.add(extractFile(zf.getInputStream(e), e));
-                        break;
+        try (ZipFile zf = new ZipFile(fname, cs)) {
+            Set<ZipEntry> dirs = newDirSet();
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            while (zes.hasMoreElements()) {
+                ZipEntry e = zes.nextElement();
+                InputStream is;
+                if (files == null) {
+                    dirs.add(extractFile(zf.getInputStream(e), e));
+                } else {
+                    String name = e.getName();
+                    for (String file : files) {
+                        if (name.startsWith(file)) {
+                            dirs.add(extractFile(zf.getInputStream(e), e));
+                            break;
+                        }
                     }
                 }
             }
         }
-        zf.close();
         updateLastModifiedTime(dirs);
     }
 
@@ -607,12 +607,12 @@ public class zip {
     }
 
     void list(String fname, String files[]) throws IOException {
-        ZipFile zf = new ZipFile(fname, cs);
-        Enumeration<? extends ZipEntry> zes = zf.entries();
-        while (zes.hasMoreElements()) {
-            printEntry(zes.nextElement(), files);
+        try (ZipFile zf = new ZipFile(fname, cs)) {
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            while (zes.hasMoreElements()) {
+                printEntry(zes.nextElement(), files);
+            }
         }
-        zf.close();
     }
 
     void printEntry(ZipEntry e, String[] files) throws IOException {

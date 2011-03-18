@@ -25,12 +25,10 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.lang.IllegalArgumentException;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -371,7 +369,8 @@ public class WaveFileWriter extends SunFileWriter {
         dos.close();
         header = baos.toByteArray();
         headerStream = new ByteArrayInputStream( header );
-        waveStream = new SequenceInputStream(headerStream,codedAudioStream);
+        waveStream = new SequenceInputStream(headerStream,
+                            new NoCloseInputStream(codedAudioStream));
 
         return (InputStream)waveStream;
     }

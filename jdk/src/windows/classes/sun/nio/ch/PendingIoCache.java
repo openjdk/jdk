@@ -110,8 +110,7 @@ class PendingIoCache {
             if (closed)
                 return;
 
-            // handle the case that where there are I/O operations that have
-            // not completed.
+            // handle case where I/O operations that have not completed.
             if (!pendingIoMap.isEmpty())
                 clearPendingIoMap();
 
@@ -132,7 +131,9 @@ class PendingIoCache {
         closePending = true;
         try {
             this.wait(50);
-        } catch (InterruptedException x) { }
+        } catch (InterruptedException x) {
+            Thread.currentThread().interrupt();
+        }
         closePending = false;
         if (pendingIoMap.isEmpty())
             return;

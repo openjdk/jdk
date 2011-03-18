@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6572331
+ * @bug 6572331 6994008
  * @summary basic test for RSA cipher key wrapping functionality
  * @author Valerie Peng
  * @library ..
@@ -38,47 +38,48 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class TestRSACipherWrap extends PKCS11Test {
 
-    private static final String RSA_ALGO = "RSA/ECB/PKCS1Padding";
+    private static final String[] RSA_ALGOS =
+        { "RSA/ECB/PKCS1Padding", "RSA" };
 
     public void main(Provider p) throws Exception {
         try {
-            Cipher.getInstance(RSA_ALGO, p);
+            Cipher.getInstance(RSA_ALGOS[0], p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
+            System.out.println(RSA_ALGOS[0] + " unsupported, skipping");
             return;
         }
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
         kpg.initialize(1024);
         KeyPair kp = kpg.generateKeyPair();
-        PublicKey publicKey = kp.getPublic();
-        PrivateKey privateKey = kp.getPrivate();
 
-        Cipher cipherPKCS11 = Cipher.getInstance(RSA_ALGO, p);
-        Cipher cipherJce = Cipher.getInstance(RSA_ALGO, "SunJCE");
+        for (String rsaAlgo: RSA_ALGOS) {
+            Cipher cipherPKCS11 = Cipher.getInstance(rsaAlgo, p);
+            Cipher cipherJce = Cipher.getInstance(rsaAlgo, "SunJCE");
 
-        String algos[] = {"AES", "RC2", "Blowfish"};
-        int keySizes[] = {128, 256};
+            String algos[] = {"AES", "RC2", "Blowfish"};
+            int keySizes[] = {128, 256};
 
-        for (int j = 0; j < algos.length; j++) {
-            String algorithm = algos[j];
-            KeyGenerator keygen =
+            for (int j = 0; j < algos.length; j++) {
+                String algorithm = algos[j];
+                KeyGenerator keygen =
                     KeyGenerator.getInstance(algorithm);
 
-            for (int i = 0; i < keySizes.length; i++) {
-                SecretKey secretKey = null;
-                System.out.print("Generate " + keySizes[i] + "-bit " +
+                for (int i = 0; i < keySizes.length; i++) {
+                    SecretKey secretKey = null;
+                    System.out.print("Generate " + keySizes[i] + "-bit " +
                         algorithm + " key using ");
-                try {
-                    keygen.init(keySizes[i]);
-                    secretKey = keygen.generateKey();
-                    System.out.println(keygen.getProvider().getName());
-                } catch (InvalidParameterException ipe) {
-                    secretKey = new SecretKeySpec(new byte[32], algorithm);
-                    System.out.println("SecretKeySpec class");
+                    try {
+                        keygen.init(keySizes[i]);
+                        secretKey = keygen.generateKey();
+                        System.out.println(keygen.getProvider().getName());
+                    } catch (InvalidParameterException ipe) {
+                        secretKey = new SecretKeySpec(new byte[32], algorithm);
+                        System.out.println("SecretKeySpec class");
+                    }
+                    test(kp, secretKey, cipherPKCS11, cipherJce);
+                    test(kp, secretKey, cipherPKCS11, cipherPKCS11);
+                    test(kp, secretKey, cipherJce, cipherPKCS11);
                 }
-                test(kp, secretKey, cipherPKCS11, cipherJce);
-                test(kp, secretKey, cipherPKCS11, cipherPKCS11);
-                test(kp, secretKey, cipherJce, cipherPKCS11);
             }
         }
     }

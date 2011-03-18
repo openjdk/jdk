@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../../..
-MODULE  = jndi-ldap
 PACKAGE = com.sun.jndi.ldap
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

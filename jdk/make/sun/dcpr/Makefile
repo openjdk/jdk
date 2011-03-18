@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = java2d
 PACKAGE = sun.dc
 LIBRARY = dcpr
 PRODUCT = sun

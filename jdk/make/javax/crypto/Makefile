@@ -108,7 +108,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = base
 PACKAGE = javax.crypto
 PRODUCT = sun
 
@@ -294,7 +293,7 @@ limited: \
 
 $(UNSIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar:		\
 	    $(UNSIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar
-	$(install-non-module-file)
+	$(install-file)
 
 $(UNSIGNED_POLICY_BUILDDIR)/limited/local_policy.jar:			\
 	    policy/limited/default_local.policy				\
@@ -415,7 +414,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/jce.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/jce.jar
 endif
-	$(install-non-module-file)
+	$(install-file)
 
 #
 # Install the appropriate policy file, depending on the type of build.
@@ -435,7 +434,7 @@ install-limited-jars: \
 	    $(POLICY_DESTDIR)/local_policy.jar
 	$(CP) $^ $(POLICY_DESTDIR)
 
-install-limited: install-limited-jars install-module-files
+install-limited: install-limited-jars
 ifndef OPENJDK
 	$(release-warning)
 endif
@@ -449,7 +448,7 @@ install-unlimited-jars: \
 	    $(POLICY_DESTDIR)/local_policy.jar
 	$(CP) $^ $(POLICY_DESTDIR)
 
-install-unlimited: install-unlimited-jars install-module-files
+install-unlimited: install-unlimited-jars
 ifndef OPENJDK
 	$(release-warning)
 endif
@@ -466,15 +465,8 @@ install-prebuilt-jars:
 	    $(PREBUILT_DIR)/jce/local_policy.jar \
 	    $(POLICY_DESTDIR)
 
-install-prebuilt: install-prebuilt-jars install-module-files
+install-prebuilt: install-prebuilt-jars
 endif
-
-install-module-files: \
-	   $(POLICY_DESTDIR)/US_export_policy.jar \
-	   $(POLICY_DESTDIR)/local_policy.jar
-
-$(POLICY_DESTDIR)/%.jar :
-	$(install-module-file)
 
 # =====================================================
 # Support routines.

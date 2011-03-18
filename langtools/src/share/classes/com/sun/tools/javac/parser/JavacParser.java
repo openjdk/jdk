@@ -2357,7 +2357,7 @@ public class JavacParser implements Parser {
 
         List<JCTypeParameter> typarams = typeParametersOpt();
 
-        JCTree extending = null;
+        JCExpression extending = null;
         if (S.token() == EXTENDS) {
             S.nextToken();
             extending = parseType();

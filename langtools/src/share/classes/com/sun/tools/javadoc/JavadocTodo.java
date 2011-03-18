@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import com.sun.tools.javac.util.*;
  *  @author Neal Gafter
  */
 public class JavadocTodo extends Todo {
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(todoKey, new Context.Factory<Todo>() {
-               public Todo make() {
-                   return new JavadocTodo(context);
+               public Todo make(Context c) {
+                   return new JavadocTodo(c);
                }
         });
     }
