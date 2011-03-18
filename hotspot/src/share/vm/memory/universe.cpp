@@ -1313,6 +1313,8 @@ void Universe::verify(bool allow_dirty, bool silent, bool option) {
   JNIHandles::verify();
   if (!silent) gclog_or_tty->print("C-heap ");
   os::check_heap();
+  if (!silent) gclog_or_tty->print("code cache ");
+  CodeCache::verify_oops();
   if (!silent) gclog_or_tty->print_cr("]");
 
   _verify_in_progress = false;

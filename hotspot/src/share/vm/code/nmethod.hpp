@@ -459,6 +459,7 @@ private:
 public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
+  void verify_oop_relocations();
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);

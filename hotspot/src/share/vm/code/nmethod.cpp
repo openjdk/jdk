@@ -1105,6 +1105,20 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
 }
 
 
+void nmethod::verify_oop_relocations() {
+  // Ensure sure that the code matches the current oop values
+  RelocIterator iter(this, NULL, NULL);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::oop_type) {
+      oop_Relocation* reloc = iter.oop_reloc();
+      if (!reloc->oop_is_immediate()) {
+        reloc->verify_oop_relocation();
+      }
+    }
+  }
+}
+
+
 ScopeDesc* nmethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
@@ -1823,6 +1837,7 @@ void nmethod::oops_do_marking_epilogue() {
     assert(cur != NULL, "not NULL-terminated");
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
+    cur->fix_oop_relocations();
     NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark\n"));
     cur = next;
   }

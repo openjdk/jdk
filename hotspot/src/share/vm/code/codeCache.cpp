@@ -337,7 +337,6 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
     if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
       f->do_code_blob(cur);
-      cur->fix_oop_relocations();
     }
   }
 
@@ -549,6 +548,19 @@ void CodeCache::gc_epilogue() {
   set_needs_cache_clean(false);
   prune_scavenge_root_nmethods();
   assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
+}
+
+
+void CodeCache::verify_oops() {
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  VerifyOopClosure voc;
+  FOR_ALL_ALIVE_BLOBS(cb) {
+    if (cb->is_nmethod()) {
+      nmethod *nm = (nmethod*)cb;
+      nm->oops_do(&voc);
+      nm->verify_oop_relocations();
+    }
+  }
 }
 
 
