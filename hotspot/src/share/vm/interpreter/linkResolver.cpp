@@ -217,7 +217,7 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
   if (EnableMethodHandles &&
       klass() == SystemDictionary::MethodHandle_klass() &&
       methodOopDesc::is_method_handle_invoke_name(name)) {
-    if (!MethodHandles::enabled()) {
+    if (!THREAD->is_Compiler_thread() && !MethodHandles::enabled()) {
       // Make sure the Java part of the runtime has been booted up.
       klassOop natives = SystemDictionary::MethodHandleNatives_klass();
       if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
