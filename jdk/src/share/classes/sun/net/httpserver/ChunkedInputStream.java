@@ -69,32 +69,33 @@ class ChunkedInputStream extends LeftOverInputStream {
      */
     private int readChunkHeader () throws IOException {
         boolean gotCR = false;
-        char c;
+        int c;
         char[] len_arr = new char [16];
         int len_size = 0;
         boolean end_of_len = false;
 
-        while ((c=(char)in.read())!= -1) {
+        while ((c=in.read())!= -1) {
+            char ch = (char) c;
             if (len_size == len_arr.length -1) {
                 throw new IOException ("invalid chunk header");
             }
             if (gotCR) {
-                if (c == LF) {
+                if (ch == LF) {
                     int l = numeric (len_arr, len_size);
                     return l;
                 } else {
                     gotCR = false;
                 }
                 if (!end_of_len) {
-                    len_arr[len_size++] = c;
+                    len_arr[len_size++] = ch;
                 }
             } else {
-                if (c == CR) {
+                if (ch == CR) {
                     gotCR = true;
-                } else if (c == ';') {
+                } else if (ch == ';') {
                     end_of_len = true;
                 } else if (!end_of_len) {
-                    len_arr[len_size++] = c;
+                    len_arr[len_size++] = ch;
                 }
             }
         }

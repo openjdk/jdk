@@ -44,14 +44,17 @@ public class Available {
         File f = new File(System.getProperty("test.src", "."), "input.jar");
 
         // test ZipInputStream
-        ZipInputStream z = new ZipInputStream(new FileInputStream(f));
-        z.getNextEntry();
-        tryAvail(z);
+        try (FileInputStream fis = new FileInputStream(f);
+             ZipInputStream z = new ZipInputStream(fis))
+        {
+            z.getNextEntry();
+            tryAvail(z);
+        }
 
         // test InflaterInputStream
-        ZipFile zfile = new ZipFile(f);
-        tryAvail(zfile.getInputStream(zfile.getEntry("Available.java")));
-        z.close();
+        try (ZipFile zfile = new ZipFile(f)) {
+            tryAvail(zfile.getInputStream(zfile.getEntry("Available.java")));
+        }
     }
 
     static void tryAvail(InputStream in) throws Exception {
@@ -67,20 +70,21 @@ public class Available {
     // To reproduce 4401122
     private static void test2() throws Exception {
         File f = new File(System.getProperty("test.src", "."), "input.jar");
-        ZipFile zf = new ZipFile(f);
-        InputStream in = zf.getInputStream(zf.getEntry("Available.java"));
+        try (ZipFile zf = new ZipFile(f)) {
+            InputStream in = zf.getInputStream(zf.getEntry("Available.java"));
 
-        int initialAvailable = in.available();
-        in.read();
-        if (in.available() != initialAvailable - 1)
-            throw new RuntimeException("Available not decremented.");
-        for(int j=0; j<initialAvailable-1; j++)
+            int initialAvailable = in.available();
             in.read();
-        if (in.available() != 0)
-            throw new RuntimeException();
-        in.close();
-        if (in.available() != 0)
-            throw new RuntimeException();
+            if (in.available() != initialAvailable - 1)
+                throw new RuntimeException("Available not decremented.");
+            for(int j=0; j<initialAvailable-1; j++)
+                in.read();
+            if (in.available() != 0)
+                throw new RuntimeException();
+            in.close();
+            if (in.available() != 0)
+                throw new RuntimeException();
+        }
     }
 
 }

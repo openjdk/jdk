@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620
+ * @bug 6939620 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
+ * @summary  Check that diamond works where LHS is supertype of RHS (1-ary constructor)
  * @author mcimadamore
  * @compile/fail/ref=Neg07.out Neg07.java -XDrawDiagnostics
  *
@@ -15,5 +15,4 @@ class Neg07 {
    }
 
    SuperFoo<String> sf1 = new Foo<>("");
-   SuperFoo<String> sf2 = new Foo<>("") {};
 }

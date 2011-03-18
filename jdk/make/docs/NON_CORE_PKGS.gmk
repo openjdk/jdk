@@ -91,8 +91,6 @@ SCTPAPI_PKGS     = com.sun.nio.sctp
 TRACING_PKGS     = com.sun.tracing         \
                    com.sun.tracing.dtrace
 
-ORACLENET_PKGS   = com.oracle.net
-
 # non-core packages in rt.jar
 NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(MGMT_PKGS) \
@@ -103,6 +101,5 @@ NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(HTTPSERVER_PKGS) \
                    $(SMARTCARDIO_PKGS) \
                    $(TRACING_PKGS) \
-                   $(SCTPAPI_PKGS) \
-                   $(ORACLENET_PKGS)
+                   $(SCTPAPI_PKGS)
 

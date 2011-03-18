@@ -33,7 +33,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = jdbc-odbc
 PACKAGE = sun.jdbc.odbc
 LIBRARY = JdbcOdbc
 PRODUCT = sun

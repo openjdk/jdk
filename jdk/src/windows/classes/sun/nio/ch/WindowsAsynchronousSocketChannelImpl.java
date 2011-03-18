@@ -239,14 +239,14 @@ class WindowsAsynchronousSocketChannelImpl
                     result.setResult(null);
                 }
             } catch (Throwable x) {
+                if (overlapped != 0L)
+                    ioCache.remove(overlapped);
                 exc = x;
             } finally {
                 end();
             }
 
             if (exc != null) {
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
                 closeChannel();
                 result.setFailure(toIOException(exc));
             }

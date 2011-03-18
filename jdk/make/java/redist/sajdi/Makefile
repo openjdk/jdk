@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE   = sajdi
 PRODUCT  = java
 include $(BUILDDIR)/common/Defs.gmk
 

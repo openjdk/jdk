@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test %I% %E%
- * @bug 4898461
+ * @bug 4898461 6604496
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library ..
@@ -70,9 +70,13 @@ public class TestSymmCiphers extends PKCS11Test {
         new CI("DES/ECB/PKCS5Padding", "DES", 6400),
         new CI("DESede/ECB/PKCS5Padding", "DESede", 400),
         new CI("AES/ECB/PKCS5Padding", "AES", 64),
+
         new CI("DES", "DES", 6400),
         new CI("DESede", "DESede", 408),
-        new CI("AES", "AES", 128)
+        new CI("AES", "AES", 128),
+
+        new CI("AES/CTR/NoPadding", "AES", 3200)
+
     };
     private static StringBuffer debugBuf = new StringBuffer();
 
