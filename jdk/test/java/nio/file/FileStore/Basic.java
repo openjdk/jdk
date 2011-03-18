@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126
+ * @bug 4313887 6873621 6979526 7006126 7020517
  * @summary Unit test for java.nio.file.FileStore
  * @library ..
  */

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
+/**
+ * <p>This class contains utilities useful for regression testing.
+ * <p>When using jtreg you would include this class via something like:
+ * <pre>
+ *
+ * @library ../../regtesthelpers
+ * @build Util
+ * </pre>
+ */
+
+public class Util {
+    /**
+     * Convert a rectangle from coordinate system of Component c to
+     * screen coordinate system.
+     *
+     * @param r a non-null Rectangle
+     * @param c a Component whose coordinate system is used for conversion
+     */
+    public static void convertRectToScreen(Rectangle r, Component c) {
+        Point p = new Point(r.x, r.y);
+        SwingUtilities.convertPointToScreen(p, c);
+        r.x = p.x;
+        r.y = p.y;
+    }
+
+    /**
+     * Compares two bufferedImages pixel-by-pixel.
+     * return true if all pixels in the two areas are identical
+     */
+    public static boolean compareBufferedImages(BufferedImage bufferedImage0, BufferedImage bufferedImage1) {
+        int width = bufferedImage0.getWidth();
+        int height = bufferedImage0.getHeight();
+
+        if (width != bufferedImage1.getWidth() || height != bufferedImage1.getHeight()) {
+            return false;
+        }
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (bufferedImage0.getRGB(x, y) != bufferedImage1.getRGB(x, y)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+}

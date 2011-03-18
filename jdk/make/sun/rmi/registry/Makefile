@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = rmi
 PACKAGE = sun.rmi.registry
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

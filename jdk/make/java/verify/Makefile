@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = base
 PRODUCT = java
 LIBRARY = verify
 include $(BUILDDIR)/common/Defs.gmk

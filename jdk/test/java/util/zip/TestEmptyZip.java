@@ -78,67 +78,49 @@ public class TestEmptyZip {
                 pass();
             }
         }
-        ZipInputStream zis = null;
-        try {
-            zis = new ZipInputStream(new FileInputStream(f));
+        try (FileInputStream fis = new FileInputStream(f);
+             ZipInputStream zis = new ZipInputStream(fis))
+        {
             ZipEntry ze = zis.getNextEntry();
             check(ze == null);
         } catch (IOException ex) {
             unexpected(ex);
-        } finally {
-            if (zis != null) zis.close();
         }
     }
 
     static void write(File f) throws Exception {
-        ZipOutputStream zos = null;
-        try {
-            zos = new ZipOutputStream(new FileOutputStream(f));
+        try (FileOutputStream fis = new FileOutputStream(f);
+             ZipOutputStream zos = new ZipOutputStream(fis))
+        {
             zos.finish();
-            zos.close();
             pass();
         } catch (Exception ex) {
             unexpected(ex);
-        } finally {
-            if (zos != null) {
-                zos.close();
-            }
         }
     }
 
     static void readFile(File f) throws Exception {
-        ZipFile zf = null;
-        try {
-            zf = new ZipFile(f);
+        try (ZipFile zf = new ZipFile(f)) {
 
             Enumeration e = zf.entries();
             while (e.hasMoreElements()) {
                 ZipEntry entry = (ZipEntry) e.nextElement();
                 fail();
             }
-            zf.close();
             pass();
         } catch (Exception ex) {
             unexpected(ex);
-        } finally {
-            if (zf != null) {
-                zf.close();
-            }
         }
     }
 
     static void readStream(File f) throws Exception {
-        ZipInputStream zis = null;
-        try {
-            zis = new ZipInputStream(new FileInputStream(f));
+        try (FileInputStream fis = new FileInputStream(f);
+             ZipInputStream zis = new ZipInputStream(fis))
+        {
             ZipEntry ze = zis.getNextEntry();
             check(ze == null);
             byte[] buf = new byte[1024];
             check(zis.read(buf, 0, 1024) == -1);
-        } finally {
-            if (zis != null) {
-                zis.close();
-            }
         }
     }
 

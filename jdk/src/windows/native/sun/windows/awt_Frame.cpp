@@ -109,7 +109,6 @@ AwtFrame::AwtFrame() {
     m_isMenuDropped = FALSE;
     m_isInputMethodWindow = FALSE;
     m_isUndecorated = FALSE;
-    m_proxyFocusOwner = NULL;
     m_lastProxiedFocusOwner = NULL;
     m_actualFocusedWindow = NULL;
     m_iconic = FALSE;
@@ -127,7 +126,6 @@ AwtFrame::~AwtFrame()
 
 void AwtFrame::Dispose()
 {
-    DestroyProxyFocusOwner();
     AwtWindow::Dispose();
 }
 
@@ -308,22 +306,9 @@ done:
     return frame;
 }
 
-LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
-                                           WPARAM wParam, LPARAM lParam)
+LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, MsgRouting &mr)
 {
-    TRY;
-
-    DASSERT(::IsWindow(hwnd));
-
-    AwtFrame *parent = (AwtFrame *)
-        AwtComponent::GetComponentImpl(::GetParent(hwnd));
-
-    if (!parent || parent->GetProxyFocusOwner() != hwnd ||
-        message == AwtComponent::WmAwtIsComponent ||
-        message == WM_GETOBJECT)
-    {
-        return ComCtl32Util::GetInstance().DefWindowProc(NULL, hwnd, message, wParam, lParam);
-    }
+    LRESULT retValue = 0L;
 
     AwtComponent *focusOwner = NULL;
     // IME and input language related messages need to be sent to a window
@@ -346,19 +331,23 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
         // TODO: when a Choice's list is dropped down and we're scrolling in
         // the list WM_MOUSEWHEEL messages come to the poxy, not to the list. Why?
         case WM_MOUSEWHEEL:
-            focusOwner = AwtComponent::GetComponent(parent->GetLastProxiedFocusOwner());
-            if  (focusOwner != NULL) {
-                return focusOwner->WindowProc(message, wParam, lParam);
+            focusOwner = AwtComponent::GetComponent(GetLastProxiedFocusOwner());
+            if  (focusOwner != NULL &&
+                 focusOwner != this) // avoid recursive calls
+            {
+                 retValue = focusOwner->WindowProc(message, wParam, lParam);
+                 mr = mrConsume;
             }
             break;
         case WM_SETFOCUS:
-            if (!sm_suppressFocusAndActivation && parent->IsEmbeddedFrame()) {
-                parent->AwtSetActiveWindow();
+            if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
+                AwtSetActiveWindow();
             }
-            return 0;
+            mr = mrConsume;
+            break;
         case WM_KILLFOCUS:
-            if (!sm_suppressFocusAndActivation && parent->IsEmbeddedFrame()) {
-                AwtWindow::SynthesizeWmActivate(FALSE, parent->GetHWnd(), NULL);
+            if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
+                AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
 
             } else if (sm_restoreFocusAndActivation) {
                 if (AwtComponent::GetFocusedWindow() != NULL) {
@@ -369,64 +358,28 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
                     }
                 }
             }
-            return 0;
+            mr = mrConsume;
+            break;
         case 0x0127: // WM_CHANGEUISTATE
         case 0x0128: // WM_UPDATEUISTATE
-            return 0;
+            mr = mrConsume;
+            break;
     }
-    return parent->WindowProc(message, wParam, lParam);
 
-    CATCH_BAD_ALLOC_RET(0);
+    return retValue;
 }
 
-void AwtFrame::CreateProxyFocusOwner()
+LRESULT AwtFrame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (AwtToolkit::IsMainThread()) {
-        AwtFrame::_CreateProxyFocusOwner((void *)this);
-    } else {
-        AwtToolkit::GetInstance().InvokeFunction(AwtFrame::_CreateProxyFocusOwner, (void *)this);
+    MsgRouting mr = mrDoDefault;
+    LRESULT retValue = 0L;
+
+    retValue = ProxyWindowProc(message, wParam, lParam, mr);
+
+    if (mr != mrConsume) {
+        retValue = AwtWindow::WindowProc(message, wParam, lParam);
     }
-}
-
-void AwtFrame::_CreateProxyFocusOwner(void *param)
-{
-    DASSERT(AwtToolkit::IsMainThread());
-
-    AwtFrame *f = (AwtFrame *)param;
-    DASSERT(f->m_proxyFocusOwner == NULL);
-
-    f->m_proxyFocusOwner = ::CreateWindow(TEXT("STATIC"),
-                                          TEXT("ProxyFocusOwner"),
-                                          WS_CHILD,
-                                          0, 0, 0, 0, f->GetHWnd(), NULL,
-                                          AwtToolkit::GetInstance().
-                                          GetModuleHandle(),
-                                          NULL);
-
-    f->m_proxyDefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(f->m_proxyFocusOwner, ProxyWindowProc);
-}
-
-void AwtFrame::DestroyProxyFocusOwner()
-{
-    // proxy focus owner must be destroyed on toolkit thread only
-    if (AwtToolkit::IsMainThread()) {
-        AwtFrame::_DestroyProxyFocusOwner((void *)this);
-    } else {
-        AwtToolkit::GetInstance().InvokeFunction(AwtFrame::_DestroyProxyFocusOwner, (void *)this);
-    }
-}
-
-void AwtFrame::_DestroyProxyFocusOwner(void *param)
-{
-    DASSERT(AwtToolkit::IsMainThread());
-
-    AwtFrame *f = (AwtFrame *)param;
-    if (f->m_proxyFocusOwner != NULL) {
-        HWND toDestroy = f->m_proxyFocusOwner;
-        f->m_proxyFocusOwner = NULL;
-        ComCtl32Util::GetInstance().UnsubclassHWND(toDestroy, ProxyWindowProc, f->m_proxyDefWindowProc);
-        ::DestroyWindow(toDestroy);
-    }
+    return retValue;
 }
 
 MsgRouting AwtFrame::WmShowWindow(BOOL show, UINT status)

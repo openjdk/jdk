@@ -29,7 +29,6 @@
 # to a collision of rules with Classes.gmk and Library.gmk
 
 BUILDDIR = ../../../../..
-MODULE  = pack200
 PACKAGE = com.sun.java.util.jar.pack
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

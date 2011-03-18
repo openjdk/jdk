@@ -431,25 +431,24 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
-  assert(frame::verify_return_pc(return_address), "must be a return pc");
+  assert(frame::verify_return_pc(return_address), err_msg("must be a return address: " INTPTR_FORMAT, return_address));
 
-  // Reset MethodHandle flag.
+  // Reset method handle flag.
   thread->set_is_method_handle_return(false);
 
-  // the fastest case first
+  // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
-  if (blob != NULL && blob->is_nmethod()) {
-    nmethod* code = (nmethod*)blob;
-    assert(code != NULL, "nmethod must be present");
-    // Check if the return address is a MethodHandle call site.
-    thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
+  nmethod* nm = (blob != NULL) ? blob->as_nmethod_or_null() : NULL;
+  if (nm != NULL) {
+    // Set flag if return address is a method handle call site.
+    thread->set_is_method_handle_return(nm->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
-    assert(!code->is_native_method(), "no exception handler");
-    assert(code->header_begin() != code->exception_begin(), "no exception handler");
-    if (code->is_deopt_pc(return_address)) {
+    assert(!nm->is_native_method(), "no exception handler");
+    assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
+    if (nm->is_deopt_pc(return_address)) {
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
-      return code->exception_begin();
+      return nm->exception_begin();
     }
   }
 
@@ -462,22 +461,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
     return Interpreter::rethrow_exception_entry();
   }
 
-  // Compiled code
-  if (CodeCache::contains(return_address)) {
-    CodeBlob* blob = CodeCache::find_blob(return_address);
-    if (blob->is_nmethod()) {
-      nmethod* code = (nmethod*)blob;
-      assert(code != NULL, "nmethod must be present");
-      // Check if the return address is a MethodHandle call site.
-      thread->set_is_method_handle_return(code->is_method_handle_return(return_address));
-      assert(code->header_begin() != code->exception_begin(), "no exception handler");
-      return code->exception_begin();
-    }
-    if (blob->is_runtime_stub()) {
-      ShouldNotReachHere();   // callers are responsible for skipping runtime stub frames
-    }
-  }
+  guarantee(blob == NULL || !blob->is_runtime_stub(), "caller should have skipped stub");
   guarantee(!VtableStubs::contains(return_address), "NULL exceptions in vtables should have been handled already!");
+
 #ifndef PRODUCT
   { ResourceMark rm;
     tty->print_cr("No exception handler found for exception at " INTPTR_FORMAT " - potential problems:", return_address);
@@ -485,6 +471,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
     tty->print_cr("b) other problem");
   }
 #endif // PRODUCT
+
   ShouldNotReachHere();
   return NULL;
 }

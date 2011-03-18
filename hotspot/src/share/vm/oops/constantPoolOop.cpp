@@ -1175,8 +1175,15 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedClass:
   {
-    Symbol* k = from_cp->unresolved_klass_at(from_i);
-    to_cp->unresolved_klass_at_put(to_i, k);
+    // Can be resolved after checking tag, so check the slot first.
+    CPSlot entry = from_cp->slot_at(from_i);
+    if (entry.is_oop()) {
+      assert(entry.get_oop()->is_klass(), "must be");
+      // Already resolved
+      to_cp->klass_at_put(to_i, (klassOop)entry.get_oop());
+    } else {
+      to_cp->unresolved_klass_at_put(to_i, entry.get_symbol());
+    }
   } break;
 
   case JVM_CONSTANT_UnresolvedClassInError:
@@ -1189,8 +1196,14 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedString:
   {
-    Symbol* s = from_cp->unresolved_string_at(from_i);
-    to_cp->unresolved_string_at_put(to_i, s);
+    // Can be resolved after checking tag, so check the slot first.
+    CPSlot entry = from_cp->slot_at(from_i);
+    if (entry.is_oop()) {
+      // Already resolved (either string or pseudo-string)
+      to_cp->string_at_put(to_i, entry.get_oop());
+    } else {
+      to_cp->unresolved_string_at_put(to_i, entry.get_symbol());
+    }
   } break;
 
   case JVM_CONSTANT_Utf8:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import com.sun.jarsigner.*;
-import java.security.cert.X509CRL;
 import java.util.Arrays;
 import sun.security.pkcs.*;
 import sun.security.timestamp.*;
@@ -238,9 +237,8 @@ public final class TimestampedSigner extends ContentSigner {
         AlgorithmId[] algorithms = {digestAlgorithmId};
 
         // Create the PKCS #7 signed data message
-        PKCS7 p7 =
-            new PKCS7(algorithms, contentInfo, signerCertificateChain,
-                    parameters.getCRLs().toArray(new X509CRL[parameters.getCRLs().size()]), signerInfos);
+        PKCS7 p7 = new PKCS7(algorithms, contentInfo, signerCertificateChain,
+                null, signerInfos);
         ByteArrayOutputStream p7out = new ByteArrayOutputStream();
         p7.encodeSignedData(p7out);
 

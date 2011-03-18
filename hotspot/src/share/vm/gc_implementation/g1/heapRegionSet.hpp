@@ -28,8 +28,8 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 
 // Large buffer for some cases where the output might be larger than normal.
-#define HRL_ERR_MSG_BUFSZ 512
-typedef FormatBuffer<HRL_ERR_MSG_BUFSZ> hrl_err_msg;
+#define HRS_ERR_MSG_BUFSZ 512
+typedef FormatBuffer<HRS_ERR_MSG_BUFSZ> hrs_err_msg;
 
 // Set verification will be forced either if someone defines
 // HEAP_REGION_SET_FORCE_VERIFY to be 1, or in builds in which
@@ -45,10 +45,10 @@ typedef FormatBuffer<HRL_ERR_MSG_BUFSZ> hrl_err_msg;
 // (e.g., length, region num, used bytes sum) plus any shared
 // functionality (e.g., verification).
 
-class hrl_ext_msg;
+class hrs_ext_msg;
 
 class HeapRegionSetBase VALUE_OBJ_CLASS_SPEC {
-  friend class hrl_ext_msg;
+  friend class hrs_ext_msg;
 
 protected:
   static size_t calculate_region_num(HeapRegion* hr);
@@ -104,10 +104,10 @@ protected:
   virtual bool check_mt_safety() { return true; }
 
   // fill_in_ext_msg() writes the the values of the set's attributes
-  // in the custom err_msg (hrl_ext_msg). fill_in_ext_msg_extra()
+  // in the custom err_msg (hrs_ext_msg). fill_in_ext_msg_extra()
   // allows subclasses to append further information.
-  virtual void fill_in_ext_msg_extra(hrl_ext_msg* msg) { }
-  void fill_in_ext_msg(hrl_ext_msg* msg, const char* message);
+  virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg) { }
+  void fill_in_ext_msg(hrs_ext_msg* msg, const char* message);
 
   // It updates the fields of the set to reflect hr being added to
   // the set.
@@ -170,9 +170,9 @@ public:
 // the fields of the associated set. This can be very helpful in
 // diagnosing failures.
 
-class hrl_ext_msg : public hrl_err_msg {
+class hrs_ext_msg : public hrs_err_msg {
 public:
-  hrl_ext_msg(HeapRegionSetBase* set, const char* message) : hrl_err_msg("") {
+  hrs_ext_msg(HeapRegionSetBase* set, const char* message) : hrs_err_msg("") {
     set->fill_in_ext_msg(this, message);
   }
 };
@@ -180,25 +180,25 @@ public:
 // These two macros are provided for convenience, to keep the uses of
 // these two asserts a bit more concise.
 
-#define hrl_assert_mt_safety_ok(_set_)                                        \
+#define hrs_assert_mt_safety_ok(_set_)                                        \
   do {                                                                        \
-    assert((_set_)->check_mt_safety(), hrl_ext_msg((_set_), "MT safety"));    \
+    assert((_set_)->check_mt_safety(), hrs_ext_msg((_set_), "MT safety"));    \
   } while (0)
 
-#define hrl_assert_region_ok(_set_, _hr_, _expected_)                         \
+#define hrs_assert_region_ok(_set_, _hr_, _expected_)                         \
   do {                                                                        \
     assert((_set_)->verify_region((_hr_), (_expected_)),                      \
-           hrl_ext_msg((_set_), "region verification"));                      \
+           hrs_ext_msg((_set_), "region verification"));                      \
   } while (0)
 
 //////////////////// HeapRegionSet ////////////////////
 
-#define hrl_assert_sets_match(_set1_, _set2_)                                 \
+#define hrs_assert_sets_match(_set1_, _set2_)                                 \
   do {                                                                        \
     assert(((_set1_)->regions_humongous() ==                                  \
                                             (_set2_)->regions_humongous()) && \
            ((_set1_)->regions_empty() == (_set2_)->regions_empty()),          \
-           hrl_err_msg("the contents of set %s and set %s should match",      \
+           hrs_err_msg("the contents of set %s and set %s should match",      \
                        (_set1_)->name(), (_set2_)->name()));                  \
   } while (0)
 
@@ -267,7 +267,7 @@ private:
   HeapRegion* tail() { return _tail; }
 
 protected:
-  virtual void fill_in_ext_msg_extra(hrl_ext_msg* msg);
+  virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg);
 
   // See the comment for HeapRegionSetBase::clear()
   virtual void clear();
@@ -309,10 +309,10 @@ public:
   virtual void print_on(outputStream* out, bool print_contents = false);
 };
 
-//////////////////// HeapRegionLinkedList ////////////////////
+//////////////////// HeapRegionLinkedListIterator ////////////////////
 
-// Iterator class that provides a convenient way to iterator over the
-// regions in a HeapRegionLinkedList instance.
+// Iterator class that provides a convenient way to iterate over the
+// regions of a HeapRegionLinkedList instance.
 
 class HeapRegionLinkedListIterator : public StackObj {
 private:

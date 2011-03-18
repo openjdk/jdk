@@ -182,10 +182,13 @@ public abstract class SocketChannel
         SocketChannel sc = open();
         try {
             sc.connect(remote);
-        } finally {
-            if (!sc.isConnected()) {
-                try { sc.close(); } catch (IOException x) { }
+        } catch (Throwable x) {
+            try {
+                sc.close();
+            } catch (Throwable suppressed) {
+                x.addSuppressed(suppressed);
             }
+            throw x;
         }
         assert sc.isConnected();
         return sc;

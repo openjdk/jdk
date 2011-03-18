@@ -221,6 +221,8 @@ AwtWindow::AwtWindow() {
 
     m_windowType = NORMAL;
     m_alwaysOnTop = false;
+
+    fullScreenExclusiveModeState = FALSE;
 }
 
 AwtWindow::~AwtWindow()

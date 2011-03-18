@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 /* hsdis-demo.c -- dump a range of addresses as native instructions
    This demonstrates the protocol required by the HotSpot PrintAssembly option.
 */

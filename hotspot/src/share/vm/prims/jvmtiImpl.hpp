@@ -451,58 +451,25 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
     TYPE_NONE,
     TYPE_COMPILED_METHOD_LOAD,
     TYPE_COMPILED_METHOD_UNLOAD,
-    TYPE_FLUSH // pseudo-event used to implement flush_queue()
+    TYPE_DYNAMIC_CODE_GENERATED
   } Type;
 
   Type _type;
   union {
     nmethod* compiled_method_load;
     struct {
+      nmethod* nm;
       jmethodID method_id;
       const void* code_begin;
     } compiled_method_unload;
-    int* flush_state_addr;
+    struct {
+      const char* name;
+      const void* code_begin;
+      const void* code_end;
+    } dynamic_code_generated;
   } _event_data;
 
   JvmtiDeferredEvent(Type t) : _type(t) {}
-
-  void set_compiled_method_load(nmethod* nm) {
-    assert(_type == TYPE_COMPILED_METHOD_LOAD, "must be");
-    _event_data.compiled_method_load = nm;
-  }
-
-  nmethod* compiled_method_load() const {
-    assert(_type == TYPE_COMPILED_METHOD_LOAD, "must be");
-    return _event_data.compiled_method_load;
-  }
-
-  void set_compiled_method_unload(jmethodID id, const void* code) {
-    assert(_type == TYPE_COMPILED_METHOD_UNLOAD, "must be");
-    _event_data.compiled_method_unload.method_id = id;
-    _event_data.compiled_method_unload.code_begin = code;
-  }
-
-  jmethodID compiled_method_unload_method_id() const {
-    assert(_type == TYPE_COMPILED_METHOD_UNLOAD, "must be");
-    return _event_data.compiled_method_unload.method_id;
-  }
-
-  const void* compiled_method_unload_code_begin() const {
-    assert(_type == TYPE_COMPILED_METHOD_UNLOAD, "must be");
-    return _event_data.compiled_method_unload.code_begin;
-  }
-
-  bool is_flush_event() const { return _type == TYPE_FLUSH; }
-
-  int* flush_state_addr() const {
-    assert(is_flush_event(), "must be");
-    return _event_data.flush_state_addr;
-  }
-
-  void set_flush_state_addr(int* flag) {
-    assert(is_flush_event(), "must be");
-    _event_data.flush_state_addr = flag;
-  }
 
  public:
 
@@ -511,8 +478,11 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
   // Factory methods
   static JvmtiDeferredEvent compiled_method_load_event(nmethod* nm)
     KERNEL_RETURN_(JvmtiDeferredEvent());
-  static JvmtiDeferredEvent compiled_method_unload_event(
+  static JvmtiDeferredEvent compiled_method_unload_event(nmethod* nm,
       jmethodID id, const void* code) KERNEL_RETURN_(JvmtiDeferredEvent());
+  static JvmtiDeferredEvent dynamic_code_generated_event(
+      const char* name, const void* begin, const void* end)
+          KERNEL_RETURN_(JvmtiDeferredEvent());
 
   // Actually posts the event.
   void post() KERNEL_RETURN;
@@ -548,24 +518,11 @@ class JvmtiDeferredEventQueue : AllStatic {
   // Transfers events from the _pending_list to the _queue.
   static void process_pending_events() KERNEL_RETURN;
 
-  static void flush_complete(int* flush_state) KERNEL_RETURN;
-
  public:
   // Must be holding Service_lock when calling these
   static bool has_events() KERNEL_RETURN_(false);
   static void enqueue(const JvmtiDeferredEvent& event) KERNEL_RETURN;
   static JvmtiDeferredEvent dequeue() KERNEL_RETURN_(JvmtiDeferredEvent());
-
-  // This call blocks until all events enqueued prior to this call
-  // have been posted.  The Service_lock is acquired and waited upon.
-  //
-  // Implemented by creating a "flush" event and placing it in the queue.
-  // When the flush event is "posted" it will call flush_complete(), which
-  // will release the caller.
-  //
-  // Can be called by any thread (maybe even the service thread itself).
-  // Not necessary for the caller to be a JavaThread.
-  static void flush_queue(Thread* current) KERNEL_RETURN;
 
   // Used to enqueue events without using a lock, for times (such as during
   // safepoint) when we can't or don't want to lock the Service_lock.

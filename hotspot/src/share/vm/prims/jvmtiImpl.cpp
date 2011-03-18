@@ -918,31 +918,61 @@ void JvmtiSuspendControl::print() {
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_LOAD);
-  event.set_compiled_method_load(nm);
-  nmethodLocker::lock_nmethod(nm); // will be unlocked when posted
+  event._event_data.compiled_method_load = nm;
+  // Keep the nmethod alive until the ServiceThread can process
+  // this deferred event.
+  nmethodLocker::lock_nmethod(nm);
   return event;
 }
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_unload_event(
-    jmethodID id, const void* code) {
+    nmethod* nm, jmethodID id, const void* code) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_UNLOAD);
-  event.set_compiled_method_unload(id, code);
+  event._event_data.compiled_method_unload.nm = nm;
+  event._event_data.compiled_method_unload.method_id = id;
+  event._event_data.compiled_method_unload.code_begin = code;
+  // Keep the nmethod alive until the ServiceThread can process
+  // this deferred event. This will keep the memory for the
+  // generated code from being reused too early. We pass
+  // zombie_ok == true here so that our nmethod that was just
+  // made into a zombie can be locked.
+  nmethodLocker::lock_nmethod(nm, true /* zombie_ok */);
+  return event;
+}
+JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
+      const char* name, const void* code_begin, const void* code_end) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_DYNAMIC_CODE_GENERATED);
+  event._event_data.dynamic_code_generated.name = name;
+  event._event_data.dynamic_code_generated.code_begin = code_begin;
+  event._event_data.dynamic_code_generated.code_end = code_end;
   return event;
 }
 
 void JvmtiDeferredEvent::post() {
+  assert(ServiceThread::is_service_thread(Thread::current()),
+         "Service thread must post enqueued events");
   switch(_type) {
-    case TYPE_COMPILED_METHOD_LOAD:
-      JvmtiExport::post_compiled_method_load(compiled_method_load());
-      nmethodLocker::unlock_nmethod(compiled_method_load());
+    case TYPE_COMPILED_METHOD_LOAD: {
+      nmethod* nm = _event_data.compiled_method_load;
+      JvmtiExport::post_compiled_method_load(nm);
+      // done with the deferred event so unlock the nmethod
+      nmethodLocker::unlock_nmethod(nm);
       break;
-    case TYPE_COMPILED_METHOD_UNLOAD:
+    }
+    case TYPE_COMPILED_METHOD_UNLOAD: {
+      nmethod* nm = _event_data.compiled_method_unload.nm;
       JvmtiExport::post_compiled_method_unload(
-        compiled_method_unload_method_id(),
-        compiled_method_unload_code_begin());
+        _event_data.compiled_method_unload.method_id,
+        _event_data.compiled_method_unload.code_begin);
+      // done with the deferred event so unlock the nmethod
+      nmethodLocker::unlock_nmethod(nm);
       break;
-    case TYPE_FLUSH:
-      JvmtiDeferredEventQueue::flush_complete(flush_state_addr());
+    }
+    case TYPE_DYNAMIC_CODE_GENERATED:
+      JvmtiExport::post_dynamic_code_generated_internal(
+        _event_data.dynamic_code_generated.name,
+        _event_data.dynamic_code_generated.code_begin,
+        _event_data.dynamic_code_generated.code_end);
       break;
     default:
       ShouldNotReachHere();
@@ -1063,56 +1093,6 @@ void JvmtiDeferredEventQueue::process_pending_events() {
       _queue_tail = new_tail;
     }
   }
-}
-
-enum {
-  // Random - used for debugging
-  FLUSHING  = 0x50403020,
-  FLUSHED   = 0x09080706
-};
-
-void JvmtiDeferredEventQueue::flush_queue(Thread* thread) {
-
-  volatile int flush_state = FLUSHING;
-
-  JvmtiDeferredEvent flush(JvmtiDeferredEvent::TYPE_FLUSH);
-  flush.set_flush_state_addr((int*)&flush_state);
-
-  if (ServiceThread::is_service_thread(thread)) {
-    // If we are the service thread we have to post all preceding events
-    // Use the flush event as a token to indicate when we can stop
-    JvmtiDeferredEvent event;
-    {
-      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
-      enqueue(flush);
-      event = dequeue();
-    }
-    while (!event.is_flush_event() ||
-           event.flush_state_addr() != &flush_state) {
-      event.post();
-      {
-        MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
-        event = dequeue();
-      }
-    }
-  } else {
-    // Wake up the service thread so it will process events.  When it gets
-    // to the flush event it will set 'flush_complete' and notify us.
-    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    enqueue(flush);
-    while (flush_state != FLUSHED) {
-      assert(flush_state == FLUSHING || flush_state == FLUSHED,
-             "only valid values for this");
-      Service_lock->wait(Mutex::_no_safepoint_check_flag);
-    }
-  }
-}
-
-void JvmtiDeferredEventQueue::flush_complete(int* state_addr) {
-  assert(state_addr != NULL && *state_addr == FLUSHING, "must be");
-  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  *state_addr = FLUSHED;
-  Service_lock->notify_all();
 }
 
 #endif // ndef KERNEL

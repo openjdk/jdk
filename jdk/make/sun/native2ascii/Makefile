@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = tools
 PACKAGE = sun.tools.native2ascii
 PRODUCT = sun
 OTHER_JAVACFLAGS += -Xlint:serial -Werror

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,28 @@ static bool find_field(instanceKlass* ik,
   else
     return ik->find_local_field(name_symbol, signature_symbol, fd);
 }
+
+static bool find_hacked_field(instanceKlass* ik,
+                              Symbol* name_symbol, Symbol* signature_symbol,
+                              fieldDescriptor* fd,
+                              bool allow_super = false) {
+  bool found = find_field(ik, name_symbol, signature_symbol, fd, allow_super);
+  if (!found && AllowTransitionalJSR292) {
+    Symbol* backup_sig = SystemDictionary::find_backup_signature(signature_symbol);
+    if (backup_sig != NULL) {
+      found = find_field(ik, name_symbol, backup_sig, fd, allow_super);
+      if (TraceMethodHandles) {
+        ResourceMark rm;
+        tty->print_cr("MethodHandles: %s.%s: backup for %s => %s%s",
+                      ik->name()->as_C_string(), name_symbol->as_C_string(),
+                      signature_symbol->as_C_string(), backup_sig->as_C_string(),
+                      (found ? "" : " (NOT FOUND)"));
+      }
+    }
+  }
+  return found;
+}
+#define find_field find_hacked_field  /* remove after AllowTransitionalJSR292 */
 
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
@@ -2176,41 +2198,43 @@ void java_lang_ref_SoftReference::set_clock(jlong value) {
 }
 
 
-// Support for java_dyn_MethodHandle
+// Support for java_lang_invoke_MethodHandle
 
-int java_dyn_MethodHandle::_type_offset;
-int java_dyn_MethodHandle::_vmtarget_offset;
-int java_dyn_MethodHandle::_vmentry_offset;
-int java_dyn_MethodHandle::_vmslots_offset;
+int java_lang_invoke_MethodHandle::_type_offset;
+int java_lang_invoke_MethodHandle::_vmtarget_offset;
+int java_lang_invoke_MethodHandle::_vmentry_offset;
+int java_lang_invoke_MethodHandle::_vmslots_offset;
 
-int sun_dyn_MemberName::_clazz_offset;
-int sun_dyn_MemberName::_name_offset;
-int sun_dyn_MemberName::_type_offset;
-int sun_dyn_MemberName::_flags_offset;
-int sun_dyn_MemberName::_vmtarget_offset;
-int sun_dyn_MemberName::_vmindex_offset;
+int java_lang_invoke_MemberName::_clazz_offset;
+int java_lang_invoke_MemberName::_name_offset;
+int java_lang_invoke_MemberName::_type_offset;
+int java_lang_invoke_MemberName::_flags_offset;
+int java_lang_invoke_MemberName::_vmtarget_offset;
+int java_lang_invoke_MemberName::_vmindex_offset;
 
-int sun_dyn_DirectMethodHandle::_vmindex_offset;
+int java_lang_invoke_DirectMethodHandle::_vmindex_offset;
 
-int sun_dyn_BoundMethodHandle::_argument_offset;
-int sun_dyn_BoundMethodHandle::_vmargslot_offset;
+int java_lang_invoke_BoundMethodHandle::_argument_offset;
+int java_lang_invoke_BoundMethodHandle::_vmargslot_offset;
 
-int sun_dyn_AdapterMethodHandle::_conversion_offset;
+int java_lang_invoke_AdapterMethodHandle::_conversion_offset;
 
-void java_dyn_MethodHandle::compute_offsets() {
+void java_lang_invoke_MethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::MethodHandle_klass();
   if (k != NULL && EnableMethodHandles) {
-    compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::java_dyn_MethodType_signature(), true);
-    compute_offset(_vmtarget_offset,  k, vmSymbols::vmtarget_name(),  vmSymbols::object_signature(), true);
-    compute_offset(_vmentry_offset,   k, vmSymbols::vmentry_name(),   vmSymbols::machine_word_signature(), true);
+    bool allow_super = false;
+    if (AllowTransitionalJSR292)  allow_super = true;  // temporary, to access java.dyn.MethodHandleImpl
+    compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::java_lang_invoke_MethodType_signature(), allow_super);
+    compute_offset(_vmtarget_offset,  k, vmSymbols::vmtarget_name(),  vmSymbols::object_signature(),                      allow_super);
+    compute_offset(_vmentry_offset,   k, vmSymbols::vmentry_name(),   vmSymbols::machine_word_signature(),                allow_super);
 
     // Note:  MH.vmslots (if it is present) is a hoisted copy of MH.type.form.vmslots.
     // It is optional pending experiments to keep or toss.
-    compute_optional_offset(_vmslots_offset, k, vmSymbols::vmslots_name(), vmSymbols::int_signature(), true);
+    compute_optional_offset(_vmslots_offset, k, vmSymbols::vmslots_name(), vmSymbols::int_signature(), allow_super);
   }
 }
 
-void sun_dyn_MemberName::compute_offsets() {
+void java_lang_invoke_MemberName::compute_offsets() {
   klassOop k = SystemDictionary::MemberName_klass();
   if (k != NULL && EnableMethodHandles) {
     compute_offset(_clazz_offset,     k, vmSymbols::clazz_name(),     vmSymbols::class_signature());
@@ -2222,14 +2246,14 @@ void sun_dyn_MemberName::compute_offsets() {
   }
 }
 
-void sun_dyn_DirectMethodHandle::compute_offsets() {
+void java_lang_invoke_DirectMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::DirectMethodHandle_klass();
   if (k != NULL && EnableMethodHandles) {
     compute_offset(_vmindex_offset,   k, vmSymbols::vmindex_name(),   vmSymbols::int_signature(),    true);
   }
 }
 
-void sun_dyn_BoundMethodHandle::compute_offsets() {
+void java_lang_invoke_BoundMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::BoundMethodHandle_klass();
   if (k != NULL && EnableMethodHandles) {
     compute_offset(_vmargslot_offset, k, vmSymbols::vmargslot_name(), vmSymbols::int_signature(),    true);
@@ -2237,22 +2261,22 @@ void sun_dyn_BoundMethodHandle::compute_offsets() {
   }
 }
 
-void sun_dyn_AdapterMethodHandle::compute_offsets() {
+void java_lang_invoke_AdapterMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::AdapterMethodHandle_klass();
   if (k != NULL && EnableMethodHandles) {
     compute_offset(_conversion_offset, k, vmSymbols::conversion_name(), vmSymbols::int_signature(), true);
   }
 }
 
-oop java_dyn_MethodHandle::type(oop mh) {
+oop java_lang_invoke_MethodHandle::type(oop mh) {
   return mh->obj_field(_type_offset);
 }
 
-void java_dyn_MethodHandle::set_type(oop mh, oop mtype) {
+void java_lang_invoke_MethodHandle::set_type(oop mh, oop mtype) {
   mh->obj_field_put(_type_offset, mtype);
 }
 
-int java_dyn_MethodHandle::vmslots(oop mh) {
+int java_lang_invoke_MethodHandle::vmslots(oop mh) {
   int vmslots_offset = _vmslots_offset;
   if (vmslots_offset != 0) {
 #ifdef ASSERT
@@ -2267,7 +2291,7 @@ int java_dyn_MethodHandle::vmslots(oop mh) {
 }
 
 // if MH.vmslots exists, hoist into it the value of type.form.vmslots
-void java_dyn_MethodHandle::init_vmslots(oop mh) {
+void java_lang_invoke_MethodHandle::init_vmslots(oop mh) {
   int vmslots_offset = _vmslots_offset;
   if (vmslots_offset != 0) {
     mh->int_field_put(vmslots_offset, compute_vmslots(mh));
@@ -2276,20 +2300,20 @@ void java_dyn_MethodHandle::init_vmslots(oop mh) {
 
 // fetch type.form.vmslots, which is the number of JVM stack slots
 // required to carry the arguments of this MH
-int java_dyn_MethodHandle::compute_vmslots(oop mh) {
+int java_lang_invoke_MethodHandle::compute_vmslots(oop mh) {
   oop mtype = type(mh);
   if (mtype == NULL)  return 0;  // Java code would get NPE
-  oop form = java_dyn_MethodType::form(mtype);
+  oop form = java_lang_invoke_MethodType::form(mtype);
   if (form == NULL)   return 0;  // Java code would get NPE
-  return java_dyn_MethodTypeForm::vmslots(form);
+  return java_lang_invoke_MethodTypeForm::vmslots(form);
 }
 
 // fetch the low-level entry point for this mh
-MethodHandleEntry* java_dyn_MethodHandle::vmentry(oop mh) {
+MethodHandleEntry* java_lang_invoke_MethodHandle::vmentry(oop mh) {
   return (MethodHandleEntry*) mh->address_field(_vmentry_offset);
 }
 
-void java_dyn_MethodHandle::set_vmentry(oop mh, MethodHandleEntry* me) {
+void java_lang_invoke_MethodHandle::set_vmentry(oop mh, MethodHandleEntry* me) {
   assert(_vmentry_offset != 0, "must be present");
 
   // This is always the final step that initializes a valid method handle:
@@ -2303,123 +2327,123 @@ void java_dyn_MethodHandle::set_vmentry(oop mh, MethodHandleEntry* me) {
 
 /// MemberName accessors
 
-oop sun_dyn_MemberName::clazz(oop mname) {
+oop java_lang_invoke_MemberName::clazz(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->obj_field(_clazz_offset);
 }
 
-void sun_dyn_MemberName::set_clazz(oop mname, oop clazz) {
+void java_lang_invoke_MemberName::set_clazz(oop mname, oop clazz) {
   assert(is_instance(mname), "wrong type");
   mname->obj_field_put(_clazz_offset, clazz);
 }
 
-oop sun_dyn_MemberName::name(oop mname) {
+oop java_lang_invoke_MemberName::name(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->obj_field(_name_offset);
 }
 
-void sun_dyn_MemberName::set_name(oop mname, oop name) {
+void java_lang_invoke_MemberName::set_name(oop mname, oop name) {
   assert(is_instance(mname), "wrong type");
   mname->obj_field_put(_name_offset, name);
 }
 
-oop sun_dyn_MemberName::type(oop mname) {
+oop java_lang_invoke_MemberName::type(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->obj_field(_type_offset);
 }
 
-void sun_dyn_MemberName::set_type(oop mname, oop type) {
+void java_lang_invoke_MemberName::set_type(oop mname, oop type) {
   assert(is_instance(mname), "wrong type");
   mname->obj_field_put(_type_offset, type);
 }
 
-int sun_dyn_MemberName::flags(oop mname) {
+int java_lang_invoke_MemberName::flags(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->int_field(_flags_offset);
 }
 
-void sun_dyn_MemberName::set_flags(oop mname, int flags) {
+void java_lang_invoke_MemberName::set_flags(oop mname, int flags) {
   assert(is_instance(mname), "wrong type");
   mname->int_field_put(_flags_offset, flags);
 }
 
-oop sun_dyn_MemberName::vmtarget(oop mname) {
+oop java_lang_invoke_MemberName::vmtarget(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->obj_field(_vmtarget_offset);
 }
 
-void sun_dyn_MemberName::set_vmtarget(oop mname, oop ref) {
+void java_lang_invoke_MemberName::set_vmtarget(oop mname, oop ref) {
   assert(is_instance(mname), "wrong type");
   mname->obj_field_put(_vmtarget_offset, ref);
 }
 
-int sun_dyn_MemberName::vmindex(oop mname) {
+int java_lang_invoke_MemberName::vmindex(oop mname) {
   assert(is_instance(mname), "wrong type");
   return mname->int_field(_vmindex_offset);
 }
 
-void sun_dyn_MemberName::set_vmindex(oop mname, int index) {
+void java_lang_invoke_MemberName::set_vmindex(oop mname, int index) {
   assert(is_instance(mname), "wrong type");
   mname->int_field_put(_vmindex_offset, index);
 }
 
-oop java_dyn_MethodHandle::vmtarget(oop mh) {
+oop java_lang_invoke_MethodHandle::vmtarget(oop mh) {
   assert(is_instance(mh), "MH only");
   return mh->obj_field(_vmtarget_offset);
 }
 
-void java_dyn_MethodHandle::set_vmtarget(oop mh, oop ref) {
+void java_lang_invoke_MethodHandle::set_vmtarget(oop mh, oop ref) {
   assert(is_instance(mh), "MH only");
   mh->obj_field_put(_vmtarget_offset, ref);
 }
 
-int sun_dyn_DirectMethodHandle::vmindex(oop mh) {
+int java_lang_invoke_DirectMethodHandle::vmindex(oop mh) {
   assert(is_instance(mh), "DMH only");
   return mh->int_field(_vmindex_offset);
 }
 
-void sun_dyn_DirectMethodHandle::set_vmindex(oop mh, int index) {
+void java_lang_invoke_DirectMethodHandle::set_vmindex(oop mh, int index) {
   assert(is_instance(mh), "DMH only");
   mh->int_field_put(_vmindex_offset, index);
 }
 
-int sun_dyn_BoundMethodHandle::vmargslot(oop mh) {
+int java_lang_invoke_BoundMethodHandle::vmargslot(oop mh) {
   assert(is_instance(mh), "BMH only");
   return mh->int_field(_vmargslot_offset);
 }
 
-oop sun_dyn_BoundMethodHandle::argument(oop mh) {
+oop java_lang_invoke_BoundMethodHandle::argument(oop mh) {
   assert(is_instance(mh), "BMH only");
   return mh->obj_field(_argument_offset);
 }
 
-int sun_dyn_AdapterMethodHandle::conversion(oop mh) {
+int java_lang_invoke_AdapterMethodHandle::conversion(oop mh) {
   assert(is_instance(mh), "AMH only");
   return mh->int_field(_conversion_offset);
 }
 
-void sun_dyn_AdapterMethodHandle::set_conversion(oop mh, int conv) {
+void java_lang_invoke_AdapterMethodHandle::set_conversion(oop mh, int conv) {
   assert(is_instance(mh), "AMH only");
   mh->int_field_put(_conversion_offset, conv);
 }
 
 
-// Support for java_dyn_MethodType
+// Support for java_lang_invoke_MethodType
 
-int java_dyn_MethodType::_rtype_offset;
-int java_dyn_MethodType::_ptypes_offset;
-int java_dyn_MethodType::_form_offset;
+int java_lang_invoke_MethodType::_rtype_offset;
+int java_lang_invoke_MethodType::_ptypes_offset;
+int java_lang_invoke_MethodType::_form_offset;
 
-void java_dyn_MethodType::compute_offsets() {
+void java_lang_invoke_MethodType::compute_offsets() {
   klassOop k = SystemDictionary::MethodType_klass();
   if (k != NULL) {
     compute_offset(_rtype_offset,  k, vmSymbols::rtype_name(),  vmSymbols::class_signature());
     compute_offset(_ptypes_offset, k, vmSymbols::ptypes_name(), vmSymbols::class_array_signature());
-    compute_offset(_form_offset,   k, vmSymbols::form_name(),   vmSymbols::java_dyn_MethodTypeForm_signature());
+    compute_offset(_form_offset,   k, vmSymbols::form_name(),   vmSymbols::java_lang_invoke_MethodTypeForm_signature());
   }
 }
 
-void java_dyn_MethodType::print_signature(oop mt, outputStream* st) {
+void java_lang_invoke_MethodType::print_signature(oop mt, outputStream* st) {
   st->print("(");
   objArrayOop pts = ptypes(mt);
   for (int i = 0, limit = pts->length(); i < limit; i++) {
@@ -2429,7 +2453,7 @@ void java_dyn_MethodType::print_signature(oop mt, outputStream* st) {
   java_lang_Class::print_signature(rtype(mt), st);
 }
 
-Symbol* java_dyn_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAPS) {
+Symbol* java_lang_invoke_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAPS) {
   ResourceMark rm;
   stringStream buffer(128);
   print_signature(mt, &buffer);
@@ -2444,101 +2468,81 @@ Symbol* java_dyn_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAP
   return name;
 }
 
-oop java_dyn_MethodType::rtype(oop mt) {
+oop java_lang_invoke_MethodType::rtype(oop mt) {
   assert(is_instance(mt), "must be a MethodType");
   return mt->obj_field(_rtype_offset);
 }
 
-objArrayOop java_dyn_MethodType::ptypes(oop mt) {
+objArrayOop java_lang_invoke_MethodType::ptypes(oop mt) {
   assert(is_instance(mt), "must be a MethodType");
   return (objArrayOop) mt->obj_field(_ptypes_offset);
 }
 
-oop java_dyn_MethodType::form(oop mt) {
+oop java_lang_invoke_MethodType::form(oop mt) {
   assert(is_instance(mt), "must be a MethodType");
   return mt->obj_field(_form_offset);
 }
 
-oop java_dyn_MethodType::ptype(oop mt, int idx) {
+oop java_lang_invoke_MethodType::ptype(oop mt, int idx) {
   return ptypes(mt)->obj_at(idx);
 }
 
-int java_dyn_MethodType::ptype_count(oop mt) {
+int java_lang_invoke_MethodType::ptype_count(oop mt) {
   return ptypes(mt)->length();
 }
 
 
 
-// Support for java_dyn_MethodTypeForm
+// Support for java_lang_invoke_MethodTypeForm
 
-int java_dyn_MethodTypeForm::_vmslots_offset;
-int java_dyn_MethodTypeForm::_erasedType_offset;
-int java_dyn_MethodTypeForm::_genericInvoker_offset;
+int java_lang_invoke_MethodTypeForm::_vmslots_offset;
+int java_lang_invoke_MethodTypeForm::_erasedType_offset;
+int java_lang_invoke_MethodTypeForm::_genericInvoker_offset;
 
-void java_dyn_MethodTypeForm::compute_offsets() {
+void java_lang_invoke_MethodTypeForm::compute_offsets() {
   klassOop k = SystemDictionary::MethodTypeForm_klass();
   if (k != NULL) {
     compute_optional_offset(_vmslots_offset,    k, vmSymbols::vmslots_name(),    vmSymbols::int_signature(), true);
-    compute_optional_offset(_erasedType_offset, k, vmSymbols::erasedType_name(), vmSymbols::java_dyn_MethodType_signature(), true);
-    compute_optional_offset(_genericInvoker_offset, k, vmSymbols::genericInvoker_name(), vmSymbols::java_dyn_MethodHandle_signature(), true);
+    compute_optional_offset(_erasedType_offset, k, vmSymbols::erasedType_name(), vmSymbols::java_lang_invoke_MethodType_signature(), true);
+    compute_optional_offset(_genericInvoker_offset, k, vmSymbols::genericInvoker_name(), vmSymbols::java_lang_invoke_MethodHandle_signature(), true);
     if (_genericInvoker_offset == 0)  _genericInvoker_offset = -1;  // set to explicit "empty" value
   }
 }
 
-int java_dyn_MethodTypeForm::vmslots(oop mtform) {
+int java_lang_invoke_MethodTypeForm::vmslots(oop mtform) {
   assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
   return mtform->int_field(_vmslots_offset);
 }
 
-oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
+oop java_lang_invoke_MethodTypeForm::erasedType(oop mtform) {
   assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
   return mtform->obj_field(_erasedType_offset);
 }
 
-oop java_dyn_MethodTypeForm::genericInvoker(oop mtform) {
+oop java_lang_invoke_MethodTypeForm::genericInvoker(oop mtform) {
   assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
   return mtform->obj_field(_genericInvoker_offset);
 }
 
 
-// Support for java_dyn_CallSite
+// Support for java_lang_invoke_CallSite
 
-int java_dyn_CallSite::_target_offset;
-int java_dyn_CallSite::_caller_method_offset;
-int java_dyn_CallSite::_caller_bci_offset;
+int java_lang_invoke_CallSite::_target_offset;
 
-void java_dyn_CallSite::compute_offsets() {
+void java_lang_invoke_CallSite::compute_offsets() {
   if (!EnableInvokeDynamic)  return;
   klassOop k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
-    compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_dyn_MethodHandle_signature());
-    compute_offset(_caller_method_offset, k, vmSymbols::vmmethod_name(), vmSymbols::sun_dyn_MemberName_signature());
-    compute_offset(_caller_bci_offset, k, vmSymbols::vmindex_name(), vmSymbols::int_signature());
+    compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
   }
 }
 
-oop java_dyn_CallSite::target(oop site) {
+oop java_lang_invoke_CallSite::target(oop site) {
   return site->obj_field(_target_offset);
 }
 
-void java_dyn_CallSite::set_target(oop site, oop target) {
+void java_lang_invoke_CallSite::set_target(oop site, oop target) {
   site->obj_field_put(_target_offset, target);
-}
-
-oop java_dyn_CallSite::caller_method(oop site) {
-  return site->obj_field(_caller_method_offset);
-}
-
-void java_dyn_CallSite::set_caller_method(oop site, oop ref) {
-  site->obj_field_put(_caller_method_offset, ref);
-}
-
-jint java_dyn_CallSite::caller_bci(oop site) {
-  return site->int_field(_caller_bci_offset);
-}
-
-void java_dyn_CallSite::set_caller_bci(oop site, jint bci) {
-  site->int_field_put(_caller_bci_offset, bci);
 }
 
 
@@ -2877,16 +2881,16 @@ void JavaClasses::compute_offsets() {
   java_lang_Thread::compute_offsets();
   java_lang_ThreadGroup::compute_offsets();
   if (EnableMethodHandles) {
-    java_dyn_MethodHandle::compute_offsets();
-    sun_dyn_MemberName::compute_offsets();
-    sun_dyn_DirectMethodHandle::compute_offsets();
-    sun_dyn_BoundMethodHandle::compute_offsets();
-    sun_dyn_AdapterMethodHandle::compute_offsets();
-    java_dyn_MethodType::compute_offsets();
-    java_dyn_MethodTypeForm::compute_offsets();
+    java_lang_invoke_MethodHandle::compute_offsets();
+    java_lang_invoke_MemberName::compute_offsets();
+    java_lang_invoke_DirectMethodHandle::compute_offsets();
+    java_lang_invoke_BoundMethodHandle::compute_offsets();
+    java_lang_invoke_AdapterMethodHandle::compute_offsets();
+    java_lang_invoke_MethodType::compute_offsets();
+    java_lang_invoke_MethodTypeForm::compute_offsets();
   }
   if (EnableInvokeDynamic) {
-    java_dyn_CallSite::compute_offsets();
+    java_lang_invoke_CallSite::compute_offsets();
   }
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes
