@@ -395,9 +395,9 @@ int LIR_Assembler::emit_exception_handler() {
 
   int offset = code_offset();
 
-  __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id), relocInfo::runtime_call_type);
   __ delayed()->nop();
-  debug_only(__ stop("should have gone to the caller");)
+  __ should_not_reach_here();
   assert(code_offset() - offset <= exception_handler_size, "overflow");
   __ end_a_stub();
 

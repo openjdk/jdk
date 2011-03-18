@@ -441,13 +441,6 @@ public class MidiSystem {
                 Synthesizer synth = getSynthesizer();
                 if (synth instanceof ReferenceCountingDevice) {
                     rec = ((ReferenceCountingDevice) synth).getReceiverReferenceCounting();
-                    // only use MixerSynth if it could successfully load a soundbank
-                    if (synth.getClass().toString().contains("com.sun.media.sound.MixerSynth")
-                        && (synth.getDefaultSoundbank() == null)) {
-                        // don't use this receiver if no soundbank available
-                        rec = null;
-                        synth.close();
-                    }
                 } else {
                     synth.open();
                     try {

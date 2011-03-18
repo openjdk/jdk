@@ -1084,7 +1084,10 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       jbyte old_tag = old_cp->tag_at(old_i).value();
       switch (old_tag) {
       case JVM_CONSTANT_Class:
+      case JVM_CONSTANT_UnresolvedClass:
         // revert the copy to JVM_CONSTANT_UnresolvedClass
+        // May be resolving while calling this so do the same for
+        // JVM_CONSTANT_UnresolvedClass (klass_name_at() deals with transition)
         (*merge_cp_p)->unresolved_klass_at_put(old_i,
           old_cp->klass_name_at(old_i));
         break;

@@ -125,9 +125,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   // given the MethodType, find out where the MH argument is buried
-  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
+  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, rdi_temp)));
   Register rdx_vmslots = rdx_temp;
-  __ movl(rdx_vmslots, Address(rdx_temp, __ delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, rdi_temp)));
+  __ movl(rdx_vmslots, Address(rdx_temp, __ delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, rdi_temp)));
   __ movptr(rcx_recv, __ argument_address(rdx_vmslots));
 
   trace_method_handle(_masm, "invokeExact");
@@ -154,11 +154,11 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
                    rcx_argslot, rbx_temp, rdx_temp);
 
   // load up an adapter from the calling type (Java weaves this)
-  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_dyn_MethodType::form_offset_in_bytes, rdi_temp)));
+  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, rdi_temp)));
   Register rdx_adapter = rdx_temp;
-  // __ load_heap_oop(rdx_adapter, Address(rdx_temp, java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes()));
+  // __ load_heap_oop(rdx_adapter, Address(rdx_temp, java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes()));
   // deal with old JDK versions:
-  __ lea(rdi_temp, Address(rdx_temp, __ delayed_value(java_dyn_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
+  __ lea(rdi_temp, Address(rdx_temp, __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
   __ cmpptr(rdi_temp, rdx_temp);
   Label sorry_no_invoke_generic;
   __ jcc(Assembler::below, sorry_no_invoke_generic);
@@ -371,16 +371,16 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
 
 // which conversion op types are implemented here?
 int MethodHandles::adapter_conversion_ops_supported_mask() {
-  return ((1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_CHECK_CAST)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_SWAP_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_ROT_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_DUP_ARGS)
-         |(1<<sun_dyn_AdapterMethodHandle::OP_DROP_ARGS)
-         //|(1<<sun_dyn_AdapterMethodHandle::OP_SPREAD_ARGS) //BUG!
+  return ((1<<java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_DUP_ARGS)
+         |(1<<java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS)
+         //|(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS) //BUG!
          );
   // FIXME: MethodHandlesTest gets a crash if we enable OP_SPREAD_ARGS.
 }
@@ -415,20 +415,21 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   const Register rarg2_required = LP64_ONLY(j_rarg2) NOT_LP64(rdi);
   assert_different_registers(rarg0_code, rarg1_actual, rarg2_required, saved_last_sp);
 
-  guarantee(java_dyn_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
+  guarantee(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
   // some handy addresses
   Address rbx_method_fie(     rbx,      methodOopDesc::from_interpreted_offset() );
+  Address rbx_method_fce(     rbx,      methodOopDesc::from_compiled_offset() );
 
-  Address rcx_mh_vmtarget(    rcx_recv, java_dyn_MethodHandle::vmtarget_offset_in_bytes() );
-  Address rcx_dmh_vmindex(    rcx_recv, sun_dyn_DirectMethodHandle::vmindex_offset_in_bytes() );
+  Address rcx_mh_vmtarget(    rcx_recv, java_lang_invoke_MethodHandle::vmtarget_offset_in_bytes() );
+  Address rcx_dmh_vmindex(    rcx_recv, java_lang_invoke_DirectMethodHandle::vmindex_offset_in_bytes() );
 
-  Address rcx_bmh_vmargslot(  rcx_recv, sun_dyn_BoundMethodHandle::vmargslot_offset_in_bytes() );
-  Address rcx_bmh_argument(   rcx_recv, sun_dyn_BoundMethodHandle::argument_offset_in_bytes() );
+  Address rcx_bmh_vmargslot(  rcx_recv, java_lang_invoke_BoundMethodHandle::vmargslot_offset_in_bytes() );
+  Address rcx_bmh_argument(   rcx_recv, java_lang_invoke_BoundMethodHandle::argument_offset_in_bytes() );
 
-  Address rcx_amh_vmargslot(  rcx_recv, sun_dyn_AdapterMethodHandle::vmargslot_offset_in_bytes() );
-  Address rcx_amh_argument(   rcx_recv, sun_dyn_AdapterMethodHandle::argument_offset_in_bytes() );
-  Address rcx_amh_conversion( rcx_recv, sun_dyn_AdapterMethodHandle::conversion_offset_in_bytes() );
+  Address rcx_amh_vmargslot(  rcx_recv, java_lang_invoke_AdapterMethodHandle::vmargslot_offset_in_bytes() );
+  Address rcx_amh_argument(   rcx_recv, java_lang_invoke_AdapterMethodHandle::argument_offset_in_bytes() );
+  Address rcx_amh_conversion( rcx_recv, java_lang_invoke_AdapterMethodHandle::conversion_offset_in_bytes() );
   Address vmarg;                // __ argument_address(vmargslot)
 
   const int java_mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
@@ -448,12 +449,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _raise_exception:
     {
       // Not a real MH entry, but rather shared code for raising an
-      // exception.  Since we use a C2I adapter to set up the
-      // interpreter state, arguments are expected in compiler
-      // argument registers.
+      // exception.  Since we use the compiled entry, arguments are
+      // expected in compiler argument registers.
       assert(raise_exception_method(), "must be set");
-      address c2i_entry = raise_exception_method()->get_c2i_entry();
-      assert(c2i_entry, "method must be linked");
+      assert(raise_exception_method()->from_compiled_entry(), "method must be linked");
 
       const Register rdi_pc = rax;
       __ pop(rdi_pc);  // caller PC
@@ -461,7 +460,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       Register rbx_method = rbx_temp;
       Label L_no_method;
-      // FIXME: fill in _raise_exception_method with a suitable sun.dyn method
+      // FIXME: fill in _raise_exception_method with a suitable java.lang.invoke method
       __ movptr(rbx_method, ExternalAddress((address) &_raise_exception_method));
       __ testptr(rbx_method, rbx_method);
       __ jccb(Assembler::zero, L_no_method);
@@ -472,13 +471,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ jccb(Assembler::zero, L_no_method);
       __ verify_oop(rbx_method);
 
-      // 32-bit: push remaining arguments as if coming from the compiler.
       NOT_LP64(__ push(rarg2_required));
+      __ push(rdi_pc);         // restore caller PC
+      __ jmp(rbx_method_fce);  // jump to compiled entry
 
-      __ push(rdi_pc);  // restore caller PC
-      __ jump(ExternalAddress(c2i_entry));  // do C2I transition
-
-      // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
       __ bind(L_no_method);
       __ push(rarg2_required);

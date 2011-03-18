@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,6 @@ public class JarSignerResources extends java.util.ListResourceBundle {
                 "[-digestalg <algorithm>]    name of digest algorithm"},
         {".sigalg.algorithm.name.of.signature.algorithm",
                 "[-sigalg <algorithm>]       name of signature algorithm"},
-        {".crl.auto.file.include.CRL.in.signed.jar",
-                "[-crl[:auto| <file>]        include CRL in signed jar"},
         {".verify.verify.a.signed.JAR.file",
                 "[-verify]                   verify a signed JAR file"},
         {".verbose.suboptions.verbose.output.when.signing.verifying.",
@@ -193,7 +191,6 @@ public class JarSignerResources extends java.util.ListResourceBundle {
         {"using.an.alternative.signing.mechanism",
                 "using an alternative signing mechanism"},
         {"entry.was.signed.on", "entry was signed on {0}"},
-        {"with.a.CRL.including.d.entries", "with a CRL including %d entries"},
         {"Warning.", "Warning: "},
         {"This.jar.contains.unsigned.entries.which.have.not.been.integrity.checked.",
                 "This jar contains unsigned entries which have not been integrity-checked. "},

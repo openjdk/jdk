@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,10 @@ EXCLUDE_PROPWARN_PKGS += sun.dyn
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced
-# with a new module system (being discussed for JDK 7).
+# with a new module system (being discussed for JDK 8).
 #
-EXPORTED_PRIVATE_PKGS = com.sun.servicetag
+EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
+                        com.oracle.net
 
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases
@@ -85,9 +86,8 @@ ifdef OPENJDK
   IMAGE_DOCLIST_JDK = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
   IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
-  # Where to find these files
-  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
-  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
+  # make/closed/common/Defs.gmk for closed location of SHARE_JDK_DOC_SRC
+
   IMAGE_DOCLIST_JDK = COPYRIGHT README.html  THIRDPARTYLICENSEREADME.txt
   IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html THIRDPARTYLICENSEREADME.txt
   ifeq ($(PLATFORM), windows)

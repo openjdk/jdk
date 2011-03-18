@@ -58,7 +58,6 @@ import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.misc.BootClassLoaderHook;
 
 /**
  * A representation of color profile data for device independent and
@@ -865,8 +864,7 @@ public class ICC_Profile implements Serializable {
         case ColorSpace.CS_PYCC:
             synchronized(ICC_Profile.class) {
                 if (PYCCprofile == null) {
-                    if (BootClassLoaderHook.getHook() != null ||
-                        standardProfileExists("PYCC.pf"))
+                    if (standardProfileExists("PYCC.pf"))
                     {
                         ProfileDeferralInfo pInfo =
                             new ProfileDeferralInfo("PYCC.pf",

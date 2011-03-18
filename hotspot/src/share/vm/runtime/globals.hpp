@@ -1540,12 +1540,8 @@ class CommandLineFlags {
   product(bool, AlwaysPreTouch, false,                                      \
           "It forces all freshly committed pages to be pre-touched.")       \
                                                                             \
-  product(bool, CMSUseOldDefaults, false,                                   \
-          "A flag temporarily introduced to allow reverting to some "       \
-          "older default settings; older as of 6.0")                        \
-                                                                            \
-  product(intx, CMSYoungGenPerWorker, 16*M,                                 \
-          "The amount of young gen chosen by default per GC worker "        \
+  product_pd(intx, CMSYoungGenPerWorker,                                    \
+          "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
   product(bool, GCOverheadReporting, false,                                 \
@@ -2610,9 +2606,6 @@ class CommandLineFlags {
   develop(bool, CompileTheWorldPreloadClasses, true,                        \
           "Preload all classes used by a class before start loading")       \
                                                                             \
-  notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
-          "Compile all methods although class initializer failed")          \
-                                                                            \
   notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
           "Force a safepoint every n compiles so sweeper can keep up")      \
                                                                             \
@@ -3656,9 +3649,6 @@ class CommandLineFlags {
   product(bool, RequireSharedSpaces, false,                                 \
           "Require shared spaces in the permanent generation")              \
                                                                             \
-  product(bool, ForceSharedSpaces, false,                                   \
-          "Require shared spaces in the permanent generation")              \
-                                                                            \
   product(bool, DumpSharedSpaces, false,                                    \
            "Special mode: JVM reads a class list, loads classes, builds "   \
             "shared spaces, and dumps the shared spaces to a file to be "   \
@@ -3722,6 +3712,13 @@ class CommandLineFlags {
   experimental(bool, AllowTransitionalJSR292, true,                         \
           "recognize pre-PFD formats of invokedynamic")                     \
                                                                             \
+  experimental(bool, PreferTransitionalJSR292, false,                       \
+          "prefer pre-PFD APIs on boot class path, if they exist")          \
+                                                                            \
+  experimental(bool, AllowInvokeForInvokeGeneric, false,                    \
+          "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
+          "as equivalent methods")                                          \
+                                                                            \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
                                                                             \
@@ -3732,6 +3729,9 @@ class CommandLineFlags {
   diagnostic(ccstr, PauseAtStartupFile, NULL,                               \
           "The file to create and for whose removal to await when pausing " \
           "at startup. (default: ./vm.paused.<pid>)")                       \
+                                                                            \
+  diagnostic(bool, PauseAtExit, false,                                      \
+          "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
           "Enable performance-impacting dtrace probes")                     \

@@ -112,7 +112,7 @@ static void __attribute((constructor)) init() {
  */
 static inline fdEntry_t *getFdEntry(int fd)
 {
-    if (fd < 0 || fd > fdCount) {
+    if (fd < 0 || fd >= fdCount) {
         return NULL;
     }
     return &fdTable[fd];

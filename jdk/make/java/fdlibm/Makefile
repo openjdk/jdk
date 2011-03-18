@@ -31,7 +31,6 @@
 #
 
 BUILDDIR     = ../..
-MODULE       = base
 LIBRARY      = fdlibm
 PRODUCT      = java
 

@@ -3386,7 +3386,22 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         instance_id = InstanceBot;
         tary = TypeAry::make(Type::BOTTOM, tary->_size);
       }
+    } else // Non integral arrays.
+    // Must fall to bottom if exact klasses in upper lattice
+    // are not equal or super klass is exact.
+    if ( above_centerline(ptr) && klass() != tap->klass() &&
+         // meet with top[] and bottom[] are processed further down:
+         tap ->_klass != NULL  && this->_klass != NULL   &&
+         // both are exact and not equal:
+        ((tap ->_klass_is_exact && this->_klass_is_exact) ||
+         // 'tap'  is exact and super or unrelated:
+         (tap ->_klass_is_exact && !tap->klass()->is_subtype_of(klass())) ||
+         // 'this' is exact and super or unrelated:
+         (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
+      tary = TypeAry::make(Type::BOTTOM, tary->_size);
+      return make( NotNull, NULL, tary, lazy_klass, false, off, InstanceBot );
     }
+
     bool xk = false;
     switch (tap->ptr()) {
     case AnyNull:
@@ -3766,7 +3781,7 @@ ciKlass* TypeAryPtr::klass() const {
   // Oops, need to compute _klass and cache it
   ciKlass* k_ary = compute_klass();
 
-  if( this != TypeAryPtr::OOPS ) {
+  if( this != TypeAryPtr::OOPS && this->dual() != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying
     // ciKlass for this array type.  In order to set the field,
     // we need to cast away const-ness.

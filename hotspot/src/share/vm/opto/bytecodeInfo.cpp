@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,7 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
     if (caller_jvms->method()->is_method_handle_adapter())
       new_depth_adjust -= 1;  // don't count actions in MH or indy adapter frames
     else if (callee_method->is_method_handle_invoke()) {
-      new_depth_adjust -= 1;  // don't count method handle calls from java.dyn implem
+      new_depth_adjust -= 1;  // don't count method handle calls from java.lang.invoke implem
     }
     if (new_depth_adjust != 0 && PrintInlining) {
       stringStream nm1; caller_jvms->method()->print_name(&nm1);
