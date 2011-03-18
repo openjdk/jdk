@@ -112,11 +112,8 @@ public class ZipFileSystem extends FileSystem {
         }
         // sm and existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
-        try {
-            zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.WRITE);
-        } catch (AccessDeniedException x) {
+        if (!Files.isWritable(zfpath))
             this.readOnly = true;
-        }
         this.zc = ZipCoder.get(nameEncoding);
         this.defaultdir = new ZipPath(this, getBytes(defaultDir));
         this.ch = Files.newByteChannel(zfpath, READ);

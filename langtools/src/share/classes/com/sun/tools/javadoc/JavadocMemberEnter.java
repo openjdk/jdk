@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,10 @@ class JavadocMemberEnter extends MemberEnter {
         return (JavadocMemberEnter)instance;
     }
 
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(memberEnterKey, new Context.Factory<MemberEnter>() {
-               public MemberEnter make() {
-                   return new JavadocMemberEnter(context);
+               public MemberEnter make(Context c) {
+                   return new JavadocMemberEnter(c);
                }
         });
     }

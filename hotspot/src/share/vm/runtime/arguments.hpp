@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,9 @@ class Arguments : AllStatic {
   // sun.java.launcher.pid, private property
   static int    _sun_java_launcher_pid;
 
+  // was this VM created by the gamma launcher
+  static bool   _created_by_gamma_launcher;
+
   // Option flags
   static bool   _has_profile;
   static bool   _has_alloc_profile;
@@ -444,6 +447,8 @@ class Arguments : AllStatic {
   static const char* sun_java_launcher()    { return _sun_java_launcher; }
   // Was VM created by a Java launcher?
   static bool created_by_java_launcher();
+  // Was VM created by the gamma Java launcher?
+  static bool created_by_gamma_launcher();
   // -Dsun.java.launcher.pid
   static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
 

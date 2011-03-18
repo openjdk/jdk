@@ -148,7 +148,7 @@ static int frame_size_in_bytes = -1;
 
 static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   assert(frame_size_in_bytes == __ total_frame_size_in_bytes(reg_save_size_in_words),
-         " mismatch in calculation");
+         "mismatch in calculation");
   sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
@@ -176,9 +176,8 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
 
 static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers = true) {
   assert(frame_size_in_bytes == __ total_frame_size_in_bytes(reg_save_size_in_words),
-         " mismatch in calculation");
+         "mismatch in calculation");
   __ save_frame_c1(frame_size_in_bytes);
-  sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
 
   // Record volatile registers as callee-save values in an OopMap so their save locations will be
   // propagated to the caller frame's RegisterMap during StackFrameStream construction (needed for
@@ -367,23 +366,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   switch (id) {
     case forward_exception_id:
       {
-        // we're handling an exception in the context of a compiled
-        // frame.  The registers have been saved in the standard
-        // places.  Perform an exception lookup in the caller and
-        // dispatch to the handler if found.  Otherwise unwind and
-        // dispatch to the callers exception handler.
-
-        oop_maps = new OopMapSet();
-        OopMap* oop_map = generate_oop_map(sasm, true);
-
-        // transfer the pending exception to the exception_oop
-        __ ld_ptr(G2_thread, in_bytes(JavaThread::pending_exception_offset()), Oexception);
-        __ ld_ptr(Oexception, 0, G0);
-        __ st_ptr(G0, G2_thread, in_bytes(JavaThread::pending_exception_offset()));
-        __ add(I7, frame::pc_return_offset, Oissuing_pc);
-
-        generate_handle_exception(sasm, oop_maps, oop_map);
-        __ should_not_reach_here();
+        oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
@@ -671,15 +654,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
     case handle_exception_id:
-      {
-        __ set_info("handle_exception", dont_gc_arguments);
-        // make a frame and preserve the caller's caller-save registers
+      { __ set_info("handle_exception", dont_gc_arguments);
+        oop_maps = generate_handle_exception(id, sasm);
+      }
+      break;
 
-        oop_maps = new OopMapSet();
-        OopMap* oop_map = save_live_registers(sasm);
-        __ mov(Oexception->after_save(),  Oexception);
-        __ mov(Oissuing_pc->after_save(), Oissuing_pc);
-        generate_handle_exception(sasm, oop_maps, oop_map);
+    case handle_exception_from_callee_id:
+      { __ set_info("handle_exception_from_callee", dont_gc_arguments);
+        oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
@@ -696,7 +678,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
                         G2_thread, Oissuing_pc->after_save());
         __ verify_not_null_oop(Oexception->after_save());
 
-        // Restore SP from L7 if the exception PC is a MethodHandle call site.
+        // Restore SP from L7 if the exception PC is a method handle call site.
         __ mov(O0, G5);  // Save the target address.
         __ lduw(Address(G2_thread, JavaThread::is_method_handle_return_offset()), L0);
         __ tst(L0);  // Condition codes are preserved over the restore.
@@ -1006,47 +988,88 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 }
 
 
-void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_maps, OopMap* oop_map, bool) {
-  Label no_deopt;
+OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
+  __ block_comment("generate_handle_exception");
+
+  // Save registers, if required.
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* oop_map = NULL;
+  switch (id) {
+  case forward_exception_id:
+    // We're handling an exception in the context of a compiled frame.
+    // The registers have been saved in the standard places.  Perform
+    // an exception lookup in the caller and dispatch to the handler
+    // if found.  Otherwise unwind and dispatch to the callers
+    // exception handler.
+     oop_map = generate_oop_map(sasm, true);
+
+     // transfer the pending exception to the exception_oop
+     __ ld_ptr(G2_thread, in_bytes(JavaThread::pending_exception_offset()), Oexception);
+     __ ld_ptr(Oexception, 0, G0);
+     __ st_ptr(G0, G2_thread, in_bytes(JavaThread::pending_exception_offset()));
+     __ add(I7, frame::pc_return_offset, Oissuing_pc);
+    break;
+  case handle_exception_id:
+    // At this point all registers MAY be live.
+    oop_map = save_live_registers(sasm);
+    __ mov(Oexception->after_save(),  Oexception);
+    __ mov(Oissuing_pc->after_save(), Oissuing_pc);
+    break;
+  case handle_exception_from_callee_id:
+    // At this point all registers except exception oop (Oexception)
+    // and exception pc (Oissuing_pc) are dead.
+    oop_map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
+    sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
+    __ save_frame_c1(frame_size_in_bytes);
+    __ mov(Oexception->after_save(),  Oexception);
+    __ mov(Oissuing_pc->after_save(), Oissuing_pc);
+    break;
+  default:  ShouldNotReachHere();
+  }
 
   __ verify_not_null_oop(Oexception);
 
   // save the exception and issuing pc in the thread
-  __ st_ptr(Oexception, G2_thread, in_bytes(JavaThread::exception_oop_offset()));
+  __ st_ptr(Oexception,  G2_thread, in_bytes(JavaThread::exception_oop_offset()));
   __ st_ptr(Oissuing_pc, G2_thread, in_bytes(JavaThread::exception_pc_offset()));
 
-  // save the real return address and use the throwing pc as the return address to lookup (has bci & oop map)
-  __ mov(I7, L0);
+  // use the throwing pc as the return address to lookup (has bci & oop map)
   __ mov(Oissuing_pc, I7);
   __ sub(I7, frame::pc_return_offset, I7);
   int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, exception_handler_for_pc));
+  oop_maps->add_gc_map(call_offset, oop_map);
 
   // Note: if nmethod has been deoptimized then regardless of
   // whether it had a handler or not we will deoptimize
   // by entering the deopt blob with a pending exception.
 
-#ifdef ASSERT
-  Label done;
-  __ tst(O0);
-  __ br(Assembler::notZero, false, Assembler::pn, done);
-  __ delayed()->nop();
-  __ stop("should have found address");
-  __ bind(done);
-#endif
+  // Restore the registers that were saved at the beginning, remove
+  // the frame and jump to the exception handler.
+  switch (id) {
+  case forward_exception_id:
+  case handle_exception_id:
+    restore_live_registers(sasm);
+    __ jmp(O0, 0);
+    __ delayed()->restore();
+    break;
+  case handle_exception_from_callee_id:
+    // Restore SP from L7 if the exception PC is a method handle call site.
+    __ mov(O0, G5);  // Save the target address.
+    __ lduw(Address(G2_thread, JavaThread::is_method_handle_return_offset()), L0);
+    __ tst(L0);  // Condition codes are preserved over the restore.
+    __ restore();
 
-  // restore the registers that were saved at the beginning and jump to the exception handler.
-  restore_live_registers(sasm);
+    __ jmp(G5, 0);  // jump to the exception handler
+    __ delayed()->movcc(Assembler::notZero, false, Assembler::icc, L7_mh_SP_save, SP);  // Restore SP if required.
+    break;
+  default:  ShouldNotReachHere();
+  }
 
-  __ jmp(O0, 0);
-  __ delayed()->restore();
-
-  oop_maps->add_gc_map(call_offset, oop_map);
+  return oop_maps;
 }
 
 
 #undef __
-
-#define __ masm->
 
 const char *Runtime1::pd_name_for_address(address entry) {
   return "<unknown function>";

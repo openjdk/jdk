@@ -70,9 +70,14 @@ public class XRGlyphCache implements GlyphDisposedListener {
         try {
             SunToolkit.awtLock();
 
-            ArrayList<Integer> glyphIDList = new ArrayList<Integer>(glyphPtrList.size());
+            GrowableIntArray glyphIDList = new GrowableIntArray(1, glyphPtrList.size());
             for (long glyphPtr : glyphPtrList) {
-                glyphIDList.add(XRGlyphCacheEntry.getGlyphID(glyphPtr));
+                int glyphID = XRGlyphCacheEntry.getGlyphID(glyphPtr);
+
+                //Check if glyph hasn't been freed already
+                if (glyphID != 0) {
+                   glyphIDList.addInt(glyphID);
+                }
             }
             freeGlyphs(glyphIDList);
         } finally {
@@ -83,7 +88,6 @@ public class XRGlyphCache implements GlyphDisposedListener {
     protected int getFreeGlyphID() {
         if (freeGlyphIDs.size() > 0) {
             int newID = freeGlyphIDs.remove(freeGlyphIDs.size() - 1);
-            ;
             return newID;
         }
         return nextID++;
@@ -246,7 +250,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
             glyph.setPinned();
         }
 
-        ArrayList<Integer> deleteGlyphList = new ArrayList<Integer>();
+        GrowableIntArray deleteGlyphList = new GrowableIntArray(1, 10);
         int pixelsToRelease = cachedPixels - MAX_CACHED_PIXELS;
 
         for (int i = cacheList.size() - 1; i >= 0 && pixelsToRelease > 0; i--) {
@@ -254,7 +258,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
 
             if (!entry.isPinned()) {
                 pixelsToRelease -= entry.getPixelCnt();
-                deleteGlyphList.add(new Integer(entry.getGlyphID()));
+                deleteGlyphList.addInt(entry.getGlyphID());
             }
         }
 
@@ -265,26 +269,23 @@ public class XRGlyphCache implements GlyphDisposedListener {
         freeGlyphs(deleteGlyphList);
     }
 
-    private void freeGlyphs(List<Integer> glyphIdList) {
+    private void freeGlyphs(GrowableIntArray glyphIdList) {
+        GrowableIntArray removedLCDGlyphs = new GrowableIntArray(1, 10);
+        GrowableIntArray removedGrayscaleGlyphs = new GrowableIntArray(1, 10);
 
-        freeGlyphIDs.addAll(glyphIdList);
+        for (int i=0; i < glyphIdList.getSize(); i++) {
+            int glyphId = glyphIdList.getInt(i);
+            freeGlyphIDs.add(glyphId);
 
-        GrowableIntArray removedLCDGlyphs = new GrowableIntArray(1, 1);
-        GrowableIntArray removedGrayscaleGlyphs = new GrowableIntArray(1, 1);
-
-        for (Integer glyphId : glyphIdList) {
-            tmp.setValue(glyphId.intValue());
+            tmp.setValue(glyphId);
             XRGlyphCacheEntry entry = cacheMap.get(tmp);
             cachedPixels -= entry.getPixelCnt();
-
-            int removedGlyphID = entry.getGlyphID();
-            tmp.setValue(removedGlyphID);
             cacheMap.remove(tmp);
 
             if (entry.getGlyphSet() == grayGlyphSet) {
-                removedGrayscaleGlyphs.addInt(removedGlyphID);
+                removedGrayscaleGlyphs.addInt(glyphId);
             } else {
-                removedLCDGlyphs.addInt(removedGlyphID);
+                removedLCDGlyphs.addInt(glyphId);
             }
 
             entry.setGlyphID(0);

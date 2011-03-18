@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = nio
 PACKAGE = java.nio
 LIBRARY = nio
 PRODUCT = java
@@ -304,11 +303,7 @@ endif # PLATFORM
 # Rules
 #
 
-SUBDIRS_management = mxbean
-include $(BUILDDIR)/common/Subdirs.gmk
-
 build: sources
-	$(SUBDIRS-loop)
 
 clean clobber::
 	$(RM) -r $(NIO_GEN) $(SNIO_GEN)
@@ -821,7 +816,7 @@ SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSOR_SRC) | \
 	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }') 
 
 $(TEMPDIR)/$(GENSOR_SRC) : $(GENSOR_SRC)
-	$(install-non-module-file)
+	$(install-file)
 
 $(GENSOR_EXE) : $(TEMPDIR)/$(GENSOR_SRC)
 	$(prep-target)

@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = imageio
 PACKAGE = javax.imageio
 PRODUCT = jiio
 include $(BUILDDIR)/common/Defs.gmk

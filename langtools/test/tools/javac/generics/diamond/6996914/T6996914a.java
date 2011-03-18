@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6996914
+ * @bug 6996914 7020044
  * @summary  Diamond inference: problem when accessing protected constructor
  * @run main T6996914a
  */
@@ -50,17 +50,6 @@ public class T6996914a {
         PackageKind(String pkgDecl, String importDecl) {
             this.pkgDecl = pkgDecl;
             this.importDecl = importDecl;
-        }
-    }
-
-    enum DiamondKind {
-        STANDARD("new Foo<>();"),
-        ANON("new Foo<>() {};");
-
-        String expr;
-
-        DiamondKind(String expr) {
-            this.expr = expr;
         }
     }
 
@@ -104,14 +93,14 @@ public class T6996914a {
         final static String sourceStub =
                         "#I\n" +
                         "class Test {\n" +
-                        "  Foo<String> fs = #D\n" +
+                        "  Foo<String> fs = new Foo<>();\n" +
                         "}\n";
 
         String source;
 
-        public ClientClass(PackageKind pk, DiamondKind dk) {
+        public ClientClass(PackageKind pk) {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = sourceStub.replace("#I", pk.importDecl).replace("#D", dk.expr);
+            source = sourceStub.replace("#I", pk.importDecl);
         }
 
         @Override
@@ -123,22 +112,20 @@ public class T6996914a {
     public static void main(String... args) throws Exception {
         for (PackageKind pk : PackageKind.values()) {
             for (ConstructorKind ck : ConstructorKind.values()) {
-                for (DiamondKind dk : DiamondKind.values()) {
-                    compileAndCheck(pk, ck, dk);
-                }
+                    compileAndCheck(pk, ck);
             }
         }
     }
 
-    static void compileAndCheck(PackageKind pk, ConstructorKind ck, DiamondKind dk) throws Exception {
+    static void compileAndCheck(PackageKind pk, ConstructorKind ck) throws Exception {
         FooClass foo = new FooClass(pk, ck);
-        ClientClass client = new ClientClass(pk, dk);
+        ClientClass client = new ClientClass(pk);
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         ErrorListener el = new ErrorListener();
         JavacTask ct = (JavacTask)tool.getTask(null, null, el,
                 null, null, Arrays.asList(foo, client));
         ct.analyze();
-        if (el.errors > 0 == check(pk, ck, dk)) {
+        if (el.errors > 0 == check(pk, ck)) {
             String msg = el.errors > 0 ?
                 "Error compiling files" :
                 "No error when compiling files";
@@ -146,10 +133,9 @@ public class T6996914a {
         }
     }
 
-    static boolean check(PackageKind pk, ConstructorKind ck, DiamondKind dk) {
+    static boolean check(PackageKind pk, ConstructorKind ck) {
         switch (pk) {
-            case A: return ck == ConstructorKind.PUBLIC ||
-                    (ck  == ConstructorKind.PROTECTED && dk == DiamondKind.ANON);
+            case A: return ck == ConstructorKind.PUBLIC;
             case DEFAULT: return ck != ConstructorKind.PRIVATE;
             default: throw new AssertionError("Unknown package kind");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,8 @@ public final class LdapClient implements PooledConnection {
     LdapResult search(String dn, int scope, int deref, int sizeLimit,
                       int timeLimit, boolean attrsOnly, String attrs[],
                       String filter, int batchSize, Control[] reqCtls,
-                      Hashtable binaryAttrs, boolean waitFirstReply)
+                      Hashtable binaryAttrs, boolean waitFirstReply,
+                      int replyQueueCapacity)
         throws IOException, NamingException {
 
         ensureOpen();
@@ -543,7 +544,8 @@ public final class LdapClient implements PooledConnection {
                 if (isLdapv3) encodeControls(ber, reqCtls);
             ber.endSeq();
 
-         LdapRequest req = conn.writeRequest(ber, curMsgId);
+         LdapRequest req =
+                conn.writeRequest(ber, curMsgId, false, replyQueueCapacity);
 
          res.msgId = curMsgId;
          res.status = LdapClient.LDAP_SUCCESS; //optimistic

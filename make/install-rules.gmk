@@ -57,39 +57,39 @@ install: install-build
 
 install-build:
 ifeq ($(BUILD_INSTALL), true)
-	@$(call MakeStart, install, $(INSTALL_BUILD_TARGETS))
+	@$(call MakeStart,install,$(INSTALL_BUILD_TARGETS))
 	($(CD) $(INSTALL_TOPDIR)/make && \
 	  $(MAKE) $(INSTALL_BUILD_TARGETS) $(INSTALL_BUILD_ARGUMENTS))
-	@$(call MakeFinish, install, $(INSTALL_BUILD_TARGETS))
+	@$(call MakeFinish,install,$(INSTALL_BUILD_TARGETS))
 endif
 
 update-patcher:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/update/Makefile ]; then \
-	  $(call MakeStart, install update, all); \
+	  $(call MakeStart,install_update,all); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/update && \
 	    $(MAKE) all $(INSTALL_BUILD_ARGUMENTS) ); \
-	  $(call MakeFinish, install, all); \
+	  $(call MakeFinish,install_update,all); \
 	fi
 endif
 
 update-patchgen:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/update/Makefile ]; then \
-	  $(call MakeStart, install update, patchgen); \
+	  $(call MakeStart,install_update,patchgen); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/update && \
 	    $(MAKE) patchgen $(INSTALL_BUILD_ARGUMENTS) ); \
-	  $(call MakeFinish, install, patchgen); \
+	  $(call MakeFinish,install_update,patchgen); \
 	fi
 endif
 
 installer:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/installer/Makefile ]; then \
-	  $(call MakeStart, install installer, all); \
+	  $(call MakeStart,install_installer,all); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/installer && \
 	    $(MAKE) all $(INSTALL_BUILD_ARGUMENTS) ); \
-	  $(call MakeFinish, install, all); \
+	  $(call MakeFinish,install_installer,all); \
 	fi
 endif
 
@@ -99,10 +99,10 @@ combo_build:
 
 install-clobber:
 ifeq ($(BUILD_INSTALL), true)
-	@$(call MakeStart, install, clobber)
+	@$(call MakeStart,install,clobber)
 	($(CD) $(INSTALL_TOPDIR)/make && \
 	  $(MAKE) clobber $(INSTALL_BUILD_ARGUMENTS))
-	@$(call MakeFinish, install, clobber)
+	@$(call MakeFinish,install,clobber)
 endif
 
 install-sanity:: 
