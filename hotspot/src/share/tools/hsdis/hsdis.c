@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 /* hsdis.c -- dump a range of addresses as native instructions
    This implements the plugin protocol required by the
    HotSpot PrintAssembly option.

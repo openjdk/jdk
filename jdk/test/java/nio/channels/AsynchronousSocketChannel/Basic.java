@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272 6842687 6878369
+ * @bug 4607272 6842687 6878369 6944810 7023403
  * @summary Unit test for AsynchronousSocketChannel
  * @run main/timeout=600 Basic
  */

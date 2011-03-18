@@ -807,8 +807,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         final JavaCompiler compiler;
         /** The log for the round. */
         final Log log;
-        /** The number of warnings in the previous round. */
-        final int priorWarnings;
 
         /** The ASTs to be compiled. */
         List<JCCompilationUnit> roots;
@@ -826,10 +824,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         private Round(Context context, int number, int priorWarnings) {
             this.context = context;
             this.number = number;
-            this.priorWarnings = priorWarnings;
 
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
+            log.nwarnings += priorWarnings;
             log.deferDiagnostics = true;
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
@@ -904,8 +902,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         JavaCompiler finalCompiler(boolean errorStatus) {
             try {
                 JavaCompiler c = JavaCompiler.instance(nextContext());
+                c.log.nwarnings += compiler.log.nwarnings;
                 if (errorStatus) {
-                    c.log.nwarnings += priorWarnings + compiler.log.nwarnings;
                     c.log.nerrors += compiler.log.nerrors;
                 }
                 return c;
@@ -1045,7 +1043,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
          * other values are implicitly reset.
          */
         private Context nextContext() {
-            Context next = new Context();
+            Context next = new Context(context);
 
             Options options = Options.instance(context);
             Assert.checkNonNull(options);

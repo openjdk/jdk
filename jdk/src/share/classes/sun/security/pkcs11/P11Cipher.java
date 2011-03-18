@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,12 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * Cipher implementation class. This class currently supports
  * DES, DESede, AES, ARCFOUR, and Blowfish.
  *
- * This class is designed to support ECB and CBC with NoPadding and
- * PKCS5Padding for both. It will use its own padding impl if the
- * native mechanism does not support padding.
+ * This class is designed to support ECB, CBC, CTR with NoPadding
+ * and ECB, CBC with PKCS5Padding. It will use its own padding impl
+ * if the native mechanism does not support padding.
  *
- * Note that PKCS#11 current only supports ECB and CBC. There are no
- * provisions for other modes such as CFB, OFB, PCBC, or CTR mode.
- * However, CTR could be implemented relatively easily (and efficiently)
- * on top of ECB mode in this class, if need be.
+ * Note that PKCS#11 currently only supports ECB, CBC, and CTR.
+ * There are no provisions for other modes such as CFB, OFB, and PCBC.
  *
  * @author  Andreas Sterbenz
  * @since   1.5
@@ -60,6 +58,8 @@ final class P11Cipher extends CipherSpi {
     private final static int MODE_ECB = 3;
     // mode constant for CBC mode
     private final static int MODE_CBC = 4;
+    // mode constant for CTR mode
+    private final static int MODE_CTR = 5;
 
     // padding constant for NoPadding
     private final static int PAD_NONE = 5;
@@ -157,7 +157,7 @@ final class P11Cipher extends CipherSpi {
     private byte[] padBuffer;
     private int padBufferLen;
 
-    // original IV, if in MODE_CBC
+    // original IV, if in MODE_CBC or MODE_CTR
     private byte[] iv;
 
     // number of bytes buffered internally by the native mechanism and padBuffer
@@ -213,6 +213,8 @@ final class P11Cipher extends CipherSpi {
                         ("CBC mode not supported with stream ciphers");
             }
             result = MODE_CBC;
+        } else if (mode.equals("CTR")) {
+            result = MODE_CTR;
         } else {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
@@ -228,6 +230,10 @@ final class P11Cipher extends CipherSpi {
         if (padding.equals("NOPADDING")) {
             paddingType = PAD_NONE;
         } else if (padding.equals("PKCS5PADDING")) {
+            if (this.blockMode == MODE_CTR) {
+                throw new NoSuchPaddingException
+                    ("PKCS#5 padding not supported with CTR mode");
+            }
             paddingType = PAD_PKCS5;
             if (mechanism != CKM_DES_CBC_PAD && mechanism != CKM_DES3_CBC_PAD &&
                     mechanism != CKM_AES_CBC_PAD) {
@@ -348,11 +354,14 @@ final class P11Cipher extends CipherSpi {
                             ("IV not used in ECB mode");
                 }
             }
-        } else { // MODE_CBC
+        } else { // MODE_CBC or MODE_CTR
             if (iv == null) {
                 if (encrypt == false) {
-                    throw new InvalidAlgorithmParameterException
-                            ("IV must be specified for decryption in CBC mode");
+                    String exMsg =
+                        (blockMode == MODE_CBC ?
+                         "IV must be specified for decryption in CBC mode" :
+                         "IV must be specified for decryption in CTR mode");
+                    throw new InvalidAlgorithmParameterException(exMsg);
                 }
                 // generate random IV
                 if (random == null) {
@@ -410,13 +419,15 @@ final class P11Cipher extends CipherSpi {
         if (session == null) {
             session = token.getOpSession();
         }
+        CK_MECHANISM mechParams = (blockMode == MODE_CTR?
+            new CK_MECHANISM(mechanism, new CK_AES_CTR_PARAMS(iv)) :
+            new CK_MECHANISM(mechanism, iv));
+
         try {
             if (encrypt) {
-                token.p11.C_EncryptInit(session.id(),
-                        new CK_MECHANISM(mechanism, iv), p11Key.keyID);
+                token.p11.C_EncryptInit(session.id(), mechParams, p11Key.keyID);
             } else {
-                token.p11.C_DecryptInit(session.id(),
-                        new CK_MECHANISM(mechanism, iv), p11Key.keyID);
+                token.p11.C_DecryptInit(session.id(), mechParams, p11Key.keyID);
             }
         } catch (PKCS11Exception ex) {
             // release session when initialization failed

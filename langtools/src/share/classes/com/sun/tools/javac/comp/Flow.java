@@ -272,7 +272,7 @@ public class Flow extends TreeScanner {
 
     /** The list of unreferenced automatic resources.
      */
-    Map<VarSymbol, JCVariableDecl> unrefdResources;
+    Scope unrefdResources;
 
     /** Set when processing a loop body the second time for DU analysis. */
     boolean loopPassTwo = false;
@@ -804,14 +804,16 @@ public class Flow extends TreeScanner {
         ListBuffer<PendingExit> prevPendingExits = pendingExits;
         boolean prevLoopPassTwo = loopPassTwo;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanStat(tree.body);
             alive |= resolveContinues(tree);
             scanCond(tree.cond);
-            if (log.nerrors != 0 ||
+            if (log.nerrors !=  prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninitsWhenTrue).nextBit(firstadr)==-1)
+                uninitsEntry.dup().diffSet(uninitsWhenTrue).nextBit(firstadr)==-1)
                 break;
             inits = initsWhenTrue;
             uninits = uninitsEntry.andSet(uninitsWhenTrue);
@@ -831,8 +833,10 @@ public class Flow extends TreeScanner {
         Bits initsCond;
         Bits uninitsCond;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanCond(tree.cond);
             initsCond = initsWhenFalse;
             uninitsCond = uninitsWhenFalse;
@@ -841,9 +845,9 @@ public class Flow extends TreeScanner {
             alive = !tree.cond.type.isFalse();
             scanStat(tree.body);
             alive |= resolveContinues(tree);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninits).nextBit(firstadr) == -1)
+                uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
             uninits = uninitsEntry.andSet(uninits);
             loopPassTwo = true;
@@ -864,8 +868,10 @@ public class Flow extends TreeScanner {
         Bits initsCond;
         Bits uninitsCond;
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             if (tree.cond != null) {
                 scanCond(tree.cond);
                 initsCond = initsWhenFalse;
@@ -883,7 +889,7 @@ public class Flow extends TreeScanner {
             scanStat(tree.body);
             alive |= resolveContinues(tree);
             scan(tree.step);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
                 uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
@@ -897,8 +903,6 @@ public class Flow extends TreeScanner {
         alive = resolveBreaks(tree, prevPendingExits) ||
             tree.cond != null && !tree.cond.type.isTrue();
         nextadr = nextadrPrev;
-        inits.excludeFrom(nextadr);
-        uninits.excludeFrom(nextadr);
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -913,13 +917,15 @@ public class Flow extends TreeScanner {
 
         letInit(tree.pos(), tree.var.sym);
         pendingExits = new ListBuffer<PendingExit>();
+        int prevErrors = log.nerrors;
         do {
             Bits uninitsEntry = uninits.dup();
+            uninitsEntry.excludeFrom(nextadr);
             scanStat(tree.body);
             alive |= resolveContinues(tree);
-            if (log.nerrors != 0 ||
+            if (log.nerrors != prevErrors ||
                 loopPassTwo ||
-                uninitsEntry.diffSet(uninits).nextBit(firstadr) == -1)
+                uninitsEntry.dup().diffSet(uninits).nextBit(firstadr) == -1)
                 break;
             uninits = uninitsEntry.andSet(uninits);
             loopPassTwo = true;
@@ -992,7 +998,6 @@ public class Flow extends TreeScanner {
     public void visitTry(JCTry tree) {
         List<Type> caughtPrev = caught;
         List<Type> thrownPrev = thrown;
-        Map<VarSymbol, JCVariableDecl> unrefdResourcesPrev = unrefdResources;
         thrown = List.nil();
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
@@ -1002,17 +1007,18 @@ public class Flow extends TreeScanner {
                 caught = chk.incl(ct.type, caught);
             }
         }
+        ListBuffer<JCVariableDecl> resourceVarDecls = ListBuffer.lb();
         Bits uninitsTryPrev = uninitsTry;
         ListBuffer<PendingExit> prevPendingExits = pendingExits;
         pendingExits = new ListBuffer<PendingExit>();
         Bits initsTry = inits.dup();
         uninitsTry = uninits.dup();
-        unrefdResources = new LinkedHashMap<VarSymbol, JCVariableDecl>();
         for (JCTree resource : tree.resources) {
             if (resource instanceof JCVariableDecl) {
                 JCVariableDecl vdecl = (JCVariableDecl) resource;
                 visitVarDef(vdecl);
-                unrefdResources.put(vdecl.sym, vdecl);
+                unrefdResources.enter(vdecl.sym);
+                resourceVarDecls.append(vdecl);
             } else if (resource instanceof JCExpression) {
                 scanExpr((JCExpression) resource);
             } else {
@@ -1049,11 +1055,14 @@ public class Flow extends TreeScanner {
         Bits uninitsEnd = uninits;
         int nextadrCatch = nextadr;
 
-        if (!unrefdResources.isEmpty() &&
+        if (!resourceVarDecls.isEmpty() &&
                 lint.isEnabled(Lint.LintCategory.TRY)) {
-            for (Map.Entry<VarSymbol, JCVariableDecl> e : unrefdResources.entrySet()) {
-                log.warning(Lint.LintCategory.TRY, e.getValue().pos(),
-                            "try.resource.not.referenced", e.getKey());
+            for (JCVariableDecl resVar : resourceVarDecls) {
+                if (unrefdResources.includes(resVar.sym)) {
+                    log.warning(Lint.LintCategory.TRY, resVar.pos(),
+                                "try.resource.not.referenced", resVar.sym);
+                    unrefdResources.remove(resVar.sym);
+                }
             }
         }
 
@@ -1143,7 +1152,6 @@ public class Flow extends TreeScanner {
             while (exits.nonEmpty()) pendingExits.append(exits.next());
         }
         uninitsTry.andSet(uninitsTryPrev).andSet(uninits);
-        unrefdResources = unrefdResourcesPrev;
     }
 
     public void visitConditional(JCConditional tree) {
@@ -1369,9 +1377,7 @@ public class Flow extends TreeScanner {
     }
 
     void referenced(Symbol sym) {
-        if (unrefdResources != null && unrefdResources.containsKey(sym)) {
-            unrefdResources.remove(sym);
-        }
+        unrefdResources.remove(sym);
     }
 
     public void visitTypeCast(JCTypeCast tree) {
@@ -1430,6 +1436,7 @@ public class Flow extends TreeScanner {
             alive = true;
             this.thrown = this.caught = null;
             this.classDef = null;
+            unrefdResources = new Scope(env.enclClass.sym);
             scan(tree);
         } finally {
             // note that recursive invocations of this method fail hard
@@ -1444,6 +1451,7 @@ public class Flow extends TreeScanner {
             this.make = null;
             this.thrown = this.caught = null;
             this.classDef = null;
+            unrefdResources = null;
         }
     }
 }

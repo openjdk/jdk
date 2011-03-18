@@ -249,7 +249,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/sunjce_provider.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/sunjce_provider.jar
 endif
-	$(install-non-module-file)
+	$(install-file)
 
 ifndef OPENJDK
 install-prebuilt:

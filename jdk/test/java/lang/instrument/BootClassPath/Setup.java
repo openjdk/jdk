@@ -62,31 +62,33 @@ public class Setup {
          * Create manifest file with Boot-Class-Path encoding the
          * sub-directory name.
          */
-        FileOutputStream out = new FileOutputStream(manifestFile);
-        out.write("Manifest-Version: 1.0\n".getBytes("UTF-8"));
+        try (FileOutputStream out = new FileOutputStream(manifestFile)) {
+            out.write("Manifest-Version: 1.0\n".getBytes("UTF-8"));
 
-        byte[] premainBytes = ("Premain-Class: " + premainClass + "\n").getBytes("UTF-8");
-        out.write(premainBytes);
+            byte[] premainBytes =
+                ("Premain-Class: " + premainClass + "\n").getBytes("UTF-8");
+            out.write(premainBytes);
 
-        out.write( "Boot-Class-Path: ".getBytes("UTF-8") );
+            out.write( "Boot-Class-Path: ".getBytes("UTF-8") );
 
-        byte[] value = bootClassPath.getBytes("UTF-8");
-        for (int i=0; i<value.length; i++) {
-            int v = (int)value[i];
-            if (v < 0) v += 256;
-            byte[] escaped =  ("%" + Integer.toHexString(v)).getBytes("UTF-8");
-            out.write(escaped);
+            byte[] value = bootClassPath.getBytes("UTF-8");
+            for (int i=0; i<value.length; i++) {
+                int v = (int)value[i];
+                if (v < 0) v += 256;
+                byte[] escaped =
+                    ("%" + Integer.toHexString(v)).getBytes("UTF-8");
+                out.write(escaped);
+            }
+            out.write( "\n\n".getBytes("UTF-8") );
         }
-        out.write( "\n\n".getBytes("UTF-8") );
-        out.close();
 
         /*
          * Write the name of the boot dir to "boot.dir"
          */
         f = new File(workDir + fileSeparator + "boot.dir");
-        out = new FileOutputStream(f);
-        out.write(bootDir.getBytes(defaultEncoding));
-        out.close();
+        try (FileOutputStream out = new FileOutputStream(f)) {
+            out.write(bootDir.getBytes(defaultEncoding));
+        }
     }
 
     /* ported from test/sun/tools/launcher/UnicodeTest.java */
