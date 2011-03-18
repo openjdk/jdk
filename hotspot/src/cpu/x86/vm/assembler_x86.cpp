@@ -1601,6 +1601,17 @@ void Assembler::movdl(Register dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::movdl(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0x66);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x6E);
+  emit_operand(dst, src);
+}
+
+
 void Assembler::movdqa(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionMark im(this);
@@ -2412,10 +2423,25 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
 }
 
 void Assembler::psrlq(XMMRegister dst, int shift) {
-  // HMM Table D-1 says sse2 or mmx
+  // Shift 64 bit value logically right by specified number of bits.
+  // HMM Table D-1 says sse2 or mmx.
+  // Do not confuse it with psrldq SSE2 instruction which
+  // shifts 128 bit value in xmm register by number of bytes.
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
 
   int encode = prefixq_and_encode(xmm2->encoding(), dst->encoding());
+  emit_byte(0x66);
+  emit_byte(0x0F);
+  emit_byte(0x73);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift);
+}
+
+void Assembler::psrldq(XMMRegister dst, int shift) {
+  // Shift 128 bit value in xmm register by number of bytes.
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+
+  int encode = prefixq_and_encode(xmm3->encoding(), dst->encoding());
   emit_byte(0x66);
   emit_byte(0x0F);
   emit_byte(0x73);
@@ -8567,101 +8593,418 @@ void MacroAssembler::reinit_heapbase() {
 }
 #endif // _LP64
 
-// IndexOf substring.
-void MacroAssembler::string_indexof(Register str1, Register str2,
-                                    Register cnt1, Register cnt2, Register result,
-                                    XMMRegister vec, Register tmp) {
+// IndexOf for constant substrings with size >= 8 chars
+// which don't need to be loaded through stack.
+void MacroAssembler::string_indexofC8(Register str1, Register str2,
+                                      Register cnt1, Register cnt2,
+                                      int int_cnt2,  Register result,
+                                      XMMRegister vec, Register tmp) {
   assert(UseSSE42Intrinsics, "SSE4.2 is required");
 
-  Label RELOAD_SUBSTR, PREP_FOR_SCAN, SCAN_TO_SUBSTR,
-        SCAN_SUBSTR, RET_NOT_FOUND, CLEANUP;
-
-  push(str1); // string addr
-  push(str2); // substr addr
-  push(cnt2); // substr count
-  jmpb(PREP_FOR_SCAN);
-
-  // Substr count saved at sp
-  // Substr saved at sp+1*wordSize
-  // String saved at sp+2*wordSize
-
-  // Reload substr for rescan
-  bind(RELOAD_SUBSTR);
-  movl(cnt2, Address(rsp, 0));
-  movptr(str2, Address(rsp, wordSize));
-  // We came here after the beginninig of the substring was
-  // matched but the rest of it was not so we need to search
-  // again. Start from the next element after the previous match.
-  subptr(str1, result); // Restore counter
-  shrl(str1, 1);
-  addl(cnt1, str1);
-  decrementl(cnt1);
-  lea(str1, Address(result, 2)); // Reload string
-
-  // Load substr
-  bind(PREP_FOR_SCAN);
-  movdqu(vec, Address(str2, 0));
-  addl(cnt1, 8);  // prime the loop
-  subptr(str1, 16);
-
-  // Scan string for substr in 16-byte vectors
-  bind(SCAN_TO_SUBSTR);
-  subl(cnt1, 8);
-  addptr(str1, 16);
-
-  // pcmpestri
+  // This method uses pcmpestri inxtruction with bound registers
   //   inputs:
   //     xmm - substring
   //     rax - substring length (elements count)
-  //     mem - scaned string
+  //     mem - scanned string
   //     rdx - string length (elements count)
   //     0xd - mode: 1100 (substring search) + 01 (unsigned shorts)
   //   outputs:
   //     rcx - matched index in string
   assert(cnt1 == rdx && cnt2 == rax && tmp == rcx, "pcmpestri");
 
-  pcmpestri(vec, Address(str1, 0), 0x0d);
-  jcc(Assembler::above, SCAN_TO_SUBSTR);      // CF == 0 && ZF == 0
-  jccb(Assembler::aboveEqual, RET_NOT_FOUND); // CF == 0
+  Label RELOAD_SUBSTR, SCAN_TO_SUBSTR, SCAN_SUBSTR,
+        RET_FOUND, RET_NOT_FOUND, EXIT, FOUND_SUBSTR,
+        MATCH_SUBSTR_HEAD, RELOAD_STR, FOUND_CANDIDATE;
 
-  // Fallthrough: found a potential substr
+  // Note, inline_string_indexOf() generates checks:
+  // if (substr.count > string.count) return -1;
+  // if (substr.count == 0) return 0;
+  assert(int_cnt2 >= 8, "this code isused only for cnt2 >= 8 chars");
+
+  // Load substring.
+  movdqu(vec, Address(str2, 0));
+  movl(cnt2, int_cnt2);
+  movptr(result, str1); // string addr
+
+  if (int_cnt2 > 8) {
+    jmpb(SCAN_TO_SUBSTR);
+
+    // Reload substr for rescan, this code
+    // is executed only for large substrings (> 8 chars)
+    bind(RELOAD_SUBSTR);
+    movdqu(vec, Address(str2, 0));
+    negptr(cnt2); // Jumped here with negative cnt2, convert to positive
+
+    bind(RELOAD_STR);
+    // We came here after the beginning of the substring was
+    // matched but the rest of it was not so we need to search
+    // again. Start from the next element after the previous match.
+
+    // cnt2 is number of substring reminding elements and
+    // cnt1 is number of string reminding elements when cmp failed.
+    // Restored cnt1 = cnt1 - cnt2 + int_cnt2
+    subl(cnt1, cnt2);
+    addl(cnt1, int_cnt2);
+    movl(cnt2, int_cnt2); // Now restore cnt2
+
+    decrementl(cnt1);     // Shift to next element
+    cmpl(cnt1, cnt2);
+    jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+
+    addptr(result, 2);
+
+  } // (int_cnt2 > 8)
+
+  // Scan string for start of substr in 16-byte vectors
+  bind(SCAN_TO_SUBSTR);
+  pcmpestri(vec, Address(result, 0), 0x0d);
+  jccb(Assembler::below, FOUND_CANDIDATE);   // CF == 1
+  subl(cnt1, 8);
+  jccb(Assembler::lessEqual, RET_NOT_FOUND); // Scanned full string
+  cmpl(cnt1, cnt2);
+  jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+  addptr(result, 16);
+  jmpb(SCAN_TO_SUBSTR);
+
+  // Found a potential substr
+  bind(FOUND_CANDIDATE);
+  // Matched whole vector if first element matched (tmp(rcx) == 0).
+  if (int_cnt2 == 8) {
+    jccb(Assembler::overflow, RET_FOUND);    // OF == 1
+  } else { // int_cnt2 > 8
+    jccb(Assembler::overflow, FOUND_SUBSTR);
+  }
+  // After pcmpestri tmp(rcx) contains matched element index
+  // Compute start addr of substr
+  lea(result, Address(result, tmp, Address::times_2));
 
   // Make sure string is still long enough
   subl(cnt1, tmp);
   cmpl(cnt1, cnt2);
-  jccb(Assembler::negative, RET_NOT_FOUND);
-  // Compute start addr of substr
-  lea(str1, Address(str1, tmp, Address::times_2));
-  movptr(result, str1); // save
-
-  // Compare potential substr
-  addl(cnt1, 8);     // prime the loop
-  addl(cnt2, 8);
-  subptr(str1, 16);
-  subptr(str2, 16);
-
-  // Scan 16-byte vectors of string and substr
-  bind(SCAN_SUBSTR);
-  subl(cnt1, 8);
-  subl(cnt2, 8);
-  addptr(str1, 16);
-  addptr(str2, 16);
-  movdqu(vec, Address(str2, 0));
-  pcmpestri(vec, Address(str1, 0), 0x0d);
-  jcc(Assembler::noOverflow, RELOAD_SUBSTR); // OF == 0
-  jcc(Assembler::positive, SCAN_SUBSTR);     // SF == 0
-
-  // Compute substr offset
-  subptr(result, Address(rsp, 2*wordSize));
-  shrl(result, 1); // index
-  jmpb(CLEANUP);
+  if (int_cnt2 == 8) {
+    jccb(Assembler::greaterEqual, SCAN_TO_SUBSTR);
+  } else { // int_cnt2 > 8
+    jccb(Assembler::greaterEqual, MATCH_SUBSTR_HEAD);
+  }
+  // Left less then substring.
 
   bind(RET_NOT_FOUND);
   movl(result, -1);
+  jmpb(EXIT);
+
+  if (int_cnt2 > 8) {
+    // This code is optimized for the case when whole substring
+    // is matched if its head is matched.
+    bind(MATCH_SUBSTR_HEAD);
+    pcmpestri(vec, Address(result, 0), 0x0d);
+    // Reload only string if does not match
+    jccb(Assembler::noOverflow, RELOAD_STR); // OF == 0
+
+    Label CONT_SCAN_SUBSTR;
+    // Compare the rest of substring (> 8 chars).
+    bind(FOUND_SUBSTR);
+    // First 8 chars are already matched.
+    negptr(cnt2);
+    addptr(cnt2, 8);
+
+    bind(SCAN_SUBSTR);
+    subl(cnt1, 8);
+    cmpl(cnt2, -8); // Do not read beyond substring
+    jccb(Assembler::lessEqual, CONT_SCAN_SUBSTR);
+    // Back-up strings to avoid reading beyond substring:
+    // cnt1 = cnt1 - cnt2 + 8
+    addl(cnt1, cnt2); // cnt2 is negative
+    addl(cnt1, 8);
+    movl(cnt2, 8); negptr(cnt2);
+    bind(CONT_SCAN_SUBSTR);
+    if (int_cnt2 < (int)G) {
+      movdqu(vec, Address(str2, cnt2, Address::times_2, int_cnt2*2));
+      pcmpestri(vec, Address(result, cnt2, Address::times_2, int_cnt2*2), 0x0d);
+    } else {
+      // calculate index in register to avoid integer overflow (int_cnt2*2)
+      movl(tmp, int_cnt2);
+      addptr(tmp, cnt2);
+      movdqu(vec, Address(str2, tmp, Address::times_2, 0));
+      pcmpestri(vec, Address(result, tmp, Address::times_2, 0), 0x0d);
+    }
+    // Need to reload strings pointers if not matched whole vector
+    jccb(Assembler::noOverflow, RELOAD_SUBSTR); // OF == 0
+    addptr(cnt2, 8);
+    jccb(Assembler::negative, SCAN_SUBSTR);
+    // Fall through if found full substring
+
+  } // (int_cnt2 > 8)
+
+  bind(RET_FOUND);
+  // Found result if we matched full small substring.
+  // Compute substr offset
+  subptr(result, str1);
+  shrl(result, 1); // index
+  bind(EXIT);
+
+} // string_indexofC8
+
+// Small strings are loaded through stack if they cross page boundary.
+void MacroAssembler::string_indexof(Register str1, Register str2,
+                                    Register cnt1, Register cnt2,
+                                    int int_cnt2,  Register result,
+                                    XMMRegister vec, Register tmp) {
+  assert(UseSSE42Intrinsics, "SSE4.2 is required");
+  //
+  // int_cnt2 is length of small (< 8 chars) constant substring
+  // or (-1) for non constant substring in which case its length
+  // is in cnt2 register.
+  //
+  // Note, inline_string_indexOf() generates checks:
+  // if (substr.count > string.count) return -1;
+  // if (substr.count == 0) return 0;
+  //
+  assert(int_cnt2 == -1 || (0 < int_cnt2 && int_cnt2 < 8), "should be != 0");
+
+  // This method uses pcmpestri inxtruction with bound registers
+  //   inputs:
+  //     xmm - substring
+  //     rax - substring length (elements count)
+  //     mem - scanned string
+  //     rdx - string length (elements count)
+  //     0xd - mode: 1100 (substring search) + 01 (unsigned shorts)
+  //   outputs:
+  //     rcx - matched index in string
+  assert(cnt1 == rdx && cnt2 == rax && tmp == rcx, "pcmpestri");
+
+  Label RELOAD_SUBSTR, SCAN_TO_SUBSTR, SCAN_SUBSTR, ADJUST_STR,
+        RET_FOUND, RET_NOT_FOUND, CLEANUP, FOUND_SUBSTR,
+        FOUND_CANDIDATE;
+
+  { //========================================================
+    // We don't know where these strings are located
+    // and we can't read beyond them. Load them through stack.
+    Label BIG_STRINGS, CHECK_STR, COPY_SUBSTR, COPY_STR;
+
+    movptr(tmp, rsp); // save old SP
+
+    if (int_cnt2 > 0) {     // small (< 8 chars) constant substring
+      if (int_cnt2 == 1) {  // One char
+        load_unsigned_short(result, Address(str2, 0));
+        movdl(vec, result); // move 32 bits
+      } else if (int_cnt2 == 2) { // Two chars
+        movdl(vec, Address(str2, 0)); // move 32 bits
+      } else if (int_cnt2 == 4) { // Four chars
+        movq(vec, Address(str2, 0));  // move 64 bits
+      } else { // cnt2 = { 3, 5, 6, 7 }
+        // Array header size is 12 bytes in 32-bit VM
+        // + 6 bytes for 3 chars == 18 bytes,
+        // enough space to load vec and shift.
+        assert(HeapWordSize*typeArrayKlass::header_size() >= 12,"sanity");
+        movdqu(vec, Address(str2, (int_cnt2*2)-16));
+        psrldq(vec, 16-(int_cnt2*2));
+      }
+    } else { // not constant substring
+      cmpl(cnt2, 8);
+      jccb(Assembler::aboveEqual, BIG_STRINGS); // Both strings are big enough
+
+      // We can read beyond string if srt+16 does not cross page boundary
+      // since heaps are aligned and mapped by pages.
+      assert(os::vm_page_size() < (int)G, "default page should be small");
+      movl(result, str2); // We need only low 32 bits
+      andl(result, (os::vm_page_size()-1));
+      cmpl(result, (os::vm_page_size()-16));
+      jccb(Assembler::belowEqual, CHECK_STR);
+
+      // Move small strings to stack to allow load 16 bytes into vec.
+      subptr(rsp, 16);
+      int stk_offset = wordSize-2;
+      push(cnt2);
+
+      bind(COPY_SUBSTR);
+      load_unsigned_short(result, Address(str2, cnt2, Address::times_2, -2));
+      movw(Address(rsp, cnt2, Address::times_2, stk_offset), result);
+      decrement(cnt2);
+      jccb(Assembler::notZero, COPY_SUBSTR);
+
+      pop(cnt2);
+      movptr(str2, rsp);  // New substring address
+    } // non constant
+
+    bind(CHECK_STR);
+    cmpl(cnt1, 8);
+    jccb(Assembler::aboveEqual, BIG_STRINGS);
+
+    // Check cross page boundary.
+    movl(result, str1); // We need only low 32 bits
+    andl(result, (os::vm_page_size()-1));
+    cmpl(result, (os::vm_page_size()-16));
+    jccb(Assembler::belowEqual, BIG_STRINGS);
+
+    subptr(rsp, 16);
+    int stk_offset = -2;
+    if (int_cnt2 < 0) { // not constant
+      push(cnt2);
+      stk_offset += wordSize;
+    }
+    movl(cnt2, cnt1);
+
+    bind(COPY_STR);
+    load_unsigned_short(result, Address(str1, cnt2, Address::times_2, -2));
+    movw(Address(rsp, cnt2, Address::times_2, stk_offset), result);
+    decrement(cnt2);
+    jccb(Assembler::notZero, COPY_STR);
+
+    if (int_cnt2 < 0) { // not constant
+      pop(cnt2);
+    }
+    movptr(str1, rsp);  // New string address
+
+    bind(BIG_STRINGS);
+    // Load substring.
+    if (int_cnt2 < 0) { // -1
+      movdqu(vec, Address(str2, 0));
+      push(cnt2);       // substr count
+      push(str2);       // substr addr
+      push(str1);       // string addr
+    } else {
+      // Small (< 8 chars) constant substrings are loaded already.
+      movl(cnt2, int_cnt2);
+    }
+    push(tmp);  // original SP
+
+  } // Finished loading
+
+  //========================================================
+  // Start search
+  //
+
+  movptr(result, str1); // string addr
+
+  if (int_cnt2  < 0) {  // Only for non constant substring
+    jmpb(SCAN_TO_SUBSTR);
+
+    // SP saved at sp+0
+    // String saved at sp+1*wordSize
+    // Substr saved at sp+2*wordSize
+    // Substr count saved at sp+3*wordSize
+
+    // Reload substr for rescan, this code
+    // is executed only for large substrings (> 8 chars)
+    bind(RELOAD_SUBSTR);
+    movptr(str2, Address(rsp, 2*wordSize));
+    movl(cnt2, Address(rsp, 3*wordSize));
+    movdqu(vec, Address(str2, 0));
+    // We came here after the beginning of the substring was
+    // matched but the rest of it was not so we need to search
+    // again. Start from the next element after the previous match.
+    subptr(str1, result); // Restore counter
+    shrl(str1, 1);
+    addl(cnt1, str1);
+    decrementl(cnt1);   // Shift to next element
+    cmpl(cnt1, cnt2);
+    jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+
+    addptr(result, 2);
+  } // non constant
+
+  // Scan string for start of substr in 16-byte vectors
+  bind(SCAN_TO_SUBSTR);
+  assert(cnt1 == rdx && cnt2 == rax && tmp == rcx, "pcmpestri");
+  pcmpestri(vec, Address(result, 0), 0x0d);
+  jccb(Assembler::below, FOUND_CANDIDATE);   // CF == 1
+  subl(cnt1, 8);
+  jccb(Assembler::lessEqual, RET_NOT_FOUND); // Scanned full string
+  cmpl(cnt1, cnt2);
+  jccb(Assembler::negative, RET_NOT_FOUND);  // Left less then substring
+  addptr(result, 16);
+
+  bind(ADJUST_STR);
+  cmpl(cnt1, 8); // Do not read beyond string
+  jccb(Assembler::greaterEqual, SCAN_TO_SUBSTR);
+  // Back-up string to avoid reading beyond string.
+  lea(result, Address(result, cnt1, Address::times_2, -16));
+  movl(cnt1, 8);
+  jmpb(SCAN_TO_SUBSTR);
+
+  // Found a potential substr
+  bind(FOUND_CANDIDATE);
+  // After pcmpestri tmp(rcx) contains matched element index
+
+  // Make sure string is still long enough
+  subl(cnt1, tmp);
+  cmpl(cnt1, cnt2);
+  jccb(Assembler::greaterEqual, FOUND_SUBSTR);
+  // Left less then substring.
+
+  bind(RET_NOT_FOUND);
+  movl(result, -1);
+  jmpb(CLEANUP);
+
+  bind(FOUND_SUBSTR);
+  // Compute start addr of substr
+  lea(result, Address(result, tmp, Address::times_2));
+
+  if (int_cnt2 > 0) { // Constant substring
+    // Repeat search for small substring (< 8 chars)
+    // from new point without reloading substring.
+    // Have to check that we don't read beyond string.
+    cmpl(tmp, 8-int_cnt2);
+    jccb(Assembler::greater, ADJUST_STR);
+    // Fall through if matched whole substring.
+  } else { // non constant
+    assert(int_cnt2 == -1, "should be != 0");
+
+    addl(tmp, cnt2);
+    // Found result if we matched whole substring.
+    cmpl(tmp, 8);
+    jccb(Assembler::lessEqual, RET_FOUND);
+
+    // Repeat search for small substring (<= 8 chars)
+    // from new point 'str1' without reloading substring.
+    cmpl(cnt2, 8);
+    // Have to check that we don't read beyond string.
+    jccb(Assembler::lessEqual, ADJUST_STR);
+
+    Label CHECK_NEXT, CONT_SCAN_SUBSTR, RET_FOUND_LONG;
+    // Compare the rest of substring (> 8 chars).
+    movptr(str1, result);
+
+    cmpl(tmp, cnt2);
+    // First 8 chars are already matched.
+    jccb(Assembler::equal, CHECK_NEXT);
+
+    bind(SCAN_SUBSTR);
+    pcmpestri(vec, Address(str1, 0), 0x0d);
+    // Need to reload strings pointers if not matched whole vector
+    jcc(Assembler::noOverflow, RELOAD_SUBSTR); // OF == 0
+
+    bind(CHECK_NEXT);
+    subl(cnt2, 8);
+    jccb(Assembler::lessEqual, RET_FOUND_LONG); // Found full substring
+    addptr(str1, 16);
+    addptr(str2, 16);
+    subl(cnt1, 8);
+    cmpl(cnt2, 8); // Do not read beyond substring
+    jccb(Assembler::greaterEqual, CONT_SCAN_SUBSTR);
+    // Back-up strings to avoid reading beyond substring.
+    lea(str2, Address(str2, cnt2, Address::times_2, -16));
+    lea(str1, Address(str1, cnt2, Address::times_2, -16));
+    subl(cnt1, cnt2);
+    movl(cnt2, 8);
+    addl(cnt1, 8);
+    bind(CONT_SCAN_SUBSTR);
+    movdqu(vec, Address(str2, 0));
+    jmpb(SCAN_SUBSTR);
+
+    bind(RET_FOUND_LONG);
+    movptr(str1, Address(rsp, wordSize));
+  } // non constant
+
+  bind(RET_FOUND);
+  // Compute substr offset
+  subptr(result, str1);
+  shrl(result, 1); // index
 
   bind(CLEANUP);
-  addptr(rsp, 3*wordSize);
-}
+  pop(rsp); // restore SP
+
+} // string_indexof
 
 // Compare strings.
 void MacroAssembler::string_compare(Register str1, Register str2,

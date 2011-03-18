@@ -44,13 +44,13 @@ import com.sun.tools.javac.util.Context;
 public class CacheFSInfo extends FSInfo {
 
     /**
-     * Register a Context.Factory to create a singleton CacheFSInfo.
+     * Register a Context.Factory to create a CacheFSInfo.
      */
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(FSInfo.class, new Context.Factory<FSInfo>() {
-            public FSInfo make() {
+            public FSInfo make(Context c) {
                 FSInfo instance = new CacheFSInfo();
-                context.put(FSInfo.class, instance);
+                c.put(FSInfo.class, instance);
                 return instance;
             }
         });
