@@ -1540,12 +1540,8 @@ class CommandLineFlags {
   product(bool, AlwaysPreTouch, false,                                      \
           "It forces all freshly committed pages to be pre-touched.")       \
                                                                             \
-  product(bool, CMSUseOldDefaults, false,                                   \
-          "A flag temporarily introduced to allow reverting to some "       \
-          "older default settings; older as of 6.0")                        \
-                                                                            \
-  product(intx, CMSYoungGenPerWorker, 16*M,                                 \
-          "The amount of young gen chosen by default per GC worker "        \
+  product_pd(intx, CMSYoungGenPerWorker,                                    \
+          "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
   product(bool, GCOverheadReporting, false,                                 \
@@ -3651,9 +3647,6 @@ class CommandLineFlags {
           "Use shared spaces in the permanent generation")                  \
                                                                             \
   product(bool, RequireSharedSpaces, false,                                 \
-          "Require shared spaces in the permanent generation")              \
-                                                                            \
-  product(bool, ForceSharedSpaces, false,                                   \
           "Require shared spaces in the permanent generation")              \
                                                                             \
   product(bool, DumpSharedSpaces, false,                                    \

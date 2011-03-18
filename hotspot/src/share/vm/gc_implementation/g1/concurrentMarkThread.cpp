@@ -237,9 +237,9 @@ void ConcurrentMarkThread::run() {
         // The following will finish freeing up any regions that we
         // found to be empty during cleanup. We'll do this part
         // without joining the suspendible set. If an evacuation pause
-        // takes places, then we would carry on freeing regions in
+        // takes place, then we would carry on freeing regions in
         // case they are needed by the pause. If a Full GC takes
-        // places, it would wait for us to process the regions
+        // place, it would wait for us to process the regions
         // reclaimed by cleanup.
 
         double cleanup_start_sec = os::elapsedTime();
