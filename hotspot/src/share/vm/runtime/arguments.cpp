@@ -2976,6 +2976,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     ScavengeRootsInCode = 1;
   }
+  if (!JavaObjectsInPerm && ScavengeRootsInCode == 0) {
+    if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
+      warning("forcing ScavengeRootsInCode non-zero because JavaObjectsInPerm is false");
+    }
+    ScavengeRootsInCode = 1;
+  }
 
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well

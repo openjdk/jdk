@@ -688,7 +688,7 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBaseFromField(JNIEnv *env, jobject unsaf
     THROW_0(vmSymbols::java_lang_IllegalArgumentException());
   }
 
-  return JNIHandles::make_local(env, java_lang_Class::as_klassOop(mirror));
+  return JNIHandles::make_local(env, mirror);
 UNSAFE_END
 
 //@deprecated
@@ -706,7 +706,7 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBaseFromClass(JNIEnv *env, jobject unsaf
   if (clazz == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
-  return JNIHandles::make_local(env, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+  return JNIHandles::make_local(env, JNIHandles::resolve_non_null(clazz));
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jobject clazz))
