@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 #include "oops/cpCacheKlass.hpp"
 #include "oops/cpCacheOop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlassKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/klassKlass.hpp"
@@ -521,6 +522,7 @@ void Universe::init_self_patching_vtbl_list(void** list, int count) {
   { objArrayKlassKlass o;     add_vtable(list, &n, &o, count); }
   { instanceKlassKlass o;     add_vtable(list, &n, &o, count); }
   { instanceKlass o;          add_vtable(list, &n, &o, count); }
+  { instanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
   { instanceRefKlass o;       add_vtable(list, &n, &o, count); }
   { typeArrayKlassKlass o;    add_vtable(list, &n, &o, count); }
   { typeArrayKlass o;         add_vtable(list, &n, &o, count); }
@@ -547,7 +549,7 @@ class FixupMirrorClosure: public ObjectClosure {
       KlassHandle k(THREAD, klassOop(obj));
       // We will never reach the CATCH below since Exceptions::_throw will cause
       // the VM to exit if an exception is thrown during initialization
-      java_lang_Class::create_mirror(k, CATCH);
+      java_lang_Class::fixup_mirror(k, CATCH);
       // This call unconditionally creates a new mirror for k,
       // and links in k's component_mirror field if k is an array.
       // If k is an objArray, k's element type must already have
@@ -605,6 +607,10 @@ void Universe::fixup_mirrors(TRAPS) {
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
   assert(SystemDictionary::Class_klass_loaded(), "java.lang.Class should be loaded");
+
+  // Cache the start of the static fields
+  instanceMirrorKlass::init_offset_of_static_fields();
+
   FixupMirrorClosure blk;
   Universe::heap()->permanent_object_iterate(&blk);
 }

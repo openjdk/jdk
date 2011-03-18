@@ -168,22 +168,18 @@ int constantPoolCacheKlass::oop_adjust_pointers(oop obj) {
 void constantPoolCacheKlass::oop_push_contents(PSPromotionManager* pm,
                                                oop obj) {
   assert(obj->is_constantPoolCache(), "should be constant pool");
-  if (EnableInvokeDynamic) {
+  if (ScavengeRootsInCode) {
     constantPoolCacheOop cache = (constantPoolCacheOop)obj;
     // during a scavenge, it is safe to inspect my pool, since it is perm
     constantPoolOop pool = cache->constant_pool();
     assert(pool->is_constantPool(), "should be constant pool");
-    if (pool->has_invokedynamic()) {
-      for (int i = 0; i < cache->length(); i++) {
-        ConstantPoolCacheEntry* e = cache->entry_at(i);
-        oop* p = (oop*)&e->_f1;
-        if (e->is_secondary_entry()) {
-          if (PSScavenge::should_scavenge(p))
-            pm->claim_or_forward_depth(p);
-          assert(!(e->is_vfinal() && PSScavenge::should_scavenge((oop*)&e->_f2)),
-                 "no live oops here");
-        }
-      }
+    for (int i = 0; i < cache->length(); i++) {
+      ConstantPoolCacheEntry* e = cache->entry_at(i);
+      oop* p = (oop*)&e->_f1;
+      if (PSScavenge::should_scavenge(p))
+        pm->claim_or_forward_depth(p);
+      assert(!(e->is_vfinal() && PSScavenge::should_scavenge((oop*)&e->_f2)),
+             "no live oops here");
     }
   }
 }

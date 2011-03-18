@@ -653,6 +653,9 @@ nmethod::nmethod(
     _pc_desc_cache.reset_to(NULL);
 
     code_buffer->copy_oops_to(this);
+    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
+      CodeCache::add_scavenge_root_nmethod(this);
+    }
     debug_only(verify_scavenge_root_oops());
     CodeCache::commit(this);
   }

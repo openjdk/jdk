@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,8 +483,8 @@ class Parse : public GraphKit {
   bool static_field_ok_in_clinit(ciField *field, ciMethod *method);
 
   // common code for actually performing the load or store
-  void do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field);
-  void do_put_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field);
+  void do_get_xxx(Node* obj, ciField* field, bool is_field);
+  void do_put_xxx(Node* obj, ciField* field, bool is_field);
 
   // loading from a constant field or the constant pool
   // returns false if push failed (non-perm field constants only, not ldcs)
