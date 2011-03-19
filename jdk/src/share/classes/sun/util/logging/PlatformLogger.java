@@ -535,7 +535,14 @@ public class PlatformLogger {
         }
 
         void doLog(int level, String msg, Object... params) {
-            LoggingSupport.log(javaLogger, levelObjects.get(level), msg, params);
+            // only pass String objects to the j.u.l.Logger which may
+            // be created by untrusted code
+            int len = (params != null) ? params.length : 0;
+            Object[] sparams = new String[len];
+            for (int i = 0; i < len; i++) {
+                sparams [i] = String.valueOf(params[i]);
+            }
+            LoggingSupport.log(javaLogger, levelObjects.get(level), msg, sparams);
         }
 
         boolean isEnabled() {

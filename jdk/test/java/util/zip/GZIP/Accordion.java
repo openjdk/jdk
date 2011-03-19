@@ -64,16 +64,13 @@ public class Accordion {
         System.out.println("count="+count);
 
         Thread compressor = new Thread() { public void run() {
-            try {
-                final GZIPOutputStream s = new GZIPOutputStream(out);
+            try (GZIPOutputStream s = new GZIPOutputStream(out)) {
                 for (long i = 0; i < count; i++)
                     s.write(data, 0, data.length);
-                s.close();
             } catch (Throwable t) { trouble = t; }}};
 
         Thread uncompressor = new Thread() { public void run() {
-            try {
-                final GZIPInputStream s = new GZIPInputStream(in);
+            try (GZIPInputStream s = new GZIPInputStream(in)) {
                 final byte[] maybeBytes = new byte[data.length];
                 for (long i = 0; i < count; i++) {
                     readFully(s, maybeBytes);
@@ -82,7 +79,6 @@ public class Accordion {
                 }
                 if (s.read(maybeBytes, 0, 1) > 0)
                     throw new Exception("Unexpected NON-EOF");
-                s.close();
             } catch (Throwable t) { trouble = t; }}};
 
         compressor.start(); uncompressor.start();

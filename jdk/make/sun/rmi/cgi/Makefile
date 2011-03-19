@@ -29,7 +29,6 @@
 
 BUILDDIR = ../../..
 # java-rmi.cgi is a JDK tool
-MODULE  = tools
 PACKAGE = sun.rmi
 PRODUCT = sun
 PROGRAM = java-rmi

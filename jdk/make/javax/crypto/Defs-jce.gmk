@@ -83,7 +83,7 @@ RELEASE_DIR = $(OUTPUTDIR)/jce-release
 
 define release-warning
 	@$(ECHO) \
-	    "\n***The jar files built by the \"release\" target must***" \
+	    "\n***The jar files built by the 'release' target must***" \
 	    "\n***still be checked into the closed workspace!     ***" \
 	    $(README-MAKEFILE_WARNING)
 endef

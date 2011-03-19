@@ -45,7 +45,9 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import javax.lang.model.element.ElementVisitor;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -896,7 +898,8 @@ public class Resolve {
                           bestSoFar,
                           allowBoxing,
                           useVarargs,
-                          operator);
+                          operator,
+                          new HashSet<TypeSymbol>());
     }
     // where
     private Symbol findMethod(Env<AttrContext> env,
@@ -909,11 +912,13 @@ public class Resolve {
                               Symbol bestSoFar,
                               boolean allowBoxing,
                               boolean useVarargs,
-                              boolean operator) {
+                              boolean operator,
+                              Set<TypeSymbol> seen) {
         for (Type ct = intype; ct.tag == CLASS || ct.tag == TYPEVAR; ct = types.supertype(ct)) {
             while (ct.tag == TYPEVAR)
                 ct = ct.getUpperBound();
             ClassSymbol c = (ClassSymbol)ct.tsym;
+            if (!seen.add(c)) return bestSoFar;
             if ((c.flags() & (ABSTRACT | INTERFACE | ENUM)) == 0)
                 abstractok = false;
             for (Scope.Entry e = c.members().lookup(name);
@@ -942,7 +947,7 @@ public class Resolve {
                     bestSoFar = findMethod(env, site, name, argtypes,
                                            typeargtypes,
                                            l.head, abstractok, bestSoFar,
-                                           allowBoxing, useVarargs, operator);
+                                           allowBoxing, useVarargs, operator, seen);
                 }
                 if (concrete != bestSoFar &&
                     concrete.kind < ERR  && bestSoFar.kind < ERR &&
@@ -1736,24 +1741,26 @@ public class Resolve {
      */
     Symbol resolveSelfContaining(DiagnosticPosition pos,
                                  Env<AttrContext> env,
-                                 Symbol member) {
+                                 Symbol member,
+                                 boolean isSuperCall) {
         Name name = names._this;
-        Env<AttrContext> env1 = env;
+        Env<AttrContext> env1 = isSuperCall ? env.outer : env;
         boolean staticOnly = false;
-        while (env1.outer != null) {
-            if (isStatic(env1)) staticOnly = true;
-            if (env1.enclClass.sym.isSubClass(member.owner, types) &&
-                isAccessible(env, env1.enclClass.sym.type, member)) {
-                Symbol sym = env1.info.scope.lookup(name).sym;
-                if (sym != null) {
-                    if (staticOnly) sym = new StaticError(sym);
-                    return access(sym, pos, env.enclClass.sym.type,
-                                  name, true);
+        if (env1 != null) {
+            while (env1 != null && env1.outer != null) {
+                if (isStatic(env1)) staticOnly = true;
+                if (env1.enclClass.sym.isSubClass(member.owner, types)) {
+                    Symbol sym = env1.info.scope.lookup(name).sym;
+                    if (sym != null) {
+                        if (staticOnly) sym = new StaticError(sym);
+                        return access(sym, pos, env.enclClass.sym.type,
+                                      name, true);
+                    }
                 }
+                if ((env1.enclClass.sym.flags() & STATIC) != 0)
+                    staticOnly = true;
+                env1 = env1.outer;
             }
-            if ((env1.enclClass.sym.flags() & STATIC) != 0)
-                staticOnly = true;
-            env1 = env1.outer;
         }
         log.error(pos, "encl.class.required", member);
         return syms.errSymbol;
@@ -1764,9 +1771,13 @@ public class Resolve {
      * JLS2 8.8.5.1 and 15.9.2
      */
     Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t) {
+        return resolveImplicitThis(pos, env, t, false);
+    }
+
+    Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t, boolean isSuperCall) {
         Type thisType = (((t.tsym.owner.kind & (MTH|VAR)) != 0)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
-                         : resolveSelfContaining(pos, env, t.tsym)).type;
+                         : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
         if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym)
             log.error(pos, "cant.ref.before.ctor.called", "this");
         return thisType;

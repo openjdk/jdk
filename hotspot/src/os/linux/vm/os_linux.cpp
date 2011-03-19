@@ -2213,7 +2213,7 @@ void os::jvm_path(char *buf, jint buflen) {
   if (rp == NULL)
     return;
 
-  if (strcmp(Arguments::sun_java_launcher(), "gamma") == 0) {
+  if (Arguments::created_by_gamma_launcher()) {
     // Support for the gamma launcher.  Typical value for buf is
     // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".  If "/jre/lib/" appears at
     // the right place in the string, then assume we are installed in a JDK and

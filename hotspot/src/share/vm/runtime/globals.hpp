@@ -2610,9 +2610,6 @@ class CommandLineFlags {
   develop(bool, CompileTheWorldPreloadClasses, true,                        \
           "Preload all classes used by a class before start loading")       \
                                                                             \
-  notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
-          "Compile all methods although class initializer failed")          \
-                                                                            \
   notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
           "Force a safepoint every n compiles so sweeper can keep up")      \
                                                                             \
@@ -3732,6 +3729,9 @@ class CommandLineFlags {
   diagnostic(ccstr, PauseAtStartupFile, NULL,                               \
           "The file to create and for whose removal to await when pausing " \
           "at startup. (default: ./vm.paused.<pid>)")                       \
+                                                                            \
+  diagnostic(bool, PauseAtExit, false,                                      \
+          "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
           "Enable performance-impacting dtrace probes")                     \

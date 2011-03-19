@@ -25,8 +25,6 @@
 
 # JDK Demo building jar file.
   
-MODULE = demos
-
 # Some names are defined with LIBRARY inside the Defs.gmk file
 LIBRARY=$(DEMONAME)
 OBJDIR=$(TEMPDIR)/$(DEMONAME)
@@ -120,8 +118,11 @@ DEMO_ALL_NATIVE_SOURCES += $(filter %.h,$(DEMO_ALL_FILES))
 DEMO_ALL_NATIVE_SOURCES += $(filter %.hpp,$(DEMO_ALL_FILES))
 
 # If we have java sources, then define the jar file we will create
+ifndef DEMO_JAR_NAME
+  DEMO_JAR_NAME = $(DEMONAME).jar
+endif
 ifneq ($(strip $(DEMO_JAVA_SOURCES)),)
-  DEMO_JAR            = $(DEMO_DESTDIR)/$(DEMONAME).jar
+  DEMO_JAR            = $(DEMO_DESTDIR)/$(DEMO_JAR_NAME)
 endif
 
 # If we have native sources, define the native library we will create
@@ -254,6 +255,17 @@ $(DEMO_JAR): \
 	$(MKDIR) -p $(DEMO_JAR_IMAGE)
 	$(JAVAC_CMD) -d $(DEMO_JAR_IMAGE) -sourcepath $(DEMO_BUILD_SRCDIR) \
 	    @$(DEMO_JAVAC_INPUT)
+  ifeq ($(DEMO_INCL_SRC),true)
+	$(CP) $(DEMO_JAVA_SOURCES:%=$(DEMO_BUILD_SRCDIR)/%) $(DEMO_JAR_IMAGE)
+  endif
+  ifeq ($(DEMO_ONLY_SRC),true)
+	$(RM) -r $(DEMO_JAR_IMAGE)
+	$(MKDIR) -p $(DEMO_JAR_IMAGE)
+	$(CP) -r $(DEMO_BUILD_SRCDIR)/* $(DEMO_JAR_IMAGE)
+    ifneq ($(DEMO_TOPFILES),)
+	$(CP) $(DEMO_ROOT)/$(DEMO_TOPFILES) $(DEMO_JAR_IMAGE)
+    endif
+  endif
 	$(BOOT_JAR_CMD) -cfm $@ $(DEMO_MANIFEST) \
 	     -C $(DEMO_JAR_IMAGE) . \
 	     $(BOOT_JAR_JFLAGS)
@@ -326,9 +338,9 @@ bundles: $(DEMO_BUILD_SRCZIP)
 ifdef DEMO_IS_APPLET
 	@$(ECHO) "Expanding jar file into demos area at $(DEMO_DESTDIR)"
 	( $(CD) $(DEMO_DESTDIR) && \
-	  $(BOOT_JAR_CMD) -xfv $(DEMONAME).jar \
+	  $(BOOT_JAR_CMD) -xfv $(DEMO_JAR_NAME) \
 	     $(BOOT_JAR_JFLAGS) && \
-	  $(RM) -r META-INF $(DEMONAME).jar  && \
+	  $(RM) -r META-INF $(DEMO_JAR_NAME) && \
 	  $(java-vm-cleanup) )
 	@( $(CD) $(DEMO_DESTDIR) && $(java-vm-cleanup) )
 	@$(ECHO) "Expanding source into demos area at $(DEMO_DESTDIR)"

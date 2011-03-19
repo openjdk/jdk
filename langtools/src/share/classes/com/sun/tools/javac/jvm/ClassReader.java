@@ -2183,7 +2183,7 @@ public class ClassReader implements Completer {
                 }
                 currentClassFile = classfile;
                 if (verbose) {
-                    printVerbose("loading", currentClassFile.toString());
+                    log.printVerbose("loading", currentClassFile.toString());
                 }
                 if (classfile.getKind() == JavaFileObject.Kind.CLASS) {
                     filling = true;
@@ -2452,13 +2452,13 @@ public class ClassReader implements Completer {
                     for (File file : fm.getLocation(SOURCE_PATH)) {
                         path = path.prepend(file);
                     }
-                    printVerbose("sourcepath", path.reverse().toString());
+                    log.printVerbose("sourcepath", path.reverse().toString());
                 } else if (wantSourceFiles) {
                     List<File> path = List.nil();
                     for (File file : fm.getLocation(CLASS_PATH)) {
                         path = path.prepend(file);
                     }
-                    printVerbose("sourcepath", path.reverse().toString());
+                    log.printVerbose("sourcepath", path.reverse().toString());
                 }
                 if (wantClassFiles) {
                     List<File> path = List.nil();
@@ -2468,7 +2468,7 @@ public class ClassReader implements Completer {
                     for (File file : fm.getLocation(CLASS_PATH)) {
                         path = path.prepend(file);
                     }
-                    printVerbose("classpath",  path.reverse().toString());
+                    log.printVerbose("classpath",  path.reverse().toString());
                 }
             }
         }
@@ -2518,14 +2518,6 @@ public class ClassReader implements Completer {
                 }
             }
         }
-
-    /** Output for "-verbose" option.
-     *  @param key The key to look up the correct internationalized string.
-     *  @param arg An argument for substitution into the output string.
-     */
-    private void printVerbose(String key, CharSequence arg) {
-        log.printNoteLines("verbose." + key, arg);
-    }
 
     /** Output for "-checkclassfile" option.
      *  @param key The key to look up the correct internationalized string.

@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = rmi
 PACKAGE = sun.rmi
 PRODUCT = sun
 LIBRARY = rmi

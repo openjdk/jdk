@@ -40,22 +40,21 @@ public class GetMethodsReturnClones {
         System.getProperty("file.separator");
 
     public static void main(String[] args) throws Exception {
-        JarFile jf = new JarFile(BASE + "test.jar", true);
-
-        byte[] buffer = new byte[8192];
-        Enumeration<JarEntry> e = jf.entries();
-        List<JarEntry> entries = new ArrayList<JarEntry>();
-        while (e.hasMoreElements()) {
-            JarEntry je = e.nextElement();
-            entries.add(je);
-            InputStream is = jf.getInputStream(je);
-            while (is.read(buffer, 0, buffer.length) != -1) {
-                // we just read. this will throw a SecurityException
-                // if  a signature/digest check fails.
+        List<JarEntry> entries = new ArrayList<>();
+        try (JarFile jf = new JarFile(BASE + "test.jar", true)) {
+            byte[] buffer = new byte[8192];
+            Enumeration<JarEntry> e = jf.entries();
+            while (e.hasMoreElements()) {
+                JarEntry je = e.nextElement();
+                entries.add(je);
+                try (InputStream is = jf.getInputStream(je)) {
+                    while (is.read(buffer, 0, buffer.length) != -1) {
+                        // we just read. this will throw a SecurityException
+                        // if  a signature/digest check fails.
+                    }
+                }
             }
-            is.close();
         }
-        jf.close();
 
         for (JarEntry je : entries) {
             Certificate[] certs = je.getCertificates();

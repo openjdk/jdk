@@ -48,12 +48,12 @@ import java.util.Collections;
  *
  * <p> An asynchronous file channel does not have a <i>current position</i>
  * within the file. Instead, the file position is specified to each read and
- * write methd that initiate asynchronous operations. A {@link CompletionHandler}
+ * write method that initiates asynchronous operations. A {@link CompletionHandler}
  * is specified as a parameter and is invoked to consume the result of the I/O
  * operation. This class also defines read and write methods that initiate
  * asynchronous operations, returning a {@link Future} to represent the pending
  * result of the operation. The {@code Future} may be used to check if the
- * operation has completed, to wait for its completion.
+ * operation has completed, wait for its completion, and retrieve the result.
  *
  * <p> In addition to read and write operations, this class defines the
  * following operations: </p>
@@ -73,13 +73,13 @@ import java.util.Collections;
  * which tasks are submitted to handle I/O events and dispatch to completion
  * handlers that consume the results of I/O operations on the channel. The
  * completion handler for an I/O operation initiated on a channel is guaranteed
- * to be invoked by one threads in the thread pool (This ensures that the
+ * to be invoked by one of the threads in the thread pool (This ensures that the
  * completion handler is run by a thread with the expected <em>identity</em>).
  * Where an I/O operation completes immediately, and the initiating thread is
  * itself a thread in the thread pool, then the completion handler may be invoked
  * directly by the initiating thread. When an {@code AsynchronousFileChannel} is
  * created without specifying a thread pool then the channel is associated with
- * a system-dependent and default thread pool that may be shared with other
+ * a system-dependent default thread pool that may be shared with other
  * channels. The default thread pool is configured by the system properties
  * defined by the {@link AsynchronousChannelGroup} class.
  *

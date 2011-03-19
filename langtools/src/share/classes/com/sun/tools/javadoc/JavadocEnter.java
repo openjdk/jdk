@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,10 @@ public class JavadocEnter extends Enter {
         return (JavadocEnter)instance;
     }
 
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(enterKey, new Context.Factory<Enter>() {
-               public Enter make() {
-                   return new JavadocEnter(context);
+               public Enter make(Context c) {
+                   return new JavadocEnter(c);
                }
         });
     }
