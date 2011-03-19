@@ -63,10 +63,10 @@ final class FileOwnerAttributeViewImpl
     {
         if (attribute.equals(OWNER_NAME)) {
             setOwner((UserPrincipal)value);
-            return;
+        } else {
+            throw new IllegalArgumentException("'" + name() + ":" +
+                attribute + "' not recognized");
         }
-        throw new UnsupportedOperationException("'" + name() + ":" +
-                attribute + "' not supported");
     }
 
     @Override
@@ -75,6 +75,9 @@ final class FileOwnerAttributeViewImpl
         for (String attribute: attributes) {
             if (attribute.equals("*") || attribute.equals(OWNER_NAME)) {
                 result.put(OWNER_NAME, getOwner());
+            } else {
+                throw new IllegalArgumentException("'" + name() + ":" +
+                    attribute + "' not recognized");
             }
         }
         return result;
