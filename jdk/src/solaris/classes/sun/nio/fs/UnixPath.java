@@ -606,7 +606,9 @@ class UnixPath
 
     @Override
     public boolean startsWith(Path other) {
-        UnixPath that = toUnixPath(other);
+        if (!(Objects.requireNonNull(other) instanceof UnixPath))
+            return false;
+        UnixPath that = (UnixPath)other;
 
         // other path is longer
         if (that.path.length > path.length)
@@ -655,7 +657,9 @@ class UnixPath
 
     @Override
     public boolean endsWith(Path other) {
-        UnixPath that = toUnixPath(other);
+        if (!(Objects.requireNonNull(other) instanceof UnixPath))
+            return false;
+        UnixPath that = (UnixPath)other;
 
         int thisLen = path.length;
         int thatLen = that.path.length;
