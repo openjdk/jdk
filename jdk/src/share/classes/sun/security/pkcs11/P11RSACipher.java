@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,11 @@ final class P11RSACipher extends CipherSpi {
     // mode constant for public key decryption (verifying)
     private final static int MODE_VERIFY  = 4;
 
+    // padding type constant for NoPadding
+    private final static int PAD_NONE = 1;
+    // padding type constant for PKCS1Padding
+    private final static int PAD_PKCS1 = 2;
+
     // token instance
     private final Token token;
 
@@ -76,6 +81,9 @@ final class P11RSACipher extends CipherSpi {
 
     // mode, one of MODE_* above
     private int mode;
+
+    // padding, one of PAD_* above
+    private int padType;
 
     private byte[] buffer;
     private int bufOfs;
@@ -113,8 +121,10 @@ final class P11RSACipher extends CipherSpi {
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
         String lowerPadding = padding.toLowerCase(Locale.ENGLISH);
-        if (lowerPadding.equals("pkcs1Padding")) {
-            // empty
+        if (lowerPadding.equals("pkcs1padding")) {
+            padType = PAD_PKCS1;
+        } else if (lowerPadding.equals("nopadding")) {
+            padType = PAD_NONE;
         } else {
             throw new NoSuchPaddingException("Unsupported padding " + padding);
         }
@@ -209,7 +219,8 @@ final class P11RSACipher extends CipherSpi {
         int n = (p11Key.keyLength() + 7) >> 3;
         outputSize = n;
         buffer = new byte[n];
-        maxInputSize = encrypt ? (n - PKCS1_MIN_PADDING_LENGTH) : n;
+        maxInputSize = ((padType == PAD_PKCS1 && encrypt) ?
+                            (n - PKCS1_MIN_PADDING_LENGTH) : n);
         try {
             initialize();
         } catch (PKCS11Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4898484
+ * @bug 4898484 6604496
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library ..
@@ -59,7 +59,8 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         new CI("DES/CBC/NoPadding", "DES", 400),
         new CI("DESede/CBC/NoPadding", "DESede", 160),
         new CI("AES/CBC/NoPadding", "AES", 4800),
-        new CI("Blowfish/CBC/NoPadding", "Blowfish", 24)
+        new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
+        new CI("AES/CTR/NoPadding", "AES", 1600)
     };
 
     private static StringBuffer debugBuf;

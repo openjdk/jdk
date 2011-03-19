@@ -2055,7 +2055,7 @@ public class File
      *
      * @return  a {@code Path} constructed from this abstract path
      *
-     * @throws  InvalidPathException
+     * @throws  java.nio.file.InvalidPathException
      *          if a {@code Path} object cannot be constructed from the abstract
      *          path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
      *

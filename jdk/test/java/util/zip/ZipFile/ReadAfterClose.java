@@ -34,10 +34,13 @@ import java.util.*;
 
 public class ReadAfterClose {
     public static void main(String[] argv) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src","."),"crash.jar"));
-        ZipEntry zent = zf.getEntry("Test.java");
-        InputStream in = zf.getInputStream(zent);
-        zf.close();
+        InputStream in;
+        try (ZipFile zf = new ZipFile(
+                 new File(System.getProperty("test.src","."),"crash.jar"))) {
+            ZipEntry zent = zf.getEntry("Test.java");
+            in = zf.getInputStream(zent);
+        }
+        // ensure zf is closed at this point
         try {
             in.read();
         } catch (IOException e) {

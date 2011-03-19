@@ -24,7 +24,7 @@
 #
 
 # @test
-# @bug 4630463 4630971 4636448 4701617 4721296 4710890 6247817
+# @bug 4630463 4630971 4636448 4701617 4721296 4710890 6247817 7021987
 # @summary Tests miscellaneous native2ascii bugfixes and regressions
 
 
@@ -99,6 +99,15 @@ check 4630971 $TESTSRC/A2N_4630971 x.out
 rm -f x.*
 $N2A -reverse -encoding MS932 $TESTSRC/A2N_4701617 x.out
 check 4701617 $TESTSRC/A2N_4701617.expected x.out
+
+# Check that the inputfile appears in the error message when not found
+
+badin="DoesNotExist"
+$N2A $badin x.out | grep "$badin" > /dev/null
+if [ $? != 0 ]; then
+    echo "\"$badin\" expected to appear in error message"
+    exit 1
+fi
 
 # for win32 only ensure when output file pre-exists that
 # native2ascii tool will simply overwrite with the expected

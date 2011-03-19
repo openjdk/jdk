@@ -525,16 +525,27 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return false;
         }
 
-        // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-        private static final long nextOffset =
-            objectFieldOffset(UNSAFE, "next", Node.class);
-        private static final long itemOffset =
-            objectFieldOffset(UNSAFE, "item", Node.class);
-        private static final long waiterOffset =
-            objectFieldOffset(UNSAFE, "waiter", Node.class);
-
         private static final long serialVersionUID = -3375979862319811754L;
+
+        // Unsafe mechanics
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long itemOffset;
+        private static final long nextOffset;
+        private static final long waiterOffset;
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                Class k = Node.class;
+                itemOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("item"));
+                nextOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("next"));
+                waiterOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("waiter"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
     }
 
     /** head of the queue; null until first enqueue */
@@ -1312,23 +1323,22 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     // Unsafe mechanics
 
-    private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long headOffset =
-        objectFieldOffset(UNSAFE, "head", LinkedTransferQueue.class);
-    private static final long tailOffset =
-        objectFieldOffset(UNSAFE, "tail", LinkedTransferQueue.class);
-    private static final long sweepVotesOffset =
-        objectFieldOffset(UNSAFE, "sweepVotes", LinkedTransferQueue.class);
-
-    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
-                                  String field, Class<?> klazz) {
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long headOffset;
+    private static final long tailOffset;
+    private static final long sweepVotesOffset;
+    static {
         try {
-            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
-        } catch (NoSuchFieldException e) {
-            // Convert Exception to corresponding Error
-            NoSuchFieldError error = new NoSuchFieldError(field);
-            error.initCause(e);
-            throw error;
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class k = LinkedTransferQueue.class;
+            headOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("head"));
+            tailOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("tail"));
+            sweepVotesOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("sweepVotes"));
+        } catch (Exception e) {
+            throw new Error(e);
         }
     }
 }

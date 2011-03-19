@@ -1,22 +1,25 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620 6894753
+ * @bug 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
- * @author mcimadamore
+ * @summary  Check that diamond is not allowed with anonymous inner class expressions
+ * @author Maurizio Cimadamore
  * @compile/fail/ref=Neg09.out Neg09.java -XDrawDiagnostics
  *
  */
 
 class Neg09 {
-    static class Foo<X extends Number & Comparable<Number>> {}
-    static class DoubleFoo<X extends Number & Comparable<Number>,
-                           Y extends Number & Comparable<Number>> {}
-    static class TripleFoo<X extends Number & Comparable<Number>,
-                           Y extends Number & Comparable<Number>,
-                           Z> {}
+    class Member<X> {}
 
-    Foo<?> fw = new Foo<>();
-    DoubleFoo<?,?> dw = new DoubleFoo<>();
-    TripleFoo<?,?,?> tw = new TripleFoo<>();
+    static class Nested<X> {}
+
+    void testSimple() {
+        Member<?> m1 = new Member<>() {};
+        Nested<?> m2 = new Nested<>() {};
+    }
+
+    void testQualified() {
+        Member<?> m1 = this.new Member<>() {};
+        Nested<?> m2 = new Neg09.Nested<>() {};
+    }
 }

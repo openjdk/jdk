@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -785,7 +785,7 @@ class PackageWriter extends BandStructure {
             defMap.entrySet().toArray(layoutsAndCounts);
             // Sort by count, most frequent first.
             // Predefs. participate in this sort, though it does not matter.
-            Arrays.sort(layoutsAndCounts, new Comparator<>() {
+            Arrays.sort(layoutsAndCounts, new Comparator<Object>() {
                 public int compare(Object o0, Object o1) {
                     Map.Entry e0 = (Map.Entry) o0;
                     Map.Entry e1 = (Map.Entry) o1;

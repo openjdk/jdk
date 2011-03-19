@@ -27,7 +27,7 @@
  * @build install/SerialDriver.java test/SerialDriver.java extension/ExtendedObjectInputStream.java
  * @summary Enable resolveClass() to accommodate package renaming.
  * This fix enables one to implement a resolveClass method that maps a
- * Serialiazable class within a serialization stream to the same class
+ * Serializable class within a serialization stream to the same class
  * in a different package within the JVM runtime. See run shell script
  * for instructions on how to run this test.
  */
@@ -83,14 +83,13 @@ public class SerialDriver implements Serializable {
         File f = new File("stream.ser");
         if (serialize) {
             // Serialize the subclass
-            try {
-                FileOutputStream fo = new FileOutputStream(f);
-                ObjectOutputStream so = new ObjectOutputStream(fo);
+            try (FileOutputStream fo = new FileOutputStream(f);
+                 ObjectOutputStream so = new ObjectOutputStream(fo))
+            {
                 so.writeObject(obj);
                 /* Comment out since renaming arrays does not work
                    since it changes the serialVersionUID. */
                 so.writeObject(array);
-                so.flush();
             } catch (Exception e) {
                 System.out.println(e);
                 throw e;
@@ -98,16 +97,15 @@ public class SerialDriver implements Serializable {
         }
         if (deserialize) {
             // Deserialize the subclass
-            try {
-                FileInputStream fi = new FileInputStream(f);
-                ExtendedObjectInputStream si = new ExtendedObjectInputStream(fi);
+            try (FileInputStream fi = new FileInputStream(f);
+                 ExtendedObjectInputStream si = new ExtendedObjectInputStream(fi))
+            {
                 si.addRenamedClassName("install.SerialDriver",
                                        "test.SerialDriver");
                 si.addRenamedClassName("[Linstall.SerialDriver;",
                                        "[Ltest.SerialDriver");
                 obj = (SerialDriver) si.readObject();
                 array = (SerialDriver[]) si.readObject();
-                si.close();
             } catch (Exception e) {
                 System.out.println(e);
                 throw e;
