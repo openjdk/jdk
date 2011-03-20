@@ -37,6 +37,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Method;
+import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.List;
 
 import java.io.File;
@@ -47,6 +48,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 public class T6199075 {
@@ -157,11 +159,14 @@ public class T6199075 {
         System.out.println("Bytecode checks made: " + bytecodeCheckCount);
     }
 
+    // Create a single file manager and reuse it for each compile to save time.
+    StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+
     void compileAndCheck(VarargsMethod m1, VarargsMethod m2, TypeKind actual, ArgumentsArity argsArity) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaSource source = new JavaSource(m1, m2, actual, argsArity);
         ErrorChecker ec = new ErrorChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, ec,
+        JavacTask ct = (JavacTask)tool.getTask(null, fm, ec,
                 null, null, Arrays.asList(source));
         ct.generate();
         check(source, ec, m1, m2, actual, argsArity);

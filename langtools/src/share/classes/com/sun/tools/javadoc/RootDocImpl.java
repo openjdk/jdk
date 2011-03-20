@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,6 +322,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
     /**
      * Do lazy initialization of "documentation" string.
      */
+    @Override
     protected String documentation() {
         if (documentation == null) {
             int cnt = options.length();
@@ -348,6 +349,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      * Return the source position of the entity, or null if
      * no position is available.
      */
+    @Override
     public SourcePosition position() {
         JavaFileObject path;
         return ((path = getOverviewPath()) == null) ?

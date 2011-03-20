@@ -29,6 +29,7 @@
  * @run main Warn4
  */
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTool;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
@@ -37,6 +38,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 public class Warn4 {
@@ -187,12 +189,15 @@ public class Warn4 {
         }
     }
 
+    // Create a single file manager and reuse it for each compile to save time.
+    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+
     static void test(SourceLevel sourceLevel, TrustMe trustMe, SuppressLevel suppressLevelClient,
             SuppressLevel suppressLevelDecl, ModifierKind modKind, Signature vararg_meth, Signature client_meth) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaSource source = new JavaSource(trustMe, suppressLevelClient, suppressLevelDecl, modKind, vararg_meth, client_meth);
         DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, dc,
+        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
                 Arrays.asList("-Xlint:unchecked", "-source", sourceLevel.sourceKey),
                 null, Arrays.asList(source));
         ct.generate(); //to get mandatory notes

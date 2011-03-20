@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 4063740
+ * @bug 4063740 6969184
  * @summary Interfaces may only be declared in top level classes.
  * @author turnidge
  *

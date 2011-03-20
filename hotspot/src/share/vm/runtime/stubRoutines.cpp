@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,30 +80,36 @@ jint    StubRoutines::_fpu_subnormal_bias1[3]                   = { 0, 0, 0 };
 jint    StubRoutines::_fpu_subnormal_bias2[3]                   = { 0, 0, 0 };
 
 // Compiled code entry points default values
-// The dafault functions don't have separate disjoint versions.
+// The default functions don't have separate disjoint versions.
 address StubRoutines::_jbyte_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
 address StubRoutines::_jshort_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
 address StubRoutines::_jint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
 address StubRoutines::_jlong_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
 address StubRoutines::_oop_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
+address StubRoutines::_oop_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
 address StubRoutines::_jbyte_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
 address StubRoutines::_jshort_disjoint_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
 address StubRoutines::_jint_disjoint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
 address StubRoutines::_jlong_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
 address StubRoutines::_oop_disjoint_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
+address StubRoutines::_oop_disjoint_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
 
 address StubRoutines::_arrayof_jbyte_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
 address StubRoutines::_arrayof_jshort_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
 address StubRoutines::_arrayof_jint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
 address StubRoutines::_arrayof_jlong_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
 address StubRoutines::_arrayof_oop_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
+address StubRoutines::_arrayof_oop_arraycopy_uninit      = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
 address StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
 address StubRoutines::_arrayof_jshort_disjoint_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
 address StubRoutines::_arrayof_jint_disjoint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
 address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
+address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
+address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
+
 
 address StubRoutines::_checkcast_arraycopy               = NULL;
+address StubRoutines::_checkcast_arraycopy_uninit        = NULL;
 address StubRoutines::_unsafe_arraycopy                  = NULL;
 address StubRoutines::_generic_arraycopy                 = NULL;
 
@@ -282,12 +288,12 @@ void stubRoutines_init2() { StubRoutines::initialize2(); }
 // Default versions of arraycopy functions
 //
 
-static void gen_arraycopy_barrier_pre(oop* dest, size_t count) {
+static void gen_arraycopy_barrier_pre(oop* dest, size_t count, bool dest_uninitialized) {
     assert(count != 0, "count should be non-zero");
     assert(count <= (size_t)max_intx, "count too large");
     BarrierSet* bs = Universe::heap()->barrier_set();
     assert(bs->has_write_ref_array_pre_opt(), "Must have pre-barrier opt");
-    bs->write_ref_array_pre(dest, (int)count);
+    bs->write_ref_array_pre(dest, (int)count, dest_uninitialized);
 }
 
 static void gen_arraycopy_barrier(oop* dest, size_t count) {
@@ -330,7 +336,17 @@ JRT_LEAF(void, StubRoutines::oop_copy(oop* src, oop* dest, size_t count))
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
   assert(count != 0, "count should be non-zero");
-  gen_arraycopy_barrier_pre(dest, count);
+  gen_arraycopy_barrier_pre(dest, count, /*dest_uninitialized*/false);
+  Copy::conjoint_oops_atomic(src, dest, count);
+  gen_arraycopy_barrier(dest, count);
+JRT_END
+
+JRT_LEAF(void, StubRoutines::oop_copy_uninit(oop* src, oop* dest, size_t count))
+#ifndef PRODUCT
+  SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
+#endif // !PRODUCT
+  assert(count != 0, "count should be non-zero");
+  gen_arraycopy_barrier_pre(dest, count, /*dest_uninitialized*/true);
   Copy::conjoint_oops_atomic(src, dest, count);
   gen_arraycopy_barrier(dest, count);
 JRT_END
@@ -368,11 +384,20 @@ JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, siz
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
   assert(count != 0, "count should be non-zero");
-  gen_arraycopy_barrier_pre((oop *) dest, count);
+  gen_arraycopy_barrier_pre((oop *) dest, count, /*dest_uninitialized*/false);
   Copy::arrayof_conjoint_oops(src, dest, count);
   gen_arraycopy_barrier((oop *) dest, count);
 JRT_END
 
+JRT_LEAF(void, StubRoutines::arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count))
+#ifndef PRODUCT
+  SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
+#endif // !PRODUCT
+  assert(count != 0, "count should be non-zero");
+  gen_arraycopy_barrier_pre((oop *) dest, count, /*dest_uninitialized*/true);
+  Copy::arrayof_conjoint_oops(src, dest, count);
+  gen_arraycopy_barrier((oop *) dest, count);
+JRT_END
 
 address StubRoutines::select_fill_function(BasicType t, bool aligned, const char* &name) {
 #define RETURN_STUB(xxx_fill) { \

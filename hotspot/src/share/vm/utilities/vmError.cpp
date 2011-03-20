@@ -802,7 +802,7 @@ void VMError::report_and_die() {
     first_error_tid = mytid;
     set_error_reported();
 
-    if (ShowMessageBoxOnError) {
+    if (ShowMessageBoxOnError || PauseAtExit) {
       show_message_box(buffer, sizeof(buffer));
 
       // User has asked JVM to abort. Reset ShowMessageBoxOnError so the
