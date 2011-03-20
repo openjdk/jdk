@@ -27,6 +27,10 @@
  */
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.zip.*;
 
 public class ReadZip {
@@ -38,71 +42,62 @@ public class ReadZip {
     }
 
     public static void main(String args[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                          "input.zip"));
+        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
+                                               "input.zip"))) {
+            // Make sure we throw NPE on null objects
+            try { unreached (zf.getEntry(null)); }
+            catch (NullPointerException e) {}
 
-        // Make sure we throw NPE on null objects
-        try { unreached (zf.getEntry(null)); }
-        catch (NullPointerException e) {}
+            try { unreached (zf.getInputStream(null)); }
+            catch (NullPointerException e) {}
 
-        try { unreached (zf.getInputStream(null)); }
-        catch (NullPointerException e) {}
-
-        ZipEntry ze = zf.getEntry("ReadZip.java");
-        if (ze == null) {
-            throw new Exception("cannot read from zip file");
+            ZipEntry ze = zf.getEntry("ReadZip.java");
+            if (ze == null) {
+                throw new Exception("cannot read from zip file");
+            }
         }
-        zf.close();
 
         // Make sure we can read the zip file that has some garbage
         // bytes padded at the end.
-        FileInputStream fis = new FileInputStream(
-                                   new File(System.getProperty("test.src", "."),
-                                            "input.zip"));
-        File newZip = new File(System.getProperty("test.dir", "."),
-                               "input2.zip");
-        FileOutputStream fos = new FileOutputStream(newZip);
+        File newZip = new File(System.getProperty("test.dir", "."), "input2.zip");
+        Files.copy(Paths.get(System.getProperty("test.src", ""), "input.zip"),
+                   newZip.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        byte[] buf = new byte[1024];
-        int n = 0;
-        while ((n = fis.read(buf)) != -1) {
-            fos.write(buf, 0, n);
-        }
-        fis.close();
         // pad some bytes
-        fos.write(1); fos.write(3); fos.write(5); fos.write(7);
-        fos.close();
-        try {
-            zf = new ZipFile(newZip);
-            ze = zf.getEntry("ReadZip.java");
+        try (OutputStream os = Files.newOutputStream(newZip.toPath(),
+                                                     StandardOpenOption.APPEND)) {
+            os.write(1); os.write(3); os.write(5); os.write(7);
+        }
+
+        try (ZipFile zf = new ZipFile(newZip)) {
+            ZipEntry ze = zf.getEntry("ReadZip.java");
             if (ze == null) {
                 throw new Exception("cannot read from zip file");
             }
         } finally {
-            zf.close();
             newZip.delete();
         }
 
         // Read zip file comment
         try {
+            try (FileOutputStream fos = new FileOutputStream(newZip);
+                 ZipOutputStream zos = new ZipOutputStream(fos))
+            {
+                ZipEntry ze = new ZipEntry("ZipEntry");
+                zos.putNextEntry(ze);
+                zos.write(1); zos.write(2); zos.write(3); zos.write(4);
+                zos.closeEntry();
+                zos.setComment("This is the comment for testing");
+            }
 
-            ZipOutputStream zos = new ZipOutputStream(
-                                      new FileOutputStream(newZip));
-            ze = new ZipEntry("ZipEntry");
-            zos.putNextEntry(ze);
-            zos.write(1); zos.write(2); zos.write(3); zos.write(4);
-            zos.closeEntry();
-            zos.setComment("This is the comment for testing");
-            zos.close();
-
-            zf = new ZipFile(newZip);
-            ze = zf.getEntry("ZipEntry");
-            if (ze == null)
-                throw new Exception("cannot read entry from zip file");
-            if (!"This is the comment for testing".equals(zf.getComment()))
-                throw new Exception("cannot read comment from zip file");
+            try (ZipFile zf = new ZipFile(newZip)) {
+                ZipEntry ze = zf.getEntry("ZipEntry");
+                if (ze == null)
+                    throw new Exception("cannot read entry from zip file");
+                if (!"This is the comment for testing".equals(zf.getComment()))
+                    throw new Exception("cannot read comment from zip file");
+            }
         } finally {
-            zf.close();
             newZip.delete();
         }
 

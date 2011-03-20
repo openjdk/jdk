@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.javadoc.*;
 
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTags;
 
 
@@ -114,6 +113,7 @@ public class AnnotationValueImpl implements AnnotationValue {
      * @return the text of a Java language annotation value expression
      *          whose value is the value of this annotation type element.
      */
+    @Override
     public String toString() {
         ToStringVisitor tv = new ToStringVisitor();
         attr.accept(tv);
@@ -121,8 +121,9 @@ public class AnnotationValueImpl implements AnnotationValue {
     }
 
     private class ToStringVisitor implements Attribute.Visitor {
-        private final StringBuffer sb = new StringBuffer();
+        private final StringBuilder sb = new StringBuilder();
 
+        @Override
         public String toString() {
             return sb.toString();
         }

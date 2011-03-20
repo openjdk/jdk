@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,7 +280,7 @@ public class AptJavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
         }
 
         if (verbose)
-            printVerbose("total", Long.toString(System.currentTimeMillis() - msec));
+            log.printVerbose("total", Long.toString(System.currentTimeMillis() - msec));
 
         chk.reportDeferredDiagnostics();
 

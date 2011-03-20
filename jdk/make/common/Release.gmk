@@ -60,9 +60,10 @@ EXCLUDE_PROPWARN_PKGS += sun.dyn
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced
-# with a new module system (being discussed for JDK 7).
+# with a new module system (being discussed for JDK 8).
 #
-EXPORTED_PRIVATE_PKGS = com.sun.servicetag
+EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
+                        com.oracle.net
 
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases
@@ -86,8 +87,14 @@ ifdef OPENJDK
   IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
   # Where to find these files
-  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
-  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
+  ifeq ($(J4B), true)
+      SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdkfb
+      SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jrefb
+  else
+      SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
+      SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
+  endif
+
   IMAGE_DOCLIST_JDK = COPYRIGHT README.html  THIRDPARTYLICENSEREADME.txt
   IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html THIRDPARTYLICENSEREADME.txt
   ifeq ($(PLATFORM), windows)
@@ -1098,7 +1105,7 @@ JRE_INFO_FILE = $(JRE_IMAGE_DIR)/release
 
 # Common way to emit a line into the release or info file
 define info-file-item # name value
-$(PRINTF) "%s=\"%s\"\n" $1 $2 >> $@
+$(PRINTF) '%s="%s"\n' $1 $2 >> $@
 endef
 
 # Values to emit

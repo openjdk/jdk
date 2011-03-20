@@ -571,9 +571,9 @@ class FileSystemPreferences extends AbstractPreferences {
                     long newLastSyncTime = 0;
                     try {
                         newLastSyncTime = prefsFile.lastModified();
-                        FileInputStream fis = new FileInputStream(prefsFile);
-                        XmlSupport.importMap(fis, m);
-                        fis.close();
+                        try (FileInputStream fis = new FileInputStream(prefsFile)) {
+                            XmlSupport.importMap(fis, m);
+                        }
                     } catch(Exception e) {
                         if (e instanceof InvalidPreferencesFormatException) {
                             getLogger().warning("Invalid preferences format in "
@@ -618,9 +618,9 @@ class FileSystemPreferences extends AbstractPreferences {
                         if (!dir.exists() && !dir.mkdirs())
                             throw new BackingStoreException(dir +
                                                              " create failed.");
-                        FileOutputStream fos = new FileOutputStream(tmpFile);
-                        XmlSupport.exportMap(fos, prefsCache);
-                        fos.close();
+                        try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+                            XmlSupport.exportMap(fos, prefsCache);
+                        }
                         if (!tmpFile.renameTo(prefsFile))
                             throw new BackingStoreException("Can't rename " +
                             tmpFile + " to " + prefsFile);

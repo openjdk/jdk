@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.tools.javac.code;
 
 import java.util.*;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.element.ElementVisitor;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
@@ -345,7 +347,12 @@ public class Symtab {
         target = Target.instance(context);
 
         // Create the unknown type
-        unknownType = new Type(TypeTags.UNKNOWN, null);
+        unknownType = new Type(TypeTags.UNKNOWN, null) {
+            @Override
+            public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+                return v.visitUnknown(this, p);
+            }
+        };
 
         // create the basic builtin symbols
         rootPackage = new PackageSymbol(names.empty, null);
@@ -355,13 +362,20 @@ public class Symtab {
                     return messages.getLocalizedString("compiler.misc.unnamed.package");
                 }
             };
-        noSymbol = new TypeSymbol(0, names.empty, Type.noType, rootPackage);
+        noSymbol = new TypeSymbol(0, names.empty, Type.noType, rootPackage) {
+            public <R, P> R accept(ElementVisitor<R, P> v, P p) {
+                return v.visitUnknown(this, p);
+            }
+        };
         noSymbol.kind = Kinds.NIL;
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
-        unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
         errType = new ErrorType(errSymbol, Type.noType);
+
+        unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
+        unknownSymbol.members_field = new Scope.ErrorScope(unknownSymbol);
+        unknownSymbol.type = unknownType;
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
@@ -382,9 +396,11 @@ public class Symtab {
 
         // VGJ
         boundClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Bound, noSymbol);
+        boundClass.members_field = new Scope.ErrorScope(boundClass);
 
         // the builtin class of all methods
         methodClass = new ClassSymbol(PUBLIC|ACYCLIC, names.Method, noSymbol);
+        methodClass.members_field = new Scope.ErrorScope(boundClass);
 
         // Create class to hold all predefined constants and operations.
         predefClass = new ClassSymbol(PUBLIC|ACYCLIC, names.empty, rootPackage);

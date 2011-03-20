@@ -1134,7 +1134,7 @@ public:
     return _g1_committed;
   }
 
-  NOT_PRODUCT(bool is_in_closed_subset(const void* p) const;)
+  virtual bool is_in_closed_subset(const void* p) const;
 
   // Dirty card table entries covering a list of young regions.
   void dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRegion* list);

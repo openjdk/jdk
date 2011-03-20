@@ -1447,7 +1447,7 @@ public class ClassWriter extends ClassFile {
         try {
             writeClassFile(out, c);
             if (verbose)
-                log.printErrLines("verbose.wrote.file", outFile);
+                log.printVerbose("wrote.file", outFile);
             out.close();
             out = null;
         } finally {

@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Scanner;
 
 public class FailingConstructors {
@@ -46,9 +47,7 @@ public class FailingConstructors {
         /* create the file and write its contents */
         File file = File.createTempFile(fileName, null);
         file.deleteOnExit();
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(FILE_CONTENTS.getBytes());
-        fos.close();
+        Files.write(file.toPath(), FILE_CONTENTS.getBytes());
 
         test(true, file);
         file.delete();

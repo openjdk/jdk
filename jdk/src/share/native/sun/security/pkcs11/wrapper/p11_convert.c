@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -695,6 +695,46 @@ CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject 
 }
 
 /*
+ * converts the Java CK_AES_CTR_PARAMS object to a CK_AES_CTR_PARAMS structure
+ *
+ * @param env - used to call JNI funktions to get the Java classes and objects
+ * @param jParam - the Java CK_AES_CTR_PARAMS object to convert
+ * @param ckpParam - pointer to the new CK_AES_CTR_PARAMS structure
+ */
+void jAesCtrParamsToCKAesCtrParam(JNIEnv *env, jobject jParam,
+                                  CK_AES_CTR_PARAMS_PTR ckpParam) {
+    jclass jAesCtrParamsClass;
+    jfieldID fieldID;
+    jlong jCounterBits;
+    jobject jCb;
+    CK_BYTE_PTR ckBytes;
+    CK_ULONG ckTemp;
+
+    /* get ulCounterBits */
+    jAesCtrParamsClass = (*env)->FindClass(env, CLASS_AES_CTR_PARAMS);
+    if (jAesCtrParamsClass == NULL) { return; }
+    fieldID = (*env)->GetFieldID(env, jAesCtrParamsClass, "ulCounterBits", "J");
+    if (fieldID == NULL) { return; }
+    jCounterBits = (*env)->GetLongField(env, jParam, fieldID);
+
+    /* get cb */
+    fieldID = (*env)->GetFieldID(env, jAesCtrParamsClass, "cb", "[B");
+    if (fieldID == NULL) { return; }
+    jCb = (*env)->GetObjectField(env, jParam, fieldID);
+
+    /* populate java values */
+    ckpParam->ulCounterBits = jLongToCKULong(jCounterBits);
+    jByteArrayToCKByteArray(env, jCb, &ckBytes, &ckTemp);
+    if ((*env)->ExceptionCheck(env)) { return; }
+    if (ckTemp != 16) {
+        TRACE1("ERROR: WRONG CTR IV LENGTH %d", ckTemp);
+    } else {
+        memcpy(ckpParam->cb, ckBytes, ckTemp);
+        free(ckBytes);
+    }
+}
+
+/*
  * converts a Java CK_MECHANISM object into a CK_MECHANISM structure
  *
  * @param env - used to call JNI funktions to get the values out of the Java object
@@ -937,12 +977,10 @@ void jMechanismParameterToCKMechanismParameterSlow(JNIEnv *env, jobject jParam, 
 {
     /* get all Java mechanism parameter classes */
     jclass jVersionClass, jSsl3MasterKeyDeriveParamsClass, jSsl3KeyMatParamsClass;
-    jclass jTlsPrfParamsClass, jRsaPkcsOaepParamsClass, jPbeParamsClass;
-    jclass jPkcs5Pbkd2ParamsClass, jRsaPkcsPssParamsClass;
+    jclass jTlsPrfParamsClass, jAesCtrParamsClass, jRsaPkcsOaepParamsClass;
+    jclass jPbeParamsClass, jPkcs5Pbkd2ParamsClass, jRsaPkcsPssParamsClass;
     jclass jEcdh1DeriveParamsClass, jEcdh2DeriveParamsClass;
     jclass jX942Dh1DeriveParamsClass, jX942Dh2DeriveParamsClass;
-
-    /* get all Java mechanism parameter classes */
     TRACE0("\nDEBUG: jMechanismParameterToCKMechanismParameter");
 
     /* most common cases, i.e. NULL/byte[]/long, are already handled by
@@ -1042,6 +1080,33 @@ void jMechanismParameterToCKMechanismParameterSlow(JNIEnv *env, jobject jParam, 
 
         /* get length and pointer of parameter */
         *ckpLength = sizeof(CK_TLS_PRF_PARAMS);
+        *ckpParamPtr = ckpParam;
+        return;
+    }
+
+    jAesCtrParamsClass = (*env)->FindClass(env, CLASS_AES_CTR_PARAMS);
+    if (jAesCtrParamsClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jParam, jAesCtrParamsClass)) {
+        /*
+         * CK_AES_CTR_PARAMS
+         */
+        CK_AES_CTR_PARAMS_PTR ckpParam;
+
+        ckpParam = (CK_AES_CTR_PARAMS_PTR) malloc(sizeof(CK_AES_CTR_PARAMS));
+        if (ckpParam == NULL) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return;
+        }
+
+        /* convert jParameter to CKParameter */
+        jAesCtrParamsToCKAesCtrParam(env, jParam, ckpParam);
+        if ((*env)->ExceptionCheck(env)) {
+            free(ckpParam);
+            return;
+        }
+
+        /* get length and pointer of parameter */
+        *ckpLength = sizeof(CK_AES_CTR_PARAMS);
         *ckpParamPtr = ckpParam;
         return;
     }

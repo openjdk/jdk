@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class T6557752 {
                 Types types = task.getTypes();
 
                 if (types.asElement(trees.getOriginalType((ErrorType)typeMirror)) != null) {
-                    throw new AssertionError("Ttypes.asElement() error!");
+                    throw new AssertionError("Types.asElement() error!");
                 }
                 foundError = true;
               }

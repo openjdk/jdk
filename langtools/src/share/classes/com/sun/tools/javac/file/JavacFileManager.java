@@ -129,10 +129,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     /**
      * Register a Context.Factory to create a JavacFileManager.
      */
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            public JavaFileManager make() {
-                return new JavacFileManager(context, true, null);
+            public JavaFileManager make(Context c) {
+                return new JavacFileManager(c, true, null);
             }
         });
     }

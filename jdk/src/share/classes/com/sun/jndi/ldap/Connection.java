@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,13 +380,19 @@ public final class Connection implements Runnable {
     }
 
     LdapRequest writeRequest(BerEncoder ber, int msgId) throws IOException {
-        return writeRequest(ber, msgId, false /* pauseAfterReceipt */);
+        return writeRequest(ber, msgId, false /* pauseAfterReceipt */, -1);
     }
 
-    LdapRequest writeRequest(BerEncoder ber, int msgId, boolean pauseAfterReceipt)
-        throws IOException {
+    LdapRequest writeRequest(BerEncoder ber, int msgId,
+        boolean pauseAfterReceipt) throws IOException {
+        return writeRequest(ber, msgId, pauseAfterReceipt, -1);
+    }
 
-        LdapRequest req = new LdapRequest(msgId, pauseAfterReceipt);
+    LdapRequest writeRequest(BerEncoder ber, int msgId,
+        boolean pauseAfterReceipt, int replyQueueCapacity) throws IOException {
+
+        LdapRequest req =
+            new LdapRequest(msgId, pauseAfterReceipt, replyQueueCapacity);
         addRequest(req);
 
         if (traceFile != null) {

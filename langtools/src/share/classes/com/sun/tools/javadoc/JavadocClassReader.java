@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ class JavadocClassReader extends ClassReader {
         return (JavadocClassReader)instance;
     }
 
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(classReaderKey, new Context.Factory<ClassReader>() {
-            public ClassReader make() {
-                return new JavadocClassReader(context);
+            public ClassReader make(Context c) {
+                return new JavadocClassReader(c);
             }
         });
     }

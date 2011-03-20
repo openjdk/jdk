@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javadoc;
 
+import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.text.CollationKey;
@@ -33,6 +34,8 @@ import javax.tools.FileObject;
 import com.sun.javadoc.*;
 
 import com.sun.tools.javac.util.Position;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * abstract base class of all Doc classes.  Doc item's are representations
@@ -166,51 +169,28 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
      * Utility for subclasses which read HTML documentation files.
      */
     String readHTMLDocumentation(InputStream input, FileObject filename) throws IOException {
-        int filesize = input.available();
-        byte[] filecontents = new byte[filesize];
-        input.read(filecontents, 0, filesize);
-        input.close();
+        byte[] filecontents = new byte[input.available()];
+        try {
+            DataInputStream dataIn = new DataInputStream(input);
+            dataIn.readFully(filecontents);
+        } finally {
+            input.close();
+        }
         String encoding = env.getEncoding();
         String rawDoc = (encoding!=null)
             ? new String(filecontents, encoding)
             : new String(filecontents);
-        String upper = null;
-        int bodyIdx = rawDoc.indexOf("<body");
-        if (bodyIdx == -1) {
-            bodyIdx = rawDoc.indexOf("<BODY");
-            if (bodyIdx == -1) {
-                upper = rawDoc.toUpperCase();
-                bodyIdx = upper.indexOf("<BODY");
-                if (bodyIdx == -1) {
-                    env.error(SourcePositionImpl.make(filename, Position.NOPOS, null),
-                                       "javadoc.Body_missing_from_html_file");
-                    return "";
-                }
-            }
-        }
-        bodyIdx = rawDoc.indexOf('>', bodyIdx);
-        if (bodyIdx == -1) {
-            env.error(SourcePositionImpl.make(filename, Position.NOPOS, null),
-                               "javadoc.Body_missing_from_html_file");
+        Pattern bodyPat = Pattern.compile("(?is).*<body\\b[^>]*>(.*)</body\\b.*");
+        Matcher m = bodyPat.matcher(rawDoc);
+        if (m.matches()) {
+            return m.group(1);
+        } else {
+            String key = rawDoc.matches("(?is).*<body\\b.*")
+                    ? "javadoc.End_body_missing_from_html_file"
+                    : "javadoc.Body_missing_from_html_file";
+            env.error(SourcePositionImpl.make(filename, Position.NOPOS, null), key);
             return "";
         }
-        ++bodyIdx;
-        int endIdx = rawDoc.indexOf("</body", bodyIdx);
-        if (endIdx == -1) {
-            endIdx = rawDoc.indexOf("</BODY", bodyIdx);
-            if (endIdx == -1) {
-                if (upper == null) {
-                    upper = rawDoc.toUpperCase();
-                }
-                endIdx = upper.indexOf("</BODY", bodyIdx);
-                if (endIdx == -1) {
-                    env.error(SourcePositionImpl.make(filename, Position.NOPOS, null),
-                                       "javadoc.End_body_missing_from_html_file");
-                    return "";
-                }
-            }
-        }
-        return rawDoc.substring(bodyIdx, endIdx);
     }
 
     /**
@@ -256,6 +236,7 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
     /**
      * Returns a string representation of this Doc item.
      */
+    @Override
     public String toString() {
         return qualifiedName();
     }

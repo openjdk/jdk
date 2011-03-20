@@ -34,8 +34,8 @@
 #include <fcntl.h>
 #endif
 #ifdef __linux__
-#include <linux/unistd.h>
-#include <linux/sysctl.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
 #include <sys/utsname.h>
 #include <netinet/ip.h>
 
