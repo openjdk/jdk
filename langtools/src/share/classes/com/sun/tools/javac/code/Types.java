@@ -1992,7 +1992,11 @@ public class Types {
      * @return true if t is a sub signature of s.
      */
     public boolean isSubSignature(Type t, Type s) {
-        return hasSameArgs(t, s) || hasSameArgs(t, erasure(s));
+        return isSubSignature(t, s, true);
+    }
+
+    public boolean isSubSignature(Type t, Type s, boolean strict) {
+        return hasSameArgs(t, s, strict) || hasSameArgs(t, erasure(s), strict);
     }
 
     /**
@@ -2129,10 +2133,24 @@ public class Types {
      * where correspondence is by position in the type parameter list.
      */
     public boolean hasSameArgs(Type t, Type s) {
+        return hasSameArgs(t, s, true);
+    }
+
+    public boolean hasSameArgs(Type t, Type s, boolean strict) {
+        return hasSameArgs(t, s, strict ? hasSameArgs_strict : hasSameArgs_nonstrict);
+    }
+
+    private boolean hasSameArgs(Type t, Type s, TypeRelation hasSameArgs) {
         return hasSameArgs.visit(t, s);
     }
     // where
-        private TypeRelation hasSameArgs = new TypeRelation() {
+        private class HasSameArgs extends TypeRelation {
+
+            boolean strict;
+
+            public HasSameArgs(boolean strict) {
+                this.strict = strict;
+            }
 
             public Boolean visitType(Type t, Type s) {
                 throw new AssertionError();
@@ -2147,7 +2165,7 @@ public class Types {
             @Override
             public Boolean visitForAll(ForAll t, Type s) {
                 if (s.tag != FORALL)
-                    return false;
+                    return strict ? false : visitMethodType(t.asMethodType(), s);
 
                 ForAll forAll = (ForAll)s;
                 return hasSameBounds(t, forAll)
@@ -2159,6 +2177,10 @@ public class Types {
                 return false;
             }
         };
+
+        TypeRelation hasSameArgs_strict = new HasSameArgs(true);
+        TypeRelation hasSameArgs_nonstrict = new HasSameArgs(false);
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="subst">
@@ -2534,7 +2556,7 @@ public class Types {
     }
     // where
         private String typaramsString(List<Type> tvars) {
-            StringBuffer s = new StringBuffer();
+            StringBuilder s = new StringBuilder();
             s.append('<');
             boolean first = true;
             for (Type t : tvars) {
@@ -2545,7 +2567,7 @@ public class Types {
             s.append('>');
             return s.toString();
         }
-        private void appendTyparamString(TypeVar t, StringBuffer buf) {
+        private void appendTyparamString(TypeVar t, StringBuilder buf) {
             buf.append(t);
             if (t.bound == null ||
                 t.bound.tsym.getQualifiedName() == names.java_lang_Object)
@@ -2832,12 +2854,26 @@ public class Types {
             while (ts.head.tag != CLASS && ts.head.tag != TYPEVAR)
                 ts = ts.tail;
             Assert.check(!ts.isEmpty());
-            List<Type> cl = closure(ts.head);
+            //step 1 - compute erased candidate set (EC)
+            List<Type> cl = erasedSupertypes(ts.head);
             for (Type t : ts.tail) {
                 if (t.tag == CLASS || t.tag == TYPEVAR)
-                    cl = intersect(cl, closure(t));
+                    cl = intersect(cl, erasedSupertypes(t));
             }
-            return compoundMin(cl);
+            //step 2 - compute minimal erased candidate set (MEC)
+            List<Type> mec = closureMin(cl);
+            //step 3 - for each element G in MEC, compute lci(Inv(G))
+            List<Type> candidates = List.nil();
+            for (Type erasedSupertype : mec) {
+                List<Type> lci = List.of(asSuper(ts.head, erasedSupertype.tsym));
+                for (Type t : ts) {
+                    lci = intersect(lci, List.of(asSuper(t, erasedSupertype.tsym)));
+                }
+                candidates = candidates.appendList(lci);
+            }
+            //step 4 - let MEC be { G1, G2 ... Gn }, then we have that
+            //lub = lci(Inv(G1)) & lci(Inv(G2)) & ... & lci(Inv(Gn))
+            return compoundMin(candidates);
 
         default:
             // calculate lub(A, B[])
@@ -2851,6 +2887,18 @@ public class Types {
         }
     }
     // where
+        List<Type> erasedSupertypes(Type t) {
+            ListBuffer<Type> buf = lb();
+            for (Type sup : closure(t)) {
+                if (sup.tag == TYPEVAR) {
+                    buf.append(sup);
+                } else {
+                    buf.append(erasure(sup));
+                }
+            }
+            return buf.toList();
+        }
+
         private Type arraySuperType = null;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup

@@ -1137,18 +1137,16 @@ public class Phaser {
 
     // Unsafe mechanics
 
-    private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long stateOffset =
-        objectFieldOffset("state", Phaser.class);
-
-    private static long objectFieldOffset(String field, Class<?> klazz) {
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long stateOffset;
+    static {
         try {
-            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
-        } catch (NoSuchFieldException e) {
-            // Convert Exception to corresponding Error
-            NoSuchFieldError error = new NoSuchFieldError(field);
-            error.initCause(e);
-            throw error;
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class k = Phaser.class;
+            stateOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("state"));
+        } catch (Exception e) {
+            throw new Error(e);
         }
     }
 }

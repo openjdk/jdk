@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6956758
+ * @bug 6969184
  *
  * @summary  poor error recovery after symbol not found
  * @author Maurizio Cimadamore

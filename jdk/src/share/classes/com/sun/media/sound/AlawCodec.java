@@ -52,9 +52,6 @@ public class AlawCodec extends SunCodec {
     private static final short seg_end [] = {0xFF, 0x1FF, 0x3FF,
                                              0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF};
 
-    private static final int tempBufferSize = 64;
-    private byte tempBuffer [] = null;
-
     /**
      * Initializes the decode tables
      */
@@ -199,12 +196,9 @@ public class AlawCodec extends SunCodec {
         AudioFormat inputFormat = stream.getFormat();
 
         if( inputFormat.matches(outputFormat) ) {
-
             cs = stream;
         } else {
-
             cs = (AudioInputStream) (new AlawCodecStream(stream, outputFormat));
-            tempBuffer = new byte[tempBufferSize];
         }
 
         return cs;
@@ -264,6 +258,10 @@ public class AlawCodec extends SunCodec {
 
     class AlawCodecStream extends AudioInputStream {
 
+        // tempBuffer required only for encoding (when encode is true)
+        private static final int tempBufferSize = 64;
+        private byte tempBuffer [] = null;
+
         /**
          * True to encode to a-law, false to decode to linear
          */
@@ -303,6 +301,7 @@ public class AlawCodec extends SunCodec {
                 encodeFormat = outputFormat;
                 decodeFormat = inputFormat;
                 PCMIsBigEndian = inputFormat.isBigEndian();
+                tempBuffer = new byte[tempBufferSize];
             }
 
             if (PCMIsBigEndian) {

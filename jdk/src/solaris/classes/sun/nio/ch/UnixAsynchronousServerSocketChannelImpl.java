@@ -236,7 +236,9 @@ class UnixAsynchronousServerSocketChannelImpl
         } catch (SecurityException x) {
             try {
                 ch.close();
-            } catch (IOException ignore) { }
+            } catch (Throwable suppressed) {
+                x.addSuppressed(suppressed);
+            }
             throw x;
         }
         return ch;

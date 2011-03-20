@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE   = management
 
 include $(BUILDDIR)/common/Defs.gmk
 

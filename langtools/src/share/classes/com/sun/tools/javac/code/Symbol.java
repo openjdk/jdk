@@ -831,6 +831,8 @@ public abstract class Symbol implements Element {
                 ClassType t = (ClassType)type;
                 if (t.interfaces_field == null) // FIXME: shouldn't be null
                     t.interfaces_field = List.nil();
+                if (t.all_interfaces_field != null)
+                    return Type.getModelTypes(t.all_interfaces_field);
                 return t.interfaces_field;
             } else {
                 return List.nil();
@@ -846,7 +848,7 @@ public abstract class Symbol implements Element {
                 // An interface has no superclass; its supertype is Object.
                 return t.isInterface()
                     ? Type.noType
-                    : t.supertype_field;
+                    : t.supertype_field.getModelType();
             } else {
                 return Type.noType;
             }

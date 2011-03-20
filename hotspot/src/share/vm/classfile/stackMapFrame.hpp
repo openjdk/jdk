@@ -228,6 +228,8 @@ class StackMapFrame : public ResourceObj {
   bool is_assignable_to(
     VerificationType* src, VerificationType* target, int32_t len, TRAPS) const;
 
+  bool has_flag_match_exception(const StackMapFrame* target) const;
+
   // Debugging
   void print() const PRODUCT_RETURN;
 };

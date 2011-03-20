@@ -105,9 +105,9 @@ public class SetLastModified {
             System.getProperty("os.name").startsWith("Windows") ? 0L : 3L*G;
         long pos = 0L;
         while (pos <= MAX_POSITION) {
-            FileChannel fc = new FileOutputStream(f).getChannel();
-            fc.position(pos).write(ByteBuffer.wrap("x".getBytes()));
-            fc.close();
+            try (FileChannel fc = new FileOutputStream(f).getChannel()) {
+                fc.position(pos).write(ByteBuffer.wrap("x".getBytes()));
+            }
             ot = f.lastModified();
             System.out.format("check with file size: %d\n", f.length());
             if (!f.setLastModified(nt))

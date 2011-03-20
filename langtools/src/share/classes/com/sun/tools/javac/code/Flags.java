@@ -43,7 +43,7 @@ public class Flags {
     private Flags() {} // uninstantiable
 
     public static String toString(long flags) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String sep = "";
         for (Flag s : asFlagSet(flags)) {
             buf.append(sep);

@@ -27,7 +27,6 @@
 # Makefile for building the VIS (solaris-only) version of medialib
 #
 BUILDDIR = ../../..
-MODULE  = media
 PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image_v
 PRODUCT = sun

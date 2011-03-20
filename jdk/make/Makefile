@@ -74,7 +74,6 @@ import            -- copy in the pre-built components (e.g. VM) \n\
 import_product    -- copy in the product components \n\
 import_fastdebug  -- copy in the fastdebug components \n\
 import_debug      -- copy in the debug components \n\
-modules           -- build the jdk and jre module images (experimental) \n\
 create_links      -- create softlinks in Solaris 32bit build to 64bit dirs \n\
 "
 
@@ -261,7 +260,6 @@ docs:: sanity-docs post-sanity-docs
 # Release engineering targets.
 #
 include $(BUILDDIR)/common/Release.gmk
-include $(BUILDDIR)/common/Modules.gmk
 
 #
 # Cscope targets.
