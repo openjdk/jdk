@@ -78,6 +78,7 @@ bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
+bool   Arguments::_created_by_gamma_launcher    = false;
 
 // These parameters are reset in method parse_vm_init_args(JavaVMInitArgs*)
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -1656,11 +1657,18 @@ void Arguments::process_java_compiler_argument(char* arg) {
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   _sun_java_launcher = strdup(launcher);
+  if (strcmp("gamma", _sun_java_launcher) == 0) {
+    _created_by_gamma_launcher = true;
+  }
 }
 
 bool Arguments::created_by_java_launcher() {
   assert(_sun_java_launcher != NULL, "property must have value");
   return strcmp(DEFAULT_JAVA_LAUNCHER, _sun_java_launcher) != 0;
+}
+
+bool Arguments::created_by_gamma_launcher() {
+  return _created_by_gamma_launcher;
 }
 
 //===========================================================================================================
@@ -2790,10 +2798,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
   }
-  // Temporary disable bulk zeroing reduction with G1. See CR 6627983.
-  if (UseG1GC) {
-    FLAG_SET_DEFAULT(ReduceBulkZeroing, false);
-  }
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
@@ -3152,6 +3156,16 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     if (!VM_Version::use_biased_locking() &&
         !(FLAG_IS_CMDLINE(UseBiasedLocking))) {
       UseBiasedLocking = false;
+    }
+  }
+
+  // set PauseAtExit if the gamma launcher was used and a debugger is attached
+  // but only if not already set on the commandline
+  if (Arguments::created_by_gamma_launcher() && os::is_debugger_attached()) {
+    bool set = false;
+    CommandLineFlags::wasSetOnCmdline("PauseAtExit", &set);
+    if (!set) {
+      FLAG_SET_DEFAULT(PauseAtExit, true);
     }
   }
 

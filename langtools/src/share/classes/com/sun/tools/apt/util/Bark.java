@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,15 @@ public class Bark extends Log {
      * Preregisters factories to create and use a Bark object for use as
      * both a Log and a Bark.
      */
-    public static void preRegister(final Context context) {
+    public static void preRegister(Context context) {
         context.put(barkKey, new Context.Factory<Bark>() {
-            public Bark make() {
-                return new Bark(context);
+            public Bark make(Context c) {
+                return new Bark(c);
             }
         });
         context.put(Log.logKey, new Context.Factory<Log>() {
-            public Log make() {
-                return Bark.instance(context);
+            public Log make(Context c) {
+                return Bark.instance(c);
             }
         });
     }

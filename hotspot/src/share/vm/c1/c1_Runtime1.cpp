@@ -426,10 +426,9 @@ extern void vm_exit(int code);
 // been deoptimized. If that is the case we return the deopt blob
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
-//
-
-
 JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* thread, oopDesc* ex, address pc, nmethod*& nm))
+  // Reset method handle flag.
+  thread->set_is_method_handle_return(false);
 
   Handle exception(thread, ex);
   nm = CodeCache::find_nmethod(pc);
@@ -480,11 +479,12 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 
-  // ExceptionCache is used only for exceptions at call and not for implicit exceptions
+  // ExceptionCache is used only for exceptions at call sites and not for implicit exceptions
   if (guard_pages_enabled) {
     address fast_continuation = nm->handler_for_exception_and_pc(exception, pc);
     if (fast_continuation != NULL) {
-      if (fast_continuation == ExceptionCache::unwind_handler()) fast_continuation = NULL;
+      // Set flag if return address is a method handle call site.
+      thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
       return fast_continuation;
     }
   }
@@ -522,14 +522,14 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     thread->set_exception_pc(pc);
 
     // the exception cache is used only by non-implicit exceptions
-    if (continuation == NULL) {
-      nm->add_handler_for_exception_and_pc(exception, pc, ExceptionCache::unwind_handler());
-    } else {
+    if (continuation != NULL) {
       nm->add_handler_for_exception_and_pc(exception, pc, continuation);
     }
   }
 
   thread->set_vm_result(exception());
+  // Set flag if return address is a method handle call site.
+  thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
   if (TraceExceptions) {
     ttyLocker ttyl;
@@ -542,20 +542,19 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 JRT_END
 
 // Enter this method from compiled code only if there is a Java exception handler
-// in the method handling the exception
+// in the method handling the exception.
 // We are entering here from exception stub. We don't do a normal VM transition here.
 // We do it in a helper. This is so we can check to see if the nmethod we have just
 // searched for an exception handler has been deoptimized in the meantime.
-address  Runtime1::exception_handler_for_pc(JavaThread* thread) {
+address Runtime1::exception_handler_for_pc(JavaThread* thread) {
   oop exception = thread->exception_oop();
   address pc = thread->exception_pc();
   // Still in Java mode
-  debug_only(ResetNoHandleMark rnhm);
+  DEBUG_ONLY(ResetNoHandleMark rnhm);
   nmethod* nm = NULL;
   address continuation = NULL;
   {
     // Enter VM mode by calling the helper
-
     ResetNoHandleMark rnhm;
     continuation = exception_handler_for_pc_helper(thread, exception, pc, nm);
   }
@@ -563,11 +562,11 @@ address  Runtime1::exception_handler_for_pc(JavaThread* thread) {
 
   // Now check to see if the nmethod we were called from is now deoptimized.
   // If so we must return to the deopt blob and deoptimize the nmethod
-
   if (nm != NULL && caller_is_deopted()) {
     continuation = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 
+  assert(continuation != NULL, "no handler found");
   return continuation;
 }
 

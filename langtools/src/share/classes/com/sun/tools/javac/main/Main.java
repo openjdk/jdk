@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,7 +367,11 @@ public class Main {
                         || options.isSet(VERSION)
                         || options.isSet(FULLVERSION))
                         return EXIT_OK;
-                    error("err.no.source.files");
+                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
+                        error("err.no.source.files.classes");
+                    } else {
+                        error("err.no.source.files");
+                    }
                     return EXIT_CMDERR;
                 }
             } catch (java.io.FileNotFoundException e) {
