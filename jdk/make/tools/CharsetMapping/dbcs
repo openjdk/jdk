@@ -10,6 +10,7 @@ MS936	  x-mswin-936 MS936   basic     sun.nio.cs.ext    true    0x81   0xfe   0x
 MS949	  x-windows-949 MS949 basic     sun.nio.cs.ext    true    0x81   0xfe   0x41  0xfe
 MS950	  x-windows-950 MS950 basic     sun.nio.cs.ext    true    0x81   0xfe   0x40  0xfe
 GBK	  GBK        GBK      basic     sun.nio.cs.ext    true    0x81   0xfe   0x40  0xfe
+IBM1364	  x-IBM1364  Cp1364   ebcdic	sun.nio.cs.ext	  false   0x40   0xde   0x40  0xfe
 IBM1381	  x-IBM1381  Cp1381   basic     sun.nio.cs.ext    true    0x8c   0xf7   0xa1  0xfe
 IBM1383	  x-IBM1383  Cp1383   euc_sim   sun.nio.cs.ext    true    0xa1   0xfe   0xa1  0xfe
 IBM930	  x-IBM930   Cp930    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
