@@ -60,7 +60,7 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     char hostname[MAXHOSTNAMELEN+1];
 
     hostname[0] = '\0';
-    if (JVM_GetHostName(hostname, MAXHOSTNAMELEN)) {
+    if (JVM_GetHostName(hostname, sizeof(hostname))) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
@@ -82,6 +82,9 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
         char *buf[HENT_BUF_SIZE/(sizeof (char *))];
         char *buf2[HENT_BUF_SIZE/(sizeof (char *))];
         int h_error=0;
+
+        // ensure null-terminated
+        hostname[MAXHOSTNAMELEN] = '\0';
 
 #ifdef __GLIBC__
         gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &hp, &h_error);

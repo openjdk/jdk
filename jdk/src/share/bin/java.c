@@ -61,6 +61,9 @@
  * interfaces.
  */
 
+/* we always print to stderr */
+#define USE_STDERR JNI_TRUE
+
 static jboolean printVersion = JNI_FALSE; /* print and exit */
 static jboolean showVersion = JNI_FALSE;  /* print but continue */
 static jboolean printUsage = JNI_FALSE;   /* print and exit*/
@@ -1136,36 +1139,18 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
     return; \
   }
 
-static jstring platformEncoding = NULL;
-static jstring getPlatformEncoding(JNIEnv *env) {
-    if (platformEncoding == NULL) {
-        jstring propname = (*env)->NewStringUTF(env, "sun.jnu.encoding");
-        if (propname) {
-            jclass cls;
-            jmethodID mid;
-            NULL_CHECK0 (cls = FindBootStrapClass(env, "java/lang/System"));
-            NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
-                                   env, cls,
-                                   "getProperty",
-                                   "(Ljava/lang/String;)Ljava/lang/String;"));
-            platformEncoding = (*env)->CallStaticObjectMethod (
-                                    env, cls, mid, propname);
-        }
+static jclass helperClass = NULL;
+
+static jclass
+GetLauncherHelperClass(JNIEnv *env) {
+    if (helperClass == NULL) {
+        NULL_CHECK0(helperClass = FindBootStrapClass(env,
+                "sun/launcher/LauncherHelper"));
     }
-    return platformEncoding;
+    return helperClass;
 }
 
-static jboolean isEncodingSupported(JNIEnv *env, jstring enc) {
-    jclass cls;
-    jmethodID mid;
-    NULL_CHECK0 (cls = FindBootStrapClass(env, "java/nio/charset/Charset"));
-    NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
-                           env, cls,
-                           "isSupported",
-                           "(Ljava/lang/String;)Z"));
-    return (*env)->CallStaticBooleanMethod(env, cls, mid, enc);
-}
-
+static jmethodID makePlatformStringMID = NULL;
 /*
  * Returns a new Java string object for the specified platform string.
  */
@@ -1173,36 +1158,23 @@ static jstring
 NewPlatformString(JNIEnv *env, char *s)
 {
     int len = (int)JLI_StrLen(s);
-    jclass cls;
-    jmethodID mid;
     jbyteArray ary;
-    jstring enc;
-
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK0(cls);
     if (s == NULL)
         return 0;
-    enc = getPlatformEncoding(env);
 
     ary = (*env)->NewByteArray(env, len);
     if (ary != 0) {
         jstring str = 0;
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
         if (!(*env)->ExceptionOccurred(env)) {
-            NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
-            if (isEncodingSupported(env, enc) == JNI_TRUE) {
-                NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
-                                          "([BLjava/lang/String;)V"));
-                str = (*env)->NewObject(env, cls, mid, ary, enc);
-            } else {
-                /*If the encoding specified in sun.jnu.encoding is not
-                  endorsed by "Charset.isSupported" we have to fall back
-                  to use String(byte[]) explicitly here without specifying
-                  the encoding name, in which the StringCoding class will
-                  pickup the iso-8859-1 as the fallback converter for us.
-                */
-                NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
-                                          "([B)V"));
-                str = (*env)->NewObject(env, cls, mid, ary);
+            if (makePlatformStringMID == NULL) {
+                NULL_CHECK0(makePlatformStringMID = (*env)->GetStaticMethodID(env,
+                        cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
             }
+            str = (*env)->CallStaticObjectMethod(env, cls,
+                    makePlatformStringMID, USE_STDERR, ary);
             (*env)->DeleteLocalRef(env, ary);
             return str;
         }
@@ -1239,20 +1211,28 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)
 {
-    jclass cls;
     jmethodID mid;
     jstring str;
     jobject result;
     jlong start, end;
-
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK0(cls);
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
-    NULL_CHECK0(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
-    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls, "checkAndLoadMain",
-                                          "(ZILjava/lang/String;)Ljava/lang/Class;"));
-    str = (*env)->NewStringUTF(env, name);
-    result = (*env)->CallStaticObjectMethod(env, cls, mid, JNI_TRUE, mode, str);
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
+                "checkAndLoadMain",
+                "(ZILjava/lang/String;)Ljava/lang/Class;"));
+
+    switch (mode) {
+        case LM_CLASS:
+            str = NewPlatformString(env, name);
+            break;
+        default:
+            str = (*env)->NewStringUTF(env, name);
+            break;
+    }
+    result = (*env)->CallStaticObjectMethod(env, cls, mid, USE_STDERR, mode, str);
 
     if (JLI_IsTraceLauncher()) {
         end   = CounterGet();
@@ -1478,15 +1458,15 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
 static void
 ShowSettings(JNIEnv *env, char *optString)
 {
-    jclass cls;
     jmethodID showSettingsID;
     jstring joptString;
-    NULL_CHECK(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK(cls);
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
             "showSettings", "(ZLjava/lang/String;JJJZ)V"));
     joptString = (*env)->NewStringUTF(env, optString);
     (*env)->CallStaticVoidMethod(env, cls, showSettingsID,
-                                 JNI_TRUE,
+                                 USE_STDERR,
                                  joptString,
                                  (jlong)initialHeapSize,
                                  (jlong)maxHeapSize,
@@ -1500,18 +1480,15 @@ ShowSettings(JNIEnv *env, char *optString)
 static void
 PrintUsage(JNIEnv* env, jboolean doXUsage)
 {
-  jclass cls;
   jmethodID initHelp, vmSelect, vmSynonym, vmErgo, printHelp, printXUsageMessage;
   jstring jprogname, vm1, vm2;
   int i;
-
-  NULL_CHECK(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
-
-
+  jclass cls = GetLauncherHelperClass(env);
+  NULL_CHECK(cls);
   if (doXUsage) {
     NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
                                         "printXUsageMessage", "(Z)V"));
-    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, JNI_TRUE);
+    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, USE_STDERR);
   } else {
     NULL_CHECK(initHelp = (*env)->GetStaticMethodID(env, cls,
                                         "initHelpMessage", "(Ljava/lang/String;)V"));
@@ -1570,7 +1547,7 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
     }
 
     /* Complete the usage message and print to stderr*/
-    (*env)->CallStaticVoidMethod(env, cls, printHelp, JNI_TRUE);
+    (*env)->CallStaticVoidMethod(env, cls, printHelp, USE_STDERR);
   }
   return;
 }
