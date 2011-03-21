@@ -180,6 +180,9 @@
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
                                                                             \
+  develop(bool, TraceLoopOpts, false,                                       \
+          "Trace executed loop optimizations")                              \
+                                                                            \
   product(bool, OptimizeFill, false,                                        \
           "convert fill/copy loops into intrinsic")                         \
                                                                             \
