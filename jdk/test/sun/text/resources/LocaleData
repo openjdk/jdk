@@ -6353,3 +6353,6 @@ CurrencyNames/pt/yum=Dinar noviy iugoslavo
 CurrencyNames/pt/zar=Rand sul-africano
 CurrencyNames/pt/zmk=Cuacha zambiano
 CurrencyNames/pt/zwd=D\u00f3lar do Zimb\u00e1bue
+
+# bug 7020960
+CurrencyNames/sr_RS/RSD=\u0434\u0438\u043d.
