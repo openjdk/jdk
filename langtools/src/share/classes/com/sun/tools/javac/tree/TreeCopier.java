@@ -135,7 +135,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCClassDecl t = (JCClassDecl) node;
         JCModifiers mods = copy(t.mods, p);
         List<JCTypeParameter> typarams = copy(t.typarams, p);
-        JCTree extending = copy(t.extending, p);
+        JCExpression extending = copy(t.extending, p);
         List<JCExpression> implementing = copy(t.implementing, p);
         List<JCTree> defs = copy(t.defs, p);
         return M.at(t.pos).ClassDef(mods, t.name, typarams, extending, implementing, defs);

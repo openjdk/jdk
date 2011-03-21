@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 7017446
  * @summary Unit test for java.nio.file.Files
  * @library ..
  */
@@ -94,12 +94,6 @@ public class FileAttributes {
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.lastModifiedTime(), map.get("lastModifiedTime"));
-
-        map = Files.readAttributes(file,
-            "basic:lastModifiedTime,lastAccessTime,ShouldNotExist");
-        assertTrue(map.size() == 2);
-        checkEqual(attrs.lastModifiedTime(), map.get("lastModifiedTime"));
-        checkEqual(attrs.lastAccessTime(), map.get("lastAccessTime"));
     }
 
     // Exercise getAttribute/setAttribute/readAttributes on posix attributes
@@ -132,7 +126,7 @@ public class FileAttributes {
         assertTrue(map.size() >= 12);
         checkEqual(attrs.permissions(), map.get("permissions")); // check one
 
-        map = Files.readAttributes(file, "posix:size,owner,ShouldNotExist");
+        map = Files.readAttributes(file, "posix:size,owner");
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.owner(), map.get("owner"));
@@ -155,7 +149,7 @@ public class FileAttributes {
         map = Files.readAttributes(file, "unix:*");
         assertTrue(map.size() >= 20);
 
-        map = Files.readAttributes(file, "unix:size,uid,gid,ShouldNotExist");
+        map = Files.readAttributes(file, "unix:size,uid,gid");
         assertTrue(map.size() == 3);
         checkEqual(map.get("size"),
                    Files.readAttributes(file, BasicFileAttributes.class).size());
@@ -206,14 +200,65 @@ public class FileAttributes {
         assertTrue(map.size() >= 13);
         checkEqual(attrs.isReadOnly(), map.get("readonly")); // check one
 
-        map = Files.readAttributes(file, "dos:size,hidden,ShouldNotExist");
+        map = Files.readAttributes(file, "dos:size,hidden");
         assertTrue(map.size() == 2);
         checkEqual(attrs.size(), map.get("size"));
         checkEqual(attrs.isHidden(), map.get("hidden"));
     }
 
+    static void checkBadSet(Path file, String attribute, Object value)
+        throws IOException
+    {
+        try {
+            Files.setAttribute(file, attribute, 0);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException ignore) { }
+    }
+
+    static void checkBadGet(Path file, String attribute) throws IOException {
+        try {
+            Files.getAttribute(file, attribute);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException ignore) { }
+    }
+
+    static void checkBadRead(Path file, String attribute) throws IOException {
+        try {
+            Files.readAttributes(file, attribute);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException ignore) { }
+    }
+
     static void miscTests(Path file) throws IOException {
-        // NPE tests
+        // unsupported views
+        try {
+            Files.setAttribute(file, "foo:bar", 0);
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException ignore) { }
+        try {
+            Files.getAttribute(file, "foo:bar");
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException ignore) { }
+        try {
+            Files.readAttributes(file, "foo:*");
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException ignore) { }
+
+        // bad args
+        checkBadSet(file, "", 0);
+        checkBadSet(file, "basic:", 0);
+        checkBadSet(file, "basic:foobar", 0);
+        checkBadGet(file, "");
+        checkBadGet(file, "basic:");
+        checkBadGet(file, "basic:foobar");
+        checkBadGet(file, "basic:size,lastModifiedTime");
+        checkBadGet(file, "basic:*");
+        checkBadRead(file, "");
+        checkBadRead(file, "basic:");
+        checkBadRead(file, "basic:foobar");
+        checkBadRead(file, "basic:size,foobar");
+
+        // nulls
         try {
             Files.getAttribute(file, null);
             throw new RuntimeException("NullPointerException expected");

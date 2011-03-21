@@ -77,6 +77,7 @@
 # endif
 
 #ifdef LINUX
+#define __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <signal.h>
 #include <ucontext.h>

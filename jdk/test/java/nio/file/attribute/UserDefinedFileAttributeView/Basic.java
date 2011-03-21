@@ -141,9 +141,6 @@ public class Basic {
         map = Files.readAttributes(file, "user:*");
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = Files.readAttributes(file, "user:DoesNotExist");
-        if (!map.isEmpty())
-            throw new RuntimeException("Map expected to be empty");
     }
 
     static void miscTests(final Path file) throws IOException {
