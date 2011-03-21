@@ -136,6 +136,7 @@ FILES_java = \
         sun/text/resources/CollationData_sl.java \
         sun/text/resources/CollationData_sq.java \
         sun/text/resources/CollationData_sr.java \
+        sun/text/resources/CollationData_sr_Latn.java \
         sun/text/resources/CollationData_sv.java \
         sun/text/resources/CollationData_tr.java \
         sun/text/resources/CollationData_uk.java \
@@ -251,6 +252,10 @@ FILES_java = \
         sun/text/resources/FormatData_sr_CS.java \
         sun/text/resources/FormatData_sr_ME.java \
         sun/text/resources/FormatData_sr_RS.java \
+        sun/text/resources/FormatData_sr_Latn.java \
+        sun/text/resources/FormatData_sr_Latn_BA.java \
+        sun/text/resources/FormatData_sr_Latn_ME.java \
+        sun/text/resources/FormatData_sr_Latn_RS.java \
         sun/text/resources/FormatData_sv.java \
         sun/text/resources/FormatData_sv_SE.java \
         sun/text/resources/FormatData_tr.java \
