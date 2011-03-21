@@ -1101,6 +1101,8 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   float likely   = PROB_LIKELY(0.9);
   float unlikely = PROB_UNLIKELY(0.9);
 
+  const int nargs = 2; // number of arguments to push back for uncommon trap in predicate
+
   const int value_offset  = java_lang_String::value_offset_in_bytes();
   const int count_offset  = java_lang_String::count_offset_in_bytes();
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
@@ -1138,12 +1140,12 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* return_    = __ make_label(1);
 
   __ set(rtn,__ ConI(-1));
-  __ loop(i, sourceOffset, BoolTest::lt, sourceEnd); {
+  __ loop(this, nargs, i, sourceOffset, BoolTest::lt, sourceEnd); {
        Node* i2  = __ AddI(__ value(i), targetCountLess1);
        // pin to prohibit loading of "next iteration" value which may SEGV (rare)
        Node* src = load_array_element(__ ctrl(), source, i2, TypeAryPtr::CHARS);
        __ if_then(src, BoolTest::eq, lastChar, unlikely); {
-         __ loop(j, zero, BoolTest::lt, targetCountLess1); {
+         __ loop(this, nargs, j, zero, BoolTest::lt, targetCountLess1); {
               Node* tpj = __ AddI(targetOffset, __ value(j));
               Node* targ = load_array_element(no_ctrl, target, tpj, target_type);
               Node* ipj  = __ AddI(__ value(i), __ value(j));
