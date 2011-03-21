@@ -1,8 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939620
+ * @bug 6939620 7020044
  *
- * @summary  Switch to 'complex' diamond inference scheme
+ * @summary  Check that diamond fails when inference violates declared bounds
+ *           (test with local class, qualified/simple type expressions)
  * @author mcimadamore
  * @compile/fail/ref=Neg04.out Neg04.java -XDrawDiagnostics
  *
@@ -20,19 +21,9 @@ class Neg04 {
         Foo<?> n3 = new Foo<>("");
         Foo<? super String> n4 = new Foo<>("");
 
-        Foo<String> n5 = new Foo<>(""){};
-        Foo<? extends String> n6 = new Foo<>(""){};
-        Foo<?> n7 = new Foo<>(""){};
-        Foo<? super String> n8 = new Foo<>(""){};
-
-        Foo<String> n9 = new Foo<>("", "");
-        Foo<? extends String> n10 = new Foo<>("", "");
-        Foo<?> n11 = new Foo<>("", "");
-        Foo<? super String> n12 = new Foo<>("", "");
-
-        Foo<String> n13 = new Foo<>("", ""){};
-        Foo<? extends String> n14 = new Foo<>("", ""){};
-        Foo<?> n15 = new Foo<>("", ""){};
-        Foo<? super String> n16 = new Foo<>("", ""){};
+        Foo<String> n5 = new Foo<>("", "");
+        Foo<? extends String> n6 = new Foo<>("", "");
+        Foo<?> n7 = new Foo<>("", "");
+        Foo<? super String> n8 = new Foo<>("", "");
     }
 }

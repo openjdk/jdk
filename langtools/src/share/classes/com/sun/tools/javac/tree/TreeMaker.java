@@ -146,7 +146,7 @@ public class TreeMaker implements JCTree.Factory {
     public JCClassDecl ClassDef(JCModifiers mods,
                                 Name name,
                                 List<JCTypeParameter> typarams,
-                                JCTree extending,
+                                JCExpression extending,
                                 List<JCExpression> implementing,
                                 List<JCTree> defs)
     {
