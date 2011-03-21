@@ -43,7 +43,7 @@ SUBDIRS =           \
 
 # Some demos aren't currently included in OpenJDK
 ifndef OPENJDK
-  SUBDIRS += Java2D SwingSet2 SwingSet3 Stylepad
+  SUBDIRS += Java2D Laffy SwingSet2 SwingSet3 Stylepad
 endif
 
 include $(BUILDDIR)/common/Subdirs.gmk

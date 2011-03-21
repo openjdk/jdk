@@ -26,6 +26,8 @@
  * @bug 6795356
  * @summary Leak caused by javax.swing.UIDefaults.ProxyLazyValue.acc
  * @author Alexander Potochkin
+ * @library ../../regtesthelpers
+ * @build Util
  * @run main bug6795356
  */
 
@@ -58,43 +60,11 @@ public class bug6795356 {
         weakRef = new WeakReference<ProtectionDomain>(domain);
         domain = null;
 
-        // Generate OutOfMemory and check the weak ref
-        generateOOME();
+        Util.generateOOME();
 
         if (weakRef.get() != null) {
             throw new RuntimeException("Memory leak found!");
         }
         System.out.println("Test passed");
-    }
-
-    static void generateOOME() {
-        List<Object> bigLeak = new LinkedList<Object>();
-        boolean oome = false;
-        System.out.print("Filling the heap");
-        try {
-            for(int i = 0; true ; i++) {
-                // Now, use up all RAM
-                bigLeak.add(new byte[1024 * 1024]);
-                System.out.print(".");
-
-                // Give the GC a change at that weakref
-                if (i % 10 == 0) {
-                    System.gc();
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        } catch (OutOfMemoryError e) {
-            bigLeak = null;
-            oome = true;
-        }
-        System.out.println("");
-        if (!oome) {
-            throw new RuntimeException("Problem with test case - never got OOME");
-        }
-        System.out.println("Got OOME");
     }
 }
