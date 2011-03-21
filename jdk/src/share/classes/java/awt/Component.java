@@ -3873,6 +3873,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * supported or met
          * @exception ClassCastException if the component is not a canvas or
          * window.
+         * @exception IllegalStateException if the component has no peer
+         * @exception IllegalArgumentException if {@code numBuffers} is less than two,
+         * or if {@code BufferCapabilities.isPageFlipping} is not
+         * {@code true}.
+         * @see #createBuffers(int, BufferCapabilities)
          */
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
