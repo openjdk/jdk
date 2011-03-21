@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,18 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.lang.reflect.*;
 
-public class cr5045147 {
+public class EmptyMapAndNulls {
 
+    @SuppressWarnings("rawtypes")
     static void realMain(String[] args) throws Throwable {
         // No comparator
         Map<String,String> comparable = new TreeMap<>();
 
-        // insert null into empty map (504517 failure)
+        // insert null into empty map (5045147 failure)
         try {
             comparable.put(null, "anything");
             fail("null shouldn't be accepted");
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             pass();
         }
 
@@ -51,7 +52,7 @@ public class cr5045147 {
         try {
             comparable.put("test", "anything");
             pass();
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             fail();
         }
 
@@ -59,17 +60,18 @@ public class cr5045147 {
         try {
             comparable.put(null, "anything");
             fail("null shouldn't be accepted");
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             pass();
         }
 
-        Map<String,String> comparator = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        // Comparator (String.CASE_INSENSITIVE_ORDER). Intentionally a raw type.
+        Map comparator = new TreeMap(String.CASE_INSENSITIVE_ORDER);
 
-        // insert null into empty map (504517 failure)
+        // insert null into empty map (5045147 failure)
         try {
             comparator.put(null, "anything");
             fail("null shouldn't be accepted");
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             pass();
         }
 
@@ -77,7 +79,7 @@ public class cr5045147 {
         try {
             comparator.put("test", "anything");
             pass();
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             fail();
         }
 
@@ -85,17 +87,17 @@ public class cr5045147 {
         try {
             comparator.put(null, "anything");
             fail("null shouldn't be accepted");
-        } catch(NullPointerExecption failed) {
+        } catch (NullPointerException failed) {
             pass();
         }
 
         comparator.clear();
 
-        // insert non-String into empty map (504517 failure)
+        // insert non-String into empty map (5045147 failure)
         try {
             comparator.put(new Object(), "anything");
             fail("Object shouldn't be accepted");
-        } catch(ClassCastExecption failed) {
+        } catch (ClassCastException failed) {
             pass();
         }
 
