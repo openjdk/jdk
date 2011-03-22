@@ -162,7 +162,7 @@ Handle java_lang_String::create_from_unicode(jchar* unicode, int length, TRAPS) 
 }
 
 Handle java_lang_String::create_tenured_from_unicode(jchar* unicode, int length, TRAPS) {
-  return basic_create_from_unicode(unicode, length, true, CHECK_NH);
+  return basic_create_from_unicode(unicode, length, JavaObjectsInPerm, CHECK_NH);
 }
 
 oop java_lang_String::create_oop_from_unicode(jchar* unicode, int length, TRAPS) {
