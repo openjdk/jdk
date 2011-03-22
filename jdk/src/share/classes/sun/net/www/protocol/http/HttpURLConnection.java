@@ -2173,6 +2173,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         if (tryTransparentNTLMServer) {
                             tryTransparentNTLMServer =
                                     NTLMAuthenticationProxy.proxy.supportsTransparentAuth;
+                            /* If the platform supports transparent authentication
+                             * then check if we are in a secure environment
+                             * whether, or not, we should try transparent authentication.*/
+                            if (tryTransparentNTLMServer) {
+                                tryTransparentNTLMServer =
+                                        NTLMAuthenticationProxy.proxy.isTrustedSite(url);
+                            }
                         }
                         a = null;
                         if (tryTransparentNTLMServer) {
