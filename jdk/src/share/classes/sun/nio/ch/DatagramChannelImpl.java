@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+import sun.net.ResourceManager;
 
 
 /**
@@ -101,14 +102,22 @@ class DatagramChannelImpl
         throws IOException
     {
         super(sp);
-        this.family = Net.isIPv6Available() ?
-            StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
-        this.fd = Net.socket(family, false);
-        this.fdVal = IOUtil.fdVal(fd);
-        this.state = ST_UNCONNECTED;
+        ResourceManager.beforeUdpCreate();
+        try {
+            this.family = Net.isIPv6Available() ?
+                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+            this.fd = Net.socket(family, false);
+            this.fdVal = IOUtil.fdVal(fd);
+            this.state = ST_UNCONNECTED;
+        } catch (IOException ioe) {
+            ResourceManager.afterUdpClose();
+            throw ioe;
+        }
     }
 
-    public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family) {
+    public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
+        throws IOException
+    {
         super(sp);
         if ((family != StandardProtocolFamily.INET) &&
             (family != StandardProtocolFamily.INET6))
@@ -957,6 +966,7 @@ class DatagramChannelImpl
     protected void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
             nd.preClose(fd);
+            ResourceManager.afterUdpClose();
 
             // if member of mulitcast group then invalidate all keys
             if (registry != null)
