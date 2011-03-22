@@ -1315,9 +1315,16 @@ public abstract class SampleModel
                            int iArray[], DataBuffer data) {
 
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, iArray[Offset++], data);
             }
         }
@@ -1345,9 +1352,17 @@ public abstract class SampleModel
     public void setSamples(int x, int y, int w, int h, int b,
                            float fArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, fArray[Offset++], data);
             }
         }
@@ -1375,9 +1390,18 @@ public abstract class SampleModel
     public void setSamples(int x, int y, int w, int h, int b,
                            double dArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, dArray[Offset++], data);
             }
         }
