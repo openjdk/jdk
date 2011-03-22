@@ -3756,6 +3756,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
+  product(uintx, StringTableSize, 1009,                                     \
+          "Number of buckets in the interned String table")                 \
+                                                                            \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
           "EINTR for I/O operations results in OS_INTRPT. The default value"\

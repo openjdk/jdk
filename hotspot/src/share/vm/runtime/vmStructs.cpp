@@ -1553,12 +1553,6 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_constant(SymbolTable::symbol_table_size)                        \
                                                                           \
-  /***************/                                                       \
-  /* StringTable */                                                       \
-  /***************/                                                       \
-                                                                          \
-  declare_constant(StringTable::string_table_size)                        \
-                                                                          \
   /********************/                                                  \
   /* SystemDictionary */                                                  \
   /********************/                                                  \
