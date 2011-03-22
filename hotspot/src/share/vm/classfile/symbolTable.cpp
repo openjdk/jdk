@@ -530,7 +530,7 @@ oop StringTable::basic_add(int index, Handle string_or_null, jchar* name,
 
   Handle string;
   // try to reuse the string if possible
-  if (!string_or_null.is_null() && string_or_null()->is_perm()) {
+  if (!string_or_null.is_null() && (!JavaObjectsInPerm || string_or_null()->is_perm())) {
     string = string_or_null;
   } else {
     string = java_lang_String::create_tenured_from_unicode(name, len, CHECK_NULL);
@@ -662,7 +662,7 @@ void StringTable::verify() {
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
-      guarantee(s->is_perm(), "interned string not in permspace");
+      guarantee(s->is_perm() || !JavaObjectsInPerm, "interned string not in permspace");
 
       int length;
       jchar* chars = java_lang_String::as_unicode_string(s, length);
