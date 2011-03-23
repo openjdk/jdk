@@ -1924,7 +1924,7 @@ class CommandLineFlags {
   experimental(intx, WorkStealingSleepMillis, 1,                            \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  experimental(uintx, WorkStealingYieldsBeforeSleep, 1000,                  \
+  experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
   experimental(uintx, WorkStealingHardSpins, 4096,                          \
