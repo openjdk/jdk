@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         div.addStyle(HtmlStyle.header);
         if (pkgname.length() > 0) {
             Content pkgNameContent = new StringContent(pkgname);
-            Content pkgNamePara = HtmlTree.P(HtmlStyle.subTitle, pkgNameContent);
-            div.addContent(pkgNamePara);
+            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
+            div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(
                 LinkInfoImpl.CONTEXT_CLASS_HEADER, annotationType, false);
