@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4789689 4905985 4927164 4827184 4993906 5004549
+ * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -155,14 +155,14 @@ public class TestNewLanguageFeatures extends JavadocTester {
             //=================================
             //Make sure the summary links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>SUMMARY:&nbsp;</li>" + NL +
+                "<li>Summary:&nbsp;</li>" + NL +
                 "<li><a href=\"#annotation_type_required_element_summary\">" +
-                "REQUIRED</a>&nbsp;|&nbsp;</li>" + NL + "<li>" +
-                "<a href=\"#annotation_type_optional_element_summary\">OPTIONAL</a></li>"},
+                "Required</a>&nbsp;|&nbsp;</li>" + NL + "<li>" +
+                "<a href=\"#annotation_type_optional_element_summary\">Optional</a></li>"},
             //Make sure the detail links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>DETAIL:&nbsp;</li>" + NL +
-                "<li><a href=\"#annotation_type_element_detail\">ELEMENT</a></li>"},
+                "<li>Detail:&nbsp;</li>" + NL +
+                "<li><a href=\"#annotation_type_element_detail\">Element</a></li>"},
             //Make sure the heading is correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "Annotation Type AnnotationType</h2>"},
