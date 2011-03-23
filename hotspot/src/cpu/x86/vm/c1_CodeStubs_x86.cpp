@@ -316,7 +316,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     Register tmp2 = rbx;
     __ push(tmp);
     __ push(tmp2);
-    __ movptr(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
+    __ load_heap_oop(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
     __ get_thread(tmp);
     __ cmpptr(tmp, Address(tmp2, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc)));
     __ pop(tmp2);
