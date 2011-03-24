@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,32 +29,40 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.metal.DefaultMetalTheme;
 
-import javax.swing.plaf.*;
-import javax.swing.plaf.metal.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
 
 /**
  * This class describes a theme using "green" colors.
  *
  * @author Steve Wilson
+ * @author Alexander Kouznetsov
  */
 public class GreenMetalTheme extends DefaultMetalTheme {
 
-    public String getName() { return "Emerald"; }
-
-  // greenish colors
+    @Override
+    public String getName() {
+        return "Emerald";
+    }
+    // greenish colors
     private final ColorUIResource primary1 = new ColorUIResource(51, 102, 51);
     private final ColorUIResource primary2 = new ColorUIResource(102, 153, 102);
     private final ColorUIResource primary3 = new ColorUIResource(153, 204, 153);
 
-    protected ColorUIResource getPrimary1() { return primary1; }
-    protected ColorUIResource getPrimary2() { return primary2; }
-    protected ColorUIResource getPrimary3() { return primary3; }
+    @Override
+    protected ColorUIResource getPrimary1() {
+        return primary1;
+    }
 
+    @Override
+    protected ColorUIResource getPrimary2() {
+        return primary2;
+    }
+
+    @Override
+    protected ColorUIResource getPrimary3() {
+        return primary3;
+    }
 }
