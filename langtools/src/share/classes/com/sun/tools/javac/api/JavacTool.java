@@ -28,8 +28,10 @@ package com.sun.tools.javac.api;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -49,10 +51,8 @@ import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
 import com.sun.tools.javac.main.RecognizedOptions;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
-import java.nio.charset.Charset;
 
 /**
  * TODO: describe com.sun.tools.javac.api.Tool
@@ -145,10 +145,13 @@ public final class JavacTool implements JavaCompiler {
         Locale locale,
         Charset charset) {
         Context context = new Context();
-        JavacMessages.instance(context).setCurrentLocale(locale);
+        context.put(Locale.class, locale);
         if (diagnosticListener != null)
             context.put(DiagnosticListener.class, diagnosticListener);
-        context.put(Log.outKey, new PrintWriter(System.err, true)); // FIXME
+        PrintWriter pw = (charset == null)
+                ? new PrintWriter(System.err, true)
+                : new PrintWriter(new OutputStreamWriter(System.err, charset), true);
+        context.put(Log.outKey, pw);
         return new JavacFileManager(context, true, charset);
     }
 
