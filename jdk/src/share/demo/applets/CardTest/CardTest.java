@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,14 +29,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.awt.event.*;
 import java.applet.Applet;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.CardLayout;
+import java.awt.Choice;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
-class CardPanel extends Panel {
+
+@SuppressWarnings("serial")
+final class CardPanel extends Panel {
+
     ActionListener listener;
 
     Panel create(LayoutManager layout) {
@@ -83,16 +96,21 @@ class CardPanel extends Panel {
         add("six", create(new GridLayout(2, 2, 10, 10)));
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return new Dimension(200, 100);
     }
 }
 
+
+@SuppressWarnings("serial")
 public class CardTest extends Applet
-                      implements ActionListener,
-                                 ItemListener {
+        implements ActionListener,
+        ItemListener {
+
     CardPanel cards;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public CardTest() {
         setLayout(new BorderLayout());
         add("Center", cards = new CardPanel(this));
@@ -127,24 +145,26 @@ public class CardTest extends Applet
         p.add(c);
     }
 
+    @Override
     public void itemStateChanged(ItemEvent e) {
-        ((CardLayout)cards.getLayout()).show(cards,
-                                             (String)(e.getItem()));
+        ((CardLayout) cards.getLayout()).show(cards,
+                (String) (e.getItem()));
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         String arg = e.getActionCommand();
 
         if ("first".equals(arg)) {
-            ((CardLayout)cards.getLayout()).first(cards);
+            ((CardLayout) cards.getLayout()).first(cards);
         } else if ("next".equals(arg)) {
-            ((CardLayout)cards.getLayout()).next(cards);
+            ((CardLayout) cards.getLayout()).next(cards);
         } else if ("previous".equals(arg)) {
-            ((CardLayout)cards.getLayout()).previous(cards);
+            ((CardLayout) cards.getLayout()).previous(cards);
         } else if ("last".equals(arg)) {
-            ((CardLayout)cards.getLayout()).last(cards);
+            ((CardLayout) cards.getLayout()).last(cards);
         } else {
-            ((CardLayout)cards.getLayout()).show(cards,(String)arg);
+            ((CardLayout) cards.getLayout()).show(cards, arg);
         }
     }
 
@@ -156,9 +176,10 @@ public class CardTest extends Applet
 
         f.add("Center", cardTest);
         f.setSize(300, 300);
-        f.show();
+        f.setVisible(true);
     }
 
+    @Override
     public String getAppletInfo() {
         return "Demonstrates the different types of layout managers.";
     }
