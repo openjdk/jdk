@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.awt.Graphics;
 
+
+@SuppressWarnings("serial")
 public class GraphApplet extends java.applet.Applet {
+
     double f(double x) {
-        return (Math.cos(x/5) + Math.sin(x/7) + 2) * getSize().height / 4;
+        return (Math.cos(x / 5) + Math.sin(x / 7) + 2) * getSize().height / 4;
     }
 
+    @Override
     public void paint(Graphics g) {
-        for (int x = 0 ; x < getSize().width ; x++) {
-            g.drawLine(x, (int)f(x), x + 1, (int)f(x + 1));
+        for (int x = 0; x < getSize().width; x++) {
+            g.drawLine(x, (int) f(x), x + 1, (int) f(x + 1));
         }
     }
-  public String getAppletInfo() {
-    return "Draws a sin graph.";
-  }
+
+    @Override
+    public String getAppletInfo() {
+        return "Draws a sin graph.";
+    }
 }
