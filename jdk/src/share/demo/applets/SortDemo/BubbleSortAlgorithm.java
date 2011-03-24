@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,8 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 /**
  * A bubble sort demonstration algorithm
@@ -39,23 +37,26 @@
  * @author James Gosling
  */
 class BubbleSortAlgorithm extends SortAlgorithm {
+
+    @Override
     void sort(int a[]) throws Exception {
-        for (int i = a.length; --i>=0; ) {
+        for (int i = a.length; --i >= 0;) {
             boolean swapped = false;
-            for (int j = 0; j<i; j++) {
+            for (int j = 0; j < i; j++) {
                 if (stopRequested) {
                     return;
                 }
-                if (a[j] > a[j+1]) {
+                if (a[j] > a[j + 1]) {
                     int T = a[j];
-                    a[j] = a[j+1];
-                    a[j+1] = T;
+                    a[j] = a[j + 1];
+                    a[j + 1] = T;
                     swapped = true;
                 }
-                pause(i,j);
+                pause(i, j);
             }
-            if (!swapped)
+            if (!swapped) {
                 return;
+            }
         }
     }
 }
