@@ -64,7 +64,7 @@ public class KeyStoreBuilderParameters implements ManagerFactoryParameters {
      * @exception IllegalArgumentException if parameters is an empty list
      */
     public KeyStoreBuilderParameters(List<Builder> parameters) {
-        if (this.parameters.isEmpty()) {
+        if (parameters.isEmpty()) {
             throw new IllegalArgumentException();
         }
 
