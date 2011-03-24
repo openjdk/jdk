@@ -34,8 +34,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -1061,6 +1061,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             PrintWriter out = context.get(Log.outKey);
             Assert.checkNonNull(out);
             next.put(Log.outKey, out);
+            Locale locale = context.get(Locale.class);
+            if (locale != null)
+                next.put(Locale.class, locale);
+            Assert.checkNonNull(messages);
+            next.put(JavacMessages.messagesKey, messages);
 
             final boolean shareNames = true;
             if (shareNames) {

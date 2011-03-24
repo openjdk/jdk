@@ -187,7 +187,7 @@ public class JavacTaskImpl extends JavacTask {
         if (taskListener != null)
             context.put(TaskListener.class, wrap(taskListener));
         //initialize compiler's default locale
-        JavacMessages.instance(context).setCurrentLocale(locale);
+        context.put(Locale.class, locale);
     }
     // where
     private TaskListener wrap(final TaskListener tl) {
