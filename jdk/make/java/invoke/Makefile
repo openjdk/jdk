@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,20 @@
 # questions.
 #
 
-#
-# Makefile for building all of java
-#
+BUILDDIR = ../..
 
-PRODUCT=java
-BUILDDIR=..
+PACKAGE = java.lang.invoke
+PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk
 
-#
-# The order of subdirs here is important
-#
-SUBDIRS += version jvm redist verify fdlibm java sun_nio jli main zip
+AUTO_FILES_JAVA_DIRS = java/lang/invoke sun/invoke
+FILES_java = \
+    java/lang/ClassValue.java \
+    java/lang/BootstrapMethodError.java
 
-# Others
-#    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
+# The sources built here use new language syntax to generate
+# method handle calls.  Let's be sure we are using that format.
+LANGUAGE_VERSION = -source 7
+CLASS_VERSION = -target 7
 
-SUBDIRS += security math util text net nio jar
-
-SUBDIRS_desktop    = awt applet beans
-SUBDIRS_management = management
-SUBDIRS_misc       = npt java_crw_demo java_hprof_demo \
-                     logging instrument invoke sql rmi
-
-
-ifeq ($(PLATFORM), solaris)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    SUBDIRS += jexec
-  endif
-endif # PLATFORM
-
-ifeq ($(PLATFORM), linux)
-  SUBDIRS += jexec
-endif # PLATFORM
-
-include $(BUILDDIR)/common/Subdirs.gmk
-
-all build clean clobber::
-	$(SUBDIRS-loop)
-
+include $(BUILDDIR)/common/Classes.gmk
