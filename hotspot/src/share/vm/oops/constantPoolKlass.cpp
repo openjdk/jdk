@@ -245,13 +245,13 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   }
   oop* addr;
   addr = cp->tags_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->cache_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->operands_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->pool_holder_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   return size;
 }
 
