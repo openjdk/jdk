@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,21 @@
 #
 
 #
-# Makefile for building the jfc demos
+# Makefile to build the TransparentRuler demo.
 #
 
-BUILDDIR = ../..
-PRODUCT = demos
+BUILDDIR = ../../..
+PRODUCT = demo/jfc
+DEMONAME = TransparentRuler
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS =           \
-    CodePointIM     \
-    FileChooserDemo \
-    Font2DTest      \
-    Metalworks      \
-    Notepad         \
-    SampleTree      \
-    SwingApplet     \
-    TableExample    \
-    TransparentRuler
+DEMO_ROOT       = $(SHARE_SRC)/demo/jfc/$(DEMONAME)
+DEMO_TOPFILES	= ./README.txt
+DEMO_MAINCLASS  = transparentruler.Ruler
+DEMO_DESTDIR    = $(DEMODIR)/jfc/$(DEMONAME)
 
-# Some demos aren't currently included in OpenJDK
-ifndef OPENJDK
-  SUBDIRS += Java2D Laffy SwingSet2 SwingSet3 Stylepad
-endif
 
-include $(BUILDDIR)/common/Subdirs.gmk
-all build clean clobber::
-	$(SUBDIRS-loop)
-
+#
+# Demo jar building rules.
+#
+include $(BUILDDIR)/common/Demo.gmk
