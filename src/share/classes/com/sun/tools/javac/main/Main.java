@@ -65,9 +65,11 @@ public class Main {
     PrintWriter out;
 
     /**
-     * If true, any command line arg errors will cause an exception.
+     * If true, certain errors will cause an exception, such as command line
+     * arg errors, or exceptions in user provided code.
      */
-    boolean fatalErrors;
+    boolean apiMode;
+
 
     /** Result codes.
      */
@@ -163,7 +165,7 @@ public class Main {
     /** Report a usage error.
      */
     void error(String key, Object... args) {
-        if (fatalErrors) {
+        if (apiMode) {
             String msg = getLocalizedString(key, args);
             throw new PropagatedException(new IllegalStateException(msg));
         }
@@ -192,8 +194,8 @@ public class Main {
         this.options = options;
     }
 
-    public void setFatalErrors(boolean fatalErrors) {
-        this.fatalErrors = fatalErrors;
+    public void setAPIMode(boolean apiMode) {
+        this.apiMode = apiMode;
     }
 
     /** Process command line arguments: store all command line options
@@ -440,7 +442,9 @@ public class Main {
         } catch (FatalError ex) {
             feMessage(ex);
             return EXIT_SYSERR;
-        } catch(AnnotationProcessingError ex) {
+        } catch (AnnotationProcessingError ex) {
+            if (apiMode)
+                throw new RuntimeException(ex.getCause());
             apMessage(ex);
             return EXIT_SYSERR;
         } catch (ClientCodeException ex) {
@@ -458,7 +462,13 @@ public class Main {
                 bugMessage(ex);
             return EXIT_ABNORMAL;
         } finally {
-            if (comp != null) comp.close();
+            if (comp != null) {
+                try {
+                    comp.close();
+                } catch (ClientCodeException ex) {
+                    throw new RuntimeException(ex.getCause());
+                }
+            }
             filenames = null;
             options = null;
         }
