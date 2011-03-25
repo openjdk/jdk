@@ -81,6 +81,57 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
 
 // </NEW PREDICTION>
 
+// Help class for avoiding interleaved logging
+class LineBuffer: public StackObj {
+
+private:
+  static const int BUFFER_LEN = 1024;
+  static const int INDENT_CHARS = 3;
+  char _buffer[BUFFER_LEN];
+  int _indent_level;
+  int _cur;
+
+  void vappend(const char* format, va_list ap) {
+    int res = vsnprintf(&_buffer[_cur], BUFFER_LEN - _cur, format, ap);
+    if (res != -1) {
+      _cur += res;
+    } else {
+      DEBUG_ONLY(warning("buffer too small in LineBuffer");)
+      _buffer[BUFFER_LEN -1] = 0;
+      _cur = BUFFER_LEN; // vsnprintf above should not add to _buffer if we are called again
+    }
+  }
+
+public:
+  explicit LineBuffer(int indent_level): _indent_level(indent_level), _cur(0) {
+    for (; (_cur < BUFFER_LEN && _cur < (_indent_level * INDENT_CHARS)); _cur++) {
+      _buffer[_cur] = ' ';
+    }
+  }
+
+#ifndef PRODUCT
+  ~LineBuffer() {
+    assert(_cur == _indent_level * INDENT_CHARS, "pending data in buffer - append_and_print_cr() not called?");
+  }
+#endif
+
+  void append(const char* format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    vappend(format, ap);
+    va_end(ap);
+  }
+
+  void append_and_print_cr(const char* format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    vappend(format, ap);
+    va_end(ap);
+    gclog_or_tty->print_cr("%s", _buffer);
+    _cur = _indent_level * INDENT_CHARS;
+  }
+};
+
 G1CollectorPolicy::G1CollectorPolicy() :
   _parallel_gc_threads(G1CollectedHeap::use_parallel_gc_threads()
     ? ParallelGCThreads : 1),
@@ -1016,10 +1067,8 @@ void G1CollectorPolicy::print_par_stats(int level,
                                          bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
-  int j;
-  for (j = 0; j < level; ++j)
-    gclog_or_tty->print("   ");
-  gclog_or_tty->print("[%s (ms):", str);
+  LineBuffer buf(level);
+  buf.append("[%s (ms):", str);
   for (uint i = 0; i < ParallelGCThreads; ++i) {
     double val = data[i];
     if (val < min)
@@ -1027,18 +1076,16 @@ void G1CollectorPolicy::print_par_stats(int level,
     if (val > max)
       max = val;
     total += val;
-    gclog_or_tty->print("  %3.1lf", val);
+    buf.append("  %3.1lf", val);
   }
   if (summary) {
-    gclog_or_tty->print_cr("");
+    buf.append_and_print_cr("");
     double avg = total / (double) ParallelGCThreads;
-    gclog_or_tty->print(" ");
-    for (j = 0; j < level; ++j)
-      gclog_or_tty->print("   ");
-    gclog_or_tty->print("Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf",
+    buf.append(" ");
+    buf.append("Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf",
                         avg, min, max);
   }
-  gclog_or_tty->print_cr("]");
+  buf.append_and_print_cr("]");
 }
 
 void G1CollectorPolicy::print_par_sizes(int level,
@@ -1047,10 +1094,8 @@ void G1CollectorPolicy::print_par_sizes(int level,
                                         bool summary) {
   double min = data[0], max = data[0];
   double total = 0.0;
-  int j;
-  for (j = 0; j < level; ++j)
-    gclog_or_tty->print("   ");
-  gclog_or_tty->print("[%s :", str);
+  LineBuffer buf(level);
+  buf.append("[%s :", str);
   for (uint i = 0; i < ParallelGCThreads; ++i) {
     double val = data[i];
     if (val < min)
@@ -1058,34 +1103,28 @@ void G1CollectorPolicy::print_par_sizes(int level,
     if (val > max)
       max = val;
     total += val;
-    gclog_or_tty->print(" %d", (int) val);
+    buf.append(" %d", (int) val);
   }
   if (summary) {
-    gclog_or_tty->print_cr("");
+    buf.append_and_print_cr("");
     double avg = total / (double) ParallelGCThreads;
-    gclog_or_tty->print(" ");
-    for (j = 0; j < level; ++j)
-      gclog_or_tty->print("   ");
-    gclog_or_tty->print("Sum: %d, Avg: %d, Min: %d, Max: %d",
+    buf.append(" ");
+    buf.append("Sum: %d, Avg: %d, Min: %d, Max: %d",
                (int)total, (int)avg, (int)min, (int)max);
   }
-  gclog_or_tty->print_cr("]");
+  buf.append_and_print_cr("]");
 }
 
 void G1CollectorPolicy::print_stats (int level,
                                      const char* str,
                                      double value) {
-  for (int j = 0; j < level; ++j)
-    gclog_or_tty->print("   ");
-  gclog_or_tty->print_cr("[%s: %5.1lf ms]", str, value);
+  LineBuffer(level).append_and_print_cr("[%s: %5.1lf ms]", str, value);
 }
 
 void G1CollectorPolicy::print_stats (int level,
                                      const char* str,
                                      int value) {
-  for (int j = 0; j < level; ++j)
-    gclog_or_tty->print("   ");
-  gclog_or_tty->print_cr("[%s: %d]", str, value);
+  LineBuffer(level).append_and_print_cr("[%s: %d]", str, value);
 }
 
 double G1CollectorPolicy::avg_value (double* data) {
@@ -2060,17 +2099,11 @@ void G1CollectorPolicy::count_CS_bytes_used() {
   _g1->collection_set_iterate(&cs_closure);
 }
 
-static void print_indent(int level) {
-  for (int j = 0; j < level+1; ++j)
-    gclog_or_tty->print("   ");
-}
-
 void G1CollectorPolicy::print_summary (int level,
                                        const char* str,
                                        NumberSeq* seq) const {
   double sum = seq->sum();
-  print_indent(level);
-  gclog_or_tty->print_cr("%-24s = %8.2lf s (avg = %8.2lf ms)",
+  LineBuffer(level + 1).append_and_print_cr("%-24s = %8.2lf s (avg = %8.2lf ms)",
                 str, sum / 1000.0, seq->avg());
 }
 
@@ -2078,8 +2111,7 @@ void G1CollectorPolicy::print_summary_sd (int level,
                                           const char* str,
                                           NumberSeq* seq) const {
   print_summary(level, str, seq);
-  print_indent(level + 5);
-  gclog_or_tty->print_cr("(num = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
+  LineBuffer(level + 6).append_and_print_cr("(num = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
                 seq->num(), seq->sd(), seq->maximum());
 }
 
@@ -2087,6 +2119,7 @@ void G1CollectorPolicy::check_other_times(int level,
                                         NumberSeq* other_times_ms,
                                         NumberSeq* calc_other_times_ms) const {
   bool should_print = false;
+  LineBuffer buf(level + 2);
 
   double max_sum = MAX2(fabs(other_times_ms->sum()),
                         fabs(calc_other_times_ms->sum()));
@@ -2095,8 +2128,7 @@ void G1CollectorPolicy::check_other_times(int level,
   double sum_ratio = max_sum / min_sum;
   if (sum_ratio > 1.1) {
     should_print = true;
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## CALCULATED OTHER SUM DOESN'T MATCH RECORDED ###");
+    buf.append_and_print_cr("## CALCULATED OTHER SUM DOESN'T MATCH RECORDED ###");
   }
 
   double max_avg = MAX2(fabs(other_times_ms->avg()),
@@ -2106,30 +2138,25 @@ void G1CollectorPolicy::check_other_times(int level,
   double avg_ratio = max_avg / min_avg;
   if (avg_ratio > 1.1) {
     should_print = true;
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## CALCULATED OTHER AVG DOESN'T MATCH RECORDED ###");
+    buf.append_and_print_cr("## CALCULATED OTHER AVG DOESN'T MATCH RECORDED ###");
   }
 
   if (other_times_ms->sum() < -0.01) {
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## RECORDED OTHER SUM IS NEGATIVE ###");
+    buf.append_and_print_cr("## RECORDED OTHER SUM IS NEGATIVE ###");
   }
 
   if (other_times_ms->avg() < -0.01) {
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## RECORDED OTHER AVG IS NEGATIVE ###");
+    buf.append_and_print_cr("## RECORDED OTHER AVG IS NEGATIVE ###");
   }
 
   if (calc_other_times_ms->sum() < -0.01) {
     should_print = true;
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## CALCULATED OTHER SUM IS NEGATIVE ###");
+    buf.append_and_print_cr("## CALCULATED OTHER SUM IS NEGATIVE ###");
   }
 
   if (calc_other_times_ms->avg() < -0.01) {
     should_print = true;
-    print_indent(level + 1);
-    gclog_or_tty->print_cr("## CALCULATED OTHER AVG IS NEGATIVE ###");
+    buf.append_and_print_cr("## CALCULATED OTHER AVG IS NEGATIVE ###");
   }
 
   if (should_print)
@@ -2210,10 +2237,9 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
       }
     }
   } else {
-    print_indent(0);
-    gclog_or_tty->print_cr("none");
+    LineBuffer(1).append_and_print_cr("none");
   }
-  gclog_or_tty->print_cr("");
+  LineBuffer(0).append_and_print_cr("");
 }
 
 void G1CollectorPolicy::print_tracing_info() const {
@@ -2532,7 +2558,7 @@ public:
     jint regions_added = parKnownGarbageCl.marked_regions_added();
     _hrSorted->incNumMarkedHeapRegions(regions_added);
     if (G1PrintParCleanupStats) {
-      gclog_or_tty->print("     Thread %d called %d times, added %d regions to list.\n",
+      gclog_or_tty->print_cr("     Thread %d called %d times, added %d regions to list.",
                  i, parKnownGarbageCl.invokes(), regions_added);
     }
   }

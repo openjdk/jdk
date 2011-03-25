@@ -171,11 +171,13 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_StringTable_oops_do)) {
-     if (so & SO_Strings) {
-       StringTable::oops_do(roots);
-     }
-    // Verify if the string table contents are in the perm gen
-    NOT_PRODUCT(StringTable::oops_do(&assert_is_perm_closure));
+    if (so & SO_Strings || (!collecting_perm_gen && !JavaObjectsInPerm)) {
+      StringTable::oops_do(roots);
+    }
+    if (JavaObjectsInPerm) {
+      // Verify the string table contents are in the perm gen
+      NOT_PRODUCT(StringTable::oops_do(&assert_is_perm_closure));
+    }
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_CodeCache_oops_do)) {

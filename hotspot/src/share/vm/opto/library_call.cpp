@@ -1118,7 +1118,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* sourcea       = basic_plus_adr(string_object, string_object, value_offset);
   Node* source        = make_load(no_ctrl, sourcea, source_type, T_OBJECT, string_type->add_offset(value_offset));
 
-  Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array)) );
+  Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array, true)) );
   jint target_length = target_array->length();
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
