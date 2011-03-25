@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ void WorkGang::run_task(AbstractGangTask* task) {
     tty->print_cr("/nFinished work gang %s: %d/%d sequence %d",
                   name(), finished_workers(), total_workers(),
                   _sequence_number);
-    }
+  }
 }
 
 void AbstractWorkGang::stop() {

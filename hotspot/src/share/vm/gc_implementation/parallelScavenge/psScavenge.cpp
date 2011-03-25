@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/generationSizer.hpp"
@@ -439,6 +440,14 @@ bool PSScavenge::invoke_no_policy() {
       reference_processor()->enqueue_discovered_references(NULL);
     }
 
+    if (!JavaObjectsInPerm) {
+      // Unlink any dead interned Strings
+      StringTable::unlink(&_is_alive_closure);
+      // Process the remaining live ones
+      PSScavengeRootsClosure root_closure(promotion_manager);
+      StringTable::oops_do(&root_closure);
+    }
+
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     PSPromotionManager::post_scavenge();
 
@@ -796,13 +805,15 @@ void PSScavenge::initialize() {
 
   // Initialize ref handling object for scavenging.
   MemRegion mr = young_gen->reserved();
-  _ref_processor = ReferenceProcessor::create_ref_processor(
-    mr,                         // span
-    true,                       // atomic_discovery
-    true,                       // mt_discovery
-    NULL,                       // is_alive_non_header
-    ParallelGCThreads,
-    ParallelRefProcEnabled);
+  _ref_processor =
+    new ReferenceProcessor(mr,                         // span
+                           ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
+                           (int) ParallelGCThreads,    // mt processing degree
+                           true,                       // mt discovery
+                           (int) ParallelGCThreads,    // mt discovery degree
+                           true,                       // atomic_discovery
+                           NULL,                       // header provides liveness info
+                           false);                     // next field updates do not need write barrier
 
   // Cache the cardtable
   BarrierSet* bs = Universe::heap()->barrier_set();

@@ -808,7 +808,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         { klassOop klass = resolve_field_return_klass(caller_method, bci, CHECK);
           // Save a reference to the class that has to be checked for initialization
           init_klass = KlassHandle(THREAD, klass);
-          k = klass;
+          k = klass->java_mirror();
         }
         break;
       case Bytecodes::_new:
