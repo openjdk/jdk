@@ -118,7 +118,7 @@ IRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
 
   if (tag.is_unresolved_klass() || tag.is_klass()) {
     klassOop klass = pool->klass_at(index, CHECK);
-    oop java_class = klass->klass_part()->java_mirror();
+    oop java_class = klass->java_mirror();
     thread->set_vm_result(java_class);
   } else {
 #ifdef ASSERT
@@ -983,7 +983,8 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *thread, oopDes
 ConstantPoolCacheEntry *cp_entry))
 
   // check the access_flags for the field in the klass
-  instanceKlass* ik = instanceKlass::cast((klassOop)cp_entry->f1());
+
+  instanceKlass* ik = instanceKlass::cast(java_lang_Class::as_klassOop(cp_entry->f1()));
   typeArrayOop fields = ik->fields();
   int index = cp_entry->field_index();
   assert(index < fields->length(), "holders field index is out of range");
@@ -1009,7 +1010,7 @@ ConstantPoolCacheEntry *cp_entry))
     // non-static field accessors have an object, but we need a handle
     h_obj = Handle(thread, obj);
   }
-  instanceKlassHandle h_cp_entry_f1(thread, (klassOop)cp_entry->f1());
+  instanceKlassHandle h_cp_entry_f1(thread, java_lang_Class::as_klassOop(cp_entry->f1()));
   jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_cp_entry_f1, cp_entry->f2(), is_static);
   JvmtiExport::post_field_access(thread, method(thread), bcp(thread), h_cp_entry_f1, h_obj, fid);
 IRT_END
@@ -1017,7 +1018,7 @@ IRT_END
 IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   oopDesc* obj, ConstantPoolCacheEntry *cp_entry, jvalue *value))
 
-  klassOop k = (klassOop)cp_entry->f1();
+  klassOop k = java_lang_Class::as_klassOop(cp_entry->f1());
 
   // check the access_flags for the field in the klass
   instanceKlass* ik = instanceKlass::cast(k);

@@ -285,10 +285,11 @@ int constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
   constantPoolOop cp = (constantPoolOop) obj;
-  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
-    oop* base = (oop*)cp->base();
-    for (int i = 0; i < cp->length(); ++i, ++base) {
+  if (cp->tags() != NULL &&
+      (!JavaObjectsInPerm || (AnonymousClasses && cp->has_pseudo_string()))) {
+    for (int i = 1; i < cp->length(); ++i) {
       if (cp->tag_at(i).is_string()) {
+        oop* base = cp->obj_at_addr_raw(i);
         if (PSScavenge::should_scavenge(base)) {
           pm->claim_or_forward_depth(base);
         }
@@ -460,7 +461,8 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
       if (cp->tag_at(i).is_string()) {
         if (!cp->has_pseudo_string()) {
           if (entry.is_oop()) {
-            guarantee(entry.get_oop()->is_perm(),   "should be in permspace");
+            guarantee(!JavaObjectsInPerm || entry.get_oop()->is_perm(),
+                      "should be in permspace");
             guarantee(entry.get_oop()->is_instance(), "should be instance");
           }
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,12 @@ public class IntField extends Field {
     super(holder, fieldArrayIndex);
   }
 
-  public int getValue(Oop obj) { return obj.getHandle().getJIntAt(getOffset()); }
+  public int getValue(Oop obj) {
+    if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
+      throw new InternalError(obj.toString());
+    }
+    return obj.getHandle().getJIntAt(getOffset());
+  }
   public void setValue(Oop obj, int value) throws MutationException {
     // Fix this: setJIntAt is missing in Address
   }
