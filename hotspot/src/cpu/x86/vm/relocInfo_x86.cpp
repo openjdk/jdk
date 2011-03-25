@@ -31,7 +31,7 @@
 #include "runtime/safepoint.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o) {
+void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 #ifdef AMD64
   x += o;
   typedef Assembler::WhichOperand WhichOperand;
@@ -40,19 +40,35 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
          which == Assembler::narrow_oop_operand ||
          which == Assembler::imm_operand, "format unpacks ok");
   if (which == Assembler::imm_operand) {
-    *pd_address_in_code() = x;
+    if (verify_only) {
+      assert(*pd_address_in_code() == x, "instructions must match");
+    } else {
+      *pd_address_in_code() = x;
+    }
   } else if (which == Assembler::narrow_oop_operand) {
     address disp = Assembler::locate_operand(addr(), which);
-    *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
+    if (verify_only) {
+      assert(*(uint32_t*) disp == oopDesc::encode_heap_oop((oop)x), "instructions must match");
+    } else {
+      *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
+    }
   } else {
     // Note:  Use runtime_call_type relocations for call32_operand.
     address ip = addr();
     address disp = Assembler::locate_operand(ip, which);
     address next_ip = Assembler::locate_next_instruction(ip);
-    *(int32_t*) disp = x - next_ip;
+    if (verify_only) {
+      assert(*(int32_t*) disp == (x - next_ip), "instructions must match");
+    } else {
+      *(int32_t*) disp = x - next_ip;
+    }
   }
 #else
-  *pd_address_in_code() = x + o;
+  if (verify_only) {
+    assert(*pd_address_in_code() == (x + o), "instructions must match");
+  } else {
+    *pd_address_in_code() = x + o;
+  }
 #endif // AMD64
 }
 

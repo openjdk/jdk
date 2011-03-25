@@ -910,7 +910,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
       ciObject* con = field->constant_value().as_object();
       // Do not "join" in the previous type; it doesn't add value,
       // and may yield a vacuous result if the field is of interface type.
-      type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+      type = TypeOopPtr::make_from_constant(con, true)->isa_oopptr();
       assert(type != NULL, "field singleton type must be consistent");
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());

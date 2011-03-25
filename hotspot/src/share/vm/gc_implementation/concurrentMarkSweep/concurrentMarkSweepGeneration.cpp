@@ -5930,12 +5930,16 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
     }
 
     {
-      TraceTime t("scrub symbol & string tables", PrintGCDetails, false, gclog_or_tty);
-      // Now clean up stale oops in StringTable
-      StringTable::unlink(&_is_alive_closure);
+      TraceTime t("scrub symbol table", PrintGCDetails, false, gclog_or_tty);
       // Clean up unreferenced symbols in symbol table.
       SymbolTable::unlink();
     }
+  }
+
+  if (should_unload_classes() || !JavaObjectsInPerm) {
+    TraceTime t("scrub string table", PrintGCDetails, false, gclog_or_tty);
+    // Now clean up stale oops in StringTable
+    StringTable::unlink(&_is_alive_closure);
   }
 
   verify_work_stacks_empty();

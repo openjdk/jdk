@@ -43,6 +43,7 @@ if [ "$1" == "-help" ]; then
 fi
 
 jdk=$1
+shift
 OS=`uname`
 
 if [ "$OS" != "Linux" ]; then
@@ -68,7 +69,7 @@ fi
 
 tmp=/tmp/sagsetup
 rm -f $tmp
-$jdk/bin/java sagtarg > $tmp &
+$jdk/bin/java $* sagtarg > $tmp &
 pid=$!
 while [ ! -s $tmp ] ; do
   # Kludge alert!

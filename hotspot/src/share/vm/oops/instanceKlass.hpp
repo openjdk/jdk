@@ -75,8 +75,6 @@
 //    [Java vtable length         ]
 //    [oop map cache (stack maps) ]
 //    [EMBEDDED Java vtable             ] size in words = vtable_len
-//    [EMBEDDED static oop fields       ] size in words = static_oop_fields_size
-//    [         static non-oop fields   ] size in words = static_field_size - static_oop_fields_size
 //    [EMBEDDED nonstatic oop-map blocks] size in words = nonstatic_oop_map_size
 //
 //    The embedded nonstatic oop-map blocks are short pairs (offset, length) indicating
@@ -230,7 +228,7 @@ class instanceKlass: public Klass {
   // (including inherited fields but after header_size()).
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
-  int             _static_oop_field_size;// number of static oop fields in this klass
+  int             _static_oop_field_count;// number of static oop fields in this klass
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
@@ -281,8 +279,8 @@ class instanceKlass: public Klass {
   int static_field_size() const            { return _static_field_size; }
   void set_static_field_size(int size)     { _static_field_size = size; }
 
-  int static_oop_field_size() const        { return _static_oop_field_size; }
-  void set_static_oop_field_size(int size) { _static_oop_field_size = size; }
+  int static_oop_field_count() const        { return _static_oop_field_count; }
+  void set_static_oop_field_count(int size) { _static_oop_field_count = size; }
 
   // Java vtable
   int  vtable_length() const               { return _vtable_len; }
@@ -660,6 +658,7 @@ class instanceKlass: public Klass {
 
   // Casting from klassOop
   static instanceKlass* cast(klassOop k) {
+    assert(k->is_klass(), "must be");
     Klass* kp = k->klass_part();
     assert(kp->null_vtbl() || kp->oop_is_instance_slow(), "cast to instanceKlass");
     return (instanceKlass*) kp;
@@ -667,7 +666,7 @@ class instanceKlass: public Klass {
 
   // Sizing (in words)
   static int header_size()            { return align_object_offset(oopDesc::header_size() + sizeof(instanceKlass)/HeapWordSize); }
-  int object_size() const             { return object_size(align_object_offset(vtable_length()) + align_object_offset(itable_length()) + static_field_size() + nonstatic_oop_map_size()); }
+  int object_size() const             { return object_size(align_object_offset(vtable_length()) + align_object_offset(itable_length()) + nonstatic_oop_map_size()); }
   static int vtable_start_offset()    { return header_size(); }
   static int vtable_length_offset()   { return oopDesc::header_size() + offset_of(instanceKlass, _vtable_len) / HeapWordSize; }
   static int object_size(int extra)   { return align_object_size(header_size() + extra); }
@@ -676,20 +675,12 @@ class instanceKlass: public Klass {
   intptr_t* start_of_itable() const        { return start_of_vtable() + align_object_offset(vtable_length()); }
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)as_klassOop(); }
 
-  // Static field offset is an offset into the Heap, should be converted by
-  // based on UseCompressedOop for traversal
-  HeapWord* start_of_static_fields() const {
-    return (HeapWord*)(start_of_itable() + align_object_offset(itable_length()));
-  }
-
   intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
 
-  int offset_of_static_fields() const {
-    return (intptr_t)start_of_static_fields() - (intptr_t)as_klassOop();
-  }
+  address static_field_addr(int offset);
 
   OopMapBlock* start_of_nonstatic_oop_maps() const {
-    return (OopMapBlock*) (start_of_static_fields() + static_field_size());
+    return (OopMapBlock*)(start_of_itable() + align_object_offset(itable_length()));
   }
 
   // Allocation profiling support
@@ -719,8 +710,6 @@ class instanceKlass: public Klass {
 
   // Garbage collection
   void oop_follow_contents(oop obj);
-  void follow_static_fields();
-  void adjust_static_fields();
   int  oop_adjust_pointers(oop obj);
   bool object_is_parsable() const { return _init_state != unparsable_by_gc; }
        // Value of _init_state must be zero (unparsable_by_gc) when klass field is set.
@@ -731,16 +720,6 @@ class instanceKlass: public Klass {
 
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS
-
-#ifndef SERIALGC
-  // Parallel Scavenge
-  void push_static_fields(PSPromotionManager* pm);
-
-  // Parallel Old
-  void follow_static_fields(ParCompactionManager* cm);
-  void copy_static_fields(ParCompactionManager* cm);
-  void update_static_fields();
-#endif // SERIALGC
 
   // Naming
   const char* signature_name() const;
@@ -769,9 +748,6 @@ class instanceKlass: public Klass {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
 #endif // !SERIALGC
-
-  void iterate_static_fields(OopClosure* closure);
-  void iterate_static_fields(OopClosure* closure, MemRegion mr);
 
 private:
   // initialization state
@@ -925,6 +901,10 @@ class JNIid: public CHeapObj {
   JNIid(klassOop holder, int offset, JNIid* next);
   // Identifier lookup
   JNIid* find(int offset);
+
+  bool find_local_field(fieldDescriptor* fd) {
+    return instanceKlass::cast(holder())->find_local_field_from_offset(offset(), true, fd);
+  }
 
   // Garbage collection support
   oop* holder_addr() { return (oop*)&_holder; }
