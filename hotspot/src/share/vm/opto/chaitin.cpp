@@ -673,7 +673,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         case Op_RegD:
           lrg.set_num_regs(2);
           // Define platform specific register pressure
-#ifdef SPARC
+#if defined(SPARC) || defined(ARM)
           lrg.set_reg_pressure(2);
 #elif defined(IA32)
           if( ireg == Op_RegL ) {
