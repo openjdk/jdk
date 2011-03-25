@@ -136,6 +136,7 @@ class Parse : public GraphKit {
     uint               _count;          // how many times executed?  Currently only set by _goto's
     bool               _is_parsed;      // has this block been parsed yet?
     bool               _is_handler;     // is this block an exception handler?
+    bool               _has_merged_backedge; // does this block have merged backedge?
     SafePointNode*     _start_map;      // all values flowing into this block
     MethodLivenessResult _live_locals;  // lazily initialized liveness bitmap
 
@@ -167,6 +168,18 @@ class Parse : public GraphKit {
 
     // True after any predecessor flows control into this block
     bool is_merged() const                 { return _start_map != NULL; }
+
+#ifdef ASSERT
+    // True after backedge predecessor flows control into this block
+    bool has_merged_backedge() const       { return _has_merged_backedge; }
+    void mark_merged_backedge(Block* pred) {
+      assert(is_SEL_head(), "should be loop head");
+      if (pred != NULL && is_SEL_backedge(pred)) {
+        assert(is_parsed(), "block should be parsed before merging backedges");
+        _has_merged_backedge = true;
+      }
+    }
+#endif
 
     // True when all non-exception predecessors have been parsed.
     bool is_ready() const                  { return preds_parsed() == pred_count(); }
@@ -440,11 +453,6 @@ class Parse : public GraphKit {
       add_safepoint();
     }
   }
-
-  // Return true if the parser should add a loop predicate
-  bool should_add_predicate(int target_bci);
-  // Insert a loop predicate into the graph
-  void add_predicate();
 
   // Note:  Intrinsic generation routines may be found in library_call.cpp.
 
