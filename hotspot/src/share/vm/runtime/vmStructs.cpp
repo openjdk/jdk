@@ -840,7 +840,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* OSThread */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(OSThread,                    _interrupted,                                  jint)                                  \
+  volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* OopMap and OopMapSet */                                                                                                         \
