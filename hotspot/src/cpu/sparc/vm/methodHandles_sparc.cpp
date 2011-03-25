@@ -775,9 +775,13 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       switch (ek) {
       case _adapter_opt_i2l:
         {
-          __ ldsw(arg_lsw, O2_scratch);                           // Load LSW
-          NOT_LP64(__ srlx(O2_scratch, BitsPerInt, O3_scratch));  // Move high bits to lower bits for std
-          __ st_long(O2_scratch, arg_msw);                        // Uses O2/O3 on !_LP64
+#ifdef _LP64
+          __ ldsw(arg_lsw, O2_scratch);                 // Load LSW sign-extended
+#else
+          __ ldsw(arg_lsw, O3_scratch);                 // Load LSW sign-extended
+          __ srlx(O3_scratch, BitsPerInt, O2_scratch);  // Move MSW value to lower 32-bits for std
+#endif
+          __ st_long(O2_scratch, arg_msw);              // Uses O2/O3 on !_LP64
         }
         break;
       case _adapter_opt_unboxl:
