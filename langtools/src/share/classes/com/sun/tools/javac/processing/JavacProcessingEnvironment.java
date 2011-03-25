@@ -67,6 +67,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.FatalError;
@@ -432,6 +433,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                             log.error("proc.processor.cant.instantiate", processorName);
                             return false;
                         }
+                    } catch(ClientCodeException e) {
+                        throw e;
                     } catch(Throwable t) {
                         throw new AnnotationProcessingError(t);
                     }
@@ -527,6 +530,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         supportedOptionNames.add(optionName);
                 }
 
+            } catch (ClientCodeException e) {
+                throw e;
             } catch (Throwable t) {
                 throw new AnnotationProcessingError(t);
             }
@@ -790,6 +795,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             ex.printStackTrace(new PrintWriter(out));
             log.error("proc.cant.access", ex.sym, ex.getDetailValue(), out.toString());
             return false;
+        } catch (ClientCodeException e) {
+            throw e;
         } catch (Throwable t) {
             throw new AnnotationProcessingError(t);
         }

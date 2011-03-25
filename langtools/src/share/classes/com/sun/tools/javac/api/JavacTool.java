@@ -49,6 +49,7 @@ import com.sun.tools.javac.main.JavacOption;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
 import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
@@ -162,38 +163,45 @@ public final class JavacTool implements JavaCompiler {
                              Iterable<String> classes,
                              Iterable<? extends JavaFileObject> compilationUnits)
     {
-        final String kindMsg = "All compilation units must be of SOURCE kind";
-        if (options != null)
-            for (String option : options)
-                option.getClass(); // null check
-        if (classes != null) {
-            for (String cls : classes)
-                if (!SourceVersion.isName(cls)) // implicit null check
-                    throw new IllegalArgumentException("Not a valid class name: " + cls);
-        }
-        if (compilationUnits != null) {
-            for (JavaFileObject cu : compilationUnits) {
-                if (cu.getKind() != JavaFileObject.Kind.SOURCE) // implicit null check
-                    throw new IllegalArgumentException(kindMsg);
+        try {
+            Context context = new Context();
+            ClientCodeWrapper ccw = ClientCodeWrapper.instance(context);
+
+            final String kindMsg = "All compilation units must be of SOURCE kind";
+            if (options != null)
+                for (String option : options)
+                    option.getClass(); // null check
+            if (classes != null) {
+                for (String cls : classes)
+                    if (!SourceVersion.isName(cls)) // implicit null check
+                        throw new IllegalArgumentException("Not a valid class name: " + cls);
             }
+            if (compilationUnits != null) {
+                compilationUnits = ccw.wrapJavaFileObjects(compilationUnits); // implicit null check
+                for (JavaFileObject cu : compilationUnits) {
+                    if (cu.getKind() != JavaFileObject.Kind.SOURCE)
+                        throw new IllegalArgumentException(kindMsg);
+                }
+            }
+
+            if (diagnosticListener != null)
+                context.put(DiagnosticListener.class, ccw.wrap(diagnosticListener));
+
+            if (out == null)
+                context.put(Log.outKey, new PrintWriter(System.err, true));
+            else
+                context.put(Log.outKey, new PrintWriter(out, true));
+
+            if (fileManager == null)
+                fileManager = getStandardFileManager(diagnosticListener, null, null);
+            fileManager = ccw.wrap(fileManager);
+            context.put(JavaFileManager.class, fileManager);
+            processOptions(context, fileManager, options);
+            Main compiler = new Main("javacTask", context.get(Log.outKey));
+            return new JavacTaskImpl(compiler, options, context, classes, compilationUnits);
+        } catch (ClientCodeException ex) {
+            throw new RuntimeException(ex.getCause());
         }
-
-        Context context = new Context();
-
-        if (diagnosticListener != null)
-            context.put(DiagnosticListener.class, diagnosticListener);
-
-        if (out == null)
-            context.put(Log.outKey, new PrintWriter(System.err, true));
-        else
-            context.put(Log.outKey, new PrintWriter(out, true));
-
-        if (fileManager == null)
-            fileManager = getStandardFileManager(diagnosticListener, null, null);
-        context.put(JavaFileManager.class, fileManager);
-        processOptions(context, fileManager, options);
-        Main compiler = new Main("javacTask", context.get(Log.outKey));
-        return new JavacTaskImpl(this, compiler, options, context, classes, compilationUnits);
     }
 
     private static void processOptions(Context context,
