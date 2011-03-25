@@ -616,6 +616,9 @@ void mlib_ImageAffineEdgeZero(mlib_affine_param *param,
         MLIB_PROCESS_EDGES_ZERO(mlib_d64);
         break;
       }
+  default:
+    /* Image type MLIB_BIT is not used in java, so we can ignore it. */
+    break;
   }
 }
 
@@ -643,6 +646,9 @@ void mlib_ImageAffineEdgeNearest(mlib_affine_param *param,
     case MLIB_DOUBLE:
       MLIB_PROCESS_EDGES(MLIB_EDGE_NEAREST_LINE, mlib_d64);
       break;
+  default:
+    /* Image type MLIB_BIT is not used in java, so we can ignore it. */
+    break;
   }
 }
 
@@ -673,8 +679,11 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
     if (ltype == MLIB_BYTE) {
       buff = mlib_malloc(channels * max_xsize);
     }
-    else {
+    else if (ltype == MLIB_SHORT) {
       buff = mlib_malloc(channels * max_xsize * sizeof(mlib_s16));
+    } else {
+      /* Unsupported type of lookup table. Report a failure */
+      return MLIB_FAILURE;
     }
 
     if (buff == NULL)
@@ -691,6 +700,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
             break;
+        default:
+          /* Incompatible image type. Ignore it for now. */
+          break;
         }
 
         break;
@@ -705,9 +717,18 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
             break;
+        default:
+          /* Incompatible image type. Ignore it for now. */
+          break;
         }
 
         break;
+    default:
+      /* Unsupported type of lookup table.
+       * Can not be here due to check on line 685,
+       * so just ignore it.
+       */
+      break;
     }
 
     mlib_free(buff);
@@ -744,6 +765,10 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
       srcStride >>= 3;
       MLIB_PROCESS_EDGES(MLIB_EDGE_BL, mlib_d64);
       break;
+
+  default:
+    /* Image type MLIB_BIT is not supported, ignore it. */
+    break;
   }
 
   return MLIB_SUCCESS;
@@ -803,8 +828,11 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
     if (ltype == MLIB_BYTE) {
       buff = mlib_malloc(channels * max_xsize);
     }
-    else {
+    else if (ltype == MLIB_SHORT) {
       buff = mlib_malloc(channels * max_xsize * sizeof(mlib_s16));
+    } else {
+      /* Unsupported type of lookup table. */
+      return MLIB_FAILURE;
     }
 
     if (buff == NULL)
@@ -821,6 +849,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
             break;
+        default:
+          /* Ignore incomatible image type. */
+          break;
         }
 
         break;
@@ -835,9 +866,19 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
             break;
+        default:
+          /* Ignore incomatible image type. */
+          break;
         }
 
         break;
+
+    default:
+      /* Unsupported type of lookup table.
+       * Can not be here due to check on line 836,
+       * so just ignore it.
+       */
+      break;
     }
 
     mlib_free(buff);
@@ -895,6 +936,10 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
       }
 
       break;
+
+  default:
+    /* Ignore unsupported image type MLIB_BIT */
+    break;
   }
 
   return MLIB_SUCCESS;
