@@ -663,7 +663,7 @@ ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
   if (key->is_perm() && _non_perm_count == 0) {
     return emptyBucket;
   } else if (key->is_instance()) {
-    if (key->klass() == SystemDictionary::Class_klass()) {
+    if (key->klass() == SystemDictionary::Class_klass() && JavaObjectsInPerm) {
       // class mirror instances are always perm
       return emptyBucket;
     }

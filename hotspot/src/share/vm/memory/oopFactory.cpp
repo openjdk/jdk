@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,12 @@ constantPoolCacheOop oopFactory::new_constantPoolCache(int length,
 }
 
 
-klassOop oopFactory::new_instanceKlass(int vtable_len, int itable_len,
+klassOop oopFactory::new_instanceKlass(Symbol* name, int vtable_len, int itable_len,
                                        int static_field_size,
                                        unsigned int nonstatic_oop_map_count,
                                        ReferenceType rt, TRAPS) {
   instanceKlassKlass* ikk = instanceKlassKlass::cast(Universe::instanceKlassKlassObj());
-  return ikk->allocate_instance_klass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_count, rt, CHECK_NULL);
+  return ikk->allocate_instance_klass(name, vtable_len, itable_len, static_field_size, nonstatic_oop_map_count, rt, CHECK_NULL);
 }
 
 

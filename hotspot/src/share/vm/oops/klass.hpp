@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,6 +577,7 @@ class Klass : public Klass_vtbl {
  public:
   // type testing operations
   virtual bool oop_is_instance_slow()       const { return false; }
+  virtual bool oop_is_instanceMirror()      const { return false; }
   virtual bool oop_is_instanceRef()         const { return false; }
   virtual bool oop_is_array()               const { return false; }
   virtual bool oop_is_objArray_slow()       const { return false; }
@@ -810,5 +811,9 @@ class Klass : public Klass_vtbl {
   void verify_vtable_index(int index);
 #endif
 };
+
+
+inline oop klassOopDesc::java_mirror() const                        { return klass_part()->java_mirror(); }
+
 
 #endif // SHARE_VM_OOPS_KLASS_HPP

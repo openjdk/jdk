@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/generationSizer.hpp"
@@ -437,6 +438,14 @@ bool PSScavenge::invoke_no_policy() {
       reference_processor()->enqueue_discovered_references(&task_executor);
     } else {
       reference_processor()->enqueue_discovered_references(NULL);
+    }
+
+    if (!JavaObjectsInPerm) {
+      // Unlink any dead interned Strings
+      StringTable::unlink(&_is_alive_closure);
+      // Process the remaining live ones
+      PSScavengeRootsClosure root_closure(promotion_manager);
+      StringTable::oops_do(&root_closure);
     }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.

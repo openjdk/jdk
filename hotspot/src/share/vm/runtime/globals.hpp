@@ -851,7 +851,7 @@ class CommandLineFlags {
   diagnostic(bool, TraceNMethodInstalls, false,                             \
              "Trace nmethod intallation")                                   \
                                                                             \
-  diagnostic(intx, ScavengeRootsInCode, 0,                                  \
+  diagnostic(intx, ScavengeRootsInCode, 1,                                  \
              "0: do not allow scavengable oops in the code cache; "         \
              "1: allow scavenging from the code cache; "                    \
              "2: emit as many constants as the compiler can see")           \
@@ -1220,6 +1220,11 @@ class CommandLineFlags {
   product(intx, BiasedLockingDecayTime, 25000,                              \
           "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
           "type after previous bulk rebias")                                \
+                                                                            \
+  develop(bool, JavaObjectsInPerm, false,                                   \
+          "controls whether Classes and interned Strings are allocated"     \
+          "in perm.  This purely intended to allow debugging issues"        \
+          "in production.")                                                 \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -3750,6 +3755,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
+                                                                            \
+  product(uintx, StringTableSize, 1009,                                     \
+          "Number of buckets in the interned String table")                 \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \

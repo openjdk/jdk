@@ -653,6 +653,9 @@ nmethod::nmethod(
     _pc_desc_cache.reset_to(NULL);
 
     code_buffer->copy_oops_to(this);
+    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
+      CodeCache::add_scavenge_root_nmethod(this);
+    }
     debug_only(verify_scavenge_root_oops());
     CodeCache::commit(this);
   }
@@ -1101,6 +1104,20 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
     assert(!(iter.type() == relocInfo::breakpoint_type
              && iter.breakpoint_reloc()->active()),
            "no active breakpoint");
+  }
+}
+
+
+void nmethod::verify_oop_relocations() {
+  // Ensure sure that the code matches the current oop values
+  RelocIterator iter(this, NULL, NULL);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::oop_type) {
+      oop_Relocation* reloc = iter.oop_reloc();
+      if (!reloc->oop_is_immediate()) {
+        reloc->verify_oop_relocation();
+      }
+    }
   }
 }
 
@@ -1823,6 +1840,7 @@ void nmethod::oops_do_marking_epilogue() {
     assert(cur != NULL, "not NULL-terminated");
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
+    cur->fix_oop_relocations();
     NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark\n"));
     cur = next;
   }

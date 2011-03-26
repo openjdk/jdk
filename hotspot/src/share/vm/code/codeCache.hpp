@@ -122,6 +122,7 @@ class CodeCache : AllStatic {
   // GC support
   static void gc_epilogue();
   static void gc_prologue();
+  static void verify_oops();
   // If "unloading_occurred" is true, then unloads (i.e., breaks root links
   // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
   // to "true" iff some code got unloaded.

@@ -112,29 +112,31 @@ void Parse::do_field_access(bool is_get, bool is_field) {
     // Compile-time detect of null-exception?
     if (stopped())  return;
 
+#ifdef ASSERT
     const TypeInstPtr *tjp = TypeInstPtr::make(TypePtr::NotNull, iter().get_declared_field_holder());
     assert(_gvn.type(obj)->higher_equal(tjp), "cast_up is no longer needed");
+#endif
 
     if (is_get) {
       --_sp;  // pop receiver before getting
-      do_get_xxx(tjp, obj, field, is_field);
+      do_get_xxx(obj, field, is_field);
     } else {
-      do_put_xxx(tjp, obj, field, is_field);
+      do_put_xxx(obj, field, is_field);
       --_sp;  // pop receiver after putting
     }
   } else {
-    const TypeKlassPtr* tkp = TypeKlassPtr::make(field_holder);
-    obj = _gvn.makecon(tkp);
+    const TypeInstPtr* tip = TypeInstPtr::make(field_holder->java_mirror());
+    obj = _gvn.makecon(tip);
     if (is_get) {
-      do_get_xxx(tkp, obj, field, is_field);
+      do_get_xxx(obj, field, is_field);
     } else {
-      do_put_xxx(tkp, obj, field, is_field);
+      do_put_xxx(obj, field, is_field);
     }
   }
 }
 
 
-void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field) {
+void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
   if (field->is_constant()) {
     if (field->is_static()) {
@@ -231,7 +233,7 @@ void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
   }
 }
 
-void Parse::do_put_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field) {
+void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   bool is_vol = field->is_volatile();
   // If reference is volatile, prevent following memory ops from
   // floating down past the volatile write.  Also prevents commoning
