@@ -178,12 +178,10 @@ public class T6838467 {
         return fm;
     }
 
-    JavacFileManager createFileManager(boolean useOptimedZipIndex) {
+    JavacFileManager createFileManager(boolean useOptimizedZip) {
         Context ctx = new Context();
-        if (useOptimedZipIndex) {
-            Options options = Options.instance(ctx);
-            options.put("useOptimizedZip", "true");
-        }
+        Options options = Options.instance(ctx);
+        options.put("useOptimizedZip", Boolean.toString(useOptimizedZip));
         return new JavacFileManager(ctx, false, null);
     }
 
