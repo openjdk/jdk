@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,6 +424,15 @@ static const char* make_log_name(const char* log_name, const char* force_directo
 
   const char* star = strchr(basename, '*');
   int star_pos = (star == NULL) ? -1 : (star - nametail);
+  int skip = 1;
+  if (star == NULL) {
+    // Try %p
+    star = strstr(basename, "%p");
+    if (star != NULL) {
+      skip = 2;
+    }
+  }
+  star_pos = (star == NULL) ? -1 : (star - nametail);
 
   char pid[32];
   if (star_pos >= 0) {
@@ -442,11 +451,11 @@ static const char* make_log_name(const char* log_name, const char* force_directo
   }
 
   if (star_pos >= 0) {
-    // convert foo*bar.log to foo123bar.log
+    // convert foo*bar.log or foo%pbar.log to foo123bar.log
     int buf_pos = (int) strlen(buf);
     strncpy(&buf[buf_pos], nametail, star_pos);
     strcpy(&buf[buf_pos + star_pos], pid);
-    nametail += star_pos + 1;  // skip prefix and star
+    nametail += star_pos + skip;  // skip prefix and pid format
   }
 
   strcat(buf, nametail);      // append rest of name, or all of name
@@ -466,7 +475,7 @@ void defaultStream::init_log() {
     // Note:  This feature is for maintainer use only.  No need for L10N.
     jio_print(warnbuf);
     FREE_C_HEAP_ARRAY(char, try_name);
-    try_name = make_log_name("hs_pid*.log", os::get_temp_directory());
+    try_name = make_log_name("hs_pid%p.log", os::get_temp_directory());
     jio_snprintf(warnbuf, sizeof(warnbuf),
                  "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
     jio_print(warnbuf);
