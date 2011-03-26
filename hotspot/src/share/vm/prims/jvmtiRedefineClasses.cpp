@@ -3350,11 +3350,12 @@ void VM_RedefineClasses::increment_class_counter(instanceKlass *ik, TRAPS) {
 
   for (Klass *subk = ik->subklass(); subk != NULL;
        subk = subk->next_sibling()) {
-    klassOop sub = subk->as_klassOop();
-    instanceKlass *subik = (instanceKlass *)sub->klass_part();
-
-    // recursively do subclasses of the current subclass
-    increment_class_counter(subik, THREAD);
+    if (subk->oop_is_instance()) {
+      // Only update instanceKlasses
+      instanceKlass *subik = (instanceKlass*)subk;
+      // recursively do subclasses of the current subclass
+      increment_class_counter(subik, THREAD);
+    }
   }
 }
 

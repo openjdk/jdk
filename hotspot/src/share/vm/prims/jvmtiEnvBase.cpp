@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,9 +616,7 @@ JvmtiEnvBase::get_field_descriptor(klassOop k, jfieldID field, fieldDescriptor* 
   bool found = false;
   if (jfieldIDWorkaround::is_static_jfieldID(field)) {
     JNIid* id = jfieldIDWorkaround::from_static_jfieldID(field);
-    int offset = id->offset();
-    klassOop holder = id->holder();
-    found = instanceKlass::cast(holder)->find_local_field_from_offset(offset, true, fd);
+    found = id->find_local_field(fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the object.
     int offset = jfieldIDWorkaround::from_instance_jfieldID(k, field);

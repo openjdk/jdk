@@ -154,11 +154,12 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // Add the "discovered" field to java.lang.ref.Reference if
   // it does not exist.
   void java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_ptr,
-    constantPoolHandle cp, FieldAllocationCount *fac_ptr, TRAPS);
+                                       constantPoolHandle cp,
+                                       FieldAllocationCount *fac_ptr, TRAPS);
   // Adjust the field allocation counts for java.lang.Class to add
   // fake fields.
-  void java_lang_Class_fix_pre(objArrayHandle* methods_ptr,
-    FieldAllocationCount *fac_ptr, TRAPS);
+  void java_lang_Class_fix_pre(int* nonstatic_field_size,
+                               FieldAllocationCount *fac_ptr);
   // Adjust the next_nonstatic_oop_offset to place the fake fields
   // before any Java fields.
   void java_lang_Class_fix_post(int* next_nonstatic_oop_offset);

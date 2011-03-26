@@ -1471,9 +1471,9 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
   if (code == Bytecodes::_getstatic || code == Bytecodes::_putstatic) {
     if (state_before != NULL) {
       // build a patching constant
-      obj = new Constant(new ClassConstant(holder), state_before);
+      obj = new Constant(new InstanceConstant(holder->java_mirror()), state_before);
     } else {
-      obj = new Constant(new ClassConstant(holder));
+      obj = new Constant(new InstanceConstant(holder->java_mirror()));
     }
   }
 

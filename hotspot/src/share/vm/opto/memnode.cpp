@@ -1573,9 +1573,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
             return TypeInt::make(constant.as_int());
           } else if (constant.basic_type() == T_ARRAY) {
             if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-              return TypeNarrowOop::make_from_constant(constant.as_object());
+              return TypeNarrowOop::make_from_constant(constant.as_object(), true);
             } else {
-              return TypeOopPtr::make_from_constant(constant.as_object());
+              return TypeOopPtr::make_from_constant(constant.as_object(), true);
             }
           }
         }
