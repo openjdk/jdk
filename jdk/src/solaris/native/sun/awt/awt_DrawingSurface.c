@@ -302,6 +302,7 @@ awt_DrawingSurface_FreeDrawingSurfaceInfo(JAWT_DrawingSurfaceInfo* dsi)
 #ifdef DEBUG
         fprintf(stderr, "Drawing Surface Info is NULL\n");
 #endif
+        return;
     }
     free(dsi->platformInfo);
     free(dsi);

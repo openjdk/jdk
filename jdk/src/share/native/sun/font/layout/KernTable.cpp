@@ -210,7 +210,7 @@ void KernTable::process(LEGlyphStorage& storage)
       // all the elements ahead of time and store them in the font
 
       const PairInfo* p = pairs;
-      const PairInfo* tp = (const PairInfo*)(p + rangeShift);
+      const PairInfo* tp = (const PairInfo*)(p + (rangeShift/KERN_PAIRINFO_SIZE)); /* rangeshift is in original table bytes */
       if (key > tp->key) {
         p = tp;
       }
@@ -222,7 +222,7 @@ void KernTable::process(LEGlyphStorage& storage)
       le_uint32 probe = searchRange;
       while (probe > 1) {
         probe >>= 1;
-        tp = (const PairInfo*)(p + probe);
+        tp = (const PairInfo*)(p + (probe/KERN_PAIRINFO_SIZE));
         le_uint32 tkey = tp->key;
 #if DEBUG
         fprintf(stdout, "   %.3d (%0.8x)\n", (tp - pairs), tkey);

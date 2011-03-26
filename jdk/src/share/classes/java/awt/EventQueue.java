@@ -48,6 +48,12 @@ import sun.awt.AWTAccessor;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
+import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
+
+import sun.misc.SharedSecrets;
+import sun.misc.JavaSecurityAccess;
+
 /**
  * <code>EventQueue</code> is a platform-independent class
  * that queues events, both from the underlying peer classes
@@ -612,6 +618,9 @@ public class EventQueue {
         return null;
     }
 
+    private static final JavaSecurityAccess javaSecurityAccess =
+        SharedSecrets.getJavaSecurityAccess();
+
     /**
      * Dispatches an event. The manner in which the event is
      * dispatched depends upon the type of the event and the
@@ -650,13 +659,49 @@ public class EventQueue {
      * @throws NullPointerException if <code>event</code> is <code>null</code>
      * @since           1.2
      */
-    protected void dispatchEvent(AWTEvent event) {
+    protected void dispatchEvent(final AWTEvent event) {
+        final Object src = event.getSource();
+        final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+            public Void run() {
+                dispatchEventImpl(event, src);
+                return null;
+            }
+        };
+
+        final AccessControlContext stack = AccessController.getContext();
+        final AccessControlContext srcAcc = getAccessControlContextFrom(src);
+        final AccessControlContext eventAcc = event.getAccessControlContext();
+        if (srcAcc == null) {
+            javaSecurityAccess.doIntersectionPrivilege(action, stack, eventAcc);
+        } else {
+            javaSecurityAccess.doIntersectionPrivilege(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        javaSecurityAccess.doIntersectionPrivilege(action, eventAcc);
+                        return null;
+                    }
+                }, stack, srcAcc);
+        }
+    }
+
+    private static AccessControlContext getAccessControlContextFrom(Object src) {
+        return src instanceof Component ?
+            ((Component)src).getAccessControlContext() :
+            src instanceof MenuComponent ?
+                ((MenuComponent)src).getAccessControlContext() :
+                src instanceof TrayIcon ?
+                    ((TrayIcon)src).getAccessControlContext() :
+                    null;
+    }
+
+    /**
+     * Called from dispatchEvent() under a correct AccessControlContext
+     */
+    private void dispatchEventImpl(final AWTEvent event, final Object src) {
         event.isPosted = true;
-        Object src = event.getSource();
         if (event instanceof ActiveEvent) {
             // This could become the sole method of dispatching in time.
             setCurrentEventAndMostRecentTimeImpl(event);
-
             ((ActiveEvent)event).dispatch();
         } else if (src instanceof Component) {
             ((Component)src).dispatchEvent(event);

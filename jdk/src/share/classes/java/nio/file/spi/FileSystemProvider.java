@@ -1037,6 +1037,11 @@ public abstract class FileSystemProvider {
      * @return  a map of the attributes returned; may be empty. The map's keys
      *          are the attribute names, its values are the attribute values
      *
+     * @throws  UnsupportedOperationException
+     *          if the attribute view is not available
+     * @throws  IllegalArgumentException
+     *          if no attributes are specified or an unrecognized attributes is
+     *          specified
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -1064,10 +1069,10 @@ public abstract class FileSystemProvider {
      *          options indicating how symbolic links are handled
      *
      * @throws  UnsupportedOperationException
-     *          if the attribute view is not available or it does not support
-     *          updating the attribute
+     *          if the attribute view is not available
      * @throws  IllegalArgumentException
-     *          if the attribute value is of the correct type but has an
+     *          if the attribute name is not specified, or is not recognized, or
+     *          the attribute value is of the correct type but has an
      *          inappropriate value
      * @throws  ClassCastException
      *          If the attribute value is not of the expected type or is a

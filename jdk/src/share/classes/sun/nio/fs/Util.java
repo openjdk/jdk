@@ -25,6 +25,8 @@
 
 package sun.nio.fs;
 
+import java.util.*;
+
 /**
  * Utility methods
  */
@@ -54,6 +56,28 @@ class Util {
         }
         result[n] = s.substring(last, s.length());
         return result;
+    }
 
+    /**
+     * Returns a Set containing the given elements.
+     */
+    static <E> Set<E> newSet(E... elements) {
+        HashSet<E> set = new HashSet<>();
+        for (E e: elements) {
+            set.add(e);
+        }
+        return set;
+    }
+
+    /**
+     * Returns a Set containing all the elements of the given Set plus
+     * the given elements.
+     */
+    static <E> Set<E> newSet(Set<E> other, E... elements) {
+        HashSet<E> set = new HashSet<>(other);
+        for (E e: elements) {
+            set.add(e);
+        }
+        return set;
     }
 }

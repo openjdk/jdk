@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,7 @@ public class CodeSource implements java.io.Serializable {
 
         // Deserialize array of code signers (if any)
         try {
-            this.signers = (CodeSigner[])ois.readObject();
+            this.signers = ((CodeSigner[])ois.readObject()).clone();
         } catch (IOException ioe) {
             // no signers present
         }

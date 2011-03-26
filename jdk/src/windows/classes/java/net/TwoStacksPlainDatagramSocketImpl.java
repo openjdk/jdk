@@ -26,6 +26,7 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
+import sun.net.ResourceManager;
 
 /**
  * This class defines the plain DatagramSocketImpl that is used for all
@@ -108,6 +109,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected void close() {
         if (fd != null || fd1 != null) {
             datagramSocketClose();
+            ResourceManager.afterUdpClose();
             fd = null;
             fd1 = null;
         }

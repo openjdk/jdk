@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,18 @@
  * questions.
  */
 
-package org.relaxng.datatype;
+package sun.misc;
 
-/**
- * Signals Datatype related exceptions.
- *
- * @author <a href="mailto:jjc@jclark.com">James Clark</a>
- * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
- */
-public class DatatypeException extends Exception {
+import java.security.AccessControlContext;
+import java.security.PrivilegedAction;
 
-        public DatatypeException( int index, String msg ) {
-                super(msg);
-                this.index = index;
-        }
-        public DatatypeException( String msg ) {
-                this(UNKNOWN,msg);
-        }
-        /**
-         * A constructor for those datatype libraries which don't support any
-         * diagnostic information at all.
-         */
-        public DatatypeException() {
-                this(UNKNOWN,null);
-        }
+public interface JavaSecurityAccess {
 
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext stack,
+                                  AccessControlContext context);
 
-        private final int index;
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext context);
 
-        public static final int UNKNOWN = -1;
-
-        /**
-         * Gets the index of the content where the error occured.
-         * UNKNOWN can be returned to indicate that no index information
-         * is available.
-         */
-        public int getIndex() {
-                return index;
-        }
 }

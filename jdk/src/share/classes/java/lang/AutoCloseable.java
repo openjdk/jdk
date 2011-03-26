@@ -34,12 +34,27 @@ package java.lang;
 public interface AutoCloseable {
     /**
      * Closes this resource, relinquishing any underlying resources.
-     * This method is invoked automatically by the {@code
-     * try}-with-resources statement.
+     * This method is invoked automatically on objects managed by the
+     * {@code try}-with-resources statement.
      *
-     * <p>Classes implementing this method are strongly encouraged to
-     * be declared to throw more specific exceptions (or no exception
-     * at all, if the close cannot fail).
+     * <p>While this interface method is declared to throw {@code
+     * Exception}, implementers are <em>strongly</em> encouraged to
+     * declare concrete implementations of the {@code close} method to
+     * throw more specific exceptions, or to throw no exception at all
+     * if the close operation cannot fail.
+     *
+     * <p><em>Implementers of this interface are also strongly advised
+     * to not have the {@code close} method throw {@link
+     * InterruptedException}.</em>
+     *
+     * This exception interacts with a thread's interrupted status,
+     * and runtime misbehavior is likely to occur if an {@code
+     * InterruptedException} is {@linkplain Throwable#addSuppressed
+     * suppressed}.
+     *
+     * More generally, if it would cause problems for an
+     * exception to be suppressed, the {@code AutoCloseable.close}
+     * method should not throw it.
      *
      * <p>Note that unlike the {@link java.io.Closeable#close close}
      * method of {@link java.io.Closeable}, this {@code close} method
@@ -48,9 +63,8 @@ public interface AutoCloseable {
      * visible side effect, unlike {@code Closeable.close} which is
      * required to have no effect if called more than once.
      *
-     * However, while not required to be idempotent, implementers of
-     * this interface are strongly encouraged to make their {@code
-     * close} methods idempotent.
+     * However, implementers of this interface are strongly encouraged
+     * to make their {@code close} methods idempotent.
      *
      * @throws Exception if this resource cannot be closed
      */
