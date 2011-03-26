@@ -34,6 +34,8 @@ package java.util;
  * @serial exclude
  */
 class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
+    private static final long serialVersionUID = 334349849919042784L;
+
     /**
      * Bit vector representation of this set.  The ith bit of the jth
      * element of this array represents the  presence of universe[64*j +i]
@@ -138,8 +140,11 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
         public void remove() {
             if (lastReturned == 0)
                 throw new IllegalStateException();
-            elements[lastReturnedIndex] -= lastReturned;
-            size--;
+            final long oldElements = elements[lastReturnedIndex];
+            elements[lastReturnedIndex] &= ~lastReturned;
+            if (oldElements != elements[lastReturnedIndex]) {
+                size--;
+            }
             lastReturned = 0;
         }
     }

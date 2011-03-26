@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-ant_version \
 	sane-zip_version \
 	sane-unzip_version \
- 	sane-msvcrt_path \
+	sane-msvcrt_path \
         sane-freetype
 
 ######################################################
@@ -279,6 +279,12 @@ sane-arch_data_model:
 	      "      $(YOU_ARE_USING) ARCH_DATA_MODEL=$(ARCH_DATA_MODEL). \n" \
 	      "" >> $(ERROR_FILE) ; \
 	fi
+ifdef BUILD_CLIENT_ONLY
+	@if [ "$(ARCH_DATA_MODEL)" != 32 ]; then \
+	   $(ECHO) "WARNING: You have requested BUILD_CLIENT_ONLY in a 64-bit build.\n" \
+	     "" >> $(WARNING_FILE) ; \
+	fi
+endif
 
 ######################################################
 # Check the OS version (windows and linux have release name checks)
@@ -811,23 +817,26 @@ sane-cacerts:
 ######################################################
 
 ifdef OPENJDK
-
-# The freetypecheck Makefile prints out "Failed" if not good enough
-$(TEMPDIR)/freetypeinfo: FRC
+  ifndef CROSS_COMPILE_ARCH
+    # The freetypecheck Makefile prints out "Failed" if not good enough
+    $(TEMPDIR)/freetypeinfo: FRC
 	@$(prep-target)
 	@(($(CD) $(BUILDDIR)/tools/freetypecheck && $(MAKE)) || \
 	    $(ECHO) "Failed to build freetypecheck." ) > $@
 
-sane-freetype: $(TEMPDIR)/freetypeinfo
+    sane-freetype: $(TEMPDIR)/freetypeinfo
 	@if [ "`$(CAT) $< | $(GREP) Fail`" != "" ]; then \
 	  $(ECHO) "ERROR: FreeType version " $(REQUIRED_FREETYPE_VERSION) \
 	          " or higher is required. \n" \
 		  "`$(CAT) $<`  \n" >> $(ERROR_FILE) ; \
 	fi
-
+  else
+    #do nothing  (cross-compiling)
+    sane-freetype: 
+  endif
 else
-#do nothing  (not OpenJDK)
-sane-freetype: 
+  #do nothing  (not OpenJDK)
+  sane-freetype: 
 endif
 
 ######################################################
@@ -1306,7 +1315,7 @@ ifeq ($(PLATFORM), windows)
 	        "      Microsoft DirectX 9 SDK can be downloaded from the following location:\n" \
 	        "          http://msdn.microsoft.com/library/default.asp?url=/downloads/list/directx.asp\n" \
 		"      Or  http://www.microsoft.com/directx\n" \
-  		"" >> $(WARNING_FILE) ; \
+		"" >> $(WARNING_FILE) ; \
 	      fi \
 	    fi \
 	  fi \
@@ -1337,13 +1346,16 @@ endif
 ######################################################
 # Check the compiler version(s)
 ######################################################
-CC_CHECK  :=$(call CheckVersions,$(CC_VER),$(REQUIRED_CC_VER))
+ifdef REQUIRED_CC_VER
+  CC_CHECK  :=$(call CheckVersions,$(CC_VER),$(REQUIRED_CC_VER))
+endif
 sane-compiler: sane-link
+ifdef REQUIRED_CC_VER
 	@if [ "$(CC_CHECK)" = "missing" ]; then \
 	  $(ECHO) "ERROR: The Compiler version is undefined. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-ifndef OPENJDK
+  ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
 	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(REQUIRED_COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
 	      "      Specifically the $(REQUIRED_COMPILER_NAME) compiler. \n " \
@@ -1352,6 +1364,7 @@ ifndef OPENJDK
 	      "          $(COMPILER_PATH) \n" \
 	      "" >> $(WARNING_FILE) ; \
          fi
+  endif
 endif
 
 ######################################################
