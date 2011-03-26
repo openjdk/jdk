@@ -46,13 +46,16 @@ import  java.util.*;
  * are freshly created in the context of the exceptional situation so
  * as to include relevant information (such as stack trace data).
  *
- * <p>A throwable contains a snapshot of the execution stack of its thread at
- * the time it was created. It can also contain a message string that gives
- * more information about the error. Finally, it can contain a <i>cause</i>:
- * another throwable that caused this throwable to get thrown.  The cause
- * facility is new in release 1.4.  It is also known as the <i>chained
- * exception</i> facility, as the cause can, itself, have a cause, and so on,
- * leading to a "chain" of exceptions, each caused by another.
+ * <p>A throwable contains a snapshot of the execution stack of its
+ * thread at the time it was created. It can also contain a message
+ * string that gives more information about the error. Over time, a
+ * throwable can {@linkplain Throwable#addSuppressed suppress} other
+ * throwables from being propagated.  Finally, the throwable can also
+ * contain a <i>cause</i>: another throwable that caused this
+ * throwable to get thrown.  The recording of this causal information
+ * is referred to as the <i>chained exception</i> facility, as the
+ * cause can, itself, have a cause, and so on, leading to a "chain" of
+ * exceptions, each caused by another.
  *
  * <p>One reason that a throwable may have a cause is that the class that
  * throws it is built atop a lower layered abstraction, and an operation on
@@ -86,47 +89,12 @@ import  java.util.*;
  * {@link #initCause(Throwable)} method.  New throwable classes that
  * wish to allow causes to be associated with them should provide constructors
  * that take a cause and delegate (perhaps indirectly) to one of the
- * {@code Throwable} constructors that takes a cause.  For example:
- * <pre>
- *     try {
- *         lowLevelOp();
- *     } catch (LowLevelException le) {
- *         throw new HighLevelException(le);  // Chaining-aware constructor
- *     }
- * </pre>
+ * {@code Throwable} constructors that takes a cause.
+ *
  * Because the {@code initCause} method is public, it allows a cause to be
  * associated with any throwable, even a "legacy throwable" whose
  * implementation predates the addition of the exception chaining mechanism to
- * {@code Throwable}. For example:
- * <pre>
- *     try {
- *         lowLevelOp();
- *     } catch (LowLevelException le) {
- *         throw (HighLevelException)
- *               new HighLevelException().initCause(le);  // Legacy constructor
- *     }
- * </pre>
- *
- * <p>Prior to release 1.4, there were many throwables that had their own
- * non-standard exception chaining mechanisms (
- * {@link ExceptionInInitializerError}, {@link ClassNotFoundException},
- * {@link java.lang.reflect.UndeclaredThrowableException},
- * {@link java.lang.reflect.InvocationTargetException},
- * {@link java.io.WriteAbortedException},
- * {@link java.security.PrivilegedActionException},
- * {@link java.awt.print.PrinterIOException},
- * {@link java.rmi.RemoteException} and
- * {@link javax.naming.NamingException}).
- * All of these throwables have been retrofitted to
- * use the standard exception chaining mechanism, while continuing to
- * implement their "legacy" chaining mechanisms for compatibility.
- *
- * <p>Further, as of release 1.4, many general purpose {@code Throwable}
- * classes (for example {@link Exception}, {@link RuntimeException},
- * {@link Error}) have been retrofitted with constructors that take
- * a cause.  This was not strictly necessary, due to the existence of the
- * {@code initCause} method, but it is more convenient and expressive to
- * delegate to a constructor that takes a cause.
+ * {@code Throwable}.
  *
  * <p>By convention, class {@code Throwable} and its subclasses have two
  * constructors, one that takes no arguments and one that takes a
@@ -136,14 +104,6 @@ import  java.util.*;
  * {@code Throwable} (the cause), and one that takes a
  * {@code String} (the detail message) and a {@code Throwable} (the
  * cause).
- *
- * <p>Also introduced in release 1.4 is the {@link #getStackTrace()} method,
- * which allows programmatic access to the stack trace information that was
- * previously available only in text form, via the various forms of the
- * {@link #printStackTrace()} method.  This information has been added to the
- * <i>serialized representation</i> of this class so {@code getStackTrace}
- * and {@code printStackTrace} will operate properly on a throwable that
- * was obtained by deserialization.
  *
  * @author  unascribed
  * @author  Josh Bloch (Added exception chaining and programmatic access to
@@ -881,11 +841,34 @@ public class Throwable implements Serializable {
      * <p>Note that when one exception {@linkplain
      * #initCause(Throwable) causes} another exception, the first
      * exception is usually caught and then the second exception is
-     * thrown in response.  In contrast, when one exception suppresses
-     * another, two exceptions are thrown in sibling code blocks, such
-     * as in a {@code try} block and in its {@code finally} block, and
-     * control flow can only continue with one exception so the second
-     * is recorded as a suppressed exception of the first.
+     * thrown in response.  In other words, there is a causal
+     * connection between the two exceptions.
+     *
+     * In contrast, there are situations where two independent
+     * exceptions can be thrown in sibling code blocks, in particular
+     * in the {@code try} block of a {@code try}-with-resources
+     * statement and the compiler-generated {@code finally} block
+     * which closes the resource.
+     *
+     * In these situations, only one of the thrown exceptions can be
+     * propagated.  In the {@code try}-with-resources statement, when
+     * there are two such exceptions, the exception originating from
+     * the {@code try} block is propagated and the exception from the
+     * {@code finally} block is added to the list of exceptions
+     * suppressed by the exception from the {@code try} block.  As an
+     * exception unwinds the stack, it can accumulate multiple
+     * suppressed exceptions.
+     *
+     * <p>An exception may have suppressed exceptions while also being
+     * caused by another exception.  Whether or not an exception has a
+     * cause is semantically known at the time of its creation, unlike
+     * whether or not an exception will suppress other exceptions
+     * which is typically only determined after an exception is
+     * thrown.
+     *
+     * <p>Note that programmer written code is also able to take
+     * advantage of calling this method in situations where there are
+     * multiple sibling exceptions and only one can be propagated.
      *
      * @param exception the exception to be added to the list of
      *        suppressed exceptions
