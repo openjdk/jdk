@@ -648,12 +648,13 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_return_type);
 
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
-
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    __ relocate(relocInfo::poll_return_type);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    __ testl(rax, polling_page);
+  }
   __ ret(0);
 }
 
@@ -661,20 +662,17 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_type);
-
-  if (info != NULL) {
-    add_debug_info_for_branch(info);
-  } else {
-    ShouldNotReachHere();
-  }
-
+  guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
-
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    offset = __ offset();
+    add_debug_info_for_branch(info);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    add_debug_info_for_branch(info);
+    __ testl(rax, polling_page);
+  }
   return offset;
 }
 

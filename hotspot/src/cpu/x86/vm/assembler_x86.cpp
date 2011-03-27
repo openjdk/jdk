@@ -3510,7 +3510,6 @@ bool Assembler::reachable(AddressLiteral adr) {
   // anywhere in the codeCache then we are always reachable.
   // This would have to change if we ever save/restore shared code
   // to be more pessimistic.
-
   disp = (int64_t)adr._target - ((int64_t)CodeCache::low_bound() + sizeof(int));
   if (!is_simm32(disp)) return false;
   disp = (int64_t)adr._target - ((int64_t)CodeCache::high_bound() + sizeof(int));
@@ -3532,6 +3531,14 @@ bool Assembler::reachable(AddressLiteral adr) {
     disp += fudge;
   }
   return is_simm32(disp);
+}
+
+// Check if the polling page is not reachable from the code cache using rip-relative
+// addressing.
+bool Assembler::is_polling_page_far() {
+  intptr_t addr = (intptr_t)os::get_polling_page();
+  return !is_simm32(addr - (intptr_t)CodeCache::low_bound()) ||
+         !is_simm32(addr - (intptr_t)CodeCache::high_bound());
 }
 
 void Assembler::emit_data64(jlong data,
@@ -6886,6 +6893,11 @@ void MacroAssembler::sign_extend_short(Register reg) {
   }
 }
 
+void MacroAssembler::testl(Register dst, AddressLiteral src) {
+  assert(reachable(src), "Address should be reachable");
+  testl(dst, as_Address(src));
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef SERIALGC
 
@@ -7119,17 +7131,6 @@ void MacroAssembler::subptr(Register dst, int32_t imm32) {
 
 void MacroAssembler::subptr(Register dst, Register src) {
   LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src));
-}
-
-void MacroAssembler::test32(Register src1, AddressLiteral src2) {
-  // src2 must be rval
-
-  if (reachable(src2)) {
-    testl(src1, as_Address(src2));
-  } else {
-    lea(rscratch1, src2);
-    testl(src1, Address(rscratch1, 0));
-  }
 }
 
 // C++ bool manipulation
