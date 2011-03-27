@@ -2377,6 +2377,9 @@ class CommandLineFlags {
   develop(intx, CICloneLoopTestLimit, 100,                                  \
           "size limit for blocks heuristically cloned in ciTypeFlow")       \
                                                                             \
+  develop(intx, OSROnlyBCI, -1,                                             \
+          "OSR only at this bci.  Negative values mean exclude that bci")   \
+                                                                            \
   /* temp diagnostics */                                                    \
                                                                             \
   diagnostic(bool, TraceRedundantCompiles, false,                           \

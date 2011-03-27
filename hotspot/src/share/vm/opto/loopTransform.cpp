@@ -1608,15 +1608,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
     return false; // Malformed loop
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
     return false;             // Infinite loop
-#ifndef PRODUCT
-  if (PrintOpto) {
-    tty->print("Removing empty loop");
-    this->dump_head();
-  } else if (TraceLoopOpts) {
-    tty->print("Empty        ");
-    this->dump_head();
-  }
-#endif
+
 #ifdef ASSERT
   // Ensure only one phi which is the iv.
   Node* iv = NULL;
@@ -1629,6 +1621,43 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   }
   assert(iv == cl->phi(), "Wrong phi" );
 #endif
+
+  // main and post loops have explicitly created zero trip guard
+  bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
+  if (needs_guard) {
+    // Check for an obvious zero trip guard.
+    Node* inctrl = cl->in(LoopNode::EntryControl);
+    if (inctrl->Opcode() == Op_IfTrue) {
+      // The test should look like just the backedge of a CountedLoop
+      Node* iff = inctrl->in(0);
+      if (iff->is_If()) {
+        Node* bol = iff->in(1);
+        if (bol->is_Bool() && bol->as_Bool()->_test._test == cl->loopexit()->test_trip()) {
+          Node* cmp = bol->in(1);
+          if (cmp->is_Cmp() && cmp->in(1) == cl->init_trip() && cmp->in(2) == cl->limit()) {
+            needs_guard = false;
+          }
+        }
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (PrintOpto) {
+    tty->print("Removing empty loop with%s zero trip guard", needs_guard ? "out" : "");
+    this->dump_head();
+  } else if (TraceLoopOpts) {
+    tty->print("Empty with%s zero trip guard   ", needs_guard ? "out" : "");
+    this->dump_head();
+  }
+#endif
+
+  if (needs_guard) {
+    // Peel the loop to ensure there's a zero trip guard
+    Node_List old_new;
+    phase->do_peeling(this, old_new);
+  }
+
   // Replace the phi at loop head with the final value of the last
   // iteration.  Then the CountedLoopEnd will collapse (backedge never
   // taken) and all loop-invariant uses of the exit values will be correct.
