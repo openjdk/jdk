@@ -874,6 +874,14 @@ void CompileBroker::compile_method_base(methodHandle method,
     return;
   }
 
+#ifndef PRODUCT
+  if (osr_bci != -1 && !FLAG_IS_DEFAULT(OSROnlyBCI)) {
+    if ((OSROnlyBCI > 0) ? (OSROnlyBCI != osr_bci) : (-OSROnlyBCI == osr_bci)) {
+      // Positive OSROnlyBCI means only compile that bci.  Negative means don't compile that BCI.
+      return;
+    }
+  }
+#endif
 
   // If this method is already in the compile queue, then
   // we do not block the current thread.
