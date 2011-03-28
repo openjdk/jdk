@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ class ConcurrentG1Refine: public CHeapObj {
   } CardEpochCacheEntry;
 
   julong make_epoch_entry(unsigned int card_num, unsigned int epoch) {
-    assert(0 <= card_num && card_num < _max_n_card_counts, "Bounds");
+    assert(0 <= card_num && card_num < _max_cards, "Bounds");
     assert(0 <= epoch && epoch <= _n_periods, "must be");
 
     return ((julong) card_num << card_num_shift) | epoch;
@@ -117,15 +117,24 @@ class ConcurrentG1Refine: public CHeapObj {
   CardEpochCacheEntry* _card_epochs;
 
   // The current number of buckets in the card count cache
-  unsigned _n_card_counts;
+  size_t _n_card_counts;
 
-  // The max number of buckets required for the number of
-  // cards for the entire reserved heap
-  unsigned _max_n_card_counts;
+  // The number of cards for the entire reserved heap
+  size_t _max_cards;
+
+  // The max number of buckets for the card counts and epochs caches.
+  // This is the maximum that the counts and epochs will grow to.
+  // It is specified as a fraction or percentage of _max_cards using
+  // G1MaxHotCardCountSizePercent.
+  size_t _max_n_card_counts;
 
   // Possible sizes of the cache: odd primes that roughly double in size.
   // (See jvmtiTagMap.cpp).
-  static int _cc_cache_sizes[];
+  enum {
+    MAX_CC_CACHE_INDEX = 15    // maximum index into the cache size array.
+  };
+
+  static size_t _cc_cache_sizes[MAX_CC_CACHE_INDEX];
 
   // The index in _cc_cache_sizes corresponding to the size of
   // _card_counts.
@@ -147,11 +156,22 @@ class ConcurrentG1Refine: public CHeapObj {
   CardTableModRefBS* _ct_bs;
   G1CollectedHeap*   _g1h;
 
-  // Expands the array that holds the card counts to the next size up
-  void expand_card_count_cache();
+  // Helper routine for expand_card_count_cache().
+  // The arrays used to hold the card counts and the epochs must have
+  // a 1:1 correspondence. Hence they are allocated and freed together.
+  // Returns true if the allocations of both the counts and epochs
+  // were successful; false otherwise.
+  bool allocate_card_count_cache(size_t n,
+                                 CardCountCacheEntry** counts,
+                                 CardEpochCacheEntry** epochs);
+
+  // Expands the arrays that hold the card counts and epochs
+  // to the cache size at index. Returns true if the expansion/
+  // allocation was successful; false otherwise.
+  bool expand_card_count_cache(int index);
 
   // hash a given key (index of card_ptr) with the specified size
-  static unsigned int hash(size_t key, int size) {
+  static unsigned int hash(size_t key, size_t size) {
     return (unsigned int) key % size;
   }
 

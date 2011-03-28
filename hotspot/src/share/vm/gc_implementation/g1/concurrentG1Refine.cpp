@@ -31,19 +31,23 @@
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "memory/space.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/java.hpp"
 #include "utilities/copy.hpp"
 
 // Possible sizes for the card counts cache: odd primes that roughly double in size.
 // (See jvmtiTagMap.cpp).
-int ConcurrentG1Refine::_cc_cache_sizes[] = {
-        16381,    32771,    76831,    150001,   307261,
-       614563,  1228891,  2457733,   4915219,  9830479,
-     19660831, 39321619, 78643219, 157286461,       -1
+
+#define MAX_SIZE ((size_t) -1)
+
+size_t ConcurrentG1Refine::_cc_cache_sizes[] = {
+          16381,    32771,    76831,    150001,   307261,
+         614563,  1228891,  2457733,   4915219,  9830479,
+       19660831, 39321619, 78643219, 157286461,  MAX_SIZE
   };
 
 ConcurrentG1Refine::ConcurrentG1Refine() :
   _card_counts(NULL), _card_epochs(NULL),
-  _n_card_counts(0), _max_n_card_counts(0),
+  _n_card_counts(0), _max_cards(0), _max_n_card_counts(0),
   _cache_size_index(0), _expand_card_counts(false),
   _hot_cache(NULL),
   _def_use_cache(false), _use_cache(false),
@@ -98,27 +102,44 @@ int ConcurrentG1Refine::thread_num() {
 void ConcurrentG1Refine::init() {
   if (G1ConcRSLogCacheSize > 0) {
     _g1h = G1CollectedHeap::heap();
-    _max_n_card_counts =
-      (unsigned) (_g1h->max_capacity() >> CardTableModRefBS::card_shift);
+
+    _max_cards = _g1h->max_capacity() >> CardTableModRefBS::card_shift;
+    _max_n_card_counts = _max_cards * G1MaxHotCardCountSizePercent / 100;
 
     size_t max_card_num = ((size_t)1 << (sizeof(unsigned)*BitsPerByte-1)) - 1;
-    guarantee(_max_n_card_counts < max_card_num, "card_num representation");
+    guarantee(_max_cards < max_card_num, "card_num representation");
 
-    int desired = _max_n_card_counts / InitialCacheFraction;
-    for (_cache_size_index = 0;
-              _cc_cache_sizes[_cache_size_index] >= 0; _cache_size_index++) {
-      if (_cc_cache_sizes[_cache_size_index] >= desired) break;
+    // We need _n_card_counts to be less than _max_n_card_counts here
+    // so that the expansion call (below) actually allocates the
+    // _counts and _epochs arrays.
+    assert(_n_card_counts == 0, "pre-condition");
+    assert(_max_n_card_counts > 0, "pre-condition");
+
+    // Find the index into cache size array that is of a size that's
+    // large enough to hold desired_sz.
+    size_t desired_sz = _max_cards / InitialCacheFraction;
+    int desired_sz_index = 0;
+    while (_cc_cache_sizes[desired_sz_index] < desired_sz) {
+      desired_sz_index += 1;
+      assert(desired_sz_index <  MAX_CC_CACHE_INDEX, "invariant");
     }
-    _cache_size_index = MAX2(0, (_cache_size_index - 1));
+    assert(desired_sz_index <  MAX_CC_CACHE_INDEX, "invariant");
 
-    int initial_size = _cc_cache_sizes[_cache_size_index];
-    if (initial_size < 0) initial_size = _max_n_card_counts;
+    // If the desired_sz value is between two sizes then
+    // _cc_cache_sizes[desired_sz_index-1] < desired_sz <= _cc_cache_sizes[desired_sz_index]
+    // we will start with the lower size in the optimistic expectation that
+    // we will not need to expand up. Note desired_sz_index could also be 0.
+    if (desired_sz_index > 0 &&
+        _cc_cache_sizes[desired_sz_index] > desired_sz) {
+      desired_sz_index -= 1;
+    }
 
-    // Make sure we don't go bigger than we will ever need
-    _n_card_counts = MIN2((unsigned) initial_size, _max_n_card_counts);
-
-    _card_counts = NEW_C_HEAP_ARRAY(CardCountCacheEntry, _n_card_counts);
-    _card_epochs = NEW_C_HEAP_ARRAY(CardEpochCacheEntry, _n_card_counts);
+    if (!expand_card_count_cache(desired_sz_index)) {
+      // Allocation was unsuccessful - exit
+      vm_exit_during_initialization("Could not reserve enough space for card count cache");
+    }
+    assert(_n_card_counts > 0, "post-condition");
+    assert(_cache_size_index == desired_sz_index, "post-condition");
 
     Copy::fill_to_bytes(&_card_counts[0],
                         _n_card_counts * sizeof(CardCountCacheEntry));
@@ -163,10 +184,13 @@ void ConcurrentG1Refine::reinitialize_threads() {
 
 ConcurrentG1Refine::~ConcurrentG1Refine() {
   if (G1ConcRSLogCacheSize > 0) {
+    // Please see the comment in allocate_card_count_cache
+    // for why we call os::malloc() and os::free() directly.
     assert(_card_counts != NULL, "Logic");
-    FREE_C_HEAP_ARRAY(CardCountCacheEntry, _card_counts);
+    os::free(_card_counts);
     assert(_card_epochs != NULL, "Logic");
-    FREE_C_HEAP_ARRAY(CardEpochCacheEntry, _card_epochs);
+    os::free(_card_epochs);
+
     assert(_hot_cache != NULL, "Logic");
     FREE_C_HEAP_ARRAY(jbyte*, _hot_cache);
   }
@@ -382,29 +406,93 @@ void ConcurrentG1Refine::clean_up_cache(int worker_i,
   }
 }
 
-void ConcurrentG1Refine::expand_card_count_cache() {
+// The arrays used to hold the card counts and the epochs must have
+// a 1:1 correspondence. Hence they are allocated and freed together
+// Returns true if the allocations of both the counts and epochs
+// were successful; false otherwise.
+bool ConcurrentG1Refine::allocate_card_count_cache(size_t n,
+                                                   CardCountCacheEntry** counts,
+                                                   CardEpochCacheEntry** epochs) {
+  // We call the allocation/free routines directly for the counts
+  // and epochs arrays. The NEW_C_HEAP_ARRAY/FREE_C_HEAP_ARRAY
+  // macros call AllocateHeap and FreeHeap respectively.
+  // AllocateHeap will call vm_exit_out_of_memory in the event
+  // of an allocation failure and abort the JVM. With the
+  // _counts/epochs arrays we only need to abort the JVM if the
+  // initial allocation of these arrays fails.
+  //
+  // Additionally AllocateHeap/FreeHeap do some tracing of
+  // allocate/free calls so calling one without calling the
+  // other can cause inconsistencies in the tracing. So we
+  // call neither.
+
+  assert(*counts == NULL, "out param");
+  assert(*epochs == NULL, "out param");
+
+  size_t counts_size = n * sizeof(CardCountCacheEntry);
+  size_t epochs_size = n * sizeof(CardEpochCacheEntry);
+
+  *counts = (CardCountCacheEntry*) os::malloc(counts_size);
+  if (*counts == NULL) {
+    // allocation was unsuccessful
+    return false;
+  }
+
+  *epochs = (CardEpochCacheEntry*) os::malloc(epochs_size);
+  if (*epochs == NULL) {
+    // allocation was unsuccessful - free counts array
+    assert(*counts != NULL, "must be");
+    os::free(*counts);
+    *counts = NULL;
+    return false;
+  }
+
+  // We successfully allocated both counts and epochs
+  return true;
+}
+
+// Returns true if the card counts/epochs cache was
+// successfully expanded; false otherwise.
+bool ConcurrentG1Refine::expand_card_count_cache(int cache_size_idx) {
+  // Can we expand the card count and epoch tables?
   if (_n_card_counts < _max_n_card_counts) {
-    int new_idx = _cache_size_index+1;
-    int new_size = _cc_cache_sizes[new_idx];
-    if (new_size < 0) new_size = _max_n_card_counts;
+    assert(cache_size_idx >= 0 && cache_size_idx  < MAX_CC_CACHE_INDEX, "oob");
 
+    size_t cache_size = _cc_cache_sizes[cache_size_idx];
     // Make sure we don't go bigger than we will ever need
-    new_size = MIN2((unsigned) new_size, _max_n_card_counts);
+    cache_size = MIN2(cache_size, _max_n_card_counts);
 
-    // Expand the card count and card epoch tables
-    if (new_size > (int)_n_card_counts) {
-      // We can just free and allocate a new array as we're
-      // not interested in preserving the contents
-      assert(_card_counts != NULL, "Logic!");
-      assert(_card_epochs != NULL, "Logic!");
-      FREE_C_HEAP_ARRAY(CardCountCacheEntry, _card_counts);
-      FREE_C_HEAP_ARRAY(CardEpochCacheEntry, _card_epochs);
-      _n_card_counts = new_size;
-      _card_counts = NEW_C_HEAP_ARRAY(CardCountCacheEntry, _n_card_counts);
-      _card_epochs = NEW_C_HEAP_ARRAY(CardEpochCacheEntry, _n_card_counts);
-      _cache_size_index = new_idx;
+    // Should we expand the card count and card epoch tables?
+    if (cache_size > _n_card_counts) {
+      // We have been asked to allocate new, larger, arrays for
+      // the card counts and the epochs. Attempt the allocation
+      // of both before we free the existing arrays in case
+      // the allocation is unsuccessful...
+      CardCountCacheEntry* counts = NULL;
+      CardEpochCacheEntry* epochs = NULL;
+
+      if (allocate_card_count_cache(cache_size, &counts, &epochs)) {
+        // Allocation was successful.
+        // We can just free the old arrays; we're
+        // not interested in preserving the contents
+        if (_card_counts != NULL) os::free(_card_counts);
+        if (_card_epochs != NULL) os::free(_card_epochs);
+
+        // Cache the size of the arrays and the index that got us there.
+        _n_card_counts = cache_size;
+        _cache_size_index = cache_size_idx;
+
+        _card_counts = counts;
+        _card_epochs = epochs;
+
+        // We successfully allocated/expanded the caches.
+        return true;
+      }
     }
   }
+
+  // We did not successfully expand the caches.
+  return false;
 }
 
 void ConcurrentG1Refine::clear_and_record_card_counts() {
@@ -415,10 +503,16 @@ void ConcurrentG1Refine::clear_and_record_card_counts() {
 #endif
 
   if (_expand_card_counts) {
-    expand_card_count_cache();
+    int new_idx = _cache_size_index + 1;
+
+    if (expand_card_count_cache(new_idx)) {
+      // Allocation was successful and  _n_card_counts has
+      // been updated to the new size. We only need to clear
+      // the epochs so we don't read a bogus epoch value
+      // when inserting a card into the hot card cache.
+      Copy::fill_to_bytes(&_card_epochs[0], _n_card_counts * sizeof(CardEpochCacheEntry));
+    }
     _expand_card_counts = false;
-    // Only need to clear the epochs.
-    Copy::fill_to_bytes(&_card_epochs[0], _n_card_counts * sizeof(CardEpochCacheEntry));
   }
 
   int this_epoch = (int) _n_periods;
