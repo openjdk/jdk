@@ -229,6 +229,7 @@ class nmethod : public CodeBlob {
   // For native wrappers
   nmethod(methodOop method,
           int nmethod_size,
+          int compile_id,
           CodeOffsets* offsets,
           CodeBuffer *code_buffer,
           int frame_size,
@@ -299,6 +300,7 @@ class nmethod : public CodeBlob {
                               int comp_level);
 
   static nmethod* new_native_nmethod(methodHandle method,
+                                     int compile_id,
                                      CodeBuffer *code_buffer,
                                      int vep_offset,
                                      int frame_complete,
@@ -500,8 +502,8 @@ public:
   address continuation_for_implicit_exception(address pc);
 
   // On-stack replacement support
-  int   osr_entry_bci() const                     { assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod"); return _entry_bci; }
-  address  osr_entry() const                      { assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod"); return _osr_entry_point; }
+  int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
+  address  osr_entry() const                      { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
   void  invalidate_osr_method();
   nmethod* osr_link() const                       { return _osr_link; }
   void     set_osr_link(nmethod *n)               { _osr_link = n; }
@@ -608,10 +610,6 @@ public:
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point);
 
-  // print compilation helper
-  static void print_compilation(outputStream *st, const char *method_name, const char *title,
-                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level);
-
   // printing support
   void print()                          const;
   void print_code();
@@ -627,7 +625,7 @@ public:
 
   // need to re-define this from CodeBlob else the overload hides it
   virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
-  void print_on(outputStream* st, const char* title) const;
+  void print_on(outputStream* st, const char* msg) const;
 
   // Logging
   void log_identity(xmlStream* log) const;
