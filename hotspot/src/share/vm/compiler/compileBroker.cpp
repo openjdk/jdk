@@ -268,11 +268,6 @@ void CompileTask::print() {
 }
 
 
-void CompileTask::print_compilation(outputStream *st, methodOop method, char* method_name) {
-  nmethod::print_compilation(st, method_name,/*title*/ NULL, method,
-                             is_blocking(), compile_id(), osr_bci(), comp_level());
-}
-
 // ------------------------------------------------------------------
 // CompileTask::print_line_on_error
 //
@@ -284,31 +279,115 @@ void CompileTask::print_compilation(outputStream *st, methodOop method, char* me
 // Otherwise it's the same as CompileTask::print_line()
 //
 void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
-  methodOop method = (methodOop)JNIHandles::resolve(_method);
   // print compiler name
   st->print("%s:", CompileBroker::compiler(comp_level())->name());
-  char* method_name = NULL;
-  if (method != NULL) {
-    method_name = method->name_and_sig_as_C_string(buf, buflen);
-  }
-  print_compilation(st, method, method_name);
+  print_compilation(st);
 }
 
 // ------------------------------------------------------------------
 // CompileTask::print_line
 void CompileTask::print_line() {
-  Thread *thread = Thread::current();
-  methodHandle method(thread,
-                      (methodOop)JNIHandles::resolve(method_handle()));
-  ResourceMark rm(thread);
-
   ttyLocker ttyl;  // keep the following output all in one block
-
   // print compiler name if requested
   if (CIPrintCompilerName) tty->print("%s:", CompileBroker::compiler(comp_level())->name());
-  print_compilation(tty, method(), NULL);
+  print_compilation();
 }
 
+
+// ------------------------------------------------------------------
+// CompileTask::print_compilation_impl
+void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level, bool is_osr_method, int osr_bci, bool is_blocking, const char* msg) {
+  st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+  st->print("%4d ", compile_id);    // print compilation number
+
+  // method attributes
+  const char compile_type   = is_osr_method                   ? '%' : ' ';
+  const char sync_char      = method->is_synchronized()       ? 's' : ' ';
+  const char exception_char = method->has_exception_handler() ? '!' : ' ';
+  const char blocking_char  = is_blocking                     ? 'b' : ' ';
+  const char native_char    = method->is_native()             ? 'n' : ' ';
+
+  // print method attributes
+  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
+
+  if (TieredCompilation) {
+    if (comp_level != -1)  st->print("%d ", comp_level);
+    else                   st->print("- ");
+  }
+  st->print("     ");  // more indent
+
+  method->print_short_name(st);
+  if (is_osr_method) {
+    st->print(" @ %d", osr_bci);
+  }
+  st->print(" (%d bytes)", method->code_size());
+
+  if (msg != NULL) {
+    st->print("   %s", msg);
+  }
+  st->cr();
+}
+
+// ------------------------------------------------------------------
+// CompileTask::print_inlining
+void CompileTask::print_inlining(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg) {
+  //         1234567
+  st->print("        ");     // print timestamp
+  //         1234
+  st->print("     ");        // print compilation number
+
+  // method attributes
+  const char sync_char      = method->is_synchronized()        ? 's' : ' ';
+  const char exception_char = method->has_exception_handlers() ? '!' : ' ';
+  const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
+
+  // print method attributes
+  st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
+
+  if (TieredCompilation) {
+    st->print("  ");
+  }
+  st->print("     ");        // more indent
+  st->print("    ");         // initial inlining indent
+
+  for (int i = 0; i < inline_level; i++)  st->print("  ");
+
+  st->print("@ %d  ", bci);  // print bci
+  method->print_short_name(st);
+  st->print(" (%d bytes)", method->code_size());
+
+  if (msg != NULL) {
+    st->print("   %s", msg);
+  }
+  st->cr();
+}
+
+// ------------------------------------------------------------------
+// CompileTask::print_inline_indent
+void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
+  //         1234567
+  st->print("        ");     // print timestamp
+  //         1234
+  st->print("     ");        // print compilation number
+  //         %s!bn
+  st->print("      ");       // print method attributes
+  if (TieredCompilation) {
+    st->print("  ");
+  }
+  st->print("     ");        // more indent
+  st->print("    ");         // initial inlining indent
+  for (int i = 0; i < inline_level; i++)  st->print("  ");
+}
+
+// ------------------------------------------------------------------
+// CompileTask::print_compilation
+void CompileTask::print_compilation(outputStream* st) {
+  oop rem = JNIHandles::resolve(method_handle());
+  assert(rem != NULL && rem->is_method(), "must be");
+  methodOop method = (methodOop) rem;
+  bool is_osr_method = osr_bci() != InvocationEntryBci;
+  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking());
+}
 
 // ------------------------------------------------------------------
 // CompileTask::log_task
@@ -1086,7 +1165,13 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs) {
-      (void) AdapterHandlerLibrary::create_native_wrapper(method);
+      // Acquire our lock.
+      int compile_id;
+      {
+        MutexLocker locker(MethodCompileQueue_lock, THREAD);
+        compile_id = assign_compile_id(method, standard_entry_bci);
+      }
+      (void) AdapterHandlerLibrary::create_native_wrapper(method, compile_id);
     } else {
       return NULL;
     }
@@ -1194,7 +1279,6 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
   assert(MethodCompileQueue_lock->owner() == Thread::current(),
          "must hold the compilation queue lock");
   bool is_osr = (osr_bci != standard_entry_bci);
-  assert(!method->is_native(), "no longer compile natives");
   uint id;
   if (CICountOSR && is_osr) {
     id = ++_osr_compilation_id;
