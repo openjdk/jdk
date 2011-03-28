@@ -193,6 +193,10 @@
   develop(intx, G1ConcRSHotCardLimit, 4,                                    \
           "The threshold that defines (>=) a hot card.")                    \
                                                                             \
+  develop(intx, G1MaxHotCardCountSizePercent, 25,                           \
+          "The maximum size of the hot card count cache as a "              \
+          "percentage of the number of cards for the maximum heap.")        \
+                                                                            \
   develop(bool, G1PrintOopAppls, false,                                     \
           "When true, print applications of closures to external locs.")    \
                                                                             \
