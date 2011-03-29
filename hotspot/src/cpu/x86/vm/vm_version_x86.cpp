@@ -429,6 +429,11 @@ void VM_Version::get_processor_features() {
         UseXmmI2D = false;
       }
     }
+    if( FLAG_IS_DEFAULT(UseSSE42Intrinsics) ) {
+      if( supports_sse4_2() && UseSSE >= 4 ) {
+        UseSSE42Intrinsics = true;
+      }
+    }
 
     // Use count leading zeros count instruction if available.
     if (supports_lzcnt()) {
