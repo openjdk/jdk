@@ -152,10 +152,10 @@ endif
 	@# Remove all of the files that are not needed for the
 	@# reduced JRE
 	@#
-	for l in $(NOT_JREREDUCED_BIN) ; do \
+	for l in $(NOT_REDUCEDJRE_BIN) ; do \
 	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/bin/$$l ; \
 	done
-	for l in $(NOT_JREREDUCED_LIB) ; do \
+	for l in $(NOT_REDUCEDJRE_LIB) ; do \
 	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/lib/$$l ; \
 	done
 
