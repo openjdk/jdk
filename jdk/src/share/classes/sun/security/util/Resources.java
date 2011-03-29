@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,8 +304,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Certificate chain length: "},
         {"Certificate.i.1.", "Certificate[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Certificate fingerprint (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "Entry type: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Keystore type: "},
         {"Keystore.provider.", "Keystore provider: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -378,20 +376,14 @@ public class Resources extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "No certificate from the SSL server"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* The integrity of the information stored in your keystore  *"},
-        {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* The integrity of the information stored in the srckeystore*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* has NOT been verified!  In order to verify its integrity, *"},
-        {".you.must.provide.your.keystore.password.",
+            "* The integrity of the information stored in your keystore  *\n" +
+            "* has NOT been verified!  In order to verify its integrity, *\n" +
             "* you must provide your keystore password.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
+        {".The.integrity.of.the.information.stored.in.the.srckeystore.",
+            "* The integrity of the information stored in the srckeystore*\n" +
+            "* has NOT been verified!  In order to verify its integrity, *\n" +
             "* you must provide the srckeystore password.                *"},
-
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "Certificate reply does not contain public key for <{0}>"},
