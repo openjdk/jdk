@@ -2901,7 +2901,23 @@ public class Attr extends JCTree.Visitor {
             ctype = chk.checkType(typeTree.pos(),
                           chk.checkClassType(typeTree.pos(), ctype),
                           syms.throwableType);
-            multicatchTypes.append(ctype);
+            if (!ctype.isErroneous()) {
+                //check that alternatives of a disjunctive type are pairwise
+                //unrelated w.r.t. subtyping
+                if (chk.intersects(ctype,  multicatchTypes.toList())) {
+                    for (Type t : multicatchTypes) {
+                        boolean sub = types.isSubtype(ctype, t);
+                        boolean sup = types.isSubtype(t, ctype);
+                        if (sub || sup) {
+                            //assume 'a' <: 'b'
+                            Type a = sub ? ctype : t;
+                            Type b = sub ? t : ctype;
+                            log.error(typeTree.pos(), "multicatch.types.must.be.disjoint", a, b);
+                        }
+                    }
+                }
+                multicatchTypes.append(ctype);
+            }
         }
         tree.type = result = check(tree, types.lub(multicatchTypes.toList()), TYP, pkind, pt);
     }
