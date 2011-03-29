@@ -911,11 +911,6 @@ initial-image-jdk:: initial-image-jdk-setup \
     ifeq ($(COMPILER_VERSION), VS2010)
 	$(CP) $(BINDIR)/msvc*100.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
     endif
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      ifeq ($(COMPILER_VERSION), VS2003)
-	$(CP) $(BINDIR)/msvc*71.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
-      endif
-    endif
   else # PLATFORM
 	@#
 	@# bin/
