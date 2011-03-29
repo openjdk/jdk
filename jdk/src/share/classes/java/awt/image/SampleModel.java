@@ -361,8 +361,8 @@ public abstract class SampleModel
         int x1 = x + w;
         int y1 = y + h;
 
-        if (x < 0 || x1 < x || x1 > width ||
-            y < 0 || y1 < y || y1 > height)
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
@@ -588,6 +588,15 @@ public abstract class SampleModel
         int type = getTransferType();
         int numDataElems = getNumDataElements();
 
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
         switch(type) {
 
         case DataBuffer.TYPE_BYTE:
@@ -595,8 +604,8 @@ public abstract class SampleModel
             byte[] barray = (byte[])obj;
             byte[] btemp = new byte[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         btemp[k] = barray[cnt++];
                     }
@@ -612,8 +621,8 @@ public abstract class SampleModel
             short[] sarray = (short[])obj;
             short[] stemp = new short[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         stemp[k] = sarray[cnt++];
                     }
@@ -628,8 +637,8 @@ public abstract class SampleModel
             int[] iArray = (int[])obj;
             int[] itemp = new int[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         itemp[k] = iArray[cnt++];
                     }
@@ -644,8 +653,8 @@ public abstract class SampleModel
             float[] fArray = (float[])obj;
             float[] ftemp = new float[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         ftemp[k] = fArray[cnt++];
                     }
@@ -660,8 +669,8 @@ public abstract class SampleModel
             double[] dArray = (double[])obj;
             double[] dtemp = new double[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         dtemp[k] = dArray[cnt++];
                     }
