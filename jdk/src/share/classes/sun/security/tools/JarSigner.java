@@ -1238,8 +1238,6 @@ public class JarSigner {
                 // Provide a helpful message when TSA is beyond a firewall
                 error(rb.getString("unable.to.sign.jar.") +
                 rb.getString("no.response.from.the.Timestamping.Authority.") +
-                rb.getString("When.connecting.from.behind.a.firewall.an.HTTP.or.HTTPS.proxy.may.need.to.be.specified.") +
-                rb.getString("Supply.the.following.options.to.jarsigner.") +
                 "\n  -J-Dhttp.proxyHost=<hostname>" +
                 "\n  -J-Dhttp.proxyPort=<portnumber>\n" +
                 rb.getString("or") +
