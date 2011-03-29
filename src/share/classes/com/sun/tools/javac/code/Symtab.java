@@ -131,6 +131,7 @@ public class Symtab {
     public final Type polymorphicSignatureType;
     public final Type throwableType;
     public final Type errorType;
+    public final Type interruptedExceptionType;
     public final Type illegalArgumentExceptionType;
     public final Type exceptionType;
     public final Type runtimeExceptionType;
@@ -441,6 +442,7 @@ public class Symtab {
         polymorphicSignatureType = enterClass("java.lang.invoke.MethodHandle$PolymorphicSignature");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
+        interruptedExceptionType = enterClass("java.lang.InterruptedException");
         exceptionType = enterClass("java.lang.Exception");
         runtimeExceptionType = enterClass("java.lang.RuntimeException");
         classNotFoundExceptionType = enterClass("java.lang.ClassNotFoundException");
@@ -480,6 +482,7 @@ public class Symtab {
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
 
+        synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
         synthesizeEmptyInterfaceIfMissing(transientPolymorphicSignatureType); // transient - 292
