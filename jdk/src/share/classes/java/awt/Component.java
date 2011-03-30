@@ -59,6 +59,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
 
@@ -471,6 +472,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
     static final Object LOCK = new AWTTreeLock();
     static class AWTTreeLock {}
 
+    /*
+     * The component's AccessControlContext.
+     */
+    private transient volatile AccessControlContext acc =
+        AccessController.getContext();
+
     /**
      * Minimum size.
      * (This field perhaps should have been transient).
@@ -669,6 +676,16 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private transient Object objectLock = new Object();
     Object getObjectLock() {
         return objectLock;
+    }
+
+    /*
+     * Returns the acc this component was constructed with.
+     */
+    final AccessControlContext getAccessControlContext() {
+        if (acc == null) {
+            throw new SecurityException("Component is missing AccessControlContext");
+        }
+        return acc;
     }
 
     boolean isPacked = false;
@@ -949,6 +966,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
             }
             public void processEvent(Component comp, AWTEvent e) {
                 comp.processEvent(e);
+            }
+
+            public AccessControlContext getAccessControlContext(Component comp) {
+                return comp.getAccessControlContext();
             }
         });
     }
@@ -3873,6 +3894,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * supported or met
          * @exception ClassCastException if the component is not a canvas or
          * window.
+         * @exception IllegalStateException if the component has no peer
+         * @exception IllegalArgumentException if {@code numBuffers} is less than two,
+         * or if {@code BufferCapabilities.isPageFlipping} is not
+         * {@code true}.
+         * @see #createBuffers(int, BufferCapabilities)
          */
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
@@ -8607,6 +8633,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
       throws ClassNotFoundException, IOException
     {
         objectLock = new Object();
+
+        acc = AccessController.getContext();
 
         s.defaultReadObject();
 

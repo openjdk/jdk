@@ -677,6 +677,6 @@ public class Type1Font extends FileFont {
 
     public String toString() {
         return "** Type1 Font: Family="+familyName+ " Name="+fullName+
-            " style="+style+" fileName="+platName;
+            " style="+style+" fileName="+getPublicFileName();
     }
 }

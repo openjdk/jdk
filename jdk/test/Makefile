@@ -399,12 +399,12 @@ $(foreach i,$1,$(wildcard ${i})) $(foreach i,$1,$(wildcard closed/${i}))
 endef
 # Running batches of tests with or without samevm
 define RunSamevmBatch
-$(ECHO) "Running tests in samevm mode: $(call TestDirs, $?)"
-$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in samevm mode: $?"
+$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
 endef
 define RunOthervmBatch
-$(ECHO) "Running tests in othervm mode: $(call TestDirs, $?)"
-$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in othervm mode: $?"
+$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
 endef
 define SummaryInfo
 $(ECHO) "########################################################"
@@ -420,27 +420,29 @@ JDK_ALL_TARGETS =
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
 JDK_ALL_TARGETS += jdk_awt
-jdk_awt: com/sun/awt java/awt sun/awt
+jdk_awt: $(call TestDirs, com/sun/awt java/awt sun/awt)
 	$(call RunOthervmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_beans1
-jdk_beans1: java/beans/beancontext java/beans/PropertyChangeSupport \
+jdk_beans1: $(call TestDirs, \
+            java/beans/beancontext java/beans/PropertyChangeSupport \
             java/beans/Introspector java/beans/Performance \
-            java/beans/VetoableChangeSupport java/beans/Statement
+            java/beans/VetoableChangeSupport java/beans/Statement)
 	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_beans2
-jdk_beans2: java/beans/Beans java/beans/EventHandler java/beans/XMLDecoder \
-            java/beans/PropertyEditor
+jdk_beans2: $(call TestDirs, \
+            java/beans/Beans java/beans/EventHandler java/beans/XMLDecoder \
+            java/beans/PropertyEditor)
 	$(call RunOthervmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_beans3
-jdk_beans3: java/beans/XMLEncoder
+jdk_beans3: $(call TestDirs, java/beans/XMLEncoder)
 	$(call RunOthervmBatch)
 
 # All beans tests
@@ -449,24 +451,24 @@ jdk_beans: jdk_beans1 jdk_beans2 jdk_beans3
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_io
-jdk_io: java/io
+jdk_io: $(call TestDirs, java/io)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_lang
-jdk_lang: java/lang
+jdk_lang: $(call TestDirs, java/lang)
 	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_management1
-jdk_management1: javax/management
+jdk_management1: $(call TestDirs, javax/management)
 	$(call RunOthervmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_management2
-jdk_management2: com/sun/jmx com/sun/management sun/management
+jdk_management2: $(call TestDirs, com/sun/jmx com/sun/management sun/management)
 	$(call RunOthervmBatch)
 
 # All management tests
@@ -475,36 +477,37 @@ jdk_management: jdk_management1 jdk_management2
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_math
-jdk_math: java/math
+jdk_math: $(call TestDirs, java/math)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_misc
-jdk_misc: demo javax/imageio javax/naming javax/print javax/script \
+jdk_misc: $(call TestDirs, \
+          demo javax/imageio javax/naming javax/print javax/script \
           javax/smartcardio javax/sound com/sun/java com/sun/jndi \
-	  com/sun/org sun/misc sun/pisces
+	  com/sun/org com/sun/xml sun/misc sun/pisces)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_net
-jdk_net: com/sun/net java/net sun/net
+jdk_net: $(call TestDirs, com/sun/net java/net sun/net)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio1
-jdk_nio1: java/nio/file
+jdk_nio1: $(call TestDirs, java/nio/file)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
-jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
-          java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
+jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
+          java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer)
 	$(call SharedLibraryPermissions,java/nio/channels)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
-jdk_nio3: com/sun/nio sun/nio
+jdk_nio3: $(call TestDirs, com/sun/nio sun/nio)
 	$(call RunSamevmBatch)
 
 # All nio tests
@@ -514,24 +517,25 @@ jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_rmi
-jdk_rmi: java/rmi javax/rmi sun/rmi
+jdk_rmi: $(call TestDirs, java/rmi javax/rmi sun/rmi)
 	$(call RunOthervmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_security1
-jdk_security1: java/security
+jdk_security1: $(call TestDirs, java/security)
 	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security2
-jdk_security2: javax/crypto com/sun/crypto
+jdk_security2: $(call TestDirs, javax/crypto com/sun/crypto)
 	$(call RunOthervmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security3
-jdk_security3: com/sun/security lib/security javax/security sun/security
+jdk_security3: $(call TestDirs, com/sun/security lib/security \
+               javax/security sun/security)
 	$(call SharedLibraryPermissions,sun/security)
 	$(call RunOthervmBatch)
 
@@ -542,23 +546,25 @@ jdk_security: jdk_security1 jdk_security2 jdk_security3
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
 JDK_ALL_TARGETS += jdk_swing
-jdk_swing: javax/swing sun/java2d
+jdk_swing: $(call TestDirs, javax/swing sun/java2d)
 	$(call RunOthervmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_text
-jdk_text: java/text sun/text
+jdk_text: $(call TestDirs, java/text sun/text)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_tools1
-jdk_tools1: com/sun/jdi
+jdk_tools1: $(call TestDirs, com/sun/jdi)
 	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools2
-jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
+jdk_tools2: $(call TestDirs, \
+            com/sun/tools sun/jvmstat sun/tools tools vm \
+            com/sun/servicetag com/sun/tracing)
 	$(call SharedLibraryPermissions,tools/launcher)
 	$(call RunSamevmBatch)
 
@@ -568,7 +574,7 @@ jdk_tools: jdk_tools1 jdk_tools2
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_util
-jdk_util: java/util sun/util
+jdk_util: $(call TestDirs, java/util sun/util)
 	$(call RunSamevmBatch)
 
 # ------------------------------------------------------------------

@@ -161,8 +161,9 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
         }
         // Use the stream-based implementation.
         // %%% Reconsider if native unpacker learns to memory-map the file.
-        FileInputStream instr = new FileInputStream(in);
-        unpack(instr, out);
+        try (FileInputStream instr = new FileInputStream(in)) {
+            unpack(instr, out);
+        }
         if (props.getBoolean(Utils.UNPACK_REMOVE_PACKFILE)) {
             in.delete();
         }

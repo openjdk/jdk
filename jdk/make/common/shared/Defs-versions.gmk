@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -138,11 +138,15 @@ ifeq ($(PLATFORM), solaris)
   endif
   REQUIRED_COMPILER_NAME      = Sun Studio 12 Update 1
   REQUIRED_COMPILER_VERSION   = SS12u1
-  ifeq ($(CC_VERSION),sun)
-    REQUIRED_CC_VER           = 5.10
-  endif
-  ifeq ($(CC_VERSION),gcc)
-    REQUIRED_CC_VER           = 3.4.3
+  # Cross-compilation compiler versions are target specific
+  # so don't set a required version if cross-compiling
+  ifndef CROSS_COMPILE_ARCH
+    ifeq ($(CC_VERSION),sun)
+      REQUIRED_CC_VER           = 5.10
+    endif
+    ifeq ($(CC_VERSION),gcc)
+      REQUIRED_CC_VER           = 3.4.3
+    endif
   endif
   REQUIRED_GCC_VER            = 2.95.2
 endif
@@ -158,11 +162,15 @@ ifeq ($(PLATFORM), linux)
   REQUIRED_COMPILER_NAME      = GCC4
   REQUIRED_COMPILER_VERSION   = GCC4
   REQUIRED_GCC_VER            = 2.95
-  ifeq ($(CC_VERSION),gcc)
-    REQUIRED_CC_VER           = 4.3.0
-  endif
-  ifeq ($(CC_VERSION),sun)
-    REQUIRED_CC_VER           = 5.10
+  # Cross-compilation compiler versions are target specific
+  # so don't set a required version if cross-compiling
+  ifndef CROSS_COMPILE_ARCH
+    ifeq ($(CC_VERSION),gcc)
+      REQUIRED_CC_VER           = 4.3.0
+    endif
+    ifeq ($(CC_VERSION),sun)
+      REQUIRED_CC_VER           = 5.10
+    endif
   endif
 endif
 
