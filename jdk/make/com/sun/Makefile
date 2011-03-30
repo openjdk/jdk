@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ SUBDIRS = java security net/ssl jarsigner
 SUBDIRS_management = jmx
 SUBDIRS_desktop    = image
 SUBDIRS_enterprise = crypto/provider jndi \
-                     org xml rowset net/httpserver
+                     org rowset net/httpserver
 SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing servicetag nio demo
 
 # Omit mirror since it's built with the apt tool.

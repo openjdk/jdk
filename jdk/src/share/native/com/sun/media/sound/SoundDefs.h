@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@
 #define X_IA64          4
 #define X_AMD64         5
 #define X_ZERO          6
+#define X_ARM           7
+#define X_PPC           8
 
 // **********************************
 // Make sure you set X_PLATFORM and X_ARCH defines correctly.

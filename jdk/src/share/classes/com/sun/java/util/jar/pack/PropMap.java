@@ -122,26 +122,23 @@ final class PropMap implements SortedMap<Object, Object>  {
         // Define certain attribute layouts by default.
         // Do this after the previous props are put in place,
         // to allow override if necessary.
-        InputStream propStr = null;
-        try {
-            String propFile = "intrinsic.properties";
-            propStr = PackerImpl.class.getResourceAsStream(propFile);
-            props.load(new BufferedInputStream(propStr));
-            for (Map.Entry<Object, Object> e : props.entrySet()) {
-                String key = (String) e.getKey();
-                String val = (String) e.getValue();
-                if (key.startsWith("attribute.")) {
-                    e.setValue(Attribute.normalizeLayoutString(val));
-                }
+        String propFile = "intrinsic.properties";
+
+        try (InputStream propStr = PackerImpl.class.getResourceAsStream(propFile)) {
+            if (propStr == null) {
+                throw new RuntimeException(propFile + " cannot be loaded");
             }
+            props.load(propStr);
         } catch (IOException ee) {
             throw new RuntimeException(ee);
-        } finally {
-            try {
-                if (propStr != null) {
-                    propStr.close();
-                }
-            } catch (IOException ignore) {}
+        }
+
+        for (Map.Entry<Object, Object> e : props.entrySet()) {
+            String key = (String) e.getKey();
+            String val = (String) e.getValue();
+            if (key.startsWith("attribute.")) {
+                e.setValue(Attribute.normalizeLayoutString(val));
+            }
         }
 
         defaultProps = (new HashMap<>(props));  // shrink to fit
