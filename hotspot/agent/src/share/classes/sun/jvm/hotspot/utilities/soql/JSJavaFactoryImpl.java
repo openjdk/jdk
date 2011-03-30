@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
       } else if (className.equals(javaLangThread())) {
          res = new JSJavaThread(instance, this);
       } else if (className.equals(javaLangClass())) {
-         Klass reflectedType = OopUtilities.classOopToKlass(instance);
+         Klass reflectedType = java_lang_Class.asKlass(instance);
          if (reflectedType != null) {
              JSJavaKlass jk = newJSJavaKlass(reflectedType);
              // we don't support mirrors of VM internal Klasses
