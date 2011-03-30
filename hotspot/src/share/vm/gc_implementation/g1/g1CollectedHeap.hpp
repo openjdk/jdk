@@ -1061,7 +1061,7 @@ public:
   }
 
   void append_secondary_free_list() {
-    _free_list.add_as_tail(&_secondary_free_list);
+    _free_list.add_as_head(&_secondary_free_list);
   }
 
   void append_secondary_free_list_if_not_empty_with_lock() {

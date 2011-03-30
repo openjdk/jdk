@@ -3879,7 +3879,7 @@ void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
       if (r->is_empty()) {
         // We didn't actually allocate anything in it; let's just put
         // it back on the free list.
-        _free_list.add_as_tail(r);
+        _free_list.add_as_head(r);
       } else if (_retain_gc_alloc_region[ap] && !totally) {
         // retain it so that we can use it at the beginning of the next GC
         _retained_gc_alloc_regions[ap] = r;
@@ -5013,7 +5013,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
 
   *pre_used += hr->used();
   hr->hr_clear(par, true /* clear_space */);
-  free_list->add_as_tail(hr);
+  free_list->add_as_head(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
@@ -5065,7 +5065,7 @@ void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
   }
   if (free_list != NULL && !free_list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_as_tail(free_list);
+    _free_list.add_as_head(free_list);
   }
   if (humongous_proxy_set != NULL && !humongous_proxy_set->is_empty()) {
     MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
