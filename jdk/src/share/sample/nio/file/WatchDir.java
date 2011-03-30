@@ -33,8 +33,7 @@ import java.nio.file.*;
 import static java.nio.file.StandardWatchEventKind.*;
 import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
 
 /**
  * Example to watch a directory (or tree) for changes to files.
@@ -43,9 +42,9 @@ import java.util.*;
 public class WatchDir {
 
     private final WatchService watcher;
-    private final Map<WatchKey,Path> keys;
     private final boolean recursive;
     private boolean trace = false;
+    private int count;
 
     @SuppressWarnings("unchecked")
     static <T> WatchEvent<T> cast(WatchEvent<?> event) {
@@ -57,17 +56,9 @@ public class WatchDir {
      */
     private void register(Path dir) throws IOException {
         WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        if (trace) {
-            Path prev = keys.get(key);
-            if (prev == null) {
-                System.out.format("register: %s\n", dir);
-            } else {
-                if (!dir.equals(prev)) {
-                    System.out.format("update: %s -> %s\n", prev, dir);
-                }
-            }
-        }
-        keys.put(key, dir);
+        count++;
+        if (trace)
+            System.out.format("register: %s\n", dir);
     }
 
     /**
@@ -92,7 +83,6 @@ public class WatchDir {
      */
     WatchDir(Path dir, boolean recursive) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
-        this.keys = new HashMap<WatchKey,Path>();
         this.recursive = recursive;
 
         if (recursive) {
@@ -121,12 +111,6 @@ public class WatchDir {
                 return;
             }
 
-            Path dir = keys.get(key);
-            if (dir == null) {
-                System.err.println("WatchKey not recognized!!");
-                continue;
-            }
-
             for (WatchEvent<?> event: key.pollEvents()) {
                 WatchEvent.Kind kind = event.kind();
 
@@ -138,7 +122,7 @@ public class WatchDir {
                 // Context for directory entry event is the file name of entry
                 WatchEvent<Path> ev = cast(event);
                 Path name = ev.context();
-                Path child = dir.resolve(name);
+                Path child = ((Path)key.watchable()).resolve(name);
 
                 // print out event
                 System.out.format("%s: %s\n", event.kind().name(), child);
@@ -156,15 +140,13 @@ public class WatchDir {
                 }
             }
 
-            // reset key and remove from set if directory no longer accessible
+            // reset key
             boolean valid = key.reset();
             if (!valid) {
-                keys.remove(key);
-
-                // all directories are inaccessible
-                if (keys.isEmpty()) {
+                // directory no longer accessible
+                count--;
+                if (count == 0)
                     break;
-                }
             }
         }
     }

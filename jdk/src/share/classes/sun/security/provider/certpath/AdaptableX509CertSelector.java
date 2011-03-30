@@ -46,10 +46,16 @@ import sun.security.x509.AuthorityKeyIdentifierExtension;
  */
 class AdaptableX509CertSelector extends X509CertSelector {
     // The start date of a validity period.
-    private Date startDate = null;
+    private Date startDate;
 
     // The end date of a validity period.
-    private Date endDate = null;
+    private Date endDate;
+
+    // Is subject key identifier sensitive?
+    private boolean isSKIDSensitive = false;
+
+    // Is serial number sensitive?
+    private boolean isSNSensitive = false;
 
     AdaptableX509CertSelector() {
         super();
@@ -97,15 +103,24 @@ class AdaptableX509CertSelector extends X509CertSelector {
         if (akidext != null) {
             KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
             if (akid != null) {
-                DerOutputStream derout = new DerOutputStream();
-                derout.putOctetString(akid.getIdentifier());
-                super.setSubjectKeyIdentifier(derout.toByteArray());
+                // Do not override the previous setting for initial selection.
+                if (isSKIDSensitive || getSubjectKeyIdentifier() == null) {
+                    DerOutputStream derout = new DerOutputStream();
+                    derout.putOctetString(akid.getIdentifier());
+                    super.setSubjectKeyIdentifier(derout.toByteArray());
+
+                    isSKIDSensitive = true;
+                }
             }
 
             SerialNumber asn =
                 (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
             if (asn != null) {
-                super.setSerialNumber(asn.getNumber());
+                // Do not override the previous setting for initial selection.
+                if (isSNSensitive || getSerialNumber() == null) {
+                    super.setSerialNumber(asn.getNumber());
+                    isSNSensitive = true;
+                }
             }
 
             // the subject criterion should be set by the caller.
@@ -148,9 +163,23 @@ class AdaptableX509CertSelector extends X509CertSelector {
             }
         }
 
-        if (version < 3 || xcert.getExtensionValue("2.5.29.14") == null) {
-            // If no SubjectKeyIdentifier extension, don't bother to check it.
+        // If no SubjectKeyIdentifier extension, don't bother to check it.
+        if (isSKIDSensitive &&
+            (version < 3 || xcert.getExtensionValue("2.5.29.14") == null)) {
             setSubjectKeyIdentifier(null);
+        }
+
+        // In practice, a CA may replace its root certificate and require that
+        // the existing certificate is still valid, even if the AKID extension
+        // does not match the replacement root certificate fields.
+        //
+        // Conservatively, we only support the replacement for version 1 and
+        // version 2 certificate. As for version 2, the certificate extension
+        // may contain sensitive information (for example, policies), the
+        // AKID need to be respected to seek the exact certificate in case
+        // of key or certificate abuse.
+        if (isSNSensitive && version < 3) {
+            setSerialNumber(null);
         }
 
         return super.match(cert);

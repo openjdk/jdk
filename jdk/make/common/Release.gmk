@@ -54,9 +54,6 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 
-# This is a stopgap until 6839872 is fixed.
-EXCLUDE_PROPWARN_PKGS += sun.dyn
-
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced

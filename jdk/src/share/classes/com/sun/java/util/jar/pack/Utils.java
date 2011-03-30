@@ -268,18 +268,18 @@ class Utils {
         // 4947205 : Peformance is slow when using pack-effort=0
         out = new BufferedOutputStream(out);
         out = new NonCloser(out); // protect from JarOutputStream.close()
-        JarOutputStream jout = new JarOutputStream(out);
-        copyJarFile(in, jout);
-        jout.close();
+        try (JarOutputStream jout = new JarOutputStream(out)) {
+            copyJarFile(in, jout);
+        }
     }
     static void copyJarFile(JarFile in, OutputStream out) throws IOException {
 
         // 4947205 : Peformance is slow when using pack-effort=0
         out = new BufferedOutputStream(out);
         out = new NonCloser(out); // protect from JarOutputStream.close()
-        JarOutputStream jout = new JarOutputStream(out);
-        copyJarFile(in, jout);
-        jout.close();
+        try (JarOutputStream jout = new JarOutputStream(out)) {
+            copyJarFile(in, jout);
+        }
     }
         // Wrapper to prevent closing of client-supplied stream.
     static private

@@ -1401,10 +1401,9 @@ import sun.misc.FormattedFloatingDecimal;
  *     <p> The number of digits in the result for the fractional part of
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
  *     specified then the default value is {@code 6}.  If the precision is
- *     less than the number of digits which would appear after the decimal
- *     point in the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
- *     using the {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     less than the number of digits to the right of the decimal point then
+ *     the value will be rounded using the
+ *     {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.
@@ -1463,12 +1462,11 @@ import sun.misc.FormattedFloatingDecimal;
  *     more decimal digits representing the fractional part of <i>m</i>.
  *
  *     <p> The number of digits in the result for the fractional part of
- *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
+ *     <i>m</i> or <i>a</i> is equal to the precision. If the precision is not
  *     specified then the default value is {@code 6}.  If the precision is
- *     less than the number of digits which would appear after the decimal
- *     point in the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
- *     using the {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     less than the number of digits to the right of the decimal point
+ *     then the value will be rounded using the
+ *     {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.
@@ -3585,7 +3583,7 @@ public final class Formatter implements Closeable, Flushable {
                 int scale = value.scale();
 
                 if (scale > prec) {
-                    // more "scale" digits than the requested "precision
+                    // more "scale" digits than the requested "precision"
                     int compPrec = value.precision();
                     if (compPrec <= scale) {
                         // case of 0.xxxxxx

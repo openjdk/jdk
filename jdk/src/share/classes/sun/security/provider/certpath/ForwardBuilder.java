@@ -243,12 +243,6 @@ class ForwardBuilder extends Builder {
                     caTargetSelector.setPolicy(getMatchingPolicies());
             }
 
-            /*
-             * Require CA certs with a pathLenConstraint that allows
-             * at least as many CA certs that have already been traversed
-             */
-            caTargetSelector.setBasicConstraints(currentState.traversedCACerts);
-
             sel = caTargetSelector;
         } else {
 
@@ -283,12 +277,6 @@ class ForwardBuilder extends Builder {
                 (caSelector, currentState.subjectNamesTraversed);
 
             /*
-             * Require CA certs with a pathLenConstraint that allows
-             * at least as many CA certs that have already been traversed
-             */
-            caSelector.setBasicConstraints(currentState.traversedCACerts);
-
-            /*
              * Facilitate certification path construction with authority
              * key identifier and subject key identifier.
              */
@@ -304,6 +292,14 @@ class ForwardBuilder extends Builder {
 
             sel = caSelector;
         }
+
+        /*
+         * For compatibility, conservatively, we don't check the path
+         * length constraint of trusted anchors.  Please don't set the
+         * basic constraints criterion unless the trusted certificate
+         * matching is completed.
+         */
+        sel.setBasicConstraints(-1);
 
         for (X509Certificate trustedCert : trustedCerts) {
             if (sel.match(trustedCert)) {
@@ -322,6 +318,12 @@ class ForwardBuilder extends Builder {
          * on certificate validity date.
          */
         sel.setCertificateValid(date);
+
+        /*
+         * Require CA certs with a pathLenConstraint that allows
+         * at least as many CA certs that have already been traversed
+         */
+        sel.setBasicConstraints(currentState.traversedCACerts);
 
         /*
          * If we have already traversed as many CA certs as the maxPathLength
