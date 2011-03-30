@@ -504,7 +504,7 @@ jdk_nio1: $(call TestDirs, java/nio/file)
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
-          java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer)
+          java/nio/channels java/nio/MappedByteBuffer)
 	$(call SharedLibraryPermissions,java/nio/channels)
 	$(call RunSamevmBatch)
 
@@ -687,7 +687,7 @@ PHONY_LIST += packtest packtest_stress
 
 ################################################################
 
-# perftest to collect statistics  
+# perftest to collect statistics
 
 # Expect JPRT to set JPRT_PACKTEST_HOME.
 PERFTEST_HOME = $(TEST_ROOT)/perf

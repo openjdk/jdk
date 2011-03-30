@@ -23,15 +23,15 @@
  * questions.
  */
 
-package java.nio;
-
-import java.lang.management.PlatformManagedObject;
+package java.lang.management;
 
 /**
- * The management interface for a buffer pool.
+ * The management interface for a buffer pool, for example a pool of
+ * {@link java.nio.ByteBuffer#allocateDirect direct} or {@link
+ * java.nio.MappedByteBuffer mapped} buffers.
  *
- * <p> A class implementing this interface is an <a href=
- * "java.lang.management.ManagementFactory.html#MXBean">MXBean</a>. A Java
+ * <p> A class implementing this interface is an
+ * {@link javax.management.MXBean}. A Java
  * virtual machine has one or more implementations of this interface. The {@link
  * java.lang.management.ManagementFactory#getPlatformMXBeans getPlatformMXBeans}
  * method can be used to obtain the list of {@code BufferPoolMXBean} objects
@@ -44,14 +44,13 @@ import java.lang.management.PlatformManagedObject;
  * javax.management.MBeanServer MBeanServer}. The {@link
  * javax.management.ObjectName ObjectName} that uniquely identifies the
  * management interface within the {@code MBeanServer} takes the form:
- * <blockquote>
- *    <tt>java.nio:type=BufferPool</tt><tt>,name=</tt><i>pool name</i>
- * </blockquote>
+ * <pre>
+ *     java.nio:type=BufferPool,name=<i>pool name</i>
+ * </pre>
  * where <em>pool name</em> is the {@link #getName name} of the buffer pool.
  *
  * @since   1.7
  */
-
 public interface BufferPoolMXBean extends PlatformManagedObject {
 
     /**
