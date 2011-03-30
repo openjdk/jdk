@@ -82,10 +82,17 @@ public class InterfaceImplementor {
         if (iface == null || !iface.isInterface()) {
             throw new IllegalArgumentException("interface Class expected");
         }
+        if (! isImplemented(thiz, iface)) {
+            return null;
+        }
         AccessControlContext accCtxt = AccessController.getContext();
         return iface.cast(Proxy.newProxyInstance(iface.getClassLoader(),
             new Class[]{iface},
             new InterfaceImplementorInvocationHandler(thiz, accCtxt)));
+    }
+
+    protected boolean isImplemented(Object thiz, Class<?> iface) {
+        return true;
     }
 
     // called to convert method result after invoke

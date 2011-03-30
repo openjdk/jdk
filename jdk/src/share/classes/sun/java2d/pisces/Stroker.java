@@ -764,6 +764,11 @@ final class Stroker implements PathConsumer2D {
     private static final int MAX_N_CURVES = 11;
     private float[] subdivTs = new float[MAX_N_CURVES - 1];
 
+    // If this class is compiled with ecj, then Hotspot crashes when OSR
+    // compiling this function. See bugs 7004570 and 6675699
+    // TODO: until those are fixed, we should work around that by
+    // manually inlining this into curveTo and quadTo.
+/******************************* WORKAROUND **********************************
     private void somethingTo(final int type) {
         // need these so we can update the state at the end of this method
         final float xf = middle[type-2], yf = middle[type-1];
@@ -866,6 +871,7 @@ final class Stroker implements PathConsumer2D {
         this.cy0 = yf;
         this.prev = DRAWING_OP_TO;
     }
+****************************** END WORKAROUND *******************************/
 
     // finds values of t where the curve in pts should be subdivided in order
     // to get good offset curves a distance of w away from the middle curve.
@@ -932,18 +938,168 @@ final class Stroker implements PathConsumer2D {
         middle[2] = x1;  middle[3] = y1;
         middle[4] = x2;  middle[5] = y2;
         middle[6] = x3;  middle[7] = y3;
-        somethingTo(8);
-    }
 
-    @Override public long getNativeConsumer() {
-        throw new InternalError("Stroker doesn't use a native consumer");
+        // inlined version of somethingTo(8);
+        // See the TODO on somethingTo
+
+        // need these so we can update the state at the end of this method
+        final float xf = middle[6], yf = middle[7];
+        float dxs = middle[2] - middle[0];
+        float dys = middle[3] - middle[1];
+        float dxf = middle[6] - middle[4];
+        float dyf = middle[7] - middle[5];
+
+        boolean p1eqp2 = (dxs == 0f && dys == 0f);
+        boolean p3eqp4 = (dxf == 0f && dyf == 0f);
+        if (p1eqp2) {
+            dxs = middle[4] - middle[0];
+            dys = middle[5] - middle[1];
+            if (dxs == 0f && dys == 0f) {
+                dxs = middle[6] - middle[0];
+                dys = middle[7] - middle[1];
+            }
+        }
+        if (p3eqp4) {
+            dxf = middle[6] - middle[2];
+            dyf = middle[7] - middle[3];
+            if (dxf == 0f && dyf == 0f) {
+                dxf = middle[6] - middle[0];
+                dyf = middle[7] - middle[1];
+            }
+        }
+        if (dxs == 0f && dys == 0f) {
+            // this happens iff the "curve" is just a point
+            lineTo(middle[0], middle[1]);
+            return;
+        }
+
+        // if these vectors are too small, normalize them, to avoid future
+        // precision problems.
+        if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
+            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            dxs /= len;
+            dys /= len;
+        }
+        if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
+            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            dxf /= len;
+            dyf /= len;
+        }
+
+        computeOffset(dxs, dys, lineWidth2, offset[0]);
+        final float mx = offset[0][0];
+        final float my = offset[0][1];
+        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, mx, my);
+
+        int nSplits = findSubdivPoints(middle, subdivTs, 8, lineWidth2);
+
+        int kind = 0;
+        Iterator<Integer> it = Curve.breakPtsAtTs(middle, 8, subdivTs, nSplits);
+        while(it.hasNext()) {
+            int curCurveOff = it.next();
+
+            kind = computeOffsetCubic(middle, curCurveOff, lp, rp);
+            if (kind != 0) {
+                emitLineTo(lp[0], lp[1]);
+                switch(kind) {
+                case 8:
+                    emitCurveTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], lp[6], lp[7], false);
+                    emitCurveTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], rp[6], rp[7], true);
+                    break;
+                case 4:
+                    emitLineTo(lp[2], lp[3]);
+                    emitLineTo(rp[0], rp[1], true);
+                    break;
+                }
+                emitLineTo(rp[kind - 2], rp[kind - 1], true);
+            }
+        }
+
+        this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;
+        this.cmy = (lp[kind - 1] - rp[kind - 1]) / 2;
+        this.cdx = dxf;
+        this.cdy = dyf;
+        this.cx0 = xf;
+        this.cy0 = yf;
+        this.prev = DRAWING_OP_TO;
     }
 
     @Override public void quadTo(float x1, float y1, float x2, float y2) {
         middle[0] = cx0; middle[1] = cy0;
         middle[2] = x1;  middle[3] = y1;
         middle[4] = x2;  middle[5] = y2;
-        somethingTo(6);
+
+        // inlined version of somethingTo(8);
+        // See the TODO on somethingTo
+
+        // need these so we can update the state at the end of this method
+        final float xf = middle[4], yf = middle[5];
+        float dxs = middle[2] - middle[0];
+        float dys = middle[3] - middle[1];
+        float dxf = middle[4] - middle[2];
+        float dyf = middle[5] - middle[3];
+        if ((dxs == 0f && dys == 0f) || (dxf == 0f && dyf == 0f)) {
+            dxs = dxf = middle[4] - middle[0];
+            dys = dyf = middle[5] - middle[1];
+        }
+        if (dxs == 0f && dys == 0f) {
+            // this happens iff the "curve" is just a point
+            lineTo(middle[0], middle[1]);
+            return;
+        }
+        // if these vectors are too small, normalize them, to avoid future
+        // precision problems.
+        if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
+            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            dxs /= len;
+            dys /= len;
+        }
+        if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
+            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            dxf /= len;
+            dyf /= len;
+        }
+
+        computeOffset(dxs, dys, lineWidth2, offset[0]);
+        final float mx = offset[0][0];
+        final float my = offset[0][1];
+        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, mx, my);
+
+        int nSplits = findSubdivPoints(middle, subdivTs, 6, lineWidth2);
+
+        int kind = 0;
+        Iterator<Integer> it = Curve.breakPtsAtTs(middle, 6, subdivTs, nSplits);
+        while(it.hasNext()) {
+            int curCurveOff = it.next();
+
+            kind = computeOffsetQuad(middle, curCurveOff, lp, rp);
+            if (kind != 0) {
+                emitLineTo(lp[0], lp[1]);
+                switch(kind) {
+                case 6:
+                    emitQuadTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], false);
+                    emitQuadTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], true);
+                    break;
+                case 4:
+                    emitLineTo(lp[2], lp[3]);
+                    emitLineTo(rp[0], rp[1], true);
+                    break;
+                }
+                emitLineTo(rp[kind - 2], rp[kind - 1], true);
+            }
+        }
+
+        this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;
+        this.cmy = (lp[kind - 1] - rp[kind - 1]) / 2;
+        this.cdx = dxf;
+        this.cdy = dyf;
+        this.cx0 = xf;
+        this.cy0 = yf;
+        this.prev = DRAWING_OP_TO;
+    }
+
+    @Override public long getNativeConsumer() {
+        throw new InternalError("Stroker doesn't use a native consumer");
     }
 
     // a stack of polynomial curves where each curve shares endpoints with

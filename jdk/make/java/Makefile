@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ SUBDIRS += security math util text net nio jar
 SUBDIRS_desktop    = awt applet beans
 SUBDIRS_management = management
 SUBDIRS_misc       = npt java_crw_demo java_hprof_demo \
-                     logging instrument dyn sql rmi
+                     logging instrument invoke sql rmi
 
 
 ifeq ($(PLATFORM), solaris)

@@ -376,6 +376,7 @@ FILES_gen_extcs = \
         sun/nio/cs/ext/HKSCSMapping.java \
         sun/nio/cs/ext/HKSCS2001Mapping.java \
         sun/nio/cs/ext/HKSCS_XPMapping.java \
+	sun/nio/cs/ext/IBM1364.java \
 	sun/nio/cs/ext/IBM1381.java \
 	sun/nio/cs/ext/IBM1383.java \
 	sun/nio/cs/ext/IBM930.java \
