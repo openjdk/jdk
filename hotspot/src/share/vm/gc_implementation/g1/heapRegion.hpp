@@ -149,6 +149,13 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   G1BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
   volatile unsigned _gc_time_stamp;
+  // When we need to retire an allocation region, while other threads
+  // are also concurrently trying to allocate into it, we typically
+  // allocate a dummy object at the end of the region to ensure that
+  // no more allocations can take place in it. However, sometimes we
+  // want to know where the end of the last "real" object we allocated
+  // into the region was and this is what this keeps track.
+  HeapWord* _pre_dummy_top;
 
  public:
   // Constructor.  If "is_zeroed" is true, the MemRegion "mr" may be
@@ -162,6 +169,17 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   virtual HeapWord* saved_mark_word() const;
   virtual void set_saved_mark();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
+
+  // See the comment above in the declaration of _pre_dummy_top for an
+  // explanation of what it is.
+  void set_pre_dummy_top(HeapWord* pre_dummy_top) {
+    assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
+    _pre_dummy_top = pre_dummy_top;
+  }
+  HeapWord* pre_dummy_top() {
+    return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top;
+  }
+  void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
 
   virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
   virtual void clear(bool mangle_space);
