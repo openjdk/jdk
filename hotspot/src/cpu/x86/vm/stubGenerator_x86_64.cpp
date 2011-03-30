@@ -2449,8 +2449,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_generic_copy(const char *name,
                                 address byte_copy_entry, address short_copy_entry,
-                                address int_copy_entry, address long_copy_entry,
-                                address oop_copy_entry, address checkcast_copy_entry) {
+                                address int_copy_entry, address oop_copy_entry,
+                                address long_copy_entry, address checkcast_copy_entry) {
 
     Label L_failed, L_failed_0, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
