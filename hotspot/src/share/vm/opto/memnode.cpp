@@ -2617,54 +2617,24 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 }
 
 //=============================================================================
-// Do we match on this edge? No memory edges
-uint StrCompNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // StrComp (Binary str1 cnt1) (Binary str2 cnt2)
+// Do not match memory edge.
+uint StrIntrinsicNode::match_edge(uint idx) const {
+  return idx == 2 || idx == 3;
 }
 
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *StrCompNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
-}
+Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (remove_dead_region(phase, can_reshape)) return this;
 
-//=============================================================================
-// Do we match on this edge? No memory edges
-uint StrEqualsNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // StrEquals (Binary str1 str2) cnt
-}
-
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node *StrEqualsNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
-}
-
-//=============================================================================
-// Do we match on this edge? No memory edges
-uint StrIndexOfNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)
-}
-
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node *StrIndexOfNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
-}
-
-//=============================================================================
-// Do we match on this edge? No memory edges
-uint AryEqNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // StrEquals ary1 ary2
-}
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node *AryEqNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  Node* mem = phase->transform(in(MemNode::Memory));
+  // If transformed to a MergeMem, get the desired slice
+  uint alias_idx = phase->C->get_alias_index(adr_type());
+  mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
+  if (mem != in(MemNode::Memory))
+    set_req(MemNode::Memory, mem);
+  return NULL;
 }
 
 //=============================================================================
