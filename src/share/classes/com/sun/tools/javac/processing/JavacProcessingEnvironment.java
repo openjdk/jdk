@@ -58,6 +58,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.FSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.jvm.ClassReader.BadClassFile;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.main.JavaCompiler.CompileState;
 import com.sun.tools.javac.model.JavacElements;
@@ -790,6 +791,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                          RoundEnvironment renv) {
         try {
             return proc.process(tes, renv);
+        } catch (BadClassFile ex) {
+            log.error("proc.cant.access.1", ex.sym, ex.getDetailValue());
+            return false;
         } catch (CompletionFailure ex) {
             StringWriter out = new StringWriter();
             ex.printStackTrace(new PrintWriter(out));
