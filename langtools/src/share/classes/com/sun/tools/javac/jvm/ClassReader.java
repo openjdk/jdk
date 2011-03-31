@@ -1162,6 +1162,9 @@ public class ClassReader implements Completer {
         ClassSymbol c = readClassSymbol(nextChar());
         NameAndType nt = (NameAndType)readPool(nextChar());
 
+        if (c.members_field == null)
+            throw badClassFile("bad.enclosing.class", self, c);
+
         MethodSymbol m = findMethod(nt, c.members_field, self.flags());
         if (nt != null && m == null)
             throw badClassFile("bad.enclosing.method", self);
