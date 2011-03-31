@@ -208,8 +208,10 @@ bool StackMapFrame::has_flag_match_exception(
   return true;
 }
 
-bool StackMapFrame::is_assignable_to(const StackMapFrame* target, TRAPS) const {
-  if (_max_locals != target->max_locals() || _stack_size != target->stack_size()) {
+bool StackMapFrame::is_assignable_to(
+    const StackMapFrame* target, bool is_exception_handler, TRAPS) const {
+  if (_max_locals != target->max_locals() ||
+      _stack_size != target->stack_size()) {
     return false;
   }
   // Only need to compare type elements up to target->locals() or target->stack().
@@ -222,7 +224,7 @@ bool StackMapFrame::is_assignable_to(const StackMapFrame* target, TRAPS) const {
   bool match_flags = (_flags | target->flags()) == target->flags();
 
   return match_locals && match_stack &&
-    (match_flags || has_flag_match_exception(target));
+    (match_flags || (is_exception_handler && has_flag_match_exception(target)));
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
