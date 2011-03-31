@@ -152,7 +152,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
             "Class file version does not support constant tag %u in class file %s",
             tag, CHECK);
         }
-        if (!EnableMethodHandles) {
+        if (!EnableInvokeDynamic) {
           classfile_parse_error(
             "This JVM does not support constant tag %u in class file %s",
             tag, CHECK);
@@ -260,7 +260,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
             verify_legal_utf8((unsigned char*)utf8_buffer, utf8_length, CHECK);
           }
 
-          if (AnonymousClasses && has_cp_patch_at(index)) {
+          if (EnableInvokeDynamic && has_cp_patch_at(index)) {
             Handle patch = clear_cp_patch_at(index);
             guarantee_property(java_lang_String::is_instance(patch()),
                                "Illegal utf8 patch at %d in class file %s",
@@ -443,7 +443,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
           int ref_index = cp->method_handle_index_at(index);
           check_property(
             valid_cp_range(ref_index, length) &&
-                EnableMethodHandles,
+                EnableInvokeDynamic,
               "Invalid constant pool index %u in class file %s",
               ref_index, CHECK_(nullHandle));
           constantTag tag = cp->tag_at(ref_index);
@@ -487,7 +487,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
           check_property(
             valid_cp_range(ref_index, length) &&
                 cp->tag_at(ref_index).is_utf8() &&
-                EnableMethodHandles,
+                EnableInvokeDynamic,
               "Invalid constant pool index %u in class file %s",
               ref_index, CHECK_(nullHandle));
         }
@@ -522,7 +522,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
   if (_cp_patches != NULL) {
     // need to treat this_class specially...
-    assert(AnonymousClasses, "");
+    assert(EnableInvokeDynamic, "");
     int this_class_index;
     {
       cfs->guarantee_more(8, CHECK_(nullHandle));  // flags, this_class, super_class, infs_len
@@ -677,7 +677,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
 
 void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS) {
-  assert(AnonymousClasses, "");
+  assert(EnableInvokeDynamic, "");
   BasicType patch_type = T_VOID;
   switch (cp->tag_at(index).value()) {
 
@@ -2103,7 +2103,7 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
     _has_vanilla_constructor = true;
   }
 
-  if (EnableMethodHandles && (m->is_method_handle_invoke() ||
+  if (EnableInvokeDynamic && (m->is_method_handle_invoke() ||
                               m->is_method_handle_adapter())) {
     THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
                "Method handle invokers must be defined internally to the VM", nullHandle);
@@ -2771,7 +2771,7 @@ void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle c
   // This is not particularly nice, but since there is no way to express
   // a native wordSize field in Java, we must do it at this level.
 
-  if (!EnableMethodHandles)  return;
+  if (!EnableInvokeDynamic)  return;
 
   int word_sig_index = 0;
   const int cp_size = cp->length();
@@ -3191,15 +3191,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     next_nonstatic_field_offset = first_nonstatic_field_offset;
 
     // adjust the vmentry field declaration in java.lang.invoke.MethodHandle
-    if (EnableMethodHandles && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
+    if (EnableInvokeDynamic && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
       java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
     if (AllowTransitionalJSR292 &&
-        EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
+        EnableInvokeDynamic && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
       java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
     if (AllowTransitionalJSR292 &&
-        EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
+        EnableInvokeDynamic && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
       // allow vmentry field in MethodHandleImpl also
       java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
