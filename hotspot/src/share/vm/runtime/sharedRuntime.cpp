@@ -1682,7 +1682,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     tty->print_cr("WrongMethodType thread="PTR_FORMAT" req="PTR_FORMAT" act="PTR_FORMAT"",
                   thread, required, actual);
   }
-  assert(EnableMethodHandles, "");
+  assert(EnableInvokeDynamic, "");
   oop singleKlass = wrong_method_type_is_for_single_argument(thread, required);
   char* message = NULL;
   if (singleKlass != NULL) {

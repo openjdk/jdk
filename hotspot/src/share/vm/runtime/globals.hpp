@@ -3693,11 +3693,15 @@ class CommandLineFlags {
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
                                                                             \
+  diagnostic(bool, EnableInvokeDynamic, true,                               \
+          "support JSR 292 (method handles, invokedynamic, "                \
+          "anonymous classes")                                              \
+                                                                            \
   product(bool, AnonymousClasses, false,                                    \
-          "support sun.misc.Unsafe.defineAnonymousClass")                   \
+          "support sun.misc.Unsafe.defineAnonymousClass (deprecated)")      \
                                                                             \
   experimental(bool, EnableMethodHandles, false,                            \
-          "support method handles (true by default under JSR 292)")         \
+          "support method handles (deprecated)")                            \
                                                                             \
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
           "number of additional stack slots a method handle may push")      \
@@ -3713,9 +3717,6 @@ class CommandLineFlags {
                                                                             \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
-                                                                            \
-  experimental(bool, EnableInvokeDynamic, false,                            \
-          "recognize the invokedynamic instruction")                        \
                                                                             \
   experimental(bool, AllowTransitionalJSR292, true,                         \
           "recognize pre-PFD formats of invokedynamic")                     \

@@ -2322,7 +2322,7 @@ int java_lang_invoke_AdapterMethodHandle::_conversion_offset;
 
 void java_lang_invoke_MethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::MethodHandle_klass();
-  if (k != NULL && EnableMethodHandles) {
+  if (k != NULL && EnableInvokeDynamic) {
     bool allow_super = false;
     if (AllowTransitionalJSR292)  allow_super = true;  // temporary, to access java.dyn.MethodHandleImpl
     compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::java_lang_invoke_MethodType_signature(), allow_super);
@@ -2337,7 +2337,7 @@ void java_lang_invoke_MethodHandle::compute_offsets() {
 
 void java_lang_invoke_MemberName::compute_offsets() {
   klassOop k = SystemDictionary::MemberName_klass();
-  if (k != NULL && EnableMethodHandles) {
+  if (k != NULL && EnableInvokeDynamic) {
     compute_offset(_clazz_offset,     k, vmSymbols::clazz_name(),     vmSymbols::class_signature());
     compute_offset(_name_offset,      k, vmSymbols::name_name(),      vmSymbols::string_signature());
     compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::object_signature());
@@ -2349,14 +2349,14 @@ void java_lang_invoke_MemberName::compute_offsets() {
 
 void java_lang_invoke_DirectMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::DirectMethodHandle_klass();
-  if (k != NULL && EnableMethodHandles) {
+  if (k != NULL && EnableInvokeDynamic) {
     compute_offset(_vmindex_offset,   k, vmSymbols::vmindex_name(),   vmSymbols::int_signature(),    true);
   }
 }
 
 void java_lang_invoke_BoundMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::BoundMethodHandle_klass();
-  if (k != NULL && EnableMethodHandles) {
+  if (k != NULL && EnableInvokeDynamic) {
     compute_offset(_vmargslot_offset, k, vmSymbols::vmargslot_name(), vmSymbols::int_signature(),    true);
     compute_offset(_argument_offset,  k, vmSymbols::argument_name(),  vmSymbols::object_signature(), true);
   }
@@ -2364,7 +2364,7 @@ void java_lang_invoke_BoundMethodHandle::compute_offsets() {
 
 void java_lang_invoke_AdapterMethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::AdapterMethodHandle_klass();
-  if (k != NULL && EnableMethodHandles) {
+  if (k != NULL && EnableInvokeDynamic) {
     compute_offset(_conversion_offset, k, vmSymbols::conversion_name(), vmSymbols::int_signature(), true);
   }
 }
@@ -2982,7 +2982,7 @@ void JavaClasses::compute_offsets() {
   java_lang_Class::compute_offsets();
   java_lang_Thread::compute_offsets();
   java_lang_ThreadGroup::compute_offsets();
-  if (EnableMethodHandles) {
+  if (EnableInvokeDynamic) {
     java_lang_invoke_MethodHandle::compute_offsets();
     java_lang_invoke_MemberName::compute_offsets();
     java_lang_invoke_DirectMethodHandle::compute_offsets();
@@ -2990,8 +2990,6 @@ void JavaClasses::compute_offsets() {
     java_lang_invoke_AdapterMethodHandle::compute_offsets();
     java_lang_invoke_MethodType::compute_offsets();
     java_lang_invoke_MethodTypeForm::compute_offsets();
-  }
-  if (EnableInvokeDynamic) {
     java_lang_invoke_CallSite::compute_offsets();
   }
   java_security_AccessControlContext::compute_offsets();
