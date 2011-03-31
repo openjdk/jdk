@@ -587,7 +587,6 @@ public abstract class WinGammaPlatform {
         Vector allConfigs = new Vector();
 
         allConfigs.add(new C1DebugConfig());
-
         allConfigs.add(new C1FastDebugConfig());
         allConfigs.add(new C1ProductConfig());
 
@@ -655,6 +654,10 @@ public abstract class WinGammaPlatform {
         boolean isHeader() {
             return attr.shortName.endsWith(".h") || attr.shortName.endsWith(".hpp");
         }
+
+        boolean isCpp() {
+            return attr.shortName.endsWith(".cpp");
+        }
     }
 
 
@@ -708,7 +711,7 @@ public abstract class WinGammaPlatform {
     PrintWriter printWriter;
 
     public void writeProjectFile(String projectFileName, String projectName,
-                                 Vector allConfigs) throws IOException {
+                                 Vector<BuildConfig> allConfigs) throws IOException {
         throw new RuntimeException("use compiler version specific version");
     }
 }

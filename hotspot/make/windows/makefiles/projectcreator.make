@@ -27,10 +27,6 @@
 # This is used externally by both batch and IDE builds, so can't
 # reference any of the HOTSPOTWORKSPACE, HOTSPOTBUILDSPACE,
 # HOTSPOTRELEASEBINDEST, or HOTSPOTDEBUGBINDEST environment variables.
-#
-# NOTE: unfortunately the ProjectCreatorSources list must be kept
-# synchronized between this and the Solaris version
-# (make/solaris/makefiles/projectcreator.make).
 
 ProjectCreatorSources=\
         $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTree.java \
@@ -42,6 +38,7 @@ ProjectCreatorSources=\
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC7.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC8.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC9.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC10.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\Util.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\BuildConfig.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\ArgsParser.java

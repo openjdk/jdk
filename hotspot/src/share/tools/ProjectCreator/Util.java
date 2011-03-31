@@ -47,18 +47,6 @@ public class Util {
         return sb.toString();
     }
 
-    static String join(String padder, String v[]) {
-        StringBuffer sb = new StringBuffer();
-
-        for (int i=0; i<v.length; i++) {
-            sb.append(v[i]);
-            if (i < (v.length  - 1)) sb.append(padder);
-        }
-
-        return sb.toString();
-    }
-
-
 
     static String prefixed_join(String padder, Vector v, boolean quoted) {
         StringBuffer sb = new StringBuffer();
