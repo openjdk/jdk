@@ -7769,6 +7769,28 @@ void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
+void MacroAssembler::cmov32(Condition cc, Register dst, Register src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
 void MacroAssembler::verify_oop(Register reg, const char* s) {
   if (!VerifyOops) return;
 
@@ -9019,14 +9041,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   movl(result, cnt1);
   subl(cnt1, cnt2);
   push(cnt1);
-  if (VM_Version::supports_cmov()) {
-    cmovl(Assembler::lessEqual, cnt2, result);
-  } else {
-    Label GT_LABEL;
-    jccb(Assembler::greater, GT_LABEL);
-    movl(cnt2, result);
-    bind(GT_LABEL);
-  }
+  cmov32(Assembler::lessEqual, cnt2, result);
 
   // Is the minimum length zero?
   testl(cnt2, cnt2);
