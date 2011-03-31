@@ -134,7 +134,8 @@ class StackMapFrame : public ResourceObj {
   void copy_stack(const StackMapFrame* src);
 
   // Return true if this stack map frame is assignable to target.
-  bool is_assignable_to(const StackMapFrame* target, TRAPS) const;
+  bool is_assignable_to(const StackMapFrame* target,
+                        bool is_exception_handler, TRAPS) const;
 
   // Push type into stack type array.
   inline void push_stack(VerificationType type, TRAPS) {
