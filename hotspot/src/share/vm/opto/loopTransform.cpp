@@ -432,6 +432,12 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
     return false;
   }
 
+  // Currently we don't have policy to optimize one iteration loops.
+  // Maximally unrolling transformation is used for that:
+  // it is peeled and the original loop become non reachable (dead).
+  if (trip_count == 1)
+    return true;
+
   // Do not unroll a loop with String intrinsics code.
   // String intrinsics are large and have loops.
   for (uint k = 0; k < _body.size(); k++) {
