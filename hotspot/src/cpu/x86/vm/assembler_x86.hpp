@@ -2244,10 +2244,13 @@ public:
 
   // Data
 
-  void cmov(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
+  void cmov32( Condition cc, Register dst, Address  src);
+  void cmov32( Condition cc, Register dst, Register src);
 
-  void cmovptr(Condition cc, Register dst, Address src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
-  void cmovptr(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
+  void cmov(   Condition cc, Register dst, Register src) { cmovptr(cc, dst, src); }
+
+  void cmovptr(Condition cc, Register dst, Address  src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
+  void cmovptr(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
 
   void movoop(Register dst, jobject obj);
   void movoop(Address dst, jobject obj);

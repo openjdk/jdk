@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -569,24 +570,13 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   __ lea          (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 
   // compute minimum length (in rax) and difference of lengths (on top of stack)
-  if (VM_Version::supports_cmov()) {
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rcx, rbx);
-    __ subptr   (rbx, rax); // subtract lengths
-    __ push     (rbx);      // result
-    __ cmov     (Assembler::lessEqual, rax, rcx);
-  } else {
-    Label L;
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rcx, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rax, rbx);
-    __ subptr   (rbx, rcx);
-    __ push     (rbx);
-    __ jcc      (Assembler::lessEqual, L);
-    __ mov      (rax, rcx);
-    __ bind (L);
-  }
+  __ movl  (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
+  __ movl  (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
+  __ mov   (rcx, rbx);
+  __ subptr(rbx, rax); // subtract lengths
+  __ push  (rbx);      // result
+  __ cmov  (Assembler::lessEqual, rax, rcx);
+
   // is minimum length 0?
   Label noLoop, haveResult;
   __ testptr (rax, rax);
