@@ -810,6 +810,8 @@ staticBufferStream::staticBufferStream(char* buffer, size_t buflen,
   _buffer = buffer;
   _buflen = buflen;
   _outer_stream = outer_stream;
+  // compile task prints time stamp relative to VM start
+  _stamp.update_to(1);
 }
 
 void staticBufferStream::write(const char* c, size_t len) {
