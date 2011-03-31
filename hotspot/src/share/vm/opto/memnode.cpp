@@ -2628,12 +2628,16 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
 
-  Node* mem = phase->transform(in(MemNode::Memory));
-  // If transformed to a MergeMem, get the desired slice
-  uint alias_idx = phase->C->get_alias_index(adr_type());
-  mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
-  if (mem != in(MemNode::Memory))
-    set_req(MemNode::Memory, mem);
+  if (can_reshape) {
+    Node* mem = phase->transform(in(MemNode::Memory));
+    // If transformed to a MergeMem, get the desired slice
+    uint alias_idx = phase->C->get_alias_index(adr_type());
+    mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
+    if (mem != in(MemNode::Memory)) {
+      set_req(MemNode::Memory, mem);
+      return this;
+    }
+  }
   return NULL;
 }
 
