@@ -301,6 +301,15 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
+unsigned int java_lang_String::hash_string(oop java_string) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+
+  if (length == 0) return 0;
+  return hash_string(value->char_at_addr(offset), length);
+}
+
 Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
   oop          obj    = java_string();
   typeArrayOop value  = java_lang_String::value(obj);
