@@ -66,7 +66,7 @@ public interface CharSequence {
      * indexing. </p>
      *
      * <p>If the <code>char</code> value specified by the index is a
-     * <a href="Character.html#unicode">surrogate</a>, the surrogate
+     * <a href="{@docRoot}/java/lang/Character.html#unicode">surrogate</a>, the surrogate
      * value is returned.
      *
      * @param   index   the index of the <code>char</code> value to be returned
