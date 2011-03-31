@@ -230,7 +230,7 @@ NET_GetFileDescriptorID(JNIEnv *env)
 jint  IPv6_supported()
 {
     SOCKET s = socket(AF_INET6, SOCK_STREAM, 0) ;
-    if (s < 0) {
+    if (s == INVALID_SOCKET) {
         return JNI_FALSE;
     }
     closesocket(s);
@@ -775,7 +775,7 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
     DWORD b;
     struct sockaddr_in6 route;
     SOCKET fd = socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd < 0) {
+    if (fd == INVALID_SOCKET) {
         return 0;
     }
 
@@ -783,7 +783,7 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
                     (void *)target_addr, sizeof(struct sockaddr_in6),
                     (void *)&route, sizeof(struct sockaddr_in6),
                     &b, 0, 0);
-    if (ret < 0) {
+    if (ret == SOCKET_ERROR) {
         // error
         closesocket(fd);
         return 0;
