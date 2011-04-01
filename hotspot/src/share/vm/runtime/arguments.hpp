@@ -301,8 +301,6 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
-  // Check compressed oops compatibility with other flags
-  static void check_compressed_oops_compat();
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
@@ -312,6 +310,7 @@ class Arguments : AllStatic {
   static void set_g1_gc_flags();
   // GC ergonomics
   static void set_ergonomics_flags();
+  static void set_shared_spaces_flags();
   // Setup heap size
   static void set_heap_size();
   // Based on automatic selection criteria, should the

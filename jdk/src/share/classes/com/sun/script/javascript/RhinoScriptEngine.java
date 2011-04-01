@@ -115,6 +115,31 @@ public final class RhinoScriptEngine extends AbstractScriptEngine
 
         //construct object used to implement getInterface
         implementor = new InterfaceImplementor(this) {
+                protected boolean isImplemented(Object thiz, Class<?> iface) {
+                    Context cx = enterContext();
+                    try {
+                        if (thiz != null && !(thiz instanceof Scriptable)) {
+                            thiz = cx.toObject(thiz, topLevel);
+                        }
+                        Scriptable engineScope = getRuntimeScope(context);
+                        Scriptable localScope = (thiz != null)? (Scriptable) thiz :
+                                                    engineScope;
+                        for (Method method : iface.getMethods()) {
+                            // ignore methods of java.lang.Object class
+                            if (method.getDeclaringClass() == Object.class) {
+                                continue;
+                            }
+                            Object obj = ScriptableObject.getProperty(localScope, method.getName());
+                            if (! (obj instanceof Function)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } finally {
+                        cx.exit();
+                    }
+                }
+
                 protected Object convertResult(Method method, Object res)
                                             throws ScriptException {
                     Class desiredType = method.getReturnType();

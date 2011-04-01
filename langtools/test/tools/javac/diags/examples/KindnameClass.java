@@ -25,6 +25,7 @@
 // key: compiler.err.cant.resolve.location
 // key: compiler.misc.location
 // key: compiler.misc.count.error
+// key: compiler.err.error
 // run: backdoor
 
 class KindnameClass {

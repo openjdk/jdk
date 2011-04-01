@@ -231,7 +231,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
 
 // Method handle invoker
-// Dispatch a method of the form java.dyn.MethodHandles::invoke(...)
+// Dispatch a method of the form java.lang.invoke.MethodHandles::invoke(...)
 address InterpreterGenerator::generate_method_handle_entry(void) {
   if (!EnableMethodHandles) {
     return generate_abstract_entry();

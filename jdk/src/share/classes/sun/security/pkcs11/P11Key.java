@@ -999,18 +999,34 @@ abstract class P11Key implements Key {
                 new CK_ATTRIBUTE(CKA_EC_PARAMS),
             };
             fetchAttributes(attributes);
+
             try {
                 params = P11ECKeyFactory.decodeParameters
                             (attributes[1].getByteArray());
-                DerValue wECPoint = new DerValue(attributes[0].getByteArray());
-                if (wECPoint.getTag() != DerValue.tag_OctetString)
-                    throw new IOException("Unexpected tag: " +
-                        wECPoint.getTag());
-                params = P11ECKeyFactory.decodeParameters
-                            (attributes[1].getByteArray());
-                w = P11ECKeyFactory.decodePoint
-                    (wECPoint.getDataBytes(), params.getCurve());
 
+                /*
+                 * An uncompressed EC point may be in either of two formats.
+                 * First try the OCTET STRING encoding:
+                 *   04 <length> 04 <X-coordinate> <Y-coordinate>
+                 *
+                 * Otherwise try the raw encoding:
+                 *   04 <X-coordinate> <Y-coordinate>
+                 */
+                byte[] ecKey = attributes[0].getByteArray();
+
+                try {
+                    DerValue wECPoint = new DerValue(ecKey);
+                    if (wECPoint.getTag() != DerValue.tag_OctetString)
+                        throw new IOException("Unexpected tag: " +
+                            wECPoint.getTag());
+
+                    w = P11ECKeyFactory.decodePoint
+                        (wECPoint.getDataBytes(), params.getCurve());
+
+                } catch (IOException e) {
+                    // Failover
+                    w = P11ECKeyFactory.decodePoint(ecKey, params.getCurve());
+                }
 
             } catch (Exception e) {
                 throw new RuntimeException("Could not parse key values", e);

@@ -820,13 +820,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** The set of package-info files to be processed this round. */
         List<PackageSymbol> packageInfoFiles;
 
+        /** The number of Messager errors generated in this round. */
+        int nMessagerErrors;
+
         /** Create a round (common code). */
-        private Round(Context context, int number, int priorWarnings) {
+        private Round(Context context, int number, int priorErrors, int priorWarnings) {
             this.context = context;
             this.number = number;
 
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
+            log.nerrors = priorErrors;
             log.nwarnings += priorWarnings;
             log.deferDiagnostics = true;
 
@@ -840,7 +844,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Create the first round. */
         Round(Context context, List<JCCompilationUnit> roots, List<ClassSymbol> classSymbols) {
-            this(context, 1, 0);
+            this(context, 1, 0, 0);
             this.roots = roots;
             genClassFiles = new HashMap<String,JavaFileObject>();
 
@@ -860,7 +864,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** Create a new round. */
         private Round(Round prev,
                 Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
-            this(prev.nextContext(), prev.number+1, prev.compiler.log.nwarnings);
+            this(prev.nextContext(),
+                    prev.number+1,
+                    prev.nMessagerErrors,
+                    prev.compiler.log.nwarnings);
             this.genClassFiles = prev.genClassFiles;
 
             List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles);
@@ -1014,6 +1021,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (taskListener != null)
                     taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
             }
+
+            nMessagerErrors = messager.errorCount();
         }
 
         void showDiagnostics(boolean showAll) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Locale;
@@ -226,17 +227,14 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                             DiagnosticPart.SOURCE));
             initFormat();
             initIndentation();
+            if (options.isSet("oldDiags"))
+                initOldFormat();
             String fmt = options.get("diagsFormat");
             if (fmt != null) {
-                String[] formats = fmt.split("\\|");
-                switch (formats.length) {
-                    case 3:
-                        setFormat(BasicFormatKind.DEFAULT_CLASS_FORMAT, formats[2]);
-                    case 2:
-                        setFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT, formats[1]);
-                    default:
-                        setFormat(BasicFormatKind.DEFAULT_POS_FORMAT, formats[0]);
-                }
+                if (fmt.equals("OLD"))
+                    initOldFormat();
+                else
+                    initFormats(fmt);
             }
             String srcPos = null;
             if ((((srcPos = options.get("sourcePosition")) != null)) &&
@@ -280,14 +278,35 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             initFormat();
             initIndentation();
         }
-        //where
+
         private void initFormat() {
-            availableFormats = new HashMap<BasicFormatKind, String>();
-            setFormat(BasicFormatKind.DEFAULT_POS_FORMAT, "%f:%l:%_%t%L%m");
-            setFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT, "%p%L%m");
-            setFormat(BasicFormatKind.DEFAULT_CLASS_FORMAT, "%f:%_%t%L%m");
+            initFormats("%f:%l:%_%p%L%m", "%p%L%m", "%f:%_%p%L%m");
         }
-        //where
+
+        private void initOldFormat() {
+            initFormats("%f:%l:%_%t%L%m", "%p%L%m", "%f:%_%t%L%m");
+        }
+
+        private void initFormats(String pos, String nopos, String clazz) {
+            availableFormats = new EnumMap<BasicFormatKind, String>(BasicFormatKind.class);
+            setFormat(BasicFormatKind.DEFAULT_POS_FORMAT,    pos);
+            setFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT, nopos);
+            setFormat(BasicFormatKind.DEFAULT_CLASS_FORMAT,  clazz);
+        }
+
+        @SuppressWarnings("fallthrough")
+        private void initFormats(String fmt) {
+            String[] formats = fmt.split("\\|");
+            switch (formats.length) {
+                case 3:
+                    setFormat(BasicFormatKind.DEFAULT_CLASS_FORMAT, formats[2]);
+                case 2:
+                    setFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT, formats[1]);
+                default:
+                    setFormat(BasicFormatKind.DEFAULT_POS_FORMAT, formats[0]);
+            }
+        }
+
         private void initIndentation() {
             indentationLevels = new HashMap<DiagnosticPart, Integer>();
             setIndentation(DiagnosticPart.SUMMARY, 0);
