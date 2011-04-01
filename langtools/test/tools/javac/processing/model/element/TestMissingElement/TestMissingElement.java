@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 6639645
+ * @bug 6639645 7026414
  * @summary Modeling type implementing missing interfaces
  * @library ../../../../lib
  * @build JavacTestingAbstractProcessor TestMissingElement
@@ -112,6 +112,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
 
             @Override
             public String visitDeclared(DeclaredType t, Void ignore) {
+                checkEqual(t.asElement(), types.asElement(t));
                 String s = asString(t.asElement());
                 List<? extends TypeMirror> args = t.getTypeArguments();
                 if (!args.isEmpty())
@@ -178,6 +179,13 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
     boolean isUnnamedPackage(Element e) {
         return (e != null && e.getKind() == ElementKind.PACKAGE
                 && ((PackageElement) e).isUnnamed());
+    }
+
+    void checkEqual(Element e1, Element e2) {
+        if (e1 != e2) {
+            throw new AssertionError("elements not equal as expected: "
+                + e1 + ", " + e2);
+        }
     }
 }
 

@@ -59,22 +59,6 @@ abstract class AbstractUserDefinedFileAttributeView
         return "user";
     }
 
-    private Object getAttribute(String attribute) throws IOException {
-        int size;
-        try {
-            size = size(attribute);
-        } catch (IOException e) {
-            // not found or some other I/O error
-            if (list().contains(attribute))
-                throw e;
-            return null;
-        }
-
-        byte[] buf = new byte[size];
-        int n = read(attribute, ByteBuffer.wrap(buf));
-        return (n == size) ? buf : Arrays.copyOf(buf, n);
-    }
-
     @Override
     public final void setAttribute(String attribute, Object value)
         throws IOException
@@ -94,12 +78,13 @@ abstract class AbstractUserDefinedFileAttributeView
     {
         // names of attributes to return
         List<String> names = new ArrayList<>();
-
         for (String name: attributes) {
             if (name.equals("*")) {
                 names = list();
                 break;
             } else {
+                if (name.length() == 0)
+                    throw new IllegalArgumentException();
                 names.add(name);
             }
         }
@@ -107,11 +92,12 @@ abstract class AbstractUserDefinedFileAttributeView
         // read each value and return in map
         Map<String,Object> result = new HashMap<>();
         for (String name: names) {
-            Object value = getAttribute(name);
-            if (value != null)
-                result.put(name, value);
+            int size = size(name);
+            byte[] buf = new byte[size];
+            int n = read(name, ByteBuffer.wrap(buf));
+            byte[] value = (n == size) ? buf : Arrays.copyOf(buf, n);
+            result.put(name, value);
         }
-
         return result;
     }
 }

@@ -240,7 +240,7 @@ makeDefaultConfig(JNIEnv *env, int screen) {
 
     AwtGraphicsConfigDataPtr defaultConfig;
     int xinawareScreen = 0;
-    VisualID forcedVisualID, defaultVisualID;
+    VisualID forcedVisualID = 0, defaultVisualID;
     char *forcedVisualStr;
     XVisualInfo vinfo;
     long mask;
@@ -254,7 +254,7 @@ makeDefaultConfig(JNIEnv *env, int screen) {
 
     if ((forcedVisualStr = getenv("FORCEDEFVIS"))) {
         mask = VisualIDMask | VisualScreenMask;
-        if (sscanf(forcedVisualStr, "%x", &forcedVisualID) > 0 &&
+        if (sscanf(forcedVisualStr, "%lx", &forcedVisualID) > 0 &&
             forcedVisualID > 0)
         {
             vinfo.visualid = forcedVisualID;

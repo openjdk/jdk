@@ -197,11 +197,12 @@ public interface Element {
      * <li> If this is a {@linkplain
      * PackageElement#getEnclosingElement package}, {@code null} is
      * returned.
-
+     *
      * <li> If this is a {@linkplain
      * TypeParameterElement#getEnclosingElement type parameter},
-     * {@code null} is returned.
-
+     * {@linkplain TypeParameterElement#getGenericElement the
+     * generic element} of the type parameter is returned.
+     *
      * </ul>
      *
      * @return the enclosing element, or {@code null} if there is none

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public class T6769027 {
 
     enum PositionKind {
         NOPOS(Position.NOPOS, "- ", "error: "),
-        POS(5, "Test.java:1:6: ", "/Test.java:1: ");
+        POS(5, "Test.java:1:6: ", "/Test.java:1: error: ");
 
         int pos;
         String rawOutput;

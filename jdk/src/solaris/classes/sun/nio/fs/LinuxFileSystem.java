@@ -28,8 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
 
 /**
@@ -37,42 +35,16 @@ import static sun.nio.fs.LinuxNativeDispatcher.*;
  */
 
 class LinuxFileSystem extends UnixFileSystem {
-    private final boolean hasInotify;
-
     LinuxFileSystem(UnixFileSystemProvider provider, String dir) {
         super(provider, dir);
-
-        // assume X.Y[-Z] format
-        String osversion = AccessController
-            .doPrivileged(new GetPropertyAction("os.version"));
-        String[] vers = Util.split(osversion, '.');
-        assert vers.length >= 2;
-
-        int majorVersion = Integer.parseInt(vers[0]);
-        int minorVersion = Integer.parseInt(vers[1]);
-        int microVersion = 0;
-        if (vers.length > 2) {
-            String[] microVers = Util.split(vers[2], '-');
-            microVersion = (microVers.length > 0) ?
-                Integer.parseInt(microVers[0]) : 0;
-        }
-
-        // inotify available since 2.6.13
-        this.hasInotify = ((majorVersion > 2) ||
-            (majorVersion == 2 && minorVersion > 6) ||
-            ((majorVersion == 2) && (minorVersion == 6) && (microVersion >= 13)));
     }
 
     @Override
     public WatchService newWatchService()
         throws IOException
     {
-        if (hasInotify) {
-            return new LinuxWatchService(this);
-        } else {
-            // use polling implementation on older kernels
-            return new PollingWatchService();
-        }
+        // assume 2.6.13 or newer
+        return new LinuxWatchService(this);
     }
 
 

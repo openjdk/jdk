@@ -28,6 +28,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.Enumeration;
+import sun.net.ResourceManager;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
@@ -66,7 +67,14 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected synchronized void create() throws SocketException {
         fd = new FileDescriptor();
-        datagramSocketCreate();
+        ResourceManager.beforeUdpCreate();
+        try {
+            datagramSocketCreate();
+        } catch (SocketException ioe) {
+            ResourceManager.afterUdpClose();
+            fd = null;
+            throw ioe;
+        }
     }
 
     /**
@@ -211,6 +219,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected void close() {
         if (fd != null) {
             datagramSocketClose();
+            ResourceManager.afterUdpClose();
             fd = null;
         }
     }
