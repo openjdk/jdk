@@ -316,12 +316,19 @@ size_t CodeHeap::allocated_capacity() const {
 }
 
 size_t CodeHeap::largest_free_block() const {
+  // First check unused space excluding free blocks.
+  size_t free_sz = size(_free_segments);
+  size_t unused  = max_capacity() - allocated_capacity() - free_sz;
+  if (unused >= free_sz)
+    return unused;
+
+  // Now check largest free block.
   size_t len = 0;
   for (FreeBlock* b = _freelist; b != NULL; b = b->link()) {
     if (b->length() > len)
       len = b->length();
   }
-  return size(len);
+  return MAX2(unused, size(len));
 }
 
 // Free list management

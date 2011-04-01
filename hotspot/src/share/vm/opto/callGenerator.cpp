@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   Node* call_site = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
 
   // Load the target MethodHandle from the CallSite object.
-  Node* target_mh_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
+  Node* target_mh_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
   Node* target_mh = kit.make_load(kit.control(), target_mh_adr, TypeInstPtr::BOTTOM, T_OBJECT);
 
   address resolve_stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
@@ -725,7 +725,7 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
   Node* call_site     = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
 
   // Load the target MethodHandle from the CallSite object.
-  Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
+  Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
   Node* target_mh  = kit.make_load(kit.control(), target_adr, TypeInstPtr::BOTTOM, T_OBJECT);
 
   // Check if the MethodHandle is still the same.

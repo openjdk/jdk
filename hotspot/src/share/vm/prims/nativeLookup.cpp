@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,29 +107,30 @@ extern "C" {
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
 }
 
-static address lookup_special_native(char* jni_name) {
-  // NB: To ignore the jni prefix and jni postfix strstr is used matching.
-  if (!JDK_Version::is_gte_jdk14x_version()) {
-    // These functions only exist for compatibility with 1.3.1 and earlier
-    // Intercept ObjectOutputStream getPrimitiveFieldValues for faster serialization
-    if (strstr(jni_name, "Java_java_io_ObjectOutputStream_getPrimitiveFieldValues") != NULL) {
-      return CAST_FROM_FN_PTR(address, JVM_GetPrimitiveFieldValues);
-    }
-    // Intercept ObjectInputStream setPrimitiveFieldValues for faster serialization
-    if (strstr(jni_name, "Java_java_io_ObjectInputStream_setPrimitiveFieldValues") != NULL) {
-      return CAST_FROM_FN_PTR(address, JVM_SetPrimitiveFieldValues);
-    }
-  }
-  if (strstr(jni_name, "Java_sun_misc_Unsafe_registerNatives") != NULL) {
-    return CAST_FROM_FN_PTR(address, JVM_RegisterUnsafeMethods);
-  }
-  if (strstr(jni_name, "Java_sun_dyn_MethodHandleNatives_registerNatives") != NULL) {
-    return CAST_FROM_FN_PTR(address, JVM_RegisterMethodHandleMethods);
-  }
-  if (strstr(jni_name, "Java_sun_misc_Perf_registerNatives") != NULL) {
-    return CAST_FROM_FN_PTR(address, JVM_RegisterPerfMethods);
-  }
+#define CC (char*)  /* cast a literal from (const char*) */
+#define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
+static JNINativeMethod lookup_special_native_methods[] = {
+  // Next two functions only exist for compatibility with 1.3.1 and earlier.
+  { CC"Java_java_io_ObjectOutputStream_getPrimitiveFieldValues",   NULL, FN_PTR(JVM_GetPrimitiveFieldValues)     },  // intercept ObjectOutputStream getPrimitiveFieldValues for faster serialization
+  { CC"Java_java_io_ObjectInputStream_setPrimitiveFieldValues",    NULL, FN_PTR(JVM_SetPrimitiveFieldValues)     },  // intercept ObjectInputStream setPrimitiveFieldValues for faster serialization
+
+  { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
+  { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
+  { CC"Java_sun_dyn_MethodHandleNatives_registerNatives",          NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },  // AllowTransitionalJSR292
+  { CC"Java_java_dyn_MethodHandleNatives_registerNatives",         NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },  // AllowTransitionalJSR292
+  { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         }
+};
+
+static address lookup_special_native(char* jni_name) {
+  int i = !JDK_Version::is_gte_jdk14x_version() ? 0 : 2;  // see comment in lookup_special_native_methods
+  int count = sizeof(lookup_special_native_methods) / sizeof(JNINativeMethod);
+  for (; i < count; i++) {
+    // NB: To ignore the jni prefix and jni postfix strstr is used matching.
+    if (strstr(jni_name, lookup_special_native_methods[i].name) != NULL) {
+      return CAST_FROM_FN_PTR(address, lookup_special_native_methods[i].fnPtr);
+    }
+  }
   return NULL;
 }
 

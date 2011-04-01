@@ -123,6 +123,10 @@ class UnixFileAttributeViews {
         private static final String OWNER_NAME = "owner";
         private static final String GROUP_NAME = "group";
 
+        // the names of the posix attributes (incudes basic)
+        static final Set<String> posixAttributeNames =
+            Util.newSet(basicAttributeNames, PERMISSIONS_NAME, OWNER_NAME, GROUP_NAME);
+
         Posix(UnixPath file, boolean followLinks) {
             super(file, followLinks);
         }
@@ -172,9 +176,10 @@ class UnixFileAttributeViews {
          * Invoked by readAttributes or sub-classes to add all matching posix
          * attributes to the builder
          */
-        final void addPosixAttributesToBuilder(PosixFileAttributes attrs,
+        final void addRequestedPosixAttributes(PosixFileAttributes attrs,
                                                AttributesBuilder builder)
         {
+            addRequestedBasicAttributes(attrs, builder);
             if (builder.match(PERMISSIONS_NAME))
                 builder.add(PERMISSIONS_NAME, attrs.permissions());
             if (builder.match(OWNER_NAME))
@@ -184,13 +189,13 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,Object> readAttributes(String[] attributes)
+        public Map<String,Object> readAttributes(String[] requested)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(attributes);
+            AttributesBuilder builder =
+                AttributesBuilder.create(posixAttributeNames, requested);
             PosixFileAttributes attrs = readAttributes();
-            addBasicAttributesToBuilder(attrs, builder);
-            addPosixAttributesToBuilder(attrs, builder);
+            addRequestedPosixAttributes(attrs, builder);
             return builder.unmodifiableMap();
         }
 
@@ -287,6 +292,12 @@ class UnixFileAttributeViews {
         private static final String GID_NAME = "gid";
         private static final String CTIME_NAME = "ctime";
 
+        // the names of the unix attributes (including posix)
+        static final Set<String> unixAttributeNames =
+            Util.newSet(posixAttributeNames,
+                        MODE_NAME, INO_NAME, DEV_NAME, RDEV_NAME,
+                        NLINK_NAME, UID_NAME, GID_NAME, CTIME_NAME);
+
         Unix(UnixPath file, boolean followLinks) {
             super(file, followLinks);
         }
@@ -316,13 +327,13 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,Object> readAttributes(String[] attributes)
+        public Map<String,Object> readAttributes(String[] requested)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(attributes);
+            AttributesBuilder builder =
+                AttributesBuilder.create(unixAttributeNames, requested);
             UnixFileAttributes attrs = readAttributes();
-            addBasicAttributesToBuilder(attrs, builder);
-            addPosixAttributesToBuilder(attrs, builder);
+            addRequestedPosixAttributes(attrs, builder);
             if (builder.match(MODE_NAME))
                 builder.add(MODE_NAME, attrs.mode());
             if (builder.match(INO_NAME))

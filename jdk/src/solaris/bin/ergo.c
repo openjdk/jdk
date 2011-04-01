@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,35 @@ ServerClassMachine(void) {
   }
 }
 
+#ifdef USE_GENERIC_ERGO
+/* Ask the OS how many processors there are. */
+static unsigned long
+physical_processors(void) {
+  const unsigned long sys_processors = sysconf(_SC_NPROCESSORS_CONF);
+  JLI_TraceLauncher("sysconf(_SC_NPROCESSORS_CONF): %lu\n", sys_processors);
+  return sys_processors;
+}
+
+jboolean
+ServerClassMachineImpl(void) {
+  jboolean            result            = JNI_FALSE;
+  /* How big is a server class machine? */
+  const unsigned long server_processors = 2UL;
+  const uint64_t      server_memory     = 2UL * GB;
+  const uint64_t      actual_memory     = physical_memory();
+
+  /* Is this a server class machine? */
+  if (actual_memory >= server_memory) {
+    const unsigned long actual_processors = physical_processors();
+    if (actual_processors >= server_processors) {
+      result = JNI_TRUE;
+    }
+  }
+  JLI_TraceLauncher("unix_" LIBARCHNAME "_ServerClassMachine: %s\n",
+           (result == JNI_TRUE ? "JNI_TRUE" : "JNI_FALSE"));
+  return result;
+}
+#endif
 
 /* Compute physical memory by asking the OS */
 uint64_t

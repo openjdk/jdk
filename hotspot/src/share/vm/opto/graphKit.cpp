@@ -3338,6 +3338,49 @@ InitializeNode* AllocateNode::initialization() {
   return NULL;
 }
 
+//----------------------------- loop predicates ---------------------------
+
+//------------------------------add_predicate_impl----------------------------
+void GraphKit::add_predicate_impl(Deoptimization::DeoptReason reason, int nargs) {
+  // Too many traps seen?
+  if (too_many_traps(reason)) {
+#ifdef ASSERT
+    if (TraceLoopPredicate) {
+      int tc = C->trap_count(reason);
+      tty->print("too many traps=%s tcount=%d in ",
+                    Deoptimization::trap_reason_name(reason), tc);
+      method()->print(); // which method has too many predicate traps
+      tty->cr();
+    }
+#endif
+    // We cannot afford to take more traps here,
+    // do not generate predicate.
+    return;
+  }
+
+  Node *cont    = _gvn.intcon(1);
+  Node* opq     = _gvn.transform(new (C, 2) Opaque1Node(C, cont));
+  Node *bol     = _gvn.transform(new (C, 2) Conv2BNode(opq));
+  IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
+  Node* iffalse = _gvn.transform(new (C, 1) IfFalseNode(iff));
+  C->add_predicate_opaq(opq);
+  {
+    PreserveJVMState pjvms(this);
+    set_control(iffalse);
+    _sp += nargs;
+    uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
+  }
+  Node* iftrue = _gvn.transform(new (C, 1) IfTrueNode(iff));
+  set_control(iftrue);
+}
+
+//------------------------------add_predicate---------------------------------
+void GraphKit::add_predicate(int nargs) {
+  if (UseLoopPredicate) {
+    add_predicate_impl(Deoptimization::Reason_predicate, nargs);
+  }
+}
+
 //----------------------------- store barriers ----------------------------
 #define __ ideal.
 
