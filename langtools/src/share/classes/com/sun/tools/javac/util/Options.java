@@ -76,6 +76,22 @@ public class Options {
     }
 
     /**
+     * Get the boolean value for an option, patterned after Boolean.getBoolean,
+     * essentially will return true, iff the value exists and is set to "true".
+     */
+    public boolean getBoolean(String name) {
+        return getBoolean(name, false);
+    }
+
+    /**
+     * Get the boolean with a default value if the option is not set.
+     */
+    public boolean getBoolean(String name, boolean defaultValue) {
+        String value = get(name);
+        return (value == null) ? defaultValue : Boolean.parseBoolean(value);
+    }
+
+    /**
      * Check if the value for an undocumented option has been set.
      */
     public boolean isSet(String name) {

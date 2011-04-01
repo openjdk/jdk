@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ private:
 public:
 
   enum {
-    vtbl_list_size = 16, // number of entries in the shared space vtable list.
+    vtbl_list_size = 17, // number of entries in the shared space vtable list.
     num_virtuals = 200   // number of virtual methods in Klass (or
                          // subclass) objects, or greater.
   };

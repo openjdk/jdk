@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1032,12 +1032,12 @@ jobject BuildKerberosTime(JNIEnv *env, PLARGE_INTEGER kerbtime) {
         // XXX Cannot use %02.2ld, because the leading 0 is ignored for integers.
         // So, print them to strings, and then print them to the master string with a
         // format pattern that makes it two digits and prefix with a 0 if necessary.
-        swprintf( (wchar_t *)month, L"%2.2d", systemTime.wMonth);
-        swprintf( (wchar_t *)day, L"%2.2d", systemTime.wDay);
-        swprintf( (wchar_t *)hour, L"%2.2d", systemTime.wHour);
-        swprintf( (wchar_t *)minute, L"%2.2d", systemTime.wMinute);
-        swprintf( (wchar_t *)second, L"%2.2d", systemTime.wSecond);
-        swprintf( (wchar_t *)timeString,
+        swprintf( (wchar_t *)month, 3, L"%2.2d", systemTime.wMonth);
+        swprintf( (wchar_t *)day, 3, L"%2.2d", systemTime.wDay);
+        swprintf( (wchar_t *)hour, 3, L"%2.2d", systemTime.wHour);
+        swprintf( (wchar_t *)minute, 3, L"%2.2d", systemTime.wMinute);
+        swprintf( (wchar_t *)second, 3, L"%2.2d", systemTime.wSecond);
+        swprintf( (wchar_t *)timeString, 16,
                 L"%ld%02.2s%02.2s%02.2s%02.2s%02.2sZ",
                 systemTime.wYear,
                 month,

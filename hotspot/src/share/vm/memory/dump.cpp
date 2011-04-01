@@ -1561,6 +1561,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
     // thread because it requires object allocation.
     LinkClassesClosure lcc(Thread::current());
     object_iterate(&lcc);
+    ensure_parsability(false); // arg is actually don't care
     tty->print_cr("done. ");
 
     // Create and dump the shared spaces.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ int  ConcurrentMarkSweepThread::_CMS_flag         = CMS_nil;
 volatile jint ConcurrentMarkSweepThread::_pending_yields      = 0;
 volatile jint ConcurrentMarkSweepThread::_pending_decrements  = 0;
 
-volatile bool ConcurrentMarkSweepThread::_icms_enabled   = false;
+volatile jint ConcurrentMarkSweepThread::_icms_disabled   = 0;
 volatile bool ConcurrentMarkSweepThread::_should_run     = false;
 // When icms is enabled, the icms thread is stopped until explicitly
 // started.
@@ -84,7 +84,7 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
     }
   }
   _sltMonitor = SLT_lock;
-  set_icms_enabled(CMSIncrementalMode);
+  assert(!CMSIncrementalMode || icms_is_enabled(), "Error");
 }
 
 void ConcurrentMarkSweepThread::run() {
@@ -341,11 +341,11 @@ void ConcurrentMarkSweepThread::stop_icms() {
 
 void ConcurrentMarkSweepThread::icms_wait() {
   assert(UseConcMarkSweepGC && CMSIncrementalMode, "just checking");
-  if (_should_stop && icms_enabled()) {
+  if (_should_stop && icms_is_enabled()) {
     MutexLockerEx x(iCMS_lock, Mutex::_no_safepoint_check_flag);
     trace_state("pause_icms");
     _collector->stats().stop_cms_timer();
-    while(!_should_run && icms_enabled()) {
+    while(!_should_run && icms_is_enabled()) {
       iCMS_lock->wait(Mutex::_no_safepoint_check_flag);
     }
     _collector->stats().start_cms_timer();

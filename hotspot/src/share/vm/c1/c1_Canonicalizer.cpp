@@ -209,7 +209,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
       set_canonical(new StoreField(x->obj(), x->offset(), x->field(), value, x->is_static(),
-                                       x->state_before(), x->is_loaded(), x->is_initialized()));
+                                   x->state_before(), x->needs_patching()));
       return;
     }
   }

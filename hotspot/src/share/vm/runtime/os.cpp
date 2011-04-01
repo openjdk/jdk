@@ -633,10 +633,10 @@ void  os::free(void *memblock) {
       *q = (u_char)freeBlockPad;
     }
     if (PrintMalloc && tty != NULL)
-      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, memblock);
+      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)memblock);
   } else if (PrintMalloc && tty != NULL) {
     // tty->print_cr("os::free %p", memblock);
-    fprintf(stderr, "os::free " PTR_FORMAT "\n", memblock);
+    fprintf(stderr, "os::free " PTR_FORMAT "\n", (uintptr_t)memblock);
   }
 #endif
   ::free((char*)memblock - space_before);
@@ -1079,11 +1079,6 @@ bool os::set_boot_path(char fileSep, char pathSep) {
         "%/lib/jsse.jar:"
         "%/lib/jce.jar:"
         "%/lib/charsets.jar:"
-
-        // ## TEMPORARY hack to keep the legacy launcher working when
-        // ## only the boot module is installed (cf. j.l.ClassLoader)
-        "%/lib/modules/jdk.boot.jar:"
-
         "%/classes";
     char* sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
     if (sysclasspath == NULL) return false;

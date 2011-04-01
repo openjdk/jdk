@@ -28,6 +28,13 @@
 #include "oops/arrayKlassKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 
 klassOop arrayKlassKlass::create_klass(TRAPS) {
@@ -104,9 +111,12 @@ int arrayKlassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
 int arrayKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
   assert(obj->is_klass(), "must be klass");
   arrayKlass* ak = arrayKlass::cast(klassOop(obj));
-  blk->do_oop(ak->adr_component_mirror());
-  blk->do_oop(ak->adr_lower_dimension());
-  blk->do_oop(ak->adr_higher_dimension());
+  oop* addr = ak->adr_component_mirror();
+  if (mr.contains(addr)) blk->do_oop(addr);
+  addr = ak->adr_lower_dimension();
+  if (mr.contains(addr)) blk->do_oop(addr);
+  addr = ak->adr_higher_dimension();
+  if (mr.contains(addr)) blk->do_oop(addr);
   ak->vtable()->oop_oop_iterate_m(blk, mr);
   return klassKlass::oop_oop_iterate_m(obj, blk, mr);
 }
@@ -114,6 +124,12 @@ int arrayKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
 #ifndef SERIALGC
 void arrayKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->blueprint()->oop_is_arrayKlass(),"must be an array klass");
+  arrayKlass* ak = arrayKlass::cast(klassOop(obj));
+  oop* p = ak->adr_component_mirror();
+  if (PSScavenge::should_scavenge(p)) {
+    pm->claim_or_forward_depth(p);
+  }
+  klassKlass::oop_push_contents(pm, obj);
 }
 
 int arrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {

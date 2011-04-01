@@ -436,6 +436,13 @@ void VM_Version::get_processor_features() {
         UseCountLeadingZerosInstruction = true;
       }
     }
+
+    // On family 21 processors default is no sw prefetch
+    if ( cpu_family() == 21 ) {
+      if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+        AllocatePrefetchStyle = 0;
+      }
+    }
   }
 
   if( is_intel() ) { // Intel cpus specific settings

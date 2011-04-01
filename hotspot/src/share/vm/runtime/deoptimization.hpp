@@ -136,12 +136,12 @@ class Deoptimization : AllStatic {
     address*  _frame_pcs;                 // Array of frame pc's, in bytes, for unrolling the stack
     intptr_t* _register_block;            // Block for storing callee-saved registers.
     BasicType _return_type;               // Tells if we have to restore double or long return value
+    intptr_t  _initial_fp;                // FP of the sender frame
     // The following fields are used as temps during the unpacking phase
     // (which is tight on registers, especially on x86). They really ought
     // to be PD variables but that involves moving this class into its own
     // file to use the pd include mechanism. Maybe in a later cleanup ...
     intptr_t  _counter_temp;              // SHOULD BE PD VARIABLE (x86 frame count temp)
-    intptr_t  _initial_fp;                // SHOULD BE PD VARIABLE (x86/c2 initial ebp)
     intptr_t  _unpack_kind;               // SHOULD BE PD VARIABLE (x86 unpack kind)
     intptr_t  _sender_sp_temp;            // SHOULD BE PD VARIABLE (x86 sender_sp)
    public:
@@ -164,6 +164,8 @@ class Deoptimization : AllStatic {
 
     // Returns the total size of frames
     int size_of_frames() const;
+
+    void set_initial_fp(intptr_t fp) { _initial_fp = fp; }
 
     // Accessors used by the code generator for the unpack stub.
     static int size_of_deoptimized_frame_offset_in_bytes() { return offset_of(UnrollBlock, _size_of_deoptimized_frame); }
