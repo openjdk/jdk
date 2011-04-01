@@ -70,6 +70,7 @@
 #include "oops/cpCacheKlass.hpp"
 #include "oops/cpCacheOop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlassKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -269,7 +270,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
-  nonstatic_field(instanceKlass,               _static_oop_field_size,                        int)                                   \
+  nonstatic_field(instanceKlass,               _static_oop_field_count,                       int)                                   \
   nonstatic_field(instanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(instanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(instanceKlass,               _minor_version,                                u2)                                    \
@@ -840,7 +841,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* OSThread */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(OSThread,                    _interrupted,                                  jint)                                  \
+  volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* OopMap and OopMapSet */                                                                                                         \
@@ -945,6 +946,15 @@ static inline uint64_t cast_uint64_t(size_t x)
   static_field(Arguments,                      _num_jvm_args,                                 int)                                   \
   static_field(Arguments,                      _java_command,                                 char*)                                 \
                                                                                                                                      \
+  /*********************************/                                                                                                \
+  /* java_lang_Class fields        */                                                                                                \
+  /*********************************/                                                                                                \
+                                                                                                                                     \
+  static_field(java_lang_Class,                klass_offset,                                  int)                                   \
+  static_field(java_lang_Class,                resolved_constructor_offset,                   int)                                   \
+  static_field(java_lang_Class,                array_klass_offset,                            int)                                   \
+  static_field(java_lang_Class,                oop_size_offset,                               int)                                   \
+  static_field(java_lang_Class,                static_oop_field_count_offset,                 int)                                   \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* Miscellaneous fields */                                                                                                         \
@@ -1092,6 +1102,7 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(instanceKlass, Klass)                             \
            declare_type(instanceKlassKlass, klassKlass)                   \
            declare_type(instanceOopDesc, oopDesc)                         \
+           declare_type(instanceMirrorKlass, instanceKlass)               \
            declare_type(instanceRefKlass, instanceKlass)                  \
            declare_type(klassKlass, Klass)                                \
            declare_type(klassOopDesc, oopDesc)                            \
@@ -1414,6 +1425,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_toplevel_type(intptr_t*)                                        \
    declare_unsigned_integer_type(InvocationCounter) /* FIXME: wrong type (not integer) */ \
   declare_toplevel_type(JavaThread*)                                      \
+  declare_toplevel_type(java_lang_Class)                                  \
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
   declare_toplevel_type(jint*)                                            \
@@ -1542,12 +1554,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***************/                                                       \
                                                                           \
   declare_constant(SymbolTable::symbol_table_size)                        \
-                                                                          \
-  /***************/                                                       \
-  /* StringTable */                                                       \
-  /***************/                                                       \
-                                                                          \
-  declare_constant(StringTable::string_table_size)                        \
                                                                           \
   /********************/                                                  \
   /* SystemDictionary */                                                  \
@@ -1699,15 +1705,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /******************************************/                            \
                                                                           \
   declare_constant(ConstantPoolCacheEntry::tosBits)                       \
-                                                                          \
-  /*********************************/                                     \
-  /* java_lang_Class field offsets */                                     \
-  /*********************************/                                     \
-                                                                          \
-  declare_constant(java_lang_Class::hc_klass_offset)                      \
-  declare_constant(java_lang_Class::hc_array_klass_offset)                \
-  declare_constant(java_lang_Class::hc_resolved_constructor_offset)       \
-  declare_constant(java_lang_Class::hc_number_of_fake_oop_fields)         \
                                                                           \
   /***************************************/                               \
   /* java_lang_Thread::ThreadStatus enum */                               \

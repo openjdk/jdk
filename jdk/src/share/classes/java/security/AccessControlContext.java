@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
+import sun.misc.JavaSecurityAccess;
+import sun.misc.SharedSecrets;
+
 
 /**
  * An AccessControlContext is used to make system resource access decisions
@@ -194,6 +197,24 @@ public final class AccessControlContext {
     {
         this.context = context;
         this.isPrivileged = isPrivileged;
+    }
+
+    /**
+     * Constructor for JavaSecurityAccess.doIntersectionPrivilege()
+     */
+    AccessControlContext(ProtectionDomain[] context,
+                         AccessControlContext privilegedContext)
+    {
+        this.context = context;
+        this.privilegedContext = privilegedContext;
+        this.isPrivileged = true;
+    }
+
+    /**
+     * Returns this context's context.
+     */
+    ProtectionDomain[] getContext() {
+        return context;
     }
 
     /**

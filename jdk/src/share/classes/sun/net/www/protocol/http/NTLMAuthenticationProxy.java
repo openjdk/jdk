@@ -36,12 +36,14 @@ import sun.util.logging.PlatformLogger;
  */
 class NTLMAuthenticationProxy {
     private static Method supportsTA;
+    private static Method isTrustedSite;
     private static final String clazzStr = "sun.net.www.protocol.http.ntlm.NTLMAuthentication";
     private static final String supportsTAStr = "supportsTransparentAuth";
+    private static final String isTrustedSiteStr = "isTrustedSite";
 
     static final NTLMAuthenticationProxy proxy = tryLoadNTLMAuthentication();
     static final boolean supported = proxy != null ? true : false;
-    static final boolean supportsTransparentAuth = supported ? supportsTransparentAuth(supportsTA) : false;
+    static final boolean supportsTransparentAuth = supported ? supportsTransparentAuth() : false;
 
     private final Constructor<? extends AuthenticationInfo> threeArgCtr;
     private final Constructor<? extends AuthenticationInfo> fiveArgCtr;
@@ -82,9 +84,22 @@ class NTLMAuthenticationProxy {
      * authentication (try with the current users credentials before
      * prompting for username and password, etc).
      */
-    private static boolean supportsTransparentAuth(Method method) {
+    private static boolean supportsTransparentAuth() {
         try {
-            return (Boolean)method.invoke(null);
+            return (Boolean)supportsTA.invoke(null);
+        } catch (ReflectiveOperationException roe) {
+            finest(roe);
+        }
+
+        return false;
+    }
+
+    /* Transparent authentication should only be tried with a trusted
+     * site ( when running in a secure environment ).
+     */
+    public static boolean isTrustedSite(URL url) {
+        try {
+            return (Boolean)isTrustedSite.invoke(null, url);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -112,6 +127,7 @@ class NTLMAuthenticationProxy {
                                             int.class,
                                             PasswordAuthentication.class);
                 supportsTA = cl.getDeclaredMethod(supportsTAStr);
+                isTrustedSite = cl.getDeclaredMethod(isTrustedSiteStr, java.net.URL.class);
                 return new NTLMAuthenticationProxy(threeArg,
                                                    fiveArg);
             }

@@ -47,16 +47,16 @@ final class Renderer implements PathConsumer2D {
 
         private static final int INIT_CROSSINGS_SIZE = 10;
 
-        private ScanlineIterator() {
+        // Preconditions: Only subpixel scanlines in the range
+        // (start <= subpixel_y <= end) will be evaluated. No
+        // edge may have a valid (i.e. inside the supplied clip)
+        // crossing that would be generated outside that range.
+        private ScanlineIterator(int start, int end) {
             crossings = new int[INIT_CROSSINGS_SIZE];
             edgePtrs = new int[INIT_CROSSINGS_SIZE];
 
-            // We don't care if we clip some of the line off with ceil, since
-            // no scan line crossings will be eliminated (in fact, the ceil is
-            // the y of the first scan line crossing).
-            final int minY = getFirstScanLineCrossing();
-            nextY = minY;
-            maxY = getScanLineCrossingEnd()-1;
+            nextY = start;
+            maxY = end;
             edgeCount = 0;
         }
 
@@ -148,6 +148,7 @@ final class Renderer implements PathConsumer2D {
     // don't just set NULL to -1, because we want NULL+NEXT to be negative.
     private static final int NULL = -SIZEOF_EDGE;
     private float[] edges = null;
+    private static final int INIT_NUM_EDGES = 8;
     private int[] edgeBuckets = null;
     private int[] edgeBucketCounts = null; // 2*newedges + (1 if pruning needed)
     private int numEdges;
@@ -156,7 +157,7 @@ final class Renderer implements PathConsumer2D {
     private static final float INC_BND = 8f;
 
     // each bucket is a linked list. this method adds eptr to the
-    // start "bucket"th linked list.
+    // start of the "bucket"th linked list.
     private void addEdgeToBucket(final int eptr, final int bucket) {
         edges[eptr+NEXT] = edgeBuckets[bucket];
         edgeBuckets[bucket] = eptr;
@@ -168,7 +169,8 @@ final class Renderer implements PathConsumer2D {
     // X0, Y0, D*[X|Y], COUNT; not variables used for computing scanline crossings).
     private void quadBreakIntoLinesAndAdd(float x0, float y0,
                                           final Curve c,
-                                          final float x2, final float y2) {
+                                          final float x2, final float y2)
+    {
         final float QUAD_DEC_BND = 32;
         final int countlg = 4;
         int count = 1 << countlg;
@@ -204,7 +206,8 @@ final class Renderer implements PathConsumer2D {
     // here, but then too many numbers are passed around.
     private void curveBreakIntoLinesAndAdd(float x0, float y0,
                                            final Curve c,
-                                           final float x3, final float y3) {
+                                           final float x3, final float y3)
+    {
         final int countlg = 3;
         int count = 1 << countlg;
 
@@ -259,8 +262,6 @@ final class Renderer implements PathConsumer2D {
         }
     }
 
-    // Preconditions: y2 > y1 and the curve must cross some scanline
-    // i.e.: y1 <= y < y2 for some y such that boundsMinY <= y < boundsMaxY
     private void addLine(float x1, float y1, float x2, float y2) {
         float or = 1; // orientation of the line. 1 if y increases, 0 otherwise.
         if (y2 < y1) {
@@ -272,12 +273,11 @@ final class Renderer implements PathConsumer2D {
             x1 = or;
             or = 0;
         }
-        final int firstCrossing = Math.max((int) Math.ceil(y1), boundsMinY);
+        final int firstCrossing = Math.max((int)Math.ceil(y1), boundsMinY);
         final int lastCrossing = Math.min((int)Math.ceil(y2), boundsMaxY);
         if (firstCrossing >= lastCrossing) {
             return;
         }
-
         if (y1 < edgeMinY) { edgeMinY = y1; }
         if (y2 > edgeMaxY) { edgeMaxY = y2; }
 
@@ -297,22 +297,10 @@ final class Renderer implements PathConsumer2D {
         edges[ptr+OR] = or;
         edges[ptr+CURX] = x1 + (firstCrossing - y1) * slope;
         edges[ptr+SLOPE] = slope;
-        edges[ptr+YMAX] = y2;
+        edges[ptr+YMAX] = lastCrossing;
         final int bucketIdx = firstCrossing - boundsMinY;
         addEdgeToBucket(ptr, bucketIdx);
-        if (lastCrossing < boundsMaxY) {
-            edgeBucketCounts[lastCrossing - boundsMinY] |= 1;
-        }
-    }
-
-    // preconditions: should not be called before the last line has been added
-    // to the edge list (even though it will return a correct answer at that
-    // point in time, it's not meant to be used that way).
-    private int getFirstScanLineCrossing() {
-        return Math.max(boundsMinY, (int)Math.ceil(edgeMinY));
-    }
-    private int getScanLineCrossingEnd() {
-        return Math.min(boundsMaxY, (int)Math.ceil(edgeMaxY));
+        edgeBucketCounts[lastCrossing - boundsMinY] |= 1;
     }
 
 // END EDGE LIST
@@ -366,9 +354,11 @@ final class Renderer implements PathConsumer2D {
         this.boundsMaxX = (pix_boundsX + pix_boundsWidth) * SUBPIXEL_POSITIONS_X;
         this.boundsMaxY = (pix_boundsY + pix_boundsHeight) * SUBPIXEL_POSITIONS_Y;
 
+        edges = new float[INIT_NUM_EDGES * SIZEOF_EDGE];
+        numEdges = 0;
         edgeBuckets = new int[boundsMaxY - boundsMinY];
         java.util.Arrays.fill(edgeBuckets, NULL);
-        edgeBucketCounts = new int[edgeBuckets.length];
+        edgeBucketCounts = new int[edgeBuckets.length + 1];
     }
 
     private float tosubpixx(float pix_x) {
@@ -394,7 +384,7 @@ final class Renderer implements PathConsumer2D {
         y0 = y1;
     }
 
-    Curve c = new Curve();
+    private Curve c = new Curve();
     @Override public void curveTo(float x1, float y1,
                                   float x2, float y2,
                                   float x3, float y3)
@@ -431,8 +421,8 @@ final class Renderer implements PathConsumer2D {
         throw new InternalError("Renderer does not use a native consumer.");
     }
 
-    private void _endRendering(final int pix_bboxx0, final int pix_bboxy0,
-                               final int pix_bboxx1, final int pix_bboxy1)
+    private void _endRendering(final int pix_bboxx0, final int pix_bboxx1,
+                               int ymin, int ymax)
     {
         // Mask to determine the relevant bit of the crossing sum
         // 0x1 if EVEN_ODD, all bits if NON_ZERO
@@ -455,7 +445,7 @@ final class Renderer implements PathConsumer2D {
         int pix_minX = Integer.MAX_VALUE;
 
         int y = boundsMinY; // needs to be declared here so we emit the last row properly.
-        ScanlineIterator it = this.new ScanlineIterator();
+        ScanlineIterator it = this.new ScanlineIterator(ymin, ymax);
         for ( ; it.hasNext(); ) {
             int numCrossings = it.next();
             int[] crossings = it.crossings;
@@ -477,7 +467,7 @@ final class Renderer implements PathConsumer2D {
                 int curxo = crossings[i];
                 int curx = curxo >> 1;
                 // to turn {0, 1} into {-1, 1}, multiply by 2 and subtract 1.
-                int crorientation = ((curxo & 0x1) << 1) -1;
+                int crorientation = ((curxo & 0x1) << 1) - 1;
                 if ((sum & mask) != 0) {
                     int x0 = Math.max(prev, bboxx0);
                     int x1 = Math.min(curx, bboxx1);
@@ -541,7 +531,7 @@ final class Renderer implements PathConsumer2D {
         }
 
         this.cache = new PiscesCache(pminX, pminY, pmaxX, pmaxY);
-        _endRendering(pminX, pminY, pmaxX, pmaxY);
+        _endRendering(pminX, pmaxX, spminY, spmaxY);
     }
 
     public PiscesCache getCache() {

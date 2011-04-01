@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ DEF_OOP(compiledICHolder);
 
 class Klass;
 class   instanceKlass;
+class     instanceMirrorKlass;
 class     instanceRefKlass;
 class   methodKlass;
 class   constMethodKlass;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,15 @@ else
   ifeq ($(ARCH), amd64)
     CPPFLAGS += -DX_ARCH=X_AMD64
   endif # ARCH amd64
+
+  ifeq ($(ARCH), arm)
+    CPPFLAGS += -DX_ARCH=X_ARM
+  endif # ARCH arm
+
+  ifeq ($(ARCH), ppc)
+    CPPFLAGS += -DX_ARCH=X_PPC
+  endif # ARCH ppc
+
 endif
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1202,11 +1202,15 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   // Oop pointers need some flattening
   const TypeInstPtr *to = tj->isa_instptr();
   if( to && _AliasLevel >= 2 && to != TypeOopPtr::BOTTOM ) {
+    ciInstanceKlass *k = to->klass()->as_instance_klass();
     if( ptr == TypePtr::Constant ) {
-      // No constant oop pointers (such as Strings); they alias with
-      // unknown strings.
-      assert(!is_known_inst, "not scalarizable allocation");
-      tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
+      if (to->klass() != ciEnv::current()->Class_klass() ||
+          offset < k->size_helper() * wordSize) {
+        // No constant oop pointers (such as Strings); they alias with
+        // unknown strings.
+        assert(!is_known_inst, "not scalarizable allocation");
+        tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
+      }
     } else if( is_known_inst ) {
       tj = to; // Keep NotNull and klass_is_exact for instance type
     } else if( ptr == TypePtr::NotNull || to->klass_is_exact() ) {
@@ -1216,7 +1220,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
     }
     // Canonicalize the holder of this field
-    ciInstanceKlass *k = to->klass()->as_instance_klass();
     if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
       // First handle header references such as a LoadKlassNode, even if the
       // object's klass is unloaded at compile time (4965979).
@@ -1224,9 +1227,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
         tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
       }
     } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
-      to = NULL;
-      tj = TypeOopPtr::BOTTOM;
-      offset = tj->offset();
+      // Static fields are in the space above the normal instance
+      // fields in the java.lang.Class instance.
+      if (to->klass() != ciEnv::current()->Class_klass()) {
+        to = NULL;
+        tj = TypeOopPtr::BOTTOM;
+        offset = tj->offset();
+      }
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
@@ -1399,7 +1406,7 @@ void Compile::grow_alias_types() {
 
 
 //--------------------------------find_alias_type------------------------------
-Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create) {
+Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
   if (_AliasLevel == 0)
     return alias_type(AliasIdxBot);
 
@@ -1464,21 +1471,27 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
     // but the base pointer type is not distinctive enough to identify
     // references into JavaThread.)
 
-    // Check for final instance fields.
+    // Check for final fields.
     const TypeInstPtr* tinst = flat->isa_instptr();
     if (tinst && tinst->offset() >= instanceOopDesc::base_offset_in_bytes()) {
-      ciInstanceKlass *k = tinst->klass()->as_instance_klass();
-      ciField* field = k->get_field_by_offset(tinst->offset(), false);
+      ciField* field;
+      if (tinst->const_oop() != NULL &&
+          tinst->klass() == ciEnv::current()->Class_klass() &&
+          tinst->offset() >= (tinst->klass()->as_instance_klass()->size_helper() * wordSize)) {
+        // static field
+        ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+        field = k->get_field_by_offset(tinst->offset(), true);
+      } else {
+        ciInstanceKlass *k = tinst->klass()->as_instance_klass();
+        field = k->get_field_by_offset(tinst->offset(), false);
+      }
+      assert(field == NULL ||
+             original_field == NULL ||
+             (field->holder() == original_field->holder() &&
+              field->offset() == original_field->offset() &&
+              field->is_static() == original_field->is_static()), "wrong field?");
       // Set field() and is_rewritable() attributes.
       if (field != NULL)  alias_type(idx)->set_field(field);
-    }
-    const TypeKlassPtr* tklass = flat->isa_klassptr();
-    // Check for final static fields.
-    if (tklass && tklass->klass()->is_instance_klass()) {
-      ciInstanceKlass *k = tklass->klass()->as_instance_klass();
-      ciField* field = k->get_field_by_offset(tklass->offset(), true);
-      // Set field() and is_rewritable() attributes.
-      if (field != NULL)   alias_type(idx)->set_field(field);
     }
   }
 
@@ -1502,10 +1515,10 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
 Compile::AliasType* Compile::alias_type(ciField* field) {
   const TypeOopPtr* t;
   if (field->is_static())
-    t = TypeKlassPtr::make(field->holder());
+    t = TypeInstPtr::make(field->holder()->java_mirror());
   else
     t = TypeOopPtr::make_from_klass_raw(field->holder());
-  AliasType* atp = alias_type(t->add_offset(field->offset_in_bytes()));
+  AliasType* atp = alias_type(t->add_offset(field->offset_in_bytes()), field);
   assert(field->is_final() == !atp->is_rewritable(), "must get the rewritable bits correct");
   return atp;
 }
@@ -1522,7 +1535,7 @@ bool Compile::have_alias_type(const TypePtr* adr_type) {
   if (adr_type == NULL)             return true;
   if (adr_type == TypePtr::BOTTOM)  return true;
 
-  return find_alias_type(adr_type, true) != NULL;
+  return find_alias_type(adr_type, true, NULL) != NULL;
 }
 
 //-----------------------------must_alias--------------------------------------
@@ -2529,6 +2542,36 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CountedLoop:
     if (n->as_Loop()->is_inner_loop()) {
       frc.inc_inner_loop_count();
+    }
+    break;
+  case Op_LShiftI:
+  case Op_RShiftI:
+  case Op_URShiftI:
+  case Op_LShiftL:
+  case Op_RShiftL:
+  case Op_URShiftL:
+    if (Matcher::need_masked_shift_count) {
+      // The cpu's shift instructions don't restrict the count to the
+      // lower 5/6 bits. We need to do the masking ourselves.
+      Node* in2 = n->in(2);
+      juint mask = (n->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      const TypeInt* t = in2->find_int_type();
+      if (t != NULL && t->is_con()) {
+        juint shift = t->get_con();
+        if (shift > mask) { // Unsigned cmp
+          Compile* C = Compile::current();
+          n->set_req(2, ConNode::make(C, TypeInt::make(shift & mask)));
+        }
+      } else {
+        if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
+          Compile* C = Compile::current();
+          Node* shift = new (C, 3) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
+          n->set_req(2, shift);
+        }
+      }
+      if (in2->outcnt() == 0) { // Remove dead node
+        in2->disconnect_inputs(NULL);
+      }
     }
     break;
   default:

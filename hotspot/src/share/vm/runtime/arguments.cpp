@@ -2819,22 +2819,38 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
 }
 
 void Arguments::set_shared_spaces_flags() {
+  const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
+  const bool might_share = must_share || UseSharedSpaces;
+
+  // The string table is part of the shared archive so the size must match.
+  if (!FLAG_IS_DEFAULT(StringTableSize)) {
+    // Disable sharing.
+    if (must_share) {
+      warning("disabling shared archive %s because of non-default "
+              "StringTableSize", DumpSharedSpaces ? "creation" : "use");
+    }
+    if (might_share) {
+      FLAG_SET_DEFAULT(DumpSharedSpaces, false);
+      FLAG_SET_DEFAULT(RequireSharedSpaces, false);
+      FLAG_SET_DEFAULT(UseSharedSpaces, false);
+    }
+    return;
+  }
+
   // Check whether class data sharing settings conflict with GC, compressed oops
   // or page size, and fix them up.  Explicit sharing options override other
   // settings.
   const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
     UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
     UseCompressedOops || UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
-  const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
-  const bool might_share = must_share || UseSharedSpaces;
   if (cannot_share) {
     if (must_share) {
-      warning("selecting serial gc and disabling large pages %s"
-              "because of %s", "" LP64_ONLY("and compressed oops "),
-              DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
-      force_serial_gc();
-      FLAG_SET_CMDLINE(bool, UseLargePages, false);
-      LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedOops, false));
+        warning("selecting serial gc and disabling large pages %s"
+                "because of %s", "" LP64_ONLY("and compressed oops "),
+                DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
+        force_serial_gc();
+        FLAG_SET_CMDLINE(bool, UseLargePages, false);
+        LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedOops, false));
     } else {
       if (UseSharedSpaces && Verbose) {
         warning("turning off use of shared archive because of "
@@ -2958,21 +2974,34 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
-  if (EnableInvokeDynamic && !EnableMethodHandles) {
-    if (!FLAG_IS_DEFAULT(EnableMethodHandles)) {
-      warning("forcing EnableMethodHandles true because EnableInvokeDynamic is true");
+  // Transitional
+  if (EnableMethodHandles || AnonymousClasses) {
+    if (!EnableInvokeDynamic && !FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+      warning("EnableMethodHandles and AnonymousClasses are obsolete.  Keeping EnableInvokeDynamic disabled.");
+    } else {
+      EnableInvokeDynamic = true;
     }
-    EnableMethodHandles = true;
   }
-  if (EnableMethodHandles && !AnonymousClasses) {
-    if (!FLAG_IS_DEFAULT(AnonymousClasses)) {
-      warning("forcing AnonymousClasses true because EnableMethodHandles is true");
+
+  // JSR 292 is not supported before 1.7
+  if (!JDK_Version::is_gte_jdk17x_version()) {
+    if (EnableInvokeDynamic) {
+      if (!FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+        warning("JSR 292 is not supported before 1.7.  Disabling support.");
+      }
+      EnableInvokeDynamic = false;
     }
-    AnonymousClasses = true;
   }
-  if ((EnableMethodHandles || AnonymousClasses) && ScavengeRootsInCode == 0) {
+
+  if (EnableInvokeDynamic && ScavengeRootsInCode == 0) {
     if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
-      warning("forcing ScavengeRootsInCode non-zero because EnableMethodHandles or AnonymousClasses is true");
+      warning("forcing ScavengeRootsInCode non-zero because EnableInvokeDynamic is true");
+    }
+    ScavengeRootsInCode = 1;
+  }
+  if (!JavaObjectsInPerm && ScavengeRootsInCode == 0) {
+    if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
+      warning("forcing ScavengeRootsInCode non-zero because JavaObjectsInPerm is false");
     }
     ScavengeRootsInCode = 1;
   }

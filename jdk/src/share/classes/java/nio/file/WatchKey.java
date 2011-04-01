@@ -146,5 +146,5 @@ public interface WatchKey {
      *
      * @return the object for which this watch key was created
      */
-    //T watchable();
+    Watchable watchable();
 }

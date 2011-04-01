@@ -87,7 +87,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>
  * For more information about introspection and design patterns, please
  * consult the
- *  <a href="http://java.sun.com/products/javabeans/docs/index.html">JavaBeans specification</a>.
+ *  <a href="http://java.sun.com/products/javabeans/docs/index.html">JavaBeans&trade; specification</a>.
  */
 
 public class Introspector {
@@ -1245,7 +1245,7 @@ public class Introspector {
         try {
             type = ClassFinder.findClass(name, type.getClassLoader());
             // Each customizer should inherit java.awt.Component and implement java.beans.Customizer
-            // according to the section 9.3 of JavaBeans specification
+            // according to the section 9.3 of JavaBeans&trade; specification
             if (Component.class.isAssignableFrom(type) && Customizer.class.isAssignableFrom(type)) {
                 return type;
             }

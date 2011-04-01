@@ -191,8 +191,7 @@ final class PiscesTileGenerator implements AATileGenerator {
                     System.out.println("len = "+runLen);
                     System.out.print(cache.toString());
                     e0.printStackTrace();
-                    System.exit(1);
-                    return;
+                    throw e0;
                 }
 
                 int rx0 = cx;
@@ -215,8 +214,7 @@ final class PiscesTileGenerator implements AATileGenerator {
                         System.out.println("len = "+runLen);
                         System.out.print(cache.toString());
                         e.printStackTrace();
-                        System.exit(1);
-                        return;
+                        throw e;
                     }
                 }
                 pos += 2;
@@ -251,3 +249,4 @@ final class PiscesTileGenerator implements AATileGenerator {
      */
     public void dispose() {}
 }
+

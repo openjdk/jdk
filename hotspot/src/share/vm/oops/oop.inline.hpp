@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ inline Klass* oopDesc::blueprint()           const { return klass()->klass_part(
 inline bool oopDesc::is_a(klassOop k)        const { return blueprint()->is_subtype_of(k); }
 
 inline bool oopDesc::is_instance()           const { return blueprint()->oop_is_instance(); }
+inline bool oopDesc::is_instanceMirror()     const { return blueprint()->oop_is_instanceMirror(); }
 inline bool oopDesc::is_instanceRef()        const { return blueprint()->oop_is_instanceRef(); }
 inline bool oopDesc::is_array()              const { return blueprint()->oop_is_array(); }
 inline bool oopDesc::is_objArray()           const { return blueprint()->oop_is_objArray(); }
@@ -399,7 +400,7 @@ inline void oopDesc::release_address_field_put(int offset, address contents) { O
 
 inline int oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();
-  int s  = lh >> LogHeapWordSize;  // deliver size scaled by wordSize
+  int s;
 
   // lh is now a value computed at class initialization that may hint
   // at the size.  For instances, this is positive and equal to the
@@ -412,7 +413,13 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
   // alive or dead.  So the speed here is equal in importance to the
   // speed of allocation.
 
-  if (lh <= Klass::_lh_neutral_value) {
+  if (lh > Klass::_lh_neutral_value) {
+    if (!Klass::layout_helper_needs_slow_path(lh)) {
+      s = lh >> LogHeapWordSize;  // deliver size scaled by wordSize
+    } else {
+      s = klass->oop_size(this);
+    }
+  } else if (lh <= Klass::_lh_neutral_value) {
     // The most common case is instances; fall through if so.
     if (lh < Klass::_lh_neutral_value) {
       // Second most common case is arrays.  We have to fetch the
