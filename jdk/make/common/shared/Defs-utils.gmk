@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,23 @@ ifeq ($(PLATFORM),windows)
 endif
 
 # Utilities
+ifdef CROSS_COMPILE_ARCH
+  AR             = $(COMPILER_PATH)ar
+  AS             = $(COMPILER_PATH)as
+  LD             = $(COMPILER_PATH)ld
+  MCS            = $(COMPILER_PATH)mcs
+  NM             = $(COMPILER_PATH)nm
+  STRIP          = $(COMPILER_PATH)strip
+else
+  AR             = $(UTILS_CCS_BIN_PATH)ar
+  AS             = $(UTILS_CCS_BIN_PATH)as
+  LD             = $(UTILS_CCS_BIN_PATH)ld
+  MCS            = $(UTILS_CCS_BIN_PATH)mcs
+  NM             = $(UTILS_CCS_BIN_PATH)nm
+  STRIP          = $(UTILS_CCS_BIN_PATH)strip
+endif
+
 ADB            = $(UTILS_COMMAND_PATH)adb
-AR             = $(UTILS_CCS_BIN_PATH)ar
-AS             = $(UTILS_CCS_BIN_PATH)as
 BASENAME       = $(UTILS_COMMAND_PATH)basename
 BZIP2          = $(UTILS_COMMAND_PATH)bzip2
 CAT            = $(UTILS_COMMAND_PATH)cat
@@ -99,19 +113,16 @@ HEAD           = $(UTILS_USR_BIN_PATH)head
 ID             = $(UTILS_COMMAND_PATH)id
 ISAINFO        = $(UTILS_COMMAND_PATH)isainfo
 KSH            = $(UTILS_COMMAND_PATH)ksh
-LD             = $(UTILS_CCS_BIN_PATH)ld
 LDD            = $(UTILS_USR_BIN_PATH)ldd
 LEX            = $(UTILS_CCS_BIN_PATH)lex
 LN             = $(UTILS_COMMAND_PATH)ln
 LS             = $(UTILS_COMMAND_PATH)ls
-MCS            = $(UTILS_CCS_BIN_PATH)mcs
 M4             = $(UTILS_CCS_BIN_PATH)m4
 MKDIR          = $(UTILS_COMMAND_PATH)mkdir
 MKSINFO        = $(UTILS_COMMAND_PATH)mksinfo
 MSGFMT         = $(UTILS_USR_BIN_PATH)msgfmt
 MV             = $(UTILS_COMMAND_PATH)mv
 NAWK           = $(UTILS_USR_BIN_PATH)nawk
-NM             = $(UTILS_CCS_BIN_PATH)nm
 PKGMK          = $(UTILS_COMMAND_PATH)pkgmk
 PRINTF         = $(UTILS_USR_BIN_PATH)printf
 PWD            = $(UTILS_COMMAND_PATH)pwd
@@ -123,7 +134,6 @@ SED            = $(UTILS_COMMAND_PATH)sed
 SH             = $(UTILS_COMMAND_PATH)sh
 SHOWREV        = $(UTILS_USR_BIN_PATH)showrev
 SORT           = $(UTILS_COMMAND_PATH)sort
-STRIP          = $(UTILS_CCS_BIN_PATH)strip
 TAIL           = $(UTILS_USR_BIN_PATH)tail
 TAR            = $(UTILS_COMMAND_PATH)tar
 TEST           = $(UTILS_USR_BIN_PATH)test
@@ -186,14 +196,16 @@ ifeq ($(PLATFORM),linux)
   # Intrinsic unix command, with backslash-escaped character interpretation
   ECHO           = /bin/echo -e
   # These are really in UTILS_USR_BIN_PATH on Linux
-  AR             = $(UTILS_USR_BIN_PATH)ar
-  AS             = $(UTILS_USR_BIN_PATH)as
-  LD             = $(UTILS_USR_BIN_PATH)ld
+  ifndef CROSS_COMPILE_ARCH
+    AR             = $(UTILS_USR_BIN_PATH)ar
+    AS             = $(UTILS_USR_BIN_PATH)as
+    LD             = $(UTILS_USR_BIN_PATH)ld
+    MCS            = $(UTILS_USR_BIN_PATH)mcs
+    NM             = $(UTILS_USR_BIN_PATH)nm
+    STRIP          = $(UTILS_USR_BIN_PATH)strip
+  endif
   LEX            = $(UTILS_USR_BIN_PATH)lex
-  MCS            = $(UTILS_USR_BIN_PATH)mcs
   M4             = $(UTILS_USR_BIN_PATH)m4
-  NM             = $(UTILS_USR_BIN_PATH)nm
-  STRIP          = $(UTILS_USR_BIN_PATH)strip
   YACC           = $(UTILS_USR_BIN_PATH)yacc
 endif
 

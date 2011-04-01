@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class InstanceKlass extends Klass {
     innerClasses         = new OopField(type.getOopField("_inner_classes"), Oop.getHeaderSize());
     nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), Oop.getHeaderSize());
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), Oop.getHeaderSize());
-    staticOopFieldSize   = new CIntField(type.getCIntegerField("_static_oop_field_size"), Oop.getHeaderSize());
+    staticOopFieldCount   = new CIntField(type.getCIntegerField("_static_oop_field_count"), Oop.getHeaderSize());
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), Oop.getHeaderSize());
     isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), Oop.getHeaderSize());
     initState            = new CIntField(type.getCIntegerField("_init_state"), Oop.getHeaderSize());
@@ -140,7 +140,7 @@ public class InstanceKlass extends Klass {
   private static OopField  innerClasses;
   private static CIntField nonstaticFieldSize;
   private static CIntField staticFieldSize;
-  private static CIntField staticOopFieldSize;
+  private static CIntField staticOopFieldCount;
   private static CIntField nonstaticOopMapSize;
   private static CIntField isMarkedDependent;
   private static CIntField initState;
@@ -241,6 +241,10 @@ public class InstanceKlass extends Klass {
   // Byteside of the header
   private static long headerSize;
 
+  public long getObjectSize(Oop object) {
+    return getSizeHelper() * VM.getVM().getAddressSize();
+  }
+
   public static long getHeaderSize() { return headerSize; }
 
   // Accessors for declared fields
@@ -261,8 +265,7 @@ public class InstanceKlass extends Klass {
   public Symbol    getSourceDebugExtension(){ return getSymbol(sourceDebugExtension); }
   public TypeArray getInnerClasses()        { return (TypeArray)    innerClasses.getValue(this); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
-  public long      getStaticFieldSize()     { return                staticFieldSize.getValue(this); }
-  public long      getStaticOopFieldSize()  { return                staticOopFieldSize.getValue(this); }
+  public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
   public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getVtableLen()           { return                vtableLen.getValue(this); }
@@ -453,14 +456,29 @@ public class InstanceKlass extends Klass {
       visitor.doOop(innerClasses, true);
       visitor.doCInt(nonstaticFieldSize, true);
       visitor.doCInt(staticFieldSize, true);
-      visitor.doCInt(staticOopFieldSize, true);
+      visitor.doCInt(staticOopFieldCount, true);
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(isMarkedDependent, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(vtableLen, true);
       visitor.doCInt(itableLen, true);
     }
+  }
 
+  /*
+   *  Visit the static fields of this InstanceKlass with the obj of
+   *  the visitor set to the oop holding the fields, which is
+   *  currently the java mirror.
+   */
+  public void iterateStaticFields(OopVisitor visitor) {
+    visitor.setObj(getJavaMirror());
+    visitor.prologue();
+    iterateStaticFieldsInternal(visitor);
+    visitor.epilogue();
+
+  }
+
+  void iterateStaticFieldsInternal(OopVisitor visitor) {
     TypeArray fields = getFields();
     int length = (int) fields.getLength();
     for (int index = 0; index < length; index += NEXT_OFFSET) {
@@ -478,9 +496,9 @@ public class InstanceKlass extends Klass {
     return getSuper();
   }
 
-  public void iterateNonStaticFields(OopVisitor visitor) {
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
     if (getSuper() != null) {
-      ((InstanceKlass) getSuper()).iterateNonStaticFields(visitor);
+      ((InstanceKlass) getSuper()).iterateNonStaticFields(visitor, obj);
     }
     TypeArray fields = getFields();
 
@@ -692,7 +710,7 @@ public class InstanceKlass extends Klass {
   public long getObjectSize() {
     long bodySize =    alignObjectOffset(getVtableLen() * getHeap().getOopSize())
                      + alignObjectOffset(getItableLen() * getHeap().getOopSize())
-                     + (getStaticFieldSize() + getNonstaticOopMapSize()) * getHeap().getOopSize();
+                     + (getNonstaticOopMapSize()) * getHeap().getOopSize();
     return alignObjectSize(headerSize + bodySize);
   }
 

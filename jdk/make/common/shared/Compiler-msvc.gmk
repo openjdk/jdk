@@ -47,82 +47,8 @@ ifeq ($(PLATFORM), windows)
   # Compiler version and type (Always get word after "Version")
   CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(SED) 's/.*\(Version.*\)/\1/' | $(NAWK) '{print $$2}')
 
-  # The MSDEVTOOLS_PATH is for older compilers, place for rc, mt, etc.
-  _OTHER_TOOLS_PATH = $(MSDEVTOOLS_PATH)
-
-  # SDK-64 and MSVC6 put REBASE.EXE in a different places - go figure...
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
-    CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
-    ifeq ($(CC_MAJORVER), 13)
-      # This should be: CC_VER=13.10.3077 LINK_VER=7.10.3077
-      COMPILER_NAME=Visual Studio .NET 2003 Professional C++
-      COMPILER_VERSION=VS2003
-      RC         = $(_OTHER_TOOLS_PATH)rc
-      REBASE     = $(COMPILER_PATH)../../Common7/Tools/Bin/rebase
-      MTL        = $(COMPILER_PATH)../../Common7/Tools/Bin/midl
-    endif
-    ifeq ($(CC_MAJORVER), 14)
-      COMPILER_NAME=Visual Studio 8
-      COMPILER_VERSION=VS2005
-      RC         = $(_OTHER_TOOLS_PATH)rc
-      REBASE     = $(COMPILER_PATH)../../Common8/Tools/Bin/rebase
-      MTL        = $(COMPILER_PATH)../../Common8/Tools/Bin/midl
-      MT         = $(_OTHER_TOOLS_PATH)/mt
-    endif
-    ifeq ($(CC_MAJORVER), 15)
-      COMPILER_NAME=Visual Studio 9
-      COMPILER_VERSION=VS2008
-      RC         = $(_OTHER_TOOLS_PATH)rc
-      #rebase and midl moved out of Visual Studio into the SDK:
-      REBASE     = $(_OTHER_TOOLS_PATH)/rebase
-      MTL        = $(_OTHER_TOOLS_PATH)/midl.exe
-      MT         = $(_OTHER_TOOLS_PATH)mt
-    endif
-  else
-    # else ARCH_DATA_MODEL is 64
-    LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
-    CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
-    CC_MINORVER :=$(call MinorVersion,$(CC_VER))
-    CC_MICROVER :=$(call MicroVersion,$(CC_VER))
-    ifeq ($(CC_MAJORVER), 13)
-      ifeq ($(ARCH), ia64)
-        # This should be: CC_VER=13.00.9337.7 LINK_VER=7.00.9337.7
-        COMPILER_NAME=Microsoft Platform SDK - November 2001 Edition
-        COMPILER_VERSION=VS2003
-        RC = $(_OTHER_TOOLS_PATH)rc
-      endif
-    endif
-    ifeq ($(CC_MAJORVER), 14)
-      ifeq ($(ARCH), amd64)
-        #rebase and midl moved out of Visual Studio into the SDK:
-        RC         = $(_OTHER_TOOLS_PATH)/rc
-        REBASE     = $(_OTHER_TOOLS_PATH)/rebase
-        MTL        = $(_OTHER_TOOLS_PATH)/midl.exe
-        ifeq ($(CC_MICROVER), 30701)
-          # This should be: CC_VER=14.00.30701 LINK_VER=8.00.30701
-	  # WARNING: it says 14, but it is such an early build it doesn't
-	  #          have all the VS2005 compiler option changes, so treat
-	  #          this like a VS2003 compiler.
-          COMPILER_NAME=Microsoft Platform SDK - February 2003 Edition
-          COMPILER_VERSION=VS2003
-        else
-          # This should be: CC_VER=14.00.40310.41 LINK_VER=8.00.40310.39
-	  COMPILER_NAME=Microsoft Platform SDK - April 2005 Edition (3790.1830)
-          COMPILER_VERSION=VS2005
-        endif
-      else
-        REBASE         = $(COMPILER_PATH)../rebase
-      endif
-    endif
-    ifeq ($(CC_MAJORVER), 15)
-      COMPILER_NAME=Microsoft Windows SDK with Visual Studio 9 (6001.18000.367)
-      COMPILER_VERSION=VS2008
-      RC = $(MSSDK61)/Bin/X64/rc.exe
-      MT = $(MSSDK61)/Bin/X64/mt.exe
-      MTL = $(MSSDK61)/Bin/X64/midl.exe
-    endif
-  endif
+  LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
+  CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
   
   # The VS2010 compiler is the same one used on both 32bit and 64bit
   ifeq ($(CC_MAJORVER), 16)

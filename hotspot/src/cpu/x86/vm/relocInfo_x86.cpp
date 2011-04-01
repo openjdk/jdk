@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "runtime/safepoint.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o) {
+void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 #ifdef AMD64
   x += o;
   typedef Assembler::WhichOperand WhichOperand;
@@ -40,19 +40,35 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
          which == Assembler::narrow_oop_operand ||
          which == Assembler::imm_operand, "format unpacks ok");
   if (which == Assembler::imm_operand) {
-    *pd_address_in_code() = x;
+    if (verify_only) {
+      assert(*pd_address_in_code() == x, "instructions must match");
+    } else {
+      *pd_address_in_code() = x;
+    }
   } else if (which == Assembler::narrow_oop_operand) {
     address disp = Assembler::locate_operand(addr(), which);
-    *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
+    if (verify_only) {
+      assert(*(uint32_t*) disp == oopDesc::encode_heap_oop((oop)x), "instructions must match");
+    } else {
+      *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
+    }
   } else {
     // Note:  Use runtime_call_type relocations for call32_operand.
     address ip = addr();
     address disp = Assembler::locate_operand(ip, which);
     address next_ip = Assembler::locate_next_instruction(ip);
-    *(int32_t*) disp = x - next_ip;
+    if (verify_only) {
+      assert(*(int32_t*) disp == (x - next_ip), "instructions must match");
+    } else {
+      *(int32_t*) disp = x - next_ip;
+    }
   }
 #else
-  *pd_address_in_code() = x + o;
+  if (verify_only) {
+    assert(*pd_address_in_code() == (x + o), "instructions must match");
+  } else {
+    *pd_address_in_code() = x + o;
+  }
 #endif // AMD64
 }
 
@@ -182,41 +198,44 @@ void Relocation::pd_swap_out_breakpoint(address x, short* instrs, int instrlen) 
 
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 #ifdef _LP64
-  typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format();
-  // This format is imm but it is really disp32
-  which = Assembler::disp32_operand;
-  address orig_addr = old_addr_for(addr(), src, dest);
-  NativeInstruction* oni = nativeInstruction_at(orig_addr);
-  int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
-  // This poll_addr is incorrect by the size of the instruction it is irrelevant
-  intptr_t poll_addr = (intptr_t)oni + *orig_disp;
+  if (!Assembler::is_polling_page_far()) {
+    typedef Assembler::WhichOperand WhichOperand;
+    WhichOperand which = (WhichOperand) format();
+    // This format is imm but it is really disp32
+    which = Assembler::disp32_operand;
+    address orig_addr = old_addr_for(addr(), src, dest);
+    NativeInstruction* oni = nativeInstruction_at(orig_addr);
+    int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
+    // This poll_addr is incorrect by the size of the instruction it is irrelevant
+    intptr_t poll_addr = (intptr_t)oni + *orig_disp;
 
-  NativeInstruction* ni = nativeInstruction_at(addr());
-  intptr_t new_disp = poll_addr - (intptr_t) ni;
+    NativeInstruction* ni = nativeInstruction_at(addr());
+    intptr_t new_disp = poll_addr - (intptr_t) ni;
 
-  int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
-  * disp = (int32_t)new_disp;
-
+    int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
+    * disp = (int32_t)new_disp;
+  }
 #endif // _LP64
 }
 
 void poll_return_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 #ifdef _LP64
-  typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format();
-  // This format is imm but it is really disp32
-  which = Assembler::disp32_operand;
-  address orig_addr = old_addr_for(addr(), src, dest);
-  NativeInstruction* oni = nativeInstruction_at(orig_addr);
-  int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
-  // This poll_addr is incorrect by the size of the instruction it is irrelevant
-  intptr_t poll_addr = (intptr_t)oni + *orig_disp;
+  if (!Assembler::is_polling_page_far()) {
+    typedef Assembler::WhichOperand WhichOperand;
+    WhichOperand which = (WhichOperand) format();
+    // This format is imm but it is really disp32
+    which = Assembler::disp32_operand;
+    address orig_addr = old_addr_for(addr(), src, dest);
+    NativeInstruction* oni = nativeInstruction_at(orig_addr);
+    int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
+    // This poll_addr is incorrect by the size of the instruction it is irrelevant
+    intptr_t poll_addr = (intptr_t)oni + *orig_disp;
 
-  NativeInstruction* ni = nativeInstruction_at(addr());
-  intptr_t new_disp = poll_addr - (intptr_t) ni;
+    NativeInstruction* ni = nativeInstruction_at(addr());
+    intptr_t new_disp = poll_addr - (intptr_t) ni;
 
-  int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
-  * disp = (int32_t)new_disp;
+    int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
+    * disp = (int32_t)new_disp;
+  }
 #endif // _LP64
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,20 +839,18 @@ public class VM {
   }
 
   private void readSystemProperties() {
-     InstanceKlass systemKls = getSystemDictionary().getSystemKlass();
-     systemKls.iterate(new DefaultOopVisitor() {
-                               ObjectReader objReader = new ObjectReader();
-                               public void doOop(sun.jvm.hotspot.oops.OopField field, boolean isVMField) {
-                                  if (field.getID().getName().equals("props")) {
-                                     try {
-                                        sysProps = (Properties) objReader.readObject(field.getValue(getObj()));
-                                     } catch (Exception e) {
-                                        if (Assert.ASSERTS_ENABLED) {
-                                           e.printStackTrace();
-                                        }
-                                     }
-                                  }
-                               }
-                        }, false);
+    final InstanceKlass systemKls = getSystemDictionary().getSystemKlass();
+    systemKls.iterateStaticFields(new DefaultOopVisitor() {
+        ObjectReader objReader = new ObjectReader();
+        public void doOop(sun.jvm.hotspot.oops.OopField field, boolean isVMField) {
+          if (field.getID().getName().equals("props")) {
+            try {
+              sysProps = (Properties) objReader.readObject(field.getValue(getObj()));
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      });
   }
 }

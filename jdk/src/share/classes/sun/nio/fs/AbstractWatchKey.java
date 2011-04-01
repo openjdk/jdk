@@ -81,7 +81,8 @@ abstract class AbstractWatchKey implements WatchKey {
     /**
      * Return the original watchable (Path)
      */
-    Path watchable() {
+    @Override
+    public Path watchable() {
         return dir;
     }
 

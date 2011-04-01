@@ -42,10 +42,12 @@ package sun.launcher;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.Charset;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -471,11 +473,11 @@ public enum LauncherHelper {
         } catch (ClassNotFoundException cnfe) {
             abort(ostream, cnfe, "java.launcher.cls.error1", cn);
         }
-        signatureDiagnostic(ostream, c);
+        getMainMethod(ostream, c);
         return c;
     }
 
-    static void signatureDiagnostic(PrintStream ostream, Class<?> clazz) {
+    static Method getMainMethod(PrintStream ostream, Class<?> clazz) {
         String classname = clazz.getName();
         Method method = null;
         try {
@@ -495,6 +497,31 @@ public enum LauncherHelper {
         if (method.getReturnType() != java.lang.Void.TYPE) {
             abort(ostream, null, "java.launcher.cls.error3", classname);
         }
-        return;
+        return method;
+    }
+
+    private static final String encprop = "sun.jnu.encoding";
+    private static String encoding = null;
+    private static boolean isCharsetSupported = false;
+
+    /*
+     * converts a c or a byte array to a platform specific string,
+     * previously implemented as a native method in the launcher.
+     */
+    static String makePlatformString(boolean printToStderr, byte[] inArray) {
+        final PrintStream ostream = (printToStderr) ? System.err : System.out;
+        if (encoding == null) {
+            encoding = System.getProperty(encprop);
+            isCharsetSupported = Charset.isSupported(encoding);
+        }
+        try {
+            String out = isCharsetSupported
+                    ? new String(inArray, encoding)
+                    : new String(inArray);
+            return out;
+        } catch (UnsupportedEncodingException uee) {
+            abort(ostream, uee, null);
+        }
+        return null; // keep the compiler happy
     }
 }

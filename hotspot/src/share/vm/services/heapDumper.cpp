@@ -832,7 +832,7 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, klassOop k) {
 
       // value
       int offset = fld.offset();
-      address addr = (address)k + offset;
+      address addr = (address)ikh->java_mirror() + offset;
 
       dump_field_value(writer, sig->byte_at(0), addr);
     }

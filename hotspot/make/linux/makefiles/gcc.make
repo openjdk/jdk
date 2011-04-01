@@ -30,9 +30,13 @@
 ifdef CROSS_COMPILE_ARCH
 CPP = $(ALT_COMPILER_PATH)/g++
 CC  = $(ALT_COMPILER_PATH)/gcc
+HOSTCPP = g++
+HOSTCC  = gcc
 else
 CPP = g++
 CC  = gcc
+HOSTCPP = $(CPP)
+HOSTCC  = $(CC)
 endif
 
 AS  = $(CC) -c

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,8 @@ public abstract class SunJSSE extends java.security.Provider {
             "sun.security.ssl.KeyManagerFactoryImpl$SunX509");
         put("KeyManagerFactory.NewSunX509",
             "sun.security.ssl.KeyManagerFactoryImpl$X509");
+        put("Alg.Alias.KeyManagerFactory.PKIX", "NewSunX509");
+
         put("TrustManagerFactory.SunX509",
             "sun.security.ssl.TrustManagerFactoryImpl$SimpleFactory");
         put("TrustManagerFactory.PKIX",

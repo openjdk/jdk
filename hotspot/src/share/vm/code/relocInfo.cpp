@@ -798,6 +798,14 @@ void oop_Relocation::fix_oop_relocation() {
 }
 
 
+void oop_Relocation::verify_oop_relocation() {
+  if (!oop_is_immediate()) {
+    // get the oop from the pool, and re-insert it into the instruction:
+    verify_value(value());
+  }
+}
+
+
 RelocIterator virtual_call_Relocation::parse_ic(nmethod* &nm, address &ic_call, address &first_oop,
                                                 oop* &oop_addr, bool *is_optimized) {
   assert(ic_call != NULL, "ic_call address must be set");
