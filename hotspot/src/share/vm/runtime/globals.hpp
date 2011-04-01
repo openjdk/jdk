@@ -2726,10 +2726,10 @@ class CommandLineFlags {
   product(bool, UseLoopCounter, true,                                       \
           "Increment invocation counter on backward branch")                \
                                                                             \
-  product(bool, UseFastEmptyMethods, true,                                  \
+  product(bool, UseFastEmptyMethods, false,                                 \
           "Use fast method entry code for empty methods")                   \
                                                                             \
-  product(bool, UseFastAccessorMethods, true,                               \
+  product(bool, UseFastAccessorMethods, false,                              \
           "Use fast method entry code for accessor methods")                \
                                                                             \
   product_pd(bool, UseOnStackReplacement,                                   \
