@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,10 +246,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
-        if (pkg != null)
-            addSummaryComment(pkg, tdLast);
-        else
-            tdLast.addContent(getSpace());
+        addSummaryComment(pkg, tdLast);
         contentTree.addContent(tdLast);
     }
 

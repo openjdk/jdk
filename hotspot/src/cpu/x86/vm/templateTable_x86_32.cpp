@@ -3110,7 +3110,7 @@ void TemplateTable::invokedynamic(int byte_no) {
     __ profile_call(rsi);
   }
 
-  __ movptr(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
+  __ movptr(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rcx)));
   __ null_check(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
   __ jump_to_method_handle_entry(rcx_method_handle, rdx);

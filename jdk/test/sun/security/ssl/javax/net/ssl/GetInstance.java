@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4898428
+ * @bug 4898428 7022855
  * @summary verify getInstance() works using Provider.getService()
+ *          Export "PKIX" as the standard algorithm name of KeyManagerFactory
  * @author Andreas Sterbenz
  */
 
@@ -61,12 +62,54 @@ public class GetInstance {
         kmf = KeyManagerFactory.getInstance("SunX509", p);
         same(p, kmf.getProvider());
 
+        kmf = KeyManagerFactory.getInstance("NewSunX509");
+        same(p, kmf.getProvider());
+        kmf = KeyManagerFactory.getInstance("NewSunX509", "SunJSSE");
+        same(p, kmf.getProvider());
+        kmf = KeyManagerFactory.getInstance("NewSunX509", p);
+        same(p, kmf.getProvider());
+
+        kmf = KeyManagerFactory.getInstance("PKIX");
+        same(p, kmf.getProvider());
+        kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
+        same(p, kmf.getProvider());
+        kmf = KeyManagerFactory.getInstance("PKIX", p);
+        same(p, kmf.getProvider());
+
         TrustManagerFactory tmf;
         tmf = TrustManagerFactory.getInstance("SunX509");
         same(p, tmf.getProvider());
         tmf = TrustManagerFactory.getInstance("SunX509", "SunJSSE");
         same(p, tmf.getProvider());
         tmf = TrustManagerFactory.getInstance("SunX509", p);
+        same(p, tmf.getProvider());
+
+        tmf = TrustManagerFactory.getInstance("PKIX");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("PKIX", p);
+        same(p, tmf.getProvider());
+
+        tmf = TrustManagerFactory.getInstance("SunPKIX");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("SunPKIX", "SunJSSE");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("SunPKIX", p);
+        same(p, tmf.getProvider());
+
+        tmf = TrustManagerFactory.getInstance("X509");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("X509", "SunJSSE");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("X509", p);
+        same(p, tmf.getProvider());
+
+        tmf = TrustManagerFactory.getInstance("X.509");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("X.509", "SunJSSE");
+        same(p, tmf.getProvider());
+        tmf = TrustManagerFactory.getInstance("X.509", p);
         same(p, tmf.getProvider());
 
         testComSun();

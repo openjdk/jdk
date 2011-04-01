@@ -129,6 +129,7 @@ class oopDesc {
 
   // type test operations (inlined in oop.inline.h)
   bool is_instance()           const;
+  bool is_instanceMirror()     const;
   bool is_instanceRef()        const;
   bool is_array()              const;
   bool is_objArray()           const;

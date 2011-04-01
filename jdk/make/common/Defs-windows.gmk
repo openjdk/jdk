@@ -68,40 +68,10 @@ PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 # The following DLL's are considered MS runtime libraries and should
 #     not to be REBASEd, see deploy/make/common/Release.gmk.
 #     msvcr*.dll: Microsoft runtimes
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(COMPILER_VERSION), VS2003)
-    MSVCRNN_DLL = msvcr71.dll
-    MSVCPNN_DLL = msvcp71.dll
-    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
-  endif
-  ifeq ($(COMPILER_VERSION), VS2005)
-    MSVCRNN_DLL = msvcr80.dll
-    MSVCPNN_DLL = msvcp80.dll
-    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
-  endif
-  ifeq ($(COMPILER_VERSION), VS2008)
-    MSVCRNN_DLL = msvcr90.dll
-    MSVCPNN_DLL = msvcp90.dll
-    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
-  endif
-  ifeq ($(COMPILER_VERSION), VS2010)
-    MSVCRNN_DLL = msvcr100.dll
-    MSVCPNN_DLL = msvcp100.dll
-    MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
-  endif
-endif
-
-ifeq ($(ARCH_DATA_MODEL), 64)
-  ifeq ($(COMPILER_VERSION), VS2008)
-    MSVCRNN_DLL = msvcr90.dll
-    MSVCPNN_DLL = msvcp90.dll
-    MS_RUNTIME_LIBRARIES = msvcrt.dll $(MSVCRNN_DLL)
-  endif
-  ifeq ($(COMPILER_VERSION), VS2010)
-    MSVCRNN_DLL = msvcr100.dll
-    MSVCPNN_DLL = msvcp100.dll
-    MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
-  endif
+ifeq ($(COMPILER_VERSION), VS2010)
+  MSVCRNN_DLL = msvcr100.dll
+  MSVCPNN_DLL = msvcp100.dll
+  MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
 endif
 
 EXTRA_LFLAGS += /LIBPATH:$(DXSDK_LIB_PATH)
@@ -124,33 +94,24 @@ ifndef FASTDEBUG_OPTIMIZATION_LEVEL
 endif
 
 ifeq ($(CC_VERSION),msvc)
-  # Visual Studio .NET 2003 or VS2003 compiler option definitions:
+  # Visual Studio compiler option definitions:
   #   -O1      Favors reduced size over speed (-Og     -Os -Oy -Ob2 -Gs -GF -Gy)
   #   -O2      Favors speed over reduced size (-Og -Oi -Ot -Oy -Ob2 -Gs -GF -Gy)
-  #   -Ox      Full optimization (use -O2)    (-Og -Oi -Ot -Oy -Ob2)
-  #              (Removed in Visual Studio 2005 or VS2005)
   #   -Ob2     More aggressive inlining
   #   -Og      Global optimizations
   #   -Oi      Replace some functions with intrinsic or special forms
-  #   -Op      Improve floating point calculations (disables some optimizations)
-  #              (Replaced with -fp:precise in VS2005, /Op is default now)
+  #   -fp:precise (should be the default)
+  #            Improve floating point calculations (disables some optimizations)
   #   -Os      Favor small code
   #   -Ot      Favor faster code
   #   -Oy      Frame pointer omission
-  #   -GB      Optimize for pentium (old VC6 option?)
-  #   -G6      VS2003 version of -GB?
+  #   -G6      Used to be -GB?
   #   -GF      Pool strings in read-only memory
   #   -Gf      Pool strings in read-write memory (the default)
   #   -Gs      Controls stack probess
-  #   -GS      Adds buffer overflow checks on stacks
-  #              (Default in VS2005)
-  #   -GX      Enables exception handling 
-  #              (Replaced with /EHsc in VS2005)
+  #   -GS      Adds buffer overflow checks on stacks (the default)
+  #   -EHsc    Enables exception handling 
   #   -Gy      Function level linking only
-  #
-  # NOTE: With VC6, -Ox included -Gs.
-  # NOTE: With VC6, -Ox, -O1, and -O2 used -Ob1, not -Ob2.
-  # NOTE: With VC6, -O1 and -O2 used -Gf, not -GF.
   #
 
   CC_OPT/NONE    = -Od
@@ -158,75 +119,6 @@ ifeq ($(CC_VERSION),msvc)
   CC_OPT/HIGHER  = -O3
   CC_OPT/HIGHEST = -O3
   
-  ifeq ($(COMPILER_VERSION), VC6)
-    # VC6 (6.2) msvc compiler (the way Tiger and early Mustang were built)
-    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
-    AUTOMATIC_PCH_OPTION =
-    GX_OPTION = -GX
-    GZ_OPTION = -GZ
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      CC_OPT/HIGHEST = -Ox -Gy -Os -GB
-      CC_OPT/HIGHER  = -Ox -Gy -Os -GB
-      CC_OPT/LOWER   = -Ox -Gy -Os -GB
-    else
-      CC_OPT/HIGHEST = -Ox -Gy -Op
-      CC_OPT/HIGHER  = -Ox -Gy -Op
-      CC_OPT/LOWER   = -Ox -Gy -Op
-    endif
-  endif
-  
-  ifeq ($(COMPILER_VERSION), VS2003)
-    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
-    AUTOMATIC_PCH_OPTION = -YX
-    # Also known as VC7 compiler
-    GX_OPTION = -GX
-    GZ_OPTION = -GZ
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      # Lowered opt level to try and reduce footprint, dll size especially.
-      #     Was: CC_OPT/HIGHEST = -O2 -G6
-      #     Was: CC_OPT/HIGHER  = -O2
-      CC_OPT/HIGHEST = -O2
-      CC_OPT/HIGHER  = -O1
-      CC_OPT/LOWER   = -O1
-    else
-      CC_OPT/HIGHEST = -O2 -Op
-      CC_OPT/HIGHER  = -O2 -Op
-      CC_OPT/LOWER   = -O1 -Op
-    endif
-  endif
-  
-  ifeq ($(COMPILER_VERSION), VS2005)
-    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
-    AUTOMATIC_PCH_OPTION =
-    # VS2005 compiler, only with Platform SDK right now?
-    GX_OPTION = -EHsc
-    GZ_OPTION = -RTC1
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      CC_OPT/HIGHEST = -O2
-      CC_OPT/HIGHER  = -O1
-      CC_OPT/LOWER   = -O1
-    else
-      CC_OPT/HIGHEST = -O2
-      CC_OPT/HIGHER  = -O1
-      CC_OPT/LOWER   = -O1
-    endif
-  endif
-  ifeq ($(COMPILER_VERSION), VS2008)
-    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
-    AUTOMATIC_PCH_OPTION =
-    GX_OPTION = -EHsc
-    GZ_OPTION = -RTC1
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      CC_OPT/HIGHEST = -O2
-      CC_OPT/HIGHER  = -O1
-      CC_OPT/LOWER   = -O1
-    else
-      CC_OPT/HIGHEST = -O2
-      CC_OPT/HIGHER  = -O1
-      CC_OPT/LOWER   = -O1
-    endif
-  endif
-
   ifeq ($(COMPILER_VERSION), VS2010)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
@@ -256,7 +148,7 @@ CC_OPT = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 
 # Select the runtime support library carefully, need to be consistent
 #
-# VS2003 compiler option definitions:
+# Visual Studio Runtime compiler option definitions:
 #   -MD        Use dynamic multi-threaded runtime library
 #   -MDd       Use debug version (don't use, doesn't mix with -MD DLL's)
 #   -MT        Use static multi-threaded runtime library (-ML is going away)
@@ -265,12 +157,9 @@ CC_OPT = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 #
 #      NOTE: We also will use /D _STATIC_CPPLIB  so we don't need msvcpnn.dll
 #
-# If MS_RUNTIME_STATIC is requested, use -MT only with VS2003.
-ifeq ($(MS_RUNTIME_STATIC),true)
-  ifeq ($(COMPILER_VERSION), VS2003)
-    MS_RUNTIME_OPTION=-MT
-  endif
-else
+# If MS_RUNTIME_STATIC is requested we may have a problem, it is no longer
+#     supported by VS2010
+ifneq ($(MS_RUNTIME_STATIC),true)
   MS_RUNTIME_OPTION=-MD
 endif
 # The _DEBUG macro option (changes things like malloc to use debug version)
@@ -302,7 +191,7 @@ endif
 MS_RUNTIME_OPTION += $(STATIC_CPPLIB_OPTION)
 
 ifeq ($(CC_VERSION),msvc)
-  # VS2003 compiler option definitions:
+  # Visual Studio compiler option definitions:
   #   -Zi      Cause *.pdb file to be created, full debug information
   #   -Z7      Full debug inside the .obj, no .pdb
   #   -Zd      Basic debug, no local variables? In the .obj
@@ -317,31 +206,10 @@ ifeq ($(CC_VERSION),msvc)
   CFLAGS_OPT      = $(CC_OPT)
   CFLAGS_DBG      = -Od $(MS_RUNTIME_DEBUG_OPTION)
 
-  # REMIND: I don't see where CFLAGS_VS2005 is used. I suspect its
-  # pulled in as a combined "CFLAGS_$(COMPILER_VERSION)" string
-  # but the lack of this isn't causing any apparent build problems
-  # with VS 2010 but it could be causing compiler warnings.
-  # For now, I  will add it for all cases :
   CFLAGS_VS2010 += -Zc:wchar_t-
-  #
-  # Starting from VS2005 the wchar_t is handled as a built-in C/C++ data type
-  # by default. However, we expect the wchar_t to be a typedef to the
-  # unsigned short data type. The -Zc:wchar_t- option restores the old
-  # behavior (as seen in VS2003) to avoid massive code modifications.
-  # When/if our code will be "C/C++ Standard"-compliant (at least in the area
-  # of handling the wchar_t type), the option won't be necessary.
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    CFLAGS_VS2005 += -Zc:wchar_t-
-  else
-    # The 64bit Platform SDK we use (April 2005) doesn't like this option
-    ifneq ($(CC_VER), 14.00.40310.41)
-      CFLAGS_VS2005 += -Zc:wchar_t-
-    endif
-  endif
 
   # All builds get the same runtime setting
   CFLAGS_COMMON += $(MS_RUNTIME_OPTION) $(CFLAGS_$(COMPILER_VERSION))
-  
 
   LDEBUG = /debug
   
@@ -350,21 +218,9 @@ ifeq ($(CC_VERSION),msvc)
     LDEBUG += /pdb:NONE
   endif
   
-  # The new Platform SDK and VS2005 has /GS as a default and requires 
-  #    bufferoverflowU.lib on the link command line, otherwise 
-  #    we get missing __security_check_cookie externals at link time. 
-  BUFFEROVERFLOWLIB = bufferoverflowU.lib
-  # Always add bufferoverflowU.lib to VS2005 link commands (pack uses LDDFLAGS)
-  LFLAGS_VS2005 = $(BUFFEROVERFLOWLIB)
-
-  # VS2008 has bufferoverflow baked in:
-  LFLAGS_VS2008 = 
-
   # VS2010, always need safe exception handlers, not needed on 64bit
   ifeq ($(ARCH_DATA_MODEL), 32)
-    LFLAGS_VS2010 =  -SAFESEH
-  else
-    LFLAGS_VS2010 =
+    LFLAGS_VS2010 +=  -SAFESEH
   endif
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file

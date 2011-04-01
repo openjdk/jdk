@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,7 @@ CollectorCounters*  PSMarkSweep::_counters = NULL;
 
 void PSMarkSweep::initialize() {
   MemRegion mr = Universe::heap()->reserved_region();
-  _ref_processor = new ReferenceProcessor(mr,
-                                          true,    // atomic_discovery
-                                          false);  // mt_discovery
+  _ref_processor = new ReferenceProcessor(mr);     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
 }
 

@@ -293,11 +293,6 @@ void Parse::do_tableswitch() {
   if (len < 1) {
     // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
-    if (should_add_predicate(default_dest)){
-      _sp += 1; // set original stack for use by uncommon_trap
-      add_predicate();
-      _sp -= 1;
-    }
     merge(default_dest);
     return;
   }
@@ -344,11 +339,6 @@ void Parse::do_lookupswitch() {
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
-    if (should_add_predicate(default_dest)){
-      _sp += 1; // set original stack for use by uncommon_trap
-      add_predicate();
-      _sp -= 1;
-    }
     merge(default_dest);
     return;
   }
@@ -756,9 +746,6 @@ void Parse::do_jsr() {
   push(_gvn.makecon(ret_addr));
 
   // Flow to the jsr.
-  if (should_add_predicate(jsr_bci)){
-    add_predicate();
-  }
   merge(jsr_bci);
 }
 
@@ -1040,11 +1027,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       profile_taken_branch(target_bci);
       adjust_map_after_if(btest, c, prob, branch_block, next_block);
       if (!stopped()) {
-        if (should_add_predicate(target_bci)){ // add a predicate if it branches to a loop
-          int nargs = repush_if_args(); // set original stack for uncommon_trap
-          add_predicate();
-          _sp -= nargs;
-        }
         merge(target_bci);
       }
     }
@@ -1168,11 +1150,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       profile_taken_branch(target_bci);
       adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
       if (!stopped()) {
-        if (should_add_predicate(target_bci)){ // add a predicate if it branches to a loop
-          int nargs = repush_if_args(); // set original stack for the uncommon_trap
-          add_predicate();
-          _sp -= nargs;
-        }
         merge(target_bci);
       }
     }
@@ -2166,10 +2143,6 @@ void Parse::do_one_bytecode() {
     // Update method data
     profile_taken_branch(target_bci);
 
-    // Add loop predicate if it goes to a loop
-    if (should_add_predicate(target_bci)){
-      add_predicate();
-    }
     // Merge the current control into the target basic block
     merge(target_bci);
 

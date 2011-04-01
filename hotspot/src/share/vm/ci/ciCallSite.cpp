@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 // Return the target MethodHandle of this CallSite.
 ciMethodHandle* ciCallSite::get_target() const {
   VM_ENTRY_MARK;
-  oop method_handle_oop = java_dyn_CallSite::target(get_oop());
+  oop method_handle_oop = java_lang_invoke_CallSite::target(get_oop());
   return CURRENT_ENV->get_object(method_handle_oop)->as_method_handle();
 }
 

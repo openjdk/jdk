@@ -33,7 +33,7 @@
  *      6379214 6485516 6486607 4225362 4494727 6533691 6531591 6531593 6570259
  *      6509039 6609737 6610748 6645271 6507067 6873931 6450945 6645268 6646611
  *      6645405 6650730 6910489 6573250 6870908 6585666 6716626 6914413 6916787
- *      6919624
+ *      6919624 6998391 7019267 7020960
  * @summary Verify locale data
  *
  */
@@ -90,6 +90,10 @@
  *        FormatData/fr_FR/MonthNames/1=f\u00e9vrier
  *        LocaleNames/fr_FR/US=\u00c9tats-Unis
  *        LocaleNames/fr_FR/FR=France</pre>
+ *
+ *    You can use language tag with '-' in locale field like this:<pre>
+ *        LocaleNames/sr-Latn/SR=Surinam
+ *        FormatData/sr-Latn-BA/DayNames/2=utorak</pre>
  *
  *    The command-line syntax of this test is
  *        <tt>java LocaleDataTest [-w] [{ -s | <filename> }]</tt>
@@ -242,7 +246,9 @@ public class LocaleDataTest
         if (index == -1 || index + 1 == key.length())
             throw new Exception("Malformed input file: \"" + key + "\" is missing locale name");
         localeName = key.substring(oldIndex, index);
-        if (localeName.length() > 0) {
+        boolean use_tag = localeName.indexOf("-") != -1;
+
+        if (use_tag == false && localeName.length() > 0) {
             language = localeName.substring(0, 2);
             if (localeName.length() > 3) {
                 country = localeName.substring(3, 5);
@@ -283,8 +289,14 @@ public class LocaleDataTest
             } else {
                 fullName = "sun.text.resources." + rbName;
             }
+            Locale locale;
+            if (use_tag) {
+                locale = Locale.forLanguageTag(localeName);
+            } else {
+                locale = new Locale(language, country, variant);
+            }
             ResourceBundle bundle = ResourceBundle.getBundle(fullName,
-                           new Locale(language, country, variant),
+                           locale,
                            ResourceBundle.Control.getNoFallbackControl(Control.FORMAT_DEFAULT));
             resource = bundle.getObject(resTag);
         }

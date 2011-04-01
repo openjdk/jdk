@@ -185,22 +185,22 @@ class G1PrepareCompactClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ModRefBarrierSet* _mrbs;
   CompactPoint _cp;
-  size_t _pre_used;
-  FreeRegionList _free_list;
   HumongousRegionSet _humongous_proxy_set;
 
   void free_humongous_region(HeapRegion* hr) {
     HeapWord* end = hr->end();
+    size_t dummy_pre_used;
+    FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
+
     assert(hr->startsHumongous(),
            "Only the start of a humongous region should be freed.");
-    _g1h->free_humongous_region(hr, &_pre_used, &_free_list,
+    _g1h->free_humongous_region(hr, &dummy_pre_used, &dummy_free_list,
                                 &_humongous_proxy_set, false /* par */);
-    // Do we also need to do this for the continues humongous regions
-    // we just collapsed?
     hr->prepare_for_compaction(&_cp);
     // Also clear the part of the card table that will be unused after
     // compaction.
     _mrbs->clear(MemRegion(hr->compaction_top(), end));
+    dummy_free_list.remove_all();
   }
 
 public:
@@ -208,8 +208,6 @@ public:
   : _g1h(G1CollectedHeap::heap()),
     _mrbs(G1CollectedHeap::heap()->mr_bs()),
     _cp(NULL, cs, cs->initialize_threshold()),
-    _pre_used(0),
-    _free_list("Local Free List for G1MarkSweep"),
     _humongous_proxy_set("G1MarkSweep Humongous Proxy Set") { }
 
   void update_sets() {
@@ -219,7 +217,6 @@ public:
                                             NULL, /* free_list */
                                             &_humongous_proxy_set,
                                             false /* par */);
-    _free_list.remove_all();
   }
 
   bool doHeapRegion(HeapRegion* hr) {

@@ -458,6 +458,7 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
   union {
     nmethod* compiled_method_load;
     struct {
+      nmethod* nm;
       jmethodID method_id;
       const void* code_begin;
     } compiled_method_unload;
@@ -477,7 +478,7 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
   // Factory methods
   static JvmtiDeferredEvent compiled_method_load_event(nmethod* nm)
     KERNEL_RETURN_(JvmtiDeferredEvent());
-  static JvmtiDeferredEvent compiled_method_unload_event(
+  static JvmtiDeferredEvent compiled_method_unload_event(nmethod* nm,
       jmethodID id, const void* code) KERNEL_RETURN_(JvmtiDeferredEvent());
   static JvmtiDeferredEvent dynamic_code_generated_event(
       const char* name, const void* begin, const void* end)
