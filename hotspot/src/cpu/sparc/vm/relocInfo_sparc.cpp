@@ -30,7 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-void Relocation::pd_set_data_value(address x, intptr_t o) {
+void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   NativeInstruction* ip = nativeInstruction_at(addr());
   jint inst = ip->long_at(0);
   assert(inst != NativeInstruction::illegal_instruction(), "no breakpoint");
@@ -83,7 +83,11 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
     guarantee(Assembler::is_simm13(simm13), "offset can't overflow simm13");
     inst &= ~Assembler::simm(    -1, 13);
     inst |=  Assembler::simm(simm13, 13);
-    ip->set_long_at(0, inst);
+    if (verify_only) {
+      assert(ip->long_at(0) == inst, "instructions must match");
+    } else {
+      ip->set_long_at(0, inst);
+    }
     }
     break;
 
@@ -97,19 +101,36 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
       jint np = oopDesc::encode_heap_oop((oop)x);
       inst &= ~Assembler::hi22(-1);
       inst |=  Assembler::hi22((intptr_t)np);
-      ip->set_long_at(0, inst);
+      if (verify_only) {
+        assert(ip->long_at(0) == inst, "instructions must match");
+      } else {
+        ip->set_long_at(0, inst);
+      }
       inst2 = ip->long_at( NativeInstruction::nop_instruction_size );
       guarantee(Assembler::inv_op(inst2)==Assembler::arith_op, "arith op");
-      ip->set_long_at(NativeInstruction::nop_instruction_size, ip->set_data32_simm13( inst2, (intptr_t)np));
+      if (verify_only) {
+        assert(ip->long_at(NativeInstruction::nop_instruction_size) == NativeInstruction::set_data32_simm13( inst2, (intptr_t)np),
+               "instructions must match");
+      } else {
+        ip->set_long_at(NativeInstruction::nop_instruction_size, NativeInstruction::set_data32_simm13( inst2, (intptr_t)np));
+      }
       break;
     }
-    ip->set_data64_sethi( ip->addr_at(0), (intptr_t)x );
+    if (verify_only) {
+      ip->verify_data64_sethi( ip->addr_at(0), (intptr_t)x );
+    } else {
+      ip->set_data64_sethi( ip->addr_at(0), (intptr_t)x );
+    }
 #else
     guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
     inst &= ~Assembler::hi22(     -1);
     inst |=  Assembler::hi22((intptr_t)x);
     // (ignore offset; it doesn't play into the sethi)
-    ip->set_long_at(0, inst);
+    if (verify_only) {
+      assert(ip->long_at(0) == inst, "instructions must match");
+    } else {
+      ip->set_long_at(0, inst);
+    }
 #endif
     }
     break;

@@ -793,6 +793,10 @@ class GraphKit : public Phase {
     if (!tst->is_Con())  record_for_igvn(iff);     // Range-check and Null-check removal is later
     return iff;
   }
+
+  // Insert a loop predicate into the graph
+  void add_predicate(int nargs = 0);
+  void add_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
 };
 
 // Helper class to support building of control flow branches. Upon

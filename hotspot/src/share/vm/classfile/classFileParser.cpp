@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/constantPoolOop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/klassVtable.hpp"
@@ -146,12 +147,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
         break;
       case JVM_CONSTANT_MethodHandle :
       case JVM_CONSTANT_MethodType :
-        if (!EnableMethodHandles ||
-            _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+        if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
           classfile_parse_error(
-            (!EnableMethodHandles ?
-             "This JVM does not support constant tag %u in class file %s" :
-             "Class file version does not support constant tag %u in class file %s"),
+            "Class file version does not support constant tag %u in class file %s",
+            tag, CHECK);
+        }
+        if (!EnableMethodHandles) {
+          classfile_parse_error(
+            "This JVM does not support constant tag %u in class file %s",
             tag, CHECK);
         }
         if (tag == JVM_CONSTANT_MethodHandle) {
@@ -170,12 +173,14 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
       case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
-          if (!EnableInvokeDynamic ||
-              _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+          if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
             classfile_parse_error(
-              (!EnableInvokeDynamic ?
-               "This JVM does not support constant tag %u in class file %s" :
-               "Class file version does not support constant tag %u in class file %s"),
+              "Class file version does not support constant tag %u in class file %s",
+              tag, CHECK);
+          }
+          if (!EnableInvokeDynamic) {
+            classfile_parse_error(
+              "This JVM does not support constant tag %u in class file %s",
               tag, CHECK);
           }
           cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
@@ -1616,8 +1621,13 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
 
   AccessFlags access_flags;
   if (name == vmSymbols::class_initializer_name()) {
-    // We ignore the access flags for a class initializer. (JVM Spec. p. 116)
-    flags = JVM_ACC_STATIC;
+    // We ignore the other access flags for a valid class initializer.
+    // (JVM Spec 2nd ed., chapter 4.6)
+    if (_major_version < 51) { // backward compatibility
+      flags = JVM_ACC_STATIC;
+    } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
+      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+    }
   } else {
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
   }
@@ -2597,54 +2607,6 @@ typeArrayHandle ClassFileParser::assemble_annotations(u1* runtime_visible_annota
 }
 
 
-static void initialize_static_field(fieldDescriptor* fd, TRAPS) {
-  KlassHandle h_k (THREAD, fd->field_holder());
-  assert(h_k.not_null() && fd->is_static(), "just checking");
-  if (fd->has_initial_value()) {
-    BasicType t = fd->field_type();
-    switch (t) {
-      case T_BYTE:
-        h_k()->byte_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_BOOLEAN:
-        h_k()->bool_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_CHAR:
-        h_k()->char_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_SHORT:
-        h_k()->short_field_put(fd->offset(), fd->int_initial_value());
-              break;
-      case T_INT:
-        h_k()->int_field_put(fd->offset(), fd->int_initial_value());
-        break;
-      case T_FLOAT:
-        h_k()->float_field_put(fd->offset(), fd->float_initial_value());
-        break;
-      case T_DOUBLE:
-        h_k()->double_field_put(fd->offset(), fd->double_initial_value());
-        break;
-      case T_LONG:
-        h_k()->long_field_put(fd->offset(), fd->long_initial_value());
-        break;
-      case T_OBJECT:
-        {
-          #ifdef ASSERT
-          TempNewSymbol sym = SymbolTable::new_symbol("Ljava/lang/String;", CHECK);
-          assert(fd->signature() == sym, "just checking");
-          #endif
-          oop string = fd->string_initial_value(CHECK);
-          h_k()->obj_field_put(fd->offset(), string);
-        }
-        break;
-      default:
-        THROW_MSG(vmSymbols::java_lang_ClassFormatError(),
-                  "Illegal ConstantValue attribute in class file");
-    }
-  }
-}
-
-
 void ClassFileParser::java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_ptr,
   constantPoolHandle cp, FieldAllocationCount *fac_ptr, TRAPS) {
   // This code is for compatibility with earlier jdk's that do not
@@ -2760,8 +2722,8 @@ void ClassFileParser::java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_pt
 }
 
 
-void ClassFileParser::java_lang_Class_fix_pre(objArrayHandle* methods_ptr,
-  FieldAllocationCount *fac_ptr, TRAPS) {
+void ClassFileParser::java_lang_Class_fix_pre(int* nonstatic_field_size,
+                                              FieldAllocationCount *fac_ptr) {
   // Add fake fields for java.lang.Class instances
   //
   // This is not particularly nice. We should consider adding a
@@ -2778,10 +2740,13 @@ void ClassFileParser::java_lang_Class_fix_pre(objArrayHandle* methods_ptr,
   // versions because when the offsets are computed at bootstrap
   // time we don't know yet which version of the JDK we're running in.
 
-  // The values below are fake but will force two non-static oop fields and
+  // The values below are fake but will force three non-static oop fields and
   // a corresponding non-static oop map block to be allocated.
   const int extra = java_lang_Class::number_of_fake_oop_fields;
   fac_ptr->nonstatic_oop_count += extra;
+
+  // Reserve some leading space for fake ints
+  *nonstatic_field_size += align_size_up(java_lang_Class::hc_number_of_fake_int_fields * BytesPerInt, heapOopSize) / heapOopSize;
 }
 
 
@@ -2797,11 +2762,11 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 
 // Force MethodHandle.vmentry to be an unmanaged pointer.
 // There is no way for a classfile to express this, so we must help it.
-void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
+void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle cp,
                                                     typeArrayHandle fields,
                                                     FieldAllocationCount *fac_ptr,
                                                     TRAPS) {
-  // Add fake fields for java.dyn.MethodHandle instances
+  // Add fake fields for java.lang.invoke.MethodHandle instances
   //
   // This is not particularly nice, but since there is no way to express
   // a native wordSize field in Java, we must do it at this level.
@@ -2818,9 +2783,10 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && word_sig_index == 0)  return;
   if (word_sig_index == 0)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing I or J signature (for vmentry) in java.dyn.MethodHandle");
+              "missing I or J signature (for vmentry) in java.lang.invoke.MethodHandle");
 
   // Find vmentry field and change the signature.
   bool found_vmentry = false;
@@ -2857,9 +2823,10 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
     }
   }
 
+  if (AllowTransitionalJSR292 && !found_vmentry)  return;
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
-              "missing vmentry byte field in java.dyn.MethodHandle");
+              "missing vmentry byte field in java.lang.invoke.MethodHandle");
 }
 
 
@@ -3194,9 +3161,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     int next_nonstatic_field_offset;
 
     // Calculate the starting byte offsets
-    next_static_oop_offset      = (instanceKlass::header_size() +
-                                  align_object_offset(vtable_size) +
-                                  align_object_offset(itable_size)) * wordSize;
+    next_static_oop_offset      = instanceMirrorKlass::offset_of_static_fields();
     next_static_double_offset   = next_static_oop_offset +
                                   (fac.static_oop_count * heapOopSize);
     if ( fac.static_double_count &&
@@ -3215,18 +3180,28 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                   fac.static_byte_count ), wordSize );
     static_field_size           = (next_static_type_offset -
                                   next_static_oop_offset) / wordSize;
+
+    // Add fake fields for java.lang.Class instances (also see below)
+    if (class_name == vmSymbols::java_lang_Class() && class_loader.is_null()) {
+      java_lang_Class_fix_pre(&nonstatic_field_size, &fac);
+    }
+
     first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
                                    nonstatic_field_size * heapOopSize;
     next_nonstatic_field_offset = first_nonstatic_field_offset;
 
-    // Add fake fields for java.lang.Class instances (also see below)
-    if (class_name == vmSymbols::java_lang_Class() && class_loader.is_null()) {
-      java_lang_Class_fix_pre(&methods, &fac, CHECK_(nullHandle));
+    // adjust the vmentry field declaration in java.lang.invoke.MethodHandle
+    if (EnableMethodHandles && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
-
-    // adjust the vmentry field declaration in java.dyn.MethodHandle
-    if (EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
-      java_dyn_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
+    }
+    if (AllowTransitionalJSR292 &&
+        EnableMethodHandles && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
+      // allow vmentry field in MethodHandleImpl also
+      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 
     // Add a fake "discovered" field if it is not present
@@ -3546,7 +3521,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     // We can now create the basic klassOop for this klass
-    klassOop ik = oopFactory::new_instanceKlass(vtable_size, itable_size,
+    klassOop ik = oopFactory::new_instanceKlass(name, vtable_size, itable_size,
                                                 static_field_size,
                                                 total_oop_map_count,
                                                 rt, CHECK_(nullHandle));
@@ -3568,7 +3543,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     this_klass->set_class_loader(class_loader());
     this_klass->set_nonstatic_field_size(nonstatic_field_size);
     this_klass->set_has_nonstatic_fields(has_nonstatic_fields);
-    this_klass->set_static_oop_field_size(fac.static_oop_count);
+    this_klass->set_static_oop_field_count(fac.static_oop_count);
     cp->set_pool_holder(this_klass());
     error_handler.set_in_error(false);   // turn off error handler for cp
     this_klass->set_constants(cp());
@@ -3629,9 +3604,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Make sure this is the end of class file stream
     guarantee_property(cfs->at_eos(), "Extra bytes at the end of class file %s", CHECK_(nullHandle));
 
-    // Initialize static fields
-    this_klass->do_local_static_fields(&initialize_static_field, CHECK_(nullHandle));
-
     // VerifyOops believes that once this has been set, the object is completely loaded.
     // Compute transitive closure of interfaces this class implements
     this_klass->set_transitive_interfaces(transitive_interfaces());
@@ -3664,6 +3636,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     if (this_klass->is_interface()) {
       check_illegal_static_method(this_klass, CHECK_(nullHandle));
     }
+
+    // Allocate mirror and initialize static fields
+    java_lang_Class::create_mirror(this_klass, CHECK_(nullHandle));
 
     ClassLoadingService::notify_class_loaded(instanceKlass::cast(this_klass()),
                                              false /* not shared class */);

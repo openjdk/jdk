@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ define_pd_global(intx, CodeEntryAlignment,    32);
 define_pd_global(intx, OptoLoopAlignment,     16);  // = 4*wordSize
 define_pd_global(intx, InlineFrequencyCount,  50);  // we can use more inlining on the SPARC
 define_pd_global(intx, InlineSmallCode,       1500);
+
 #ifdef _LP64
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, ThreadStackSize,       1024);
@@ -71,4 +72,6 @@ define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, UseMembar,            false);
 
+// GC Ergo Flags
+define_pd_global(intx, CMSYoungGenPerWorker, 16*M);  // default max size of CMS young gen, per GC worker thread
 #endif // CPU_SPARC_VM_GLOBALS_SPARC_HPP

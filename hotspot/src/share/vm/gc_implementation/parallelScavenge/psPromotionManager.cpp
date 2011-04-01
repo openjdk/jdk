@@ -411,7 +411,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
 template <class T> void PSPromotionManager::process_array_chunk_work(
                                                  oop obj,
                                                  int start, int end) {
-  assert(start < end, "invariant");
+  assert(start <= end, "invariant");
   T* const base      = (T*)objArrayOop(obj)->base();
   T* p               = base + start;
   T* const chunk_end = base + end;
