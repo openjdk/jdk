@@ -52,7 +52,7 @@ import  java.util.*;
  * throwable can {@linkplain Throwable#addSuppressed suppress} other
  * throwables from being propagated.  Finally, the throwable can also
  * contain a <i>cause</i>: another throwable that caused this
- * throwable to get thrown.  The recording of this causal information
+ * throwable to be constructed.  The recording of this causal information
  * is referred to as the <i>chained exception</i> facility, as the
  * cause can, itself, have a cause, and so on, leading to a "chain" of
  * exceptions, each caused by another.
@@ -280,6 +280,41 @@ public class Throwable implements Serializable {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
         this.cause = cause;
+    }
+
+    /**
+     * Constructs a new throwable with the specified detail message,
+     * cause, and {@linkplain #addSuppressed suppression} enabled or
+     * disabled.  If suppression is disabled, {@link #getSuppressed}
+     * for this object will return a zero-length array and calls to
+     * {@link #addSuppressed} that would otherwise append an exception
+     * to the suppressed list will have no effect.
+     *
+     * <p>Note that the other constructors of {@code Throwable} treat
+     * suppression as being enabled.  Subclasses of {@code Throwable}
+     * should document any conditions under which suppression is
+     * disabled.  Disabling of suppression should only occur in
+     * exceptional circumstances where special requirements exist,
+     * such as a virtual machine reusing exception objects under
+     * low-memory situations.
+     *
+     * @param  message the detail message.
+     * @param cause the cause.  (A {@code null} value is permitted,
+     * and indicates that the cause is nonexistent or unknown.)
+     * @param enableSuppression whether or not suppression is enabled or disabled
+     *
+     * @see OutOfMemoryError
+     * @see NullPointerException
+     * @see ArithmeticException
+     * @since 1.7
+     */
+    protected Throwable(String message, Throwable cause,
+                        boolean enableSuppression) {
+        fillInStackTrace();
+        detailMessage = message;
+        this.cause = cause;
+        if (!enableSuppression)
+            suppressedExceptions = null;
     }
 
     /**
@@ -830,13 +865,10 @@ public class Throwable implements Serializable {
      * typically called (automatically and implicitly) by the {@code
      * try}-with-resources statement.
      *
-     * If the first exception to be suppressed is {@code null}, that
-     * indicates suppressed exception information will <em>not</em> be
-     * recorded for this exception.  Subsequent calls to this method
-     * will not record any suppressed exceptions.  Otherwise,
-     * attempting to suppress {@code null} after an exception has
-     * already been successfully suppressed results in a {@code
-     * NullPointerException}.
+     * <p>The suppression behavior is enabled <em>unless</em> disabled
+     * {@linkplain #Throwable(String, Throwable, boolean) via a
+     * constructor}.  When suppression is disabled, this method does
+     * nothing other than to validate its argument.
      *
      * <p>Note that when one exception {@linkplain
      * #initCause(Throwable) causes} another exception, the first
@@ -874,33 +906,23 @@ public class Throwable implements Serializable {
      *        suppressed exceptions
      * @throws IllegalArgumentException if {@code exception} is this
      *         throwable; a throwable cannot suppress itself.
-     * @throws NullPointerException if {@code exception} is null and
-     *         an exception has already been suppressed by this exception
+     * @throws NullPointerException if {@code exception} is {@code null}
      * @since 1.7
      */
     public final synchronized void addSuppressed(Throwable exception) {
         if (exception == this)
             throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
 
-        if (exception == null) {
-            if (suppressedExceptions == SUPPRESSED_SENTINEL) {
-                suppressedExceptions = null; // No suppression information recorded
-                return;
-            } else
-                throw new NullPointerException(NULL_CAUSE_MESSAGE);
-        } else {
-            assert exception != null && exception != this;
+        if (exception == null)
+            throw new NullPointerException(NULL_CAUSE_MESSAGE);
 
-            if (suppressedExceptions == null) // Suppressed exceptions not recorded
-                return;
+        if (suppressedExceptions == null) // Suppressed exceptions not recorded
+            return;
 
-            if (suppressedExceptions == SUPPRESSED_SENTINEL)
-                suppressedExceptions = new ArrayList<>(1);
+        if (suppressedExceptions == SUPPRESSED_SENTINEL)
+            suppressedExceptions = new ArrayList<>(1);
 
-            assert suppressedExceptions != SUPPRESSED_SENTINEL;
-
-            suppressedExceptions.add(exception);
-        }
+        suppressedExceptions.add(exception);
     }
 
     private static final Throwable[] EMPTY_THROWABLE_ARRAY = new Throwable[0];
@@ -910,7 +932,9 @@ public class Throwable implements Serializable {
      * suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
      *
-     * If no exceptions were suppressed, an empty array is returned.
+     * If no exceptions were suppressed or {@linkplain
+     * Throwable(String, Throwable, boolean) suppression is disabled},
+     * an empty array is returned.
      *
      * @return an array containing all of the exceptions that were
      *         suppressed to deliver this exception.
