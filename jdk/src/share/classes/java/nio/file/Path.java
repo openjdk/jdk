@@ -228,6 +228,9 @@ public interface Path
      * not have a root component and the given path has a root component then
      * this path does not start with the given path.
      *
+     * <p> If the given path is associated with a different {@code FileSystem}
+     * to this path then {@code false} is returned.
+     *
      * @param   other
      *          the given path
      *
@@ -270,6 +273,9 @@ public interface Path
      * does not have a root component and the given path has a root component
      * then this path does not end with the given path.
      *
+     * <p> If the given path is associated with a different {@code FileSystem}
+     * to this path then {@code false} is returned.
+     *
      * @param   other
      *          the given path
      *
@@ -283,7 +289,10 @@ public interface Path
      * the given path string, in exactly the manner specified by the {@link
      * #endsWith(Path) endsWith(Path)} method. On UNIX for example, the path
      * "{@code foo/bar}" ends with "{@code foo/bar}" and "{@code bar}". It does
-     * not end with "{@code r}" or "{@code /bar}".
+     * not end with "{@code r}" or "{@code /bar}". Note that trailing separators
+     * are not taken into account, and so invoking this method on the {@code
+     * Path}"{@code foo/bar}" with the {@code String} "{@code bar/}" returns
+     * {@code true}.
      *
      * @param   other
      *          the given path string
@@ -724,12 +733,18 @@ public interface Path
      * provider, platform specific. This method does not access the file system
      * and neither file is required to exist.
      *
+     * <p> This method may not be used to compare paths that are associated
+     * with different file system providers.
+     *
      * @param   other  the path compared to this path.
      *
      * @return  zero if the argument is {@link #equals equal} to this path, a
      *          value less than zero if this path is lexicographically less than
      *          the argument, or a value greater than zero if this path is
      *          lexicographically greater than the argument
+     *
+     * @throws  ClassCastException
+     *          if the paths are associated with different providers
      */
     @Override
     int compareTo(Path other);
@@ -738,7 +753,7 @@ public interface Path
      * Tests this path for equality with the given object.
      *
      * <p> If the given object is not a Path, or is a Path associated with a
-     * different provider, then this method immediately returns {@code false}.
+     * different {@code FileSystem}, then this method returns {@code false}.
      *
      * <p> Whether or not two path are equal depends on the file system
      * implementation. In some cases the paths are compared without regard

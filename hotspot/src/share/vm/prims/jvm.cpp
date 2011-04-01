@@ -1808,7 +1808,7 @@ JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAt(JNIEnv *env, jobject unused, jobjec
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
   klassOop k = cp->klass_at(index, CHECK_NULL);
-  return (jclass) JNIHandles::make_local(k->klass_part()->java_mirror());
+  return (jclass) JNIHandles::make_local(k->java_mirror());
 }
 JVM_END
 
@@ -1824,7 +1824,7 @@ JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv *env, jobject unused
   }
   klassOop k = constantPoolOopDesc::klass_at_if_loaded(cp, index);
   if (k == NULL) return NULL;
-  return (jclass) JNIHandles::make_local(k->klass_part()->java_mirror());
+  return (jclass) JNIHandles::make_local(k->java_mirror());
 }
 JVM_END
 

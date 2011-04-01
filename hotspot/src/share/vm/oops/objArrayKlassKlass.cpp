@@ -31,6 +31,13 @@
 #include "oops/objArrayKlassKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 klassOop objArrayKlassKlass::create_klass(TRAPS) {
   objArrayKlassKlass o;
@@ -236,12 +243,23 @@ objArrayKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
   addr = oak->bottom_klass_addr();
   if (mr.contains(addr)) blk->do_oop(addr);
 
-  return arrayKlassKlass::oop_oop_iterate(obj, blk);
+  return arrayKlassKlass::oop_oop_iterate_m(obj, blk, mr);
 }
 
 #ifndef SERIALGC
 void objArrayKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->blueprint()->oop_is_objArrayKlass(),"must be an obj array klass");
+  objArrayKlass* oak = objArrayKlass::cast((klassOop)obj);
+  oop* p = oak->element_klass_addr();
+  if (PSScavenge::should_scavenge(p)) {
+    pm->claim_or_forward_depth(p);
+  }
+  p = oak->bottom_klass_addr();
+  if (PSScavenge::should_scavenge(p)) {
+    pm->claim_or_forward_depth(p);
+  }
+
+  arrayKlassKlass::oop_push_contents(pm, obj);
 }
 
 int objArrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
@@ -287,7 +305,7 @@ const char* objArrayKlassKlass::internal_name() const {
 // Verification
 
 void objArrayKlassKlass::oop_verify_on(oop obj, outputStream* st) {
-  klassKlass::oop_verify_on(obj, st);
+  arrayKlassKlass::oop_verify_on(obj, st);
   objArrayKlass* oak = objArrayKlass::cast((klassOop)obj);
   guarantee(oak->element_klass()->is_perm(),  "should be in permspace");
   guarantee(oak->element_klass()->is_klass(), "should be klass");

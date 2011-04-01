@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,8 +377,9 @@ final class ClientHandshaker extends Handshaker {
         ProtocolVersion mesgVersion = mesg.protocolVersion;
         if (!isNegotiable(mesgVersion)) {
             throw new SSLHandshakeException(
-                    "Server chose unsupported or disabled protocol: " +
-                    mesgVersion);
+                "Server chose " + mesgVersion +
+                ", but that protocol version is not enabled or not supported " +
+                "by the client.");
         }
 
         handshakeHash.protocolDetermined(mesgVersion);

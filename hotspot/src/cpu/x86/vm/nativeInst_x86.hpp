@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,11 @@ class NativeReturnX: public NativeInstruction {
 class NativeTstRegMem: public NativeInstruction {
  public:
   enum Intel_specific_constants {
-    instruction_code_memXregl   = 0x85
+    instruction_rex_prefix_mask = 0xF0,
+    instruction_rex_prefix      = Assembler::REX,
+    instruction_code_memXregl   = 0x85,
+    modrm_mask                  = 0x38, // select reg from the ModRM byte
+    modrm_reg                   = 0x00  // rax
   };
 };
 
@@ -533,12 +537,25 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
-  if ( ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-       ubyte_at(1) == 0x05 ) { // 00 rax 101
-     address fault = addr_at(6) + int_at(2);
-     return os::is_poll_address(fault);
+  if (Assembler::is_polling_page_far()) {
+    // two cases, depending on the choice of the base register in the address.
+    if (((ubyte_at(0) & NativeTstRegMem::instruction_rex_prefix_mask) == NativeTstRegMem::instruction_rex_prefix &&
+         ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl &&
+         (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) ||
+        ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+        (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) {
+      return true;
+    } else {
+      return false;
+    }
   } else {
-    return false;
+    if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+        ubyte_at(1) == 0x05) { // 00 rax 101
+      address fault = addr_at(6) + int_at(2);
+      return os::is_poll_address(fault);
+    } else {
+      return false;
+    }
   }
 #else
   return ( ubyte_at(0) == NativeMovRegMem::instruction_code_mem2reg ||

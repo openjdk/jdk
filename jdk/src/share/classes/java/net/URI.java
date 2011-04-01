@@ -1829,21 +1829,23 @@ public final class URI
         } else if (authority != null) {
             sb.append("//");
             if (authority.startsWith("[")) {
+                // authority should (but may not) contain an embedded IPv6 address
                 int end = authority.indexOf("]");
-                if (end != -1 && authority.indexOf(":")!=-1) {
-                    String doquote, dontquote;
+                String doquote = authority, dontquote = "";
+                if (end != -1 && authority.indexOf(":") != -1) {
+                    // the authority contains an IPv6 address
                     if (end == authority.length()) {
                         dontquote = authority;
                         doquote = "";
                     } else {
-                        dontquote = authority.substring(0,end+1);
-                        doquote = authority.substring(end+1);
+                        dontquote = authority.substring(0 , end + 1);
+                        doquote = authority.substring(end + 1);
                     }
-                    sb.append (dontquote);
-                    sb.append(quote(doquote,
+                }
+                sb.append(dontquote);
+                sb.append(quote(doquote,
                             L_REG_NAME | L_SERVER,
                             H_REG_NAME | H_SERVER));
-                }
             } else {
                 sb.append(quote(authority,
                             L_REG_NAME | L_SERVER,

@@ -3510,7 +3510,6 @@ bool Assembler::reachable(AddressLiteral adr) {
   // anywhere in the codeCache then we are always reachable.
   // This would have to change if we ever save/restore shared code
   // to be more pessimistic.
-
   disp = (int64_t)adr._target - ((int64_t)CodeCache::low_bound() + sizeof(int));
   if (!is_simm32(disp)) return false;
   disp = (int64_t)adr._target - ((int64_t)CodeCache::high_bound() + sizeof(int));
@@ -3532,6 +3531,14 @@ bool Assembler::reachable(AddressLiteral adr) {
     disp += fudge;
   }
   return is_simm32(disp);
+}
+
+// Check if the polling page is not reachable from the code cache using rip-relative
+// addressing.
+bool Assembler::is_polling_page_far() {
+  intptr_t addr = (intptr_t)os::get_polling_page();
+  return !is_simm32(addr - (intptr_t)CodeCache::low_bound()) ||
+         !is_simm32(addr - (intptr_t)CodeCache::high_bound());
 }
 
 void Assembler::emit_data64(jlong data,
@@ -6886,6 +6893,11 @@ void MacroAssembler::sign_extend_short(Register reg) {
   }
 }
 
+void MacroAssembler::testl(Register dst, AddressLiteral src) {
+  assert(reachable(src), "Address should be reachable");
+  testl(dst, as_Address(src));
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef SERIALGC
 
@@ -7119,17 +7131,6 @@ void MacroAssembler::subptr(Register dst, int32_t imm32) {
 
 void MacroAssembler::subptr(Register dst, Register src) {
   LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src));
-}
-
-void MacroAssembler::test32(Register src1, AddressLiteral src2) {
-  // src2 must be rval
-
-  if (reachable(src2)) {
-    testl(src1, as_Address(src2));
-  } else {
-    lea(rscratch1, src2);
-    testl(src1, Address(rscratch1, 0));
-  }
 }
 
 // C++ bool manipulation
@@ -7768,6 +7769,28 @@ void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
+void MacroAssembler::cmov32(Condition cc, Register dst, Register src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
 void MacroAssembler::verify_oop(Register reg, const char* s) {
   if (!VerifyOops) return;
 
@@ -7831,7 +7854,7 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
-  Address type_addr(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg));
+  Address type_addr(mh_reg, delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg));
   // compare method type against that of the receiver
   if (UseCompressedOops) {
     load_heap_oop(temp_reg, type_addr);
@@ -7851,14 +7874,14 @@ void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register m
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
   // load mh.type.form.vmslots
-  if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
+  if (java_lang_invoke_MethodHandle::vmslots_offset_in_bytes() != 0) {
     // hoist vmslots into every mh to avoid dependent load chain
-    movl(vmslots_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)));
+    movl(vmslots_reg, Address(mh_reg, delayed_value(java_lang_invoke_MethodHandle::vmslots_offset_in_bytes, temp_reg)));
   } else {
     Register temp2_reg = vmslots_reg;
-    load_heap_oop(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
-    load_heap_oop(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
-    movl(vmslots_reg, Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(mh_reg,    delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(temp2_reg, delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, temp_reg)));
+    movl(vmslots_reg, Address(temp2_reg, delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
   }
 }
 
@@ -7873,7 +7896,7 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
 
   // pick out the interpreted side of the handler
   // NOTE: vmentry is not an oop!
-  movptr(temp_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
+  movptr(temp_reg, Address(mh_reg, delayed_value(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
 
   // off we go...
   jmp(Address(temp_reg, MethodHandleEntry::from_interpreted_entry_offset_in_bytes()));
@@ -9018,14 +9041,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   movl(result, cnt1);
   subl(cnt1, cnt2);
   push(cnt1);
-  if (VM_Version::supports_cmov()) {
-    cmovl(Assembler::lessEqual, cnt2, result);
-  } else {
-    Label GT_LABEL;
-    jccb(Assembler::greater, GT_LABEL);
-    movl(cnt2, result);
-    bind(GT_LABEL);
-  }
+  cmov32(Assembler::lessEqual, cnt2, result);
 
   // Is the minimum length zero?
   testl(cnt2, cnt2);

@@ -56,19 +56,12 @@ class HeapRegionRemSetIterator;
 class ConcurrentMark;
 class ConcurrentMarkThread;
 class ConcurrentG1Refine;
-class ConcurrentZFThread;
 
 typedef OverflowTaskQueue<StarTask>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
-
-enum G1GCThreadGroups {
-  G1CRGroup = 0,
-  G1ZFGroup = 1,
-  G1CMGroup = 2
-};
 
 enum GCAllocPurpose {
   GCAllocForTenured,
@@ -294,9 +287,9 @@ private:
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
-#define heap_locking_asserts_err_msg(__extra_message)                         \
+#define heap_locking_asserts_err_msg(_extra_message_)                         \
   err_msg("%s : Heap_lock locked: %s, at safepoint: %s, is VM thread: %s",    \
-          (__extra_message),                                                  \
+          (_extra_message_),                                                  \
           BOOL_TO_STR(Heap_lock->owned_by_self()),                            \
           BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),               \
           BOOL_TO_STR(Thread::current()->is_VM_thread()))
@@ -307,11 +300,11 @@ private:
            heap_locking_asserts_err_msg("should be holding the Heap_lock"));  \
   } while (0)
 
-#define assert_heap_locked_or_at_safepoint(__should_be_vm_thread)             \
+#define assert_heap_locked_or_at_safepoint(_should_be_vm_thread_)             \
   do {                                                                        \
     assert(Heap_lock->owned_by_self() ||                                      \
            (SafepointSynchronize::is_at_safepoint() &&                        \
-             ((__should_be_vm_thread) == Thread::current()->is_VM_thread())), \
+             ((_should_be_vm_thread_) == Thread::current()->is_VM_thread())), \
            heap_locking_asserts_err_msg("should be holding the Heap_lock or " \
                                         "should be at a safepoint"));         \
   } while (0)
@@ -338,10 +331,10 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint(__should_be_vm_thread)                            \
+#define assert_at_safepoint(_should_be_vm_thread_)                            \
   do {                                                                        \
     assert(SafepointSynchronize::is_at_safepoint() &&                         \
-              ((__should_be_vm_thread) == Thread::current()->is_VM_thread()), \
+              ((_should_be_vm_thread_) == Thread::current()->is_VM_thread()), \
            heap_locking_asserts_err_msg("should be at a safepoint"));         \
   } while (0)
 
@@ -371,35 +364,40 @@ protected:
   // will check whether there's anything available in the
   // secondary_free_list and/or wait for more regions to appear in that
   // list, if _free_regions_coming is set.
-  HeapRegion* new_region_try_secondary_free_list(size_t word_size);
+  HeapRegion* new_region_try_secondary_free_list();
 
-  // It will try to allocate a single non-humongous HeapRegion
-  // sufficient for an allocation of the given word_size.  If
-  // do_expand is true, it will attempt to expand the heap if
-  // necessary to satisfy the allocation request. Note that word_size
-  // is only used to make sure that we expand sufficiently but, given
-  // that the allocation request is assumed not to be humongous,
-  // having word_size is not strictly necessary (expanding by a single
-  // region will always be sufficient). But let's keep that parameter
-  // in case we need it in the future.
+  // Try to allocate a single non-humongous HeapRegion sufficient for
+  // an allocation of the given word_size. If do_expand is true,
+  // attempt to expand the heap if necessary to satisfy the allocation
+  // request.
   HeapRegion* new_region_work(size_t word_size, bool do_expand);
 
-  // It will try to allocate a new region to be used for allocation by
-  // mutator threads. It will not try to expand the heap if not region
-  // is available.
+  // Try to allocate a new region to be used for allocation by a
+  // mutator thread. Attempt to expand the heap if no region is
+  // available.
   HeapRegion* new_alloc_region(size_t word_size) {
     return new_region_work(word_size, false /* do_expand */);
   }
 
-  // It will try to allocate a new region to be used for allocation by
-  // a GC thread. It will try to expand the heap if no region is
-  // available.
+  // Try to allocate a new region to be used for allocation by a GC
+  // thread. Attempt to expand the heap if no region is available.
   HeapRegion* new_gc_alloc_region(int purpose, size_t word_size);
 
+  // Attempt to satisfy a humongous allocation request of the given
+  // size by finding a contiguous set of free regions of num_regions
+  // length and remove them from the master free list. Return the
+  // index of the first region or -1 if the search was unsuccessful.
   int humongous_obj_allocate_find_first(size_t num_regions, size_t word_size);
 
-  // Attempt to allocate an object of the given (very large) "word_size".
-  // Returns "NULL" on failure.
+  // Initialize a contiguous set of free regions of length num_regions
+  // and starting at index first so that they appear as a single
+  // humongous region.
+  HeapWord* humongous_obj_allocate_initialize_regions(int first,
+                                                      size_t num_regions,
+                                                      size_t word_size);
+
+  // Attempt to allocate a humongous object of the given size. Return
+  // NULL if unsuccessful.
   HeapWord* humongous_obj_allocate(size_t word_size);
 
   // The following two methods, allocate_new_tlab() and
@@ -776,7 +774,7 @@ protected:
   // Invoke "save_marks" on all heap regions.
   void save_marks();
 
-  // It frees a non-humongous region by initializing its contents and
+  // Frees a non-humongous region by initializing its contents and
   // adding it to the free list that's passed as a parameter (this is
   // usually a local list which will be appended to the master free
   // list later). The used bytes of freed regions are accumulated in
@@ -787,13 +785,13 @@ protected:
                    FreeRegionList* free_list,
                    bool par);
 
-  // It frees a humongous region by collapsing it into individual
-  // regions and calling free_region() for each of them. The freed
-  // regions will be added to the free list that's passed as a parameter
-  // (this is usually a local list which will be appended to the
-  // master free list later). The used bytes of freed regions are
-  // accumulated in pre_used. If par is true, the region's RSet will
-  // not be freed up. The assumption is that this will be done later.
+  // Frees a humongous region by collapsing it into individual regions
+  // and calling free_region() for each of them. The freed regions
+  // will be added to the free list that's passed as a parameter (this
+  // is usually a local list which will be appended to the master free
+  // list later). The used bytes of freed regions are accumulated in
+  // pre_used. If par is true, the region's RSet will not be freed
+  // up. The assumption is that this will be done later.
   void free_humongous_region(HeapRegion* hr,
                              size_t* pre_used,
                              FreeRegionList* free_list,
@@ -1046,13 +1044,13 @@ public:
 #endif // HEAP_REGION_SET_FORCE_VERIFY
 
 #ifdef ASSERT
-  bool is_on_free_list(HeapRegion* hr) {
+  bool is_on_master_free_list(HeapRegion* hr) {
     return hr->containing_set() == &_free_list;
   }
 
-  bool is_on_humongous_set(HeapRegion* hr) {
+  bool is_in_humongous_set(HeapRegion* hr) {
     return hr->containing_set() == &_humongous_set;
-}
+  }
 #endif // ASSERT
 
   // Wrapper for the region list operations that can be called from
@@ -1066,7 +1064,9 @@ public:
     _free_list.add_as_tail(&_secondary_free_list);
   }
 
-  void append_secondary_free_list_if_not_empty() {
+  void append_secondary_free_list_if_not_empty_with_lock() {
+    // If the secondary free list looks empty there's no reason to
+    // take the lock and then try to append it.
     if (!_secondary_free_list.is_empty()) {
       MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
       append_secondary_free_list();

@@ -100,6 +100,18 @@ Java_sun_nio_ch_Net_isIPv6Available0(JNIEnv* env, jclass cl)
     return JNI_FALSE;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
+{
+    return JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
+{
+    return JNI_FALSE;
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                             jboolean stream, jboolean reuse)

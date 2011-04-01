@@ -69,14 +69,13 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
  private:
   enum { cache_size = 4 };
-  PcDesc* _last_pc_desc;         // most recent pc_desc found
   PcDesc* _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_last_pc_desc = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
-  PcDesc* last_pc_desc() { return _last_pc_desc; }
+  PcDesc* last_pc_desc() { return _pc_descs[0]; }
 };
 
 
@@ -178,7 +177,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
 
   // Protected by Patching_lock
-  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded)
+  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
@@ -194,7 +193,10 @@ class nmethod : public CodeBlob {
 
   NOT_PRODUCT(bool _has_debug_info; )
 
-  // Nmethod Flushing lock (if non-zero, then the nmethod is not removed)
+  // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
+  // and is not made into a zombie. However, once the nmethod is made into
+  // a zombie, it will be locked one final time if CompiledMethodUnload
+  // event processing needs to be done.
   jint  _lock_count;
 
   // not_entrant method removal. Each mark_sweep pass will update
@@ -227,6 +229,7 @@ class nmethod : public CodeBlob {
   // For native wrappers
   nmethod(methodOop method,
           int nmethod_size,
+          int compile_id,
           CodeOffsets* offsets,
           CodeBuffer *code_buffer,
           int frame_size,
@@ -297,6 +300,7 @@ class nmethod : public CodeBlob {
                               int comp_level);
 
   static nmethod* new_native_nmethod(methodHandle method,
+                                     int compile_id,
                                      CodeBuffer *code_buffer,
                                      int vep_offset,
                                      int frame_complete,
@@ -457,6 +461,7 @@ private:
 public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
+  void verify_oop_relocations();
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
@@ -497,8 +502,8 @@ public:
   address continuation_for_implicit_exception(address pc);
 
   // On-stack replacement support
-  int   osr_entry_bci() const                     { assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod"); return _entry_bci; }
-  address  osr_entry() const                      { assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod"); return _osr_entry_point; }
+  int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
+  address  osr_entry() const                      { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
   void  invalidate_osr_method();
   nmethod* osr_link() const                       { return _osr_link; }
   void     set_osr_link(nmethod *n)               { _osr_link = n; }
@@ -522,8 +527,9 @@ public:
   void flush();
 
  public:
-  // If returning true, it is unsafe to remove this nmethod even though it is a zombie
-  // nmethod, since the VM might have a reference to it. Should only be called from a  safepoint.
+  // When true is returned, it is unsafe to remove this nmethod even if
+  // it is a zombie, since the VM or the ServiceThread might still be
+  // using it.
   bool is_locked_by_vm() const                    { return _lock_count >0; }
 
   // See comment at definition of _last_seen_on_stack
@@ -604,10 +610,6 @@ public:
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point);
 
-  // print compilation helper
-  static void print_compilation(outputStream *st, const char *method_name, const char *title,
-                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level);
-
   // printing support
   void print()                          const;
   void print_code();
@@ -623,7 +625,7 @@ public:
 
   // need to re-define this from CodeBlob else the overload hides it
   virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
-  void print_on(outputStream* st, const char* title) const;
+  void print_on(outputStream* st, const char* msg) const;
 
   // Logging
   void log_identity(xmlStream* log) const;
@@ -689,13 +691,20 @@ public:
 
 };
 
-// Locks an nmethod so its code will not get removed, even if it is a zombie/not_entrant method
+// Locks an nmethod so its code will not get removed and it will not
+// be made into a zombie, even if it is a not_entrant method. After the
+// nmethod becomes a zombie, if CompiledMethodUnload event processing
+// needs to be done, then lock_nmethod() is used directly to keep the
+// generated code from being reused too early.
 class nmethodLocker : public StackObj {
   nmethod* _nm;
 
  public:
 
-  static void lock_nmethod(nmethod* nm);   // note: nm can be NULL
+  // note: nm can be NULL
+  // Only JvmtiDeferredEvent::compiled_method_unload_event()
+  // should pass zombie_ok == true.
+  static void lock_nmethod(nmethod* nm, bool zombie_ok = false);
   static void unlock_nmethod(nmethod* nm); // (ditto)
 
   nmethodLocker(address pc); // derive nm from pc

@@ -37,6 +37,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/permGen.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/objArrayKlassKlass.hpp"
@@ -649,6 +650,7 @@ instanceOop instanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop instanceKlass::allocate_instance(TRAPS) {
+  assert(!oop_is_instanceMirror(), "wrong allocation path");
   bool has_finalizer_flag = has_finalizer(); // Query before possible GC
   int size = size_helper();  // Query before forming handle.
 
@@ -669,6 +671,7 @@ instanceOop instanceKlass::allocate_permanent_instance(TRAPS) {
   // instances so simply disallow finalizable perm objects.  This can
   // be relaxed if a need for it is found.
   assert(!has_finalizer(), "perm objects not allowed to have finalizers");
+  assert(!oop_is_instanceMirror(), "wrong allocation path");
   int size = size_helper();  // Query before forming handle.
   KlassHandle h_k(THREAD, as_klassOop());
   instanceOop i = (instanceOop)
@@ -735,7 +738,12 @@ void instanceKlass::call_class_initializer(TRAPS) {
 static int call_class_initializer_impl_counter = 0;   // for debugging
 
 methodOop instanceKlass::class_initializer() {
-  return find_method(vmSymbols::class_initializer_name(), vmSymbols::void_method_signature());
+  methodOop clinit = find_method(
+      vmSymbols::class_initializer_name(), vmSymbols::void_method_signature());
+  if (clinit != NULL && clinit->has_valid_initializer_flags()) {
+    return clinit;
+  }
+  return NULL;
 }
 
 void instanceKlass::call_class_initializer_impl(instanceKlassHandle this_oop, TRAPS) {
@@ -892,6 +900,7 @@ void instanceKlass::methods_do(void f(methodOop method)) {
     f(m);
   }
 }
+
 
 void instanceKlass::do_local_static_fields(FieldClosure* cl) {
   fieldDescriptor fd;
@@ -1604,36 +1613,6 @@ template <class T> void assert_nothing(T *p) {}
 // The following macros call specialized macros, passing either oop or
 // narrowOop as the specialization type.  These test the UseCompressedOops
 // flag.
-#define InstanceKlass_OOP_ITERATE(start_p, count,    \
-                                  do_oop, assert_fn) \
-{                                                    \
-  if (UseCompressedOops) {                           \
-    InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop, \
-      start_p, count,                                \
-      do_oop, assert_fn)                             \
-  } else {                                           \
-    InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,       \
-      start_p, count,                                \
-      do_oop, assert_fn)                             \
-  }                                                  \
-}
-
-#define InstanceKlass_BOUNDED_OOP_ITERATE(start_p, count, low, high,    \
-                                          do_oop, assert_fn) \
-{                                                            \
-  if (UseCompressedOops) {                                   \
-    InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop, \
-      start_p, count,                                        \
-      low, high,                                             \
-      do_oop, assert_fn)                                     \
-  } else {                                                   \
-    InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,       \
-      start_p, count,                                        \
-      low, high,                                             \
-      do_oop, assert_fn)                                     \
-  }                                                          \
-}
-
 #define InstanceKlass_OOP_MAP_ITERATE(obj, do_oop, assert_fn)            \
 {                                                                        \
   /* Compute oopmap block range. The common case                         \
@@ -1705,38 +1684,6 @@ template <class T> void assert_nothing(T *p) {}
     }                                                                    \
   }                                                                      \
 }
-
-void instanceKlass::follow_static_fields() {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    MarkSweep::mark_and_push(p), \
-    assert_is_in_closed_subset)
-}
-
-#ifndef SERIALGC
-void instanceKlass::follow_static_fields(ParCompactionManager* cm) {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    PSParallelCompact::mark_and_push(cm, p), \
-    assert_is_in)
-}
-#endif // SERIALGC
-
-void instanceKlass::adjust_static_fields() {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    MarkSweep::adjust_pointer(p), \
-    assert_nothing)
-}
-
-#ifndef SERIALGC
-void instanceKlass::update_static_fields() {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    PSParallelCompact::adjust_pointer(p), \
-    assert_nothing)
-}
-#endif // SERIALGC
 
 void instanceKlass::oop_follow_contents(oop obj) {
   assert(obj != NULL, "can't follow the content of NULL object");
@@ -1824,22 +1771,6 @@ ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 #endif // !SERIALGC
 
-void instanceKlass::iterate_static_fields(OopClosure* closure) {
-    InstanceKlass_OOP_ITERATE( \
-      start_of_static_fields(), static_oop_field_size(), \
-      closure->do_oop(p), \
-      assert_is_in_reserved)
-}
-
-void instanceKlass::iterate_static_fields(OopClosure* closure,
-                                          MemRegion mr) {
-  InstanceKlass_BOUNDED_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    mr.start(), mr.end(), \
-    (closure)->do_oop_v(p), \
-    assert_is_in_closed_subset)
-}
-
 int instanceKlass::oop_adjust_pointers(oop obj) {
   int size = size_helper();
   InstanceKlass_OOP_MAP_ITERATE( \
@@ -1868,21 +1799,6 @@ int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   return size_helper();
 }
 
-void instanceKlass::push_static_fields(PSPromotionManager* pm) {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_depth(p); \
-    }, \
-    assert_nothing )
-}
-
-void instanceKlass::copy_static_fields(ParCompactionManager* cm) {
-  InstanceKlass_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    PSParallelCompact::adjust_pointer(p), \
-    assert_is_in)
-}
 #endif // SERIALGC
 
 // This klass is alive but the implementor link is not followed/updated.
@@ -1996,6 +1912,11 @@ void instanceKlass::set_source_debug_extension(Symbol* n) {
   _source_debug_extension = n;
   if (_source_debug_extension != NULL) _source_debug_extension->increment_refcount();
 }
+
+address instanceKlass::static_field_addr(int offset) {
+  return (address)(offset + instanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
+}
+
 
 const char* instanceKlass::signature_name() const {
   const char* src = (const char*) (name()->as_C_string());
@@ -2364,7 +2285,7 @@ nmethod* instanceKlass::lookup_osr_nmethod(const methodOop m, int bci, int comp_
 
 void FieldPrinter::do_field(fieldDescriptor* fd) {
   _st->print(BULLET);
-   if (fd->is_static() || (_obj == NULL)) {
+   if (_obj == NULL) {
      fd->print_on(_st);
      _st->cr();
    } else {
@@ -2394,8 +2315,8 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   }
 
   st->print_cr(BULLET"---- fields (total size %d words):", oop_size(obj));
-  FieldPrinter print_nonstatic_field(st, obj);
-  do_nonstatic_fields(&print_nonstatic_field);
+  FieldPrinter print_field(st, obj);
+  do_nonstatic_fields(&print_field);
 
   if (as_klassOop() == SystemDictionary::Class_klass()) {
     st->print(BULLET"signature: ");
@@ -2413,9 +2334,15 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print(BULLET"fake entry for array: ");
     array_klass->print_value_on(st);
     st->cr();
+    st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
+    st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
+    klassOop real_klass = java_lang_Class::as_klassOop(obj);
+    if (real_klass != NULL && real_klass->klass_part()->oop_is_instance()) {
+      instanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
+    }
   } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
     st->print(BULLET"signature: ");
-    java_dyn_MethodType::print_signature(obj, st);
+    java_lang_invoke_MethodType::print_signature(obj, st);
     st->cr();
   }
 }
@@ -2446,7 +2373,7 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     }
   } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
     st->print(" = ");
-    java_dyn_MethodType::print_signature(obj, st);
+    java_lang_invoke_MethodType::print_signature(obj, st);
   } else if (java_lang_boxing_object::is_instance(obj)) {
     st->print(" = ");
     java_lang_boxing_object::print(obj, st);
@@ -2555,7 +2482,7 @@ void JNIid::deallocate(JNIid* current) {
 
 
 void JNIid::verify(klassOop holder) {
-  int first_field_offset  = instanceKlass::cast(holder)->offset_of_static_fields();
+  int first_field_offset  = instanceMirrorKlass::offset_of_static_fields();
   int end_field_offset;
   end_field_offset = first_field_offset + (instanceKlass::cast(holder)->static_field_size() * wordSize);
 

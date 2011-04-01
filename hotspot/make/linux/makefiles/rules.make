@@ -55,6 +55,14 @@ LINK_NOPROF.CC  = $(CCC) $(LFLAGS) $(AOUT_FLAGS)
 LINK_LIB.CC     = $(CCC) $(LFLAGS) $(SHARED_FLAG)
 PREPROCESS.CC   = $(CC_COMPILE) -E
 
+# cross compiling the jvm with c2 requires host compilers to build
+# adlc tool
+
+HOST.CC_COMPILE      = $(HOSTCPP) $(CPPFLAGS) $(CFLAGS)
+HOST.COMPILE.CC      = $(HOST.CC_COMPILE) -c
+HOST.LINK_NOPROF.CC  = $(HOSTCPP) $(LFLAGS) $(AOUT_FLAGS)
+
+
 # Effect of REMOVE_TARGET is to delete out-of-date files during "gnumake -k".
 REMOVE_TARGET   = rm -f $@
 

@@ -500,7 +500,7 @@ const char* Klass::external_name() const {
   if (oop_is_instance()) {
     instanceKlass* ik = (instanceKlass*) this;
     if (ik->is_anonymous()) {
-      assert(AnonymousClasses, "");
+      assert(EnableInvokeDynamic, "");
       intptr_t hash = ik->java_mirror()->identity_hash();
       char     hash_buf[40];
       sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -569,24 +570,13 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   __ lea          (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 
   // compute minimum length (in rax) and difference of lengths (on top of stack)
-  if (VM_Version::supports_cmov()) {
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rcx, rbx);
-    __ subptr   (rbx, rax); // subtract lengths
-    __ push     (rbx);      // result
-    __ cmov     (Assembler::lessEqual, rax, rcx);
-  } else {
-    Label L;
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rcx, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rax, rbx);
-    __ subptr   (rbx, rcx);
-    __ push     (rbx);
-    __ jcc      (Assembler::lessEqual, L);
-    __ mov      (rax, rcx);
-    __ bind (L);
-  }
+  __ movl  (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
+  __ movl  (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
+  __ mov   (rcx, rbx);
+  __ subptr(rbx, rax); // subtract lengths
+  __ push  (rbx);      // result
+  __ cmov  (Assembler::lessEqual, rax, rcx);
+
   // is minimum length 0?
   Label noLoop, haveResult;
   __ testptr (rax, rax);
@@ -648,12 +638,13 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_return_type);
 
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
-
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    __ relocate(relocInfo::poll_return_type);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    __ testl(rax, polling_page);
+  }
   __ ret(0);
 }
 
@@ -661,20 +652,17 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_type);
-
-  if (info != NULL) {
-    add_debug_info_for_branch(info);
-  } else {
-    ShouldNotReachHere();
-  }
-
+  guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
-
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    offset = __ offset();
+    add_debug_info_for_branch(info);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    add_debug_info_for_branch(info);
+    __ testl(rax, polling_page);
+  }
   return offset;
 }
 
