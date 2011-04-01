@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ int SymbolTable::symbols_counted = 0;
 void SymbolTable::unlink() {
   int removed = 0;
   int total = 0;
-  int memory_total = 0;
+  size_t memory_total = 0;
   for (int i = 0; i < the_table()->table_size(); ++i) {
     for (HashtableEntry<Symbol*>** p = the_table()->bucket_addr(i); *p != NULL; ) {
       HashtableEntry<Symbol*>* entry = *p;
@@ -112,8 +112,10 @@ void SymbolTable::unlink() {
   }
   symbols_removed += removed;
   symbols_counted += total;
-  if (PrintGCDetails) {
-    gclog_or_tty->print(" [Symbols=%d size=%dK] ", total,
+  // Exclude printing for normal PrintGCDetails because people parse
+  // this output.
+  if (PrintGCDetails && Verbose && WizardMode) {
+    gclog_or_tty->print(" [Symbols=%d size=" SIZE_FORMAT "K] ", total,
                         (memory_total*HeapWordSize)/1024);
   }
 }
@@ -478,33 +480,6 @@ class StableMemoryChecker : public StackObj {
 
 
 // --------------------------------------------------------------------------
-
-
-// Compute the hash value for a java.lang.String object which would
-// contain the characters passed in. This hash value is used for at
-// least two purposes.
-//
-// (a) As the hash value used by the StringTable for bucket selection
-//     and comparison (stored in the HashtableEntry structures).  This
-//     is used in the String.intern() method.
-//
-// (b) As the hash value used by the String object itself, in
-//     String.hashCode().  This value is normally calculate in Java code
-//     in the String.hashCode method(), but is precomputed for String
-//     objects in the shared archive file.
-//
-//     For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
-
-int StringTable::hash_string(jchar* s, int len) {
-  unsigned h = 0;
-  while (len-- > 0) {
-    h = 31*h + (unsigned) *s;
-    s++;
-  }
-  return h;
-}
-
-
 StringTable* StringTable::_the_table = NULL;
 
 oop StringTable::lookup(int index, jchar* name,
@@ -528,7 +503,7 @@ oop StringTable::basic_add(int index, Handle string_or_null, jchar* name,
 
   Handle string;
   // try to reuse the string if possible
-  if (!string_or_null.is_null() && string_or_null()->is_perm()) {
+  if (!string_or_null.is_null() && (!JavaObjectsInPerm || string_or_null()->is_perm())) {
     string = string_or_null;
   } else {
     string = java_lang_String::create_tenured_from_unicode(name, len, CHECK_NULL);
@@ -559,7 +534,7 @@ oop StringTable::lookup(Symbol* symbol) {
   ResourceMark rm;
   int length;
   jchar* chars = symbol->as_unicode(length);
-  unsigned int hashValue = hash_string(chars, length);
+  unsigned int hashValue = java_lang_String::hash_string(chars, length);
   int index = the_table()->hash_to_index(hashValue);
   return the_table()->lookup(index, chars, length, hashValue);
 }
@@ -567,7 +542,7 @@ oop StringTable::lookup(Symbol* symbol) {
 
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
-  unsigned int hashValue = hash_string(name, len);
+  unsigned int hashValue = java_lang_String::hash_string(name, len);
   int index = the_table()->hash_to_index(hashValue);
   oop string = the_table()->lookup(index, name, len, hashValue);
 
@@ -660,11 +635,8 @@ void StringTable::verify() {
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
-      guarantee(s->is_perm(), "interned string not in permspace");
-
-      int length;
-      jchar* chars = java_lang_String::as_unicode_string(s, length);
-      unsigned int h = hash_string(chars, length);
+      guarantee(s->is_perm() || !JavaObjectsInPerm, "interned string not in permspace");
+      unsigned int h = java_lang_String::hash_string(s);
       guarantee(p->hash() == h, "broken hash in string table entry");
       guarantee(the_table()->hash_to_index(h) == i,
                 "wrong index in string table");

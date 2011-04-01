@@ -656,7 +656,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           // oop rcvr = locals[0].j.r;
           oop rcvr;
           if (METHOD->is_static()) {
-            rcvr = METHOD->constants()->pool_holder()->klass_part()->java_mirror();
+            rcvr = METHOD->constants()->pool_holder()->java_mirror();
           } else {
             rcvr = LOCALS_OBJECT(0);
             VERIFY_OOP(rcvr);
@@ -2111,8 +2111,8 @@ run:
             break;
 
           case JVM_CONSTANT_Class:
-            VERIFY_OOP(constants->resolved_klass_at(index)->klass_part()->java_mirror());
-            SET_STACK_OBJECT(constants->resolved_klass_at(index)->klass_part()->java_mirror(), 0);
+            VERIFY_OOP(constants->resolved_klass_at(index)->java_mirror());
+            SET_STACK_OBJECT(constants->resolved_klass_at(index)->java_mirror(), 0);
             break;
 
           case JVM_CONSTANT_UnresolvedString:
@@ -2383,17 +2383,6 @@ run:
       }
 
       DEFAULT:
-#ifdef ZERO
-          // Some zero configurations use the C++ interpreter as a
-          // fallback interpreter and have support for platform
-          // specific fast bytecodes which aren't supported here, so
-          // redispatch to the equivalent non-fast bytecode when they
-          // are encountered.
-          if (Bytecodes::is_defined((Bytecodes::Code)opcode)) {
-              opcode = (jubyte)Bytecodes::java_code((Bytecodes::Code)opcode);
-              goto opcode_switch;
-          }
-#endif
           fatal(err_msg("Unimplemented opcode %d = %s", opcode,
                         Bytecodes::name((Bytecodes::Code)opcode)));
           goto finish;

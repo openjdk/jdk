@@ -36,6 +36,8 @@ import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
 import sun.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
+import sun.misc.JavaSecurityAccess;
+import sun.misc.SharedSecrets;
 
 /**
  *
@@ -58,6 +60,36 @@ import sun.security.util.SecurityConstants;
  */
 
 public class ProtectionDomain {
+
+    static {
+        // Set up JavaSecurityAccess in SharedSecrets
+        SharedSecrets.setJavaSecurityAccess(
+            new JavaSecurityAccess() {
+                public <T> T doIntersectionPrivilege(
+                    PrivilegedAction<T> action,
+                    final AccessControlContext stack,
+                    final AccessControlContext context)
+                {
+                    if (action == null) {
+                        throw new NullPointerException();
+                    }
+                    return AccessController.doPrivileged(
+                        action,
+                        new AccessControlContext(
+                            stack.getContext(), context).optimize()
+                    );
+                }
+
+                public <T> T doIntersectionPrivilege(
+                    PrivilegedAction<T> action,
+                    AccessControlContext context)
+                {
+                    return doIntersectionPrivilege(action,
+                        AccessController.getContext(), context);
+                }
+            }
+       );
+    }
 
     /* CodeSource */
     private CodeSource codesource ;

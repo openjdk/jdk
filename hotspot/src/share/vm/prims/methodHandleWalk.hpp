@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ private:
   void set_last_method(oop target, TRAPS);
   static BasicType compute_bound_arg_type(oop target, methodOop m, int arg_slot, TRAPS);
 
-  oop MethodHandle_type_oop()     { return java_dyn_MethodHandle::type(method_handle_oop()); }
-  oop MethodHandle_vmtarget_oop() { return java_dyn_MethodHandle::vmtarget(method_handle_oop()); }
-  int MethodHandle_vmslots()      { return java_dyn_MethodHandle::vmslots(method_handle_oop()); }
-  int DirectMethodHandle_vmindex()     { return sun_dyn_DirectMethodHandle::vmindex(method_handle_oop()); }
-  oop BoundMethodHandle_argument_oop() { return sun_dyn_BoundMethodHandle::argument(method_handle_oop()); }
-  int BoundMethodHandle_vmargslot()    { return sun_dyn_BoundMethodHandle::vmargslot(method_handle_oop()); }
-  int AdapterMethodHandle_conversion() { return sun_dyn_AdapterMethodHandle::conversion(method_handle_oop()); }
+  oop MethodHandle_type_oop()          { return java_lang_invoke_MethodHandle::type(method_handle_oop()); }
+  oop MethodHandle_vmtarget_oop()      { return java_lang_invoke_MethodHandle::vmtarget(method_handle_oop()); }
+  int MethodHandle_vmslots()           { return java_lang_invoke_MethodHandle::vmslots(method_handle_oop()); }
+  int DirectMethodHandle_vmindex()     { return java_lang_invoke_DirectMethodHandle::vmindex(method_handle_oop()); }
+  oop BoundMethodHandle_argument_oop() { return java_lang_invoke_BoundMethodHandle::argument(method_handle_oop()); }
+  int BoundMethodHandle_vmargslot()    { return java_lang_invoke_BoundMethodHandle::vmargslot(method_handle_oop()); }
+  int AdapterMethodHandle_conversion() { return java_lang_invoke_AdapterMethodHandle::conversion(method_handle_oop()); }
 
 public:
   MethodHandleChain(Handle root, TRAPS)

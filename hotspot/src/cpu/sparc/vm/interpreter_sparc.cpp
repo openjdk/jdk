@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,9 +260,9 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
 
 // Method handle invoker
-// Dispatch a method of the form java.dyn.MethodHandles::invoke(...)
+// Dispatch a method of the form java.lang.invoke.MethodHandles::invoke(...)
 address InterpreterGenerator::generate_method_handle_entry(void) {
-  if (!EnableMethodHandles) {
+  if (!EnableInvokeDynamic) {
     return generate_abstract_entry();
   }
 

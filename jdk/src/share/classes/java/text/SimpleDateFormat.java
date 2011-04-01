@@ -504,8 +504,8 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * Cache to hold the DateTimePatterns of a Locale.
      */
-    private static final ConcurrentMap<String, String[]> cachedLocaleData
-        = new ConcurrentHashMap<String, String[]>(3);
+    private static final ConcurrentMap<Locale, String[]> cachedLocaleData
+        = new ConcurrentHashMap<Locale, String[]>(3);
 
     /**
      * Cache NumberFormat instances with Locale key.
@@ -619,8 +619,7 @@ public class SimpleDateFormat extends DateFormat {
         initializeCalendar(loc);
 
         /* try the cache first */
-        String key = getKey();
-        String[] dateTimePatterns = cachedLocaleData.get(key);
+        String[] dateTimePatterns = cachedLocaleData.get(loc);
         if (dateTimePatterns == null) { /* cache miss */
             ResourceBundle r = LocaleData.getDateFormatData(loc);
             if (!isGregorianCalendar()) {
@@ -633,7 +632,7 @@ public class SimpleDateFormat extends DateFormat {
                 dateTimePatterns = r.getStringArray("DateTimePatterns");
             }
             /* update cache */
-            cachedLocaleData.putIfAbsent(key, dateTimePatterns);
+            cachedLocaleData.putIfAbsent(loc, dateTimePatterns);
         }
         formatData = DateFormatSymbols.getInstanceRef(loc);
         if ((timeStyle >= 0) && (dateStyle >= 0)) {
@@ -682,13 +681,6 @@ public class SimpleDateFormat extends DateFormat {
             // will be formatted using generic GMT+/-H:MM nomenclature.
             calendar = Calendar.getInstance(TimeZone.getDefault(), loc);
         }
-    }
-
-    private String getKey() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getCalendarName()).append('.');
-        sb.append(locale.getLanguage()).append('_').append(locale.getCountry()).append('_').append(locale.getVariant());
-        return sb.toString();
     }
 
     /**

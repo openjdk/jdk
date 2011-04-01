@@ -334,8 +334,8 @@ void TemplateTable::ldc(bool wide) {
 void TemplateTable::fast_aldc(bool wide) {
   transition(vtos, atos);
 
-  if (!EnableMethodHandles) {
-    // We should not encounter this bytecode if !EnableMethodHandles.
+  if (!EnableInvokeDynamic) {
+    // We should not encounter this bytecode if !EnableInvokeDynamic.
     // The verifier will stop it.  However, if we get past the verifier,
     // this will stop the thread in a reasonable way, without crashing the JVM.
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -3303,7 +3303,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ sll(Rret, LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);  // get return address
 
-  __ load_heap_oop(G5_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
+  __ load_heap_oop(G5_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
   __ null_check(G3_method_handle);
 
   // Adjust Rret first so Llast_SP can be same as Rret

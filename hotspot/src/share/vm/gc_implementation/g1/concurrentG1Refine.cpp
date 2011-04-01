@@ -373,7 +373,7 @@ void ConcurrentG1Refine::clean_up_cache(int worker_i,
             // RSet updating while within an evacuation pause.
             // In this case worker_i should be the id of a GC worker thread
             assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-            assert(worker_i < (int) DirtyCardQueueSet::num_par_ids(), "incorrect worker id");
+            assert(worker_i < (int) (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "incorrect worker id");
             into_cset_dcq->enqueue(entry);
           }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,14 +192,18 @@ void VM_GenCollectFullConcurrent::doit() {
          "total_collections() should be monotonically increasing");
 
   MutexLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  assert(_full_gc_count_before <= gch->total_full_collections(), "Error");
   if (gch->total_full_collections() == _full_gc_count_before) {
-    // Disable iCMS until the full collection is done.
+    // Disable iCMS until the full collection is done, and
+    // remember that we did so.
     CMSCollector::disable_icms();
+    _disabled_icms = true;
     // In case CMS thread was in icms_wait(), wake it up.
     CMSCollector::start_icms();
     // Nudge the CMS thread to start a concurrent collection.
     CMSCollector::request_full_gc(_full_gc_count_before);
   } else {
+    assert(_full_gc_count_before < gch->total_full_collections(), "Error");
     FullGCCount_lock->notify_all();  // Inform the Java thread its work is done
   }
 }
@@ -259,6 +263,8 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
       FullGCCount_lock->wait(Mutex::_no_safepoint_check_flag);
     }
   }
-  // Enable iCMS back.
-  CMSCollector::enable_icms();
+  // Enable iCMS back if we disabled it earlier.
+  if (_disabled_icms) {
+    CMSCollector::enable_icms();
+  }
 }

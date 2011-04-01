@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,9 @@ public class b6341534 extends JavacTestingAbstractProcessor {
         // on round 1, expect errorRaised == false && processingOver == false
         // on round 2, expect errorRaised == true && processingOver == true
         if( renv.errorRaised() != renv.processingOver()) {
-            messager.printMessage(ERROR, "FAILED");
+            messager.printMessage(ERROR, "FAILED: round:" + r
+                + ", errorRaised:" + renv.errorRaised()
+                + ", processingOver:" + renv.processingOver());
         }
         return true;
     }

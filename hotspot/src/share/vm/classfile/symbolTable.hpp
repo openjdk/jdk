@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,18 +216,14 @@ private:
   oop basic_add(int index, Handle string_or_null, jchar* name, int len,
                 unsigned int hashValue, TRAPS);
 
-  // Table size
-  enum {
-    string_table_size = 1009
-  };
-
   oop lookup(int index, jchar* chars, int length, unsigned int hashValue);
 
-  StringTable() : Hashtable<oop>(string_table_size, sizeof (HashtableEntry<oop>)) {}
+  StringTable() : Hashtable<oop>((int)StringTableSize,
+                                 sizeof (HashtableEntry<oop>)) {}
 
   StringTable(HashtableBucket* t, int number_of_entries)
-    : Hashtable<oop>(string_table_size, sizeof (HashtableEntry<oop>), t,
-                number_of_entries) {}
+    : Hashtable<oop>((int)StringTableSize, sizeof (HashtableEntry<oop>), t,
+                     number_of_entries) {}
 
 public:
   // The string table
@@ -241,12 +237,10 @@ public:
   static void create_table(HashtableBucket* t, int length,
                            int number_of_entries) {
     assert(_the_table == NULL, "One string table allowed.");
-    assert(length == string_table_size * sizeof(HashtableBucket),
+    assert((size_t)length == StringTableSize * sizeof(HashtableBucket),
            "bad shared string size.");
     _the_table = new StringTable(t, number_of_entries);
   }
-
-  static int hash_string(jchar* s, int len);
 
   // GC support
   //   Delete pointers to otherwise-unreachable objects.

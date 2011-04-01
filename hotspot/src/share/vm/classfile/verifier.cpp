@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1671,13 +1671,19 @@ void ClassVerifier::verify_ldc(
       VerificationType::long_type(),
       VerificationType::long2_type(), CHECK_VERIFY(this));
   } else if (tag.is_method_handle()) {
+    Symbol* methodHandle_name = vmSymbols::java_lang_invoke_MethodHandle();
+    if (AllowTransitionalJSR292 && !Universe::is_bootstrapping())
+      methodHandle_name = SystemDictionaryHandles::MethodHandle_klass()->name();
     current_frame->push_stack(
       VerificationType::reference_type(
-        vmSymbols::java_dyn_MethodHandle()), CHECK_VERIFY(this));
+        methodHandle_name), CHECK_VERIFY(this));
   } else if (tag.is_method_type()) {
+    Symbol* methodType_name = vmSymbols::java_lang_invoke_MethodType();
+    if (AllowTransitionalJSR292 && !Universe::is_bootstrapping())
+      methodType_name = SystemDictionaryHandles::MethodType_klass()->name();
     current_frame->push_stack(
       VerificationType::reference_type(
-        vmSymbols::java_dyn_MethodType()), CHECK_VERIFY(this));
+        methodType_name), CHECK_VERIFY(this));
   } else {
     verify_error(bci, "Invalid index in ldc");
     return;

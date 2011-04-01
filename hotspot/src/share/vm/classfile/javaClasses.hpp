@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,30 @@ class java_lang_String : AllStatic {
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length);
 
+  // Compute the hash value for a java.lang.String object which would
+  // contain the characters passed in. This hash value is used for at
+  // least two purposes.
+  //
+  // (a) As the hash value used by the StringTable for bucket selection
+  //     and comparison (stored in the HashtableEntry structures).  This
+  //     is used in the String.intern() method.
+  //
+  // (b) As the hash value used by the String object itself, in
+  //     String.hashCode().  This value is normally calculate in Java code
+  //     in the String.hashCode method(), but is precomputed for String
+  //     objects in the shared archive file.
+  //
+  //     For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
+  static unsigned int hash_string(jchar* s, int len) {
+    unsigned int h = 0;
+    while (len-- > 0) {
+      h = 31*h + (unsigned int) *s;
+      s++;
+    }
+    return h;
+  }
+  static unsigned int hash_string(oop java_string);
+
   static bool equals(oop java_string, jchar* chars, int len);
 
   // Conversion between '.' and '/' formats
@@ -138,16 +162,17 @@ class java_lang_Class : AllStatic {
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
   enum {
-    hc_klass_offset                = 0,
-    hc_array_klass_offset          = 1,
-    hc_resolved_constructor_offset = 2,
-    hc_number_of_fake_oop_fields   = 3
+    hc_number_of_fake_oop_fields   = 3,
+    hc_number_of_fake_int_fields   = 2
   };
 
   static int klass_offset;
   static int resolved_constructor_offset;
   static int array_klass_offset;
   static int number_of_fake_oop_fields;
+
+  static int oop_size_offset;
+  static int static_oop_field_count_offset;
 
   static void compute_offsets();
   static bool offsets_computed;
@@ -157,6 +182,7 @@ class java_lang_Class : AllStatic {
  public:
   // Instance creation
   static oop  create_mirror(KlassHandle k, TRAPS);
+  static void fixup_mirror(KlassHandle k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
   static klassOop as_klassOop(oop java_class);
@@ -191,6 +217,12 @@ class java_lang_Class : AllStatic {
   static void set_classRedefinedCount(oop the_class_mirror, int value);
   // Support for parallelCapable field
   static bool parallelCapable(oop the_class_mirror);
+
+  static int oop_size(oop java_class);
+  static void set_oop_size(oop java_class, int size);
+  static int static_oop_field_count(oop java_class);
+  static void set_static_oop_field_count(oop java_class, int size);
+
   // Debugging
   friend class JavaClasses;
   friend class instanceKlass;   // verification code accesses offsets
@@ -794,11 +826,11 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
 };
 
 
-// Interface to java.dyn.MethodHandle objects
+// Interface to java.lang.invoke.MethodHandle objects
 
 class MethodHandleEntry;
 
-class java_dyn_MethodHandle: AllStatic {
+class java_lang_invoke_MethodHandle: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -839,7 +871,7 @@ class java_dyn_MethodHandle: AllStatic {
   static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
 };
 
-class sun_dyn_DirectMethodHandle: public java_dyn_MethodHandle {
+class java_lang_invoke_DirectMethodHandle: public java_lang_invoke_MethodHandle {
   friend class JavaClasses;
 
  private:
@@ -864,7 +896,7 @@ class sun_dyn_DirectMethodHandle: public java_dyn_MethodHandle {
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
 };
 
-class sun_dyn_BoundMethodHandle: public java_dyn_MethodHandle {
+class java_lang_invoke_BoundMethodHandle: public java_lang_invoke_MethodHandle {
   friend class JavaClasses;
 
  private:
@@ -891,7 +923,7 @@ public:
   static int vmargslot_offset_in_bytes()        { return _vmargslot_offset; }
 };
 
-class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
+class java_lang_invoke_AdapterMethodHandle: public java_lang_invoke_BoundMethodHandle {
   friend class JavaClasses;
 
  private:
@@ -942,14 +974,14 @@ class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
 };
 
 
-// Interface to sun.dyn.MemberName objects
+// Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 
-class sun_dyn_MemberName: AllStatic {
+class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
 
  private:
-  // From java.dyn.MemberName:
+  // From java.lang.invoke.MemberName:
   //    private Class<?>   clazz;       // class in which the method is defined
   //    private String     name;        // may be null if not yet materialized
   //    private Object     type;        // may be null if not yet materialized
@@ -1018,9 +1050,9 @@ class sun_dyn_MemberName: AllStatic {
 };
 
 
-// Interface to java.dyn.MethodType objects
+// Interface to java.lang.invoke.MethodType objects
 
-class java_dyn_MethodType: AllStatic {
+class java_lang_invoke_MethodType: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -1052,7 +1084,7 @@ class java_dyn_MethodType: AllStatic {
   static int form_offset_in_bytes()             { return _form_offset; }
 };
 
-class java_dyn_MethodTypeForm: AllStatic {
+class java_lang_invoke_MethodTypeForm: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -1075,9 +1107,9 @@ class java_dyn_MethodTypeForm: AllStatic {
 };
 
 
-// Interface to java.dyn.CallSite objects
+// Interface to java.lang.invoke.CallSite objects
 
-class java_dyn_CallSite: AllStatic {
+class java_lang_invoke_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
@@ -1165,12 +1197,9 @@ class java_lang_System : AllStatic {
    hc_static_err_offset = 2
   };
 
-  static int offset_of_static_fields;
   static int  static_in_offset;
   static int static_out_offset;
   static int static_err_offset;
-
-  static void compute_offsets();
 
  public:
   static int  in_offset_in_bytes();

@@ -57,8 +57,8 @@ abstract class AbstractAclFileAttributeView
             setAcl((List<AclEntry>)value);
             return;
         }
-        throw new UnsupportedOperationException("'" + name() + ":" +
-                attribute + "' not supported");
+        throw new IllegalArgumentException("'" + name() + ":" +
+            attribute + "' not recognized");
     }
 
     @Override
@@ -81,6 +81,8 @@ abstract class AbstractAclFileAttributeView
                 owner = true;
                 continue;
             }
+            throw new IllegalArgumentException("'" + name() + ":" +
+                attribute + "' not recognized");
         }
         Map<String,Object> result = new HashMap<>(2);
         if (acl)

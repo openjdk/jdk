@@ -152,36 +152,6 @@ public final class JavacTool implements JavaCompiler {
         return new JavacFileManager(context, true, charset);
     }
 
-    private boolean compilationInProgress = false;
-
-    /**
-     * Register that a compilation is about to start.
-     */
-    void beginContext(Context context) {
-        if (compilationInProgress)
-            throw new IllegalStateException("Compilation in progress");
-        compilationInProgress = true;
-        final JavaFileManager givenFileManager = context.get(JavaFileManager.class);
-        context.put(JavaFileManager.class, (JavaFileManager)null);
-        context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            public JavaFileManager make(Context c) {
-                if (givenFileManager != null) {
-                    c.put(JavaFileManager.class, givenFileManager);
-                    return givenFileManager;
-                } else {
-                    return new JavacFileManager(c, true, null);
-                }
-            }
-        });
-    }
-
-    /**
-     * Register that a compilation is completed.
-     */
-    void endContext() {
-        compilationInProgress = false;
-    }
-
     public JavacTask getTask(Writer out,
                              JavaFileManager fileManager,
                              DiagnosticListener<? super JavaFileObject> diagnosticListener,

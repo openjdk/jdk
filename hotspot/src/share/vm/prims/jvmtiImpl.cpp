@@ -919,15 +919,24 @@ JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_LOAD);
   event._event_data.compiled_method_load = nm;
-  nmethodLocker::lock_nmethod(nm); // will be unlocked when posted
+  // Keep the nmethod alive until the ServiceThread can process
+  // this deferred event.
+  nmethodLocker::lock_nmethod(nm);
   return event;
 }
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_unload_event(
-    jmethodID id, const void* code) {
+    nmethod* nm, jmethodID id, const void* code) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_UNLOAD);
+  event._event_data.compiled_method_unload.nm = nm;
   event._event_data.compiled_method_unload.method_id = id;
   event._event_data.compiled_method_unload.code_begin = code;
+  // Keep the nmethod alive until the ServiceThread can process
+  // this deferred event. This will keep the memory for the
+  // generated code from being reused too early. We pass
+  // zombie_ok == true here so that our nmethod that was just
+  // made into a zombie can be locked.
+  nmethodLocker::lock_nmethod(nm, true /* zombie_ok */);
   return event;
 }
 JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
@@ -946,14 +955,19 @@ void JvmtiDeferredEvent::post() {
     case TYPE_COMPILED_METHOD_LOAD: {
       nmethod* nm = _event_data.compiled_method_load;
       JvmtiExport::post_compiled_method_load(nm);
+      // done with the deferred event so unlock the nmethod
       nmethodLocker::unlock_nmethod(nm);
       break;
     }
-    case TYPE_COMPILED_METHOD_UNLOAD:
+    case TYPE_COMPILED_METHOD_UNLOAD: {
+      nmethod* nm = _event_data.compiled_method_unload.nm;
       JvmtiExport::post_compiled_method_unload(
         _event_data.compiled_method_unload.method_id,
         _event_data.compiled_method_unload.code_begin);
+      // done with the deferred event so unlock the nmethod
+      nmethodLocker::unlock_nmethod(nm);
       break;
+    }
     case TYPE_DYNAMIC_CODE_GENERATED:
       JvmtiExport::post_dynamic_code_generated_internal(
         _event_data.dynamic_code_generated.name,

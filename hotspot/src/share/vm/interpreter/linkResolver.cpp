@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ void LinkResolver::resolve_klass_no_update(KlassHandle& result, constantPoolHand
 
 void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
   methodOop result_oop = klass->uncached_lookup_method(name, signature);
-  if (EnableMethodHandles && result_oop != NULL) {
+  if (EnableInvokeDynamic && result_oop != NULL) {
     switch (result_oop->intrinsic_id()) {
     case vmIntrinsics::_invokeExact:
     case vmIntrinsics::_invokeGeneric:
@@ -214,14 +214,16 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
                                           KlassHandle klass, Symbol* name, Symbol* signature,
                                           KlassHandle current_klass,
                                           TRAPS) {
-  if (EnableMethodHandles &&
+  if (EnableInvokeDynamic &&
       klass() == SystemDictionary::MethodHandle_klass() &&
       methodOopDesc::is_method_handle_invoke_name(name)) {
-    if (!MethodHandles::enabled()) {
+    if (!THREAD->is_Compiler_thread() && !MethodHandles::enabled()) {
       // Make sure the Java part of the runtime has been booted up.
       klassOop natives = SystemDictionary::MethodHandleNatives_klass();
       if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
-        SystemDictionary::resolve_or_fail(vmSymbols::sun_dyn_MethodHandleNatives(),
+        Symbol* natives_name = vmSymbols::java_lang_invoke_MethodHandleNatives();
+        if (natives != NULL && AllowTransitionalJSR292)  natives_name = Klass::cast(natives)->name();
+        SystemDictionary::resolve_or_fail(natives_name,
                                           Handle(),
                                           Handle(),
                                           true,
@@ -298,7 +300,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle& re
 }
 
 void LinkResolver::resolve_dynamic_method(methodHandle& resolved_method, KlassHandle& resolved_klass, constantPoolHandle pool, int index, TRAPS) {
-  // The class is java.dyn.MethodHandle
+  // The class is java.lang.invoke.MethodHandle
   resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
 
   Symbol* method_name = vmSymbols::invokeExact_name();

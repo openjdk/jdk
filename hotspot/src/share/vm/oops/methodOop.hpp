@@ -84,6 +84,11 @@
 // | invocation_counter                                   |
 // | backedge_counter                                     |
 // |------------------------------------------------------|
+// |           prev_time (tiered only, 64 bit wide)       |
+// |                                                      |
+// |------------------------------------------------------|
+// |                  rate (tiered)                       |
+// |------------------------------------------------------|
 // | code                           (pointer)             |
 // | i2i                            (pointer)             |
 // | adapter                        (pointer)             |
@@ -123,6 +128,11 @@ class methodOopDesc : public oopDesc {
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
+
+#ifdef TIERED
+  jlong             _prev_time;                   // Previous time the rate was acquired
+  float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
+#endif
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -303,6 +313,17 @@ class methodOopDesc : public oopDesc {
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }
   InvocationCounter* backedge_counter()   { return &_backedge_counter; }
+
+#ifdef TIERED
+  // We are reusing interpreter_invocation_count as a holder for the previous event count!
+  // We can do that since interpreter_invocation_count is not used in tiered.
+  int prev_event_count() const                   { return _interpreter_invocation_count;  }
+  void set_prev_event_count(int count)           { _interpreter_invocation_count = count; }
+  jlong prev_time() const                        { return _prev_time; }
+  void set_prev_time(jlong time)                 { _prev_time = time; }
+  float rate() const                             { return _rate; }
+  void set_rate(float rate)                      { _rate = rate; }
+#endif
 
   int invocation_count();
   int backedge_count();
@@ -497,6 +518,13 @@ class methodOopDesc : public oopDesc {
   // returns true if the method is an initializer (<init> or <clinit>).
   bool is_initializer() const;
 
+  // returns true if the method is static OR if the classfile version < 51
+  bool has_valid_initializer_flags() const;
+
+  // returns true if the method name is <clinit> and the method has
+  // valid static initializer flags.
+  bool is_static_initializer() const;
+
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.
@@ -579,7 +607,7 @@ class methodOopDesc : public oopDesc {
   // method handles want to be able to push a few extra values (e.g., a bound receiver), and
   // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
   // all without checking for a stack overflow
-  static int extra_stack_entries() { return (EnableMethodHandles ? (int)MethodHandlePushLimit : 0) + (EnableInvokeDynamic ? 3 : 0); }
+  static int extra_stack_entries() { return EnableInvokeDynamic ? (int) MethodHandlePushLimit + 3 : 0; }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
 
   // RedefineClasses() support:

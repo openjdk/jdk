@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,16 +80,7 @@ public:
       oop obj = *p;
       if (obj->klass() == SystemDictionary::String_klass()) {
 
-        int hash;
-        typeArrayOop value = java_lang_String::value(obj);
-        int length = java_lang_String::length(obj);
-        if (length == 0) {
-          hash = 0;
-        } else {
-          int offset = java_lang_String::offset(obj);
-          jchar* s = value->char_at_addr(offset);
-          hash = StringTable::hash_string(s, length);
-        }
+        int hash = java_lang_String::hash_string(obj);
         obj->int_field_put(hash_offset, hash);
       }
     }
@@ -1561,6 +1552,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
     // thread because it requires object allocation.
     LinkClassesClosure lcc(Thread::current());
     object_iterate(&lcc);
+    ensure_parsability(false); // arg is actually don't care
     tty->print_cr("done. ");
 
     // Create and dump the shared spaces.

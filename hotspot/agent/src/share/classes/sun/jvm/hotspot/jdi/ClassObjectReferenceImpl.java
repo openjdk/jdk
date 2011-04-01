@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.jvm.hotspot.jdi;
 import com.sun.jdi.*;
 import sun.jvm.hotspot.oops.Instance;
 import sun.jvm.hotspot.oops.Klass;
-import sun.jvm.hotspot.oops.OopUtilities;
+import sun.jvm.hotspot.oops.java_lang_Class;
 
 public class ClassObjectReferenceImpl extends ObjectReferenceImpl
                                       implements ClassObjectReference {
@@ -39,7 +39,7 @@ public class ClassObjectReferenceImpl extends ObjectReferenceImpl
 
     public ReferenceType reflectedType() {
         if (reflectedType == null) {
-            Klass k = OopUtilities.classOopToKlass(ref());
+            Klass k = java_lang_Class.asKlass(ref());
             reflectedType = vm.referenceType(k);
         }
         return reflectedType;

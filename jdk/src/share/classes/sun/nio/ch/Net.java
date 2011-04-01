@@ -60,6 +60,21 @@ class Net {                                             // package-private
         return isIPv6Available;
     }
 
+    /**
+     * Tells whether IPv6 sockets can join IPv4 multicast groups
+     */
+    static boolean canIPv6SocketJoinIPv4Group() {
+        return canIPv6SocketJoinIPv4Group0();
+    }
+
+    /**
+     * Tells whether {@link #join6} can be used to join an IPv4
+     * multicast group (IPv4 group as IPv4-mapped IPv6 address)
+     */
+    static boolean canJoin6WithIPv4Group() {
+        return canJoin6WithIPv4Group0();
+    }
+
     static InetSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
             throw new NullPointerException();
@@ -291,13 +306,18 @@ class Net {                                             // package-private
 
     // -- Socket operations --
 
-    static native boolean isIPv6Available0();
+    private static native boolean isIPv6Available0();
 
-    static FileDescriptor socket(boolean stream) {
+    private static native boolean canIPv6SocketJoinIPv4Group0();
+
+    private static native boolean canJoin6WithIPv4Group0();
+
+    static FileDescriptor socket(boolean stream) throws IOException {
         return socket(UNSPEC, stream);
     }
 
-    static FileDescriptor socket(ProtocolFamily family, boolean stream) {
+    static FileDescriptor socket(ProtocolFamily family, boolean stream)
+        throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
         return IOUtil.newFD(socket0(preferIPv6, stream, false));
