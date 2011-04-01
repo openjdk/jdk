@@ -2289,6 +2289,7 @@ public class Attr extends JCTree.Visitor {
                 sitesym.kind == VAR &&
                 ((VarSymbol)sitesym).isResourceVariable() &&
                 sym.kind == MTH &&
+                sym.name.equals(names.close) &&
                 sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
                 env.info.lint.isEnabled(LintCategory.TRY)) {
             log.warning(LintCategory.TRY, tree, "try.explicit.close.call");
