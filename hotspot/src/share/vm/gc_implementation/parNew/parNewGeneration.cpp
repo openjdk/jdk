@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1530,13 +1530,15 @@ void ParNewGeneration::ref_processor_init()
 {
   if (_ref_processor == NULL) {
     // Allocate and initialize a reference processor
-    _ref_processor = ReferenceProcessor::create_ref_processor(
-        _reserved,                  // span
-        refs_discovery_is_atomic(), // atomic_discovery
-        refs_discovery_is_mt(),     // mt_discovery
-        NULL,                       // is_alive_non_header
-        ParallelGCThreads,
-        ParallelRefProcEnabled);
+    _ref_processor =
+      new ReferenceProcessor(_reserved,                  // span
+                             ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
+                             (int) ParallelGCThreads,    // mt processing degree
+                             refs_discovery_is_mt(),     // mt discovery
+                             (int) ParallelGCThreads,    // mt discovery degree
+                             refs_discovery_is_atomic(), // atomic_discovery
+                             NULL,                       // is_alive_non_header
+                             false);                     // write barrier for next field updates
   }
 }
 

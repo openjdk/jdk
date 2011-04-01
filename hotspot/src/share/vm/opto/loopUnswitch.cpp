@@ -110,6 +110,13 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
   IfNode* unswitch_iff = find_unswitching_candidate((const IdealLoopTree *)loop);
   assert(unswitch_iff != NULL, "should be at least one");
 
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("Unswitch   %d ", head->unswitch_count()+1);
+    loop->dump_head();
+  }
+#endif
+
   // Need to revert back to normal loop
   if (head->is_CountedLoop() && !head->as_CountedLoop()->is_normal_loop()) {
     head->as_CountedLoop()->set_normal_loop();

@@ -54,7 +54,11 @@
                         <li><a href="#opensolaris">OpenSolaris</a></li>
                     </ul>
                 </li>
-                <li><a href="#directories">Source Directory Structure</a> </li>
+                <li><a href="#directories">Source Directory Structure</a> 
+                    <ul>
+                        <li><a href="#drops">Managing the Source Drops</a></li>
+                    </ul>
+                </li>
                 <li><a href="#building">Build Information</a>
                     <ul>
                         <li><a href="#gmake">GNU Make (<tt><i>gmake</i></tt>)</a> </li>
@@ -65,7 +69,7 @@
                             <ul>
                                 <li><a href="#bootjdk">Bootstrap JDK</a> </li>
                                 <li><a href="#importjdk">Optional Import JDK</a> </li>
-                                <li><a href="#ant">Ant</a> </li>
+                                <li><a href="#ant">Ant 1.7.1</a> </li>
                                 <li><a href="#cacerts">Certificate Authority File (cacert)</a> </li>
                                 <li><a href="#compilers">Compilers</a>
                                     <ul>
@@ -114,13 +118,13 @@
             <a href="http://mercurial.selenic.com/wiki/Mercurial">Mercurial</a>.
             If you are new to Mercurial, please see the
             <a href="http://mercurial.selenic.com/wiki/BeginnersGuides">Beginner Guides</a>
-            or refer to the <a href=""http://hgbook.red-bean.com/">Mercurial Book</a>.
+            or refer to the <a href="http://hgbook.red-bean.com/">Mercurial Book</a>.
             The first few chapters of the book provide an excellent overview of
             Mercurial, what it is and how it works.
             <br>
             For using Mercurial with the OpenJDK refer to the
-            <a href=""http://openjdk.java.net/guide/repositories.html#installConfig">
-               Developer Guide: Installing and Configuring Mercurial</a>
+            <a href="http://openjdk.java.net/guide/repositories.html#installConfig">
+                Developer Guide: Installing and Configuring Mercurial</a>
             section for more information.
             The Forest Extension is not part of the Mercurial install,
             and is optional,
@@ -146,14 +150,14 @@
                 using the Forest Extension:
                 <blockquote>
                     <tt>
-                        hg fclone http://openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
+                        hg fclone http://hg.openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
                     </tt>
                 </blockquote>
                 To get the entire set of OpenJDK Mercurial repositories
                 without using the Forest Extension:
                 <blockquote>
                     <tt>
-                        hg clone http://openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
+                        hg clone http://hg.openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
                         <br>cd <i>YourOpenJDK</i>
                         <br>sh ./get_source.sh
                     </tt>
@@ -207,66 +211,50 @@
                     <tr>
                         <td>Linux X86 (32-bit)</td>
                         <td>Fedora 9</td>
-                        <td>gcc 4 </td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>gcc 4.3 </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Linux X64 (64-bit)</td>
                         <td>Fedora 9</td>
-                        <td>gcc 4 </td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>gcc 4.3 </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Solaris SPARC (32-bit)</td>
-                        <td>Solaris 10u2 + patches 
-                            <br>
-                            See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
-                                SunSolve</a> for patch downloads.
-                        </td>
+                        <td>Solaris 10 Update 6</td>
                         <td>Sun Studio 12 Update 1 + patches</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Solaris SPARCV9 (64-bit)</td>
-                        <td>Solaris 10u2 + patches
-                            <br>
-                            See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
-                                SunSolve</a> for patch downloads.
-                        </td>
+                        <td>Solaris 10 Update 6</td>
                         <td>Sun Studio 12 Update 1 + patches</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Solaris X86 (32-bit)</td>
-                        <td>Solaris 10u2 + patches
-                            <br>
-                            See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
-                                SunSolve</a> for patch downloads.
-                        </td>
+                        <td>Solaris 10 Update 6</td>
                         <td>Sun Studio 12 Update 1 + patches</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Solaris X64 (64-bit)</td>
-                        <td>Solaris 10u2 + patches
-                            <br>
-                            See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
-                                SunSolve</a> for patch downloads.
-                        </td>
+                        <td>Solaris 10 Update 6</td>
                         <td>Sun Studio 12 Update 1 + patches</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Windows X86 (32-bit)</td>
                         <td>Windows XP</td>
                         <td>Microsoft Visual Studio C++ 2010 Professional Edition</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                     <tr>
                         <td>Windows X64 (64-bit)</td>
                         <td>Windows Server 2003 - Enterprise x64 Edition</td>
                         <td>Microsoft Visual Studio C++ 2010 Professional Edition</td>
-                        <td>JDK 6u14 FCS </td>
+                        <td>JDK 6u18</td>
                     </tr>
                 </tbody>
             </table>
@@ -300,7 +288,7 @@
 	      way to do it is to execute the following commands as user 
                 <tt>root</tt>:
                 <p/>
-                <code>yum-builddep java-openjdk</code>
+                <code>yum-builddep java-1.6.0-openjdk</code>
                 <p/>
                 <code>yum install gcc gcc-c++</code>
                 <p/>
@@ -345,10 +333,10 @@
             </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
-        <h3><a name="centos">CentOS 5.2</a></h3>
+        <h3><a name="centos">CentOS 5.5</a></h3>
         <blockquote>
             After installing
-            <a href="http://www.centos.org/">CentOS 5.2</a>
+            <a href="http://www.centos.org/">CentOS 5.5</a>
             you need to make sure you have
             the following Development bundles installed:
             <blockquote>
@@ -356,7 +344,7 @@
                     <li>Development Libraries</li>
                     <li>Development Tools</li>
                     <li>Java Development</li>
-                    <li>X Software Development</li>
+                    <li>X Software Development (Including XFree86-devel)</li>
                 </ul>
             </blockquote>
             <p>
@@ -552,15 +540,105 @@
                 building the OpenJDK runtime libraries and misc files.
                 The top level <tt>Makefile</tt>
                 is used to build the entire OpenJDK.
+
+            <h3><a name="drops">Managing the Source Drops</a></h3>
+            <blockquote>
+                <p>
+                    The repositories <tt>jaxp</tt> and <tt>jaxws</tt> actually
+                    do not contain the sources for JAXP or JAX-WS.
+                    These products have their own open source procedures at their
+                    <a href="http://jaxp.java.net/">JAXP</a> and
+                    <a href="http://jax-ws.java.net/">JAX-WS</a> home pages.
+                    The OpenJDK project does need access to these sources to build
+                    a complete JDK image because JAXP and JAX-WS are part of the JDK.
+                    The current process for delivery of the JAXP and JAX-WS sources
+                    involves so called "source drop bundles" downloaded from a public
+                    website.
+                    There are many reasons for this current mechanism, and it is
+                    understood that this is not ideal for the open source community.
+                    It is possible this process could change in the future.
+                    <br>
+                    <b>NOTE:</b> The <a href="http://download.java.net/openjdk/jdk7/">
+                        Complete OpenJDK Source Bundles</a> <u>will</u> contain the JAXP and
+                    JAX-WS sources.
+                </p>
+
+                <h4><a name="dropcreation">Creation of New Source Drop Bundles</a></h4>
+                <blockquote>
+                    <ol>
+                        <li>
+                            The JAXP or JAX-WS team prepares a new zip bundle,
+                            places a copy in a public download area on java.net,
+                            sends us a link and a list of CRs (Change Request Numbers).
+                            The older download bundles should not be deleted.
+                            It is the responsibility of the JAXP and JAX-WS team to
+                            place the proper GPL legal notices on the sources
+                            and do any filtering or java re-packaging for the
+                            OpenJDK instances of these classes.
+                        </li>
+                        <li>
+                            The OpenJDK team copies this new bundle into shared
+                            area (e.g. <tt>/java/devtools/share/jdk7-drops</tt>).
+                            Older bundles are never deleted so we retain the history.
+                        </li>
+                        <li>
+                            The OpenJDK team edits the ant property file
+                            <tt>jaxp/jaxp.properties</tt> or
+                            <tt>jaxws/jaxws.properties</tt> to update the
+                            base URL, the zip bundle name, and the MD5 checksum
+                            of the zip bundle
+                            (on Solaris: <tt>sum -c md5 <i>bundlename</i></tt>)
+                        </li>
+                        <li>
+                            OpenJDK team reviews and commits those changes with the
+                            given CRs.
+                        </li>
+                    </ol>
+                </blockquote>
+
+                <h4><a name="dropusage">Using Source Drop Bundles</a></h4>
+                <blockquote>
+                    <p>
+                        The ant scripts that build <tt>jaxp</tt> and <tt>jaxws</tt>
+                        will attempt to locate these zip bundles from the directory
+                        in the environment variable
+                        <tt><a href="#ALT_DROPS_DIR">ALT_DROPS_DIR</a></tt>.
+                        The checksums protect from getting the wrong, corrupted, or
+                        improperly modified sources.
+                        Once the sources are made available, the population will not
+                        happen again unless a <tt>make clobber</tt> is requested
+                        or the <tt>jaxp/drop/</tt> or <tt>jaxws/drop/</tt>
+                        directory is explicitly deleted.
+                        <br>
+                        <b>NOTE:</b> The default Makefile and ant script behavior
+                        is to NOT download these bundles from the public http site.
+                        In general, doing downloads
+                        during the build process is not advised, it creates too much
+                        unpredictability in the build process.
+                        However, you can use <tt>make ALLOW_DOWNLOADS=true</tt> to
+                        tell the ant script that the download of the zip bundle is
+                        acceptable.
+                    </p>
+                    <p>
+                        The recommended procedure for keeping a cache of these
+                        source bundles would be to download them once, place them
+                        in a directory outside the repositories, and then set
+                        <tt><a href="#ALT_DROPS_DIR">ALT_DROPS_DIR</a></tt> to refer
+                        to that directory.
+                        These drop bundles do change occasionally, so the newer
+                        bundles may need to be added to this area from time to time.
+                    </p>
+                </blockquote>
+            </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <hr>
         <h2><a name="building">Build Information</a></h2>
         <blockquote>
             Building the OpenJDK
-            is done with a <tt><i>gmake</i></tt>
-            command line and various
-            environment or make variable settings that direct the make rules
+            is done with a <a href="#gmake">GNU <tt>make</tt></a> command line
+            and various
+            environment or make variable settings that direct the makefile rules
             to where various components have been installed.
             Where possible the makefiles will attempt to located the various
             components in the default locations or any component specific 
@@ -578,7 +656,7 @@
                 <pre><tt>
                 bash
                 . jdk/make/jdk_generic_profile.sh
-                <i>gmake</i> sanity &amp;&amp; <i>gmake</i>
+                <a href="#gmake"><tt>make</tt></a> sanity &amp;&amp; <a href="#gmake"><tt>make</tt></a>
                 </tt></pre>
             </blockquote>
             <p>
@@ -599,25 +677,31 @@
             A few notes about using GNU make:
             <ul>
                 <li>
-                    In general, you need GNU make version 3.81 or newer.
+                    You need GNU make version 3.81 or newer.
                 </li>
                 <li>
                     Place the location of the GNU make binary in the <tt>PATH</tt>. 
                 </li>
                 <li>
                     <strong>Linux:</strong>
-                    The <tt>/usr/bin/make</tt> command should work fine for you.
+                    The <tt>/usr/bin/make</tt> should be 3.81 or newer
+                    and should work fine for you.
+                    If this version is not 3.81 or newer,
+                    see the <a href="#buildgmake">"Building GNU make"</a> section.
                 </li>
                 <li>
                     <strong>Solaris:</strong>
                     Do NOT use <tt>/usr/bin/make</tt> on Solaris.
                     If your Solaris system has the software
                     from the Solaris Companion CD installed, 
-                    you should use <tt>gmake</tt>
+                    you should try and use <tt>gmake</tt>
                     which will be located in either the <tt>/opt/sfw/bin</tt> or 
                     <tt>/usr/sfw/bin</tt> directory.
-                    In more recent versions of Solaris GNU make can be found
-                    at <tt>/usr/bin/gmake</tt>. 
+                    In more recent versions of Solaris GNU make might be found
+                    at <tt>/usr/bin/gmake</tt>.<br>
+                    <b>NOTE:</b> It is very likely that this <tt>gmake</tt>
+                    could be 3.80, you need 3.81, in which case,
+                    see the <a href="#buildgmake">"Building GNU make"</a> section.
                 </li>
                 <li>
                     <strong>Windows:</strong>
@@ -627,30 +711,25 @@
                     as a <tt>make.exe</tt> built for something like
                     <a href="http://www.mkssoftware.com/">MKS</a>). 
                     <br>
-                    <b>WARNING:</b> Watch out for make version 3.81, it may
+                    <b>WARNING:</b> Watch out on some make 3.81 versions, it may
                     not work due to a lack of support for MS-DOS drive letter paths
                     like <tt>C:/</tt> or <tt>C:\</tt>.
-                    Use a 3.80 version, or find a newer
-                    version that has this problem fixed.
-                    The older 3.80 version of make.exe can be downloaded with this
-                    <a href="http://cygwin.paracoda.com/release/make/make-3.80-1.tar.bz2" target="_blank">
-                        link</a>.
-                    Use of this older 3.80 make.exe may require that you install the
-                    libintl2.dll library or libintl2 cygwin package which is
-                    no longer installed by default by the cygwin installer.
                     <br>
-                    Also see the
+                    You may be able to use the information at the
                     <a href="http://developer.mozilla.org/en/docs/Windows_build_prerequisites_using_cygwin#make" target="_blank">
                         mozilla developer center</a>
                     on this topic.
                     <br>
                     It's hoped that when make 3.82 starts shipping in a future cygwin
                     release that this MS-DOS path issue will be fixed.
-                    In addition to the above 3.80 make.exe you can download 
-                    this
+                    <br>
+                    It may be possible to download the version at
                     <a href="http://www.cmake.org/files/cygwin/make.exe">
-                        www.cmake.org make.exe</a> which will not have a libintl2.dll
-                    dependency.
+                        www.cmake.org make.exe</a>.
+                    <br>
+                    It might be necessary for you to build your own GNU make 3.81,
+                    see the <a href="#buildgmake">"Building GNU make"</a> section
+                    in that case.
                 </li>
             </ul>
             <p>
@@ -662,6 +741,34 @@
                 The latest source to GNU make is available at
                 <a href="http://ftp.gnu.org/pub/gnu/make/" target="_blank">
                     ftp.gnu.org/pub/gnu/make/</a>.
+            </p>
+            <!-- ------------------------------------------------------ -->
+            <h4><a name="buildgmake">Building GNU make</a></h4>
+            <blockquote>
+                First step is to get the GNU make 3.81 source from
+                <a href="http://ftp.gnu.org/pub/gnu/make/" target="_blank">
+                    ftp.gnu.org/pub/gnu/make/</a>.
+                Building is a little different depending on the OS and unix toolset
+                on Windows:
+                <ul>
+                    <li>
+                        <strong>Linux:</strong>
+                        <tt>./configure && make</tt>
+                    </li>
+                    <li>
+                        <strong>Solaris:</strong>
+                        <tt>./configure && gmake CC=gcc</tt>
+                    </li>
+                    <li>
+                        <strong>Windows for CYGWIN:</strong>
+                        <tt>./configure && make</tt>
+                    </li>
+                    <li>
+                        <strong>Windows for MKS: (CYGWIN is recommended)</strong>
+                        <tt>./configure && make -f Makefile.win32</tt>
+                    </li>
+                </ul>
+            </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <hr>
@@ -713,7 +820,7 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, 
+                    <a href="#ant">Ant 1.7.1 or newer</a>,
                     make sure it is in your PATH.
                 </li>
             </ol>
@@ -776,7 +883,7 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, 
+                    <a href="#ant">Ant 1.7.1 or newer</a>,
                     make sure it is in your PATH.
                 </li>
             </ol>
@@ -862,7 +969,7 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, 
+                    <a href="#ant">Ant 1.7.1 or newer</a>,
                     make sure it is in your PATH and set
                     <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
                 </li>
@@ -923,14 +1030,20 @@
             <blockquote>
                 All OpenJDK builds require access to least Ant 1.7.1.
                 The Ant tool is available from the 
-                <a href="http://ant.apache.org" target="_blank">
-                    Ant download site</a>.
+                <a href="http://archive.apache.org/dist/ant/binaries/apache-ant-1.7.1-bin.zip" target="_blank">
+                    Ant 1.7.1 archive download site</a>.
                 You should always make sure <tt>ant</tt> is in your PATH, and
                 on Windows you may also need to set 
                 <tt><a href="#ANT_HOME">ANT_HOME</a></tt>
                 to point to the location of
                 the Ant installation, this is the directory pathname
                 that contains a <tt>bin and lib</tt>.
+                <br>
+                <b>WARNING:</b> Ant versions used from IDE tools like NetBeans
+                or installed via system packages may not operate the same
+                as the one obtained from the Ant download bundles.
+                These system and IDE installers sometimes choose to change
+                the ant installation enough to cause differences.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="cacerts">Certificate Authority File (cacert)</a></h4>
@@ -962,7 +1075,7 @@
             <blockquote>
                 <strong><a name="gcc">Linux gcc/binutils</a></strong>
                 <blockquote>
-                    The GNU gcc compiler version should be 4 or newer.
+                    The GNU gcc compiler version should be 4.3 or newer.
                     The compiler used should be the default compiler installed
                     in <tt>/usr/bin</tt>.
                 </blockquote>
@@ -1047,21 +1160,16 @@
                 <strong><a name="msvc32">Windows i586: Microsoft Visual Studio 2010 Compilers</a></strong>
                 <blockquote>
                     <p>
-                        <b>BEGIN WARNING</b>: At this time (Spring/Summer 2010) JDK 7 is starting a transition to
-                        use the newest VS2010 Microsoft compilers. These build instructions are updated
-                        to show where we are going. We have a QA process to go through before
-                        official builds actually use VS2010. So for now, official builds are
-                        still using VS2003. No other compilers are known to build the entire JDK,
+                        <b>BEGIN WARNING</b>: JDK 7 has transitioned to
+                        use the newest VS2010 Microsoft compilers.
+                        No other compilers are known to build the entire JDK,
                         including non-open portions.
-                        So for now you should be able to build with either VS2003 or VS2010.
-                        We do not guarantee that VS2008 will work, although there is sufficient
-                        makefile support to make at least basic JDK builds plausible.
                         Visual Studio 2010 Express compilers are now able to build all the
                         open source repositories, but this is 32 bit only. To build 64 bit
-                        Windows binaries use the the 7.1 Windows SDK.<b>END WARNING.</b>
+                        Windows binaries use the the 7.1 Windows SDK.
+                        <b>END WARNING.</b>
                     <p>
-                        The 32-bit OpenJDK Windows build
-                        requires
+                        The 32-bit OpenJDK Windows build requires
                         Microsoft Visual Studio C++ 2010 (VS2010) Professional
                         Edition or Express compiler.
                         The compiler and other tools are expected to reside
@@ -1088,11 +1196,10 @@
                 </blockquote>
                 <strong><a name="msvc64">Windows x64: Microsoft Visual Studio 2010 Professional Compiler</a></strong>
                 <blockquote>
-                    For <b>X64</b>, builds, when using the VS2010 Professional
-                    compiler, the 64 bit build set up is much the same as 32 bit
+                    For <b>X64</b>, the set up is much the same as 32 bit
                     except that you run <tt>amd64\VCVARS64.BAT</tt>
                     to set the compiler environment variables.
-                    Previously 64 bit builds had used the 64 bit compiler in
+                    Previously 64 bit builds had to use the 64 bit compiler in
                     an unbundled Windows SDK but this is no longer necessary if
                     you have VS2010 Professional.
                 </blockquote>
@@ -1614,6 +1721,13 @@
                     and on Windows with CYGWIN
                     <tt>/usr/bin</tt>.
                 </dd>
+                <dt><tt><a name="ALT_DROPS_DIR">ALT_DROPS_DIR</a></tt> </dt>
+                <dd>
+                    The location of any source drop bundles
+                    (see <a href="#drops">Managing the Source Drops</a>).
+                    The default will be
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/share/jdk7-drops</tt>.
+                </dd>
                 <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
                 <dd>
                     <strong>Solaris only:</strong>
@@ -1649,6 +1763,12 @@
                     Where each of these directories contain the import JDK image
                     for that platform.
                 </dd>
+                <dt><a name="ALT_OPENWIN_HOME"><tt>ALT_OPENWIN_HOME</tt></a></dt>
+                <dd>
+		    The top-level directory of the libraries and include files for the platform's 
+		    graphical programming environment. The default location is platform specific. 
+		    For example, on Linux it defaults to <tt>/usr/X11R6/</tt>.
+		</dd>
                 <dt><strong>Windows specific:</strong></dt>
                 <dd>
                     <dl>
@@ -1659,9 +1779,8 @@
 			    located.
 			    The default is whatever WINDOWSSDKDIR is set to
 			    (or WindowsSdkDir) or the path
-			    <pre>
-                            c:\Program Files\Microsoft SDKs\Windows\v6.1a
-			    </pre>
+                            <br>
+                            <tt>c:\Program Files\Microsoft SDKs\Windows\v7.0a</tt>
                         </dd>
                         <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
                         <dd>
@@ -1678,7 +1797,157 @@
                         </dd>
                     </dl>
                 </dd>
+                <dt><strong>Cross-Compilation Support:</strong></dt>
+                <dd>
+                    <dl>
+                        <dt><a name="CROSS_COMPILE_ARCH"><tt>CROSS_COMPILE_ARCH</tt></a> </dt>
+                        <dd>
+                            Set to the target architecture of a cross-compilation build. If set, this
+                            variable is used to signify that we are cross-compiling. The expectation
+                            is that <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> is set
+                            to point to the cross-compiler and that any cross-compilation specific flags
+                            are passed using <a href="#EXTRA_CFLAGS"><tt>EXTRA_CFLAGS</tt></a>.
+			    The <a href="#ALT_OPENWIN_HOME"><tt>ALT_OPENWIN_HOME</tt></a> variable should 
+			    also be set to point to the graphical header files (e.g. X11) provided with 
+			    the cross-compiler.
+                            When cross-compiling we skip execution of any demos etc that may be built, and
+                            also skip binary-file verification.
+                        </dd>
+                        <dt><tt><a name="EXTRA_CFLAGS">EXTRA_CFLAGS</a></tt> </dt>
+                        <dd>
+			   Used to pass cross-compilation options to the cross-compiler.
+                           These are added to the <tt>CFLAGS</tt> and <tt>CXXFLAGS</tt> variables. 
+			</dd>
+                        <dt><tt><a name="USE_ONLY_BOOTDIR_TOOLS">USE_ONLY_BOOTDIR_TOOLS</a></tt> </dt>
+                        <dd>
+                            Used primarily for cross-compilation builds (and always set in that case)
+                            this variable indicates that tools from the boot JDK should be used during
+                            the build process, not the tools (<tt>javac</tt>, <tt>javah</tt>, <tt>jar</tt>)
+                            just built (which can't execute on the build host).
+                        </dd>
+                        <dt><tt><a name="HOST_CC">HOST_CC</a></tt> </dt>
+                        <dd>
+                            The location of the C compiler to generate programs to run on the build host.
+                            Some parts of the build generate programs that are then compiled and executed
+                            to produce other parts of the build. Normally the primary C compiler is used
+                            to do this, but when cross-compiling that would be the cross-compiler and the
+                            resulting program could not be executed. 
+                            On Linux this defaults to <tt>/usr/bin/gcc</tt>; on other platforms it must be
+                            set explicitly.
+                        </dd>
+                    </dl>
+                <dt><strong>Specialized Build Options:</strong></dt>
+                <dd>
+                  Some build variables exist to support specialized build environments and/or specialized
+                  build products. Their use is only supported in those contexts:
+                    <dl>
+                        <dt><tt><a name="BUILD_CLIENT_ONLY">BUILD_CLIENT_ONLY</a></tt> </dt>
+                        <dd>
+                            Indicates this build will only contain the Hotspot client VM. In addition to
+                            controlling the Hotspot build target, it ensures that we don't try to copy
+                            any server VM files/directories, and defines a default <tt>jvm.cfg</tt> file
+                            suitable for a client-only environment. Using this in a 64-bit build will
+                            generate a sanity warning as 64-bit client builds are not directly supported.
+                        </dd>
+                        <dt><tt><a name="BUILD_HEADLESS_ONLY"></a>BUILD_HEADLESS_ONLY</tt> </dt>
+                        <dd>
+                            Used when the build environment has no graphical capabilities at all. This
+			    excludes building anything that requires graphical libraries to be available.
+                        </dd>
+                        <dt><tt><a name="JAVASE_EMBEDDED"></a>JAVASE_EMBEDDED</tt> </dt>
+                        <dd>
+			    Used to indicate this is a build of the Oracle Java SE Embedded product. 
+			    This will enable the directives included in the SE-Embedded specific build 
+			    files.
+                        </dd>
+                        <dt><tt><a name="LIBZIP_CAN_USE_MMAP">LIBZIP_CAN_USE_MMAP</a></tt> </dt>
+                        <dd>
+			    If set to false, disables the use of mmap by the zip utility. Otherwise,
+	                    mmap will be used.
+                        </dd>
+                        <dt><tt><a name="COMPRESS_JARS"></a>COMPRESS_JARS</tt> </dt>
+                        <dd>
+			  If set to true, causes certain jar files that would otherwise be built without
+			  compression, to use compression.
+                        </dd>
+                    </dl>
+                </dd>
             </dl>
+        </blockquote>
+        <!-- ------------------------------------------------------ -->
+        <hr>
+        <h2><a name="hints">Hints and Tips</a></h2>
+        <blockquote>
+            You don't have to use all these hints and tips, and in fact people do actually
+            build with systems that contradict these, but they might prove to be
+            helpful to some.
+            <ul>
+                <li>
+                    If <tt>make sanity</tt> does not work, find out why, fix that
+                    before going any further. Or at least understand what the
+                    complaints are from it.
+                </li>
+                <li>
+                    JDK: Keep in mind that you are building a JDK, but you need
+                    a JDK (BOOTDIR JDK) to build this JDK.
+                </li>
+                <li>
+                    Ant: The ant utility is a java application and besides having
+                    ant available to you, it's important that ant finds the right
+                    java to run with. Make sure you can type <tt>ant -version</tt>
+                    and get clean results with no error messages.
+                </li>
+                <li>
+                    Linux: Try and favor the system packages over building your own
+                    or getting packages from other areas.
+                    Most Linux builds should be possible with the system's
+                    available packages.
+                </li>
+                <li>
+                    Solaris: Typically you will need to get compilers on your systems
+                    and occasionally GNU make 3.81 if a gmake binary is not available.
+                    The gmake binary might not be 3.81, be careful.
+                </li>
+                <li>
+                    Windows VS2010:
+                    <ul>
+                        <li>
+                            Only the C++ part of VS2010 is needed.
+                            Try to let the installation go to the default install directory.
+                            Always reboot your system after installing VS2010.
+                            The system environment variable VS100COMNTOOLS should be
+                            set in your environment.
+                        </li>
+                        <li>
+                            Make sure that TMP and TEMP are also set in the environment
+                            and refer to Windows paths that exist, like <tt>C:\temp</tt>,
+                            not <tt>/tmp</tt>, not <tt>/cygdrive/c/temp</tt>, and not <tt>C:/temp</tt>.
+                            <tt>C:\temp</tt> is just an example, it is assumed that this area is
+                            private to the user, so by default after installs you should
+                            see a unique user path in these variables.
+                        </li>
+                        <li>
+                            You need to use vsvars32.bat or vsvars64.bat to get the
+                            PATH, INCLUDE, LIB, LIBPATH, and WINDOWSSDKDIR
+                            variables set in your shell environment.
+                            These bat files are not easy to use from a shell environment.
+                            However, there is a script placed in the root jdk7 repository called
+                            vsvars.sh that can help, it should only be done once in a shell
+                            that will be doing the build, e.g.<br>
+                            <tt>sh ./make/scripts/vsvars.sh -v10 > settings<br>
+                                eval `cat settings`</tt><br>
+                            Or just <tt>eval `sh ./make/scripts/vsvars.sh -v10`</tt>.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Windows: PATH order is critical, see the
+                    <a href="#paths">paths</a> section for more information.
+                </li>
+                <li>
+                    Windows 64bit builds: Use ARCH_DATA_MODEL=64.
+                </li>
+            </ul>
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <hr>
@@ -1706,6 +1975,19 @@
                 Some of the more common problems with builds are briefly described
                 below, with suggestions for remedies.
             <ul>
+                <li>
+                    <b>Corrupted Bundles on Windows:</b>
+                    <blockquote>
+                        Some virus scanning software has been known to corrupt the
+                        downloading of zip bundles.
+                        It may be necessary to disable the 'on access' or 'real time'
+                        virus scanning features to prevent this corruption.
+                        This type of "real time" virus scanning can also slow down the
+                        build process significantly.
+                        Temporarily disabling the feature, or excluding the build
+                        output directory may be necessary to get correct and faster builds.
+                    </blockquote>
+                </li>
                 <li>
                     <b>Slow Builds:</b>
                     <blockquote>
@@ -1801,7 +2083,11 @@
                     </blockquote>
                 </li>
                 <li>
-                    <b>Windows Error Message: <tt>*** fatal error - couldn't allocate heap, ... </tt></b>
+                    <b>Windows Error Messages:</b><br>
+                    <tt>*** fatal error - couldn't allocate heap, ... </tt><br>
+                    <tt>rm fails with "Directory not empty"</tt><br>
+                    <tt>unzip fails with "cannot create ... Permission denied"</tt><br>
+                    <tt>unzip fails with "cannot create ... Error 50"</tt><br>
                     <blockquote>
                         The CYGWIN software can conflict with other non-CYGWIN
                         software. See the CYGWIN FAQ section on
@@ -1810,12 +2096,11 @@
                     </blockquote>
                 </li>
                 <li>
-                    <b>Windows Error Message: <tt>*** multiple target patterns.  Stop.</tt></b>
+                    <b>Windows Error Message: <tt>spawn failed</tt></b>
                     <blockquote>
-                        The CYGWIN make version 3.81 may not like the Windows <tt>C:/</tt>
-                        style paths, it may not like the ':' character in the path
-                        when used in a makefile target definition.
-                        See the <a href="#gmake"><tt><i>gmake</i></tt></a> section.
+                        Try rebooting the system, or there could be some kind of
+                        issue with the disk or disk partition being used.
+                        Sometimes it comes with a "Permission Denied" message.
                     </blockquote>
                 </li>
             </ul>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,7 +481,7 @@ oop constantPoolOopDesc::resolve_constant_at_impl(constantPoolHandle this_oop, i
     {
       klassOop resolved = klass_at_impl(this_oop, index, CHECK_NULL);
       // ldc wants the java mirror.
-      result_oop = resolved->klass_part()->java_mirror();
+      result_oop = resolved->java_mirror();
       break;
     }
 
@@ -1175,8 +1175,15 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedClass:
   {
-    Symbol* k = from_cp->unresolved_klass_at(from_i);
-    to_cp->unresolved_klass_at_put(to_i, k);
+    // Can be resolved after checking tag, so check the slot first.
+    CPSlot entry = from_cp->slot_at(from_i);
+    if (entry.is_oop()) {
+      assert(entry.get_oop()->is_klass(), "must be");
+      // Already resolved
+      to_cp->klass_at_put(to_i, (klassOop)entry.get_oop());
+    } else {
+      to_cp->unresolved_klass_at_put(to_i, entry.get_symbol());
+    }
   } break;
 
   case JVM_CONSTANT_UnresolvedClassInError:
@@ -1189,8 +1196,14 @@ void constantPoolOopDesc::copy_entry_to(constantPoolHandle from_cp, int from_i,
 
   case JVM_CONSTANT_UnresolvedString:
   {
-    Symbol* s = from_cp->unresolved_string_at(from_i);
-    to_cp->unresolved_string_at_put(to_i, s);
+    // Can be resolved after checking tag, so check the slot first.
+    CPSlot entry = from_cp->slot_at(from_i);
+    if (entry.is_oop()) {
+      // Already resolved (either string or pseudo-string)
+      to_cp->string_at_put(to_i, entry.get_oop());
+    } else {
+      to_cp->unresolved_string_at_put(to_i, entry.get_symbol());
+    }
   } break;
 
   case JVM_CONSTANT_Utf8:

@@ -996,25 +996,15 @@ endif
 ######################################################
 sane-msdevtools_path:
 ifeq ($(PLATFORM), windows)
-  ifneq ($(COMPILER_VERSION), VS2010)
-	@if [ "$(MSDEVTOOLS_PATH)" != "" -a ! -r "$(MSDEVTOOLS_PATH)" ]; then \
-	  $(ECHO) "ERROR: You do not have a valid MSDEVTOOLS_PATH setting. \n" \
-	    "      Please check your access to \n" \
-	    "          $(MSDEVTOOLS_PATH) \n" \
-	    "      and/or check your value of ALT_MSDEVTOOLS_PATH. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-  else
-    ifeq ($(wildcard $(RC)),)
+  ifeq ($(wildcard $(RC)),)
 	@$(ECHO) "ERROR: Cannot find the RC utility from path: $(RC)\n" \
 	    "      This is normally obtained from the WINDOWSSDKDIR." \
 	    "" >> $(ERROR_FILE)
-    endif
-    ifeq ($(wildcard $(DUMPBIN)),)
+  endif
+  ifeq ($(wildcard $(DUMPBIN)),)
 	@$(ECHO) "ERROR: Cannot find the DUMPBIN utility from path: $(DUMPBIN)\n" \
 	    "      This is normally obtained from the COMPILER_PATH." \
 	    "" >> $(ERROR_FILE)
-    endif
   endif
 endif
 
@@ -1432,7 +1422,6 @@ endif
 ######################################################
 sane-install-mssdk_path:
 ifeq ($(PLATFORM), windows)
-  ifeq ($(COMPILER_VERSION), VS2010)
 	@if [ -z "$(WINDOWSSDKDIR)" ]; then \
 	  $(ECHO) "WARNING: Your WINDOWSSDKDIR setting is empty.\n" \
 	    "        It is recommended to set ALT_WINDOWSSDKDIR.\n" \
@@ -1445,7 +1434,6 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_WINDOWSSDKDIR. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-  endif
 	@if [ -z "$(INSTALL_MSSDK)" ]; then \
 	  $(ECHO) "WARNING: Your INSTALL_MSSDK setting is empty.\n" \
 	    "        It is recommended to set ALT_INSTALL_MSSDK.\n" \

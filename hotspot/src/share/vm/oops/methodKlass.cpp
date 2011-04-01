@@ -103,6 +103,12 @@ methodOop methodKlass::allocate(constMethodHandle xconst,
   m->backedge_counter()->init();
   m->clear_number_of_breakpoints();
 
+#ifdef TIERED
+  m->set_rate(0);
+  m->set_prev_event_count(0);
+  m->set_prev_time(0);
+#endif
+
   assert(m->is_parsable(), "must be parsable here.");
   assert(m->size() == size, "wrong size for object");
   // We should not publish an uprasable object's reference

@@ -656,7 +656,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           // oop rcvr = locals[0].j.r;
           oop rcvr;
           if (METHOD->is_static()) {
-            rcvr = METHOD->constants()->pool_holder()->klass_part()->java_mirror();
+            rcvr = METHOD->constants()->pool_holder()->java_mirror();
           } else {
             rcvr = LOCALS_OBJECT(0);
             VERIFY_OOP(rcvr);
@@ -2111,8 +2111,8 @@ run:
             break;
 
           case JVM_CONSTANT_Class:
-            VERIFY_OOP(constants->resolved_klass_at(index)->klass_part()->java_mirror());
-            SET_STACK_OBJECT(constants->resolved_klass_at(index)->klass_part()->java_mirror(), 0);
+            VERIFY_OOP(constants->resolved_klass_at(index)->java_mirror());
+            SET_STACK_OBJECT(constants->resolved_klass_at(index)->java_mirror(), 0);
             break;
 
           case JVM_CONSTANT_UnresolvedString:

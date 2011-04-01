@@ -154,9 +154,6 @@ final class Helpers {
     // These use a hardcoded factor of 2 for increasing sizes. Perhaps this
     // should be provided as an argument.
     static float[] widenArray(float[] in, final int cursize, final int numToAdd) {
-        if (in == null) {
-            return new float[5 * numToAdd];
-        }
         if (in.length >= cursize + numToAdd) {
             return in;
         }

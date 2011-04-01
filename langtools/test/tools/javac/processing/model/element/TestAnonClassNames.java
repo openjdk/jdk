@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6449781
+ * @bug 6449781 6930508
  * @summary Test that reported names of anonymous classes are non-null.
  * @author  Joseph D. Darcy
  * @library ../../../lib
@@ -93,6 +93,7 @@ public class TestAnonClassNames {
             TestAnonClassNames.class,
         };
 
+        List<String> names = new ArrayList<String>();
         for(Class<?> clazz : classes) {
             String name = clazz.getName();
             Nesting anno = clazz.getAnnotation(Nesting.class);
@@ -100,7 +101,14 @@ public class TestAnonClassNames {
                               clazz.getName(),
                               anno == null ? "(unset/ANONYMOUS)" : anno.value());
             testClassName(name);
+            names.add(name);
         }
+
+        // test all names together
+        testClassNames(names);
+
+        if (errors > 0)
+            throw new RuntimeException(errors + " errors occurred");
     }
 
     /**
@@ -109,15 +117,23 @@ public class TestAnonClassNames {
      * input classes are modeled as elements.
      */
     static void testClassName(String className) {
-        JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-        List<String> classNames = new ArrayList<String>();
-        classNames.add(className);
+        testClassNames(Arrays.asList(className));
+    }
+
+    /**
+     * Perform annotation processing on a list of class file names and verify
+     * the existence of different flavors of class names when the
+     * input classes are modeled as elements.
+     */
+    static void testClassNames(List<String> classNames) {
+        System.out.println("test: " + classNames);
 
         List<String> options = new ArrayList<String>();
         options.add("-proc:only");
         options.add("-classpath");
         options.add(System.getProperty("test.classes"));
 
+        JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         JavaCompiler.CompilationTask compileTask =
             javaCompiler.getTask(null, // Output
                                  null, // File manager
@@ -130,8 +146,15 @@ public class TestAnonClassNames {
         compileTask.setProcessors(processors);
         Boolean goodResult = compileTask.call();
         if (!goodResult) {
-            throw new RuntimeException("Errors found during compile.");
+            error("Errors found during compile.");
         }
+    }
+
+    static int errors = 0;
+
+    static void error(String msg) {
+        System.out.println("Error: " + msg);
+        errors++;
     }
 }
 
