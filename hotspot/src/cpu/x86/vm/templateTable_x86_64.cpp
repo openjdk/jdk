@@ -3145,7 +3145,7 @@ void TemplateTable::invokedynamic(int byte_no) {
     __ profile_call(r13);
   }
 
-  __ load_heap_oop(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
+  __ load_heap_oop(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rcx)));
   __ null_check(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
   __ jump_to_method_handle_entry(rcx_method_handle, rdx);

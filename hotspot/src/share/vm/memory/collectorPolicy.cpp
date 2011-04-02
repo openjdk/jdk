@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,10 +293,11 @@ void GenCollectorPolicy::initialize_size_info() {
   // Determine maximum size of gen0
 
   size_t max_new_size = 0;
-  if (FLAG_IS_CMDLINE(MaxNewSize)) {
+  if (FLAG_IS_CMDLINE(MaxNewSize) || FLAG_IS_ERGO(MaxNewSize)) {
     if (MaxNewSize < min_alignment()) {
       max_new_size = min_alignment();
-    } else if (MaxNewSize >= max_heap_byte_size()) {
+    }
+    if (MaxNewSize >= max_heap_byte_size()) {
       max_new_size = align_size_down(max_heap_byte_size() - min_alignment(),
                                      min_alignment());
       warning("MaxNewSize (" SIZE_FORMAT "k) is equal to or "
@@ -333,7 +334,7 @@ void GenCollectorPolicy::initialize_size_info() {
   assert(max_new_size > 0, "All paths should set max_new_size");
 
   // Given the maximum gen0 size, determine the initial and
-  // minimum sizes.
+  // minimum gen0 sizes.
 
   if (max_heap_byte_size() == min_heap_byte_size()) {
     // The maximum and minimum heap sizes are the same so
@@ -396,7 +397,7 @@ void GenCollectorPolicy::initialize_size_info() {
   }
 
   if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
+    gclog_or_tty->print_cr("1: Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
       SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
       min_gen0_size(), initial_gen0_size(), max_gen0_size());
   }
@@ -448,7 +449,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
   // At this point the minimum, initial and maximum sizes
   // of the overall heap and of gen0 have been determined.
   // The maximum gen1 size can be determined from the maximum gen0
-  // and maximum heap size since not explicit flags exits
+  // and maximum heap size since no explicit flags exits
   // for setting the gen1 maximum.
   _max_gen1_size = max_heap_byte_size() - _max_gen0_size;
   _max_gen1_size =
@@ -494,13 +495,13 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
           "generation sizes: using maximum heap = " SIZE_FORMAT
           " -XX:OldSize flag is being ignored",
           max_heap_byte_size());
-  }
+    }
     // If there is an inconsistency between the OldSize and the minimum and/or
     // initial size of gen0, since OldSize was explicitly set, OldSize wins.
     if (adjust_gen0_sizes(&_min_gen0_size, &_min_gen1_size,
                           min_heap_byte_size(), OldSize)) {
       if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
+        gclog_or_tty->print_cr("2: Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
               SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
               min_gen0_size(), initial_gen0_size(), max_gen0_size());
       }
@@ -509,7 +510,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
     if (adjust_gen0_sizes(&_initial_gen0_size, &_initial_gen1_size,
                          initial_heap_byte_size(), OldSize)) {
       if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
+        gclog_or_tty->print_cr("3: Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
           SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
           min_gen0_size(), initial_gen0_size(), max_gen0_size());
       }

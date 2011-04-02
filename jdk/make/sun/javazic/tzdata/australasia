@@ -531,11 +531,31 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # to 01:00am and First Sunday April 2011 (03/04/11) - adjust clocks
 # backwards from 1:00am to 12:00am"
 
+# From Raymond Hughes (2011-03-07)
+# I believe this will be posted shortly on the website
+# <a href="http://www.mcil.gov.ws">
+# www.mcil.gov.ws
+# </a>
+#
+# PUBLIC NOTICE ON DAYLIGHT SAVING TIME
+#
+# Pursuant to the Daylight Saving Act 2009 and Cabinets decision,
+# businesses and the general public are hereby advised that daylight
+# saving time is on the first Saturday of April 2011 (02/04/11).
+#
+# The public is therefore advised that when the standard time strikes
+# the hour of four oclock (4.00am or 0400 Hours) on the 2nd April 2011,
+# then all instruments used to measure standard time are to be
+# adjusted/changed to three oclock (3:00am or 0300Hrs).
+#
+# Margaret Fruean ACTING CHIEF EXECUTIVE OFFICER MINISTRY OF COMMERCE,
+# INDUSTRY AND LABOUR 28th February 2011
+
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
 			-11:00	-	WST	2010 Sep 26
-			-11:00	1:00	WSDT	2011 Apr 3 1:00
+			-11:00	1:00	WSDT	2011 Apr 2 4:00
 			-11:00	-	WST
 
 # Solomon Is

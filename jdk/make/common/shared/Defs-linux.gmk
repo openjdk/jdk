@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,14 @@ else
   COMPILER_PATH  =/usr/bin/
 endif
 
+# OPENWIN_HOME: path to where the X11 environment is installed.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq ($(ALT_OPENWIN_HOME),)
+  OPENWIN_HOME :=$(call PrefixPath,$(ALT_OPENWIN_HOME))
+else
+  OPENWIN_HOME  =/usr/X11R6/
+endif
+
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
 ifneq "$(origin ALT_DEVTOOLS_PATH)" "undefined"
@@ -181,6 +189,7 @@ HOTSPOT_SERVER_PATH:=$(call AltCheckValue,HOTSPOT_SERVER_PATH)
 
 # Macro to check it's input file for banned dependencies and verify the
 #   binary built properly. Relies on process exit code.
+ifndef CROSS_COMPILE_ARCH
 define binary_file_verification # binary_file
 ( \
   $(ECHO) "Checking for mapfile use in: $1" && \
@@ -193,4 +202,10 @@ define binary_file_verification # binary_file
   ( $(READELF) -d $1 | $(EGREP) 'NEEDED|RUNPATH|RPATH' ) \
 )
 endef
-
+else
+define binary_file_verification 
+( \
+  $(ECHO) "Skipping binary file verification for cross-compile build" \
+)
+endef
+endif

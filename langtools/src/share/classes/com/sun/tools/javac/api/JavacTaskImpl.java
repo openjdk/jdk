@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,19 +129,11 @@ public class JavacTaskImpl extends JavacTask {
 
     public Boolean call() {
         if (!used.getAndSet(true)) {
-            beginContext();
+            initContext();
             notYetEntered = new HashMap<JavaFileObject, JCCompilationUnit>();
-            try {
-                compilerMain.setFatalErrors(true);
-                result = compilerMain.compile(args, context, fileObjects, processors);
-            } finally {
-                endContext();
-            }
-            compilerMain = null;
-            args = null;
-            context = null;
-            fileObjects = null;
-            notYetEntered = null;
+            compilerMain.setFatalErrors(true);
+            result = compilerMain.compile(args, context, fileObjects, processors);
+            cleanup();
             return result == 0;
         } else {
             throw new IllegalStateException("multiple calls to method 'call'");
@@ -163,8 +155,11 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     private void prepareCompiler() throws IOException {
-        if (!used.getAndSet(true)) {
-            beginContext();
+        if (used.getAndSet(true)) {
+            if (compiler == null)
+                throw new IllegalStateException();
+        } else {
+            initContext();
             compilerMain.setOptions(Options.instance(context));
             compilerMain.filenames = new ListBuffer<File>();
             List<File> filenames = compilerMain.processArgs(CommandLine.parse(args));
@@ -185,13 +180,12 @@ public class JavacTaskImpl extends JavacTask {
         }
     }
 
-    private void beginContext() {
+    private void initContext() {
         context.put(JavacTaskImpl.class, this);
         if (context.get(TaskListener.class) != null)
             context.put(TaskListener.class, (TaskListener)null);
         if (taskListener != null)
             context.put(TaskListener.class, wrap(taskListener));
-        tool.beginContext(context);
         //initialize compiler's default locale
         JavacMessages.instance(context).setCurrentLocale(locale);
     }
@@ -218,8 +212,15 @@ public class JavacTaskImpl extends JavacTask {
         };
     }
 
-    private void endContext() {
-        tool.endContext();
+    void cleanup() {
+        if (compiler != null)
+            compiler.close();
+        compiler = null;
+        compilerMain = null;
+        args = null;
+        context = null;
+        fileObjects = null;
+        notYetEntered = null;
     }
 
     /**
@@ -446,12 +447,12 @@ public class JavacTaskImpl extends JavacTask {
             }
             if (genList.isEmpty()) {
                 compiler.reportDeferredDiagnostics();
-                compiler.log.flush();
-                endContext();
+                cleanup();
             }
         }
         finally {
-            compiler.log.flush();
+            if (compiler != null)
+                compiler.log.flush();
         }
         return results;
     }

@@ -52,6 +52,22 @@ void NativeInstruction::set_data64_sethi(address instaddr, intptr_t x) {
   ICache::invalidate_range(instaddr, 7 * BytesPerInstWord);
 }
 
+void NativeInstruction::verify_data64_sethi(address instaddr, intptr_t x) {
+  ResourceMark rm;
+  unsigned char buffer[10 * BytesPerInstWord];
+  CodeBuffer buf(buffer, 10 * BytesPerInstWord);
+  MacroAssembler masm(&buf);
+
+  Register destreg = inv_rd(*(unsigned int *)instaddr);
+  // Generate the proper sequence into a temporary buffer and compare
+  // it with the original sequence.
+  masm.patchable_sethi(x, destreg);
+  int len = buffer - masm.pc();
+  for (int i = 0; i < len; i++) {
+    assert(instaddr[i] == buffer[i], "instructions must match");
+  }
+}
+
 void NativeInstruction::verify() {
   // make sure code pattern is actually an instruction address
   address addr = addr_at(0);

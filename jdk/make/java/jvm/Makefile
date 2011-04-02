@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ $(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
 $(PLATFORM_INCLUDE)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
 	$(install-file)
 
-JVMCFG = $(LIBDIR)/$(LIBARCH)/jvm.cfg
+JVMCFG_DIR = $(LIBDIR)/$(LIBARCH)
+JVMCFG = $(JVMCFG_DIR)/jvm.cfg
 
 #
 # How to install jvm.cfg.
@@ -54,8 +55,21 @@ else
 JVMCFG_ARCH = $(ARCH)
 endif
 
+ifdef BUILD_CLIENT_ONLY
+$(JVMCFG)::
+	$(MKDIR) -p $(JVMCFG_DIR)
+	@# Update jvm.cfg to use -client by default and alias -server to -client
+	$(RM) -f $(JVMCFG)
+	$(ECHO) "-client KNOWN">$(JVMCFG)
+	$(ECHO) "-server ALIASED_TO -client">>$(JVMCFG)
+	$(ECHO) "-hotspot ALIASED_TO -client">>$(JVMCFG)
+	$(ECHO) "-classic WARN">>$(JVMCFG)
+	$(ECHO) "-native ERROR">>$(JVMCFG)
+	$(ECHO) "-green ERROR">>$(JVMCFG)
+else
 $(JVMCFG): $(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
 	$(install-file)
+endif
 
 all: build
 

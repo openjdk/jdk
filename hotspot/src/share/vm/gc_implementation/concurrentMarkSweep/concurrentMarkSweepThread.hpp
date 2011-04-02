@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 class ConcurrentMarkSweepGeneration;
 class CMSCollector;
 
-// The Concurrent Mark Sweep GC Thread (could be several in the future).
+// The Concurrent Mark Sweep GC Thread
 class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class ConcurrentMarkSweepGeneration;   // XXX should remove friendship
@@ -54,8 +54,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   static SurrogateLockerThread*         _slt;
   static SurrogateLockerThread::SLT_msg_type _sltBuffer;
   static Monitor*                       _sltMonitor;
-
-  ConcurrentMarkSweepThread*            _next;
 
   static bool _should_terminate;
 
@@ -84,7 +82,7 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   // Tracing messages, enabled by CMSTraceThreadState.
   static inline void trace_state(const char* desc);
 
-  static volatile bool _icms_enabled;   // iCMS enabled?
+  static volatile int _icms_disabled;   // a counter to track #iCMS disable & enable
   static volatile bool _should_run;     // iCMS may run
   static volatile bool _should_stop;    // iCMS should stop
 
@@ -214,10 +212,25 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
 
   // Incremental mode is enabled globally by the flag CMSIncrementalMode.  It
   // must also be enabled/disabled dynamically to allow foreground collections.
-  static inline void enable_icms()              { _icms_enabled = true; }
-  static inline void disable_icms()             { _icms_enabled = false; }
-  static inline void set_icms_enabled(bool val) { _icms_enabled = val; }
-  static inline bool icms_enabled()             { return _icms_enabled; }
+#define ICMS_ENABLING_ASSERT                                                      \
+          assert((CMSIncrementalMode  && _icms_disabled >= 0) ||                  \
+                 (!CMSIncrementalMode && _icms_disabled <= 0), "Error")
+
+  static inline void enable_icms() {
+    ICMS_ENABLING_ASSERT;
+    Atomic::dec(&_icms_disabled);
+  }
+  static inline void disable_icms() {
+   ICMS_ENABLING_ASSERT;
+   Atomic::inc(&_icms_disabled);
+  }
+  static inline bool icms_is_disabled() {
+   ICMS_ENABLING_ASSERT;
+   return _icms_disabled > 0;
+  }
+  static inline bool icms_is_enabled() {
+   return !icms_is_disabled();
+  }
 };
 
 inline void ConcurrentMarkSweepThread::trace_state(const char* desc) {

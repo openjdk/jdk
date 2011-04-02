@@ -157,6 +157,11 @@ class WindowsFileAttributeViews {
         private static final String HIDDEN_NAME = "hidden";
         private static final String ATTRIBUTES_NAME = "attributes";
 
+        // the names of the DOS attribtues (includes basic)
+        static final Set<String> dosAttributeNames =
+            Util.newSet(basicAttributeNames,
+                        READONLY_NAME, ARCHIVE_NAME, SYSTEM_NAME,  HIDDEN_NAME, ATTRIBUTES_NAME);
+
         Dos(WindowsPath file, boolean followLinks) {
             super(file, followLinks);
         }
@@ -193,9 +198,10 @@ class WindowsFileAttributeViews {
         public Map<String,Object> readAttributes(String[] attributes)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(attributes);
+            AttributesBuilder builder =
+                AttributesBuilder.create(dosAttributeNames, attributes);
             WindowsFileAttributes attrs = readAttributes();
-            addBasicAttributesToBuilder(attrs, builder);
+            addRequestedBasicAttributes(attrs, builder);
             if (builder.match(READONLY_NAME))
                 builder.add(READONLY_NAME, attrs.isReadOnly());
             if (builder.match(ARCHIVE_NAME))

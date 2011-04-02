@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,13 +274,7 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
        // hc_klass is a HotSpot magic field and hence we can't
        // find it from InstanceKlass for java.lang.Class.
        TypeDataBase db = VM.getVM().getTypeDataBase();
-       int hcKlassOffset = (int) Instance.getHeaderSize();
-       try {
-          hcKlassOffset += (db.lookupIntConstant("java_lang_Class::hc_klass_offset").intValue() *
-                           VM.getVM().getHeapOopSize());
-       } catch (RuntimeException re) {
-          // ignore, currently java_lang_Class::hc_klass_offset is zero
-       }
+       int hcKlassOffset = (int) db.lookupType("java_lang_Class").getCIntegerField("klass_offset").getValue();
        if (VM.getVM().isCompressedOopsEnabled()) {
          hcKlassField = new NarrowOopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
        } else {

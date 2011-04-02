@@ -3166,7 +3166,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
         fieldDescriptor fd;
         // Possible we might not find this field; if so, don't break
         if (ik->find_local_field(vmSymbols::frontCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-          k()->bool_field_put(fd.offset(), true);
+          k()->java_mirror()->bool_field_put(fd.offset(), true);
         }
       }
 
@@ -3182,7 +3182,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
           fieldDescriptor fd;
           // Possible we might not find this field: if so, silently don't break
           if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-            k()->bool_field_put(fd.offset(), true);
+            k()->java_mirror()->bool_field_put(fd.offset(), true);
           }
         }
       }

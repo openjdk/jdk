@@ -190,7 +190,8 @@ public class Flow extends TreeScanner {
     private final Resolve rs;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
-    private final boolean allowRethrowAnalysis;
+    private final boolean allowImprovedRethrowAnalysis;
+    private final boolean allowImprovedCatchAnalysis;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -209,7 +210,8 @@ public class Flow extends TreeScanner {
         lint = Lint.instance(context);
         rs = Resolve.instance(context);
         Source source = Source.instance(context);
-        allowRethrowAnalysis = source.allowMulticatch();
+        allowImprovedRethrowAnalysis = source.allowImprovedRethrowAnalysis();
+        allowImprovedCatchAnalysis = source.allowImprovedCatchAnalysis();
     }
 
     /** A flag that indicates whether the last statement could
@@ -1046,7 +1048,9 @@ public class Flow extends TreeScanner {
             }
         }
         scanStat(tree.body);
-        List<Type> thrownInTry = thrown;
+        List<Type> thrownInTry = allowImprovedCatchAnalysis ?
+            chk.union(thrown, List.of(syms.runtimeExceptionType, syms.errorType)) :
+            thrown;
         thrown = thrownPrev;
         caught = caughtPrev;
         boolean aliveEnd = alive;
@@ -1081,16 +1085,7 @@ public class Flow extends TreeScanner {
                     ctypes = ctypes.append(exc);
                     if (types.isSameType(exc, syms.objectType))
                         continue;
-                    if (chk.subset(exc, caughtInTry)) {
-                        log.error(l.head.pos(),
-                                  "except.already.caught", exc);
-                    } else if (!chk.isUnchecked(l.head.pos(), exc) &&
-                               exc.tsym != syms.throwableType.tsym &&
-                               exc.tsym != syms.exceptionType.tsym &&
-                               !chk.intersects(exc, thrownInTry)) {
-                        log.error(l.head.pos(),
-                                  "except.never.thrown.in.try", exc);
-                    }
+                    checkCaughtType(l.head.pos(), exc, thrownInTry, caughtInTry);
                     caughtInTry = chk.incl(exc, caughtInTry);
                 }
             }
@@ -1152,6 +1147,29 @@ public class Flow extends TreeScanner {
             while (exits.nonEmpty()) pendingExits.append(exits.next());
         }
         uninitsTry.andSet(uninitsTryPrev).andSet(uninits);
+    }
+
+    void checkCaughtType(DiagnosticPosition pos, Type exc, List<Type> thrownInTry, List<Type> caughtInTry) {
+        if (chk.subset(exc, caughtInTry)) {
+            log.error(pos, "except.already.caught", exc);
+        } else if (!chk.isUnchecked(pos, exc) &&
+                exc.tsym != syms.throwableType.tsym &&
+                exc.tsym != syms.exceptionType.tsym &&
+                !chk.intersects(exc, thrownInTry)) {
+            log.error(pos, "except.never.thrown.in.try", exc);
+        } else if (allowImprovedCatchAnalysis) {
+            List<Type> catchableThrownTypes = chk.intersect(List.of(exc), thrownInTry);
+            // 'catchableThrownTypes' cannnot possibly be empty - if 'exc' was an
+            // unchecked exception, the result list would not be empty, as the augmented
+            // thrown set includes { RuntimeException, Error }; if 'exc' was a checked
+            // exception, that would have been covered in the branch above
+            if (chk.diff(catchableThrownTypes, caughtInTry).isEmpty()) {
+                String key = catchableThrownTypes.length() == 1 ?
+                        "unreachable.catch" :
+                        "unreachable.catch.1";
+                log.warning(pos, key, catchableThrownTypes);
+            }
+        }
     }
 
     public void visitConditional(JCConditional tree) {
@@ -1238,7 +1256,7 @@ public class Flow extends TreeScanner {
             sym.kind == VAR &&
             (sym.flags() & (FINAL | EFFECTIVELY_FINAL)) != 0 &&
             preciseRethrowTypes.get(sym) != null &&
-            allowRethrowAnalysis) {
+            allowImprovedRethrowAnalysis) {
             for (Type t : preciseRethrowTypes.get(sym)) {
                 markThrown(tree, t);
             }

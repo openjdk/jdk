@@ -165,7 +165,7 @@ int HeapRegionSeq::find_contiguous_from(int from, size_t num) {
 
   assert(num_so_far <= num, "post-condition");
   if (num_so_far == num) {
-    // we find enough space for the humongous object
+    // we found enough space for the humongous object
     assert(from <= first && first < _regions.length(), "post-condition");
     assert(first < curr && (curr - first) == (int) num, "post-condition");
     for (int i = first; i < first + (int) num; ++i) {

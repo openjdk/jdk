@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,8 @@ CFLAGS_REQUIRED_sparcv9 += -m64 -mcpu=v9
 LDFLAGS_COMMON_sparcv9  += -m64 -mcpu=v9
 CFLAGS_REQUIRED_sparc   += -m32 -mcpu=v9
 LDFLAGS_COMMON_sparc    += -m32 -mcpu=v9
+CFLAGS_REQUIRED_arm     += -fsigned-char -D_LITTLE_ENDIAN
+CFLAGS_REQUIRED_ppc     += -fsigned-char -D_BIG_ENDIAN
 ifeq ($(ZERO_BUILD), true)
   CFLAGS_REQUIRED       =  $(ZERO_ARCHFLAG)
   ifeq ($(ZERO_ENDIANNESS), little)
@@ -143,11 +145,9 @@ endif
 #
 # Misc compiler options
 #
-ifeq ($(ARCH),ppc)
-  CFLAGS_COMMON   = -fsigned-char
-else # ARCH
+ifneq ($(ARCH),ppc)
   CFLAGS_COMMON   = -fno-strict-aliasing
-endif # ARCH
+endif 
 PIC_CODE_LARGE = -fPIC
 PIC_CODE_SMALL = -fpic
 GLOBAL_KPIC = $(PIC_CODE_LARGE)
@@ -219,8 +219,19 @@ ifdef LIBRARY
   #   The environment variable LD_LIBRARY_PATH will over-ride these runpaths.
   #   Try: 'readelf -d lib*.so' to see these settings in a library.
   #
-  LDFLAGS_COMMON += -Xlinker -z -Xlinker origin -Xlinker -rpath -Xlinker \$$ORIGIN
-  LDFLAGS_COMMON += $(LD_RUNPATH_EXTRAS:%=-Xlinker -z -Xlinker origin -Xlinker -rpath -Xlinker \$$ORIGIN/%)
+  Z_ORIGIN_FLAG/sparc = -Xlinker -z -Xlinker origin
+  Z_ORIGIN_FLAG/i586  = -Xlinker -z -Xlinker origin
+  Z_ORIGIN_FLAG/amd64 = -Xlinker -z -Xlinker origin 
+  Z_ORIGIN_FLAG/ia64  = -Xlinker -z -Xlinker origin
+  Z_ORIGIN_FLAG/arm   = 
+  Z_ORIGIN_FLAG/ppc   =
+  Z_ORIGIN_FLAG/zero  = -Xlinker -z -Xlinker origin
+
+  LDFLAG_Z_ORIGIN = $(Z_ORIGIN_FLAG/$(ARCH_FAMILY))
+
+  LDFLAGS_COMMON += $(LDFLAG_Z_ORIGIN) -Xlinker -rpath -Xlinker \$$ORIGIN
+  LDFLAGS_COMMON += $(LD_RUNPATH_EXTRAS:%=$(LDFLAG_Z_ORIGIN) -Xlinker -rpath -Xlinker \$$ORIGIN/%)
+
 endif
 
 EXTRA_LIBS += -lc
@@ -315,7 +326,6 @@ override LIBNSL                  =
 override LIBTHREAD               =
 override MOOT_PRIORITIES         = true
 override NO_INTERRUPTIBLE_IO     = true
-override OPENWIN_HOME            = /usr/X11R6
 ifeq ($(ARCH), amd64)
 override OPENWIN_LIB             = $(OPENWIN_HOME)/lib64
 else
@@ -359,3 +369,9 @@ else
   INCLUDE_SA = true
 endif
 
+ifdef CROSS_COMPILE_ARCH
+  # X11 headers are not under /usr/include
+  OTHER_CFLAGS += -I$(OPENWIN_HOME)/include
+  OTHER_CXXFLAGS += -I$(OPENWIN_HOME)/include
+  OTHER_CPPFLAGS += -I$(OPENWIN_HOME)/include
+endif
