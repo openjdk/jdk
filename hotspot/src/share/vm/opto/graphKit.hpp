@@ -662,7 +662,9 @@ class GraphKit : public Phase {
             && Universe::heap()->can_elide_tlab_store_barriers());
   }
 
+  // Sync Ideal and Graph kits.
   void sync_kit(IdealKit& ideal);
+  void final_sync(IdealKit& ideal);
 
   // vanilla/CMS post barrier
   void write_barrier_post(Node *store, Node* obj,
