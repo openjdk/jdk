@@ -301,6 +301,132 @@ void PhaseIdealLoop::peeled_dom_test_elim( IdealLoopTree *loop, Node_List &old_n
 //         peeled-loop backedge has 2 users.
 // Step 3: Cut the backedge on the clone (so its not a loop) and remove the
 //         extra backedge user.
+//
+//                   orig
+//
+//                  stmt1
+//                    |
+//                    v
+//              loop predicate
+//                    |
+//                    v
+//                   loop<----+
+//                     |      |
+//                   stmt2    |
+//                     |      |
+//                     v      |
+//                    if      ^
+//                   / \      |
+//                  /   \     |
+//                 v     v    |
+//               false true   |
+//               /       \    |
+//              /         ----+
+//             |
+//             v
+//           exit
+//
+//
+//            after clone loop
+//
+//                   stmt1
+//                     |
+//                     v
+//               loop predicate
+//                 /       \
+//        clone   /         \   orig
+//               /           \
+//              /             \
+//             v               v
+//   +---->loop clone          loop<----+
+//   |      |                    |      |
+//   |    stmt2 clone          stmt2    |
+//   |      |                    |      |
+//   |      v                    v      |
+//   ^      if clone            If      ^
+//   |      / \                / \      |
+//   |     /   \              /   \     |
+//   |    v     v            v     v    |
+//   |    true  false      false true   |
+//   |    /         \      /       \    |
+//   +----           \    /         ----+
+//                    \  /
+//                    1v v2
+//                  region
+//                     |
+//                     v
+//                   exit
+//
+//
+//         after peel and predicate move
+//
+//                   stmt1
+//                    /
+//                   /
+//        clone     /            orig
+//                 /
+//                /              +----------+
+//               /               |          |
+//              /          loop predicate   |
+//             /                 |          |
+//            v                  v          |
+//   TOP-->loop clone          loop<----+   |
+//          |                    |      |   |
+//        stmt2 clone          stmt2    |   |
+//          |                    |      |   ^
+//          v                    v      |   |
+//          if clone            If      ^   |
+//          / \                / \      |   |
+//         /   \              /   \     |   |
+//        v     v            v     v    |   |
+//      true   false      false  true   |   |
+//        |         \      /       \    |   |
+//        |          \    /         ----+   ^
+//        |           \  /                  |
+//        |           1v v2                 |
+//        v         region                  |
+//        |            |                    |
+//        |            v                    |
+//        |          exit                   |
+//        |                                 |
+//        +--------------->-----------------+
+//
+//
+//              final graph
+//
+//                  stmt1
+//                    |
+//                    v
+//                  stmt2 clone
+//                    |
+//                    v
+//                   if clone
+//                  / |
+//                 /  |
+//                v   v
+//            false  true
+//             |      |
+//             |      v
+//             | loop predicate
+//             |      |
+//             |      v
+//             |     loop<----+
+//             |      |       |
+//             |    stmt2     |
+//             |      |       |
+//             |      v       |
+//             v      if      ^
+//             |     /  \     |
+//             |    /    \    |
+//             |   v     v    |
+//             | false  true  |
+//             |  |        \  |
+//             v  v         --+
+//            region
+//              |
+//              v
+//             exit
+//
 void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 
   C->set_major_progress();
@@ -315,9 +441,10 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
     loop->dump_head();
   }
 #endif
-  Node *h = loop->_head;
-  if (h->is_CountedLoop()) {
-    CountedLoopNode *cl = h->as_CountedLoop();
+  Node* head = loop->_head;
+  bool counted_loop = head->is_CountedLoop();
+  if (counted_loop) {
+    CountedLoopNode *cl = head->as_CountedLoop();
     assert(cl->trip_count() > 0, "peeling a fully unrolled loop");
     cl->set_trip_count(cl->trip_count() - 1);
     if (cl->is_main_loop()) {
@@ -330,11 +457,11 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
     }
   }
+  Node* entry = head->in(LoopNode::EntryControl);
 
   // Step 1: Clone the loop body.  The clone becomes the peeled iteration.
   //         The pre-loop illegally has 2 control users (old & new loops).
-  clone_loop( loop, old_new, dom_depth(loop->_head) );
-
+  clone_loop( loop, old_new, dom_depth(head) );
 
   // Step 2: Make the old-loop fall-in edges point to the peeled iteration.
   //         Do this by making the old-loop fall-in edges act as if they came
@@ -342,12 +469,15 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
   //         backedges) and then map to the new peeled iteration.  This leaves
   //         the pre-loop with only 1 user (the new peeled iteration), but the
   //         peeled-loop backedge has 2 users.
-  for (DUIterator_Fast jmax, j = loop->_head->fast_outs(jmax); j < jmax; j++) {
-    Node* old = loop->_head->fast_out(j);
-    if( old->in(0) == loop->_head && old->req() == 3 &&
-        (old->is_Loop() || old->is_Phi()) ) {
-      Node *new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
-      if( !new_exit_value )     // Backedge value is ALSO loop invariant?
+  Node* new_exit_value = old_new[head->in(LoopNode::LoopBackControl)->_idx];
+  new_exit_value = move_loop_predicates(entry, new_exit_value);
+  _igvn.hash_delete(head);
+  head->set_req(LoopNode::EntryControl, new_exit_value);
+  for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
+    Node* old = head->fast_out(j);
+    if (old->in(0) == loop->_head && old->req() == 3 && old->is_Phi()) {
+      new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
+      if (!new_exit_value )     // Backedge value is ALSO loop invariant?
         // Then loop body backedge value remains the same.
         new_exit_value = old->in(LoopNode::LoopBackControl);
       _igvn.hash_delete(old);
@@ -358,12 +488,12 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 
   // Step 3: Cut the backedge on the clone (so its not a loop) and remove the
   //         extra backedge user.
-  Node *nnn = old_new[loop->_head->_idx];
-  _igvn.hash_delete(nnn);
-  nnn->set_req(LoopNode::LoopBackControl, C->top());
-  for (DUIterator_Fast j2max, j2 = nnn->fast_outs(j2max); j2 < j2max; j2++) {
-    Node* use = nnn->fast_out(j2);
-    if( use->in(0) == nnn && use->req() == 3 && use->is_Phi() ) {
+  Node* new_head = old_new[head->_idx];
+  _igvn.hash_delete(new_head);
+  new_head->set_req(LoopNode::LoopBackControl, C->top());
+  for (DUIterator_Fast j2max, j2 = new_head->fast_outs(j2max); j2 < j2max; j2++) {
+    Node* use = new_head->fast_out(j2);
+    if (use->in(0) == new_head && use->req() == 3 && use->is_Phi()) {
       _igvn.hash_delete(use);
       use->set_req(LoopNode::LoopBackControl, C->top());
     }
@@ -371,15 +501,15 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 
 
   // Step 4: Correct dom-depth info.  Set to loop-head depth.
-  int dd = dom_depth(loop->_head);
-  set_idom(loop->_head, loop->_head->in(1), dd);
+  int dd = dom_depth(head);
+  set_idom(head, head->in(1), dd);
   for (uint j3 = 0; j3 < loop->_body.size(); j3++) {
     Node *old = loop->_body.at(j3);
     Node *nnn = old_new[old->_idx];
     if (!has_ctrl(nnn))
       set_idom(nnn, idom(nnn), dd-1);
     // While we're at it, remove any SafePoints from the peeled code
-    if( old->Opcode() == Op_SafePoint ) {
+    if (old->Opcode() == Op_SafePoint) {
       Node *nnn = old_new[old->_idx];
       lazy_replace(nnn,nnn->in(TypeFunc::Control));
     }
@@ -1659,7 +1789,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
   if (needs_guard) {
     // Check for an obvious zero trip guard.
-    Node* inctrl = cl->in(LoopNode::EntryControl);
+    Node* inctrl = PhaseIdealLoop::skip_loop_predicates(cl->in(LoopNode::EntryControl));
     if (inctrl->Opcode() == Op_IfTrue) {
       // The test should look like just the backedge of a CountedLoop
       Node* iff = inctrl->in(0);
@@ -1861,651 +1991,8 @@ bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   return true;
 }
 
-//-------------------------------is_uncommon_trap_proj----------------------------
-// Return true if proj is the form of "proj->[region->..]call_uct"
-bool PhaseIdealLoop::is_uncommon_trap_proj(ProjNode* proj, Deoptimization::DeoptReason reason) {
-  int path_limit = 10;
-  assert(proj, "invalid argument");
-  Node* out = proj;
-  for (int ct = 0; ct < path_limit; ct++) {
-    out = out->unique_ctrl_out();
-    if (out == NULL || out->is_Root() || out->is_Start())
-      return false;
-    if (out->is_CallStaticJava()) {
-      int req = out->as_CallStaticJava()->uncommon_trap_request();
-      if (req != 0) {
-        Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-        if (trap_reason == reason || reason == Deoptimization::Reason_none) {
-           return true;
-        }
-      }
-      return false; // don't do further after call
-    }
-  }
-  return false;
-}
 
-//-------------------------------is_uncommon_trap_if_pattern-------------------------
-// Return true  for "if(test)-> proj -> ...
-//                          |
-//                          V
-//                      other_proj->[region->..]call_uct"
-//
-// "must_reason_predicate" means the uct reason must be Reason_predicate
-bool PhaseIdealLoop::is_uncommon_trap_if_pattern(ProjNode *proj, Deoptimization::DeoptReason reason) {
-  Node *in0 = proj->in(0);
-  if (!in0->is_If()) return false;
-  // Variation of a dead If node.
-  if (in0->outcnt() < 2)  return false;
-  IfNode* iff = in0->as_If();
-
-  // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
-  if (reason != Deoptimization::Reason_none) {
-    if (iff->in(1)->Opcode() != Op_Conv2B ||
-       iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
-      return false;
-    }
-  }
-
-  ProjNode* other_proj = iff->proj_out(1-proj->_con)->as_Proj();
-  return is_uncommon_trap_proj(other_proj, reason);
-}
-
-//-------------------------------register_control-------------------------
-void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) {
-  assert(n->is_CFG(), "must be control node");
-  _igvn.register_new_node_with_optimizer(n);
-  loop->_body.push(n);
-  set_loop(n, loop);
-  // When called from beautify_loops() idom is not constructed yet.
-  if (_idom != NULL) {
-    set_idom(n, pred, dom_depth(pred));
-  }
-}
-
-//------------------------------create_new_if_for_predicate------------------------
-// create a new if above the uct_if_pattern for the predicate to be promoted.
-//
-//          before                                after
-//        ----------                           ----------
-//           ctrl                                 ctrl
-//            |                                     |
-//            |                                     |
-//            v                                     v
-//           iff                                 new_iff
-//          /    \                                /      \
-//         /      \                              /        \
-//        v        v                            v          v
-//  uncommon_proj cont_proj                   if_uct     if_cont
-// \      |        |                           |          |
-//  \     |        |                           |          |
-//   v    v        v                           |          v
-//     rgn       loop                          |         iff
-//      |                                      |        /     \
-//      |                                      |       /       \
-//      v                                      |      v         v
-// uncommon_trap                               | uncommon_proj cont_proj
-//                                           \  \    |           |
-//                                            \  \   |           |
-//                                             v  v  v           v
-//                                               rgn           loop
-//                                                |
-//                                                |
-//                                                v
-//                                           uncommon_trap
-//
-//
-// We will create a region to guard the uct call if there is no one there.
-// The true projecttion (if_cont) of the new_iff is returned.
-// This code is also used to clone predicates to clonned loops.
-ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                                      Deoptimization::DeoptReason reason) {
-  assert(is_uncommon_trap_if_pattern(cont_proj, reason), "must be a uct if pattern!");
-  IfNode* iff = cont_proj->in(0)->as_If();
-
-  ProjNode *uncommon_proj = iff->proj_out(1 - cont_proj->_con);
-  Node     *rgn   = uncommon_proj->unique_ctrl_out();
-  assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
-
-  if (!rgn->is_Region()) { // create a region to guard the call
-    assert(rgn->is_Call(), "must be call uct");
-    CallNode* call = rgn->as_Call();
-    IdealLoopTree* loop = get_loop(call);
-    rgn = new (C, 1) RegionNode(1);
-    rgn->add_req(uncommon_proj);
-    register_control(rgn, loop, uncommon_proj);
-    _igvn.hash_delete(call);
-    call->set_req(0, rgn);
-    // When called from beautify_loops() idom is not constructed yet.
-    if (_idom != NULL) {
-      set_idom(call, rgn, dom_depth(rgn));
-    }
-  }
-
-  Node* entry = iff->in(0);
-  if (new_entry != NULL) {
-    // Clonning the predicate to new location.
-    entry = new_entry;
-  }
-  // Create new_iff
-  IdealLoopTree* lp = get_loop(entry);
-  IfNode *new_iff = new (C, 2) IfNode(entry, NULL, iff->_prob, iff->_fcnt);
-  register_control(new_iff, lp, entry);
-  Node *if_cont = new (C, 1) IfTrueNode(new_iff);
-  Node *if_uct  = new (C, 1) IfFalseNode(new_iff);
-  if (cont_proj->is_IfFalse()) {
-    // Swap
-    Node* tmp = if_uct; if_uct = if_cont; if_cont = tmp;
-  }
-  register_control(if_cont, lp, new_iff);
-  register_control(if_uct, get_loop(rgn), new_iff);
-
-  // if_uct to rgn
-  _igvn.hash_delete(rgn);
-  rgn->add_req(if_uct);
-  // When called from beautify_loops() idom is not constructed yet.
-  if (_idom != NULL) {
-    Node* ridom = idom(rgn);
-    Node* nrdom = dom_lca(ridom, new_iff);
-    set_idom(rgn, nrdom, dom_depth(rgn));
-  }
-  // rgn must have no phis
-  assert(!rgn->as_Region()->has_phi(), "region must have no phis");
-
-  if (new_entry == NULL) {
-    // Attach if_cont to iff
-    _igvn.hash_delete(iff);
-    iff->set_req(0, if_cont);
-    if (_idom != NULL) {
-      set_idom(iff, if_cont, dom_depth(iff));
-    }
-  }
-  return if_cont->as_Proj();
-}
-
-//--------------------------find_predicate_insertion_point-------------------
-// Find a good location to insert a predicate
-ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason) {
-  if (start_c == NULL || !start_c->is_Proj())
-    return NULL;
-  if (is_uncommon_trap_if_pattern(start_c->as_Proj(), reason)) {
-    return start_c->as_Proj();
-  }
-  return NULL;
-}
-
-//--------------------------find_predicate------------------------------------
-// Find a predicate
-Node* PhaseIdealLoop::find_predicate(Node* entry) {
-  Node* predicate = NULL;
-  if (UseLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      assert(entry->in(0)->in(1)->in(1)->Opcode()==Op_Opaque1, "must be");
-      return entry;
-    }
-  }
-  return NULL;
-}
-
-//------------------------------Invariance-----------------------------------
-// Helper class for loop_predication_impl to compute invariance on the fly and
-// clone invariants.
-class Invariance : public StackObj {
-  VectorSet _visited, _invariant;
-  Node_Stack _stack;
-  VectorSet _clone_visited;
-  Node_List _old_new; // map of old to new (clone)
-  IdealLoopTree* _lpt;
-  PhaseIdealLoop* _phase;
-
-  // Helper function to set up the invariance for invariance computation
-  // If n is a known invariant, set up directly. Otherwise, look up the
-  // the possibility to push n onto the stack for further processing.
-  void visit(Node* use, Node* n) {
-    if (_lpt->is_invariant(n)) { // known invariant
-      _invariant.set(n->_idx);
-    } else if (!n->is_CFG()) {
-      Node *n_ctrl = _phase->ctrl_or_self(n);
-      Node *u_ctrl = _phase->ctrl_or_self(use); // self if use is a CFG
-      if (_phase->is_dominator(n_ctrl, u_ctrl)) {
-        _stack.push(n, n->in(0) == NULL ? 1 : 0);
-      }
-    }
-  }
-
-  // Compute invariance for "the_node" and (possibly) all its inputs recursively
-  // on the fly
-  void compute_invariance(Node* n) {
-    assert(_visited.test(n->_idx), "must be");
-    visit(n, n);
-    while (_stack.is_nonempty()) {
-      Node*  n = _stack.node();
-      uint idx = _stack.index();
-      if (idx == n->req()) { // all inputs are processed
-        _stack.pop();
-        // n is invariant if it's inputs are all invariant
-        bool all_inputs_invariant = true;
-        for (uint i = 0; i < n->req(); i++) {
-          Node* in = n->in(i);
-          if (in == NULL) continue;
-          assert(_visited.test(in->_idx), "must have visited input");
-          if (!_invariant.test(in->_idx)) { // bad guy
-            all_inputs_invariant = false;
-            break;
-          }
-        }
-        if (all_inputs_invariant) {
-          _invariant.set(n->_idx); // I am a invariant too
-        }
-      } else { // process next input
-        _stack.set_index(idx + 1);
-        Node* m = n->in(idx);
-        if (m != NULL && !_visited.test_set(m->_idx)) {
-          visit(n, m);
-        }
-      }
-    }
-  }
-
-  // Helper function to set up _old_new map for clone_nodes.
-  // If n is a known invariant, set up directly ("clone" of n == n).
-  // Otherwise, push n onto the stack for real cloning.
-  void clone_visit(Node* n) {
-    assert(_invariant.test(n->_idx), "must be invariant");
-    if (_lpt->is_invariant(n)) { // known invariant
-      _old_new.map(n->_idx, n);
-    } else{ // to be cloned
-      assert (!n->is_CFG(), "should not see CFG here");
-      _stack.push(n, n->in(0) == NULL ? 1 : 0);
-    }
-  }
-
-  // Clone "n" and (possibly) all its inputs recursively
-  void clone_nodes(Node* n, Node* ctrl) {
-    clone_visit(n);
-    while (_stack.is_nonempty()) {
-      Node*  n = _stack.node();
-      uint idx = _stack.index();
-      if (idx == n->req()) { // all inputs processed, clone n!
-        _stack.pop();
-        // clone invariant node
-        Node* n_cl = n->clone();
-        _old_new.map(n->_idx, n_cl);
-        _phase->register_new_node(n_cl, ctrl);
-        for (uint i = 0; i < n->req(); i++) {
-          Node* in = n_cl->in(i);
-          if (in == NULL) continue;
-          n_cl->set_req(i, _old_new[in->_idx]);
-        }
-      } else { // process next input
-        _stack.set_index(idx + 1);
-        Node* m = n->in(idx);
-        if (m != NULL && !_clone_visited.test_set(m->_idx)) {
-          clone_visit(m); // visit the input
-        }
-      }
-    }
-  }
-
- public:
-  Invariance(Arena* area, IdealLoopTree* lpt) :
-    _lpt(lpt), _phase(lpt->_phase),
-    _visited(area), _invariant(area), _stack(area, 10 /* guess */),
-    _clone_visited(area), _old_new(area)
-  {}
-
-  // Map old to n for invariance computation and clone
-  void map_ctrl(Node* old, Node* n) {
-    assert(old->is_CFG() && n->is_CFG(), "must be");
-    _old_new.map(old->_idx, n); // "clone" of old is n
-    _invariant.set(old->_idx);  // old is invariant
-    _clone_visited.set(old->_idx);
-  }
-
-  // Driver function to compute invariance
-  bool is_invariant(Node* n) {
-    if (!_visited.test_set(n->_idx))
-      compute_invariance(n);
-    return (_invariant.test(n->_idx) != 0);
-  }
-
-  // Driver function to clone invariant
-  Node* clone(Node* n, Node* ctrl) {
-    assert(ctrl->is_CFG(), "must be");
-    assert(_invariant.test(n->_idx), "must be an invariant");
-    if (!_clone_visited.test(n->_idx))
-      clone_nodes(n, ctrl);
-    return _old_new[n->_idx];
-  }
-};
-
-//------------------------------is_range_check_if -----------------------------------
-// Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
-// Note: this function is particularly designed for loop predication. We require load_range
-//       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const {
-  if (!is_loop_exit(iff)) {
-    return false;
-  }
-  if (!iff->in(1)->is_Bool()) {
-    return false;
-  }
-  const BoolNode *bol = iff->in(1)->as_Bool();
-  if (bol->_test._test != BoolTest::lt) {
-    return false;
-  }
-  if (!bol->in(1)->is_Cmp()) {
-    return false;
-  }
-  const CmpNode *cmp = bol->in(1)->as_Cmp();
-  if (cmp->Opcode() != Op_CmpU ) {
-    return false;
-  }
-  Node* range = cmp->in(2);
-  if (range->Opcode() != Op_LoadRange) {
-    const TypeInt* tint = phase->_igvn.type(range)->isa_int();
-    if (!OptimizeFill || tint == NULL || tint->empty() || tint->_lo < 0) {
-      // Allow predication on positive values that aren't LoadRanges.
-      // This allows optimization of loops where the length of the
-      // array is a known value and doesn't need to be loaded back
-      // from the array.
-      return false;
-    }
-  }
-  if (!invar.is_invariant(range)) {
-    return false;
-  }
-  Node *iv     = _head->as_CountedLoop()->phi();
-  int   scale  = 0;
-  Node *offset = NULL;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset)) {
-    return false;
-  }
-  if(offset && !invar.is_invariant(offset)) { // offset must be invariant
-    return false;
-  }
-  return true;
-}
-
-//------------------------------rc_predicate-----------------------------------
-// Create a range check predicate
-//
-// for (i = init; i < limit; i += stride) {
-//    a[scale*i+offset]
-// }
-//
-// Compute max(scale*i + offset) for init <= i < limit and build the predicate
-// as "max(scale*i + offset) u< a.length".
-//
-// There are two cases for max(scale*i + offset):
-// (1) stride*scale > 0
-//   max(scale*i + offset) = scale*(limit-stride) + offset
-// (2) stride*scale < 0
-//   max(scale*i + offset) = scale*init + offset
-BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
-                                       int scale, Node* offset,
-                                       Node* init, Node* limit, Node* stride,
-                                       Node* range, bool upper) {
-  DEBUG_ONLY(ttyLocker ttyl);
-  if (TraceLoopPredicate) tty->print("rc_predicate ");
-
-  Node* max_idx_expr  = init;
-  int stride_con = stride->get_int();
-  if ((stride_con > 0) == (scale > 0) == upper) {
-    max_idx_expr = new (C, 3) SubINode(limit, stride);
-    register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate) tty->print("(limit - stride) ");
-  } else {
-    if (TraceLoopPredicate) tty->print("init ");
-  }
-
-  if (scale != 1) {
-    ConNode* con_scale = _igvn.intcon(scale);
-    max_idx_expr = new (C, 3) MulINode(max_idx_expr, con_scale);
-    register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate) tty->print("* %d ", scale);
-  }
-
-  if (offset && (!offset->is_Con() || offset->get_int() != 0)){
-    max_idx_expr = new (C, 3) AddINode(max_idx_expr, offset);
-    register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate)
-      if (offset->is_Con()) tty->print("+ %d ", offset->get_int());
-      else tty->print("+ offset ");
-  }
-
-  CmpUNode* cmp = new (C, 3) CmpUNode(max_idx_expr, range);
-  register_new_node(cmp, ctrl);
-  BoolNode* bol = new (C, 2) BoolNode(cmp, BoolTest::lt);
-  register_new_node(bol, ctrl);
-
-  if (TraceLoopPredicate) tty->print_cr("<u range");
-  return bol;
-}
-
-//------------------------------ loop_predication_impl--------------------------
-// Insert loop predicates for null checks and range checks
-bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
-  if (!UseLoopPredicate) return false;
-
-  if (!loop->_head->is_Loop()) {
-    // Could be a simple region when irreducible loops are present.
-    return false;
-  }
-
-  if (loop->_head->unique_ctrl_out()->Opcode() == Op_NeverBranch) {
-    // do nothing for infinite loops
-    return false;
-  }
-
-  CountedLoopNode *cl = NULL;
-  if (loop->_head->is_CountedLoop()) {
-    cl = loop->_head->as_CountedLoop();
-    // do nothing for iteration-splitted loops
-    if (!cl->is_normal_loop()) return false;
-  }
-
-  LoopNode *lpn  = loop->_head->as_Loop();
-  Node* entry = lpn->in(LoopNode::EntryControl);
-
-  ProjNode *predicate_proj = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-  if (!predicate_proj) {
-#ifndef PRODUCT
-    if (TraceLoopPredicate) {
-      tty->print("missing predicate:");
-      loop->dump_head();
-      lpn->dump(1);
-    }
-#endif
-    return false;
-  }
-  ConNode* zero = _igvn.intcon(0);
-  set_ctrl(zero, C->root());
-
-  ResourceArea *area = Thread::current()->resource_area();
-  Invariance invar(area, loop);
-
-  // Create list of if-projs such that a newer proj dominates all older
-  // projs in the list, and they all dominate loop->tail()
-  Node_List if_proj_list(area);
-  LoopNode *head  = loop->_head->as_Loop();
-  Node *current_proj = loop->tail(); //start from tail
-  while ( current_proj != head ) {
-    if (loop == get_loop(current_proj) && // still in the loop ?
-        current_proj->is_Proj()        && // is a projection  ?
-        current_proj->in(0)->Opcode() == Op_If) { // is a if projection ?
-      if_proj_list.push(current_proj);
-    }
-    current_proj = idom(current_proj);
-  }
-
-  bool hoisted = false; // true if at least one proj is promoted
-  while (if_proj_list.size() > 0) {
-    // Following are changed to nonnull when a predicate can be hoisted
-    ProjNode* new_predicate_proj = NULL;
-
-    ProjNode* proj = if_proj_list.pop()->as_Proj();
-    IfNode*   iff  = proj->in(0)->as_If();
-
-    if (!is_uncommon_trap_if_pattern(proj, Deoptimization::Reason_none)) {
-      if (loop->is_loop_exit(iff)) {
-        // stop processing the remaining projs in the list because the execution of them
-        // depends on the condition of "iff" (iff->in(1)).
-        break;
-      } else {
-        // Both arms are inside the loop. There are two cases:
-        // (1) there is one backward branch. In this case, any remaining proj
-        //     in the if_proj list post-dominates "iff". So, the condition of "iff"
-        //     does not determine the execution the remining projs directly, and we
-        //     can safely continue.
-        // (2) both arms are forwarded, i.e. a diamond shape. In this case, "proj"
-        //     does not dominate loop->tail(), so it can not be in the if_proj list.
-        continue;
-      }
-    }
-
-    Node*     test = iff->in(1);
-    if (!test->is_Bool()){ //Conv2B, ...
-      continue;
-    }
-    BoolNode* bol = test->as_Bool();
-    if (invar.is_invariant(bol)) {
-      // Invariant test
-      new_predicate_proj = create_new_if_for_predicate(predicate_proj, NULL,
-                                                       Deoptimization::Reason_predicate);
-      Node* ctrl = new_predicate_proj->in(0)->as_If()->in(0);
-      BoolNode* new_predicate_bol = invar.clone(bol, ctrl)->as_Bool();
-
-      // Negate test if necessary
-      bool negated = false;
-      if (proj->_con != predicate_proj->_con) {
-        new_predicate_bol = new (C, 2) BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
-        register_new_node(new_predicate_bol, ctrl);
-        negated = true;
-      }
-      IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
-      _igvn.hash_delete(new_predicate_iff);
-      new_predicate_iff->set_req(1, new_predicate_bol);
-#ifndef PRODUCT
-      if (TraceLoopPredicate) {
-        tty->print("Predicate invariant if%s: %d ", negated ? " negated" : "", new_predicate_iff->_idx);
-        loop->dump_head();
-      } else if (TraceLoopOpts) {
-        tty->print("Predicate IC ");
-        loop->dump_head();
-      }
-#endif
-    } else if (cl != NULL && loop->is_range_check_if(iff, this, invar)) {
-      assert(proj->_con == predicate_proj->_con, "must match");
-
-      // Range check for counted loops
-      const Node*    cmp    = bol->in(1)->as_Cmp();
-      Node*          idx    = cmp->in(1);
-      assert(!invar.is_invariant(idx), "index is variant");
-      assert(cmp->in(2)->Opcode() == Op_LoadRange || OptimizeFill, "must be");
-      Node* rng = cmp->in(2);
-      assert(invar.is_invariant(rng), "range must be invariant");
-      int scale    = 1;
-      Node* offset = zero;
-      bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), &scale, &offset);
-      assert(ok, "must be index expression");
-
-      Node* init    = cl->init_trip();
-      Node* limit   = cl->limit();
-      Node* stride  = cl->stride();
-
-      // Build if's for the upper and lower bound tests.  The
-      // lower_bound test will dominate the upper bound test and all
-      // cloned or created nodes will use the lower bound test as
-      // their declared control.
-      ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate);
-      ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate);
-      assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
-      Node *ctrl = lower_bound_proj->in(0)->as_If()->in(0);
-
-      // Perform cloning to keep Invariance state correct since the
-      // late schedule will place invariant things in the loop.
-      rng = invar.clone(rng, ctrl);
-      if (offset && offset != zero) {
-        assert(invar.is_invariant(offset), "offset must be loop invariant");
-        offset = invar.clone(offset, ctrl);
-      }
-
-      // Test the lower bound
-      Node*  lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, false);
-      IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
-      _igvn.hash_delete(lower_bound_iff);
-      lower_bound_iff->set_req(1, lower_bound_bol);
-      if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
-
-      // Test the upper bound
-      Node* upper_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, true);
-      IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
-      _igvn.hash_delete(upper_bound_iff);
-      upper_bound_iff->set_req(1, upper_bound_bol);
-      if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", lower_bound_iff->_idx);
-
-      // Fall through into rest of the clean up code which will move
-      // any dependent nodes onto the upper bound test.
-      new_predicate_proj = upper_bound_proj;
-
-#ifndef PRODUCT
-      if (TraceLoopOpts && !TraceLoopPredicate) {
-        tty->print("Predicate RC ");
-        loop->dump_head();
-      }
-#endif
-    } else {
-      // Loop variant check (for example, range check in non-counted loop)
-      // with uncommon trap.
-      continue;
-    }
-    assert(new_predicate_proj != NULL, "sanity");
-    // Success - attach condition (new_predicate_bol) to predicate if
-    invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
-
-    // Eliminate the old If in the loop body
-    dominated_by( new_predicate_proj, iff, proj->_con != new_predicate_proj->_con );
-
-    hoisted = true;
-    C->set_major_progress();
-  } // end while
-
-#ifndef PRODUCT
-  // report that the loop predication has been actually performed
-  // for this loop
-  if (TraceLoopPredicate && hoisted) {
-    tty->print("Loop Predication Performed:");
-    loop->dump_head();
-  }
-#endif
-
-  return hoisted;
-}
-
-//------------------------------loop_predication--------------------------------
-// driver routine for loop predication optimization
-bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
-  bool hoisted = false;
-  // Recursively promote predicates
-  if ( _child ) {
-    hoisted = _child->loop_predication( phase);
-  }
-
-  // self
-  if (!_irreducible && !tail()->is_top()) {
-    hoisted |= phase->loop_predication_impl(this);
-  }
-
-  if ( _next ) { //sibling
-    hoisted |= _next->loop_predication( phase);
-  }
-
-  return hoisted;
-}
-
-
+//=============================================================================
 // Process all the loops in the loop tree and replace any fill
 // patterns with an intrisc version.
 bool PhaseIdealLoop::do_intrinsify_fill() {
@@ -2761,6 +2248,13 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   if (!match_fill_loop(lpt, store, store_value, shift, offset)) {
     return false;
   }
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("ArrayFill    ");
+    lpt->dump_head();
+  }
+#endif
 
   // Now replace the whole loop body by a call to a fill routine that
   // covers the same region as the loop.
