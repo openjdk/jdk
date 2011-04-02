@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1156,7 +1156,7 @@ class LIR_OpJavaCall: public LIR_OpCall {
     return
       is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
       ||
-      (method()->holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
+      (method()->holder()->name() == ciSymbol::java_lang_invoke_MethodHandle() &&
        methodOopDesc::is_method_handle_invoke_name(method()->name()->sid()));
   }
 

@@ -139,9 +139,8 @@ public class TestInferBinaryName {
             throws IOException {
         Context ctx = new Context();
         Options options = Options.instance(ctx);
-        // uugh, ugly back door, should be cleaned up, someday
-        if (zipFileIndexKind == USE_ZIP_FILE_INDEX)
-            options.put("useOptimizedZip", "true");
+        options.put("useOptimizedZip",
+                Boolean.toString(zipFileIndexKind == USE_ZIP_FILE_INDEX));
 
         if (symFileKind == IGNORE_SYMBOL_FILE)
             options.put("ignore.symbol.file", "true");

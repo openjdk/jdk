@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class ReferenceProcessor : public CHeapObj {
   bool        _enqueuing_is_done;     // true if all weak references enqueued
   bool        _processing_is_mt;      // true during phases when
                                       // reference processing is MT.
-  int         _next_id;               // round-robin counter in
+  int         _next_id;               // round-robin mod _num_q counter in
                                       // support of work distribution
 
   // For collectors that do not keep GC marking information
@@ -103,7 +103,8 @@ class ReferenceProcessor : public CHeapObj {
 
  public:
   int num_q()                            { return _num_q; }
-  void set_mt_degree(int v)              { _num_q = v; }
+  int max_num_q()                        { return _max_num_q; }
+  void set_active_mt_degree(int v)       { _num_q = v; }
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
   static oop  sentinel_ref()             { return _sentinelRef; }
   static oop* adr_sentinel_ref()         { return &_sentinelRef; }
@@ -216,6 +217,7 @@ class ReferenceProcessor : public CHeapObj {
                                    VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 
+  // round-robin mod _num_q (not: _not_ mode _max_num_q)
   int next_id() {
     int id = _next_id;
     if (++_next_id == _num_q) {
@@ -256,23 +258,15 @@ class ReferenceProcessor : public CHeapObj {
     _max_num_q(0),
     _processing_is_mt(false),
     _next_id(0)
-  {}
+  { }
 
-  ReferenceProcessor(MemRegion span, bool atomic_discovery,
-                     bool mt_discovery,
-                     int mt_degree = 1,
-                     bool mt_processing = false,
+  // Default parameters give you a vanilla reference processor.
+  ReferenceProcessor(MemRegion span,
+                     bool mt_processing = false, int mt_processing_degree = 1,
+                     bool mt_discovery  = false, int mt_discovery_degree  = 1,
+                     bool atomic_discovery = true,
+                     BoolObjectClosure* is_alive_non_header = NULL,
                      bool discovered_list_needs_barrier = false);
-
-  // Allocates and initializes a reference processor.
-  static ReferenceProcessor* create_ref_processor(
-    MemRegion          span,
-    bool               atomic_discovery,
-    bool               mt_discovery,
-    BoolObjectClosure* is_alive_non_header = NULL,
-    int                parallel_gc_threads = 1,
-    bool               mt_processing = false,
-    bool               discovered_list_needs_barrier = false);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -397,20 +391,20 @@ class ReferenceProcessorSpanMutator: StackObj {
 // A utility class to temporarily change the MT'ness of
 // reference discovery for the given ReferenceProcessor
 // in the scope that contains it.
-class ReferenceProcessorMTMutator: StackObj {
+class ReferenceProcessorMTDiscoveryMutator: StackObj {
  private:
   ReferenceProcessor* _rp;
   bool                _saved_mt;
 
  public:
-  ReferenceProcessorMTMutator(ReferenceProcessor* rp,
-                              bool mt):
+  ReferenceProcessorMTDiscoveryMutator(ReferenceProcessor* rp,
+                                       bool mt):
     _rp(rp) {
     _saved_mt = _rp->discovery_is_mt();
     _rp->set_mt_discovery(mt);
   }
 
-  ~ReferenceProcessorMTMutator() {
+  ~ReferenceProcessorMTDiscoveryMutator() {
     _rp->set_mt_discovery(_saved_mt);
   }
 };

@@ -86,28 +86,6 @@ public:
   bool idempotent() { return true; }
 };
 
-class IntoCSRegionClosure: public HeapRegionClosure {
-  IntoCSOopClosure _blk;
-  G1CollectedHeap* _g1;
-public:
-  IntoCSRegionClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* blk) :
-    _g1(g1), _blk(g1, blk) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->in_collection_set()) {
-      _blk.set_region(r);
-      if (r->isHumongous()) {
-        if (r->startsHumongous()) {
-          oop obj = oop(r->bottom());
-          obj->oop_iterate(&_blk);
-        }
-      } else {
-        r->oop_before_save_marks_iterate(&_blk);
-      }
-    }
-    return false;
-  }
-};
-
 class VerifyRSCleanCardOopClosure: public OopClosure {
   G1CollectedHeap* _g1;
 public:
@@ -329,7 +307,7 @@ public:
     // is during RSet updating within an evacuation pause.
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-    assert(worker_i < (int) DirtyCardQueueSet::num_par_ids(), "should be a GC worker");
+    assert(worker_i < (int) (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "should be a GC worker");
 
     if (_g1rs->concurrentRefineOneCard(card_ptr, worker_i, true)) {
       // 'card_ptr' contains references that point into the collection

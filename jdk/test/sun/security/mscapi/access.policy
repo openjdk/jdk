@@ -3,7 +3,7 @@ grant {
     permission java.lang.RuntimePermission 
 			"accessClassInPackage.sun.*";
 
-    permission java.lang.RuntimePermission "loadLibrary.sunmscapi";
+    permission java.lang.RuntimePermission "loadLibrary.*";
 
     permission java.util.PropertyPermission "os.arch", "read";
 

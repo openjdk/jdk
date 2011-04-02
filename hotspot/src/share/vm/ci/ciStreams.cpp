@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,7 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
   bool ignore;
   // report as InvokeDynamic for invokedynamic, which is syntactically classless
   if (cur_bc() == Bytecodes::_invokedynamic)
-    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_dyn_InvokeDynamic(), false);
+    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_lang_invoke_InvokeDynamic(), false);
   return CURRENT_ENV->get_klass_by_index(cpool, get_method_holder_index(), ignore, _holder);
 }
 
