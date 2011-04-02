@@ -35,7 +35,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
     String projectVersion() {return "7.10";};
 
     public void writeProjectFile(String projectFileName, String projectName,
-                                 Vector allConfigs) throws IOException {
+                                 Vector<BuildConfig> allConfigs) throws IOException {
         System.out.println();
         System.out.println("    Writing .vcproj file: "+projectFileName);
         // If we got this far without an error, we're safe to actually
@@ -54,11 +54,11 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
                 "SccLocalPath", ""
             }
             );
-        startTag("Platforms", null);
+        startTag("Platforms");
         tag("Platform", new String[] {"Name", (String) BuildConfig.getField(null, "PlatformName")});
         endTag("Platforms");
 
-        startTag("Configurations", null);
+        startTag("Configurations");
 
         for (Iterator i = allConfigs.iterator(); i.hasNext(); ) {
             writeConfiguration((BuildConfig)i.next());
@@ -66,11 +66,11 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
         endTag("Configurations");
 
-        tag("References", null);
+        tag("References");
 
         writeFiles(allConfigs);
 
-        tag("Globals", null);
+        tag("Globals");
 
         endTag("VisualStudioProject");
         printWriter.close();
@@ -190,28 +190,6 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
         }
     }
 
-    class TypeFilter extends NameFilter {
-        String[] exts;
-
-        TypeFilter(String fname, String[] exts) {
-            this.fname = fname;
-            this.exts = exts;
-        }
-
-        boolean match(FileInfo fi) {
-            for (int i=0; i<exts.length; i++) {
-                if (fi.full.endsWith(exts[i])) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        String  filterString() {
-            return Util.join(";", exts);
-        }
-    }
-
     class TerminatorFilter extends NameFilter {
         TerminatorFilter(String fname) {
             this.fname = fname;
@@ -299,8 +277,8 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
     //   - container filter just provides a container to group together real filters
     //   - real filter can select elements from the set according to some rule, put it into XML
     //     and remove from the list
-    Vector makeFilters(TreeSet<FileInfo> files) {
-        Vector rv = new Vector();
+    Vector<NameFilter> makeFilters(TreeSet<FileInfo> files) {
+        Vector<NameFilter> rv = new Vector<NameFilter>();
         String sbase = Util.normalize(BuildConfig.getFieldString(null, "SourceBase")+"/src/");
 
         String currentDir = "";
@@ -370,13 +348,12 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
         rv.add(new SpecificNameFilter("Precompiled Header", new String[] {"precompiled.hpp"}));
 
         // this one is to catch files not caught by other filters
-        //rv.add(new TypeFilter("Header Files", new String[] {"h", "hpp", "hxx", "hm", "inl", "fi", "fd"}));
         rv.add(new TerminatorFilter("Source Files"));
 
         return rv;
     }
 
-    void writeFiles(Vector allConfigs) {
+    void writeFiles(Vector<BuildConfig> allConfigs) {
 
         Hashtable allFiles = computeAttributedFiles(allConfigs);
 
@@ -387,7 +364,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
         TreeSet sortedFiles = sortFiles(allFiles);
 
-        startTag("Files", null);
+        startTag("Files");
 
         for (Iterator i = makeFilters(sortedFiles).iterator(); i.hasNext(); ) {
             doWriteFiles(sortedFiles, allConfigNames, (NameFilter)i.next());
@@ -556,34 +533,39 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
     int indent;
 
     private void startTagPrim(String name,
+            String[] attrs,
+            boolean close) {
+        startTagPrim(name, attrs, close, true);
+    }
+
+    private void startTagPrim(String name,
                               String[] attrs,
-                              boolean close) {
+                              boolean close,
+                              boolean newline) {
         doIndent();
         printWriter.print("<"+name);
         indent++;
 
-        if (attrs != null) {
-            printWriter.println();
+        if (attrs != null && attrs.length > 0) {
             for (int i=0; i<attrs.length; i+=2) {
-                doIndent();
                 printWriter.print(" " + attrs[i]+"=\""+attrs[i+1]+"\"");
                 if (i < attrs.length - 2) {
-                    printWriter.println();
                 }
             }
         }
 
         if (close) {
             indent--;
-            //doIndent();
-            printWriter.println("/>");
+            printWriter.print(" />");
         } else {
-            //doIndent();
-            printWriter.println(">");
+                printWriter.print(">");
+        }
+        if(newline) {
+                printWriter.println();
         }
     }
 
-    void startTag(String name, String[] attrs) {
+    void startTag(String name, String... attrs) {
         startTagPrim(name, attrs, false);
     }
 
@@ -601,11 +583,25 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
         printWriter.println("</"+name+">");
     }
 
-    void tag(String name, String[] attrs) {
+    void tag(String name, String... attrs) {
         startTagPrim(name, attrs, true);
     }
 
-     void tagV(String name, Vector attrs) {
+    void tagData(String name, String data) {
+        doIndent();
+        printWriter.print("<"+name+">");
+        printWriter.print(data);
+        printWriter.println("</"+name+">");
+    }
+
+    void tagData(String name, String data, String... attrs) {
+        startTagPrim(name, attrs, false, false);
+        printWriter.print(data);
+        printWriter.println("</"+name+">");
+        indent--;
+    }
+
+    void tagV(String name, Vector attrs) {
          String s[] = new String [attrs.size()];
          for (int i=0; i<attrs.size(); i++) {
              s[i] = (String)attrs.elementAt(i);
@@ -616,7 +612,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
     void doIndent() {
         for (int i=0; i<indent; i++) {
-            printWriter.print("    ");
+            printWriter.print("  ");
         }
     }
 

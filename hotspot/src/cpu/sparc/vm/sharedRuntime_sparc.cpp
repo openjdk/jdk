@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1769,6 +1769,7 @@ static void create_inner_frame(MacroAssembler* masm, bool* already_created) {
 // returns.
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 methodHandle method,
+                                                int compile_id,
                                                 int total_in_args,
                                                 int comp_args_on_stack, // in VMRegStackSlots
                                                 BasicType *in_sig_bt,
@@ -2462,6 +2463,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ flush();
 
   nmethod *nm = nmethod::new_native_nmethod(method,
+                                            compile_id,
                                             masm->code(),
                                             vep_offset,
                                             frame_complete,

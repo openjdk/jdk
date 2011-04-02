@@ -49,6 +49,9 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/ad_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/ad_arm.hpp"
+#endif
 
 OptoReg::Name OptoReg::c_frame_pointer;
 
