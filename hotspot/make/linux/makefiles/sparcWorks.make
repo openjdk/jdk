@@ -29,6 +29,9 @@ CPP = CC
 CC  = cc
 AS  = $(CC) -c
 
+HOSTCPP = $(CPP)
+HOSTCC  = $(CC)
+
 ARCHFLAG = $(ARCHFLAG/$(BUILDARCH))
 ARCHFLAG/i486    = -m32
 ARCHFLAG/amd64   = -m64
