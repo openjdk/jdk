@@ -1120,7 +1120,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
 
-  IdealKit kit(gvn(), control(), merged_memory(), false, true);
+  IdealKit kit(this, false, true);
 #define __ kit.
   Node* zero             = __ ConI(0);
   Node* one              = __ ConI(1);
@@ -1171,7 +1171,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   __ bind(return_);
 
   // Final sync IdealKit and GraphKit.
-  sync_kit(kit);
+  final_sync(kit);
   Node* result = __ value(rtn);
 #undef __
   C->set_has_loops(true);
@@ -2318,22 +2318,20 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         // of it. So we need to emit code to conditionally do the proper type of
         // store.
 
-        IdealKit ideal(gvn(), control(),  merged_memory());
+        IdealKit ideal(this);
 #define __ ideal.
         // QQQ who knows what probability is here??
         __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
           // Sync IdealKit and graphKit.
-          set_all_memory( __ merged_memory());
-          set_control(__ ctrl());
+          sync_kit(ideal);
           Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
           // Update IdealKit memory.
-          __ set_all_memory(merged_memory());
-          __ set_ctrl(control());
+          __ sync_kit(this);
         } __ else_(); {
           __ store(__ ctrl(), adr, val, type, alias_type->index(), is_volatile);
         } __ end_if();
         // Final sync IdealKit and GraphKit.
-        sync_kit(ideal);
+        final_sync(ideal);
 #undef __
       }
     }
