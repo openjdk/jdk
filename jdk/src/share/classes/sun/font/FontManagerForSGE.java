@@ -54,4 +54,11 @@ public interface FontManagerForSGE extends FontManager {
     public Font[] getAllInstalledFonts();
 
     public String[] getInstalledFontFamilyNames(Locale requestedLocale);
+
+    /* Modifies the behaviour of a subsequent call to preferLocaleFonts()
+     * to use Mincho instead of Gothic for dialoginput in JA locales
+     * on windows. Not needed on other platforms.
+     */
+    public void useAlternateFontforJALocales();
+
 }

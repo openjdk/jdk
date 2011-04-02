@@ -185,6 +185,18 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         FontManager fm = FontManagerFactory.getInstance();
         return (FontManagerForSGE) fm;
     }
+
+    /* Modifies the behaviour of a subsequent call to preferLocaleFonts()
+     * to use Mincho instead of Gothic for dialoginput in JA locales
+     * on windows. Not needed on other platforms.
+     *
+     * DO NOT MOVE OR RENAME OR OTHERWISE ALTER THIS METHOD.
+     * ITS USED BY SOME NON-JRE INTERNAL CODE.
+     */
+    public static void useAlternateFontforJALocales() {
+        getFontManagerForSGE().useAlternateFontforJALocales();
+    }
+
      /**
      * Returns all fonts available in this environment.
      */
