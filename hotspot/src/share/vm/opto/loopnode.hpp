@@ -706,11 +706,11 @@ private:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(true) {
-    build_and_optimize(false, false);
+    build_and_optimize(false);
   }
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(bool do_split_if, bool do_loop_pred);
+  void build_and_optimize(bool do_split_if);
 
 public:
   // Dominators for the sea of nodes
@@ -721,13 +721,13 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool do_loop_pred) :
+  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(false) {
-    build_and_optimize(do_split_ifs, do_loop_pred);
+    build_and_optimize(do_split_ifs);
   }
 
   // Verify that verify_me made the same decisions as a fresh run.
@@ -737,7 +737,7 @@ public:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(verify_me),
     _verify_only(false) {
-    build_and_optimize(false, false);
+    build_and_optimize(false);
   }
 
   // Build and verify the loop tree without modifying the graph.  This
@@ -830,7 +830,26 @@ public:
                                         Deoptimization::DeoptReason reason);
   void register_control(Node* n, IdealLoopTree *loop, Node* pred);
 
-   // Find a good location to insert a predicate
+  // Clone loop predicates to cloned loops (peeled, unswitched)
+  static ProjNode* clone_predicate(ProjNode* predicate_proj, Node* new_entry,
+                                   Deoptimization::DeoptReason reason,
+                                   PhaseIdealLoop* loop_phase,
+                                   PhaseIterGVN* igvn);
+  static ProjNode*  move_predicate(ProjNode* predicate_proj, Node* new_entry,
+                                   Deoptimization::DeoptReason reason,
+                                   PhaseIdealLoop* loop_phase,
+                                   PhaseIterGVN* igvn);
+  static Node* clone_loop_predicates(Node* old_entry, Node* new_entry,
+                                         bool move_predicates,
+                                         PhaseIdealLoop* loop_phase,
+                                         PhaseIterGVN* igvn);
+  Node* clone_loop_predicates(Node* old_entry, Node* new_entry);
+  Node*  move_loop_predicates(Node* old_entry, Node* new_entry);
+
+  void eliminate_loop_predicates(Node* entry);
+  static Node* skip_loop_predicates(Node* entry);
+
+  // Find a good location to insert a predicate
   static ProjNode* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
   // Find a predicate
   static Node* find_predicate(Node* entry);
