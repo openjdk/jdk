@@ -706,6 +706,38 @@ static ciArrayKlass* as_array_klass(ciType* type) {
   }
 }
 
+static Value maxvalue(IfOp* ifop) {
+  switch (ifop->cond()) {
+    case If::eql: return NULL;
+    case If::neq: return NULL;
+    case If::lss: // x <  y ? x : y
+    case If::leq: // x <= y ? x : y
+      if (ifop->x() == ifop->tval() &&
+          ifop->y() == ifop->fval()) return ifop->y();
+      return NULL;
+
+    case If::gtr: // x >  y ? y : x
+    case If::geq: // x >= y ? y : x
+      if (ifop->x() == ifop->tval() &&
+          ifop->y() == ifop->fval()) return ifop->y();
+      return NULL;
+
+  }
+}
+
+static ciType* phi_declared_type(Phi* phi) {
+  ciType* t = phi->operand_at(0)->declared_type();
+  if (t == NULL) {
+    return NULL;
+  }
+  for(int i = 1; i < phi->operand_count(); i++) {
+    if (t != phi->operand_at(i)->declared_type()) {
+      return NULL;
+    }
+  }
+  return t;
+}
+
 void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** expected_typep) {
   Instruction* src     = x->argument_at(0);
   Instruction* src_pos = x->argument_at(1);
@@ -715,12 +747,20 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
 
   // first try to identify the likely type of the arrays involved
   ciArrayKlass* expected_type = NULL;
-  bool is_exact = false;
+  bool is_exact = false, src_objarray = false, dst_objarray = false;
   {
     ciArrayKlass* src_exact_type    = as_array_klass(src->exact_type());
     ciArrayKlass* src_declared_type = as_array_klass(src->declared_type());
+    Phi* phi;
+    if (src_declared_type == NULL && (phi = src->as_Phi()) != NULL) {
+      src_declared_type = as_array_klass(phi_declared_type(phi));
+    }
     ciArrayKlass* dst_exact_type    = as_array_klass(dst->exact_type());
     ciArrayKlass* dst_declared_type = as_array_klass(dst->declared_type());
+    if (dst_declared_type == NULL && (phi = dst->as_Phi()) != NULL) {
+      dst_declared_type = as_array_klass(phi_declared_type(phi));
+    }
+
     if (src_exact_type != NULL && src_exact_type == dst_exact_type) {
       // the types exactly match so the type is fully known
       is_exact = true;
@@ -744,17 +784,60 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (expected_type == NULL) expected_type = dst_exact_type;
     if (expected_type == NULL) expected_type = src_declared_type;
     if (expected_type == NULL) expected_type = dst_declared_type;
+
+    src_objarray = (src_exact_type && src_exact_type->is_obj_array_klass()) || (src_declared_type && src_declared_type->is_obj_array_klass());
+    dst_objarray = (dst_exact_type && dst_exact_type->is_obj_array_klass()) || (dst_declared_type && dst_declared_type->is_obj_array_klass());
   }
 
   // if a probable array type has been identified, figure out if any
   // of the required checks for a fast case can be elided.
   int flags = LIR_OpArrayCopy::all_flags;
+
+  if (!src_objarray)
+    flags &= ~LIR_OpArrayCopy::src_objarray;
+  if (!dst_objarray)
+    flags &= ~LIR_OpArrayCopy::dst_objarray;
+
+  if (!x->arg_needs_null_check(0))
+    flags &= ~LIR_OpArrayCopy::src_null_check;
+  if (!x->arg_needs_null_check(2))
+    flags &= ~LIR_OpArrayCopy::dst_null_check;
+
+
   if (expected_type != NULL) {
-    // try to skip null checks
-    if (src->as_NewArray() != NULL)
+    Value length_limit = NULL;
+
+    IfOp* ifop = length->as_IfOp();
+    if (ifop != NULL) {
+      // look for expressions like min(v, a.length) which ends up as
+      //   x > y ? y : x  or  x >= y ? y : x
+      if ((ifop->cond() == If::gtr || ifop->cond() == If::geq) &&
+          ifop->x() == ifop->fval() &&
+          ifop->y() == ifop->tval()) {
+        length_limit = ifop->y();
+      }
+    }
+
+    // try to skip null checks and range checks
+    NewArray* src_array = src->as_NewArray();
+    if (src_array != NULL) {
       flags &= ~LIR_OpArrayCopy::src_null_check;
-    if (dst->as_NewArray() != NULL)
+      if (length_limit != NULL &&
+          src_array->length() == length_limit &&
+          is_constant_zero(src_pos)) {
+        flags &= ~LIR_OpArrayCopy::src_range_check;
+      }
+    }
+
+    NewArray* dst_array = dst->as_NewArray();
+    if (dst_array != NULL) {
       flags &= ~LIR_OpArrayCopy::dst_null_check;
+      if (length_limit != NULL &&
+          dst_array->length() == length_limit &&
+          is_constant_zero(dst_pos)) {
+        flags &= ~LIR_OpArrayCopy::dst_range_check;
+      }
+    }
 
     // check from incoming constant values
     if (positive_constant(src_pos))
@@ -786,6 +869,28 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (is_exact) {
       flags &= ~LIR_OpArrayCopy::type_check;
     }
+  }
+
+  IntConstant* src_int = src_pos->type()->as_IntConstant();
+  IntConstant* dst_int = dst_pos->type()->as_IntConstant();
+  if (src_int && dst_int) {
+    int s_offs = src_int->value();
+    int d_offs = dst_int->value();
+    if (src_int->value() >= dst_int->value()) {
+      flags &= ~LIR_OpArrayCopy::overlapping;
+    }
+    if (expected_type != NULL) {
+      BasicType t = expected_type->element_type()->basic_type();
+      int element_size = type2aelembytes(t);
+      if (((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
+          ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0)) {
+        flags &= ~LIR_OpArrayCopy::unaligned;
+      }
+    }
+  } else if (src_pos == dst_pos || is_constant_zero(dst_pos)) {
+    // src and dest positions are the same, or dst is zero so assume
+    // nonoverlapping copy.
+    flags &= ~LIR_OpArrayCopy::overlapping;
   }
 
   if (src == dst) {
