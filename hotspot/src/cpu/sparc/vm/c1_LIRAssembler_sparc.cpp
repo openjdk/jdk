@@ -2065,20 +2065,36 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  // We also, for now, always call the stub if the barrier set requires a
-  // write_ref_pre barrier (which the stub does, but none of the optimized
-  // cases currently does).
-  if (op->expected_type() == NULL ||
-      Universe::heap()->barrier_set()->has_write_ref_pre_barrier()) {
+  if (op->expected_type() == NULL) {
     __ mov(src,     O0);
     __ mov(src_pos, O1);
     __ mov(dst,     O2);
     __ mov(dst_pos, O3);
     __ mov(length,  O4);
-    __ call_VM_leaf(tmp, CAST_FROM_FN_PTR(address, Runtime1::arraycopy));
+    address copyfunc_addr = StubRoutines::generic_arraycopy();
 
-    __ br_zero(Assembler::less, false, Assembler::pn, O0, *stub->entry());
-    __ delayed()->nop();
+    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
+      __ call_VM_leaf(tmp, CAST_FROM_FN_PTR(address, Runtime1::arraycopy));
+    } else {
+#ifndef PRODUCT
+      if (PrintC1Statistics) {
+        address counter = (address)&Runtime1::_generic_arraycopystub_cnt;
+        __ inc_counter(counter, G1, G3);
+      }
+#endif
+      __ call_VM_leaf(tmp, copyfunc_addr);
+    }
+
+    if (copyfunc_addr != NULL) {
+      __ xor3(O0, -1, tmp);
+      __ sub(length, tmp, length);
+      __ add(src_pos, tmp, src_pos);
+      __ br_zero(Assembler::less, false, Assembler::pn, O0, *stub->entry());
+      __ delayed()->add(dst_pos, tmp, dst_pos);
+    } else {
+      __ br_zero(Assembler::less, false, Assembler::pn, O0, *stub->entry());
+      __ delayed()->nop();
+    }
     __ bind(*stub->continuation());
     return;
   }
@@ -2135,20 +2151,143 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ delayed()->nop();
   }
 
+#ifndef _LP64
+  __ sra(dst_pos, 0, dst_pos); //higher 32bits must be null
+  __ sra(src_pos, 0, src_pos); //higher 32bits must be null
+#endif
+
+  int shift = shift_amount(basic_type);
+
   if (flags & LIR_OpArrayCopy::type_check) {
-    if (UseCompressedOops) {
-      // We don't need decode because we just need to compare
-      __ lduw(src, oopDesc::klass_offset_in_bytes(), tmp);
-      __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
-      __ cmp(tmp, tmp2);
-      __ br(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+    // We don't know the array types are compatible
+    if (basic_type != T_OBJECT) {
+      // Simple test for basic type arrays
+      if (UseCompressedOops) {
+        // We don't need decode because we just need to compare
+        __ lduw(src, oopDesc::klass_offset_in_bytes(), tmp);
+        __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+        __ cmp(tmp, tmp2);
+        __ br(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+      } else {
+        __ ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp);
+        __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
+        __ cmp(tmp, tmp2);
+        __ brx(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+      }
+      __ delayed()->nop();
     } else {
-      __ ld_ptr(src, oopDesc::klass_offset_in_bytes(), tmp);
-      __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
-      __ cmp(tmp, tmp2);
-      __ brx(Assembler::notEqual, false, Assembler::pt, *stub->entry());
+      // For object arrays, if src is a sub class of dst then we can
+      // safely do the copy.
+      address copyfunc_addr = StubRoutines::checkcast_arraycopy();
+
+      Label cont, slow;
+      assert_different_registers(tmp, tmp2, G3, G1);
+
+      __ load_klass(src, G3);
+      __ load_klass(dst, G1);
+
+      __ check_klass_subtype_fast_path(G3, G1, tmp, tmp2, &cont, copyfunc_addr == NULL ? stub->entry() : &slow, NULL);
+
+      __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+      __ delayed()->nop();
+
+      __ cmp(G3, 0);
+      if (copyfunc_addr != NULL) { // use stub if available
+        // src is not a sub class of dst so we have to do a
+        // per-element check.
+        __ br(Assembler::notEqual, false, Assembler::pt, cont);
+        __ delayed()->nop();
+
+        __ bind(slow);
+
+        int mask = LIR_OpArrayCopy::src_objarray|LIR_OpArrayCopy::dst_objarray;
+        if ((flags & mask) != mask) {
+          // Check that at least both of them object arrays.
+          assert(flags & mask, "one of the two should be known to be an object array");
+
+          if (!(flags & LIR_OpArrayCopy::src_objarray)) {
+            __ load_klass(src, tmp);
+          } else if (!(flags & LIR_OpArrayCopy::dst_objarray)) {
+            __ load_klass(dst, tmp);
+          }
+          int lh_offset = klassOopDesc::header_size() * HeapWordSize +
+            Klass::layout_helper_offset_in_bytes();
+
+          __ lduw(tmp, lh_offset, tmp2);
+
+          jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
+          __ set(objArray_lh, tmp);
+          __ cmp(tmp, tmp2);
+          __ br(Assembler::notEqual, false, Assembler::pt,  *stub->entry());
+          __ delayed()->nop();
+        }
+
+        Register src_ptr = O0;
+        Register dst_ptr = O1;
+        Register len     = O2;
+        Register chk_off = O3;
+        Register super_k = O4;
+
+        __ add(src, arrayOopDesc::base_offset_in_bytes(basic_type), src_ptr);
+        if (shift == 0) {
+          __ add(src_ptr, src_pos, src_ptr);
+        } else {
+          __ sll(src_pos, shift, tmp);
+          __ add(src_ptr, tmp, src_ptr);
+        }
+
+        __ add(dst, arrayOopDesc::base_offset_in_bytes(basic_type), dst_ptr);
+        if (shift == 0) {
+          __ add(dst_ptr, dst_pos, dst_ptr);
+        } else {
+          __ sll(dst_pos, shift, tmp);
+          __ add(dst_ptr, tmp, dst_ptr);
+        }
+        LP64_ONLY( __ sra(length, 0, length)); //higher 32bits must be null
+        __ mov(length, len);
+        __ load_klass(dst, tmp);
+
+        int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
+                         objArrayKlass::element_klass_offset_in_bytes());
+        __ ld_ptr(tmp, ek_offset, super_k);
+
+        int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
+                          Klass::super_check_offset_offset_in_bytes());
+        __ lduw(super_k, sco_offset, chk_off);
+
+        __ call_VM_leaf(tmp, copyfunc_addr);
+
+#ifndef PRODUCT
+        if (PrintC1Statistics) {
+          Label failed;
+          __ br_notnull(O0, false, Assembler::pn,  failed);
+          __ delayed()->nop();
+          __ inc_counter((address)&Runtime1::_arraycopy_checkcast_cnt, G1, G3);
+          __ bind(failed);
+        }
+#endif
+
+        __ br_null(O0, false, Assembler::pt,  *stub->continuation());
+        __ delayed()->xor3(O0, -1, tmp);
+
+#ifndef PRODUCT
+        if (PrintC1Statistics) {
+          __ inc_counter((address)&Runtime1::_arraycopy_checkcast_attempt_cnt, G1, G3);
+        }
+#endif
+
+        __ sub(length, tmp, length);
+        __ add(src_pos, tmp, src_pos);
+        __ br(Assembler::always, false, Assembler::pt, *stub->entry());
+        __ delayed()->add(dst_pos, tmp, dst_pos);
+
+        __ bind(cont);
+      } else {
+        __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
+        __ delayed()->nop();
+        __ bind(cont);
+      }
     }
-    __ delayed()->nop();
   }
 
 #ifdef ASSERT
@@ -2207,14 +2346,18 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 #endif
 
-  int shift = shift_amount(basic_type);
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    address counter = Runtime1::arraycopy_count_address(basic_type);
+    __ inc_counter(counter, G1, G3);
+  }
+#endif
 
   Register src_ptr = O0;
   Register dst_ptr = O1;
   Register len     = O2;
 
   __ add(src, arrayOopDesc::base_offset_in_bytes(basic_type), src_ptr);
-  LP64_ONLY(__ sra(src_pos, 0, src_pos);) //higher 32bits must be null
   if (shift == 0) {
     __ add(src_ptr, src_pos, src_ptr);
   } else {
@@ -2223,7 +2366,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   __ add(dst, arrayOopDesc::base_offset_in_bytes(basic_type), dst_ptr);
-  LP64_ONLY(__ sra(dst_pos, 0, dst_pos);) //higher 32bits must be null
   if (shift == 0) {
     __ add(dst_ptr, dst_pos, dst_ptr);
   } else {
@@ -2231,18 +2373,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ add(dst_ptr, tmp, dst_ptr);
   }
 
-  if (basic_type != T_OBJECT) {
-    if (shift == 0) {
-      __ mov(length, len);
-    } else {
-      __ sll(length, shift, len);
-    }
-    __ call_VM_leaf(tmp, CAST_FROM_FN_PTR(address, Runtime1::primitive_arraycopy));
-  } else {
-    // oop_arraycopy takes a length in number of elements, so don't scale it.
-    __ mov(length, len);
-    __ call_VM_leaf(tmp, CAST_FROM_FN_PTR(address, Runtime1::oop_arraycopy));
-  }
+  bool disjoint = (flags & LIR_OpArrayCopy::overlapping) == 0;
+  bool aligned = (flags & LIR_OpArrayCopy::unaligned) == 0;
+  const char *name;
+  address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
+
+  // arraycopy stubs takes a length in number of elements, so don't scale it.
+  __ mov(length, len);
+  __ call_VM_leaf(tmp, entry);
 
   __ bind(*stub->continuation());
 }
