@@ -2112,9 +2112,12 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       if (value != head->phi()) {
         msg = "unhandled shift in address";
       } else {
-        found_index = true;
-        shift = n;
-        assert(type2aelembytes(store->as_Mem()->memory_type(), true) == 1 << shift->in(2)->get_int(), "scale should match");
+        if (type2aelembytes(store->as_Mem()->memory_type(), true) != (1 << n->in(2)->get_int())) {
+          msg = "scale doesn't match";
+        } else {
+          found_index = true;
+          shift = n;
+        }
       }
     } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
       if (n->in(1) == head->phi()) {
