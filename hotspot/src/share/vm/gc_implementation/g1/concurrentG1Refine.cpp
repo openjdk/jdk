@@ -51,7 +51,11 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
   _cache_size_index(0), _expand_card_counts(false),
   _hot_cache(NULL),
   _def_use_cache(false), _use_cache(false),
-  _n_periods(0),
+  // We initialize the epochs of the array to 0. By initializing
+  // _n_periods to 1 and not 0 we automatically invalidate all the
+  // entries on the array. Otherwise we might accidentally think that
+  // we claimed a card that was in fact never set (see CR7033292).
+  _n_periods(1),
   _threads(NULL), _n_threads(0)
 {
 
