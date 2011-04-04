@@ -79,11 +79,6 @@ class Field extends AccessibleObject implements Member {
     // potentially many Field objects pointing to it.)
     private Field               root;
 
-    // More complicated security check cache needed here than for
-    // Class.newInstance() and Constructor.newInstance()
-    private Class<?> securityCheckCache;
-    private Class<?> securityCheckTargetClassCache;
-
     // Generics infrastructure
 
     private String getGenericSignature() {return signature;}
@@ -954,6 +949,7 @@ class Field extends AccessibleObject implements Member {
             tmp = reflectionFactory.newFieldAccessor(this, overrideFinalCheck);
             setFieldAccessor(tmp, overrideFinalCheck);
         }
+
         return tmp;
     }
 
@@ -983,21 +979,8 @@ class Field extends AccessibleObject implements Member {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
                 Class<?> caller = Reflection.getCallerClass(4);
-                Class<?> targetClass = ((obj == null || !Modifier.isProtected(modifiers))
-                                        ? clazz
-                                        : obj.getClass());
 
-                synchronized (this) {
-                    if ((securityCheckCache == caller)
-                            && (securityCheckTargetClassCache == targetClass)) {
-                        return;
-                    }
-                }
-                Reflection.ensureMemberAccess(caller, clazz, obj, modifiers);
-                synchronized (this) {
-                    securityCheckCache = caller;
-                    securityCheckTargetClassCache = targetClass;
-                }
+                checkAccess(caller, clazz, obj, modifiers);
             }
         }
     }
