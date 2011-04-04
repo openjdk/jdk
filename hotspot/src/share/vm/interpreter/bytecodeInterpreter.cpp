@@ -568,7 +568,7 @@ BytecodeInterpreter::run(interpreterState istate) {
 /* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
 /* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_return_register_finalizer,        &&opc_default,      &&opc_default,
+/* 0xE4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_return_register_finalizer,
 /* 0xE8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
