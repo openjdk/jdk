@@ -495,7 +495,7 @@ public final
      * this object represents
      *
      * @exception IllegalAccessException    if this {@code Constructor} object
-     *              enforces Java language access control and the underlying
+     *              is enforcing Java language access control and the underlying
      *              constructor is inaccessible.
      * @exception IllegalArgumentException  if the number of actual
      *              and formal parameters differ; if an unwrapping
