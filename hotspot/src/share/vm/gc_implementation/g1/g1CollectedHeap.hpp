@@ -1057,7 +1057,13 @@ public:
     return _g1_reserved.contains(p);
   }
 
-  // Returns a MemRegion that corresponds to the space that  has been
+  // Returns a MemRegion that corresponds to the space that has been
+  // reserved for the heap
+  MemRegion g1_reserved() {
+    return _g1_reserved;
+  }
+
+  // Returns a MemRegion that corresponds to the space that has been
   // committed in the heap
   MemRegion g1_committed() {
     return _g1_committed;
