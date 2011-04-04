@@ -565,7 +565,7 @@ public final
      * {@code args}
      *
      * @exception IllegalAccessException    if this {@code Method} object
-     *              enforces Java language access control and the underlying
+     *              is enforcing Java language access control and the underlying
      *              method is inaccessible.
      * @exception IllegalArgumentException  if the method is an
      *              instance method and the specified object argument
