@@ -216,12 +216,15 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         pre.addContent(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(
                 LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, annotationType, false);
-        Content name = new RawHtml (annotationType.name() +
-                getTypeParameterLinks(linkInfo));
+        Content annotationName = new StringContent(annotationType.name());
+        Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
         if (configuration().linksource) {
-            addSrcLink(annotationType, name, pre);
+            addSrcLink(annotationType, annotationName, pre);
+            pre.addContent(parameterLinks);
         } else {
-            pre.addContent(HtmlTree.STRONG(name));
+            Content span = HtmlTree.SPAN(HtmlStyle.strong, annotationName);
+            span.addContent(parameterLinks);
+            pre.addContent(span);
         }
         annotationInfoTree.addContent(pre);
     }
