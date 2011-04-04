@@ -479,7 +479,7 @@ public class ZoneInfoFile {
                 String zi = System.getProperty("java.home") +
                     File.separator + "lib" + File.separator + "zi";
                 try {
-                    zi = FileSystems.getDefault().getPath(zi).toRealPath(true).toString();
+                    zi = FileSystems.getDefault().getPath(zi).toRealPath().toString();
                 } catch(Exception e) {
                 }
                 return zi;

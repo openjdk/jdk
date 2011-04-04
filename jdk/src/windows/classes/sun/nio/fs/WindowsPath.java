@@ -831,9 +831,9 @@ class WindowsPath extends AbstractPath {
     }
 
     @Override
-    public WindowsPath toRealPath(boolean resolveLinks) throws IOException {
+    public WindowsPath toRealPath(LinkOption... options) throws IOException {
         checkRead();
-        String rp = WindowsLinkSupport.getRealPath(this, resolveLinks);
+        String rp = WindowsLinkSupport.getRealPath(this, Util.followLinks(options));
         return createFromNormalizedPath(getFileSystem(), rp);
     }
 
