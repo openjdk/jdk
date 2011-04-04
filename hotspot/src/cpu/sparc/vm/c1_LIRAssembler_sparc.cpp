@@ -2058,6 +2058,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   BasicType basic_type = default_type != NULL ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
+#ifdef _LP64
+  // higher 32bits must be null
+  __ sra(dst_pos, 0, dst_pos);
+  __ sra(src_pos, 0, src_pos);
+  __ sra(length, 0, length);
+#endif
+
   // set up the arraycopy stub information
   ArrayCopyStub* stub = op->stub();
 
@@ -2151,11 +2158,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ delayed()->nop();
   }
 
-#ifndef _LP64
-  __ sra(dst_pos, 0, dst_pos); //higher 32bits must be null
-  __ sra(src_pos, 0, src_pos); //higher 32bits must be null
-#endif
-
   int shift = shift_amount(basic_type);
 
   if (flags & LIR_OpArrayCopy::type_check) {
@@ -2243,7 +2245,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
           __ sll(dst_pos, shift, tmp);
           __ add(dst_ptr, tmp, dst_ptr);
         }
-        LP64_ONLY( __ sra(length, 0, length)); //higher 32bits must be null
         __ mov(length, len);
         __ load_klass(dst, tmp);
 
