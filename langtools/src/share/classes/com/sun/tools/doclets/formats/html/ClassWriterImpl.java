@@ -228,12 +228,15 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, classDoc, false);
         //Let's not link to ourselves in the signature.
         linkInfo.linkToSelf = false;
-        Content name = new RawHtml (classDoc.name() +
-                getTypeParameterLinks(linkInfo));
+        Content className = new StringContent(classDoc.name());
+        Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
         if (configuration().linksource) {
-            addSrcLink(classDoc, name, pre);
+            addSrcLink(classDoc, className, pre);
+            pre.addContent(parameterLinks);
         } else {
-            pre.addContent(HtmlTree.STRONG(name));
+            Content span = HtmlTree.SPAN(HtmlStyle.strong, className);
+            span.addContent(parameterLinks);
+            pre.addContent(span);
         }
         if (!isInterface) {
             Type superclass = Util.getFirstVisibleSuperClass(classDoc,

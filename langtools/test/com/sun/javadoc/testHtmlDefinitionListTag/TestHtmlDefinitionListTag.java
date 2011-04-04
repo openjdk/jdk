@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib/
- * @build JavadocTester
- * @build TestHtmlDefinitionListTag
+ * @build JavadocTester TestHtmlDefinitionListTag
  * @run main TestHtmlDefinitionListTag
  */
 
@@ -43,7 +42,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // Optional Element should print properly nested definition list tags
     // for default value.
     private static final String[][] TEST_ALL = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<pre>public class <strong>C1</strong>" + NL +
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<pre>public class " +
+                 "<span class=\"strong\">C1</span>" + NL +
                  "extends java.lang.Object" + NL + "implements java.io.Serializable</pre>"},
         {BUG_ID + FS + "pkg1" + FS + "C4.html", "<dl>" + NL +
                  "<dt>Default:</dt>" + NL + "<dd>true</dd>" + NL +
