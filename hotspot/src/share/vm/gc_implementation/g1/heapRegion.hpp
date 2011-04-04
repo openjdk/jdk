@@ -398,13 +398,16 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
+  size_t live_bytes() {
+    return (top() - prev_top_at_mark_start()) * HeapWordSize + marked_bytes();
+  }
+
   // The number of bytes counted in the next marking.
   size_t next_marked_bytes() { return _next_marked_bytes; }
   // The number of bytes live wrt the next marking.
   size_t next_live_bytes() {
-    return (top() - next_top_at_mark_start())
-      * HeapWordSize
-      + next_marked_bytes();
+    return
+      (top() - next_top_at_mark_start()) * HeapWordSize + next_marked_bytes();
   }
 
   // A lower bound on the amount of garbage bytes in the region.
