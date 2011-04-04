@@ -30,7 +30,7 @@
  * @compile -Werror -Xlint:cast XlintWarn.java
  */
 
-import java.dyn.*;
+import java.lang.invoke.*;
 
 class XlintWarn {
     void test(MethodHandle mh) throws Throwable {

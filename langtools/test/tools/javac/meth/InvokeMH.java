@@ -42,7 +42,7 @@
 
 package meth;
 
-import java.dyn.MethodHandle;
+import java.lang.invoke.MethodHandle;
 
 public class InvokeMH {
     void test(MethodHandle mh_SiO,
