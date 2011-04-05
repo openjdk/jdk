@@ -522,34 +522,40 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
   loop->record_for_igvn();
 }
 
+#define EMPTY_LOOP_SIZE 7 // number of nodes in an empty loop
+
 //------------------------------policy_maximally_unroll------------------------
-// Return exact loop trip count, or 0 if not maximally unrolling
+// Calculate exact loop trip count and return true if loop can be maximally
+// unrolled.
 bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop(), "");
+  if (!cl->is_valid_counted_loop())
+    return false; // Malformed counted loop
 
   Node *init_n = cl->init_trip();
   Node *limit_n = cl->limit();
 
   // Non-constant bounds
   if (init_n   == NULL || !init_n->is_Con()  ||
-      limit_n  == NULL || !limit_n->is_Con() ||
-      // protect against stride not being a constant
-      !cl->stride_is_con()) {
+      limit_n  == NULL || !limit_n->is_Con()) {
     return false;
   }
-  int init   = init_n->get_int();
-  int limit  = limit_n->get_int();
-  int span   = limit - init;
-  int stride = cl->stride_con();
+  // Use longs to avoid integer overflow.
+  int  stride_con = cl->stride_con();
+  long init_con   = cl->init_trip()->get_int();
+  long limit_con  = cl->limit()->get_int();
+  int  stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
+  long trip_cnt   = (limit_con - init_con + stride_m)/stride_con;
 
-  if (init >= limit || stride > span) {
+  // Note, max_jint is used to indicate unknown trip count.
+  if (trip_cnt <= 0 || trip_cnt >= (long)max_jint) {
     // return a false (no maximally unroll) and the regular unroll/peel
     // route will make a small mess which CCP will fold away.
     return false;
   }
-  uint trip_count = span/stride;   // trip_count can be greater than 2 Gig.
-  assert( (int)trip_count*stride == span, "must divide evenly" );
+  uint trip_count = (uint)trip_cnt;
+  cl->set_trip_count(trip_count);
 
   // Real policy: if we maximally unroll, does it get too big?
   // Allow the unrolled mess to get larger than standard loop
@@ -557,15 +563,29 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   uint body_size    = _body.size();
   uint unroll_limit = (uint)LoopUnrollLimit * 4;
   assert( (intx)unroll_limit == LoopUnrollLimit * 4, "LoopUnrollLimit must fit in 32bits");
-  cl->set_trip_count(trip_count);
   if (trip_count > unroll_limit || body_size > unroll_limit) {
+    return false;
+  }
+
+  // Take into account that after unroll conjoined heads and tails will fold,
+  // otherwise policy_unroll() may allow more unrolling than max unrolling.
+  uint new_body_size = EMPTY_LOOP_SIZE + (body_size - EMPTY_LOOP_SIZE) * trip_count;
+  uint tst_body_size = (new_body_size - EMPTY_LOOP_SIZE) / trip_count + EMPTY_LOOP_SIZE;
+  if (body_size != tst_body_size) // Check for int overflow
+    return false;
+  if (new_body_size > unroll_limit ||
+      // Unrolling can result in a large amount of node construction
+      new_body_size >= MaxNodeLimit - phase->C->unique()) {
     return false;
   }
 
   // Currently we don't have policy to optimize one iteration loops.
   // Maximally unrolling transformation is used for that:
   // it is peeled and the original loop become non reachable (dead).
-  if (trip_count == 1)
+  // Also fully unroll a loop with few iterations regardless next
+  // conditions since following loop optimizations will split
+  // such loop anyway (pre-main-post).
+  if (trip_count <= 3)
     return true;
 
   // Do not unroll a loop with String intrinsics code.
@@ -582,17 +602,7 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
     } // switch
   }
 
-  if (body_size <= unroll_limit) {
-    uint new_body_size = body_size * trip_count;
-    if (new_body_size <= unroll_limit &&
-        body_size == new_body_size / trip_count &&
-        // Unrolling can result in a large amount of node construction
-        new_body_size < MaxNodeLimit - phase->C->unique()) {
-      return true;    // maximally unroll
-    }
-  }
-
-  return false;               // Do not maximally unroll
+  return true; // Do maximally unroll
 }
 
 
@@ -604,11 +614,14 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
   CountedLoopNode *cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop() || cl->is_main_loop(), "");
 
-  // protect against stride not being a constant
-  if (!cl->stride_is_con()) return false;
+  if (!cl->is_valid_counted_loop())
+    return false; // Malformed counted loop
 
   // protect against over-unrolling
   if (cl->trip_count() <= 1) return false;
+
+  // Check for stride being a small enough constant
+  if (abs(cl->stride_con()) > (1<<3)) return false;
 
   int future_unroll_ct = cl->unrolled_count() * 2;
 
@@ -689,9 +702,6 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
     // Normal case: loop too big
     return false;
   }
-
-  // Check for stride being a small enough constant
-  if (abs(cl->stride_con()) > (1<<3)) return false;
 
   // Unroll once!  (Each trip will soon do double iterations)
   return true;
@@ -1086,7 +1096,11 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     tty->print("Unrolling ");
     loop->dump_head();
   } else if (TraceLoopOpts) {
-    tty->print("Unroll     %d ", loop_head->unrolled_count()*2);
+    if (loop_head->trip_count() < LoopUnrollLimit) {
+      tty->print("Unroll  %d(%2d) ", loop_head->unrolled_count()*2, loop_head->trip_count());
+    } else {
+      tty->print("Unroll  %d     ", loop_head->unrolled_count()*2);
+    }
     loop->dump_head();
   }
 #endif
@@ -1761,7 +1775,7 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
 // have on the last iteration.  This will break the loop.
 bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   // Minimum size must be empty loop
-  if (_body.size() > 7/*number of nodes in an empty loop*/)
+  if (_body.size() > EMPTY_LOOP_SIZE)
     return false;
 
   if (!_head->is_CountedLoop())
@@ -1887,6 +1901,12 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     }
   }
 
+  // Skip next optimizations if running low on nodes. Note that
+  // policy_unswitching and policy_maximally_unroll have this check.
+  uint nodes_left = MaxNodeLimit - phase->C->unique();
+  if ((2 * _body.size()) > nodes_left) {
+    return true;
+  }
 
   // Counted loops may be peeled, may need some iterations run up
   // front for RCE, and may want to align loop refs to a cache
