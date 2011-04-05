@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,20 @@
  * questions.
  */
 
-#include <windows.h>
-#include "jdk_util.h"
 
-#define JVM_DLL "jvm.dll"
+#ifndef JDK_UTIL_MD_H
+#define JDK_UTIL_MD_H
 
-static HMODULE jvm_handle = NULL;
+#include "jni.h"
 
-int JDK_InitJvmHandle() {
-    jvm_handle = GetModuleHandle(JVM_DLL);
-    return (jvm_handle != NULL);
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void* JDK_FindJvmEntry(const char* name) {
-    return (void*) GetProcAddress(jvm_handle, name);
-}
+JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name);
 
-JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name) {
-    HMODULE handle = NULL;
-    char path[MAX_PATH];
-    int ret;
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
 
-    if (GetSystemDirectory(path, sizeof(path)) != 0) {
-        strcat(path, "\\");
-        strcat(path, name);
-        handle = LoadLibrary(path);
-    }
-
-    if (handle == NULL) {
-        if (GetWindowsDirectory(path, sizeof(path)) != 0) {
-            strcat(path, "\\");
-            strcat(path, name);
-            handle = LoadLibrary(path);
-        }
-    }
-    return handle;
-}
-
+#endif /* JDK_UTIL_MD_H */
