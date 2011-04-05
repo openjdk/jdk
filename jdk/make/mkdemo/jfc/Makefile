@@ -39,7 +39,8 @@ SUBDIRS =           \
     Notepad         \
     SampleTree      \
     SwingApplet     \
-    TableExample
+    TableExample    \
+    TransparentRuler
 
 # Some demos aren't currently included in OpenJDK
 ifndef OPENJDK

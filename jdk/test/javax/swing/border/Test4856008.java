@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856008
+ * @bug 4856008 7025987
  * @summary Tests border insets
  * @author Sergey Malenkov
  */
@@ -59,6 +59,7 @@ import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicToolBarUI;
 import javax.swing.plaf.metal.MetalBorders;
 import javax.swing.plaf.metal.MetalComboBoxEditor;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 import sun.swing.plaf.synth.SynthFileChooserUI;
 
@@ -134,6 +135,9 @@ public class Test4856008 {
 
             //+ SynthFileChooserUI.UIBorder:
             new SynthFileChooser().getUIBorder(),
+
+            //+ LoweredBorder:
+            new NimbusLookAndFeel().getDefaults().getBorder("TitledBorder.border"),
     };
 
     public static void main(String[] args) {

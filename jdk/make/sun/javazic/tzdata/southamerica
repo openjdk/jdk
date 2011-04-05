@@ -1193,6 +1193,19 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # From Arthur David Olson (2011-03-02):
 # The emol.com article mentions a water shortage as the cause of the
 # postponement, which may mean that it's not a permanent change.
+
+# From Glenn Eychaner (2011-03-28):
+# The article:
+# <a href="http://diario.elmercurio.com/2011/03/28/_portada/_portada/noticias/7565897A-CA86-49E6-9E03-660B21A4883E.htm?id=3D{7565897A-CA86-49E6-9E03-660B21A4883E}">
+# http://diario.elmercurio.com/2011/03/28/_portada/_portada/noticias/7565897A-CA86-49E6-9E03-660B21A4883E.htm?id=3D{7565897A-CA86-49E6-9E03-660B21A4883E}
+# </a>
+#
+# In English:
+# Chile's clocks will go back an hour this year on the 7th of May instead
+# of this Saturday. They will go forward again the 3rd Saturday in
+# August, not in October as they have since 1968. This is a pilot plan
+# which will be reevaluated in 2012.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1932	-	Sep	 1	0:00	1:00	S
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
@@ -1222,13 +1235,16 @@ Rule	Chile	1997	only	-	Mar	30	3:00u	0	-
 Rule	Chile	1998	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	1998	only	-	Sep	27	4:00u	1:00	S
 Rule	Chile	1999	only	-	Apr	 4	3:00u	0	-
-Rule	Chile	1999	max	-	Oct	Sun>=9	4:00u	1:00	S
+Rule	Chile	1999	2010	-	Oct	Sun>=9	4:00u	1:00	S
+Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
+Rule	Chile	2012	max	-	Oct	Sun>=9	4:00u	1:00	S
 Rule	Chile	2000	2007	-	Mar	Sun>=9	3:00u	0	-
 # N.B.: the end of March 29 in Chile is March 30 in Universal time,
 # which is used below in specifying the transition.
 Rule	Chile	2008	only	-	Mar	30	3:00u	0	-
 Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
-Rule	Chile	2010	2011	-	Apr	Sun>=1	3:00u	0	-
+Rule	Chile	2010	only	-	Apr	Sun>=1	3:00u	0	-
+Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	Chile	2012	max	-	Mar	Sun>=9	3:00u	0	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
