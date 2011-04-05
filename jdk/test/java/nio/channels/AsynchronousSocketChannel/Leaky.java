@@ -28,12 +28,12 @@
  */
 
 import java.nio.ByteBuffer;
-import java.nio.BufferPoolMXBean;
 import java.nio.channels.*;
 import java.net.*;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
 
 /**

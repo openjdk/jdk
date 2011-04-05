@@ -27,160 +27,124 @@
 <html>
 <body bgcolor="white">
 
-Provides the management interface for monitoring and management of the 
-Java virtual machine as well as the operating system on which the 
-Java virtual machine is running.  It allows both local and remote 
-monitoring and management of the running Java virtual machine.  
-
-<h4>Platform MXBeans</h4>
-
-This package defines the management interface of the following
-components:
-
-<blockquote>
-<table cellspacing=1 summary="Description of the MBeans">
-<tr>
-<th><p align="left">Management Interface</p></th>
-<th><p align="left">Description</p></th>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.ClassLoadingMXBean}</tt> </td>
-<td> Class loading system of the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.CompilationMXBean}</tt> </td>
-<td> Compilation system of the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.MemoryMXBean}</tt> </td>
-<td> Memory system of the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.ThreadMXBean}</tt> </td>
-<td> Threads system of the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.RuntimeMXBean}</tt> </td>
-<td> Runtime system of the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.OperatingSystemMXBean}</tt> </td>
-<td> Operating system on which the Java virtual machine is running.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.GarbageCollectorMXBean}</tt> </td>
-<td> Garbage collector in the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.MemoryManagerMXBean}</tt> </td>
-<td> Memory manager in the Java virtual machine.</td>
-</tr>
-<tr>
-<td> <tt>{@link java.lang.management.MemoryPoolMXBean}</tt> </td>
-<td> Memory pool in the Java virtual machine.</td>
-</tr>
-</table>
-</blockquote>
-
+Provides the management interfaces for monitoring and management of the
+Java virtual machine and other components in the Java runtime.
+It allows both local and remote
+monitoring and management of the running Java virtual machine.
 <p>
-A platform MXBean is a <i>managed bean</i> that defines the management
-interface for one component for the platform and is specified in the
-<a href="ManagementFactory.html#MXBean">
-ManagementFactory</a> class.
 
-<p>An application can monitor the instrumentation of the 
-Java virtual machine and manage certain characteristics in
-the following ways:
-<ul>
-<li><i>Direct access to an MXBean interface</i>
-    <ol type="a">
-    <li>Get the MXBean instance through the static factory method
-        and access the MXBean interface locally of the running
-        virtual machine.</li>
-    <li>Construct an MXBean proxy instance that
-        forwards the method calls to a given 
-        {@link javax.management.MBeanServer MBeanServer}
-        by calling
-        {@link java.lang.management.ManagementFactory#newPlatformMXBeanProxy
-         ManagementFactory.newPlatformMXBeanProxy}.
-         A proxy is typically constructed to remotely access
-         an MXBean of another running virtual machine.</li>
-    </ol></li>
-<li><i>Indirect access via {@link javax.management.MBeanServer MBeanServer} 
-       interface</i>
-    <ol type="a">
-    <li>Go through the 
-        {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
-        platform MBeanServer} to access MXBeans locally or
-        a specific <tt>MBeanServerConnection</tt> to access
-        MXBeans remotely.
-        The attributes and operations of an MXBean use only
-        <em>JMX open types</em> which include basic data types, 
-        {@link javax.management.openmbean.CompositeData CompositeData},
-        and {@link javax.management.openmbean.TabularData TabularData} 
-        defined in {@link javax.management.openmbean.OpenType OpenType}.
-       </li>
-    </ol></li>
-</ul>
-
-Below shows a few <a href="#examples">examples</a> of different
-ways to access MXBeans.
-
+<h4><a name="MXBean">Platform MXBean</a></h4>
+<p>
+A platform MXBean is a <i>managed bean</i> that
+conforms to the <a href="../../../javax/management/package-summary.html">JMX</a>
+Instrumentation Specification and only uses a set of basic data types.
+Each platform MXBean is a {@link java.lang.management.PlatformManagedObject}
+with a unique
+{@linkplain java.lang.management.PlatformManagedObject#getObjectName name}.
+<p>
 <h4>ManagementFactory</h4>
 
-The {@link java.lang.management.ManagementFactory} class is the management
-factory class for the Java platform.  This class provides a set of 
+<p>The {@link java.lang.management.ManagementFactory} class is the management
+factory class for the Java platform.  This class provides a set of
 static factory methods to obtain the MXBeans for the Java platform
 to allow an application to access the MXBeans directly.
 
 <p>A <em>platform MBeanServer</em> can be accessed with the
 {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
  getPlatformMBeanServer} method.  On the first call to this method,
-it creates the platform MBeanServer and registers all platform MXBeans 
-including platform MXBeans defined in other packages such as
-{@link java.util.logging.LoggingMXBean}.  
-Each platform MXBean is registered with a unique name defined in the
-{@link java.lang.management.ManagementFactory ManagementFactory} class
-for constructing {@link javax.management.ObjectName ObjectName}. 
-This is a single MBeanServer that can be shared by different managed 
+it creates the platform MBeanServer and registers all platform MXBeans
+including {@linkplain java.lang.management.PlatformManagedObject
+platform MXBeans}.
+Each platform MXBean is registered with a unique name defined in
+the specification of the management interface.
+This is a single MBeanServer that can be shared by different managed
 components running within the same Java virtual machine.
- 
+
 <h4>Interoperability</h4>
 
-A management application and a platform MBeanServer of a running
-virtual machine can interoperate 
+<p>A management application and a platform MBeanServer of a running
+virtual machine can interoperate
 without requiring classes used by the platform MXBean interfaces.
 The data types being transmitted between the JMX connector
 server and the connector client are JMX
-{@link javax.management.openmbean.OpenType open types} and
+{@linkplain javax.management.openmbean.OpenType open types} and
 this allows interoperation across versions.
-
-<p>A data type used by the MXBean interfaces are mapped to
-an open type when being accessed via MBeanServer interface.
-The data type mapping is specified in the
-{@link java.lang.management.ManagementFactory ManagementFactory} class.
+A data type used by the MXBean interfaces are mapped to an
+open type when being accessed via MBeanServer interface.
+See the <a href="../../../javax/management/MXBean.html#MXBean-spec">
+MXBean</a> specification for details.
 
 <h4><a name="examples">Ways to Access MXBeans</a></h4>
 
-There are three different ways to access the management interfaces. 
-
+<p>An application can monitor the instrumentation of the
+Java virtual machine and the runtime in the following ways:
 <p>
-<ol>
-<li>Call the methods in the MXBean directly within the same 
-    Java virtual machine.
-<blockquote><pre>
+<b>1. Direct access to an MXBean interface</b>
+<p>
+<ul>
+<li>Get an MXBean instance locally in the running Java virtual machine:<p>
+<pre>
    RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
 
    // Get the standard attribute "VmVendor"
    String vendor = mxbean.getVmVendor();
-
 </pre>
-</blockquote>
-</li>
+<p>Or by calling the
+        {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+               getPlatformMXBean} or
+        {@link java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+               getPlatformMXBeans} method:
+<pre>
+   RuntimeMXBean mxbean = ManagementFactory.getPlatformMXBean(RuntimeMXBean.class);
 
-<li>Go through a <tt>MBeanServerConnection</tt> connecting 
-    to the <tt>platform MBeanServer</tt> of a running virtual machine.</li>
-<blockquote><pre>
+   // Get the standard attribute "VmVendor"
+   String vendor = mxbean.getVmVendor();
+</pre>
+<p>
+</li>
+<li>Construct an MXBean proxy instance that forwards the
+    method calls to a given MBeanServer:<p>
+<pre>
+   MBeanServerConnection mbs;
+
+   // Connect to a running JVM (or itself) and get MBeanServerConnection
+   // that has the JVM MBeans registered in it
+   ...
+
+   // Get a MBean proxy for RuntimeMXBean interface
+   RuntimeMXBean proxy =
+       {@link java.lang.management.ManagementFactory#getPlatformMXBean(MBeanServerConnection, Class)
+       ManagementFactory.getPlatformMXBean}(mbs,
+                                           RuntimeMXBean.class);
+   // Get standard attribute "VmVendor"
+   String vendor = proxy.getVmVendor();
+</pre>
+<p>A proxy is typically used to access an MXBean
+   in a remote Java virtual machine.
+   An alternative way to create an MXBean proxy is:
+<pre>
+   RuntimeMXBean proxy =
+       {@link java.lang.management.ManagementFactory#newPlatformMXBeanProxy
+              ManagementFactory.newPlatformMXBeanProxy}(mbs,
+                                                ManagementFactory.RUNTIME_MXBEAN_NAME,
+                                                RuntimeMXBean.class);
+</pre>
+</li>
+</ul>
+<p>
+<b>2. Indirect access to an MXBean interface via MBeanServer</b><p>
+<ul>
+<li>Go through the
+    {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
+    platform MBeanServer} to access MXBeans locally or
+    a specific {@code MBeanServerConnection} to access
+    MXBeans remotely.
+    The attributes and operations of an MXBean use only
+    <em>JMX open types</em> which include basic data types,
+    {@link javax.management.openmbean.CompositeData CompositeData},
+    and {@link javax.management.openmbean.TabularData TabularData}
+    defined in {@link javax.management.openmbean.OpenType OpenType}.<p>
+<pre>
    MBeanServerConnection mbs;
 
    // Connect to a running JVM (or itself) and get MBeanServerConnection
@@ -190,7 +154,7 @@ There are three different ways to access the management interfaces.
    try {
        // Assuming the RuntimeMXBean has been registered in mbs
        ObjectName oname = new ObjectName(ManagementFactory.RUNTIME_MXBEAN_NAME);
-    
+
        // Get standard attribute "VmVendor"
        String vendor = (String) mbs.getAttribute(oname, "VmVendor");
    } catch (....) {
@@ -198,36 +162,19 @@ There are three different ways to access the management interfaces.
        // and MBeanServer.getAttribute method
        ...
    }
-
-</pre></blockquote>
-
-<li>Use MXBean proxy.</li>
-<blockquote><pre>
-   MBeanServerConnection mbs;
-
-   // Connect to a running JVM (or itself) and get MBeanServerConnection
-   // that has the JVM MBeans registered in it
-   ...
-
-   // Get a MBean proxy for RuntimeMXBean interface
-   RuntimeMXBean proxy = 
-       ManagementFactory.newPlatformMXBeanProxy(mbs,
-                                                ManagementFactory.RUNTIME_MXBEAN_NAME,
-                                                RuntimeMXBean.class);
-   // Get standard attribute "VmVendor" 
-   String vendor = proxy.getVmVendor();
-</pre></blockquote>
-</ol>
+</pre>
+</li>
+</ul>
 
 
 <h4><a name="extension">Platform Extension</a></h4>
 
-A Java virtual machine implementation may add its platform extension to
+<p>A Java virtual machine implementation may add its platform extension to
 the management interface by defining platform-dependent
 interfaces that extend the standard management interfaces to include
-platform-specific metrics and management operations.  
+platform-specific metrics and management operations.
 The static factory methods in the <tt>ManagementFactory</tt> class will
-return the MBeans with the platform extension.
+return the MXBeans with the platform extension.
 
 <p>
 It is recommended to name the platform-specific attributes with
@@ -240,26 +187,30 @@ is happened to be same as some vendor-specific attribute's name,
 the applications accessing that vendor-specific attribute would have
 to be modified to cope with versioning and compatibility issues.
 
-<p>Below is an example showing how to access a platform-specific
-attribute from Sun's implementation of the <tt>RuntimeMXBean</tt>.
+<p>Below is an example showing how to access an attribute
+from the platform extension:
 
 <p>
-1) Direct access to the Sun-specific MXBean interface
-<blockquote><pre>
-   com.sun.management.RuntimeMXBean mxbean = 
-       (com.sun.management.RuntimeMXBean) ManagementFactory.getRuntimeMXBean();
+1) Direct access to the Oracle-specific MXBean interface
+<blockquote>
+<pre>
+   List&lt;com.sun.management.GarbageCollectorMXBean&gt; mxbeans =
+       ManagementFactory.getPlatformMXBeans(com.sun.management.GarbageCollectorMXBean.class);
 
-   // Get the standard attribute "VmVendor"
-   String vendor = mxbean.getVmVendor();
+   for (com.sun.management.GarbageCollectorMXBean gc : mxbeans) {
+       // Get the standard attribute "CollectionCount"
+       String count = mxbean.getCollectionCount();
 
-   // Get the platform-specific attribute "Bar"
-   BarType bar = mxbean.getBar();
-
+       // Get the platform-specific attribute "LastGcInfo"
+       GcInfo gcinfo = gc.getLastGcInfo();
+       ...
+   }
 </pre>
 </blockquote>
 
 <p>
-2) Access the Sun-specific MXBean interface via <tt>MBeanServer</tt>
+2) Access the Oracle-specific MXBean interface via <tt>MBeanServer</tt>
+   through proxy
 
 <blockquote><pre>
    MBeanServerConnection mbs;
@@ -268,24 +219,17 @@ attribute from Sun's implementation of the <tt>RuntimeMXBean</tt>.
    // that has the JVM MXBeans registered in it
    ...
 
-   try {
-       // Assuming the RuntimeMXBean has been registered in mbs
-       ObjectName oname = new ObjectName(ManagementFactory.RUNTIME_MXBEAN_NAME);
-    
-       // Get standard attribute "VmVendor"
-       String vendor = (String) mbs.getAttribute(oname, "VmVendor");
+   List&lt;com.sun.management.GarbageCollectorMXBean&gt; mxbeans =
+       ManagementFactory.getPlatformMXBeans(mbs, com.sun.management.GarbageCollectorMXBean.class);
 
-       // Check if this MXBean contains Sun's extension
-       if (mbs.isInstanceOf(oname, "com.sun.management.RuntimeMXBean")) {
-           // Get platform-specific attribute "Bar"
-           BarType bar = (String) mbs.getAttribute(oname, "Bar");
-       }
-   } catch (....) {
-       // Catch the exceptions thrown by ObjectName constructor
-       // and MBeanServer methods
+   for (com.sun.management.GarbageCollectorMXBean gc : mxbeans) {
+       // Get the standard attribute "CollectionCount"
+       String count = mxbean.getCollectionCount();
+
+       // Get the platform-specific attribute "LastGcInfo"
+       GcInfo gcinfo = gc.getLastGcInfo();
        ...
    }
-
 </pre></blockquote>
 
 <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor

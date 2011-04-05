@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug     6911258 6962571 6963622 6991528
+ * @bug     6911258 6962571 6963622 6991528 7005628
  * @summary Basic tests of suppressed exceptions
  * @author  Joseph D. Darcy
  */
@@ -44,14 +44,6 @@ public class SuppressedExceptions {
 
     private static void noSelfSuppression() {
         Throwable throwable = new Throwable();
-        try {
-            throwable.addSuppressed(throwable);
-            throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
-        } catch (IllegalArgumentException iae) {
-            ; // Expected
-        }
-
-        throwable.addSuppressed(null); // Immutable suppression list
         try {
             throwable.addSuppressed(throwable);
             throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
@@ -153,19 +145,19 @@ public class SuppressedExceptions {
             (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x78, (byte)0x70,
         };
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream ois = new ObjectInputStream(bais);
+        try(ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+            ObjectInputStream ois = new ObjectInputStream(bais)) {
+            Object o = ois.readObject();
+            Throwable throwable = (Throwable) o;
 
-        Object o = ois.readObject();
-        Throwable throwable = (Throwable) o;
+            System.err.println("TESTING SERIALIZED EXCEPTION");
 
-        System.err.println("TESTING SERIALIZED EXCEPTION");
-
-        Throwable[] t0 = throwable.getSuppressed();
-        if (t0.length != 0) { // Will fail if t0 is null.
-            throw new RuntimeException(message);
+            Throwable[] t0 = throwable.getSuppressed();
+            if (t0.length != 0) { // Will fail if t0 is null.
+                throw new RuntimeException(message);
+            }
+            throwable.printStackTrace();
         }
-        throwable.printStackTrace();
     }
 
     private static void selfReference() {
@@ -183,8 +175,7 @@ public class SuppressedExceptions {
     }
 
     private static void noModification() {
-        Throwable t = new Throwable();
-        t.addSuppressed(null);
+        Throwable t = new NoSuppression(false);
 
         Throwable[] t0 = t.getSuppressed();
         if (t0.length != 0)
@@ -196,5 +187,24 @@ public class SuppressedExceptions {
         t0 = t.getSuppressed();
         if (t0.length != 0)
             throw new RuntimeException("Bad nonzero length of suppressed exceptions.");
+
+        Throwable suppressed = new ArithmeticException();
+        t = new NoSuppression(true); // Suppression enabled
+        // Make sure addSuppressed(null) throws an NPE
+        try {
+            t.addSuppressed(null);
+        } catch(NullPointerException e) {
+            ; // Expected
+        }
+        t.addSuppressed(suppressed);
+        t0 = t.getSuppressed();
+        if (t0.length != 1 || t0[0] != suppressed)
+            throw new RuntimeException("Expected suppression did not occur.");
+    }
+
+    private static class NoSuppression extends Throwable {
+        public NoSuppression(boolean enableSuppression) {
+            super("The medium.", null, enableSuppression);
+        }
     }
 }

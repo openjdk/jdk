@@ -690,6 +690,9 @@ sun/tools/jconsole/ResourceCheckTest.sh				generic-all
 
 # jdk_util
 
+# Filed 7027061
+java/util/Locale/Bug6989440.java				windows-all
+
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all
 

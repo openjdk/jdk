@@ -56,7 +56,7 @@ public class TimeStamp {
         // make a local copy of our test file
         File srcFile = Utils.locateJar("golden.jar");
         File goldenFile = new File("golden.jar");
-        Utils.copyFile(srcFile, goldenFile.getAbsoluteFile());
+        Utils.copyFile(srcFile, goldenFile);
 
         JarFile goldenJarFile = new JarFile(goldenFile);
         File packFile = new File("golden.pack");

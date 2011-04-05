@@ -415,6 +415,12 @@ class JarVerifier {
         pendingBlocks = null;
         signerCache = null;
         manDig = null;
+        // MANIFEST.MF is always treated as signed and verified,
+        // move its signers from sigFileSigners to verifiedSigners.
+        if (sigFileSigners.containsKey(JarFile.MANIFEST_NAME)) {
+            verifiedSigners.put(JarFile.MANIFEST_NAME,
+                    sigFileSigners.remove(JarFile.MANIFEST_NAME));
+        }
     }
 
     static class VerifierStream extends java.io.InputStream {

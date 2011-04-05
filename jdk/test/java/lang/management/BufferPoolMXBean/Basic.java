@@ -22,20 +22,22 @@
  */
 
 /* @test
- * @bug 6606598
- * @summary Unit test for java.nio.BufferPoolMXBean
+ * @bug 6606598 7024172
+ * @summary Unit test for java.lang.management.BufferPoolMXBean
  * @run main/othervm Basic
  */
 
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.BufferPoolMXBean;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import static java.nio.file.StandardOpenOption.*;
 import java.nio.channels.FileChannel;
-import java.io.File;
-import java.io.RandomAccessFile;
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 public class Basic {
@@ -78,21 +80,21 @@ public class Basic {
             totalCapacity += cap;
         }
 
-        // map a file
-        File f = File.createTempFile("blah", null);
-        f.deleteOnExit();
-        RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        FileChannel fc = raf.getChannel();
-        mbb = fc.map(FileChannel.MapMode.READ_WRITE, 10, 100);
-        bufferCount++;
-        totalCapacity += mbb.capacity();
+        // create a mapped buffer
+        Path tmpfile = Files.createTempFile("blah", null);
+        tmpfile.toFile().deleteOnExit();
+        try (FileChannel fc = FileChannel.open(tmpfile, READ, WRITE)) {
+            mbb = fc.map(FileChannel.MapMode.READ_WRITE, 10, 100);
+            bufferCount++;
+            totalCapacity += mbb.capacity();
+        }
 
-        // direct
+        // use platform MXBeans directly
         List<BufferPoolMXBean> pools =
             ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
         check(pools, bufferCount, totalCapacity);
 
-        // using MBeanServer
+        // use MBeanServer
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> mbeans = server.queryNames(
             new ObjectName("java.nio:type=BufferPool,*"), null);
@@ -103,5 +105,13 @@ public class Basic {
             pools.add(pool);
         }
         check(pools, bufferCount, totalCapacity);
+
+        // attempt to unmap mapped buffer
+        WeakReference<MappedByteBuffer> ref = new WeakReference<>(mbb);
+        mbb = null;
+        do {
+            System.gc();
+            Thread.sleep(250);
+        } while (ref.get() != null);
     }
 }
