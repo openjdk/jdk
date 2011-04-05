@@ -836,6 +836,9 @@ void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
           _masm->verify_stack_oop(r->reg2stack() * VMRegImpl::stack_slot_size);
         }
       }
+      check_codespace();
+      CHECK_BAILOUT();
+
       s.next();
     }
     VerifyOops = v;
