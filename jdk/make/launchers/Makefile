@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,17 @@ $(MAKE) -f Makefile.launcher \
 endef
 
 # Run MAKE $@ for all generic launchers
-define make-all-launchers
+ifndef BUILD_HEADLESS_ONLY
+define make-appletviewer
 $(call make-launcher, appletviewer, sun.applet.Main, , )
+endef
+else
+define make-appletviewer
+endef
+endif
+
+define make-all-launchers
+$(make-appletviewer)
 $(call make-launcher, apt, com.sun.tools.apt.Main, , )
 $(call make-launcher, extcheck, com.sun.tools.extcheck.Main, , )
 $(call make-launcher, idlj, com.sun.tools.corba.se.idl.toJavaPortable.Compile, , )

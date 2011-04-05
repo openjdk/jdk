@@ -521,19 +521,19 @@ public class CheckPermissions {
             // -- toRealPath --
 
             prepare();
-            file.toRealPath(true);
+            file.toRealPath();
             assertCheckRead(file);
 
             prepare();
-            file.toRealPath(false);
+            file.toRealPath(LinkOption.NOFOLLOW_LINKS);
             assertCheckRead(file);
 
             prepare();
-            Paths.get(".").toRealPath(true);
+            Paths.get(".").toRealPath();
             assertCheckPropertyAccess("user.dir");
 
             prepare();
-            Paths.get(".").toRealPath(false);
+            Paths.get(".").toRealPath(LinkOption.NOFOLLOW_LINKS);
             assertCheckPropertyAccess("user.dir");
 
             // -- register --
