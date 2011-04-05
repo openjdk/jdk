@@ -7,7 +7,7 @@ To run Font2DTest:
     or 
 % appletviewer Font2DTest.html
 
-These instructions assume that the 1.5 versions of the java
+These instructions assume that the 1.7 versions of the java
 and appletviewer commands are in your path.  If they aren't,
 then you should either specify the complete path to the commands
 or update your PATH environment variable as described in the
