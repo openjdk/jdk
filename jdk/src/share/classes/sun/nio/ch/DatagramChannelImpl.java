@@ -388,9 +388,8 @@ class DatagramChannelImpl
         // we must instead use a nonempty buffer, otherwise the call
         // will not block waiting for a datagram on some platforms.
         int newSize = Math.max(rem, 1);
-        ByteBuffer bb = null;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(newSize);
         try {
-            bb = Util.getTemporaryDirectBuffer(newSize);
             int n = receiveIntoNativeBuffer(fd, bb, newSize, 0);
             bb.flip();
             if (n > 0 && rem > 0)
@@ -482,9 +481,8 @@ class DatagramChannelImpl
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        ByteBuffer bb = null;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
         try {
-            bb = Util.getTemporaryDirectBuffer(rem);
             bb.put(src);
             bb.flip();
             // Do not update src until we see how many bytes were written
@@ -766,10 +764,10 @@ class DatagramChannelImpl
         // check multicast address is compatible with this socket
         if (group instanceof Inet4Address) {
             if (family == StandardProtocolFamily.INET6 && !Net.canIPv6SocketJoinIPv4Group())
-                throw new IllegalArgumentException("Group is not IPv4 multicast address");
+                throw new IllegalArgumentException("IPv6 socket cannot join IPv4 multicast group");
         } else if (group instanceof Inet6Address) {
             if (family != StandardProtocolFamily.INET6)
-                throw new IllegalArgumentException("Group is not IPv6 multicast address");
+                throw new IllegalArgumentException("Only IPv6 sockets can join IPv6 multicast group");
         } else {
             throw new IllegalArgumentException("Address type not supported");
         }
