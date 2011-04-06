@@ -685,20 +685,22 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
       }
       ready_cnt[n->_idx] = local; // Count em up
 
-      // A few node types require changing a required edge to a precedence edge
-      // before allocation.
+#ifdef ASSERT
       if( UseConcMarkSweepGC || UseG1GC ) {
         if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
-          // Note: Required edges with an index greater than oper_input_base
-          // are not supported by the allocator.
-          // Note2: Can only depend on unmatched edge being last,
-          // can not depend on its absolute position.
-          Node *oop_store = n->in(n->req() - 1);
-          n->del_req(n->req() - 1);
-          n->add_prec(oop_store);
-          assert(cfg->_bbs[oop_store->_idx]->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
+          // Check the precedence edges
+          for (uint prec = n->req(); prec < n->len(); prec++) {
+            Node* oop_store = n->in(prec);
+            if (oop_store != NULL) {
+              assert(cfg->_bbs[oop_store->_idx]->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
+            }
+          }
         }
       }
+#endif
+
+      // A few node types require changing a required edge to a precedence edge
+      // before allocation.
       if( n->is_Mach() && n->req() > TypeFunc::Parms &&
           (n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire ||
            n->as_Mach()->ideal_Opcode() == Op_MemBarVolatile) ) {
