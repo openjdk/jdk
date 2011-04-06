@@ -239,6 +239,12 @@ public class MidiSystem {
      * If a suitable MIDI port is not available, the Receiver is
      * retrieved from an installed synthesizer.
      *
+     * <p>If a native receiver provided by the default device does not implement
+     * the {@code MidiDeviceReceiver} interface, it will be wrapped in a
+     * wrapper class that implements the {@code MidiDeviceReceiver} interface.
+     * The corresponding {@code Receiver} method calls will be forwarded
+     * to the native receiver.
+     *
      * <p>If this method returns successfully, the {@link
      * javax.sound.midi.MidiDevice MidiDevice} the
      * <code>Receiver</code> belongs to is opened implicitly, if it is
@@ -284,7 +290,13 @@ public class MidiSystem {
      * it is used to identify the device that provides the default transmitter.
      * For details, refer to the {@link MidiSystem class description}.
      *
-     * If this method returns successfully, the {@link
+     * <p>If a native transmitter provided by the default device does not implement
+     * the {@code MidiDeviceTransmitter} interface, it will be wrapped in a
+     * wrapper class that implements the {@code MidiDeviceTransmitter} interface.
+     * The corresponding {@code Transmitter} method calls will be forwarded
+     * to the native transmitter.
+     *
+     * <p>If this method returns successfully, the {@link
      * javax.sound.midi.MidiDevice MidiDevice} the
      * <code>Transmitter</code> belongs to is opened implicitly, if it
      * is not already open. It is possible to close an implicitly
