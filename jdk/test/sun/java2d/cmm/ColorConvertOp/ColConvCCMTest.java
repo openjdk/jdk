@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665
+ * @bug 6476665 7033534
  * @summary Verifies color conversion of Component Color Model based images
  * @run main ColConvCCMTest
  */
