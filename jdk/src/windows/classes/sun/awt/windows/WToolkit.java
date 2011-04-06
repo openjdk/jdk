@@ -103,9 +103,6 @@ public class WToolkit extends SunToolkit implements Runnable {
 
     static {
         loadLibraries();
-        // Force Win32GE to load if it is not already loaded; this loads
-        // various other classes that are required for basic awt functionality
-        Win32GraphicsEnvironment.init();
         initIDs();
 
         // Print out which version of Windows is running
