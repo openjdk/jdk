@@ -962,6 +962,16 @@ void Arguments::set_mode_flags(Mode mode) {
   UseCompiler                = true;
   UseLoopCounter             = true;
 
+#ifndef ZERO
+  // Turn these off for mixed and comp.  Leave them on for Zero.
+  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
+    UseFastAccessorMethods = mode == _int;
+  }
+  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
+    UseFastEmptyMethods = mode == _int;
+  }
+#endif
+
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
