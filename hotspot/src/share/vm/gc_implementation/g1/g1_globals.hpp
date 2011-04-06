@@ -89,6 +89,11 @@
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
                                                                             \
+  experimental(bool, G1UseConcMarkReferenceProcessing, false,               \
+          "If true, enable reference discovery during concurrent "          \
+          "marking and reference processing at the end of remark "          \
+          "(unsafe).")                                                      \
+                                                                            \
   develop(bool, G1SATBBarrierPrintNullPreVals, false,                       \
           "If true, count frac of ptr writes with null pre-vals.")          \
                                                                             \
@@ -138,9 +143,9 @@
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
                                                                             \
-  develop(intx, G1PrintRegionLivenessInfo, 0,                               \
-          "When > 0, print the occupancies of the <n> best and worst"       \
-          "regions.")                                                       \
+  product(bool, G1PrintRegionLivenessInfo, false,                           \
+          "Prints the liveness information for all regions in the heap "    \
+          "at the end of a marking cycle.")                                 \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
@@ -192,6 +197,10 @@
                                                                             \
   develop(intx, G1ConcRSHotCardLimit, 4,                                    \
           "The threshold that defines (>=) a hot card.")                    \
+                                                                            \
+  develop(intx, G1MaxHotCardCountSizePercent, 25,                           \
+          "The maximum size of the hot card count cache as a "              \
+          "percentage of the number of cards for the maximum heap.")        \
                                                                             \
   develop(bool, G1PrintOopAppls, false,                                     \
           "When true, print applications of closures to external locs.")    \
