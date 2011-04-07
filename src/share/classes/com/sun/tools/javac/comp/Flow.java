@@ -381,7 +381,7 @@ public class Flow extends TreeScanner {
         if (sym.adr >= firstadr && trackable(sym)) {
             if ((sym.flags() & FINAL) != 0) {
                 if ((sym.flags() & PARAMETER) != 0) {
-                    if ((sym.flags() & DISJUNCTION) != 0) { //multi-catch parameter
+                    if ((sym.flags() & UNION) != 0) { //multi-catch parameter
                         log.error(pos, "multicatch.parameter.may.not.be.assigned",
                                   sym);
                     }
@@ -1003,7 +1003,7 @@ public class Flow extends TreeScanner {
         thrown = List.nil();
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
-                    ((JCTypeDisjunction)l.head.param.vartype).alternatives :
+                    ((JCTypeUnion)l.head.param.vartype).alternatives :
                     List.of(l.head.param.vartype);
             for (JCExpression ct : subClauses) {
                 caught = chk.incl(ct.type, caught);
@@ -1075,7 +1075,7 @@ public class Flow extends TreeScanner {
             alive = true;
             JCVariableDecl param = l.head.param;
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
-                    ((JCTypeDisjunction)l.head.param.vartype).alternatives :
+                    ((JCTypeUnion)l.head.param.vartype).alternatives :
                     List.of(l.head.param.vartype);
             List<Type> ctypes = List.nil();
             List<Type> rethrownTypes = chk.diff(thrownInTry, caughtInTry);

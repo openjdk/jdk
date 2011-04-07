@@ -338,10 +338,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeApply(clazz, arguments);
     }
 
-    public JCTree visitDisjunctiveType(DisjunctiveTypeTree node, P p) {
-        JCTypeDisjunction t = (JCTypeDisjunction) node;
+    public JCTree visitUnionType(UnionTypeTree node, P p) {
+        JCTypeUnion t = (JCTypeUnion) node;
         List<JCExpression> components = copy(t.alternatives, p);
-        return M.at(t.pos).TypeDisjunction(components);
+        return M.at(t.pos).TypeUnion(components);
     }
 
     public JCTree visitArrayType(ArrayTypeTree node, P p) {
