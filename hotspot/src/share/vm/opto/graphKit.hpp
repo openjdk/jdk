@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,8 +544,10 @@ class GraphKit : public Phase {
                              BasicType bt);
 
   // For the few case where the barriers need special help
-  void pre_barrier(Node* ctl, Node* obj, Node* adr, uint adr_idx,
-                   Node* val, const TypeOopPtr* val_type, BasicType bt);
+  void pre_barrier(bool do_load, Node* ctl,
+                   Node* obj, Node* adr, uint adr_idx, Node* val, const TypeOopPtr* val_type,
+                   Node* pre_val,
+                   BasicType bt);
 
   void post_barrier(Node* ctl, Node* store, Node* obj, Node* adr, uint adr_idx,
                     Node* val, BasicType bt, bool use_precise);
@@ -669,11 +671,13 @@ class GraphKit : public Phase {
                           Node* adr,  uint adr_idx, Node* val, bool use_precise);
 
   // G1 pre/post barriers
-  void g1_write_barrier_pre(Node* obj,
+  void g1_write_barrier_pre(bool do_load,
+                            Node* obj,
                             Node* adr,
                             uint alias_idx,
                             Node* val,
                             const TypeOopPtr* val_type,
+                            Node* pre_val,
                             BasicType bt);
 
   void g1_write_barrier_post(Node* store,

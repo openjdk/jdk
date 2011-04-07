@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,11 @@ class DirtyCardQueueSet;
 // snapshot-at-the-beginning marking.
 
 class G1SATBCardTableModRefBS: public CardTableModRefBSForCTRS {
-private:
+public:
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
 
-public:
   G1SATBCardTableModRefBS(MemRegion whole_heap,
                           int max_covered_regions);
 
@@ -60,10 +59,6 @@ public:
       enqueue(oopDesc::decode_heap_oop(heap_oop));
     }
   }
-
-  // When we know the current java thread:
-  template <class T> static void write_ref_field_pre_static(T* field, oop newVal,
-                                                            JavaThread* jt);
 
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.

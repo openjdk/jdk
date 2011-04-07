@@ -403,6 +403,8 @@ class instanceKlass: public Klass {
   ReferenceType reference_type() const     { return _reference_type; }
   void set_reference_type(ReferenceType t) { _reference_type = t; }
 
+  static int reference_type_offset_in_bytes() { return offset_of(instanceKlass, _reference_type); }
+
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find field in direct superinterfaces, returns the interface in which the field is defined
