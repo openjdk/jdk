@@ -483,8 +483,8 @@ public class DriverManager {
     private static void loadInitialDrivers() {
         String drivers;
         try {
-            drivers = (String)  AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            drivers = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
                     return System.getProperty("jdbc.drivers");
                 }
             });
@@ -496,8 +496,8 @@ public class DriverManager {
         // exposed as a java.sql.Driver.class service.
         // ServiceLoader.load() replaces the sun.misc.Providers()
 
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
 
                 ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
                 Iterator driversIterator = loadedDrivers.iterator();
