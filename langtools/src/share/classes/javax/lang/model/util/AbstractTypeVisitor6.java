@@ -96,7 +96,7 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
-     * Visits a {@code DisjunctiveType} element by calling {@code
+     * Visits a {@code UnionType} element by calling {@code
      * visitUnknown}.
 
      * @param t  {@inheritDoc}
@@ -105,7 +105,7 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
      *
      * @since 1.7
      */
-    public R visitDisjunctive(DisjunctiveType t, P p) {
+    public R visitUnion(UnionType t, P p) {
         return visitUnknown(t, p);
     }
 

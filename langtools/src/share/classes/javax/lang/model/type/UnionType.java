@@ -28,22 +28,20 @@ package javax.lang.model.type;
 import java.util.List;
 
 /**
- * Represents a disjunctive type.
+ * Represents a union type.
  *
  * As of the {@link javax.lang.model.SourceVersion#RELEASE_7
- * RELEASE_7} source version, disjunctive types can appear as the type
+ * RELEASE_7} source version, union types can appear as the type
  * of a multi-catch exception parameter.
  *
  * @since 1.7
  */
-public interface DisjunctiveType extends TypeMirror {
+public interface UnionType extends TypeMirror {
 
     /**
-     * Return the alternatives comprising this disjunctive type.
+     * Return the alternatives comprising this union type.
      *
-     * The alternatives are formally referred to as <i>disjuncts</i>.
-     *
-     * @return the alternatives comprising this disjunctive type.
+     * @return the alternatives comprising this union type.
      */
     List<? extends TypeMirror> getAlternatives();
 }
