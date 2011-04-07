@@ -1112,7 +1112,7 @@ public class Attr extends JCTree.Visitor {
             Type ctype = attribStat(c.param, catchEnv);
             if (TreeInfo.isMultiCatch(c)) {
                 //multi-catch parameter is implicitly marked as final
-                c.param.sym.flags_field |= FINAL | DISJUNCTION;
+                c.param.sym.flags_field |= FINAL | UNION;
             }
             if (c.param.sym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
@@ -2908,7 +2908,7 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, TYP, pkind, pt);
     }
 
-    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+    public void visitTypeUnion(JCTypeUnion tree) {
         ListBuffer<Type> multicatchTypes = ListBuffer.lb();
         for (JCExpression typeTree : tree.alternatives) {
             Type ctype = attribType(typeTree, env);
@@ -2916,7 +2916,7 @@ public class Attr extends JCTree.Visitor {
                           chk.checkClassType(typeTree.pos(), ctype),
                           syms.throwableType);
             if (!ctype.isErroneous()) {
-                //check that alternatives of a disjunctive type are pairwise
+                //check that alternatives of a union type are pairwise
                 //unrelated w.r.t. subtyping
                 if (chk.intersects(ctype,  multicatchTypes.toList())) {
                     for (Type t : multicatchTypes) {
