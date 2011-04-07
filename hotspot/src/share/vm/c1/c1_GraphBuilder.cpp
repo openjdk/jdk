@@ -2912,6 +2912,46 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       block()->set_end(end);
       break;
     }
+
+  case vmIntrinsics::_Reference_get:
+    {
+      if (UseG1GC) {
+        // With java.lang.ref.reference.get() we must go through the
+        // intrinsic - when G1 is enabled - even when get() is the root
+        // method of the compile so that, if necessary, the value in
+        // the referent field of the reference object gets recorded by
+        // the pre-barrier code.
+        // Specifically, if G1 is enabled, the value in the referent
+        // field is recorded by the G1 SATB pre barrier. This will
+        // result in the referent being marked live and the reference
+        // object removed from the list of discovered references during
+        // reference processing.
+
+        // Set up a stream so that appending instructions works properly.
+        ciBytecodeStream s(scope->method());
+        s.reset_to_bci(0);
+        scope_data()->set_stream(&s);
+        s.next();
+
+        // setup the initial block state
+        _block = start_block;
+        _state = start_block->state()->copy_for_parsing();
+        _last  = start_block;
+        load_local(objectType, 0);
+
+        // Emit the intrinsic node.
+        bool result = try_inline_intrinsics(scope->method());
+        if (!result) BAILOUT("failed to inline intrinsic");
+        method_return(apop());
+
+        // connect the begin and end blocks and we're all done.
+        BlockEnd* end = last()->as_BlockEnd();
+        block()->set_end(end);
+        break;
+      }
+      // Otherwise, fall thru
+    }
+
   default:
     scope_data()->add_to_work_list(start_block);
     iterate_all_blocks();
@@ -3148,6 +3188,15 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_compareAndSwapObject:
       append_unsafe_CAS(callee);
       return true;
+
+    case vmIntrinsics::_Reference_get:
+      // It is only when G1 is enabled that we absolutely
+      // need to use the intrinsic version of Reference.get()
+      // so that the value in the referent field, if necessary,
+      // can be registered by the pre-barrier code.
+      if (!UseG1GC) return false;
+      preserves_state = true;
+      break;
 
     default                       : return false; // do not inline
   }

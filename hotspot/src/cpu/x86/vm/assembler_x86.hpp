@@ -1444,6 +1444,7 @@ private:
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
   friend class Runtime1;      // as_Address()
+
  protected:
 
   Address as_Address(AddressLiteral adr);
@@ -1665,21 +1666,22 @@ class MacroAssembler: public Assembler {
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
+#ifndef SERIALGC
+
   void g1_write_barrier_pre(Register obj,
-#ifndef _LP64
+                            Register pre_val,
                             Register thread,
-#endif
                             Register tmp,
-                            Register tmp2,
-                            bool     tosca_live);
+                            bool tosca_live,
+                            bool expand_call);
+
   void g1_write_barrier_post(Register store_addr,
                              Register new_val,
-#ifndef _LP64
                              Register thread,
-#endif
                              Register tmp,
                              Register tmp2);
 
+#endif // SERIALGC
 
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);

@@ -139,7 +139,12 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         }
         __ get_thread(rcx);
         __ save_bcp();
-        __ g1_write_barrier_pre(rdx, rcx, rsi, rbx, val != noreg);
+        __ g1_write_barrier_pre(rdx /* obj */,
+                                rbx /* pre_val */,
+                                rcx /* thread */,
+                                rsi /* tmp */,
+                                val != noreg /* tosca_live */,
+                                false /* expand_call */);
 
         // Do the actual store
         // noreg means NULL
@@ -148,7 +153,11 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
           // No post barrier for NULL
         } else {
           __ movl(Address(rdx, 0), val);
-          __ g1_write_barrier_post(rdx, rax, rcx, rbx, rsi);
+          __ g1_write_barrier_post(rdx /* store_adr */,
+                                   val /* new_val */,
+                                   rcx /* thread */,
+                                   rbx /* tmp */,
+                                   rsi /* tmp2 */);
         }
         __ restore_bcp();
 

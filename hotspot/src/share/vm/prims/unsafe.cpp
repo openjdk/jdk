@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif // SERIALGC
 #include "memory/allocation.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
@@ -193,7 +196,32 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject o
   UnsafeWrapper("Unsafe_GetObject");
   if (obj == NULL)  THROW_0(vmSymbols::java_lang_NullPointerException());
   GET_OOP_FIELD(obj, offset, v)
-  return JNIHandles::make_local(env, v);
+  jobject ret = JNIHandles::make_local(env, v);
+#ifndef SERIALGC
+  // We could be accessing the referent field in a reference
+  // object. If G1 is enabled then we need to register a non-null
+  // referent with the SATB barrier.
+  if (UseG1GC) {
+    bool needs_barrier = false;
+
+    if (ret != NULL) {
+      if (offset == java_lang_ref_Reference::referent_offset) {
+        oop o = JNIHandles::resolve_non_null(obj);
+        klassOop k = o->klass();
+        if (instanceKlass::cast(k)->reference_type() != REF_NONE) {
+          assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+          needs_barrier = true;
+        }
+      }
+    }
+
+    if (needs_barrier) {
+      oop referent = JNIHandles::resolve(ret);
+      G1SATBCardTableModRefBS::enqueue(referent);
+    }
+  }
+#endif // SERIALGC
+  return ret;
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObject140(JNIEnv *env, jobject unsafe, jobject obj, jint offset, jobject x_h))
@@ -226,7 +254,32 @@ UNSAFE_END
 UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObject");
   GET_OOP_FIELD(obj, offset, v)
-  return JNIHandles::make_local(env, v);
+  jobject ret = JNIHandles::make_local(env, v);
+#ifndef SERIALGC
+  // We could be accessing the referent field in a reference
+  // object. If G1 is enabled then we need to register non-null
+  // referent with the SATB barrier.
+  if (UseG1GC) {
+    bool needs_barrier = false;
+
+    if (ret != NULL) {
+      if (offset == java_lang_ref_Reference::referent_offset && obj != NULL) {
+        oop o = JNIHandles::resolve(obj);
+        klassOop k = o->klass();
+        if (instanceKlass::cast(k)->reference_type() != REF_NONE) {
+          assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+          needs_barrier = true;
+        }
+      }
+    }
+
+    if (needs_barrier) {
+      oop referent = JNIHandles::resolve(ret);
+      G1SATBCardTableModRefBS::enqueue(referent);
+    }
+  }
+#endif // SERIALGC
+  return ret;
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h))

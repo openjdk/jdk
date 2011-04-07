@@ -57,7 +57,11 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       {
-        __ g1_write_barrier_pre( base, index, offset, tmp, /*preserve_o_regs*/true);
+        // Load and record the previous value.
+        __ g1_write_barrier_pre(base, index, offset,
+                                noreg /* pre_val */,
+                                tmp, true /*preserve_o_regs*/);
+
         if (index == noreg ) {
           assert(Assembler::is_simm13(offset), "fix this code");
           __ store_heap_oop(val, base, offset);

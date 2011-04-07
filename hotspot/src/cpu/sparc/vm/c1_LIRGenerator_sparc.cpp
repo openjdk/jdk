@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,8 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
   if (obj_store) {
     // Needs GC write barriers.
-    pre_barrier(LIR_OprFact::address(array_addr), false, NULL);
+    pre_barrier(LIR_OprFact::address(array_addr), LIR_OprFact::illegalOpr /* pre_val */,
+                true /* do_load */, false /* patch */, NULL);
   }
   __ move(value.result(), array_addr, null_check_info);
   if (obj_store) {
@@ -687,7 +688,8 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   __ add(obj.result(), offset.result(), addr);
 
   if (type == objectType) {  // Write-barrier needed for Object fields.
-    pre_barrier(addr, false, NULL);
+    pre_barrier(addr, LIR_OprFact::illegalOpr /* pre_val */,
+                true /* do_load */, false /* patch */, NULL);
   }
 
   if (type == objectType)
@@ -1187,7 +1189,8 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
       }
 
       if (is_obj) {
-        pre_barrier(LIR_OprFact::address(addr), false, NULL);
+        pre_barrier(LIR_OprFact::address(addr), LIR_OprFact::illegalOpr /* pre_val */,
+                    true /* do_load */, false /* patch */, NULL);
         // _bs->c1_write_barrier_pre(this, LIR_OprFact::address(addr));
       }
       __ move(data, addr);

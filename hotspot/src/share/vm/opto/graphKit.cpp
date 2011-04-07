@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1457,19 +1457,22 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
 }
 
 
-void GraphKit::pre_barrier(Node* ctl,
+void GraphKit::pre_barrier(bool do_load,
+                           Node* ctl,
                            Node* obj,
                            Node* adr,
                            uint  adr_idx,
                            Node* val,
                            const TypeOopPtr* val_type,
+                           Node* pre_val,
                            BasicType bt) {
+
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
-      g1_write_barrier_pre(obj, adr, adr_idx, val, val_type, bt);
+      g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
 
     case BarrierSet::CardTableModRef:
@@ -1532,7 +1535,11 @@ Node* GraphKit::store_oop(Node* ctl,
   uint adr_idx = C->get_alias_index(adr_type);
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
 
-  pre_barrier(control(), obj, adr, adr_idx, val, val_type, bt);
+  pre_barrier(true /* do_load */,
+              control(), obj, adr, adr_idx, val, val_type,
+              NULL /* pre_val */,
+              bt);
+
   Node* store = store_to_memory(control(), adr, val, bt, adr_idx);
   post_barrier(control(), store, obj, adr, adr_idx, val, bt, use_precise);
   return store;
@@ -3465,12 +3472,31 @@ void GraphKit::write_barrier_post(Node* oop_store,
 }
 
 // G1 pre/post barriers
-void GraphKit::g1_write_barrier_pre(Node* obj,
+void GraphKit::g1_write_barrier_pre(bool do_load,
+                                    Node* obj,
                                     Node* adr,
                                     uint alias_idx,
                                     Node* val,
                                     const TypeOopPtr* val_type,
+                                    Node* pre_val,
                                     BasicType bt) {
+
+  // Some sanity checks
+  // Note: val is unused in this routine.
+
+  if (do_load) {
+    // We need to generate the load of the previous value
+    assert(obj != NULL, "must have a base");
+    assert(adr != NULL, "where are loading from?");
+    assert(pre_val == NULL, "loaded already?");
+    assert(val_type != NULL, "need a type");
+  } else {
+    // In this case both val_type and alias_idx are unused.
+    assert(pre_val != NULL, "must be loaded already");
+    assert(pre_val->bottom_type()->basic_type() == T_OBJECT, "or we shouldn't be here");
+  }
+  assert(bt == T_OBJECT, "or we shouldn't be here");
+
   IdealKit ideal(gvn(), control(), merged_memory(), true);
 
   Node* tls = __ thread(); // ThreadLocalStorage
@@ -3492,32 +3518,28 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
                                           PtrQueue::byte_offset_of_index());
   const int buffer_offset  = in_bytes(JavaThread::satb_mark_queue_offset() +  // 652
                                           PtrQueue::byte_offset_of_buf());
+
   // Now the actual pointers into the thread
-
-  // set_control( ctl);
-
   Node* marking_adr = __ AddP(no_base, tls, __ ConX(marking_offset));
   Node* buffer_adr  = __ AddP(no_base, tls, __ ConX(buffer_offset));
   Node* index_adr   = __ AddP(no_base, tls, __ ConX(index_offset));
 
   // Now some of the values
-
   Node* marking = __ load(__ ctrl(), marking_adr, TypeInt::INT, active_type, Compile::AliasIdxRaw);
 
   // if (!marking)
   __ if_then(marking, BoolTest::ne, zero); {
     Node* index   = __ load(__ ctrl(), index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
 
-    const Type* t1 = adr->bottom_type();
-    const Type* t2 = val->bottom_type();
-
-    Node* orig = __ load(no_ctrl, adr, val_type, bt, alias_idx);
-    // if (orig != NULL)
-    __ if_then(orig, BoolTest::ne, null()); {
-      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
-
+    if (do_load) {
       // load original value
       // alias_idx correct??
+      pre_val = __ load(no_ctrl, adr, val_type, bt, alias_idx);
+    }
+
+    // if (pre_val != NULL)
+    __ if_then(pre_val, BoolTest::ne, null()); {
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
       // is the queue for this thread full?
       __ if_then(index, BoolTest::ne, zero, likely); {
@@ -3531,10 +3553,9 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
         next_indexX = _gvn.transform( new (C, 2) ConvI2LNode(next_index, TypeLong::make(0, max_jlong, Type::WidenMax)) );
 #endif
 
-        // Now get the buffer location we will log the original value into and store it
+        // Now get the buffer location we will log the previous value into and store it
         Node *log_addr = __ AddP(no_base, buffer, next_indexX);
-        __ store(__ ctrl(), log_addr, orig, T_OBJECT, Compile::AliasIdxRaw);
-
+        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, Compile::AliasIdxRaw);
         // update the index
         __ store(__ ctrl(), index_adr, next_index, T_INT, Compile::AliasIdxRaw);
 
@@ -3542,9 +3563,9 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
 
         // logging buffer is full, call the runtime
         const TypeFunc *tf = OptoRuntime::g1_wb_pre_Type();
-        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", orig, tls);
+        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", pre_val, tls);
       } __ end_if();  // (!index)
-    } __ end_if();  // (orig != NULL)
+    } __ end_if();  // (pre_val != NULL)
   } __ end_if();  // (!marking)
 
   // Final sync IdealKit and GraphKit.

@@ -629,7 +629,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     initial_gvn()->transform_no_reclaim(top());
 
     // Set up tf(), start(), and find a CallGenerator.
-    CallGenerator* cg;
+    CallGenerator* cg = NULL;
     if (is_osr_compilation()) {
       const TypeTuple *domain = StartOSRNode::osr_domain();
       const TypeTuple *range = TypeTuple::make_range(method()->signature());
@@ -644,9 +644,24 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       StartNode* s = new (this, 2) StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       init_start(s);
-      float past_uses = method()->interpreter_invocation_count();
-      float expected_uses = past_uses;
-      cg = CallGenerator::for_inline(method(), expected_uses);
+      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get && UseG1GC) {
+        // With java.lang.ref.reference.get() we must go through the
+        // intrinsic when G1 is enabled - even when get() is the root
+        // method of the compile - so that, if necessary, the value in
+        // the referent field of the reference object gets recorded by
+        // the pre-barrier code.
+        // Specifically, if G1 is enabled, the value in the referent
+        // field is recorded by the G1 SATB pre barrier. This will
+        // result in the referent being marked live and the reference
+        // object removed from the list of discovered references during
+        // reference processing.
+        cg = find_intrinsic(method(), false);
+      }
+      if (cg == NULL) {
+        float past_uses = method()->interpreter_invocation_count();
+        float expected_uses = past_uses;
+        cg = CallGenerator::for_inline(method(), expected_uses);
+      }
     }
     if (failing())  return;
     if (cg == NULL) {
