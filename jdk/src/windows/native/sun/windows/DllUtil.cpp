@@ -25,7 +25,7 @@
 
 
 #include "DllUtil.h"
-#include <jdk_util_md.h>
+#include <jdk_util.h>
 
 // Disable warning about using this in the initializer list.
 #pragma warning( disable : 4355)
