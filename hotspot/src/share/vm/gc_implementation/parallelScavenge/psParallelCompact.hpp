@@ -1027,9 +1027,6 @@ class PSParallelCompact : AllStatic {
                                        ParallelTaskTerminator* terminator_ptr,
                                        uint parallel_gc_threads);
 
-  // For debugging only - compacts the old gen serially
-  static void compact_serial(ParCompactionManager* cm);
-
   // If objects are left in eden after a collection, try to move the boundary
   // and absorb them into the old gen.  Returns true if eden was emptied.
   static bool absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
