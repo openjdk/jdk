@@ -243,6 +243,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
+  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
