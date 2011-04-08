@@ -307,6 +307,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _par_last_termination_times_ms = new double[_parallel_gc_threads];
   _par_last_termination_attempts = new double[_parallel_gc_threads];
   _par_last_gc_worker_end_times_ms = new double[_parallel_gc_threads];
+  _par_last_gc_worker_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
   _expensive_region_limit_ms = 0.5 * (double) MaxGCPauseMillis;
@@ -911,6 +912,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _par_last_termination_times_ms[i] = -1234.0;
     _par_last_termination_attempts[i] = -1234.0;
     _par_last_gc_worker_end_times_ms[i] = -1234.0;
+    _par_last_gc_worker_times_ms[i] = -1234.0;
   }
 #endif
 
@@ -1063,8 +1065,7 @@ T sum_of(T* sum_arr, int start, int n, int N) {
 
 void G1CollectorPolicy::print_par_stats(int level,
                                         const char* str,
-                                        double* data,
-                                         bool summary) {
+                                        double* data) {
   double min = data[0], max = data[0];
   double total = 0.0;
   LineBuffer buf(level);
@@ -1078,20 +1079,15 @@ void G1CollectorPolicy::print_par_stats(int level,
     total += val;
     buf.append("  %3.1lf", val);
   }
-  if (summary) {
-    buf.append_and_print_cr("");
-    double avg = total / (double) ParallelGCThreads;
-    buf.append(" ");
-    buf.append("Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf",
-                        avg, min, max);
-  }
-  buf.append_and_print_cr("]");
+  buf.append_and_print_cr("");
+  double avg = total / (double) ParallelGCThreads;
+  buf.append_and_print_cr(" Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf, Diff: %5.1lf]",
+    avg, min, max, max - min);
 }
 
 void G1CollectorPolicy::print_par_sizes(int level,
                                         const char* str,
-                                        double* data,
-                                        bool summary) {
+                                        double* data) {
   double min = data[0], max = data[0];
   double total = 0.0;
   LineBuffer buf(level);
@@ -1105,14 +1101,10 @@ void G1CollectorPolicy::print_par_sizes(int level,
     total += val;
     buf.append(" %d", (int) val);
   }
-  if (summary) {
-    buf.append_and_print_cr("");
-    double avg = total / (double) ParallelGCThreads;
-    buf.append(" ");
-    buf.append("Sum: %d, Avg: %d, Min: %d, Max: %d",
-               (int)total, (int)avg, (int)min, (int)max);
-  }
-  buf.append_and_print_cr("]");
+  buf.append_and_print_cr("");
+  double avg = total / (double) ParallelGCThreads;
+  buf.append_and_print_cr(" Sum: %d, Avg: %d, Min: %d, Max: %d, Diff: %d]",
+    (int)total, (int)avg, (int)min, (int)max, (int)max - (int)min);
 }
 
 void G1CollectorPolicy::print_stats (int level,
@@ -1421,22 +1413,22 @@ void G1CollectorPolicy::record_collection_pause_end() {
     }
     if (parallel) {
       print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-      print_par_stats(2, "GC Worker Start Time",
-                      _par_last_gc_worker_start_times_ms, false);
+      print_par_stats(2, "GC Worker Start Time", _par_last_gc_worker_start_times_ms);
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-      print_par_sizes(3, "Processed Buffers",
-                      _par_last_update_rs_processed_buffers, true);
-      print_par_stats(2, "Ext Root Scanning",
-                      _par_last_ext_root_scan_times_ms);
-      print_par_stats(2, "Mark Stack Scanning",
-                      _par_last_mark_stack_scan_times_ms);
+      print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+      print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
+      print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
       print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
-      print_par_sizes(3, "Termination Attempts",
-                      _par_last_termination_attempts, true);
-      print_par_stats(2, "GC Worker End Time",
-                      _par_last_gc_worker_end_times_ms, false);
+      print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
+      print_par_stats(2, "GC Worker End Time", _par_last_gc_worker_end_times_ms);
+
+      for (int i = 0; i < _parallel_gc_threads; i++) {
+        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] - _par_last_gc_worker_start_times_ms[i];
+      }
+      print_par_stats(2, "GC Worker Times", _par_last_gc_worker_times_ms);
+
       print_stats(2, "Other", parallel_other_time);
       print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
     } else {
