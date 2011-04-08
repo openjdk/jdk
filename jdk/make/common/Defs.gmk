@@ -524,6 +524,10 @@ else
   COPYRIGHT_YEAR := $(shell $(DATE) '+%Y')
 endif
 
+ifndef OPENJDK
+include $(JDK_TOPDIR)/make/closed/common/Defs.gmk
+endif
+
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)
 define install-importonly-file
 @$(ECHO) "ASSEMBLY_IMPORT: $@"

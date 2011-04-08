@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -769,7 +769,7 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // signature-polymorphic MethodHandle methods, invokeExact or invokeGeneric.
 bool ciMethod::is_method_handle_invoke() const {
   if (!is_loaded()) {
-    bool flag = (holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
+    bool flag = (holder()->name() == ciSymbol::java_lang_invoke_MethodHandle() &&
                  methodOopDesc::is_method_handle_invoke_name(name()->sid()));
     return flag;
   }

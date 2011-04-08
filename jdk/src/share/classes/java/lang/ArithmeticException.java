@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,18 @@ package java.lang;
  * example, an integer "divide by zero" throws an
  * instance of this class.
  *
+ * {@code ArithmeticException} objects may be constructed by the
+ * virtual machine as if {@linkplain Throwable#Throwable(String,
+ * Throwable, boolean) suppression were disabled}.
+ *
  * @author  unascribed
  * @since   JDK1.0
  */
-public
-class ArithmeticException extends RuntimeException {
+public class ArithmeticException extends RuntimeException {
     private static final long serialVersionUID = 2256477558314496007L;
 
     /**
-     * Constructs an <code>ArithmeticException</code> with no detail
+     * Constructs an {@code ArithmeticException} with no detail
      * message.
      */
     public ArithmeticException() {
@@ -46,7 +49,7 @@ class ArithmeticException extends RuntimeException {
     }
 
     /**
-     * Constructs an <code>ArithmeticException</code> with the specified
+     * Constructs an {@code ArithmeticException} with the specified
      * detail message.
      *
      * @param   s   the detail message.

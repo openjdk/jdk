@@ -44,7 +44,7 @@ import static java.awt.event.KeyEvent.*;
  * or if the keys ends with ".mnemonic", an element
  * representing a mnemomic keycode <code>int</code> or <code>char</code>.
  */
-public class JConsoleResources_ja extends ListResourceBundle {
+public class JConsoleResources_ja extends JConsoleResources {
 
     /**
      * Returns the contents of this <code>ResourceBundle</code>.

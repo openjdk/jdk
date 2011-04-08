@@ -54,9 +54,6 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 
-# This is a stopgap until 6839872 is fixed.
-EXCLUDE_PROPWARN_PKGS += sun.dyn
-
 #
 # Include the exported private packages in ct.sym.
 # This is an interim solution until the ct.sym is replaced
@@ -86,14 +83,7 @@ ifdef OPENJDK
   IMAGE_DOCLIST_JDK = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
   IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
-  # Where to find these files
-  ifeq ($(J4B), true)
-      SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdkfb
-      SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jrefb
-  else
-      SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
-      SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
-  endif
+  # make/closed/common/Defs.gmk for closed location of SHARE_JDK_DOC_SRC
 
   IMAGE_DOCLIST_JDK = COPYRIGHT README.html  THIRDPARTYLICENSEREADME.txt
   IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html THIRDPARTYLICENSEREADME.txt
@@ -931,11 +921,6 @@ initial-image-jdk:: initial-image-jdk-setup \
 	$(CP) $(BINDIR)/jli.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
     ifeq ($(COMPILER_VERSION), VS2010)
 	$(CP) $(BINDIR)/msvc*100.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
-    endif
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      ifeq ($(COMPILER_VERSION), VS2003)
-	$(CP) $(BINDIR)/msvc*71.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
-      endif
     endif
   else # PLATFORM
 	@#

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6380018 6392177
+ * @bug 6380018 6392177 6993311
  * @summary Test the ability to create and process package-info.java files
  * @author  Joseph D. Darcy
  * @library ../../lib
@@ -60,7 +60,7 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
 
         // Verify annotations are as expected
         Set<TypeElement> expectedAnnotations = new HashSet<TypeElement>();
-        expectedAnnotations.add(eltUtils.getTypeElement("java.lang.SuppressWarnings"));
+        expectedAnnotations.add(eltUtils.getTypeElement("java.lang.Deprecated"));
 
         if (!roundEnv.processingOver()) {
             System.out.println("\nRound " + round);
@@ -90,7 +90,7 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
                     } catch(FilerException fe) {}
 
                     PrintWriter pw = new PrintWriter(filer.createSourceFile("foo.package-info").openWriter());
-                    pw.println("@SuppressWarnings(\"\")");
+                    pw.println("@Deprecated");
                     pw.println("package foo;");
                     pw.close();
 

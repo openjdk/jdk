@@ -283,23 +283,32 @@ public class HelpWriter extends HtmlDocletWriter {
         Content framePara = HtmlTree.P(line26);
         liFrame.addContent(framePara);
         ul.addContent(liFrame);
+        Content allclassesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                getResource("doclet.All_Classes"));
+        Content liAllClasses = HtmlTree.LI(HtmlStyle.blockList, allclassesHead);
+        Content line27 = getResource("doclet.Help_line_27",
+                getHyperLinkString("allclasses-noframe.html",
+                configuration.getText("doclet.All_Classes")));
+        Content allclassesPara = HtmlTree.P(line27);
+        liAllClasses.addContent(allclassesPara);
+        ul.addContent(liAllClasses);
         Content sHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 getResource("doclet.Serialized_Form"));
         Content liSerial = HtmlTree.LI(HtmlStyle.blockList, sHead);
-        Content line27 = getResource("doclet.Help_line_27");
-        Content serialPara = HtmlTree.P(line27);
+        Content line28 = getResource("doclet.Help_line_28");
+        Content serialPara = HtmlTree.P(line28);
         liSerial.addContent(serialPara);
         ul.addContent(liSerial);
         Content constHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 getResource("doclet.Constants_Summary"));
         Content liConst = HtmlTree.LI(HtmlStyle.blockList, constHead);
-        Content line28 = getResource("doclet.Help_line_28");
-        Content constPara = HtmlTree.P(line28);
+        Content line29 = getResource("doclet.Help_line_29");
+        Content constPara = HtmlTree.P(line29);
         liConst.addContent(constPara);
         ul.addContent(liConst);
         Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
-        Content line29 = HtmlTree.EM(getResource("doclet.Help_line_29"));
-        divContent.addContent(line29);
+        Content line30 = HtmlTree.EM(getResource("doclet.Help_line_30"));
+        divContent.addContent(line30);
         contentTree.addContent(divContent);
     }
 

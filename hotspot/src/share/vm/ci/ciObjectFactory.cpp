@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,9 +342,9 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
     return new (arena()) ciMethodData(h_md);
   } else if (o->is_instance()) {
     instanceHandle h_i(THREAD, (instanceOop)o);
-    if (java_dyn_CallSite::is_instance(o))
+    if (java_lang_invoke_CallSite::is_instance(o))
       return new (arena()) ciCallSite(h_i);
-    else if (java_dyn_MethodHandle::is_instance(o))
+    else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else
       return new (arena()) ciInstance(h_i);
@@ -663,7 +663,7 @@ ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
   if (key->is_perm() && _non_perm_count == 0) {
     return emptyBucket;
   } else if (key->is_instance()) {
-    if (key->klass() == SystemDictionary::Class_klass()) {
+    if (key->klass() == SystemDictionary::Class_klass() && JavaObjectsInPerm) {
       // class mirror instances are always perm
       return emptyBucket;
     }
