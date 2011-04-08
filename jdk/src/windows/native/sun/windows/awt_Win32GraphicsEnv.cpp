@@ -63,7 +63,7 @@ SetProcessDPIAwareProperty()
 
     bAlreadySet = TRUE;
 
-    HMODULE hLibUser32Dll = ::LoadLibrary(TEXT("user32.dll"));
+    HMODULE hLibUser32Dll = JDK_LoadSystemLibrary("user32.dll");
 
     if (hLibUser32Dll != NULL) {
         SetProcessDPIAwareFunc *lpSetProcessDPIAware =
