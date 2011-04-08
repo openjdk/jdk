@@ -971,6 +971,8 @@ size_t CodeCache::largest_free_block() {
   if (CodeCache_lock->owned_by_self()) {
     return _heap->largest_free_block();
   } else {
+    // Avoid lock ordering problems with ttyLock.
+    ttyUnlocker ttyul;
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     return _heap->largest_free_block();
   }
