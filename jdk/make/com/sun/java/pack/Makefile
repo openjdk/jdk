@@ -127,8 +127,9 @@ prop:
 pack200-tool:
 	$(call make-launcher, pack200, com.sun.java.util.jar.pack.Driver, , --pack)
 
+# ignore mapfile for non-product binary 
 unpacker:
-	$(MAKE) $(UNPACK_EXE) STANDALONE=true
+	$(MAKE) $(UNPACK_EXE) STANDALONE=true LDMAPFLAGS_DBG=
 
 ifeq ($(PLATFORM), windows)
 IMVERSIONVALUE=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)
