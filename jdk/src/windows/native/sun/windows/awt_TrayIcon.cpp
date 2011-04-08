@@ -185,7 +185,7 @@ void AwtTrayIcon::InitNID(UINT uID)
     int shellVersion = 5; // WIN_2000
     // MSDN: DllGetVersion should not be implicitly called, but rather
     // loaded using GetProcAddress
-    HMODULE hShell = LoadLibrary(TEXT("Shell32.dll"));
+    HMODULE hShell = JDK_LoadSystemLibrary("Shell32.dll");
     if (hShell != NULL) {
         DLLGETVERSIONPROC proc = (DLLGETVERSIONPROC)GetProcAddress(hShell, "DllGetVersion");
         if (proc != NULL) {
