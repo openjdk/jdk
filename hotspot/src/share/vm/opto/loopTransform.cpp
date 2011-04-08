@@ -63,6 +63,46 @@ void IdealLoopTree::record_for_igvn() {
   }
 }
 
+//------------------------------compute_exact_trip_count-----------------------
+// Compute loop exact trip count if possible. Do not recalculate trip count for
+// split loops (pre-main-post) which have their limits and inits behind Opaque node.
+void IdealLoopTree::compute_exact_trip_count( PhaseIdealLoop *phase ) {
+  if (!_head->as_Loop()->is_valid_counted_loop()) {
+    return;
+  }
+  CountedLoopNode* cl = _head->as_CountedLoop();
+  // Trip count may become nonexact for iteration split loops since
+  // RCE modifies limits. Note, _trip_count value is not reset since
+  // it is used to limit unrolling of main loop.
+  cl->set_nonexact_trip_count();
+
+  // Loop's test should be part of loop.
+  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
+    return; // Infinite loop
+
+#ifdef ASSERT
+  BoolTest::mask bt = cl->loopexit()->test_trip();
+  assert(bt == BoolTest::lt || bt == BoolTest::gt ||
+         bt == BoolTest::ne, "canonical test is expected");
+#endif
+
+  Node* init_n = cl->init_trip();
+  Node* limit_n = cl->limit();
+  if (init_n  != NULL &&  init_n->is_Con() &&
+      limit_n != NULL && limit_n->is_Con()) {
+    // Use longs to avoid integer overflow.
+    int stride_con  = cl->stride_con();
+    long init_con   = cl->init_trip()->get_int();
+    long limit_con  = cl->limit()->get_int();
+    int stride_m    = stride_con - (stride_con > 0 ? 1 : -1);
+    long trip_count = (limit_con - init_con + stride_m)/stride_con;
+    if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
+      // Set exact trip count.
+      cl->set_exact_trip_count((uint)trip_count);
+    }
+  }
+}
+
 //------------------------------compute_profile_trip_cnt----------------------------
 // Compute loop trip count from profile data as
 //    (backedge_count + loop_exit_count) / loop_exit_count
@@ -533,29 +573,15 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   if (!cl->is_valid_counted_loop())
     return false; // Malformed counted loop
 
-  Node *init_n = cl->init_trip();
-  Node *limit_n = cl->limit();
-
-  // Non-constant bounds
-  if (init_n   == NULL || !init_n->is_Con()  ||
-      limit_n  == NULL || !limit_n->is_Con()) {
+  if (!cl->has_exact_trip_count()) {
+    // Trip count is not exact.
     return false;
   }
-  // Use longs to avoid integer overflow.
-  int  stride_con = cl->stride_con();
-  long init_con   = cl->init_trip()->get_int();
-  long limit_con  = cl->limit()->get_int();
-  int  stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
-  long trip_cnt   = (limit_con - init_con + stride_m)/stride_con;
 
-  // Note, max_jint is used to indicate unknown trip count.
-  if (trip_cnt <= 0 || trip_cnt >= (long)max_jint) {
-    // return a false (no maximally unroll) and the regular unroll/peel
-    // route will make a small mess which CCP will fold away.
-    return false;
-  }
-  uint trip_count = (uint)trip_cnt;
-  cl->set_trip_count(trip_count);
+  uint trip_count = cl->trip_count();
+  // Note, max_juint is used to indicate unknown trip count.
+  assert(trip_count > 1, "one iteration loop should be optimized out already");
+  assert(trip_count < max_juint, "exact trip_count should be less than max_uint.");
 
   // Real policy: if we maximally unroll, does it get too big?
   // Allow the unrolled mess to get larger than standard loop
@@ -1096,7 +1122,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     tty->print("Unrolling ");
     loop->dump_head();
   } else if (TraceLoopOpts) {
-    if (loop_head->trip_count() < LoopUnrollLimit) {
+    if (loop_head->trip_count() < (uint)LoopUnrollLimit) {
       tty->print("Unroll  %d(%2d) ", loop_head->unrolled_count()*2, loop_head->trip_count());
     } else {
       tty->print("Unroll  %d     ", loop_head->unrolled_count()*2);
@@ -1802,6 +1828,17 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   // main and post loops have explicitly created zero trip guard
   bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
   if (needs_guard) {
+    // Skip guard if values not overlap.
+    const TypeInt* init_t = phase->_igvn.type(cl->init_trip())->is_int();
+    const TypeInt* limit_t = phase->_igvn.type(cl->limit())->is_int();
+    int  stride_con = cl->stride_con();
+    if (stride_con > 0) {
+      needs_guard = (init_t->_hi >= limit_t->_lo);
+    } else {
+      needs_guard = (init_t->_lo <= limit_t->_hi);
+    }
+  }
+  if (needs_guard) {
     // Check for an obvious zero trip guard.
     Node* inctrl = PhaseIdealLoop::skip_loop_predicates(cl->in(LoopNode::EntryControl));
     if (inctrl->Opcode() == Op_IfTrue) {
@@ -1846,12 +1883,49 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   return true;
 }
 
+//------------------------------policy_do_one_iteration_loop-------------------
+// Convert one iteration loop into normal code.
+bool IdealLoopTree::policy_do_one_iteration_loop( PhaseIdealLoop *phase ) {
+  if (!_head->as_Loop()->is_valid_counted_loop())
+    return false; // Only for counted loop
+
+  CountedLoopNode *cl = _head->as_CountedLoop();
+  if (!cl->has_exact_trip_count() || cl->trip_count() != 1) {
+    return false;
+  }
+
+#ifndef PRODUCT
+  if(TraceLoopOpts) {
+    tty->print("OneIteration ");
+    this->dump_head();
+  }
+#endif
+
+  Node *init_n = cl->init_trip();
+#ifdef ASSERT
+  // Loop boundaries should be constant since trip count is exact.
+  assert(init_n->get_int() + cl->stride_con() >= cl->limit()->get_int(), "should be one iteration");
+#endif
+  // Replace the phi at loop head with the value of the init_trip.
+  // Then the CountedLoopEnd will collapse (backedge will not be taken)
+  // and all loop-invariant uses of the exit values will be correct.
+  phase->_igvn.replace_node(cl->phi(), cl->init_trip());
+  phase->C->set_major_progress();
+  return true;
+}
 
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
 bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new ) {
+  // Compute exact loop trip count if possible.
+  compute_exact_trip_count(phase);
+
+  // Convert one iteration loop into normal code.
+  if (policy_do_one_iteration_loop(phase))
+    return true;
+
   // Check and remove empty loops (spam micro-benchmarks)
-  if( policy_do_remove_empty_loop(phase) )
+  if (policy_do_remove_empty_loop(phase))
     return true;  // Here we removed an empty loop
 
   bool should_peel = policy_peeling(phase); // Should we peel?
@@ -1860,40 +1934,40 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
 
   // Non-counted loops may be peeled; exactly 1 iteration is peeled.
   // This removes loop-invariant tests (usually null checks).
-  if( !_head->is_CountedLoop() ) { // Non-counted loop
+  if (!_head->is_CountedLoop()) { // Non-counted loop
     if (PartialPeelLoop && phase->partial_peel(this, old_new)) {
       // Partial peel succeeded so terminate this round of loop opts
       return false;
     }
-    if( should_peel ) {            // Should we peel?
+    if (should_peel) {            // Should we peel?
 #ifndef PRODUCT
       if (PrintOpto) tty->print_cr("should_peel");
 #endif
       phase->do_peeling(this,old_new);
-    } else if( should_unswitch ) {
+    } else if (should_unswitch) {
       phase->do_unswitching(this, old_new);
     }
     return true;
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 
-  if( !cl->loopexit() ) return true; // Ignore various kinds of broken loops
+  if (!cl->loopexit()) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
-  if( cl->is_pre_loop() || cl->is_post_loop() ) return true;
+  if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
   // Compute loop trip count from profile data
   compute_profile_trip_cnt(phase);
 
   // Before attempting fancy unrolling, RCE or alignment, see if we want
   // to completely unroll this loop or do loop unswitching.
-  if( cl->is_normal_loop() ) {
+  if (cl->is_normal_loop()) {
     if (should_unswitch) {
       phase->do_unswitching(this, old_new);
       return true;
     }
     bool should_maximally_unroll =  policy_maximally_unroll(phase);
-    if( should_maximally_unroll ) {
+    if (should_maximally_unroll) {
       // Here we did some unrolling and peeling.  Eventually we will
       // completely unroll this loop and it will no longer be a loop.
       phase->do_maximally_unroll(this,old_new);
@@ -1937,14 +2011,14 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   // If we have any of these conditions (RCE, alignment, unrolling) met, then
   // we switch to the pre-/main-/post-loop model.  This model also covers
   // peeling.
-  if( should_rce || should_align || should_unroll ) {
-    if( cl->is_normal_loop() )  // Convert to 'pre/main/post' loops
+  if (should_rce || should_align || should_unroll) {
+    if (cl->is_normal_loop())  // Convert to 'pre/main/post' loops
       phase->insert_pre_post_loops(this,old_new, !may_rce_align);
 
     // Adjust the pre- and main-loop limits to let the pre and post loops run
     // with full checks, but the main-loop with no checks.  Remove said
     // checks from the main body.
-    if( should_rce )
+    if (should_rce)
       phase->do_range_check(this,old_new);
 
     // Double loop body for unrolling.  Adjust the minimum-trip test (will do
@@ -1952,16 +2026,16 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     // an even number of trips).  If we are peeling, we might enable some RCE
     // and we'd rather unroll the post-RCE'd loop SO... do not unroll if
     // peeling.
-      if( should_unroll && !should_peel )
-        phase->do_unroll(this,old_new, true);
+    if (should_unroll && !should_peel)
+      phase->do_unroll(this,old_new, true);
 
     // Adjust the pre-loop limits to align the main body
     // iterations.
-    if( should_align )
+    if (should_align)
       Unimplemented();
 
   } else {                      // Else we have an unchanged counted loop
-    if( should_peel )           // Might want to peel but do nothing else
+    if (should_peel)           // Might want to peel but do nothing else
       phase->do_peeling(this,old_new);
   }
   return true;

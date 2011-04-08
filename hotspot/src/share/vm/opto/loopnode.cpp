@@ -1450,6 +1450,21 @@ void IdealLoopTree::dump_head( ) const {
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
     tty->print(" counted");
+
+    Node* init_n = cl->init_trip();
+    if (init_n  != NULL &&  init_n->is_Con())
+      tty->print(" [%d,", cl->init_trip()->get_int());
+    else
+      tty->print(" [int,");
+    Node* limit_n = cl->limit();
+    if (limit_n  != NULL &&  limit_n->is_Con())
+      tty->print("%d),", cl->limit()->get_int());
+    else
+      tty->print("int),");
+    int stride_con  = cl->stride_con();
+    if (stride_con > 0) tty->print("+");
+    tty->print("%d", stride_con);
+
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
