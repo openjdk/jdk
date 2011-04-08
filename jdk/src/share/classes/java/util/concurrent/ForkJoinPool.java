@@ -791,18 +791,19 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     /**
      * Tries to enqueue worker w in wait queue and await change in
-     * worker's eventCount.  If the pool is quiescent, possibly
-     * terminates worker upon exit.  Otherwise, before blocking,
-     * rescans queues to avoid missed signals.  Upon finding work,
-     * releases at least one worker (which may be the current
-     * worker). Rescans restart upon detected staleness or failure to
-     * release due to contention. Note the unusual conventions about
-     * Thread.interrupt here and elsewhere: Because interrupts are
-     * used solely to alert threads to check termination, which is
-     * checked here anyway, we clear status (using Thread.interrupted)
-     * before any call to park, so that park does not immediately
-     * return due to status being set via some other unrelated call to
-     * interrupt in user code.
+     * worker's eventCount.  If the pool is quiescent and there is
+     * more than one worker, possibly terminates worker upon exit.
+     * Otherwise, before blocking, rescans queues to avoid missed
+     * signals.  Upon finding work, releases at least one worker
+     * (which may be the current worker). Rescans restart upon
+     * detected staleness or failure to release due to
+     * contention. Note the unusual conventions about Thread.interrupt
+     * here and elsewhere: Because interrupts are used solely to alert
+     * threads to check termination, which is checked here anyway, we
+     * clear status (using Thread.interrupted) before any call to
+     * park, so that park does not immediately return due to status
+     * being set via some other unrelated call to interrupt in user
+     * code.
      *
      * @param w the calling worker
      * @param c the ctl value on entry
@@ -823,7 +824,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             else if (w.eventCount != v)
                 return true;                      // update next time
         }
-        if (parallelism + (int)(nc >> AC_SHIFT) == 0 &&
+        if ((int)c != 0 && parallelism + (int)(nc >> AC_SHIFT) == 0 &&
             blockedCount == 0 && quiescerCount == 0)
             idleAwaitWork(w, nc, c, v);           // quiescent
         for (boolean rescanned = false;;) {
@@ -893,7 +894,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 w.parked = false;
                 if (w.eventCount != v)
                     break;
-                else if (System.nanoTime() - startTime < SHRINK_RATE)
+                else if (System.nanoTime() - startTime <
+                         SHRINK_RATE - (SHRINK_RATE / 10)) // timing slop
                     Thread.interrupted();          // spurious wakeup
                 else if (UNSAFE.compareAndSwapLong(this, ctlOffset,
                                                    currentCtl, prevCtl)) {
@@ -1175,7 +1177,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         ws[k] = w;
                         nextWorkerIndex = k + 1;
                         int m = g & SMASK;
-                        g = k >= m? ((m << 1) + 1) & SMASK : g + (SG_UNIT<<1);
+                        g = k > m? ((m << 1) + 1) & SMASK : g + (SG_UNIT<<1);
                     }
                 } finally {
                     scanGuard = g;
