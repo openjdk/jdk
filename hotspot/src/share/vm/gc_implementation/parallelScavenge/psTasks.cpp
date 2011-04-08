@@ -30,7 +30,7 @@
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
-#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "gc_implementation/parallelScavenge/psTasks.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
@@ -45,24 +45,6 @@
 //
 // ScavengeRootsTask
 //
-
-// Define before use
-class PSScavengeRootsClosure: public OopClosure {
- private:
-  PSPromotionManager* _promotion_manager;
-
- protected:
-  template <class T> void do_oop_work(T *p) {
-    if (PSScavenge::should_scavenge(p)) {
-      // We never card mark roots, maybe call a func without test?
-      PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
-    }
-  }
- public:
-  PSScavengeRootsClosure(PSPromotionManager* pm) : _promotion_manager(pm) { }
-  void do_oop(oop* p)       { PSScavengeRootsClosure::do_oop_work(p); }
-  void do_oop(narrowOop* p) { PSScavengeRootsClosure::do_oop_work(p); }
-};
 
 void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
   assert(Universe::heap()->is_gc_active(), "called outside gc");

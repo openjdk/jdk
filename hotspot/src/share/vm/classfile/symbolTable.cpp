@@ -88,7 +88,7 @@ int SymbolTable::symbols_counted = 0;
 void SymbolTable::unlink() {
   int removed = 0;
   int total = 0;
-  int memory_total = 0;
+  size_t memory_total = 0;
   for (int i = 0; i < the_table()->table_size(); ++i) {
     for (HashtableEntry<Symbol*>** p = the_table()->bucket_addr(i); *p != NULL; ) {
       HashtableEntry<Symbol*>* entry = *p;
@@ -112,8 +112,10 @@ void SymbolTable::unlink() {
   }
   symbols_removed += removed;
   symbols_counted += total;
-  if (PrintGCDetails) {
-    gclog_or_tty->print(" [Symbols=%d size=%dK] ", total,
+  // Exclude printing for normal PrintGCDetails because people parse
+  // this output.
+  if (PrintGCDetails && Verbose && WizardMode) {
+    gclog_or_tty->print(" [Symbols=%d size=" SIZE_FORMAT "K] ", total,
                         (memory_total*HeapWordSize)/1024);
   }
 }
@@ -528,7 +530,7 @@ oop StringTable::basic_add(int index, Handle string_or_null, jchar* name,
 
   Handle string;
   // try to reuse the string if possible
-  if (!string_or_null.is_null() && string_or_null()->is_perm()) {
+  if (!string_or_null.is_null() && (!JavaObjectsInPerm || string_or_null()->is_perm())) {
     string = string_or_null;
   } else {
     string = java_lang_String::create_tenured_from_unicode(name, len, CHECK_NULL);
@@ -660,7 +662,7 @@ void StringTable::verify() {
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
-      guarantee(s->is_perm(), "interned string not in permspace");
+      guarantee(s->is_perm() || !JavaObjectsInPerm, "interned string not in permspace");
 
       int length;
       jchar* chars = java_lang_String::as_unicode_string(s, length);

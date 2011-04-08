@@ -333,136 +333,26 @@ ifndef VS2010_EXISTS
   export WINDOWSSDKDIR
 endif
 
-# Setup for VS2010 is simple, others logic is historic
-ifeq ($(VS2010_EXISTS),true)
-  
-  # VS2010 Compiler root directory
-  _msvc_dir :=$(VS100COMNTOOLS)/../../Vc
-  # SDK root directory
-  _ms_sdk   :=$(WINDOWSSDKDIR)
-  # Compiler bin directory and redist directory
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    _compiler_bin :=$(_msvc_dir)/Bin
-    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC100.CRT)
-  endif
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    _compiler_bin :=$(_msvc_dir)/bin/amd64
-    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x64/Microsoft.VC100.CRT)
-  endif
-  ifeq ($(_redist_sdk),)
-    _redist_sdk   :=$(_system_root)/system32
-  endif
+ifneq ($(VS2010_EXISTS),true)
+  x:=$(error ERROR: No VS2010 found on system.)
+endif 
 
-else # Not VS2010
-
-  # Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
-  ifeq ($(ARCH_DATA_MODEL), 32)
-
-    # Try looking in MSVCDIR or MSVCDir area first 
-    # (set by vcvars32.bat for VC .NET, not defined in the VC 2008/2010)
-    ifdef MSVCDIR
-      xMSVCDIR  :="$(subst \,/,$(MSVCDIR))"
-      _msvc_dir :=$(call FullPath,$(xMSVCDIR))
-    else
-      ifdef MSVCDir
-        xMSVCDIR  :="$(subst \,/,$(MSVCDir))"
-        _msvc_dir :=$(call FullPath,$(xMSVCDIR))
-      endif
-    endif
-    # If we still don't have it, look for VSnnCOMNTOOLS (newest first),
-    # set by installer?
-    ifeq ($(_msvc_dir),)
-      ifdef VS90COMNTOOLS  # /Common/Tools directory, use ../../Vc
-        xVS90COMNTOOLS :="$(subst \,/,$(VS90COMNTOOLS))"
-        _vs90tools     :=$(call FullPath,$(xVS90COMNTOOLS))
-      endif
-      ifneq ($(_vs90tools),)
-        _msvc_dir   :=$(_vs90tools)/../../Vc
-      else
-        ifdef VS80COMNTOOLS  # /Common/Tools directory, use ../../Vc
-          xVS80COMNTOOLS :="$(subst \,/,$(VS80COMNTOOLS))"
-          _vs80tools     :=$(call FullPath,$(xVS80COMNTOOLS))
-        endif
-        ifneq ($(_vs80tools),)
-          _msvc_dir   :=$(_vs80tools)/../../Vc
-        else
-          ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
-            xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
-            _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
-          endif
-          ifneq ($(_vs71tools),)
-            _msvc_dir   :=$(_vs71tools)/../../Vc7
-          endif
-        endif
-      endif
-    endif
-  
-    ifneq ($(_msvc_dir),)
-      _compiler_bin :=$(_msvc_dir)/Bin
-      # Assume PlatformSDK is in VS71 (will be empty if VS90)
-      _ms_sdk       :=$(call FullPath,$(_msvc_dir)/PlatformSDK)
-      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
-      ifeq ($(_redist_sdk),)
-        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
-        ifeq ($(_redist_sdk),)
-          _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
-        endif
-      endif
-    endif
-  endif
-
-  # The Microsoft Platform SDK installed by itself
-  ifneq ($(_program_files),)
-    _PSDK :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
-    _psdk :=$(call FullPath,$(xMSSDK61))
-    ifeq ($(_psdk),)
-      xPSDK  :="$(_program_files)/Microsoft Platform SDK"
-      _psdk  :=$(call FullPath,$(xPSDK))
-      ifeq ($(_psdk),)
-        xPSDK  :="$(_program_files)/Microsoft SDK"
-        _psdk :=$(call FullPath,$(xMSSDK))
-      endif
-    endif
-  endif
-
-  # If no SDK found yet, look in other places
-  ifeq ($(_ms_sdk),)
-    ifdef MSSDK
-    xMSSDK  :="$(subst \,/,$(MSSDK))"
-    _ms_sdk :=$(call FullPath,$(xMSSDK))
-  else
-    ifdef MSSdk
-      xMSSDK  :="$(subst \,/,$(MSSdk))"
-      _ms_sdk :=$(call FullPath,$(xMSSDK))
-    else
-        _ms_sdk :=$(_psdk)
-      endif
-    endif
-  endif
-  
-  # Compilers for 64bit may be from the free SDK, or Visual Studio Professional.
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    xVS2008 :="$(_program_files32)/Microsoft Visual Studio 9.0/"
-    VS2008 :=$(call FullPath,$(xVS2008))
-    ifneq ($(VS2008),)
-      _compiler_bin :=$(VS2008)/VC/Bin/$(ARCH)
-      xMSSDK61      :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
-      MSSDK61       :=$(call FullPath,$(xMSSDK61))
-      _redist_sdk   :=$(VS2008)/VC/redist/x64/Microsoft.VC90.CRT
-    else
-      ifneq ($(_ms_sdk),)
-        ifeq ($(ARCH), ia64)
-          _compiler_bin :=$(_ms_sdk)/Bin/Win64
-        endif
-        ifeq ($(ARCH), amd64)
-          _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
-          _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
-        endif
-      endif
-    endif
-  endif
-
-endif # VS2010_EXISTS
+# VS2010 Compiler root directory
+_msvc_dir :=$(VS100COMNTOOLS)/../../Vc
+# SDK root directory
+_ms_sdk   :=$(WINDOWSSDKDIR)
+# Compiler bin directory and redist directory
+ifeq ($(ARCH_DATA_MODEL), 32)
+  _compiler_bin :=$(_msvc_dir)/Bin
+  _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC100.CRT)
+endif
+ifeq ($(ARCH_DATA_MODEL), 64)
+  _compiler_bin :=$(_msvc_dir)/bin/amd64
+  _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x64/Microsoft.VC100.CRT)
+endif
+ifeq ($(_redist_sdk),)
+  _redist_sdk   :=$(_system_root)/system32
+endif
 
 # Location on system where jdk installs might be
 ifneq ($(_program_files),)
@@ -566,20 +456,8 @@ ifndef ALT_BOOTDIR
   _BOOTDIR3  =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
-# 32bit always needs the MSVCRNN runtime, 64bit does when using VS2008
-ifeq ($(ARCH_DATA_MODEL), 32)
-  _NEEDS_MSVCRNN = true
-else
-  ifeq ($(VS2010_EXISTS),true)
-    _NEEDS_MSVCRNN = true
-  else 
-    ifneq ($(VS2008),)
-      _NEEDS_MSVCRNN = true
-    else
-      _NEEDS_MSVCRNN = false
-    endif
-  endif
-endif
+# Everybody needs the MSVCRNN runtime starting with VS2010
+_NEEDS_MSVCRNN = true
 
 ifeq ($(_NEEDS_MSVCRNN), true)
   # MSVCRNN_DLL_PATH: location of msvcrnn.dll that will be re-distributed
@@ -758,8 +636,6 @@ HOTSPOT_LIB_PATH:=$(call AltCheckValue,HOTSPOT_LIB_PATH)
 
 # Special define for checking the binaries
 
-ifeq ($(VS2010_EXISTS),true)
-
 # All windows dll and exe files should have been built with /NXCOMPAT
 #   and be setup for dynamic base addresses.
 #   In addition, we should not be dependent on certain dll files that
@@ -839,14 +715,5 @@ define binary_file_verification # binary_file
   $(call binary_file_dll_verification,$1); \
 )
 endef
-endif
-
-else
-
-# Macro to check it's input file for banned dependencies and verify the
-#   binary was built properly. Relies on process exit code.
-define binary_file_verification # binary_file
-endef
-
 endif
 

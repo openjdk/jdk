@@ -93,6 +93,7 @@ public:
       in(1) != NULL && phase->type(in(1)) != Type::TOP &&
       in(2) != NULL && phase->type(in(2)) != Type::TOP;
   }
+  bool is_valid_counted_loop() const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -101,9 +102,8 @@ public:
 //------------------------------Counted Loops----------------------------------
 // Counted loops are all trip-counted loops, with exactly 1 trip-counter exit
 // path (and maybe some other exit paths).  The trip-counter exit is always
-// last in the loop.  The trip-counter does not have to stride by a constant,
-// but it does have to stride by a loop-invariant amount; the exit value is
-// also loop invariant.
+// last in the loop.  The trip-counter have to stride by a constant;
+// the exit value is also loop invariant.
 
 // CountedLoopNodes and CountedLoopEndNodes come in matched pairs.  The
 // CountedLoopNode has the incoming loop control and the loop-back-control
@@ -112,7 +112,7 @@ public:
 // CountedLoopNode if there is control flow in the loop), the post-increment
 // trip-counter value, and the limit.  The trip-counter value is always of
 // the form (Op old-trip-counter stride).  The old-trip-counter is produced
-// by a Phi connected to the CountedLoopNode.  The stride is loop invariant.
+// by a Phi connected to the CountedLoopNode.  The stride is constant.
 // The Op is any commutable opcode, including Add, Mul, Xor.  The
 // CountedLoopEndNode also takes in the loop-invariant limit value.
 
@@ -696,6 +696,9 @@ private:
   // Is safept not required by an outer loop?
   bool is_deleteable_safept(Node* sfpt);
 
+  // Replace parallel induction variable (parallel to trip counter)
+  void replace_parallel_iv(IdealLoopTree *loop);
+
   // Perform verification that the graph is valid.
   PhaseIdealLoop( PhaseIterGVN &igvn) :
     PhaseTransform(Ideal_Loop),
@@ -751,7 +754,7 @@ public:
   // Per-Node transform
   virtual Node *transform( Node *a_node ) { return 0; }
 
-  Node *is_counted_loop( Node *x, IdealLoopTree *loop );
+  bool is_counted_loop( Node *x, IdealLoopTree *loop );
 
   // Return a post-walked LoopNode
   IdealLoopTree *get_loop( Node *n ) const {
@@ -815,16 +818,22 @@ public:
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
 
   // Return true if proj is for "proj->[region->..]call_uct"
-  bool is_uncommon_trap_proj(ProjNode* proj, bool must_reason_predicate = false);
+  // Return true if proj is for "proj->[region->..]call_uct"
+  static bool is_uncommon_trap_proj(ProjNode* proj, Deoptimization::DeoptReason reason);
   // Return true for    "if(test)-> proj -> ...
   //                          |
   //                          V
   //                      other_proj->[region->..]call_uct"
-  bool is_uncommon_trap_if_pattern(ProjNode* proj, bool must_reason_predicate = false);
+  static bool is_uncommon_trap_if_pattern(ProjNode* proj, Deoptimization::DeoptReason reason);
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj);
-  // Find a good location to insert a predicate
-  ProjNode* find_predicate_insertion_point(Node* start_c);
+  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
+                                        Deoptimization::DeoptReason reason);
+  void register_control(Node* n, IdealLoopTree *loop, Node* pred);
+
+   // Find a good location to insert a predicate
+  static ProjNode* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
+  // Find a predicate
+  static Node* find_predicate(Node* entry);
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(Node* ctrl,
                          int scale, Node* offset,
@@ -936,7 +945,7 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by( Node *prevdom, Node *iff );
+  void dominated_by( Node *prevdom, Node *iff, bool flip = false );
 
   // Split Node 'n' through merge point
   Node *split_thru_region( Node *n, Node *region );

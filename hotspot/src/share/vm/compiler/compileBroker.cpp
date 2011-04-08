@@ -1364,7 +1364,7 @@ void CompileBroker::compiler_thread_loop() {
       // We need this HandleMark to avoid leaking VM handles.
       HandleMark hm(thread);
 
-      if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
+      if (CodeCache::largest_free_block() < CodeCacheMinimumFreeSpace) {
         // the code cache is really full
         handle_full_code_cache();
       } else if (UseCodeCacheFlushing && CodeCache::needs_flushing()) {
@@ -1645,11 +1645,13 @@ void CompileBroker::handle_full_code_cache() {
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
       xtty->begin_elem("code_cache_full");
+      CodeCache::log_state(xtty);
       xtty->stamp();
       xtty->end_elem();
     }
     warning("CodeCache is full. Compiler has been disabled.");
     warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+    CodeCache::print_bounds(tty);
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
       before_exit(JavaThread::current());

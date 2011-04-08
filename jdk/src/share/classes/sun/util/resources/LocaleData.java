@@ -171,16 +171,21 @@ public class LocaleData {
             /* Get the locale string list from LocaleDataMetaInfo class. */
             String localeString = LocaleDataMetaInfo.getSupportedLocaleString(baseName);
 
-            if (localeString.length() == 0) {
+      if (localeString.length() == 0) {
                 return candidates;
             }
 
             for (Iterator<Locale> l = candidates.iterator(); l.hasNext(); ) {
-                String lstr = l.next().toString();
-                /* truncate extra segment introduced by Java 7 for script and extesions */
-                int idx = lstr.indexOf("_#");
-                if (idx >= 0) {
-                    lstr = lstr.substring(0, idx);
+                Locale loc = l.next();
+                String lstr = null;
+                if (loc.getScript().length() > 0) {
+                    lstr = loc.toLanguageTag().replace('-', '_');
+                } else {
+                    lstr = loc.toString();
+                    int idx = lstr.indexOf("_#");
+                    if (idx >= 0) {
+                        lstr = lstr.substring(0, idx);
+                    }
                 }
                 /* Every locale string in the locale string list returned from
                    the above getSupportedLocaleString is enclosed
@@ -265,28 +270,15 @@ public class LocaleData {
 
         Locale[] locales = new Locale[localeStringTokenizer.countTokens()];
         for (int i = 0; i < locales.length; i++) {
-            String currentToken = localeStringTokenizer.nextToken();
-            int p2 = 0;
-            int p1 = currentToken.indexOf('_');
-            String language = "";
-            String country = "";
-            String variant = "";
-
-            if (p1 == -1) {
-                language = currentToken;
-            } else {
-                language = currentToken.substring(0, p1);
-                p2 = currentToken.indexOf('_', p1 + 1);
-                if (p2 == -1) {
-                    country = currentToken.substring(p1 + 1);
-                } else {
-                    country = currentToken.substring(p1 + 1, p2);
-                    if (p2 < currentToken.length()) {
-                        variant = currentToken.substring(p2 + 1);
-                    }
-                }
+            String currentToken = localeStringTokenizer.nextToken().replace('_','-');
+            if (currentToken.equals("ja-JP-JP")) {
+                currentToken = "ja-JP-u-ca-japanese-x-lvariant-JP";
+            } else if (currentToken.equals("th-TH-TH")) {
+                currentToken = "th-TH-u-nu-thai-x-lvariant-TH";
+            } else if (currentToken.equals("no-NO-NY")) {
+                currentToken = "no-NO-x-lvariant-NY";
             }
-            locales[i] = new Locale(language, country, variant);
+            locales[i] = Locale.forLanguageTag(currentToken);
         }
         return locales;
     }
