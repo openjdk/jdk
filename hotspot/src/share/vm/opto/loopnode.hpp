@@ -57,7 +57,12 @@ class LoopNode : public RegionNode {
 protected:
   short _loop_flags;
   // Names for flag bitfields
-  enum { pre_post_main=0, inner_loop=8, partial_peel_loop=16, partial_peel_failed=32  };
+  enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
+         MainHasNoPreLoop=4,
+         HasExactTripCount=8,
+         InnerLoop=16,
+         PartialPeelLoop=32,
+         PartialPeelFailed=64 };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -65,13 +70,13 @@ public:
   // Names for edge indices
   enum { Self=0, EntryControl, LoopBackControl };
 
-  int is_inner_loop() const { return _loop_flags & inner_loop; }
-  void set_inner_loop() { _loop_flags |= inner_loop; }
+  int is_inner_loop() const { return _loop_flags & InnerLoop; }
+  void set_inner_loop() { _loop_flags |= InnerLoop; }
 
-  int is_partial_peel_loop() const { return _loop_flags & partial_peel_loop; }
-  void set_partial_peel_loop() { _loop_flags |= partial_peel_loop; }
-  int partial_peel_has_failed() const { return _loop_flags & partial_peel_failed; }
-  void mark_partial_peel_failed() { _loop_flags |= partial_peel_failed; }
+  int is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
+  void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
+  int partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
+  void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -137,8 +142,8 @@ class CountedLoopNode : public LoopNode {
   // the Main CountedLoop.  Used to assert that we understand the graph shape.
   node_idx_t _main_idx;
 
-  // Known trip count calculated by policy_maximally_unroll
-  int   _trip_count;
+  // Known trip count calculated by compute_exact_trip_count()
+  uint  _trip_count;
 
   // Expected trip count from profile data
   float _profile_trip_cnt;
@@ -152,7 +157,7 @@ class CountedLoopNode : public LoopNode {
 
 public:
   CountedLoopNode( Node *entry, Node *backedge )
-    : LoopNode(entry, backedge), _trip_count(max_jint),
+    : LoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _profile_trip_cnt(COUNT_UNKNOWN), _unrolled_count_log2(0),
       _node_count_before_unroll(0) {
     init_class_id(Class_CountedLoop);
@@ -194,13 +199,12 @@ public:
 
   // A 'main' loop that is ONLY unrolled or peeled, never RCE'd or
   // Aligned, may be missing it's pre-loop.
-  enum { Normal=0, Pre=1, Main=2, Post=3, PrePostFlagsMask=3, Main_Has_No_Pre_Loop=4 };
-  int is_normal_loop() const { return (_loop_flags&PrePostFlagsMask) == Normal; }
-  int is_pre_loop   () const { return (_loop_flags&PrePostFlagsMask) == Pre;    }
-  int is_main_loop  () const { return (_loop_flags&PrePostFlagsMask) == Main;   }
-  int is_post_loop  () const { return (_loop_flags&PrePostFlagsMask) == Post;   }
-  int is_main_no_pre_loop() const { return _loop_flags & Main_Has_No_Pre_Loop; }
-  void set_main_no_pre_loop() { _loop_flags |= Main_Has_No_Pre_Loop; }
+  int is_normal_loop() const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
+  int is_pre_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
+  int is_main_loop  () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
+  int is_post_loop  () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
+  int is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
+  void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
   int main_idx() const { return _main_idx; }
 
@@ -208,10 +212,19 @@ public:
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
-  void set_normal_loop(                    ) { _loop_flags &= ~PrePostFlagsMask; }
+  void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(int tc) { _trip_count = tc; }
-  int trip_count()            { return _trip_count; }
+  void set_trip_count(uint tc) { _trip_count = tc; }
+  uint trip_count()            { return _trip_count; }
+
+  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
+  void set_exact_trip_count(uint tc) {
+    _trip_count = tc;
+    _loop_flags |= HasExactTripCount;
+  }
+  void set_nonexact_trip_count() {
+    _loop_flags &= ~HasExactTripCount;
+  }
 
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
@@ -384,6 +397,9 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool policy_do_remove_empty_loop( PhaseIdealLoop *phase );
 
+  // Convert one iteration loop into normal code.
+  bool policy_do_one_iteration_loop( PhaseIdealLoop *phase );
+
   // Return TRUE or FALSE if the loop should be peeled or not.  Peel if we can
   // make some loop-invariant test (usually a null-check) happen before the
   // loop.
@@ -411,6 +427,9 @@ public:
 
   // Return TRUE if "iff" is a range check.
   bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const;
+
+  // Compute loop exact trip count if possible
+  void compute_exact_trip_count( PhaseIdealLoop *phase );
 
   // Compute loop trip count from profile data
   void compute_profile_trip_cnt( PhaseIdealLoop *phase );
