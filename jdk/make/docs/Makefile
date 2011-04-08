@@ -40,7 +40,7 @@ COPYRIGHT_URL-7 = $(DOCSDIR_URL)/legal/cpyr.html
 COPYRIGHT_URL = $(COPYRIGHT_URL-$(JDK_MINOR_VERSION))
 
 # Url to bug filing site
-BUG_SUBMIT_URL = http://bugs.sun.com/services/bugreport/index.jsp
+BUG_SUBMIT_URL = http://bugreport.sun.com/bugreport/
 
 # Common line for how to submit a bug or rfe
 BUG_SUBMIT_LINE = <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
