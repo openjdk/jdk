@@ -1709,6 +1709,7 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst, Register src);
 
   void load_heap_oop(Register dst, Address src);
+  void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
 
   // Used for storing NULL. All other oop constants should be
