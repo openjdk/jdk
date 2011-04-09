@@ -1456,7 +1456,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
 
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
-    LIR_Opr ptr = new_register(T_OBJECT);
+    LIR_Opr ptr = new_pointer_register();
     if (!address->index()->is_valid() && address->disp() == 0) {
       __ move(address->base(), ptr);
     } else {
@@ -1508,7 +1508,9 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
   LIR_Const* card_table_base = new LIR_Const(((CardTableModRefBS*)_bs)->byte_map_base);
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
-    LIR_Opr ptr = new_register(T_OBJECT);
+    // ptr cannot be an object because we use this barrier for array card marks
+    // and addr can point in the middle of an array.
+    LIR_Opr ptr = new_pointer_register();
     if (!address->index()->is_valid() && address->disp() == 0) {
       __ move(address->base(), ptr);
     } else {
