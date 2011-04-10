@@ -338,7 +338,11 @@ public class Resolve {
 
         // tvars is the list of formal type variables for which type arguments
         // need to inferred.
-        List<Type> tvars = env.info.tvars;
+        List<Type> tvars = null;
+        if (env.info.tvars != null) {
+            tvars = types.newInstances(env.info.tvars);
+            mt = types.subst(mt, env.info.tvars, tvars);
+        }
         if (typeargtypes == null) typeargtypes = List.nil();
         if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
