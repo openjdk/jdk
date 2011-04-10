@@ -56,11 +56,11 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
     {
         if (type == DosFileAttributeView.class) {
             return (V) new LinuxDosFileAttributeView(UnixPath.toUnixPath(obj),
-                                                     followLinks(options));
+                                                     Util.followLinks(options));
         }
         if (type == UserDefinedFileAttributeView.class) {
             return (V) new LinuxUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                                                             followLinks(options));
+                                                             Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, type, options);
     }
@@ -72,11 +72,11 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
     {
         if (name.equals("dos")) {
             return new LinuxDosFileAttributeView(UnixPath.toUnixPath(obj),
-                                                 followLinks(options));
+                                                 Util.followLinks(options));
         }
         if (name.equals("user")) {
             return new LinuxUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                                                         followLinks(options));
+                                                         Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, name, options);
     }

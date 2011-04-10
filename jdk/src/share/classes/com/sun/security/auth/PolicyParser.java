@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@ import java.lang.RuntimePermission;
 import java.net.MalformedURLException;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Vector;
 import java.util.StringTokenizer;
-import java.security.GeneralSecurityException;
 import sun.security.util.PropertyExpander;
 
 /**
@@ -368,8 +369,8 @@ class PolicyParser {
                                 "WILDCARD class but no WILDCARD name");
                     throw new ParsingException
                         (st.lineno(),
-                        rb.getString("can.not.specify.Principal.with.a.") +
-                        rb.getString("wildcard.class.without.a.wildcard.name"));
+                        rb.getString("can.not.specify.Principal.with.a." +
+                                     "wildcard.class.without.a.wildcard.name"));
                 }
 
                 try {
@@ -525,9 +526,10 @@ class PolicyParser {
                                         rb.getString("number.") +
                                         String.valueOf(st.nval));
         case StreamTokenizer.TT_EOF:
-           throw new ParsingException
-                (rb.getString("expected.") + expect +
-                rb.getString(".read.end.of.file"));
+            MessageFormat form = new MessageFormat(
+                    rb.getString("expected.expect.read.end.of.file."));
+            Object[] source = {expect};
+            throw new ParsingException(form.format(source));
         case StreamTokenizer.TT_WORD:
             if (expect.equalsIgnoreCase(st.sval)) {
                 lookahead = st.nextToken();

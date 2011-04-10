@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,37 +29,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.event.*;
 import java.awt.Graphics;
 import java.awt.Font;
 import java.applet.Applet;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
 
 /**
  * An applet that displays jittering text on the screen.
  *
  * @author Daniel Wyszynski 04/12/95
- * @modified 05/09/95 kwalrath Changed string; added thread suspension
- * @modified 02/06/98 madbot removed use of suspend and resume and cleaned up
+ * @author 05/09/95 kwalrath Changed string; added thread suspension
+ * @author 02/06/98 madbot removed use of suspend and resume and cleaned up
  */
-
+@SuppressWarnings("serial")
 public class NervousText extends Applet implements Runnable, MouseListener {
+
     String banner;              // The text to be displayed
     char bannerChars[];         // The same text as an array of characters
     char attributes[];          // Character attributes ('^' for superscript)
     Thread runner = null;       // The thread that is displaying the text
     boolean threadSuspended;    // True when thread suspended (via mouse click)
-
     static final int REGULAR_WD = 15;
     static final int REGULAR_HT = 36;
     static final int SMALL_WD = 12;
     static final int SMALL_HT = 24;
-
     Font regularFont = new Font("Serif", Font.BOLD, REGULAR_HT);
     Font smallFont = new Font("Serif", Font.BOLD, SMALL_HT);
 
+    @Override
     public void init() {
         banner = getParameter("text");
         if (banner == null) {
@@ -67,8 +67,8 @@ public class NervousText extends Applet implements Runnable, MouseListener {
         }
 
         int bannerLength = banner.length();
-        StringBuffer bc = new StringBuffer(bannerLength);
-        StringBuffer attrs = new StringBuffer(bannerLength);
+        StringBuilder bc = new StringBuilder(bannerLength);
+        StringBuilder attrs = new StringBuilder(bannerLength);
         int wd = 0;
         for (int i = 0; i < bannerLength; i++) {
             char c = banner.charAt(i);
@@ -89,7 +89,7 @@ public class NervousText extends Applet implements Runnable, MouseListener {
         }
 
         bannerLength = bc.length();
-        bannerChars =  new char[bannerLength];
+        bannerChars = new char[bannerLength];
         attributes = new char[bannerLength];
         bc.getChars(0, bannerLength, bannerChars, 0);
         attrs.getChars(0, bannerLength, attributes, 0);
@@ -99,15 +99,18 @@ public class NervousText extends Applet implements Runnable, MouseListener {
         addMouseListener(this);
     }
 
+    @Override
     public void destroy() {
         removeMouseListener(this);
     }
 
+    @Override
     public void start() {
         runner = new Thread(this);
         runner.start();
     }
 
+    @Override
     public synchronized void stop() {
         runner = null;
         if (threadSuspended) {
@@ -116,22 +119,24 @@ public class NervousText extends Applet implements Runnable, MouseListener {
         }
     }
 
+    @Override
     public void run() {
         Thread me = Thread.currentThread();
         while (runner == me) {
             try {
                 Thread.sleep(100);
-                synchronized(this) {
+                synchronized (this) {
                     while (threadSuspended) {
                         wait();
                     }
                 }
-            } catch (InterruptedException e){
+            } catch (InterruptedException e) {
             }
             repaint();
         }
     }
 
+    @Override
     public void paint(Graphics g) {
         int length = bannerChars.length;
         for (int i = 0, x = 0; i < length; i++) {
@@ -152,33 +157,41 @@ public class NervousText extends Applet implements Runnable, MouseListener {
         }
     }
 
+    @Override
     public synchronized void mousePressed(MouseEvent e) {
         e.consume();
         threadSuspended = !threadSuspended;
-        if (!threadSuspended)
+        if (!threadSuspended) {
             notify();
+        }
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
 
+    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
+    @Override
     public String getAppletInfo() {
-        return "Title: NervousText\nAuthor: Daniel Wyszynski\nDisplays a text banner that jitters.";
+        return "Title: NervousText\nAuthor: Daniel Wyszynski\n"
+                + "Displays a text banner that jitters.";
     }
 
+    @Override
     public String[][] getParameterInfo() {
         String pinfo[][] = {
-            {"text", "string", "Text to display"},
-        };
+            { "text", "string", "Text to display" }, };
         return pinfo;
     }
 }

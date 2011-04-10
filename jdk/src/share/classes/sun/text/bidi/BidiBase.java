@@ -3457,12 +3457,17 @@ public class BidiBase {
          */
         static final AttributedCharacterIterator.Attribute RUN_DIRECTION =
             getTextAttribute("RUN_DIRECTION");
-        static final Boolean RUN_DIRECTION_LTR =
-            (Boolean)getStaticField(clazz, "RUN_DIRECTION_LTR");
         static final AttributedCharacterIterator.Attribute NUMERIC_SHAPING =
             getTextAttribute("NUMERIC_SHAPING");
         static final AttributedCharacterIterator.Attribute BIDI_EMBEDDING =
             getTextAttribute("BIDI_EMBEDDING");
+
+        /**
+         * TextAttribute.RUN_DIRECTION_LTR
+         */
+        static final Boolean RUN_DIRECTION_LTR = (clazz == null) ?
+            Boolean.FALSE : (Boolean)getStaticField(clazz, "RUN_DIRECTION_LTR");
+
 
         private static Class<?> getClass(String name) {
             try {
@@ -3473,25 +3478,23 @@ public class BidiBase {
         }
 
         private static Object getStaticField(Class<?> clazz, String name) {
-            if (clazz == null) {
-                // fake attribute
-                return new AttributedCharacterIterator.Attribute(name) { };
-            } else {
-                try {
-                    Field f = clazz.getField(name);
-                    return f.get(null);
-                } catch (NoSuchFieldException x) {
-                    throw new AssertionError(x);
-                } catch (IllegalAccessException x) {
-                    throw new AssertionError(x);
-                }
+            try {
+                Field f = clazz.getField(name);
+                return f.get(null);
+            } catch (NoSuchFieldException | IllegalAccessException x) {
+                throw new AssertionError(x);
             }
         }
 
         private static AttributedCharacterIterator.Attribute
             getTextAttribute(String name)
         {
-            return (AttributedCharacterIterator.Attribute)getStaticField(clazz, name);
+            if (clazz == null) {
+                // fake attribute
+                return new AttributedCharacterIterator.Attribute(name) { };
+            } else {
+                return (AttributedCharacterIterator.Attribute)getStaticField(clazz, name);
+            }
         }
     }
 
