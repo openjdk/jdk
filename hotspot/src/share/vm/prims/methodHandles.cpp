@@ -928,6 +928,7 @@ static const char* always_null_names[] = {
 };
 
 static bool is_always_null_type(klassOop klass) {
+  if (klass == NULL)  return false;  // safety
   if (!Klass::cast(klass)->oop_is_instance())  return false;
   instanceKlass* ik = instanceKlass::cast(klass);
   // Must be on the boot class path:
@@ -944,6 +945,8 @@ static bool is_always_null_type(klassOop klass) {
 }
 
 bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
+  if (dst == NULL)  return true;
+  if (src == NULL)  return (dst != SystemDictionary::Object_klass());
   if (src == dst || dst == SystemDictionary::Object_klass())
     return false;                               // quickest checks
   Klass* srck = Klass::cast(src);
@@ -1026,10 +1029,15 @@ void MethodHandles::verify_method_signature(methodHandle m,
                                             int first_ptype_pos,
                                             KlassHandle insert_ptype,
                                             TRAPS) {
+  Handle mhi_type;
+  if (m->is_method_handle_invoke()) {
+    // use this more exact typing instead of the symbolic signature:
+    mhi_type = Handle(THREAD, m->method_handle_type());
+  }
   objArrayHandle ptypes(THREAD, java_lang_invoke_MethodType::ptypes(mtype()));
   int pnum = first_ptype_pos;
   int pmax = ptypes->length();
-  int mnum = 0;                 // method argument
+  int anum = 0;                 // method argument
   const char* err = NULL;
   ResourceMark rm(THREAD);
   for (SignatureStream ss(m->signature()); !ss.is_done(); ss.next()) {
@@ -1048,47 +1056,70 @@ void MethodHandles::verify_method_signature(methodHandle m,
       else
         ptype_oop = insert_ptype->java_mirror();
       pnum += 1;
-      mnum += 1;
+      anum += 1;
     }
-    klassOop  pklass = NULL;
-    BasicType ptype  = T_OBJECT;
-    if (ptype_oop != NULL)
-      ptype = java_lang_Class::as_BasicType(ptype_oop, &pklass);
-    else
-      // null does not match any non-reference; use Object to report the error
-      pklass = SystemDictionary::Object_klass();
-    klassOop  mklass = NULL;
-    BasicType mtype  = ss.type();
-    if (mtype == T_ARRAY)  mtype = T_OBJECT; // fold all refs to T_OBJECT
-    if (mtype == T_OBJECT) {
-      if (ptype_oop == NULL) {
+    KlassHandle pklass;
+    BasicType   ptype = T_OBJECT;
+    bool   have_ptype = false;
+    // missing ptype_oop does not match any non-reference; use Object to report the error
+    pklass = SystemDictionaryHandles::Object_klass();
+    if (ptype_oop != NULL) {
+      have_ptype = true;
+      klassOop pklass_oop = NULL;
+      ptype = java_lang_Class::as_BasicType(ptype_oop, &pklass_oop);
+      pklass = KlassHandle(THREAD, pklass_oop);
+    }
+    ptype_oop = NULL; //done with this
+    KlassHandle aklass;
+    BasicType   atype = ss.type();
+    if (atype == T_ARRAY)  atype = T_OBJECT; // fold all refs to T_OBJECT
+    if (atype == T_OBJECT) {
+      if (!have_ptype) {
         // null matches any reference
         continue;
       }
-      KlassHandle pklass_handle(THREAD, pklass); pklass = NULL;
-      // If we fail to resolve types at this point, we will throw an error.
-      Symbol* name = ss.as_symbol(CHECK);
-      instanceKlass* mk = instanceKlass::cast(m->method_holder());
-      Handle loader(THREAD, mk->class_loader());
-      Handle domain(THREAD, mk->protection_domain());
-      mklass = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
-      pklass = pklass_handle();
-      if (mklass == NULL && pklass != NULL &&
-          Klass::cast(pklass)->name() == name &&
-          m->is_method_handle_invoke()) {
-        // Assume a match.  We can't really decode the signature of MH.invoke*.
-        continue;
+      if (mhi_type.is_null()) {
+        // If we fail to resolve types at this point, we will usually throw an error.
+        TempNewSymbol name = ss.as_symbol_or_null();
+        if (name != NULL) {
+          instanceKlass* mk = instanceKlass::cast(m->method_holder());
+          Handle loader(THREAD, mk->class_loader());
+          Handle domain(THREAD, mk->protection_domain());
+          klassOop aklass_oop = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
+          if (aklass_oop != NULL)
+            aklass = KlassHandle(THREAD, aklass_oop);
+        }
+      } else {
+        // for method handle invokers we don't look at the name in the signature
+        oop atype_oop;
+        if (ss.at_return_type())
+          atype_oop = java_lang_invoke_MethodType::rtype(mhi_type());
+        else
+          atype_oop = java_lang_invoke_MethodType::ptype(mhi_type(), anum-1);
+        klassOop aklass_oop = NULL;
+        atype = java_lang_Class::as_BasicType(atype_oop, &aklass_oop);
+        aklass = KlassHandle(THREAD, aklass_oop);
       }
     }
     if (!ss.at_return_type()) {
-      err = check_argument_type_change(ptype, pklass, mtype, mklass, mnum);
+      err = check_argument_type_change(ptype, pklass(), atype, aklass(), anum);
     } else {
-      err = check_return_type_change(mtype, mklass, ptype, pklass); // note reversal!
+      err = check_return_type_change(atype, aklass(), ptype, pklass()); // note reversal!
     }
     if (err != NULL)  break;
   }
 
   if (err != NULL) {
+#ifndef PRODUCT
+    if (PrintMiscellaneous && (Verbose || WizardMode)) {
+      tty->print("*** verify_method_signature failed: ");
+      java_lang_invoke_MethodType::print_signature(mtype(), tty);
+      tty->cr();
+      tty->print_cr("    first_ptype_pos = %d, insert_ptype = "UINTX_FORMAT, first_ptype_pos, insert_ptype());
+      tty->print("    Failing method: ");
+      m->print();
+    }
+#endif //PRODUCT
     THROW_MSG(vmSymbols::java_lang_InternalError(), err);
   }
 }
@@ -1288,10 +1319,12 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
   // format, format, format
   const char* src_name = type2name(src_type);
   const char* dst_name = type2name(dst_type);
-  if (src_type == T_OBJECT)  src_name = Klass::cast(src_klass)->external_name();
-  if (dst_type == T_OBJECT)  dst_name = Klass::cast(dst_klass)->external_name();
   if (src_name == NULL)  src_name = "unknown type";
   if (dst_name == NULL)  dst_name = "unknown type";
+  if (src_type == T_OBJECT)
+    src_name = (src_klass != NULL) ? Klass::cast(src_klass)->external_name() : "an unresolved class";
+  if (dst_type == T_OBJECT)
+    dst_name = (dst_klass != NULL) ? Klass::cast(dst_klass)->external_name() : "an unresolved class";
 
   size_t msglen = strlen(err) + strlen(src_name) + strlen(dst_name) + (argnum < 10 ? 1 : 11);
   char* msg = NEW_RESOURCE_ARRAY(char, msglen + 1);
