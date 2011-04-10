@@ -282,6 +282,8 @@ class StubRoutines: AllStatic {
   static address addr_fpu_subnormal_bias2()                { return (address)&_fpu_subnormal_bias2; }
 
 
+  static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
+
   static address jbyte_arraycopy()  { return _jbyte_arraycopy; }
   static address jshort_arraycopy() { return _jshort_arraycopy; }
   static address jint_arraycopy()   { return _jint_arraycopy; }

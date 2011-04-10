@@ -2824,7 +2824,7 @@ ValueStack* GraphBuilder::state_at_entry() {
   int idx = 0;
   if (!method()->is_static()) {
     // we should always see the receiver
-    state->store_local(idx, new Local(objectType, idx));
+    state->store_local(idx, new Local(method()->holder(), objectType, idx));
     idx = 1;
   }
 
@@ -2836,7 +2836,7 @@ ValueStack* GraphBuilder::state_at_entry() {
     // don't allow T_ARRAY to propagate into locals types
     if (basic_type == T_ARRAY) basic_type = T_OBJECT;
     ValueType* vt = as_ValueType(basic_type);
-    state->store_local(idx, new Local(vt, idx));
+    state->store_local(idx, new Local(type, vt, idx));
     idx += type->size();
   }
 

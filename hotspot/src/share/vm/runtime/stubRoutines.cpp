@@ -433,3 +433,77 @@ address StubRoutines::select_fill_function(BasicType t, bool aligned, const char
 
 #undef RETURN_STUB
 }
+
+// constants for computing the copy function
+enum {
+  COPYFUNC_UNALIGNED = 0,
+  COPYFUNC_ALIGNED = 1,                 // src, dest aligned to HeapWordSize
+  COPYFUNC_CONJOINT = 0,
+  COPYFUNC_DISJOINT = 2                 // src != dest, or transfer can descend
+};
+
+// Note:  The condition "disjoint" applies also for overlapping copies
+// where an descending copy is permitted (i.e., dest_offset <= src_offset).
+address
+StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized) {
+  int selector =
+    (aligned  ? COPYFUNC_ALIGNED  : COPYFUNC_UNALIGNED) +
+    (disjoint ? COPYFUNC_DISJOINT : COPYFUNC_CONJOINT);
+
+#define RETURN_STUB(xxx_arraycopy) { \
+  name = #xxx_arraycopy; \
+  return StubRoutines::xxx_arraycopy(); }
+
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
+  name = #xxx_arraycopy; \
+  return StubRoutines::xxx_arraycopy(parm); }
+
+  switch (t) {
+  case T_BYTE:
+  case T_BOOLEAN:
+    switch (selector) {
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jbyte_arraycopy);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jbyte_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jbyte_disjoint_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jbyte_disjoint_arraycopy);
+    }
+  case T_CHAR:
+  case T_SHORT:
+    switch (selector) {
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jshort_arraycopy);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jshort_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jshort_disjoint_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jshort_disjoint_arraycopy);
+    }
+  case T_INT:
+  case T_FLOAT:
+    switch (selector) {
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jint_arraycopy);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jint_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jint_disjoint_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jint_disjoint_arraycopy);
+    }
+  case T_DOUBLE:
+  case T_LONG:
+    switch (selector) {
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jlong_arraycopy);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jlong_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jlong_disjoint_arraycopy);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jlong_disjoint_arraycopy);
+    }
+  case T_ARRAY:
+  case T_OBJECT:
+    switch (selector) {
+    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_arraycopy, dest_uninitialized);
+    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_arraycopy, dest_uninitialized);
+    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_disjoint_arraycopy, dest_uninitialized);
+    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_disjoint_arraycopy, dest_uninitialized);
+    }
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+#undef RETURN_STUB
+#undef RETURN_STUB_PARM
+}
