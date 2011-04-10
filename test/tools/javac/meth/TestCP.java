@@ -35,7 +35,7 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Method;
 
-import java.dyn.*;
+import java.lang.invoke.*;
 import java.io.*;
 
 public class TestCP {
