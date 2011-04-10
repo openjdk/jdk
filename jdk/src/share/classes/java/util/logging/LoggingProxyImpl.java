@@ -99,4 +99,9 @@ class LoggingProxyImpl implements LoggingProxy {
     public String getLevelName(Object level) {
         return ((Level) level).getName();
     }
+
+    @Override
+    public String getProperty(String key) {
+        return LogManager.getLogManager().getProperty(key);
+    }
 }

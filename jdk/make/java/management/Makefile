@@ -86,7 +86,8 @@ OTHER_INCLUDES += \
   -I$(SHARE_SRC)/native/sun/management 
 
 ifeq ($(PLATFORM),windows)
-  OTHER_LDLIBS += $(JVMLIB)
+  # Need process status helper API (psapi) on Windows
+  OTHER_LDLIBS += $(JVMLIB) psapi.lib
 endif
 
 #

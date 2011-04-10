@@ -261,6 +261,7 @@ endif
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
 ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
+	           && $(CHMOD) -R a+r . \
 	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport/text/summary.txt
 STATS_TXT_NAME = Stats.txt
@@ -312,7 +313,9 @@ BUNDLE_UP_AND_EXIT = \
   else \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
   fi; \
-  $(CAT) $(STATS_TXT); \
+  if [ -f $(STATS_TXT) ] ; then \
+    $(CAT) $(STATS_TXT); \
+  fi; \
   $(ZIP_UP_RESULTS) ; \
   $(TESTEXIT) \
 )
@@ -370,10 +373,10 @@ EXCLUDELIST=$(ABS_TEST_OUTPUT_DIR)/excludelist.txt
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
-$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TEST_DEPENDENCIES)
 	@$(ECHO) "NOTHING_EXCLUDED" > $@
 else
-$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TEST_DEPENDENCIES)
 	@$(RM) $@ $@.temp1 $@.temp2
 	@(($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-all'          ) ;\
 	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(PLATFORM_OS)'          ) ;\
@@ -385,7 +388,7 @@ $(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
           ($(ECHO) "#") ;\
         ) | $(SED) -e 's@^[\ ]*@@' \
           | $(EGREP) -v '^#' > $@.temp1
-	@for tdir in $(TESTDIRS) ; do \
+	for tdir in $(TESTDIRS) SOLARIS_10_SH_BUG_NO_EMPTY_FORS ; do \
           ( ( $(CAT) $@.temp1 | $(EGREP) "^$${tdir}" ) ; $(ECHO) "#" ) >> $@.temp2 ; \
         done
 	@$(ECHO) "# at least one line" >> $@.temp2
@@ -400,11 +403,11 @@ endef
 # Running batches of tests with or without samevm
 define RunSamevmBatch
 $(ECHO) "Running tests in samevm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
+$(MAKE) TEST_DEPENDENCIES="$?" TESTDIRS="$?" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
 endef
 define RunOthervmBatch
 $(ECHO) "Running tests in othervm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
+$(MAKE) TEST_DEPENDENCIES="$?" TESTDIRS="$?" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
 endef
 define SummaryInfo
 $(ECHO) "########################################################"
@@ -501,7 +504,7 @@ jdk_nio1: $(call TestDirs, java/nio/file)
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
-          java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer)
+          java/nio/channels java/nio/MappedByteBuffer)
 	$(call SharedLibraryPermissions,java/nio/channels)
 	$(call RunSamevmBatch)
 
@@ -684,7 +687,7 @@ PHONY_LIST += packtest packtest_stress
 
 ################################################################
 
-# perftest to collect statistics  
+# perftest to collect statistics
 
 # Expect JPRT to set JPRT_PACKTEST_HOME.
 PERFTEST_HOME = $(TEST_ROOT)/perf
@@ -706,7 +709,7 @@ PHONY_LIST += perftest
 # vmsqe tests
 
 # Expect JPRT to set JPRT_VMSQE_HOME.
-VMSQE_HOME = /java/sqe/comp/vm/testbase/sqe/vm/current/build/latest/vm
+VMSQE_HOME = $(SLASH_JAVA)/sqe/comp/vm/testbase/sqe/vm/current/build/latest/vm
 ifdef JPRT_VMSQE_HOME
   VMSQE_HOME = $(JPRT_VMSQE_HOME)
 endif
@@ -718,7 +721,7 @@ ifdef JPRT_RUNVMSQE_HOME
 endif
 
 # Expect JPRT to set JPRT_TONGA3_HOME.
-TONGA3_HOME = /java/sqe//tools/gtee/harness/tonga
+TONGA3_HOME = $(SLASH_JAVA)/sqe/tools/gtee/harness/tonga
 ifdef JPRT_TONGA3_HOME
   TONGA3_HOME = $(JPRT_TONGA3_HOME)
 endif
@@ -771,148 +774,84 @@ PHONY_LIST += vmsqe_jdwp vmsqe_jdi vmsqe_jdb vmsqe_quick-jdi vmsqe_sajdi \
 
 # jck tests
 
-JCK_WORK_DIR     = $(ABS_TEST_OUTPUT_DIR)/JCKwork
-JCK_REPORT_DIR   = $(ABS_TEST_OUTPUT_DIR)/JCKreport
-JCK_PROPERTIES   = $(ABS_TEST_OUTPUT_DIR)/jck.properties
-JCK_CONFIG       = $(ABS_TEST_OUTPUT_DIR)/jck.config
-
-JCK_JAVA_EXE     = $(PRODUCT_HOME)/bin/java$(EXESUFFIX)
-
-JCK_JAVATEST_JAR = $(JCK_HOME)/lib/javatest.jar
-JCK_JAVATEST     = $(ALT_BOOTDIR)/bin/java -jar $(JCK_JAVATEST_JAR)
-
-$(JCK_CONFIG): $(TEST_ROOT)/JCK-$(JCK_BUNDLE_NAME)-$(JCK_RELEASE)-base.jti
-	$(RM) $@
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
-
-$(JCK_PROPERTIES): $(PRODUCT_HOME) $(JCK_JAVA_EXE)
-	$(RM) $@
-	$(MKDIR) -p $(@D)
-	$(ECHO) "jck.env.compiler.compRefExecute.cmdAsFile=$(JCK_JAVA_EXE)" >> $@
-	$(ECHO) "jck.env.compiler.compRefExecute.systemRoot=$(SYSTEMROOT)" >> $@
-	$(ECHO) "jck.env.compiler.testCompile.testCompileAPImultiJVM.cmdAsFile=$(JCK_JAVA_EXE)" >> $@
-	$(ECHO) "jck.tests.tests=$(JCK_BUNDLE_TESTDIRS)" >> $@
-
-jck_tests: prep $(JCK_HOME) $(JCK_PROPERTIES) $(JCK_CONFIG) $(JCK_JAVATEST_JAR)
-	$(MKDIR) -p $(JCK_WORK_DIR)
-	( $(JCK_JAVATEST)                            \
-		-verbose:commands,non-pass           \
-		-testSuite    $(JCK_HOME)            \
-		-workDir      $(JCK_WORK_DIR)        \
-		-config       $(JCK_CONFIG)          \
-		-set -file    $(JCK_PROPERTIES)      \
-		-runtests                            \
-		-writeReport  $(JCK_REPORT_DIR)      \
-        ) ; $(BUNDLE_UP_AND_EXIT)
-
-PHONY_LIST += jck_tests
-
-################################################################
-
-# jck6 tests
-
-JCK6_RELEASE = 6b
-JCK6_DEFAULT_HOME = $(SLASH_JAVA)/re/jck/$(JCK6_RELEASE)/archive/fcs/binaries
-
-# Expect JPRT to set JPRT_JCK6COMPILER_HOME.
-JCK6COMPILER_HOME = $(JCK6_DEFAULT_HOME)/JCK-compiler-$(JCK6_RELEASE)
-ifdef JPRT_JCK6COMPILER_HOME
-  JCK6COMPILER_HOME = $(JPRT_JCK6COMPILER_HOME)
-endif
-
-# Expect JPRT to set JPRT_JCK6RUNTIME_HOME.
-JCK6RUNTIME_HOME = $(JCK6_DEFAULT_HOME)/JCK-runtime-$(JCK6_RELEASE)
-ifdef JPRT_JCK6RUNTIME_HOME
-  JCK6RUNTIME_HOME = $(JPRT_JCK6RUNTIME_HOME)
-endif
-
-# Expect JPRT to set JPRT_JCK6DEVTOOLS_HOME.
-JCK6DEVTOOLS_HOME = $(JCK6_DEFAULT_HOME)/JCK-devtools-$(JCK6_RELEASE)
-ifdef JPRT_JCK6DEVTOOLS_HOME
-  JCK6DEVTOOLS_HOME = $(JPRT_JCK6DEVTOOLS_HOME)
-endif
-
-jck6_tests: JCK_HOME=$(JCK6_HOME)
-jck6_tests: JCK_RELEASE=$(JCK6_RELEASE)
-jck6_tests: jck_tests
-
-jck6compiler: JCK6_HOME=$(JCK6COMPILER_HOME)
-jck6compiler: JCK_BUNDLE_NAME=compiler
-jck6compiler: jck6_tests
-
-jck6compiler_lang: JCK_BUNDLE_TESTDIRS=lang
-jck6compiler_lang: jck6compiler
-
-jck6runtime: JCK6_HOME=$(JCK6RUNTIME_HOME)
-jck6runtime: JCK_BUNDLE_NAME=runtime
-jck6runtime: jck6_tests
-
-jck6runtime_lang: JCK_BUNDLE_TESTDIRS=lang
-jck6runtime_lang: jck6runtime
-
-jck6devtools: JCK6_HOME=$(JCK6DEVTOOLS_HOME)
-jck6devtools: JCK_BUNDLE_NAME=devtools
-jck6devtools: jck6_tests
-
-jck6devtools_lang: JCK_BUNDLE_TESTDIRS=lang
-jck6devtools_lang: jck6devtools
-
-PHONY_LIST += jck6compiler jck6runtime jck6devtools jck6_tests \
-	      jck6compiler_lang jck6runtime_lang jck6devtools_lang
-
-################################################################
-
-# jck7 tests
-
-JCK7_RELEASE = 7
-JCK7_DEFAULT_HOME = $(SLASH_JAVA)/re/jck/$(JCK7_RELEASE)/archive/fcs/binaries
+# Default is to use jck 7 from /java/re
+JCK7_DEFAULT_HOME = $(SLASH_JAVA)/re/jck/7/promoted/latest/binaries
 
 # Expect JPRT to set JPRT_JCK7COMPILER_HOME.
-JCK7COMPILER_HOME = $(JCK7_DEFAULT_HOME)/JCK-compiler-$(JCK7_RELEASE)
+JCK7COMPILER_HOME = $(JCK7_DEFAULT_HOME)/JCK-compiler-7
 ifdef JPRT_JCK7COMPILER_HOME
-  JCK7COMPILER_HOME = $(JPRT_JCK7COMPILER_HOME)
+  JCK7COMPILER_HOME = $(JPRT_JCK7COMPILER_HOME)/JCK-compiler-7
 endif
 
 # Expect JPRT to set JPRT_JCK7RUNTIME_HOME.
-JCK7RUNTIME_HOME = $(JCK7_DEFAULT_HOME)/JCK-runtime-$(JCK7_RELEASE)
+JCK7RUNTIME_HOME = $(JCK7_DEFAULT_HOME)/JCK-runtime-7
 ifdef JPRT_JCK7RUNTIME_HOME
-  JCK7RUNTIME_HOME = $(JPRT_JCK7RUNTIME_HOME)
+  JCK7RUNTIME_HOME = $(JPRT_JCK7RUNTIME_HOME)/JCK-runtime-7
 endif
 
 # Expect JPRT to set JPRT_JCK7DEVTOOLS_HOME.
-JCK7DEVTOOLS_HOME = $(JCK7_DEFAULT_HOME)/JCK-devtools-$(JCK7_RELEASE)
+JCK7DEVTOOLS_HOME = $(JCK7_DEFAULT_HOME)/JCK-devtools-7
 ifdef JPRT_JCK7DEVTOOLS_HOME
-  JCK7DEVTOOLS_HOME = $(JPRT_JCK7DEVTOOLS_HOME)
+  JCK7DEVTOOLS_HOME = $(JPRT_JCK7DEVTOOLS_HOME)/JCK-devtools-7
 endif
 
-jck7_tests: JCK_HOME=$(JCK7_HOME)
-jck7_tests: JCK_RELEASE=$(JCK7_RELEASE)
-jck7_tests: jck_tests
+# The jtjck.jar utility to use to run the tests
+JTJCK_JAR = $(JCK_HOME)/lib/jtjck.jar
+JTJCK_JAVA_ARGS =  -XX:MaxPermSize=256m -Xmx512m
+JTJCK_OPTIONS = -headless -v 
 
-jck7compiler: JCK7_HOME=$(JCK7COMPILER_HOME)
-jck7compiler: JCK_BUNDLE_NAME=compiler
-jck7compiler: jck7_tests
+# Default tests to run
+ifndef JCK_COMPILER_TESTS
+  JCK_COMPILER_TESTS = 
+endif
+ifndef JCK_RUNTIME_TESTS
+  JCK_RUNTIME_TESTS  = 
+endif
+ifndef JCK_DEVTOOLS_TESTS
+  JCK_DEVTOOLS_TESTS = 
+endif
 
-jck7compiler_lang: JCK_BUNDLE_TESTDIRS=lang
-jck7compiler_lang: jck7compiler
+# Generic rule used to run jck tests
+_generic_jck_tests: prep $(PRODUCT_HOME) $(EXCLUDELIST)
+	@$(EXPAND) $(EXCLUDELIST) \
+            | $(CUT) -d' ' -f1 \
+            | $(SED) -e 's@^@Excluding: @'
+	( $(CD) $(ABS_TEST_OUTPUT_DIR) &&          			   \
+	  $(PRODUCT_HOME)/bin/java $(JTJCK_JAVA_ARGS) 			   \
+	    -jar "$(JTJCK_JAR)" 					   \
+	    $(JTJCK_OPTIONS) 						   \
+            -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport  \
+            -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork    \
+            -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
+	    $(TESTDIRS) 						   \
+        ) ; $(BUNDLE_UP_AND_EXIT)
 
-jck7runtime: JCK7_HOME=$(JCK7RUNTIME_HOME)
-jck7runtime: JCK_BUNDLE_NAME=runtime
-jck7runtime: jck7_tests
+# JCK7 compiler tests
+jck7compiler:
+	$(MAKE) UNIQUE_DIR=$@ \
+	        JCK_HOME=$(JCK7COMPILER_HOME) \
+	        TESTDIRS="$(JCK_COMPILER_TESTS)" \
+                _generic_jck_tests
 
-jck7runtime_lang: JCK_BUNDLE_TESTDIRS=lang
-jck7runtime_lang: jck7runtime
+# JCK7 runtime tests
+jck7runtime: 
+	$(MAKE) UNIQUE_DIR=$@ \
+	        JCK_HOME=$(JCK7RUNTIME_HOME) \
+	        TESTDIRS="$(JCK_RUNTIME_TESTS)" \
+                _generic_jck_tests
 
-jck7devtools: JCK7_HOME=$(JCK7DEVTOOLS_HOME)
-jck7devtools: JCK_BUNDLE_NAME=devtools
-jck7devtools: jck7_tests
+# JCK7 devtools tests
+jck7devtools: 
+	$(MAKE) UNIQUE_DIR=$@ \
+	        JCK_HOME=$(JCK7DEVTOOLS_HOME) \
+                TESTDIRS="$(JCK_DEVTOOLS_TESTS)" \
+                _generic_jck_tests
 
-jck7devtools_lang: JCK_BUNDLE_TESTDIRS=lang
-jck7devtools_lang: jck7devtools
+# Run all 3 sets of JCK7 tests
+jck_all: jck7runtime jck7devtools jck7compiler
 
-PHONY_LIST += jck7compiler jck7runtime jck7devtools jck7_tests \
-	      jck7compiler_lang jck7runtime_lang jck7devtools_lang
+PHONY_LIST += jck_all _generic_jck_tests \
+	      jck7compiler jck7runtime jck7devtools
 
 ################################################################
 

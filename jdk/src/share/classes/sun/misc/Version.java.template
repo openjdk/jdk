@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ public class Version {
         "@@java_version@@";
 
     private static final String java_runtime_name =
-        "@@java_runtime_name@@";
-
+	"@@java_runtime_name@@";
+ 
     private static final String java_runtime_version =
         "@@java_runtime_version@@";
 
@@ -87,12 +87,26 @@ public class Version {
      * Give a stream, it will print version info on it.
      */
     public static void print(PrintStream ps) {
+        boolean isHeadless = false;
+
+        /* Report that we're running headless if the property is true */
+	String headless = System.getProperty("java.awt.headless");
+	if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
+            isHeadless = true;
+	} 
+
         /* First line: platform version. */
         ps.println(launcher_name + " version \"" + java_version + "\"");
 
         /* Second line: runtime version (ie, libraries). */
-        ps.println(java_runtime_name + " (build " +
-                           java_runtime_version + ")");
+
+	ps.print(java_runtime_name + " (build " + java_runtime_version);
+
+	if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
+	    // embedded builds report headless state
+	    ps.print(", headless");
+	}
+	ps.println(')');
 
         /* Third line: JVM information. */
         String java_vm_name    = System.getProperty("java.vm.name");

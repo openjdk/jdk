@@ -630,10 +630,10 @@ public class WToolkit extends SunToolkit implements Runnable {
 
     public PrintJob getPrintJob(Frame frame, String doctitle,
                                 JobAttributes jobAttributes,
-                                PageAttributes pageAttributes) {
-
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalArgumentException();
+                                PageAttributes pageAttributes)
+    {
+        if (frame == null) {
+            throw new NullPointerException("frame must not be null");
         }
 
         PrintJob2D printJob = new PrintJob2D(frame, doctitle,

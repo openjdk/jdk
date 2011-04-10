@@ -204,9 +204,9 @@ void mlib_ImageCopy_bit_na(const mlib_u8 *sa,
   mlib_u64 *dp;          /* 8-byte aligned start points in dst */
   mlib_u64 *sp;          /* 8-byte aligned start point in src */
   mlib_s32 j;            /* offset of address in dst */
-  mlib_u64 lmask0 = 0xFFFFFFFFFFFFFFFF;
+  mlib_u64 lmask0 = 0xFFFFFFFFFFFFFFFFULL;
   mlib_u64 dmask;
-  mlib_u64 lsrc, lsrc0, lsrc1, ldst;
+  mlib_u64 lsrc, lsrc0, lsrc1 = 0ULL, ldst;
   mlib_s32 ls_offset, ld_offset, shift;
 
   if (size <= 0) return;
@@ -427,9 +427,9 @@ void mlib_ImageCopy_bit_na_r(const mlib_u8 *sa,
   mlib_u64 *dp;          /* 8-byte aligned start points in dst */
   mlib_u64 *sp;          /* 8-byte aligned start point in src */
   mlib_s32 j;            /* offset of address in dst */
-  mlib_u64 lmask0 = 0xFFFFFFFFFFFFFFFF;
+  mlib_u64 lmask0 = 0xFFFFFFFFFFFFFFFFULL;
   mlib_u64 dmask;
-  mlib_u64 lsrc, lsrc0, lsrc1, ldst;
+  mlib_u64 lsrc, lsrc0, lsrc1 = 0ULL, ldst;
   mlib_s32 ls_offset, ld_offset, shift;
 
   if (size <= 0) return;

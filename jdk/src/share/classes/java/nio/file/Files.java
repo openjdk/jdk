@@ -2067,7 +2067,7 @@ public final class Files {
      *
      * @return  {@code true} if the file is a symbolic link; {@code false} if
      *          the file does not exist, is not a symbolic link, or it cannot
-     *          be determined if the file is symbolic link or not.
+     *          be determined if the file is a symbolic link or not.
      *
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
@@ -2106,7 +2106,7 @@ public final class Files {
      *
      * @return  {@code true} if the file is a directory; {@code false} if
      *          the file does not exist, is not a directory, or it cannot
-     *          be determined if the file is directory or not.
+     *          be determined if the file is a directory or not.
      *
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
@@ -2142,8 +2142,8 @@ public final class Files {
      *          options indicating how symbolic links are handled
      *
      * @return  {@code true} if the file is a regular file; {@code false} if
-     *          the file does not exist, is not a direcregular filetory, or it
-     *          cannot be determined if the file is regular file or not.
+     *          the file does not exist, is not a regular file, or it
+     *          cannot be determined if the file is a regular file or not.
      *
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is

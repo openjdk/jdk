@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,46 +29,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.table.AbstractTableModel;
+
 
 /**
  * An adaptor, transforming the JDBC interface to the TableModel interface.
  *
  * @author Philip Milne
  */
-
-import java.util.Vector;
-import java.sql.*;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.event.TableModelEvent;
-
+@SuppressWarnings("serial")
 public class JDBCAdapter extends AbstractTableModel {
-    Connection          connection;
-    Statement           statement;
-    ResultSet           resultSet;
-    String[]            columnNames = {};
-    Vector              rows = new Vector();
-    ResultSetMetaData   metaData;
+
+    Connection connection;
+    Statement statement;
+    ResultSet resultSet;
+    String[] columnNames = {};
+    List<List<Object>> rows = new ArrayList<List<Object>>();
+    ResultSetMetaData metaData;
 
     public JDBCAdapter(String url, String driverName,
-                       String user, String passwd) {
+            String user, String passwd) {
         try {
             Class.forName(driverName);
             System.out.println("Opening db connection");
 
             connection = DriverManager.getConnection(url, user, passwd);
             statement = connection.createStatement();
-        }
-        catch (ClassNotFoundException ex) {
+        } catch (ClassNotFoundException ex) {
             System.err.println("Cannot find the database driver classes.");
             System.err.println(ex);
-        }
-        catch (SQLException ex) {
+        } catch (SQLException ex) {
             System.err.println("Cannot connect to this database.");
             System.err.println(ex);
         }
-     }
+    }
 
     public void executeQuery(String query) {
         if (connection == null || statement == null) {
@@ -79,27 +83,28 @@ public class JDBCAdapter extends AbstractTableModel {
             resultSet = statement.executeQuery(query);
             metaData = resultSet.getMetaData();
 
-            int numberOfColumns =  metaData.getColumnCount();
+            int numberOfColumns = metaData.getColumnCount();
             columnNames = new String[numberOfColumns];
             // Get the column names and cache them.
             // Then we can close the connection.
-            for(int column = 0; column < numberOfColumns; column++) {
-                columnNames[column] = metaData.getColumnLabel(column+1);
+            for (int column = 0; column < numberOfColumns; column++) {
+                columnNames[column] = metaData.getColumnLabel(column + 1);
             }
 
             // Get all rows.
-            rows = new Vector();
+            rows = new ArrayList<List<Object>>();
             while (resultSet.next()) {
-                Vector newRow = new Vector();
+                List<Object> newRow = new ArrayList<Object>();
                 for (int i = 1; i <= getColumnCount(); i++) {
-                    newRow.addElement(resultSet.getObject(i));
+                    newRow.add(resultSet.getObject(i));
                 }
-                rows.addElement(newRow);
+                rows.add(newRow);
             }
             //  close(); Need to copy the metaData, bug in jdbc:odbc driver.
-            fireTableChanged(null); // Tell the listeners a new table has arrived.
-        }
-        catch (SQLException ex) {
+
+            // Tell the listeners a new table has arrived.
+            fireTableChanged(null);
+        } catch (SQLException ex) {
             System.err.println(ex);
         }
     }
@@ -111,6 +116,7 @@ public class JDBCAdapter extends AbstractTableModel {
         connection.close();
     }
 
+    @Override
     protected void finalize() throws Throwable {
         close();
         super.finalize();
@@ -121,9 +127,8 @@ public class JDBCAdapter extends AbstractTableModel {
     //             Implementation of the TableModel Interface
     //
     //////////////////////////////////////////////////////////////////////////
-
     // MetaData
-
+    @Override
     public String getColumnName(int column) {
         if (columnNames[column] != null) {
             return columnNames[column];
@@ -132,49 +137,49 @@ public class JDBCAdapter extends AbstractTableModel {
         }
     }
 
-    public Class getColumnClass(int column) {
+    @Override
+    public Class<?> getColumnClass(int column) {
         int type;
         try {
-            type = metaData.getColumnType(column+1);
-        }
-        catch (SQLException e) {
+            type = metaData.getColumnType(column + 1);
+        } catch (SQLException e) {
             return super.getColumnClass(column);
         }
 
-        switch(type) {
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-            return String.class;
+        switch (type) {
+            case Types.CHAR:
+            case Types.VARCHAR:
+            case Types.LONGVARCHAR:
+                return String.class;
 
-        case Types.BIT:
-            return Boolean.class;
+            case Types.BIT:
+                return Boolean.class;
 
-        case Types.TINYINT:
-        case Types.SMALLINT:
-        case Types.INTEGER:
-            return Integer.class;
+            case Types.TINYINT:
+            case Types.SMALLINT:
+            case Types.INTEGER:
+                return Integer.class;
 
-        case Types.BIGINT:
-            return Long.class;
+            case Types.BIGINT:
+                return Long.class;
 
-        case Types.FLOAT:
-        case Types.DOUBLE:
-            return Double.class;
+            case Types.FLOAT:
+            case Types.DOUBLE:
+                return Double.class;
 
-        case Types.DATE:
-            return java.sql.Date.class;
+            case Types.DATE:
+                return java.sql.Date.class;
 
-        default:
-            return Object.class;
+            default:
+                return Object.class;
         }
     }
 
+    @Override
     public boolean isCellEditable(int row, int column) {
         try {
-            return metaData.isWritable(column+1);
-        }
-        catch (SQLException e) {
+            return metaData.isWritable(column + 1);
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -184,14 +189,13 @@ public class JDBCAdapter extends AbstractTableModel {
     }
 
     // Data methods
-
     public int getRowCount() {
         return rows.size();
     }
 
     public Object getValueAt(int aRow, int aColumn) {
-        Vector row = (Vector)rows.elementAt(aRow);
-        return row.elementAt(aColumn);
+        List<Object> row = rows.get(aRow);
+        return row.get(aColumn);
     }
 
     public String dbRepresentation(int column, Object value) {
@@ -202,43 +206,42 @@ public class JDBCAdapter extends AbstractTableModel {
         }
 
         try {
-            type = metaData.getColumnType(column+1);
-        }
-        catch (SQLException e) {
+            type = metaData.getColumnType(column + 1);
+        } catch (SQLException e) {
             return value.toString();
         }
 
-        switch(type) {
-        case Types.INTEGER:
-        case Types.DOUBLE:
-        case Types.FLOAT:
-            return value.toString();
-        case Types.BIT:
-            return ((Boolean)value).booleanValue() ? "1" : "0";
-        case Types.DATE:
-            return value.toString(); // This will need some conversion.
-        default:
-            return "\""+value.toString()+"\"";
+        switch (type) {
+            case Types.INTEGER:
+            case Types.DOUBLE:
+            case Types.FLOAT:
+                return value.toString();
+            case Types.BIT:
+                return ((Boolean) value).booleanValue() ? "1" : "0";
+            case Types.DATE:
+                return value.toString(); // This will need some conversion.
+            default:
+                return "\"" + value.toString() + "\"";
         }
 
     }
 
+    @Override
     public void setValueAt(Object value, int row, int column) {
         try {
-            String tableName = metaData.getTableName(column+1);
+            String tableName = metaData.getTableName(column + 1);
             // Some of the drivers seem buggy, tableName should not be null.
             if (tableName == null) {
                 System.out.println("Table name returned null.");
             }
             String columnName = getColumnName(column);
             String query =
-                "update "+tableName+
-                " set "+columnName+" = "+dbRepresentation(column, value)+
-                " where ";
+                    "update " + tableName + " set " + columnName + " = "
+                    + dbRepresentation(column, value) + " where ";
             // We don't have a model of the schema so we don't know the
             // primary keys or which columns to lock on. To demonstrate
             // that editing is possible, we'll just lock on everything.
-            for(int col = 0; col<getColumnCount(); col++) {
+            for (int col = 0; col < getColumnCount(); col++) {
                 String colName = getColumnName(col);
                 if (colName.equals("")) {
                     continue;
@@ -246,19 +249,18 @@ public class JDBCAdapter extends AbstractTableModel {
                 if (col != 0) {
                     query = query + " and ";
                 }
-                query = query + colName +" = "+
-                    dbRepresentation(col, getValueAt(row, col));
+                query = query + colName + " = " + dbRepresentation(col,
+                        getValueAt(row, col));
             }
             System.out.println(query);
             System.out.println("Not sending update to database");
             // statement.executeQuery(query);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             //     e.printStackTrace();
             System.err.println("Update failed");
         }
-        Vector dataRow = (Vector)rows.elementAt(row);
-        dataRow.setElementAt(value, column);
+        List<Object> dataRow = rows.get(row);
+        dataRow.set(column, value);
 
     }
 }

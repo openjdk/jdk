@@ -74,14 +74,6 @@ public final
     private byte[]              annotations;
     private byte[]              parameterAnnotations;
 
-    // For non-public members or members in package-private classes,
-    // it is necessary to perform somewhat expensive security checks.
-    // If the security check succeeds for a given class, it will
-    // always succeed (it is not affected by the granting or revoking
-    // of permissions); we speed up the check in the common case by
-    // remembering the last Class for which the check succeeded.
-    private volatile Class<?> securityCheckCache;
-
     // Generics infrastructure
     // Accessor for factory
     private GenericsFactory getFactory() {
@@ -495,7 +487,7 @@ public final
      * this object represents
      *
      * @exception IllegalAccessException    if this {@code Constructor} object
-     *              enforces Java language access control and the underlying
+     *              is enforcing Java language access control and the underlying
      *              constructor is inaccessible.
      * @exception IllegalArgumentException  if the number of actual
      *              and formal parameters differ; if an unwrapping
@@ -518,16 +510,17 @@ public final
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
                 Class<?> caller = Reflection.getCallerClass(2);
-                if (securityCheckCache != caller) {
-                    Reflection.ensureMemberAccess(caller, clazz, null, modifiers);
-                    securityCheckCache = caller;
-                }
+
+                checkAccess(caller, clazz, null, modifiers);
             }
         }
         if ((clazz.getModifiers() & Modifier.ENUM) != 0)
             throw new IllegalArgumentException("Cannot reflectively create enum objects");
-        if (constructorAccessor == null) acquireConstructorAccessor();
-        return (T) constructorAccessor.newInstance(initargs);
+        ConstructorAccessor ca = constructorAccessor;   // read volatile
+        if (ca == null) {
+            ca = acquireConstructorAccessor();
+        }
+        return (T) ca.newInstance(initargs);
     }
 
     /**
@@ -560,18 +553,20 @@ public final
     // ConstructorAccessor for a given Constructor. However, avoiding
     // synchronization will probably make the implementation more
     // scalable.
-    private void acquireConstructorAccessor() {
+    private ConstructorAccessor acquireConstructorAccessor() {
         // First check to see if one has been created yet, and take it
         // if so.
         ConstructorAccessor tmp = null;
         if (root != null) tmp = root.getConstructorAccessor();
         if (tmp != null) {
             constructorAccessor = tmp;
-            return;
+        } else {
+            // Otherwise fabricate one and propagate it up to the root
+            tmp = reflectionFactory.newConstructorAccessor(this);
+            setConstructorAccessor(tmp);
         }
-        // Otherwise fabricate one and propagate it up to the root
-        tmp = reflectionFactory.newConstructorAccessor(this);
-        setConstructorAccessor(tmp);
+
+        return tmp;
     }
 
     // Returns ConstructorAccessor for this Constructor object, not

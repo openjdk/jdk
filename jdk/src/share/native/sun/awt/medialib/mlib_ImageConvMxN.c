@@ -211,6 +211,13 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
         case MLIB_DOUBLE:
           ret = mlib_convMxNnw_d64(dst_i, src_i, kernel, m, n, dm, dn, cmask);
           break;
+
+      default:
+        /* For some reasons, there is no convolution routine for type MLIB_BIT.
+         * For now, we silently ignore it (because this image type is not used by java),
+         * but probably we have to report an error.
+         */
+        break;
       }
     }
 
@@ -221,6 +228,11 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
       case MLIB_EDGE_DST_COPY_SRC:
         mlib_ImageConvCopyEdge(dst_e, src_e, dx_l, dx_r, dy_t, dy_b, cmask);
         break;
+    default:
+      /* Other edge conditions do not need additional handling.
+       *  Note also that they are not exposed in public Java API
+       */
+      break;
     }
   }
   else {                                    /* MLIB_EDGE_SRC_EXTEND */
@@ -279,6 +291,12 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
       case MLIB_DOUBLE:
         mlib_convMxNext_d64(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, cmask);
         break;
+    default:
+      /* For some reasons, there is no convolution routine for type MLIB_BIT.
+       * For now, we silently ignore it (because this image type is not used by java),
+       * but probably we have to report an error.
+       */
+      break;
     }
   }
 
