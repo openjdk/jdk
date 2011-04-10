@@ -142,19 +142,19 @@ ul.navList li.navBarCell1Rev {
 .subNav ul.navList {
     float:left;
     margin:0;
-    font-size:0.7em;
+    font-size:0.8em;
     width:350px;
 }
 ul.subNavList {
     float:left;
     margin:0;
-    font-size:0.7em;
+    font-size:0.8em;
     width:350px;
 }
 ul.subNavList li{
     list-style:none;
     float:left;
-    font-size:90%;
+    font-size:98%;
 }
 /*
 Page header and footer styles
@@ -183,8 +183,6 @@ Page header and footer styles
 .subTitle {
     margin:0;
     padding-top:10px;
-    font-size:0.75em;
-    font-weight:bold;
 }
 /*
 Page layout container styles
