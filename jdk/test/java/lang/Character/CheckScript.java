@@ -1,34 +1,58 @@
+
+/*
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 /**
  * @test
- * @bug 6945564 6959267
+ * @bug 6945564 6959267 7033561
  * @summary  Check that the j.l.Character.UnicodeScript
  */
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.regex.*;
 import java.lang.Character.UnicodeScript;
 
 public class CheckScript {
 
-    static BufferedReader open(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws Exception {
+        File fScripts;
+        File fAliases;
         if (args.length == 0) {
-            return new BufferedReader(new FileReader(new File(System.getProperty("test.src", "."), "Scripts.txt")));
-        } else if (args.length == 1) {
-            return new BufferedReader(new FileReader(args[0]));
+            fScripts = new File(System.getProperty("test.src", "."), "Scripts.txt");
+            fAliases = new File(System.getProperty("test.src", "."), "PropertyValueAliases.txt");
+        } else if (args.length == 2) {
+            fScripts = new File(args[0]);
+            fAliases = new File(args[1]);
         } else {
-            System.out.println("java CharacterScript Scripts.txt");
+            System.out.println("java CharacterScript Scripts.txt PropertyValueAliases.txt");
             throw new RuntimeException("Datafile name should be specified.");
         }
-    }
-
-    public static void main(String[] args) throws Exception {
 
         Matcher m = Pattern.compile("(\\p{XDigit}+)(?:\\.{2}(\\p{XDigit}+))?\\s+;\\s+(\\w+)\\s+#.*").matcher("");
         String line = null;
         HashMap<String,ArrayList<Integer>> scripts = new HashMap<>();
-        try (BufferedReader sbfr = open(args)) {
+        try (BufferedReader sbfr = new BufferedReader(new FileReader(fScripts))) {
             while ((line = sbfr.readLine()) != null) {
                 if (line.length() <= 1 || line.charAt(0) == '#') {
                     continue;
@@ -104,6 +128,30 @@ public class CheckScript {
                         ", of(cp)=<" + script +
                         "> but NOT in ranges of this script");
 
+                }
+            }
+        }
+        // check all aliases
+        m = Pattern.compile("sc\\s*;\\s*(\\p{Alpha}{4})\\s*;\\s*([\\p{Alpha}|_]+)\\s*.*").matcher("");
+        line = null;
+        try (BufferedReader sbfr = new BufferedReader(new FileReader(fAliases))) {
+            while ((line = sbfr.readLine()) != null) {
+                if (line.length() <= 1 || line.charAt(0) == '#') {
+                    continue;
+                }
+                m.reset(line);
+                if (m.matches()) {
+                    String alias = m.group(1);
+                    String name = m.group(2);
+                    // HRKT -> Katakana_Or_Hiragana not supported
+                    if ("HRKT".equals(alias.toUpperCase(Locale.ENGLISH)))
+                        continue;
+                    if (Character.UnicodeScript.forName(alias) !=
+                        Character.UnicodeScript.forName(name)) {
+                        throw new RuntimeException(
+                            "UnicodeScript failed: alias<" + alias +
+                            "> does not map to <" + name + ">");
+                    }
                 }
             }
         }
