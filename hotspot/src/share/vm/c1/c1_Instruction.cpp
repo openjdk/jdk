@@ -559,7 +559,7 @@ void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
 // of the inserted block, without recomputing the values of the other blocks
 // in the CFG. Therefore the value of "depth_first_number" in BlockBegin becomes meaningless.
 BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
-  BlockBegin* new_sux = new BlockBegin(-99);
+  BlockBegin* new_sux = new BlockBegin(end()->state()->bci());
 
   // mark this block (special treatment when block order is computed)
   new_sux->set(critical_edge_split_flag);
