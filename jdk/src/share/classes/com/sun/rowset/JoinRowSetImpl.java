@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
     /**
      * A <code>Vector</code> object that contains the <code>RowSet</code> objects
      * that have been added to this <code>JoinRowSet</code> object.
-         */
-    private Vector vecRowSetsInJOIN;
+     */
+    private Vector<CachedRowSetImpl> vecRowSetsInJOIN;
 
     /**
      * The <code>CachedRowSet</code> object that encapsulates this
@@ -78,13 +78,13 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * for this <code>JoinRowSet</code> object.
      * The last join type set forms the basis of succeeding joins.
      */
-    private Vector vecJoinType;
+    private Vector<Integer> vecJoinType;
 
     /**
      * A <code>Vector</code> object containing the names of all the tables entering
      * the join.
      */
-    private Vector vecTableNames;
+    private Vector<String> vecTableNames;
 
     /**
      * An <code>int</code> that indicates the column index of the match column.
@@ -121,10 +121,10 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      */
     public JoinRowSetImpl() throws SQLException {
 
-        vecRowSetsInJOIN = new Vector();
+        vecRowSetsInJOIN = new Vector<CachedRowSetImpl>();
         crsInternal = new CachedRowSetImpl();
-        vecJoinType = new Vector();
-        vecTableNames = new Vector();
+        vecJoinType = new Vector<Integer>();
+        vecTableNames = new Vector<String>();
         iMatchKey = -1;
         strMatchKey = null;
         supportedJOINs =
@@ -222,7 +222,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
            // either of the setter methods have been set.
            if(boolColId){
               //
-              ArrayList indices = new ArrayList();
+              ArrayList<Integer> indices = new ArrayList<>();
               for(int i=0;i<cRowset.getMatchColumnNames().length;i++) {
                   if( (strMatchKey = (cRowset.getMatchColumnNames())[i]) != null) {
                       iMatchKey = cRowset.findColumn(strMatchKey);
