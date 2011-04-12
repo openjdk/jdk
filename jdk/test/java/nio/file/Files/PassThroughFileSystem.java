@@ -486,8 +486,8 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
-        public Path toRealPath(boolean resolveLinks) throws IOException {
-            return wrap(delegate.toRealPath(resolveLinks));
+        public Path toRealPath(LinkOption... options) throws IOException {
+            return wrap(delegate.toRealPath(options));
         }
 
         @Override
