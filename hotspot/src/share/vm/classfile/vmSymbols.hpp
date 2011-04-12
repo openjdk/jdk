@@ -301,6 +301,7 @@
   template(dispatch_name,                             "dispatch")                                 \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
   template(fillInStackTrace_name,                     "fillInStackTrace")                         \
+  template(fillInStackTrace0_name,                    "fillInStackTrace0")                        \
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
   template(setProperty_name,                          "setProperty")                              \
