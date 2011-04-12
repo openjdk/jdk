@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,5 +149,23 @@
                                                   ((VMJavaVal64*)(addr))->d)
 #define SET_LOCALS_LONG_FROM_ADDR(addr, offset) (((VMJavaVal64*)&locals[-((offset)+1)])->l = \
                                                 ((VMJavaVal64*)(addr))->l)
+
+// VMSlots implementation
+
+#define VMSLOTS_SLOT(offset)    ((intptr_t*)&vmslots[(offset)])
+#define VMSLOTS_ADDR(offset)    ((address)vmslots[(offset)])
+#define VMSLOTS_INT(offset)     (*((jint*)&vmslots[(offset)]))
+#define VMSLOTS_FLOAT(offset)   (*((jfloat*)&vmslots[(offset)]))
+#define VMSLOTS_OBJECT(offset)  ((oop)vmslots[(offset)])
+#define VMSLOTS_DOUBLE(offset)  (((VMJavaVal64*)&vmslots[(offset) - 1])->d)
+#define VMSLOTS_LONG(offset)    (((VMJavaVal64*)&vmslots[(offset) - 1])->l)
+
+#define SET_VMSLOTS_SLOT(value, offset)   (*(intptr_t*)&vmslots[(offset)] = *(intptr_t *)(value))
+#define SET_VMSLOTS_ADDR(value, offset)   (*((address *)&vmslots[(offset)]) = (value))
+#define SET_VMSLOTS_INT(value, offset)    (*((jint *)&vmslots[(offset)]) = (value))
+#define SET_VMSLOTS_FLOAT(value, offset)  (*((jfloat *)&vmslots[(offset)]) = (value))
+#define SET_VMSLOTS_OBJECT(value, offset) (*((oop *)&vmslots[(offset)]) = (value))
+#define SET_VMSLOTS_DOUBLE(value, offset) (((VMJavaVal64*)&vmslots[(offset) - 1])->d = (value))
+#define SET_VMSLOTS_LONG(value, offset)   (((VMJavaVal64*)&vmslots[(offset) - 1])->l = (value))
 
 #endif // CPU_ZERO_VM_BYTECODEINTERPRETER_ZERO_HPP
