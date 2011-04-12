@@ -212,14 +212,6 @@ public class Win32GraphicsEnvironment
  * ----END DISPLAY CHANGE SUPPORT----
  */
 
-    /**
-     * Whether registerFontFile expects absolute or relative
-     * font file names.
-     */
-    protected boolean useAbsoluteFontFileNames() {
-        return false;
-    }
-
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;
         if (WindowsFlags.isD3DEnabled()) {
