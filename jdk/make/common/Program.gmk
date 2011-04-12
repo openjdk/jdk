@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ ACTUAL_PROGRAM      = $(ACTUAL_PROGRAM_DIR)/$(ACTUAL_PROGRAM_NAME)
 program_default_rule: all
 
 program: $(ACTUAL_PROGRAM)
+
+# reuse the mapfiles in the launcher's directory, the same should
+# be applicable to the tool launchers as well.
+FILES_m = $(BUILDDIR)/java/main/java/mapfile-$(ARCH)
+include $(BUILDDIR)/common/Mapfile-vers.gmk
 
 include $(JDK_TOPDIR)/make/common/Rules.gmk
 
