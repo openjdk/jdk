@@ -55,6 +55,7 @@ FILES_compiled_properties = \
         sun/util/resources/LocaleNames_mt.properties \
         sun/util/resources/LocaleNames_nl.properties \
         sun/util/resources/LocaleNames_no.properties \
+        sun/util/resources/LocaleNames_no_NO_NY.properties \
         sun/util/resources/LocaleNames_pl.properties \
         sun/util/resources/LocaleNames_pt.properties \
         sun/util/resources/LocaleNames_pt_BR.properties \
