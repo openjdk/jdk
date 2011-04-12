@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,28 @@
 #
 
 #
-# Makefile for building all the samples
+# Makefile for the forkjoin/mergesort sample code
 #
 
-BUILDDIR = ..
+BUILDDIR = ../../..
+
 PRODUCT = java
+
 include $(BUILDDIR)/common/Defs.gmk
 
-ifdef OPENJDK
-  WEBSERVICES_SUBDIR =
-else
-  WEBSERVICES_SUBDIR = webservices
-endif
+SAMPLE_SRC_DIR = $(SHARE_SRC)/sample/forkjoin/mergesort
+SAMPLE_DST_DIR = $(SAMPLEDIR)/forkjoin/mergesort
 
-SUBDIRS =
-SUBDIRS_misc = nio scripting nbproject forkjoin
-SUBDIRS_enterprise = $(WEBSERVICES_SUBDIR)
-SUBDIRS_management = jmx
+SAMPLE_FILES =							\
+	$(SAMPLE_DST_DIR)/MergeDemo.java			\
+	$(SAMPLE_DST_DIR)/MergeSort.java
 
-# include dtrace samples in Solaris builds
-ifeq ($(PLATFORM), solaris) 
-	SUBDIRS += dtrace
-endif
+all build: $(SAMPLE_FILES)
 
-include $(BUILDDIR)/common/Subdirs.gmk
+$(SAMPLE_DST_DIR)/%: $(SAMPLE_SRC_DIR)/%
+	$(install-file)
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+clean clobber:
+	$(RM) -r $(SAMPLE_DST_DIR)
 
-clobber clean ::
-	$(RM) -r $(SAMPLEDIR)
+.PHONY: all build clean clobber
