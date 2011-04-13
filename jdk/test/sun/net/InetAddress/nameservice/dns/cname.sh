@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@
 
 # @test
 # @bug 4763315
-# @build CanonicalName Lookup 
+# @build CanonicalName Lookup
 # @run shell/timeout=120 cname.sh
 # @summary Test DNS provider's handling of CNAME records
 
 
 # The host that we try to resolve
 
-HOST=webcache.sfbay.sun.com
+HOST=www-proxy.us.oracle.com
 
-# fail gracefully if DNS is not configured or there 
+# fail gracefully if DNS is not configured or there
 # isn't a CNAME record.
 
 CLASSPATH=${TESTCLASSES}
@@ -43,7 +43,7 @@ export CLASSPATH
 JAVA="${TESTJAVA}/bin/java"
 
 sh -xc "$JAVA CanonicalName $HOST" 2>&1
-if [ $? != 0 ]; then 
+if [ $? != 0 ]; then
     echo "DNS not configured or host doesn't resolve to CNAME record"
     exit 0
 fi
@@ -70,7 +70,7 @@ go "$np" "$HOST"
 go "$np $sm" "$HOST"
 
 
-# 
+#
 # Results
 #
 echo ''
