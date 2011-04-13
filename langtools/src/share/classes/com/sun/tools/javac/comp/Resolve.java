@@ -770,12 +770,9 @@ public class Resolve {
                     return ambiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol mostSpecific;
-                Type result2 = mt2.getReturnType();
-                if (mt2.tag == FORALL)
-                    result2 = types.subst(result2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
-                if (types.isSubtype(mt1.getReturnType(), result2))
+                if (types.returnTypeSubstitutable(mt1, mt2))
                     mostSpecific = m1;
-                else if (types.isSubtype(result2, mt1.getReturnType()))
+                else if (types.returnTypeSubstitutable(mt2, mt1))
                     mostSpecific = m2;
                 else {
                     // Theoretically, this can't happen, but it is possible
