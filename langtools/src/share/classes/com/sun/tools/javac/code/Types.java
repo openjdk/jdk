@@ -1985,7 +1985,7 @@ public class Types {
      * signature</em> of the other.  This is <b>not</b> an equivalence
      * relation.
      *
-     * @see "The Java Language Specification, Third Ed. (8.4.2)."
+     * @jls section 8.4.2.
      * @see #overrideEquivalent(Type t, Type s)
      * @param t first signature (possibly raw).
      * @param s second signature (could be subjected to erasure).
@@ -2004,7 +2004,7 @@ public class Types {
      * equivalence</em>.  This is the natural extension of
      * isSubSignature to an equivalence relation.
      *
-     * @see "The Java Language Specification, Third Ed. (8.4.2)."
+     * @jls section 8.4.2.
      * @see #isSubSignature(Type t, Type s)
      * @param t a signature (possible raw, could be subjected to
      * erasure).
@@ -3049,8 +3049,7 @@ public class Types {
 
     /**
      * Return-Type-Substitutable.
-     * @see <a href="http://java.sun.com/docs/books/jls/">The Java
-     * Language Specification, Third Ed. (8.4.5)</a>
+     * @jls section 8.4.5
      */
     public boolean returnTypeSubstitutable(Type r1, Type r2) {
         if (hasSameArgs(r1, r2))
@@ -3130,7 +3129,7 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="Capture conversion">
     /*
-     * JLS 3rd Ed. 5.1.10 Capture Conversion:
+     * JLS 5.1.10 Capture Conversion:
      *
      * Let G name a generic type declaration with n formal type
      * parameters A1 ... An with corresponding bounds U1 ... Un. There
@@ -3163,7 +3162,7 @@ public class Types {
      * Capture conversion is not applied recursively.
      */
     /**
-     * Capture conversion as specified by JLS 3rd Ed.
+     * Capture conversion as specified by the JLS.
      */
 
     public List<Type> capture(List<Type> ts) {

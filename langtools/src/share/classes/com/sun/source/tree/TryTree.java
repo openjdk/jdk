@@ -39,7 +39,7 @@ import java.util.List;
  *       <em>finallyBlock</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.20"
+ * @jls section 14.20
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

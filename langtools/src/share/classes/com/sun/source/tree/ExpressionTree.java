@@ -29,7 +29,7 @@ package com.sun.source.tree;
  * A tree node used as the base class for the different types of
  * expressions.
  *
- * @see "The Java Language Specification, 3rd ed, chapter 15"
+ * @jls chapter 15
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

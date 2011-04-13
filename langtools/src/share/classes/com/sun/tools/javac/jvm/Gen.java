@@ -283,7 +283,7 @@ public class Gen extends JCTree.Visitor {
         }
 
         // leave alone methods inherited from Object
-        // JLS2 13.1.
+        // JLS 13.1.
         if (sym.owner == syms.objectType.tsym)
             return sym;
 

@@ -29,7 +29,7 @@ package com.sun.tools.classfile;
 import java.io.IOException;
 
 /**
- * See JVMS3, section 4.4.
+ * See JVMS, section 4.4.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

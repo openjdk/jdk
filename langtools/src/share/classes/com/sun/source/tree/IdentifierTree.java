@@ -35,7 +35,7 @@ import javax.lang.model.element.Name;
  *   <em>name</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 6.5.6.1"
+ * @jls section 6.5.6.1
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
