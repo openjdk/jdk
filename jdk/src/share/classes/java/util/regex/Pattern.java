@@ -369,13 +369,10 @@ import java.util.Arrays;
  * part of an unescaped construct.
  *
  * <p> Backslashes within string literals in Java source code are interpreted
- * as required by the <a
- * href="http://java.sun.com/docs/books/jls">Java Language
- * Specification</a> as either <a
- * href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#100850">Unicode
- * escapes</a> or other <a
- * href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#101089">character
- * escapes</a>.  It is therefore necessary to double backslashes in string
+ * as required by
+ * <cite>The Java&trade; Language Specification</cite>
+ * as either Unicode escapes (section 3.3) or other character escapes (section 3.10.6)
+ * It is therefore necessary to double backslashes in string
  * literals that represent regular expressions to protect them from
  * interpretation by the Java bytecode compiler.  The string literal
  * <tt>"&#92;b"</tt>, for example, matches a single backspace character when
@@ -525,9 +522,9 @@ import java.util.Arrays;
  * Canonical Equivalents.
  *
  * <p> Unicode escape sequences such as <tt>&#92;u2014</tt> in Java source code
- * are processed as described in <a
- * href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#100850">\u00A73.3</a>
- * of the Java Language Specification.  Such escape sequences are also
+ * are processed as described in section 3.3 of
+ * <cite>The Java&trade; Language Specification</cite>.
+ * Such escape sequences are also
  * implemented directly by the regular-expression parser so that Unicode
  * escapes can be used in expressions that are read from files or from the
  * keyboard.  Thus the strings <tt>"&#92;u2014"</tt> and <tt>"\\u2014"</tt>,

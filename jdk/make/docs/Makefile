@@ -53,7 +53,7 @@ DEV_DOCS_URL-7 = http://download.oracle.com/javase/7/docs/index.html
 DEV_DOCS_URL = $(DEV_DOCS_URL-$(JDK_MINOR_VERSION))
 
 # Url to Java Language Spec
-JLS3_URL = http://java.sun.com/docs/books/jls/
+#JLS3_URL = http://java.sun.com/docs/books/jls/
 
 # Common Java trademark line
 JAVA_TRADEMARK_LINE = Java is a trademark or registered trademark of \
@@ -293,8 +293,8 @@ COREAPI_HEADER = \
 <strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(JDK_MINOR_VERSION)</strong>
 
 # Java language specification cite
-TAG_JLS3 = jls3:a:See <cite><a href="$(JLS3_URL)"> \
-The Java Language Specification, Third Edition</a></cite>:
+TAG_JLS = jls:a:See <cite> \
+The Java&trade; Language Specification</cite>:
 
 # Overview file for core apis
 COREAPI_OVERVIEW = $(SHARE_SRC)/classes/overview-core.html
@@ -329,7 +329,7 @@ $(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
 	  $(call OptionPair,-tag,specdefault:X)				; \
 	  $(call OptionPair,-tag,Note:X)				; \
 	  $(call OptionPair,-tag,ToDo:X)				; \
-          $(call OptionPair,-tag,$(TAG_JLS3)) 				; \
+          $(call OptionPair,-tag,$(TAG_JLS)) 				; \
 	  $(call OptionOnly,-splitIndex)				; \
 	  $(call OptionPair,-overview,$(COREAPI_OVERVIEW))		; \
 	  $(call OptionPair,-doctitle,$(COREAPI_DOCTITLE))		; \
@@ -1081,6 +1081,7 @@ $(TREEAPI_OPTIONS_FILE):
 	  $(call OptionPair,-doctitle,$(TREEAPI_DOCTITLE))		; \
 	  $(call OptionPair,-windowtitle,$(TREEAPI_WINDOWTITLE) $(DRAFT_WINTITLE));\
 	  $(call OptionPair,-header,$(TREEAPI_HEADER)$(DRAFT_HEADER))	; \
+          $(call OptionPair,-tag,$(TAG_JLS)) 				; \
 	  $(call OptionPair,-bottom,$(TREEAPI_BOTTOM)$(DRAFT_BOTTOM))	; \
 	  $(call OptionTrip,-group,$(TREEAPI_GROUPNAME),$(TREEAPI_REGEXP)); \
 	  $(call OptionTrip,-linkoffline,$(TREEAPI2COREAPI),$(COREAPI_DOCSDIR)/); \

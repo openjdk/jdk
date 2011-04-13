@@ -37,7 +37,7 @@ package java.lang;
  * propagate outside the method or constructor boundary.
  *
  * @author  Frank Yellin
- * @jls3 11.2 Compile-Time Checking of Exceptions
+ * @jls 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class RuntimeException extends Exception {

@@ -118,10 +118,8 @@ public class SecureClassLoader extends ClassLoader {
      *                  and without a trailing ".class" suffix.
      * @param      b    the bytes that make up the class data. The bytes in
      *             positions <code>off</code> through <code>off+len-1</code>
-     *             should have the format of a valid class file as defined
-     *             by the
-     *             <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *             Virtual Machine Specification</a>.
+     *             should have the format of a valid class file as defined by
+     *             <cite>The Java&trade; Virtual Machine Specification</cite>.
      * @param      off  the start offset in <code>b</code> of the class data
      * @param      len  the length of the class data
      * @param      cs   the associated CodeSource, or <code>null</code> if none
@@ -157,9 +155,8 @@ public class SecureClassLoader extends ClassLoader {
      *                  and without a trailing ".class" suffix.
      * @param      b    the bytes that make up the class data.  The bytes from positions
      *                  <tt>b.position()</tt> through <tt>b.position() + b.limit() -1</tt>
-     *                  should have the format of a valid class file as defined by the
-     *                  <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     *                  Machine Specification</a>.
+     *                  should have the format of a valid class file as defined by
+     *                  <cite>The Java&trade; Virtual Machine Specification</cite>.
      * @param      cs   the associated CodeSource, or <code>null</code> if none
      * @return the <code>Class</code> object created from the data,
      *         and optional CodeSource.

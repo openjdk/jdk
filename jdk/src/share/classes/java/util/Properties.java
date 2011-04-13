@@ -68,8 +68,9 @@ import java.io.BufferedWriter;
  * methods work the same way as the load(Reader)/store(Writer, String) pair, except
  * the input/output stream is encoded in ISO 8859-1 character encoding.
  * Characters that cannot be directly represented in this encoding can be written using
- * <a href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#3.3">Unicode escapes</a>
- * ; only a single 'u' character is allowed in an escape
+ * Unicode escapes as defined in section 3.3 of
+ * <cite>The Java&trade; Language Specification</cite>;
+ * only a single 'u' character is allowed in an escape
  * sequence. The native2ascii tool can be used to convert property files to and
  * from other character encodings.
  *
@@ -272,11 +273,8 @@ class Properties extends Hashtable<Object,Object> {
      * <a name="unicodeescapes"></a>
      * Characters in keys and elements can be represented in escape
      * sequences similar to those used for character and string literals
-     * (see <a
-     * href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#3.3">&sect;3.3</a>
-     * and <a
-     * href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#3.10.6">&sect;3.10.6</a>
-     * of the <i>Java Language Specification</i>).
+     * (see sections 3.3 and 3.10.6 of
+     * <cite>The Java&trade; Language Specification</cite>).
      *
      * The differences from the character escape sequences and Unicode
      * escapes used for characters and strings are:
@@ -326,8 +324,9 @@ class Properties extends Hashtable<Object,Object> {
      * {@link #load(java.io.Reader) load(Reader)} and is assumed to use
      * the ISO 8859-1 character encoding; that is each byte is one Latin1
      * character. Characters not in Latin1, and certain special characters,
-     * are represented in keys and elements using
-     * <a href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#3.3">Unicode escapes</a>.
+     * are represented in keys and elements using Unicode escapes as defined in
+     * section 3.3 of
+     * <cite>The Java&trade; Language Specification</cite>.
      * <p>
      * The specified stream remains open after this method returns.
      *
