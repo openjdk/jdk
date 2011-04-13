@@ -103,7 +103,6 @@ public class MsgAppletViewer_fr extends ListResourceBundle {
             {"appletclassloader.fileexception", "Exception {0} lors du chargement de : {1}"},
             {"appletclassloader.filedeath", "Fermeture de {0} lors du chargement de : {1}"},
             {"appletclassloader.fileerror", "Erreur {0} lors du chargement de : {1}"},
-            {"appletclassloader.findclass.verbose.findclass", "{0} : recherche de la classe {1}"},
             {"appletclassloader.findclass.verbose.openstream", "Ouverture du flux de donn\u00E9es dans {0} pour obtenir {1}"},
             {"appletclassloader.getresource.verbose.forname", "AppletClassLoader.getResource pour le nom : {0}"},
             {"appletclassloader.getresource.verbose.found", "Ressource {0} trouv\u00E9e en tant que ressource syst\u00E8me"},
