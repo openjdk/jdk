@@ -2271,7 +2271,7 @@ public class Check {
      * that of any public or protected method declared in class Object
      * or in the interface annotation.Annotation."
      *
-     * @jls3 9.6 Annotation Types
+     * @jls 9.6 Annotation Types
      */
     void validateAnnotationMethod(DiagnosticPosition pos, MethodSymbol m) {
         for (Type sup = syms.annotationType; sup.tag == CLASS; sup = types.supertype(sup)) {

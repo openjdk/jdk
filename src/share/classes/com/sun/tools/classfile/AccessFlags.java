@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * See JVMS3, sections 4.2, 4.6, 4.7.
+ * See JVMS, sections 4.2, 4.6, 4.7.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

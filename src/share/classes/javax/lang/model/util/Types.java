@@ -81,7 +81,7 @@ public interface Types {
      * @return {@code true} if and only if the first type is a subtype
      *          of the second
      * @throws IllegalArgumentException if given an executable or package type
-     * @jls3 4.10 Subtyping
+     * @jls 4.10 Subtyping
      */
     boolean isSubtype(TypeMirror t1, TypeMirror t2);
 
@@ -93,7 +93,7 @@ public interface Types {
      * @return {@code true} if and only if the first type is assignable
      *          to the second
      * @throws IllegalArgumentException if given an executable or package type
-     * @jls3 5.2 Assignment Conversion
+     * @jls 5.2 Assignment Conversion
      */
     boolean isAssignable(TypeMirror t1, TypeMirror t2);
 
@@ -104,7 +104,7 @@ public interface Types {
      * @param t2  the second type
      * @return {@code true} if and only if the first type contains the second
      * @throws IllegalArgumentException if given an executable or package type
-     * @jls3 4.5.1.1 Type Argument Containment and Equivalence
+     * @jls 4.5.1.1 Type Argument Containment and Equivalence
      */
     boolean contains(TypeMirror t1, TypeMirror t2);
 
@@ -116,7 +116,7 @@ public interface Types {
      * @param m2  the second method
      * @return {@code true} if and only if the first signature is a
      *          subsignature of the second
-     * @jls3 8.4.2 Method Signature
+     * @jls 8.4.2 Method Signature
      */
     boolean isSubsignature(ExecutableType m1, ExecutableType m2);
 
@@ -136,7 +136,7 @@ public interface Types {
      * @param t  the type to be erased
      * @return the erasure of the given type
      * @throws IllegalArgumentException if given a package type
-     * @jls3 4.6 Type Erasure
+     * @jls 4.6 Type Erasure
      */
     TypeMirror erasure(TypeMirror t);
 
@@ -146,7 +146,7 @@ public interface Types {
      *
      * @param p  the primitive type to be converted
      * @return the class of a boxed value of type {@code p}
-     * @jls3 5.1.7 Boxing Conversion
+     * @jls 5.1.7 Boxing Conversion
      */
     TypeElement boxedClass(PrimitiveType p);
 
@@ -158,7 +158,7 @@ public interface Types {
      * @return the type of an unboxed value of type {@code t}
      * @throws IllegalArgumentException if the given type has no
      *          unboxing conversion
-     * @jls3 5.1.8 Unboxing Conversion
+     * @jls 5.1.8 Unboxing Conversion
      */
     PrimitiveType unboxedType(TypeMirror t);
 
@@ -168,7 +168,7 @@ public interface Types {
      * @param t  the type to be converted
      * @return the result of applying capture conversion
      * @throws IllegalArgumentException if given an executable or package type
-     * @jls3 5.1.10 Capture Conversion
+     * @jls 5.1.10 Capture Conversion
      */
     TypeMirror capture(TypeMirror t);
 

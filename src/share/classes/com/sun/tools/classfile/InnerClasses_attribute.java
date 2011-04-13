@@ -30,7 +30,7 @@ import java.io.IOException;
 import com.sun.tools.classfile.ConstantPool.*;
 
 /**
- * See JVMS3, section 4.8.6.
+ * See JVMS, section 4.8.6.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

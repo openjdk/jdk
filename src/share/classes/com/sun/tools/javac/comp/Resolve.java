@@ -346,7 +346,7 @@ public class Resolve {
         if (typeargtypes == null) typeargtypes = List.nil();
         if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
-            // which is fine, see JLS3 15.12.2.1
+            // which is fine, see JLS 15.12.2.1
         } else if (mt.tag == FORALL && typeargtypes.nonEmpty()) {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
@@ -1769,7 +1769,7 @@ public class Resolve {
 
     /**
      * Resolve an appropriate implicit this instance for t's container.
-     * JLS2 8.8.5.1 and 15.9.2
+     * JLS 8.8.5.1 and 15.9.2
      */
     Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t) {
         return resolveImplicitThis(pos, env, t, false);
