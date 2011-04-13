@@ -181,8 +181,8 @@ public abstract class Pack200 {
      * The class files will not contain identical bytes, since the unpacker
      * is free to change minor class file features such as constant pool order.
      * However, the class files will be semantically identical,
-     * as specified in the Java Virtual Machine Specification
-     * <a href="http://java.sun.com/docs/books/vmspec/html/ClassFile.doc.html">http://java.sun.com/docs/books/vmspec/html/ClassFile.doc.html</a>.
+     * as specified in
+     * <cite>The Java&trade; Virtual Machine Specification</cite>.
      * <p>
      * By default, the packer does not change the order of JAR elements.
      * Also, the modification time and deflation hint of each
