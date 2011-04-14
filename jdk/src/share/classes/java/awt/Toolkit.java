@@ -466,10 +466,6 @@ public abstract class Toolkit {
      */
     protected void loadSystemColors(int[] systemColors)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
-
     }
 
 /**
@@ -504,10 +500,6 @@ public abstract class Toolkit {
      */
     public void setDynamicLayout(boolean dynamic)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
-
     }
 
     /**
@@ -531,9 +523,6 @@ public abstract class Toolkit {
      */
     protected boolean isDynamicLayoutSet()
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().isDynamicLayoutSet();
         } else {
@@ -569,9 +558,6 @@ public abstract class Toolkit {
      */
     public boolean isDynamicLayoutActive()
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().isDynamicLayoutActive();
         } else {
@@ -615,9 +601,6 @@ public abstract class Toolkit {
      */
     public Insets getScreenInsets(GraphicsConfiguration gc)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getScreenInsets(gc);
         } else {
@@ -1359,9 +1342,6 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public Clipboard getSystemSelection() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getSystemSelection();
         } else {
@@ -1391,10 +1371,6 @@ public abstract class Toolkit {
      * @since     JDK1.1
      */
     public int getMenuShortcutKeyMask() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
-
         return Event.CTRL_MASK;
     }
 
@@ -1523,9 +1499,6 @@ public abstract class Toolkit {
      */
     public Dimension getBestCursorSize(int preferredWidth,
         int preferredHeight) throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         // Override to implement custom cursor support.
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().
@@ -1553,9 +1526,6 @@ public abstract class Toolkit {
      * @since     1.2
      */
     public int getMaximumCursorColors() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         // Override to implement custom cursor support.
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getMaximumCursorColors();
@@ -2602,9 +2572,6 @@ public abstract class Toolkit {
     * @since 1.7
      */
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
         return Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled();
     }
 }

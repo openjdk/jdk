@@ -74,7 +74,7 @@ ifeq ($(PLATFORM), linux)
   # volatile to prevent the optimization. However, this approach does not
   # work because we have to declare all variables as volatile in result.
 
-#  OTHER_CFLAGS += -Wno-clobbered
+  OTHER_CFLAGS += -Wno-clobbered
 endif
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk
