@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "opto/addnode.hpp"
@@ -43,17 +44,17 @@
 #ifndef PRODUCT
 void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || PrintInlining || PrintOptoInlining) {
-    tty->print("   ");
-    for( int i = 0; i < depth; i++ ) tty->print("  ");
-    if (!PrintOpto) {
-      method->print_short_name();
-      tty->print(" ->");
+    if (!PrintInlining) {
+      if (!PrintOpto && !PrintCompilation) {
+        method->print_short_name();
+        tty->cr();
+      }
+      CompileTask::print_inlining(prof_method, depth, bci);
     }
-    tty->print(" @ %d  ", bci);
-    prof_method->print_short_name();
-    tty->print("  >>TypeProfile (%d/%d counts) = ", receiver_count, site_count);
+    CompileTask::print_inline_indent(depth);
+    tty->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
     prof_klass->name()->print_symbol();
-    tty->print_cr(" (%d bytes)", prof_method->code_size());
+    tty->cr();
   }
 }
 #endif
@@ -62,6 +63,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor) {
   CallGenerator* cg;
+  guarantee(call_method != NULL, "failed method resolution");
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -129,8 +131,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
 
         // Get an adapter for the MethodHandle.
         ciMethod* target_method = method_handle->get_method_handle_adapter();
-
-        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+        CallGenerator* hit_cg = NULL;
+        if (target_method != NULL)
+          hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
         if (hit_cg != NULL && hit_cg->is_inline())
           return hit_cg;
       }
@@ -151,8 +154,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
 
       // Get an adapter for the MethodHandle.
       ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-
-      CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+      CallGenerator* hit_cg = NULL;
+      if (target_method != NULL)
+        hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
       if (hit_cg != NULL && hit_cg->is_inline()) {
         CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
         return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
@@ -269,13 +273,13 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
-              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth(), jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1)));
+              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1)));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != NULL) {
-              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth(), jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count));
+              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count));
               cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
               if (cg != NULL)  return cg;
             }

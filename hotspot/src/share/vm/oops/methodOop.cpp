@@ -852,11 +852,11 @@ bool methodOopDesc::should_not_be_cached() const {
 bool methodOopDesc::is_method_handle_invoke_name(vmSymbols::SID name_sid) {
   switch (name_sid) {
   case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name):
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):
     return true;
   }
-  if ((AllowTransitionalJSR292 || AllowInvokeForInvokeGeneric)
-      && name_sid == vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name))
+  if (AllowInvokeGeneric
+      && name_sid == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name))
     return true;
   return false;
 }
@@ -1092,7 +1092,6 @@ void methodOopDesc::init_intrinsic_id() {
   if (name_id == vmSymbols::NO_SID)  return;
   vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
   if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && !(klass_id == vmSymbols::VM_SYMBOL_ENUM_NAME(java_dyn_MethodHandle) && AllowTransitionalJSR292)
       && sig_id == vmSymbols::NO_SID)  return;
   jshort flags = access_flags().as_short();
 
@@ -1118,19 +1117,16 @@ void methodOopDesc::init_intrinsic_id() {
     break;
 
   // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*.
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_dyn_MethodHandle):  // AllowTransitionalJSR292 ONLY
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
     if (is_static() || !is_native())  break;
     switch (name_id) {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name):
+      if (!AllowInvokeGeneric)  break;
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):
       id = vmIntrinsics::_invokeGeneric;
       break;
     case vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name):
       id = vmIntrinsics::_invokeExact;
-      break;
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name):
-      if (AllowInvokeForInvokeGeneric)   id = vmIntrinsics::_invokeGeneric;
-      else if (AllowTransitionalJSR292)  id = vmIntrinsics::_invokeExact;
       break;
     }
     break;

@@ -385,10 +385,18 @@ class OopAddress: public AddressLiteral {
 };
 
 class ExternalAddress: public AddressLiteral {
+ private:
+  static relocInfo::relocType reloc_for_target(address target) {
+    // Sometimes ExternalAddress is used for values which aren't
+    // exactly addresses, like the card table base.
+    // external_word_type can't be used for values in the first page
+    // so just skip the reloc in that case.
+    return external_word_Relocation::can_be_relocated(target) ? relocInfo::external_word_type : relocInfo::none;
+  }
 
-  public:
+ public:
 
-  ExternalAddress(address target) : AddressLiteral(target, relocInfo::external_word_type){}
+  ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(target)) {}
 
 };
 
@@ -580,7 +588,6 @@ private:
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
-
   bool reachable(AddressLiteral adr) NOT_LP64({ return true;});
 
   // These are all easily abused and hence protected
@@ -682,6 +689,8 @@ private:
                                                     x < (1 << (nbits-1)); }
  static bool is_simm32(int32_t x) { return true; }
 #endif // _LP64
+
+  static bool is_polling_page_far() NOT_LP64({ return false;});
 
   // Generic instructions
   // Does 32bit or 64bit as needed for the platform. In some sense these
@@ -1700,6 +1709,7 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst, Register src);
 
   void load_heap_oop(Register dst, Address src);
+  void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
 
   // Used for storing NULL. All other oop constants should be
@@ -2094,7 +2104,10 @@ class MacroAssembler: public Assembler {
 
   void leal32(Register dst, Address src) { leal(dst, src); }
 
-  void test32(Register src1, AddressLiteral src2);
+  // Import other testl() methods from the parent class or else
+  // they will be hidden by the following overriding declaration.
+  using Assembler::testl;
+  void testl(Register dst, AddressLiteral src);
 
   void orptr(Register dst, Address src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
   void orptr(Register dst, Register src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
@@ -2240,10 +2253,13 @@ public:
 
   // Data
 
-  void cmov(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
+  void cmov32( Condition cc, Register dst, Address  src);
+  void cmov32( Condition cc, Register dst, Register src);
 
-  void cmovptr(Condition cc, Register dst, Address src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
-  void cmovptr(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmovl(cc, dst, src)); }
+  void cmov(   Condition cc, Register dst, Register src) { cmovptr(cc, dst, src); }
+
+  void cmovptr(Condition cc, Register dst, Address  src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
+  void cmovptr(Condition cc, Register dst, Register src) { LP64_ONLY(cmovq(cc, dst, src)) NOT_LP64(cmov32(cc, dst, src)); }
 
   void movoop(Register dst, jobject obj);
   void movoop(Address dst, jobject obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.util.Set;
 
 /**
  * @test
- * @bug 6875847
+ * @bug 6875847 6992272 7002320 7015500 7023613
  * @summary test API changes to Locale
  */
 public class LocaleEnhanceTest extends LocaleTestFmwk {
@@ -83,7 +83,7 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             "en-Latn-US-NewYork", "en_US_NewYork_#Latn",
             "en-Latn-US", "en_US_#Latn",
             "en-Latn-NewYork", "en__NewYork_#Latn", // double underscore
-            "en-Latn", "en_#Latn",
+            "en-Latn", "en__#Latn", // double underscore
             "en-US-NewYork", "en_US_NewYork",
             "en-US", "en_US",
             "en-NewYork", "en__NewYork", // double underscore
@@ -1256,6 +1256,22 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             loc = bldr.build();
             out = loc.toLanguageTag();
             assertEquals("Language tag roundtrip by Builder.setLanguageTag with input: " + in, expected, out);
+        }
+    }
+
+    public void testBug7023613() {
+        String[][] testdata = {
+            {"en-Latn", "en__#Latn"},
+            {"en-u-ca-japanese", "en__#u-ca-japanese"},
+        };
+
+        for (String[] data : testdata) {
+            String in = data[0];
+            String expected = (data.length == 1) ? data[0] : data[1];
+
+            Locale loc = Locale.forLanguageTag(in);
+            String out = loc.toString();
+            assertEquals("Empty country field with non-empty script/extension with input: " + in, expected, out);
         }
     }
 

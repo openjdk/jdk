@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,11 +987,33 @@ public class JOptionPane extends JComponent implements Accessible
         }
         dialog.pack();
         dialog.setLocationRelativeTo(parentComponent);
+
+        final PropertyChangeListener listener = new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent event) {
+                // Let the defaultCloseOperation handle the closing
+                // if the user closed the window without selecting a button
+                // (newValue = null in that case).  Otherwise, close the dialog.
+                if (dialog.isVisible() && event.getSource() == JOptionPane.this &&
+                        (event.getPropertyName().equals(VALUE_PROPERTY) ||
+                                event.getPropertyName().equals(INPUT_VALUE_PROPERTY)) &&
+                        event.getNewValue() != null &&
+                        event.getNewValue() != JOptionPane.UNINITIALIZED_VALUE) {
+                    dialog.setVisible(false);
+                }
+            }
+        };
+
         WindowAdapter adapter = new WindowAdapter() {
             private boolean gotFocus = false;
             public void windowClosing(WindowEvent we) {
                 setValue(null);
             }
+
+            public void windowClosed(WindowEvent e) {
+                removePropertyChangeListener(listener);
+                dialog.getContentPane().removeAll();
+            }
+
             public void windowGainedFocus(WindowEvent we) {
                 // Once window gets focus, set initial focus
                 if (!gotFocus) {
@@ -1008,20 +1030,8 @@ public class JOptionPane extends JComponent implements Accessible
                 setValue(JOptionPane.UNINITIALIZED_VALUE);
             }
         });
-        addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent event) {
-                // Let the defaultCloseOperation handle the closing
-                // if the user closed the window without selecting a button
-                // (newValue = null in that case).  Otherwise, close the dialog.
-                if (dialog.isVisible() && event.getSource() == JOptionPane.this &&
-                  (event.getPropertyName().equals(VALUE_PROPERTY) ||
-                   event.getPropertyName().equals(INPUT_VALUE_PROPERTY)) &&
-                  event.getNewValue() != null &&
-                  event.getNewValue() != JOptionPane.UNINITIALIZED_VALUE) {
-                    dialog.setVisible(false);
-                }
-            }
-        });
+
+        addPropertyChangeListener(listener);
     }
 
 

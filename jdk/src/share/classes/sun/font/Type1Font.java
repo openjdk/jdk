@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,6 +677,6 @@ public class Type1Font extends FileFont {
 
     public String toString() {
         return "** Type1 Font: Family="+familyName+ " Name="+fullName+
-            " style="+style+" fileName="+platName;
+            " style="+style+" fileName="+getPublicFileName();
     }
 }

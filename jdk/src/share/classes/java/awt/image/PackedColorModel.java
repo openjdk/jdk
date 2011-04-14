@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,8 +343,13 @@ public abstract class PackedColorModel extends ColorModel {
         if (bitMasks.length != maskArray.length) {
             return false;
         }
+
+        /* compare 'effective' masks only, i.e. only part of the mask
+         * which fits the capacity of the transfer type.
+         */
+        int maxMask = (int)((1L << DataBuffer.getDataTypeSize(transferType)) - 1);
         for (int i=0; i < bitMasks.length; i++) {
-            if (bitMasks[i] != maskArray[i]) {
+            if ((maxMask & bitMasks[i]) != (maxMask & maskArray[i])) {
                 return false;
             }
         }

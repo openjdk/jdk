@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Anchorage", AKST},
             {"AST", AKST},
             {"America/Halifax", AST},
+            {"America/Sitka", AKST},
             {"America/St_Johns", NST},
             {"CNT", NST},
             {"Europe/Paris", CET},
@@ -392,6 +393,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
+            {"America/Metlakatla", new String[] {"Metlakatla Standard Time", "MeST",
+                                                 "Metlakatla Daylight Time", "MeDT"}},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"\u30b5\u30f3\u30d4\u30a8\u30fc\u30eb\u30fb\u30df\u30af\u30ed\u30f3\u8af8\u5cf6\u6a19\u6e96\u6642", "PMST",
                                                "\u30b5\u30f3\u30d4\u30a8\u30fc\u30eb\u30fb\u30df\u30af\u30ed\u30f3\u8af8\u5cf6\u590f\u6642\u9593", "PMDT"}},

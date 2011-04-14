@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,8 @@ $(SERVICEDIR)/%: $(CLOSED_SRC)/share/classes/sun/java2d/cmm/kcms/META-INF/servic
 # Extra rules
 #
 ifeq  ($(PLATFORM), linux)
-LDLIBS += -lpthread
+    LDLIBS += -lpthread
+    OTHER_CFLAGS += -Wno-missing-field-initializers
 endif
 
 clean clobber:: 
@@ -103,6 +104,5 @@ CPPFLAGS += -I$(CLASSHDRDIR) \
 
 endif # PLATFORM
 
-#CFLAGS += -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST
-CFLAGS += -DFUT_CALC_EX -DNO_FUT_GCONST
+CFLAGS += -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST
 

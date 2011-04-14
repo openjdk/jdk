@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2685,11 +2685,11 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                     switch (type_table[operand]) {
                     case JVM_CONSTANT_MethodType:
                       full_info = make_class_info_from_name(context,
-                                                            "java/dyn/MethodType");
+                                                            "java/lang/invoke/MethodType");
                       break;
                     default: //JVM_CONSTANT_MethodHandle
                       full_info = make_class_info_from_name(context,
-                                                            "java/dyn/MethodHandle");
+                                                            "java/lang/invoke/MethodHandle");
                       break;
                     }
                     break;

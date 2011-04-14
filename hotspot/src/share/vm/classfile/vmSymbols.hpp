@@ -245,44 +245,15 @@
   template(java_lang_invoke_AdapterMethodHandle,      "java/lang/invoke/AdapterMethodHandle")     \
   template(java_lang_invoke_BoundMethodHandle,        "java/lang/invoke/BoundMethodHandle")       \
   template(java_lang_invoke_DirectMethodHandle,       "java/lang/invoke/DirectMethodHandle")      \
-  /* temporary transitional public names from 6839872: */                                         \
-  template(java_dyn_InvokeDynamic,                    "java/dyn/InvokeDynamic")         /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_Linkage,                          "java/dyn/Linkage")               /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_CallSite,                         "java/dyn/CallSite")              /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodHandle,                     "java/dyn/MethodHandle")          /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodType,                       "java/dyn/MethodType")            /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_WrongMethodTypeException,         "java/dyn/WrongMethodTypeException") /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodType_signature,             "Ljava/dyn/MethodType;")          /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodHandle_signature,           "Ljava/dyn/MethodHandle;")        /* AllowTransitionalJSR292 ONLY */ \
-  /* temporary transitional internal names from 6839872: */                                       \
-  template(java_dyn_MethodTypeForm,                   "java/dyn/MethodTypeForm")        /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodTypeForm_signature,         "Ljava/dyn/MethodTypeForm;")      /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MemberName,                       "java/dyn/MemberName")            /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_MethodHandleNatives,              "java/dyn/MethodHandleNatives")   /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_AdapterMethodHandle,              "java/dyn/AdapterMethodHandle")   /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_BoundMethodHandle,                "java/dyn/BoundMethodHandle")     /* AllowTransitionalJSR292 ONLY */ \
-  template(java_dyn_DirectMethodHandle,               "java/dyn/DirectMethodHandle")    /* AllowTransitionalJSR292 ONLY */ \
-  /* temporary transitional internal names from EDR: */                                           \
-  template(sun_dyn_MemberName,                        "sun/dyn/MemberName")             /* AllowTransitionalJSR292 ONLY */ \
-  template(sun_dyn_MethodHandleImpl,                  "sun/dyn/MethodHandleImpl")       /* AllowTransitionalJSR292 ONLY */ \
-  template(sun_dyn_MethodHandleNatives,               "sun/dyn/MethodHandleNatives")    /* AllowTransitionalJSR292 ONLY */ \
-  template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")    /* AllowTransitionalJSR292 ONLY */ \
-  template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")      /* AllowTransitionalJSR292 ONLY */ \
-  template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")     /* AllowTransitionalJSR292 ONLY */ \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
-  template(findMethodHandleType_TRANS_signature, "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/dyn/MethodType;") /* AllowTransitionalJSR292 ONLY */ \
   template(notifyGenericMethodType_name,              "notifyGenericMethodType")                  \
   template(notifyGenericMethodType_signature,         "(Ljava/lang/invoke/MethodType;)V")         \
-  template(notifyGenericMethodType_TRANS_signature,   "(Ljava/dyn/MethodType;)V")       /* AllowTransitionalJSR292 ONLY */ \
   template(linkMethodHandleConstant_name,             "linkMethodHandleConstant")                 \
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;") \
-  template(linkMethodHandleConstant_TRANS_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/dyn/MethodHandle;") /* AllowTransitionalJSR292 ONLY */ \
   template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
   template(makeDynamicCallSite_signature, "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/Object;Ljava/lang/invoke/MemberName;I)Ljava/lang/invoke/CallSite;") \
-  template(makeDynamicCallSite_TRANS_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Lsun/dyn/MemberName;I)Ljava/dyn/CallSite;") /* AllowTransitionalJSR292 ONLY */ \
-  template(makeDynamicCallSite_TRANS2_signature, "(Ljava/dyn/MethodHandle;Ljava/lang/String;Ljava/dyn/MethodType;Ljava/lang/Object;Ljava/dyn/MemberName;I)Ljava/dyn/CallSite;") /* AllowTransitionalJSR292 ONLY */ \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
                                                                                                   \
@@ -911,8 +882,6 @@
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_object_array_object_signature, F_R) \
   /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
   do_intrinsic(_checkSpreadArgument,      java_lang_invoke_MethodHandleNatives, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) \
-  do_intrinsic(_checkSpreadArgument_TRANS,sun_dyn_MethodHandleImpl, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) /* AllowTransitionalJSR292 ONLY */ \
-  do_intrinsic(_checkSpreadArgument_TRANS2,java_dyn_MethodHandleNatives, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) /* AllowTransitionalJSR292 ONLY */ \
    do_name(    checkSpreadArgument_name,       "checkSpreadArgument")                                                   \
    do_name(    checkSpreadArgument_signature,  "(Ljava/lang/Object;I)V")                                                \
   do_intrinsic(_invokeExact,              java_lang_invoke_MethodHandle, invokeExact_name,   object_array_object_signature, F_RN) \

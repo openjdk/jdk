@@ -176,7 +176,7 @@ void LinkResolver::resolve_klass_no_update(KlassHandle& result, constantPoolHand
 
 void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
   methodOop result_oop = klass->uncached_lookup_method(name, signature);
-  if (EnableMethodHandles && result_oop != NULL) {
+  if (EnableInvokeDynamic && result_oop != NULL) {
     switch (result_oop->intrinsic_id()) {
     case vmIntrinsics::_invokeExact:
     case vmIntrinsics::_invokeGeneric:
@@ -214,16 +214,14 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
                                           KlassHandle klass, Symbol* name, Symbol* signature,
                                           KlassHandle current_klass,
                                           TRAPS) {
-  if (EnableMethodHandles &&
+  if (EnableInvokeDynamic &&
       klass() == SystemDictionary::MethodHandle_klass() &&
       methodOopDesc::is_method_handle_invoke_name(name)) {
     if (!THREAD->is_Compiler_thread() && !MethodHandles::enabled()) {
       // Make sure the Java part of the runtime has been booted up.
       klassOop natives = SystemDictionary::MethodHandleNatives_klass();
       if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
-        Symbol* natives_name = vmSymbols::java_lang_invoke_MethodHandleNatives();
-        if (natives != NULL && AllowTransitionalJSR292)  natives_name = Klass::cast(natives)->name();
-        SystemDictionary::resolve_or_fail(natives_name,
+        SystemDictionary::resolve_or_fail(vmSymbols::java_lang_invoke_MethodHandleNatives(),
                                           Handle(),
                                           Handle(),
                                           true,

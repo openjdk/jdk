@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,9 +154,6 @@ final class Helpers {
     // These use a hardcoded factor of 2 for increasing sizes. Perhaps this
     // should be provided as an argument.
     static float[] widenArray(float[] in, final int cursize, final int numToAdd) {
-        if (in == null) {
-            return new float[5 * numToAdd];
-        }
         if (in.length >= cursize + numToAdd) {
             return in;
         }

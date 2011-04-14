@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ ifneq (,$(findstring $(PLATFORM), linux solaris))	# UNIX systems
 	endif
     endif
     ifeq ($(PLATFORM), linux)
-	LDFLAGS += -Wl,-z -Wl,origin
+	LDFLAGS += $(LDFLAG_Z_ORIGIN)
 	LDFLAGS += -Wl,--allow-shlib-undefined
 	LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../lib/$(LIBARCH)/jli
 	LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../jre/lib/$(LIBARCH)/jli

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4160195
- * @summary Check for correct detection of XML content type
+ * @bug 4160195 7026346
+ * @summary Check for correct detection of XML content type, including BOM streams
  */
 
 import java.io.*;
@@ -34,6 +34,8 @@ import java.net.*;
 public class GetXmlContentType {
 
     static final String XML_MIME_TYPE = "application/xml";
+    static final String XML_HEADER = "<?xml";
+    static int passed, failed;
 
     // guess type from content and filename
     static final String goodFiles [] = {
@@ -50,52 +52,91 @@ public class GetXmlContentType {
         };
 
     public static void main(String[] args) throws Exception {
-        boolean sawError = false;
+        contentTypeFromFile();
+        contentTypeFromBOMStream();
 
-        //
+        if (failed > 0)
+            throw new RuntimeException (
+                "Test failed; passed = " + passed + ", failed = " + failed);
+    }
+
+    static void contentTypeFromFile() throws Exception {
         // POSITIVE tests:  good data --> good result
-        //
-        for (int i = 0; i < goodFiles.length; i++) {
-            String      result = getUrlContentType (goodFiles [i]);
 
-            if (!XML_MIME_TYPE.equals (result)) {
-                System.out.println ("Wrong MIME type: "
-                    + goodFiles [i]
-                    + " --> " + result
-                    );
-                sawError = true;
+        for (String goodFile : goodFiles) {
+            String result = getUrlContentType(goodFile);
+
+            if (!XML_MIME_TYPE.equals(result)) {
+                System.out.println("Wrong MIME type: " + goodFile + " --> " + result);
+                failed++;
+            } else {
+                passed++;
             }
         }
 
-        //
         // NEGATIVE tests:  bad data --> correct diagnostic
-        //
-        for (int i = 0; i < badFiles.length; i++) {
-            String      result = getUrlContentType (badFiles [i]);
+        for (String badFile : badFiles) {
+            String result = getUrlContentType(badFile);
 
-            if (XML_MIME_TYPE.equals (result)) {
-                System.out.println ("Wrong MIME type: "
-                    + badFiles [i]
-                    + " --> " + result
-                    );
-                sawError = true;
+            if (XML_MIME_TYPE.equals(result)) {
+                System.out.println("Wrong MIME type: " + badFile + " --> " + result);
+                failed++;
+            } else {
+                passed++;
             }
         }
-
-        if (sawError)
-            throw new Exception (
-                "GetXmlContentType Test failed; see diagnostics.");
     }
 
-    static String getUrlContentType (String name) throws IOException {
-        File            file = new File(System.getProperty("test.src", "."), "xml");
-        URL             u = new URL ("file:"
-                            + file.getCanonicalPath()
-                            + file.separator
-                            + name);
-        URLConnection   conn = u.openConnection ();
+    static String getUrlContentType(String name) throws IOException {
+        File file = new File(System.getProperty("test.src", "."), "xml");
+        URL u = new URL("file:"
+                         + file.getCanonicalPath()
+                         + file.separator
+                         + name);
+        URLConnection conn = u.openConnection();
 
-        return conn.getContentType ();
+        return conn.getContentType();
     }
 
+    static void contentTypeFromBOMStream() throws Exception {
+        final String[] encodings = new  String[]
+                {"UTF-8", "UTF-16BE", "UTF-16LE", "UTF-32BE", "UTF-32LE"};
+        for (String encoding : encodings) {
+             try (InputStream is = new ByteArrayInputStream(toBOMBytes(encoding))) {
+                 String mime = URLConnection.guessContentTypeFromStream(is);
+                 if ( !XML_MIME_TYPE.equals(mime) ) {
+                     System.out.println("Wrong MIME type: " + encoding + " --> " + mime);
+                     failed++;
+                 } else {
+                     passed++;
+                 }
+             }
+         }
+    }
+
+    static byte[] toBOMBytes(String encoding) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        switch (encoding) {
+            case "UTF-8" :
+                bos.write(new  byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF });
+                break;
+            case "UTF-16BE" :
+                bos.write(new  byte[] { (byte) 0xFE, (byte) 0xFF });
+                break;
+            case "UTF-16LE" :
+                bos.write(new  byte[] { (byte) 0xFF, (byte) 0xFE });
+                break;
+            case "UTF-32BE" :
+                bos.write(new  byte[] { (byte) 0x00, (byte) 0x00,
+                                        (byte) 0xFE, (byte) 0xFF });
+                break;
+            case "UTF-32LE" :
+                bos.write(new  byte[] { (byte) 0xFF, (byte) 0xFE,
+                                        (byte) 0x00, (byte) 0x00 });
+        }
+
+        bos.write(XML_HEADER.getBytes(encoding));
+        return bos.toByteArray();
+    }
 }

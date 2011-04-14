@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import java.util.concurrent.locks.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.Serializable;
+import java.io.*;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.event.EventListenerList;
 
 
@@ -208,6 +212,22 @@ public class Timer implements Serializable
         }
     }
 
+    /*
+     * The timer's AccessControlContext.
+     */
+     private transient volatile AccessControlContext acc =
+            AccessController.getContext();
+
+    /**
+      * Returns the acc this timer was constructed with.
+      */
+     final AccessControlContext getAccessControlContext() {
+       if (acc == null) {
+           throw new SecurityException(
+                   "Timer is missing AccessControlContext");
+       }
+       return acc;
+     }
 
     /**
      * DoPostEvent is a runnable class that fires actionEvents to
@@ -587,13 +607,25 @@ public class Timer implements Serializable
 
 
     void post() {
-        if (notify.compareAndSet(false, true) || !coalesce) {
-            SwingUtilities.invokeLater(doPostEvent);
+         if (notify.compareAndSet(false, true) || !coalesce) {
+             AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                 public Void run() {
+                     SwingUtilities.invokeLater(doPostEvent);
+                     return null;
+                }
+            }, getAccessControlContext());
         }
     }
 
     Lock getLock() {
         return lock;
+    }
+
+    private void readObject(ObjectInputStream in)
+        throws ClassNotFoundException, IOException
+    {
+        this.acc = AccessController.getContext();
+        in.defaultReadObject();
     }
 
     /*

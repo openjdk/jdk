@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,25 +29,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.applet.Applet;
-import java.awt.event.*;
-import java.awt.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Label;
+import java.awt.LayoutManager;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.TextEvent;
 import java.awt.image.ColorModel;
 import java.awt.image.MemoryImageSource;
 
+
+enum DitherMethod {
+
+    NOOP, RED, GREEN, BLUE, ALPHA, SATURATION
+};
+
+
+@SuppressWarnings("serial")
 public class DitherTest extends Applet implements Runnable {
-    final private static int NOOP = 0;
-    final private static int RED = 1;
-    final private static int GREEN = 2;
-    final private static int BLUE = 3;
-    final private static int ALPHA = 4;
-    final private static int SATURATION = 5;
 
     private Thread runner;
-
     private DitherControls XControls;
     private DitherControls YControls;
     private DitherCanvas canvas;
@@ -62,6 +80,7 @@ public class DitherTest extends Applet implements Runnable {
         ditherTest.start();
     }
 
+    @Override
     public void init() {
         String xspec = null, yspec = null;
         int xvals[] = new int[2];
@@ -70,7 +89,7 @@ public class DitherTest extends Applet implements Runnable {
         try {
             xspec = getParameter("xaxis");
             yspec = getParameter("yaxis");
-        } catch (NullPointerException npe) {
+        } catch (NullPointerException ignored) {
             //only occurs if run as application
         }
 
@@ -80,44 +99,34 @@ public class DitherTest extends Applet implements Runnable {
         if (yspec == null) {
             yspec = "blue";
         }
-        int xmethod = colormethod(xspec, xvals);
-        int ymethod = colormethod(yspec, yvals);
+        DitherMethod xmethod = colorMethod(xspec, xvals);
+        DitherMethod ymethod = colorMethod(yspec, yvals);
 
         setLayout(new BorderLayout());
         XControls = new DitherControls(this, xvals[0], xvals[1],
-                                       xmethod, false);
+                xmethod, false);
         YControls = new DitherControls(this, yvals[0], yvals[1],
-                                       ymethod, true);
+                ymethod, true);
         YControls.addRenderButton();
         add("North", XControls);
         add("South", YControls);
         add("Center", canvas = new DitherCanvas());
     }
 
-    private int colormethod(String s, int vals[]) {
-        int method = NOOP;
+    private DitherMethod colorMethod(String s, int vals[]) {
+        DitherMethod method = DitherMethod.NOOP;
         if (s == null) {
             s = "";
         }
         String lower = s.toLowerCase();
-        int len = 0;
-        if (lower.startsWith("red")) {
-            method = RED;
-            lower = lower.substring(3);
-        } else if (lower.startsWith("green")) {
-            method = GREEN;
-            lower = lower.substring(5);
-        } else if (lower.startsWith("blue")) {
-            method = BLUE;
-            lower = lower.substring(4);
-        } else if (lower.startsWith("alpha")) {
-            method = ALPHA;
-            lower = lower.substring(5);
-        } else if (lower.startsWith("saturation")) {
-            method = SATURATION;
-            lower = lower.substring(10);
+
+        for (DitherMethod m : DitherMethod.values()) {
+            if (lower.startsWith(m.toString().toLowerCase())) {
+                method = m;
+                lower = lower.substring(m.toString().length());
+            }
         }
-        if (method == NOOP) {
+        if (method == DitherMethod.NOOP) {
             vals[0] = 0;
             vals[1] = 0;
             return method;
@@ -132,7 +141,7 @@ public class DitherTest extends Applet implements Runnable {
                 begval = Integer.parseInt(lower.substring(0, dash));
                 endval = Integer.parseInt(lower.substring(dash + 1));
             }
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException ignored) {
         }
 
         if (begval < 0) {
@@ -173,16 +182,14 @@ public class DitherTest extends Applet implements Runnable {
                 c[0] = c[1] = c[2] = 0;
                 c[3] = 255;
                 if (xmethod < ymethod) {
-                    applymethod(c, xmethod, i, width, xvals);
-                    applymethod(c, ymethod, j, height, yvals);
+                    applyMethod(c, xmethod, i, width, xvals);
+                    applyMethod(c, ymethod, j, height, yvals);
                 } else {
-                    applymethod(c, ymethod, j, height, yvals);
-                    applymethod(c, xmethod, i, width, xvals);
+                    applyMethod(c, ymethod, j, height, yvals);
+                    applyMethod(c, xmethod, i, width, xvals);
                 }
-                pixels[index++] = ((c[3] << 24) |
-                                   (c[0] << 16) |
-                                   (c[1] << 8) |
-                                   c[2]);
+                pixels[index++] = ((c[3] << 24) | (c[0] << 16) | (c[1] << 8)
+                        | c[2]);
             }
 
             // Poll once per row to see if we've been told to stop.
@@ -191,51 +198,54 @@ public class DitherTest extends Applet implements Runnable {
             }
         }
         return createImage(new MemoryImageSource(width, height,
-                            ColorModel.getRGBdefault(), pixels, 0, width));
+                ColorModel.getRGBdefault(), pixels, 0, width));
     }
 
-    private void applymethod(int c[], int method, int step,
-                             int total, int vals[]) {
-        if (method == NOOP) {
+    private void applyMethod(int c[], int methodIndex, int step,
+            int total, int vals[]) {
+        DitherMethod method = DitherMethod.values()[methodIndex];
+        if (method == DitherMethod.NOOP) {
             return;
         }
         int val = ((total < 2)
-                   ? vals[0]
-                   : vals[0] + ((vals[1] - vals[0]) * step / (total - 1)));
+                ? vals[0]
+                : vals[0] + ((vals[1] - vals[0]) * step / (total - 1)));
         switch (method) {
-        case RED:
-            c[0] = val;
-            break;
-        case GREEN:
-            c[1] = val;
-            break;
-        case BLUE:
-            c[2] = val;
-            break;
-        case ALPHA:
-            c[3] = val;
-            break;
-        case SATURATION:
-            int max = Math.max(Math.max(c[0], c[1]), c[2]);
-            int min = max * (255 - val) / 255;
-            if (c[0] == 0) {
-                c[0] = min;
-            }
-            if (c[1] == 0) {
-                c[1] = min;
-            }
-            if (c[2] == 0) {
-                c[2] = min;
-            }
-            break;
+            case RED:
+                c[0] = val;
+                break;
+            case GREEN:
+                c[1] = val;
+                break;
+            case BLUE:
+                c[2] = val;
+                break;
+            case ALPHA:
+                c[3] = val;
+                break;
+            case SATURATION:
+                int max = Math.max(Math.max(c[0], c[1]), c[2]);
+                int min = max * (255 - val) / 255;
+                if (c[0] == 0) {
+                    c[0] = min;
+                }
+                if (c[1] == 0) {
+                    c[1] = min;
+                }
+                if (c[2] == 0) {
+                    c[2] = min;
+                }
+                break;
         }
     }
 
+    @Override
     public void start() {
         runner = new Thread(this);
         runner.start();
     }
 
+    @Override
     public void run() {
         canvas.setImage(null);  // Wipe previous image
         Image img = calculateImage();
@@ -244,35 +254,43 @@ public class DitherTest extends Applet implements Runnable {
         }
     }
 
+    @Override
     public void stop() {
         runner = null;
     }
 
+    @Override
     public void destroy() {
         remove(XControls);
         remove(YControls);
         remove(canvas);
     }
 
+    @Override
     public String getAppletInfo() {
         return "An interactive demonstration of dithering.";
     }
 
+    @Override
     public String[][] getParameterInfo() {
         String[][] info = {
-            {"xaxis", "{RED, GREEN, BLUE, ALPHA, SATURATION}",
-             "The color of the Y axis.  Default is RED."},
-            {"yaxis", "{RED, GREEN, BLUE, ALPHA, SATURATION}",
-             "The color of the X axis.  Default is BLUE."}
+            { "xaxis", "{RED, GREEN, BLUE, ALPHA, SATURATION}",
+                "The color of the Y axis.  Default is RED." },
+            { "yaxis", "{RED, GREEN, BLUE, ALPHA, SATURATION}",
+                "The color of the X axis.  Default is BLUE." }
         };
         return info;
     }
 }
 
+
+@SuppressWarnings("serial")
 class DitherCanvas extends Canvas {
+
     private Image img;
     private static String calcString = "Calculating...";
 
+    @Override
     public void paint(Graphics g) {
         int w = getSize().width;
         int h = getSize().height;
@@ -288,14 +306,17 @@ class DitherCanvas extends Canvas {
         }
     }
 
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
 
+    @Override
     public Dimension getMinimumSize() {
         return new Dimension(20, 20);
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return new Dimension(200, 200);
     }
@@ -310,29 +331,29 @@ class DitherCanvas extends Canvas {
     }
 }
 
+
+@SuppressWarnings("serial")
 class DitherControls extends Panel implements ActionListener {
+
     private CardinalTextField start;
     private CardinalTextField end;
     private Button button;
     private Choice choice;
     private DitherTest applet;
-
     private static LayoutManager dcLayout = new FlowLayout(FlowLayout.CENTER,
-                                                           10, 5);
+            10, 5);
 
-    public DitherControls(DitherTest app, int s, int e, int type,
-                          boolean vertical) {
+    public DitherControls(DitherTest app, int s, int e, DitherMethod type,
+            boolean vertical) {
         applet = app;
         setLayout(dcLayout);
         add(new Label(vertical ? "Vertical" : "Horizontal"));
         add(choice = new Choice());
-        choice.addItem("Noop");
-        choice.addItem("Red");
-        choice.addItem("Green");
-        choice.addItem("Blue");
-        choice.addItem("Alpha");
-        choice.addItem("Saturation");
-        choice.select(type);
+        for (DitherMethod m : DitherMethod.values()) {
+            choice.addItem(m.toString().substring(0, 1)
+                    + m.toString().substring(1).toLowerCase());
+        }
+        choice.select(type.ordinal());
         add(start = new CardinalTextField(Integer.toString(s), 4));
         add(end = new CardinalTextField(Integer.toString(e), 4));
     }
@@ -369,6 +390,7 @@ class DitherControls extends Panel implements ActionListener {
     }
 
     /* called when user clicks the button */
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == button) {
             applet.start();
@@ -376,6 +398,8 @@ class DitherControls extends Panel implements ActionListener {
     }
 }
 
+
+@SuppressWarnings("serial")
 class CardinalTextField extends TextField {
 
     String oldText = null;
@@ -391,6 +415,7 @@ class CardinalTextField extends TextField {
     // function, but this is neater, since ideally, it would prevent
     // the text from appearing at all.  Sigh.  See bugid 4100317/4114565.
     //
+    @Override
     protected void processEvent(AWTEvent evt) {
         int id = evt.getID();
         if (id != KeyEvent.KEY_TYPED) {
@@ -420,6 +445,7 @@ class CardinalTextField extends TextField {
     // Note: it would be easy to extend this to an eight-bit
     // TextField (range 0-255), but I'll leave it as-is.
     //
+    @Override
     protected void processTextEvent(TextEvent te) {
         // The empty string is okay, too
         String newText = getText();
@@ -436,11 +462,8 @@ class CardinalTextField extends TextField {
     // Returns true for Cardinal (non-negative) numbers
     // Note that the empty string is not allowed
     private boolean textIsCardinal(String textToCheck) {
-        int value = -1;
-
         try {
-            value = Integer.parseInt(textToCheck, 10);
-            return (value >= 0);
+            return Integer.parseInt(textToCheck, 10) >= 0;
         } catch (NumberFormatException nfe) {
             return false;
         }

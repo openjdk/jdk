@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ IMPORT_TOOLS_PACKAGES += \
      com/sun/tools/internal/xjc \
      com/sun/tools/internal/ws \
      com/sun/tools/internal/jxc \
+     org/relaxng \
      META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory \
-     META-INF/services/com.sun.tools.xjc.Plugin
+     META-INF/services/com.sun.tools.internal.xjc.Plugin
 

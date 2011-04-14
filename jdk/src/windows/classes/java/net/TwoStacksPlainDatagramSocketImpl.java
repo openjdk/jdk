@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
+import sun.net.ResourceManager;
 
 /**
  * This class defines the plain DatagramSocketImpl that is used for all
@@ -108,6 +109,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected void close() {
         if (fd != null || fd1 != null) {
             datagramSocketClose();
+            ResourceManager.afterUdpClose();
             fd = null;
             fd1 = null;
         }

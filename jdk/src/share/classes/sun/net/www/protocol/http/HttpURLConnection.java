@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2173,6 +2173,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         if (tryTransparentNTLMServer) {
                             tryTransparentNTLMServer =
                                     NTLMAuthenticationProxy.proxy.supportsTransparentAuth;
+                            /* If the platform supports transparent authentication
+                             * then check if we are in a secure environment
+                             * whether, or not, we should try transparent authentication.*/
+                            if (tryTransparentNTLMServer) {
+                                tryTransparentNTLMServer =
+                                        NTLMAuthenticationProxy.proxy.isTrustedSite(url);
+                            }
                         }
                         a = null;
                         if (tryTransparentNTLMServer) {

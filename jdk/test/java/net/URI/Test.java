@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Unit test for java.net.URI
- * @bug 4464135 4505046 4503239 4438319 4991359 4866303
+ * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363
  * @author Mark Reinhold
  */
 
@@ -1050,6 +1050,13 @@ public class Test {
         test("http://1.2.3.4.5").psa().x().z();
         test("http://[1.2.3.4:5]").x().z();
         test("http://1:2:3:4:5:6:7:8").psa().x().z();
+        test("http://[1.2.3.4]/").x().z();
+        test("http://[1.2.3.4/").x().z();
+        test("http://[foo]/").x().z();
+        test("http://[foo/").x().z();
+        test("s", "[foo]", "/", null, null).x().z();
+        test("s", "[foo", "/", null, null).x().z();
+        test("s", "[::foo", "/", null, null).x().z();
 
         // Test hostnames that might initially look like IPv4 addresses
 

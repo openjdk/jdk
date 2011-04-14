@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,14 @@
 
 /* @test
    @bug 4471738
-   @ignore until 6825739 fixed
    @summary Failure to properly traverse class hierarchy in Class.getMethod()
 */
 
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
 
-public class InheritedMethods extends JPanel {
+public class InheritedMethods {
     public static void main(String[] args) throws Exception { new InheritedMethods(); }
     InheritedMethods() throws Exception {
         Class c = Foo.class;
@@ -41,7 +38,6 @@ public class InheritedMethods extends JPanel {
         if (m.getDeclaringClass() != java.util.List.class) {
           throw new RuntimeException("TEST FAILED");
         }
-        add(new JLabel("Test"));
     }
     interface Foo extends List { }
 }

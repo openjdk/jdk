@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,22 @@ public class Options {
      */
     public String get(OptionName name) {
         return values.get(name.optionName);
+    }
+
+    /**
+     * Get the boolean value for an option, patterned after Boolean.getBoolean,
+     * essentially will return true, iff the value exists and is set to "true".
+     */
+    public boolean getBoolean(String name) {
+        return getBoolean(name, false);
+    }
+
+    /**
+     * Get the boolean with a default value if the option is not set.
+     */
+    public boolean getBoolean(String name, boolean defaultValue) {
+        String value = get(name);
+        return (value == null) ? defaultValue : Boolean.parseBoolean(value);
     }
 
     /**

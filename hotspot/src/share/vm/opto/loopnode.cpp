@@ -341,7 +341,12 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   //
   assert(x->Opcode() == Op_Loop, "regular loops only");
   C->print_method("Before CountedLoop", 3);
-
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("Counted      ");
+    loop->dump_head();
+  }
+#endif
   // If compare points to incr, we are ok.  Otherwise the compare
   // can directly point to the phi; in this case adjust the compare so that
   // it points to the incr by adjusting the limit.
@@ -864,8 +869,10 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   Node *outer = new (phase->C, 3) LoopNode( ctl, _head->in(outer_idx) );
   outer = igvn.register_new_node_with_optimizer(outer, _head);
   phase->set_created_loop_node();
+
+  Node* pred = phase->clone_loop_predicates(ctl, outer);
   // Outermost loop falls into '_head' loop
-  _head->set_req(LoopNode::EntryControl, outer);
+  _head->set_req(LoopNode::EntryControl, pred);
   _head->del_req(outer_idx);
   // Split all the Phis up between '_head' loop and 'outer' loop.
   for (DUIterator_Fast jmax, j = _head->fast_outs(jmax); j < jmax; j++) {
@@ -1064,8 +1071,6 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   // Cache parts in locals for easy
   PhaseIterGVN &igvn = phase->_igvn;
 
-  phase->C->print_method("Before beautify loops", 3);
-
   igvn.hash_delete(_head);      // Yank from hash before hacking edges
 
   // Check for multiple fall-in paths.  Peel off a landing pad if need be.
@@ -1105,12 +1110,13 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   // backedges into a private merge point and use the merge point as
   // the one true backedge.
   if( _head->req() > 3 ) {
-    // Merge the many backedges into a single backedge.
+    // Merge the many backedges into a single backedge but leave
+    // the hottest backedge as separate edge for the following peel.
     merge_many_backedges( phase );
     result = true;
   }
 
-  // If I am a shared header (multiple backedges), peel off myself loop.
+  // If I have one hot backedge, peel off myself loop.
   // I better be the outermost loop.
   if( _head->req() > 3 ) {
     split_outer_loop( phase );
@@ -1435,15 +1441,30 @@ void IdealLoopTree::dump_head( ) const {
   tty->print("Loop: N%d/N%d ",_head->_idx,_tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
   if (UseLoopPredicate) {
-    Node* entry = _head->in(LoopNode::EntryControl);
-    if (entry != NULL && entry->is_Proj() &&
-        PhaseIdealLoop::is_uncommon_trap_if_pattern(entry->as_Proj(), Deoptimization::Reason_predicate)) {
+    Node* entry = PhaseIdealLoop::find_predicate_insertion_point(_head->in(LoopNode::EntryControl),
+                                                                 Deoptimization::Reason_predicate);
+    if (entry != NULL) {
       tty->print(" predicated");
     }
   }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
     tty->print(" counted");
+
+    Node* init_n = cl->init_trip();
+    if (init_n  != NULL &&  init_n->is_Con())
+      tty->print(" [%d,", cl->init_trip()->get_int());
+    else
+      tty->print(" [int,");
+    Node* limit_n = cl->limit();
+    if (limit_n  != NULL &&  limit_n->is_Con())
+      tty->print("%d),", cl->limit()->get_int());
+    else
+      tty->print("int),");
+    int stride_con  = cl->stride_con();
+    if (stride_con > 0) tty->print("+");
+    tty->print("%d", stride_con);
+
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
@@ -1543,10 +1564,11 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
-void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
+void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
   ResourceMark rm;
 
   int old_progress = C->major_progress();
+  uint orig_worklist_size = _igvn._worklist.size();
 
   // Reset major-progress flag for the driver's heuristics
   C->clear_major_progress();
@@ -1573,6 +1595,13 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   _ltree_root = new IdealLoopTree( this, C->root(), C->root() );
   // Do not need a safepoint at the top level
   _ltree_root->_has_sfpt = 1;
+
+  // Initialize Dominators.
+  // Checked in clone_loop_predicate() during beautify_loops().
+  _idom_size = 0;
+  _idom      = NULL;
+  _dom_depth = NULL;
+  _dom_stk   = NULL;
 
   // Empty pre-order array
   allocate_preorders();
@@ -1610,6 +1639,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   // Split shared headers and insert loop landing pads.
   // Do not bother doing this on the Root loop of course.
   if( !_verify_me && !_verify_only && _ltree_root->_child ) {
+    C->print_method("Before beautify loops", 3);
     if( _ltree_root->_child->beautify_loops( this ) ) {
       // Re-build loop tree!
       _ltree_root->_child = NULL;
@@ -1694,12 +1724,13 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
     for (int i = 0; i < old_progress; i++)
       C->set_major_progress();
     assert(C->unique() == unique, "verification mode made Nodes? ? ?");
-    assert(_igvn._worklist.size() == 0, "shouldn't push anything");
+    assert(_igvn._worklist.size() == orig_worklist_size, "shouldn't push anything");
     return;
   }
 
-  // some parser-inserted loop predicates could never be used by loop
-  // predication. Eliminate them before loop optimization
+  // Some parser-inserted loop predicates could never be used by loop
+  // predication or they were moved away from loop during some optimizations.
+  // For example, peeling. Eliminate them before next loop optimizations.
   if (UseLoopPredicate) {
     eliminate_useless_predicates();
   }
@@ -1750,7 +1781,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   }
 
   // Perform loop predication before iteration splitting
-  if (do_loop_pred && C->has_loops() && !C->major_progress()) {
+  if (C->has_loops() && !C->major_progress() && (C->predicate_count() > 0)) {
     _ltree_root->_child->loop_predication(this);
   }
 
@@ -1793,8 +1824,20 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
     C->set_major_progress();
   }
 
-  // Convert scalar to superword operations
+  // Keep loop predicates and perform optimizations with them
+  // until no more loop optimizations could be done.
+  // After that switch predicates off and do more loop optimizations.
+  if (!C->major_progress() && (C->predicate_count() > 0)) {
+     C->cleanup_loop_predicates(_igvn);
+#ifndef PRODUCT
+     if (TraceLoopOpts) {
+       tty->print_cr("PredicatesOff");
+     }
+#endif
+     C->set_major_progress();
+  }
 
+  // Convert scalar to superword operations at the end of all loop opts.
   if (UseSuperWord && C->has_loops() && !C->major_progress()) {
     // SuperWord transform
     SuperWord sw(this);

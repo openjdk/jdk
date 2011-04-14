@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,18 @@ Java_sun_nio_ch_Net_isIPv6Available0(JNIEnv* env, jclass cl)
     {
         return JNI_TRUE;
     }
+    return JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
+{
+    return JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
+{
     return JNI_FALSE;
 }
 

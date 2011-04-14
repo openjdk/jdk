@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,57 +29,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.net.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
 
 /**
  * A simple applet class to demonstrate a sort algorithm.
  * You can specify a sorting algorithm using the "alg"
- * attribyte. When you click on the applet, a thread is
+ * attribute. When you click on the applet, a thread is
  * forked which animates the sorting algorithm.
  *
  * @author James Gosling
  */
-public class SortItem
-    extends java.applet.Applet
-    implements Runnable, MouseListener {
+@SuppressWarnings("serial")
+public class SortItem extends java.applet.Applet implements Runnable,
+        MouseListener {
 
     /**
      * The thread that is sorting (or null).
      */
     private Thread kicker;
-
     /**
      * The array that is being sorted.
      */
     int arr[];
-
     /**
      * The high water mark.
      */
     int h1 = -1;
-
     /**
      * The low water mark.
      */
     int h2 = -1;
-
     /**
      * The name of the algorithm.
      */
     String algName;
-
     /**
      * The sorting algorithm (or null).
      */
     SortAlgorithm algorithm;
-
     Dimension initialSize = null;
 
     /**
@@ -91,10 +84,10 @@ public class SortItem
         double f = initialSize.width / (double) a.length;
 
         for (int i = a.length; --i >= 0;) {
-            a[i] = (int)(i * f);
+            a[i] = (int) (i * f);
         }
         for (int i = a.length; --i >= 0;) {
-            int j = (int)(i * Math.random());
+            int j = (int) (i * Math.random());
             int t = a[i];
             a[i] = a[j];
             a[j] = t;
@@ -128,12 +121,16 @@ public class SortItem
         if (kicker != null) {
             repaint();
         }
-        try {Thread.sleep(20);} catch (InterruptedException e){}
+        try {
+            Thread.sleep(20);
+        } catch (InterruptedException e) {
+        }
     }
 
     /**
      * Initialize the applet.
      */
+    @Override
     public void init() {
         String at = getParameter("alg");
         if (at == null) {
@@ -147,6 +144,7 @@ public class SortItem
         addMouseListener(this);
     }
 
+    @Override
     public void start() {
         h1 = h2 = -1;
         scramble();
@@ -157,6 +155,7 @@ public class SortItem
     /**
      * Deallocate resources of applet.
      */
+    @Override
     public void destroy() {
         removeMouseListener(this);
     }
@@ -165,10 +164,11 @@ public class SortItem
      * Paint the array of numbers as a list
      * of horizontal lines of varying lengths.
      */
+    @Override
     public void paint(Graphics g) {
         int a[] = arr;
         int y = 0;
-        int deltaY = 0, deltaX = 0, evenY = 0, evenX = 0;
+        int deltaY = 0, deltaX = 0, evenY = 0;
 
         Dimension currentSize = getSize();
         int currentHeight = currentSize.height;
@@ -184,7 +184,6 @@ public class SortItem
         // even size.
         if (!currentSize.equals(initialSize)) {
             evenY = (currentHeight - initialSize.height) % 2;
-            evenX = (currentWidth - initialSize.width) % 2;
             deltaY = (currentHeight - initialSize.height) / 2;
             deltaX = (currentWidth - initialSize.width) / 2;
 
@@ -194,7 +193,6 @@ public class SortItem
             }
             if (deltaX < 0) {
                 deltaX = 0;
-                evenX = 0;
             }
         }
 
@@ -227,6 +225,7 @@ public class SortItem
     /**
      * Update without erasing the background.
      */
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
@@ -238,15 +237,16 @@ public class SortItem
      * @see java.lang.Thread#run
      * @see SortItem#mouseUp
      */
+    @Override
     public void run() {
         try {
             if (algorithm == null) {
-                algorithm = (SortAlgorithm)Class.forName(algName).newInstance();
+                algorithm = (SortAlgorithm) Class.forName(algName).newInstance();
                 algorithm.setParent(this);
             }
             algorithm.init();
             algorithm.sort(arr);
-        } catch(Exception e) {
+        } catch (Exception e) {
         }
     }
 
@@ -254,8 +254,9 @@ public class SortItem
      * Stop the applet. Kill any sorting algorithm that
      * is still sorting.
      */
+    @Override
     public synchronized void stop() {
-        if (algorithm != null){
+        if (algorithm != null) {
             try {
                 algorithm.stop();
             } catch (IllegalThreadStateException e) {
@@ -279,35 +280,42 @@ public class SortItem
         }
     }
 
-
+    @Override
     public void mouseClicked(MouseEvent e) {
         showStatus(getParameter("alg"));
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
     }
 
     /**
      * The user clicked in the applet. Start the clock!
      */
+    @Override
     public void mouseReleased(MouseEvent e) {
         startSort();
         e.consume();
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
 
+    @Override
     public String getAppletInfo() {
         return "Title: SortDemo \nAuthor: James Gosling 1.17f, 10 Apr 1995 \nA simple applet class to demonstrate a sort algorithm.  \nYou can specify a sorting algorithm using the 'alg' attribute.  \nWhen you click on the applet, a thread is forked which animates \nthe sorting algorithm.";
     }
 
+    @Override
     public String[][] getParameterInfo() {
         String[][] info = {
-          {"alg", "string", "The name of the algorithm to run.  You can choose from the provided algorithms or suppply your own, as long as the classes are runnable as threads and their names end in 'Algorithm.'  BubbleSort is the default.  Example:  Use 'QSort' to run the QSortAlgorithm class."}
+            { "alg", "string",
+                "The name of the algorithm to run.  You can choose from the provided algorithms or suppply your own, as long as the classes are runnable as threads and their names end in 'Algorithm.'  BubbleSort is the default.  Example:  Use 'QSort' to run the QSortAlgorithm class." }
         };
         return info;
     }

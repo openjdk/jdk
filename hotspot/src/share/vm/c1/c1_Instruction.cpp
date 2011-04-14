@@ -135,6 +135,33 @@ bool AccessIndexed::compute_needs_range_check() {
 }
 
 
+ciType* Local::exact_type() const {
+  ciType* type = declared_type();
+
+  // for primitive arrays, the declared type is the exact type
+  if (type->is_type_array_klass()) {
+    return type;
+  } else if (type->is_instance_klass()) {
+    ciInstanceKlass* ik = (ciInstanceKlass*)type;
+    if (ik->is_loaded() && ik->is_final() && !ik->is_interface()) {
+      return type;
+    }
+  } else if (type->is_obj_array_klass()) {
+    ciObjArrayKlass* oak = (ciObjArrayKlass*)type;
+    ciType* base = oak->base_element_type();
+    if (base->is_instance_klass()) {
+      ciInstanceKlass* ik = base->as_instance_klass();
+      if (ik->is_loaded() && ik->is_final()) {
+        return type;
+      }
+    } else if (base->is_primitive_type()) {
+      return type;
+    }
+  }
+  return NULL;
+}
+
+
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
   if (array_type == NULL) {
@@ -189,16 +216,21 @@ ciType* NewTypeArray::exact_type() const {
   return ciTypeArrayKlass::make(elt_type());
 }
 
-
 ciType* NewObjectArray::exact_type() const {
   return ciObjArrayKlass::make(klass());
 }
 
+ciType* NewArray::declared_type() const {
+  return exact_type();
+}
 
 ciType* NewInstance::exact_type() const {
   return klass();
 }
 
+ciType* NewInstance::declared_type() const {
+  return exact_type();
+}
 
 ciType* CheckCast::declared_type() const {
   return klass();
@@ -349,6 +381,11 @@ void Invoke::state_values_do(ValueVisitor* f) {
   if (state()        != NULL) state()->values_do(f);
 }
 
+ciType* Invoke::declared_type() const {
+  ciType *t = _target->signature()->return_type();
+  assert(t->basic_type() != T_VOID, "need return value of void method?");
+  return t;
+}
 
 // Implementation of Contant
 intx Constant::hash() const {

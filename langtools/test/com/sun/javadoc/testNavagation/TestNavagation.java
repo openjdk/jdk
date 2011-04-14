@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4131628 4664607
+ * @bug      4131628 4664607 7025314
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
@@ -45,20 +45,20 @@ public class TestNavagation extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "A.html", "<li>PREV CLASS</li>"},
+        {BUG_ID + FS + "pkg" + FS + "A.html", "<li>Prev Class</li>"},
         {BUG_ID + FS + "pkg" + FS + "A.html",
-            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
+            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">Next Class</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
+            "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"strong\">Prev Class</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
+            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">Next Class</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "E.html",
-            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
+            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">Prev Class</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "E.html",
-            "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"strong\">NEXT CLASS</span></a>"},
+            "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"strong\">Next Class</span></a>"},
         {BUG_ID + FS + "pkg" + FS + "I.html",
-            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">PREV CLASS</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "I.html", "<li>NEXT CLASS</li>"},
+            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"strong\">Prev Class</span></a>"},
+        {BUG_ID + FS + "pkg" + FS + "I.html", "<li>Next Class</li>"},
         // Test for 4664607
         {BUG_ID + FS + "pkg" + FS + "I.html",
             "<a href=\"#skip-navbar_top\" title=\"Skip navigation links\"></a><a name=\"navbar_top_firstrow\">" + NL +

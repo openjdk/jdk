@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,6 @@ public class Basic {
         map = Files.readAttributes(file, "user:*");
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = Files.readAttributes(file, "user:DoesNotExist");
-        if (!map.isEmpty())
-            throw new RuntimeException("Map expected to be empty");
     }
 
     static void miscTests(final Path file) throws IOException {

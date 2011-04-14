@@ -23,23 +23,26 @@
 
 /*
  * @test
- * @bug     6610094
- * @summary Basic unit test of ManagementFactory.getPlatformMXBeans()
- *          and also PlatformManagedObject.getObjectName()
+ * @bug     6610094 7024172
+ * @summary Basic unit test of ManagementFactory.getPlatformMXBean(s)
+ *          methods and PlatformManagedObject.getObjectName()
  * @author  Mandy Chung
  *
  * @run main GetPlatformMXBeans
  */
 
 import java.lang.management.*;
-import static java.lang.management.ManagementFactory.*;
+import java.io.IOException;
 import java.util.*;
 import javax.management.*;
+
+import static java.lang.management.ManagementFactory.*;
 
 public class GetPlatformMXBeans {
     private static MBeanServer platformMBeanServer =
             getPlatformMBeanServer();
     public static void main(String[] argv) throws Exception {
+        // singleton platform MXBean
         checkPlatformMXBean(getClassLoadingMXBean(),
                             ClassLoadingMXBean.class,
                             CLASS_LOADING_MXBEAN_NAME);
@@ -58,17 +61,28 @@ public class GetPlatformMXBeans {
         checkPlatformMXBean(getThreadMXBean(),
                             ThreadMXBean.class,
                             THREAD_MXBEAN_NAME);
+
+        // the following MXBean can have more than one instances
         checkGarbageCollectorMXBeans(getGarbageCollectorMXBeans());
         checkMemoryManagerMXBeans(getMemoryManagerMXBeans());
         checkMemoryPoolMXBeans(getMemoryPoolMXBeans());
+
+        // check invalid platform MXBean
+        checkInvalidPlatformMXBean();
     }
 
     private static <T extends PlatformManagedObject>
-        void checkPlatformMXBean(T obj, Class<T> mxbeanInterface,
-                                 String mxbeanName) throws Exception
+            void checkPlatformMXBean(T obj, Class<T> mxbeanInterface,
+                                     String mxbeanName)
+        throws Exception
     {
-        int numElements = (obj != null ? 1 : 0);
-        // verify local list of platform MXBeans
+        // getPlatformMXBean may return null if the mxbean is not implemented
+        PlatformManagedObject mxbean = getPlatformMXBean(mxbeanInterface);
+        if (obj != mxbean) {
+            throw new RuntimeException("Singleton MXBean returned not matched");
+        }
+
+        int numElements = obj == null ? 0 : 1;
         List<? extends PlatformManagedObject> mxbeans =
             getPlatformMXBeans(mxbeanInterface);
         if (mxbeans.size() != numElements) {
@@ -77,23 +91,45 @@ public class GetPlatformMXBeans {
         }
 
         if (obj != null) {
-            PlatformManagedObject pmo = mxbeans.get(0);
-            if (obj != pmo) {
+            if (obj != mxbeans.get(0)) {
                 throw new RuntimeException("The list returned by getPlatformMXBeans"
                     + " not matched");
             }
             ObjectName on = new ObjectName(mxbeanName);
-            if (!on.equals(pmo.getObjectName())) {
+            if (!on.equals(mxbean.getObjectName())) {
                 throw new RuntimeException("Unmatched ObjectName " +
-                    pmo.getObjectName() + " Expected = " + on);
+                    mxbean.getObjectName() + " Expected = " + on);
             }
+            checkRemotePlatformMXBean(obj, platformMBeanServer,
+                                      mxbeanInterface, mxbeanName);
+        }
+    }
+
+    // verify platform MXBeans in the platform MBeanServer
+    private static <T extends PlatformManagedObject>
+            void checkRemotePlatformMXBean(T obj,
+                                           MBeanServerConnection mbs,
+                                           Class<T> mxbeanInterface,
+                                           String mxbeanName)
+        throws Exception
+    {
+        PlatformManagedObject mxbean = getPlatformMXBean(mbs, mxbeanInterface);
+        if ((obj == null && mxbean != null) || (obj != null && mxbean == null)) {
+            throw new RuntimeException("Singleton MXBean returned not matched");
         }
 
-        // verify platform MXBeans in the platform MBeanServer
-        mxbeans = getPlatformMXBeans(platformMBeanServer, mxbeanInterface);
+        int numElements = obj == null ? 0 : 1;
+        List<? extends PlatformManagedObject> mxbeans =
+            getPlatformMXBeans(mbs, mxbeanInterface);
         if (mxbeans.size() != numElements) {
             throw new RuntimeException("Unmatched number of platform MXBeans "
                 + mxbeans.size() + ". Expected = " + numElements);
+        }
+
+        ObjectName on = new ObjectName(mxbeanName);
+        if (!on.equals(mxbean.getObjectName())) {
+            throw new RuntimeException("Unmatched ObjectName " +
+                mxbean.getObjectName() + " Expected = " + on);
         }
     }
 
@@ -148,6 +184,14 @@ public class GetPlatformMXBeans {
         void checkPlatformMXBeans(List<T> objs, Class<T> mxbeanInterface)
             throws Exception
     {
+        try {
+            getPlatformMXBean(mxbeanInterface);
+            // mxbeanInterface is not a singleton
+            throw new RuntimeException(mxbeanInterface + ": not a singleton MXBean");
+        } catch (IllegalArgumentException e) {
+            // expect IAE
+        }
+
         // verify local list of platform MXBeans
         List<? extends PlatformManagedObject> mxbeans =
             getPlatformMXBeans(mxbeanInterface);
@@ -175,6 +219,42 @@ public class GetPlatformMXBeans {
         if (objs.size() != mxbeans.size()) {
             throw new RuntimeException("Unmatched number of platform MXBeans "
                 + mxbeans.size() + ". Expected = " + objs.size());
+        }
+    }
+
+    interface FakeMXBean extends PlatformManagedObject {};
+
+    private static void checkInvalidPlatformMXBean() throws IOException {
+        try {
+            getPlatformMXBean(FakeMXBean.class);
+            // mxbeanInterface is not a singleton
+            throw new RuntimeException("Expect IllegalArgumentException but not thrown");
+        } catch (IllegalArgumentException e) {
+            // expect IAE
+        }
+
+        try {
+            getPlatformMXBeans(FakeMXBean.class);
+            // mxbeanInterface is not a singleton
+            throw new RuntimeException("Expect IllegalArgumentException but not thrown");
+        } catch (IllegalArgumentException e) {
+            // expect IAE
+        }
+
+        try {
+            getPlatformMXBean(platformMBeanServer, FakeMXBean.class);
+            // mxbeanInterface is not a singleton
+            throw new RuntimeException("Expect IllegalArgumentException but not thrown");
+        } catch (IllegalArgumentException e) {
+            // expect IAE
+        }
+
+        try {
+            getPlatformMXBeans(platformMBeanServer, FakeMXBean.class);
+            // mxbeanInterface is not a singleton
+            throw new RuntimeException("Expect IllegalArgumentException but not thrown");
+        } catch (IllegalArgumentException e) {
+            // expect IAE
         }
     }
 }

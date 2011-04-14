@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@
 #ifdef ALT_CODESET_KEY
 #define CODESET ALT_CODESET_KEY
 #endif
+#endif
+
+#ifdef JAVASE_EMBEDDED
+#include <dlfcn.h>
+#include <sys/stat.h>
 #endif
 
 /* Take an array of string pairs (map of key->value) and a string (key).
@@ -304,6 +309,36 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
     return 1;
 }
 
+#ifdef JAVASE_EMBEDDED
+/* Determine the default embedded toolkit based on whether lib/xawt/
+ * exists in the JRE. This can still be overridden by -Dawt.toolkit=XXX
+ */
+static char* getEmbeddedToolkit() {
+    Dl_info dlinfo;
+    char buf[MAXPATHLEN];
+    int32_t len;
+    char *p;
+    struct stat statbuf;
+
+    /* Get address of this library and the directory containing it. */
+    dladdr((void *)getEmbeddedToolkit, &dlinfo);
+    realpath((char *)dlinfo.dli_fname, buf);
+    len = strlen(buf);
+    p = strrchr(buf, '/');
+    /* Default AWT Toolkit on Linux and Solaris is XAWT. */
+    strncpy(p, "/xawt/", MAXPATHLEN-len-1);
+    /* Check if it exists */
+    if (stat(buf, &statbuf) == -1 && errno == ENOENT) {
+        /* No - this is a reduced-headless-jre so use special HToolkit */
+        return "sun.awt.HToolkit";
+    }
+    else {
+        /* Yes - this is a headful JRE so fallback to SE defaults */
+        return NULL;
+    }
+}
+#endif
+
 /* This function gets called very early, before VM_CALLS are setup.
  * Do not use any of the VM_CALLS entries!!!
  */
@@ -328,7 +363,12 @@ GetJavaProperties(JNIEnv *env)
 
     /* Java 2D properties */
     sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
-    sprops.awt_toolkit = NULL;
+
+#ifdef JAVASE_EMBEDDED
+    sprops.awt_toolkit = getEmbeddedToolkit();
+    if (sprops.awt_toolkit == NULL) // default as below
+#endif
+    sprops.awt_toolkit = "sun.awt.X11.XToolkit";
 
     /* This is used only for debugging of font problems. */
     v = getenv("JAVA2D_FONTPATH");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ import sun.net.www.protocol.http.HttpURLConnection;
 public class NTLMAuthentication extends AuthenticationInfo {
 
     private static final long serialVersionUID = 100L;
+
+    private static final NTLMAuthenticationCallback NTLMAuthCallback =
+        NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
     private String hostname;
     private static String defaultDomain; /* Domain to use if not specified by user */
@@ -140,6 +143,14 @@ public class NTLMAuthentication extends AuthenticationInfo {
      */
     public static boolean supportsTransparentAuth() {
         return true;
+    }
+
+    /**
+     * Returns true if the given site is trusted, i.e. we can try
+     * transparent Authentication.
+     */
+    public static boolean isTrustedSite(URL url) {
+        return NTLMAuthCallback.isTrustedSite(url);
     }
 
     /**

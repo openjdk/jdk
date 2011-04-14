@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,9 +241,9 @@ class NativeUnpack {
     void run(File inFile, JarOutputStream jstream) throws IOException {
         // %%% maybe memory-map the file, and pass it straight into unpacker
         ByteBuffer mappedFile = null;
-        FileInputStream fis = new FileInputStream(inFile);
-        run(fis, jstream, mappedFile);
-        fis.close();
+        try (FileInputStream fis = new FileInputStream(inFile)) {
+            run(fis, jstream, mappedFile);
+        }
         // Note:  caller is responsible to finish with jstream.
     }
 

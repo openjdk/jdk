@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,18 +268,18 @@ class Utils {
         // 4947205 : Peformance is slow when using pack-effort=0
         out = new BufferedOutputStream(out);
         out = new NonCloser(out); // protect from JarOutputStream.close()
-        JarOutputStream jout = new JarOutputStream(out);
-        copyJarFile(in, jout);
-        jout.close();
+        try (JarOutputStream jout = new JarOutputStream(out)) {
+            copyJarFile(in, jout);
+        }
     }
     static void copyJarFile(JarFile in, OutputStream out) throws IOException {
 
         // 4947205 : Peformance is slow when using pack-effort=0
         out = new BufferedOutputStream(out);
         out = new NonCloser(out); // protect from JarOutputStream.close()
-        JarOutputStream jout = new JarOutputStream(out);
-        copyJarFile(in, jout);
-        jout.close();
+        try (JarOutputStream jout = new JarOutputStream(out)) {
+            copyJarFile(in, jout);
+        }
     }
         // Wrapper to prevent closing of client-supplied stream.
     static private

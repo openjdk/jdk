@@ -244,6 +244,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
+  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -962,6 +963,16 @@ void Arguments::set_mode_flags(Mode mode) {
   UseInterpreter             = true;
   UseCompiler                = true;
   UseLoopCounter             = true;
+
+#ifndef ZERO
+  // Turn these off for mixed and comp.  Leave them on for Zero.
+  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
+    UseFastAccessorMethods = mode == _int;
+  }
+  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
+    UseFastEmptyMethods = mode == _int;
+  }
+#endif
 
   // Default values may be platform/compiler dependent -
   // use the saved values
@@ -2975,21 +2986,28 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
-  if (EnableInvokeDynamic && !EnableMethodHandles) {
-    if (!FLAG_IS_DEFAULT(EnableMethodHandles)) {
-      warning("forcing EnableMethodHandles true because EnableInvokeDynamic is true");
+  // Transitional
+  if (EnableMethodHandles || AnonymousClasses) {
+    if (!EnableInvokeDynamic && !FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+      warning("EnableMethodHandles and AnonymousClasses are obsolete.  Keeping EnableInvokeDynamic disabled.");
+    } else {
+      EnableInvokeDynamic = true;
     }
-    EnableMethodHandles = true;
   }
-  if (EnableMethodHandles && !AnonymousClasses) {
-    if (!FLAG_IS_DEFAULT(AnonymousClasses)) {
-      warning("forcing AnonymousClasses true because EnableMethodHandles is true");
+
+  // JSR 292 is not supported before 1.7
+  if (!JDK_Version::is_gte_jdk17x_version()) {
+    if (EnableInvokeDynamic) {
+      if (!FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+        warning("JSR 292 is not supported before 1.7.  Disabling support.");
+      }
+      EnableInvokeDynamic = false;
     }
-    AnonymousClasses = true;
   }
-  if ((EnableMethodHandles || AnonymousClasses) && ScavengeRootsInCode == 0) {
+
+  if (EnableInvokeDynamic && ScavengeRootsInCode == 0) {
     if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
-      warning("forcing ScavengeRootsInCode non-zero because EnableMethodHandles or AnonymousClasses is true");
+      warning("forcing ScavengeRootsInCode non-zero because EnableInvokeDynamic is true");
     }
     ScavengeRootsInCode = 1;
   }

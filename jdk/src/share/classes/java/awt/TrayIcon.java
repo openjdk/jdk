@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 
 /**
  * A <code>TrayIcon</code> object represents a tray icon that can be
@@ -90,6 +92,7 @@ import java.util.EventObject;
  * @author Anton Tarasov
  */
 public class TrayIcon {
+
     private Image image;
     private String tooltip;
     private PopupMenu popup;
@@ -102,6 +105,24 @@ public class TrayIcon {
     transient MouseListener mouseListener;
     transient MouseMotionListener mouseMotionListener;
     transient ActionListener actionListener;
+
+    /*
+     * The tray icon's AccessControlContext.
+     *
+     * Unlike the acc in Component, this field is made final
+     * because TrayIcon is not serializable.
+     */
+    private final AccessControlContext acc = AccessController.getContext();
+
+    /*
+     * Returns the acc this tray icon was constructed with.
+     */
+    final AccessControlContext getAccessControlContext() {
+        if (acc == null) {
+            throw new SecurityException("TrayIcon is missing AccessControlContext");
+        }
+        return acc;
+    }
 
     static {
         Toolkit.loadLibraries();

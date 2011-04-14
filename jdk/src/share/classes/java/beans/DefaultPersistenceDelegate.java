@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import sun.reflect.misc.*;
  * is the delegate used by default for classes about
  * which no information is available. The <code>DefaultPersistenceDelegate</code>
  * provides, version resilient, public API-based persistence for
- * classes that follow the JavaBeans conventions without any class specific
+ * classes that follow the JavaBeans&trade; conventions without any class specific
  * configuration.
  * <p>
  * The key assumptions are that the class has a nullary constructor

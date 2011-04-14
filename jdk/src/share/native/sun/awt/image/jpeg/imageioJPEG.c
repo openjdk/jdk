@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <string.h>
-
+#include <limits.h>
 
 /* java native interface headers */
 #include "jni.h"
@@ -2657,7 +2657,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
         (destWidth < 0) || (destWidth > srcWidth) ||
         (destHeight < 0) ||
         (stepX < 0) || (stepY < 0) ||
-        ((scanLineSize / numBands) < destWidth))  /* destWidth causes an integer overflow */
+        ((INT_MAX / numBands) < destWidth))  /* destWidth causes an integer overflow */
     {
         JNU_ThrowByName(env, "javax/imageio/IIOException",
                         "Invalid argument to native writeImage");

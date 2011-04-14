@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.FileDescriptor;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
+import sun.net.ResourceManager;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -68,6 +69,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     private int resetState;
     private final Object resetLock = new Object();
 
+   /* whether this Socket is a stream (TCP) socket or not (UDP)
+    */
+    private boolean stream;
+
     /**
      * Load net library into runtime.
      */
@@ -82,7 +87,19 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      */
     protected synchronized void create(boolean stream) throws IOException {
         fd = new FileDescriptor();
-        socketCreate(stream);
+        this.stream = stream;
+        if (!stream) {
+            ResourceManager.beforeUdpCreate();
+            try {
+                socketCreate(false);
+            } catch (IOException ioe) {
+                ResourceManager.afterUdpClose();
+                fd = null;
+                throw ioe;
+            }
+        } else {
+            socketCreate(true);
+        }
         if (socket != null)
             socket.setCreated();
         if (serverSocket != null)
@@ -479,6 +496,9 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected void close() throws IOException {
         synchronized(fdLock) {
             if (fd != null) {
+                if (!stream) {
+                    ResourceManager.afterUdpClose();
+                }
                 if (fdUseCount == 0) {
                     if (closePending) {
                         return;

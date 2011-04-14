@@ -1632,7 +1632,6 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
     igvn.replace_node(n, n->in(1));
   }
   assert(predicate_count()==0, "should be clean!");
-  igvn.optimize();
 }
 
 //------------------------------Optimize---------------------------------------
@@ -1689,7 +1688,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1697,7 +1696,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1705,7 +1704,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
     }
@@ -1743,21 +1742,13 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
-    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
+      PhaseIdealLoop ideal_loop( igvn, true);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
-      // Perform loop predication optimization during first iteration after CCP.
-      // After that switch it off and cleanup unused loop predicates.
-      if (loop_predication) {
-        loop_predication = false;
-        cleanup_loop_predicates(igvn);
-        if (failing())  return;
-      }
     }
   }
 
@@ -2542,6 +2533,36 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CountedLoop:
     if (n->as_Loop()->is_inner_loop()) {
       frc.inc_inner_loop_count();
+    }
+    break;
+  case Op_LShiftI:
+  case Op_RShiftI:
+  case Op_URShiftI:
+  case Op_LShiftL:
+  case Op_RShiftL:
+  case Op_URShiftL:
+    if (Matcher::need_masked_shift_count) {
+      // The cpu's shift instructions don't restrict the count to the
+      // lower 5/6 bits. We need to do the masking ourselves.
+      Node* in2 = n->in(2);
+      juint mask = (n->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      const TypeInt* t = in2->find_int_type();
+      if (t != NULL && t->is_con()) {
+        juint shift = t->get_con();
+        if (shift > mask) { // Unsigned cmp
+          Compile* C = Compile::current();
+          n->set_req(2, ConNode::make(C, TypeInt::make(shift & mask)));
+        }
+      } else {
+        if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
+          Compile* C = Compile::current();
+          Node* shift = new (C, 3) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
+          n->set_req(2, shift);
+        }
+      }
+      if (in2->outcnt() == 0) { // Remove dead node
+        in2->disconnect_inputs(NULL);
+      }
     }
     break;
   default:

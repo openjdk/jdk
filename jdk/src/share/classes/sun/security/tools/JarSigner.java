@@ -1238,10 +1238,11 @@ public class JarSigner {
                 // Provide a helpful message when TSA is beyond a firewall
                 error(rb.getString("unable.to.sign.jar.") +
                 rb.getString("no.response.from.the.Timestamping.Authority.") +
-                rb.getString("When.connecting.from.behind.a.firewall.then.an.HTTP.proxy.may.need.to.be.specified.") +
-                rb.getString("Supply.the.following.options.to.jarsigner.") +
-                "\n  -J-Dhttp.proxyHost=<hostname> " +
-                "\n  -J-Dhttp.proxyPort=<portnumber> ", e);
+                "\n  -J-Dhttp.proxyHost=<hostname>" +
+                "\n  -J-Dhttp.proxyPort=<portnumber>\n" +
+                rb.getString("or") +
+                "\n  -J-Dhttps.proxyHost=<hostname> " +
+                "\n  -J-Dhttps.proxyPort=<portnumber> ", e);
             }
 
             sfFilename = sf.getMetaName();
