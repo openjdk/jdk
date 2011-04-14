@@ -52,7 +52,13 @@ public class bug7004134 {
                 frame.add(label);
                 frame.pack();
                 frame.setVisible(true);
+            }
+        });
 
+        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
                 ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
 
                 toolTipManager.setInitialDelay(0);
@@ -83,7 +89,13 @@ public class bug7004134 {
                             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                             frame.pack();
                             frame.setVisible(true);
+                        }
+                    });
 
+                    ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        public void run() {
                             ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
 
                             toolTipManager.setInitialDelay(0);
