@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,87 +31,99 @@
 package sun.util.locale;
 
 public class StringTokenIterator {
-    private String _text;
-    private String _dlms;
+    private String text;
+    private String dlms;        // null if a single char delimiter
+    private char delimiterChar; // delimiter if a single char delimiter
 
-    private String _token;
-    private int _start;
-    private int _end;
-    private boolean _done;
+    private String token;
+    private int start;
+    private int end;
+    private boolean done;
 
     public StringTokenIterator(String text, String dlms) {
-        _text = text;
-        _dlms = dlms;
+        this.text = text;
+        if (dlms.length() == 1) {
+            delimiterChar = dlms.charAt(0);
+        } else {
+            this.dlms = dlms;
+        }
         setStart(0);
     }
 
     public String first() {
         setStart(0);
-        return _token;
+        return token;
     }
 
     public String current() {
-        return _token;
+        return token;
     }
 
     public int currentStart() {
-        return _start;
+        return start;
     }
 
     public int currentEnd() {
-        return _end;
+        return end;
     }
 
     public boolean isDone() {
-        return _done;
+        return done;
     }
 
     public String next() {
         if (hasNext()) {
-            _start = _end + 1;
-            _end = nextDelimiter(_start);
-            _token = _text.substring(_start, _end);
+            start = end + 1;
+            end = nextDelimiter(start);
+            token = text.substring(start, end);
         } else {
-            _start = _end;
-            _token = null;
-            _done = true;
+            start = end;
+            token = null;
+            done = true;
         }
-        return _token;
+        return token;
     }
 
     public boolean hasNext() {
-        return (_end < _text.length());
+        return (end < text.length());
     }
 
     public StringTokenIterator setStart(int offset) {
-        if (offset > _text.length()) {
+        if (offset > text.length()) {
             throw new IndexOutOfBoundsException();
         }
-        _start = offset;
-        _end = nextDelimiter(_start);
-        _token = _text.substring(_start, _end);
-        _done = false;
+        start = offset;
+        end = nextDelimiter(start);
+        token = text.substring(start, end);
+        done = false;
         return this;
     }
 
     public StringTokenIterator setText(String text) {
-        _text = text;
+        this.text = text;
         setStart(0);
         return this;
     }
 
     private int nextDelimiter(int start) {
-        int idx = start;
-        outer: while (idx < _text.length()) {
-            char c = _text.charAt(idx);
-            for (int i = 0; i < _dlms.length(); i++) {
-                if (c == _dlms.charAt(i)) {
-                    break outer;
+        int textlen = this.text.length();
+        if (dlms == null) {
+            for (int idx = start; idx < textlen; idx++) {
+                if (text.charAt(idx) == delimiterChar) {
+                    return idx;
                 }
             }
-            idx++;
+        } else {
+            int dlmslen = dlms.length();
+            for (int idx = start; idx < textlen; idx++) {
+                char c = text.charAt(idx);
+                for (int i = 0; i < dlmslen; i++) {
+                    if (c == dlms.charAt(i)) {
+                        return idx;
+                    }
+                }
+            }
         }
-        return idx;
+        return textlen;
     }
 }
-
