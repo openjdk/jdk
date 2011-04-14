@@ -2169,7 +2169,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   const int reference_type_offset = instanceKlass::reference_type_offset_in_bytes() +
                                         sizeof(oopDesc);
 
-  Node* referent_off = __ ConI(java_lang_ref_Reference::referent_offset);
+  Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
   __ if_then(offset, BoolTest::eq, referent_off, unlikely); {
     __ if_then(base_oop, BoolTest::ne, null(), likely); {
