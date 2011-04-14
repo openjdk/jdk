@@ -2062,9 +2062,12 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
     bool gen_source_check = true;       // Assume the code stub has to check the src object for null.
 
     if (off.is_constant()) {
-      jint off_con = off.get_jint_constant();
+      jlong off_con = (off.type()->is_int() ?
+                        (jlong) off.get_jint_constant() :
+                        off.get_jlong_constant());
 
-      if (off_con != java_lang_ref_Reference::referent_offset) {
+
+      if (off_con != (jlong) java_lang_ref_Reference::referent_offset) {
         // The constant offset is something other than referent_offset.
         // We can skip generating/checking the remaining guards and
         // skip generation of the code stub.
@@ -2112,15 +2115,29 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
       // the offset check.
       if (gen_offset_check) {
         // if (offset == referent_offset) -> slow code stub
-        __ cmp(lir_cond_equal, off.result(),
-               LIR_OprFact::intConst(java_lang_ref_Reference::referent_offset));
+        // If offset is an int then we can do the comparison with the
+        // referent_offset constant; otherwise we need to move
+        // referent_offset into a temporary register and generate
+        // a reg-reg compare.
+
+        LIR_Opr referent_off;
+
+        if (off.type()->is_int()) {
+          referent_off = LIR_OprFact::intConst(java_lang_ref_Reference::referent_offset);
+        } else {
+          assert(off.type()->is_long(), "what else?");
+          referent_off = new_register(T_LONG);
+          __ move(LIR_OprFact::longConst(java_lang_ref_Reference::referent_offset), referent_off);
+        }
+
+        __ cmp(lir_cond_equal, off.result(), referent_off);
 
         // Optionally generate "src == null" check.
         stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
                                                     src_klass, thread,
                                                     gen_source_check);
 
-        __ branch(lir_cond_equal, T_INT, stub);
+        __ branch(lir_cond_equal, as_BasicType(off.type()), stub);
       } else {
         if (gen_source_check) {
           // offset is a const and equals referent offset

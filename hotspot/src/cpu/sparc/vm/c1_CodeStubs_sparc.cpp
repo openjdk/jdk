@@ -489,7 +489,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
 
   // Is marking active?
   assert(thread()->is_register(), "precondition");
-  Register thread_reg = thread()->as_register();
+  Register thread_reg = NOT_LP64(thread()->as_register()) LP64_ONLY(thread()->as_register_lo());
 
   Address in_progress(thread_reg, in_bytes(JavaThread::satb_mark_queue_offset() +
                                        PtrQueue::byte_offset_of_active()));
