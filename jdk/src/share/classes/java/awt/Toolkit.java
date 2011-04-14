@@ -2591,8 +2591,6 @@ public abstract class Toolkit {
     * initialized with {@code true}.
     * Changing this value after the {@code Toolkit} class initialization will have no effect.
     * <p>
-    * The current value could be queried by using the
-    * {@code System.getProperty("sun.awt.enableExtraMouseButtons")} method.
     * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
     * @return {@code true} if events from extra mouse buttons are allowed to be processed and posted;
     *         {@code false} otherwise
