@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,18 +459,17 @@ bool CardTableModRefBS::mark_card_deferred(size_t card_index) {
 void CardTableModRefBS::non_clean_card_iterate(Space* sp,
                                                MemRegion mr,
                                                DirtyCardToOopClosure* dcto_cl,
-                                               MemRegionClosure* cl,
-                                               bool clear) {
+                                               MemRegionClosure* cl) {
   if (!mr.is_empty()) {
     int n_threads = SharedHeap::heap()->n_par_threads();
     if (n_threads > 0) {
 #ifndef SERIALGC
-      par_non_clean_card_iterate_work(sp, mr, dcto_cl, cl, clear, n_threads);
+      par_non_clean_card_iterate_work(sp, mr, dcto_cl, cl, n_threads);
 #else  // SERIALGC
       fatal("Parallel gc not supported here.");
 #endif // SERIALGC
     } else {
-      non_clean_card_iterate_work(mr, cl, clear);
+      non_clean_card_iterate_work(mr, cl);
     }
   }
 }
@@ -481,10 +480,7 @@ void CardTableModRefBS::non_clean_card_iterate(Space* sp,
 // cards (and miss those marked precleaned). In that sense,
 // the name precleaned is currently somewhat of a misnomer.
 void CardTableModRefBS::non_clean_card_iterate_work(MemRegion mr,
-                                                    MemRegionClosure* cl,
-                                                    bool clear) {
-  // Figure out whether we have to worry about parallelism.
-  bool is_par = (SharedHeap::heap()->n_par_threads() > 1);
+                                                    MemRegionClosure* cl) {
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (mri.word_size() > 0) {
@@ -506,44 +502,12 @@ void CardTableModRefBS::non_clean_card_iterate_work(MemRegion mr,
           MemRegion cur_cards(addr_for(cur_entry),
                               non_clean_cards * card_size_in_words);
           MemRegion dirty_region = cur_cards.intersection(mri);
-          if (clear) {
-            for (size_t i = 0; i < non_clean_cards; i++) {
-              // Clean the dirty cards (but leave the other non-clean
-              // alone.)  If parallel, do the cleaning atomically.
-              jbyte cur_entry_val = cur_entry[i];
-              if (card_is_dirty_wrt_gen_iter(cur_entry_val)) {
-                if (is_par) {
-                  jbyte res = Atomic::cmpxchg(clean_card, &cur_entry[i], cur_entry_val);
-                  assert(res != clean_card,
-                         "Dirty card mysteriously cleaned");
-                } else {
-                  cur_entry[i] = clean_card;
-                }
-              }
-            }
-          }
           cl->do_MemRegion(dirty_region);
         }
         cur_entry = next_entry;
       }
     }
   }
-}
-
-void CardTableModRefBS::mod_oop_in_space_iterate(Space* sp,
-                                                 OopClosure* cl,
-                                                 bool clear,
-                                                 bool before_save_marks) {
-  // Note that dcto_cl is resource-allocated, so there is no
-  // corresponding "delete".
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision());
-  MemRegion used_mr;
-  if (before_save_marks) {
-    used_mr = sp->used_region_at_save_marks();
-  } else {
-    used_mr = sp->used_region();
-  }
-  non_clean_card_iterate(sp, used_mr, dcto_cl, dcto_cl, clear);
 }
 
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
@@ -593,9 +557,8 @@ void CardTableModRefBS::dirty(MemRegion mr) {
   memset(first, dirty_card, last-first);
 }
 
-// NOTES:
-// (1) Unlike mod_oop_in_space_iterate() above, dirty_card_iterate()
-//     iterates over dirty cards ranges in increasing address order.
+// Unlike several other card table methods, dirty_card_iterate()
+// iterates over dirty cards ranges in increasing address order.
 void CardTableModRefBS::dirty_card_iterate(MemRegion mr,
                                            MemRegionClosure* cl) {
   for (int i = 0; i < _cur_covered_regions; i++) {
@@ -698,7 +661,7 @@ public:
 
 void CardTableModRefBS::verify_clean_region(MemRegion mr) {
   GuaranteeNotModClosure blk(this);
-  non_clean_card_iterate_work(mr, &blk, false);
+  non_clean_card_iterate_work(mr, &blk);
 }
 
 // To verify a MemRegion is entirely dirty this closure is passed to
