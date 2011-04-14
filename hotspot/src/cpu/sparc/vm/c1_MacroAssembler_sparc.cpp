@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,7 @@ void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {
   Label not_null;
-  br_zero(Assembler::notEqual, false, Assembler::pt, r, not_null);
+  br_notnull(r, false, Assembler::pt, not_null);
   delayed()->nop();
   stop("non-null oop required");
   bind(not_null);

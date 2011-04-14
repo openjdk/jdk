@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package java.beans;
 
 /**
  * An "IndexedPropertyChange" event gets delivered whenever a component that
- * conforms to the JavaBeans<TM> specification (a "bean") changes a bound
+ * conforms to the JavaBeans&trade; specification (a "bean") changes a bound
  * indexed property. This class is an extension of <code>PropertyChangeEvent</code>
  * but contains the index of the property that has changed.
  * <P>

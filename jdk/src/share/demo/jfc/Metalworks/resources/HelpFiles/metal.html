@@ -7,11 +7,11 @@
 <BODY>
 
 <H1>
-About the Java L&F</H1>
-The Java Look and Feel is a cross-platform look & feel being provided by Javasoft.
-Here is some information about the Java L&F you might find useful.
+About the Java L&amp;F</H1>
+The Java Look and Feel is a cross-platform look &amp; feel being provided by Javasoft.
+Here is some information about the Java L&amp;F you might find useful.
 
-<P>The Java L&F implements all of the basic Swing functionality,
+<P>The Java L&amp;F implements all of the basic Swing functionality,
 but also extends it in several areas including:
 <UL>
 <LI>
@@ -27,27 +27,27 @@ Toolbars</LI>
 Trees</LI>
 </UL>
 
-</P>
+<P/>
 <H1>
 Themes</H1>
-<P>One of the first things we learned while implementing the Java L&F
+<P>One of the first things we learned while implementing the Java L&amp;F
 was than many developers feel very strongly about how colors are used in
 their software. To help accommodate this we created a Theme mechanism
 which allows a developer to easily specify the default colors, fonts and
-icons used by the L&F.</P>
+icons used by the L&amp;F.</P>
 
 <P>The theme mechanism is designed to allow developers to create
 their own themes. For an example of this, see the themes
-which are included with Metalworks. Note, like all of the L&F packages, 
+which are included with Metalworks. Note, like all of the L&amp;F packages,
 the metal package is not yet frozen and the theme mechanism may change as 
 we get developer feedback on how to improve it.</P>
 
 <H1>
 Sliders</H1>
-<P>There are several areas where the Java L&F introduces some optional
+<P>There are several areas where the Java L&amp;F introduces some optional
 "value-added" features above the base line capabilities of swing.&nbsp;
 One is the option of Filled Sliders. These are ideal for things like
-volume controls. To access the Java L&F "value-added" features you
+volume controls. To access the Java L&amp;F "value-added" features you
 pass in a token to the component's putClientProperty method.&nbsp;Here
 is an example:</P>
 
@@ -60,12 +60,12 @@ slider.putClientProperty("JSlider.isFilled",
 <P>Note that if a UI such as Windows or Motif encounters a property such as
 JSlider.fill which is does not understand that property will be ignored.&nbsp;
 Thus you don't have to worry about problems which could arise if you switch
-to a different L&F.</P>
+to a different L&amp;F.</P>
 
 <H1>
 ToolBars</H1>
 <P>Many popular applications support "roll-over" effects on buttons in toolbars. 
-The Java L&F provides an easy way to do this. Here is a code snippit:</P>
+The Java L&amp;F provides an easy way to do this. Here is a code snippit:</P>
 
 <PRE>
 JToolBar toolbar = new JToolBar();<BR>
@@ -82,7 +82,7 @@ is a nice effect for many applications.</P>
 
 <H1>
 Trees</H1>
-<P>Java L&F allows you to control the line style used in the JTree component. Here are some code snippits:</P>
+<P>Java L&amp;F allows you to control the line style used in the JTree component. Here are some code snippits:</P>
 
 <PRE>
 JTree myTree = new JTree();
@@ -101,6 +101,6 @@ myTree.putClientProperty("JTree.lineStyle",
                          "Horizontal"); 
 </PRE>
 
-<P><A HREF="toc.html"><IMG SRC="back.gif" BORDER=0 NATURALSIZEFLAG="3" HEIGHT=22 WIDTH=42 ALIGN=BOTTOM>Back</A>
+<P><A HREF="toc.html"><IMG alt="Back"  SRC="back.gif" BORDER=0 HEIGHT=22 WIDTH=42 ALIGN=BOTTOM>Back</A>
 </BODY>
 </HTML>

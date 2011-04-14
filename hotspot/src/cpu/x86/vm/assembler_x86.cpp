@@ -3510,7 +3510,6 @@ bool Assembler::reachable(AddressLiteral adr) {
   // anywhere in the codeCache then we are always reachable.
   // This would have to change if we ever save/restore shared code
   // to be more pessimistic.
-
   disp = (int64_t)adr._target - ((int64_t)CodeCache::low_bound() + sizeof(int));
   if (!is_simm32(disp)) return false;
   disp = (int64_t)adr._target - ((int64_t)CodeCache::high_bound() + sizeof(int));
@@ -3532,6 +3531,14 @@ bool Assembler::reachable(AddressLiteral adr) {
     disp += fudge;
   }
   return is_simm32(disp);
+}
+
+// Check if the polling page is not reachable from the code cache using rip-relative
+// addressing.
+bool Assembler::is_polling_page_far() {
+  intptr_t addr = (intptr_t)os::get_polling_page();
+  return !is_simm32(addr - (intptr_t)CodeCache::low_bound()) ||
+         !is_simm32(addr - (intptr_t)CodeCache::high_bound());
 }
 
 void Assembler::emit_data64(jlong data,
@@ -6886,6 +6893,11 @@ void MacroAssembler::sign_extend_short(Register reg) {
   }
 }
 
+void MacroAssembler::testl(Register dst, AddressLiteral src) {
+  assert(reachable(src), "Address should be reachable");
+  testl(dst, as_Address(src));
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef SERIALGC
 
@@ -7119,17 +7131,6 @@ void MacroAssembler::subptr(Register dst, int32_t imm32) {
 
 void MacroAssembler::subptr(Register dst, Register src) {
   LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src));
-}
-
-void MacroAssembler::test32(Register src1, AddressLiteral src2) {
-  // src2 must be rval
-
-  if (reachable(src2)) {
-    testl(src1, as_Address(src2));
-  } else {
-    lea(rscratch1, src2);
-    testl(src1, Address(rscratch1, 0));
-  }
 }
 
 // C++ bool manipulation
@@ -7768,6 +7769,28 @@ void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
+void MacroAssembler::cmov32(Condition cc, Register dst, Register src) {
+  if (VM_Version::supports_cmov()) {
+    cmovl(cc, dst, src);
+  } else {
+    Label L;
+    jccb(negate_condition(cc), L);
+    movl(dst, src);
+    bind(L);
+  }
+}
+
 void MacroAssembler::verify_oop(Register reg, const char* s) {
   if (!VerifyOops) return;
 
@@ -7918,12 +7941,12 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
 #endif
   push(rax);                          // save rax,
   // addr may contain rsp so we will have to adjust it based on the push
-  // we just did
+  // we just did (and on 64 bit we do two pushes)
   // NOTE: 64bit seemed to have had a bug in that it did movq(addr, rax); which
   // stores rax into addr which is backwards of what was intended.
   if (addr.uses(rsp)) {
     lea(rax, addr);
-    pushptr(Address(rax, BytesPerWord));
+    pushptr(Address(rax, LP64_ONLY(2 *) BytesPerWord));
   } else {
     pushptr(addr);
   }
@@ -8368,6 +8391,17 @@ void MacroAssembler::load_heap_oop(Register dst, Address src) {
   if (UseCompressedOops) {
     movl(dst, src);
     decode_heap_oop(dst);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+// Doesn't do verfication, generates fixed size code
+void MacroAssembler::load_heap_oop_not_null(Register dst, Address src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, src);
+    decode_heap_oop_not_null(dst);
   } else
 #endif
     movptr(dst, src);
@@ -9018,14 +9052,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   movl(result, cnt1);
   subl(cnt1, cnt2);
   push(cnt1);
-  if (VM_Version::supports_cmov()) {
-    cmovl(Assembler::lessEqual, cnt2, result);
-  } else {
-    Label GT_LABEL;
-    jccb(Assembler::greater, GT_LABEL);
-    movl(cnt2, result);
-    bind(GT_LABEL);
-  }
+  cmov32(Assembler::lessEqual, cnt2, result);
 
   // Is the minimum length zero?
   testl(cnt2, cnt2);

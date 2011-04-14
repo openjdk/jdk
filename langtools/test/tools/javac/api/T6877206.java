@@ -168,9 +168,7 @@ public class T6877206 {
     JavacFileManager createFileManager(boolean useOptimizedZip, boolean useSymbolFile) {
         Context ctx = new Context();
         Options options = Options.instance(ctx);
-        if (useOptimizedZip) {
-            options.put("useOptimizedZip", "true");
-        }
+        options.put("useOptimizedZip", Boolean.toString(useOptimizedZip));
         if (!useSymbolFile) {
             options.put("ignore.symbol.file", "true");
         }

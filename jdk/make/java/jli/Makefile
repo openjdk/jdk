@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,12 +78,16 @@ FILES_c = \
 	zutil.c
 
 ifneq ($(PLATFORM), windows)
-
-FILES_c += \
-	$(CTARGDIR)ergo.c \
-	$(CTARGDIR)ergo_$(ERGO_FAMILY).c
+  FILES_c += ergo.c 
+  ERGO_ARCH_FILE = ergo_$(ERGO_FAMILY).c
+  # if the architecture specific ergo file exists then
+  # use it, else use the generic definitions from ergo.c
+  ifneq ($(wildcard $(LAUNCHER_PLATFORM_SRC)/$(ERGO_ARCH_FILE)),)
+    FILES_c += $(ERGO_ARCH_FILE)
+  else
+    OTHER_CPPFLAGS += -DUSE_GENERIC_ERGO
+  endif
 endif
-
 
 # Names of arch directories
 LIBARCH_DEFINES = -DLIBARCHNAME='"$(LIBARCH)"'

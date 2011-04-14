@@ -971,7 +971,7 @@ public class JavacParser implements Parser {
             if ((mode & EXPR) != 0) {
                 mode = EXPR;
                 S.nextToken();
-                if (S.token() == LT) typeArgs = typeArguments();
+                if (S.token() == LT) typeArgs = typeArguments(false);
                 t = creator(pos, typeArgs);
                 typeArgs = null;
             } else return illegal();
@@ -1036,7 +1036,7 @@ public class JavacParser implements Parser {
                             mode = EXPR;
                             int pos1 = S.pos();
                             S.nextToken();
-                            if (S.token() == LT) typeArgs = typeArguments();
+                            if (S.token() == LT) typeArgs = typeArguments(false);
                             t = innerCreator(pos1, typeArgs, t);
                             typeArgs = null;
                             break loop;
@@ -1116,7 +1116,7 @@ public class JavacParser implements Parser {
                     mode = EXPR;
                     int pos2 = S.pos();
                     S.nextToken();
-                    if (S.token() == LT) typeArgs = typeArguments();
+                    if (S.token() == LT) typeArgs = typeArguments(false);
                     t = innerCreator(pos2, typeArgs, t);
                     typeArgs = null;
                 } else {
@@ -1146,7 +1146,7 @@ public class JavacParser implements Parser {
         } else {
             int pos = S.pos();
             accept(DOT);
-            typeArgs = (S.token() == LT) ? typeArguments() : null;
+            typeArgs = (S.token() == LT) ? typeArguments(false) : null;
             t = toP(F.at(pos).Select(t, ident()));
             t = argumentsOpt(typeArgs, t);
         }
@@ -1206,7 +1206,7 @@ public class JavacParser implements Parser {
             (mode & NOPARAMS) == 0) {
             mode = TYPE;
             checkGenerics();
-            return typeArguments(t);
+            return typeArguments(t, false);
         } else {
             return t;
         }
@@ -1223,51 +1223,54 @@ public class JavacParser implements Parser {
                 illegal();
             }
             mode = useMode;
-            return typeArguments();
+            return typeArguments(false);
         }
         return null;
     }
 
     /**  TypeArguments  = "<" TypeArgument {"," TypeArgument} ">"
      */
-    List<JCExpression> typeArguments() {
-        ListBuffer<JCExpression> args = lb();
+    List<JCExpression> typeArguments(boolean diamondAllowed) {
         if (S.token() == LT) {
             S.nextToken();
-            if (S.token() == GT && (mode & DIAMOND) != 0) {
+            if (S.token() == GT && diamondAllowed) {
                 checkDiamond();
+                mode |= DIAMOND;
                 S.nextToken();
                 return List.nil();
-            }
-            args.append(((mode & EXPR) == 0) ? typeArgument() : parseType());
-            while (S.token() == COMMA) {
-                S.nextToken();
+            } else {
+                ListBuffer<JCExpression> args = ListBuffer.lb();
                 args.append(((mode & EXPR) == 0) ? typeArgument() : parseType());
-            }
-            switch (S.token()) {
-            case GTGTGTEQ:
-                S.token(GTGTEQ);
-                break;
-            case GTGTEQ:
-                S.token(GTEQ);
-                break;
-            case GTEQ:
-                S.token(EQ);
-                break;
-            case GTGTGT:
-                S.token(GTGT);
-                break;
-            case GTGT:
-                S.token(GT);
-                break;
-            default:
-                accept(GT);
-                break;
+                while (S.token() == COMMA) {
+                    S.nextToken();
+                    args.append(((mode & EXPR) == 0) ? typeArgument() : parseType());
+                }
+                switch (S.token()) {
+                case GTGTGTEQ:
+                    S.token(GTGTEQ);
+                    break;
+                case GTGTEQ:
+                    S.token(GTEQ);
+                    break;
+                case GTEQ:
+                    S.token(EQ);
+                    break;
+                case GTGTGT:
+                    S.token(GTGT);
+                    break;
+                case GTGT:
+                    S.token(GT);
+                    break;
+                default:
+                    accept(GT);
+                    break;
+                }
+                return args.toList();
             }
         } else {
             syntaxError(S.pos(), "expected", LT);
+            return List.nil();
         }
-        return args.toList();
     }
 
     /** TypeArgument = Type
@@ -1303,9 +1306,9 @@ public class JavacParser implements Parser {
         }
     }
 
-    JCTypeApply typeArguments(JCExpression t) {
+    JCTypeApply typeArguments(JCExpression t, boolean diamondAllowed) {
         int pos = S.pos();
-        List<JCExpression> args = typeArguments();
+        List<JCExpression> args = typeArguments(diamondAllowed);
         return toP(F.at(pos).TypeApply(t, args));
     }
 
@@ -1370,18 +1373,25 @@ public class JavacParser implements Parser {
         }
         JCExpression t = qualident();
         int oldmode = mode;
-        mode = TYPE | DIAMOND;
+        mode = TYPE;
+        boolean diamondFound = false;
         if (S.token() == LT) {
             checkGenerics();
-            t = typeArguments(t);
+            t = typeArguments(t, true);
+            diamondFound = (mode & DIAMOND) != 0;
         }
         while (S.token() == DOT) {
+            if (diamondFound) {
+                //cannot select after a diamond
+                illegal(S.pos());
+            }
             int pos = S.pos();
             S.nextToken();
             t = toP(F.at(pos).Select(t, ident()));
             if (S.token() == LT) {
                 checkGenerics();
-                t = typeArguments(t);
+                t = typeArguments(t, true);
+                diamondFound = (mode & DIAMOND) != 0;
             }
         }
         mode = oldmode;
@@ -1416,9 +1426,8 @@ public class JavacParser implements Parser {
         JCExpression t = toP(F.at(S.pos()).Ident(ident()));
         if (S.token() == LT) {
             int oldmode = mode;
-            mode |= DIAMOND;
             checkGenerics();
-            t = typeArguments(t);
+            t = typeArguments(t, true);
             mode = oldmode;
         }
         return classCreatorRest(newpos, encl, typeArgs, t);

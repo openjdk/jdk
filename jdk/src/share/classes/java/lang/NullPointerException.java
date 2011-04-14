@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,24 @@
 package java.lang;
 
 /**
- * Thrown when an application attempts to use <code>null</code> in a
+ * Thrown when an application attempts to use {@code null} in a
  * case where an object is required. These include:
  * <ul>
- * <li>Calling the instance method of a <code>null</code> object.
- * <li>Accessing or modifying the field of a <code>null</code> object.
- * <li>Taking the length of <code>null</code> as if it were an array.
- * <li>Accessing or modifying the slots of <code>null</code> as if it
+ * <li>Calling the instance method of a {@code null} object.
+ * <li>Accessing or modifying the field of a {@code null} object.
+ * <li>Taking the length of {@code null} as if it were an array.
+ * <li>Accessing or modifying the slots of {@code null} as if it
  *     were an array.
- * <li>Throwing <code>null</code> as if it were a <code>Throwable</code>
+ * <li>Throwing {@code null} as if it were a {@code Throwable}
  *     value.
  * </ul>
  * <p>
  * Applications should throw instances of this class to indicate
- * other illegal uses of the <code>null</code> object.
+ * other illegal uses of the {@code null} object.
+ *
+ * {@code NullPointerException} objects may be constructed by the
+ * virtual machine as if {@linkplain Throwable#Throwable(String,
+ * Throwable, boolean) suppression were disabled}.
  *
  * @author  unascribed
  * @since   JDK1.0
@@ -49,14 +53,14 @@ class NullPointerException extends RuntimeException {
     private static final long serialVersionUID = 5162710183389028792L;
 
     /**
-     * Constructs a <code>NullPointerException</code> with no detail message.
+     * Constructs a {@code NullPointerException} with no detail message.
      */
     public NullPointerException() {
         super();
     }
 
     /**
-     * Constructs a <code>NullPointerException</code> with the specified
+     * Constructs a {@code NullPointerException} with the specified
      * detail message.
      *
      * @param   s   the detail message.

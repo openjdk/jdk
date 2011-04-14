@@ -1017,7 +1017,7 @@ klassOop SystemDictionary::parse_stream(Symbol* class_name,
   }
 
   if (host_klass.not_null() && k.not_null()) {
-    assert(AnonymousClasses, "");
+    assert(EnableInvokeDynamic, "");
     // If it's anonymous, initialize it now, since nobody else will.
     k->set_host_klass(host_klass());
 
@@ -1887,99 +1887,27 @@ static const short wk_init_info[] = {
   0
 };
 
-Symbol* SystemDictionary::find_backup_symbol(Symbol* symbol,
-                                             const char* from_prefix,
-                                             const char* to_prefix) {
-  assert(AllowTransitionalJSR292, "");  // delete this subroutine
-  Symbol* backup_symbol = NULL;
-  size_t from_len = strlen(from_prefix);
-  if (strncmp((const char*) symbol->base(), from_prefix, from_len) != 0)
-    return NULL;
-  char buf[100];
-  size_t to_len = strlen(to_prefix);
-  size_t tail_len = symbol->utf8_length() - from_len;
-  size_t new_len = to_len + tail_len;
-  guarantee(new_len < sizeof(buf), "buf too small");
-  memcpy(buf, to_prefix, to_len);
-  memcpy(buf + to_len, symbol->base() + from_len, tail_len);
-  buf[new_len] = '\0';
-  vmSymbols::SID backup_sid = vmSymbols::find_sid(buf);
-  if (backup_sid != vmSymbols::NO_SID) {
-    backup_symbol = vmSymbols::symbol_at(backup_sid);
-  }
-  return backup_symbol;
-}
-
-Symbol* SystemDictionary::find_backup_class_name(Symbol* symbol) {
-  assert(AllowTransitionalJSR292, "");  // delete this subroutine
-  if (symbol == NULL)  return NULL;
-  Symbol* backup_symbol = find_backup_symbol(symbol, "java/lang/invoke/", "java/dyn/");  // AllowTransitionalJSR292 ONLY
-  if (backup_symbol == NULL)
-    backup_symbol = find_backup_symbol(symbol, "java/dyn/", "sun/dyn/");  // AllowTransitionalJSR292 ONLY
-  return backup_symbol;
-}
-
-Symbol* SystemDictionary::find_backup_signature(Symbol* symbol) {
-  assert(AllowTransitionalJSR292, "");  // delete this subroutine
-  if (symbol == NULL)  return NULL;
-  return find_backup_symbol(symbol, "Ljava/lang/invoke/", "Ljava/dyn/");
-}
-
 bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int  info = wk_init_info[id - FIRST_WKID];
   int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   klassOop*    klassp = &_well_known_klasses[id];
-  bool pre_load = (init_opt < SystemDictionary::Opt);
-  bool try_load = true;
+  bool must_load = (init_opt < SystemDictionary::Opt);
+  bool try_load  = true;
   if (init_opt == SystemDictionary::Opt_Kernel) {
 #ifndef KERNEL
     try_load = false;
 #endif //KERNEL
   }
-  Symbol* backup_symbol = NULL;  // symbol to try if the current symbol fails
-  if (init_opt == SystemDictionary::Pre_JSR292) {
-    if (!EnableMethodHandles)  try_load = false;  // do not bother to load such classes
-    if (AllowTransitionalJSR292) {
-      backup_symbol = find_backup_class_name(symbol);
-      if (try_load && PreferTransitionalJSR292) {
-        while (backup_symbol != NULL) {
-          (*klassp) = resolve_or_null(backup_symbol, CHECK_0); // try backup early
-          if (TraceMethodHandles) {
-            ResourceMark rm;
-            tty->print_cr("MethodHandles: try backup first for %s => %s (%s)",
-                          symbol->as_C_string(), backup_symbol->as_C_string(),
-                          ((*klassp) == NULL) ? "no such class" : "backup load succeeded");
-          }
-          if ((*klassp) != NULL)  return true;
-          backup_symbol = find_backup_class_name(backup_symbol);  // find next backup
-        }
-      }
-    }
-  }
-  if ((*klassp) != NULL)  return true;
-  if (!try_load)          return false;
-  while (symbol != NULL) {
-    bool must_load = (pre_load && (backup_symbol == NULL));
+  if ((*klassp) == NULL && try_load) {
     if (must_load) {
       (*klassp) = resolve_or_fail(symbol, true, CHECK_0); // load required class
     } else {
       (*klassp) = resolve_or_null(symbol,       CHECK_0); // load optional klass
     }
-    if ((*klassp) != NULL)  return true;
-    // Go around again.  Example of long backup sequence:
-    // java.lang.invoke.MemberName, java.dyn.MemberName, sun.dyn.MemberName, ONLY if AllowTransitionalJSR292
-    if (TraceMethodHandles && (backup_symbol != NULL)) {
-      ResourceMark rm;
-      tty->print_cr("MethodHandles: backup for %s => %s",
-                    symbol->as_C_string(), backup_symbol->as_C_string());
-    }
-    symbol = backup_symbol;
-    if (AllowTransitionalJSR292)
-      backup_symbol = find_backup_class_name(symbol);
   }
-  return false;
+  return ((*klassp) != NULL);
 }
 
 void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS) {
@@ -2038,25 +1966,15 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   instanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
   instanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
 
-  WKID meth_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
-  WKID meth_group_end   = WK_KLASS_ENUM_NAME(WrongMethodTypeException_klass);
-  initialize_wk_klasses_until(meth_group_start, scan, CHECK);
-  if (EnableMethodHandles) {
-    initialize_wk_klasses_through(meth_group_end, scan, CHECK);
-  }
-  if (_well_known_klasses[meth_group_start] == NULL) {
-    // Skip the rest of the method handle classes, if MethodHandle is not loaded.
-    scan = WKID(meth_group_end+1);
-  }
-  WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
-  initialize_wk_klasses_until(indy_group_start, scan, CHECK);
+  // JSR 292 classes
+  WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
+  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
+  initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
-    initialize_wk_klasses_through(indy_group_end, scan, CHECK);
-  }
-  if (_well_known_klasses[indy_group_start] == NULL) {
-    // Skip the rest of the dynamic typing classes, if Linkage is not loaded.
-    scan = WKID(indy_group_end+1);
+    initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
+  } else {
+    // Skip the JSR 292 classes, if not enabled.
+    scan = WKID(jsr292_group_end + 1);
   }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
@@ -2407,7 +2325,7 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
                                                       Symbol* signature,
                                                       KlassHandle accessing_klass,
                                                       TRAPS) {
-  if (!EnableMethodHandles)  return NULL;
+  if (!EnableInvokeDynamic)  return NULL;
   vmSymbols::SID name_id = vmSymbols::find_sid(name);
   assert(name_id != vmSymbols::NO_SID, "must be a known name");
   unsigned int hash  = invoke_method_table()->compute_hash(signature, name_id);
@@ -2419,9 +2337,7 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     if (THREAD->is_Compiler_thread())
       return NULL;              // do not attempt from within compiler
-    bool for_invokeGeneric = (name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name));
-    if (AllowInvokeForInvokeGeneric && name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invoke_name))
-      for_invokeGeneric = true;
+    bool for_invokeGeneric = (name_id != vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name));
     bool found_on_bcp = false;
     Handle mt = find_method_handle_type(signature, accessing_klass,
                                         for_invokeGeneric,
@@ -2508,14 +2424,10 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   JavaCallArguments args(Handle(THREAD, rt()));
   args.push_oop(pts());
   JavaValue result(T_OBJECT);
-  Symbol* findMethodHandleType_signature = vmSymbols::findMethodHandleType_signature();
-  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodType_klass()->name() == vmSymbols::java_dyn_MethodType()) {
-    findMethodHandleType_signature = vmSymbols::findMethodHandleType_TRANS_signature();
-  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::findMethodHandleType_name(),
-                         findMethodHandleType_signature,
+                         vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
   Handle method_type(THREAD, (oop) result.get_jobject());
 
@@ -2523,14 +2435,10 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     // call java.lang.invoke.MethodHandleNatives::notifyGenericMethodType(MethodType) -> void
     JavaCallArguments args(Handle(THREAD, method_type()));
     JavaValue no_result(T_VOID);
-    Symbol* notifyGenericMethodType_signature = vmSymbols::notifyGenericMethodType_signature();
-    if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodType_klass()->name() == vmSymbols::java_dyn_MethodType()) {
-      notifyGenericMethodType_signature = vmSymbols::notifyGenericMethodType_TRANS_signature();
-    }
     JavaCalls::call_static(&no_result,
                            SystemDictionary::MethodHandleNatives_klass(),
                            vmSymbols::notifyGenericMethodType_name(),
-                           notifyGenericMethodType_signature,
+                           vmSymbols::notifyGenericMethodType_signature(),
                            &args, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If the notification fails, just kill it.
@@ -2579,14 +2487,10 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   args.push_oop(name());
   args.push_oop(type());
   JavaValue result(T_OBJECT);
-  Symbol* linkMethodHandleConstant_signature = vmSymbols::linkMethodHandleConstant_signature();
-  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandle_klass()->name() == vmSymbols::java_dyn_MethodHandle()) {
-    linkMethodHandleConstant_signature = vmSymbols::linkMethodHandleConstant_TRANS_signature();
-  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::linkMethodHandleConstant_name(),
-                         linkMethodHandleConstant_signature,
+                         vmSymbols::linkMethodHandleConstant_signature(),
                          &args, CHECK_(empty));
   return Handle(THREAD, (oop) result.get_jobject());
 }
@@ -2617,17 +2521,10 @@ Handle SystemDictionary::make_dynamic_call_site(Handle bootstrap_method,
   args.push_oop(caller_mname());
   args.push_int(caller_bci);
   JavaValue result(T_OBJECT);
-  Symbol* makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_signature();
-  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandleNatives_klass()->name() == vmSymbols::sun_dyn_MethodHandleNatives()) {
-    makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_TRANS_signature();
-  }
-  if (AllowTransitionalJSR292 && SystemDictionaryHandles::MethodHandleNatives_klass()->name() == vmSymbols::java_dyn_MethodHandleNatives()) {
-    makeDynamicCallSite_signature = vmSymbols::makeDynamicCallSite_TRANS2_signature();
-  }
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::makeDynamicCallSite_name(),
-                         makeDynamicCallSite_signature,
+                         vmSymbols::makeDynamicCallSite_signature(),
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
   assert(call_site_oop->is_oop()
@@ -2708,26 +2605,8 @@ Handle SystemDictionary::find_bootstrap_method(methodHandle caller_method, int c
       argument_info_result = argument_info;  // return argument_info to caller
       return bsm;
     }
-    // else null BSM; fall through
-  } else if (tag.is_name_and_type()) {
-    // JSR 292 EDR does not have JVM_CONSTANT_InvokeDynamic
-    // a bare name&type defaults its BSM to null, so fall through...
   } else {
     ShouldNotReachHere();  // verifier does not allow this
-  }
-
-  // Fall through to pick up the per-class bootstrap method.
-  // This mechanism may go away in the PFD.
-  assert(AllowTransitionalJSR292, "else the verifier should have stopped us already");
-  argument_info_result = empty;  // return no argument_info to caller
-  oop bsm_oop = instanceKlass::cast(caller_method->method_holder())->bootstrap_method();
-  if (bsm_oop != NULL) {
-    if (TraceMethodHandles) {
-      tty->print_cr("bootstrap method for "PTR_FORMAT" registered as "PTR_FORMAT":",
-                    (intptr_t) caller_method(), (intptr_t) bsm_oop);
-    }
-    assert(bsm_oop->is_oop(), "must be sane");
-    return Handle(THREAD, bsm_oop);
   }
 
   return empty;

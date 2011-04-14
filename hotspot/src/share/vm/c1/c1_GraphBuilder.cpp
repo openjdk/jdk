@@ -30,6 +30,7 @@
 #include "c1/c1_InstructionPrinter.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
+#include "compiler/compileBroker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2823,7 +2824,7 @@ ValueStack* GraphBuilder::state_at_entry() {
   int idx = 0;
   if (!method()->is_static()) {
     // we should always see the receiver
-    state->store_local(idx, new Local(objectType, idx));
+    state->store_local(idx, new Local(method()->holder(), objectType, idx));
     idx = 1;
   }
 
@@ -2835,7 +2836,7 @@ ValueStack* GraphBuilder::state_at_entry() {
     // don't allow T_ARRAY to propagate into locals types
     if (basic_type == T_ARRAY) basic_type = T_OBJECT;
     ValueType* vt = as_ValueType(basic_type);
-    state->store_local(idx, new Local(vt, idx));
+    state->store_local(idx, new Local(type, vt, idx));
     idx += type->size();
   }
 
@@ -3775,24 +3776,7 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
 
 #ifndef PRODUCT
 void GraphBuilder::print_inline_result(ciMethod* callee, bool res) {
-  const char sync_char      = callee->is_synchronized()        ? 's' : ' ';
-  const char exception_char = callee->has_exception_handlers() ? '!' : ' ';
-  const char monitors_char  = callee->has_monitor_bytecodes()  ? 'm' : ' ';
-  tty->print("     %c%c%c ", sync_char, exception_char, monitors_char);
-  for (int i = 0; i < scope()->level(); i++) tty->print("  ");
-  if (res) {
-    tty->print("  ");
-  } else {
-    tty->print("- ");
-  }
-  tty->print("@ %d  ", bci());
-  callee->print_short_name();
-  tty->print(" (%d bytes)", callee->code_size());
-  if (_inline_bailout_msg) {
-    tty->print("  %s", _inline_bailout_msg);
-  }
-  tty->cr();
-
+  CompileTask::print_inlining(callee, scope()->level(), bci(), _inline_bailout_msg);
   if (res && CIPrintMethodCodes) {
     callee->print_codes();
   }

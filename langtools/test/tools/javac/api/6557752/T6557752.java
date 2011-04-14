@@ -118,7 +118,8 @@ public class T6557752 {
 
                 Types types = task.getTypes();
 
-                if (types.asElement(trees.getOriginalType((ErrorType)typeMirror)) != null) {
+                str1 = types.asElement(trees.getOriginalType((ErrorType)typeMirror)).toString();
+                if (!str1.equals("FooBar")) {
                     throw new AssertionError("Types.asElement() error!");
                 }
                 foundError = true;

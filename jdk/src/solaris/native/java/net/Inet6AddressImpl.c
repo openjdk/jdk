@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,12 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     char hostname[NI_MAXHOST+1];
 
     hostname[0] = '\0';
-    if (JVM_GetHostName(hostname, MAXHOSTNAMELEN)) {
+    if (JVM_GetHostName(hostname, sizeof(hostname))) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
+        // ensure null-terminated
+        hostname[NI_MAXHOST] = '\0';
 #ifdef __linux__
         /* On Linux gethostname() says "host.domain.sun.com".  On
          * Solaris gethostname() says "host", so extra work is needed.

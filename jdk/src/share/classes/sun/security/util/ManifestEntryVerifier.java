@@ -195,8 +195,7 @@ public class ManifestEntryVerifier {
                 Hashtable<String, CodeSigner[]> sigFileSigners)
         throws JarException
     {
-        // MANIFEST.MF should not be skipped. It has signers.
-        if (skip && !entry.getName().equals(JarFile.MANIFEST_NAME)) {
+        if (skip) {
             return null;
         }
 

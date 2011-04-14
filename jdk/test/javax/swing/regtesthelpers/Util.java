@@ -24,6 +24,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -71,5 +73,47 @@ public class Util {
         }
 
         return true;
+    }
+
+    /**
+     * Fills the heap until OutOfMemoryError occurs. This method is useful for
+     * WeakReferences removing.
+     */
+    public static void generateOOME() {
+        List<Object> bigLeak = new LinkedList<Object>();
+
+        boolean oome = false;
+
+        System.out.print("Filling the heap");
+
+        try {
+            for(int i = 0; true ; i++) {
+                // Now, use up all RAM
+                bigLeak.add(new byte[1024 * 1024]);
+
+                System.out.print(".");
+
+                // Give the GC a change at that weakref
+                if (i % 10 == 0) {
+                    System.gc();
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } catch (OutOfMemoryError e) {
+            bigLeak = null;
+            oome = true;
+        }
+
+        System.out.println("");
+
+        if (!oome) {
+            throw new RuntimeException("Problem with test case - never got OOME");
+        }
+
+        System.out.println("Got OOME");
     }
 }

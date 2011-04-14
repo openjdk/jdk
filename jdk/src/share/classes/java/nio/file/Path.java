@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,9 @@ public interface Path
      * not have a root component and the given path has a root component then
      * this path does not start with the given path.
      *
+     * <p> If the given path is associated with a different {@code FileSystem}
+     * to this path then {@code false} is returned.
+     *
      * @param   other
      *          the given path
      *
@@ -270,6 +273,9 @@ public interface Path
      * does not have a root component and the given path has a root component
      * then this path does not end with the given path.
      *
+     * <p> If the given path is associated with a different {@code FileSystem}
+     * to this path then {@code false} is returned.
+     *
      * @param   other
      *          the given path
      *
@@ -283,7 +289,10 @@ public interface Path
      * the given path string, in exactly the manner specified by the {@link
      * #endsWith(Path) endsWith(Path)} method. On UNIX for example, the path
      * "{@code foo/bar}" ends with "{@code foo/bar}" and "{@code bar}". It does
-     * not end with "{@code r}" or "{@code /bar}".
+     * not end with "{@code r}" or "{@code /bar}". Note that trailing separators
+     * are not taken into account, and so invoking this method on the {@code
+     * Path}"{@code foo/bar}" with the {@code String} "{@code bar/}" returns
+     * {@code true}.
      *
      * @param   other
      *          the given path string
@@ -541,18 +550,21 @@ public interface Path
      * <p> If this path is relative then its absolute path is first obtained,
      * as if by invoking the {@link #toAbsolutePath toAbsolutePath} method.
      *
-     * <p> The {@code resolveLinks} parameter specifies if symbolic links
-     * should be resolved. This parameter is ignored when symbolic links are
-     * not supported. Where supported, and the parameter has the value {@code
-     * true} then symbolic links are resolved to their final target. Where the
-     * parameter has the value {@code false} then this method does not resolve
-     * symbolic links. Some implementations allow special names such as
-     * "{@code ..}" to refer to the parent directory. When deriving the <em>real
-     * path</em>, and a "{@code ..}" (or equivalent) is preceded by a
-     * non-"{@code ..}" name then an implementation will typically causes both
-     * names to be removed. When not resolving symbolic links and the preceding
-     * name is a symbolic link then the names are only removed if it guaranteed
-     * that the resulting path will locate the same file as this path.
+     * <p> The {@code options} array may be used to indicate how symbolic links
+     * are handled. By default, symbolic links are resolved to their final
+     * target. If the option {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} is
+     * present then this method does not resolve symbolic links.
+     *
+     * Some implementations allow special names such as "{@code ..}" to refer to
+     * the parent directory. When deriving the <em>real path</em>, and a
+     * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then
+     * an implementation will typically cause both names to be removed. When
+     * not resolving symbolic links and the preceding name is a symbolic link
+     * then the names are only removed if it guaranteed that the resulting path
+     * will locate the same file as this path.
+     *
+     * @param   options
+     *          options indicating how symbolic links are handled
      *
      * @return  an absolute path represent the <em>real</em> path of the file
      *          located by this object
@@ -567,7 +579,7 @@ public interface Path
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
      */
-    Path toRealPath(boolean resolveLinks) throws IOException;
+    Path toRealPath(LinkOption... options) throws IOException;
 
     /**
      * Returns a {@link File} object representing this path. Where this {@code
@@ -724,12 +736,18 @@ public interface Path
      * provider, platform specific. This method does not access the file system
      * and neither file is required to exist.
      *
+     * <p> This method may not be used to compare paths that are associated
+     * with different file system providers.
+     *
      * @param   other  the path compared to this path.
      *
      * @return  zero if the argument is {@link #equals equal} to this path, a
      *          value less than zero if this path is lexicographically less than
      *          the argument, or a value greater than zero if this path is
      *          lexicographically greater than the argument
+     *
+     * @throws  ClassCastException
+     *          if the paths are associated with different providers
      */
     @Override
     int compareTo(Path other);
@@ -738,7 +756,7 @@ public interface Path
      * Tests this path for equality with the given object.
      *
      * <p> If the given object is not a Path, or is a Path associated with a
-     * different provider, then this method immediately returns {@code false}.
+     * different {@code FileSystem}, then this method returns {@code false}.
      *
      * <p> Whether or not two path are equal depends on the file system
      * implementation. In some cases the paths are compared without regard

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,16 @@ import sun.swing.SwingUtilities2;
 import sun.awt.AppContext;
 import sun.swing.*;
 import sun.awt.SunToolkit;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaSecurityAccess;
+
+import sun.awt.AWTAccessor;
 
 /**
  * This class is used to handle the transfer of a <code>Transferable</code>
@@ -1686,7 +1696,37 @@ public class TransferHandler implements Serializable {
             return true;
         }
 
-        public void actionPerformed(ActionEvent e) {
+        private static final JavaSecurityAccess javaSecurityAccess =
+            SharedSecrets.getJavaSecurityAccess();
+
+        public void actionPerformed(final ActionEvent e) {
+            final Object src = e.getSource();
+
+            final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+                public Void run() {
+                    actionPerformedImpl(e);
+                    return null;
+                }
+            };
+
+            final AccessControlContext stack = AccessController.getContext();
+            final AccessControlContext srcAcc = AWTAccessor.getComponentAccessor().getAccessControlContext((Component)src);
+            final AccessControlContext eventAcc = AWTAccessor.getAWTEventAccessor().getAccessControlContext(e);
+
+                if (srcAcc == null) {
+                    javaSecurityAccess.doIntersectionPrivilege(action, stack, eventAcc);
+                } else {
+                    javaSecurityAccess.doIntersectionPrivilege(
+                        new PrivilegedAction<Void>() {
+                            public Void run() {
+                                javaSecurityAccess.doIntersectionPrivilege(action, eventAcc);
+                                return null;
+                             }
+                    }, stack, srcAcc);
+                }
+        }
+
+        private void actionPerformedImpl(ActionEvent e) {
             Object src = e.getSource();
             if (src instanceof JComponent) {
                 JComponent c = (JComponent) src;

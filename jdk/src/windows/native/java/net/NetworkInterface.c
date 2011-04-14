@@ -53,36 +53,6 @@
  * order and this ensures consistent device number across invocations.
  */
 
-
-/* IP helper library routines */
-int (PASCAL FAR *GetIpAddrTable_fn)();
-int (PASCAL FAR *GetIfTable_fn)();
-int (PASCAL FAR *GetFriendlyIfIndex_fn)();
-int (PASCAL FAR *GetAdaptersAddresses_fn)();
-int (PASCAL FAR *GetAdaptersInfo_fn)();
-int (PASCAL FAR *GetNumberOfInterfaces_fn)();
-
-/* Enumeration routines */
-typedef int (*EnumerateNetInterfaces)(JNIEnv *, netif **);
-typedef int(*EnumerateNetAddresses)(JNIEnv *, netif *, netaddr **);
-
-static EnumerateNetInterfaces enumInterfaces_fn;
-static EnumerateNetAddresses enumAddresses_fn;
-
-/* Windows 9x routines are external (not needed on 64-bit) */
-#ifndef _WIN64
-extern int enumInterfaces_win9x(JNIEnv *, netif **);
-extern int enumAddresses_win9x(JNIEnv *, netif *, netaddr **);
-extern int init_win9x(void);
-#endif
-
-
-/* Windows 95/98/ME running */
-static jboolean isW9x;
-
-/* Windows version supports */
-static jboolean os_supports_ipv6;
-
 /* various JNI ids */
 
 jclass ni_class;            /* NetworkInterface */
@@ -154,10 +124,10 @@ MIB_IFROW *getIF(jint index) {
      */
     size = sizeof(MIB_IFTABLE);
     tableP = (MIB_IFTABLE *)malloc(size);
-    count = (*GetIfTable_fn)(tableP, &size, TRUE);
+    count = GetIfTable(tableP, &size, TRUE);
     if (count == ERROR_INSUFFICIENT_BUFFER || count == ERROR_BUFFER_OVERFLOW) {
         tableP = (MIB_IFTABLE *)realloc(tableP, size);
-        count = (*GetIfTable_fn)(tableP, &size, TRUE);
+        count = GetIfTable(tableP, &size, TRUE);
     }
 
     if (count != NO_ERROR) {
@@ -172,7 +142,7 @@ MIB_IFROW *getIF(jint index) {
         /*
          * Warning the real index is obtained by GetFriendlyIfIndex()
          */
-        ifindex = (*GetFriendlyIfIndex_fn)(ifrowP->dwIndex);
+        ifindex = GetFriendlyIfIndex(ifrowP->dwIndex);
         if (ifindex == index) {
           /*
            * Create a copy of the entry so that we can free the table.
@@ -199,7 +169,7 @@ MIB_IFROW *getIF(jint index) {
  * occurs then netifPP be returned as list of netif structures or NULL
  * if no interfaces are found.
  */
-int enumInterfaces_win(JNIEnv *env, netif **netifPP)
+int enumInterfaces(JNIEnv *env, netif **netifPP)
 {
     MIB_IFTABLE *tableP;
     MIB_IFROW *ifrowP;
@@ -215,31 +185,15 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
      */
     size = sizeof(MIB_IFTABLE);
     tableP = (MIB_IFTABLE *)malloc(size);
-    ret = (*GetIfTable_fn)(tableP, &size, TRUE);
+    ret = GetIfTable(tableP, &size, TRUE);
     if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
         tableP = (MIB_IFTABLE *)realloc(tableP, size);
-        ret = (*GetIfTable_fn)(tableP, &size, TRUE);
+        ret = GetIfTable(tableP, &size, TRUE);
     }
 
     if (ret != NO_ERROR) {
         if (tableP != NULL)
             free(tableP);
-
-#ifndef _WIN64
-        if (isW9x && ret == ERROR_NOT_SUPPORTED) {
-            /*
-             * If ERROR_NOT_SUPPORTED is returned on Windows 98 it means that
-             * IE5.0 has been installed. In this case we revert to the Windows 95
-             * approach and avoid using the IP Helper Library.
-             * See: http://support.microsoft.com/support/kb/articles/q234/5/73.asp
-             */
-            enumInterfaces_fn = enumInterfaces_win9x;
-            enumAddresses_fn = enumAddresses_win9x;
-            init_win9x();
-
-            return (*enumInterfaces_fn)(env, netifPP);
-        }
-#endif
 
         JNU_ThrowByName(env, "java/lang/Error",
                 "IP Helper Library GetIfTable function failed");
@@ -328,7 +282,7 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
         curr->displayName[ifrowP->dwDescrLen] = '\0';
         curr->dwIndex = ifrowP->dwIndex;
         curr->ifType = ifrowP->dwType;
-        curr->index = (*GetFriendlyIfIndex_fn)(ifrowP->dwIndex);
+        curr->index = GetFriendlyIfIndex(ifrowP->dwIndex);
 
         /*
          * Put the interface at tail of list as GetIfTable(,,TRUE) is
@@ -384,10 +338,10 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
     size = sizeof(MIB_IPADDRTABLE);
     tableP = (MIB_IPADDRTABLE *)malloc(size);
 
-    ret = (*GetIpAddrTable_fn)(&tableP, &size, FALSE);
+    ret = GetIpAddrTable(tableP, &size, FALSE);
     if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
         tableP = (MIB_IPADDRTABLE *)realloc(tableP, size);
-        ret = (*GetIpAddrTable_fn)(tableP, &size, FALSE);
+        ret = GetIpAddrTable(tableP, &size, FALSE);
     }
     if (ret != NO_ERROR) {
         if (tableP) {
@@ -477,71 +431,6 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
 JNIEXPORT void JNICALL
 Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
 {
-    OSVERSIONINFO ver;
-    HANDLE h;
-
-    /*
-     * First check if this is a Windows 9x machine.
-     */
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    if (ver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS && ver.dwMajorVersion == 4) {
-        isW9x = JNI_TRUE;
-    }
-
-    /*
-     * Try to load the IP Helper Library and obtain the entry points we
-     * require. This will succeed on 98, NT SP4+, 2000 & XP. It will
-     * fail on Windows 95 (if IE hasn't been updated) and old versions
-     * of NT (IP helper library only appeared at SP4). If it fails on
-     * Windows 9x we will use the registry approach, otherwise if it
-     * fails we throw an Error indicating that we have an incompatible
-     * IP helper library.
-     */
-    h = LoadLibrary("iphlpapi.dll");
-    if (h != NULL) {
-        GetIpAddrTable_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetIpAddrTable");
-        GetIfTable_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetIfTable");
-        GetFriendlyIfIndex_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetFriendlyIfIndex");
-        GetNumberOfInterfaces_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetNumberOfInterfaces");
-        GetAdaptersAddresses_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetAdaptersAddresses");
-        GetAdaptersInfo_fn =
-            (int (PASCAL FAR *)())GetProcAddress(h, "GetAdaptersInfo");
-    }
-
-    /* IPv6 is supported on Windows versions if the following APIs avail */
-
-    os_supports_ipv6 = (GetAdaptersAddresses_fn != NULL) &&
-                       (GetNumberOfInterfaces_fn != NULL) &&
-                       (GetAdaptersInfo_fn != NULL);
-
-    if (GetIpAddrTable_fn == NULL ||
-        GetIfTable_fn == NULL ||
-        GetFriendlyIfIndex_fn == NULL) {
-
-#ifndef _WIN64
-        if (isW9x) {
-            /* Use Windows 9x registry approach which requires initialization */
-            enumInterfaces_fn = enumInterfaces_win9x;
-            enumAddresses_fn = enumAddresses_win9x;
-            init_win9x();
-        } else
-#endif
-        {
-            JNU_ThrowByName(env, "java/lang/Error",
-                "Incompatible IP helper library (iphlpapi.dll)");
-            return;
-        }
-    } else {
-        enumInterfaces_fn = enumInterfaces_win;
-        enumAddresses_fn = enumAddresses_win;
-    }
-
     /*
      * Get the various JNI ids that we require
      */
@@ -581,7 +470,8 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
  * populate the InetAddress array based on the IP addresses for this
  * interface.
  */
-jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netaddr *netaddrP)
+jobject createNetworkInterface
+    (JNIEnv *env, netif *ifs, int netaddrCount, netaddr *netaddrP)
 {
     jobject netifObj;
     jobject name, displayName;
@@ -596,7 +486,8 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netadd
     netifObj = (*env)->NewObject(env, ni_class, ni_ctor);
     name = (*env)->NewStringUTF(env, ifs->name);
     if (ifs->dNameIsUnicode) {
-        displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName, wcslen ((PWCHAR)ifs->displayName));
+        displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName,
+                                       (jsize)wcslen ((PWCHAR)ifs->displayName));
     } else {
         displayName = (*env)->NewStringUTF(env, ifs->displayName);
     }
@@ -612,7 +503,7 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netadd
      * Note that 0 is a valid number of addresses.
      */
     if (netaddrCount < 0) {
-        netaddrCount = (*enumAddresses_fn)(env, ifs, &netaddrP);
+        netaddrCount = enumAddresses_win(env, ifs, &netaddrP);
         if ((*env)->ExceptionOccurred(env)) {
             free_netaddr(netaddrP);
             return NULL;
@@ -725,12 +616,13 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     const char *name_utf;
     jobject netifObj = NULL;
 
-    if (os_supports_ipv6 && ipv6_available()) {
+    // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+    if (ipv6_available()) {
         return Java_java_net_NetworkInterface_getByName0_XP (env, cls, name);
     }
 
     /* get the list of interfaces */
-    if ((*enumInterfaces_fn)(env, &ifList) < 0) {
+    if (enumInterfaces(env, &ifList) < 0) {
         return NULL;
     }
 
@@ -771,12 +663,13 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
     netif *ifList, *curr;
     jobject netifObj = NULL;
 
-    if (os_supports_ipv6 && ipv6_available()) {
+    // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+    if (ipv6_available()) {
         return Java_java_net_NetworkInterface_getByIndex0_XP (env, cls, index);
     }
 
     /* get the list of interfaces */
-    if ((*enumInterfaces_fn)(env, &ifList) < 0) {
+    if (enumInterfaces(env, &ifList) < 0) {
         return NULL;
     }
 
@@ -812,12 +705,13 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
     jint addr = (*env)->GetIntField(env, iaObj, ni_iaAddr);
     jobject netifObj = NULL;
 
-    if (os_supports_ipv6 && ipv6_available()) {
+    // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+    if (ipv6_available()) {
         return Java_java_net_NetworkInterface_getByInetAddress0_XP (env, cls, iaObj);
     }
 
     /* get the list of interfaces */
-    if ((*enumInterfaces_fn)(env, &ifList) < 0) {
+    if (enumInterfaces(env, &ifList) < 0) {
         return NULL;
     }
 
@@ -832,7 +726,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
         netaddr *addrP;
 
         /* enumerate the addresses on this interface */
-        count = (*enumAddresses_fn)(env, curr, &addrList);
+        count = enumAddresses_win(env, curr, &addrList);
         if (count < 0) {
             free_netif(ifList);
             return NULL;
@@ -881,14 +775,15 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     jobjectArray netIFArr;
     jint arr_index;
 
-    if (os_supports_ipv6 && ipv6_available()) {
+    // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+    if (ipv6_available()) {
         return Java_java_net_NetworkInterface_getAll_XP (env, cls);
     }
 
     /*
      * Get list of interfaces
      */
-    count = (*enumInterfaces_fn)(env, &ifList);
+    count = enumInterfaces(env, &ifList);
     if (count < 0) {
         return NULL;
     }
@@ -934,13 +829,16 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0
     (JNIEnv *env, jclass cls, jstring name, jint index) {
   jboolean ret = JNI_FALSE;
 
-  if (os_supports_ipv6 && ipv6_available()) {
+  // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+  if (ipv6_available()) {
     return Java_java_net_NetworkInterface_isUp0_XP(env, cls, name, index);
   } else {
     MIB_IFROW *ifRowP;
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
-      ret = ifRowP->dwAdminStatus == 1 && (ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL || ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_CONNECTED);
+      ret = ifRowP->dwAdminStatus == 1 &&
+            (ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL ||
+             ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_CONNECTED);
       free(ifRowP);
     }
   }
@@ -952,11 +850,13 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0
  * Method:    isP2P0
  * Signature: (Ljava/lang/String;I)Z
  */
-JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(JNIEnv *env, jclass cls, jstring name, jint index) {
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0
+    (JNIEnv *env, jclass cls, jstring name, jint index) {
   MIB_IFROW *ifRowP;
   jboolean ret = JNI_FALSE;
 
-  if (os_supports_ipv6 && ipv6_available()) {
+  // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+  if (ipv6_available()) {
     return Java_java_net_NetworkInterface_isP2P0_XP(env, cls, name, index);
   } else {
     ifRowP = getIF(index);
@@ -983,7 +883,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0
   MIB_IFROW *ifRowP;
   jboolean ret = JNI_FALSE;
 
-  if (os_supports_ipv6 && ipv6_available()) {
+  // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+  if (ipv6_available()) {
     return Java_java_net_NetworkInterface_isLoopback0_XP(env, cls, name, index);
   } else {
     ifRowP = getIF(index);
@@ -1003,22 +904,8 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0
  */
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0
     (JNIEnv *env, jclass cls, jstring name, jint index) {
-  MIB_IFROW *ifRowP;
-  jboolean ret = JNI_TRUE;
-
-  // Let's try to use the newer API (XP & 2003 only)
-  if (GetAdaptersAddresses_fn != NULL) {
-    ret = Java_java_net_NetworkInterface_supportsMulticast0_XP(env, cls,
+    return Java_java_net_NetworkInterface_supportsMulticast0_XP(env, cls,
                                                                name, index);
-    return ret;
-  }
-  ifRowP = getIF(index);
-  if (ifRowP != NULL) {
-    if (ifRowP->dwType == MIB_IF_TYPE_LOOPBACK)
-      ret = JNI_FALSE;
-    free(ifRowP);
-  }
-  return ret;
 }
 
 /*
@@ -1026,12 +913,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0
  * Method:    getMacAddr0
  * Signature: ([bLjava/lang/String;I)[b
  */
-JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *env, jclass class, jbyteArray addrArray, jstring name, jint index) {
+JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0
+    (JNIEnv *env, jclass class, jbyteArray addrArray, jstring name, jint index) {
   jbyteArray ret = NULL;
   int len;
   MIB_IFROW *ifRowP;
 
-  if (os_supports_ipv6 && ipv6_available()) {
+  // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+  if (ipv6_available()) {
     return Java_java_net_NetworkInterface_getMacAddr0_XP(env, class, name, index);
   } else {
     ifRowP = getIF(index);
@@ -1058,11 +947,13 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *
  * Method:      getMTU0
  * Signature:   ([bLjava/lang/String;I)I
  */
-JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclass class, jstring name, jint index) {
+JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0
+    (JNIEnv *env, jclass class, jstring name, jint index) {
   jint ret = -1;
   MIB_IFROW *ifRowP;
 
-  if (os_supports_ipv6 && ipv6_available()) {
+  // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
+  if (ipv6_available()) {
     return Java_java_net_NetworkInterface_getMTU0_XP(env, class, name, index);
   } else {
     ifRowP = getIF(index);

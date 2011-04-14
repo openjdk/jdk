@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -776,67 +776,69 @@ public:
   static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
 };
 
-//------------------------------StrComp-------------------------------------
-class StrCompNode: public Node {
+//------------------------------StrIntrinsic-------------------------------
+// Base class for Ideal nodes used in String instrinsic code.
+class StrIntrinsicNode: public Node {
 public:
-  StrCompNode(Node* control, Node* char_array_mem,
-              Node* s1, Node* c1,
-              Node* s2, Node* c2): Node(control, char_array_mem,
-                                        s1, c1,
-                                        s2, c2) {};
-  virtual int Opcode() const;
+  StrIntrinsicNode(Node* control, Node* char_array_mem,
+                   Node* s1, Node* c1, Node* s2, Node* c2):
+    Node(control, char_array_mem, s1, c1, s2, c2) {
+  }
+
+  StrIntrinsicNode(Node* control, Node* char_array_mem,
+                   Node* s1, Node* s2, Node* c):
+    Node(control, char_array_mem, s1, s2, c) {
+  }
+
+  StrIntrinsicNode(Node* control, Node* char_array_mem,
+                   Node* s1, Node* s2):
+    Node(control, char_array_mem, s1, s2) {
+  }
+
   virtual bool depends_only_on_test() const { return false; }
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------StrComp-------------------------------------
+class StrCompNode: public StrIntrinsicNode {
+public:
+  StrCompNode(Node* control, Node* char_array_mem,
+              Node* s1, Node* c1, Node* s2, Node* c2):
+    StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
 };
 
 //------------------------------StrEquals-------------------------------------
-class StrEqualsNode: public Node {
+class StrEqualsNode: public StrIntrinsicNode {
 public:
   StrEqualsNode(Node* control, Node* char_array_mem,
-                Node* s1, Node* s2, Node* c): Node(control, char_array_mem,
-                                                   s1, s2, c) {};
+                Node* s1, Node* s2, Node* c):
+    StrIntrinsicNode(control, char_array_mem, s1, s2, c) {};
   virtual int Opcode() const;
-  virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
-  virtual uint match_edge(uint idx) const;
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------StrIndexOf-------------------------------------
-class StrIndexOfNode: public Node {
+class StrIndexOfNode: public StrIntrinsicNode {
 public:
   StrIndexOfNode(Node* control, Node* char_array_mem,
-                 Node* s1, Node* c1,
-                 Node* s2, Node* c2): Node(control, char_array_mem,
-                                           s1, c1,
-                                           s2, c2) {};
+              Node* s1, Node* c1, Node* s2, Node* c2):
+    StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2) {};
   virtual int Opcode() const;
-  virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
-  virtual uint match_edge(uint idx) const;
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------AryEq---------------------------------------
-class AryEqNode: public Node {
+class AryEqNode: public StrIntrinsicNode {
 public:
-  AryEqNode(Node* control, Node* char_array_mem,
-            Node* s1, Node* s2): Node(control, char_array_mem, s1, s2) {};
+  AryEqNode(Node* control, Node* char_array_mem, Node* s1, Node* s2):
+    StrIntrinsicNode(control, char_array_mem, s1, s2) {};
   virtual int Opcode() const;
-  virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
-  virtual uint match_edge(uint idx) const;
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------MemBar-----------------------------------------

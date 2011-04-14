@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2874,7 +2874,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * on windows. Not needed on other platforms.
      */
     public synchronized void useAlternateFontforJALocales() {
-
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger()
+                .info("Entered useAlternateFontforJALocales().");
+        }
         if (!FontUtilities.isWindows) {
             return;
         }
@@ -2897,7 +2900,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     }
 
     public synchronized void preferLocaleFonts() {
-
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger().info("Entered preferLocaleFonts().");
+        }
         /* Test if re-ordering will have any effect */
         if (!FontConfiguration.willReorderForStartupLocale()) {
             return;
@@ -2928,7 +2933,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     }
 
     public synchronized void preferProportionalFonts() {
-
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger()
+                .info("Entered preferProportionalFonts().");
+        }
         /* If no proportional fonts are configured, there's no need
          * to take any action.
          */
@@ -3455,6 +3463,11 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     private void
         initCompositeFonts(FontConfiguration fontConfig,
                            ConcurrentHashMap<String, Font2D>  altNameCache) {
+
+        if (FontUtilities.isLogging()) {
+            FontUtilities.getLogger()
+                            .info("Initialising composite fonts");
+        }
 
         int numCoreFonts = fontConfig.getNumberCoreFonts();
         String[] fcFonts = fontConfig.getPlatformFontNames();

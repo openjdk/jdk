@@ -978,31 +978,19 @@ WarmCallInfo* WarmCallInfo::remove_from(WarmCallInfo* head) {
   return head;
 }
 
-WarmCallInfo* WarmCallInfo::_always_hot  = NULL;
-WarmCallInfo* WarmCallInfo::_always_cold = NULL;
+WarmCallInfo WarmCallInfo::_always_hot(WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE(),
+                                       WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE());
+WarmCallInfo WarmCallInfo::_always_cold(WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE(),
+                                        WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE());
 
 WarmCallInfo* WarmCallInfo::always_hot() {
-  if (_always_hot == NULL) {
-    static double bits[sizeof(WarmCallInfo) / sizeof(double) + 1] = {0};
-    WarmCallInfo* ci = (WarmCallInfo*) bits;
-    ci->_profit = ci->_count = MAX_VALUE();
-    ci->_work   = ci->_size  = MIN_VALUE();
-    _always_hot = ci;
-  }
-  assert(_always_hot->is_hot(), "must always be hot");
-  return _always_hot;
+  assert(_always_hot.is_hot(), "must always be hot");
+  return &_always_hot;
 }
 
 WarmCallInfo* WarmCallInfo::always_cold() {
-  if (_always_cold == NULL) {
-    static double bits[sizeof(WarmCallInfo) / sizeof(double) + 1] = {0};
-    WarmCallInfo* ci = (WarmCallInfo*) bits;
-    ci->_profit = ci->_count = MIN_VALUE();
-    ci->_work   = ci->_size  = MAX_VALUE();
-    _always_cold = ci;
-  }
-  assert(_always_cold->is_cold(), "must always be cold");
-  return _always_cold;
+  assert(_always_cold.is_cold(), "must always be cold");
+  return &_always_cold;
 }
 
 

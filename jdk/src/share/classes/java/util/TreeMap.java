@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,11 +528,8 @@ public class TreeMap<K,V>
     public V put(K key, V value) {
         Entry<K,V> t = root;
         if (t == null) {
-            // TBD:
-            // 5045147: (coll) Adding null to an empty TreeSet should
-            // throw NullPointerException
-            //
-            // compare(key, key); // type check
+            compare(key, key); // type (and possibly null) check
+
             root = new Entry<>(key, value, null);
             size = 1;
             modCount++;

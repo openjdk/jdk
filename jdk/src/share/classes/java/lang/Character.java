@@ -31,10 +31,10 @@ import java.util.HashMap;
 import java.util.Locale;
 
 /**
- * The <code>Character</code> class wraps a value of the primitive
- * type <code>char</code> in an object. An object of type
- * <code>Character</code> contains a single field whose type is
- * <code>char</code>.
+ * The {@code Character} class wraps a value of the primitive
+ * type {@code char} in an object. An object of type
+ * {@code Character} contains a single field whose type is
+ * {@code char}.
  * <p>
  * In addition, this class provides several methods for determining
  * a character's category (lowercase letter, digit, etc.) and for converting
@@ -42,7 +42,7 @@ import java.util.Locale;
  * <p>
  * Character information is based on the Unicode Standard, version 6.0.0.
  * <p>
- * The methods and data of class <code>Character</code> are defined by
+ * The methods and data of class {@code Character} are defined by
  * the information in the <i>UnicodeData</i> file that is part of the
  * Unicode Character Database maintained by the Unicode
  * Consortium. This file specifies various properties including name
@@ -56,8 +56,8 @@ import java.util.Locale;
  *
  * <h4><a name="unicode">Unicode Character Representations</a></h4>
  *
- * <p>The <code>char</code> data type (and therefore the value that a
- * <code>Character</code> object encapsulates) are based on the
+ * <p>The {@code char} data type (and therefore the value that a
+ * {@code Character} object encapsulates) are based on the
  * original Unicode specification, which defined characters as
  * fixed-width 16-bit entities. The Unicode standard has since been
  * changed to allow for characters whose representation requires more
@@ -72,43 +72,43 @@ import java.util.Locale;
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
  * <a name="supplementary">Characters</a> whose code points are greater
  * than U+FFFF are called <em>supplementary character</em>s.  The Java
- * platform uses the UTF-16 representation in <code>char</code> arrays and
- * in the <code>String</code> and <code>StringBuffer</code> classes. In
+ * platform uses the UTF-16 representation in {@code char} arrays and
+ * in the {@code String} and {@code StringBuffer} classes. In
  * this representation, supplementary characters are represented as a pair
- * of <code>char</code> values, the first from the <em>high-surrogates</em>
+ * of {@code char} values, the first from the <em>high-surrogates</em>
  * range, (&#92;uD800-&#92;uDBFF), the second from the
  * <em>low-surrogates</em> range (&#92;uDC00-&#92;uDFFF).
  *
- * <p>A <code>char</code> value, therefore, represents Basic
+ * <p>A {@code char} value, therefore, represents Basic
  * Multilingual Plane (BMP) code points, including the surrogate
  * code points, or code units of the UTF-16 encoding. An
- * <code>int</code> value represents all Unicode code points,
+ * {@code int} value represents all Unicode code points,
  * including supplementary code points. The lower (least significant)
- * 21 bits of <code>int</code> are used to represent Unicode code
+ * 21 bits of {@code int} are used to represent Unicode code
  * points and the upper (most significant) 11 bits must be zero.
  * Unless otherwise specified, the behavior with respect to
- * supplementary characters and surrogate <code>char</code> values is
+ * supplementary characters and surrogate {@code char} values is
  * as follows:
  *
  * <ul>
- * <li>The methods that only accept a <code>char</code> value cannot support
- * supplementary characters. They treat <code>char</code> values from the
+ * <li>The methods that only accept a {@code char} value cannot support
+ * supplementary characters. They treat {@code char} values from the
  * surrogate ranges as undefined characters. For example,
- * <code>Character.isLetter('&#92;uD840')</code> returns <code>false</code>, even though
+ * {@code Character.isLetter('\u005CuD840')} returns {@code false}, even though
  * this specific value if followed by any low-surrogate value in a string
  * would represent a letter.
  *
- * <li>The methods that accept an <code>int</code> value support all
+ * <li>The methods that accept an {@code int} value support all
  * Unicode characters, including supplementary characters. For
- * example, <code>Character.isLetter(0x2F81A)</code> returns
- * <code>true</code> because the code point value represents a letter
+ * example, {@code Character.isLetter(0x2F81A)} returns
+ * {@code true} because the code point value represents a letter
  * (a CJK ideograph).
  * </ul>
  *
  * <p>In the Java SE API documentation, <em>Unicode code point</em> is
  * used for character values in the range between U+0000 and U+10FFFF,
  * and <em>Unicode code unit</em> is used for 16-bit
- * <code>char</code> values that are code units of the <em>UTF-16</em>
+ * {@code char} values that are code units of the <em>UTF-16</em>
  * encoding. For more information on Unicode terminology, refer to the
  * <a href="http://www.unicode.org/glossary/">Unicode Glossary</a>.
  *
@@ -125,9 +125,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The minimum radix available for conversion to and from strings.
      * The constant value of this field is the smallest value permitted
      * for the radix argument in radix-conversion methods such as the
-     * <code>digit</code> method, the <code>forDigit</code>
-     * method, and the <code>toString</code> method of class
-     * <code>Integer</code>.
+     * {@code digit} method, the {@code forDigit} method, and the
+     * {@code toString} method of class {@code Integer}.
      *
      * @see     Character#digit(char, int)
      * @see     Character#forDigit(int, int)
@@ -140,9 +139,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The maximum radix available for conversion to and from strings.
      * The constant value of this field is the largest value permitted
      * for the radix argument in radix-conversion methods such as the
-     * <code>digit</code> method, the <code>forDigit</code>
-     * method, and the <code>toString</code> method of class
-     * <code>Integer</code>.
+     * {@code digit} method, the {@code forDigit} method, and the
+     * {@code toString} method of class {@code Integer}.
      *
      * @see     Character#digit(char, int)
      * @see     Character#forDigit(int, int)
@@ -153,7 +151,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * The constant value of this field is the smallest value of type
-     * <code>char</code>, <code>'&#92;u0000'</code>.
+     * {@code char}, {@code '\u005Cu0000'}.
      *
      * @since   1.0.2
      */
@@ -161,15 +159,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * The constant value of this field is the largest value of type
-     * <code>char</code>, <code>'&#92;uFFFF'</code>.
+     * {@code char}, {@code '\u005CuFFFF'}.
      *
      * @since   1.0.2
      */
     public static final char MAX_VALUE = '\uFFFF';
 
     /**
-     * The <code>Class</code> instance representing the primitive type
-     * <code>char</code>.
+     * The {@code Class} instance representing the primitive type
+     * {@code char}.
      *
      * @since   1.1
      */
@@ -371,7 +369,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
 
     /**
-     * Undefined bidirectional character type. Undefined <code>char</code>
+     * Undefined bidirectional character type. Undefined {@code char}
      * values have undefined directionality in the Unicode specification.
      * @since 1.4
      */
@@ -495,7 +493,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The minimum value of a
      * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
      * Unicode high-surrogate code unit</a>
-     * in the UTF-16 encoding, constant <code>'&#92;uD800'</code>.
+     * in the UTF-16 encoding, constant {@code '\u005CuD800'}.
      * A high-surrogate is also known as a <i>leading-surrogate</i>.
      *
      * @since 1.5
@@ -506,7 +504,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The maximum value of a
      * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
      * Unicode high-surrogate code unit</a>
-     * in the UTF-16 encoding, constant <code>'&#92;uDBFF'</code>.
+     * in the UTF-16 encoding, constant {@code '\u005CuDBFF'}.
      * A high-surrogate is also known as a <i>leading-surrogate</i>.
      *
      * @since 1.5
@@ -517,7 +515,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The minimum value of a
      * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
      * Unicode low-surrogate code unit</a>
-     * in the UTF-16 encoding, constant <code>'&#92;uDC00'</code>.
+     * in the UTF-16 encoding, constant {@code '\u005CuDC00'}.
      * A low-surrogate is also known as a <i>trailing-surrogate</i>.
      *
      * @since 1.5
@@ -528,7 +526,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * The maximum value of a
      * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
      * Unicode low-surrogate code unit</a>
-     * in the UTF-16 encoding, constant <code>'&#92;uDFFF'</code>.
+     * in the UTF-16 encoding, constant {@code '\u005CuDFFF'}.
      * A low-surrogate is also known as a <i>trailing-surrogate</i>.
      *
      * @since 1.5
@@ -537,7 +535,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * The minimum value of a Unicode surrogate code unit in the
-     * UTF-16 encoding, constant <code>'&#92;uD800'</code>.
+     * UTF-16 encoding, constant {@code '\u005CuD800'}.
      *
      * @since 1.5
      */
@@ -545,7 +543,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * The maximum value of a Unicode surrogate code unit in the
-     * UTF-16 encoding, constant <code>'&#92;uDFFF'</code>.
+     * UTF-16 encoding, constant {@code '\u005CuDFFF'}.
      *
      * @since 1.5
      */
@@ -582,7 +580,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Instances of this class represent particular subsets of the Unicode
      * character set.  The only family of subsets defined in the
-     * <code>Character</code> class is {@link Character.UnicodeBlock}.
+     * {@code Character} class is {@link Character.UnicodeBlock}.
      * Other portions of the Java API may define other subsets for their
      * own purposes.
      *
@@ -593,10 +591,10 @@ class Character implements java.io.Serializable, Comparable<Character> {
         private String name;
 
         /**
-         * Constructs a new <code>Subset</code> instance.
+         * Constructs a new {@code Subset} instance.
          *
          * @param  name  The name of this subset
-         * @exception NullPointerException if name is <code>null</code>
+         * @exception NullPointerException if name is {@code null}
          */
         protected Subset(String name) {
             if (name == null) {
@@ -606,10 +604,10 @@ class Character implements java.io.Serializable, Comparable<Character> {
         }
 
         /**
-         * Compares two <code>Subset</code> objects for equality.
-         * This method returns <code>true</code> if and only if
-         * <code>this</code> and the argument refer to the same
-         * object; since this method is <code>final</code>, this
+         * Compares two {@code Subset} objects for equality.
+         * This method returns {@code true} if and only if
+         * {@code this} and the argument refer to the same
+         * object; since this method is {@code final}, this
          * guarantee holds for all subclasses.
          */
         public final boolean equals(Object obj) {
@@ -618,9 +616,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Returns the standard hash code as defined by the
-         * <code>{@link Object#hashCode}</code> method.  This method
-         * is <code>final</code> in order to ensure that the
-         * <code>equals</code> and <code>hashCode</code> methods will
+         * {@link Object#hashCode} method.  This method
+         * is {@code final} in order to ensure that the
+         * {@code equals} and {@code hashCode} methods will
          * be consistent in all subclasses.
          */
         public final int hashCode() {
@@ -2960,7 +2958,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Returns the object representing the Unicode block containing the
-         * given character, or <code>null</code> if the character is not a
+         * given character, or {@code null} if the character is not a
          * member of a defined block.
          *
          * <p><b>Note:</b> This method cannot handle
@@ -2969,9 +2967,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * supplementary characters, use the {@link #of(int)} method.
          *
          * @param   c  The character in question
-         * @return  The <code>UnicodeBlock</code> instance representing the
+         * @return  The {@code UnicodeBlock} instance representing the
          *          Unicode block of which this character is a member, or
-         *          <code>null</code> if the character is not a member of any
+         *          {@code null} if the character is not a member of any
          *          Unicode block
          */
         public static UnicodeBlock of(char c) {
@@ -2981,16 +2979,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Returns the object representing the Unicode block
          * containing the given character (Unicode code point), or
-         * <code>null</code> if the character is not a member of a
+         * {@code null} if the character is not a member of a
          * defined block.
          *
          * @param   codePoint the character (Unicode code point) in question.
-         * @return  The <code>UnicodeBlock</code> instance representing the
+         * @return  The {@code UnicodeBlock} instance representing the
          *          Unicode block of which this character is a member, or
-         *          <code>null</code> if the character is not a member of any
+         *          {@code null} if the character is not a member of any
          *          Unicode block
          * @exception IllegalArgumentException if the specified
-         * <code>codePoint</code> is an invalid Unicode code point.
+         * {@code codePoint} is an invalid Unicode code point.
          * @see Character#isValidCodePoint(int)
          * @since   1.5
          */
@@ -3044,12 +3042,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * If the Unicode Standard changes block names, both the previous and
          * current names will be accepted.
          *
-         * @param blockName A <code>UnicodeBlock</code> name.
-         * @return The <code>UnicodeBlock</code> instance identified
-         *         by <code>blockName</code>
-         * @throws IllegalArgumentException if <code>blockName</code> is an
+         * @param blockName A {@code UnicodeBlock} name.
+         * @return The {@code UnicodeBlock} instance identified
+         *         by {@code blockName}
+         * @throws IllegalArgumentException if {@code blockName} is an
          *         invalid name
-         * @throws NullPointerException if <code>blockName</code> is null
+         * @throws NullPointerException if {@code blockName} is null
          * @since 1.5
          */
         public static final UnicodeBlock forName(String blockName) {
@@ -4280,11 +4278,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * the given character (Unicode code point) is assigned to.
          *
          * @param   codePoint the character (Unicode code point) in question.
-         * @return  The <code>UnicodeScript</code> constant representing the
+         * @return  The {@code UnicodeScript} constant representing the
          *          Unicode script of which this character is assigned to.
          *
          * @exception IllegalArgumentException if the specified
-         * <code>codePoint</code> is an invalid Unicode code point.
+         * {@code codePoint} is an invalid Unicode code point.
          * @see Character#isValidCodePoint(int)
          *
          */
@@ -4315,12 +4313,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * case-insensitive string comparisons for script name validation.
          * <p>
          *
-         * @param scriptName A <code>UnicodeScript</code> name.
-         * @return The <code>UnicodeScript</code> constant identified
-         *         by <code>scriptName</code>
-         * @throws IllegalArgumentException if <code>scriptName</code> is an
+         * @param scriptName A {@code UnicodeScript} name.
+         * @return The {@code UnicodeScript} constant identified
+         *         by {@code scriptName}
+         * @throws IllegalArgumentException if {@code scriptName} is an
          *         invalid name
-         * @throws NullPointerException if <code>scriptName</code> is null
+         * @throws NullPointerException if {@code scriptName} is null
          */
         public static final UnicodeScript forName(String scriptName) {
             scriptName = scriptName.toUpperCase(Locale.ENGLISH);
@@ -4333,7 +4331,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * The value of the <code>Character</code>.
+     * The value of the {@code Character}.
      *
      * @serial
      */
@@ -4343,11 +4341,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
     private static final long serialVersionUID = 3786198910865385080L;
 
     /**
-     * Constructs a newly allocated <code>Character</code> object that
-     * represents the specified <code>char</code> value.
+     * Constructs a newly allocated {@code Character} object that
+     * represents the specified {@code char} value.
      *
      * @param  value   the value to be represented by the
-     *                  <code>Character</code> object.
+     *                  {@code Character} object.
      */
     public Character(char value) {
         this.value = value;
@@ -4374,7 +4372,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * frequently requested values.
      *
      * This method will always cache values in the range {@code
-     * '\u005Cu0000'} to {@code '\u005Cu007f'}, inclusive, and may
+     * '\u005Cu0000'} to {@code '\u005Cu007F'}, inclusive, and may
      * cache other values outside of this range.
      *
      * @param  c a char value.
@@ -4389,8 +4387,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns the value of this <code>Character</code> object.
-     * @return  the primitive <code>char</code> value represented by
+     * Returns the value of this {@code Character} object.
+     * @return  the primitive {@code char} value represented by
      *          this object.
      */
     public char charValue() {
@@ -4409,13 +4407,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Compares this object against the specified object.
-     * The result is <code>true</code> if and only if the argument is not
-     * <code>null</code> and is a <code>Character</code> object that
-     * represents the same <code>char</code> value as this object.
+     * The result is {@code true} if and only if the argument is not
+     * {@code null} and is a {@code Character} object that
+     * represents the same {@code char} value as this object.
      *
      * @param   obj   the object to compare with.
-     * @return  <code>true</code> if the objects are the same;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the objects are the same;
+     *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (obj instanceof Character) {
@@ -4425,11 +4423,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns a <code>String</code> object representing this
-     * <code>Character</code>'s value.  The result is a string of
+     * Returns a {@code String} object representing this
+     * {@code Character}'s value.  The result is a string of
      * length 1 whose sole component is the primitive
-     * <code>char</code> value represented by this
-     * <code>Character</code> object.
+     * {@code char} value represented by this
+     * {@code Character} object.
      *
      * @return  a string representation of this object.
      */
@@ -4439,12 +4437,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns a <code>String</code> object representing the
-     * specified <code>char</code>.  The result is a string of length
-     * 1 consisting solely of the specified <code>char</code>.
+     * Returns a {@code String} object representing the
+     * specified {@code char}.  The result is a string of length
+     * 1 consisting solely of the specified {@code char}.
      *
-     * @param c the <code>char</code> to be converted
-     * @return the string representation of the specified <code>char</code>
+     * @param c the {@code char} to be converted
+     * @return the string representation of the specified {@code char}
      * @since 1.4
      */
     public static String toString(char c) {
@@ -4578,7 +4576,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Determines whether the specified pair of <code>char</code>
+     * Determines whether the specified pair of {@code char}
      * values is a valid
      * <a href="http://www.unicode.org/glossary/#surrogate_pair">
      * Unicode surrogate pair</a>.
@@ -4590,9 +4588,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @param  high the high-surrogate code value to be tested
      * @param  low the low-surrogate code value to be tested
-     * @return <code>true</code> if the specified high and
+     * @return {@code true} if the specified high and
      * low-surrogate code values represent a valid surrogate pair;
-     * <code>false</code> otherwise.
+     * {@code false} otherwise.
      * @since  1.5
      */
     public static boolean isSurrogatePair(char high, char low) {
@@ -4600,7 +4598,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Determines the number of <code>char</code> values needed to
+     * Determines the number of {@code char} values needed to
      * represent the specified character (Unicode code point). If the
      * specified character is equal to or greater than 0x10000, then
      * the method returns 2. Otherwise, the method returns 1.
@@ -4643,23 +4641,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point at the given index of the
-     * <code>CharSequence</code>. If the <code>char</code> value at
-     * the given index in the <code>CharSequence</code> is in the
+     * {@code CharSequence}. If the {@code char} value at
+     * the given index in the {@code CharSequence} is in the
      * high-surrogate range, the following index is less than the
-     * length of the <code>CharSequence</code>, and the
-     * <code>char</code> value at the following index is in the
+     * length of the {@code CharSequence}, and the
+     * {@code char} value at the following index is in the
      * low-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at the given index is returned.
+     * the {@code char} value at the given index is returned.
      *
-     * @param seq a sequence of <code>char</code> values (Unicode code
+     * @param seq a sequence of {@code char} values (Unicode code
      * units)
-     * @param index the index to the <code>char</code> values (Unicode
-     * code units) in <code>seq</code> to be converted
+     * @param index the index to the {@code char} values (Unicode
+     * code units) in {@code seq} to be converted
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if <code>seq</code> is null.
+     * @exception NullPointerException if {@code seq} is null.
      * @exception IndexOutOfBoundsException if the value
-     * <code>index</code> is negative or not less than
+     * {@code index} is negative or not less than
      * {@link CharSequence#length() seq.length()}.
      * @since  1.5
      */
@@ -4678,23 +4676,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point at the given index of the
-     * <code>char</code> array. If the <code>char</code> value at
-     * the given index in the <code>char</code> array is in the
+     * {@code char} array. If the {@code char} value at
+     * the given index in the {@code char} array is in the
      * high-surrogate range, the following index is less than the
-     * length of the <code>char</code> array, and the
-     * <code>char</code> value at the following index is in the
+     * length of the {@code char} array, and the
+     * {@code char} value at the following index is in the
      * low-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at the given index is returned.
+     * the {@code char} value at the given index is returned.
      *
-     * @param a the <code>char</code> array
-     * @param index the index to the <code>char</code> values (Unicode
-     * code units) in the <code>char</code> array to be converted
+     * @param a the {@code char} array
+     * @param index the index to the {@code char} values (Unicode
+     * code units) in the {@code char} array to be converted
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if <code>a</code> is null.
+     * @exception NullPointerException if {@code a} is null.
      * @exception IndexOutOfBoundsException if the value
-     * <code>index</code> is negative or not less than
-     * the length of the <code>char</code> array.
+     * {@code index} is negative or not less than
+     * the length of the {@code char} array.
      * @since  1.5
      */
     public static int codePointAt(char[] a, int index) {
@@ -4703,27 +4701,27 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point at the given index of the
-     * <code>char</code> array, where only array elements with
-     * <code>index</code> less than <code>limit</code> can be used. If
-     * the <code>char</code> value at the given index in the
-     * <code>char</code> array is in the high-surrogate range, the
-     * following index is less than the <code>limit</code>, and the
-     * <code>char</code> value at the following index is in the
+     * {@code char} array, where only array elements with
+     * {@code index} less than {@code limit} can be used. If
+     * the {@code char} value at the given index in the
+     * {@code char} array is in the high-surrogate range, the
+     * following index is less than the {@code limit}, and the
+     * {@code char} value at the following index is in the
      * low-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at the given index is returned.
+     * the {@code char} value at the given index is returned.
      *
-     * @param a the <code>char</code> array
-     * @param index the index to the <code>char</code> values (Unicode
-     * code units) in the <code>char</code> array to be converted
-     * @param limit the index after the last array element that can be used in the
-     * <code>char</code> array
+     * @param a the {@code char} array
+     * @param index the index to the {@code char} values (Unicode
+     * code units) in the {@code char} array to be converted
+     * @param limit the index after the last array element that
+     * can be used in the {@code char} array
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if <code>a</code> is null.
-     * @exception IndexOutOfBoundsException if the <code>index</code>
-     * argument is negative or not less than the <code>limit</code>
-     * argument, or if the <code>limit</code> argument is negative or
-     * greater than the length of the <code>char</code> array.
+     * @exception NullPointerException if {@code a} is null.
+     * @exception IndexOutOfBoundsException if the {@code index}
+     * argument is negative or not less than the {@code limit}
+     * argument, or if the {@code limit} argument is negative or
+     * greater than the length of the {@code char} array.
      * @since  1.5
      */
     public static int codePointAt(char[] a, int index, int limit) {
@@ -4749,21 +4747,21 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point preceding the given index of the
-     * <code>CharSequence</code>. If the <code>char</code> value at
-     * <code>(index - 1)</code> in the <code>CharSequence</code> is in
-     * the low-surrogate range, <code>(index - 2)</code> is not
-     * negative, and the <code>char</code> value at <code>(index -
-     * 2)</code> in the <code>CharSequence</code> is in the
+     * {@code CharSequence}. If the {@code char} value at
+     * {@code (index - 1)} in the {@code CharSequence} is in
+     * the low-surrogate range, {@code (index - 2)} is not
+     * negative, and the {@code char} value at {@code (index - 2)}
+     * in the {@code CharSequence} is in the
      * high-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at <code>(index - 1)</code> is
+     * the {@code char} value at {@code (index - 1)} is
      * returned.
      *
-     * @param seq the <code>CharSequence</code> instance
+     * @param seq the {@code CharSequence} instance
      * @param index the index following the code point that should be returned
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if <code>seq</code> is null.
-     * @exception IndexOutOfBoundsException if the <code>index</code>
+     * @exception NullPointerException if {@code seq} is null.
+     * @exception IndexOutOfBoundsException if the {@code index}
      * argument is less than 1 or greater than {@link
      * CharSequence#length() seq.length()}.
      * @since  1.5
@@ -4783,23 +4781,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point preceding the given index of the
-     * <code>char</code> array. If the <code>char</code> value at
-     * <code>(index - 1)</code> in the <code>char</code> array is in
-     * the low-surrogate range, <code>(index - 2)</code> is not
-     * negative, and the <code>char</code> value at <code>(index -
-     * 2)</code> in the <code>char</code> array is in the
+     * {@code char} array. If the {@code char} value at
+     * {@code (index - 1)} in the {@code char} array is in
+     * the low-surrogate range, {@code (index - 2)} is not
+     * negative, and the {@code char} value at {@code (index - 2)}
+     * in the {@code char} array is in the
      * high-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at <code>(index - 1)</code> is
+     * the {@code char} value at {@code (index - 1)} is
      * returned.
      *
-     * @param a the <code>char</code> array
+     * @param a the {@code char} array
      * @param index the index following the code point that should be returned
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if <code>a</code> is null.
-     * @exception IndexOutOfBoundsException if the <code>index</code>
+     * @exception NullPointerException if {@code a} is null.
+     * @exception IndexOutOfBoundsException if the {@code index}
      * argument is less than 1 or greater than the length of the
-     * <code>char</code> array
+     * {@code char} array
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index) {
@@ -4808,29 +4806,29 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the code point preceding the given index of the
-     * <code>char</code> array, where only array elements with
-     * <code>index</code> greater than or equal to <code>start</code>
-     * can be used. If the <code>char</code> value at <code>(index -
-     * 1)</code> in the <code>char</code> array is in the
-     * low-surrogate range, <code>(index - 2)</code> is not less than
-     * <code>start</code>, and the <code>char</code> value at
-     * <code>(index - 2)</code> in the <code>char</code> array is in
+     * {@code char} array, where only array elements with
+     * {@code index} greater than or equal to {@code start}
+     * can be used. If the {@code char} value at {@code (index - 1)}
+     * in the {@code char} array is in the
+     * low-surrogate range, {@code (index - 2)} is not less than
+     * {@code start}, and the {@code char} value at
+     * {@code (index - 2)} in the {@code char} array is in
      * the high-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at <code>(index - 1)</code> is
+     * the {@code char} value at {@code (index - 1)} is
      * returned.
      *
-     * @param a the <code>char</code> array
+     * @param a the {@code char} array
      * @param index the index following the code point that should be returned
      * @param start the index of the first array element in the
-     * <code>char</code> array
+     * {@code char} array
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if <code>a</code> is null.
-     * @exception IndexOutOfBoundsException if the <code>index</code>
-     * argument is not greater than the <code>start</code> argument or
-     * is greater than the length of the <code>char</code> array, or
-     * if the <code>start</code> argument is negative or not less than
-     * the length of the <code>char</code> array.
+     * @exception NullPointerException if {@code a} is null.
+     * @exception IndexOutOfBoundsException if the {@code index}
+     * argument is not greater than the {@code start} argument or
+     * is greater than the length of the {@code char} array, or
+     * if the {@code start} argument is negative or not less than
+     * the length of the {@code char} array.
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index, int start) {
@@ -4915,31 +4913,31 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Converts the specified character (Unicode code point) to its
      * UTF-16 representation. If the specified code point is a BMP
      * (Basic Multilingual Plane or Plane 0) value, the same value is
-     * stored in <code>dst[dstIndex]</code>, and 1 is returned. If the
+     * stored in {@code dst[dstIndex]}, and 1 is returned. If the
      * specified code point is a supplementary character, its
-     * surrogate values are stored in <code>dst[dstIndex]</code>
-     * (high-surrogate) and <code>dst[dstIndex+1]</code>
+     * surrogate values are stored in {@code dst[dstIndex]}
+     * (high-surrogate) and {@code dst[dstIndex+1]}
      * (low-surrogate), and 2 is returned.
      *
      * @param  codePoint the character (Unicode code point) to be converted.
-     * @param  dst an array of <code>char</code> in which the
-     * <code>codePoint</code>'s UTF-16 value is stored.
-     * @param dstIndex the start index into the <code>dst</code>
+     * @param  dst an array of {@code char} in which the
+     * {@code codePoint}'s UTF-16 value is stored.
+     * @param dstIndex the start index into the {@code dst}
      * array where the converted value is stored.
      * @return 1 if the code point is a BMP code point, 2 if the
      * code point is a supplementary code point.
      * @exception IllegalArgumentException if the specified
-     * <code>codePoint</code> is not a valid Unicode code point.
-     * @exception NullPointerException if the specified <code>dst</code> is null.
-     * @exception IndexOutOfBoundsException if <code>dstIndex</code>
-     * is negative or not less than <code>dst.length</code>, or if
-     * <code>dst</code> at <code>dstIndex</code> doesn't have enough
-     * array element(s) to store the resulting <code>char</code>
-     * value(s). (If <code>dstIndex</code> is equal to
-     * <code>dst.length-1</code> and the specified
-     * <code>codePoint</code> is a supplementary character, the
+     * {@code codePoint} is not a valid Unicode code point.
+     * @exception NullPointerException if the specified {@code dst} is null.
+     * @exception IndexOutOfBoundsException if {@code dstIndex}
+     * is negative or not less than {@code dst.length}, or if
+     * {@code dst} at {@code dstIndex} doesn't have enough
+     * array element(s) to store the resulting {@code char}
+     * value(s). (If {@code dstIndex} is equal to
+     * {@code dst.length-1} and the specified
+     * {@code codePoint} is a supplementary character, the
      * high-surrogate value is not stored in
-     * <code>dst[dstIndex]</code>.)
+     * {@code dst[dstIndex]}.)
      * @since  1.5
      */
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
@@ -4956,18 +4954,18 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Converts the specified character (Unicode code point) to its
-     * UTF-16 representation stored in a <code>char</code> array. If
+     * UTF-16 representation stored in a {@code char} array. If
      * the specified code point is a BMP (Basic Multilingual Plane or
-     * Plane 0) value, the resulting <code>char</code> array has
-     * the same value as <code>codePoint</code>. If the specified code
+     * Plane 0) value, the resulting {@code char} array has
+     * the same value as {@code codePoint}. If the specified code
      * point is a supplementary code point, the resulting
-     * <code>char</code> array has the corresponding surrogate pair.
+     * {@code char} array has the corresponding surrogate pair.
      *
      * @param  codePoint a Unicode code point
-     * @return a <code>char</code> array having
-     *         <code>codePoint</code>'s UTF-16 representation.
+     * @return a {@code char} array having
+     *         {@code codePoint}'s UTF-16 representation.
      * @exception IllegalArgumentException if the specified
-     * <code>codePoint</code> is not a valid Unicode code point.
+     * {@code codePoint} is not a valid Unicode code point.
      * @since  1.5
      */
     public static char[] toChars(int codePoint) {
@@ -4991,24 +4989,24 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Returns the number of Unicode code points in the text range of
      * the specified char sequence. The text range begins at the
-     * specified <code>beginIndex</code> and extends to the
-     * <code>char</code> at index <code>endIndex - 1</code>. Thus the
-     * length (in <code>char</code>s) of the text range is
-     * <code>endIndex-beginIndex</code>. Unpaired surrogates within
+     * specified {@code beginIndex} and extends to the
+     * {@code char} at index {@code endIndex - 1}. Thus the
+     * length (in {@code char}s) of the text range is
+     * {@code endIndex-beginIndex}. Unpaired surrogates within
      * the text range count as one code point each.
      *
      * @param seq the char sequence
-     * @param beginIndex the index to the first <code>char</code> of
+     * @param beginIndex the index to the first {@code char} of
      * the text range.
-     * @param endIndex the index after the last <code>char</code> of
+     * @param endIndex the index after the last {@code char} of
      * the text range.
      * @return the number of Unicode code points in the specified text
      * range
-     * @exception NullPointerException if <code>seq</code> is null.
+     * @exception NullPointerException if {@code seq} is null.
      * @exception IndexOutOfBoundsException if the
-     * <code>beginIndex</code> is negative, or <code>endIndex</code>
+     * {@code beginIndex} is negative, or {@code endIndex}
      * is larger than the length of the given sequence, or
-     * <code>beginIndex</code> is larger than <code>endIndex</code>.
+     * {@code beginIndex} is larger than {@code endIndex}.
      * @since  1.5
      */
     public static int codePointCount(CharSequence seq, int beginIndex, int endIndex) {
@@ -5029,21 +5027,21 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the number of Unicode code points in a subarray of the
-     * <code>char</code> array argument. The <code>offset</code>
-     * argument is the index of the first <code>char</code> of the
-     * subarray and the <code>count</code> argument specifies the
-     * length of the subarray in <code>char</code>s. Unpaired
+     * {@code char} array argument. The {@code offset}
+     * argument is the index of the first {@code char} of the
+     * subarray and the {@code count} argument specifies the
+     * length of the subarray in {@code char}s. Unpaired
      * surrogates within the subarray count as one code point each.
      *
-     * @param a the <code>char</code> array
-     * @param offset the index of the first <code>char</code> in the
-     * given <code>char</code> array
-     * @param count the length of the subarray in <code>char</code>s
+     * @param a the {@code char} array
+     * @param offset the index of the first {@code char} in the
+     * given {@code char} array
+     * @param count the length of the subarray in {@code char}s
      * @return the number of Unicode code points in the specified subarray
-     * @exception NullPointerException if <code>a</code> is null.
-     * @exception IndexOutOfBoundsException if <code>offset</code> or
-     * <code>count</code> is negative, or if <code>offset +
-     * count</code> is larger than the length of the given array.
+     * @exception NullPointerException if {@code a} is null.
+     * @exception IndexOutOfBoundsException if {@code offset} or
+     * {@code count} is negative, or if {@code offset +
+     * count} is larger than the length of the given array.
      * @since  1.5
      */
     public static int codePointCount(char[] a, int offset, int count) {
@@ -5068,24 +5066,24 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the index within the given char sequence that is offset
-     * from the given <code>index</code> by <code>codePointOffset</code>
+     * from the given {@code index} by {@code codePointOffset}
      * code points. Unpaired surrogates within the text range given by
-     * <code>index</code> and <code>codePointOffset</code> count as
+     * {@code index} and {@code codePointOffset} count as
      * one code point each.
      *
      * @param seq the char sequence
      * @param index the index to be offset
      * @param codePointOffset the offset in code points
      * @return the index within the char sequence
-     * @exception NullPointerException if <code>seq</code> is null.
-     * @exception IndexOutOfBoundsException if <code>index</code>
+     * @exception NullPointerException if {@code seq} is null.
+     * @exception IndexOutOfBoundsException if {@code index}
      *   is negative or larger then the length of the char sequence,
-     *   or if <code>codePointOffset</code> is positive and the
-     *   subsequence starting with <code>index</code> has fewer than
-     *   <code>codePointOffset</code> code points, or if
-     *   <code>codePointOffset</code> is negative and the subsequence
-     *   before <code>index</code> has fewer than the absolute value
-     *   of <code>codePointOffset</code> code points.
+     *   or if {@code codePointOffset} is positive and the
+     *   subsequence starting with {@code index} has fewer than
+     *   {@code codePointOffset} code points, or if
+     *   {@code codePointOffset} is negative and the subsequence
+     *   before {@code index} has fewer than the absolute value
+     *   of {@code codePointOffset} code points.
      * @since 1.5
      */
     public static int offsetByCodePoints(CharSequence seq, int index,
@@ -5123,36 +5121,36 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns the index within the given <code>char</code> subarray
-     * that is offset from the given <code>index</code> by
-     * <code>codePointOffset</code> code points. The
-     * <code>start</code> and <code>count</code> arguments specify a
-     * subarray of the <code>char</code> array. Unpaired surrogates
-     * within the text range given by <code>index</code> and
-     * <code>codePointOffset</code> count as one code point each.
+     * Returns the index within the given {@code char} subarray
+     * that is offset from the given {@code index} by
+     * {@code codePointOffset} code points. The
+     * {@code start} and {@code count} arguments specify a
+     * subarray of the {@code char} array. Unpaired surrogates
+     * within the text range given by {@code index} and
+     * {@code codePointOffset} count as one code point each.
      *
-     * @param a the <code>char</code> array
-     * @param start the index of the first <code>char</code> of the
+     * @param a the {@code char} array
+     * @param start the index of the first {@code char} of the
      * subarray
-     * @param count the length of the subarray in <code>char</code>s
+     * @param count the length of the subarray in {@code char}s
      * @param index the index to be offset
      * @param codePointOffset the offset in code points
      * @return the index within the subarray
-     * @exception NullPointerException if <code>a</code> is null.
+     * @exception NullPointerException if {@code a} is null.
      * @exception IndexOutOfBoundsException
-     *   if <code>start</code> or <code>count</code> is negative,
-     *   or if <code>start + count</code> is larger than the length of
+     *   if {@code start} or {@code count} is negative,
+     *   or if {@code start + count} is larger than the length of
      *   the given array,
-     *   or if <code>index</code> is less than <code>start</code> or
-     *   larger then <code>start + count</code>,
-     *   or if <code>codePointOffset</code> is positive and the text range
-     *   starting with <code>index</code> and ending with <code>start
-     *   + count - 1</code> has fewer than <code>codePointOffset</code> code
+     *   or if {@code index} is less than {@code start} or
+     *   larger then {@code start + count},
+     *   or if {@code codePointOffset} is positive and the text range
+     *   starting with {@code index} and ending with {@code start + count - 1}
+     *   has fewer than {@code codePointOffset} code
      *   points,
-     *   or if <code>codePointOffset</code> is negative and the text range
-     *   starting with <code>start</code> and ending with <code>index
-     *   - 1</code> has fewer than the absolute value of
-     *   <code>codePointOffset</code> code points.
+     *   or if {@code codePointOffset} is negative and the text range
+     *   starting with {@code start} and ending with {@code index - 1}
+     *   has fewer than the absolute value of
+     *   {@code codePointOffset} code points.
      * @since 1.5
      */
     public static int offsetByCodePoints(char[] a, int start, int count,
@@ -5198,8 +5196,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is a lowercase character.
      * <p>
      * A character is lowercase if its general category type, provided
-     * by <code>Character.getType(ch)</code>, is
-     * <code>LOWERCASE_LETTER</code>.
+     * by {@code Character.getType(ch)}, is
+     * {@code LOWERCASE_LETTER}.
      * <p>
      * The following are examples of lowercase characters:
      * <p><blockquote><pre>
@@ -5217,8 +5215,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isLowerCase(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is lowercase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is lowercase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(char)
      * @see     Character#isTitleCase(char)
      * @see     Character#toLowerCase(char)
@@ -5234,7 +5232,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is lowercase if its general category type, provided
      * by {@link Character#getType getType(codePoint)}, is
-     * <code>LOWERCASE_LETTER</code>.
+     * {@code LOWERCASE_LETTER}.
      * <p>
      * The following are examples of lowercase characters:
      * <p><blockquote><pre>
@@ -5247,8 +5245,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p> Many other Unicode characters are lowercase too.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is lowercase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is lowercase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(int)
      * @see     Character#isTitleCase(int)
      * @see     Character#toLowerCase(int)
@@ -5263,7 +5261,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is an uppercase character.
      * <p>
      * A character is uppercase if its general category type, provided by
-     * <code>Character.getType(ch)</code>, is <code>UPPERCASE_LETTER</code>.
+     * {@code Character.getType(ch)}, is {@code UPPERCASE_LETTER}.
      * <p>
      * The following are examples of uppercase characters:
      * <p><blockquote><pre>
@@ -5281,8 +5279,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isUpperCase(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is uppercase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is uppercase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(char)
      * @see     Character#isTitleCase(char)
      * @see     Character#toUpperCase(char)
@@ -5297,7 +5295,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character (Unicode code point) is an uppercase character.
      * <p>
      * A character is uppercase if its general category type, provided by
-     * {@link Character#getType(int) getType(codePoint)}, is <code>UPPERCASE_LETTER</code>.
+     * {@link Character#getType(int) getType(codePoint)}, is {@code UPPERCASE_LETTER}.
      * <p>
      * The following are examples of uppercase characters:
      * <p><blockquote><pre>
@@ -5310,8 +5308,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p> Many other Unicode characters are uppercase too.<p>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is uppercase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is uppercase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(int)
      * @see     Character#isTitleCase(int)
      * @see     Character#toUpperCase(int)
@@ -5326,8 +5324,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is a titlecase character.
      * <p>
      * A character is a titlecase character if its general
-     * category type, provided by <code>Character.getType(ch)</code>,
-     * is <code>TITLECASE_LETTER</code>.
+     * category type, provided by {@code Character.getType(ch)},
+     * is {@code TITLECASE_LETTER}.
      * <p>
      * Some characters look like pairs of Latin letters. For example, there
      * is an uppercase letter that looks like "LJ" and has a corresponding
@@ -5336,12 +5334,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * with initial capitals, as for a book title.
      * <p>
      * These are some of the Unicode characters for which this method returns
-     * <code>true</code>:
+     * {@code true}:
      * <ul>
-     * <li><code>LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON</code>
-     * <li><code>LATIN CAPITAL LETTER L WITH SMALL LETTER J</code>
-     * <li><code>LATIN CAPITAL LETTER N WITH SMALL LETTER J</code>
-     * <li><code>LATIN CAPITAL LETTER D WITH SMALL LETTER Z</code>
+     * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON}
+     * <li>{@code LATIN CAPITAL LETTER L WITH SMALL LETTER J}
+     * <li>{@code LATIN CAPITAL LETTER N WITH SMALL LETTER J}
+     * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z}
      * </ul>
      * <p> Many other Unicode characters are titlecase too.<p>
      *
@@ -5351,8 +5349,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isTitleCase(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is titlecase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is titlecase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(char)
      * @see     Character#isUpperCase(char)
      * @see     Character#toTitleCase(char)
@@ -5368,7 +5366,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is a titlecase character if its general
      * category type, provided by {@link Character#getType(int) getType(codePoint)},
-     * is <code>TITLECASE_LETTER</code>.
+     * is {@code TITLECASE_LETTER}.
      * <p>
      * Some characters look like pairs of Latin letters. For example, there
      * is an uppercase letter that looks like "LJ" and has a corresponding
@@ -5377,18 +5375,18 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * with initial capitals, as for a book title.
      * <p>
      * These are some of the Unicode characters for which this method returns
-     * <code>true</code>:
+     * {@code true}:
      * <ul>
-     * <li><code>LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON</code>
-     * <li><code>LATIN CAPITAL LETTER L WITH SMALL LETTER J</code>
-     * <li><code>LATIN CAPITAL LETTER N WITH SMALL LETTER J</code>
-     * <li><code>LATIN CAPITAL LETTER D WITH SMALL LETTER Z</code>
+     * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON}
+     * <li>{@code LATIN CAPITAL LETTER L WITH SMALL LETTER J}
+     * <li>{@code LATIN CAPITAL LETTER N WITH SMALL LETTER J}
+     * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z}
      * </ul>
      * <p> Many other Unicode characters are titlecase too.<p>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is titlecase;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is titlecase;
+     *          {@code false} otherwise.
      * @see     Character#isLowerCase(int)
      * @see     Character#isUpperCase(int)
      * @see     Character#toTitleCase(int)
@@ -5403,20 +5401,20 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is a digit.
      * <p>
      * A character is a digit if its general category type, provided
-     * by <code>Character.getType(ch)</code>, is
-     * <code>DECIMAL_DIGIT_NUMBER</code>.
+     * by {@code Character.getType(ch)}, is
+     * {@code DECIMAL_DIGIT_NUMBER}.
      * <p>
      * Some Unicode character ranges that contain digits:
      * <ul>
-     * <li><code>'&#92;u0030'</code> through <code>'&#92;u0039'</code>,
-     *     ISO-LATIN-1 digits (<code>'0'</code> through <code>'9'</code>)
-     * <li><code>'&#92;u0660'</code> through <code>'&#92;u0669'</code>,
+     * <li>{@code '\u005Cu0030'} through {@code '\u005Cu0039'},
+     *     ISO-LATIN-1 digits ({@code '0'} through {@code '9'})
+     * <li>{@code '\u005Cu0660'} through {@code '\u005Cu0669'},
      *     Arabic-Indic digits
-     * <li><code>'&#92;u06F0'</code> through <code>'&#92;u06F9'</code>,
+     * <li>{@code '\u005Cu06F0'} through {@code '\u005Cu06F9'},
      *     Extended Arabic-Indic digits
-     * <li><code>'&#92;u0966'</code> through <code>'&#92;u096F'</code>,
+     * <li>{@code '\u005Cu0966'} through {@code '\u005Cu096F'},
      *     Devanagari digits
-     * <li><code>'&#92;uFF10'</code> through <code>'&#92;uFF19'</code>,
+     * <li>{@code '\u005CuFF10'} through {@code '\u005CuFF19'},
      *     Fullwidth digits
      * </ul>
      *
@@ -5428,8 +5426,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isDigit(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is a digit;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a digit;
+     *          {@code false} otherwise.
      * @see     Character#digit(char, int)
      * @see     Character#forDigit(int, int)
      * @see     Character#getType(char)
@@ -5443,27 +5441,27 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is a digit if its general category type, provided
      * by {@link Character#getType(int) getType(codePoint)}, is
-     * <code>DECIMAL_DIGIT_NUMBER</code>.
+     * {@code DECIMAL_DIGIT_NUMBER}.
      * <p>
      * Some Unicode character ranges that contain digits:
      * <ul>
-     * <li><code>'&#92;u0030'</code> through <code>'&#92;u0039'</code>,
-     *     ISO-LATIN-1 digits (<code>'0'</code> through <code>'9'</code>)
-     * <li><code>'&#92;u0660'</code> through <code>'&#92;u0669'</code>,
+     * <li>{@code '\u005Cu0030'} through {@code '\u005Cu0039'},
+     *     ISO-LATIN-1 digits ({@code '0'} through {@code '9'})
+     * <li>{@code '\u005Cu0660'} through {@code '\u005Cu0669'},
      *     Arabic-Indic digits
-     * <li><code>'&#92;u06F0'</code> through <code>'&#92;u06F9'</code>,
+     * <li>{@code '\u005Cu06F0'} through {@code '\u005Cu06F9'},
      *     Extended Arabic-Indic digits
-     * <li><code>'&#92;u0966'</code> through <code>'&#92;u096F'</code>,
+     * <li>{@code '\u005Cu0966'} through {@code '\u005Cu096F'},
      *     Devanagari digits
-     * <li><code>'&#92;uFF10'</code> through <code>'&#92;uFF19'</code>,
+     * <li>{@code '\u005CuFF10'} through {@code '\u005CuFF19'},
      *     Fullwidth digits
      * </ul>
      *
      * Many other character ranges contain digits as well.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a digit;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a digit;
+     *          {@code false} otherwise.
      * @see     Character#forDigit(int, int)
      * @see     Character#getType(int)
      * @since   1.5
@@ -5487,8 +5485,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isDefined(int)} method.
      *
      * @param   ch   the character to be tested
-     * @return  <code>true</code> if the character has a defined meaning
-     *          in Unicode; <code>false</code> otherwise.
+     * @return  {@code true} if the character has a defined meaning
+     *          in Unicode; {@code false} otherwise.
      * @see     Character#isDigit(char)
      * @see     Character#isLetter(char)
      * @see     Character#isLetterOrDigit(char)
@@ -5511,8 +5509,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character has a defined meaning
-     *          in Unicode; <code>false</code> otherwise.
+     * @return  {@code true} if the character has a defined meaning
+     *          in Unicode; {@code false} otherwise.
      * @see     Character#isDigit(int)
      * @see     Character#isLetter(int)
      * @see     Character#isLetterOrDigit(int)
@@ -5529,14 +5527,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is a letter.
      * <p>
      * A character is considered to be a letter if its general
-     * category type, provided by <code>Character.getType(ch)</code>,
+     * category type, provided by {@code Character.getType(ch)},
      * is any of the following:
      * <ul>
-     * <li> <code>UPPERCASE_LETTER</code>
-     * <li> <code>LOWERCASE_LETTER</code>
-     * <li> <code>TITLECASE_LETTER</code>
-     * <li> <code>MODIFIER_LETTER</code>
-     * <li> <code>OTHER_LETTER</code>
+     * <li> {@code UPPERCASE_LETTER}
+     * <li> {@code LOWERCASE_LETTER}
+     * <li> {@code TITLECASE_LETTER}
+     * <li> {@code MODIFIER_LETTER}
+     * <li> {@code OTHER_LETTER}
      * </ul>
      *
      * Not all letters have case. Many characters are
@@ -5548,8 +5546,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isLetter(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is a letter;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a letter;
+     *          {@code false} otherwise.
      * @see     Character#isDigit(char)
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isJavaLetter(char)
@@ -5571,19 +5569,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * category type, provided by {@link Character#getType(int) getType(codePoint)},
      * is any of the following:
      * <ul>
-     * <li> <code>UPPERCASE_LETTER</code>
-     * <li> <code>LOWERCASE_LETTER</code>
-     * <li> <code>TITLECASE_LETTER</code>
-     * <li> <code>MODIFIER_LETTER</code>
-     * <li> <code>OTHER_LETTER</code>
+     * <li> {@code UPPERCASE_LETTER}
+     * <li> {@code LOWERCASE_LETTER}
+     * <li> {@code TITLECASE_LETTER}
+     * <li> {@code MODIFIER_LETTER}
+     * <li> {@code OTHER_LETTER}
      * </ul>
      *
      * Not all letters have case. Many characters are
      * letters but are neither uppercase nor lowercase nor titlecase.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a letter;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a letter;
+     *          {@code false} otherwise.
      * @see     Character#isDigit(int)
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetterOrDigit(int)
@@ -5606,9 +5604,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is a letter or digit.
      * <p>
      * A character is considered to be a letter or digit if either
-     * <code>Character.isLetter(char ch)</code> or
-     * <code>Character.isDigit(char ch)</code> returns
-     * <code>true</code> for the character.
+     * {@code Character.isLetter(char ch)} or
+     * {@code Character.isDigit(char ch)} returns
+     * {@code true} for the character.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -5616,8 +5614,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isLetterOrDigit(int)} method.
      *
      * @param   ch   the character to be tested.
-     * @return  <code>true</code> if the character is a letter or digit;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a letter or digit;
+     *          {@code false} otherwise.
      * @see     Character#isDigit(char)
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isJavaLetter(char)
@@ -5636,11 +5634,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * A character is considered to be a letter or digit if either
      * {@link #isLetter(int) isLetter(codePoint)} or
      * {@link #isDigit(int) isDigit(codePoint)} returns
-     * <code>true</code> for the character.
+     * {@code true} for the character.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a letter or digit;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a letter or digit;
+     *          {@code false} otherwise.
      * @see     Character#isDigit(int)
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetter(int)
@@ -5664,15 +5662,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * A character may start a Java identifier if and only if
      * one of the following is true:
      * <ul>
-     * <li> {@link #isLetter(char) isLetter(ch)} returns <code>true</code>
-     * <li> {@link #getType(char) getType(ch)} returns <code>LETTER_NUMBER</code>
-     * <li> ch is a currency symbol (such as "$")
-     * <li> ch is a connecting punctuation character (such as "_").
+     * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
+     * <li> {@link #getType(char) getType(ch)} returns {@code LETTER_NUMBER}
+     * <li> {@code ch} is a currency symbol (such as {@code '$'})
+     * <li> {@code ch} is a connecting punctuation character (such as {@code '_'}).
      * </ul>
      *
      * @param   ch the character to be tested.
-     * @return  <code>true</code> if the character may start a Java
-     *          identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may start a Java
+     *          identifier; {@code false} otherwise.
      * @see     Character#isJavaLetterOrDigit(char)
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isJavaIdentifierPart(char)
@@ -5695,19 +5693,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * of the following are true:
      * <ul>
      * <li>  it is a letter
-     * <li>  it is a currency symbol (such as <code>'$'</code>)
-     * <li>  it is a connecting punctuation character (such as <code>'_'</code>)
+     * <li>  it is a currency symbol (such as {@code '$'})
+     * <li>  it is a connecting punctuation character (such as {@code '_'})
      * <li>  it is a digit
      * <li>  it is a numeric letter (such as a Roman numeral character)
      * <li>  it is a combining mark
      * <li>  it is a non-spacing mark
-     * <li> <code>isIdentifierIgnorable</code> returns
-     * <code>true</code> for the character.
+     * <li> {@code isIdentifierIgnorable} returns
+     * {@code true} for the character.
      * </ul>
      *
      * @param   ch the character to be tested.
-     * @return  <code>true</code> if the character may be part of a
-     *          Java identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may be part of a
+     *          Java identifier; {@code false} otherwise.
      * @see     Character#isJavaLetter(char)
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isJavaIdentifierPart(char)
@@ -5730,10 +5728,10 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * A character may start a Java identifier if and only if
      * one of the following conditions is true:
      * <ul>
-     * <li> {@link #isLetter(char) isLetter(ch)} returns <code>true</code>
-     * <li> {@link #getType(char) getType(ch)} returns <code>LETTER_NUMBER</code>
-     * <li> ch is a currency symbol (such as "$")
-     * <li> ch is a connecting punctuation character (such as "_").
+     * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
+     * <li> {@link #getType(char) getType(ch)} returns {@code LETTER_NUMBER}
+     * <li> {@code ch} is a currency symbol (such as {@code '$'})
+     * <li> {@code ch} is a connecting punctuation character (such as {@code '_'}).
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -5742,8 +5740,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isJavaIdentifierStart(int)} method.
      *
      * @param   ch the character to be tested.
-     * @return  <code>true</code> if the character may start a Java identifier;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character may start a Java identifier;
+     *          {@code false} otherwise.
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierStart(char)
@@ -5762,17 +5760,17 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * one of the following conditions is true:
      * <ul>
      * <li> {@link #isLetter(int) isLetter(codePoint)}
-     *      returns <code>true</code>
+     *      returns {@code true}
      * <li> {@link #getType(int) getType(codePoint)}
-     *      returns <code>LETTER_NUMBER</code>
-     * <li> the referenced character is a currency symbol (such as "$")
+     *      returns {@code LETTER_NUMBER}
+     * <li> the referenced character is a currency symbol (such as {@code '$'})
      * <li> the referenced character is a connecting punctuation character
-     *      (such as "_").
+     *      (such as {@code '_'}).
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character may start a Java identifier;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character may start a Java identifier;
+     *          {@code false} otherwise.
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierStart(int)
@@ -5791,14 +5789,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * are true:
      * <ul>
      * <li>  it is a letter
-     * <li>  it is a currency symbol (such as <code>'$'</code>)
-     * <li>  it is a connecting punctuation character (such as <code>'_'</code>)
+     * <li>  it is a currency symbol (such as {@code '$'})
+     * <li>  it is a connecting punctuation character (such as {@code '_'})
      * <li>  it is a digit
      * <li>  it is a numeric letter (such as a Roman numeral character)
      * <li>  it is a combining mark
      * <li>  it is a non-spacing mark
-     * <li> <code>isIdentifierIgnorable</code> returns
-     * <code>true</code> for the character
+     * <li> {@code isIdentifierIgnorable} returns
+     * {@code true} for the character
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -5807,8 +5805,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isJavaIdentifierPart(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return <code>true</code> if the character may be part of a
-     *          Java identifier; <code>false</code> otherwise.
+     * @return {@code true} if the character may be part of a
+     *          Java identifier; {@code false} otherwise.
      * @see     Character#isIdentifierIgnorable(char)
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetterOrDigit(char)
@@ -5828,20 +5826,20 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * are true:
      * <ul>
      * <li>  it is a letter
-     * <li>  it is a currency symbol (such as <code>'$'</code>)
-     * <li>  it is a connecting punctuation character (such as <code>'_'</code>)
+     * <li>  it is a currency symbol (such as {@code '$'})
+     * <li>  it is a connecting punctuation character (such as {@code '_'})
      * <li>  it is a digit
      * <li>  it is a numeric letter (such as a Roman numeral character)
      * <li>  it is a combining mark
      * <li>  it is a non-spacing mark
      * <li> {@link #isIdentifierIgnorable(int)
-     * isIdentifierIgnorable(codePoint)} returns <code>true</code> for
+     * isIdentifierIgnorable(codePoint)} returns {@code true} for
      * the character
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return <code>true</code> if the character may be part of a
-     *          Java identifier; <code>false</code> otherwise.
+     * @return {@code true} if the character may be part of a
+     *          Java identifier; {@code false} otherwise.
      * @see     Character#isIdentifierIgnorable(int)
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetterOrDigit(int)
@@ -5860,9 +5858,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * A character may start a Unicode identifier if and only if
      * one of the following conditions is true:
      * <ul>
-     * <li> {@link #isLetter(char) isLetter(ch)} returns <code>true</code>
+     * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
      * <li> {@link #getType(char) getType(ch)} returns
-     *      <code>LETTER_NUMBER</code>.
+     *      {@code LETTER_NUMBER}.
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -5871,8 +5869,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isUnicodeIdentifierStart(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  <code>true</code> if the character may start a Unicode
-     *          identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may start a Unicode
+     *          identifier; {@code false} otherwise.
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierPart(char)
@@ -5890,13 +5888,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * one of the following conditions is true:
      * <ul>
      * <li> {@link #isLetter(int) isLetter(codePoint)}
-     *      returns <code>true</code>
+     *      returns {@code true}
      * <li> {@link #getType(int) getType(codePoint)}
-     *      returns <code>LETTER_NUMBER</code>.
+     *      returns {@code LETTER_NUMBER}.
      * </ul>
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character may start a Unicode
-     *          identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may start a Unicode
+     *          identifier; {@code false} otherwise.
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierPart(int)
@@ -5914,13 +5912,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * one of the following statements is true:
      * <ul>
      * <li>  it is a letter
-     * <li>  it is a connecting punctuation character (such as <code>'_'</code>)
+     * <li>  it is a connecting punctuation character (such as {@code '_'})
      * <li>  it is a digit
      * <li>  it is a numeric letter (such as a Roman numeral character)
      * <li>  it is a combining mark
      * <li>  it is a non-spacing mark
-     * <li> <code>isIdentifierIgnorable</code> returns
-     * <code>true</code> for this character.
+     * <li> {@code isIdentifierIgnorable} returns
+     * {@code true} for this character.
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -5929,8 +5927,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isUnicodeIdentifierPart(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  <code>true</code> if the character may be part of a
-     *          Unicode identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may be part of a
+     *          Unicode identifier; {@code false} otherwise.
      * @see     Character#isIdentifierIgnorable(char)
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetterOrDigit(char)
@@ -5949,17 +5947,17 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * one of the following statements is true:
      * <ul>
      * <li>  it is a letter
-     * <li>  it is a connecting punctuation character (such as <code>'_'</code>)
+     * <li>  it is a connecting punctuation character (such as {@code '_'})
      * <li>  it is a digit
      * <li>  it is a numeric letter (such as a Roman numeral character)
      * <li>  it is a combining mark
      * <li>  it is a non-spacing mark
-     * <li> <code>isIdentifierIgnorable</code> returns
-     * <code>true</code> for this character.
+     * <li> {@code isIdentifierIgnorable} returns
+     * {@code true} for this character.
      * </ul>
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character may be part of a
-     *          Unicode identifier; <code>false</code> otherwise.
+     * @return  {@code true} if the character may be part of a
+     *          Unicode identifier; {@code false} otherwise.
      * @see     Character#isIdentifierIgnorable(int)
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetterOrDigit(int)
@@ -5979,12 +5977,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <ul>
      * <li>ISO control characters that are not whitespace
      * <ul>
-     * <li><code>'&#92;u0000'</code> through <code>'&#92;u0008'</code>
-     * <li><code>'&#92;u000E'</code> through <code>'&#92;u001B'</code>
-     * <li><code>'&#92;u007F'</code> through <code>'&#92;u009F'</code>
+     * <li>{@code '\u005Cu0000'} through {@code '\u005Cu0008'}
+     * <li>{@code '\u005Cu000E'} through {@code '\u005Cu001B'}
+     * <li>{@code '\u005Cu007F'} through {@code '\u005Cu009F'}
      * </ul>
      *
-     * <li>all characters that have the <code>FORMAT</code> general
+     * <li>all characters that have the {@code FORMAT} general
      * category value
      * </ul>
      *
@@ -5994,9 +5992,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isIdentifierIgnorable(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  <code>true</code> if the character is an ignorable control
+     * @return  {@code true} if the character is an ignorable control
      *          character that may be part of a Java or Unicode identifier;
-     *           <code>false</code> otherwise.
+     *           {@code false} otherwise.
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isUnicodeIdentifierPart(char)
      * @since   1.1
@@ -6014,19 +6012,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <ul>
      * <li>ISO control characters that are not whitespace
      * <ul>
-     * <li><code>'&#92;u0000'</code> through <code>'&#92;u0008'</code>
-     * <li><code>'&#92;u000E'</code> through <code>'&#92;u001B'</code>
-     * <li><code>'&#92;u007F'</code> through <code>'&#92;u009F'</code>
+     * <li>{@code '\u005Cu0000'} through {@code '\u005Cu0008'}
+     * <li>{@code '\u005Cu000E'} through {@code '\u005Cu001B'}
+     * <li>{@code '\u005Cu007F'} through {@code '\u005Cu009F'}
      * </ul>
      *
-     * <li>all characters that have the <code>FORMAT</code> general
+     * <li>all characters that have the {@code FORMAT} general
      * category value
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is an ignorable control
+     * @return  {@code true} if the character is an ignorable control
      *          character that may be part of a Java or Unicode identifier;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isUnicodeIdentifierPart(int)
      * @since   1.5
@@ -6040,16 +6038,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * mapping information from the UnicodeData file.
      * <p>
      * Note that
-     * <code>Character.isLowerCase(Character.toLowerCase(ch))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isLowerCase(Character.toLowerCase(ch))}
+     * does not always return {@code true} for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
      * <p>In general, {@link String#toLowerCase()} should be used to map
-     * characters to lowercase. <code>String</code> case mapping methods
-     * have several benefits over <code>Character</code> case mapping methods.
-     * <code>String</code> case mapping methods can perform locale-sensitive
+     * characters to lowercase. {@code String} case mapping methods
+     * have several benefits over {@code Character} case mapping methods.
+     * {@code String} case mapping methods can perform locale-sensitive
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
-     * the <code>Character</code> case mapping methods cannot.
+     * the {@code Character} case mapping methods cannot.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -6072,16 +6070,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * file.
      *
      * <p> Note that
-     * <code>Character.isLowerCase(Character.toLowerCase(codePoint))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isLowerCase(Character.toLowerCase(codePoint))}
+     * does not always return {@code true} for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
      * <p>In general, {@link String#toLowerCase()} should be used to map
-     * characters to lowercase. <code>String</code> case mapping methods
-     * have several benefits over <code>Character</code> case mapping methods.
-     * <code>String</code> case mapping methods can perform locale-sensitive
+     * characters to lowercase. {@code String} case mapping methods
+     * have several benefits over {@code Character} case mapping methods.
+     * {@code String} case mapping methods can perform locale-sensitive
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
-     * the <code>Character</code> case mapping methods cannot.
+     * the {@code Character} case mapping methods cannot.
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  the lowercase equivalent of the character (Unicode code
@@ -6100,16 +6098,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * information from the UnicodeData file.
      * <p>
      * Note that
-     * <code>Character.isUpperCase(Character.toUpperCase(ch))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isUpperCase(Character.toUpperCase(ch))}
+     * does not always return {@code true} for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
      * <p>In general, {@link String#toUpperCase()} should be used to map
-     * characters to uppercase. <code>String</code> case mapping methods
-     * have several benefits over <code>Character</code> case mapping methods.
-     * <code>String</code> case mapping methods can perform locale-sensitive
+     * characters to uppercase. {@code String} case mapping methods
+     * have several benefits over {@code Character} case mapping methods.
+     * {@code String} case mapping methods can perform locale-sensitive
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
-     * the <code>Character</code> case mapping methods cannot.
+     * the {@code Character} case mapping methods cannot.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -6132,16 +6130,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * file.
      *
      * <p>Note that
-     * <code>Character.isUpperCase(Character.toUpperCase(codePoint))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isUpperCase(Character.toUpperCase(codePoint))}
+     * does not always return {@code true} for some ranges of
      * characters, particularly those that are symbols or ideographs.
      *
      * <p>In general, {@link String#toUpperCase()} should be used to map
-     * characters to uppercase. <code>String</code> case mapping methods
-     * have several benefits over <code>Character</code> case mapping methods.
-     * <code>String</code> case mapping methods can perform locale-sensitive
+     * characters to uppercase. {@code String} case mapping methods
+     * have several benefits over {@code Character} case mapping methods.
+     * {@code String} case mapping methods can perform locale-sensitive
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
-     * the <code>Character</code> case mapping methods cannot.
+     * the {@code Character} case mapping methods cannot.
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  the uppercase equivalent of the character, if any;
@@ -6161,13 +6159,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * explicit titlecase mapping and is not itself a titlecase char
      * according to UnicodeData, then the uppercase mapping is
      * returned as an equivalent titlecase mapping. If the
-     * <code>char</code> argument is already a titlecase
-     * <code>char</code>, the same <code>char</code> value will be
+     * {@code char} argument is already a titlecase
+     * {@code char}, the same {@code char} value will be
      * returned.
      * <p>
      * Note that
-     * <code>Character.isTitleCase(Character.toTitleCase(ch))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isTitleCase(Character.toTitleCase(ch))}
+     * does not always return {@code true} for some ranges of
      * characters.
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -6198,8 +6196,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * returned.
      *
      * <p>Note that
-     * <code>Character.isTitleCase(Character.toTitleCase(codePoint))</code>
-     * does not always return <code>true</code> for some ranges of
+     * {@code Character.isTitleCase(Character.toTitleCase(codePoint))}
+     * does not always return {@code true} for some ranges of
      * characters.
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
@@ -6215,28 +6213,40 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns the numeric value of the character <code>ch</code> in the
+     * Returns the numeric value of the character {@code ch} in the
      * specified radix.
      * <p>
-     * If the radix is not in the range <code>MIN_RADIX</code>&nbsp;&lt;=
-     * <code>radix</code>&nbsp;&lt;= <code>MAX_RADIX</code> or if the
-     * value of <code>ch</code> is not a valid digit in the specified
-     * radix, <code>-1</code> is returned. A character is a valid digit
+     * If the radix is not in the range {@code MIN_RADIX} &le;
+     * {@code radix} &le; {@code MAX_RADIX} or if the
+     * value of {@code ch} is not a valid digit in the specified
+     * radix, {@code -1} is returned. A character is a valid digit
      * if at least one of the following is true:
      * <ul>
-     * <li>The method <code>isDigit</code> is <code>true</code> of the character
+     * <li>The method {@code isDigit} is {@code true} of the character
      *     and the Unicode decimal digit value of the character (or its
      *     single-character decomposition) is less than the specified radix.
      *     In this case the decimal digit value is returned.
      * <li>The character is one of the uppercase Latin letters
-     *     <code>'A'</code> through <code>'Z'</code> and its code is less than
-     *     <code>radix&nbsp;+ 'A'&nbsp;-&nbsp;10</code>.
-     *     In this case, <code>ch&nbsp;- 'A'&nbsp;+&nbsp;10</code>
+     *     {@code 'A'} through {@code 'Z'} and its code is less than
+     *     {@code radix + 'A' - 10}.
+     *     In this case, {@code ch - 'A' + 10}
      *     is returned.
      * <li>The character is one of the lowercase Latin letters
-     *     <code>'a'</code> through <code>'z'</code> and its code is less than
-     *     <code>radix&nbsp;+ 'a'&nbsp;-&nbsp;10</code>.
-     *     In this case, <code>ch&nbsp;- 'a'&nbsp;+&nbsp;10</code>
+     *     {@code 'a'} through {@code 'z'} and its code is less than
+     *     {@code radix + 'a' - 10}.
+     *     In this case, {@code ch - 'a' + 10}
+     *     is returned.
+     * <li>The character is one of the fullwidth uppercase Latin letters A
+     *     ({@code '\u005CuFF21'}) through Z ({@code '\u005CuFF3A'})
+     *     and its code is less than
+     *     {@code radix + '\u005CuFF21' - 10}.
+     *     In this case, {@code ch - '\u005CuFF21' + 10}
+     *     is returned.
+     * <li>The character is one of the fullwidth lowercase Latin letters a
+     *     ({@code '\u005CuFF41'}) through z ({@code '\u005CuFF5A'})
+     *     and its code is less than
+     *     {@code radix + '\u005CuFF41' - 10}.
+     *     In this case, {@code ch - '\u005CuFF41' + 10}
      *     is returned.
      * </ul>
      *
@@ -6260,25 +6270,39 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Returns the numeric value of the specified character (Unicode
      * code point) in the specified radix.
      *
-     * <p>If the radix is not in the range <code>MIN_RADIX</code>&nbsp;&lt;=
-     * <code>radix</code>&nbsp;&lt;= <code>MAX_RADIX</code> or if the
+     * <p>If the radix is not in the range {@code MIN_RADIX} &le;
+     * {@code radix} &le; {@code MAX_RADIX} or if the
      * character is not a valid digit in the specified
-     * radix, <code>-1</code> is returned. A character is a valid digit
+     * radix, {@code -1} is returned. A character is a valid digit
      * if at least one of the following is true:
      * <ul>
-     * <li>The method {@link #isDigit(int) isDigit(codePoint)} is <code>true</code> of the character
+     * <li>The method {@link #isDigit(int) isDigit(codePoint)} is {@code true} of the character
      *     and the Unicode decimal digit value of the character (or its
      *     single-character decomposition) is less than the specified radix.
      *     In this case the decimal digit value is returned.
      * <li>The character is one of the uppercase Latin letters
-     *     <code>'A'</code> through <code>'Z'</code> and its code is less than
-     *     <code>radix&nbsp;+ 'A'&nbsp;-&nbsp;10</code>.
-     *     In this case, <code>ch&nbsp;- 'A'&nbsp;+&nbsp;10</code>
+     *     {@code 'A'} through {@code 'Z'} and its code is less than
+     *     {@code radix + 'A' - 10}.
+     *     In this case, {@code codePoint - 'A' + 10}
      *     is returned.
      * <li>The character is one of the lowercase Latin letters
-     *     <code>'a'</code> through <code>'z'</code> and its code is less than
-     *     <code>radix&nbsp;+ 'a'&nbsp;-&nbsp;10</code>.
-     *     In this case, <code>ch&nbsp;- 'a'&nbsp;+&nbsp;10</code>
+     *     {@code 'a'} through {@code 'z'} and its code is less than
+     *     {@code radix + 'a' - 10}.
+     *     In this case, {@code codePoint - 'a' + 10}
+     *     is returned.
+     * <li>The character is one of the fullwidth uppercase Latin letters A
+     *     ({@code '\u005CuFF21'}) through Z ({@code '\u005CuFF3A'})
+     *     and its code is less than
+     *     {@code radix + '\u005CuFF21' - 10}.
+     *     In this case,
+     *     {@code codePoint - '\u005CuFF21' + 10}
+     *     is returned.
+     * <li>The character is one of the fullwidth lowercase Latin letters a
+     *     ({@code '\u005CuFF41'}) through z ({@code '\u005CuFF5A'})
+     *     and its code is less than
+     *     {@code radix + '\u005CuFF41'- 10}.
+     *     In this case,
+     *     {@code codePoint - '\u005CuFF41' + 10}
      *     is returned.
      * </ul>
      *
@@ -6295,19 +6319,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns the <code>int</code> value that the specified Unicode
+     * Returns the {@code int} value that the specified Unicode
      * character represents. For example, the character
-     * <code>'&#92;u216C'</code> (the roman numeral fifty) will return
+     * {@code '\u005Cu216C'} (the roman numeral fifty) will return
      * an int with a value of 50.
      * <p>
-     * The letters A-Z in their uppercase (<code>'&#92;u0041'</code> through
-     * <code>'&#92;u005A'</code>), lowercase
-     * (<code>'&#92;u0061'</code> through <code>'&#92;u007A'</code>), and
-     * full width variant (<code>'&#92;uFF21'</code> through
-     * <code>'&#92;uFF3A'</code> and <code>'&#92;uFF41'</code> through
-     * <code>'&#92;uFF5A'</code>) forms have numeric values from 10
+     * The letters A-Z in their uppercase ({@code '\u005Cu0041'} through
+     * {@code '\u005Cu005A'}), lowercase
+     * ({@code '\u005Cu0061'} through {@code '\u005Cu007A'}), and
+     * full width variant ({@code '\u005CuFF21'} through
+     * {@code '\u005CuFF3A'} and {@code '\u005CuFF41'} through
+     * {@code '\u005CuFF5A'}) forms have numeric values from 10
      * through 35. This is independent of the Unicode specification,
-     * which does not assign numeric values to these <code>char</code>
+     * which does not assign numeric values to these {@code char}
      * values.
      * <p>
      * If the character does not have a numeric value, then -1 is returned.
@@ -6321,7 +6345,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #getNumericValue(int)} method.
      *
      * @param   ch      the character to be converted.
-     * @return  the numeric value of the character, as a nonnegative <code>int</code>
+     * @return  the numeric value of the character, as a nonnegative {@code int}
      *           value; -2 if the character has a numeric value that is not a
      *          nonnegative integer; -1 if the character has no numeric value.
      * @see     Character#forDigit(int, int)
@@ -6333,19 +6357,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Returns the <code>int</code> value that the specified
+     * Returns the {@code int} value that the specified
      * character (Unicode code point) represents. For example, the character
-     * <code>'&#92;u216C'</code> (the Roman numeral fifty) will return
-     * an <code>int</code> with a value of 50.
+     * {@code '\u005Cu216C'} (the Roman numeral fifty) will return
+     * an {@code int} with a value of 50.
      * <p>
-     * The letters A-Z in their uppercase (<code>'&#92;u0041'</code> through
-     * <code>'&#92;u005A'</code>), lowercase
-     * (<code>'&#92;u0061'</code> through <code>'&#92;u007A'</code>), and
-     * full width variant (<code>'&#92;uFF21'</code> through
-     * <code>'&#92;uFF3A'</code> and <code>'&#92;uFF41'</code> through
-     * <code>'&#92;uFF5A'</code>) forms have numeric values from 10
+     * The letters A-Z in their uppercase ({@code '\u005Cu0041'} through
+     * {@code '\u005Cu005A'}), lowercase
+     * ({@code '\u005Cu0061'} through {@code '\u005Cu007A'}), and
+     * full width variant ({@code '\u005CuFF21'} through
+     * {@code '\u005CuFF3A'} and {@code '\u005CuFF41'} through
+     * {@code '\u005CuFF5A'}) forms have numeric values from 10
      * through 35. This is independent of the Unicode specification,
-     * which does not assign numeric values to these <code>char</code>
+     * which does not assign numeric values to these {@code char}
      * values.
      * <p>
      * If the character does not have a numeric value, then -1 is returned.
@@ -6354,7 +6378,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * is returned.
      *
      * @param   codePoint the character (Unicode code point) to be converted.
-     * @return  the numeric value of the character, as a nonnegative <code>int</code>
+     * @return  the numeric value of the character, as a nonnegative {@code int}
      *          value; -2 if the character has a numeric value that is not a
      *          nonnegative integer; -1 if the character has no numeric value.
      * @see     Character#forDigit(int, int)
@@ -6367,24 +6391,24 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Determines if the specified character is ISO-LATIN-1 white space.
-     * This method returns <code>true</code> for the following five
+     * This method returns {@code true} for the following five
      * characters only:
      * <table>
-     * <tr><td><code>'\t'</code></td>            <td><code>U+0009</code></td>
-     *     <td><code>HORIZONTAL TABULATION</code></td></tr>
-     * <tr><td><code>'\n'</code></td>            <td><code>U+000A</code></td>
-     *     <td><code>NEW LINE</code></td></tr>
-     * <tr><td><code>'\f'</code></td>            <td><code>U+000C</code></td>
-     *     <td><code>FORM FEED</code></td></tr>
-     * <tr><td><code>'\r'</code></td>            <td><code>U+000D</code></td>
-     *     <td><code>CARRIAGE RETURN</code></td></tr>
-     * <tr><td><code>'&nbsp;'</code></td>  <td><code>U+0020</code></td>
-     *     <td><code>SPACE</code></td></tr>
+     * <tr><td>{@code '\t'}</td>            <td>{@code U+0009}</td>
+     *     <td>{@code HORIZONTAL TABULATION}</td></tr>
+     * <tr><td>{@code '\n'}</td>            <td>{@code U+000A}</td>
+     *     <td>{@code NEW LINE}</td></tr>
+     * <tr><td>{@code '\f'}</td>            <td>{@code U+000C}</td>
+     *     <td>{@code FORM FEED}</td></tr>
+     * <tr><td>{@code '\r'}</td>            <td>{@code U+000D}</td>
+     *     <td>{@code CARRIAGE RETURN}</td></tr>
+     * <tr><td>{@code '&nbsp;'}</td>  <td>{@code U+0020}</td>
+     *     <td>{@code SPACE}</td></tr>
      * </table>
      *
      * @param      ch   the character to be tested.
-     * @return     <code>true</code> if the character is ISO-LATIN-1 white
-     *             space; <code>false</code> otherwise.
+     * @return     {@code true} if the character is ISO-LATIN-1 white
+     *             space; {@code false} otherwise.
      * @see        Character#isSpaceChar(char)
      * @see        Character#isWhitespace(char)
      * @deprecated Replaced by isWhitespace(char).
@@ -6407,9 +6431,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * method returns true if the character's general category type is any of
      * the following:
      * <ul>
-     * <li> <code>SPACE_SEPARATOR</code>
-     * <li> <code>LINE_SEPARATOR</code>
-     * <li> <code>PARAGRAPH_SEPARATOR</code>
+     * <li> {@code SPACE_SEPARATOR}
+     * <li> {@code LINE_SEPARATOR}
+     * <li> {@code PARAGRAPH_SEPARATOR}
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -6418,8 +6442,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isSpaceChar(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  <code>true</code> if the character is a space character;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a space character;
+     *          {@code false} otherwise.
      * @see     Character#isWhitespace(char)
      * @since   1.1
      */
@@ -6441,8 +6465,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * </ul>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a space character;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is a space character;
+     *          {@code false} otherwise.
      * @see     Character#isWhitespace(int)
      * @since   1.5
      */
@@ -6458,19 +6482,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * A character is a Java whitespace character if and only if it satisfies
      * one of the following criteria:
      * <ul>
-     * <li> It is a Unicode space character (<code>SPACE_SEPARATOR</code>,
-     *      <code>LINE_SEPARATOR</code>, or <code>PARAGRAPH_SEPARATOR</code>)
-     *      but is not also a non-breaking space (<code>'&#92;u00A0'</code>,
-     *      <code>'&#92;u2007'</code>, <code>'&#92;u202F'</code>).
-     * <li> It is <code>'&#92;t'</code>, U+0009 HORIZONTAL TABULATION.
-     * <li> It is <code>'&#92;n'</code>, U+000A LINE FEED.
-     * <li> It is <code>'&#92;u000B'</code>, U+000B VERTICAL TABULATION.
-     * <li> It is <code>'&#92;f'</code>, U+000C FORM FEED.
-     * <li> It is <code>'&#92;r'</code>, U+000D CARRIAGE RETURN.
-     * <li> It is <code>'&#92;u001C'</code>, U+001C FILE SEPARATOR.
-     * <li> It is <code>'&#92;u001D'</code>, U+001D GROUP SEPARATOR.
-     * <li> It is <code>'&#92;u001E'</code>, U+001E RECORD SEPARATOR.
-     * <li> It is <code>'&#92;u001F'</code>, U+001F UNIT SEPARATOR.
+     * <li> It is a Unicode space character ({@code SPACE_SEPARATOR},
+     *      {@code LINE_SEPARATOR}, or {@code PARAGRAPH_SEPARATOR})
+     *      but is not also a non-breaking space ({@code '\u005Cu00A0'},
+     *      {@code '\u005Cu2007'}, {@code '\u005Cu202F'}).
+     * <li> It is {@code '\u005Ct'}, U+0009 HORIZONTAL TABULATION.
+     * <li> It is {@code '\u005Cn'}, U+000A LINE FEED.
+     * <li> It is {@code '\u005Cu000B'}, U+000B VERTICAL TABULATION.
+     * <li> It is {@code '\u005Cf'}, U+000C FORM FEED.
+     * <li> It is {@code '\u005Cr'}, U+000D CARRIAGE RETURN.
+     * <li> It is {@code '\u005Cu001C'}, U+001C FILE SEPARATOR.
+     * <li> It is {@code '\u005Cu001D'}, U+001D GROUP SEPARATOR.
+     * <li> It is {@code '\u005Cu001E'}, U+001E RECORD SEPARATOR.
+     * <li> It is {@code '\u005Cu001F'}, U+001F UNIT SEPARATOR.
      * </ul>
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -6479,8 +6503,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isWhitespace(int)} method.
      *
      * @param   ch the character to be tested.
-     * @return  <code>true</code> if the character is a Java whitespace
-     *          character; <code>false</code> otherwise.
+     * @return  {@code true} if the character is a Java whitespace
+     *          character; {@code false} otherwise.
      * @see     Character#isSpaceChar(char)
      * @since   1.1
      */
@@ -6496,23 +6520,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <ul>
      * <li> It is a Unicode space character ({@link #SPACE_SEPARATOR},
      *      {@link #LINE_SEPARATOR}, or {@link #PARAGRAPH_SEPARATOR})
-     *      but is not also a non-breaking space (<code>'&#92;u00A0'</code>,
-     *      <code>'&#92;u2007'</code>, <code>'&#92;u202F'</code>).
-     * <li> It is <code>'&#92;t'</code>, U+0009 HORIZONTAL TABULATION.
-     * <li> It is <code>'&#92;n'</code>, U+000A LINE FEED.
-     * <li> It is <code>'&#92;u000B'</code>, U+000B VERTICAL TABULATION.
-     * <li> It is <code>'&#92;f'</code>, U+000C FORM FEED.
-     * <li> It is <code>'&#92;r'</code>, U+000D CARRIAGE RETURN.
-     * <li> It is <code>'&#92;u001C'</code>, U+001C FILE SEPARATOR.
-     * <li> It is <code>'&#92;u001D'</code>, U+001D GROUP SEPARATOR.
-     * <li> It is <code>'&#92;u001E'</code>, U+001E RECORD SEPARATOR.
-     * <li> It is <code>'&#92;u001F'</code>, U+001F UNIT SEPARATOR.
+     *      but is not also a non-breaking space ({@code '\u005Cu00A0'},
+     *      {@code '\u005Cu2007'}, {@code '\u005Cu202F'}).
+     * <li> It is {@code '\u005Ct'}, U+0009 HORIZONTAL TABULATION.
+     * <li> It is {@code '\u005Cn'}, U+000A LINE FEED.
+     * <li> It is {@code '\u005Cu000B'}, U+000B VERTICAL TABULATION.
+     * <li> It is {@code '\u005Cf'}, U+000C FORM FEED.
+     * <li> It is {@code '\u005Cr'}, U+000D CARRIAGE RETURN.
+     * <li> It is {@code '\u005Cu001C'}, U+001C FILE SEPARATOR.
+     * <li> It is {@code '\u005Cu001D'}, U+001D GROUP SEPARATOR.
+     * <li> It is {@code '\u005Cu001E'}, U+001E RECORD SEPARATOR.
+     * <li> It is {@code '\u005Cu001F'}, U+001F UNIT SEPARATOR.
      * </ul>
      * <p>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a Java whitespace
-     *          character; <code>false</code> otherwise.
+     * @return  {@code true} if the character is a Java whitespace
+     *          character; {@code false} otherwise.
      * @see     Character#isSpaceChar(int)
      * @since   1.5
      */
@@ -6523,9 +6547,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Determines if the specified character is an ISO control
      * character.  A character is considered to be an ISO control
-     * character if its code is in the range <code>'&#92;u0000'</code>
-     * through <code>'&#92;u001F'</code> or in the range
-     * <code>'&#92;u007F'</code> through <code>'&#92;u009F'</code>.
+     * character if its code is in the range {@code '\u005Cu0000'}
+     * through {@code '\u005Cu001F'} or in the range
+     * {@code '\u005Cu007F'} through {@code '\u005Cu009F'}.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -6533,8 +6557,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #isISOControl(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  <code>true</code> if the character is an ISO control character;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is an ISO control character;
+     *          {@code false} otherwise.
      *
      * @see     Character#isSpaceChar(char)
      * @see     Character#isWhitespace(char)
@@ -6547,13 +6571,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Determines if the referenced character (Unicode code point) is an ISO control
      * character.  A character is considered to be an ISO control
-     * character if its code is in the range <code>'&#92;u0000'</code>
-     * through <code>'&#92;u001F'</code> or in the range
-     * <code>'&#92;u007F'</code> through <code>'&#92;u009F'</code>.
+     * character if its code is in the range {@code '\u005Cu0000'}
+     * through {@code '\u005Cu001F'} or in the range
+     * {@code '\u005Cu007F'} through {@code '\u005Cu009F'}.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is an ISO control character;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the character is an ISO control character;
+     *          {@code false} otherwise.
      * @see     Character#isSpaceChar(int)
      * @see     Character#isWhitespace(int)
      * @since   1.5
@@ -6575,7 +6599,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the {@link #getType(int)} method.
      *
      * @param   ch      the character to be tested.
-     * @return  a value of type <code>int</code> representing the
+     * @return  a value of type {@code int} representing the
      *          character's general category.
      * @see     Character#COMBINING_SPACING_MARK
      * @see     Character#CONNECTOR_PUNCTUATION
@@ -6617,7 +6641,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Returns a value indicating a character's general category.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  a value of type <code>int</code> representing the
+     * @return  a value of type {@code int} representing the
      *          character's general category.
      * @see     Character#COMBINING_SPACING_MARK COMBINING_SPACING_MARK
      * @see     Character#CONNECTOR_PUNCTUATION CONNECTOR_PUNCTUATION
@@ -6657,23 +6681,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Determines the character representation for a specific digit in
-     * the specified radix. If the value of <code>radix</code> is not a
-     * valid radix, or the value of <code>digit</code> is not a valid
+     * the specified radix. If the value of {@code radix} is not a
+     * valid radix, or the value of {@code digit} is not a valid
      * digit in the specified radix, the null character
-     * (<code>'&#92;u0000'</code>) is returned.
+     * ({@code '\u005Cu0000'}) is returned.
      * <p>
-     * The <code>radix</code> argument is valid if it is greater than or
-     * equal to <code>MIN_RADIX</code> and less than or equal to
-     * <code>MAX_RADIX</code>. The <code>digit</code> argument is valid if
-     * <code>0&nbsp;&lt;=digit&nbsp;&lt;&nbsp;radix</code>.
+     * The {@code radix} argument is valid if it is greater than or
+     * equal to {@code MIN_RADIX} and less than or equal to
+     * {@code MAX_RADIX}. The {@code digit} argument is valid if
+     * {@code 0 <= digit < radix}.
      * <p>
      * If the digit is less than 10, then
-     * <code>'0'&nbsp;+ digit</code> is returned. Otherwise, the value
-     * <code>'a'&nbsp;+ digit&nbsp;-&nbsp;10</code> is returned.
+     * {@code '0' + digit} is returned. Otherwise, the value
+     * {@code 'a' + digit - 10} is returned.
      *
      * @param   digit   the number to convert to a character.
      * @param   radix   the radix.
-     * @return  the <code>char</code> representation of the specified digit
+     * @return  the {@code char} representation of the specified digit
      *          in the specified radix.
      * @see     Character#MIN_RADIX
      * @see     Character#MAX_RADIX
@@ -6696,16 +6720,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Returns the Unicode directionality property for the given
      * character.  Character directionality is used to calculate the
      * visual ordering of text. The directionality value of undefined
-     * <code>char</code> values is <code>DIRECTIONALITY_UNDEFINED</code>.
+     * {@code char} values is {@code DIRECTIONALITY_UNDEFINED}.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
      * the {@link #getDirectionality(int)} method.
      *
-     * @param  ch <code>char</code> for which the directionality property
+     * @param  ch {@code char} for which the directionality property
      *            is requested.
-     * @return the directionality property of the <code>char</code> value.
+     * @return the directionality property of the {@code char} value.
      *
      * @see Character#DIRECTIONALITY_UNDEFINED
      * @see Character#DIRECTIONALITY_LEFT_TO_RIGHT
@@ -6774,7 +6798,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines whether the character is mirrored according to the
      * Unicode specification.  Mirrored characters should have their
      * glyphs horizontally mirrored when displayed in text that is
-     * right-to-left.  For example, <code>'&#92;u0028'</code> LEFT
+     * right-to-left.  For example, {@code '\u005Cu0028'} LEFT
      * PARENTHESIS is semantically defined to be an <i>opening
      * parenthesis</i>.  This will appear as a "(" in text that is
      * left-to-right but as a ")" in text that is right-to-left.
@@ -6784,9 +6808,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * all Unicode characters, including supplementary characters, use
      * the {@link #isMirrored(int)} method.
      *
-     * @param  ch <code>char</code> for which the mirrored property is requested
-     * @return <code>true</code> if the char is mirrored, <code>false</code>
-     *         if the <code>char</code> is not mirrored or is not defined.
+     * @param  ch {@code char} for which the mirrored property is requested
+     * @return {@code true} if the char is mirrored, {@code false}
+     *         if the {@code char} is not mirrored or is not defined.
      * @since 1.4
      */
     public static boolean isMirrored(char ch) {
@@ -6798,13 +6822,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * is mirrored according to the Unicode specification.  Mirrored
      * characters should have their glyphs horizontally mirrored when
      * displayed in text that is right-to-left.  For example,
-     * <code>'&#92;u0028'</code> LEFT PARENTHESIS is semantically
+     * {@code '\u005Cu0028'} LEFT PARENTHESIS is semantically
      * defined to be an <i>opening parenthesis</i>.  This will appear
      * as a "(" in text that is left-to-right but as a ")" in text
      * that is right-to-left.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is mirrored, <code>false</code>
+     * @return  {@code true} if the character is mirrored, {@code false}
      *          if the character is not mirrored or is not defined.
      * @since   1.5
      */
@@ -6813,16 +6837,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
     }
 
     /**
-     * Compares two <code>Character</code> objects numerically.
+     * Compares two {@code Character} objects numerically.
      *
-     * @param   anotherCharacter   the <code>Character</code> to be compared.
+     * @param   anotherCharacter   the {@code Character} to be compared.
 
-     * @return  the value <code>0</code> if the argument <code>Character</code>
-     *          is equal to this <code>Character</code>; a value less than
-     *          <code>0</code> if this <code>Character</code> is numerically less
-     *          than the <code>Character</code> argument; and a value greater than
-     *          <code>0</code> if this <code>Character</code> is numerically greater
-     *          than the <code>Character</code> argument (unsigned comparison).
+     * @return  the value {@code 0} if the argument {@code Character}
+     *          is equal to this {@code Character}; a value less than
+     *          {@code 0} if this {@code Character} is numerically less
+     *          than the {@code Character} argument; and a value greater than
+     *          {@code 0} if this {@code Character} is numerically greater
+     *          than the {@code Character} argument (unsigned comparison).
      *          Note that this is strictly a numerical comparison; it is not
      *          locale-dependent.
      * @since   1.2
@@ -6856,8 +6880,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  either the uppercase equivalent of the character, if
-     *          any, or an error flag (<code>Character.ERROR</code>)
-     *          that indicates that a 1:M <code>char</code> mapping exists.
+     *          any, or an error flag ({@code Character.ERROR})
+     *          that indicates that a 1:M {@code char} mapping exists.
      * @see     Character#isLowerCase(char)
      * @see     Character#isUpperCase(char)
      * @see     Character#toLowerCase(char)
@@ -6873,11 +6897,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Converts the character (Unicode code point) argument to uppercase using case
      * mapping information from the SpecialCasing file in the Unicode
      * specification. If a character has no explicit uppercase
-     * mapping, then the <code>char</code> itself is returned in the
-     * <code>char[]</code>.
+     * mapping, then the {@code char} itself is returned in the
+     * {@code char[]}.
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
-     * @return a <code>char[]</code> with the uppercased character.
+     * @return a {@code char[]} with the uppercased character.
      * @since 1.4
      */
     static char[] toUpperCaseCharArray(int codePoint) {
@@ -6908,7 +6932,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Returns the Unicode name of the specified character
-     * <code>codePoint</code>, or null if the code point is
+     * {@code codePoint}, or null if the code point is
      * {@link #UNASSIGNED unassigned}.
      * <p>
      * Note: if the specified character is not assigned a name by
@@ -6916,14 +6940,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Database maintained by the Unicode Consortium), the returned
      * name is the same as the result of expression
      *
-     * <blockquote><code>
-     *     Character.UnicodeBlock.of(codePoint)
-     *                           .toString()
-     *                           .replace('_', ' ')
+     * <blockquote>{@code
+     *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
      *     + " "
      *     + Integer.toHexString(codePoint).toUpperCase(Locale.ENGLISH);
      *
-     * </code></blockquote>
+     * }</blockquote>
      *
      * @param  codePoint the character (Unicode code point)
      *
@@ -6931,7 +6953,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *         the code point is unassigned.
      *
      * @exception IllegalArgumentException if the specified
-     *            <code>codePoint</code> is not a valid Unicode
+     *            {@code codePoint} is not a valid Unicode
      *            code point.
      *
      * @since 1.7

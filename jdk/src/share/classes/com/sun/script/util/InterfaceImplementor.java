@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,17 @@ public class InterfaceImplementor {
         if (iface == null || !iface.isInterface()) {
             throw new IllegalArgumentException("interface Class expected");
         }
+        if (! isImplemented(thiz, iface)) {
+            return null;
+        }
         AccessControlContext accCtxt = AccessController.getContext();
         return iface.cast(Proxy.newProxyInstance(iface.getClassLoader(),
             new Class[]{iface},
             new InterfaceImplementorInvocationHandler(thiz, accCtxt)));
+    }
+
+    protected boolean isImplemented(Object thiz, Class<?> iface) {
+        return true;
     }
 
     // called to convert method result after invoke

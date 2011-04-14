@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -569,24 +570,13 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   __ lea          (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 
   // compute minimum length (in rax) and difference of lengths (on top of stack)
-  if (VM_Version::supports_cmov()) {
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rcx, rbx);
-    __ subptr   (rbx, rax); // subtract lengths
-    __ push     (rbx);      // result
-    __ cmov     (Assembler::lessEqual, rax, rcx);
-  } else {
-    Label L;
-    __ movl     (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ movl     (rcx, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ mov      (rax, rbx);
-    __ subptr   (rbx, rcx);
-    __ push     (rbx);
-    __ jcc      (Assembler::lessEqual, L);
-    __ mov      (rax, rcx);
-    __ bind (L);
-  }
+  __ movl  (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
+  __ movl  (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
+  __ mov   (rcx, rbx);
+  __ subptr(rbx, rax); // subtract lengths
+  __ push  (rbx);      // result
+  __ cmov  (Assembler::lessEqual, rax, rcx);
+
   // is minimum length 0?
   Label noLoop, haveResult;
   __ testptr (rax, rax);
@@ -648,12 +638,13 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_return_type);
 
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
-
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    __ relocate(relocInfo::poll_return_type);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    __ testl(rax, polling_page);
+  }
   __ ret(0);
 }
 
@@ -661,20 +652,17 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
                               relocInfo::poll_type);
-
-  if (info != NULL) {
-    add_debug_info_for_branch(info);
-  } else {
-    ShouldNotReachHere();
-  }
-
+  guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
-
-  // NOTE: the requires that the polling page be reachable else the reloc
-  // goes to the movq that loads the address and not the faulting instruction
-  // which breaks the signal handler code
-
-  __ test32(rax, polling_page);
+  if (Assembler::is_polling_page_far()) {
+    __ lea(rscratch1, polling_page);
+    offset = __ offset();
+    add_debug_info_for_branch(info);
+    __ testl(rax, Address(rscratch1, 0));
+  } else {
+    add_debug_info_for_branch(info);
+    __ testl(rax, polling_page);
+  }
   return offset;
 }
 
@@ -3114,7 +3102,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   BasicType basic_type = default_type != NULL ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
-  // if we don't know anything or it's an object array, just go through the generic arraycopy
+  // if we don't know anything, just go through the generic arraycopy
   if (default_type == NULL) {
     Label done;
     // save outgoing arguments on stack in case call to System.arraycopy is needed
@@ -3135,7 +3123,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     store_parameter(src, 4);
     NOT_LP64(assert(src == rcx && src_pos == rdx, "mismatch in calling convention");)
 
-    address entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
+    address C_entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
+
+    address copyfunc_addr = StubRoutines::generic_arraycopy();
 
     // pass arguments: may push as this is not a safepoint; SP must be fix at each safepoint
 #ifdef _LP64
@@ -3153,11 +3143,29 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // Allocate abi space for args but be sure to keep stack aligned
     __ subptr(rsp, 6*wordSize);
     store_parameter(j_rarg4, 4);
-    __ call(RuntimeAddress(entry));
+    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
+      __ call(RuntimeAddress(C_entry));
+    } else {
+#ifndef PRODUCT
+      if (PrintC1Statistics) {
+        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
+      }
+#endif
+      __ call(RuntimeAddress(copyfunc_addr));
+    }
     __ addptr(rsp, 6*wordSize);
 #else
     __ mov(c_rarg4, j_rarg4);
-    __ call(RuntimeAddress(entry));
+    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
+      __ call(RuntimeAddress(C_entry));
+    } else {
+#ifndef PRODUCT
+      if (PrintC1Statistics) {
+        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
+      }
+#endif
+      __ call(RuntimeAddress(copyfunc_addr));
+    }
 #endif // _WIN64
 #else
     __ push(length);
@@ -3165,12 +3173,27 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ push(dst);
     __ push(src_pos);
     __ push(src);
-    __ call_VM_leaf(entry, 5); // removes pushed parameter from the stack
+
+    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
+      __ call_VM_leaf(C_entry, 5); // removes pushed parameter from the stack
+    } else {
+#ifndef PRODUCT
+      if (PrintC1Statistics) {
+        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
+      }
+#endif
+      __ call_VM_leaf(copyfunc_addr, 5); // removes pushed parameter from the stack
+    }
 
 #endif // _LP64
 
     __ cmpl(rax, 0);
     __ jcc(Assembler::equal, *stub->continuation());
+
+    if (copyfunc_addr != NULL) {
+      __ mov(tmp, rax);
+      __ xorl(tmp, -1);
+    }
 
     // Reload values from the stack so they are where the stub
     // expects them.
@@ -3179,6 +3202,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ movptr   (length,  Address(rsp, 2*BytesPerWord));
     __ movptr   (src_pos, Address(rsp, 3*BytesPerWord));
     __ movptr   (src,     Address(rsp, 4*BytesPerWord));
+
+    if (copyfunc_addr != NULL) {
+      __ subl(length, tmp);
+      __ addl(src_pos, tmp);
+      __ addl(dst_pos, tmp);
+    }
     __ jmp(*stub->entry());
 
     __ bind(*stub->continuation());
@@ -3238,10 +3267,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ testl(dst_pos, dst_pos);
     __ jcc(Assembler::less, *stub->entry());
   }
-  if (flags & LIR_OpArrayCopy::length_positive_check) {
-    __ testl(length, length);
-    __ jcc(Assembler::less, *stub->entry());
-  }
 
   if (flags & LIR_OpArrayCopy::src_range_check) {
     __ lea(tmp, Address(src_pos, length, Address::times_1, 0));
@@ -3254,15 +3279,190 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ jcc(Assembler::above, *stub->entry());
   }
 
+  if (flags & LIR_OpArrayCopy::length_positive_check) {
+    __ testl(length, length);
+    __ jcc(Assembler::less, *stub->entry());
+    __ jcc(Assembler::zero, *stub->continuation());
+  }
+
+#ifdef _LP64
+  __ movl2ptr(src_pos, src_pos); //higher 32bits must be null
+  __ movl2ptr(dst_pos, dst_pos); //higher 32bits must be null
+#endif
+
   if (flags & LIR_OpArrayCopy::type_check) {
-    if (UseCompressedOops) {
-      __ movl(tmp, src_klass_addr);
-      __ cmpl(tmp, dst_klass_addr);
+    // We don't know the array types are compatible
+    if (basic_type != T_OBJECT) {
+      // Simple test for basic type arrays
+      if (UseCompressedOops) {
+        __ movl(tmp, src_klass_addr);
+        __ cmpl(tmp, dst_klass_addr);
+      } else {
+        __ movptr(tmp, src_klass_addr);
+        __ cmpptr(tmp, dst_klass_addr);
+      }
+      __ jcc(Assembler::notEqual, *stub->entry());
     } else {
-      __ movptr(tmp, src_klass_addr);
-      __ cmpptr(tmp, dst_klass_addr);
+      // For object arrays, if src is a sub class of dst then we can
+      // safely do the copy.
+      Label cont, slow;
+
+      __ push(src);
+      __ push(dst);
+
+      __ load_klass(src, src);
+      __ load_klass(dst, dst);
+
+      __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, NULL);
+
+      __ push(src);
+      __ push(dst);
+      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ pop(dst);
+      __ pop(src);
+
+      __ cmpl(src, 0);
+      __ jcc(Assembler::notEqual, cont);
+
+      __ bind(slow);
+      __ pop(dst);
+      __ pop(src);
+
+      address copyfunc_addr = StubRoutines::checkcast_arraycopy();
+      if (copyfunc_addr != NULL) { // use stub if available
+        // src is not a sub class of dst so we have to do a
+        // per-element check.
+
+        int mask = LIR_OpArrayCopy::src_objarray|LIR_OpArrayCopy::dst_objarray;
+        if ((flags & mask) != mask) {
+          // Check that at least both of them object arrays.
+          assert(flags & mask, "one of the two should be known to be an object array");
+
+          if (!(flags & LIR_OpArrayCopy::src_objarray)) {
+            __ load_klass(tmp, src);
+          } else if (!(flags & LIR_OpArrayCopy::dst_objarray)) {
+            __ load_klass(tmp, dst);
+          }
+          int lh_offset = klassOopDesc::header_size() * HeapWordSize +
+            Klass::layout_helper_offset_in_bytes();
+          Address klass_lh_addr(tmp, lh_offset);
+          jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
+          __ cmpl(klass_lh_addr, objArray_lh);
+          __ jcc(Assembler::notEqual, *stub->entry());
+        }
+
+#ifndef _LP64
+        // save caller save registers
+        store_parameter(rax, 2);
+        store_parameter(rcx, 1);
+        store_parameter(rdx, 0);
+
+        __ movptr(tmp, dst_klass_addr);
+        __ movptr(tmp, Address(tmp, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
+        __ push(tmp);
+        __ movl(tmp, Address(tmp, Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc)));
+        __ push(tmp);
+        __ push(length);
+        __ lea(tmp, Address(dst, dst_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
+        __ push(tmp);
+        __ lea(tmp, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
+        __ push(tmp);
+
+        __ call_VM_leaf(copyfunc_addr, 5);
+#else
+        __ movl2ptr(length, length); //higher 32bits must be null
+
+        // save caller save registers: copy them to callee save registers
+        __ mov(rbx, rdx);
+        __ mov(r13, r8);
+        __ mov(r14, r9);
+#ifndef _WIN64
+        store_parameter(rsi, 1);
+        store_parameter(rcx, 0);
+        // on WIN64 other incoming parameters are in rdi and rsi saved
+        // across the call
+#endif
+
+        __ lea(c_rarg0, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
+        assert_different_registers(c_rarg0, dst, dst_pos, length);
+        __ lea(c_rarg1, Address(dst, dst_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
+        assert_different_registers(c_rarg1, dst, length);
+
+        __ mov(c_rarg2, length);
+        assert_different_registers(c_rarg2, dst);
+
+#ifdef _WIN64
+        // Allocate abi space for args but be sure to keep stack aligned
+        __ subptr(rsp, 6*wordSize);
+        __ load_klass(c_rarg3, dst);
+        __ movptr(c_rarg3, Address(c_rarg3, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
+        store_parameter(c_rarg3, 4);
+        __ movl(c_rarg3, Address(c_rarg3, Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc)));
+        __ call(RuntimeAddress(copyfunc_addr));
+        __ addptr(rsp, 6*wordSize);
+#else
+        __ load_klass(c_rarg4, dst);
+        __ movptr(c_rarg4, Address(c_rarg4, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
+        __ movl(c_rarg3, Address(c_rarg4, Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc)));
+        __ call(RuntimeAddress(copyfunc_addr));
+#endif
+
+#endif
+
+#ifndef PRODUCT
+        if (PrintC1Statistics) {
+          Label failed;
+          __ testl(rax, rax);
+          __ jcc(Assembler::notZero, failed);
+          __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_cnt));
+          __ bind(failed);
+        }
+#endif
+
+        __ testl(rax, rax);
+        __ jcc(Assembler::zero, *stub->continuation());
+
+#ifndef PRODUCT
+        if (PrintC1Statistics) {
+          __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_attempt_cnt));
+        }
+#endif
+
+        __ mov(tmp, rax);
+
+        __ xorl(tmp, -1);
+
+#ifndef _LP64
+        // restore caller save registers
+        assert_different_registers(tmp, rdx, rcx, rax); // result of stub will be lost
+        __ movptr(rdx, Address(rsp, 0*BytesPerWord));
+        __ movptr(rcx, Address(rsp, 1*BytesPerWord));
+        __ movptr(rax, Address(rsp, 2*BytesPerWord));
+#else
+        // restore caller save registers
+        __ mov(rdx, rbx);
+        __ mov(r8, r13);
+        __ mov(r9, r14);
+#ifndef _WIN64
+        assert_different_registers(tmp, rdx, r8, r9, rcx, rsi); // result of stub will be lost
+        __ movptr(rcx, Address(rsp, 0*BytesPerWord));
+        __ movptr(rsi, Address(rsp, 1*BytesPerWord));
+#else
+        assert_different_registers(tmp, rdx, r8, r9); // result of stub will be lost
+#endif
+#endif
+
+        __ subl(length, tmp);
+        __ addl(src_pos, tmp);
+        __ addl(dst_pos, tmp);
+      }
+
+      __ jmp(*stub->entry());
+
+      __ bind(cont);
+      __ pop(dst);
+      __ pop(src);
     }
-    __ jcc(Assembler::notEqual, *stub->entry());
   }
 
 #ifdef ASSERT
@@ -3303,16 +3503,16 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 #endif
 
-  if (shift_amount > 0 && basic_type != T_OBJECT) {
-    __ shlptr(length, shift_amount);
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    __ incrementl(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)));
   }
+#endif
 
 #ifdef _LP64
   assert_different_registers(c_rarg0, dst, dst_pos, length);
-  __ movl2ptr(src_pos, src_pos); //higher 32bits must be null
   __ lea(c_rarg0, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
   assert_different_registers(c_rarg1, length);
-  __ movl2ptr(dst_pos, dst_pos); //higher 32bits must be null
   __ lea(c_rarg1, Address(dst, dst_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
   __ mov(c_rarg2, length);
 
@@ -3323,11 +3523,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   store_parameter(tmp, 1);
   store_parameter(length, 2);
 #endif // _LP64
-  if (basic_type == T_OBJECT) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Runtime1::oop_arraycopy), 0);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Runtime1::primitive_arraycopy), 0);
-  }
+
+  bool disjoint = (flags & LIR_OpArrayCopy::overlapping) == 0;
+  bool aligned = (flags & LIR_OpArrayCopy::unaligned) == 0;
+  const char *name;
+  address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
+  __ call_VM_leaf(entry, 0);
 
   __ bind(*stub->continuation());
 }

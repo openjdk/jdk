@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072
+ * @bug 4496290 4985072 7006178
  * @summary A simple test to determine if -use works.
  * @author jamieh
  * @library ../lib/
@@ -34,7 +34,7 @@
 
 public class TestUseOption extends JavadocTester {
 
-    private static final String BUG_ID = "4496290-4985072";
+    private static final String BUG_ID = "4496290-4985072-7006178";
 
     //Input for string search tests.
     private static final String[] TEST2 = {
@@ -54,12 +54,26 @@ public class TestUseOption extends JavadocTester {
         "Method in C8.",
     };
 
+    private static final String[][] TEST3 = {
+        {BUG_ID + "-3" + FS + "class-use" + FS + "UsedInC.html", "Uses of <a href=" +
+                 "\"../UsedInC.html\" title=\"class in &lt;Unnamed&gt;\">" +
+                 "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
+        },
+        {BUG_ID + "-3" + FS + "package-use.html", "<td class=\"colOne\">" +
+                 "<a href=\"class-use/UsedInC.html#&lt;Unnamed&gt;\">UsedInC</a>&nbsp;</td>"
+        }
+    };
+
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
     };
 
     private static final String[] ARGS2 = new String[] {
         "-d", BUG_ID+"-2", "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
+    };
+
+    private static final String[] ARGS3 = new String[] {
+        "-d", BUG_ID + "-3", "-sourcepath", SRC_DIR, "-use", SRC_DIR + FS + "C.java", SRC_DIR + FS + "UsedInC.java"
     };
 
     /**
@@ -92,6 +106,8 @@ public class TestUseOption extends JavadocTester {
                 throw new Exception(TEST2[i] + " is in the wrong order.");
             prevIndex = currentIndex;
         }
+        tester.printSummary();
+        run(tester, ARGS3, TEST3, NO_TEST);
         tester.printSummary();
     }
 

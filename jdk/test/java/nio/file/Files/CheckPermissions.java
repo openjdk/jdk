@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,19 +521,19 @@ public class CheckPermissions {
             // -- toRealPath --
 
             prepare();
-            file.toRealPath(true);
+            file.toRealPath();
             assertCheckRead(file);
 
             prepare();
-            file.toRealPath(false);
+            file.toRealPath(LinkOption.NOFOLLOW_LINKS);
             assertCheckRead(file);
 
             prepare();
-            Paths.get(".").toRealPath(true);
+            Paths.get(".").toRealPath();
             assertCheckPropertyAccess("user.dir");
 
             prepare();
-            Paths.get(".").toRealPath(false);
+            Paths.get(".").toRealPath(LinkOption.NOFOLLOW_LINKS);
             assertCheckPropertyAccess("user.dir");
 
             // -- register --

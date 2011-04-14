@@ -164,8 +164,8 @@ public class Exchanger<V> {
      * races between two threads or thread pre-emptions occurring
      * between reading and CASing.  Also, very transient peak
      * contention can be much higher than the average sustainable
-     * levels.  The max limit is decreased on average 50% of the times
-     * that a non-slot-zero wait elapses without being fulfilled.
+     * levels.  An attempt to decrease the max limit is usually made
+     * when a non-slot-zero wait elapses without being fulfilled.
      * Threads experiencing elapsed waits move closer to zero, so
      * eventually find existing (or future) threads even if the table
      * has been shrunk due to inactivity.  The chosen mechanics and

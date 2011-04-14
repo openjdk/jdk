@@ -26,10 +26,11 @@
  * @bug     6882376 6985460
  * @summary Test if java.util.logging.Logger is created before and after
  *          logging is enabled.  Also validate some basic PlatformLogger
- *          operations.
+ *          operations.  othervm mode to make sure java.util.logging
+ *          is not initialized.
  *
  * @compile -XDignore.symbol.file PlatformLoggerTest.java
- * @run main PlatformLoggerTest
+ * @run main/othervm PlatformLoggerTest
  */
 
 import java.util.logging.*;

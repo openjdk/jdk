@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ class IdealKit: public StackObj {
   bool _delay_all_transforms;              // flag forcing all transforms to be delayed
   Node* _initial_ctrl;                     // saves initial control until variables declared
   Node* _initial_memory;                   // saves initial memory  until variables declared
+  Node* _initial_i_o;                      // saves initial i_o  until variables declared
 
   PhaseGVN& gvn() const { return _gvn; }
   // Create a new cvstate filled with nulls
@@ -142,17 +143,21 @@ class IdealKit: public StackObj {
   Node* memory(uint alias_idx);
 
  public:
-  IdealKit(PhaseGVN &gvn, Node* control, Node* memory, bool delay_all_transforms = false, bool has_declarations = false);
+  IdealKit(GraphKit* gkit, bool delay_all_transforms = false, bool has_declarations = false);
   ~IdealKit() {
     stop();
     drain_delay_transform();
   }
+  void sync_kit(GraphKit* gkit);
+
   // Control
   Node* ctrl()                          { return _cvstate->in(TypeFunc::Control); }
   void set_ctrl(Node* ctrl)             { _cvstate->set_req(TypeFunc::Control, ctrl); }
   Node* top()                           { return C->top(); }
   MergeMemNode* merged_memory()         { return _cvstate->in(TypeFunc::Memory)->as_MergeMem(); }
   void set_all_memory(Node* mem)        { _cvstate->set_req(TypeFunc::Memory, mem); }
+  Node* i_o()                           { return _cvstate->in(TypeFunc::I_O); }
+  void set_i_o(Node* c)                 { _cvstate->set_req(TypeFunc::I_O, c); }
   void set(IdealVariable& v, Node* rhs) { _cvstate->set_req(first_var + v.id(), rhs); }
   Node* value(IdealVariable& v)         { return _cvstate->in(first_var + v.id()); }
   void dead(IdealVariable& v)           { set(v, (Node*)NULL); }
@@ -239,7 +244,18 @@ class IdealKit: public StackObj {
                       const char *leaf_name,
                       Node* parm0,
                       Node* parm1 = NULL,
-                      Node* parm2 = NULL);
+                      Node* parm2 = NULL,
+                      Node* parm3 = NULL);
+
+  void make_leaf_call_no_fp(const TypeFunc *slow_call_type,
+                            address slow_call,
+                            const char *leaf_name,
+                            const TypePtr* adr_type,
+                            Node* parm0,
+                            Node* parm1,
+                            Node* parm2,
+                            Node* parm3);
+
 };
 
 #endif // SHARE_VM_OPTO_IDEALKIT_HPP

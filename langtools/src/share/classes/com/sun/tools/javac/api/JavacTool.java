@@ -28,8 +28,10 @@ package com.sun.tools.javac.api;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -47,12 +49,11 @@ import com.sun.tools.javac.main.JavacOption;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
 import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
-import java.nio.charset.Charset;
 
 /**
  * TODO: describe com.sun.tools.javac.api.Tool
@@ -145,41 +146,14 @@ public final class JavacTool implements JavaCompiler {
         Locale locale,
         Charset charset) {
         Context context = new Context();
-        JavacMessages.instance(context).setCurrentLocale(locale);
+        context.put(Locale.class, locale);
         if (diagnosticListener != null)
             context.put(DiagnosticListener.class, diagnosticListener);
-        context.put(Log.outKey, new PrintWriter(System.err, true)); // FIXME
+        PrintWriter pw = (charset == null)
+                ? new PrintWriter(System.err, true)
+                : new PrintWriter(new OutputStreamWriter(System.err, charset), true);
+        context.put(Log.outKey, pw);
         return new JavacFileManager(context, true, charset);
-    }
-
-    private boolean compilationInProgress = false;
-
-    /**
-     * Register that a compilation is about to start.
-     */
-    void beginContext(Context context) {
-        if (compilationInProgress)
-            throw new IllegalStateException("Compilation in progress");
-        compilationInProgress = true;
-        final JavaFileManager givenFileManager = context.get(JavaFileManager.class);
-        context.put(JavaFileManager.class, (JavaFileManager)null);
-        context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            public JavaFileManager make(Context c) {
-                if (givenFileManager != null) {
-                    c.put(JavaFileManager.class, givenFileManager);
-                    return givenFileManager;
-                } else {
-                    return new JavacFileManager(c, true, null);
-                }
-            }
-        });
-    }
-
-    /**
-     * Register that a compilation is completed.
-     */
-    void endContext() {
-        compilationInProgress = false;
     }
 
     public JavacTask getTask(Writer out,
@@ -189,38 +163,45 @@ public final class JavacTool implements JavaCompiler {
                              Iterable<String> classes,
                              Iterable<? extends JavaFileObject> compilationUnits)
     {
-        final String kindMsg = "All compilation units must be of SOURCE kind";
-        if (options != null)
-            for (String option : options)
-                option.getClass(); // null check
-        if (classes != null) {
-            for (String cls : classes)
-                if (!SourceVersion.isName(cls)) // implicit null check
-                    throw new IllegalArgumentException("Not a valid class name: " + cls);
-        }
-        if (compilationUnits != null) {
-            for (JavaFileObject cu : compilationUnits) {
-                if (cu.getKind() != JavaFileObject.Kind.SOURCE) // implicit null check
-                    throw new IllegalArgumentException(kindMsg);
+        try {
+            Context context = new Context();
+            ClientCodeWrapper ccw = ClientCodeWrapper.instance(context);
+
+            final String kindMsg = "All compilation units must be of SOURCE kind";
+            if (options != null)
+                for (String option : options)
+                    option.getClass(); // null check
+            if (classes != null) {
+                for (String cls : classes)
+                    if (!SourceVersion.isName(cls)) // implicit null check
+                        throw new IllegalArgumentException("Not a valid class name: " + cls);
             }
+            if (compilationUnits != null) {
+                compilationUnits = ccw.wrapJavaFileObjects(compilationUnits); // implicit null check
+                for (JavaFileObject cu : compilationUnits) {
+                    if (cu.getKind() != JavaFileObject.Kind.SOURCE)
+                        throw new IllegalArgumentException(kindMsg);
+                }
+            }
+
+            if (diagnosticListener != null)
+                context.put(DiagnosticListener.class, ccw.wrap(diagnosticListener));
+
+            if (out == null)
+                context.put(Log.outKey, new PrintWriter(System.err, true));
+            else
+                context.put(Log.outKey, new PrintWriter(out, true));
+
+            if (fileManager == null)
+                fileManager = getStandardFileManager(diagnosticListener, null, null);
+            fileManager = ccw.wrap(fileManager);
+            context.put(JavaFileManager.class, fileManager);
+            processOptions(context, fileManager, options);
+            Main compiler = new Main("javacTask", context.get(Log.outKey));
+            return new JavacTaskImpl(compiler, options, context, classes, compilationUnits);
+        } catch (ClientCodeException ex) {
+            throw new RuntimeException(ex.getCause());
         }
-
-        Context context = new Context();
-
-        if (diagnosticListener != null)
-            context.put(DiagnosticListener.class, diagnosticListener);
-
-        if (out == null)
-            context.put(Log.outKey, new PrintWriter(System.err, true));
-        else
-            context.put(Log.outKey, new PrintWriter(out, true));
-
-        if (fileManager == null)
-            fileManager = getStandardFileManager(diagnosticListener, null, null);
-        context.put(JavaFileManager.class, fileManager);
-        processOptions(context, fileManager, options);
-        Main compiler = new Main("javacTask", context.get(Log.outKey));
-        return new JavacTaskImpl(this, compiler, options, context, classes, compilationUnits);
     }
 
     private static void processOptions(Context context,

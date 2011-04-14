@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,12 @@ all:: build
 INTERNAL_IMPORT_LIST = $(LIBDIR)/classlist
 
 # List of files coming from outside this workspace
-IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
-              $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt
+ifndef BUILD_CLIENT_ONLY
+  IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
+                $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt
+else
+  IMPORT_LIST =
+endif
 
 # Hotspot client is only available on 32-bit non-Zero builds
 ifneq ($(ZERO_BUILD), true)
@@ -97,10 +101,12 @@ $(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 	$(call chmod-file, a+x)
 
 # Get the hotspot .map and .pdb files for client and server
+ifndef BUILD_CLIENT_ONLY
 IMPORT_LIST += \
 	$(LIBDIR)/$(JVMLIB_NAME) \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME)
+endif
 
 # Add .map and .pdb files to the import path for client and kernel VMs. 
 # These are only available on 32-bit windows builds. 
@@ -126,9 +132,11 @@ $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMMAP_NAME)  $@
 
+ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
+endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
@@ -138,27 +146,32 @@ $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)  $@
 
+ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME) $@
+endif
 
 #  Windows     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  Windows
 else # PLATFORM
 #  NOT Windows vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  NOT Windows
 
-IMPORT_LIST += \
-        $(LIB_LOCATION)/$(LIBJSIG_NAME) \
-	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME)
+IMPORT_LIST += $(LIB_LOCATION)/$(LIBJSIG_NAME) 
+ifndef BUILD_CLIENT_ONLY
+  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME)
+endif
 
 ifeq ($(PLATFORM), solaris)
-  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
-# The conditional can be removed when import JDKs contain these files.
-ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)),)
-  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME)
-else
-  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/$(JVMDB_NAME) not found!)
-endif 
-endif 
+  ifndef BUILD_CLIENT_ONLY
+    IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
+    # The conditional can be removed when import JDKs contain these files.
+    ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME)
+    else
+      $(warning WARNING: $(HOTSPOT_SERVER_PATH)/$(JVMDB_NAME) not found!)
+    endif 
+  endif 
+endif
 
 ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
@@ -179,18 +192,20 @@ else
   $(warning WARNING: $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME) not found!)
 endif
 
-# The conditional can be removed when import JDKs contain these files.
-ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)),)
-  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME)
-else
-  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME) not found!)
-endif
+ifndef BUILD_CLIENT_ONLY
+  # The conditional can be removed when import JDKs contain these files.
+  ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)),)
+    IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME)
+  else
+    $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME) not found!)
+  endif
 
-# The conditional can be removed when import JDKs contain these files.
-ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)),)
-  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME)
-else
-  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME) not found!)
+  # The conditional can be removed when import JDKs contain these files.
+  ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)),)
+    IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME)
+  else
+    $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME) not found!)
+ endif
 endif
 
 # For backwards compatability, make a link of the 32-bit client JVM to $(LIBDIR)
@@ -222,10 +237,16 @@ $(LIB_LOCATION)/$(LIBJSIG_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJ
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
+ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_NAME))
+else
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME):
+	@$(prep-target)
+	$(call install-sym-link, ../$(LIBJSIG_NAME))
+endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_NAME)
 	$(install-import-file)
@@ -235,6 +256,7 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/64/$
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
+ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB_NAME)
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
@@ -242,6 +264,7 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
+endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)
 	$(install-import-file)
@@ -251,6 +274,7 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
+ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
@@ -265,6 +289,7 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_NAM
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt : $(HOTSPOT_SERVER_PATH)/Xusage.txt
 	$(install-import-file)
+endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/Xusage.txt : $(HOTSPOT_CLIENT_PATH)/Xusage.txt
 	$(install-import-file)

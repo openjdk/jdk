@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,6 +286,10 @@ public abstract class MultipleGradientPaint implements Paint {
     /**
      * Returns a copy of the transform applied to the gradient.
      *
+     * <p>
+     * Note that if no transform is applied to the gradient
+     * when it is created, the identity transform is used.
+     *
      * @return a copy of the transform applied to the gradient
      */
     public final AffineTransform getTransform() {
@@ -293,10 +297,12 @@ public abstract class MultipleGradientPaint implements Paint {
     }
 
     /**
-     * Returns the transparency mode for this Paint object.
+     * Returns the transparency mode for this {@code Paint} object.
      *
-     * @return an integer value representing the transparency mode for
-     * this Paint object
+     * @return {@code OPAQUE} if all colors used by this
+     *         {@code Paint} object are opaque,
+     *         {@code TRANSLUCENT} if at least one of the
+     *         colors used by this {@code Paint} object is not opaque.
      * @see java.awt.Transparency
      */
     public final int getTransparency() {

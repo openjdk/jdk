@@ -46,13 +46,16 @@ import  java.util.*;
  * are freshly created in the context of the exceptional situation so
  * as to include relevant information (such as stack trace data).
  *
- * <p>A throwable contains a snapshot of the execution stack of its thread at
- * the time it was created. It can also contain a message string that gives
- * more information about the error. Finally, it can contain a <i>cause</i>:
- * another throwable that caused this throwable to get thrown.  The cause
- * facility is new in release 1.4.  It is also known as the <i>chained
- * exception</i> facility, as the cause can, itself, have a cause, and so on,
- * leading to a "chain" of exceptions, each caused by another.
+ * <p>A throwable contains a snapshot of the execution stack of its
+ * thread at the time it was created. It can also contain a message
+ * string that gives more information about the error. Over time, a
+ * throwable can {@linkplain Throwable#addSuppressed suppress} other
+ * throwables from being propagated.  Finally, the throwable can also
+ * contain a <i>cause</i>: another throwable that caused this
+ * throwable to be constructed.  The recording of this causal information
+ * is referred to as the <i>chained exception</i> facility, as the
+ * cause can, itself, have a cause, and so on, leading to a "chain" of
+ * exceptions, each caused by another.
  *
  * <p>One reason that a throwable may have a cause is that the class that
  * throws it is built atop a lower layered abstraction, and an operation on
@@ -86,47 +89,12 @@ import  java.util.*;
  * {@link #initCause(Throwable)} method.  New throwable classes that
  * wish to allow causes to be associated with them should provide constructors
  * that take a cause and delegate (perhaps indirectly) to one of the
- * {@code Throwable} constructors that takes a cause.  For example:
- * <pre>
- *     try {
- *         lowLevelOp();
- *     } catch (LowLevelException le) {
- *         throw new HighLevelException(le);  // Chaining-aware constructor
- *     }
- * </pre>
+ * {@code Throwable} constructors that takes a cause.
+ *
  * Because the {@code initCause} method is public, it allows a cause to be
  * associated with any throwable, even a "legacy throwable" whose
  * implementation predates the addition of the exception chaining mechanism to
- * {@code Throwable}. For example:
- * <pre>
- *     try {
- *         lowLevelOp();
- *     } catch (LowLevelException le) {
- *         throw (HighLevelException)
- *               new HighLevelException().initCause(le);  // Legacy constructor
- *     }
- * </pre>
- *
- * <p>Prior to release 1.4, there were many throwables that had their own
- * non-standard exception chaining mechanisms (
- * {@link ExceptionInInitializerError}, {@link ClassNotFoundException},
- * {@link java.lang.reflect.UndeclaredThrowableException},
- * {@link java.lang.reflect.InvocationTargetException},
- * {@link java.io.WriteAbortedException},
- * {@link java.security.PrivilegedActionException},
- * {@link java.awt.print.PrinterIOException},
- * {@link java.rmi.RemoteException} and
- * {@link javax.naming.NamingException}).
- * All of these throwables have been retrofitted to
- * use the standard exception chaining mechanism, while continuing to
- * implement their "legacy" chaining mechanisms for compatibility.
- *
- * <p>Further, as of release 1.4, many general purpose {@code Throwable}
- * classes (for example {@link Exception}, {@link RuntimeException},
- * {@link Error}) have been retrofitted with constructors that take
- * a cause.  This was not strictly necessary, due to the existence of the
- * {@code initCause} method, but it is more convenient and expressive to
- * delegate to a constructor that takes a cause.
+ * {@code Throwable}.
  *
  * <p>By convention, class {@code Throwable} and its subclasses have two
  * constructors, one that takes no arguments and one that takes a
@@ -136,14 +104,6 @@ import  java.util.*;
  * {@code Throwable} (the cause), and one that takes a
  * {@code String} (the detail message) and a {@code Throwable} (the
  * cause).
- *
- * <p>Also introduced in release 1.4 is the {@link #getStackTrace()} method,
- * which allows programmatic access to the stack trace information that was
- * previously available only in text form, via the various forms of the
- * {@link #printStackTrace()} method.  This information has been added to the
- * <i>serialized representation</i> of this class so {@code getStackTrace}
- * and {@code printStackTrace} will operate properly on a throwable that
- * was obtained by deserialization.
  *
  * @author  unascribed
  * @author  Josh Bloch (Added exception chaining and programmatic access to
@@ -320,6 +280,41 @@ public class Throwable implements Serializable {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
         this.cause = cause;
+    }
+
+    /**
+     * Constructs a new throwable with the specified detail message,
+     * cause, and {@linkplain #addSuppressed suppression} enabled or
+     * disabled.  If suppression is disabled, {@link #getSuppressed}
+     * for this object will return a zero-length array and calls to
+     * {@link #addSuppressed} that would otherwise append an exception
+     * to the suppressed list will have no effect.
+     *
+     * <p>Note that the other constructors of {@code Throwable} treat
+     * suppression as being enabled.  Subclasses of {@code Throwable}
+     * should document any conditions under which suppression is
+     * disabled.  Disabling of suppression should only occur in
+     * exceptional circumstances where special requirements exist,
+     * such as a virtual machine reusing exception objects under
+     * low-memory situations.
+     *
+     * @param  message the detail message.
+     * @param cause the cause.  (A {@code null} value is permitted,
+     * and indicates that the cause is nonexistent or unknown.)
+     * @param enableSuppression whether or not suppression is enabled or disabled
+     *
+     * @see OutOfMemoryError
+     * @see NullPointerException
+     * @see ArithmeticException
+     * @since 1.7
+     */
+    protected Throwable(String message, Throwable cause,
+                        boolean enableSuppression) {
+        fillInStackTrace();
+        detailMessage = message;
+        this.cause = cause;
+        if (!enableSuppression)
+            suppressedExceptions = null;
     }
 
     /**
@@ -870,54 +865,64 @@ public class Throwable implements Serializable {
      * typically called (automatically and implicitly) by the {@code
      * try}-with-resources statement.
      *
-     * If the first exception to be suppressed is {@code null}, that
-     * indicates suppressed exception information will <em>not</em> be
-     * recorded for this exception.  Subsequent calls to this method
-     * will not record any suppressed exceptions.  Otherwise,
-     * attempting to suppress {@code null} after an exception has
-     * already been successfully suppressed results in a {@code
-     * NullPointerException}.
+     * <p>The suppression behavior is enabled <em>unless</em> disabled
+     * {@linkplain #Throwable(String, Throwable, boolean) via a
+     * constructor}.  When suppression is disabled, this method does
+     * nothing other than to validate its argument.
      *
      * <p>Note that when one exception {@linkplain
      * #initCause(Throwable) causes} another exception, the first
      * exception is usually caught and then the second exception is
-     * thrown in response.  In contrast, when one exception suppresses
-     * another, two exceptions are thrown in sibling code blocks, such
-     * as in a {@code try} block and in its {@code finally} block, and
-     * control flow can only continue with one exception so the second
-     * is recorded as a suppressed exception of the first.
+     * thrown in response.  In other words, there is a causal
+     * connection between the two exceptions.
+     *
+     * In contrast, there are situations where two independent
+     * exceptions can be thrown in sibling code blocks, in particular
+     * in the {@code try} block of a {@code try}-with-resources
+     * statement and the compiler-generated {@code finally} block
+     * which closes the resource.
+     *
+     * In these situations, only one of the thrown exceptions can be
+     * propagated.  In the {@code try}-with-resources statement, when
+     * there are two such exceptions, the exception originating from
+     * the {@code try} block is propagated and the exception from the
+     * {@code finally} block is added to the list of exceptions
+     * suppressed by the exception from the {@code try} block.  As an
+     * exception unwinds the stack, it can accumulate multiple
+     * suppressed exceptions.
+     *
+     * <p>An exception may have suppressed exceptions while also being
+     * caused by another exception.  Whether or not an exception has a
+     * cause is semantically known at the time of its creation, unlike
+     * whether or not an exception will suppress other exceptions
+     * which is typically only determined after an exception is
+     * thrown.
+     *
+     * <p>Note that programmer written code is also able to take
+     * advantage of calling this method in situations where there are
+     * multiple sibling exceptions and only one can be propagated.
      *
      * @param exception the exception to be added to the list of
      *        suppressed exceptions
      * @throws IllegalArgumentException if {@code exception} is this
      *         throwable; a throwable cannot suppress itself.
-     * @throws NullPointerException if {@code exception} is null and
-     *         an exception has already been suppressed by this exception
+     * @throws NullPointerException if {@code exception} is {@code null}
      * @since 1.7
      */
     public final synchronized void addSuppressed(Throwable exception) {
         if (exception == this)
             throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
 
-        if (exception == null) {
-            if (suppressedExceptions == SUPPRESSED_SENTINEL) {
-                suppressedExceptions = null; // No suppression information recorded
-                return;
-            } else
-                throw new NullPointerException(NULL_CAUSE_MESSAGE);
-        } else {
-            assert exception != null && exception != this;
+        if (exception == null)
+            throw new NullPointerException(NULL_CAUSE_MESSAGE);
 
-            if (suppressedExceptions == null) // Suppressed exceptions not recorded
-                return;
+        if (suppressedExceptions == null) // Suppressed exceptions not recorded
+            return;
 
-            if (suppressedExceptions == SUPPRESSED_SENTINEL)
-                suppressedExceptions = new ArrayList<>(1);
+        if (suppressedExceptions == SUPPRESSED_SENTINEL)
+            suppressedExceptions = new ArrayList<>(1);
 
-            assert suppressedExceptions != SUPPRESSED_SENTINEL;
-
-            suppressedExceptions.add(exception);
-        }
+        suppressedExceptions.add(exception);
     }
 
     private static final Throwable[] EMPTY_THROWABLE_ARRAY = new Throwable[0];
@@ -927,7 +932,9 @@ public class Throwable implements Serializable {
      * suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
      *
-     * If no exceptions were suppressed, an empty array is returned.
+     * If no exceptions were suppressed or {@linkplain
+     * Throwable(String, Throwable, boolean) suppression is disabled},
+     * an empty array is returned.
      *
      * @return an array containing all of the exceptions that were
      *         suppressed to deliver this exception.

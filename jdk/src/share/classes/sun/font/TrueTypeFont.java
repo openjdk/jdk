@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,8 @@ public class TrueTypeFont extends FileFont {
                 break;
 
             default:
-                throw new FontFormatException("Unsupported sfnt " + platName);
+                throw new FontFormatException("Unsupported sfnt " +
+                                              getPublicFileName());
             }
 
             /* Now have the offset of this TT font (possibly within a TTC)
@@ -1680,7 +1681,6 @@ public class TrueTypeFont extends FileFont {
     @Override
     public String toString() {
         return "** TrueType Font: Family="+familyName+ " Name="+fullName+
-            " style="+style+" fileName="+platName;
+            " style="+style+" fileName="+getPublicFileName();
     }
-
 }

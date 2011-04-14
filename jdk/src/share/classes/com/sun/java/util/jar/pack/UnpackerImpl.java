@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,9 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
         }
         // Use the stream-based implementation.
         // %%% Reconsider if native unpacker learns to memory-map the file.
-        FileInputStream instr = new FileInputStream(in);
-        unpack(instr, out);
+        try (FileInputStream instr = new FileInputStream(in)) {
+            unpack(instr, out);
+        }
         if (props.getBoolean(Utils.UNPACK_REMOVE_PACKFILE)) {
             in.delete();
         }

@@ -1,4 +1,4 @@
-#!/bin/sh -f
+#!/bin/bash -f
 
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
@@ -152,14 +152,24 @@ if [ -s ${all_changesets} ] ; then
     echo "------------------------------------------------"
     hg log --rev ${changeset} --template '{desc}\n' > ${desc}
     printf "%d: %s\n%s\n" ${index} "${changeset}" "`cat ${desc}|head -1`"
-    if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then
-      printf "  EXCLUDED tag changeset.\n"
-    elif cat ${desc} | fgrep -i rebrand > /dev/null ; then
-      printf "  EXCLUDED rebrand changeset.\n"
-    elif cat ${desc} | fgrep -i copyright > /dev/null ; then
-      printf "  EXCLUDED copyright changeset.\n"
+    if [ "${year}" = "2010" ] ; then
+      if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then
+        printf "  EXCLUDED tag changeset.\n"
+      elif cat ${desc} | fgrep -i rebrand > /dev/null ; then
+        printf "  EXCLUDED rebrand changeset.\n"
+      elif cat ${desc} | fgrep -i copyright > /dev/null ; then
+        printf "  EXCLUDED copyright changeset.\n"
+      else
+        updateChangesetFiles ${changeset}
+      fi
     else
-      updateChangesetFiles ${changeset}
+      if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then
+        printf "  EXCLUDED tag changeset.\n"
+      elif cat ${desc} | fgrep -i "copyright year" > /dev/null ; then
+        printf "  EXCLUDED copyright year changeset.\n"
+      else
+        updateChangesetFiles ${changeset}
+      fi
     fi
     rm -f ${desc}
   done
