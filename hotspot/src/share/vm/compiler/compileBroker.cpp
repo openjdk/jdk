@@ -1736,8 +1736,14 @@ void CompileBroker::handle_full_code_cache() {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
+      stringStream s;
+      // Dump code cache state into a buffer before locking the tty,
+      // because log_state() will use locks causing lock conflicts.
+      CodeCache::log_state(&s);
+      // Lock to prevent tearing
+      ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      CodeCache::log_state(xtty);
+      xtty->print(s.as_string());
       xtty->stamp();
       xtty->end_elem();
     }
