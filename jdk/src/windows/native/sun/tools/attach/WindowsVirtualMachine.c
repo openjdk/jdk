@@ -32,13 +32,13 @@
 
 
 /* kernel32 */
-typedef HINSTANCE (WINAPI* LoadLibraryFunc) (LPCTSTR);
+typedef HINSTANCE (WINAPI* GetModuleHandleFunc) (LPCTSTR);
 typedef FARPROC (WINAPI* GetProcAddressFunc)(HMODULE, LPCSTR);
 
 /* only on Windows 64-bit or 32-bit application running under WOW64 */
 typedef BOOL (WINAPI *IsWow64ProcessFunc) (HANDLE, PBOOL);
 
-static LoadLibraryFunc _LoadLibrary;
+static GetModuleHandleFunc _GetModuleHandle;
 static GetProcAddressFunc _GetProcAddress;
 static IsWow64ProcessFunc _IsWow64Process;
 
@@ -70,7 +70,7 @@ static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
 #define MAX_PIPE_NAME_LENGTH    256
 
 typedef struct {
-   LoadLibraryFunc _LoadLibrary;
+   GetModuleHandleFunc _GetModuleHandle;
    GetProcAddressFunc _GetProcAddress;
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
    char func1[MAX_FUNC_LENGTH];
@@ -96,7 +96,7 @@ static DWORD WINAPI thread_func(DataBlock *pData)
     HINSTANCE h;
     EnqueueOperationFunc addr;
 
-    h = pData->_LoadLibrary(pData->jvmLib);
+    h = pData->_GetModuleHandle(pData->jvmLib);
     if (h == NULL) {
         return ERR_OPEN_JVM_FAIL;
     }
@@ -131,15 +131,10 @@ static void thread_end (void) {
 JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_init
   (JNIEnv *env, jclass cls)
 {
-    HINSTANCE h = LoadLibrary("kernel32");
-    if (h != NULL) {
-        _LoadLibrary = (LoadLibraryFunc) GetProcAddress(h, "LoadLibraryA");
-        _GetProcAddress = (GetProcAddressFunc)GetProcAddress(h, "GetProcAddress");
-        _IsWow64Process = (IsWow64ProcessFunc)GetProcAddress(h, "IsWow64Process");
-    }
-    if (_LoadLibrary == NULL || _GetProcAddress == NULL) {
-        JNU_ThrowInternalError(env, "Unable to get address of LoadLibraryA or GetProcAddress");
-    }
+    // All following APIs exist on Windows XP with SP2/Windows Server 2008
+    _GetModuleHandle = (GetModuleHandleFunc)GetModuleHandle;
+    _GetProcAddress = (GetProcAddressFunc)GetProcAddress;
+    _IsWow64Process = (IsWow64ProcessFunc)IsWow64Process;
 }
 
 
@@ -375,7 +370,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
     /*
      * Setup data to copy to target process
      */
-    data._LoadLibrary = _LoadLibrary;
+    data._GetModuleHandle = _GetModuleHandle;
     data._GetProcAddress = _GetProcAddress;
 
     strcpy(data.jvmLib, "jvm");
