@@ -29,6 +29,7 @@
 #include <windows.h>
 #include "J2D_GL/wglext.h"
 #include "OGLFuncMacros.h"
+#include <jdk_util.h>
 
 /**
  * Core WGL functions
