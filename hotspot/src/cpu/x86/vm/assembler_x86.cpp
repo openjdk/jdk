@@ -2317,7 +2317,7 @@ void Assembler::prefetchnta(Address src) {
 }
 
 void Assembler::prefetchr(Address src) {
-  NOT_LP64(assert(VM_Version::supports_3dnow(), "must support"));
+  NOT_LP64(assert(VM_Version::supports_3dnow_prefetch(), "must support"));
   InstructionMark im(this);
   prefetch_prefix(src);
   emit_byte(0x0D);
@@ -2349,7 +2349,7 @@ void Assembler::prefetcht2(Address src) {
 }
 
 void Assembler::prefetchw(Address src) {
-  NOT_LP64(assert(VM_Version::supports_3dnow(), "must support"));
+  NOT_LP64(assert(VM_Version::supports_3dnow_prefetch(), "must support"));
   InstructionMark im(this);
   prefetch_prefix(src);
   emit_byte(0x0D);
