@@ -2193,7 +2193,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
         // Use the pre-barrier to record the value in the referent field
         pre_barrier(false /* do_load */,
                     __ ctrl(),
-                    NULL /* obj */, NULL /* adr */, -1 /* alias_idx */, NULL /* val */, NULL /* val_type */,
+                    NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
                     pre_val /* pre_val */,
                     T_OBJECT);
 
@@ -5419,7 +5419,7 @@ bool LibraryCallKit::inline_reference_get() {
   // Use the pre-barrier to record the value in the referent field
   pre_barrier(false /* do_load */,
               control(),
-              NULL /* obj */, NULL /* adr */, -1 /* alias_idx */, NULL /* val */, NULL /* val_type */,
+              NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
               result /* pre_val */,
               T_OBJECT);
 
