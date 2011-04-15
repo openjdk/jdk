@@ -921,6 +921,10 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
     tty->cr();
   }
 
+  // invariant:   cp->symbol_at_put is preceded by a refcount increment (more usually a lookup)
+  name->increment_refcount();
+  signature->increment_refcount();
+
   constantPoolHandle cp;
   {
     constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
