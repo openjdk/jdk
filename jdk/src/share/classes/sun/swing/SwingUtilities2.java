@@ -270,11 +270,10 @@ public class SwingUtilities2 {
      */
     public static int getLeftSideBearing(JComponent c, FontMetrics fm,
                                          String string) {
-        int res = 0;
-        if (!string.isEmpty()) {
-            res = getLeftSideBearing(c, fm, string.charAt(0));
+        if ((string == null) || (string.length() == 0)) {
+            return 0;
         }
-        return res;
+        return getLeftSideBearing(c, fm, string.charAt(0));
     }
 
     /**
