@@ -369,10 +369,7 @@ IRT_ENTRY(void, InterpreterRuntime::throw_WrongMethodTypeException(JavaThread* t
   }
 
   // create exception
-  Symbol* java_lang_invoke_WrongMethodTypeException = vmSymbols::java_lang_invoke_WrongMethodTypeException();
-  if (AllowTransitionalJSR292)
-    java_lang_invoke_WrongMethodTypeException = SystemDictionaryHandles::WrongMethodTypeException_klass()->name();
-  THROW_MSG(java_lang_invoke_WrongMethodTypeException, message);
+  THROW_MSG(vmSymbols::java_lang_invoke_WrongMethodTypeException(), message);
 }
 IRT_END
 
