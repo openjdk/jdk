@@ -42,9 +42,20 @@ ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
   methodHandle callee(_callee->get_methodOop());
   // We catch all exceptions here that could happen in the method
   // handle compiler and stop the VM.
-  MethodHandleCompiler mhc(h, callee, is_invokedynamic, CATCH);
-  methodHandle m = mhc.compile(CATCH);
-  return CURRENT_ENV->get_object(m())->as_method();
+  MethodHandleCompiler mhc(h, callee, is_invokedynamic, THREAD);
+  if (!HAS_PENDING_EXCEPTION) {
+    methodHandle m = mhc.compile(THREAD);
+    if (!HAS_PENDING_EXCEPTION) {
+      return CURRENT_ENV->get_object(m())->as_method();
+    }
+  }
+  if (PrintMiscellaneous && (Verbose || WizardMode)) {
+    tty->print("*** ciMethodHandle::get_adapter => ");
+    PENDING_EXCEPTION->print();
+    tty->print("*** get_adapter (%s): ", is_invokedynamic ? "indy" : "mh"); ((ciObject*)this)->print(); //@@
+  }
+  CLEAR_PENDING_EXCEPTION;
+  return NULL;
 }
 
 

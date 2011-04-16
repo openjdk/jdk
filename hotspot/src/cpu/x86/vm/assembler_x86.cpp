@@ -2317,7 +2317,7 @@ void Assembler::prefetchnta(Address src) {
 }
 
 void Assembler::prefetchr(Address src) {
-  NOT_LP64(assert(VM_Version::supports_3dnow(), "must support"));
+  NOT_LP64(assert(VM_Version::supports_3dnow_prefetch(), "must support"));
   InstructionMark im(this);
   prefetch_prefix(src);
   emit_byte(0x0D);
@@ -2349,7 +2349,7 @@ void Assembler::prefetcht2(Address src) {
 }
 
 void Assembler::prefetchw(Address src) {
-  NOT_LP64(assert(VM_Version::supports_3dnow(), "must support"));
+  NOT_LP64(assert(VM_Version::supports_3dnow_prefetch(), "must support"));
   InstructionMark im(this);
   prefetch_prefix(src);
   emit_byte(0x0D);
@@ -7941,12 +7941,12 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
 #endif
   push(rax);                          // save rax,
   // addr may contain rsp so we will have to adjust it based on the push
-  // we just did
+  // we just did (and on 64 bit we do two pushes)
   // NOTE: 64bit seemed to have had a bug in that it did movq(addr, rax); which
   // stores rax into addr which is backwards of what was intended.
   if (addr.uses(rsp)) {
     lea(rax, addr);
-    pushptr(Address(rax, BytesPerWord));
+    pushptr(Address(rax, LP64_ONLY(2 *) BytesPerWord));
   } else {
     pushptr(addr);
   }
@@ -8391,6 +8391,17 @@ void MacroAssembler::load_heap_oop(Register dst, Address src) {
   if (UseCompressedOops) {
     movl(dst, src);
     decode_heap_oop(dst);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+// Doesn't do verfication, generates fixed size code
+void MacroAssembler::load_heap_oop_not_null(Register dst, Address src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, src);
+    decode_heap_oop_not_null(dst);
   } else
 #endif
     movptr(dst, src);

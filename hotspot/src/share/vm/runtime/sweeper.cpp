@@ -418,6 +418,11 @@ void NMethodSweeper::speculative_disconnect_nmethods(bool is_full) {
 // state of the code cache if it's requested.
 void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
   if (PrintMethodFlushing) {
+    stringStream s;
+    // Dump code cache state into a buffer before locking the tty,
+    // because log_state() will use locks causing lock conflicts.
+    CodeCache::log_state(&s);
+
     ttyLocker ttyl;
     tty->print("### sweeper: %s ", msg);
     if (format != NULL) {
@@ -426,10 +431,15 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
       tty->vprint(format, ap);
       va_end(ap);
     }
-    CodeCache::log_state(tty); tty->cr();
+    tty->print_cr(s.as_string());
   }
 
   if (LogCompilation && (xtty != NULL)) {
+    stringStream s;
+    // Dump code cache state into a buffer before locking the tty,
+    // because log_state() will use locks causing lock conflicts.
+    CodeCache::log_state(&s);
+
     ttyLocker ttyl;
     xtty->begin_elem("sweeper state='%s' traversals='" INTX_FORMAT "' ", msg, (intx)traversal_count());
     if (format != NULL) {
@@ -438,7 +448,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
       xtty->vprint(format, ap);
       va_end(ap);
     }
-    CodeCache::log_state(xtty);
+    xtty->print(s.as_string());
     xtty->stamp();
     xtty->end_elem();
   }

@@ -385,10 +385,18 @@ class OopAddress: public AddressLiteral {
 };
 
 class ExternalAddress: public AddressLiteral {
+ private:
+  static relocInfo::relocType reloc_for_target(address target) {
+    // Sometimes ExternalAddress is used for values which aren't
+    // exactly addresses, like the card table base.
+    // external_word_type can't be used for values in the first page
+    // so just skip the reloc in that case.
+    return external_word_Relocation::can_be_relocated(target) ? relocInfo::external_word_type : relocInfo::none;
+  }
 
-  public:
+ public:
 
-  ExternalAddress(address target) : AddressLiteral(target, relocInfo::external_word_type){}
+  ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(target)) {}
 
 };
 
@@ -1701,6 +1709,7 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst, Register src);
 
   void load_heap_oop(Register dst, Address src);
+  void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
 
   // Used for storing NULL. All other oop constants should be
