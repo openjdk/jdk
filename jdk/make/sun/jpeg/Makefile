@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,9 @@ ifeq ($(PLATFORM), linux)
   # Recommended way to avoid such warning is to declare the variable as
   # volatile to prevent the optimization. However, this approach does not
   # work because we have to declare all variables as volatile in result.
-
+ifndef CROSS_COMPILE_ARCH
   OTHER_CFLAGS += -Wno-clobbered
+endif
 endif
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk

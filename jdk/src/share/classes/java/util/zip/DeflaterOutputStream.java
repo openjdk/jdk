@@ -206,14 +206,9 @@ class DeflaterOutputStream extends FilterOutputStream {
             return;
         }
         if (!def.finished()) {
-            // Deflate no more than stride bytes at a time.  This avoids
-            // excess copying in deflateBytes (see Deflater.c)
-            int stride = buf.length;
-            for (int i = 0; i < len; i+= stride) {
-                def.setInput(b, off + i, Math.min(stride, len - i));
-                while (!def.needsInput()) {
-                    deflate();
-                }
+            def.setInput(b, off, len);
+            while (!def.needsInput()) {
+                deflate();
             }
         }
     }

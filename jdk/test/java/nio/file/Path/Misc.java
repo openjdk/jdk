@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 7029979
  * @summary Unit test for miscellenous java.nio.file.Path methods
  * @library ..
  */
 
 import java.nio.file.*;
+import static java.nio.file.LinkOption.*;
 import java.io.*;
 
 public class Misc {
@@ -96,65 +97,65 @@ public class Misc {
         final Path link = dir.resolve("link");
 
         /**
-         * Test: totRealPath(true) will access same file as toRealPath(false)
+         * Test: totRealPath() will access same file as toRealPath(NOFOLLOW_LINKS)
          */
-        assertTrue(Files.isSameFile(file.toRealPath(true), file.toRealPath(false)));
+        assertTrue(Files.isSameFile(file.toRealPath(), file.toRealPath(NOFOLLOW_LINKS)));
 
         /**
          * Test: toRealPath should fail if file does not exist
          */
         Path doesNotExist = dir.resolve("DoesNotExist");
         try {
-            doesNotExist.toRealPath(true);
+            doesNotExist.toRealPath();
             throw new RuntimeException("IOException expected");
         } catch (IOException expected) {
         }
         try {
-            doesNotExist.toRealPath(false);
+            doesNotExist.toRealPath(NOFOLLOW_LINKS);
             throw new RuntimeException("IOException expected");
         } catch (IOException expected) {
         }
 
         /**
-         * Test: toRealPath(true) should resolve links
+         * Test: toRealPath() should resolve links
          */
         if (supportsLinks) {
             Files.createSymbolicLink(link, file.toAbsolutePath());
-            assertTrue(link.toRealPath(true).equals(file.toRealPath(true)));
+            assertTrue(link.toRealPath().equals(file.toRealPath()));
             Files.delete(link);
         }
 
         /**
-         * Test: toRealPath(false) should not resolve links
+         * Test: toRealPath(NOFOLLOW_LINKS) should not resolve links
          */
         if (supportsLinks) {
             Files.createSymbolicLink(link, file.toAbsolutePath());
-            assertTrue(link.toRealPath(false).getFileName().equals(link.getFileName()));
+            assertTrue(link.toRealPath(NOFOLLOW_LINKS).getFileName().equals(link.getFileName()));
             Files.delete(link);
         }
 
         /**
-         * Test: toRealPath(false) with broken link
+         * Test: toRealPath(NOFOLLOW_LINKS) with broken link
          */
         if (supportsLinks) {
             Path broken = Files.createSymbolicLink(link, doesNotExist);
-            assertTrue(link.toRealPath(false).getFileName().equals(link.getFileName()));
+            assertTrue(link.toRealPath(NOFOLLOW_LINKS).getFileName().equals(link.getFileName()));
             Files.delete(link);
         }
 
         /**
          * Test: toRealPath should eliminate "."
          */
-        assertTrue(dir.resolve(".").toRealPath(true).equals(dir.toRealPath(true)));
-        assertTrue(dir.resolve(".").toRealPath(false).equals(dir.toRealPath(false)));
+        assertTrue(dir.resolve(".").toRealPath().equals(dir.toRealPath()));
+        assertTrue(dir.resolve(".").toRealPath(NOFOLLOW_LINKS).equals(dir.toRealPath(NOFOLLOW_LINKS)));
 
         /**
          * Test: toRealPath should eliminate ".." when it doesn't follow a
          *       symbolic link
          */
         Path subdir = Files.createDirectory(dir.resolve("subdir"));
-        assertTrue(subdir.resolve("..").toRealPath(true).equals(dir.toRealPath(true)));
-        assertTrue(subdir.resolve("..").toRealPath(false).equals(dir.toRealPath(false)));
+        assertTrue(subdir.resolve("..").toRealPath().equals(dir.toRealPath()));
+        assertTrue(subdir.resolve("..").toRealPath(NOFOLLOW_LINKS).equals(dir.toRealPath(NOFOLLOW_LINKS)));
         Files.delete(subdir);
 
         // clean-up

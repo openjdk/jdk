@@ -1064,8 +1064,6 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   // Cache parts in locals for easy
   PhaseIterGVN &igvn = phase->_igvn;
 
-  phase->C->print_method("Before beautify loops", 3);
-
   igvn.hash_delete(_head);      // Yank from hash before hacking edges
 
   // Check for multiple fall-in paths.  Peel off a landing pad if need be.
@@ -1547,6 +1545,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   ResourceMark rm;
 
   int old_progress = C->major_progress();
+  uint orig_worklist_size = _igvn._worklist.size();
 
   // Reset major-progress flag for the driver's heuristics
   C->clear_major_progress();
@@ -1610,6 +1609,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
   // Split shared headers and insert loop landing pads.
   // Do not bother doing this on the Root loop of course.
   if( !_verify_me && !_verify_only && _ltree_root->_child ) {
+    C->print_method("Before beautify loops", 3);
     if( _ltree_root->_child->beautify_loops( this ) ) {
       // Re-build loop tree!
       _ltree_root->_child = NULL;
@@ -1694,7 +1694,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool do_loop_pred) {
     for (int i = 0; i < old_progress; i++)
       C->set_major_progress();
     assert(C->unique() == unique, "verification mode made Nodes? ? ?");
-    assert(_igvn._worklist.size() == 0, "shouldn't push anything");
+    assert(_igvn._worklist.size() == orig_worklist_size, "shouldn't push anything");
     return;
   }
 

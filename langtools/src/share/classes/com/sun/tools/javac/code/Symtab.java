@@ -125,12 +125,11 @@ public class Symtab {
     public final Type stringBuilderType;
     public final Type cloneableType;
     public final Type serializableType;
-    public final Type transientMethodHandleType; // transient - 292
     public final Type methodHandleType;
-    public final Type transientPolymorphicSignatureType; // transient - 292
     public final Type polymorphicSignatureType;
     public final Type throwableType;
     public final Type errorType;
+    public final Type interruptedExceptionType;
     public final Type illegalArgumentExceptionType;
     public final Type exceptionType;
     public final Type runtimeExceptionType;
@@ -435,12 +434,11 @@ public class Symtab {
         cloneableType = enterClass("java.lang.Cloneable");
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
-        transientMethodHandleType = enterClass("java.dyn.MethodHandle"); // transient - 292
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
-        transientPolymorphicSignatureType = enterClass("java.dyn.MethodHandle$PolymorphicSignature"); // transient - 292
         polymorphicSignatureType = enterClass("java.lang.invoke.MethodHandle$PolymorphicSignature");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
+        interruptedExceptionType = enterClass("java.lang.InterruptedException");
         exceptionType = enterClass("java.lang.Exception");
         runtimeExceptionType = enterClass("java.lang.RuntimeException");
         classNotFoundExceptionType = enterClass("java.lang.ClassNotFoundException");
@@ -480,9 +478,9 @@ public class Symtab {
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
 
+        synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
-        synthesizeEmptyInterfaceIfMissing(transientPolymorphicSignatureType); // transient - 292
         synthesizeEmptyInterfaceIfMissing(polymorphicSignatureType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);

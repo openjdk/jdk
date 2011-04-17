@@ -334,7 +334,7 @@ mlib_image *mlib_ImageCreateSubimage(mlib_image *img,
   mlib_s32       width;                 /* for parent image */
   mlib_s32       height;                /* for parent image */
   mlib_s32       stride;
-  mlib_s32       bitoffset;
+  mlib_s32       bitoffset = 0;
   void           *data;
 
 /* sanity check */
@@ -423,7 +423,7 @@ mlib_image *mlib_ImageSetSubimage(mlib_image       *dst,
   mlib_s32   channels = src -> channels;
   mlib_s32   stride   = src -> stride;
   mlib_u8    *data    = src -> data;
-  mlib_s32   bitoffset;
+  mlib_s32   bitoffset = 0;
 
   data += y * stride;
 

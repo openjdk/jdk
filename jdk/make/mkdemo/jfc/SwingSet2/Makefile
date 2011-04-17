@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ DEMONAME = SwingSet2
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(CLOSED_SRC)/share/demo/jfc/$(DEMONAME)
-DEMO_TOPFILES   = ./README.txt
+DEMO_TOPFILES   = ./README.txt ./$(DEMONAME).html
 DEMO_MAINCLASS  = $(DEMONAME)
 DEMO_MANIFEST_ATTR = SplashScreen-Image: resources/images/splash.png
 DEMO_DESTDIR    = $(DEMODIR)/jfc/$(DEMONAME)

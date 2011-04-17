@@ -78,7 +78,7 @@
 /***************************************************************/
 #define DEF_VARS_MxN(type)                                      \
   GET_SRC_DST_PARAMETERS(type);                                 \
-  type     *sl, *sp, *dl, *dp;                                  \
+  type     *sl, *sp = NULL, *dl, *dp = NULL;                    \
   mlib_d64 *pbuff = buff;                                       \
   mlib_s32 i, j, c
 

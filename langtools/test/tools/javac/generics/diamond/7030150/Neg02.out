@@ -1,0 +1,3 @@
+Neg02.java:15:24: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg02.Foo), (compiler.misc.arg.length.mismatch)
+Neg02.java:16:24: compiler.err.cant.apply.symbol.1: kindname.constructor, Foo, T, java.lang.String, kindname.class, Neg02.Foo<X>, (compiler.misc.arg.length.mismatch)
+2 errors

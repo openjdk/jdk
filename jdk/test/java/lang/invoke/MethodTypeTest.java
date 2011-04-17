@@ -26,7 +26,7 @@
 /* @test
  * @summary unit tests for java.lang.invoke.MethodType
  * @compile MethodTypeTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.lang.invoke.MethodTypeTest
+ * @run junit/othervm test.java.lang.invoke.MethodTypeTest
  */
 
 package test.java.lang.invoke;

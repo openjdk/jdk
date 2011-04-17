@@ -241,7 +241,7 @@ class ComparableTimSort {
              * pivot < all in [left, start), so pivot belongs at left.  Note
              * that if there are elements equal to pivot, left points to the
              * first slot after them -- that's why this sort is stable.
-             * Slide elements over to make room to make room for pivot.
+             * Slide elements over to make room for pivot.
              */
             int n = start - left;  // The number of elements to move
             // Switch is just an optimization for arraycopy in default case

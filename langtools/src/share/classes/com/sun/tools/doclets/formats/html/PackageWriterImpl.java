@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,10 +115,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
         if (packageDoc.inlineTags().length > 0 && ! configuration.nocomment) {
-            HtmlTree p = new HtmlTree(HtmlTag.P);
-            p.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(packageDoc, p);
-            div.addContent(p);
+            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
+            subTitleDiv.addStyle(HtmlStyle.subTitle);
+            addSummaryComment(packageDoc, subTitleDiv);
+            div.addContent(subTitleDiv);
             Content space = getSpace();
             Content descLink = getHyperLink("", "package_description",
                     descriptionLabel, "", "");

@@ -115,7 +115,7 @@ Implementation-dependent behavior.
 Prior to 1.4, the helper threads were never terminated.
 <p>
 Starting with 1.4, the behavior has changed as a result of the fix for
-<a href="http://developer.java.sun.com/developer/bugParade/bugs/4030718.html">
+<a href="http://bugs.sun.com/view_bug.do?bug_id=4030718">
 4030718</a>. With the current implementation, AWT terminates all its
 helper threads allowing the application to exit cleanly when the
 following three conditions are true:
@@ -148,11 +148,11 @@ will exit cleanly in all cases. Two examples:
 <ul>
   <li> Other packages can create displayable components for internal
        needs and never make them undisplayable. See
-<a href="http://developer.java.sun.com/developer/bugParade/bugs/4515058.html">
+<a href="http://bugs.sun.com/view_bug.do?bug_id=4515058">
 4515058</a>,
-<a href="http://developer.java.sun.com/developer/bugParade/bugs/4671025.html">
+<a href="http://bugs.sun.com/view_bug.do?bug_id=4671025">
 4671025</a>, and
-<a href="http://developer.java.sun.com/developer/bugParade/bugs/4465537.html">
+<a href="http://bugs.sun.com/view_bug.do?bug_id=4465537">
 4465537</a>. 
   <li> Both Microsoft Windows and X11 allow an application to send native
        events to windows that belong to another application. With this

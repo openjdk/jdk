@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,20 +29,73 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.io.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.FileDialog;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JToolBar;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.Segment;
+import javax.swing.text.TextAction;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
 
-import javax.swing.text.*;
-import javax.swing.undo.*;
-import javax.swing.event.*;
-import javax.swing.*;
 
 /**
  * Sample application using the simple text editor component that
@@ -50,22 +103,24 @@ import javax.swing.*;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial")
 class Notepad extends JPanel {
 
     private static ResourceBundle resources;
-    private final static String EXIT_AFTER_PAINT = new String("-exit");
+    private final static String EXIT_AFTER_PAINT = "-exit";
     private static boolean exitAfterFirstPaint;
 
     static {
         try {
             resources = ResourceBundle.getBundle("resources.Notepad",
-                                                 Locale.getDefault());
+                    Locale.getDefault());
         } catch (MissingResourceException mre) {
             System.err.println("resources/Notepad.properties not found");
             System.exit(1);
         }
     }
 
+    @Override
     public void paintChildren(Graphics g) {
         super.paintChildren(g);
         if (exitAfterFirstPaint) {
@@ -73,17 +128,19 @@ class Notepad extends JPanel {
         }
     }
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     Notepad() {
         super(true);
 
-        // Force SwingSet to come up in the Cross Platform L&F
+        // Trying to set Nimbus look and feel
         try {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            // If you want the System L&F instead, comment out the above line and
-            // uncomment the following:
-            // UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception exc) {
-            System.err.println("Error loading L&F: " + exc);
+            for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
         }
 
         setBorder(BorderFactory.createEtchedBorder());
@@ -95,7 +152,7 @@ class Notepad extends JPanel {
         editor.getDocument().addUndoableEditListener(undoHandler);
 
         // install the command table
-        commands = new Hashtable();
+        commands = new HashMap<Object, Action>();
         Action[] actions = getActions();
         for (int i = 0; i < actions.length; i++) {
             Action a = actions[i];
@@ -109,15 +166,17 @@ class Notepad extends JPanel {
         try {
             String vpFlag = resources.getString("ViewportBackingStore");
             Boolean bs = Boolean.valueOf(vpFlag);
-            port.setBackingStoreEnabled(bs.booleanValue());
-        } catch (MissingResourceException mre) {
+            port.setScrollMode(bs.booleanValue()
+                    ? JViewport.BACKINGSTORE_SCROLL_MODE
+                    : JViewport.BLIT_SCROLL_MODE);
+        } catch (MissingResourceException ignored) {
             // just use the viewport default
         }
 
-        menuItems = new Hashtable();
+        menuItems = new HashMap<String, JMenuItem>();
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
-        panel.add("North",createToolbar());
+        panel.add("North", createToolbar());
         panel.add("Center", scroller);
         add("Center", panel);
         add("South", createStatusbar());
@@ -125,28 +184,28 @@ class Notepad extends JPanel {
 
     public static void main(String[] args) {
         try {
-        String vers = System.getProperty("java.version");
-        if (vers.compareTo("1.1.2") < 0) {
-            System.out.println("!!!WARNING: Swing must be run with a " +
-                               "1.1.2 or higher version VM!!!");
-        }
-        if (args.length > 0 && args[0].equals(EXIT_AFTER_PAINT)) {
-            exitAfterFirstPaint = true;
-        }
-        JFrame frame = new JFrame();
-        frame.setTitle(resources.getString("Title"));
-        frame.setBackground(Color.lightGray);
-        frame.getContentPane().setLayout(new BorderLayout());
-        Notepad notepad = new Notepad();
-        frame.getContentPane().add("Center", notepad);
-        frame.setJMenuBar(notepad.createMenubar());
-        frame.addWindowListener(new AppCloser());
-        frame.pack();
-        frame.setSize(500, 600);
-        frame.show();
+            if (args.length > 0 && args[0].equals(EXIT_AFTER_PAINT)) {
+                exitAfterFirstPaint = true;
+            }
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                public void run() {
+                    JFrame frame = new JFrame();
+                    frame.setTitle(resources.getString("Title"));
+                    frame.setBackground(Color.lightGray);
+                    frame.getContentPane().setLayout(new BorderLayout());
+                    Notepad notepad = new Notepad();
+                    frame.getContentPane().add("Center", notepad);
+                    frame.setJMenuBar(notepad.createMenubar());
+                    frame.addWindowListener(new AppCloser());
+                    frame.pack();
+                    frame.setSize(500, 600);
+                    frame.setVisible(true);
+                }
+            });
         } catch (Throwable t) {
-            System.out.println("uncaught exception: " + t);
-            t.printStackTrace();
+            Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE,
+                    "uncaught exception", t);
         }
     }
 
@@ -177,6 +236,7 @@ class Notepad extends JPanel {
         return editor;
     }
 
+
     /**
      * To shutdown when run as an application.  This is a
      * fairly lame implementation.   A more self-respecting
@@ -184,6 +244,8 @@ class Notepad extends JPanel {
      * was needed.
      */
     protected static final class AppCloser extends WindowAdapter {
+
+        @Override
         public void windowClosing(WindowEvent e) {
             System.exit(0);
         }
@@ -239,11 +301,11 @@ class Notepad extends JPanel {
      *  if one wasn't created.
      */
     protected JMenuItem getMenuItem(String cmd) {
-        return (JMenuItem) menuItems.get(cmd);
+        return menuItems.get(cmd);
     }
 
     protected Action getAction(String cmd) {
-        return (Action) commands.get(cmd);
+        return commands.get(cmd);
     }
 
     protected String getResourceString(String nm) {
@@ -328,10 +390,14 @@ class Notepad extends JPanel {
     protected JButton createToolbarButton(String key) {
         URL url = getResource(key + imageSuffix);
         JButton b = new JButton(new ImageIcon(url)) {
-            public float getAlignmentY() { return 0.5f; }
+
+            @Override
+            public float getAlignmentY() {
+                return 0.5f;
+            }
         };
         b.setRequestFocusEnabled(false);
-        b.setMargin(new Insets(1,1,1,1));
+        b.setMargin(new Insets(1, 1, 1, 1));
 
         String astr = getResourceString(key + actionSuffix);
         if (astr == null) {
@@ -360,15 +426,17 @@ class Notepad extends JPanel {
      * resource file.
      */
     protected String[] tokenize(String input) {
-        Vector v = new Vector();
+        List<String> v = new ArrayList<String>();
         StringTokenizer t = new StringTokenizer(input);
         String cmd[];
 
-        while (t.hasMoreTokens())
-            v.addElement(t.nextToken());
+        while (t.hasMoreTokens()) {
+            v.add(t.nextToken());
+        }
         cmd = new String[v.size()];
-        for (int i = 0; i < cmd.length; i++)
-            cmd[i] = (String) v.elementAt(i);
+        for (int i = 0; i < cmd.length; i++) {
+            cmd[i] = v.get(i);
+        }
 
         return cmd;
     }
@@ -416,13 +484,16 @@ class Notepad extends JPanel {
     }
 
     // Yarked from JMenu, ideally this would be public.
+
     private class ActionChangedListener implements PropertyChangeListener {
+
         JMenuItem menuItem;
 
         ActionChangedListener(JMenuItem mi) {
             super();
             this.menuItem = mi;
         }
+
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
             if (e.getPropertyName().equals(Action.NAME)) {
@@ -434,55 +505,47 @@ class Notepad extends JPanel {
             }
         }
     }
-
     private JTextComponent editor;
-    private Hashtable commands;
-    private Hashtable menuItems;
+    private Map<Object, Action> commands;
+    private Map<String, JMenuItem> menuItems;
     private JMenuBar menubar;
     private JToolBar toolbar;
     private JComponent status;
     private JFrame elementTreeFrame;
     protected ElementTreePanel elementTreePanel;
-
     protected FileDialog fileDialog;
-
     /**
      * Listener for the edits on the current document.
      */
     protected UndoableEditListener undoHandler = new UndoHandler();
-
     /** UndoManager that we add edits to. */
     protected UndoManager undo = new UndoManager();
-
     /**
      * Suffix applied to the key used in resource file
      * lookups for an image.
      */
     public static final String imageSuffix = "Image";
-
     /**
      * Suffix applied to the key used in resource file
      * lookups for a label.
      */
     public static final String labelSuffix = "Label";
-
     /**
      * Suffix applied to the key used in resource file
      * lookups for an action.
      */
     public static final String actionSuffix = "Action";
-
     /**
      * Suffix applied to the key used in resource file
      * lookups for tooltip text.
      */
     public static final String tipSuffix = "Tooltip";
-
     public static final String openAction = "open";
-    public static final String newAction  = "new";
+    public static final String newAction = "new";
     public static final String saveAction = "save";
     public static final String exitAction = "exit";
     public static final String showElementTreeAction = "showElementTree";
+
 
     class UndoHandler implements UndoableEditListener {
 
@@ -497,6 +560,7 @@ class Notepad extends JPanel {
         }
     }
 
+
     /**
      * FIXME - I'm not very useful yet
      */
@@ -507,17 +571,14 @@ class Notepad extends JPanel {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         }
 
+        @Override
         public void paint(Graphics g) {
             super.paint(g);
         }
-
     }
-
     // --- action implementations -----------------------------------
-
     private UndoAction undoAction = new UndoAction();
     private RedoAction redoAction = new RedoAction();
-
     /**
      * Actions defined by the Notepad class
      */
@@ -531,7 +592,9 @@ class Notepad extends JPanel {
         redoAction
     };
 
+
     class UndoAction extends AbstractAction {
+
         public UndoAction() {
             super("Undo");
             setEnabled(false);
@@ -541,26 +604,27 @@ class Notepad extends JPanel {
             try {
                 undo.undo();
             } catch (CannotUndoException ex) {
-                System.out.println("Unable to undo: " + ex);
-                ex.printStackTrace();
+                Logger.getLogger(UndoAction.class.getName()).log(Level.SEVERE,
+                        "Unable to undo", ex);
             }
             update();
             redoAction.update();
         }
 
         protected void update() {
-            if(undo.canUndo()) {
+            if (undo.canUndo()) {
                 setEnabled(true);
                 putValue(Action.NAME, undo.getUndoPresentationName());
-            }
-            else {
+            } else {
                 setEnabled(false);
                 putValue(Action.NAME, "Undo");
             }
         }
     }
 
+
     class RedoAction extends AbstractAction {
+
         public RedoAction() {
             super("Redo");
             setEnabled(false);
@@ -570,24 +634,24 @@ class Notepad extends JPanel {
             try {
                 undo.redo();
             } catch (CannotRedoException ex) {
-                System.out.println("Unable to redo: " + ex);
-                ex.printStackTrace();
+                Logger.getLogger(RedoAction.class.getName()).log(Level.SEVERE,
+                        "Unable to redo", ex);
             }
             update();
             undoAction.update();
         }
 
         protected void update() {
-            if(undo.canRedo()) {
+            if (undo.canRedo()) {
                 setEnabled(true);
                 putValue(Action.NAME, undo.getRedoPresentationName());
-            }
-            else {
+            } else {
                 setEnabled(false);
                 putValue(Action.NAME, "Redo");
             }
         }
     }
+
 
     class OpenAction extends NewAction {
 
@@ -595,6 +659,7 @@ class Notepad extends JPanel {
             super(openAction);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Frame frame = getFrame();
             JFileChooser chooser = new JFileChooser();
@@ -607,8 +672,9 @@ class Notepad extends JPanel {
             File f = chooser.getSelectedFile();
             if (f.isFile() && f.canRead()) {
                 Document oldDoc = getEditor().getDocument();
-                if(oldDoc != null)
+                if (oldDoc != null) {
                     oldDoc.removeUndoableEditListener(undoHandler);
+                }
                 if (elementTreePanel != null) {
                     elementTreePanel.setEditor(null);
                 }
@@ -624,6 +690,7 @@ class Notepad extends JPanel {
             }
         }
     }
+
 
     class SaveAction extends AbstractAction {
 
@@ -647,6 +714,7 @@ class Notepad extends JPanel {
         }
     }
 
+
     class NewAction extends AbstractAction {
 
         NewAction() {
@@ -659,8 +727,9 @@ class Notepad extends JPanel {
 
         public void actionPerformed(ActionEvent e) {
             Document oldDoc = getEditor().getDocument();
-            if(oldDoc != null)
+            if (oldDoc != null) {
                 oldDoc.removeUndoableEditListener(undoHandler);
+            }
             getEditor().setDocument(new PlainDocument());
             getEditor().getDocument().addUndoableEditListener(undoHandler);
             resetUndoManager();
@@ -668,6 +737,7 @@ class Notepad extends JPanel {
             revalidate();
         }
     }
+
 
     /**
      * Really lame implementation of an exit command
@@ -682,6 +752,7 @@ class Notepad extends JPanel {
             System.exit(0);
         }
     }
+
 
     /**
      * Action that brings up a JFrame with a JTree showing the structure
@@ -698,18 +769,19 @@ class Notepad extends JPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if(elementTreeFrame == null) {
+            if (elementTreeFrame == null) {
                 // Create a frame containing an instance of
                 // ElementTreePanel.
                 try {
-                    String    title = resources.getString
-                                        ("ElementTreeFrameTitle");
+                    String title = resources.getString("ElementTreeFrameTitle");
                     elementTreeFrame = new JFrame(title);
                 } catch (MissingResourceException mre) {
                     elementTreeFrame = new JFrame();
                 }
 
                 elementTreeFrame.addWindowListener(new WindowAdapter() {
+
+                    @Override
                     public void windowClosing(WindowEvent weeee) {
                         elementTreeFrame.setVisible(false);
                     }
@@ -721,9 +793,10 @@ class Notepad extends JPanel {
                 fContentPane.add(elementTreePanel);
                 elementTreeFrame.pack();
             }
-            elementTreeFrame.show();
+            elementTreeFrame.setVisible(true);
         }
     }
+
 
     /**
      * Thread to load a file into the text storage model
@@ -736,6 +809,7 @@ class Notepad extends JPanel {
             this.doc = doc;
         }
 
+        @Override
         public void run() {
             try {
                 // initialize the statusbar
@@ -751,22 +825,22 @@ class Notepad extends JPanel {
                 char[] buff = new char[4096];
                 int nch;
                 while ((nch = in.read(buff, 0, buff.length)) != -1) {
-                    doc.insertString(doc.getLength(), new String(buff, 0, nch), null);
+                    doc.insertString(doc.getLength(), new String(buff, 0, nch),
+                            null);
                     progress.setValue(progress.getValue() + nch);
                 }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 final String msg = e.getMessage();
                 SwingUtilities.invokeLater(new Runnable() {
+
                     public void run() {
                         JOptionPane.showMessageDialog(getFrame(),
                                 "Could not open file: " + msg,
                                 "Error opening file",
                                 JOptionPane.ERROR_MESSAGE);
-            }
+                    }
                 });
-            }
-            catch (BadLocationException e) {
+            } catch (BadLocationException e) {
                 System.err.println(e.getMessage());
             }
             doc.addUndoableEditListener(undoHandler);
@@ -778,21 +852,23 @@ class Notepad extends JPanel {
 
             if (elementTreePanel != null) {
                 SwingUtilities.invokeLater(new Runnable() {
+
                     public void run() {
                         elementTreePanel.setEditor(getEditor());
                     }
                 });
             }
         }
-
         Document doc;
         File f;
     }
+
 
     /**
      * Thread to save a document to file
      */
     class FileSaver extends Thread {
+
         Document doc;
         File f;
 
@@ -802,13 +878,15 @@ class Notepad extends JPanel {
             this.doc = doc;
         }
 
+        @Override
+        @SuppressWarnings("SleepWhileHoldingLock")
         public void run() {
             try {
                 // initialize the statusbar
                 status.removeAll();
                 JProgressBar progress = new JProgressBar();
                 progress.setMinimum(0);
-                progress.setMaximum((int) doc.getLength());
+                progress.setMaximum(doc.getLength());
                 status.add(progress);
                 status.revalidate();
 
@@ -827,24 +905,25 @@ class Notepad extends JPanel {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Logger.getLogger(FileSaver.class.getName()).log(
+                                Level.SEVERE,
+                                null, e);
                     }
                 }
                 out.flush();
                 out.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 final String msg = e.getMessage();
                 SwingUtilities.invokeLater(new Runnable() {
+
                     public void run() {
                         JOptionPane.showMessageDialog(getFrame(),
                                 "Could not save file: " + msg,
                                 "Error saving file",
                                 JOptionPane.ERROR_MESSAGE);
-            }
+                    }
                 });
-            }
-            catch (BadLocationException e) {
+            } catch (BadLocationException e) {
                 System.err.println(e.getMessage());
             }
             // we are done... get rid of progressbar

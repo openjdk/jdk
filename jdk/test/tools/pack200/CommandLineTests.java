@@ -120,9 +120,9 @@ public class CommandLineTests {
             // make a backup copy for re-use
             File bakFile = new File(f.getName() + ".bak");
             if (!bakFile.exists()) {  // backup
-                Utils.copyFile(f.getAbsoluteFile(), bakFile.getAbsoluteFile());
+                Utils.copyFile(f, bakFile);
             } else {  // restore
-                Utils.copyFile(bakFile.getAbsoluteFile(), f.getAbsoluteFile());
+                Utils.copyFile(bakFile, f);
             }
             cmdsList.clear();
             cmdsList.add(Utils.getPack200Cmd());
