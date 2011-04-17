@@ -1924,7 +1924,7 @@ class CommandLineFlags {
   experimental(intx, WorkStealingSleepMillis, 1,                            \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  experimental(uintx, WorkStealingYieldsBeforeSleep, 1000,                  \
+  experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
   experimental(uintx, WorkStealingHardSpins, 4096,                          \
@@ -3718,13 +3718,7 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, AllowTransitionalJSR292, true,                         \
-          "recognize pre-PFD formats of invokedynamic")                     \
-                                                                            \
-  experimental(bool, PreferTransitionalJSR292, false,                       \
-          "prefer pre-PFD APIs on boot class path, if they exist")          \
-                                                                            \
-  experimental(bool, AllowInvokeForInvokeGeneric, false,                    \
+  experimental(bool, AllowInvokeGeneric, true,                              \
           "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
           "as equivalent methods")                                          \
                                                                             \

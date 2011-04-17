@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Varning: <embed>-taggen kr\u00E4ver ett h\u00F6jdattribut."},
             {"appletviewer.parse.warning.embed.requireswidth", "Varning: <embed>-taggen kr\u00E4ver ett breddattribut."},
             {"appletviewer.parse.warning.appnotLongersupported", "Varning: <app>-taggen st\u00F6ds inte l\u00E4ngre, anv\u00E4nd <applet> ist\u00E4llet:"},
-            {"appletviewer.usage", "Syntax: URL:er f\u00F6r appletviewer-<alternativ>.\n\nF\u00F6ljande <alternativ> finns:\n  -debug                  Startar appletvisning i Java-fels\u00F6kningen\n  -encoding <kodning>    Anger teckenkodning  som anv\u00E4nds i HTML-filer\n  -J<k\u00F6rningsflagga>        \u00D6verf\u00F6r argument till Java-tolkningen\n\nAlternativet -J \u00E4r inte standard och kan \u00E4ndras utan f\u00F6reg\u00E5ende meddelande."},
+            {"appletviewer.usage", "Syntax: appletviewer <alternativ> url:er \n\nd\u00E4r <alternativ> inkluderar:\n  -debug                  Startar appletvisning i Java-fels\u00F6kningen\n  -encoding <kodning>    Anger teckenkodning  som anv\u00E4nds i HTML-filer\n  -J<k\u00F6rningsflagga>        \u00D6verf\u00F6r argument till Java-tolkningen\n\nAlternativet -J \u00E4r inte standard och kan \u00E4ndras utan f\u00F6reg\u00E5ende meddelande."},
             {"appletviewer.main.err.unsupportedopt", "Alternativ som inte st\u00F6ds: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Ok\u00E4nt argument: {0}"},
             {"appletviewer.main.err.dupoption", "Duplicerat alternativ: {0}"},
@@ -103,7 +103,6 @@ public class MsgAppletViewer_sv extends ListResourceBundle {
             {"appletclassloader.fileexception", "{0} undantag vid l\u00E4sning: {1}"},
             {"appletclassloader.filedeath", "{0} avslutad vid l\u00E4sning: {1}"},
             {"appletclassloader.fileerror", "{0} fel vid l\u00E4sning: {1}"},
-            {"appletclassloader.findclass.verbose.findclass", "{0} hittar klass {1}"},
             {"appletclassloader.findclass.verbose.openstream", "\u00D6ppnar str\u00F6m till: {0} f\u00F6r h\u00E4mtning av {1}"},
             {"appletclassloader.getresource.verbose.forname", "AppletClassLoader.getResource f\u00F6r namnet: {0}"},
             {"appletclassloader.getresource.verbose.found", "Hittade resursen: {0} som systemresurs"},

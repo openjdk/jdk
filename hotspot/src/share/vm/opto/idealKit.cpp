@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,16 @@
 const uint IdealKit::first_var = TypeFunc::Parms + 1;
 
 //----------------------------IdealKit-----------------------------------------
-IdealKit::IdealKit(PhaseGVN &gvn, Node* control, Node* mem, bool delay_all_transforms, bool has_declarations) :
-  _gvn(gvn), C(gvn.C) {
-  _initial_ctrl = control;
-  _initial_memory = mem;
+IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarations) :
+  _gvn(gkit->gvn()), C(gkit->C) {
+  _initial_ctrl = gkit->control();
+  _initial_memory = gkit->merged_memory();
+  _initial_i_o = gkit->i_o();
   _delay_all_transforms = delay_all_transforms;
   _var_ct = 0;
   _cvstate = NULL;
   // We can go memory state free or else we need the entire memory state
-  assert(mem == NULL || mem->Opcode() == Op_MergeMem, "memory must be pre-split");
+  assert(_initial_memory == NULL || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
   int init_size = 5;
   _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
   _delay_transform  = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
@@ -54,6 +55,13 @@ IdealKit::IdealKit(PhaseGVN &gvn, Node* control, Node* mem, bool delay_all_trans
   if (!has_declarations) {
      declarations_done();
   }
+}
+
+//----------------------------sync_kit-----------------------------------------
+void IdealKit::sync_kit(GraphKit* gkit) {
+  set_all_memory(gkit->merged_memory());
+  set_i_o(gkit->i_o());
+  set_ctrl(gkit->control());
 }
 
 //-------------------------------if_then-------------------------------------
@@ -156,16 +164,14 @@ void IdealKit::end_if() {
 // onto the stack.
 void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, BoolTest::mask relop, Node* limit, float prob, float cnt) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new loop");
-
-  // Sync IdealKit and graphKit.
-  gkit->set_all_memory(this->merged_memory());
-  gkit->set_control(this->ctrl());
-  // Add loop predicate.
-  gkit->add_predicate(nargs);
-  // Update IdealKit memory.
-  this->set_all_memory(gkit->merged_memory());
-  this->set_ctrl(gkit->control());
-
+  if (UseLoopPredicate) {
+    // Sync IdealKit and graphKit.
+    gkit->sync_kit(*this);
+    // Add loop predicate.
+    gkit->add_predicate(nargs);
+    // Update IdealKit memory.
+    sync_kit(gkit);
+  }
   set(iv, init);
   Node* head = make_label(1);
   bind(head);
@@ -280,6 +286,7 @@ void IdealKit::declarations_done() {
   _cvstate = new_cvstate();   // initialize current cvstate
   set_ctrl(_initial_ctrl);    // initialize control in current cvstate
   set_all_memory(_initial_memory);// initialize memory in current cvstate
+  set_i_o(_initial_i_o);      // initialize i_o in current cvstate
   DEBUG_ONLY(_state->push(BlockS));
 }
 
@@ -421,6 +428,9 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
   // Get the region for the join state
   Node* join_region = join->in(TypeFunc::Control);
   assert(join_region != NULL, "join region must exist");
+  if (join->in(TypeFunc::I_O) == NULL ) {
+    join->set_req(TypeFunc::I_O,  merging->in(TypeFunc::I_O));
+  }
   if (join->in(TypeFunc::Memory) == NULL ) {
     join->set_req(TypeFunc::Memory,  merging->in(TypeFunc::Memory));
     return;
@@ -467,6 +477,20 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
       mms.set_memory(phi);
     }
   }
+
+  Node* join_io    = join->in(TypeFunc::I_O);
+  Node* merging_io = merging->in(TypeFunc::I_O);
+  if (join_io != merging_io) {
+    PhiNode* phi;
+    if (join_io->is_Phi() && join_io->as_Phi()->region() == join_region) {
+      phi = join_io->as_Phi();
+    } else {
+      phi = PhiNode::make(join_region, join_io, Type::ABIO);
+      phi = (PhiNode*) delay_transform(phi);
+      join->set_req(TypeFunc::I_O, phi);
+    }
+    phi->set_req(slot, merging_io);
+  }
 }
 
 
@@ -477,7 +501,8 @@ void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
                               const char *leaf_name,
                               Node* parm0,
                               Node* parm1,
-                              Node* parm2) {
+                              Node* parm2,
+                              Node* parm3) {
 
   // We only handle taking in RawMem and modifying RawMem
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;
@@ -498,6 +523,55 @@ void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
   if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
+  if (parm3 != NULL)  call->init_req(TypeFunc::Parms+3, parm3);
+
+  // Node *c = _gvn.transform(call);
+  call = (CallNode *) _gvn.transform(call);
+  Node *c = call; // dbx gets confused with call call->dump()
+
+  // Slow leaf call has no side-effects, sets few values
+
+  set_ctrl(transform( new (C, 1) ProjNode(call,TypeFunc::Control) ));
+
+  // Make memory for the call
+  Node* mem = _gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory) );
+
+  // Set the RawPtr memory state only.
+  set_memory(mem, adr_idx);
+
+  assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
+         "call node must be constructed correctly");
+}
+
+
+void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
+                              address slow_call,
+                              const char *leaf_name,
+                              const TypePtr* adr_type,
+                              Node* parm0,
+                              Node* parm1,
+                              Node* parm2,
+                              Node* parm3) {
+
+  // We only handle taking in RawMem and modifying RawMem
+  uint adr_idx = C->get_alias_index(adr_type);
+
+  // Slow-path leaf call
+  int size = slow_call_type->domain()->cnt();
+  CallNode *call =  (CallNode*)new (C, size) CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
+
+  // Set fixed predefined input arguments
+  call->init_req( TypeFunc::Control, ctrl() );
+  call->init_req( TypeFunc::I_O    , top() )     ;   // does no i/o
+  // Narrow memory as only memory input
+  call->init_req( TypeFunc::Memory , memory(adr_idx));
+  call->init_req( TypeFunc::FramePtr, top() /* frameptr() */ );
+  call->init_req( TypeFunc::ReturnAdr, top() );
+
+  if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
+  if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
+  if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
+  if (parm3 != NULL)  call->init_req(TypeFunc::Parms+3, parm3);
 
   // Node *c = _gvn.transform(call);
   call = (CallNode *) _gvn.transform(call);

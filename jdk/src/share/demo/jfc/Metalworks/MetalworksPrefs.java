@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,50 +29,70 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.metal.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTabbedPane;
+import javax.swing.UIManager;
+import javax.swing.border.TitledBorder;
 
 
 /**
-  * This is dialog which allows users to choose preferences
-  *
-  * @author Steve Wilson
-  */
-public class MetalworksPrefs extends JDialog {
+ * This is dialog which allows users to choose preferences
+ *
+ * @author Steve Wilson
+ * @author Alexander Kouznetsov
+ */
+@SuppressWarnings("serial")
+public final class MetalworksPrefs extends JDialog {
 
     public MetalworksPrefs(JFrame f) {
         super(f, "Preferences", true);
         JPanel container = new JPanel();
-        container.setLayout( new BorderLayout() );
+        container.setLayout(new BorderLayout());
 
         JTabbedPane tabs = new JTabbedPane();
         JPanel filters = buildFilterPanel();
         JPanel conn = buildConnectingPanel();
-        tabs.addTab( "Filters", null, filters );
-        tabs.addTab( "Connecting", null, conn );
+        tabs.addTab("Filters", null, filters);
+        tabs.addTab("Connecting", null, conn);
 
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout ( new FlowLayout(FlowLayout.RIGHT) );
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         JButton cancel = new JButton("Cancel");
         cancel.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   CancelPressed();
-                               }});
-        buttonPanel.add( cancel );
+
+            public void actionPerformed(ActionEvent e) {
+                CancelPressed();
+            }
+        });
+        buttonPanel.add(cancel);
         JButton ok = new JButton("OK");
         ok.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   OKPressed();
-                               }});
-        buttonPanel.add( ok );
+
+            public void actionPerformed(ActionEvent e) {
+                OKPressed();
+            }
+        });
+        buttonPanel.add(ok);
         getRootPane().setDefaultButton(ok);
 
         container.add(tabs, BorderLayout.CENTER);
@@ -85,12 +105,12 @@ public class MetalworksPrefs extends JDialog {
 
     public JPanel buildFilterPanel() {
         JPanel filters = new JPanel();
-        filters.setLayout( new GridLayout(1, 0) );
+        filters.setLayout(new GridLayout(1, 0));
 
         JPanel spamPanel = new JPanel();
 
         spamPanel.setLayout(new ColumnLayout());
-        spamPanel.setBorder( new TitledBorder("Spam") );
+        spamPanel.setBorder(new TitledBorder("Spam"));
         ButtonGroup spamGroup = new ButtonGroup();
         JRadioButton file = new JRadioButton("File in Spam Folder");
         JRadioButton delete = new JRadioButton("Auto Delete");
@@ -106,7 +126,7 @@ public class MetalworksPrefs extends JDialog {
 
         JPanel autoRespond = new JPanel();
         autoRespond.setLayout(new ColumnLayout());
-        autoRespond.setBorder( new TitledBorder("Auto Response") );
+        autoRespond.setBorder(new TitledBorder("Auto Response"));
 
         ButtonGroup respondGroup = new ButtonGroup();
         JRadioButton none = new JRadioButton("None");
@@ -129,10 +149,10 @@ public class MetalworksPrefs extends JDialog {
 
     public JPanel buildConnectingPanel() {
         JPanel connectPanel = new JPanel();
-        connectPanel.setLayout( new ColumnLayout() );
+        connectPanel.setLayout(new ColumnLayout());
 
         JPanel protoPanel = new JPanel();
-        JLabel protoLabel = new JLabel ("Protocol");
+        JLabel protoLabel = new JLabel("Protocol");
         JComboBox protocol = new JComboBox();
         protocol.addItem("SMTP");
         protocol.addItem("IMAP");
@@ -141,7 +161,7 @@ public class MetalworksPrefs extends JDialog {
         protoPanel.add(protocol);
 
         JPanel attachmentPanel = new JPanel();
-        JLabel attachmentLabel = new JLabel ("Attachments");
+        JLabel attachmentLabel = new JLabel("Attachments");
         JComboBox attach = new JComboBox();
         attach.addItem("Download Always");
         attach.addItem("Ask size > 1 Meg");
@@ -152,7 +172,7 @@ public class MetalworksPrefs extends JDialog {
 
         JCheckBox autoConn = new JCheckBox("Auto Connect");
         JCheckBox compress = new JCheckBox("Use Compression");
-        autoConn.setSelected( true );
+        autoConn.setSelected(true);
 
         connectPanel.add(protoPanel);
         connectPanel.add(attachmentPanel);
@@ -161,18 +181,16 @@ public class MetalworksPrefs extends JDialog {
         return connectPanel;
     }
 
-
-
     protected void centerDialog() {
         Dimension screenSize = this.getToolkit().getScreenSize();
         Dimension size = this.getSize();
-        screenSize.height = screenSize.height/2;
-        screenSize.width = screenSize.width/2;
-        size.height = size.height/2;
-        size.width = size.width/2;
+        screenSize.height = screenSize.height / 2;
+        screenSize.width = screenSize.width / 2;
+        size.height = size.height / 2;
+        size.width = size.width / 2;
         int y = screenSize.height - size.height;
         int x = screenSize.width - size.width;
-        this.setLocation(x,y);
+        this.setLocation(x, y);
     }
 
     public void CancelPressed() {
@@ -182,52 +200,54 @@ public class MetalworksPrefs extends JDialog {
     public void OKPressed() {
         this.setVisible(false);
     }
-
 }
+
 
 class ColumnLayout implements LayoutManager {
 
-  int xInset = 5;
-  int yInset = 5;
-  int yGap = 2;
+    int xInset = 5;
+    int yInset = 5;
+    int yGap = 2;
 
-  public void addLayoutComponent(String s, Component c) {}
+    public void addLayoutComponent(String s, Component c) {
+    }
 
-  public void layoutContainer(Container c) {
-      Insets insets = c.getInsets();
-      int height = yInset + insets.top;
+    public void layoutContainer(Container c) {
+        Insets insets = c.getInsets();
+        int height = yInset + insets.top;
 
-      Component[] children = c.getComponents();
-      Dimension compSize = null;
-      for (int i = 0; i < children.length; i++) {
-          compSize = children[i].getPreferredSize();
-          children[i].setSize(compSize.width, compSize.height);
-          children[i].setLocation( xInset + insets.left, height);
-          height += compSize.height + yGap;
-      }
+        Component[] children = c.getComponents();
+        Dimension compSize = null;
+        for (Component child : children) {
+            compSize = child.getPreferredSize();
+            child.setSize(compSize.width, compSize.height);
+            child.setLocation(xInset + insets.left, height);
+            height += compSize.height + yGap;
+        }
 
-  }
+    }
 
-  public Dimension minimumLayoutSize(Container c) {
-      Insets insets = c.getInsets();
-      int height = yInset + insets.top;
-      int width = 0 + insets.left + insets.right;
+    public Dimension minimumLayoutSize(Container c) {
+        Insets insets = c.getInsets();
+        int height = yInset + insets.top;
+        int width = 0 + insets.left + insets.right;
 
-      Component[] children = c.getComponents();
-      Dimension compSize = null;
-      for (int i = 0; i < children.length; i++) {
-          compSize = children[i].getPreferredSize();
-          height += compSize.height + yGap;
-          width = Math.max(width, compSize.width + insets.left + insets.right + xInset*2);
-      }
-      height += insets.bottom;
-      return new Dimension( width, height);
-  }
+        Component[] children = c.getComponents();
+        Dimension compSize = null;
+        for (Component child : children) {
+            compSize = child.getPreferredSize();
+            height += compSize.height + yGap;
+            width = Math.max(width, compSize.width + insets.left + insets.right + xInset
+                    * 2);
+        }
+        height += insets.bottom;
+        return new Dimension(width, height);
+    }
 
-  public Dimension preferredLayoutSize(Container c) {
-      return minimumLayoutSize(c);
-  }
+    public Dimension preferredLayoutSize(Container c) {
+        return minimumLayoutSize(c);
+    }
 
-  public void removeLayoutComponent(Component c) {}
-
+    public void removeLayoutComponent(Component c) {
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.beans.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 
 /**
-  * This class listens for UISwitches, and updates a given component.
-  *
-  * @author Steve Wilson
-  */
+ * This class listens for UISwitches, and updates a given component.
+ *
+ * @author Steve Wilson
+ * @author Alexander Kouznetsov
+ */
 public class UISwitchListener implements PropertyChangeListener {
+
     JComponent componentToSwitch;
 
     public UISwitchListener(JComponent c) {

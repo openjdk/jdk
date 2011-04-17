@@ -1,0 +1,232 @@
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# SE-Embedded Reduced JRE targets
+#
+ifdef JAVASE_EMBEDDED
+
+reduced-image-jre reduced-headless-image-jre ::
+	@$(ECHO) ">>>Making "$@" @ `$(DATE)` ..."
+
+# Add the reduced-jre images as pre-reqs. These will be processed last
+images:: reduced-image-jre reduced-headless-image-jre
+
+
+######################################################
+# Create the headless rt.jar
+######################################################
+
+NOT_HEADLESS_RT_JAR_LIST = $(ABS_TEMPDIR)/not_hl_rt_jar.list
+HEADLESS_RT_JAR_FILELIST=$(JARFILELISTS_TEMPDIR)/hl_rt_jar_list
+TOTAL_HEADLESS_JAR_FILELIST=$(REORDER_TEMPDIR)/hl_file_list
+HEADLESS_CLASSLIST=$(ABS_TEMPDIR)/headless_classlist
+
+# Add the jar file directories that we don't want in the
+# headless JRE.  If you want to remove most classes in a
+# directory, put the directory in the NOT_HEADLESS_RT_JAR_LIST
+# and put the individual classes you want to keep in the 
+# HEADLESS_CLASSLIST file. 
+$(NOT_HEADLESS_RT_JAR_LIST): $(NOT_RT_JAR_LIST)
+	$(RM) $(HEADLESS_CLASSLIST)
+	$(RM) $(NOT_HEADLESS_RT_JAR_LIST)
+	$(CP) $(NOT_RT_JAR_LIST) $(NOT_HEADLESS_RT_JAR_LIST)
+	$(ECHO) "sun/awt/motif/" >> $@
+	$(ECHO) "sun/awt/X11/" >> $@
+	$(ECHO) "sun/applet/" >> $@
+	$(ECHO) "sun/java2d/opengl/" >> $@
+	$(ECHO) "com/sun/java/swing/plaf/" >> $@
+	$(ECHO) "sun/awt/motif/MFontConfiguration" >$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/applet/AppContextCreator" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/applet/AppletAudioClip" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXSurfaceData" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXSurfaceData"\$$"GLXOffScreenSurfaceData" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXVolatileSurfaceManager" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/OGLSurfaceData" >>$(HEADLESS_CLASSLIST)
+
+$(TOTAL_HEADLESS_JAR_FILELIST): $(JARREORDER_JARFILE) $(NOT_HEADLESS_RT_JAR_LIST)
+	$(prep-target)
+	$(RM) $@.temp
+	$(CD) $(CLASSBINDIR) ; \
+		$(BOOT_JAVA_CMD) -jar $(JARREORDER_JARFILE) \
+		-o  $@.temp $(HEADLESS_CLASSLIST) $(NOT_HEADLESS_RT_JAR_LIST)  .
+	$(MV) $@.temp $@
+	@$(CD) $(CLASSBINDIR); $(java-vm-cleanup)
+
+# Create the headless rt.jar file list & non-class files list
+MakeHeadlessJarFileList: $(TOTAL_HEADLESS_JAR_FILELIST) $(JARSPLIT_JARFILE)
+	@$(RM) $(HEADLESS_RT_JAR_FILELIST) $(RES_JAR_FILELIST)
+	$(BOOT_JAVA_CMD) -jar $(JARSPLIT_JARFILE) $(TOTAL_HEADLESS_JAR_FILELIST) \
+		-o  $(HEADLESS_RT_JAR_FILELIST) $(RES_JAR_FILELIST)
+	@$(java-vm-cleanup)
+
+# Create headless rt.jar
+HL_RT_JAR=$(ABS_TEMPDIR)/rt-hl-orig.jar
+$(HL_RT_JAR): MakeHeadlessJarFileList $(JAR_MANIFEST_FILE)
+	$(prep-target)
+	$(CD) $(CLASSBINDIR) ; \
+		$(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ @$(HEADLESS_RT_JAR_FILELIST) \
+		 $(JAR_JFLAGS)
+	@$(CD) $(CLASSBINDIR); $(java-vm-cleanup)
+
+
+#
+# Produce a reduced Headful JRE for Embedded Devices
+#
+# The deployment binaries are added during the deployment build process
+#
+
+# Binaries that don't get included in reduced jre image bin directory
+NOT_REDUCEDJRE_BIN = \
+ java_vm \
+ kinit \
+ klist \
+ ktab \
+ orbd \
+ policytool \
+ rmid \
+ rmiregistry \
+ servertool \
+ tnameserv \
+ pack200 \
+ unpack200
+
+# jars/resources/libs that don't get included in reduced jre image lib directory
+NOT_REDUCEDJRE_LIB = \
+ charsets.jar \
+ ext/dnsns.jar \
+ ext/localedata.jar \
+ $(LIBARCH)/client/classes.jsa \
+ $(LIBARCH)/libjavaplugin_jni.so \
+ $(LIBARCH)/libjavaplugin_nscp_gcc29.so \
+ $(LIBARCH)/libjavaplugin_nscp.so \
+ $(LIBARCH)/libjavaplugin_oji.so
+
+
+ifeq ($(PLATFORM), linux)
+  STRIP_OPTS = --strip-unneeded
+else
+  STRIP_OPTS = -x
+endif
+
+
+reduced-image-jre::
+	@$(ECHO) Starting to Produce Reduced JRE
+	@#
+	@# First make a copy of the full JRE
+	@#
+	$(RM) -r $(JRE_REDUCED_IMAGE_DIR)
+	$(MKDIR) -p $(JRE_REDUCED_IMAGE_DIR)
+	$(CD) $(JRE_IMAGE_DIR); \
+	    $(TAR) cf - . | ($(CD) $(JRE_REDUCED_IMAGE_DIR); $(TAR) xf - ); 
+
+	@# strip the main .so files
+	$(STRIP) $(STRIP_OPTS) $(JRE_REDUCED_IMAGE_DIR)/lib/$(LIBARCH)/client/libjvm.so
+ifndef BUILD_CLIENT_ONLY
+	$(STRIP) $(STRIP_OPTS) $(JRE_REDUCED_IMAGE_DIR)/lib/$(LIBARCH)/server/libjvm.so
+endif
+
+	@#
+	@# Remove all of the files that are not needed for the
+	@# reduced JRE
+	@#
+	for l in $(NOT_REDUCEDJRE_BIN) ; do \
+	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/bin/$$l ; \
+	done
+	for l in $(NOT_REDUCEDJRE_LIB) ; do \
+	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/lib/$$l ; \
+	done
+
+	@# Remove misc. other files
+	$(RM) -r $(JRE_REDUCED_IMAGE_DIR)/man
+	$(RM) -f $(JRE_REDUCED_IMAGE_DIR)/CHANGES
+
+	@$(ECHO) Done Creating Reduced JRE
+
+#
+# Produce a reduced Headless JRE
+#
+reduced-headless-image-jre:: $(RT_JAR) $(RESOURCES_JAR) $(BUILD_META_INDEX) $(HL_RT_JAR)
+	@$(ECHO) Starting to Produce Reduced Headless JRE
+	@#
+	@# First make a copy of the reduced JRE we just built
+	@#
+	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)
+	$(MKDIR) -p $(JRE_REDUCED_HEADLESS_IMAGE_DIR)
+	$(CD) $(JRE_REDUCED_IMAGE_DIR); \
+	    $(TAR) cf - . | ($(CD) $(JRE_REDUCED_HEADLESS_IMAGE_DIR); $(TAR) xf - ); 
+
+	@# Replace the full rt.jar with the headless rt.jar
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/rt.jar
+	$(CP) $(HL_RT_JAR) $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/rt.jar
+
+	@#
+	@# Remove all of the files that are not needed for the
+	@# reduced Headless JRE
+	@#
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/gtkhelper
+	$(RM)  $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/libjsoundalsa.so
+	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/audio
+	$(RM) -fr $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/applet
+	$(RM)  $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/awt_robot
+	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/xawt
+	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/libsplashscreen.so
+	@# Remove oblique fonts and reduce font support to LucidaSansRegular only
+	$(RM) -fr $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/oblique-fonts
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaBrightDemiBold.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaBrightDemiItalic.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaBrightItalic.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaBrightRegular.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaSansDemiBold.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaTypewriterBold.ttf
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/LucidaTypewriterRegular.ttf
+
+ifeq ($(PLATFORM), linux)
+# put out minimal fonts.dir file for the remaining font
+	$(RM) -f $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) 6>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-1">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-2">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-4">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-5">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-7">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+	$(ECHO) "LucidaSansRegular.ttf -b&h-lucidasans-medium-r-normal-sans-0-0-0-0-p-0-iso8859-9">>$(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/fonts/fonts.dir
+
+endif # Linux
+
+	@#
+	@# all done with JRE reduced headless image
+	@#
+
+	@$(ECHO) Done Creating Reduced Headless JRE
+
+images-clobber::
+	$(RM) -r $(JRE_REDUCED_IMAGE_DIR)
+	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)
+
+.PHONY: reduced-image-jre reduced-headless-image-jre 
+
+endif # JAVASE_EMBEDDED
+

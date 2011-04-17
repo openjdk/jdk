@@ -1,5 +1,5 @@
 /*
- * copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -694,47 +694,6 @@ class DH_ServerKeyExchange extends ServerKeyExchange
     // the preferable signature algorithm used by this ServerKeyExchange message
     private SignatureAndHashAlgorithm preferableSignatureAlgorithm;
 
-    /* Return the Diffie-Hellman modulus */
-    BigInteger getModulus() {
-        return new BigInteger(1, dh_p);
-    }
-
-    /* Return the Diffie-Hellman base/generator */
-    BigInteger getBase() {
-        return new BigInteger(1, dh_g);
-    }
-
-    /* Return the server's Diffie-Hellman public key */
-    BigInteger getServerPublicKey() {
-        return new BigInteger(1, dh_Ys);
-    }
-
-    /*
-     * Update sig with nonces and Diffie-Hellman public key.
-     */
-    private void updateSignature(Signature sig, byte clntNonce[],
-            byte svrNonce[]) throws SignatureException {
-        int tmp;
-
-        sig.update(clntNonce);
-        sig.update(svrNonce);
-
-        tmp = dh_p.length;
-        sig.update((byte)(tmp >> 8));
-        sig.update((byte)(tmp & 0x0ff));
-        sig.update(dh_p);
-
-        tmp = dh_g.length;
-        sig.update((byte)(tmp >> 8));
-        sig.update((byte)(tmp & 0x0ff));
-        sig.update(dh_g);
-
-        tmp = dh_Ys.length;
-        sig.update((byte)(tmp >> 8));
-        sig.update((byte)(tmp & 0x0ff));
-        sig.update(dh_Ys);
-    }
-
     /*
      * Construct from initialized DH key object, for DH_anon
      * key exchange.
@@ -777,12 +736,6 @@ class DH_ServerKeyExchange extends ServerKeyExchange
         sig.initSign(key, sr);
         updateSignature(sig, clntNonce, svrNonce);
         signature = sig.sign();
-    }
-
-    private void setValues(DHCrypt obj) {
-        dh_p = toByteArray(obj.getModulus());
-        dh_g = toByteArray(obj.getBase());
-        dh_Ys = toByteArray(obj.getPublicKey());
     }
 
     /*
@@ -875,6 +828,53 @@ class DH_ServerKeyExchange extends ServerKeyExchange
         }
     }
 
+    /* Return the Diffie-Hellman modulus */
+    BigInteger getModulus() {
+        return new BigInteger(1, dh_p);
+    }
+
+    /* Return the Diffie-Hellman base/generator */
+    BigInteger getBase() {
+        return new BigInteger(1, dh_g);
+    }
+
+    /* Return the server's Diffie-Hellman public key */
+    BigInteger getServerPublicKey() {
+        return new BigInteger(1, dh_Ys);
+    }
+
+    /*
+     * Update sig with nonces and Diffie-Hellman public key.
+     */
+    private void updateSignature(Signature sig, byte clntNonce[],
+            byte svrNonce[]) throws SignatureException {
+        int tmp;
+
+        sig.update(clntNonce);
+        sig.update(svrNonce);
+
+        tmp = dh_p.length;
+        sig.update((byte)(tmp >> 8));
+        sig.update((byte)(tmp & 0x0ff));
+        sig.update(dh_p);
+
+        tmp = dh_g.length;
+        sig.update((byte)(tmp >> 8));
+        sig.update((byte)(tmp & 0x0ff));
+        sig.update(dh_g);
+
+        tmp = dh_Ys.length;
+        sig.update((byte)(tmp >> 8));
+        sig.update((byte)(tmp & 0x0ff));
+        sig.update(dh_Ys);
+    }
+
+    private void setValues(DHCrypt obj) {
+        dh_p = toByteArray(obj.getModulus());
+        dh_g = toByteArray(obj.getBase());
+        dh_Ys = toByteArray(obj.getPublicKey());
+    }
+
     int messageLength() {
         int temp = 6;   // overhead for p, g, y(s) values.
 
@@ -945,8 +945,7 @@ class DH_ServerKeyExchange extends ServerKeyExchange
  * We support named curves only, no explicitly encoded curves.
  */
 static final
-class ECDH_ServerKeyExchange extends ServerKeyExchange
-{
+class ECDH_ServerKeyExchange extends ServerKeyExchange {
 
     // constants for ECCurveType
     private final static int CURVE_EXPLICIT_PRIME = 1;
@@ -1120,10 +1119,12 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
     }
 
     int messageLength() {
-        int sigLen = (signatureBytes == null) ? 0 : 2 + signatureBytes.length;
-
-        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-            sigLen += SignatureAndHashAlgorithm.sizeInRecord();
+        int sigLen = 0;
+        if (signatureBytes != null) {
+            sigLen = 2 + signatureBytes.length;
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                sigLen += SignatureAndHashAlgorithm.sizeInRecord();
+            }
         }
 
         return 4 + pointBytes.length + sigLen;
@@ -1133,12 +1134,13 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
         s.putInt8(CURVE_NAMED_CURVE);
         s.putInt16(curveId);
         s.putBytes8(pointBytes);
-        if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-            s.putInt8(preferableSignatureAlgorithm.getHashValue());
-            s.putInt8(preferableSignatureAlgorithm.getSignatureValue());
-        }
 
         if (signatureBytes != null) {
+            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                s.putInt8(preferableSignatureAlgorithm.getHashValue());
+                s.putInt8(preferableSignatureAlgorithm.getSignatureValue());
+            }
+
             s.putBytes16(signatureBytes);
         }
     }
@@ -1147,9 +1149,13 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange
         s.println("*** ECDH ServerKeyExchange");
 
         if (debug != null && Debug.isOn("verbose")) {
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                s.println("Signature Algorithm " +
-                        preferableSignatureAlgorithm.getAlgorithmName());
+            if (signatureBytes == null) {
+                s.println("Anonymous");
+            } else {
+                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
+                    s.println("Signature Algorithm " +
+                            preferableSignatureAlgorithm.getAlgorithmName());
+                }
             }
 
             s.println("Server key: " + publicKey);

@@ -39,10 +39,6 @@
 /* true if SO_RCVTIMEO is supported */
 jboolean isRcvTimeoutSupported = JNI_TRUE;
 
-LPFN_GETADDRINFO getaddrinfo_ptr = NULL;
-LPFN_FREEADDRINFO freaddrinfo_ptr = NULL;
-LPFN_GETNAMEINFO getnameinfo_ptr = NULL;
-
 /*
  * Table of Windows Sockets errors, the specific exception we
  * throw for the error, and the error text.
@@ -233,37 +229,14 @@ NET_GetFileDescriptorID(JNIEnv *env)
 
 jint  IPv6_supported()
 {
-    HMODULE lib;
-    int fd = socket(AF_INET6, SOCK_STREAM, 0) ;
-    if (fd < 0) {
+    SOCKET s = socket(AF_INET6, SOCK_STREAM, 0) ;
+    if (s == INVALID_SOCKET) {
         return JNI_FALSE;
     }
-    closesocket (fd);
-
-    if ((lib = LoadLibrary ("ws2_32.dll")) == NULL) {
-        return JNI_FALSE;
-    }
-    if ((getaddrinfo_ptr = (LPFN_GETADDRINFO)GetProcAddress (lib, "getaddrinfo")) == NULL) {
-        FreeLibrary (lib);
-        return JNI_FALSE;
-    }
-    if ((freeaddrinfo_ptr = (LPFN_FREEADDRINFO)GetProcAddress (lib, "freeaddrinfo")) == NULL) {
-        FreeLibrary (lib);
-        return JNI_FALSE;
-    }
-    if ((getnameinfo_ptr = (LPFN_GETNAMEINFO)GetProcAddress (lib, "getnameinfo")) == NULL) {
-        FreeLibrary (lib);
-        return JNI_FALSE;
-    }
-    FreeLibrary(lib);
+    closesocket(s);
 
     return JNI_TRUE;
 }
-
-jboolean NET_addrtransAvailable() {
-    return (jboolean)(getaddrinfo_ptr != NULL);
-}
-
 
 /*
  * Return the default TOS value
@@ -664,7 +637,7 @@ NET_BindV6(struct ipv6bind* b) {
     if (family == AF_INET && (b->addr->him4.sin_addr.s_addr != INADDR_ANY)) {
         /* bind to v4 only */
         int ret;
-        ret = NET_Bind (b->ipv4_fd, (struct sockaddr *)b->addr,
+        ret = NET_Bind ((int)b->ipv4_fd, (struct sockaddr *)b->addr,
                                 sizeof (struct sockaddr_in));
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
@@ -676,7 +649,7 @@ NET_BindV6(struct ipv6bind* b) {
     if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->him6.sin6_addr))) {
         /* bind to v6 only */
         int ret;
-        ret = NET_Bind (b->ipv6_fd, (struct sockaddr *)b->addr,
+        ret = NET_Bind ((int)b->ipv6_fd, (struct sockaddr *)b->addr,
                                 sizeof (struct SOCKADDR_IN6));
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
@@ -691,15 +664,15 @@ NET_BindV6(struct ipv6bind* b) {
     memset (&oaddr, 0, sizeof(oaddr));
     if (family == AF_INET) {
         ofamily = AF_INET6;
-        fd = b->ipv4_fd;
-        ofd = b->ipv6_fd;
+        fd = (int)b->ipv4_fd;
+        ofd = (int)b->ipv6_fd;
         port = (u_short)GET_PORT (b->addr);
         IN6ADDR_SETANY (&oaddr.him6);
         oaddr.him6.sin6_port = port;
     } else {
         ofamily = AF_INET;
-        ofd = b->ipv4_fd;
-        fd = b->ipv6_fd;
+        ofd = (int)b->ipv4_fd;
+        fd = (int)b->ipv6_fd;
         port = (u_short)GET_PORT (b->addr);
         oaddr.him4.sin_family = AF_INET;
         oaddr.him4.sin_port = port;
@@ -744,11 +717,11 @@ NET_BindV6(struct ipv6bind* b) {
             b->ipv6_fd = SOCKET_ERROR;
 
             /* create two new sockets */
-            fd = socket (family, sotype, 0);
+            fd = (int)socket (family, sotype, 0);
             if (fd == SOCKET_ERROR) {
                 CLOSE_SOCKETS_AND_RETURN;
             }
-            ofd = socket (ofamily, sotype, 0);
+            ofd = (int)socket (ofamily, sotype, 0);
             if (ofd == SOCKET_ERROR) {
                 CLOSE_SOCKETS_AND_RETURN;
             }
@@ -802,7 +775,7 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
     DWORD b;
     struct sockaddr_in6 route;
     SOCKET fd = socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd < 0) {
+    if (fd == INVALID_SOCKET) {
         return 0;
     }
 
@@ -810,7 +783,7 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
                     (void *)target_addr, sizeof(struct sockaddr_in6),
                     (void *)&route, sizeof(struct sockaddr_in6),
                     &b, 0, 0);
-    if (ret < 0) {
+    if (ret == SOCKET_ERROR) {
         // error
         closesocket(fd);
         return 0;
@@ -1001,10 +974,10 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 }
 
 int NET_Socket (int domain, int type, int protocol) {
-    int sock;
+    SOCKET sock;
     sock = socket (domain, type, protocol);
     if (sock != INVALID_SOCKET) {
         SetHandleInformation((HANDLE)(uintptr_t)sock, HANDLE_FLAG_INHERIT, FALSE);
     }
-    return sock;
+    return (int)sock;
 }

@@ -382,6 +382,11 @@ public:
     return (addr_for(pcard) == p);
   }
 
+  HeapWord* align_to_card_boundary(HeapWord* p) {
+    jbyte* pcard = byte_for(p + card_size_in_words - 1);
+    return addr_for(pcard);
+  }
+
   // The kinds of precision a CardTableModRefBS may offer.
   enum PrecisionStyle {
     Precise,

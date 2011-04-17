@@ -734,6 +734,48 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # http://www.timeanddate.com/news/time/morocco-starts-dst-2010.html
 # </a>
 
+# From Dan Abitol (2011-03-30):
+# ...Rules for Africa/Casablanca are the following (24h format)
+# The 3rd april 2011 at 00:00:00, [it] will be 3rd april 1:00:00
+# The 31th july 2011 at 00:59:59,  [it] will be 31th July 00:00:00
+# ...Official links of change in morocco
+# The change was broadcast on the FM Radio
+# I ve called ANRT (telecom regulations in Morocco) at
+# +212.537.71.84.00
+# <a href="http://www.anrt.net.ma/fr/">
+# http://www.anrt.net.ma/fr/
+# </a>
+# They said that
+# <a href="http://www.map.ma/fr/sections/accueil/l_heure_legale_au_ma/view">
+# http://www.map.ma/fr/sections/accueil/l_heure_legale_au_ma/view
+# </a>
+# is the official publication to look at.
+# They said that the decision was already taken.
+#
+# More articles in the press
+# <a href="http://www.yabiladi.com/articles/details/5058/secret-l-heure-d-ete-maroc-lev">
+# http://www.yabiladi.com/articles/details/5058/secret-l-heure-d-ete-maroc-lev
+# </a>
+# e.html
+# <a href="http://www.lematin.ma/Actualite/Express/Article.asp?id=148923">
+# http://www.lematin.ma/Actualite/Express/Article.asp?id=148923
+# </a>
+# <a href="http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT%2B1-a-partir-de-dim">
+# http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT%2B1-a-partir-de-dim
+# anche-prochain-5538.html
+# </a>
+
+# From Petr Machata (2011-03-30):
+# They have it written in English here:
+# <a href="http://www.map.ma/eng/sections/home/morocco_to_spring_fo/view">
+# http://www.map.ma/eng/sections/home/morocco_to_spring_fo/view
+# </a>
+#
+# It says there that "Morocco will resume its standard time on July 31,
+# 2011 at midnight." Now they don't say whether they mean midnight of
+# wall clock time (i.e. 11pm UTC), but that's what I would assume. It has
+# also been like that in the past.
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
@@ -757,6 +799,8 @@ Rule	Morocco	2009	only	-	Jun	 1	 0:00	1:00	S
 Rule	Morocco	2009	only	-	Aug	 21	 0:00	0	-
 Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
+Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
+Rule	Morocco	2011	only	-	Jul	 31	 0	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	WE%sT	1984 Mar 16
