@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,12 +29,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.io.File;
 import java.io.IOException;
 import javax.swing.filechooser.FileSystemView;
+
 
 /**
  * This is a simple example that uses the FileSystemView class.
@@ -43,6 +42,7 @@ import javax.swing.filechooser.FileSystemView;
  * @author Pavel Porvatov
  */
 public class ExampleFileSystemView extends FileSystemView {
+
     /**
      * Creates a new folder with the default name "New folder". This method is invoked
      * when the user presses the "New folder" button.
@@ -65,8 +65,9 @@ public class ExampleFileSystemView extends FileSystemView {
      * Returns a list which appears in a drop-down list of the FileChooser component.
      * In this implementation only the home directory is returned.
      */
+    @Override
     public File[] getRoots() {
-        return new File[]{getHomeDirectory()};
+        return new File[] { getHomeDirectory() };
     }
 
     /**
@@ -74,9 +75,11 @@ public class ExampleFileSystemView extends FileSystemView {
      * A string with all upper case letters is returned for a directory.
      * A string with all lower case letters is returned for a file.
      */
+    @Override
     public String getSystemDisplayName(File f) {
         String displayName = super.getSystemDisplayName(f);
 
-        return f.isDirectory() ? displayName.toUpperCase() : displayName.toLowerCase();
+        return f.isDirectory() ? displayName.toUpperCase() : displayName.
+                toLowerCase();
     }
 }

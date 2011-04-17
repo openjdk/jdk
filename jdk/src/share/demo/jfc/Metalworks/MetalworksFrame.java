@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,50 +29,70 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.*;
-import java.io.*;
-import java.awt.event.*;
-import java.beans.*;
-import javax.swing.*;
-import javax.swing.border.*;
-
-import javax.swing.plaf.metal.*;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.InputStream;
+import javax.swing.ButtonGroup;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.UIManager;
+import javax.swing.plaf.metal.DefaultMetalTheme;
+import javax.swing.plaf.metal.MetalTheme;
+import javax.swing.plaf.metal.OceanTheme;
 
 
 /**
-  * This is the main container frame for the Metalworks demo app
-  *
-  * @author Steve Wilson
-  */
-public class MetalworksFrame extends JFrame {
+ * This is the main container frame for the Metalworks demo app
+ *
+ * @author Steve Wilson
+ * @author Alexander Kouznetsov
+ */
+@SuppressWarnings("serial")
+public final class MetalworksFrame extends JFrame {
 
     JMenuBar menuBar;
     JDesktopPane desktop;
     JInternalFrame toolPalette;
     JCheckBoxMenuItem showToolPaletteMenuItem;
-
-    static final Integer DOCLAYER = new Integer(5);
-    static final Integer TOOLLAYER = new Integer(6);
-    static final Integer HELPLAYER = new Integer(7);
-
-    static final String ABOUTMSG = "Metalworks \n \nAn application written to show off the Java Look & Feel. \n \nWritten by the JavaSoft Look & Feel Team \n  Michael Albers\n  Tom Santos\n  Jeff Shapiro\n  Steve Wilson";
-
+    static final Integer DOCLAYER = 5;
+    static final Integer TOOLLAYER = 6;
+    static final Integer HELPLAYER = 7;
+    static final String ABOUTMSG = "Metalworks \n \nAn application written to "
+            + "show off the Java Look & Feel. \n \nWritten by the JavaSoft "
+            + "Look & Feel Team \n  Michael Albers\n  Tom Santos\n  "
+            + "Jeff Shapiro\n  Steve Wilson";
 
     public MetalworksFrame() {
         super("Metalworks");
         final int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds ( inset, inset, screenSize.width - inset*2, screenSize.height - inset*2 );
+        setBounds(inset, inset, screenSize.width - inset * 2, screenSize.height - inset
+                * 2);
         buildContent();
         buildMenus();
         this.addWindowListener(new WindowAdapter() {
-                               public void windowClosing(WindowEvent e) {
-                                   quit();
-                               }});
-        UIManager.addPropertyChangeListener(new UISwitchListener((JComponent)getRootPane()));
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                quit();
+            }
+        });
+        UIManager.addPropertyChangeListener(new UISwitchListener(
+                (JComponent) getRootPane()));
     }
 
     protected void buildMenus() {
@@ -87,20 +107,23 @@ public class MetalworksFrame extends JFrame {
         // load a theme from a text file
         MetalTheme myTheme = null;
         try {
-            InputStream istream = getClass().getResourceAsStream("/resources/MyTheme.theme");
-            myTheme =  new PropertiesMetalTheme(istream);
-        } catch (NullPointerException e) {System.out.println(e);}
+            InputStream istream = getClass().getResourceAsStream(
+                    "/resources/MyTheme.theme");
+            myTheme = new PropertiesMetalTheme(istream);
+        } catch (NullPointerException e) {
+            System.out.println(e);
+        }
 
         // build an array of themes
         MetalTheme[] themes = { new OceanTheme(),
-                                new DefaultMetalTheme(),
-                                new GreenMetalTheme(),
-                                new AquaMetalTheme(),
-                                new KhakiMetalTheme(),
-                                new DemoMetalTheme(),
-                                new ContrastMetalTheme(),
-                                new BigContrastMetalTheme(),
-                                myTheme };
+            new DefaultMetalTheme(),
+            new GreenMetalTheme(),
+            new AquaMetalTheme(),
+            new KhakiMetalTheme(),
+            new DemoMetalTheme(),
+            new ContrastMetalTheme(),
+            new BigContrastMetalTheme(),
+            myTheme };
 
         // put the themes in a menu
         JMenu themeMenu = new MetalThemeMenu("Theme", themes);
@@ -121,19 +144,25 @@ public class MetalworksFrame extends JFrame {
         JMenuItem quit = new JMenuItem("Quit");
 
         newWin.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   newDocument();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                newDocument();
+            }
+        });
 
         open.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   openDocument();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                openDocument();
+            }
+        });
 
         quit.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   quit();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                quit();
+            }
+        });
 
         file.add(newWin);
         file.add(open);
@@ -156,9 +185,11 @@ public class MetalworksFrame extends JFrame {
         paste.setEnabled(false);
 
         prefs.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   openPrefsWindow();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                openPrefsWindow();
+            }
+        });
 
         edit.add(undo);
         edit.addSeparator();
@@ -178,16 +209,18 @@ public class MetalworksFrame extends JFrame {
         outBox.setEnabled(false);
 
         inBox.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   openInBox();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                openInBox();
+            }
+        });
 
         views.add(inBox);
         views.add(outBox);
         return views;
     }
 
-     protected JMenu buildSpeedMenu() {
+    protected JMenu buildSpeedMenu() {
         JMenu speed = new JMenu("Drag");
 
         JRadioButtonMenuItem live = new JRadioButtonMenuItem("Live");
@@ -203,28 +236,37 @@ public class MetalworksFrame extends JFrame {
 
         live.setSelected(true);
 
-        slow.addActionListener(new ActionListener(){
-                               public void actionPerformed(ActionEvent e){
-                                // for right now I'm saying if you set the mode
-                                 // to something other than a specified mode
-                                 // it will revert to the old way
-                                 // This is mostly for comparison's sake
-                               desktop.setDragMode(-1);}});
+        slow.addActionListener(new ActionListener() {
 
-        live.addActionListener(new ActionListener(){
-                         public void actionPerformed(ActionEvent e){
-                         desktop.setDragMode(JDesktopPane.LIVE_DRAG_MODE);}});
+            public void actionPerformed(ActionEvent e) {
+                // for right now I'm saying if you set the mode
+                // to something other than a specified mode
+                // it will revert to the old way
+                // This is mostly for comparison's sake
+                desktop.setDragMode(-1);
+            }
+        });
 
-        outline.addActionListener(new ActionListener(){
-                         public void actionPerformed(ActionEvent e){
-                         desktop.setDragMode(JDesktopPane.OUTLINE_DRAG_MODE);}});
+        live.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                desktop.setDragMode(JDesktopPane.LIVE_DRAG_MODE);
+            }
+        });
+
+        outline.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                desktop.setDragMode(JDesktopPane.OUTLINE_DRAG_MODE);
+            }
+        });
 
 
         speed.add(live);
         speed.add(outline);
         speed.add(slow);
         return speed;
-     }
+    }
 
     protected JMenu buildHelpMenu() {
         JMenu help = new JMenu("Help");
@@ -232,15 +274,18 @@ public class MetalworksFrame extends JFrame {
         JMenuItem openHelp = new JMenuItem("Open Help Window");
 
         about.addActionListener(new ActionListener() {
+
             public void actionPerformed(ActionEvent e) {
                 showAboutBox();
             }
         });
 
         openHelp.addActionListener(new ActionListener() {
-                               public void actionPerformed(ActionEvent e) {
-                                   openHelpWindow();
-                               }});
+
+            public void actionPerformed(ActionEvent e) {
+                openHelpWindow();
+            }
+        });
 
         help.add(about);
         help.add(openHelp);
@@ -263,7 +308,8 @@ public class MetalworksFrame extends JFrame {
         try {
             doc.setVisible(true);
             doc.setSelected(true);
-        } catch (java.beans.PropertyVetoException e2) {}
+        } catch (java.beans.PropertyVetoException e2) {
+        }
     }
 
     public void openDocument() {
@@ -277,7 +323,8 @@ public class MetalworksFrame extends JFrame {
         try {
             help.setVisible(true);
             help.setSelected(true);
-        } catch (java.beans.PropertyVetoException e2) {}
+        } catch (java.beans.PropertyVetoException e2) {
+        }
     }
 
     public void showAboutBox() {
@@ -286,7 +333,7 @@ public class MetalworksFrame extends JFrame {
 
     public void openPrefsWindow() {
         MetalworksPrefs dialog = new MetalworksPrefs(this);
-        dialog.show();
+        dialog.setVisible(true);
 
     }
 
@@ -296,6 +343,7 @@ public class MetalworksFrame extends JFrame {
         try {
             doc.setVisible(true);
             doc.setSelected(true);
-        } catch (java.beans.PropertyVetoException e2) {}
+        } catch (java.beans.PropertyVetoException e2) {
+        }
     }
 }

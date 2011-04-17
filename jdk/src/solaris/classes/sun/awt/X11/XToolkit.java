@@ -1228,8 +1228,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public PrintJob getPrintJob(final Frame frame, final String doctitle,
                                 final Properties props) {
 
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalArgumentException();
+        if (frame == null) {
+            throw new NullPointerException("frame must not be null");
         }
 
         PrintJob2D printJob = new PrintJob2D(frame, doctitle, props);
@@ -1242,11 +1242,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     public PrintJob getPrintJob(final Frame frame, final String doctitle,
                 final JobAttributes jobAttributes,
-                final PageAttributes pageAttributes) {
-
-
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalArgumentException();
+                final PageAttributes pageAttributes)
+    {
+        if (frame == null) {
+            throw new NullPointerException("frame must not be null");
         }
 
         PrintJob2D printJob = new PrintJob2D(frame, doctitle,

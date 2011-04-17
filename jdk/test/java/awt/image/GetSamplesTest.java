@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug     6735275
- * @summary Test verifies that SampleModel.getSamples() throws an appropriate
- *           exception if coordinates are not in bounds.
+ * @bug     6735275 6993561
+ * @summary Test verifies that SampleModel.getSamples() SampleModel.setSamples()
+ *          throw an appropriate exception if coordinates are not in bounds.
  *
  * @run     main GetSamplesTest
  */
@@ -75,6 +75,7 @@ public class GetSamplesTest {
 
         try {
             sm.getSamples(Integer.MAX_VALUE, 0, 1, 1, 0, iArray, db);
+            sm.setSamples(Integer.MAX_VALUE, 0, 1, 1, 0, iArray, db);
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
             iOk = true;
@@ -82,6 +83,7 @@ public class GetSamplesTest {
 
         try {
             sm.getSamples(Integer.MAX_VALUE, 0, 1, 1, 0, fArray, db);
+            sm.setSamples(Integer.MAX_VALUE, 0, 1, 1, 0, fArray, db);
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
             fOk = true;
@@ -89,6 +91,7 @@ public class GetSamplesTest {
 
         try {
             sm.getSamples(0, Integer.MAX_VALUE, 1, 1, 0, dArray, db);
+            sm.setSamples(0, Integer.MAX_VALUE, 1, 1, 0, dArray, db);
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
             dOk = true;

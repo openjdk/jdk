@@ -277,6 +277,10 @@ protected:
   }
 
 public:
+  // It adds hr to the list as the new head. The region should not be
+  // a member of another set.
+  inline void add_as_head(HeapRegion* hr);
+
   // It adds hr to the list as the new tail. The region should not be
   // a member of another set.
   inline void add_as_tail(HeapRegion* hr);
@@ -287,6 +291,11 @@ public:
 
   // Convenience method.
   inline HeapRegion* remove_head_or_null();
+
+  // It moves the regions from from_list to this list and empties
+  // from_list. The new regions will appear in the same order as they
+  // were in from_list and be linked in the beginning of this list.
+  void add_as_head(HeapRegionLinkedList* from_list);
 
   // It moves the regions from from_list to this list and empties
   // from_list. The new regions will appear in the same order as they

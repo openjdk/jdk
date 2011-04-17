@@ -1869,8 +1869,8 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
 /***************************************************************/
 mlib_status CONV_FUNC_MxN
 {
-  DTYPE    *adr_src, *sl, *sp;
-  DTYPE    *adr_dst, *dl, *dp;
+  DTYPE    *adr_src, *sl, *sp = NULL;
+  DTYPE    *adr_dst, *dl, *dp = NULL;
   FTYPE    buff[BUFF_SIZE], *buffs_arr[2*(MAX_N + 1)];
   FTYPE    **buffs = buffs_arr, *buffd;
   FTYPE    akernel[256], *k = akernel, fscale = DSCALE;
@@ -2332,8 +2332,8 @@ mlib_status CONV_FUNC_MxN
 
 mlib_status CONV_FUNC_MxN_I
 {
-  DTYPE    *adr_src, *sl, *sp;
-  DTYPE    *adr_dst, *dl, *dp;
+  DTYPE    *adr_src, *sl, *sp = NULL;
+  DTYPE    *adr_dst, *dl, *dp = NULL;
   mlib_s32 buff[BUFF_SIZE], *buffs_arr[2*(MAX_N + 1)];
   mlib_s32 *pbuff = buff;
   mlib_s32 **buffs = buffs_arr, *buffd;
