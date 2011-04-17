@@ -209,10 +209,6 @@ int
     );
 #endif
 
-LPFN_GETADDRINFO getaddrinfo_ptr;
-LPFN_FREEADDRINFO freeaddrinfo_ptr;
-LPFN_GETNAMEINFO getnameinfo_ptr;
-
 /* used to disable connection reset messages on Windows XP */
 #ifndef SIO_UDP_CONNRESET
 #define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR,12)
@@ -301,8 +297,6 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
          const char *defaultDetail);
 
 void NET_ThrowSocketException(JNIEnv *env, char* msg);
-
-jboolean NET_addrtransAvailable();
 
 /*
  * differs from NET_Timeout() as follows:

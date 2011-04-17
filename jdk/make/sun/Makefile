@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,17 @@ endif
 
 # nio need to be compiled before awt to have all charsets ready
 SUBDIRS            = jar security javazic misc net nio text launcher
+
+ifdef BUILD_HEADLESS_ONLY
+  DISPLAY_LIBS = awt $(HEADLESS_SUBDIR)
+  DISPLAY_TOOLS = 
+else
+  DISPLAY_LIBS = awt splashscreen $(XAWT_SUBDIR) $(HEADLESS_SUBDIR)
+  DISPLAY_TOOLS = applet
+endif
 SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
-                     awt splashscreen $(XAWT_SUBDIR) \
-                     $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
-                     jawt font jpeg cmm applet beans
+                     $(DISPLAY_LIBS) $(DGA_SUBDIR) \
+                     jawt font jpeg cmm $(DISPLAY_TOOLS) beans
 SUBDIRS_management = management
 SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole

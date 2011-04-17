@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/ad_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/ad_arm.hpp"
 #endif
 
 // Optimization - Graph Style

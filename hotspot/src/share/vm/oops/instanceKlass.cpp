@@ -2337,7 +2337,7 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
     st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
     klassOop real_klass = java_lang_Class::as_klassOop(obj);
-    if (real_klass && real_klass->klass_part()->oop_is_instance()) {
+    if (real_klass != NULL && real_klass->klass_part()->oop_is_instance()) {
       instanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {

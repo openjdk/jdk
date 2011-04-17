@@ -2461,6 +2461,22 @@ public class Types {
             }
         };
 
+    public Type createMethodTypeWithReturn(Type original, Type newReturn) {
+        return original.accept(methodWithReturn, newReturn);
+    }
+    // where
+        private final MapVisitor<Type> methodWithReturn = new MapVisitor<Type>() {
+            public Type visitType(Type t, Type newReturn) {
+                throw new IllegalArgumentException("Not a method type: " + t);
+            }
+            public Type visitMethodType(MethodType t, Type newReturn) {
+                return new MethodType(t.argtypes, newReturn, t.thrown, t.tsym);
+            }
+            public Type visitForAll(ForAll t, Type newReturn) {
+                return new ForAll(t.tvars, t.qtype.accept(this, newReturn));
+            }
+        };
+
     // <editor-fold defaultstate="collapsed" desc="createErrorType">
     public Type createErrorType(Type originalType) {
         return new ErrorType(originalType, syms.errSymbol);

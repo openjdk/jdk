@@ -1017,7 +1017,7 @@ klassOop SystemDictionary::parse_stream(Symbol* class_name,
   }
 
   if (host_klass.not_null() && k.not_null()) {
-    assert(AnonymousClasses, "");
+    assert(EnableInvokeDynamic, "");
     // If it's anonymous, initialize it now, since nobody else will.
     k->set_host_klass(host_klass());
 
@@ -1940,7 +1940,7 @@ bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   }
   Symbol* backup_symbol = NULL;  // symbol to try if the current symbol fails
   if (init_opt == SystemDictionary::Pre_JSR292) {
-    if (!EnableMethodHandles)  try_load = false;  // do not bother to load such classes
+    if (!EnableInvokeDynamic)  try_load = false;  // do not bother to load such classes
     if (AllowTransitionalJSR292) {
       backup_symbol = find_backup_class_name(symbol);
       if (try_load && PreferTransitionalJSR292) {
@@ -2038,25 +2038,15 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   instanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
   instanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
 
-  WKID meth_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
-  WKID meth_group_end   = WK_KLASS_ENUM_NAME(WrongMethodTypeException_klass);
-  initialize_wk_klasses_until(meth_group_start, scan, CHECK);
-  if (EnableMethodHandles) {
-    initialize_wk_klasses_through(meth_group_end, scan, CHECK);
-  }
-  if (_well_known_klasses[meth_group_start] == NULL) {
-    // Skip the rest of the method handle classes, if MethodHandle is not loaded.
-    scan = WKID(meth_group_end+1);
-  }
-  WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
-  initialize_wk_klasses_until(indy_group_start, scan, CHECK);
+  // JSR 292 classes
+  WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
+  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
+  initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
-    initialize_wk_klasses_through(indy_group_end, scan, CHECK);
-  }
-  if (_well_known_klasses[indy_group_start] == NULL) {
-    // Skip the rest of the dynamic typing classes, if Linkage is not loaded.
-    scan = WKID(indy_group_end+1);
+    initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
+  } else {
+    // Skip the JSR 292 classes, if not enabled.
+    scan = WKID(jsr292_group_end + 1);
   }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
@@ -2407,7 +2397,7 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
                                                       Symbol* signature,
                                                       KlassHandle accessing_klass,
                                                       TRAPS) {
-  if (!EnableMethodHandles)  return NULL;
+  if (!EnableInvokeDynamic)  return NULL;
   vmSymbols::SID name_id = vmSymbols::find_sid(name);
   assert(name_id != vmSymbols::NO_SID, "must be a known name");
   unsigned int hash  = invoke_method_table()->compute_hash(signature, name_id);

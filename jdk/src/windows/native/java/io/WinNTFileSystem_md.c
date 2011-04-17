@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  * questions.
  */
 
-/* Access APIs for Win2K and above */
+/* Access APIs for WinXP and above */
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0500
+#define _WIN32_WINNT 0x0501
 #endif
 
 #include <assert.h>
@@ -60,13 +60,17 @@ static GetFinalPathNameByHandleProc GetFinalPathNameByHandle_func;
 JNIEXPORT void JNICALL
 Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 {
-    HANDLE handle;
+    HMODULE handle;
     jclass fileClass = (*env)->FindClass(env, "java/io/File");
     if (!fileClass) return;
     ids.path =
              (*env)->GetFieldID(env, fileClass, "path", "Ljava/lang/String;");
-    handle = LoadLibrary("kernel32");
-    if (handle != NULL) {
+
+    // GetFinalPathNameByHandle requires Windows Vista or newer
+    if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT),
+                           (LPCWSTR)&CreateFileW, &handle) != 0)
+    {
         GetFinalPathNameByHandle_func = (GetFinalPathNameByHandleProc)
             GetProcAddress(handle, "GetFinalPathNameByHandleW");
     }
@@ -824,8 +828,6 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
     return ret;
 }
 
-typedef BOOL (WINAPI* GetVolumePathNameProc) (LPCWSTR, LPWSTR, DWORD);
-
 JNIEXPORT jlong JNICALL
 Java_java_io_WinNTFileSystem_getSpace0(JNIEnv *env, jobject this,
                                        jobject file, jint t)
@@ -834,14 +836,7 @@ Java_java_io_WinNTFileSystem_getSpace0(JNIEnv *env, jobject this,
     jlong rv = 0L;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
 
-    HMODULE h = LoadLibrary("kernel32");
-    GetVolumePathNameProc getVolumePathNameW = NULL;
-    if (h) {
-        getVolumePathNameW
-            = (GetVolumePathNameProc)GetProcAddress(h, "GetVolumePathNameW");
-    }
-
-    if (getVolumePathNameW(pathbuf, volname, MAX_PATH_LENGTH)) {
+    if (GetVolumePathNameW(pathbuf, volname, MAX_PATH_LENGTH)) {
         ULARGE_INTEGER totalSpace, freeSpace, usableSpace;
         if (GetDiskFreeSpaceExW(volname, &usableSpace, &totalSpace, &freeSpace)) {
             switch(t) {
@@ -860,9 +855,6 @@ Java_java_io_WinNTFileSystem_getSpace0(JNIEnv *env, jobject this,
         }
     }
 
-    if (h) {
-        FreeLibrary(h);
-    }
     free(pathbuf);
     return rv;
 }

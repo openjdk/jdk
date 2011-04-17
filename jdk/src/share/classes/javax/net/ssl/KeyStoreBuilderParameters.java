@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class KeyStoreBuilderParameters implements ManagerFactoryParameters {
      * @exception NullPointerException if builder is null
      */
     public KeyStoreBuilderParameters(Builder builder) {
-        parameters = Collections.singletonList(builder);
+        parameters = Collections.singletonList(Objects.requireNonNull(builder));
     }
 
     /**
@@ -64,11 +64,12 @@ public class KeyStoreBuilderParameters implements ManagerFactoryParameters {
      * @exception IllegalArgumentException if parameters is an empty list
      */
     public KeyStoreBuilderParameters(List<Builder> parameters) {
-        this.parameters = Collections.unmodifiableList(
-            new ArrayList<Builder>(parameters));
-        if (this.parameters.isEmpty()) {
+        if (parameters.isEmpty()) {
             throw new IllegalArgumentException();
         }
+
+        this.parameters = Collections.unmodifiableList(
+            new ArrayList<Builder>(parameters));
     }
 
     /**

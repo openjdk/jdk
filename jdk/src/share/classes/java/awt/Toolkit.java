@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,7 +875,7 @@ public abstract class Toolkit {
                         String nm = null;
                         Class cls = null;
                         try {
-                            nm = System.getProperty("awt.toolkit", "sun.awt.X11.XToolkit");
+                            nm = System.getProperty("awt.toolkit");
                             try {
                                 cls = Class.forName(nm);
                             } catch (ClassNotFoundException e) {

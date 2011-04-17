@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class MsgAppletViewer_zh_CN extends ListResourceBundle {
             {"appletclassloader.fileexception", "\u52A0\u8F7D\u65F6\u51FA\u73B0{0}\u5F02\u5E38\u9519\u8BEF: {1}"},
             {"appletclassloader.filedeath", "\u52A0\u8F7D\u65F6\u5DF2\u7EC8\u6B62{0}: {1}"},
             {"appletclassloader.fileerror", "\u52A0\u8F7D\u65F6\u51FA\u73B0{0}\u9519\u8BEF: {1}"},
-            {"appletclassloader.findclass.verbose.findclass", "{0}\u627E\u5230\u7C7B{1}"},
             {"appletclassloader.findclass.verbose.openstream", "\u6253\u5F00\u5230{0}\u7684\u6D41\u4EE5\u83B7\u53D6{1}"},
             {"appletclassloader.getresource.verbose.forname", "\u540D\u79F0\u7684 AppletClassLoader.getResource: {0}"},
             {"appletclassloader.getresource.verbose.found", "\u5DF2\u627E\u5230\u4F5C\u4E3A\u7CFB\u7EDF\u8D44\u6E90\u7684\u8D44\u6E90{0}"},

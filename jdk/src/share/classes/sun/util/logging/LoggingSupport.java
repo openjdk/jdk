@@ -29,6 +29,7 @@ package sun.util.logging;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Date;
 
 /**
  * Internal API to support JRE implementation to detect if the java.util.logging
@@ -138,4 +139,42 @@ public class LoggingSupport {
         ensureAvailable();
         return proxy.getLevelName(level);
     }
+
+    private static final String DEFAULT_FORMAT =
+        "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%6$s%n";
+
+    private static final String FORMAT_PROP_KEY = "java.util.logging.SimpleFormatter.format";
+    public static String getSimpleFormat() {
+        return getSimpleFormat(true);
+    }
+
+    // useProxy if true will cause initialization of
+    // java.util.logging and read its configuration
+    static String getSimpleFormat(boolean useProxy) {
+        String format =
+            AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
+                        return System.getProperty(FORMAT_PROP_KEY);
+                    }
+                });
+
+        if (useProxy && proxy != null && format == null) {
+            format = proxy.getProperty(FORMAT_PROP_KEY);
+        }
+
+        if (format != null) {
+            try {
+                // validate the user-defined format string
+                String.format(format, new Date(), "", "", "", "", "");
+            } catch (IllegalArgumentException e) {
+                // illegal syntax; fall back to the default format
+                format = DEFAULT_FORMAT;
+            }
+        } else {
+            format = DEFAULT_FORMAT;
+        }
+        return format;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,11 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "assembler_sparc.inline.hpp");
   AD.addInclude(AD._CPP_file, "nativeInst_sparc.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_sparc.inline.hpp");
+#endif
+#ifdef TARGET_ARCH_arm
+  AD.addInclude(AD._CPP_file, "assembler_arm.inline.hpp");
+  AD.addInclude(AD._CPP_file, "nativeInst_arm.hpp");
+  AD.addInclude(AD._CPP_file, "vmreg_arm.inline.hpp");
 #endif
   AD.addInclude(AD._HPP_file, "memory/allocation.hpp");
   AD.addInclude(AD._HPP_file, "opto/machnode.hpp");

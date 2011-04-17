@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,6 +426,11 @@ public:
   static bool float_in_double();
   // Do ints take an entire long register or just half?
   static const bool int_in_long;
+
+  // Do the processor's shift instructions only use the low 5/6 bits
+  // of the count for 32/64 bit ints? If not we need to do the masking
+  // ourselves.
+  static const bool need_masked_shift_count;
 
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.

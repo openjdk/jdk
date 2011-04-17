@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ FILES_compiled_properties = \
         sun/util/resources/LocaleNames_mt.properties \
         sun/util/resources/LocaleNames_nl.properties \
         sun/util/resources/LocaleNames_no.properties \
+        sun/util/resources/LocaleNames_no_NO_NY.properties \
         sun/util/resources/LocaleNames_pl.properties \
         sun/util/resources/LocaleNames_pt.properties \
         sun/util/resources/LocaleNames_pt_BR.properties \

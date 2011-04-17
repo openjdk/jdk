@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,20 +150,6 @@ public class WindowsFileSystemProvider
         }
     }
 
-    private boolean followLinks(LinkOption... options) {
-        boolean followLinks = true;
-        for (LinkOption option: options) {
-            if (option == LinkOption.NOFOLLOW_LINKS) {
-                followLinks = false;
-                continue;
-            }
-            if (option == null)
-                throw new NullPointerException();
-            throw new AssertionError("Should not get here");
-        }
-        return followLinks;
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V
@@ -172,7 +158,7 @@ public class WindowsFileSystemProvider
         WindowsPath file = WindowsPath.toWindowsPath(obj);
         if (view == null)
             throw new NullPointerException();
-        boolean followLinks = followLinks(options);
+        boolean followLinks = Util.followLinks(options);
         if (view == BasicFileAttributeView.class)
             return (V) WindowsFileAttributeViews.createBasicView(file, followLinks);
         if (view == DosFileAttributeView.class)
@@ -209,7 +195,7 @@ public class WindowsFileSystemProvider
     @Override
     public DynamicFileAttributeView getFileAttributeView(Path obj, String name, LinkOption... options) {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        boolean followLinks = followLinks(options);
+        boolean followLinks = Util.followLinks(options);
         if (name.equals("basic"))
             return WindowsFileAttributeViews.createBasicView(file, followLinks);
         if (name.equals("dos"))

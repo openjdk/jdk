@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -99,7 +99,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         synchronized(filesystems) {
             Path realPath = null;
             if (ensureFile(path)) {
-                realPath = path.toRealPath(true);
+                realPath = path.toRealPath();
                 if (filesystems.containsKey(realPath))
                     throw new FileSystemAlreadyExistsException();
             }
@@ -154,7 +154,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         synchronized (filesystems) {
             ZipFileSystem zipfs = null;
             try {
-                zipfs = filesystems.get(uriToPath(uri).toRealPath(true));
+                zipfs = filesystems.get(uriToPath(uri).toRealPath());
             } catch (IOException x) {
                 // ignore the ioe from toRealPath(), return FSNFE
             }
@@ -310,7 +310,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     //////////////////////////////////////////////////////////////
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            zfpath = zfpath.toRealPath(true);
+            zfpath = zfpath.toRealPath();
             if (filesystems.get(zfpath) == zfs)
                 filesystems.remove(zfpath);
         }

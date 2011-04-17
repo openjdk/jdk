@@ -1560,7 +1560,7 @@ JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls))
         }
       }
     }
-    if (AnonymousClasses) {
+    if (EnableInvokeDynamic) {
       env->RegisterNatives(unsafecls, anonk_methods, sizeof(anonk_methods)/sizeof(JNINativeMethod));
       if (env->ExceptionOccurred()) {
         if (PrintMiscellaneous && (Verbose || WizardMode)) {
