@@ -116,6 +116,12 @@ endif
 include $(JDK_TOPDIR)/make/common/Defs-$(PLATFORM).gmk
 
 #
+# SE-Embedded support, if enabled
+#
+
+include $(JDK_TOPDIR)/make/common/Defs-embedded.gmk
+
+#
 # Cross-compilation Settings
 #
 ifdef CROSS_COMPILE_ARCH
@@ -143,7 +149,6 @@ endif
 ifdef BUILD_CLIENT_ONLY
   VM_NAME = client
 endif
-
 
 #
 # Freetype logic is applicable to OpenJDK only

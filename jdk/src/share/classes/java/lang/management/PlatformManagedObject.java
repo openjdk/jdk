@@ -46,7 +46,7 @@ import javax.management.ObjectName;
  * intended for the management interfaces for the platform to extend but
  * not for applications.
  *
- * @see <a href="ManagementFactory.html#MXBean">Platform MXBeans</a>
+ * @see ManagementFactory
  * @since 1.7
  */
 public interface PlatformManagedObject {

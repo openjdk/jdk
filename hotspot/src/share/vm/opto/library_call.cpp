@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
@@ -388,11 +389,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #endif
   if (kit.try_to_inline()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
-      tty->print("Inlining intrinsic %s%s at bci:%d in",
-                 vmIntrinsics::name_at(intrinsic_id()),
-                 (is_virtual() ? " (virtual)" : ""), kit.bci());
-      kit.caller()->print_short_name(tty);
-      tty->print_cr(" (%d bytes)", kit.caller()->code_size());
+      CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, kit.bci(), is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {

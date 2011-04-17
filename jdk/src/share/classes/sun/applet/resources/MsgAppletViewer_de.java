@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class MsgAppletViewer_de extends ListResourceBundle {
             {"appletclassloader.fileexception", "{0}-Ausnahme beim Laden von: {1}"},
             {"appletclassloader.filedeath", "{0} abgebrochen beim Laden von: {1}"},
             {"appletclassloader.fileerror", "{0}-Fehler beim Laden von: {1}"},
-            {"appletclassloader.findclass.verbose.findclass", "{0} Klasse {1} suchen"},
             {"appletclassloader.findclass.verbose.openstream", "\u00D6ffnen von Stream zu: {0}, um {1} abzurufen"},
             {"appletclassloader.getresource.verbose.forname", "AppletClassLoader.getResource f\u00FCr Name: {0}"},
             {"appletclassloader.getresource.verbose.found", "Ressource {0} als Systemressource gefunden"},

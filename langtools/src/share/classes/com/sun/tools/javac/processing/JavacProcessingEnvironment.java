@@ -34,8 +34,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -58,6 +58,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.FSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.jvm.ClassReader.BadClassFile;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.main.JavaCompiler.CompileState;
 import com.sun.tools.javac.model.JavacElements;
@@ -67,6 +68,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.FatalError;
@@ -432,6 +434,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                             log.error("proc.processor.cant.instantiate", processorName);
                             return false;
                         }
+                    } catch(ClientCodeException e) {
+                        throw e;
                     } catch(Throwable t) {
                         throw new AnnotationProcessingError(t);
                     }
@@ -527,6 +531,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         supportedOptionNames.add(optionName);
                 }
 
+            } catch (ClientCodeException e) {
+                throw e;
             } catch (Throwable t) {
                 throw new AnnotationProcessingError(t);
             }
@@ -785,11 +791,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                          RoundEnvironment renv) {
         try {
             return proc.process(tes, renv);
+        } catch (BadClassFile ex) {
+            log.error("proc.cant.access.1", ex.sym, ex.getDetailValue());
+            return false;
         } catch (CompletionFailure ex) {
             StringWriter out = new StringWriter();
             ex.printStackTrace(new PrintWriter(out));
             log.error("proc.cant.access", ex.sym, ex.getDetailValue(), out.toString());
             return false;
+        } catch (ClientCodeException e) {
+            throw e;
         } catch (Throwable t) {
             throw new AnnotationProcessingError(t);
         }
@@ -1061,6 +1072,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             PrintWriter out = context.get(Log.outKey);
             Assert.checkNonNull(out);
             next.put(Log.outKey, out);
+            Locale locale = context.get(Locale.class);
+            if (locale != null)
+                next.put(Locale.class, locale);
+            Assert.checkNonNull(messages);
+            next.put(JavacMessages.messagesKey, messages);
 
             final boolean shareNames = true;
             if (shareNames) {

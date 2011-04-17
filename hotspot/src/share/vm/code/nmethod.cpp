@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
@@ -469,6 +470,7 @@ void nmethod::init_defaults() {
 
 
 nmethod* nmethod::new_native_nmethod(methodHandle method,
+  int compile_id,
   CodeBuffer *code_buffer,
   int vep_offset,
   int frame_complete,
@@ -485,7 +487,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
     nm = new (native_nmethod_size)
-      nmethod(method(), native_nmethod_size, &offsets,
+      nmethod(method(), native_nmethod_size, compile_id, &offsets,
               code_buffer, frame_size,
               basic_lock_owner_sp_offset, basic_lock_sp_offset,
               oop_maps);
@@ -610,6 +612,7 @@ nmethod* nmethod::new_nmethod(methodHandle method,
 nmethod::nmethod(
   methodOop method,
   int nmethod_size,
+  int compile_id,
   CodeOffsets* offsets,
   CodeBuffer* code_buffer,
   int frame_size,
@@ -644,7 +647,7 @@ nmethod::nmethod(
     _handler_table_offset    = _dependencies_offset;
     _nul_chk_table_offset    = _handler_table_offset;
     _nmethod_end_offset      = _nul_chk_table_offset;
-    _compile_id              = 0;  // default
+    _compile_id              = compile_id;
     _comp_level              = CompLevel_none;
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
@@ -930,72 +933,11 @@ void nmethod::log_new_nmethod() const {
 #undef LOG_OFFSET
 
 
-void nmethod::print_compilation(outputStream *st, const char *method_name, const char *title,
-                                methodOop method, bool is_blocking, int compile_id, int bci, int comp_level) {
-  bool is_synchronized = false, has_xhandler = false, is_native = false;
-  int code_size = -1;
-  if (method != NULL) {
-    is_synchronized = method->is_synchronized();
-    has_xhandler    = method->has_exception_handler();
-    is_native       = method->is_native();
-    code_size       = method->code_size();
-  }
-  // print compilation number
-  st->print("%7d %3d", (int)tty->time_stamp().milliseconds(), compile_id);
-
-  // print method attributes
-  const bool is_osr = bci != InvocationEntryBci;
-  const char blocking_char  = is_blocking     ? 'b' : ' ';
-  const char compile_type   = is_osr          ? '%' : ' ';
-  const char sync_char      = is_synchronized ? 's' : ' ';
-  const char exception_char = has_xhandler    ? '!' : ' ';
-  const char native_char    = is_native       ? 'n' : ' ';
-  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
-  if (TieredCompilation) {
-    st->print("%d ", comp_level);
-  }
-
-  // print optional title
-  bool do_nl = false;
-  if (title != NULL) {
-    int tlen = (int) strlen(title);
-    bool do_nl = false;
-    if (tlen > 0 && title[tlen-1] == '\n') { tlen--; do_nl = true; }
-    st->print("%.*s", tlen, title);
-  } else {
-    do_nl = true;
-  }
-
-  // print method name string if given
-  if (method_name != NULL) {
-    st->print(method_name);
-  } else {
-    // otherwise as the method to print itself
-    if (method != NULL && !Universe::heap()->is_gc_active()) {
-      method->print_short_name(st);
-    } else {
-      st->print("(method)");
-    }
-  }
-
-  if (method != NULL) {
-    // print osr_bci if any
-    if (is_osr) st->print(" @ %d", bci);
-    // print method size
-    st->print(" (%d bytes)", code_size);
-  }
-  if (do_nl) st->cr();
-}
-
 // Print out more verbose output usually for a newly created nmethod.
-void nmethod::print_on(outputStream* st, const char* title) const {
+void nmethod::print_on(outputStream* st, const char* msg) const {
   if (st != NULL) {
     ttyLocker ttyl;
-    print_compilation(st, /*method_name*/NULL, title,
-                      method(), /*is_blocking*/false,
-                      compile_id(),
-                      is_osr_method() ? osr_entry_bci() : InvocationEntryBci,
-                      comp_level());
+    CompileTask::print_compilation(st, this, msg);
     if (WizardMode) st->print(" (" INTPTR_FORMAT ")", this);
   }
 }
@@ -1309,8 +1251,7 @@ void nmethod::log_state_change() const {
     }
   }
   if (PrintCompilation && _state != unloaded) {
-    print_on(tty, _state == zombie ? "made zombie " : "made not entrant ");
-    tty->cr();
+    print_on(tty, _state == zombie ? "made zombie" : "made not entrant");
   }
 }
 
@@ -1816,7 +1757,7 @@ bool nmethod::test_set_oops_do_mark() {
           break;
       }
       // Mark was clear when we first saw this guy.
-      NOT_PRODUCT(if (TraceScavenge)  print_on(tty, "oops_do, mark\n"));
+      NOT_PRODUCT(if (TraceScavenge)  print_on(tty, "oops_do, mark"));
       return false;
     }
   }
@@ -1841,7 +1782,7 @@ void nmethod::oops_do_marking_epilogue() {
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
     cur->fix_oop_relocations();
-    NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark\n"));
+    NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark"));
     cur = next;
   }
   void* required = _oops_do_mark_nmethods;
@@ -2396,7 +2337,7 @@ void nmethod::print() const {
   ResourceMark rm;
   ttyLocker ttyl;   // keep the following output all in one block
 
-  tty->print("Compiled ");
+  tty->print("Compiled method ");
 
   if (is_compiled_by_c1()) {
     tty->print("(c1) ");
@@ -2408,8 +2349,8 @@ void nmethod::print() const {
     tty->print("(nm) ");
   }
 
-  print_on(tty, "nmethod");
-  tty->cr();
+  print_on(tty, NULL);
+
   if (WizardMode) {
     tty->print("((nmethod*) "INTPTR_FORMAT ") ", this);
     tty->print(" for method " INTPTR_FORMAT , (address)method());
@@ -2796,7 +2737,8 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
 #ifndef PRODUCT
 
 void nmethod::print_value_on(outputStream* st) const {
-  print_on(st, "nmethod");
+  st->print("nmethod");
+  print_on(st, NULL);
 }
 
 void nmethod::print_calls(outputStream* st) {

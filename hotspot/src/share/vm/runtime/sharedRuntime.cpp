@@ -1682,7 +1682,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     tty->print_cr("WrongMethodType thread="PTR_FORMAT" req="PTR_FORMAT" act="PTR_FORMAT"",
                   thread, required, actual);
   }
-  assert(EnableMethodHandles, "");
+  assert(EnableInvokeDynamic, "");
   oop singleKlass = wrong_method_type_is_for_single_argument(thread, required);
   char* message = NULL;
   if (singleKlass != NULL) {
@@ -2479,19 +2479,9 @@ bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length, int to
 // java compiled calling convention to the native convention, handlizes
 // arguments, and transitions to native.  On return from the native we transition
 // back to java blocking if a safepoint is in progress.
-nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
+nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int compile_id) {
   ResourceMark rm;
   nmethod* nm = NULL;
-
-  if (PrintCompilation) {
-    ttyLocker ttyl;
-    tty->print("---   n%s ", (method->is_synchronized() ? "s" : " "));
-    method->print_short_name(tty);
-    if (method->is_static()) {
-      tty->print(" (static)");
-    }
-    tty->cr();
-  }
 
   assert(method->has_native_function(), "must have something valid to call!");
 
@@ -2537,6 +2527,7 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
       // Generate the compiled-to-native wrapper code
       nm = SharedRuntime::generate_native_wrapper(&_masm,
                                                   method,
+                                                  compile_id,
                                                   total_args_passed,
                                                   comp_args_on_stack,
                                                   sig_bt,regs,
@@ -2548,6 +2539,10 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
 
   // Install the generated code.
   if (nm != NULL) {
+    if (PrintCompilation) {
+      ttyLocker ttyl;
+      CompileTask::print_compilation(tty, nm, method->is_static() ? "(static)" : "");
+    }
     method->set_code(method, nm);
     nm->post_compiled_method_load_event();
   } else {

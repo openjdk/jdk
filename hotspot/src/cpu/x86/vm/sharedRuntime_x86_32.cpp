@@ -1111,6 +1111,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
 // returns.
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 methodHandle method,
+                                                int compile_id,
                                                 int total_in_args,
                                                 int comp_args_on_stack,
                                                 BasicType *in_sig_bt,
@@ -1854,6 +1855,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ flush();
 
   nmethod *nm = nmethod::new_native_nmethod(method,
+                                            compile_id,
                                             masm->code(),
                                             vep_offset,
                                             frame_complete,

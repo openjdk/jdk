@@ -181,11 +181,10 @@ public class JarSignerResources extends java.util.ListResourceBundle {
         {"TSA.location.", "TSA location: "},
         {"TSA.certificate.", "TSA certificate: "},
         {"no.response.from.the.Timestamping.Authority.",
-                "no response from the Timestamping Authority. "},
-        {"When.connecting.from.behind.a.firewall.then.an.HTTP.proxy.may.need.to.be.specified.",
-                "When connecting from behind a firewall then an HTTP proxy may need to be specified. "},
-        {"Supply.the.following.options.to.jarsigner.",
-                "Supply the following options to jarsigner: "},
+                "no response from the Timestamping Authority. When connecting"
+                + " from behind a firewall an HTTP or HTTPS proxy may need to"
+                + " be specified. Supply the following options to jarsigner:"},
+        {"or", "or"},
         {"Certificate.not.found.for.alias.alias.must.reference.a.valid.KeyStore.entry.containing.an.X.509.public.key.certificate.for.the",
                 "Certificate not found for: {0}.  {1} must reference a valid KeyStore entry containing an X.509 public key certificate for the Timestamping Authority."},
         {"using.an.alternative.signing.mechanism",

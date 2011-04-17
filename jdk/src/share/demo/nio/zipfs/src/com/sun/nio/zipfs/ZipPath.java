@@ -150,7 +150,7 @@ public class ZipPath implements Path {
     }
 
     @Override
-    public ZipPath toRealPath(boolean resolveLinks) throws IOException {
+    public ZipPath toRealPath(LinkOption... options) throws IOException {
         ZipPath realPath = new ZipPath(zfs, getResolvedPath()).toAbsolutePath();
         realPath.checkAccess();
         return realPath;

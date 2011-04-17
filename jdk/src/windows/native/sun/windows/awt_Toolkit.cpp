@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,9 +528,6 @@ BOOL AwtToolkit::Dispose() {
 
     tk.m_isActive = FALSE;
 
-    awt_dnd_uninitialize();
-    awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
-
     // dispose Direct3D-related resources. This should be done
     // before AwtObjectList::Cleanup() as the d3d will attempt to
     // shutdown when the last of its windows is disposed of
@@ -538,6 +535,9 @@ BOOL AwtToolkit::Dispose() {
 
     AwtObjectList::Cleanup();
     AwtFont::Cleanup();
+
+    awt_dnd_uninitialize();
+    awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
 
     if (tk.m_inputMethodHWnd != NULL) {
         ::SendMessage(tk.m_inputMethodHWnd, WM_IME_CONTROL, IMC_OPENSTATUSWINDOW, 0);

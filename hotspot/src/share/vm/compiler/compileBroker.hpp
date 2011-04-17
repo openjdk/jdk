@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ class CompileTask : public CHeapObj {
   int          _hot_count;    // information about its invocation counter
   const char*  _comment;      // more info about the task
 
-  void print_compilation(outputStream *st, methodOop method, char* method_name);
  public:
   CompileTask() {
     _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock");
@@ -96,10 +95,26 @@ class CompileTask : public CHeapObj {
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
 
+private:
+  static void  print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level, bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false, const char* msg = NULL);
+
+public:
+  void         print_compilation(outputStream* st = tty);
+  static void  print_compilation(outputStream* st, const nmethod* nm, const char* msg = NULL) {
+    print_compilation_impl(st, nm->method(), nm->compile_id(), nm->comp_level(), nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false, msg);
+  }
+
+  static void  print_inlining(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = NULL);
+  static void  print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
+    print_inlining(tty, method, inline_level, bci, msg);
+  }
+
+  static void  print_inline_indent(int inline_level, outputStream* st = tty);
+
   void         print();
   void         print_line();
-
   void         print_line_on_error(outputStream* st, char* buf, int buflen);
+
   void         log_task(xmlStream* log);
   void         log_task_queued();
   void         log_task_start(CompileLog* log);

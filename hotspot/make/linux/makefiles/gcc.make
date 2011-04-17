@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,13 @@
 ifdef CROSS_COMPILE_ARCH
 CPP = $(ALT_COMPILER_PATH)/g++
 CC  = $(ALT_COMPILER_PATH)/gcc
+HOSTCPP = g++
+HOSTCC  = gcc
 else
 CPP = g++
 CC  = gcc
+HOSTCPP = $(CPP)
+HOSTCC  = $(CC)
 endif
 
 AS  = $(CC) -c

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ DEMONAME = Java2Demo
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(CLOSED_SRC)/share/demo/jfc/Java2D
-DEMO_TOPFILES   = ./Java2Demo.html ./README.txt
+DEMO_TOPFILES   = ./README.txt ./$(DEMONAME).html
 DEMO_MAINCLASS  = java2d.Java2Demo
 DEMO_DESTDIR    = $(DEMODIR)/jfc/Java2D
 
