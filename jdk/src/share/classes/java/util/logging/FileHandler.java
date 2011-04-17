@@ -409,22 +409,25 @@ public class FileHandler extends StreamHandler {
                     // Try the next file.
                     continue;
                 }
+                boolean available;
                 try {
-                    FileLock fl = fc.tryLock();
-                    if (fl == null) {
-                        // We failed to get the lock.  Try next file.
-                        continue;
-                    }
+                    available = fc.tryLock() != null;
                     // We got the lock OK.
                 } catch (IOException ix) {
                     // We got an IOException while trying to get the lock.
                     // This normally indicates that locking is not supported
                     // on the target directory.  We have to proceed without
                     // getting a lock.   Drop through.
+                    available = true;
                 }
-                // We got the lock.  Remember it.
-                locks.put(lockFileName, lockFileName);
-                break;
+                if (available) {
+                    // We got the lock.  Remember it.
+                    locks.put(lockFileName, lockFileName);
+                    break;
+                }
+
+                // We failed to get the lock.  Try next file.
+                fc.close();
             }
         }
 
