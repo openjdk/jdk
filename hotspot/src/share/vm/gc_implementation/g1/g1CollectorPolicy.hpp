@@ -182,6 +182,7 @@ protected:
   double* _par_last_termination_times_ms;
   double* _par_last_termination_attempts;
   double* _par_last_gc_worker_end_times_ms;
+  double* _par_last_gc_worker_times_ms;
 
   // indicates that we are in young GC mode
   bool _in_young_gc_mode;
@@ -569,11 +570,8 @@ protected:
   void print_stats(int level, const char* str, double value);
   void print_stats(int level, const char* str, int value);
 
-  void print_par_stats(int level, const char* str, double* data) {
-    print_par_stats(level, str, data, true);
-  }
-  void print_par_stats(int level, const char* str, double* data, bool summary);
-  void print_par_sizes(int level, const char* str, double* data, bool summary);
+  void print_par_stats(int level, const char* str, double* data);
+  void print_par_sizes(int level, const char* str, double* data);
 
   void check_other_times(int level,
                          NumberSeq* other_times_ms,

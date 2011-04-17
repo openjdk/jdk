@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,17 @@
 //
 // orig:                       transformed:
 //                               if (invariant-test) then
+//  predicate                      predicate
 //  loop                           loop
 //    stmt1                          stmt1
 //    if (invariant-test) then       stmt2
 //      stmt2                        stmt4
 //    else                         endloop
 //      stmt3                    else
-//    endif                        loop [clone]
-//    stmt4                          stmt1 [clone]
-//  endloop                          stmt3
+//    endif                        predicate [clone]
+//    stmt4                        loop [clone]
+//  endloop                          stmt1 [clone]
+//                                   stmt3
 //                                   stmt4 [clone]
 //                                 endloop
 //                               endif
@@ -124,8 +126,15 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
 
   ProjNode* proj_true = create_slow_version_of_loop(loop, old_new);
 
-  assert(proj_true->is_IfTrue() && proj_true->unique_ctrl_out() == head, "by construction");
-
+#ifdef ASSERT
+  Node* uniqc = proj_true->unique_ctrl_out();
+  Node* entry = head->in(LoopNode::EntryControl);
+  Node* predicate = find_predicate(entry);
+  if (predicate != NULL) predicate = predicate->in(0);
+  assert(proj_true->is_IfTrue() &&
+         (predicate == NULL && uniqc == head ||
+          predicate != NULL && uniqc == predicate), "by construction");
+#endif
   // Increment unswitch count
   LoopNode* head_clone = old_new[head->_idx]->as_Loop();
   int nct = head->unswitch_count() + 1;
@@ -227,21 +236,24 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
 
   // Clone the loop body.  The clone becomes the fast loop.  The
-  // original pre-header will (illegally) have 2 control users (old & new loops).
+  // original pre-header will (illegally) have 3 control users
+  // (old & new loops & new if).
   clone_loop(loop, old_new, dom_depth(head), iff);
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   // Fast (true) control
+  Node* iffast_pred = clone_loop_predicates(entry, iffast);
   _igvn.hash_delete(head);
-  head->set_req(LoopNode::EntryControl, iffast);
-  set_idom(head, iffast, dom_depth(head));
+  head->set_req(LoopNode::EntryControl, iffast_pred);
+  set_idom(head, iffast_pred, dom_depth(head));
   _igvn._worklist.push(head);
 
   // Slow (false) control
+  Node* ifslow_pred = move_loop_predicates(entry, ifslow);
   LoopNode* slow_head = old_new[head->_idx]->as_Loop();
   _igvn.hash_delete(slow_head);
-  slow_head->set_req(LoopNode::EntryControl, ifslow);
-  set_idom(slow_head, ifslow, dom_depth(slow_head));
+  slow_head->set_req(LoopNode::EntryControl, ifslow_pred);
+  set_idom(slow_head, ifslow_pred, dom_depth(slow_head));
   _igvn._worklist.push(slow_head);
 
   recompute_dom_depth();

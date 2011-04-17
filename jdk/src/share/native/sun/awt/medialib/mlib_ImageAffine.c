@@ -210,6 +210,8 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
     t_ind = 4;
   else if (type == MLIB_DOUBLE)
     t_ind = 5;
+  else
+    return MLIB_FAILURE; /* unknown image type */
 
   if (colormap != NULL && filter != MLIB_NEAREST) {
     if (t_ind != 0 && t_ind != 1)
@@ -318,6 +320,10 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
         }
 
         break;
+
+    default:
+      /* nothing to do for other edge types. */
+      break;
     }
 
     if (param_e->buff_malloc != NULL)

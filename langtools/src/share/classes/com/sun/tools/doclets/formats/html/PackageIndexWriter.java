@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,10 +163,10 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void addOverviewHeader(Content body) {
         if (root.inlineTags().length > 0) {
-            HtmlTree p = new HtmlTree(HtmlTag.P);
-            p.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(root, p);
-            Content div = HtmlTree.DIV(HtmlStyle.header, p);
+            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
+            subTitleDiv.addStyle(HtmlStyle.subTitle);
+            addSummaryComment(root, subTitleDiv);
+            Content div = HtmlTree.DIV(HtmlStyle.header, subTitleDiv);
             Content see = seeLabel;
             see.addContent(" ");
             Content descPara = HtmlTree.P(see);
@@ -188,10 +188,10 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addOverviewComment(Content htmltree) {
         if (root.inlineTags().length > 0) {
             htmltree.addContent(getMarkerAnchor("overview_description"));
-            HtmlTree p = new HtmlTree(HtmlTag.P);
-            p.addStyle(HtmlStyle.subTitle);
-            addInlineComment(root, p);
-            htmltree.addContent(p);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.subTitle);
+            addInlineComment(root, div);
+            htmltree.addContent(div);
         }
     }
 

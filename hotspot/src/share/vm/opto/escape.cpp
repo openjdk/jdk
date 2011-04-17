@@ -594,7 +594,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
 
 //
 // Create a new version of orig_phi if necessary. Returns either the newly
-// created phi or an existing phi.  Sets create_new to indicate wheter  a new
+// created phi or an existing phi.  Sets create_new to indicate whether a new
 // phi was created.  Cache the last newly created phi in the node map.
 //
 PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn, bool &new_created) {
@@ -649,7 +649,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
 }
 
 //
-// Return a new version  of Memory Phi "orig_phi" with the inputs having the
+// Return a new version of Memory Phi "orig_phi" with the inputs having the
 // specified alias index.
 //
 PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn) {
@@ -828,11 +828,15 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       break;  // hit one of our sentinels
     if (result->is_Mem()) {
       const Type *at = phase->type(result->in(MemNode::Address));
-      if (at != Type::TOP) {
-        assert (at->isa_ptr() != NULL, "pointer type required.");
-        int idx = C->get_alias_index(at->is_ptr());
-        if (idx == alias_idx)
-          break;
+      if (at == Type::TOP)
+        break; // Dead
+      assert (at->isa_ptr() != NULL, "pointer type required.");
+      int idx = C->get_alias_index(at->is_ptr());
+      if (idx == alias_idx)
+        break; // Found
+      if (!is_instance && (at->isa_oopptr() == NULL ||
+                           !at->is_oopptr()->is_known_instance())) {
+        break; // Do not skip store to general memory slice.
       }
       result = result->in(MemNode::Memory);
     }
@@ -902,13 +906,13 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
-    if (C->get_alias_index(t) != alias_idx) {
-      // Create a new Phi with the specified alias index type.
-      result = split_memory_phi(mphi, alias_idx, orig_phis, phase);
-    } else if (!is_instance) {
+    if (!is_instance) {
       // Push all non-instance Phis on the orig_phis worklist to update inputs
       // during Phase 4 if needed.
       orig_phis.append_if_missing(mphi);
+    } else if (C->get_alias_index(t) != alias_idx) {
+      // Create a new Phi with the specified alias index type.
+      result = split_memory_phi(mphi, alias_idx, orig_phis, phase);
     }
   }
   // the result is either MemNode, PhiNode, InitializeNode.

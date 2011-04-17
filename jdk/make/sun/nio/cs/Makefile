@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,15 @@ $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH): \
   $(SHARE_SRC)/classes/sun/nio/cs/ext/$(SERVICE_DESCRIPTION_PATH)
 	$(install-file)
 
+# no compression unless requested
+ifndef COMPRESS_JARS
+  CREATE_JAR_OPTS_NOMANIFEST = cf0
+else
+  CREATE_JAR_OPTS_NOMANIFEST = cf
+endif
+
 $(CHARSETS_JAR): $(FILES_class) $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH) $(FILES_DAT)
-	$(BOOT_JAR_CMD) cf0 $(CHARSETS_JAR) \
+	$(BOOT_JAR_CMD) $(CREATE_JAR_OPTS_NOMANIFEST) $(CHARSETS_JAR) \
 	      -C $(CLASSDESTDIR) sun \
 	      -C $(CLASSDESTDIR) $(SERVICE_DESCRIPTION_PATH)  \
 	      $(BOOT_JAR_JFLAGS)

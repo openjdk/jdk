@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -149,13 +149,13 @@ ifeq ($(PLATFORM), linux)
         LIBXT = -lXt
     else
     # Allows for builds on Debian GNU Linux, X11 is in a different place 
-       LIBXT = $(firstword $(wildcard /usr/X11R6/lib/libXt.a) \
+       LIBXT = $(firstword $(wildcard $(OPENWIN_LIB)/libXt.a) \
                         $(wildcard /usr/lib/libXt.a))
-       LIBSM = $(firstword $(wildcard /usr/X11R6/lib/libSM.a) \
+       LIBSM = $(firstword $(wildcard $(OPENWIN_LIB)/libSM.a) \
                         $(wildcard /usr/lib/libSM.a))
-       LIBICE = $(firstword $(wildcard /usr/X11R6/lib/libICE.a) \
+       LIBICE = $(firstword $(wildcard $(OPENWIN_LIB)/libICE.a) \
                          $(wildcard /usr/lib/libICE.a))
-       LIBXTST = $(firstword $(wildcard /usr/X11R6/lib/libXtst.a) \
+       LIBXTST = $(firstword $(wildcard $(OPENWIN_LIB)/libXtst.a) \
                          $(wildcard /usr/lib/libXtst.a))
    endif
 endif
@@ -224,9 +224,9 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/debug \
         $(EVENT_MODEL)
 
 ifeq ($(PLATFORM), linux)
-# Checking for the X11/extensions headers at the additional location
-  CPPFLAGS += -I/X11R6/include/X11/extensions \
-              -I/usr/include/X11/extensions
+  # Checking for the X11/extensions headers at the additional location
+  CPPFLAGS += -I$(firstword $(wildcard $(OPENWIN_HOME)/include/X11/extensions) \
+                        $(wildcard /usr/include/X11/extensions))
 endif
 
 ifeq ($(PLATFORM), solaris)

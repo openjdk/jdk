@@ -245,13 +245,13 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   }
   oop* addr;
   addr = cp->tags_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->cache_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->operands_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->pool_holder_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   return size;
 }
 
@@ -381,7 +381,6 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
       case JVM_CONSTANT_MethodType :
         st->print("signature_index=%d", cp->method_type_index_at(index));
         break;
-      case JVM_CONSTANT_InvokeDynamicTrans :
       case JVM_CONSTANT_InvokeDynamic :
         {
           st->print("bootstrap_method_index=%d", cp->invoke_dynamic_bootstrap_method_ref_index_at(index));

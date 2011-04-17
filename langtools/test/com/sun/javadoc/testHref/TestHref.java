@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
  * @library  ../lib/
- * @build    JavadocTester
- * @build    TestHref
+ * @build    JavadocTester TestHref
  * @run main TestHref
  */
 
@@ -81,7 +80,7 @@ public class TestHref extends JavadocTester {
 
         //Signature does not link to the page itself.
         {BUG_ID + FS + "pkg" + FS + "C4.html",
-            "public abstract class <strong>C4&lt;E extends C4&lt;E&gt;&gt;</strong>"
+            "public abstract class <span class=\"strong\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         },
     };
     private static final String[][] NEGATED_TEST =
