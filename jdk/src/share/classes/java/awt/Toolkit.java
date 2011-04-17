@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,7 +858,7 @@ public abstract class Toolkit {
                         String nm = null;
                         Class cls = null;
                         try {
-                            nm = System.getProperty("awt.toolkit", "sun.awt.X11.XToolkit");
+                            nm = System.getProperty("awt.toolkit");
                             try {
                                 cls = Class.forName(nm);
                             } catch (ClassNotFoundException e) {
@@ -1157,12 +1157,9 @@ public abstract class Toolkit {
      *          takes JobAttributes and PageAttributes objects. This object
      *          may be updated to reflect the user's job choices on exit. May
      *          be null.
-     *
      * @return  a <code>PrintJob</code> object, or <code>null</code> if the
      *          user cancelled the print job.
-     * @throws  NullPointerException if frame is null.  This exception is
-     *          always thrown when GraphicsEnvironment.isHeadless() returns
-     *          true.
+     * @throws  NullPointerException if frame is null
      * @throws  SecurityException if this thread is not allowed to initiate a
      *          print job request
      * @see     java.awt.GraphicsEnvironment#isHeadless
@@ -1201,12 +1198,9 @@ public abstract class Toolkit {
      *          job. The attributes will be updated to reflect the user's
      *          choices as outlined in the PageAttributes documentation. May be
      *          null.
-     *
      * @return  a <code>PrintJob</code> object, or <code>null</code> if the
      *          user cancelled the print job.
-     * @throws  NullPointerException if frame is null and either jobAttributes
-     *          is null or jobAttributes.getDialog() returns
-     *          JobAttributes.DialogType.NATIVE.
+     * @throws  NullPointerException if frame is null
      * @throws  IllegalArgumentException if pageAttributes specifies differing
      *          cross feed and feed resolutions. Also if this thread has
      *          access to the file system and jobAttributes specifies
@@ -1218,9 +1212,6 @@ public abstract class Toolkit {
      *          opportunity to select a file and proceed with printing.
      *          The dialog will ensure that the selected output file
      *          is valid before returning from this method.
-     *          <p>
-     *          This exception is always thrown when GraphicsEnvironment.isHeadless()
-     *          returns true.
      * @throws  SecurityException if this thread is not allowed to initiate a
      *          print job request, or if jobAttributes specifies print to file,
      *          and this thread is not allowed to access the file system
@@ -1235,10 +1226,6 @@ public abstract class Toolkit {
                                 JobAttributes jobAttributes,
                                 PageAttributes pageAttributes) {
         // Override to add printing support with new job/page control classes
-
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalArgumentException();
-        }
 
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getPrintJob(frame, jobtitle,

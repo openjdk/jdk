@@ -93,16 +93,15 @@ if "%MSC_VER%" == "1500" (
 echo Will generate VC9 {Visual Studio 2008}
 ) else (
 if "%MSC_VER%" == "1600" (
-echo Detected Visual Studio 2010, but
-echo will generate VC9 {Visual Studio 2008}
-echo Use conversion wizard in VS 2010.
+echo Will generate VC10 {Visual Studio 2010}
+set ProjectFile=%HotSpotBuildSpace%\jvm.vcxproj
 ) else (
 echo Will generate VC7 project {Visual Studio 2003 .NET}
 )
 )
 )
 )
-echo                            %ProjectFile%
+echo %ProjectFile%
 echo **************************************************************
 
 REM Test all variables to see whether the directories they

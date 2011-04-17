@@ -788,8 +788,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Internally to java.lang.invoke, a @PolymorphicSignature annotation
             // acts like a classfile attribute.
             if (!c.type.isErroneous() &&
-                    (types.isSameType(c.type, syms.polymorphicSignatureType) ||
-                     types.isSameType(c.type, syms.transientPolymorphicSignatureType))) {
+                types.isSameType(c.type, syms.polymorphicSignatureType)) {
                 if (!target.hasMethodHandles()) {
                     // Somebody is compiling JDK7 source code to a JDK6 target.
                     // Make it an error, since it is unlikely but important.

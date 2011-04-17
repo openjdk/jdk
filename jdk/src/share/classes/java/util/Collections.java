@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3533,20 +3533,20 @@ public class Collections {
     }
 
     /**
-     * Returns a comparator that imposes the reverse of the <i>natural
-     * ordering</i> on a collection of objects that implement the
-     * <tt>Comparable</tt> interface.  (The natural ordering is the ordering
-     * imposed by the objects' own <tt>compareTo</tt> method.)  This enables a
+     * Returns a comparator that imposes the reverse of the <em>natural
+     * ordering</em> on a collection of objects that implement the
+     * {@code Comparable} interface.  (The natural ordering is the ordering
+     * imposed by the objects' own {@code compareTo} method.)  This enables a
      * simple idiom for sorting (or maintaining) collections (or arrays) of
-     * objects that implement the <tt>Comparable</tt> interface in
-     * reverse-natural-order.  For example, suppose a is an array of
+     * objects that implement the {@code Comparable} interface in
+     * reverse-natural-order.  For example, suppose {@code a} is an array of
      * strings. Then: <pre>
      *          Arrays.sort(a, Collections.reverseOrder());
      * </pre> sorts the array in reverse-lexicographic (alphabetical) order.<p>
      *
      * The returned comparator is serializable.
      *
-     * @return a comparator that imposes the reverse of the <i>natural
+     * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
      *         the <tt>Comparable</tt> interface.
      * @see Comparable
@@ -3575,16 +3575,18 @@ public class Collections {
 
     /**
      * Returns a comparator that imposes the reverse ordering of the specified
-     * comparator.  If the specified comparator is null, this method is
+     * comparator.  If the specified comparator is {@code null}, this method is
      * equivalent to {@link #reverseOrder()} (in other words, it returns a
-     * comparator that imposes the reverse of the <i>natural ordering</i> on a
-     * collection of objects that implement the Comparable interface).
+     * comparator that imposes the reverse of the <em>natural ordering</em> on
+     * a collection of objects that implement the Comparable interface).
      *
      * <p>The returned comparator is serializable (assuming the specified
-     * comparator is also serializable or null).
+     * comparator is also serializable or {@code null}).
      *
-     * @return a comparator that imposes the reverse ordering of the
-     *         specified comparator
+     * @param cmp a comparator who's ordering is to be reversed by the returned
+     * comparator or {@code null}
+     * @return A comparator that imposes the reverse ordering of the
+     *         specified comparator.
      * @since 1.5
      */
     public static <T> Comparator<T> reverseOrder(Comparator<T> cmp) {

@@ -27,7 +27,7 @@
  * @bug 6991596
  * @summary JSR 292 unimplemented adapter_opt_i2i and adapter_opt_l2i on SPARC
  *
- * @run main/othervm -ea -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic -XX:+UnlockDiagnosticVMOptions -XX:+VerifyMethodHandles Test6991596
+ * @run main/othervm -ea -XX:+UnlockDiagnosticVMOptions -XX:+VerifyMethodHandles Test6991596
  */
 
 import java.lang.invoke.*;

@@ -245,13 +245,13 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   }
   oop* addr;
   addr = cp->tags_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->cache_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->operands_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   addr = cp->pool_holder_addr();
-  blk->do_oop(addr);
+  if (mr.contains(addr)) blk->do_oop(addr);
   return size;
 }
 
@@ -286,7 +286,7 @@ void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
   constantPoolOop cp = (constantPoolOop) obj;
   if (cp->tags() != NULL &&
-      (!JavaObjectsInPerm || (AnonymousClasses && cp->has_pseudo_string()))) {
+      (!JavaObjectsInPerm || (EnableInvokeDynamic && cp->has_pseudo_string()))) {
     for (int i = 1; i < cp->length(); ++i) {
       if (cp->tag_at(i).is_string()) {
         oop* base = cp->obj_at_addr_raw(i);

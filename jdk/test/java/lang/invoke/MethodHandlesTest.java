@@ -25,8 +25,8 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @compile -source 7 -target 7 -XDallowTransitionalJSR292=no MethodHandlesTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.lang.invoke.MethodHandlesTest
+ * @compile -source 7 -target 7 MethodHandlesTest.java
+ * @run junit/othervm test.java.lang.invoke.MethodHandlesTest
  */
 
 package test.java.lang.invoke;

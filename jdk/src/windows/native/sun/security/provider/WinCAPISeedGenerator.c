@@ -33,11 +33,6 @@
 #include <jni.h>
 #include "sun_security_provider_NativeSeedGenerator.h"
 
-/* Typedefs for runtime linking. */
-typedef BOOL (WINAPI *CryptAcquireContextType)(HCRYPTPROV*, LPCTSTR, LPCTSTR, DWORD, DWORD);
-typedef BOOL (WINAPI *CryptGenRandomType)(HCRYPTPROV, DWORD, BYTE*);
-typedef BOOL (WINAPI *CryptReleaseContextType)(HCRYPTPROV, DWORD);
-
 /*
  * Get a random seed from the MS CryptoAPI. Return true if successful, false
  * otherwise.
@@ -49,48 +44,27 @@ typedef BOOL (WINAPI *CryptReleaseContextType)(HCRYPTPROV, DWORD);
 JNIEXPORT jboolean JNICALL Java_sun_security_provider_NativeSeedGenerator_nativeGenerateSeed
   (JNIEnv *env, jclass clazz, jbyteArray randArray)
 {
-    HMODULE lib;
-    CryptAcquireContextType acquireContext;
-    CryptGenRandomType genRandom;
-    CryptReleaseContextType releaseContext;
-
     HCRYPTPROV hCryptProv;
     jboolean result = JNI_FALSE;
     jsize numBytes;
     jbyte* randBytes;
 
-    lib = LoadLibrary("ADVAPI32.DLL");
-    if (lib == NULL) {
-        return result;
-    }
-
-    acquireContext = (CryptAcquireContextType)GetProcAddress(lib, "CryptAcquireContextA");
-    genRandom = (CryptGenRandomType)GetProcAddress(lib, "CryptGenRandom");
-    releaseContext = (CryptReleaseContextType)GetProcAddress(lib, "CryptReleaseContext");
-
-    if (acquireContext == NULL || genRandom == NULL || releaseContext == NULL) {
-        FreeLibrary(lib);
-        return result;
-    }
-
-    if (acquireContext(&hCryptProv, "J2SE", NULL, PROV_RSA_FULL, 0) == FALSE) {
+    if (CryptAcquireContextA(&hCryptProv, "J2SE", NULL, PROV_RSA_FULL, 0) == FALSE) {
         /* If CSP context hasn't been created, create one. */
-        if (acquireContext(&hCryptProv, "J2SE", NULL, PROV_RSA_FULL,
+        if (CryptAcquireContextA(&hCryptProv, "J2SE", NULL, PROV_RSA_FULL,
                 CRYPT_NEWKEYSET) == FALSE) {
-            FreeLibrary(lib);
             return result;
         }
     }
 
     numBytes = (*env)->GetArrayLength(env, randArray);
     randBytes = (*env)->GetByteArrayElements(env, randArray, NULL);
-    if (genRandom(hCryptProv, numBytes, randBytes)) {
+    if (CryptGenRandom(hCryptProv, numBytes, randBytes)) {
         result = JNI_TRUE;
     }
     (*env)->ReleaseByteArrayElements(env, randArray, randBytes, 0);
 
-    releaseContext(hCryptProv, 0);
-    FreeLibrary(lib);
+    CryptReleaseContext(hCryptProv, 0);
 
     return result;
 }

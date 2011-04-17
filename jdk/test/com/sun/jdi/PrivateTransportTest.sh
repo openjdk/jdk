@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,8 @@ fi
 
 libdir=${TESTCLASSES}
 
+is_windows=false
+is_cygwin=false
 case `uname -s` in 
   SunOS)
     libarch=`uname -p`
@@ -126,10 +128,13 @@ case `uname -s` in
     libloc=`dirname ${xx}`
     ;;
   Windows*)
+    is_windows=true
     libloc=${jreloc}/bin
     sep=';'
     ;;
   CYGWIN*)
+    is_windows=true
+    is_cygwin=true
     libloc=${jreloc}/bin
     sep=':'
 
@@ -176,7 +181,18 @@ fi
 #
 CP="-classpath \"${TESTCLASSES}\""
 #
-DEBUGGEEFLAGS="$DEBUGGEEFLAGS -agentlib:jdwp=transport=${private_transport},server=y,suspend=n"
+if [ "$is_windows" = "true" ]; then
+    if [ "$is_cygwin" = "true" ]; then
+        win_fullpath=`cygpath -m "$fullpath" \
+            | sed -e 's#/#\\\\\\\\#g' -e 's/\.dll//'`
+    else
+        win_fullpath=`echo "$fullpath" \
+            | sed -e 's#/#\\\\\\\\#g' -e 's/\.dll//'`
+    fi
+    DEBUGGEEFLAGS="$DEBUGGEEFLAGS -agentlib:jdwp=transport=${win_fullpath},server=y,suspend=n"
+else
+    DEBUGGEEFLAGS="$DEBUGGEEFLAGS -agentlib:jdwp=transport=${private_transport},server=y,suspend=n"
+fi
                
 echo ${TESTJAVA}/bin/java ${DEBUGGEEFLAGS} ${CP} ${TARGETCLASS}
 eval ${TESTJAVA}/bin/java ${DEBUGGEEFLAGS} ${CP} ${TARGETCLASS}

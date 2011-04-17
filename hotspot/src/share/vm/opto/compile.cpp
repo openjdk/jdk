@@ -2544,6 +2544,36 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       frc.inc_inner_loop_count();
     }
     break;
+  case Op_LShiftI:
+  case Op_RShiftI:
+  case Op_URShiftI:
+  case Op_LShiftL:
+  case Op_RShiftL:
+  case Op_URShiftL:
+    if (Matcher::need_masked_shift_count) {
+      // The cpu's shift instructions don't restrict the count to the
+      // lower 5/6 bits. We need to do the masking ourselves.
+      Node* in2 = n->in(2);
+      juint mask = (n->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      const TypeInt* t = in2->find_int_type();
+      if (t != NULL && t->is_con()) {
+        juint shift = t->get_con();
+        if (shift > mask) { // Unsigned cmp
+          Compile* C = Compile::current();
+          n->set_req(2, ConNode::make(C, TypeInt::make(shift & mask)));
+        }
+      } else {
+        if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
+          Compile* C = Compile::current();
+          Node* shift = new (C, 3) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
+          n->set_req(2, shift);
+        }
+      }
+      if (in2->outcnt() == 0) { // Remove dead node
+        in2->disconnect_inputs(NULL);
+      }
+    }
+    break;
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );

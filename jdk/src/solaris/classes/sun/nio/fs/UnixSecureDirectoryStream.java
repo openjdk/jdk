@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,20 +81,6 @@ class UnixSecureDirectoryStream
         return (UnixPath)obj;
     }
 
-    private boolean followLinks(LinkOption... options) {
-        boolean followLinks = true;
-        for (LinkOption option: options) {
-            if (option == LinkOption.NOFOLLOW_LINKS) {
-                followLinks = false;
-                continue;
-            }
-            if (option == null)
-                throw new NullPointerException();
-            throw new AssertionError("Should not get here");
-        }
-        return followLinks;
-    }
-
     /**
      * Opens sub-directory in this directory
      */
@@ -105,7 +91,7 @@ class UnixSecureDirectoryStream
     {
         UnixPath file = getName(obj);
         UnixPath child = ds.directory().resolve(file);
-        boolean followLinks = followLinks(options);
+        boolean followLinks = Util.followLinks(options);
 
         // permission check using name resolved against original path of directory
         SecurityManager sm = System.getSecurityManager();
@@ -316,7 +302,7 @@ class UnixSecureDirectoryStream
                                                                 LinkOption... options)
     {
         UnixPath file = getName(obj);
-        boolean followLinks = followLinks(options);
+        boolean followLinks = Util.followLinks(options);
         return getFileAttributeViewImpl(file, type, followLinks);
     }
 
