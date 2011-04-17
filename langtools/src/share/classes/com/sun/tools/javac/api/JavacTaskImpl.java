@@ -65,7 +65,7 @@ import com.sun.tools.javac.main.JavaCompiler;
  * @author Jonathan Gibbons
  */
 public class JavacTaskImpl extends JavacTask {
-    private JavacTool tool;
+    private ClientCodeWrapper ccw;
     private Main compilerMain;
     private JavaCompiler compiler;
     private Locale locale;
@@ -80,12 +80,11 @@ public class JavacTaskImpl extends JavacTask {
 
     private Integer result = null;
 
-    JavacTaskImpl(JavacTool tool,
-                Main compilerMain,
+    JavacTaskImpl(Main compilerMain,
                 String[] args,
                 Context context,
                 List<JavaFileObject> fileObjects) {
-        this.tool = tool;
+        this.ccw = ClientCodeWrapper.instance(context);
         this.compilerMain = compilerMain;
         this.args = args;
         this.context = context;
@@ -94,17 +93,15 @@ public class JavacTaskImpl extends JavacTask {
         // null checks
         compilerMain.getClass();
         args.getClass();
-        context.getClass();
         fileObjects.getClass();
     }
 
-    JavacTaskImpl(JavacTool tool,
-                Main compilerMain,
+    JavacTaskImpl(Main compilerMain,
                 Iterable<String> flags,
                 Context context,
                 Iterable<String> classes,
                 Iterable<? extends JavaFileObject> fileObjects) {
-        this(tool, compilerMain, toArray(flags, classes), context, toList(fileObjects));
+        this(compilerMain, toArray(flags, classes), context, toList(fileObjects));
     }
 
     static private String[] toArray(Iterable<String> flags, Iterable<String> classes) {
@@ -131,7 +128,7 @@ public class JavacTaskImpl extends JavacTask {
         if (!used.getAndSet(true)) {
             initContext();
             notYetEntered = new HashMap<JavaFileObject, JCCompilationUnit>();
-            compilerMain.setFatalErrors(true);
+            compilerMain.setAPIMode(true);
             result = compilerMain.compile(args, context, fileObjects, processors);
             cleanup();
             return result == 0;
@@ -185,31 +182,9 @@ public class JavacTaskImpl extends JavacTask {
         if (context.get(TaskListener.class) != null)
             context.put(TaskListener.class, (TaskListener)null);
         if (taskListener != null)
-            context.put(TaskListener.class, wrap(taskListener));
+            context.put(TaskListener.class, ccw.wrap(taskListener));
         //initialize compiler's default locale
-        JavacMessages.instance(context).setCurrentLocale(locale);
-    }
-    // where
-    private TaskListener wrap(final TaskListener tl) {
-        tl.getClass(); // null check
-        return new TaskListener() {
-            public void started(TaskEvent e) {
-                try {
-                    tl.started(e);
-                } catch (Throwable t) {
-                    throw new ClientCodeException(t);
-                }
-            }
-
-            public void finished(TaskEvent e) {
-                try {
-                    tl.finished(e);
-                } catch (Throwable t) {
-                    throw new ClientCodeException(t);
-                }
-            }
-
-        };
+        context.put(Locale.class, locale);
     }
 
     void cleanup() {

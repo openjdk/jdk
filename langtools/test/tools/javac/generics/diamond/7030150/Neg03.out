@@ -1,0 +1,3 @@
+Neg03.java:15:24: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg03.Foo), (compiler.misc.explicit.param.do.not.conform.to.bounds: java.lang.String, java.lang.Integer)
+Neg03.java:16:24: compiler.err.cant.apply.symbol.1: kindname.constructor, Foo, T, int, kindname.class, Neg03.Foo<X>, (compiler.misc.explicit.param.do.not.conform.to.bounds: java.lang.String, java.lang.Integer)
+2 errors

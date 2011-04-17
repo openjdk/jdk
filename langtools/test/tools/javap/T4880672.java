@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 4880672
+ * @bug 4880672 7031005
  * @summary javap does not output inner interfaces of an interface
  */
 
@@ -39,7 +39,7 @@ public class T4880672
 
     void run() {
         verify("java.util.Map", "public interface java.util.Map$Entry");
-        verify("T4880672", "class T4880672$A$B extends java.lang.Object");
+        verify("T4880672", "class T4880672$A$B");
         verify("C", ""); // must not give error if no InnerClasses attribute
         if (errors > 0)
             throw new Error(errors + " found.");

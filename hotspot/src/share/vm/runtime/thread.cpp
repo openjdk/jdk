@@ -3229,7 +3229,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
     }
-    }
+  }
 
   // See        : bugid 4211085.
   // Background : the static initializer of java.lang.Compiler tries to read

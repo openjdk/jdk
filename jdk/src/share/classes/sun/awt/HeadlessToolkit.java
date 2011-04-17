@@ -320,8 +320,7 @@ public class HeadlessToolkit extends Toolkit
             // Should never happen
             throw new HeadlessException();
         }
-        throw new IllegalArgumentException(
-                "PrintJob not supported in a headless environment");
+        throw new NullPointerException("frame must not be null");
     }
 
     public PrintJob getPrintJob(Frame frame, String doctitle, Properties props)
@@ -330,8 +329,7 @@ public class HeadlessToolkit extends Toolkit
             // Should never happen
             throw new HeadlessException();
         }
-        throw new IllegalArgumentException(
-                "PrintJob not supported in a headless environment");
+        throw new NullPointerException("frame must not be null");
     }
 
     /*
