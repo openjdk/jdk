@@ -70,6 +70,7 @@
 #include "oops/cpCacheKlass.hpp"
 #include "oops/cpCacheOop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlassKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -1101,6 +1102,7 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(instanceKlass, Klass)                             \
            declare_type(instanceKlassKlass, klassKlass)                   \
            declare_type(instanceOopDesc, oopDesc)                         \
+           declare_type(instanceMirrorKlass, instanceKlass)               \
            declare_type(instanceRefKlass, instanceKlass)                  \
            declare_type(klassKlass, Klass)                                \
            declare_type(klassOopDesc, oopDesc)                            \

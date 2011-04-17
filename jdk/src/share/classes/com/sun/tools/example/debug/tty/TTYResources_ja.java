@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"Monitor information for expr", "{0} ({1})\u306E\u60C5\u5831\u306E\u30E2\u30CB\u30BF\u30FC:"},
         {"More than one class named", "\u540D\u524D''{0}''\u306E\u30AF\u30E9\u30B9\u304C\u8907\u6570\u3042\u308A\u307E\u3059"},
         {"native method", "native\u30E1\u30BD\u30C3\u30C9"},
-        {"nested:", "\u5165\u308C\u5B50\u306B\u306A\u3063\u3066\u3044\u307E\u3059: {0}"},
+        {"nested:", "\u30CD\u30B9\u30C8\u3055\u308C\u3066\u3044\u307E\u3059: {0}"},
         {"No attach address specified.", "\u63A5\u7D9A\u30A2\u30C9\u30EC\u30B9\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
         {"No breakpoints set.", "\u30D6\u30EC\u30FC\u30AF\u30DD\u30A4\u30F3\u30C8\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
         {"No class named", "\u540D\u524D''{0}''\u306E\u30AF\u30E9\u30B9\u304C\u3042\u308A\u307E\u305B\u3093"},

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,16 @@ JDK_TEST_LIST2 = \
 	jdk_rmi \
 	jdk_swing
 
+# These are the current jck test targets in the jdk repository
+JDK_JCK7_LIST = jck7devtools jck7compiler jck7runtime
+
 # Default test target (everything)
 all: $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
 
 # Test targets
 $(LANGTOOLS_TEST_LIST):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
-$(JDK_TEST_LIST) $(JDK_TEST_LIST2):
+$(JDK_TEST_LIST) $(JDK_TEST_LIST2) $(JDK_JCK7_LIST):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), $@)
 
 clean:
@@ -87,7 +90,9 @@ clean:
 ################################################################
 
 # Phony targets (e.g. these are not filenames)
-.PHONY: all clean $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
+.PHONY: all clean \
+        $(JDK_TEST_LIST) $(JDK_TEST_LIST2) $(JDK_JCK7_LIST) \
+        $(LANGTOOLS_TEST_LIST)
 
 ################################################################
 

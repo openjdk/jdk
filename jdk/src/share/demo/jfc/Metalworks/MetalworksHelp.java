@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,8 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,26 +38,31 @@ import java.io.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 
-/*
+
+/**
  * @author Steve Wilson
+ * @author Alexander Kouznetsov
  */
+@SuppressWarnings("serial")
 public class MetalworksHelp extends JInternalFrame {
 
     public MetalworksHelp() {
         super("Help", true, true, true, true);
 
-        setFrameIcon( (Icon)UIManager.get("Tree.openIcon")); // PENDING(steve) need more general palce to get this icon
-        setBounds( 200, 25, 400, 400);
+        setFrameIcon((Icon) UIManager.get("Tree.openIcon")); // PENDING(steve) need more general place to get this icon
+        setBounds(200, 25, 400, 400);
         HtmlPane html = new HtmlPane();
         setContentPane(html);
     }
-
 }
 
 
+@SuppressWarnings("serial")
 class HtmlPane extends JScrollPane implements HyperlinkListener {
+
     JEditorPane html;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public HtmlPane() {
         try {
             URL url = getClass().getResource("/resources/HelpFiles/toc.html");
@@ -67,7 +70,7 @@ class HtmlPane extends JScrollPane implements HyperlinkListener {
             html.setEditable(false);
             html.addHyperlinkListener(this);
             html.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
-                                   Boolean.TRUE);
+                    Boolean.TRUE);
             JViewport vp = getViewport();
             vp.add(html);
         } catch (MalformedURLException e) {
@@ -106,6 +109,7 @@ class HtmlPane extends JScrollPane implements HyperlinkListener {
         SwingUtilities.invokeLater(new PageLoader(u, c));
     }
 
+
     /**
      * temporary class that loads synchronously (although
      * later than the request so that a cursor change
@@ -142,9 +146,7 @@ class HtmlPane extends JScrollPane implements HyperlinkListener {
                 }
             }
         }
-
         URL url;
         Cursor cursor;
     }
-
 }

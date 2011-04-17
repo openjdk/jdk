@@ -104,9 +104,7 @@ sun/reflect/ReflectionFactory
 java/lang/ref/Reference$Lock
 java/lang/ref/Reference$ReferenceHandler
 java/lang/ref/Finalizer$FinalizerThread
-java/util/Hashtable$EmptyEnumerator
 java/util/Enumeration
-java/util/Hashtable$EmptyIterator
 java/util/Iterator
 java/util/Hashtable$Entry
 java/nio/charset/Charset
@@ -198,8 +196,6 @@ java/io/ExpiringCache
 java/io/ExpiringCache$1
 java/util/LinkedHashMap
 java/util/LinkedHashMap$Entry
-java/io/File$1
-sun/misc/JavaIODeleteOnExitAccess
 sun/misc/SharedSecrets
 java/lang/ClassLoader$3
 java/lang/StringCoding$StringEncoder
@@ -213,7 +209,6 @@ sun/misc/NativeSignalHandler
 java/io/Console
 java/io/Console$1
 sun/misc/JavaIOAccess
-java/io/Console$1$1
 java/lang/Shutdown
 java/util/ArrayList
 java/lang/Shutdown$Lock
@@ -332,7 +327,6 @@ java/util/Hashtable$Enumerator
 java/beans/PropertyChangeEvent
 java/util/EventObject
 java/awt/Component$AWTTreeLock
-sun/awt/DebugHelper
 sun/awt/NativeLibLoader
 sun/security/action/LoadLibraryAction
 java/awt/GraphicsEnvironment
@@ -343,7 +337,6 @@ java/lang/ProcessEnvironment$ExternalData
 java/lang/ProcessEnvironment$Value
 java/lang/ProcessEnvironment$StringEnvironment
 java/util/Collections$UnmodifiableMap
-sun/awt/DebugHelperStub
 java/awt/Toolkit
 java/awt/Toolkit$3
 sun/util/CoreResourceBundleControl
@@ -393,9 +386,7 @@ sun/awt/X11GraphicsEnvironment
 sun/java2d/SunGraphicsEnvironment
 sun/java2d/FontSupport
 sun/awt/DisplayChangedListener
-sun/java2d/SunGraphicsEnvironment$TTFilter
 java/io/FilenameFilter
-sun/java2d/SunGraphicsEnvironment$T1Filter
 sun/awt/X11GraphicsEnvironment$1
 sun/awt/SunToolkit
 sun/awt/WindowClosingSupport
@@ -405,7 +396,6 @@ sun/awt/InputMethodSupport
 java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject
 java/util/concurrent/locks/Condition
 sun/awt/AWTAutoShutdown
-sun/awt/AWTAutoShutdown$PeerMap
 sun/awt/SunToolkit$6
 java/awt/Dialog$ModalExclusionType
 java/lang/Enum
@@ -426,7 +416,6 @@ sun/font/CompositeFont
 java/util/HashMap$Values
 java/util/HashMap$ValueIterator
 java/util/HashMap$HashIterator
-sun/font/FontManager$1
 java/awt/Font
 java/awt/geom/AffineTransform
 sun/font/AttributeValues
@@ -464,7 +453,6 @@ sun/font/StrikeCache
 sun/java2d/Disposer
 sun/java2d/Disposer$1
 sun/font/StrikeCache$1
-sun/font/FontManager$FontRegistrationInfo
 sun/awt/motif/MFontConfiguration
 sun/awt/FontConfiguration
 sun/awt/FontDescriptor
@@ -509,11 +497,8 @@ java/awt/image/DirectColorModel
 java/awt/image/PackedColorModel
 java/awt/color/ColorSpace
 java/awt/color/ICC_Profile
-sun/awt/color/ProfileDeferralInfo
-sun/awt/color/ProfileDeferralMgr
 java/awt/color/ICC_ProfileRGB
 java/awt/color/ICC_Profile$1
-sun/awt/color/ProfileActivator
 java/awt/color/ICC_ColorSpace
 sun/java2d/pipe/NullPipe
 sun/java2d/pipe/PixelDrawPipe
@@ -536,8 +521,6 @@ sun/java2d/pipe/TextRenderer
 sun/java2d/pipe/SpanClipRenderer
 sun/java2d/pipe/Region
 sun/java2d/pipe/RegionIterator
-sun/java2d/pipe/DuctusShapeRenderer
-sun/java2d/pipe/DuctusRenderer
 sun/java2d/pipe/AlphaPaintPipe
 sun/java2d/pipe/SpanShapeRenderer$Composite
 sun/java2d/pipe/SpanShapeRenderer
@@ -611,7 +594,6 @@ sun/awt/X11/XWrapperBase
 sun/awt/X11/Native
 sun/awt/X11/Native$1
 java/awt/EventQueue
-sun/awt/X11/XToolkit$7
 java/util/EmptyStackException
 java/lang/reflect/InvocationTargetException
 java/awt/EventDispatchThread
@@ -620,10 +602,7 @@ java/awt/event/MouseEvent
 sun/awt/PeerEvent
 java/awt/event/InvocationEvent
 java/awt/ActiveEvent
-java/awt/EventQueueItem
 sun/awt/X11/XToolkit$1
-sun/awt/X11/XToolkit$XErrorHandler
-sun/awt/X11/XToolkit$5
 sun/awt/X11/XEventDispatcher
 sun/awt/SunToolkit$ModalityListenerList
 sun/awt/ModalityListener
@@ -635,21 +614,18 @@ java/util/LinkedList
 java/util/Deque
 java/util/Queue
 java/util/AbstractSequentialList
-java/util/LinkedList$Entry
 sun/awt/X11/AwtScreenData
 sun/awt/X11/XWM
 sun/awt/X11/MWMConstants
 sun/awt/X11/XAtom
 java/awt/Insets
 sun/awt/X11/XWM$1
-sun/awt/X11/XWM$2
 sun/awt/X11/XSetWindowAttributes
 sun/awt/X11/XErrorEvent
 sun/awt/X11/XNETProtocol
 sun/awt/X11/XStateProtocol
 sun/awt/X11/XLayerProtocol
 sun/awt/X11/XProtocol
-sun/awt/X11/XProtocol$1
 java/lang/Long$LongCache
 sun/awt/X11/WindowPropertyGetter
 sun/awt/X11/UnsafeXDisposerRecord
@@ -659,7 +635,6 @@ sun/awt/X11/XAtomList
 sun/awt/X11/XToolkit$3
 java/awt/Window$WindowDisposerRecord
 sun/awt/X11/XAnyEvent
-sun/awt/X11/IXAnyEvent
 java/awt/KeyboardFocusManager
 java/awt/KeyEventDispatcher
 java/awt/KeyEventPostProcessor
@@ -669,7 +644,6 @@ java/awt/DefaultKeyboardFocusManager
 java/awt/DefaultFocusTraversalPolicy
 java/awt/ContainerOrderFocusTraversalPolicy
 java/awt/FocusTraversalPolicy
-java/awt/MutableBoolean
 java/util/Collections$UnmodifiableSet
 sun/awt/HeadlessToolkit
 sun/awt/X11/XKeyboardFocusManagerPeer
@@ -728,7 +702,6 @@ sun/java2d/DefaultDisposerRecord
 sun/java2d/x11/X11Renderer
 sun/awt/X11/XGlobalCursorManager
 sun/awt/GlobalCursorManager
-sun/awt/X11/XToolkit$6
 java/awt/Cursor$CursorDisposer
 java/awt/AWTException
 java/awt/HeadlessException
@@ -760,7 +733,6 @@ java/awt/event/MouseListener
 java/awt/event/MouseMotionListener
 java/awt/event/MouseWheelListener
 java/awt/event/InputMethodListener
-java/awt/Component$NativeInLightFixer
 java/awt/event/ContainerListener
 javax/accessibility/AccessibleContext
 sun/reflect/UnsafeObjectFieldAccessorImpl
@@ -845,7 +817,6 @@ javax/swing/RepaintManager$DisplayChangedHandler
 javax/swing/SwingPaintEventDispatcher
 sun/awt/PaintEventDispatcher
 javax/swing/UIManager$2
-javax/swing/UIManager$3
 java/awt/PopupMenu
 java/awt/Menu
 java/awt/MenuItem
@@ -941,8 +912,6 @@ javax/swing/plaf/basic/BasicLabelUI
 javax/swing/plaf/LabelUI
 javax/swing/plaf/metal/DefaultMetalTheme$FontDelegate$1
 javax/swing/plaf/basic/BasicHTML
-javax/swing/SystemEventQueueUtilities
-javax/swing/SystemEventQueueUtilities$SystemEventQueue
 sun/awt/NullComponentPeer
 java/awt/event/WindowEvent
 java/awt/EventQueue$1
@@ -954,11 +923,8 @@ sun/awt/dnd/SunDropTargetEvent
 java/awt/event/ActionEvent
 sun/awt/X11/XReparentEvent
 sun/awt/X11/XWindowAttributes
-sun/awt/X11/ComponentAccessor
-sun/awt/X11/ComponentAccessor$1
 sun/awt/EventQueueItem
 sun/awt/SunToolkit$3
-javax/swing/SystemEventQueueUtilities$ComponentWorkRequest
 java/applet/Applet
 java/awt/Panel
 com/sun/awt/AWTUtilities
@@ -974,17 +940,14 @@ java/io/ByteArrayOutputStream
 sun/misc/ExtensionDependency
 java/lang/Package
 sun/security/util/ManifestEntryVerifier
-sun/security/provider/Sun
 java/security/Provider
 java/security/Provider$ServiceKey
 java/security/Provider$EngineDescription
-sun/security/provider/Sun$1
 java/security/Security
 java/security/Security$1
 sun/misc/FloatingDecimal
 sun/misc/FloatingDecimal$1
 java/util/regex/Pattern
-java/util/regex/Pattern$8
 java/util/regex/Pattern$Node
 java/util/regex/Pattern$LastNode
 java/util/regex/Pattern$GroupHead
@@ -1068,7 +1031,6 @@ javax/swing/text/AttributeSet
 javax/swing/text/SimpleAttributeSet$EmptyAttributeSet
 javax/swing/text/StyleContext$NamedStyle
 javax/swing/text/Style
-javax/swing/text/SimpleAttributeSet$1
 javax/swing/text/StyleContext$SmallAttributeSet
 javax/swing/text/AbstractDocument$BidiRootElement
 javax/swing/text/AbstractDocument$BranchElement
@@ -1232,7 +1194,6 @@ sun/nio/cs/UTF_16
 sun/nio/cs/UTF_16$Decoder
 sun/nio/cs/UnicodeDecoder
 sun/font/FileFontStrike
-sun/font/FileFont$FileFontDisposer
 sun/font/TrueTypeGlyphMapper
 sun/font/CMap
 sun/font/CMap$NullCMapClass
@@ -1242,17 +1203,9 @@ sun/font/CMap$CMapFormat12
 java/awt/FontFormatException
 sun/java2d/HeadlessGraphicsEnvironment
 java/nio/charset/Charset$3
-sun/nio/cs/ext/ExtendedCharsets
 sun/nio/cs/AbstractCharsetProvider
-sun/nio/cs/ext/EUC_KR
-sun/nio/cs/ext/EUC_KR$Decoder
-sun/nio/cs/ext/DoubleByteDecoder
 sun/font/NativeFont
-sun/nio/cs/ext/MS950
-sun/nio/cs/ext/MS950$Decoder
 java/lang/CharacterData00
-sun/nio/cs/ext/GBK
-sun/nio/cs/ext/GBK$Decoder
 sun/font/CMap$CMapFormat2
 sun/font/FontDesignMetrics$KeyReference
 sun/awt/image/PNGImageDecoder
@@ -1264,13 +1217,7 @@ sun/awt/event/IgnorePaintEvent
 java/awt/image/DataBufferInt
 java/awt/image/SinglePixelPackedSampleModel
 sun/awt/image/IntegerInterleavedRaster
-sun/java2d/x11/X11RemoteOffScreenImage
-sun/awt/image/RemoteOffScreenImage
 sun/awt/image/OffScreenImage
-sun/java2d/x11/X11RemoteOffScreenImage$X11RemoteSurfaceManager
-sun/awt/image/OffScreenSurfaceManager
-sun/awt/image/CachingSurfaceManager
-sun/awt/image/RasterListener
 sun/awt/image/BufImgSurfaceData
 sun/java2d/opengl/GLXGraphicsConfig
 sun/java2d/opengl/OGLGraphicsConfig
@@ -1278,7 +1225,6 @@ sun/java2d/x11/X11SurfaceData$X11PixmapSurfaceData
 sun/awt/image/WritableRasterNative
 sun/awt/image/DataBufferNative
 sun/java2d/SurfaceManagerFactory
-sun/java2d/x11/X11CachingSurfaceManager
 sun/java2d/opengl/GLXSurfaceData
 sun/java2d/opengl/OGLSurfaceData
 sun/font/CompositeGlyphMapper
@@ -1419,7 +1365,6 @@ java/awt/event/MouseAdapter
 javax/swing/ToolTipManager$insideTimerAction
 javax/swing/ToolTipManager$outsideTimerAction
 javax/swing/ToolTipManager$stillInsideTimerAction
-javax/swing/ToolTipManager$Actions
 sun/swing/UIAction
 javax/swing/Action
 javax/swing/ToolTipManager$MoveBeforeEnterListener
@@ -1712,7 +1657,6 @@ javax/swing/border/EtchedBorder
 javax/swing/JToolBar$Separator
 javax/swing/plaf/basic/BasicToolBarSeparatorUI
 sun/font/FontDesignMetrics$MetricsKey
-sun/awt/color/CMM
 javax/swing/KeyboardManager$ComponentKeyStrokePair
 sun/awt/EmbeddedFrame
 sun/awt/im/InputMethodContext
@@ -1763,7 +1707,6 @@ javax/swing/JComponent$2
 sun/net/www/MimeTable
 java/net/FileNameMap
 sun/net/www/MimeTable$1
-sun/net/www/MimeTable$2
 sun/net/www/MimeEntry
 java/net/URLConnection$1
 java/text/SimpleDateFormat
@@ -1785,7 +1728,6 @@ java/text/DecimalFormatSymbols
 java/text/spi/DecimalFormatSymbolsProvider
 java/util/Currency
 java/util/Currency$1
-java/util/CurrencyData
 java/util/spi/CurrencyNameProvider
 sun/util/resources/CurrencyNames
 sun/util/resources/CurrencyNames_en_US
@@ -1964,7 +1906,6 @@ javax/swing/JTree$TreeModelHandler
 javax/swing/tree/VariableHeightLayoutCache$TreeStateNode
 javax/swing/tree/DefaultMutableTreeNode
 javax/swing/tree/MutableTreeNode
-javax/swing/tree/DefaultMutableTreeNode$1
 javax/swing/tree/DefaultMutableTreeNode$PreorderEnumeration
 javax/swing/event/TableColumnModelEvent
 java/text/ParseException
@@ -2019,7 +1960,6 @@ javax/swing/plaf/basic/BasicSliderUI$ScrollListener
 javax/swing/plaf/metal/MetalSliderUI$MetalPropertyListener
 javax/swing/plaf/basic/BasicSliderUI$PropertyChangeHandler
 java/util/Hashtable$KeySet
-sun/java2d/SunGraphicsEnvironment$5
 sun/font/Type1Font$1
 java/nio/channels/FileChannel$MapMode
 sun/nio/ch/FileChannelImpl$Unmapper
@@ -2134,7 +2074,6 @@ sun/security/jca/ProviderList$3
 sun/security/jca/ProviderList$1
 sun/security/jca/ProviderList$2
 sun/security/jca/ProviderConfig$2
-sun/security/jca/ProviderConfig$4
 sun/security/util/PropertyExpander
 sun/security/jca/ProviderConfig$1
 sun/security/jca/ProviderConfig$3
@@ -2192,7 +2131,6 @@ java/security/spec/KeySpec
 java/security/KeyFactory
 sun/security/jca/ProviderList$ServiceList
 sun/security/jca/ProviderList$ServiceList$1
-sun/security/rsa/SunRsaSign
 sun/security/rsa/RSAKeyFactory
 java/security/KeyFactorySpi
 java/security/spec/RSAPublicKeySpec
@@ -2276,9 +2214,7 @@ java/lang/AssertionError
 java/io/NotSerializableException
 java/io/ObjectStreamException
 java/security/InvalidParameterException
-java/util/Collections$EmptySet$1
 java/io/ObjectStreamClass$ClassDataSlot
-java/io/ObjectInputStream$CallbackContext
 sun/reflect/UnsafeQualifiedStaticLongFieldAccessorImpl
 java/io/ObjectOutputStream$BlockDataOutputStream
 java/io/ObjectOutputStream$HandleTable
@@ -2294,11 +2230,8 @@ java/security/interfaces/DSAPrivateKey
 java/security/spec/InvalidKeySpecException
 java/security/spec/DSAParameterSpec
 java/security/spec/AlgorithmParameterSpec
-javax/crypto/SecretKey
 sun/security/util/MemoryCache$HardCacheEntry
 java/awt/EventQueue$1AWTInvocationLock
-javax/swing/SystemEventQueueUtilities$RunnableCanvas
-javax/swing/SystemEventQueueUtilities$RunnableCanvasGraphics
 java/awt/Component$FlipBufferStrategy
 java/awt/SentEvent
 sun/awt/X11/XDestroyWindowEvent
@@ -2331,18 +2264,14 @@ sun/swing/BakedArrayList
 javax/swing/plaf/synth/SynthLookAndFeel$Handler
 javax/swing/plaf/synth/SynthDefaultLookup
 com/sun/java/swing/plaf/gtk/GTKEngine
-com/sun/java/swing/plaf/gtk/GTKNativeEngine
 javax/swing/plaf/synth/Region
-com/sun/java/swing/plaf/gtk/GTKNativeEngine$WidgetType
 com/sun/java/swing/plaf/gtk/GTKRegion
 sun/swing/ImageCache
 com/sun/java/swing/plaf/gtk/GTKEngine$Settings
 com/sun/java/swing/plaf/gtk/GTKStyleFactory
 com/sun/java/swing/plaf/gtk/PangoFonts
-sun/font/FontManager$FontConfigInfo
 com/sun/java/swing/plaf/gtk/GTKLookAndFeel$WeakPCL
 javax/swing/plaf/synth/SynthLookAndFeel$AATextListener
-com/sun/java/swing/plaf/gtk/GTKNativeStyle
 com/sun/java/swing/plaf/gtk/GTKStyle
 com/sun/java/swing/plaf/gtk/GTKConstants
 javax/swing/plaf/synth/SynthStyle
@@ -2370,7 +2299,6 @@ javax/swing/plaf/synth/SynthButtonUI
 javax/swing/plaf/synth/SynthToggleButtonUI
 javax/swing/plaf/basic/BasicBorders$FieldBorder
 javax/swing/plaf/synth/SynthMenuBarUI
-javax/swing/plaf/synth/DefaultMenuLayout
 javax/swing/plaf/synth/SynthMenuUI
 javax/swing/plaf/synth/SynthUI
 com/sun/java/swing/plaf/gtk/GTKIconFactory
@@ -2424,7 +2352,6 @@ java/net/SocketPermission
 javax/security/auth/AuthPermission
 java/lang/Thread$1
 java/util/logging/LogManager$5
-java/util/logging/LogManager$6
 sun/applet/StdAppletViewerFactory
 sun/applet/AppletViewerFactory
 sun/applet/AppletViewer$UserActionListener
@@ -2435,7 +2362,6 @@ sun/misc/MessageUtils
 sun/applet/AppletPanel$10
 java/security/Policy$1
 sun/security/provider/PolicyFile$1
-sun/security/provider/PolicyInfo
 sun/security/provider/PolicyFile$3
 sun/security/provider/PolicyParser
 sun/security/util/PolicyUtil
@@ -2444,12 +2370,10 @@ sun/security/provider/PolicyParser$PermissionEntry
 sun/security/provider/PolicyFile$PolicyEntry
 sun/security/provider/PolicyFile$6
 sun/security/provider/PolicyFile$7
-sun/security/provider/SelfPermission
 java/net/SocketPermissionCollection
 java/util/PropertyPermissionCollection
 sun/applet/AppletPanel$9
 sun/applet/AppletClassLoader
-sun/applet/AppletClassLoader$4
 sun/applet/AppletThreadGroup
 sun/applet/AppContextCreator
 sun/applet/AppletPanel$1
@@ -2463,9 +2387,7 @@ java/awt/peer/MenuItemPeer
 sun/awt/X11/XMenuItemPeer
 java/awt/MenuShortcut
 sun/awt/X11/XMenuWindow
-sun/awt/X11/XMenuBarPeer$1
 sun/awt/AppContext$3
-sun/awt/MostRecentThreadAppContext
 sun/awt/X11/XMenuItemPeer$TextMetrics
 sun/awt/X11/XMenuBarPeer$MappingData
 sun/awt/X11/XBaseMenuWindow$MappingData

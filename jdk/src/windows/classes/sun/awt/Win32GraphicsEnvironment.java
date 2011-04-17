@@ -39,12 +39,8 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunDisplayChanger;
-import sun.awt.windows.WFontConfiguration;
 import sun.awt.windows.WPrinterJob;
 import sun.awt.windows.WToolkit;
-import sun.font.FontManager;
-import sun.font.FontManagerFactory;
-import sun.font.SunFontManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.WindowsSurfaceManagerFactory;
@@ -229,20 +225,6 @@ public class Win32GraphicsEnvironment
             device = new Win32GraphicsDevice(screennum);
         }
         return device;
-    }
-
-    // Implements SunGraphicsEnvironment.createFontConfiguration.
-    protected FontConfiguration createFontConfiguration() {
-       FontConfiguration fc = new WFontConfiguration(SunFontManager.getInstance());
-       fc.init();
-       return fc;
-    }
-
-    public FontConfiguration createFontConfiguration(boolean preferLocaleFonts,
-                                                     boolean preferPropFonts) {
-
-        return new WFontConfiguration(SunFontManager.getInstance(),
-                preferLocaleFonts,preferPropFonts);
     }
 
     public boolean isDisplayLocal() {

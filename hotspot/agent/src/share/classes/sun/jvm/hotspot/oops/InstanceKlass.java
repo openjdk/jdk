@@ -241,6 +241,10 @@ public class InstanceKlass extends Klass {
   // Byteside of the header
   private static long headerSize;
 
+  public long getObjectSize(Oop object) {
+    return getSizeHelper() * VM.getVM().getAddressSize();
+  }
+
   public static long getHeaderSize() { return headerSize; }
 
   // Accessors for declared fields
@@ -459,7 +463,22 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(vtableLen, true);
       visitor.doCInt(itableLen, true);
     }
+  }
 
+  /*
+   *  Visit the static fields of this InstanceKlass with the obj of
+   *  the visitor set to the oop holding the fields, which is
+   *  currently the java mirror.
+   */
+  public void iterateStaticFields(OopVisitor visitor) {
+    visitor.setObj(getJavaMirror());
+    visitor.prologue();
+    iterateStaticFieldsInternal(visitor);
+    visitor.epilogue();
+
+  }
+
+  void iterateStaticFieldsInternal(OopVisitor visitor) {
     TypeArray fields = getFields();
     int length = (int) fields.getLength();
     for (int index = 0; index < length; index += NEXT_OFFSET) {
@@ -477,9 +496,9 @@ public class InstanceKlass extends Klass {
     return getSuper();
   }
 
-  public void iterateNonStaticFields(OopVisitor visitor) {
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
     if (getSuper() != null) {
-      ((InstanceKlass) getSuper()).iterateNonStaticFields(visitor);
+      ((InstanceKlass) getSuper()).iterateNonStaticFields(visitor, obj);
     }
     TypeArray fields = getFields();
 

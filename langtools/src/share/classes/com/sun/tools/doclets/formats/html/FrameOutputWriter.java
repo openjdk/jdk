@@ -114,13 +114,10 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         Content noframesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 getResource("doclet.Frame_Alert"));
         noframes.addContent(noframesHead);
-        Content p = HtmlTree.P(getResource("doclet.Frame_Warning_Message"));
+        Content p = HtmlTree.P(getResource("doclet.Frame_Warning_Message",
+                getHyperLinkString(configuration.topFile,
+                configuration.getText("doclet.Non_Frame_Version"))));
         noframes.addContent(p);
-        noframes.addContent(new HtmlTree(HtmlTag.BR));
-        noframes.addContent(getResource("doclet.Link_To"));
-        Content link = getHyperLink(configuration.topFile,
-                getResource("doclet.Non_Frame_Version"));
-        noframes.addContent(link);
         contentTree.addContent(noframes);
     }
 

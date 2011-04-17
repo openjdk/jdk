@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Method;
 
-import java.dyn.*;
+import java.lang.invoke.*;
 import java.io.*;
 
 public class TestCP {

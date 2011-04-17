@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,16 +64,16 @@ public class FinalizerInfo extends Tool {
          */
         InstanceKlass ik =
             SystemDictionaryHelper.findInstanceKlass("java.lang.ref.Finalizer");
-        final OopField queueField[] = new OopField[1];
-        ik.iterateFields(new DefaultOopVisitor() {
+        final Oop[] queueref = new Oop[1];
+        ik.iterateStaticFields(new DefaultOopVisitor() {
             public void doOop(OopField field, boolean isVMField) {
-                String name = field.getID().getName();
-                if (name.equals("queue")) {
-                    queueField[0] = field;
-                }
+              String name = field.getID().getName();
+              if (name.equals("queue")) {
+                queueref[0] = field.getValue(getObj());
+              }
             }
-        }, false);
-        Oop queue = queueField[0].getValue(ik);
+          });
+        Oop queue = queueref[0];
 
         InstanceKlass k = (InstanceKlass) queue.getKlass();
 

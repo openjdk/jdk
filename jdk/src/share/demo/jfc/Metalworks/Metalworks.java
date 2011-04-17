@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,34 +29,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.*;
+import java.awt.Toolkit;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+
 /**
-  * This application is a demo of the Metal Look & Feel
-  *
-  * @author Steve Wilson
-  */
+ * This application is a demo of the Metal Look & Feel
+ *
+ * @author Steve Wilson
+ * @author Alexander Kouznetsov
+ */
 public class Metalworks {
 
-    public static void main( String[] args ) {
+    public static void main(String[] args) {
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         JDialog.setDefaultLookAndFeelDecorated(true);
         JFrame.setDefaultLookAndFeelDecorated(true);
         Toolkit.getDefaultToolkit().setDynamicLayout(true);
-        System.setProperty("sun.awt.noerasebackground","true");
-
+        System.setProperty("sun.awt.noerasebackground", "true");
         try {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
-        }
-        catch ( UnsupportedLookAndFeelException e ) {
-            System.out.println ("Metal Look & Feel not supported on this platform. \nProgram Terminated");
+        } catch (UnsupportedLookAndFeelException e) {
+            System.out.println(
+                    "Metal Look & Feel not supported on this platform. \n"
+                    + "Program Terminated");
             System.exit(0);
         }
         JFrame frame = new MetalworksFrame();

@@ -425,13 +425,8 @@ public class Log extends AbstractLog {
      */
     protected void writeDiagnostic(JCDiagnostic diag) {
         if (diagListener != null) {
-            try {
-                diagListener.report(diag);
-                return;
-            }
-            catch (Throwable t) {
-                throw new ClientCodeException(t);
-            }
+            diagListener.report(diag);
+            return;
         }
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
