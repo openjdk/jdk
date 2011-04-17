@@ -1166,7 +1166,12 @@ public class LogManager {
     private static LoggingMXBean loggingMXBean = null;
     /**
      * String representation of the
-     * {@link javax.management.ObjectName} for {@link LoggingMXBean}.
+     * {@link javax.management.ObjectName} for the management interface
+     * for the logging facility.
+     *
+     * @see java.lang.management.PlatformLoggingMXBean
+     * @see java.util.logging.LoggingMXBean
+     *
      * @since 1.5
      */
     public final static String LOGGING_MXBEAN_NAME
@@ -1174,20 +1179,20 @@ public class LogManager {
 
     /**
      * Returns <tt>LoggingMXBean</tt> for managing loggers.
-     * An alternative way to manage loggers is using
-     * the {@link java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
-     * ManagementFactory.getPlatformMXBeans} method as follows:
+     * An alternative way to manage loggers is through the
+     * {@link java.lang.management.PlatformLoggingMXBean} interface
+     * that can be obtained by calling:
      * <pre>
-     *     List&lt{@link PlatformLoggingMXBean}&gt result = ManagementFactory.getPlatformMXBeans(PlatformLoggingMXBean.class);
+     *     PlatformLoggingMXBean logging = {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+     *         ManagementFactory.getPlatformMXBean}(PlatformLoggingMXBean.class);
      * </pre>
      *
      * @return a {@link LoggingMXBean} object.
      *
-     * @see PlatformLoggingMXBean
-     * @see java.lang.management.ManagementFactory
+     * @see java.lang.management.PlatformLoggingMXBean
      * @since 1.5
      */
-    public static synchronized LoggingMXBean  getLoggingMXBean() {
+    public static synchronized LoggingMXBean getLoggingMXBean() {
         if (loggingMXBean == null) {
             loggingMXBean =  new Logging();
         }

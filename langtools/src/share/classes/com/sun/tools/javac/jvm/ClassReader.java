@@ -1162,6 +1162,9 @@ public class ClassReader implements Completer {
         ClassSymbol c = readClassSymbol(nextChar());
         NameAndType nt = (NameAndType)readPool(nextChar());
 
+        if (c.members_field == null)
+            throw badClassFile("bad.enclosing.class", self, c);
+
         MethodSymbol m = findMethod(nt, c.members_field, self.flags());
         if (nt != null && m == null)
             throw badClassFile("bad.enclosing.method", self);
@@ -1318,8 +1321,7 @@ public class ClassReader implements Completer {
                 else
                     proxies.append(proxy);
                 if (majorVersion >= V51.major &&
-                        (proxy.type.tsym == syms.polymorphicSignatureType.tsym ||
-                         proxy.type.tsym == syms.transientPolymorphicSignatureType.tsym)) {
+                    proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
                     sym.flags_field |= POLYMORPHIC_SIGNATURE;
                 }
             }

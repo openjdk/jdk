@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,11 +599,35 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
 
     if (caller != NULL) {
       stringStream bciStream;
+      ciMethod* last = NULL;
+      int last_bci;
       while(caller) {
+        if (caller->has_method()) {
+          last = caller->method();
+          last_bci = caller->bci();
+        }
         bciStream.print("%d ", caller->bci());
         caller = caller->caller();
       }
       print_prop("bci", bciStream.as_string());
+      if (last != NULL && last->has_linenumber_table() && last_bci >= 0) {
+        print_prop("line", last->line_number_from_bci(last_bci));
+      }
+    }
+
+    if (node->debug_orig() != NULL) {
+      stringStream dorigStream;
+      Node* dorig = node->debug_orig();
+      if (dorig) {
+        dorigStream.print("%d ", dorig->_idx);
+        Node* first = dorig;
+        dorig = first->debug_orig();
+        while (dorig && dorig != first) {
+          dorigStream.print("%d ", dorig->_idx);
+          dorig = dorig->debug_orig();
+        }
+      }
+      print_prop("debug_orig", dorigStream.as_string());
     }
 
     if (_chaitin && _chaitin != (PhaseChaitin *)0xdeadbeef) {
@@ -628,6 +652,17 @@ void IdealGraphPrinter::walk_nodes(Node *start, void *param) {
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
   visited.test_set(start->_idx);
+  if (C->cfg() != NULL) {
+    // once we have a CFG there are some nodes that aren't really
+    // reachable but are in the CFG so add them here.
+    for (uint i = 0; i < C->cfg()->_blocks.size(); i++) {
+      Block *b = C->cfg()->_blocks[i];
+      for (uint s = 0; s < b->_nodes.size(); s++) {
+        nodeStack.push(b->_nodes[s]);
+      }
+    }
+  }
+
   while(nodeStack.length() > 0) {
 
     Node *n = nodeStack.pop();
@@ -686,16 +721,23 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
       end_head();
 
       head(SUCCESSORS_ELEMENT);
-      for (uint s = 0; s < C->cfg()->_blocks[i]->_num_succs; s++) {
+      for (uint s = 0; s < b->_num_succs; s++) {
         begin_elem(SUCCESSOR_ELEMENT);
         print_attr(BLOCK_NAME_PROPERTY, b->_succs[s]->_pre_order);
         end_elem();
       }
       tail(SUCCESSORS_ELEMENT);
 
+      head(NODES_ELEMENT);
+      for (uint s = 0; s < b->_nodes.size(); s++) {
+        begin_elem(NODE_ELEMENT);
+        print_attr(NODE_ID_PROPERTY, get_node_id(b->_nodes[s]));
+        end_elem();
+      }
+      tail(NODES_ELEMENT);
+
       tail(BLOCK_ELEMENT);
     }
-
     tail(CONTROL_FLOW_ELEMENT);
   }
   tail(GRAPH_ELEMENT);

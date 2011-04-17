@@ -262,36 +262,15 @@ CollectionSetChooser::sortMarkedHeapRegions() {
   for (int i = 0; i < _numMarkedRegions; i++) {
     assert(_markedRegions.at(i) != NULL, "Should be true by sorting!");
     _markedRegions.at(i)->set_sort_index(i);
-    if (G1PrintRegionLivenessInfo > 0) {
-      if (i == 0) gclog_or_tty->print_cr("Sorted marked regions:");
-      if (i < G1PrintRegionLivenessInfo ||
-          (_numMarkedRegions-i) < G1PrintRegionLivenessInfo) {
-        HeapRegion* hr = _markedRegions.at(i);
-        size_t u = hr->used();
-        gclog_or_tty->print_cr("  Region %d: %d used, %d max live, %5.2f%%.",
-                      i, u, hr->max_live_bytes(),
-                      100.0*(float)hr->max_live_bytes()/(float)u);
-      }
+  }
+  if (G1PrintRegionLivenessInfo) {
+    G1PrintRegionLivenessInfoClosure cl(gclog_or_tty, "Post-Sorting");
+    for (int i = 0; i < _numMarkedRegions; ++i) {
+      HeapRegion* r = _markedRegions.at(i);
+      cl.doHeapRegion(r);
     }
   }
-  if (G1PolicyVerbose > 1)
-    printSortedHeapRegions();
   assert(verify(), "should now be sorted");
-}
-
-void
-printHeapRegion(HeapRegion *hr) {
-  if (hr->isHumongous())
-    gclog_or_tty->print("H: ");
-  if (hr->in_collection_set())
-    gclog_or_tty->print("CS: ");
-  gclog_or_tty->print_cr("Region " PTR_FORMAT " (%s%s) "
-                         "[" PTR_FORMAT ", " PTR_FORMAT"] "
-                         "Used: " SIZE_FORMAT "K, garbage: " SIZE_FORMAT "K.",
-                         hr, hr->is_young() ? "Y " : "  ",
-                         hr->is_marked()? "M1" : "M0",
-                         hr->bottom(), hr->end(),
-                         hr->used()/K, hr->garbage_bytes()/K);
 }
 
 void
@@ -351,25 +330,7 @@ CollectionSetChooser::clearMarkedHeapRegions(){
 
 void
 CollectionSetChooser::updateAfterFullCollection() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   clearMarkedHeapRegions();
-}
-
-void
-CollectionSetChooser::printSortedHeapRegions() {
-  gclog_or_tty->print_cr("Printing %d Heap Regions sorted by amount of known garbage",
-                _numMarkedRegions);
-
-  DEBUG_ONLY(int marked_count = 0;)
-  for (int i = 0; i < _markedRegions.length(); i++) {
-    HeapRegion* r = _markedRegions.at(i);
-    if (r != NULL) {
-      printHeapRegion(r);
-      DEBUG_ONLY(marked_count++;)
-    }
-  }
-  assert(marked_count == _numMarkedRegions, "must be");
-  gclog_or_tty->print_cr("Done sorted heap region print");
 }
 
 void CollectionSetChooser::removeRegion(HeapRegion *hr) {

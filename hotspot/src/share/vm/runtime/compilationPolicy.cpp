@@ -396,8 +396,6 @@ void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, i
 // SimpleCompPolicy - compile current method
 
 void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
-  assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
-
   int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
@@ -413,8 +411,6 @@ void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
 }
 
 void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
-  assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
-
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
@@ -432,8 +428,6 @@ const char* StackWalkCompPolicy::_msg = NULL;
 
 // Consider m for compilation
 void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
-  assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
-
   int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
@@ -473,8 +467,6 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
 }
 
 void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
-  assert(UseCompiler || CompileTheWorld, "UseCompiler should be set by now.");
-
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 

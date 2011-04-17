@@ -786,9 +786,9 @@ public class SynthTableUI extends BasicTableUI
                                                 hasFocus, row, column);
 
             setIcon(null);
-            Class columnClass = table.getColumnClass(column);
-            configureValue(value, columnClass);
-
+            if (table != null) {
+                configureValue(value, table.getColumnClass(column));
+            }
             return this;
         }
 

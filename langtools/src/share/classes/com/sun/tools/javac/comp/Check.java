@@ -676,7 +676,7 @@ public class Check {
                     "cant.apply.diamond.1",
                     t, diags.fragment("diamond.and.anon.class", t));
             return types.createErrorType(t);
-        } else if (!t.tsym.type.isParameterized()) {
+        } else if (t.tsym.type.getTypeArguments().isEmpty()) {
             log.error(tree.clazz.pos(),
                 "cant.apply.diamond.1",
                 t, diags.fragment("diamond.non.generic", t));

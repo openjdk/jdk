@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,16 +28,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/*
- */
-
 package com.sun.inputmethods.internal.codepointim;
+
 
 import java.awt.Image;
 import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.im.spi.InputMethod;
 import java.util.Locale;
+
 
 /**
  * The CodePointInputMethod is a simple input method that allows Unicode
@@ -68,12 +66,12 @@ public class CodePointInputMethodDescriptor implements InputMethodDescriptor {
      */
     public Locale[] getAvailableLocales() {
         Locale[] locales = {
-            new Locale("","",""),
-        };
+            new Locale("", "", ""), };
         return locales;
     }
 
-    public synchronized String getInputMethodDisplayName(Locale inputLocale, Locale displayLanguage) {
+    public synchronized String getInputMethodDisplayName(Locale inputLocale,
+            Locale displayLanguage) {
         return "CodePoint Input Method";
     }
 

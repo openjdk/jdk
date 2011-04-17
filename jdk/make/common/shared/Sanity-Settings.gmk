@@ -185,7 +185,9 @@ ifeq ($(PLATFORM),windows)
   endif
 endif
 ifeq ($(PLATFORM),linux)
-  ALL_SETTINGS+=$(call addRequiredSetting,ALSA_VERSION)
+  ifdef REQUIRED_ALSA_VERSION
+    ALL_SETTINGS+=$(call addRequiredSetting,ALSA_VERSION)
+  endif
 endif
 ALL_SETTINGS+=$(call addRequiredVersionSetting,OS_VERSION)
 ALL_SETTINGS+=$(call addOptionalSetting,OS_VARIANT_NAME)

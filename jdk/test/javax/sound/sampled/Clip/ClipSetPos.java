@@ -33,6 +33,7 @@
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 
 public class ClipSetPos {
@@ -48,9 +49,13 @@ public class ClipSetPos {
         boolean testPassed = true;
         Clip clip = null;
         try {
-            clip = AudioSystem.getClip();
+            clip = (Clip)AudioSystem.getLine(new DataLine.Info(Clip.class, audioFormat));
             clip.open(audioFormat, dataBuffer, 0, dataBuffer.length);
         } catch (LineUnavailableException ex) {
+            log(ex);
+            log("Cannot test (this is not failure)");
+            return;
+        } catch (IllegalArgumentException ex) {
             log(ex);
             log("Cannot test (this is not failure)");
             return;

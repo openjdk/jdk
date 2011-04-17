@@ -43,14 +43,6 @@
 extern int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP);
 int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP);
 
-/* IP helper library routines */
-int (PASCAL FAR *GetIpAddrTable_fn)();
-int (PASCAL FAR *GetIfTable_fn)();
-int (PASCAL FAR *GetFriendlyIfIndex_fn)();
-int (PASCAL FAR *GetAdaptersAddresses_fn)();
-int (PASCAL FAR *GetAdaptersInfo_fn)();
-int (PASCAL FAR *GetNumberOfInterfaces_fn)();
-
 #ifdef DEBUG
 void printnif (netif *nif) {
 #ifdef _WIN64
@@ -96,14 +88,14 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     flags = GAA_FLAG_SKIP_DNS_SERVER;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
-    ret = (*GetAdaptersAddresses_fn) (AF_UNSPEC, flags, NULL, adapterInfo, &len);
+    ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     if (ret == ERROR_BUFFER_OVERFLOW) {
         adapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (adapterInfo == 0) {
             return -1;
         }
         bufsize = len;
-        ret = (*GetAdaptersAddresses_fn) (AF_UNSPEC, flags, NULL, adapterInfo, &len);
+        ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
@@ -133,7 +125,7 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     flags = GAA_FLAG_SKIP_DNS_SERVER;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
-    val = (*GetAdaptersAddresses_fn) (AF_UNSPEC, flags, NULL, adapterInfo, &len);
+    val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     if (val == ERROR_BUFFER_OVERFLOW) {
         adapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (adapterInfo == 0) {
@@ -141,7 +133,7 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
             return NULL;
         }
         bufsize = len;
-        val = (*GetAdaptersAddresses_fn) (AF_UNSPEC, flags, NULL, adapterInfo, &len);
+        val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
@@ -182,7 +174,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     * as what previous JDK versions would return.
     */
 
-    ret = enumInterfaces_win (env, netifPP);
+    ret = enumInterfaces(env, netifPP);
     if (ret == -1) {
         return -1;
     } else {
@@ -221,7 +213,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
      *  (b)  IPv6 information for IPv6 only interfaces (probably tunnels)
      *
      * For compatibility with previous releases we use the naming
-     * information gotten from enumInterfaces_win() for (a) entries
+     * information gotten from enumInterfaces() for (a) entries
      * However, the index numbers are taken from the new API.
      *
      * The procedure is to go through the list of adapters returned
@@ -439,7 +431,8 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
     netifObj = (*env)->NewObject(env, ni_class, ni_ctor);
     name = (*env)->NewStringUTF(env, ifs->name);
     if (ifs->dNameIsUnicode) {
-        displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName, wcslen ((PWCHAR)ifs->displayName));
+        displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName,
+                                        (jsize)wcslen ((PWCHAR)ifs->displayName));
     } else {
         displayName = (*env)->NewStringUTF(env, ifs->displayName);
     }
