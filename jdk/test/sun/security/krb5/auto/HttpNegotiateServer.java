@@ -74,11 +74,10 @@ public class HttpNegotiateServer {
     final static char[] WEB_PASS = "webby".toCharArray();
     final static String PROXY_USER = "pro";
     final static char[] PROXY_PASS = "proxy".toCharArray();
-    final static int WEB_PORT = 17840;
+
 
     final static String WEB_HOST = "host.web.domain";
     final static String PROXY_HOST = "host.proxy.domain";
-    final static int PROXY_PORT = 17841;
 
     // web page content
     final static String CONTENT = "Hello, World!";
@@ -86,18 +85,11 @@ public class HttpNegotiateServer {
     // For 6829283, count how many times the Authenticator is called.
     static int count = 0;
 
+    static int webPort, proxyPort;
+
     // URLs for web test, proxy test. The proxy server is not a real proxy
     // since it fakes the same content for any URL. :)
-    final static URL webUrl, proxyUrl;
-    static {
-        URL u1 = null, u2 = null;
-        try {
-            u1 = new URL("http://" + WEB_HOST +":" + WEB_PORT + "/a/b/c");
-            u2 = new URL("http://nosuchplace/a/b/c");
-        } catch (Exception e) {
-        }
-        webUrl = u1; proxyUrl = u2;
-    }
+    static URL webUrl, proxyUrl;
 
     /**
      * This Authenticator checks everything:
@@ -127,7 +119,7 @@ public class HttpNegotiateServer {
                 if (!this.getRequestingHost().equalsIgnoreCase(PROXY_HOST)) {
                     throw new RuntimeException("Bad host");
                 }
-                if (this.getRequestingPort() != PROXY_PORT) {
+                if (this.getRequestingPort() != proxyPort) {
                     throw new RuntimeException("Bad port");
                 }
                 if (!this.getRequestingURL().equals(proxyUrl)) {
@@ -188,10 +180,15 @@ public class HttpNegotiateServer {
         fos.close();
         f.deleteOnExit();
 
-        HttpServer h1 = httpd(WEB_PORT, "Negotiate", false,
+        HttpServer h1 = httpd("Negotiate", false,
                 "HTTP/" + WEB_HOST + "@" + REALM_WEB, KRB5_TAB);
-        HttpServer h2 = httpd(PROXY_PORT, "Negotiate", true,
+        webPort = h1.getAddress().getPort();
+        HttpServer h2 = httpd("Negotiate", true,
                 "HTTP/" + PROXY_HOST + "@" + REALM_PROXY, KRB5_TAB);
+        proxyPort = h2.getAddress().getPort();
+
+        webUrl = new URL("http://" + WEB_HOST +":" + webPort + "/a/b/c");
+        proxyUrl = new URL("http://nosuchplace/a/b/c");
 
         try {
             Exception e1 = null, e2 = null;
@@ -230,7 +227,7 @@ public class HttpNegotiateServer {
         reader = new BufferedReader(new InputStreamReader(
                 proxyUrl.openConnection(
                 new Proxy(Proxy.Type.HTTP,
-                    new InetSocketAddress(PROXY_HOST, PROXY_PORT)))
+                    new InetSocketAddress(PROXY_HOST, proxyPort)))
                 .getInputStream()));
         if (!reader.readLine().equals(CONTENT)) {
             throw new RuntimeException("Bad content");
@@ -258,10 +255,10 @@ public class HttpNegotiateServer {
      * @param principal the krb5 service principal the server runs with
      * @return the server
      */
-    public static HttpServer httpd(int port, String scheme, boolean proxy,
+    public static HttpServer httpd(String scheme, boolean proxy,
             String principal, String ktab) throws Exception {
         MyHttpHandler h = new MyHttpHandler();
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         HttpContext hc = server.createContext("/", h);
         hc.setAuthenticator(new MyServerAuthenticator(
                 proxy, scheme, principal, ktab));

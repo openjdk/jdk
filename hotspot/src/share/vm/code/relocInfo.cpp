@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,20 +472,14 @@ RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   return itr._rh;
 }
 
-
-static inline bool is_index(intptr_t index) {
-  return 0 < index && index < os::vm_page_size();
-}
-
-
 int32_t Relocation::runtime_address_to_index(address runtime_address) {
-  assert(!is_index((intptr_t)runtime_address), "must not look like an index");
+  assert(!is_reloc_index((intptr_t)runtime_address), "must not look like an index");
 
   if (runtime_address == NULL)  return 0;
 
   StubCodeDesc* p = StubCodeDesc::desc_for(runtime_address);
   if (p != NULL && p->begin() == runtime_address) {
-    assert(is_index(p->index()), "there must not be too many stubs");
+    assert(is_reloc_index(p->index()), "there must not be too many stubs");
     return (int32_t)p->index();
   } else {
     // Known "miscellaneous" non-stub pointers:
@@ -506,7 +500,7 @@ int32_t Relocation::runtime_address_to_index(address runtime_address) {
 address Relocation::index_to_runtime_address(int32_t index) {
   if (index == 0)  return NULL;
 
-  if (is_index(index)) {
+  if (is_reloc_index(index)) {
     StubCodeDesc* p = StubCodeDesc::desc_for_index(index);
     assert(p != NULL, "there must be a stub for this index");
     return p->begin();
@@ -634,7 +628,7 @@ void external_word_Relocation::pack_data_to(CodeSection* dest) {
 #ifndef _LP64
   p = pack_1_int_to(p, index);
 #else
-  if (is_index(index)) {
+  if (is_reloc_index(index)) {
     p = pack_2_ints_to(p, index, 0);
   } else {
     jlong t = (jlong) _target;
@@ -642,7 +636,7 @@ void external_word_Relocation::pack_data_to(CodeSection* dest) {
     int32_t hi = high(t);
     p = pack_2_ints_to(p, lo, hi);
     DEBUG_ONLY(jlong t1 = jlong_from(hi, lo));
-    assert(!is_index(t1) && (address) t1 == _target, "not symmetric");
+    assert(!is_reloc_index(t1) && (address) t1 == _target, "not symmetric");
   }
 #endif /* _LP64 */
   dest->set_locs_end((relocInfo*) p);
@@ -656,7 +650,7 @@ void external_word_Relocation::unpack_data() {
   int32_t lo, hi;
   unpack_2_ints(lo, hi);
   jlong t = jlong_from(hi, lo);;
-  if (is_index(t)) {
+  if (is_reloc_index(t)) {
     _target = index_to_runtime_address(t);
   } else {
     _target = (address) t;

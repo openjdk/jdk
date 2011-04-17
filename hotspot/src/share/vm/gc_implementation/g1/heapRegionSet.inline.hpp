@@ -110,6 +110,23 @@ inline void HeapRegionSet::remove_with_proxy(HeapRegion* hr,
 
 //////////////////// HeapRegionLinkedList ////////////////////
 
+inline void HeapRegionLinkedList::add_as_head(HeapRegion* hr) {
+  hrs_assert_mt_safety_ok(this);
+  assert((length() == 0 && _head == NULL && _tail == NULL) ||
+         (length() >  0 && _head != NULL && _tail != NULL),
+         hrs_ext_msg(this, "invariant"));
+  // add_internal() will verify the region.
+  add_internal(hr);
+
+  // Now link the region.
+  if (_head != NULL) {
+    hr->set_next(_head);
+  } else {
+    _tail = hr;
+  }
+  _head = hr;
+}
+
 inline void HeapRegionLinkedList::add_as_tail(HeapRegion* hr) {
   hrs_assert_mt_safety_ok(this);
   assert((length() == 0 && _head == NULL && _tail == NULL) ||

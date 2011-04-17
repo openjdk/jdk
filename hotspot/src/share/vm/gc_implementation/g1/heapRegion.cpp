@@ -360,6 +360,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
   set_young_type(NotYoung);
+  reset_pre_dummy_top();
 
   if (!par) {
     // If this is parallel, this will be done later.
@@ -923,11 +924,11 @@ void G1OffsetTableContigSpace::set_saved_mark() {
     ContiguousSpace::set_saved_mark();
     OrderAccess::storestore();
     _gc_time_stamp = curr_gc_time_stamp;
-    // The following fence is to force a flush of the writes above, but
-    // is strictly not needed because when an allocating worker thread
-    // calls set_saved_mark() it does so under the ParGCRareEvent_lock;
-    // when the lock is released, the write will be flushed.
-    // OrderAccess::fence();
+    // No need to do another barrier to flush the writes above. If
+    // this is called in parallel with other threads trying to
+    // allocate into the region, the caller should call this while
+    // holding a lock and when the lock is released the writes will be
+    // flushed.
   }
 }
 

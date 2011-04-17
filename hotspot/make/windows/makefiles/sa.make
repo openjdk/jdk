@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@ default::  $(GENERATED)\sa-jdi.jar
 $(GENERATED)\sa-jdi.jar: $(AGENT_FILES1:/=\) $(AGENT_FILES2:/=\)
 	@if not exist $(SA_CLASSDIR) mkdir $(SA_CLASSDIR)
 	@echo ...Building sa-jdi.jar
-	@echo ...$(COMPILE_JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -d $(SA_CLASSDIR) ....
-	@$(COMPILE_JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES1:/=\)
-	@$(COMPILE_JAVAC) -source 1.4 -target 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES2:/=\)
+	@echo ...$(COMPILE_JAVAC) -classpath $(SA_CLASSPATH) -d $(SA_CLASSDIR) ....
+	@$(COMPILE_JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES1:/=\)
+	@$(COMPILE_JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) $(AGENT_FILES2:/=\)
 	$(COMPILE_RMIC) -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo $(SA_BUILD_VERSION_PROP)> $(SA_PROPERTIES)
 	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -129,10 +129,17 @@ CPPFLAGS += -DXAWT -DXAWT_HACK \
         -I$(PLATFORM_SRC)/native/sun/awt
 
 ifeq ($(PLATFORM), linux)
-# Allows for builds on Debian GNU Linux, X11 is in a different place 
-  CPPFLAGS += -I/usr/X11R6/include/X11/extensions \
-              -I/usr/include/X11/extensions \
-              -I$(OPENWIN_HOME)/include 
+  ifndef CROSS_COMPILE_ARCH
+    # Allows for builds on Debian GNU Linux, X11 is in a different place 
+    # This should really be handled at a higher-level so we don't have to
+    # work-around this when cross-compiling
+    CPPFLAGS += -I/usr/X11R6/include/X11/extensions \
+                -I/usr/include/X11/extensions \
+                -I$(OPENWIN_HOME)/include 
+  else
+    CPPFLAGS += -I$(OPENWIN_HOME)/include/X11/extensions \
+                -I$(OPENWIN_HOME)/include 
+  endif
 endif
 
 # We have some odd logic here because some Solaris 10 updates
@@ -245,7 +252,11 @@ XLIBTYPES=$(PLATFORM_SRC)/classes/sun/awt/X11/generator/xlibtypes.txt
 
 $(SIZERS): $(SIZERS_C) 
 	$(prep-target)
+ifndef CROSS_COMPILE_ARCH
 	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+else
+	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+endif
 
 $(WRAPPER_GENERATOR_CLASS): $(WRAPPER_GENERATOR_JAVA)
 	$(prep-target)

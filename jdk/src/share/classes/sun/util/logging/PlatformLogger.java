@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,12 +316,6 @@ public class PlatformLogger {
      */
     static class LoggerProxy {
         private static final PrintStream defaultStream = System.err;
-        private static final String lineSeparator = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("line.separator");
-                }
-            });
 
         final String name;
         volatile int levelValue;
@@ -353,14 +347,14 @@ public class PlatformLogger {
             if (level < levelValue || levelValue == OFF) {
                 return;
             }
-            defaultStream.println(format(level, msg, null));
+            defaultStream.print(format(level, msg, null));
         }
 
         void doLog(int level, String msg, Throwable thrown) {
             if (level < levelValue || levelValue == OFF) {
                 return;
             }
-            defaultStream.println(format(level, msg, thrown));
+            defaultStream.print(format(level, msg, thrown));
         }
 
         void doLog(int level, String msg, Object... params) {
@@ -368,7 +362,7 @@ public class PlatformLogger {
                 return;
             }
             String newMsg = formatMessage(msg, params);
-            defaultStream.println(format(level, newMsg, null));
+            defaultStream.print(format(level, newMsg, null));
         }
 
         public boolean isLoggable(int level) {
@@ -377,12 +371,6 @@ public class PlatformLogger {
             }
             return true;
         }
-
-        private static final String format = "{0,date} {0,time}";
-
-        private Object args[] = new Object[1];
-        private MessageFormat formatter;
-        private Date dat;
 
         // Copied from java.util.logging.Formatter.formatMessage
         private String formatMessage(String format, Object... parameters) {
@@ -408,37 +396,30 @@ public class PlatformLogger {
             }
         }
 
+        private static final String formatString =
+            LoggingSupport.getSimpleFormat(false); // don't check logging.properties
+
+        // minimize memory allocation
+        private Date date = new Date();
         private synchronized String format(int level, String msg, Throwable thrown) {
-            StringBuffer sb = new StringBuffer();
-            // Minimize memory allocations here.
-            if (dat == null) {
-                dat = new Date();
-                formatter = new MessageFormat(format);
-            }
-            dat.setTime(System.currentTimeMillis());
-            args[0] = dat;
-            StringBuffer text = new StringBuffer();
-            formatter.format(args, text, null);
-            sb.append(text);
-            sb.append(" ");
-            sb.append(getCallerInfo());
-            sb.append(lineSeparator);
-            sb.append(PlatformLogger.getLevelName(level));
-            sb.append(": ");
-            sb.append(msg);
+            date.setTime(System.currentTimeMillis());
+            String throwable = "";
             if (thrown != null) {
-                try {
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    thrown.printStackTrace(pw);
-                    pw.close();
-                    sb.append(sw.toString());
-                } catch (Exception ex) {
-                    throw new AssertionError(ex);
-                }
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                pw.println();
+                thrown.printStackTrace(pw);
+                pw.close();
+                throwable = sw.toString();
             }
 
-            return sb.toString();
+            return String.format(formatString,
+                                 date,
+                                 getCallerInfo(),
+                                 name,
+                                 PlatformLogger.getLevelName(level),
+                                 msg,
+                                 throwable);
         }
 
         // Returns the caller's class and method's name; best effort
