@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public:
          rethrow_exception,         // unwinding and throwing exception
          // requests to frame manager from C++ interpreter
          call_method,               // request for new frame from interpreter, manager responds with method_entry
+         call_method_handle,        // like the above, except the callee is a method handle
          return_from_method,        // request from interpreter to unwind, manager responds with method_continue
          more_monitors,             // need a new monitor
          throwing_exception,        // unwind stack and rethrow

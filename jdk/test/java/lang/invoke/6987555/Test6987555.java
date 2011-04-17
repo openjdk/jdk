@@ -27,7 +27,7 @@
  * @bug 6987555
  * @summary JSR 292 unboxing to a boolean value fails on big-endian SPARC
  *
- * @run main/othervm -Xint -ea -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic -XX:+UnlockDiagnosticVMOptions -XX:+VerifyMethodHandles Test6987555
+ * @run main/othervm -Xint -ea -XX:+UnlockDiagnosticVMOptions -XX:+VerifyMethodHandles Test6987555
  */
 
 import java.lang.invoke.*;

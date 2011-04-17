@@ -148,8 +148,8 @@ typedef union {
 
 /***************************************************************/
 #define DEF_VARS(type)                                          \
-  type     *adr_src, *sl, *sp;                                  \
-  type     *adr_dst, *dl, *dp;                                  \
+  type     *adr_src, *sl, *sp = NULL;                           \
+  type     *adr_dst, *dl, *dp = NULL;                           \
   FTYPE    *pbuff = buff;                                       \
   mlib_s32 wid, hgt, sll, dll;                                  \
   mlib_s32 nchannel, chan1;                                     \
@@ -2060,8 +2060,8 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
   mlib_s32 d0, d1, shift1, shift2;
   mlib_s32 k0, k1, k2, k3, k4, k5, k6;
   mlib_s32 p0, p1, p2, p3, p4, p5, p6, p7;
-  DTYPE    *adr_src, *sl, *sp;
-  DTYPE    *adr_dst, *dl, *dp;
+  DTYPE    *adr_src, *sl, *sp = NULL;
+  DTYPE    *adr_dst, *dl, *dp = NULL;
   mlib_s32 wid, hgt, sll, dll;
   mlib_s32 nchannel, chan1;
   mlib_s32 i, j, c;

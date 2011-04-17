@@ -27,20 +27,18 @@ package sun.management;
 
 import java.lang.management.*;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
 import javax.management.MBeanRegistrationException;
 import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 import javax.management.RuntimeOperationsException;
-import java.nio.BufferPoolMXBean;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import sun.security.action.LoadLibraryAction;
 
-import java.util.logging.PlatformLoggingMXBean;
 import sun.util.logging.LoggingSupport;
 
 import java.util.ArrayList;
@@ -139,61 +137,80 @@ public class ManagementFactoryHelper {
         return result;
     }
 
-    public static List<PlatformLoggingMXBean> getLoggingMXBean() {
+    public static PlatformLoggingMXBean getPlatformLoggingMXBean() {
         if (LoggingSupport.isAvailable()) {
-            return Collections.singletonList(createPlatformLoggingMXBean());
+            return PlatformLoggingImpl.instance;
         } else {
-            return Collections.emptyList();
+            return null;
         }
     }
 
-    private final static String LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
-    private static PlatformLoggingMXBean createPlatformLoggingMXBean() {
-        return new PlatformLoggingMXBean() {
-            private volatile ObjectName objname;  // created lazily
-            @Override
-            public ObjectName getObjectName() {
-                ObjectName result = objname;
-                if (result == null) {
-                    synchronized (this) {
-                        if (objname == null) {
-                            result = Util.newObjectName(LOGGING_MXBEAN_NAME);
-                            objname = result;
-                        }
-                    }
-                }
-                return result;
-            }
-
-            @Override
-            public java.util.List<String> getLoggerNames() {
-                return LoggingSupport.getLoggerNames();
-            }
-
-            @Override
-            public String getLoggerLevel(String loggerName) {
-                return LoggingSupport.getLoggerLevel(loggerName);
-            }
-
-            @Override
-            public void setLoggerLevel(String loggerName, String levelName) {
-                LoggingSupport.setLoggerLevel(loggerName, levelName);
-            }
-
-            @Override
-            public String getParentLoggerName(String loggerName) {
-                return LoggingSupport.getParentLoggerName(loggerName);
-            }
-        };
+    // The logging MXBean object is an instance of
+    // PlatformLoggingMXBean and java.util.logging.LoggingMXBean
+    // but it can't directly implement two MXBean interfaces
+    // as a compliant MXBean implements exactly one MXBean interface,
+    // or if it implements one interface that is a subinterface of
+    // all the others; otherwise, it is a non-compliant MXBean
+    // and MBeanServer will throw NotCompliantMBeanException.
+    // See the Definition of an MXBean section in javax.management.MXBean spec.
+    //
+    // To create a compliant logging MXBean, define a LoggingMXBean interface
+    // that extend PlatformLoggingMXBean and j.u.l.LoggingMXBean
+    interface LoggingMXBean
+        extends PlatformLoggingMXBean, java.util.logging.LoggingMXBean {
     }
 
-    public static List<BufferPoolMXBean> getBufferPoolMXBeans() {
-        List<BufferPoolMXBean> pools = new ArrayList<BufferPoolMXBean>(2);
-        pools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
-            .getDirectBufferPool()));
-        pools.add(createBufferPoolMXBean(sun.nio.ch.FileChannelImpl
-            .getMappedBufferPool()));
-        return pools;
+    static class PlatformLoggingImpl implements LoggingMXBean
+    {
+        final static PlatformLoggingMXBean instance = new PlatformLoggingImpl();
+        final static String LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
+
+        private volatile ObjectName objname;  // created lazily
+        @Override
+        public ObjectName getObjectName() {
+            ObjectName result = objname;
+            if (result == null) {
+                synchronized (this) {
+                    if (objname == null) {
+                        result = Util.newObjectName(LOGGING_MXBEAN_NAME);
+                        objname = result;
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public java.util.List<String> getLoggerNames() {
+            return LoggingSupport.getLoggerNames();
+        }
+
+        @Override
+        public String getLoggerLevel(String loggerName) {
+            return LoggingSupport.getLoggerLevel(loggerName);
+        }
+
+        @Override
+        public void setLoggerLevel(String loggerName, String levelName) {
+            LoggingSupport.setLoggerLevel(loggerName, levelName);
+        }
+
+        @Override
+        public String getParentLoggerName(String loggerName) {
+            return LoggingSupport.getParentLoggerName(loggerName);
+        }
+    }
+
+    private static List<BufferPoolMXBean> bufferPools = null;
+    public static synchronized List<BufferPoolMXBean> getBufferPoolMXBeans() {
+        if (bufferPools == null) {
+            bufferPools = new ArrayList<>(2);
+            bufferPools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
+                .getDirectBufferPool()));
+            bufferPools.add(createBufferPoolMXBean(sun.nio.ch.FileChannelImpl
+                .getMappedBufferPool()));
+        }
+        return bufferPools;
     }
 
     private final static String BUFFER_POOL_MXBEAN_NAME = "java.nio:type=BufferPool";

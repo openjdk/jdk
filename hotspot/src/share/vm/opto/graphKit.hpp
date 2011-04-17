@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,7 +662,9 @@ class GraphKit : public Phase {
             && Universe::heap()->can_elide_tlab_store_barriers());
   }
 
+  // Sync Ideal and Graph kits.
   void sync_kit(IdealKit& ideal);
+  void final_sync(IdealKit& ideal);
 
   // vanilla/CMS post barrier
   void write_barrier_post(Node *store, Node* obj,

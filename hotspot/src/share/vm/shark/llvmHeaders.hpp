@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,11 @@
 #include <llvm/ModuleProvider.h>
 #endif
 #include <llvm/Support/IRBuilder.h>
+#if SHARK_LLVM_VERSION >= 29
+#include <llvm/Support/Threading.h>
+#else
 #include <llvm/System/Threading.h>
+#endif
 #include <llvm/Target/TargetSelect.h>
 #include <llvm/Type.h>
 #include <llvm/ExecutionEngine/JITMemoryManager.h>
@@ -55,7 +59,11 @@
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/Debug.h>
+#if SHARK_LLVM_VERSION >= 29
+#include <llvm/Support/Host.h>
+#else
 #include <llvm/System/Host.h>
+#endif
 #endif
 
 #include <map>

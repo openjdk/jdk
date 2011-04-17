@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
 import java.util.Collections;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -51,37 +52,63 @@ import javax.management.JMX;
 import sun.management.ManagementFactoryHelper;
 
 /**
- * The <tt>ManagementFactory</tt> class is a factory class for getting
+ * The {@code ManagementFactory} class is a factory class for getting
  * managed beans for the Java platform.
  * This class consists of static methods each of which returns
- * one or more <a href="#MXBean">platform MXBean(s)</a> representing
+ * one or more <i>platform MXBeans</i> representing
  * the management interface of a component of the Java virtual
  * machine.
+ * <p>
+ * <h4><a name="MXBean">Platform MXBeans</a></h4>
+ * <p>
+ * A platform MXBean is a <i>managed bean</i> that
+ * conforms to the <a href="../../../javax/management/package-summary.html">JMX</a>
+ * Instrumentation Specification and only uses a set of basic data types.
+ * A JMX management application and the {@linkplain
+ * #getPlatformMBeanServer platform MBeanServer}
+ * can interoperate without requiring classes for MXBean specific
+ * data types.
+ * The data types being transmitted between the JMX connector
+ * server and the connector client are
+ * {@linkplain javax.management.openmbean.OpenType open types}
+ * and this allows interoperation across versions.
+ * See <a href="../../../javax/management/MXBean.html#MXBean-spec">
+ * the specification of MXBeans</a> for details.
+ *
+ * <a name="MXBeanNames"></a>
+ * <p>Each platform MXBean is a {@link PlatformManagedObject}
+ * and it has a unique
+ * {@link javax.management.ObjectName ObjectName} for
+ * registration in the platform {@code MBeanServer} as returned by
+ * by the {@link PlatformManagedObject#getObjectName getObjectName}
+ * method.
  *
  * <p>
  * An application can access a platform MXBean in the following ways:
+ * <h5>1. Direct access to an MXBean interface</h5>
+ * <blockquote>
  * <ul>
- * <li><i>Direct access to an MXBean interface</i>
- *     <ol type="a">
- *     <li>Get the MXBean instance through the static factory method,
- *         or the {@link #getPlatformMXBeans(Class)} method
- *         and access the MXBean locally of the running
+ *     <li>Get an MXBean instance by calling the
+ *         {@link #getPlatformMXBean(Class) getPlatformMXBean} or
+ *         {@link #getPlatformMXBeans(Class) getPlatformMXBeans} method
+ *         and access the MXBean locally in the running
  *         virtual machine.
  *         </li>
  *     <li>Construct an MXBean proxy instance that forwards the
  *         method calls to a given {@link MBeanServer MBeanServer} by calling
- *         the {@link #newPlatformMXBeanProxy newPlatformMXBeanProxy} method
- *         or the {@link #getPlatformMXBeans(MBeanServerConnection, Class)}
- *         method.
+ *         the {@link #getPlatformMXBean(MBeanServerConnection, Class)} or
+ *         {@link #getPlatformMXBeans(MBeanServerConnection, Class)} method.
+ *         The {@link #newPlatformMXBeanProxy newPlatformMXBeanProxy} method
+ *         can also be used to construct an MXBean proxy instance of
+ *         a given {@code ObjectName}.
  *         A proxy is typically constructed to remotely access
  *         an MXBean of another running virtual machine.
  *         </li>
- *     </ol></li>
- * <li><i>Indirect access to an MXBean interface via MBeanServer</i>
- *     <ol type="a">
- *     <li>Go through the {@link #getPlatformMBeanServer
- *         platform MBeanServer} to access MXBeans locally or
- *         a specific <tt>MBeanServerConnection</tt> to access
+ * </ul>
+ * <h5>2. Indirect access to an MXBean interface via MBeanServer</h5>
+ * <ul>
+ *     <li>Go through the platform {@code MBeanServer} to access MXBeans
+ *         locally or a specific <tt>MBeanServerConnection</tt> to access
  *         MXBeans remotely.
  *         The attributes and operations of an MXBean use only
  *         <em>JMX open types</em> which include basic data types,
@@ -89,133 +116,19 @@ import sun.management.ManagementFactoryHelper;
  *         and {@link javax.management.openmbean.TabularData TabularData}
  *         defined in
  *         {@link javax.management.openmbean.OpenType OpenType}.
- *         The mapping is specified below.
+ *         The mapping is specified in
+ *         the {@linkplain javax.management.MXBean MXBean} specification
+ *         for details.
  *        </li>
- *     </ol></li>
  * </ul>
- *
- * <h4><a name="MXBean">Platform MXBeans</a></h4>
- * A platform MXBean is a <i>managed bean</i> that conforms to
- * the JMX Instrumentation Specification and only uses
- * a set of basic data types described below.
- * See <a href="../../../javax/management/MXBean.html#MXBean-spec">
- * the specification of MXBeans</a> for details.
- * All platform MXBean interfaces extend {@link PlatformManagedObject}s
- * and new methods may be added in these interfaces
- * in future Java SE releases.
- * <p>
- * A JMX management application and the platform <tt>MBeanServer</tt>
- * can interoperate without requiring classes for MXBean specific
- * data types.
- * The data types being transmitted between the JMX connector
- * server and the connector client are
- * {@linkplain javax.management.openmbean.OpenType open types}
- * and this allows interoperation across versions.
- * <p>
- * The platform MXBean interfaces use only the following data types:
- * <ul>
- *   <li>Primitive types such as <tt>int</tt>, <tt>long</tt>,
- *       <tt>boolean</tt>, etc</li>
- *   <li>Wrapper classes for primitive types such as
- *       {@link java.lang.Integer Integer}, {@link java.lang.Long Long},
- *       {@link java.lang.Boolean Boolean}, etc and
- *       {@link java.lang.String String}</li>
- *   <li>{@link java.lang.Enum Enum} classes</li>
- *   <li>Classes that define only getter methods and define a static
- *       <tt>from</tt> method with a
- *       {@link javax.management.openmbean.CompositeData CompositeData}
- *       argument to convert from an input <tt>CompositeData</tt> to
- *       an instance of that class
- *       </li>
- *   <li>{@link java.util.List List&lt;E&gt;}
- *       where <tt>E</tt> is a primitive type, a wrapper class,
- *       an enum class, or a class supporting conversion from a
- *       <tt>CompositeData</tt> to its class
- *       </li>
- *   <li>{@link java.util.Map Map&lt;K,V&gt;}
- *       where <tt>K</tt> and <tt>V</tt> are
- *       a primitive type, a wrapper class,
- *       an enum class, or a class supporting conversion from a
- *       <tt>CompositeData</tt> to its class
- *       </li>
- * </ul>
- *
- * <p>
- * When an attribute or operation of a platform MXBean
- * is accessed via an <tt>MBeanServer</tt>, the data types are mapped
- * as follows:
- * <ul>
- *   <li>A primitive type or a wrapper class is mapped
- *       to the same type.
- *       </li>
- *   <li>An {@link Enum} is mapped to
- *       <tt>String</tt> whose value is the name of the enum constant.
- *   <li>A class that defines only getter methods and a static
- *       <tt>from</tt> method with a
- *       {@link javax.management.openmbean.CompositeData CompositeData}
- *       argument is mapped to
- *       {@link javax.management.openmbean.CompositeData CompositeData}.
- *       </li>
- *   <li><tt>Map&lt;K,V&gt;</tt> is mapped to
- *       {@link javax.management.openmbean.TabularData TabularData}
- *       whose row type is a
- *       {@link javax.management.openmbean.CompositeType CompositeType} with
- *       two items whose names are <i>"key"</i> and <i>"value"</i>
- *       and the item types are
- *       the corresponding mapped type of <tt>K</tt> and <tt>V</tt>
- *       respectively and the <i>"key"</i> is the index.
- *       </li>
- *   <li><tt>List&lt;E&gt;</tt> is mapped to an array with the mapped
- *       type of <tt>E</tt> as the element type.
- *       </li>
- *   <li>An array of element type <tt>E</tt> is mapped to
- *       an array of the same dimenions with the mapped type of <tt>E</tt>
- *       as the element type.</li>
- * </ul>
- *
- * The {@link javax.management.MBeanInfo MBeanInfo}
- * for a platform MXBean
- * describes the data types of the attributes and operations
- * as primitive or open types mapped as specified above.
- *
- * <p>
- * For example, the {@link MemoryMXBean}
- * interface has the following <i>getter</i> and <i>setter</i> methods:
- *
- * <blockquote><pre>
- * public MemoryUsage getHeapMemoryUsage();
- * public boolean isVerbose();
- * public void setVerbose(boolean value);
- * </pre></blockquote>
- *
- * These attributes in the <tt>MBeanInfo</tt>
- * of the <tt>MemoryMXBean</tt> have the following names and types:
- *
- * <blockquote>
- * <table border>
- * <tr>
- *   <th>Attribute Name</th>
- *   <th>Type</th>
- *   </tr>
- * <tr>
- *   <td><tt>HeapMemoryUsage</tt></td>
- *   <td>{@link MemoryUsage#from
- *              CompositeData representing MemoryUsage}</td>
- * </tr>
- * <tr>
- *   <td><tt>Verbose</tt></td>
- *   <td><tt>boolean</tt></td>
- * </tr>
- * </table>
  * </blockquote>
  *
- * <h4><a name="MXBeanNames">MXBean Names</a></h4>
- * Each platform MXBean for a Java virtual machine has a unique
- * {@link javax.management.ObjectName ObjectName} for
- * registration in the platform <tt>MBeanServer</tt> that can
- * be obtained by calling the {@link PlatformManagedObject#getObjectName}
- * method.
- *
+ * <p>
+ * The {@link #getPlatformManagementInterfaces getPlatformManagementInterfaces}
+ * method returns all management interfaces supported in the Java virtual machine
+ * including the standard management interfaces listed in the tables
+ * below as well as the management interfaces extended by the JDK implementation.
+ * <p>
  * A Java virtual machine has a single instance of the following management
  * interfaces:
  *
@@ -228,27 +141,32 @@ import sun.management.ManagementFactoryHelper;
  * <tr>
  * <td> {@link ClassLoadingMXBean} </td>
  * <td> {@link #CLASS_LOADING_MXBEAN_NAME
- *             <tt>java.lang:type=ClassLoading</tt>}</td>
+ *             java.lang:type=ClassLoading}</td>
  * </tr>
  * <tr>
  * <td> {@link MemoryMXBean} </td>
  * <td> {@link #MEMORY_MXBEAN_NAME
- *             <tt>java.lang:type=Memory</tt>}</td>
+ *             java.lang:type=Memory}</td>
  * </tr>
  * <tr>
  * <td> {@link ThreadMXBean} </td>
  * <td> {@link #THREAD_MXBEAN_NAME
- *             <tt>java.lang:type=Threading</tt>}</td>
+ *             java.lang:type=Threading}</td>
  * </tr>
  * <tr>
  * <td> {@link RuntimeMXBean} </td>
  * <td> {@link #RUNTIME_MXBEAN_NAME
- *             <tt>java.lang:type=Runtime</tt>}</td>
+ *             java.lang:type=Runtime}</td>
  * </tr>
  * <tr>
  * <td> {@link OperatingSystemMXBean} </td>
  * <td> {@link #OPERATING_SYSTEM_MXBEAN_NAME
- *             <tt>java.lang:type=OperatingSystem</tt>}</td>
+ *             java.lang:type=OperatingSystem}</td>
+ * </tr>
+ * <tr>
+ * <td> {@link PlatformLoggingMXBean} </td>
+ * <td> {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME
+ *             java.util.logging:type=Logging}</td>
  * </tr>
  * </table>
  * </blockquote>
@@ -266,7 +184,7 @@ import sun.management.ManagementFactoryHelper;
  * <tr>
  * <td> {@link CompilationMXBean} </td>
  * <td> {@link #COMPILATION_MXBEAN_NAME
- *             <tt>java.lang:type=Compilation</tt>}</td>
+ *             java.lang:type=Compilation}</td>
  * </tr>
  * </table>
  * </blockquote>
@@ -283,17 +201,21 @@ import sun.management.ManagementFactoryHelper;
  * <tr>
  * <td> {@link GarbageCollectorMXBean} </td>
  * <td> {@link #GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=GarbageCollector</tt>}<tt>,name=</tt><i>collector's name</i></td>
+ *             java.lang:type=GarbageCollector}<tt>,name=</tt><i>collector's name</i></td>
  * </tr>
  * <tr>
  * <td> {@link MemoryManagerMXBean} </td>
  * <td> {@link #MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=MemoryManager</tt>}<tt>,name=</tt><i>manager's name</i></td>
+ *             java.lang:type=MemoryManager}<tt>,name=</tt><i>manager's name</i></td>
  * </tr>
  * <tr>
  * <td> {@link MemoryPoolMXBean} </td>
  * <td> {@link #MEMORY_POOL_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=MemoryPool</tt>}<tt>,name=</tt><i>pool's name</i></td>
+ *             java.lang:type=MemoryPool}<tt>,name=</tt><i>pool's name</i></td>
+ * </tr>
+ * <tr>
+ * <td> {@link BufferPoolMXBean} </td>
+ * <td> {@code java.nio:type=BufferPool,name=}<i>pool name</i></td>
  * </tr>
  * </table>
  * </blockquote>
@@ -302,7 +224,6 @@ import sun.management.ManagementFactoryHelper;
  *      JMX Specification</a>
  * @see <a href="package-summary.html#examples">
  *      Ways to Access Management Metrics</a>
- * @see java.util.logging.LoggingMXBean
  * @see javax.management.MXBean
  *
  * @author  Mandy Chung
@@ -496,35 +417,35 @@ public class ManagementFactory {
     /**
      * Returns the platform {@link javax.management.MBeanServer MBeanServer}.
      * On the first call to this method, it first creates the platform
-     * <tt>MBeanServer</tt> by calling the
+     * {@code MBeanServer} by calling the
      * {@link javax.management.MBeanServerFactory#createMBeanServer
      * MBeanServerFactory.createMBeanServer}
-     * method and registers the platform MXBeans in this platform
-     * <tt>MBeanServer</tt> using the <a href="#MXBeanNames">MXBean names</a>
-     * defined in the class description.
+     * method and registers each platform MXBean in this platform
+     * {@code MBeanServer} with its
+     * {@link PlatformManagedObject#getObjectName ObjectName}.
      * This method, in subsequent calls, will simply return the
-     * initially created platform <tt>MBeanServer</tt>.
+     * initially created platform {@code MBeanServer}.
      * <p>
      * MXBeans that get created and destroyed dynamically, for example,
      * memory {@link MemoryPoolMXBean pools} and
      * {@link MemoryManagerMXBean managers},
      * will automatically be registered and deregistered into the platform
-     * <tt>MBeanServer</tt>.
+     * {@code MBeanServer}.
      * <p>
-     * If the system property <tt>javax.management.builder.initial</tt>
-     * is set, the platform <tt>MBeanServer</tt> creation will be done
+     * If the system property {@code javax.management.builder.initial}
+     * is set, the platform {@code MBeanServer} creation will be done
      * by the specified {@link javax.management.MBeanServerBuilder}.
      * <p>
      * It is recommended that this platform MBeanServer also be used
      * to register other application managed beans
      * besides the platform MXBeans.
      * This will allow all MBeans to be published through the same
-     * <tt>MBeanServer</tt> and hence allow for easier network publishing
+     * {@code MBeanServer} and hence allow for easier network publishing
      * and discovery.
      * Name conflicts with the platform MXBeans should be avoided.
      *
-     * @return the platform <tt>MBeanServer</tt>; the platform
-     *         MXBeans are registered into the platform <tt>MBeanServer</tt>
+     * @return the platform {@code MBeanServer}; the platform
+     *         MXBeans are registered into the platform {@code MBeanServer}
      *         at the first time this method is called.
      *
      * @exception SecurityException if there is a security manager
@@ -671,7 +592,9 @@ public class ManagementFactory {
 
         try {
             final ObjectName objName = new ObjectName(mxbeanName);
-            if (!connection.isInstanceOf(objName, interfaceClass.getName())) {
+            // skip the isInstanceOf check for LoggingMXBean
+            String intfName = interfaceClass.getName();
+            if (!connection.isInstanceOf(objName, intfName)) {
                 throw new IllegalArgumentException(mxbeanName +
                     " is not an instance of " + interfaceClass);
             }
@@ -683,55 +606,128 @@ public class ManagementFactory {
             // create an MXBean proxy
             return JMX.newMXBeanProxy(connection, objName, mxbeanInterface,
                                       emitter);
-        } catch (InstanceNotFoundException e) {
-            final IllegalArgumentException iae =
-                new IllegalArgumentException(mxbeanName +
-                    " not found in the connection.");
-            iae.initCause(e);
-            throw iae;
-        } catch (MalformedObjectNameException e) {
-            final IllegalArgumentException iae =
-                new IllegalArgumentException(mxbeanName +
-                    " is not a valid ObjectName format.");
-            iae.initCause(e);
-            throw iae;
+        } catch (InstanceNotFoundException|MalformedObjectNameException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
     /**
-     * Returns the list of platform MXBeans that implement
-     * the given {@code mxbeanInterface} in the running Java
+     * Returns the platform MXBean implementing
+     * the given {@code mxbeanInterface} which is specified
+     * to have one single instance in the Java virtual machine.
+     * This method may return {@code null} if the management interface
+     * is not implemented in the Java virtual machine (for example,
+     * a Java virtual machine with no compilation system does not
+     * implement {@link CompilationMXBean});
+     * otherwise, this method is equivalent to calling:
+     * <pre>
+     *    {@link #getPlatformMXBeans(Class)
+     *      getPlatformMXBeans(mxbeanInterface)}.get(0);
+     * </pre>
+     *
+     * @param mxbeanInterface a management interface for a platform
+     *     MXBean with one single instance in the Java virtual machine
+     *     if implemented.
+     *
+     * @return the platform MXBean that implements
+     * {@code mxbeanInterface}, or {@code null} if not exist.
+     *
+     * @throws IllegalArgumentException if {@code mxbeanInterface}
+     * is not a platform management interface or
+     * not a singleton platform MXBean.
+     *
+     * @since 1.7
+     */
+    public static <T extends PlatformManagedObject>
+            T getPlatformMXBean(Class<T> mxbeanInterface) {
+        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        if (pc == null)
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " is not a platform management interface");
+        if (!pc.isSingleton())
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " can have zero or more than one instances");
+
+        return pc.getSingletonMXBean(mxbeanInterface);
+    }
+
+    /**
+     * Returns the list of platform MXBeans implementing
+     * the given {@code mxbeanInterface} in the Java
      * virtual machine.
      * The returned list may contain zero, one, or more instances.
      * The number of instances in the returned list is defined
      * in the specification of the given management interface.
+     * The order is undefined and there is no guarantee that
+     * the list returned is in the same order as previous invocations.
      *
      * @param mxbeanInterface a management interface for a platform
      *                        MXBean
      *
-     * @return the list of platform MXBeans that implements
+     * @return the list of platform MXBeans that implement
      * {@code mxbeanInterface}.
      *
      * @throws IllegalArgumentException if {@code mxbeanInterface}
-     * is not a management interface for the platform.
+     * is not a platform management interface.
      *
      * @since 1.7
      */
     public static <T extends PlatformManagedObject> List<T>
             getPlatformMXBeans(Class<T> mxbeanInterface) {
-        String className = mxbeanInterface.getName();
-        for (PlatformComponent component: PlatformComponent.values()) {
-            // comparing the class name first instead of the Class instance
-            // to avoid causing unnecessary class loading of
-            // the other MXBean interfaces
-            if (className.equals(component.getMXBeanInterfaceName())) {
-                if (component.getMXBeanInterface() == mxbeanInterface) {
-                    return component.getMXBeans(mxbeanInterface);
-                }
-            }
-        }
-        throw new IllegalArgumentException(mxbeanInterface.getName() +
-            " is not implemented by any of the platform MXBeans.");
+        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        if (pc == null)
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " is not a platform management interface");
+        return Collections.unmodifiableList(pc.getMXBeans(mxbeanInterface));
+    }
+
+    /**
+     * Returns the platform MXBean proxy for
+     * {@code mxbeanInterface} which is specified to have one single
+     * instance in a Java virtual machine and the proxy will
+     * forward the method calls through the given {@code MBeanServerConnection}.
+     * This method may return {@code null} if the management interface
+     * is not implemented in the Java virtual machine being monitored
+     * (for example, a Java virtual machine with no compilation system
+     * does not implement {@link CompilationMXBean});
+     * otherwise, this method is equivalent to calling:
+     * <pre>
+     *     {@link #getPlatformMXBeans(MBeanServerConnection, Class)
+     *        getPlatformMXBeans(connection, mxbeanInterface)}.get(0);
+     * </pre>
+     *
+     * @param connection the {@code MBeanServerConnection} to forward to.
+     * @param mxbeanInterface a management interface for a platform
+     *     MXBean with one single instance in the Java virtual machine
+     *     being monitored, if implemented.
+     *
+     * @return the platform MXBean proxy for
+     * forwarding the method calls of the {@code mxbeanInterface}
+     * through the given {@code MBeanServerConnection},
+     * or {@code null} if not exist.
+     *
+     * @throws IllegalArgumentException if {@code mxbeanInterface}
+     * is not a platform management interface or
+     * not a singleton platform MXBean.
+     * @throws java.io.IOException if a communication problem
+     * occurred when accessing the {@code MBeanServerConnection}.
+     *
+     * @see #newPlatformMXBeanProxy
+     * @since 1.7
+     */
+    public static <T extends PlatformManagedObject>
+            T getPlatformMXBean(MBeanServerConnection connection,
+                                Class<T> mxbeanInterface)
+        throws java.io.IOException
+    {
+        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        if (pc == null)
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " is not a platform management interface");
+        if (!pc.isSingleton())
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " can have zero or more than one instances");
+        return pc.getSingletonMXBean(connection, mxbeanInterface);
     }
 
     /**
@@ -741,6 +737,8 @@ public class ManagementFactory {
      * The returned list may contain zero, one, or more instances.
      * The number of instances in the returned list is defined
      * in the specification of the given management interface.
+     * The order is undefined and there is no guarantee that
+     * the list returned is in the same order as previous invocations.
      *
      * @param connection the {@code MBeanServerConnection} to forward to.
      * @param mxbeanInterface a management interface for a platform
@@ -751,54 +749,49 @@ public class ManagementFactory {
      * through the given {@code MBeanServerConnection}.
      *
      * @throws IllegalArgumentException if {@code mxbeanInterface}
-     * is not a management interface for the platform.
+     * is not a platform management interface.
      *
      * @throws java.io.IOException if a communication problem
      * occurred when accessing the {@code MBeanServerConnection}.
      *
+     * @see #newPlatformMXBeanProxy
      * @since 1.7
      */
     public static <T extends PlatformManagedObject>
-        List<T> getPlatformMXBeans(MBeanServerConnection connection,
-                                   Class<T> mxbeanInterface)
+            List<T> getPlatformMXBeans(MBeanServerConnection connection,
+                                       Class<T> mxbeanInterface)
         throws java.io.IOException
     {
-        String className = mxbeanInterface.getName();
-        for (PlatformComponent component: PlatformComponent.values()) {
-            // comparing the class name first instead of the Class instance
-            // to avoid causing unnecessary class loading of
-            // the other MXBean interfaces
-            if (className.equals(component.getMXBeanInterfaceName())) {
-                if (component.getMXBeanInterface() == mxbeanInterface) {
-                    return component.getMXBeans(connection,
-                                                mxbeanInterface);
-                }
-            }
+        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        if (pc == null) {
+            throw new IllegalArgumentException(mxbeanInterface.getName() +
+                " is not a platform management interface");
         }
-        throw new IllegalArgumentException(mxbeanInterface.getName() +
-            " is not implemented by any of the platform MXBeans.");
+        return Collections.unmodifiableList(pc.getMXBeans(connection, mxbeanInterface));
     }
 
     /**
-     * Returns a list of {@code Class} objects, subinterface of
+     * Returns the set of {@code Class} objects, subinterface of
      * {@link PlatformManagedObject}, representing
      * all management interfaces for
      * monitoring and managing the Java platform.
      *
-     * @return a list of {@code Class} objects, subinterface of
+     * @return the set of {@code Class} objects, subinterface of
      * {@link PlatformManagedObject} representing
      * the management interfaces for
      * monitoring and managing the Java platform.
      *
      * @since 1.7
      */
-    public static List<Class<? extends PlatformManagedObject>> getAllPlatformMXBeanInterfaces() {
-        List<Class<? extends PlatformManagedObject>> result =
-            new ArrayList<>();
+    public static Set<Class<? extends PlatformManagedObject>>
+           getPlatformManagementInterfaces()
+    {
+        Set<Class<? extends PlatformManagedObject>> result =
+            new TreeSet<>();
         for (PlatformComponent component: PlatformComponent.values()) {
             result.add(component.getMXBeanInterface());
         }
-        return result;
+        return Collections.unmodifiableSet(result);
     }
 
     private static final String NOTIF_EMITTER =
@@ -810,7 +803,9 @@ public class ManagementFactory {
     private static void addMXBean(final MBeanServer mbs, final PlatformManagedObject pmo) {
         // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
         final DynamicMBean dmbean;
-        if (pmo instanceof NotificationEmitter) {
+        if (pmo instanceof DynamicMBean) {
+            dmbean = DynamicMBean.class.cast(pmo);
+        } else if (pmo instanceof NotificationEmitter) {
             dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
         } else {
             dmbean = new StandardMBean(pmo, null, true);

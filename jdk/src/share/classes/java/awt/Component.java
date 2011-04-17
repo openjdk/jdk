@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5821,7 +5821,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <code>InputMethodRequests</code> instance.
      * If listener <code>l</code> is <code>null</code>,
      * no exception is thrown and no action is performed.
-     * <p>Refer to <a href="doc-files/AWTThreadIssues.html#ListenersThreads"
+     * <p>Refer to <a href="{@docRoot}/java/awt/doc-files/AWTThreadIssues.html#ListenersThreads"
      * >AWT Threading Issues</a> for details on AWT's threading model.
      *
      * @param    l   the input method listener

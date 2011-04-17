@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,13 +819,13 @@ class UnixPath
     }
 
     @Override
-    public Path toRealPath(boolean resolveLinks) throws IOException {
+    public Path toRealPath(LinkOption... options) throws IOException {
         checkRead();
 
         UnixPath absolute = toAbsolutePath();
 
-        // if resolveLinks is true then use realpath
-        if (resolveLinks) {
+        // if resolving links then use realpath
+        if (Util.followLinks(options)) {
             try {
                 byte[] rp = realpath(absolute);
                 return new UnixPath(getFileSystem(), rp);
@@ -834,7 +834,7 @@ class UnixPath
             }
         }
 
-        // if resolveLinks is false then eliminate "." and also ".."
+        // if not resolving links then eliminate "." and also ".."
         // where the previous element is not a link.
         UnixPath result = fs.rootDirectory();
         for (int i=0; i<absolute.getNameCount(); i++) {

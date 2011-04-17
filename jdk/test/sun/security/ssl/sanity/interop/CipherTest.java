@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,19 +115,7 @@ public class CipherTest {
         }
 
         boolean isEnabled() {
-            // ignore SCSV
-            if (cipherSuite.equals("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
-                return false;
-            }
-
-            // ignore exportable cipher suite for TLSv1.1
-            if (protocol.equals("TLSv1.1")) {
-                if(cipherSuite.indexOf("_EXPORT_") != -1) {
-                    return false;
-                }
-            }
-
-            return true;
+            return TLSCipherStatus.isEnabled(cipherSuite, protocol);
         }
 
         public String toString() {
@@ -138,6 +126,114 @@ public class CipherTest {
             return s;
         }
 
+        static enum TLSCipherStatus {
+            // cipher suites supported since TLS 1.2
+            CS_01("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", 0x0303, 0xFFFF),
+            CS_02("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",   0x0303, 0xFFFF),
+            CS_03("TLS_RSA_WITH_AES_256_CBC_SHA256",         0x0303, 0xFFFF),
+            CS_04("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",  0x0303, 0xFFFF),
+            CS_05("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",    0x0303, 0xFFFF),
+            CS_06("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
+            CS_07("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
+
+            CS_08("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 0x0303, 0xFFFF),
+            CS_09("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",   0x0303, 0xFFFF),
+            CS_10("TLS_RSA_WITH_AES_128_CBC_SHA256",         0x0303, 0xFFFF),
+            CS_11("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",  0x0303, 0xFFFF),
+            CS_12("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",    0x0303, 0xFFFF),
+            CS_13("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
+            CS_14("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
+
+            CS_15("TLS_DH_anon_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
+            CS_16("TLS_DH_anon_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
+            CS_17("TLS_RSA_WITH_NULL_SHA256",                0x0303, 0xFFFF),
+
+            // cipher suites obsoleted since TLS 1.2
+            CS_50("SSL_RSA_WITH_DES_CBC_SHA",                0x0000, 0x0303),
+            CS_51("SSL_DHE_RSA_WITH_DES_CBC_SHA",            0x0000, 0x0303),
+            CS_52("SSL_DHE_DSS_WITH_DES_CBC_SHA",            0x0000, 0x0303),
+            CS_53("SSL_DH_anon_WITH_DES_CBC_SHA",            0x0000, 0x0303),
+            CS_54("TLS_KRB5_WITH_DES_CBC_SHA",               0x0000, 0x0303),
+            CS_55("TLS_KRB5_WITH_DES_CBC_MD5",               0x0000, 0x0303),
+
+            // cipher suites obsoleted since TLS 1.1
+            CS_60("SSL_RSA_EXPORT_WITH_RC4_40_MD5",          0x0000, 0x0302),
+            CS_61("SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",      0x0000, 0x0302),
+            CS_62("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",       0x0000, 0x0302),
+            CS_63("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
+            CS_64("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
+            CS_65("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
+            CS_66("TLS_KRB5_EXPORT_WITH_RC4_40_SHA",         0x0000, 0x0302),
+            CS_67("TLS_KRB5_EXPORT_WITH_RC4_40_MD5",         0x0000, 0x0302),
+            CS_68("TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",     0x0000, 0x0302),
+            CS_69("TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",     0x0000, 0x0302),
+
+            // ignore TLS_EMPTY_RENEGOTIATION_INFO_SCSV always
+            CS_99("TLS_EMPTY_RENEGOTIATION_INFO_SCSV",       0xFFFF, 0x0000);
+
+            // the cipher suite name
+            final String cipherSuite;
+
+            // supported since protocol version
+            final int supportedSince;
+
+            // obsoleted since protocol version
+            final int obsoletedSince;
+
+            TLSCipherStatus(String cipherSuite,
+                    int supportedSince, int obsoletedSince) {
+                this.cipherSuite = cipherSuite;
+                this.supportedSince = supportedSince;
+                this.obsoletedSince = obsoletedSince;
+            }
+
+            static boolean isEnabled(String cipherSuite, String protocol) {
+                int versionNumber = toVersionNumber(protocol);
+
+                if (versionNumber < 0) {
+                    return true;  // unlikely to happen
+                }
+
+                for (TLSCipherStatus status : TLSCipherStatus.values()) {
+                    if (cipherSuite.equals(status.cipherSuite)) {
+                        if ((versionNumber < status.supportedSince) ||
+                            (versionNumber >= status.obsoletedSince)) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                }
+
+                return true;
+            }
+
+            private static int toVersionNumber(String protocol) {
+                int versionNumber = -1;
+
+                switch (protocol) {
+                    case "SSLv2Hello":
+                        versionNumber = 0x0002;
+                        break;
+                    case "SSLv3":
+                        versionNumber = 0x0300;
+                        break;
+                    case "TLSv1":
+                        versionNumber = 0x0301;
+                        break;
+                    case "TLSv1.1":
+                        versionNumber = 0x0302;
+                        break;
+                    case "TLSv1.2":
+                        versionNumber = 0x0303;
+                        break;
+                    default:
+                        // unlikely to happen
+                }
+
+                return versionNumber;
+            }
+        }
     }
 
     private List<TestParameters> tests;

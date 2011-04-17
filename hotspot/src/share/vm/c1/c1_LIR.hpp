@@ -1215,7 +1215,11 @@ public:
     src_range_check        = 1 << 5,
     dst_range_check        = 1 << 6,
     type_check             = 1 << 7,
-    all_flags              = (1 << 8) - 1
+    overlapping            = 1 << 8,
+    unaligned              = 1 << 9,
+    src_objarray           = 1 << 10,
+    dst_objarray           = 1 << 11,
+    all_flags              = (1 << 12) - 1
   };
 
   LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_Opr dst_pos, LIR_Opr length, LIR_Opr tmp,

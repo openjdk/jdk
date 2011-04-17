@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,27 +29,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.awt.event.*;
-import java.awt.*;
-import java.applet.*;
+import java.applet.Applet;
+import java.awt.BorderLayout;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.Vector;
 
-public class DrawTest extends Applet{
+@SuppressWarnings("serial")
+public class DrawTest extends Applet {
+
     DrawPanel panel;
     DrawControls controls;
 
+    @Override
     public void init() {
         setLayout(new BorderLayout());
         panel = new DrawPanel();
         controls = new DrawControls(panel);
         add("Center", panel);
-        add("South",controls);
+        add("South", controls);
     }
 
+    @Override
     public void destroy() {
         remove(panel);
         remove(controls);
@@ -63,22 +82,28 @@ public class DrawTest extends Applet{
 
         f.add("Center", drawTest);
         f.setSize(300, 300);
-        f.show();
+        f.setVisible(true);
     }
+
+    @Override
     public String getAppletInfo() {
         return "A simple drawing program.";
     }
 }
 
+
+@SuppressWarnings("serial")
 class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
+
     public static final int LINES = 0;
     public static final int POINTS = 1;
-    int    mode = LINES;
-    Vector lines = new Vector();
-    Vector colors = new Vector();
-    int x1,y1;
-    int x2,y2;
+    int mode = LINES;
+    List<Rectangle> lines = new ArrayList<Rectangle>();
+    List<Color> colors = new ArrayList<Color>();
+    int x1, y1;
+    int x2, y2;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public DrawPanel() {
         setBackground(Color.white);
         addMouseMotionListener(this);
@@ -87,16 +112,16 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
 
     public void setDrawMode(int mode) {
         switch (mode) {
-          case LINES:
-          case POINTS:
-            this.mode = mode;
-            break;
-          default:
-            throw new IllegalArgumentException();
+            case LINES:
+            case POINTS:
+                this.mode = mode;
+                break;
+            default:
+                throw new IllegalArgumentException();
         }
     }
 
-
+    @Override
     public void mouseDragged(MouseEvent e) {
         e.consume();
         switch (mode) {
@@ -106,8 +131,8 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
                 break;
             case POINTS:
             default:
-                colors.addElement(getForeground());
-                lines.addElement(new Rectangle(x1, y1, e.getX(), e.getY()));
+                colors.add(getForeground());
+                lines.add(new Rectangle(x1, y1, e.getX(), e.getY()));
                 x1 = e.getX();
                 y1 = e.getY();
                 break;
@@ -115,9 +140,11 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
         repaint();
     }
 
+    @Override
     public void mouseMoved(MouseEvent e) {
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
         e.consume();
         switch (mode) {
@@ -128,8 +155,8 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
                 break;
             case POINTS:
             default:
-                colors.addElement(getForeground());
-                lines.addElement(new Rectangle(e.getX(), e.getY(), -1, -1));
+                colors.add(getForeground());
+                lines.add(new Rectangle(e.getX(), e.getY(), -1, -1));
                 x1 = e.getX();
                 y1 = e.getY();
                 repaint();
@@ -137,12 +164,13 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
         }
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         e.consume();
         switch (mode) {
             case LINES:
-                colors.addElement(getForeground());
-                lines.addElement(new Rectangle(x1, y1, e.getX(), e.getY()));
+                colors.add(getForeground());
+                lines.add(new Rectangle(x1, y1, e.getX(), e.getY()));
                 x2 = -1;
                 break;
             case POINTS:
@@ -152,23 +180,27 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
         repaint();
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
 
+    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
+    @Override
     public void paint(Graphics g) {
         int np = lines.size();
 
         /* draw the current lines */
         g.setColor(getForeground());
-        for (int i=0; i < np; i++) {
-            Rectangle p = (Rectangle)lines.elementAt(i);
-            g.setColor((Color)colors.elementAt(i));
+        for (int i = 0; i < np; i++) {
+            Rectangle p = lines.get(i);
+            g.setColor(colors.get(i));
             if (p.width != -1) {
                 g.drawLine(p.x, p.y, p.width, p.height);
             } else {
@@ -185,9 +217,12 @@ class DrawPanel extends Panel implements MouseListener, MouseMotionListener {
 }
 
 
+@SuppressWarnings("serial")
 class DrawControls extends Panel implements ItemListener {
+
     DrawPanel target;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public DrawControls(DrawPanel target) {
         this.target = target;
         setLayout(new FlowLayout());
@@ -222,33 +257,35 @@ class DrawControls extends Panel implements ItemListener {
         add(shapes);
     }
 
+    @Override
     public void paint(Graphics g) {
         Rectangle r = getBounds();
         g.setColor(Color.lightGray);
         g.draw3DRect(0, 0, r.width, r.height, false);
 
         int n = getComponentCount();
-        for(int i=0; i<n; i++) {
+        for (int i = 0; i < n; i++) {
             Component comp = getComponent(i);
             if (comp instanceof Checkbox) {
                 Point loc = comp.getLocation();
                 Dimension d = comp.getSize();
                 g.setColor(comp.getForeground());
-                g.drawRect(loc.x-1, loc.y-1, d.width+1, d.height+1);
+                g.drawRect(loc.x - 1, loc.y - 1, d.width + 1, d.height + 1);
             }
         }
     }
 
-  public void itemStateChanged(ItemEvent e) {
-    if (e.getSource() instanceof Checkbox) {
-      target.setForeground(((Component)e.getSource()).getForeground());
-    } else if (e.getSource() instanceof Choice) {
-      String choice = (String) e.getItem();
-      if (choice.equals("Lines")) {
-        target.setDrawMode(DrawPanel.LINES);
-      } else if (choice.equals("Points")) {
-        target.setDrawMode(DrawPanel.POINTS);
-      }
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        if (e.getSource() instanceof Checkbox) {
+            target.setForeground(((Component) e.getSource()).getForeground());
+        } else if (e.getSource() instanceof Choice) {
+            String choice = (String) e.getItem();
+            if (choice.equals("Lines")) {
+                target.setDrawMode(DrawPanel.LINES);
+            } else if (choice.equals("Points")) {
+                target.setDrawMode(DrawPanel.POINTS);
+            }
+        }
     }
-  }
 }

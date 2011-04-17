@@ -3423,7 +3423,7 @@ encode %{
          masm.movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2] 
 
          // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-         if ((EmitSync & 2048) && VM_Version::supports_3dnow() && os::is_MP()) {
+         if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
             // prefetchw [eax + Offset(_owner)-2]
             masm.prefetchw(Address(rax, ObjectMonitor::owner_offset_in_bytes()-2));
          }
@@ -3467,7 +3467,7 @@ encode %{
          masm.movptr(boxReg, tmpReg) ; 
 
          // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-         if ((EmitSync & 2048) && VM_Version::supports_3dnow() && os::is_MP()) {
+         if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
             // prefetchw [eax + Offset(_owner)-2]
             masm.prefetchw(Address(rax, ObjectMonitor::owner_offset_in_bytes()-2));
          }
@@ -3614,7 +3614,7 @@ encode %{
       // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
 
       masm.get_thread (boxReg) ;
-      if ((EmitSync & 4096) && VM_Version::supports_3dnow() && os::is_MP()) {
+      if ((EmitSync & 4096) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
         // prefetchw [ebx + Offset(_owner)-2]
         masm.prefetchw(Address(rbx, ObjectMonitor::owner_offset_in_bytes()-2));
       }
@@ -7333,7 +7333,7 @@ instruct loadSSD(regD dst, stackSlotD src) %{
 // Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchr0( memory mem ) %{
-  predicate(UseSSE==0 && !VM_Version::supports_3dnow());
+  predicate(UseSSE==0 && !VM_Version::supports_3dnow_prefetch());
   match(PrefetchRead mem);
   ins_cost(0);
   size(0);
@@ -7343,7 +7343,7 @@ instruct prefetchr0( memory mem ) %{
 %}
 
 instruct prefetchr( memory mem ) %{
-  predicate(UseSSE==0 && VM_Version::supports_3dnow() || ReadPrefetchInstr==3);
+  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch() || ReadPrefetchInstr==3);
   match(PrefetchRead mem);
   ins_cost(100);
 
@@ -7387,7 +7387,7 @@ instruct prefetchrT2( memory mem ) %{
 %}
 
 instruct prefetchw0( memory mem ) %{
-  predicate(UseSSE==0 && !VM_Version::supports_3dnow());
+  predicate(UseSSE==0 && !VM_Version::supports_3dnow_prefetch());
   match(PrefetchWrite mem);
   ins_cost(0);
   size(0);
@@ -7397,7 +7397,7 @@ instruct prefetchw0( memory mem ) %{
 %}
 
 instruct prefetchw( memory mem ) %{
-  predicate(UseSSE==0 && VM_Version::supports_3dnow() || AllocatePrefetchInstr==3);
+  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch() || AllocatePrefetchInstr==3);
   match( PrefetchWrite mem );
   ins_cost(100);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4880663 6715757
+ * @bug 4880663 6715757 7031005
  * @summary javap could output whitespace between class name and opening brace
  *          javap prints "extends java.lang.Object"
  */
@@ -39,7 +39,7 @@ public class T4880663 {
     public void run() throws IOException {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
-        verify(classFile, "class Test extends java.lang.Object {");
+        verify(classFile, "class Test {");
 
         if (errors > 0)
             throw new Error(errors + " found.");

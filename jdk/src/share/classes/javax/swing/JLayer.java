@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,7 @@ public final class JLayer<V extends Component>
      * for this {@code JLayer} and the {@code JLayer}
      * is displayable.
      * <p/>
-     * The following example shows how to correclty use this method
+     * The following example shows how to correctly use this method
      * in the {@code LayerUI} implementations:
      * <pre>
      *    public void installUI(JComponent c) {
@@ -834,7 +834,7 @@ public final class JLayer<V extends Component>
         }
 
         /**
-         * First, implementatation of this method iterates through
+         * First, implementation of this method iterates through
          * glassPane's child components and returns {@code true}
          * if any of them is visible and contains passed x,y point.
          * After that it checks if no mouseListeners is attached to this component
