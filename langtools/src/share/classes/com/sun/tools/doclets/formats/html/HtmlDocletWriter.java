@@ -2120,7 +2120,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
             }
             text = (isplaintext) ?
-                refMemName : getCode() + refMemName + getCodeEnd();
+                refMemName : getCode() + Util.escapeHtmlChars(refMemName) + getCodeEnd();
 
             result.append(getDocLink(LinkInfoImpl.CONTEXT_SEE_TAG, containing,
                 refMem, (label.length() == 0)? text: label, false));
