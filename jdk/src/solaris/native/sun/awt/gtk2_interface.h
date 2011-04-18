@@ -766,6 +766,8 @@ gboolean (*fp_gtk_file_chooser_set_current_folder)(GtkFileChooser *chooser,
     const gchar *filename);
 gboolean (*fp_gtk_file_chooser_set_filename)(GtkFileChooser *chooser,
     const char *filename);
+void (*fp_gtk_file_chooser_set_current_name)(GtkFileChooser *chooser,
+    const gchar *name);
 void (*fp_gtk_file_filter_add_custom)(GtkFileFilter *filter,
     GtkFileFilterFlags needed, GtkFileFilterFunc func, gpointer data,
     GDestroyNotify notify);
