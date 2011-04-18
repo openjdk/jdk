@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911 4421494
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494 7021568
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 
@@ -581,6 +581,31 @@ public class ParseDouble {
         }
     }
 
+
+    private static void testStrictness() {
+        final double expected = 0x0.0000008000001p-1022;
+        boolean failed = false;
+        double conversion = 0.0;
+        double sum = 0.0; // Prevent conversion from being optimized away
+
+        //2^-1047 + 2^-1075
+        String decimal = "6.631236871469758276785396630275967243399099947355303144249971758736286630139265439618068200788048744105960420552601852889715006376325666595539603330361800519107591783233358492337208057849499360899425128640718856616503093444922854759159988160304439909868291973931426625698663157749836252274523485312442358651207051292453083278116143932569727918709786004497872322193856150225415211997283078496319412124640111777216148110752815101775295719811974338451936095907419622417538473679495148632480391435931767981122396703443803335529756003353209830071832230689201383015598792184172909927924176339315507402234836120730914783168400715462440053817592702766213559042115986763819482654128770595766806872783349146967171293949598850675682115696218943412532098591327667236328125E-316";
+
+        for(int i = 0; i <= 12_000; i++) {
+            conversion = Double.parseDouble(decimal);
+            sum += conversion;
+            if (conversion != expected) {
+                failed = true;
+                System.out.printf("Iteration %d converts as %a%n",
+                                  i, conversion);
+            }
+        }
+
+        System.out.println("Sum = "  + sum);
+        if (failed)
+            throw new RuntimeException("Inconsistent conversion");
+    }
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -595,5 +620,6 @@ public class ParseDouble {
         testRegex(paddedBadStrings, true);
 
         testSubnormalPowers();
+        testStrictness();
     }
 }
