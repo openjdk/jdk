@@ -106,7 +106,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     /**
      * Distinguished non-null value for representing null values.
      */
-    private static final Object NULL = new Object();
+    private static final Object NULL = new Integer(0);
 
     private Object maskNull(Object value) {
         return (value == null ? NULL : value);
@@ -116,7 +116,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         return (V) (value == NULL ? null : value);
     }
 
-    private static Enum[] ZERO_LENGTH_ENUM_ARRAY = new Enum[0];
+    private static final Enum[] ZERO_LENGTH_ENUM_ARRAY = new Enum[0];
 
     /**
      * Creates an empty enum map with the specified key type.
@@ -464,6 +464,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         public Iterator<Map.Entry<K,V>> iterator() {
             return new EntryIterator();
         }
+
         public boolean contains(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
@@ -552,70 +553,82 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         }
     }
 
-    /**
-     * Since we don't use Entry objects, we use the Iterator itself as entry.
-     */
-    private class EntryIterator extends EnumMapIterator<Map.Entry<K,V>>
-        implements Map.Entry<K,V>
-    {
+    private class EntryIterator extends EnumMapIterator<Map.Entry<K,V>> {
+        private Entry lastReturnedEntry = null;
+
         public Map.Entry<K,V> next() {
             if (!hasNext())
                 throw new NoSuchElementException();
-            lastReturnedIndex = index++;
-            return this;
+            lastReturnedEntry = new Entry(index++);
+            return lastReturnedEntry;
         }
 
-        public K getKey() {
-            checkLastReturnedIndexForEntryUse();
-            return keyUniverse[lastReturnedIndex];
+        public void remove() {
+            lastReturnedIndex =
+                ((null == lastReturnedEntry) ? -1 : lastReturnedEntry.index);
+            super.remove();
+            lastReturnedEntry.index = lastReturnedIndex;
+            lastReturnedEntry = null;
         }
 
-        public V getValue() {
-            checkLastReturnedIndexForEntryUse();
-            return unmaskNull(vals[lastReturnedIndex]);
-        }
+        private class Entry implements Map.Entry<K,V> {
+            private int index;
 
-        public V setValue(V value) {
-            checkLastReturnedIndexForEntryUse();
-            V oldValue = unmaskNull(vals[lastReturnedIndex]);
-            vals[lastReturnedIndex] = maskNull(value);
-            return oldValue;
-        }
+            private Entry(int index) {
+                this.index = index;
+            }
 
-        public boolean equals(Object o) {
-            if (lastReturnedIndex < 0)
-                return o == this;
+            public K getKey() {
+                checkIndexForEntryUse();
+                return keyUniverse[index];
+            }
 
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry e = (Map.Entry)o;
-            V ourValue = unmaskNull(vals[lastReturnedIndex]);
-            Object hisValue = e.getValue();
-            return e.getKey() == keyUniverse[lastReturnedIndex] &&
-                (ourValue == hisValue ||
-                 (ourValue != null && ourValue.equals(hisValue)));
-        }
+            public V getValue() {
+                checkIndexForEntryUse();
+                return unmaskNull(vals[index]);
+            }
 
-        public int hashCode() {
-            if (lastReturnedIndex < 0)
-                return super.hashCode();
+            public V setValue(V value) {
+                checkIndexForEntryUse();
+                V oldValue = unmaskNull(vals[index]);
+                vals[index] = maskNull(value);
+                return oldValue;
+            }
 
-            Object value = vals[lastReturnedIndex];
-            return keyUniverse[lastReturnedIndex].hashCode()
-                ^ (value == NULL ? 0 : value.hashCode());
-        }
+            public boolean equals(Object o) {
+                if (index < 0)
+                    return o == this;
 
-        public String toString() {
-            if (lastReturnedIndex < 0)
-                return super.toString();
+                if (!(o instanceof Map.Entry))
+                    return false;
 
-            return keyUniverse[lastReturnedIndex] + "="
-                + unmaskNull(vals[lastReturnedIndex]);
-        }
+                Map.Entry e = (Map.Entry)o;
+                V ourValue = unmaskNull(vals[index]);
+                Object hisValue = e.getValue();
+                return (e.getKey() == keyUniverse[index] &&
+                        (ourValue == hisValue ||
+                         (ourValue != null && ourValue.equals(hisValue))));
+            }
 
-        private void checkLastReturnedIndexForEntryUse() {
-            if (lastReturnedIndex < 0)
-                throw new IllegalStateException("Entry was removed");
+            public int hashCode() {
+                if (index < 0)
+                    return super.hashCode();
+
+                return entryHashCode(index);
+            }
+
+            public String toString() {
+                if (index < 0)
+                    return super.toString();
+
+                return keyUniverse[index] + "="
+                    + unmaskNull(vals[index]);
+            }
+
+            private void checkIndexForEntryUse() {
+                if (index < 0)
+                    throw new IllegalStateException("Entry was removed");
+            }
         }
     }
 
@@ -631,10 +644,35 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * @return <tt>true</tt> if the specified object is equal to this map
      */
     public boolean equals(Object o) {
-        if (!(o instanceof EnumMap))
-            return super.equals(o);
+        if (this == o)
+            return true;
+        if (o instanceof EnumMap)
+            return equals((EnumMap)o);
+        if (!(o instanceof Map))
+            return false;
 
-        EnumMap em = (EnumMap)o;
+        Map<K,V> m = (Map<K,V>)o;
+        if (size != m.size())
+            return false;
+
+        for (int i = 0; i < keyUniverse.length; i++) {
+            if (null != vals[i]) {
+                K key = keyUniverse[i];
+                V value = unmaskNull(vals[i]);
+                if (null == value) {
+                    if (!((null == m.get(key)) && m.containsKey(key)))
+                       return false;
+                } else {
+                   if (!value.equals(m.get(key)))
+                      return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private boolean equals(EnumMap em) {
         if (em.keyType != keyType)
             return size == 0 && em.size == 0;
 
@@ -647,6 +685,26 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
                 return false;
         }
         return true;
+    }
+
+    /**
+     * Returns the hash code value for this map.  The hash code of a map is
+     * defined to be the sum of the hash codes of each entry in the map.
+     */
+    public int hashCode() {
+        int h = 0;
+
+        for (int i = 0; i < keyUniverse.length; i++) {
+            if (null != vals[i]) {
+                h += entryHashCode(i);
+            }
+        }
+
+        return h;
+    }
+
+    private int entryHashCode(int index) {
+        return (keyUniverse[index].hashCode() ^ vals[index].hashCode());
     }
 
     /**
@@ -705,9 +763,13 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         s.writeInt(size);
 
         // Write out keys and values (alternating)
-        for (Map.Entry<K,V> e :  entrySet()) {
-            s.writeObject(e.getKey());
-            s.writeObject(e.getValue());
+        int entriesToBeWritten = size;
+        for (int i = 0; entriesToBeWritten > 0; i++) {
+            if (null != vals[i]) {
+                s.writeObject(keyUniverse[i]);
+                s.writeObject(unmaskNull(vals[i]));
+                entriesToBeWritten--;
+            }
         }
     }
 

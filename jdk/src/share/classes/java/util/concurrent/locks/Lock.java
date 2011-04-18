@@ -30,7 +30,7 @@
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 package java.util.concurrent.locks;
@@ -120,8 +120,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
- * lock, as described in <a href="http://java.sun.com/docs/books/jls/">
- * The Java Language Specification, Third Edition (17.4 Memory Model)</a>:
+ * lock, as described in section 17.4 of
+ * <cite>The Java&trade; Language Specification</cite>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.
