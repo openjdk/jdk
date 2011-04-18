@@ -2879,7 +2879,7 @@ class CommandLineFlags {
           "Max. no. of lines in the stack trace for Java exceptions "       \
           "(0 means all)")                                                  \
                                                                             \
-  NOT_EMBEDDED(develop(intx, GuaranteedSafepointInterval, 1000,             \
+  NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
                                                                             \
