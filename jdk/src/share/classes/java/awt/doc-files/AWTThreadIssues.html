@@ -40,10 +40,9 @@ newly added listener is only notified on subsequent key events.
 <a name="Autoshutdown"></a>
 <h2>Auto-shutdown</h2>
 
-According to <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/VMSpecTOC.doc.html"><i>The 
-Java</i><sup><small>TM</small></sup> <i>Virtual Machine Specification,
-Second edition</i></a> (see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/Concepts.doc.html#19152">§2.17.9</a>
-and <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/Concepts.doc.html#33308">§2.19</a>),
+According to
+<cite>The Java&trade; Virtual Machine Specification</cite>,
+sections 2.17.9 and 2.19,
 the Java virtual machine (JVM) initially starts up with a single non-daemon
 thread, which typically calls the <code>main</code> method of some class.
 The virtual machine terminates all its activity and exits when
@@ -183,7 +182,8 @@ non-daemon thread that blocks forever.
         <...>
 </pre>
 
-The Java Virtual Machine Specification guarantees
+<cite>The Java&trade; Virtual Machine Specification</cite>
+ guarantees
 that the JVM doesn't exit until this thread terminates.
 </body>
 </html>

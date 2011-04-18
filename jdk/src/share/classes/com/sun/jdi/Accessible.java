@@ -42,12 +42,9 @@ public interface Accessible {
      * Returns the Java<sup><font size=-2>TM</font></sup>
      * programming language modifiers, encoded in an integer.
      * <p>
-     * The modifier encodings are defined in the
-     * <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual Machine
-     * Specification</a>, in the <code>access_flag</code> tables for
-     * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#75734">classes</a>,
-     * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#88358">fields</a>, and
-     * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#75568">methods</a>.
+     * The modifier encodings are defined in
+     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * in the <code>access_flag</code> tables for classes(section 4.1), fields(section 4.5), and methods(section 4.6).
      */
     public int modifiers();
 

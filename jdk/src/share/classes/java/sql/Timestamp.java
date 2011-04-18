@@ -54,7 +54,7 @@ import java.util.StringTokenizer;
  * As a result, the <code>Timestamp.equals(Object)</code>
  * method is not symmetric with respect to the
  * <code>java.util.Date.equals(Object)</code>
- * method.  Also, the <code>hashcode</code> method uses the underlying
+ * method.  Also, the <code>hashCode</code> method uses the underlying
  * <code>java.util.Date</code>
  * implementation and therefore does not include nanos in its computation.
  * <P>
@@ -513,6 +513,18 @@ public class Timestamp extends java.util.Date {
           Timestamp ts = new Timestamp(o.getTime());
           return this.compareTo(ts);
       }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The {@code hashCode} method uses the underlying {@code java.util.Date}
+     * implementation and therefore does not include nanos in its computation.
+     *
+     */
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     static final long serialVersionUID = 2745179027874758501L;

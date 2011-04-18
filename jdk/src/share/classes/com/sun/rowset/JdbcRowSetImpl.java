@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,12 +93,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
     /**
      * The Vector holding the Match Columns
      */
-    private Vector iMatchColumns;
+    private Vector<Integer> iMatchColumns;
 
     /**
      * The Vector that will hold the Match Column names.
      */
-    private Vector strMatchColumns;
+    private Vector<String> strMatchColumns;
 
 
     protected transient JdbcRowSetResourceBundle resBundle;
@@ -213,12 +213,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         //Instantiating the vector for MatchColumns
 
-        iMatchColumns = new Vector(10);
+        iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
            iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
-        strMatchColumns = new Vector(10);
+        strMatchColumns = new Vector<String>(10);
         for(int j = 0; j < 10; j++) {
            strMatchColumns.add(j,null);
         }
@@ -286,12 +286,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         //Instantiating the vector for MatchColumns
 
-        iMatchColumns = new Vector(10);
+        iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
            iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
-        strMatchColumns = new Vector(10);
+        strMatchColumns = new Vector<String>(10);
         for(int j = 0; j < 10; j++) {
            strMatchColumns.add(j,null);
         }
@@ -373,12 +373,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         //Instantiating the vector for MatchColumns
 
-        iMatchColumns = new Vector(10);
+        iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
            iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
-        strMatchColumns = new Vector(10);
+        strMatchColumns = new Vector<String>(10);
         for(int j = 0; j < 10; j++) {
            strMatchColumns.add(j,null);
         }
@@ -463,12 +463,12 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         //Instantiating the vector for MatchColumns
 
-        iMatchColumns = new Vector(10);
+        iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
            iMatchColumns.add(i,Integer.valueOf(-1));
         }
 
-        strMatchColumns = new Vector(10);
+        strMatchColumns = new Vector<String>(10);
         for(int j = 0; j < 10; j++) {
            strMatchColumns.add(j,null);
         }
@@ -675,7 +675,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         try {
 
-            Map aMap = getTypeMap();
+            Map<String, Class<?>> aMap = getTypeMap();
             if( aMap != null) {
                 conn.setTypeMap(aMap);
             }
