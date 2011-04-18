@@ -1196,9 +1196,8 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of MetalTabbedPaneUI.
+     * Instantiate it only within subclasses of {@code MetalTabbedPaneUI}.
      */
     public class TabbedPaneLayout extends BasicTabbedPaneUI.TabbedPaneLayout {
 
