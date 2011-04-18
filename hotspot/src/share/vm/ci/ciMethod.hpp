@@ -276,9 +276,9 @@ class ciMethod : public ciObject {
   void print_short_name(outputStream* st = tty);
 
   methodOop get_method_handle_target() {
-    klassOop receiver_limit_oop = NULL;
-    int flags = 0;
-    return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
+    KlassHandle receiver_limit; int flags = 0;
+    methodHandle m = MethodHandles::decode_method(get_oop(), receiver_limit, flags);
+    return m();
   }
 };
 
