@@ -824,7 +824,8 @@ public class ForkJoinPool extends AbstractExecutorService {
             else if (w.eventCount != v)
                 return true;                      // update next time
         }
-        if ((int)c != 0 && parallelism + (int)(nc >> AC_SHIFT) == 0 &&
+        if ((!shutdown || !tryTerminate(false)) &&
+            (int)c != 0 && parallelism + (int)(nc >> AC_SHIFT) == 0 &&
             blockedCount == 0 && quiescerCount == 0)
             idleAwaitWork(w, nc, c, v);           // quiescent
         for (boolean rescanned = false;;) {
@@ -1024,8 +1025,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         do {} while (!UNSAFE.compareAndSwapLong(this, ctlOffset,  // no mask
                                                 c = ctl, c + AC_UNIT));
         int b;
-        do {} while(!UNSAFE.compareAndSwapInt(this, blockedCountOffset,
-                                              b = blockedCount, b - 1));
+        do {} while (!UNSAFE.compareAndSwapInt(this, blockedCountOffset,
+                                               b = blockedCount, b - 1));
     }
 
     /**
@@ -1177,7 +1178,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         ws[k] = w;
                         nextWorkerIndex = k + 1;
                         int m = g & SMASK;
-                        g = k > m? ((m << 1) + 1) & SMASK : g + (SG_UNIT<<1);
+                        g = (k > m) ? ((m << 1) + 1) & SMASK : g + (SG_UNIT<<1);
                     }
                 } finally {
                     scanGuard = g;
@@ -1360,8 +1361,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void addQuiescerCount(int delta) {
         int c;
-        do {} while(!UNSAFE.compareAndSwapInt(this, quiescerCountOffset,
-                                              c = quiescerCount, c + delta));
+        do {} while (!UNSAFE.compareAndSwapInt(this, quiescerCountOffset,
+                                               c = quiescerCount, c + delta));
     }
 
     /**
@@ -1714,7 +1715,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public int getRunningThreadCount() {
         int r = parallelism + (int)(ctl >> AC_SHIFT);
-        return r <= 0? 0 : r; // suppress momentarily negative values
+        return (r <= 0) ? 0 : r; // suppress momentarily negative values
     }
 
     /**
@@ -1726,7 +1727,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     public int getActiveThreadCount() {
         int r = parallelism + (int)(ctl >> AC_SHIFT) + blockedCount;
-        return r <= 0? 0 : r; // suppress momentarily negative values
+        return (r <= 0) ? 0 : r; // suppress momentarily negative values
     }
 
     /**
@@ -1881,9 +1882,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         int ac = rc + blockedCount;
         String level;
         if ((c & STOP_BIT) != 0)
-            level = (tc == 0)? "Terminated" : "Terminating";
+            level = (tc == 0) ? "Terminated" : "Terminating";
         else
-            level = shutdown? "Shutting down" : "Running";
+            level = shutdown ? "Shutting down" : "Running";
         return super.toString() +
             "[" + level +
             ", parallelism = " + pc +
