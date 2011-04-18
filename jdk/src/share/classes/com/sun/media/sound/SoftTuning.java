@@ -25,6 +25,7 @@
 package com.sun.media.sound;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 import javax.sound.midi.Patch;
 
@@ -234,8 +235,10 @@ public class SoftTuning {
         }
     }
 
+    // am: getTuning(int) is more effective.
+    // currently getTuning() is used only by tests
     public double[] getTuning() {
-        return tuning;
+        return Arrays.copyOf(tuning, tuning.length);
     }
 
     public double getTuning(int noteNumber) {
