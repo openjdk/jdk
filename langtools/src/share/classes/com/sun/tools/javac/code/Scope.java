@@ -649,7 +649,7 @@ public class Scope {
                 public Iterator<Symbol> iterator() {
                     return new CompoundScopeIterator(subScopes) {
                         Iterator<Symbol> nextIterator(Scope s) {
-                            return s.getElements().iterator();
+                            return s.getElements(sf).iterator();
                         }
                     };
                 }
