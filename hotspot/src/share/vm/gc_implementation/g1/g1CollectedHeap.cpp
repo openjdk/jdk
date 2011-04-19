@@ -2113,6 +2113,28 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
      (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
 
+#ifndef PRODUCT
+void G1CollectedHeap::allocate_dummy_regions() {
+  // Let's fill up most of the region
+  size_t word_size = HeapRegion::GrainWords - 1024;
+  // And as a result the region we'll allocate will be humongous.
+  guarantee(isHumongous(word_size), "sanity");
+
+  for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
+    // Let's use the existing mechanism for the allocation
+    HeapWord* dummy_obj = humongous_obj_allocate(word_size);
+    if (dummy_obj != NULL) {
+      MemRegion mr(dummy_obj, word_size);
+      CollectedHeap::fill_with_object(mr);
+    } else {
+      // If we can't allocate once, we probably cannot allocate
+      // again. Let's get out of the loop.
+      break;
+    }
+  }
+}
+#endif // !PRODUCT
+
 void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
 
@@ -3337,6 +3359,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // ConcurrentGCThread::safepoint_desynchronize().
         doConcurrentMark();
       }
+
+      allocate_dummy_regions();
 
 #if YOUNG_LIST_VERBOSE
       gclog_or_tty->print_cr("\nEnd of the pause.\nYoung_list:");
