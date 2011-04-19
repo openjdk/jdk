@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, false, HtmlStyle.title,
                 getResource("doclet.Help_line_1"));
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        Content line2 = HtmlTree.P(HtmlStyle.subTitle,
+        Content line2 = HtmlTree.DIV(HtmlStyle.subTitle,
                 getResource("doclet.Help_line_2"));
         div.addContent(line2);
         contentTree.addContent(div);

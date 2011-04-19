@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         div.addStyle(HtmlStyle.header);
         if (pkgname.length() > 0) {
             Content pkgNameContent = new StringContent(pkgname);
-            Content pkgNamePara = HtmlTree.P(HtmlStyle.subTitle, pkgNameContent);
-            div.addContent(pkgNamePara);
+            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
+            div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl( LinkInfoImpl.CONTEXT_CLASS_HEADER,
                 classDoc, false);
@@ -228,12 +228,15 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, classDoc, false);
         //Let's not link to ourselves in the signature.
         linkInfo.linkToSelf = false;
-        Content name = new RawHtml (classDoc.name() +
-                getTypeParameterLinks(linkInfo));
+        Content className = new StringContent(classDoc.name());
+        Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
         if (configuration().linksource) {
-            addSrcLink(classDoc, name, pre);
+            addSrcLink(classDoc, className, pre);
+            pre.addContent(parameterLinks);
         } else {
-            pre.addContent(HtmlTree.STRONG(name));
+            Content span = HtmlTree.SPAN(HtmlStyle.strong, className);
+            span.addContent(parameterLinks);
+            pre.addContent(span);
         }
         if (!isInterface) {
             Type superclass = Util.getFirstVisibleSuperClass(classDoc,

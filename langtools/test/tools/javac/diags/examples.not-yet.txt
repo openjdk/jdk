@@ -27,6 +27,7 @@ compiler.err.not.annotation.type                        # cannot occur given pre
 compiler.err.prob.found.req.1                           # Check: DEAD, in unused method
 compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
 compiler.err.proc.cant.access                           # completion failure
+compiler.err.proc.cant.access.1                         # completion failure, no stack trace
 compiler.err.proc.cant.create.loader                    # security exception from service loader
 compiler.err.proc.no.service                            # JavacProcessingEnvironment: no service loader available
 compiler.err.proc.processor.bad.option.name             # cannot happen? masked by javac.err.invalid.A.key
@@ -49,6 +50,7 @@ compiler.misc.bad.class.file.header                     # bad class file
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
 compiler.misc.bad.const.pool.tag.at                     # bad class file
+compiler.misc.bad.enclosing.class                       # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file

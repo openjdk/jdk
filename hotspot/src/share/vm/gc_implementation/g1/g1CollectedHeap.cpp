@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/concurrentG1Refine.hpp"
 #include "gc_implementation/g1/concurrentG1RefineThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
+#include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
@@ -517,8 +518,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
   return NULL;
 }
 
-HeapRegion* G1CollectedHeap::new_region_work(size_t word_size,
-                                             bool do_expand) {
+HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
   assert(!isHumongous(word_size) ||
                                   word_size <= (size_t) HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
@@ -566,7 +566,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(int purpose,
                                                  size_t word_size) {
   HeapRegion* alloc_region = NULL;
   if (_gc_alloc_region_counts[purpose] < g1_policy()->max_regions(purpose)) {
-    alloc_region = new_region_work(word_size, true /* do_expand */);
+    alloc_region = new_region(word_size, true /* do_expand */);
     if (purpose == GCAllocForSurvived && alloc_region != NULL) {
       alloc_region->set_survivor();
     }
@@ -587,7 +587,7 @@ int G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
     // Only one region to allocate, no need to go through the slower
     // path. The caller will attempt the expasion if this fails, so
     // let's not try to expand here too.
-    HeapRegion* hr = new_region_work(word_size, false /* do_expand */);
+    HeapRegion* hr = new_region(word_size, false /* do_expand */);
     if (hr != NULL) {
       first = hr->hrs_index();
     } else {
@@ -788,407 +788,12 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   return result;
 }
 
-void
-G1CollectedHeap::retire_cur_alloc_region(HeapRegion* cur_alloc_region) {
-  // Other threads might still be trying to allocate using CASes out
-  // of the region we are retiring, as they can do so without holding
-  // the Heap_lock. So we first have to make sure that noone else can
-  // allocate in it by doing a maximal allocation. Even if our CAS
-  // attempt fails a few times, we'll succeed sooner or later given
-  // that a failed CAS attempt mean that the region is getting closed
-  // to being full (someone else succeeded in allocating into it).
-  size_t free_word_size = cur_alloc_region->free() / HeapWordSize;
-
-  // This is the minimum free chunk we can turn into a dummy
-  // object. If the free space falls below this, then noone can
-  // allocate in this region anyway (all allocation requests will be
-  // of a size larger than this) so we won't have to perform the dummy
-  // allocation.
-  size_t min_word_size_to_fill = CollectedHeap::min_fill_size();
-
-  while (free_word_size >= min_word_size_to_fill) {
-    HeapWord* dummy =
-      cur_alloc_region->par_allocate_no_bot_updates(free_word_size);
-    if (dummy != NULL) {
-      // If the allocation was successful we should fill in the space.
-      CollectedHeap::fill_with_object(dummy, free_word_size);
-      break;
-    }
-
-    free_word_size = cur_alloc_region->free() / HeapWordSize;
-    // It's also possible that someone else beats us to the
-    // allocation and they fill up the region. In that case, we can
-    // just get out of the loop
-  }
-  assert(cur_alloc_region->free() / HeapWordSize < min_word_size_to_fill,
-         "sanity");
-
-  retire_cur_alloc_region_common(cur_alloc_region);
-  assert(_cur_alloc_region == NULL, "post-condition");
-}
-
-// See the comment in the .hpp file about the locking protocol and
-// assumptions of this method (and other related ones).
-HeapWord*
-G1CollectedHeap::replace_cur_alloc_region_and_allocate(size_t word_size,
-                                                       bool at_safepoint,
-                                                       bool do_dirtying,
-                                                       bool can_expand) {
-  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  assert(_cur_alloc_region == NULL,
-         "replace_cur_alloc_region_and_allocate() should only be called "
-         "after retiring the previous current alloc region");
-  assert(SafepointSynchronize::is_at_safepoint() == at_safepoint,
-         "at_safepoint and is_at_safepoint() should be a tautology");
-  assert(!can_expand || g1_policy()->can_expand_young_list(),
-         "we should not call this method with can_expand == true if "
-         "we are not allowed to expand the young gen");
-
-  if (can_expand || !g1_policy()->is_young_list_full()) {
-    HeapRegion* new_cur_alloc_region = new_alloc_region(word_size);
-    if (new_cur_alloc_region != NULL) {
-      assert(new_cur_alloc_region->is_empty(),
-             "the newly-allocated region should be empty, "
-             "as right now we only allocate new regions out of the free list");
-      g1_policy()->update_region_num(true /* next_is_young */);
-      set_region_short_lived_locked(new_cur_alloc_region);
-
-      assert(!new_cur_alloc_region->isHumongous(),
-             "Catch a regression of this bug.");
-
-      // We need to ensure that the stores to _cur_alloc_region and,
-      // subsequently, to top do not float above the setting of the
-      // young type.
-      OrderAccess::storestore();
-
-      // Now, perform the allocation out of the region we just
-      // allocated. Note that noone else can access that region at
-      // this point (as _cur_alloc_region has not been updated yet),
-      // so we can just go ahead and do the allocation without any
-      // atomics (and we expect this allocation attempt to
-      // suceeded). Given that other threads can attempt an allocation
-      // with a CAS and without needing the Heap_lock, if we assigned
-      // the new region to _cur_alloc_region before first allocating
-      // into it other threads might have filled up the new region
-      // before we got a chance to do the allocation ourselves. In
-      // that case, we would have needed to retire the region, grab a
-      // new one, and go through all this again. Allocating out of the
-      // new region before assigning it to _cur_alloc_region avoids
-      // all this.
-      HeapWord* result =
-                     new_cur_alloc_region->allocate_no_bot_updates(word_size);
-      assert(result != NULL, "we just allocate out of an empty region "
-             "so allocation should have been successful");
-      assert(is_in(result), "result should be in the heap");
-
-      // Now make sure that the store to _cur_alloc_region does not
-      // float above the store to top.
-      OrderAccess::storestore();
-      _cur_alloc_region = new_cur_alloc_region;
-
-      if (!at_safepoint) {
-        Heap_lock->unlock();
-      }
-
-      // do the dirtying, if necessary, after we release the Heap_lock
-      if (do_dirtying) {
-        dirty_young_block(result, word_size);
-      }
-      return result;
-    }
-  }
-
-  assert(_cur_alloc_region == NULL, "we failed to allocate a new current "
-         "alloc region, it should still be NULL");
-  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  return NULL;
-}
-
-// See the comment in the .hpp file about the locking protocol and
-// assumptions of this method (and other related ones).
-HeapWord*
-G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
-  assert_heap_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "attempt_allocation_slow() should not be "
-         "used for humongous allocations");
-
-  // We should only reach here when we were unable to allocate
-  // otherwise. So, we should have not active current alloc region.
-  assert(_cur_alloc_region == NULL, "current alloc region should be NULL");
-
-  // We will loop while succeeded is false, which means that we tried
-  // to do a collection, but the VM op did not succeed. So, when we
-  // exit the loop, either one of the allocation attempts was
-  // successful, or we succeeded in doing the VM op but which was
-  // unable to allocate after the collection.
-  for (int try_count = 1; /* we'll return or break */; try_count += 1) {
-    bool succeeded = true;
-
-    // Every time we go round the loop we should be holding the Heap_lock.
-    assert_heap_locked();
-
-    if (GC_locker::is_active_and_needs_gc()) {
-      // We are locked out of GC because of the GC locker. We can
-      // allocate a new region only if we can expand the young gen.
-
-      if (g1_policy()->can_expand_young_list()) {
-        // Yes, we are allowed to expand the young gen. Let's try to
-        // allocate a new current alloc region.
-        HeapWord* result =
-          replace_cur_alloc_region_and_allocate(word_size,
-                                                false, /* at_safepoint */
-                                                true,  /* do_dirtying */
-                                                true   /* can_expand */);
-        if (result != NULL) {
-          assert_heap_not_locked();
-          return result;
-        }
-      }
-      // We could not expand the young gen further (or we could but we
-      // failed to allocate a new region). We'll stall until the GC
-      // locker forces a GC.
-
-      // If this thread is not in a jni critical section, we stall
-      // the requestor until the critical section has cleared and
-      // GC allowed. When the critical section clears, a GC is
-      // initiated by the last thread exiting the critical section; so
-      // we retry the allocation sequence from the beginning of the loop,
-      // rather than causing more, now probably unnecessary, GC attempts.
-      JavaThread* jthr = JavaThread::current();
-      assert(jthr != NULL, "sanity");
-      if (jthr->in_critical()) {
-        if (CheckJNICalls) {
-          fatal("Possible deadlock due to allocating while"
-                " in jni critical section");
-        }
-        // We are returning NULL so the protocol is that we're still
-        // holding the Heap_lock.
-        assert_heap_locked();
-        return NULL;
-      }
-
-      Heap_lock->unlock();
-      GC_locker::stall_until_clear();
-
-      // No need to relock the Heap_lock. We'll fall off to the code
-      // below the else-statement which assumes that we are not
-      // holding the Heap_lock.
-    } else {
-      // We are not locked out. So, let's try to do a GC. The VM op
-      // will retry the allocation before it completes.
-
-      // Read the GC count while holding the Heap_lock
-      unsigned int gc_count_before = SharedHeap::heap()->total_collections();
-
-      Heap_lock->unlock();
-
-      HeapWord* result =
-        do_collection_pause(word_size, gc_count_before, &succeeded);
-      assert_heap_not_locked();
-      if (result != NULL) {
-        assert(succeeded, "the VM op should have succeeded");
-
-        // Allocations that take place on VM operations do not do any
-        // card dirtying and we have to do it here.
-        dirty_young_block(result, word_size);
-        return result;
-      }
-    }
-
-    // Both paths that get us here from above unlock the Heap_lock.
-    assert_heap_not_locked();
-
-    // We can reach here when we were unsuccessful in doing a GC,
-    // because another thread beat us to it, or because we were locked
-    // out of GC due to the GC locker. In either case a new alloc
-    // region might be available so we will retry the allocation.
-    HeapWord* result = attempt_allocation(word_size);
-    if (result != NULL) {
-      assert_heap_not_locked();
-      return result;
-    }
-
-    // So far our attempts to allocate failed. The only time we'll go
-    // around the loop and try again is if we tried to do a GC and the
-    // VM op that we tried to schedule was not successful because
-    // another thread beat us to it. If that happened it's possible
-    // that by the time we grabbed the Heap_lock again and tried to
-    // allocate other threads filled up the young generation, which
-    // means that the allocation attempt after the GC also failed. So,
-    // it's worth trying to schedule another GC pause.
-    if (succeeded) {
-      break;
-    }
-
-    // Give a warning if we seem to be looping forever.
-    if ((QueuedAllocationWarningCount > 0) &&
-        (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_slow() "
-              "retries %d times", try_count);
-    }
-  }
-
-  assert_heap_locked();
-  return NULL;
-}
-
-// See the comment in the .hpp file about the locking protocol and
-// assumptions of this method (and other related ones).
-HeapWord*
-G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
-                                              bool at_safepoint) {
-  // This is the method that will allocate a humongous object. All
-  // allocation paths that attempt to allocate a humongous object
-  // should eventually reach here. Currently, the only paths are from
-  // mem_allocate() and attempt_allocation_at_safepoint().
-  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  assert(isHumongous(word_size), "attempt_allocation_humongous() "
-         "should only be used for humongous allocations");
-  assert(SafepointSynchronize::is_at_safepoint() == at_safepoint,
-         "at_safepoint and is_at_safepoint() should be a tautology");
-
-  HeapWord* result = NULL;
-
-  // We will loop while succeeded is false, which means that we tried
-  // to do a collection, but the VM op did not succeed. So, when we
-  // exit the loop, either one of the allocation attempts was
-  // successful, or we succeeded in doing the VM op but which was
-  // unable to allocate after the collection.
-  for (int try_count = 1; /* we'll return or break */; try_count += 1) {
-    bool succeeded = true;
-
-    // Given that humongous objects are not allocated in young
-    // regions, we'll first try to do the allocation without doing a
-    // collection hoping that there's enough space in the heap.
-    result = humongous_obj_allocate(word_size);
-    assert(_cur_alloc_region == NULL || !_cur_alloc_region->isHumongous(),
-           "catch a regression of this bug.");
-    if (result != NULL) {
-      if (!at_safepoint) {
-        // If we're not at a safepoint, unlock the Heap_lock.
-        Heap_lock->unlock();
-      }
-      return result;
-    }
-
-    // If we failed to allocate the humongous object, we should try to
-    // do a collection pause (if we're allowed) in case it reclaims
-    // enough space for the allocation to succeed after the pause.
-    if (!at_safepoint) {
-      // Read the GC count while holding the Heap_lock
-      unsigned int gc_count_before = SharedHeap::heap()->total_collections();
-
-      // If we're allowed to do a collection we're not at a
-      // safepoint, so it is safe to unlock the Heap_lock.
-      Heap_lock->unlock();
-
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
-      assert_heap_not_locked();
-      if (result != NULL) {
-        assert(succeeded, "the VM op should have succeeded");
-        return result;
-      }
-
-      // If we get here, the VM operation either did not succeed
-      // (i.e., another thread beat us to it) or it succeeded but
-      // failed to allocate the object.
-
-      // If we're allowed to do a collection we're not at a
-      // safepoint, so it is safe to lock the Heap_lock.
-      Heap_lock->lock();
-    }
-
-    assert(result == NULL, "otherwise we should have exited the loop earlier");
-
-    // So far our attempts to allocate failed. The only time we'll go
-    // around the loop and try again is if we tried to do a GC and the
-    // VM op that we tried to schedule was not successful because
-    // another thread beat us to it. That way it's possible that some
-    // space was freed up by the thread that successfully scheduled a
-    // GC. So it's worth trying to allocate again.
-    if (succeeded) {
-      break;
-    }
-
-    // Give a warning if we seem to be looping forever.
-    if ((QueuedAllocationWarningCount > 0) &&
-        (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_humongous "
-              "retries %d times", try_count);
-    }
-  }
-
-  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  return NULL;
-}
-
-HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
-                                           bool expect_null_cur_alloc_region) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
-  assert(_cur_alloc_region == NULL || !expect_null_cur_alloc_region,
-         err_msg("the current alloc region was unexpectedly found "
-                 "to be non-NULL, cur alloc region: "PTR_FORMAT" "
-                 "expect_null_cur_alloc_region: %d word_size: "SIZE_FORMAT,
-                 _cur_alloc_region, expect_null_cur_alloc_region, word_size));
-
-  if (!isHumongous(word_size)) {
-    if (!expect_null_cur_alloc_region) {
-      HeapRegion* cur_alloc_region = _cur_alloc_region;
-      if (cur_alloc_region != NULL) {
-        // We are at a safepoint so no reason to use the MT-safe version.
-        HeapWord* result = cur_alloc_region->allocate_no_bot_updates(word_size);
-        if (result != NULL) {
-          assert(is_in(result), "result should be in the heap");
-
-          // We will not do any dirtying here. This is guaranteed to be
-          // called during a safepoint and the thread that scheduled the
-          // pause will do the dirtying if we return a non-NULL result.
-          return result;
-        }
-
-        retire_cur_alloc_region_common(cur_alloc_region);
-      }
-    }
-
-    assert(_cur_alloc_region == NULL,
-           "at this point we should have no cur alloc region");
-    return replace_cur_alloc_region_and_allocate(word_size,
-                                                 true, /* at_safepoint */
-                                                 false /* do_dirtying */,
-                                                 false /* can_expand */);
-  } else {
-    return attempt_allocation_humongous(word_size,
-                                        true /* at_safepoint */);
-  }
-
-  ShouldNotReachHere();
-}
-
 HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "we do not allow TLABs of humongous size");
+  assert(!isHumongous(word_size), "we do not allow humongous TLABs");
 
-  // First attempt: Try allocating out of the current alloc region
-  // using a CAS. If that fails, take the Heap_lock and retry the
-  // allocation, potentially replacing the current alloc region.
-  HeapWord* result = attempt_allocation(word_size);
-  if (result != NULL) {
-    assert_heap_not_locked();
-    return result;
-  }
-
-  // Second attempt: Go to the slower path where we might try to
-  // schedule a collection.
-  result = attempt_allocation_slow(word_size);
-  if (result != NULL) {
-    assert_heap_not_locked();
-    return result;
-  }
-
-  assert_heap_locked();
-  // Need to unlock the Heap_lock before returning.
-  Heap_lock->unlock();
-  return NULL;
+  unsigned int dummy_gc_count_before;
+  return attempt_allocation(word_size, &dummy_gc_count_before);
 }
 
 HeapWord*
@@ -1200,48 +805,18 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   assert(!is_tlab, "mem_allocate() this should not be called directly "
          "to allocate TLABs");
 
-  // Loop until the allocation is satisified,
-  // or unsatisfied after GC.
+  // Loop until the allocation is satisified, or unsatisfied after GC.
   for (int try_count = 1; /* we'll return */; try_count += 1) {
     unsigned int gc_count_before;
-    {
-      if (!isHumongous(word_size)) {
-        // First attempt: Try allocating out of the current alloc region
-        // using a CAS. If that fails, take the Heap_lock and retry the
-        // allocation, potentially replacing the current alloc region.
-        HeapWord* result = attempt_allocation(word_size);
-        if (result != NULL) {
-          assert_heap_not_locked();
-          return result;
-        }
 
-        assert_heap_locked();
-
-        // Second attempt: Go to the slower path where we might try to
-        // schedule a collection.
-        result = attempt_allocation_slow(word_size);
-        if (result != NULL) {
-          assert_heap_not_locked();
-          return result;
-        }
-      } else {
-        // attempt_allocation_humongous() requires the Heap_lock to be held.
-        Heap_lock->lock();
-
-        HeapWord* result = attempt_allocation_humongous(word_size,
-                                                     false /* at_safepoint */);
-        if (result != NULL) {
-          assert_heap_not_locked();
-          return result;
-        }
-      }
-
-      assert_heap_locked();
-      // Read the gc count while the heap lock is held.
-      gc_count_before = SharedHeap::heap()->total_collections();
-
-      // Release the Heap_lock before attempting the collection.
-      Heap_lock->unlock();
+    HeapWord* result = NULL;
+    if (!isHumongous(word_size)) {
+      result = attempt_allocation(word_size, &gc_count_before);
+    } else {
+      result = attempt_allocation_humongous(word_size, &gc_count_before);
+    }
+    if (result != NULL) {
+      return result;
     }
 
     // Create the garbage collection operation...
@@ -1249,7 +824,6 @@ G1CollectedHeap::mem_allocate(size_t word_size,
     // ...and get the VM thread to execute it.
     VMThread::execute(&op);
 
-    assert_heap_not_locked();
     if (op.prologue_succeeded() && op.pause_succeeded()) {
       // If the operation was successful we'll return the result even
       // if it is NULL. If the allocation attempt failed immediately
@@ -1275,21 +849,207 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   }
 
   ShouldNotReachHere();
+  return NULL;
 }
 
-void G1CollectedHeap::abandon_cur_alloc_region() {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
+                                           unsigned int *gc_count_before_ret) {
+  // Make sure you read the note in attempt_allocation_humongous().
 
-  HeapRegion* cur_alloc_region = _cur_alloc_region;
-  if (cur_alloc_region != NULL) {
-    assert(!cur_alloc_region->is_empty(),
-           "the current alloc region can never be empty");
-    assert(cur_alloc_region->is_young(),
-           "the current alloc region should be young");
+  assert_heap_not_locked_and_not_at_safepoint();
+  assert(!isHumongous(word_size), "attempt_allocation_slow() should not "
+         "be called for humongous allocation requests");
 
-    retire_cur_alloc_region_common(cur_alloc_region);
+  // We should only get here after the first-level allocation attempt
+  // (attempt_allocation()) failed to allocate.
+
+  // We will loop until a) we manage to successfully perform the
+  // allocation or b) we successfully schedule a collection which
+  // fails to perform the allocation. b) is the only case when we'll
+  // return NULL.
+  HeapWord* result = NULL;
+  for (int try_count = 1; /* we'll return */; try_count += 1) {
+    bool should_try_gc;
+    unsigned int gc_count_before;
+
+    {
+      MutexLockerEx x(Heap_lock);
+
+      result = _mutator_alloc_region.attempt_allocation_locked(word_size,
+                                                      false /* bot_updates */);
+      if (result != NULL) {
+        return result;
+      }
+
+      // If we reach here, attempt_allocation_locked() above failed to
+      // allocate a new region. So the mutator alloc region should be NULL.
+      assert(_mutator_alloc_region.get() == NULL, "only way to get here");
+
+      if (GC_locker::is_active_and_needs_gc()) {
+        if (g1_policy()->can_expand_young_list()) {
+          result = _mutator_alloc_region.attempt_allocation_force(word_size,
+                                                      false /* bot_updates */);
+          if (result != NULL) {
+            return result;
+          }
+        }
+        should_try_gc = false;
+      } else {
+        // Read the GC count while still holding the Heap_lock.
+        gc_count_before = SharedHeap::heap()->total_collections();
+        should_try_gc = true;
+      }
+    }
+
+    if (should_try_gc) {
+      bool succeeded;
+      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      if (result != NULL) {
+        assert(succeeded, "only way to get back a non-NULL result");
+        return result;
+      }
+
+      if (succeeded) {
+        // If we get here we successfully scheduled a collection which
+        // failed to allocate. No point in trying to allocate
+        // further. We'll just return NULL.
+        MutexLockerEx x(Heap_lock);
+        *gc_count_before_ret = SharedHeap::heap()->total_collections();
+        return NULL;
+      }
+    } else {
+      GC_locker::stall_until_clear();
+    }
+
+    // We can reach here if we were unsuccessul in scheduling a
+    // collection (because another thread beat us to it) or if we were
+    // stalled due to the GC locker. In either can we should retry the
+    // allocation attempt in case another thread successfully
+    // performed a collection and reclaimed enough space. We do the
+    // first attempt (without holding the Heap_lock) here and the
+    // follow-on attempt will be at the start of the next loop
+    // iteration (after taking the Heap_lock).
+    result = _mutator_alloc_region.attempt_allocation(word_size,
+                                                      false /* bot_updates */);
+    if (result != NULL ){
+      return result;
+    }
+
+    // Give a warning if we seem to be looping forever.
+    if ((QueuedAllocationWarningCount > 0) &&
+        (try_count % QueuedAllocationWarningCount == 0)) {
+      warning("G1CollectedHeap::attempt_allocation_slow() "
+              "retries %d times", try_count);
+    }
   }
-  assert(_cur_alloc_region == NULL, "post-condition");
+
+  ShouldNotReachHere();
+  return NULL;
+}
+
+HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
+                                          unsigned int * gc_count_before_ret) {
+  // The structure of this method has a lot of similarities to
+  // attempt_allocation_slow(). The reason these two were not merged
+  // into a single one is that such a method would require several "if
+  // allocation is not humongous do this, otherwise do that"
+  // conditional paths which would obscure its flow. In fact, an early
+  // version of this code did use a unified method which was harder to
+  // follow and, as a result, it had subtle bugs that were hard to
+  // track down. So keeping these two methods separate allows each to
+  // be more readable. It will be good to keep these two in sync as
+  // much as possible.
+
+  assert_heap_not_locked_and_not_at_safepoint();
+  assert(isHumongous(word_size), "attempt_allocation_humongous() "
+         "should only be called for humongous allocations");
+
+  // We will loop until a) we manage to successfully perform the
+  // allocation or b) we successfully schedule a collection which
+  // fails to perform the allocation. b) is the only case when we'll
+  // return NULL.
+  HeapWord* result = NULL;
+  for (int try_count = 1; /* we'll return */; try_count += 1) {
+    bool should_try_gc;
+    unsigned int gc_count_before;
+
+    {
+      MutexLockerEx x(Heap_lock);
+
+      // Given that humongous objects are not allocated in young
+      // regions, we'll first try to do the allocation without doing a
+      // collection hoping that there's enough space in the heap.
+      result = humongous_obj_allocate(word_size);
+      if (result != NULL) {
+        return result;
+      }
+
+      if (GC_locker::is_active_and_needs_gc()) {
+        should_try_gc = false;
+      } else {
+        // Read the GC count while still holding the Heap_lock.
+        gc_count_before = SharedHeap::heap()->total_collections();
+        should_try_gc = true;
+      }
+    }
+
+    if (should_try_gc) {
+      // If we failed to allocate the humongous object, we should try to
+      // do a collection pause (if we're allowed) in case it reclaims
+      // enough space for the allocation to succeed after the pause.
+
+      bool succeeded;
+      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      if (result != NULL) {
+        assert(succeeded, "only way to get back a non-NULL result");
+        return result;
+      }
+
+      if (succeeded) {
+        // If we get here we successfully scheduled a collection which
+        // failed to allocate. No point in trying to allocate
+        // further. We'll just return NULL.
+        MutexLockerEx x(Heap_lock);
+        *gc_count_before_ret = SharedHeap::heap()->total_collections();
+        return NULL;
+      }
+    } else {
+      GC_locker::stall_until_clear();
+    }
+
+    // We can reach here if we were unsuccessul in scheduling a
+    // collection (because another thread beat us to it) or if we were
+    // stalled due to the GC locker. In either can we should retry the
+    // allocation attempt in case another thread successfully
+    // performed a collection and reclaimed enough space.  Give a
+    // warning if we seem to be looping forever.
+
+    if ((QueuedAllocationWarningCount > 0) &&
+        (try_count % QueuedAllocationWarningCount == 0)) {
+      warning("G1CollectedHeap::attempt_allocation_humongous() "
+              "retries %d times", try_count);
+    }
+  }
+
+  ShouldNotReachHere();
+  return NULL;
+}
+
+HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
+                                       bool expect_null_mutator_alloc_region) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert(_mutator_alloc_region.get() == NULL ||
+                                             !expect_null_mutator_alloc_region,
+         "the current alloc region was unexpectedly found to be non-NULL");
+
+  if (!isHumongous(word_size)) {
+    return _mutator_alloc_region.attempt_allocation_locked(word_size,
+                                                      false /* bot_updates */);
+  } else {
+    return humongous_obj_allocate(word_size);
+  }
+
+  ShouldNotReachHere();
 }
 
 void G1CollectedHeap::abandon_gc_alloc_regions() {
@@ -1417,8 +1177,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
-      prepare_for_verify();
       gclog_or_tty->print(" VerifyBeforeGC:");
+      prepare_for_verify();
       Universe::verify(true);
     }
 
@@ -1439,9 +1199,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     concurrent_mark()->abort();
 
     // Make sure we'll choose a new allocation region afterwards.
-    abandon_cur_alloc_region();
+    release_mutator_alloc_region();
     abandon_gc_alloc_regions();
-    assert(_cur_alloc_region == NULL, "Invariant.");
     g1_rem_set()->cleanupHRRS();
     tear_down_region_lists();
 
@@ -1546,6 +1305,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     // regions to the incremental collection set for the next
     // evacuation pause.
     clear_cset_fast_test();
+
+    init_mutator_alloc_region();
 
     double end = os::elapsedTime();
     g1_policy()->record_full_collection_end();
@@ -1720,8 +1481,9 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 
   *succeeded = true;
   // Let's attempt the allocation first.
-  HeapWord* result = attempt_allocation_at_safepoint(word_size,
-                                     false /* expect_null_cur_alloc_region */);
+  HeapWord* result =
+    attempt_allocation_at_safepoint(word_size,
+                                 false /* expect_null_mutator_alloc_region */);
   if (result != NULL) {
     assert(*succeeded, "sanity");
     return result;
@@ -1748,7 +1510,7 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 
   // Retry the allocation
   result = attempt_allocation_at_safepoint(word_size,
-                                      true /* expect_null_cur_alloc_region */);
+                                  true /* expect_null_mutator_alloc_region */);
   if (result != NULL) {
     assert(*succeeded, "sanity");
     return result;
@@ -1765,7 +1527,7 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 
   // Retry the allocation once more
   result = attempt_allocation_at_safepoint(word_size,
-                                      true /* expect_null_cur_alloc_region */);
+                                  true /* expect_null_mutator_alloc_region */);
   if (result != NULL) {
     assert(*succeeded, "sanity");
     return result;
@@ -1796,7 +1558,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   if (expand(expand_bytes)) {
     verify_region_sets_optional();
     return attempt_allocation_at_safepoint(word_size,
-                                          false /* expect_null_cur_alloc_region */);
+                                 false /* expect_null_mutator_alloc_region */);
   }
   return NULL;
 }
@@ -1940,7 +1702,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _evac_failure_scan_stack(NULL) ,
   _mark_in_progress(false),
   _cg1r(NULL), _summary_bytes_used(0),
-  _cur_alloc_region(NULL),
   _refine_cte_cl(NULL),
   _full_collection(false),
   _free_list("Master Free List"),
@@ -2099,7 +1860,6 @@ jint G1CollectedHeap::initialize() {
   _g1_max_committed = _g1_committed;
   _hrs = new HeapRegionSeq(_expansion_regions);
   guarantee(_hrs != NULL, "Couldn't allocate HeapRegionSeq");
-  guarantee(_cur_alloc_region == NULL, "from constructor");
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -2195,6 +1955,22 @@ jint G1CollectedHeap::initialize() {
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
 
+  // Here we allocate the dummy full region that is required by the
+  // G1AllocRegion class. If we don't pass an address in the reserved
+  // space here, lots of asserts fire.
+  MemRegion mr(_g1_reserved.start(), HeapRegion::GrainWords);
+  HeapRegion* dummy_region = new HeapRegion(_bot_shared, mr, true);
+  // We'll re-use the same region whether the alloc region will
+  // require BOT updates or not and, if it doesn't, then a non-young
+  // region will complain that it cannot support allocations without
+  // BOT updates. So we'll tag the dummy region as young to avoid that.
+  dummy_region->set_young();
+  // Make sure it's full.
+  dummy_region->set_top(dummy_region->end());
+  G1AllocRegion::setup(this, dummy_region);
+
+  init_mutator_alloc_region();
+
   return JNI_OK;
 }
 
@@ -2261,7 +2037,7 @@ size_t G1CollectedHeap::used() const {
          "Should be owned on this thread's behalf.");
   size_t result = _summary_bytes_used;
   // Read only once in case it is set to NULL concurrently
-  HeapRegion* hr = _cur_alloc_region;
+  HeapRegion* hr = _mutator_alloc_region.get();
   if (hr != NULL)
     result += hr->used();
   return result;
@@ -2324,13 +2100,11 @@ size_t G1CollectedHeap::unsafe_max_alloc() {
   // to free(), resulting in a SIGSEGV. Note that this doesn't appear
   // to be a problem in the optimized build, since the two loads of the
   // current allocation region field are optimized away.
-  HeapRegion* car = _cur_alloc_region;
-
-  // FIXME: should iterate over all regions?
-  if (car == NULL) {
+  HeapRegion* hr = _mutator_alloc_region.get();
+  if (hr == NULL) {
     return 0;
   }
-  return car->free();
+  return hr->free();
 }
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
@@ -2781,16 +2555,12 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   // since we can't allow tlabs to grow big enough to accomodate
   // humongous objects.
 
-  // We need to store the cur alloc region locally, since it might change
-  // between when we test for NULL and when we use it later.
-  ContiguousSpace* cur_alloc_space = _cur_alloc_region;
+  HeapRegion* hr = _mutator_alloc_region.get();
   size_t max_tlab_size = _humongous_object_threshold_in_words * wordSize;
-
-  if (cur_alloc_space == NULL) {
+  if (hr == NULL) {
     return max_tlab_size;
   } else {
-    return MIN2(MAX2(cur_alloc_space->free(), (size_t)MinTLABSize),
-                max_tlab_size);
+    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab_size);
   }
 }
 
@@ -3364,6 +3134,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   }
 
   verify_region_sets_optional();
+  verify_dirty_young_regions();
 
   {
     // This call will decide whether this pause is an initial-mark
@@ -3425,8 +3196,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
         HandleMark hm;  // Discard invalid handles created during verification
-        prepare_for_verify();
         gclog_or_tty->print(" VerifyBeforeGC:");
+        prepare_for_verify();
         Universe::verify(false);
       }
 
@@ -3442,7 +3213,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       // Forget the current alloc region (we might even choose it to be part
       // of the collection set!).
-      abandon_cur_alloc_region();
+      release_mutator_alloc_region();
 
       // The elapsed time induced by the start time below deliberately elides
       // the possible verification above.
@@ -3573,6 +3344,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
+      init_mutator_alloc_region();
+
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
@@ -3655,6 +3428,15 @@ size_t G1CollectedHeap::desired_plab_sz(GCAllocPurpose purpose)
   return gclab_word_size;
 }
 
+void G1CollectedHeap::init_mutator_alloc_region() {
+  assert(_mutator_alloc_region.get() == NULL, "pre-condition");
+  _mutator_alloc_region.init();
+}
+
+void G1CollectedHeap::release_mutator_alloc_region() {
+  _mutator_alloc_region.release();
+  assert(_mutator_alloc_region.get() == NULL, "post-condition");
+}
 
 void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   assert(purpose >= 0 && purpose < GCAllocPurposeCount, "invalid purpose");
@@ -3879,7 +3661,7 @@ void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
       if (r->is_empty()) {
         // We didn't actually allocate anything in it; let's just put
         // it back on the free list.
-        _free_list.add_as_tail(r);
+        _free_list.add_as_head(r);
       } else if (_retain_gc_alloc_region[ap] && !totally) {
         // retain it so that we can use it at the beginning of the next GC
         _retained_gc_alloc_regions[ap] = r;
@@ -5013,7 +4795,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
 
   *pre_used += hr->used();
   hr->hr_clear(par, true /* clear_space */);
-  free_list->add_as_tail(hr);
+  free_list->add_as_head(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
@@ -5065,7 +4847,7 @@ void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
   }
   if (free_list != NULL && !free_list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_as_tail(free_list);
+    _free_list.add_as_head(free_list);
   }
   if (humongous_proxy_set != NULL && !humongous_proxy_set->is_empty()) {
     MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
@@ -5140,10 +4922,8 @@ class G1VerifyCardTableCleanup: public HeapRegionClosure {
   CardTableModRefBS* _ct_bs;
 public:
   G1VerifyCardTableCleanup(CardTableModRefBS* ct_bs)
-    : _ct_bs(ct_bs)
-  { }
-  virtual bool doHeapRegion(HeapRegion* r)
-  {
+    : _ct_bs(ct_bs) { }
+  virtual bool doHeapRegion(HeapRegion* r) {
     MemRegion mr(r->bottom(), r->end());
     if (r->is_survivor()) {
       _ct_bs->verify_dirty_region(mr);
@@ -5153,6 +4933,29 @@ public:
     return false;
   }
 };
+
+void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
+  CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
+  for (HeapRegion* hr = head; hr != NULL; hr = hr->get_next_young_region()) {
+    // We cannot guarantee that [bottom(),end()] is dirty.  Threads
+    // dirty allocated blocks as they allocate them. The thread that
+    // retires each region and replaces it with a new one will do a
+    // maximal allocation to fill in [pre_dummy_top(),end()] but will
+    // not dirty that area (one less thing to have to do while holding
+    // a lock). So we can only verify that [bottom(),pre_dummy_top()]
+    // is dirty. Also note that verify_dirty_region() requires
+    // mr.start() and mr.end() to be card aligned and pre_dummy_top()
+    // is not guaranteed to be.
+    MemRegion mr(hr->bottom(),
+                 ct_bs->align_to_card_boundary(hr->pre_dummy_top()));
+    ct_bs->verify_dirty_region(mr);
+  }
+}
+
+void G1CollectedHeap::verify_dirty_young_regions() {
+  verify_dirty_young_list(_young_list->first_region());
+  verify_dirty_young_list(_young_list->first_survivor_region());
+}
 #endif
 
 void G1CollectedHeap::cleanUpCardTable() {
@@ -5499,6 +5302,44 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
     return hr->is_in(p);
   }
 }
+
+HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
+                                                      bool force) {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
+  assert(!force || g1_policy()->can_expand_young_list(),
+         "if force is true we should be able to expand the young list");
+  if (force || !g1_policy()->is_young_list_full()) {
+    HeapRegion* new_alloc_region = new_region(word_size,
+                                              false /* do_expand */);
+    if (new_alloc_region != NULL) {
+      g1_policy()->update_region_num(true /* next_is_young */);
+      set_region_short_lived_locked(new_alloc_region);
+      return new_alloc_region;
+    }
+  }
+  return NULL;
+}
+
+void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
+                                                  size_t allocated_bytes) {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
+  assert(alloc_region->is_young(), "all mutator alloc regions should be young");
+
+  g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
+  _summary_bytes_used += allocated_bytes;
+}
+
+HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
+                                                    bool force) {
+  return _g1h->new_mutator_alloc_region(word_size, force);
+}
+
+void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
+                                       size_t allocated_bytes) {
+  _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
+}
+
+// Heap region set verification
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:

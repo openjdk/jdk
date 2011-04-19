@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4665566 4855876
+ * @bug      4665566 4855876 7025314
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib/
@@ -45,9 +45,9 @@ public class TestJavascript extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"../index.html?pkg/C.html\" target=\"_top\">FRAMES</a>"},
+            "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>"},
         {BUG_ID + FS + "TestJavascript.html",
-            "<a href=\"index.html?TestJavascript.html\" target=\"_top\">FRAMES</a>"},
+            "<a href=\"index.html?TestJavascript.html\" target=\"_top\">Frames</a>"},
         {BUG_ID + FS + "index.html",
             "<script type=\"text/javascript\">" + NL +
                         "    targetPage = \"\" + window.location.search;" + NL +

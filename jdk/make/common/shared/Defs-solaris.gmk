@@ -194,13 +194,30 @@ MAPFILE_WARNING-OPT=WARNING
 MAPFILE_WARNING-=WARNING
 MAPFILE_WARNING=$(MAPFILE_WARNING-$(VARIANT))
 
+# Some libraries do not have mapfiles for multiple reasons.
+#   These libraries for sparc and sparcv9 are exceptions to the mapfile rule:
+#     libjdgaSUNWafb.so
+#     libjdgaSUNWcg6.so
+#     libjdgaSUNWffb.so
+#     libjdgaSUNWm64.so
+#     libxinerama.so
+#   The library libJdbcOdbc.so has also been given an exception.
+#   The JNI/JVMTI demo libraries are also missing mapfiles, no exceptions yet.
+ifeq ($(ARCH_FAMILY),sparc)
+  MAPFILE_EXCEPTIONS = \
+    (libJdbcOdbc|libjdgaSUNWafb|libjdgaSUNWcg6|libjdgaSUNWffb|libjdgaSUNWm64|libxinerama)
+else
+  MAPFILE_EXCEPTIONS = (libJdbcOdbc)
+endif
+
 # Macro to check it's input file for banned dependencies and verify the
 #   binary built properly. Relies on process exit code.
 ifndef CROSS_COMPILE_ARCH
 define binary_file_verification # binary_file
 ( \
   $(ECHO) "Checking for mapfile use in: $1" && \
-  if [ "`$(NM) -g -D $1 | $(EGREP) -v 'UNDEF' | $(EGREP) 'SUNWprivate'`" = "" ] ; then \
+  if [ "`$(ECHO) $(basename $(notdir $1)) | $(EGREP) '$(MAPFILE_EXCEPTIONS)'`" = "" \
+       -a "`$(NM) -g -D $1 | $(EGREP) -v 'UNDEF' | $(EGREP) 'SUNWprivate'`" = "" ] ; then \
     $(ECHO) "$(MAPFILE_WARNING): File was not built with a mapfile: $1"; \
   fi && \
   $(ECHO) "Library loads for: $1" && \

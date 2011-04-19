@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class JavacMessages implements Messages {
     /** The context key for the JavacMessages object. */
-    protected static final Context.Key<JavacMessages> messagesKey =
+    public static final Context.Key<JavacMessages> messagesKey =
         new Context.Key<JavacMessages>();
 
     /** Get the JavacMessages instance for this context. */
@@ -77,7 +77,7 @@ public class JavacMessages implements Messages {
     /** Creates a JavacMessages object.
      */
     public JavacMessages(Context context) {
-        this(defaultBundleName);
+        this(defaultBundleName, context.get(Locale.class));
         context.put(messagesKey, this);
     }
 
@@ -85,10 +85,17 @@ public class JavacMessages implements Messages {
      * @param bundleName the name to identify the resource buundle of localized messages.
      */
     public JavacMessages(String bundleName) throws MissingResourceException {
+        this(bundleName, null);
+    }
+
+    /** Creates a JavacMessages object.
+     * @param bundleName the name to identify the resource buundle of localized messages.
+     */
+    public JavacMessages(String bundleName, Locale locale) throws MissingResourceException {
         bundleNames = List.nil();
         bundleCache = new HashMap<Locale, SoftReference<List<ResourceBundle>>>();
         add(bundleName);
-        setCurrentLocale(Locale.getDefault());
+        setCurrentLocale(locale);
     }
 
     public JavacMessages() throws MissingResourceException {
