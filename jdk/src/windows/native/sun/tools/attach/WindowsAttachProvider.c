@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
+#include <Psapi.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -97,41 +98,6 @@ Java_sun_tools_attach_WindowsAttachProvider_volumeFlags(JNIEnv *env, jclass cls,
 
 
 /*
- * Process status helper library functions
- */
-static BOOL  (WINAPI *_EnumProcesses)     (DWORD *, DWORD, DWORD *);
-static BOOL  (WINAPI *_EnumProcessModules)(HANDLE, HMODULE *, DWORD, LPDWORD);
-static DWORD (WINAPI *_GetModuleBaseName) (HANDLE, HMODULE, LPTSTR, DWORD);
-
-
-/*
- * Class:     sun_tools_attach_WindowsAttachProvider
- * Method:    initializeProcessStatusHelper
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_tools_attach_WindowsAttachProvider_initializeProcessStatusHelper(JNIEnv *env, jclass cls)
-{
-    HINSTANCE psapi = LoadLibrary("PSAPI.DLL") ;
-    if (psapi != NULL) {
-        _EnumProcesses = (BOOL(WINAPI *)(DWORD *, DWORD, DWORD *))
-            GetProcAddress(psapi, "EnumProcesses") ;
-        _EnumProcessModules = (BOOL(WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD))
-            GetProcAddress(psapi, "EnumProcessModules");
-        _GetModuleBaseName = (DWORD(WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
-            GetProcAddress(psapi, "GetModuleBaseNameA");
-    }
-
-    if ((_EnumProcesses == NULL) ||
-        (_EnumProcessModules == NULL) ||
-        (_GetModuleBaseName == NULL))
-    {
-        JNU_ThrowInternalError(env, "Unable to initialize process status helper library");
-    }
-}
-
-
-/*
  * Class:     sun_tools_attach_WindowsAttachProvider
  * Method:    enumProcesses
  * Signature: ([JI)I
@@ -147,7 +113,7 @@ Java_sun_tools_attach_WindowsAttachProvider_enumProcesses(JNIEnv *env, jclass cl
     size = max * sizeof(DWORD);
     ptr = (DWORD*)malloc(size);
     if (ptr != NULL) {
-        BOOL res = (*_EnumProcesses)(ptr, size, &bytesReturned);
+        BOOL res = EnumProcesses(ptr, size, &bytesReturned);
         if (res != 0) {
             result = (jint)(bytesReturned / sizeof(DWORD));
             (*env)->SetIntArrayRegion(env, arr, 0, (jsize)result, (jint*)ptr);
@@ -192,13 +158,13 @@ Java_sun_tools_attach_WindowsAttachProvider_isLibraryLoadedByProcess(JNIEnv *env
     size = 1024 * sizeof(HMODULE);
     ptr = (HMODULE*)malloc(size);
     if (ptr != NULL) {
-        BOOL res = (*_EnumProcessModules)(hProcess, ptr, size, &bytesReturned);
+        BOOL res = EnumProcessModules(hProcess, ptr, size, &bytesReturned);
         if (res != 0) {
             int count = bytesReturned / sizeof(HMODULE);
             int i = 0;
             while (i < count) {
                 char base[256];
-                BOOL res = (*_GetModuleBaseName)(hProcess, ptr[i], base, sizeof(base));
+                BOOL res = GetModuleBaseName(hProcess, ptr[i], base, sizeof(base));
                 if (res != 0) {
                     if (strcmp(base, lib) == 0) {
                       result = JNI_TRUE;
