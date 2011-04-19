@@ -806,6 +806,9 @@
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>
+                        <exclude name="**/*.rej"/>
+                        <exclude name="**/*.orig"/>
+                        <exclude name="**/overview.html"/>
                         <exclude name="**/package.html"/>
                     </fileset>
                 </copy>

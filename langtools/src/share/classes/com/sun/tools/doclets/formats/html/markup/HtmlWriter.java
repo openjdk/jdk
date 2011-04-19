@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,8 @@ public class HtmlWriter extends PrintWriter {
         nextclassLabel = getResource("doclet.Next_Class");
         summaryLabel = getResource("doclet.Summary");
         detailLabel = getResource("doclet.Detail");
-        framesLabel = getResource("doclet.FRAMES");
-        noframesLabel = getResource("doclet.NO_FRAMES");
+        framesLabel = getResource("doclet.Frames");
+        noframesLabel = getResource("doclet.No_Frames");
         treeLabel = getResource("doclet.Tree");
         classLabel = getResource("doclet.Class");
         deprecatedLabel = getResource("doclet.navDeprecated");

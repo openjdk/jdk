@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ public class T6937244A {
         int count = 0;
 
         for (String line: out.split("[\r\n]+")) {
-            if (line.contains("extends")) {
-                verify(line, "extends java.lang.Object implements java.util.List<java.lang.String>");
+            if (line.contains("implements")) {
+                verify(line, "implements java.util.List<java.lang.String>");
                 count++;
             }
 

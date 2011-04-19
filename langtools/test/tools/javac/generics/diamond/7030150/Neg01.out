@@ -1,0 +1,3 @@
+Neg01.java:15:24: compiler.err.cant.apply.diamond.1: (compiler.misc.diamond: Neg01.Foo), (compiler.misc.infer.no.conforming.assignment.exists: X, int, java.lang.String)
+Neg01.java:16:24: compiler.err.cant.apply.symbol.1: kindname.constructor, Foo, T, int, kindname.class, Neg01.Foo<X>, (compiler.misc.no.conforming.assignment.exists: int, java.lang.String)
+2 errors
