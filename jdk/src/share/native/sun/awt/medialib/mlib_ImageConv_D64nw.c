@@ -71,8 +71,8 @@
 #define DEF_VARS(type)                                          \
   GET_SRC_DST_PARAMETERS(type);                                 \
   type     *sl;                                                 \
-  type     *dl, *dp;                                            \
-  mlib_s32 i, j, c
+  type     *dl, *dp = NULL;                                     \
+  mlib_s32 i = 0, j, c
 
 /***************************************************************/
 #undef  KSIZE

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.StringTokenizer;
  * As a result, the <code>Timestamp.equals(Object)</code>
  * method is not symmetric with respect to the
  * <code>java.util.Date.equals(Object)</code>
- * method.  Also, the <code>hashcode</code> method uses the underlying
+ * method.  Also, the <code>hashCode</code> method uses the underlying
  * <code>java.util.Date</code>
  * implementation and therefore does not include nanos in its computation.
  * <P>
@@ -513,6 +513,18 @@ public class Timestamp extends java.util.Date {
           Timestamp ts = new Timestamp(o.getTime());
           return this.compareTo(ts);
       }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The {@code hashCode} method uses the underlying {@code java.util.Date}
+     * implementation and therefore does not include nanos in its computation.
+     *
+     */
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     static final long serialVersionUID = 2745179027874758501L;

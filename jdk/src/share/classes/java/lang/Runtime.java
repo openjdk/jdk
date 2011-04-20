@@ -544,6 +544,11 @@ public class Runtime {
      * <p>If <tt>envp</tt> is <tt>null</tt>, the subprocess inherits the
      * environment settings of the current process.
      *
+     * <p>A minimal set of system dependent environment variables may
+     * be required to start a process on some operating systems.
+     * As a result, the subprocess may inherit additional environment variable
+     * settings beyond those in the specified environment.
+     *
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,7 +500,7 @@ const char* Klass::external_name() const {
   if (oop_is_instance()) {
     instanceKlass* ik = (instanceKlass*) this;
     if (ik->is_anonymous()) {
-      assert(AnonymousClasses, "");
+      assert(EnableInvokeDynamic, "");
       intptr_t hash = ik->java_mirror()->identity_hash();
       char     hash_buf[40];
       sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);

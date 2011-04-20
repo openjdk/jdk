@@ -74,9 +74,6 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
     private static int THREAD_STATUS_TERMINATED;
   */
 
-  // java.lang.Class fields
-  private static OopField hcKlassField;
-
   // java.util.concurrent.locks.AbstractOwnableSynchronizer fields
   private static OopField absOwnSyncOwnerThreadField;
 
@@ -266,27 +263,6 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
       return threadParkBlockerField.getValue(threadOop);
     }
     return null;
-  }
-
-  // initialize fields for java.lang.Class
-  private static void initClassFields() {
-    if (hcKlassField == null) {
-       // hc_klass is a HotSpot magic field and hence we can't
-       // find it from InstanceKlass for java.lang.Class.
-       TypeDataBase db = VM.getVM().getTypeDataBase();
-       int hcKlassOffset = (int) db.lookupType("java_lang_Class").getCIntegerField("klass_offset").getValue();
-       if (VM.getVM().isCompressedOopsEnabled()) {
-         hcKlassField = new NarrowOopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
-       } else {
-         hcKlassField = new OopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
-       }
-    }
-  }
-
-  /** get klassOop field at offset hc_klass_offset from a java.lang.Class object */
-  public static Klass classOopToKlass(Oop aClass) {
-    initClassFields();
-    return (Klass) hcKlassField.getValue(aClass);
   }
 
   // initialize fields for j.u.c.l AbstractOwnableSynchornizer class

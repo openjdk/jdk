@@ -607,7 +607,7 @@ class methodOopDesc : public oopDesc {
   // method handles want to be able to push a few extra values (e.g., a bound receiver), and
   // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
   // all without checking for a stack overflow
-  static int extra_stack_entries() { return (EnableMethodHandles ? (int)MethodHandlePushLimit : 0) + (EnableInvokeDynamic ? 3 : 0); }
+  static int extra_stack_entries() { return EnableInvokeDynamic ? (int) MethodHandlePushLimit + 3 : 0; }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
 
   // RedefineClasses() support:

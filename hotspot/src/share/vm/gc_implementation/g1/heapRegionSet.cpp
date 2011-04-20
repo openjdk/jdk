@@ -261,6 +261,45 @@ void HeapRegionLinkedList::fill_in_ext_msg_extra(hrs_ext_msg* msg) {
   msg->append(" hd: "PTR_FORMAT" tl: "PTR_FORMAT, head(), tail());
 }
 
+void HeapRegionLinkedList::add_as_head(HeapRegionLinkedList* from_list) {
+  hrs_assert_mt_safety_ok(this);
+  hrs_assert_mt_safety_ok(from_list);
+
+  verify_optional();
+  from_list->verify_optional();
+
+  if (from_list->is_empty()) return;
+
+#ifdef ASSERT
+  HeapRegionLinkedListIterator iter(from_list);
+  while (iter.more_available()) {
+    HeapRegion* hr = iter.get_next();
+    // In set_containing_set() we check that we either set the value
+    // from NULL to non-NULL or vice versa to catch bugs. So, we have
+    // to NULL it first before setting it to the value.
+    hr->set_containing_set(NULL);
+    hr->set_containing_set(this);
+  }
+#endif // ASSERT
+
+  if (_head != NULL) {
+    assert(length() >  0 && _tail != NULL, hrs_ext_msg(this, "invariant"));
+    from_list->_tail->set_next(_head);
+  } else {
+    assert(length() == 0 && _head == NULL, hrs_ext_msg(this, "invariant"));
+    _tail = from_list->_tail;
+  }
+  _head = from_list->_head;
+
+  _length           += from_list->length();
+  _region_num       += from_list->region_num();
+  _total_used_bytes += from_list->total_used_bytes();
+  from_list->clear();
+
+  verify_optional();
+  from_list->verify_optional();
+}
+
 void HeapRegionLinkedList::add_as_tail(HeapRegionLinkedList* from_list) {
   hrs_assert_mt_safety_ok(this);
   hrs_assert_mt_safety_ok(from_list);

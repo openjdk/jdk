@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -287,12 +287,6 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
 ############################################################################
 
 # jdk_math
-
-# Problems with rounding add failures on solaris-sparcv9 and -server
-java/math/BigDecimal/AddTests.java			 	solaris-sparcv9
-
-# Should be samevm? But seems problematic with samevm on windows
-java/math/BigInteger/ModPow65537.java			 	generic-all
 
 ############################################################################
 

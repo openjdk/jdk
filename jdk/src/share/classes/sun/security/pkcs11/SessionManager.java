@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,9 @@ final class SessionManager {
     // maximum number of sessions to open with this token
     private final int maxSessions;
 
+    // total number of active sessions
+    private int activeSessions;
+
     // pool of available object sessions
     private final Pool objSessions;
 
@@ -115,11 +118,6 @@ final class SessionManager {
         return (maxSessions <= DEFAULT_MAX_SESSIONS);
     }
 
-    // returns the total number of active sessions
-    int totalSessionCount() {
-        return SessionRef.totalCount();
-    }
-
     synchronized Session getObjSession() throws PKCS11Exception {
         Session session = objSessions.poll();
         if (session != null) {
@@ -141,7 +139,7 @@ final class SessionManager {
         // create a new session rather than re-using an obj session
         // that avoids potential expensive cancels() for Signatures & RSACipher
         if (maxSessions == Integer.MAX_VALUE ||
-                totalSessionCount() < maxSessions) {
+                activeSessions < maxSessions) {
             session = openSession();
             return ensureValid(session);
         }
@@ -164,7 +162,7 @@ final class SessionManager {
         if (debug != null) {
             String location = new Exception().getStackTrace()[2].toString();
             System.out.println("Killing session (" + location + ") active: "
-                + totalSessionCount());
+                + activeSessions);
         }
         closeSession(session);
         return null;
@@ -189,7 +187,7 @@ final class SessionManager {
         }
         if (debug != null) {
             System.out.println("Demoting session, active: " +
-                totalSessionCount());
+                activeSessions);
         }
         boolean present = objSessions.remove(session);
         if (present == false) {
@@ -202,16 +200,16 @@ final class SessionManager {
 
     private Session openSession() throws PKCS11Exception {
         if ((maxSessions != Integer.MAX_VALUE) &&
-                (totalSessionCount() >= maxSessions)) {
+                (activeSessions >= maxSessions)) {
             throw new ProviderException("No more sessions available");
         }
         long id = token.p11.C_OpenSession
                     (token.provider.slotID, openSessionFlags, null, null);
         Session session = new Session(token, id);
+        activeSessions++;
         if (debug != null) {
-            int currTotal = totalSessionCount();
-            if (currTotal > maxActiveSessions) {
-                maxActiveSessions = currTotal;
+            if (activeSessions > maxActiveSessions) {
+                maxActiveSessions = activeSessions;
                 if (maxActiveSessions % 10 == 0) {
                     System.out.println("Open sessions: " + maxActiveSessions);
                 }
@@ -222,6 +220,7 @@ final class SessionManager {
 
     private void closeSession(Session session) {
         session.close();
+        activeSessions--;
     }
 
     private static final class Pool {
@@ -275,7 +274,7 @@ final class SessionManager {
             }
             if (debug != null) {
                 System.out.println("Closing " + i + " idle sessions, active: "
-                        + mgr.totalSessionCount());
+                        + mgr.activeSessions);
             }
             List<Session> subList = pool.subList(0, i);
             subList.clear();

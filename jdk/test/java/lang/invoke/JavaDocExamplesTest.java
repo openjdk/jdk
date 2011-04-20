@@ -25,8 +25,8 @@
 
 /* @test
  * @summary example code used in javadoc for java.lang.invoke API
- * @compile -XDallowTransitionalJSR292=no JavaDocExamplesTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles test.java.lang.invoke.JavaDocExamplesTest
+ * @compile JavaDocExamplesTest.java
+ * @run junit/othervm test.java.lang.invoke.JavaDocExamplesTest
  */
 
 /*
@@ -34,7 +34,6 @@
 $ $JAVA7X_HOME/bin/javac -cp $JUNIT4_JAR -d /tmp/Classes \
    $DAVINCI/sources/jdk/test/java/lang/invoke/JavaDocExamplesTest.java
 $ $JAVA7X_HOME/bin/java   -cp $JUNIT4_JAR:/tmp/Classes \
-   -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles \
    -Dtest.java.lang.invoke.JavaDocExamplesTest.verbosity=1 \
      test.java.lang.invoke.JavaDocExamplesTest
 ----
