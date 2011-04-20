@@ -1924,7 +1924,7 @@ class CommandLineFlags {
   experimental(intx, WorkStealingSleepMillis, 1,                            \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
-  experimental(uintx, WorkStealingYieldsBeforeSleep, 1000,                  \
+  experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
   experimental(uintx, WorkStealingHardSpins, 4096,                          \
@@ -2376,6 +2376,9 @@ class CommandLineFlags {
                                                                             \
   develop(intx, CICloneLoopTestLimit, 100,                                  \
           "size limit for blocks heuristically cloned in ciTypeFlow")       \
+                                                                            \
+  develop(intx, OSROnlyBCI, -1,                                             \
+          "OSR only at this bci.  Negative values mean exclude that bci")   \
                                                                             \
   /* temp diagnostics */                                                    \
                                                                             \
@@ -3690,11 +3693,15 @@ class CommandLineFlags {
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
                                                                             \
+  diagnostic(bool, EnableInvokeDynamic, true,                               \
+          "support JSR 292 (method handles, invokedynamic, "                \
+          "anonymous classes")                                              \
+                                                                            \
   product(bool, AnonymousClasses, false,                                    \
-          "support sun.misc.Unsafe.defineAnonymousClass")                   \
+          "support sun.misc.Unsafe.defineAnonymousClass (deprecated)")      \
                                                                             \
   experimental(bool, EnableMethodHandles, false,                            \
-          "support method handles (true by default under JSR 292)")         \
+          "support method handles (deprecated)")                            \
                                                                             \
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
           "number of additional stack slots a method handle may push")      \
@@ -3710,9 +3717,6 @@ class CommandLineFlags {
                                                                             \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
-                                                                            \
-  experimental(bool, EnableInvokeDynamic, false,                            \
-          "recognize the invokedynamic instruction")                        \
                                                                             \
   experimental(bool, AllowTransitionalJSR292, true,                         \
           "recognize pre-PFD formats of invokedynamic")                     \

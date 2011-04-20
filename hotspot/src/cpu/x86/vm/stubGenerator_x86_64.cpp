@@ -144,8 +144,11 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- rsp
   //     [ argument word n      ]
   //      ...
-  //  -8 [ argument word 1      ]
-  //  -7 [ saved r15            ] <--- rsp_after_call
+  // -28 [ argument word 1      ]
+  // -27 [ saved xmm15          ] <--- rsp_after_call
+  //     [ saved xmm7-xmm14     ]
+  //  -9 [ saved xmm6           ] (each xmm register takes 2 slots)
+  //  -7 [ saved r15            ]
   //  -6 [ saved r14            ]
   //  -5 [ saved r13            ]
   //  -4 [ saved r12            ]
@@ -169,8 +172,11 @@ class StubGenerator: public StubCodeGenerator {
   // Call stub stack layout word offsets from rbp
   enum call_stub_layout {
 #ifdef _WIN64
-    rsp_after_call_off = -7,
-    r15_off            = rsp_after_call_off,
+    xmm_save_first     = 6,  // save from xmm6
+    xmm_save_last      = 15, // to xmm15
+    xmm_save_base      = -9,
+    rsp_after_call_off = xmm_save_base - 2 * (xmm_save_last - xmm_save_first), // -27
+    r15_off            = -7,
     r14_off            = -6,
     r13_off            = -5,
     r12_off            = -4,
@@ -207,6 +213,13 @@ class StubGenerator: public StubCodeGenerator {
     thread_off         =  3
 #endif
   };
+
+#ifdef _WIN64
+  Address xmm_save(int reg) {
+    assert(reg >= xmm_save_first && reg <= xmm_save_last, "XMM register number out of range");
+    return Address(rbp, (xmm_save_base - (reg - xmm_save_first) * 2) * wordSize);
+  }
+#endif
 
   address generate_call_stub(address& return_address) {
     assert((int)frame::entry_frame_after_call_words == -(int)rsp_after_call_off + 1 &&
@@ -256,8 +269,11 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r13_save, r13);
     __ movptr(r14_save, r14);
     __ movptr(r15_save, r15);
-
 #ifdef _WIN64
+    for (int i = 6; i <= 15; i++) {
+      __ movdqu(xmm_save(i), as_XMMRegister(i));
+    }
+
     const Address rdi_save(rbp, rdi_off * wordSize);
     const Address rsi_save(rbp, rsi_off * wordSize);
 
@@ -360,6 +376,11 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // restore regs belonging to calling function
+#ifdef _WIN64
+    for (int i = 15; i >= 6; i--) {
+      __ movdqu(as_XMMRegister(i), xmm_save(i));
+    }
+#endif
     __ movptr(r15, r15_save);
     __ movptr(r14, r14_save);
     __ movptr(r13, r13_save);
@@ -2428,8 +2449,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_generic_copy(const char *name,
                                 address byte_copy_entry, address short_copy_entry,
-                                address int_copy_entry, address long_copy_entry,
-                                address oop_copy_entry, address checkcast_copy_entry) {
+                                address int_copy_entry, address oop_copy_entry,
+                                address long_copy_entry, address checkcast_copy_entry) {
 
     Label L_failed, L_failed_0, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;

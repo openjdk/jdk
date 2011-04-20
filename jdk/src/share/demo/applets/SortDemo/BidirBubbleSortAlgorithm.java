@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,8 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 /**
  * A bi-directional bubble sort demonstration algorithm
@@ -39,6 +37,8 @@
  * @author James Gosling
  */
 class BidirBubbleSortAlgorithm extends SortAlgorithm {
+
+    @Override
     void sort(int a[]) throws Exception {
         int j;
         int limit = a.length;
@@ -61,9 +61,9 @@ class BidirBubbleSortAlgorithm extends SortAlgorithm {
             }
             if (!swapped) {
                 return;
-            }
-            else
+            } else {
                 swapped = false;
+            }
             for (j = limit; --j >= st;) {
                 if (stopRequested) {
                     return;

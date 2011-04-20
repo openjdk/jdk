@@ -727,6 +727,9 @@ public class SpringLayout implements LayoutManager2 {
         * For any other <code>String</code> value passed as the edge,
         * no action is taken. For a <code>null</code> edge, a
         * <code>NullPointerException</code> is thrown.
+        * <p/>
+        * <b>Note:</b> This method can affect {@code x} and {@code y} values
+        * previously set for this {@code Constraints}.
         *
         * @param edgeName the edge to be set
         * @param s the spring controlling the specified edge

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,6 +389,13 @@ public abstract class FileSystem
      *   <li><p> The {@code { }} characters are a group of subpatterns, where
      *   the group matches if any subpattern in the group matches. The {@code ","}
      *   character is used to separate the subpatterns. Groups cannot be nested.
+     *   </p></li>
+     *
+     *   <li><p> Leading period<tt>&#47;</tt>dot characters in file name are
+     *   treated as regular characters in match operations. For example,
+     *   the {@code "*"} glob pattern matches file name {@code ".login"}.
+     *   The {@link Files#isHidden} method may be used to test whether a file
+     *   is considered hidden.
      *   </p></li>
      *
      *   <li><p> All other characters match themselves in an implementation

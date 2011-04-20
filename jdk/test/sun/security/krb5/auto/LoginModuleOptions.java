@@ -28,7 +28,6 @@
  * @summary Krb5LoginModule a little too restrictive, and the doc is not clear.
  */
 import com.sun.security.auth.module.Krb5LoginModule;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
@@ -36,7 +35,6 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 
 public class LoginModuleOptions {
 
@@ -61,10 +59,12 @@ public class LoginModuleOptions {
         // 1. ccache -> keytab
         login(null, "useTicketCache", "true", "ticketCache", "krbcc_non_exists",
                 "useKeyTab", "true", "principal", "dummy");
+
         // 2. keytab -> shared
         login(null, "useKeyTab", "true", "principal", "dummy",
                 "keyTab", "ktab_non_exist",
                 "tryFirstPass", "true", NAME, OneKDC.USER, PWD, OneKDC.PASS);
+
         // 3. shared -> callback
         // 3.1. useFirstPass, no callback
         boolean failed = false;

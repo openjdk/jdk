@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class MsgAppletViewer_ko extends ListResourceBundle {
             {"appletclassloader.fileexception", "\uB85C\uB4DC \uC911 {0} \uC608\uC678 \uC0AC\uD56D \uBC1C\uC0DD: {1}"},
             {"appletclassloader.filedeath", "\uB85C\uB4DC \uC911 {0}\uC774(\uAC00) \uC885\uB8CC\uB428: {1}"},
             {"appletclassloader.fileerror", "\uB85C\uB4DC \uC911 {0} \uC624\uB958 \uBC1C\uC0DD: {1}"},
-            {"appletclassloader.findclass.verbose.findclass", "{0}\uC774(\uAC00) {1} \uD074\uB798\uC2A4\uB97C \uCC3E\uC2B5\uB2C8\uB2E4."},
             {"appletclassloader.findclass.verbose.openstream", "{1}\uC744(\uB97C) \uAC00\uC838\uC624\uAE30 \uC704\uD574 {0}\uC5D0 \uB300\uD55C \uC2A4\uD2B8\uB9BC\uC744 \uC5EC\uB294 \uC911"},
             {"appletclassloader.getresource.verbose.forname", "\uC774\uB984\uC5D0 \uB300\uD55C AppletClassLoader.getResource: {0}"},
             {"appletclassloader.getresource.verbose.found", "\uC2DC\uC2A4\uD15C \uB9AC\uC18C\uC2A4\uB85C {0} \uB9AC\uC18C\uC2A4\uB97C \uCC3E\uC558\uC2B5\uB2C8\uB2E4."},

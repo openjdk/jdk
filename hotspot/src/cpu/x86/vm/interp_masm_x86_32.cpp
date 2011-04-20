@@ -215,7 +215,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register reg, int bcp_off
   if (index_size == sizeof(u2)) {
     load_unsigned_short(reg, Address(rsi, bcp_offset));
   } else if (index_size == sizeof(u4)) {
-    assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
+    assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     movl(reg, Address(rsi, bcp_offset));
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
@@ -223,7 +223,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register reg, int bcp_off
     assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
     notl(reg);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
-    assert(EnableMethodHandles, "tiny index used only for EnableMethodHandles");
+    assert(EnableInvokeDynamic, "tiny index used only for JSR 292");
     load_unsigned_byte(reg, Address(rsi, bcp_offset));
   } else {
     ShouldNotReachHere();

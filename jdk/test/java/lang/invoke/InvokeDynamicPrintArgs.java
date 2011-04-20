@@ -25,9 +25,9 @@
  * @summary smoke test for invokedynamic instructions
  * @build indify.Indify
  * @compile InvokeDynamicPrintArgs.java
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic
+ * @run main/othervm
  *      indify.Indify
- *      --verify-specifier-count=3 --transitionalJSR292=false
+ *      --verify-specifier-count=3
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --check-output
  */
@@ -63,7 +63,8 @@ public class InvokeDynamicPrintArgs {
         String testClassPath = System.getProperty("build.test.classes.dir");
         if (testClassPath == null)  throw new RuntimeException();
         String[] args = new String[]{
-            "--verify-specifier-count=3", "--transitionalJSR292=false",
+            "--verify-specifier-count=3",
+            "--verbose",
             "--expand-properties", "--classpath", testClassPath,
             "--java", "test.java.lang.invoke.InvokeDynamicPrintArgs", "--check-output"
         };
@@ -159,16 +160,14 @@ public class InvokeDynamicPrintArgs {
         shouldNotCallThis();
         return ((CallSite) MH_bsm2().invokeGeneric(lookup(),
                                                   "bar", methodType(void.class, String.class, int.class)
-                                                  , new Object[] { Void.class, "void type!",
-                                                                   1, 234.5F, 67.5, (long)89 }
+                                                  , Void.class, "void type!", 1, 234.5F, 67.5, (long)89
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_bar2() throws Throwable {
         shouldNotCallThis();
         return ((CallSite) MH_bsm2().invokeGeneric(lookup(),
                                                   "bar2", methodType(void.class, String.class, int.class)
-                                                  , new Object[] { Void.class, "void type!",
-                                                                   1, 234.5F, 67.5, (long)89 }
+                                                  , Void.class, "void type!", 1, 234.5F, 67.5, (long)89
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_baz() throws Throwable {

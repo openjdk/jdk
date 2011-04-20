@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public abstract class CipherSpi {
      * <code>inputLen</code> (in bytes).
      *
      * <p>This call takes into account any unprocessed (buffered) data from a
-     * previous <code>update</code> call, and padding.
+     * previous <code>update</code> call, padding, and AEAD tagging.
      *
      * <p>The actual output length of the next <code>update</code> or
      * <code>doFinal</code> call may be smaller than the length returned by
@@ -322,6 +322,11 @@ public abstract class CipherSpi {
      * {@link #engineGetParameters() engineGetParameters} or
      * {@link #engineGetIV() engineGetIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -339,8 +344,8 @@ public abstract class CipherSpi {
      * @param random the source of randomness
      *
      * @exception InvalidKeyException if the given key is inappropriate for
-     * initializing this cipher, or if this cipher is being initialized for
-     * decryption and requires algorithm parameters that cannot be
+     * initializing this cipher, or requires
+     * algorithm parameters that cannot be
      * determined from the given key.
      */
     protected abstract void engineInit(int opmode, Key key,
@@ -366,6 +371,11 @@ public abstract class CipherSpi {
      * {@link #engineGetParameters() engineGetParameters} or
      * {@link #engineGetIV() engineGetIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -387,7 +397,7 @@ public abstract class CipherSpi {
      * initializing this cipher
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or if this cipher is being initialized for decryption and requires
+     * or if this cipher requires
      * algorithm parameters and <code>params</code> is null.
      */
     protected abstract void engineInit(int opmode, Key key,
@@ -414,6 +424,11 @@ public abstract class CipherSpi {
      * {@link #engineGetParameters() engineGetParameters} or
      * {@link #engineGetIV() engineGetIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -435,7 +450,7 @@ public abstract class CipherSpi {
      * initializing this cipher
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or if this cipher is being initialized for decryption and requires
+     * or if this cipher requires
      * algorithm parameters and <code>params</code> is null.
      */
     protected abstract void engineInit(int opmode, Key key,
@@ -548,6 +563,9 @@ public abstract class CipherSpi {
      * buffer, starting at <code>inputOffset</code> inclusive, and any input
      * bytes that may have been buffered during a previous <code>update</code>
      * operation, are processed, with padding (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in a new buffer.
      *
      * <p>Upon finishing, this method resets this cipher object to the state
@@ -575,6 +593,9 @@ public abstract class CipherSpi {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     protected abstract byte[] engineDoFinal(byte[] input, int inputOffset,
                                             int inputLen)
@@ -590,6 +611,9 @@ public abstract class CipherSpi {
      * buffer, starting at <code>inputOffset</code> inclusive, and any input
      * bytes that may have been buffered during a previous <code>update</code>
      * operation, are processed, with padding (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in the <code>output</code> buffer, starting at
      * <code>outputOffset</code> inclusive.
      *
@@ -626,6 +650,9 @@ public abstract class CipherSpi {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     protected abstract int engineDoFinal(byte[] input, int inputOffset,
                                          int inputLen, byte[] output,
@@ -640,8 +667,11 @@ public abstract class CipherSpi {
      * initialized.
      *
      * <p>All <code>input.remaining()</code> bytes starting at
-     * <code>input.position()</code> are processed. The result is stored
-     * in the output buffer.
+     * <code>input.position()</code> are processed.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
+     * The result is stored in the output buffer.
      * Upon return, the input buffer's position will be equal
      * to its limit; its limit will not have changed. The output buffer's
      * position will have advanced by n, where n is the value returned
@@ -678,6 +708,9 @@ public abstract class CipherSpi {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      *
      * @throws NullPointerException if either parameter is <CODE>null</CODE>
      * @since 1.5
@@ -891,5 +924,68 @@ public abstract class CipherSpi {
         throws InvalidKeyException
     {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD), using a subset of the provided buffer.
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     *
+     * @param src the buffer containing the AAD
+     * @param offset the offset in {@code src} where the AAD input starts
+     * @param len the number of AAD bytes
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.7
+     */
+    protected void engineUpdateAAD(byte[] src, int offset, int len) {
+        throw new UnsupportedOperationException(
+            "The underlying Cipher implementation "
+            +  "does not support this method");
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD).
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     * <p>
+     * All {@code src.remaining()} bytes starting at
+     * {@code src.position()} are processed.
+     * Upon return, the input buffer's position will be equal
+     * to its limit; its limit will not have changed.
+     *
+     * @param src the buffer containing the AAD
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.7
+     */
+    protected void engineUpdateAAD(ByteBuffer src) {
+        throw new UnsupportedOperationException(
+            "The underlying Cipher implementation "
+            +  "does not support this method");
     }
 }

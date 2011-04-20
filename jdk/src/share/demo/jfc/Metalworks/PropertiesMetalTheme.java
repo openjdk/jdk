@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,17 +29,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.StringTokenizer;
 
-import javax.swing.plaf.*;
-import javax.swing.plaf.metal.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.metal.DefaultMetalTheme;
+
 
 /**
  * This class allows you to load a theme from a file.
@@ -57,36 +55,33 @@ import java.util.*;
  * but it could easily be extended to load fonts -  or even icons.
  *
  * @author Steve Wilson
+ * @author Alexander Kouznetsov
  */
 public class PropertiesMetalTheme extends DefaultMetalTheme {
 
     private String name = "Custom Theme";
-
     private ColorUIResource primary1;
     private ColorUIResource primary2;
     private ColorUIResource primary3;
-
     private ColorUIResource secondary1;
     private ColorUIResource secondary2;
     private ColorUIResource secondary3;
-
     private ColorUIResource black;
     private ColorUIResource white;
 
-
     /**
-      * pass an inputstream pointing to a properties file.
-      * Colors will be initialized to be the same as the DefaultMetalTheme,
-      * and then any colors provided in the properties file will override that.
-      */
-    public PropertiesMetalTheme( InputStream stream ) {
+     * pass an inputstream pointing to a properties file.
+     * Colors will be initialized to be the same as the DefaultMetalTheme,
+     * and then any colors provided in the properties file will override that.
+     */
+    public PropertiesMetalTheme(InputStream stream) {
         initColors();
         loadProperties(stream);
     }
 
     /**
-      * Initialize all colors to be the same as the DefaultMetalTheme.
-      */
+     * Initialize all colors to be the same as the DefaultMetalTheme.
+     */
     private void initColors() {
         primary1 = super.getPrimary1();
         primary2 = super.getPrimary2();
@@ -101,9 +96,9 @@ public class PropertiesMetalTheme extends DefaultMetalTheme {
     }
 
     /**
-      * Load the theme name and colors from the properties file
-      * Items not defined in the properties file are ignored
-      */
+     * Load the theme name and colors from the properties file
+     * Items not defined in the properties file are ignored
+     */
     private void loadProperties(InputStream stream) {
         Properties prop = new Properties();
         try {
@@ -120,7 +115,7 @@ public class PropertiesMetalTheme extends DefaultMetalTheme {
         Object colorString = null;
 
         colorString = prop.get("primary1");
-        if (colorString != null){
+        if (colorString != null) {
             primary1 = parseColor(colorString.toString());
         }
 
@@ -161,22 +156,54 @@ public class PropertiesMetalTheme extends DefaultMetalTheme {
 
     }
 
-    public String getName() { return name; }
+    @Override
+    public String getName() {
+        return name;
+    }
 
-    protected ColorUIResource getPrimary1() { return primary1; }
-    protected ColorUIResource getPrimary2() { return primary2; }
-    protected ColorUIResource getPrimary3() { return primary3; }
+    @Override
+    protected ColorUIResource getPrimary1() {
+        return primary1;
+    }
 
-    protected ColorUIResource getSecondary1() { return secondary1; }
-    protected ColorUIResource getSecondary2() { return secondary2; }
-    protected ColorUIResource getSecondary3() { return secondary3; }
+    @Override
+    protected ColorUIResource getPrimary2() {
+        return primary2;
+    }
 
-    protected ColorUIResource getBlack() { return black; }
-    protected ColorUIResource getWhite() { return white; }
+    @Override
+    protected ColorUIResource getPrimary3() {
+        return primary3;
+    }
+
+    @Override
+    protected ColorUIResource getSecondary1() {
+        return secondary1;
+    }
+
+    @Override
+    protected ColorUIResource getSecondary2() {
+        return secondary2;
+    }
+
+    @Override
+    protected ColorUIResource getSecondary3() {
+        return secondary3;
+    }
+
+    @Override
+    protected ColorUIResource getBlack() {
+        return black;
+    }
+
+    @Override
+    protected ColorUIResource getWhite() {
+        return white;
+    }
 
     /**
-      * parse a comma delimited list of 3 strings into a Color
-      */
+     * parse a comma delimited list of 3 strings into a Color
+     */
     private ColorUIResource parseColor(String s) {
         int red = 0;
         int green = 0;

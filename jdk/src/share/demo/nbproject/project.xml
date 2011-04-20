@@ -50,6 +50,7 @@
                 <project>nbproject/jfc/Stylepad</project>
                 <project>nbproject/jfc/SwingApplet</project>
                 <project>nbproject/jfc/TableExample</project>
+                <project>nbproject/jfc/TransparentRuler</project>
                 <project>nbproject/scripting/jconsole-plugin</project>
                 <project>nbproject/management/FullThreadDump</project>
                 <project>nbproject/management/JTop</project>
