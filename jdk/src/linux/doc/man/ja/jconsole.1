@@ -19,34 +19,32 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jconsole 1 "02 Jun 2010"
+.TH jconsole 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jconsole \- Java 監視および管理コンソール
+.SH "̾��"
+jconsole \- Java �ƻ뤪��Ӵ������󥽡���
 .LP
 .RS 3
 .TP 2
 o
-形式 
+���� 
 .TP 2
 o
-パラメータ 
+�ѥ�᡼�� 
 .TP 2
 o
-説明 
+���� 
 .TP 2
 o
-オプション 
+���ץ���� 
 .TP 2
 o
-関連項目 
+��Ϣ���� 
 .RE
 
 .LP
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -58,63 +56,60 @@ o
 .fi
 
 .LP
-.SH "パラメータ"
-.LP
-
+.SH "�ѥ�᡼��"
 .LP
 .RS 3
 .TP 3
 options 
-オプションを使用する場合、コマンド名の直後に記述してください。 
-.br
+���ץ�������Ѥ����硢���ޥ��̾��ľ��˵��Ҥ��Ƥ��������� 
 .TP 3
 connection = pid | host:port | jmxUrl 
 .RS 3
-\f2pid\fP\ \ \ ローカルの Java VM のプロセス ID。Java VM は、jconsole を実行しているユーザー ID と同じユーザー ID を使用して実行する必要があります。詳細については、
+.TP 2
+o
+\f2pid\fP��������� Java VM �Υץ����� ID��Java VM �ϡ�jconsole ��¹Ԥ��Ƥ���桼���� ID ��Ʊ���桼���� ID ����Ѥ��Ƽ¹Ԥ���ɬ�פ�����ޤ����ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2「JMX 監視および管理」\fP @
+\f2��JMX �ƻ뤪��Ӵ�����\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlを参照してください。 
-.br
-\f2host\fP:\f2port\fP\ \  Java VM が実行しているホストシステムの名前と、JVM を起動したときにシステムプロパティー \f2com.sun.management.jmxremote.port\fP で指定したポート番号。詳細については、
+http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html�򻲾Ȥ��Ƥ��������� 
+.TP 2
+o
+\f2host\fP:\f2port\fP Java VM ���¹Ԥ��Ƥ���ۥ��ȥ����ƥ��̾���ȡ�JVM ��ư�����Ȥ��˥����ƥ�ץ��ѥƥ��� \f2com.sun.management.jmxremote.port\fP �ǻ��ꤷ���ݡ����ֹ档�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2「JMX 監視および管理」\fP @
+\f2��JMX �ƻ뤪��Ӵ�����\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlを参照してください。 
-.br
-\f2jmxUrl\fP 接続先の JMX エージェントのアドレス。 これについては、
+http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html�򻲾Ȥ��Ƥ��������� 
+.TP 2
+o
+\f2jmxUrl\fP ��³��� JMX ����������ȤΥ��ɥ쥹������ˤĤ��Ƥϡ�
 .na
 \f2JMXServiceURL\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/javax/management/remote/JMXServiceURL.html を参照してください。 
+http://java.sun.com/javase/6/docs/api/javax/management/remote/JMXServiceURL.html �򻲾Ȥ��Ƥ��������� 
 .RE
 .RE
 
 .LP
-.SH " 説明"
-.LP
-
+.SH " ����"
 .LP
 .LP
-\f3jconsole\fP コマンドは、ローカルマシンまたはリモートマシン上の Java アプリケーションと仮想マシンの監視と管理を行うグラフィカルコンソールツールを起動します。
+\f3jconsole\fP ���ޥ�ɤϡ���������ޥ���ޤ��ϥ�⡼�ȥޥ����� Java ���ץꥱ�������Ȳ��ۥޥ���δƻ�ȴ�����Ԥ�����ե����륳�󥽡���ġ����ư���ޤ���
 .LP
 .LP
-Windows 上では、\f3jconsole\fP はコンソールウィンドウと関連付けられていません。ただし、なんらかの理由で \f3jconsole\fP コマンドが失敗すると、エラー情報を示すダイアログボックスが表示されます。
+Windows ��Ǥϡ�\f3jconsole\fP �ϥ��󥽡��륦����ɥ��ȴ�Ϣ�դ����Ƥ��ޤ��󡣤��������ʤ�餫����ͳ�� \f3jconsole\fP ���ޥ�ɤ����Ԥ���ȡ����顼����򼨤������������ܥå�����ɽ������ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-interval=n 
-更新間隔を \f2n\fP 秒に設定します (デフォルトは 4 秒)。 
+�����ֳ֤� \f2n\fP �ä����ꤷ�ޤ� (�ǥե���Ȥ� 4 ��)�� 
 .TP 3
-\-notile\  
-最初にウィンドウをタイリングしません (複数の接続のため)。 
+\-notile 
+�ǽ�˥�����ɥ��򥿥���󥰤��ޤ��� (ʣ������³�Τ���)�� 
 .TP 3
-\-pluginpath\  plugins 
-JConsole プラグインの検索先となるディレクトリまたは JAR ファイルのリストを指定します。\f2plugins\fP パスには、次の名前のプロバイダ構成ファイルを含めてください。
+\-pluginpath plugins 
+JConsole �ץ饰����θ�����Ȥʤ�ǥ��쥯�ȥ�ޤ��� JAR �ե�����Υꥹ�Ȥ���ꤷ�ޤ���\f2plugins\fP �ѥ��ˤϡ�����̾���Υץ��Х��������ե������ޤ�Ƥ���������
 .br
 .nf
 \f3
@@ -124,36 +119,36 @@ JConsole プラグインの検索先となるディレクトリまたは JAR フ
 \fP
 .fi
 .LP
-これには、
+����ˤϡ�
 .na
 \f2com.sun.tools.jconsole.JConsolePlugin\fP @
 .fi
-http://java.sun.com/javase/6/docs/jdk/api/jconsole/spec/com/sun/tools/jconsole/JConsolePlugin.html クラスを実装するクラスの完全修飾クラス名を指定する行が、プラグインごとに 1 行ずつ含まれています。  
+http://java.sun.com/javase/6/docs/jdk/api/jconsole/spec/com/sun/tools/jconsole/JConsolePlugin.html ���饹��������륯�饹�δ����������饹̾����ꤹ��Ԥ����ץ饰���󤴤Ȥ� 1 �Ԥ��Ĵޤޤ�Ƥ��ޤ���  
 .TP 3
-\-version\  
-バージョン情報を出力して終了します。 
+\-version 
+�С������������Ϥ��ƽ�λ���ޤ��� 
 .TP 3
-\-help\  
-ヘルプメッセージを出力して終了します。 
+\-help 
+�إ�ץ�å���������Ϥ��ƽ�λ���ޤ��� 
 .TP 3
-\-J<flag>\  
-jconsole が実行されている Java 仮想マシンに <flag> を渡します。 
+\-J<flag> 
+jconsole ���¹Ԥ���Ƥ��� Java ���ۥޥ���� <flag> ���Ϥ��ޤ��� 
 .RE
 
 .LP
-.SH "関連項目"
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2
 o
 .na
-\f2jconsole の使用\fP @
+\f2JConsole �λ���\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html 
 .TP 2
 o
 .na
-\f2「Java プラットフォームの監視および管理」\fP @
+\f2��Java �ץ�åȥե�����δƻ뤪��Ӵ�����\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/management/index.html 
 .RE

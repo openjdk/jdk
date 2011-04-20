@@ -19,43 +19,41 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jstatd 1 "02 Jun 2010"
+.TH jstatd 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jstatd \- 仮想マシン jstat デーモン
+.SH "̾��"
+jstatd \- ���ۥޥ��� jstat �ǡ����
 .LP
 .RS 3
 .TP 2
 o
-形式 
+���� 
 .TP 2
 o
-パラメータ 
+�ѥ�᡼�� 
 .TP 2
 o
-説明 
+���� 
 .TP 2
 o
-オプション 
+���ץ���� 
 .TP 2
 o
-セキュリティー 
+�������ƥ��� 
 .TP 2
 o
-リモートインタフェース 
+��⡼�ȥ��󥿥ե����� 
 .TP 2
 o
-例 
+�� 
 .TP 2
 o
-関連項目 
+��Ϣ���� 
 .RE
 
 .LP
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -68,72 +66,64 @@ jstatd [ \fP\f4options\fP\f3 ]\fP
 .fi
 
 .LP
-.SH "パラメータ"
-.LP
-
+.SH "�ѥ�᡼��"
 .LP
 .RS 3
 .TP 3
 options 
-コマンド行オプション。オプションは任意の順序で指定できます。重複または矛盾するオプションがある場合、最後に指定したオプションが優先されます。 
+���ޥ�ɹԥ��ץ���󡣥��ץ�����Ǥ�դν���ǻ���Ǥ��ޤ�����ʣ�ޤ���̷�⤹�륪�ץ���󤬤����硢�Ǹ�˻��ꤷ�����ץ����ͥ�褵��ޤ��� 
 .RE
 
 .LP
-.SH " 説明"
-.LP
-
+.SH " ����"
 .LP
 .LP
-\f3jstatd\fP ツールは、計測された HotSpot Java 仮想マシン (JVM) の作成と終了を監視し、ローカルシステム上で実行している Java 仮想マシンに、リモート監視ツールが接続できるようにするためのインタフェースを提供する RMI サーバーアプリケーションです。
+\f3jstatd\fP �ġ���ϡ���¬���줿 HotSpot Java ���ۥޥ��� (JVM) �κ����Ƚ�λ��ƻ뤷���������륷���ƥ��Ǽ¹Ԥ��Ƥ��� Java ���ۥޥ���ˡ���⡼�ȴƻ�ġ��뤬��³�Ǥ���褦�ˤ��뤿��Υ��󥿥ե��������󶡤��� RMI �����С����ץꥱ�������Ǥ���
 .LP
 .LP
-\f3jstatd\fP サーバーでは、ローカルホストに RMI レジストリが存在することが必要になります。\f3jstatd\fP サーバーは、デフォルトポートまたは \f2\-p port\fP オプションで指定されたポート上の RMI レジストリに接続しようとします。RMI レジストリが見つからない場合、\f2\-p port\fP オプションで指定されたポート、または \f2\-p port\fP が省略されている場合は、デフォルト RMI レジストリにバインドされた \f3jstatd\fP アプリケーション内に、1 つの RMI レジストリが作成されます。内部 RMI レジストリの作成は、\f2\-nr\fP オプションを指定することによって禁止することができます。
+\f3jstatd\fP �����С��Ǥϡ���������ۥ��Ȥ� RMI �쥸���ȥ꤬¸�ߤ��뤳�Ȥ�ɬ�פˤʤ�ޤ���\f3jstatd\fP �����С��ϡ��ǥե���ȥݡ��Ȥޤ��� \f2\-p port\fP ���ץ����ǻ��ꤵ�줿�ݡ��Ⱦ�� RMI �쥸���ȥ����³���褦�Ȥ��ޤ���RMI �쥸���ȥ꤬���Ĥ���ʤ���硢\f2\-p port\fP ���ץ����ǻ��ꤵ�줿�ݡ��ȡ��ޤ��� \f2\-p port\fP ����ά����Ƥ�����ϡ��ǥե���� RMI �쥸���ȥ�˥Х���ɤ��줿 \f3jstatd\fP ���ץꥱ���������ˡ�1 �Ĥ� RMI �쥸���ȥ꤬��������ޤ������� RMI �쥸���ȥ�κ����ϡ�\f2\-nr\fP ���ץ�������ꤹ�뤳�Ȥˤ�äƶػߤ��뤳�Ȥ��Ǥ��ޤ���
 .LP
 .LP
-\f3注:\fP このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
+\f3��:\fP ���Υ桼�ƥ���ƥ����ϥ��ݡ����оݳ��Ǥ��ꡢ����� JDK �ΥС������Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ������ߡ�Windows 98 ����� Windows Me �ץ�åȥե�����Ǥϻ��ѤǤ��ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .LP
-\f3jstatd\fP コマンドは次のオプションをサポートしています。
+\f3jstatd\fP ���ޥ�ɤϼ��Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .LP
 .RS 3
 .TP 3
 \-nr 
-既存の RMI レジストリが見つからない場合、\f2jstatd\fP プロセス内に内部 RMI レジストリを作成しないようにします。 
+��¸�� RMI �쥸���ȥ꤬���Ĥ���ʤ���硢\f2jstatd\fP �ץ������������ RMI �쥸���ȥ��������ʤ��褦�ˤ��ޤ��� 
 .TP 3
 \-p\  port 
-RMI レジストリがあると予想されるポート番号です。 見つからない場合は、\f2\-nr\fP が指定されていなければ作成されます。 
+RMI �쥸���ȥ꤬�����ͽ�ۤ����ݡ����ֹ�Ǥ��� ���Ĥ���ʤ����ϡ�\f2\-nr\fP �����ꤵ��Ƥ��ʤ���к�������ޤ��� 
 .TP 3
 \-n\  rminame 
-RMI レジストリにおいて、リモート RMI オブジェクトがバインドされる名前です。デフォルト名は \f2JStatRemoteHost\fP です。複数の \f3jstatd\fP サーバーが同じホスト上で起動している場合、各サーバーのエクスポートした RMI オブジェクトの名前は、このオプションを指定することによって、一意の名前にすることができます。ただし、このオプションを使用する場合、監視クライアントの \f2hostid\fP および \f2vmid\fP 文字列に、その一意のサーバー名を含める必要があります。 
+RMI �쥸���ȥ�ˤ����ơ���⡼�� RMI ���֥������Ȥ��Х���ɤ����̾���Ǥ����ǥե����̾�� \f2JStatRemoteHost\fP �Ǥ���ʣ���� \f3jstatd\fP �����С���Ʊ���ۥ��Ⱦ�ǵ�ư���Ƥ����硢�ƥ����С��Υ������ݡ��Ȥ��� RMI ���֥������Ȥ�̾���ϡ����Υ��ץ�������ꤹ�뤳�Ȥˤ�äơ���դ�̾���ˤ��뤳�Ȥ��Ǥ��ޤ��������������Υ��ץ�������Ѥ����硢�ƻ륯�饤����Ȥ� \f2hostid\fP ����� \f2vmid\fP ʸ����ˡ����ΰ�դΥ����С�̾��ޤ��ɬ�פ�����ޤ��� 
 .TP 3
 \-Joption 
-\f3javac\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
+\f3javac\fP ���ƤӽФ� \f3java\fP ��ư�ġ���ˡ�\f2option\fP ���Ϥ��ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ���\f3\-J\fP ��Ȥäơ�Java �ǵ��Ҥ��줿���ץꥱ��������¹Ԥ����ظ�� VM �˥��ץ�����Ϥ����Ȥϡ��褯�Ԥ��Ƥ��ޤ��� 
 .RE
 
 .LP
-.SH "セキュリティー"
-.LP
-
+.SH "�������ƥ���"
 .LP
 .LP
-\f3jstatd\fP サーバーは、有効なネイティブアクセス権を持つ JVM だけを監視できます。したがって、\f3jstatd\fP プロセスは、ターゲット JVM と同じユーザー資格で実行している必要があります。一部のユーザー資格は、Unix(TM) ベースのシステムにおける \f2root\fP ユーザーのように、システム上の任意の JVM によってエクスポートされたインストゥルメンテーションへのアクセス権を持っています。このような資格で実行している \f3jstatd\fP プロセスは、システム上のすべての JVM を監視できますが、セキュリティー上の別の問題が起こります。
+\f3jstatd\fP �����С��ϡ�ͭ���ʥͥ��ƥ��֥�������������� JVM ������ƻ�Ǥ��ޤ����������äơ�\f3jstatd\fP �ץ������ϡ��������å� JVM ��Ʊ���桼������ʤǼ¹Ԥ��Ƥ���ɬ�פ�����ޤ��������Υ桼������ʤϡ�UNIX(TM) �١����Υ����ƥ�ˤ����� \f2root\fP �桼�����Τ褦�ˡ������ƥ���Ǥ�դ� JVM �ˤ�äƥ������ݡ��Ȥ��줿���󥹥ȥ�����ơ������ؤΥ�������������äƤ��ޤ������Τ褦�ʻ�ʤǼ¹Ԥ��Ƥ��� \f3jstatd\fP �ץ������ϡ������ƥ��Τ��٤Ƥ� JVM ��ƻ�Ǥ��ޤ������������ƥ�������̤����꤬������ޤ���
 .LP
 .LP
-\f3jstatd\fP サーバーは、リモートクライアントの認証を一切与えません。そのため、\f3jstatd\fP サーバープロセスを実行すると、\f3jstatd\fP プロセスがアクセス権を持つすべての JVM によるインストゥルメンテーションのエクスポートを、ネットワーク上のすべてのユーザーに公開することになります。この無防備な状態は、環境的に望ましくない場合があります。 特に実稼働環境または安全でないネットワークでは、\f3jstatd\fP プロセスを起動する前に、ローカルセキュリティーポリシーを検討する必要があります。
+\f3jstatd\fP �����С��ϡ���⡼�ȥ��饤����Ȥ�ǧ�ڤ����Ϳ���ޤ��󡣤��Τ��ᡢ\f3jstatd\fP �����С��ץ�������¹Ԥ���ȡ�\f3jstatd\fP �ץ���������������������Ĥ��٤Ƥ� JVM �ˤ�륤�󥹥ȥ�����ơ������Υ������ݡ��Ȥ򡢥ͥåȥ����Τ��٤ƤΥ桼�����˸������뤳�Ȥˤʤ�ޤ�������̵�����ʾ��֤ϡ��Ķ�Ū��˾�ޤ����ʤ���礬����ޤ��� �ä˼²�Ư�Ķ��ޤ��ϰ����Ǥʤ��ͥåȥ���Ǥϡ�\f3jstatd\fP �ץ�������ư�������ˡ��������륻�����ƥ����ݥꥷ����Ƥ����ɬ�פ�����ޤ���
 .LP
 .LP
-\f3jstatd\fP サーバーは、他のセキュリティーマネージャーがインストールされていない場合には、RMISecurityPolicy のインスタンスをインストールします。 そのため、セキュリティーポリシーファイルを指定する必要があります。ポリシーファイルは、デフォルトポリシー実装の
+\f3jstatd\fP �����С��ϡ�¾�Υ������ƥ����ޥ͡����㡼�����󥹥ȡ��뤵��Ƥ��ʤ����ˤϡ�RMISecurityPolicy �Υ��󥹥��󥹤򥤥󥹥ȡ��뤷�ޤ��� ���Τ��ᡢ�������ƥ����ݥꥷ���ե��������ꤹ��ɬ�פ�����ޤ����ݥꥷ���ե�����ϡ��ǥե���ȥݥꥷ��������
 .na
-\f2ポリシーファイルの構文\fP @
+\f2�ݥꥷ���ե�����ι�ʸ\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.htmlに準拠する必要があります。
+http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.html�˽�򤹤�ɬ�פ�����ޤ���
 .LP
 .LP
-次のポリシーファイルの場合、\f3jstatd\fP サーバーは一切のセキュリティー例外を使用せずに実行できます。このポリシーは、すべてのコードベースへのあらゆるアクセス権を認めるポリシーよりも自由度は低いですが、\f3jstatd\fP サーバーを実行するために最低限必要なアクセス権しか認めないポリシーよりも自由度は高くなっています。
+���Υݥꥷ���ե�����ξ�硢\f3jstatd\fP �����С��ϰ��ڤΥ������ƥ����㳰����Ѥ����˼¹ԤǤ��ޤ������Υݥꥷ���ϡ����٤ƤΥ����ɥ١����ؤΤ����륢����������ǧ���ݥꥷ�����⼫ͳ�٤��㤤�Ǥ�����\f3jstatd\fP �����С���¹Ԥ��뤿��˺����ɬ�פʥ�������������ǧ��ʤ��ݥꥷ�����⼫ͳ�٤Ϲ⤯�ʤäƤ��ޤ���
 .LP
 .nf
 \f3
@@ -155,7 +145,7 @@ grant codebase "file:${java.home}/../lib/tools.jar" {\fP
 
 .LP
 .LP
-このポリシーを使用するには、このテキストを \f2jstatd.all.policy\fP というファイルにコピーし、次のように \f3jstatd\fP サーバーを実行します。
+���Υݥꥷ������Ѥ���ˤϡ����Υƥ����Ȥ� \f2jstatd.all.policy\fP �Ȥ����ե�����˥��ԡ��������Τ褦�� \f3jstatd\fP �����С���¹Ԥ��ޤ���
 .LP
 .nf
 \f3
@@ -169,27 +159,23 @@ jstatd \-J\-Djava.security.policy=jstatd.all.policy\fP
 
 .LP
 .LP
-より厳しいセキュリティーを実施するサイトの場合、カスタムポリシーファイルを使用して、特定の信頼できるホストまたはネットワークにアクセスを制限することができます。 ただし、このような方法は、IP アドレスの盗聴攻撃を受けやすくなります。セキュリティーの問題について、カスタマイズしたポリシーファイルでも対処できない場合は、\f3jstatd\fP サーバーを実行せずに、\f3jstat\fP と \f3jps\fP ツールをローカルで使用することがもっとも安全な方法になります。
+��긷�����������ƥ�����»ܤ��륵���Ȥξ�硢��������ݥꥷ���ե��������Ѥ��ơ�����ο���Ǥ���ۥ��Ȥޤ��ϥͥåȥ���˥������������¤��뤳�Ȥ��Ǥ��ޤ��� �����������Τ褦����ˡ�ϡ�IP ���ɥ쥹����İ���������䤹���ʤ�ޤ����������ƥ���������ˤĤ��ơ��������ޥ��������ݥꥷ���ե�����Ǥ��н�Ǥ��ʤ����ϡ�\f3jstatd\fP �����С���¹Ԥ����ˡ�\f3jstat\fP �� \f3jps\fP �ġ�����������ǻ��Ѥ��뤳�Ȥ���äȤ��������ˡ�ˤʤ�ޤ���
 .LP
-.SH "リモートインタフェース"
-.LP
-
+.SH "��⡼�ȥ��󥿥ե�����"
 .LP
 .LP
-\f3jstatd\fP プロセスがエクスポートするインタフェースは、独自に開発したものであり変更される予定です。ユーザーおよび開発者は、このインタフェースへの書き込みを行わないでください。
+\f3jstatd\fP �ץ��������������ݡ��Ȥ��륤�󥿥ե������ϡ��ȼ��˳�ȯ������ΤǤ����ѹ������ͽ��Ǥ����桼��������ӳ�ȯ�Ԥϡ����Υ��󥿥ե������ؤν񤭹��ߤ�Ԥ�ʤ��Ǥ���������
 .LP
-.SH "例"
-.LP
-
+.SH "��"
 .LP
 .LP
-次に \f3jstatd\fP を起動する例を紹介します。\f3jstatd\fP スクリプトによって、サーバーはバックグラウンドで自動的に起動します。
+���� \f3jstatd\fP ��ư�������Ҳ𤷤ޤ���\f3jstatd\fP ������ץȤˤ�äơ������С��ϥХå����饦��ɤǼ�ưŪ�˵�ư���ޤ���
 .LP
 .SS 
-内部 RMI レジストリの使用
+���� RMI �쥸���ȥ�λ���
 .LP
 .LP
-この例は、内部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。この例では、デフォルトの RMI レジストリポート (ポート 1099) には、他のサーバーはバインドされていないと想定しています。
+������ϡ����� RMI �쥸���ȥ����Ѥ��� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���������Ǥϡ��ǥե���Ȥ� RMI �쥸���ȥ�ݡ��� (�ݡ��� 1099) �ˤϡ�¾�Υ����С��ϥХ���ɤ���Ƥ��ʤ������ꤷ�Ƥ��ޤ���
 .LP
 .nf
 \f3
@@ -201,10 +187,10 @@ jstatd \-J\-Djava.security.policy=all.policy
 
 .LP
 .SS 
-外部 RMI レジストリの使用
+���� RMI �쥸���ȥ�λ���
 .LP
 .LP
-この例は、外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+������ϡ����� RMI �쥸���ȥ����Ѥ��� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���
 .LP
 .nf
 \f3
@@ -218,7 +204,7 @@ jstatd \-J\-Djava.security.policy=all.policy
 
 .LP
 .LP
-この例は、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+������ϡ��ݡ��� 2020 �γ��� RMI �쥸���ȥ����Ѥ��� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���
 .LP
 .nf
 \f3
@@ -232,7 +218,7 @@ jstatd \-J\-Djava.security.policy=all.policy \-p 2020
 
 .LP
 .LP
-この例は、AlternateJstatdServerName の名前にバインドされた、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+������ϡ�AlternateJstatdServerName ��̾���˥Х���ɤ��줿���ݡ��� 2020 �γ��� RMI �쥸���ȥ����Ѥ��� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���
 .LP
 .nf
 \f3
@@ -246,10 +232,10 @@ jstatd \-J\-Djava.security.policy=all.policy \-p 2020 \-n AlternateJstatdServerN
 
 .LP
 .SS 
-インプロセス RMI レジストリの作成の禁止
+����ץ����� RMI �쥸���ȥ�κ����ζػ�
 .LP
 .LP
-この例は、RMI レジストリが見つからない場合に RMI レジストリを作成しない \f3jstatd\fP の起動を表しています。この例では、RMI レジストリがすでに実行していると想定しています。実行していない場合は、該当するエラーメッセージが表示されます。
+������ϡ�RMI �쥸���ȥ꤬���Ĥ���ʤ����� RMI �쥸���ȥ��������ʤ� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���������Ǥϡ�RMI �쥸���ȥ꤬���Ǥ˼¹Ԥ��Ƥ�������ꤷ�Ƥ��ޤ����¹Ԥ��Ƥ��ʤ����ϡ��������륨�顼��å�������ɽ������ޤ���
 .LP
 .nf
 \f3
@@ -261,10 +247,10 @@ jstatd \-J\-Djava.security.policy=all.policy \-nr
 
 .LP
 .SS 
-RMI ログ機能の有効化
+RMI ������ǽ��ͭ����
 .LP
 .LP
-この例は、RMI ログ機能を有効にした \f3jstatd\fP の起動を表しています。この方法は、トラブルシューティングまたはサーバー活動の監視に役立ちます。
+������ϡ�RMI ������ǽ��ͭ���ˤ��� \f3jstatd\fP �ε�ư��ɽ���Ƥ��ޤ���������ˡ�ϡ��ȥ�֥륷�塼�ƥ��󥰤ޤ��ϥ����С���ư�δƻ����Ω���ޤ���
 .LP
 .nf
 \f3
@@ -275,25 +261,25 @@ jstatd \-J\-Djava.security.policy=all.policy \-J\-Djava.rmi.server.logCalls=true
 .fi
 
 .LP
-.SH "関連項目"
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2
 o
-「java(1) \- Java アプリケーション起動ツール」 
+��java(1) \- Java ���ץꥱ�������ư�ġ���� 
 .TP 2
 o
-「jps(1) \- Java 仮想マシンプロセスステータスツール」 
+��jps(1) \- Java ���ۥޥ���ץ��������ơ������ġ���� 
 .TP 2
 o
-「jstat(1) \- Java 仮想マシン統計データ監視ツール」 
+��jstat(1) \- Java ���ۥޥ������ץǡ����ƻ�ġ���� 
 .TP 2
 o
-「
+��
 .na
 \f2rmiregistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi \- Java リモートオブジェクトレジストリ」 
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi \- Java ��⡼�ȥ��֥������ȥ쥸���ȥ�� 
 .RE
 
 .LP
