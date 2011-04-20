@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,13 @@ public class Krb5LoginModule implements LoginModule {
     private boolean succeeded = false;
     private boolean commitSucceeded = false;
     private String username;
+
+    // Encryption keys calculated from password. Assigned when storekey == true
+    // and useKeyTab == false (or true but not found)
     private EncryptionKey[] encKeys = null;
+
+    KeyTab ktab = null;
+
     private Credentials cred = null;
 
     private PrincipalName principal = null;
@@ -663,28 +669,49 @@ public class Krb5LoginModule implements LoginModule {
                         (krb5PrincName.toString(),
                          PrincipalName.KRB_NT_PRINCIPAL);
                 }
+
+                /*
+                 * Before dynamic KeyTab support (6894072), here we check if
+                 * the keytab contains keys for the principal. If no, keytab
+                 * will not be used and password is prompted for.
+                 *
+                 * After 6894072, we normally don't check it, and expect the
+                 * keys can be populated until a real connection is made. The
+                 * check is still done when isInitiator == true, where the keys
+                 * will be used right now.
+                 *
+                 * Probably tricky relations:
+                 *
+                 * useKeyTab is config flag, but when it's true but the ktab
+                 * does not contains keys for principal, we would use password
+                 * and keep the flag unchanged (for reuse?). In this method,
+                 * we use (ktab != null) to check whether keytab is used.
+                 * After this method (and when storeKey == true), we use
+                 * (encKeys == null) to check.
+                 */
                 if (useKeyTab) {
-                    encKeys =
-                        EncryptionKey.acquireSecretKeys(principal, keyTabName);
-
-                    if (debug) {
-                        if (encKeys != null)
-                            System.out.println
-                                ("principal's key obtained from the keytab");
-                        else
-                            System.out.println
-                                ("Key for the principal " +
-                                 principal  +
-                                 " not available in " +
-                                 ((keyTabName == null) ?
-                                  "default key tab" : keyTabName));
+                    ktab = (keyTabName == null)
+                                ? KeyTab.getInstance()
+                                : KeyTab.getInstance(new File(keyTabName));
+                    if (isInitiator) {
+                        if (Krb5Util.keysFromJavaxKeyTab(ktab, principal).length
+                                == 0) {
+                            ktab = null;
+                            if (debug) {
+                                System.out.println
+                                    ("Key for the principal " +
+                                     principal  +
+                                     " not available in " +
+                                     ((keyTabName == null) ?
+                                      "default key tab" : keyTabName));
+                            }
+                        }
                     }
-
                 }
 
                 KrbAsReqBuilder builder;
-                // We can't get the key from the keytab so prompt
-                if (encKeys == null) {
+
+                if (ktab == null) {
                     promptForPass(getPasswdFromSharedState);
                     builder = new KrbAsReqBuilder(principal, password);
                     if (isInitiator) {
@@ -693,9 +720,13 @@ public class Krb5LoginModule implements LoginModule {
                         // updated with PA info
                         cred = builder.action().getCreds();
                     }
-                    encKeys = builder.getKeys();
+                    if (storeKey) {
+                        encKeys = builder.getKeys();
+                        // When encKeys is empty, the login actually fails.
+                        // For compatibility, exception is thrown in commit().
+                    }
                 } else {
-                    builder = new KrbAsReqBuilder(principal, encKeys);
+                    builder = new KrbAsReqBuilder(principal, ktab);
                     if (isInitiator) {
                         cred = builder.action().getCreds();
                     }
@@ -705,10 +736,15 @@ public class Krb5LoginModule implements LoginModule {
                 if (debug) {
                     System.out.println("principal is " + principal);
                     HexDumpEncoder hd = new HexDumpEncoder();
-                    for (int i = 0; i < encKeys.length; i++) {
-                        System.out.println("EncryptionKey: keyType=" +
-                            encKeys[i].getEType() + " keyBytes (hex dump)=" +
-                            hd.encodeBuffer(encKeys[i].getBytes()));
+                    if (ktab != null) {
+                        System.out.println("Will use keytab");
+                    } else if (storeKey) {
+                        for (int i = 0; i < encKeys.length; i++) {
+                            System.out.println("EncryptionKey: keyType=" +
+                                encKeys[i].getEType() +
+                                " keyBytes (hex dump)=" +
+                                hd.encodeBuffer(encKeys[i].getBytes()));
+                        }
                     }
                 }
 
@@ -989,8 +1025,8 @@ public class Krb5LoginModule implements LoginModule {
                 kerbTicket = Krb5Util.credsToTicket(cred);
             }
 
-            if (storeKey) {
-                if (encKeys == null || encKeys.length <= 0) {
+            if (storeKey && encKeys != null) {
+                if (encKeys.length == 0) {
                     succeeded = false;
                     throw new LoginException("Null Server Key ");
                 }
@@ -1006,10 +1042,11 @@ public class Krb5LoginModule implements LoginModule {
                 }
 
             }
-            // Let us add the kerbClientPrinc,kerbTicket and kerbKey (if
+            // Let us add the kerbClientPrinc,kerbTicket and KeyTab/KerbKey (if
             // storeKey is true)
-            if (!princSet.contains(kerbClientPrinc))
+            if (!princSet.contains(kerbClientPrinc)) {
                 princSet.add(kerbClientPrinc);
+            }
 
             // add the TGT
             if (kerbTicket != null) {
@@ -1018,19 +1055,29 @@ public class Krb5LoginModule implements LoginModule {
             }
 
             if (storeKey) {
-                for (int i = 0; i < kerbKeys.length; i++) {
-                    if (!privCredSet.contains(kerbKeys[i])) {
-                        privCredSet.add(kerbKeys[i]);
+                if (encKeys == null) {
+                    if (!privCredSet.contains(ktab)) {
+                        privCredSet.add(ktab);
+                        // Compatibility; also add keys to privCredSet
+                        for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
+                            privCredSet.add(new Krb5Util.KeysFromKeyTab(key));
+                        }
                     }
-                    encKeys[i].destroy();
-                    encKeys[i] = null;
-                    if (debug) {
-                        System.out.println("Added server's key"
-                                        + kerbKeys[i]);
-                        System.out.println("\t\t[Krb5LoginModule] " +
-                                       "added Krb5Principal  " +
-                                       kerbClientPrinc.toString()
-                                       + " to Subject");
+                } else {
+                    for (int i = 0; i < kerbKeys.length; i ++) {
+                        if (!privCredSet.contains(kerbKeys[i])) {
+                            privCredSet.add(kerbKeys[i]);
+                        }
+                        encKeys[i].destroy();
+                        encKeys[i] = null;
+                        if (debug) {
+                            System.out.println("Added server's key"
+                                            + kerbKeys[i]);
+                            System.out.println("\t\t[Krb5LoginModule] " +
+                                           "added Krb5Principal  " +
+                                           kerbClientPrinc.toString()
+                                           + " to Subject");
+                        }
                     }
                 }
             }
@@ -1106,7 +1153,8 @@ public class Krb5LoginModule implements LoginModule {
         while (it.hasNext()) {
             Object o = it.next();
             if (o instanceof KerberosTicket ||
-                o instanceof KerberosKey) {
+                    o instanceof KerberosKey ||
+                    o instanceof KeyTab) {
                 it.remove();
             }
         }
@@ -1161,6 +1209,7 @@ public class Krb5LoginModule implements LoginModule {
         } else {
             // remove temp results for the next try
             encKeys = null;
+            ktab = null;
             principal = null;
         }
         username = null;

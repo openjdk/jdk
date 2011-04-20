@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,7 @@ public class EncryptionKey
      * @returns an array of secret keys or null if none were found.
      */
     public static EncryptionKey[] acquireSecretKeys(PrincipalName princ,
-                                                    String keytab)
-        throws KrbException, IOException {
+                                                    String keytab) {
 
         if (princ == null)
             throw new IllegalArgumentException(
@@ -148,11 +147,6 @@ public class EncryptionKey
         // KeyTab getInstance(keytab) will call KeyTab.getInstance()
         // if keytab is null
         KeyTab ktab = KeyTab.getInstance(keytab);
-
-        if (ktab == null) {
-            return null;
-        }
-
         return ktab.readServiceKeys(princ);
     }
 
