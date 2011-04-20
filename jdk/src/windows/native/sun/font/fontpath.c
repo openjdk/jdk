@@ -235,7 +235,7 @@ static int CALLBACK EnumFontFacesInFamilyProcW(
     }
 
     fullname = (*env)->NewString(env, lpelfe->elfFullName,
-                                 wcslen((LPWSTR)lpelfe->elfFullName));
+                                 (jsize)wcslen((LPWSTR)lpelfe->elfFullName));
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
     (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
@@ -314,7 +314,7 @@ static int CALLBACK EnumFamilyNamesW(
     GdiFontMapInfo *fmi = (GdiFontMapInfo*)lParam;
     JNIEnv *env = fmi->env;
     jstring familyLC;
-    int slen;
+    size_t slen;
     LOGFONTW lfw;
 
     /* Both Vista and XP return DEVICE_FONTTYPE for OTF fonts */
@@ -336,7 +336,7 @@ static int CALLBACK EnumFamilyNamesW(
             return 1;
     }
     slen = wcslen(lpelfe->elfLogFont.lfFaceName);
-    fmi->family = (*env)->NewString(env,lpelfe->elfLogFont.lfFaceName, slen);
+    fmi->family = (*env)->NewString(env,lpelfe->elfLogFont.lfFaceName, (jsize)slen);
     familyLC = (*env)->CallObjectMethod(env, fmi->family,
                                         fmi->toLowerCaseMID, fmi->locale);
     /* check if already seen this family with a different charset */
@@ -386,10 +386,10 @@ static int CALLBACK EnumFamilyNamesW(
 static BOOL RegistryToBaseTTNameA(LPSTR name) {
     static const char TTSUFFIX[] = " (TrueType)";
     static const char OTSUFFIX[] = " (OpenType)";
-    int TTSLEN = strlen(TTSUFFIX);
+    size_t TTSLEN = strlen(TTSUFFIX);
     char *suffix;
 
-    int len = strlen(name);
+    size_t len = strlen(name);
     if (len == 0) {
         return FALSE;
     }
@@ -412,10 +412,10 @@ static BOOL RegistryToBaseTTNameA(LPSTR name) {
 static BOOL RegistryToBaseTTNameW(LPWSTR name) {
     static const wchar_t TTSUFFIX[] = L" (TrueType)";
     static const wchar_t OTSUFFIX[] = L" (OpenType)";
-    int TTSLEN = wcslen(TTSUFFIX);
+    size_t TTSLEN = wcslen(TTSUFFIX);
     wchar_t *suffix;
 
-    int len = wcslen(name);
+    size_t len = wcslen(name);
     if (len == 0) {
         return FALSE;
     }
@@ -439,7 +439,7 @@ static void registerFontA(GdiFontMapInfo *fmi, jobject fontToFileMap,
     LPSTR ptr1, ptr2;
     jstring fontStr;
     JNIEnv *env = fmi->env;
-    int dslen = strlen(data);
+    size_t dslen = strlen(data);
     jstring fileStr = JNU_NewStringPlatform(env, data);
 
     /* TTC or ttc means it may be a collection. Need to parse out
@@ -488,8 +488,8 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
     wchar_t *ptr1, *ptr2;
     jstring fontStr;
     JNIEnv *env = fmi->env;
-    int dslen = wcslen(data);
-    jstring fileStr = (*env)->NewString(env, data, dslen);
+    size_t dslen = wcslen(data);
+    jstring fileStr = (*env)->NewString(env, data, (jsize)dslen);
 
     /* TTC or ttc means it may be a collection. Need to parse out
      * multiple font face names separated by " & "
@@ -510,7 +510,7 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
             while ((ptr2 = wcsstr(ptr1, L" & ")) != NULL) {
                 ptr1 = ptr2+3;
             }
-            fontStr = (*env)->NewString(env, ptr1, wcslen(ptr1));
+            fontStr = (*env)->NewString(env, ptr1, (jsize)wcslen(ptr1));
             fontStr = (*env)->CallObjectMethod(env, fontStr,
                                                fmi->toLowerCaseMID,
                                                fmi->locale);
@@ -524,7 +524,7 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
             }
         }
     } else {
-        fontStr = (*env)->NewString(env, name, wcslen(name));
+        fontStr = (*env)->NewString(env, name, (jsize)wcslen(name));
         fontStr = (*env)->CallObjectMethod(env, fontStr,
                                            fmi->toLowerCaseMID, fmi->locale);
         (*env)->CallObjectMethod(env, fontToFileMap, fmi->putMID,
