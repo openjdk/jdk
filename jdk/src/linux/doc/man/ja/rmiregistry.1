@@ -19,22 +19,18 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmiregistry 1 "02 Jun 2010"
+.TH rmiregistry 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-rmiregistry \- Java リモートオブジェクトレジストリ
+.SH "̾��"
+rmiregistry \- Java ��⡼�ȥ��֥������ȥ쥸���ȥ�
 .LP
 .RS 3
-
-.LP
-.LP
-\f3rmiregistry\fP コマンドは、現在のホストの指定したポート上にリモートオブジェクトレジストリを開始します。
-.LP
+\f3rmiregistry\fP ���ޥ�ɤϡ����ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȥ��֥������ȥ쥸���ȥ�򳫻Ϥ��ޤ��� 
 .RE
-.SH "形式"
-.LP
 
+.LP
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,52 +41,43 @@ rmiregistry [\fP\f4port\fP\f3]
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3rmiregistry\fP コマンドは、現在のホストの指定 \f2port\fP 上にリモートオブジェクトレジストリを作成し、開始します。\f2port\fP の指定を省略した場合、レジストリはポート 1099 で開始します。\f3rmiregistry\fP コマンドに、出力機能はありません。通常、これはバックグラウンドで実行されます。例を示します。
+\f3rmiregistry\fP ���ޥ�ɤϡ����ߤΥۥ��Ȥλ��� \f2port\fP ��˥�⡼�ȥ��֥������ȥ쥸���ȥ������������Ϥ��ޤ���\f2port\fP �λ�����ά������硢�쥸���ȥ�ϥݡ��� 1099 �ǳ��Ϥ��ޤ���\f3rmiregistry\fP ���ޥ�ɤˡ����ϵ�ǽ�Ϥ���ޤ����̾����ϥХå����饦��ɤǼ¹Ԥ���ޤ�����򼨤��ޤ���
 .LP
 .LP
 \f2rmiregistry&\fP
 .LP
 .LP
-リモートオブジェクトレジストリは、ブートストラップのネームサービスです。 同一ホストの RMI サーバーが、リモートオブジェクトを名前にバインドするために使用されます。次に、ローカルおよびリモートホストのクライアントはリモートオブジェクトを検索し、リモートメソッドの呼び出しを行います。
+��⡼�ȥ��֥������ȥ쥸���ȥ�ϡ��֡��ȥ��ȥ�åפΥ͡��ॵ���ӥ��Ǥ���Ʊ��ۥ��Ȥ� RMI �����С�������⡼�ȥ��֥������Ȥ�̾���˥Х���ɤ��뤿��˻��Ѥ���ޤ������ˡ��������뤪��ӥ�⡼�ȥۥ��ȤΥ��饤����Ȥϥ�⡼�ȥ��֥������Ȥ򸡺�������⡼�ȥ᥽�åɤθƤӽФ���Ԥ��ޤ���
 .LP
 .LP
-レジストリは、一般的に、最初のリモートオブジェクトの位置を指定します。 そこで、アプリケーションはメソッドを呼び出す必要があります。代わって、そのオブジェクトはアプリケーション指定のサポートを提供し、他のオブジェクトを探します。
+�쥸���ȥ�ϡ�����Ū�ˡ��ǽ�Υ�⡼�ȥ��֥������Ȥΰ��֤���ꤷ�ޤ��� �����ǡ����ץꥱ�������ϥ᥽�åɤ�ƤӽФ�ɬ�פ�����ޤ������äơ����Υ��֥������Ȥϥ��ץꥱ����������Υ��ݡ��Ȥ��󶡤���¾�Υ��֥������Ȥ�õ���ޤ���
 .LP
 .LP
-\f2java.rmi.registry.LocateRegistry\fP クラスのメソッドは、ローカルホスト、またはローカルホストとポートで動作するレジストリを取得するために使用されます。
+\f2java.rmi.registry.LocateRegistry\fP ���饹�Υ᥽�åɤϡ���������ۥ��ȡ��ޤ��ϥ�������ۥ��Ȥȥݡ��Ȥ�ư���쥸���ȥ��������뤿��˻��Ѥ���ޤ���
 .LP
 .LP
-\f2java.rmi.Naming\fP クラスの URL ベースのメソッドは、レジストリで動作し、任意のホストおよびローカルホスト上のリモートオブジェクトの検索に使用されます。リモートオブジェクトに単純な (文字列) 名前をバインドしたり、新しい名前をリバインド (古いバインドにオーバーライド) します。 またリモートオブジェクトをアンバインドしたり、レジストリにバインドされた URL を出力します。
+\f2java.rmi.Naming\fP ���饹�� URL �١����Υ᥽�åɤϡ��쥸���ȥ��ư���Ǥ�դΥۥ��Ȥ���ӥ�������ۥ��Ⱦ�Υ�⡼�ȥ��֥������Ȥθ����˻��Ѥ���ޤ�����⡼�ȥ��֥������Ȥ�ñ��� (ʸ����) ̾����Х���ɤ����ꡢ������̾�����Х���� (�Ť��Х���ɤ˥����С��饤��) ���ޤ����ޤ���⡼�ȥ��֥������Ȥ򥢥�Х���ɤ����ꡢ�쥸���ȥ�˥Х���ɤ��줿 URL ����Ϥ��ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-J 
-\f2\-J\fP の後ろに続くオプションを \f2java\fP インタプリタに引き渡します。 \f2java\fP オプションと組み合わせて使います (\f2\-J\fP と \f2java\fP オプションの間にスペースは入れない)。 
+\f2\-J\fP �θ����³�����ץ����� \f2java\fP ���󥿥ץ꥿�˰����Ϥ��ޤ��� \f2java\fP ���ץ������Ȥ߹�碌�ƻȤ��ޤ� (\-J �� java ���ץ����δ֤˥��ڡ���������ʤ�)�� 
 .RE
 
 .LP
-.SH "関連項目"
+.SH "��Ϣ����"
 .LP
-
-.LP
-.LP
-java(1)、
+java(1)��
 .na
 \f2java.rmi.registry.LocateRegistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/rmi/registry/LocateRegistry.html、および 
+http://java.sun.com/javase/6/docs/api/java/rmi/registry/LocateRegistry.html������� 
 .na
 \f2java.rmi.Naming\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/rmi/Naming.html
-.LP
- 
+http://java.sun.com/javase/6/docs/api/java/rmi/Naming.html  

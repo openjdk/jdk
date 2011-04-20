@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH serialver 1 "02 Jun 2010"
+.TH serialver 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-serialver \- シリアルバージョンコマンド
-.LP
-.RS 3
-
+.SH "̾��"
+serialver \- ���ꥢ��С�����󥳥ޥ��
 .LP
 .LP
-\f3serialver\fP コマンドは \f2serialVersionUID\fP を返します。
+\f3serialver\fP ���ޥ�ɤ� \f2serialVersionUID\fP ���֤��ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,74 +39,54 @@ serialver \- シリアルバージョンコマンド
 
 .LP
 .RS 3
-
-.LP
-.RS 3
 .TP 3
 options 
-このドキュメントで説明されているコマンド行オプションです。 
+���Υɥ�����Ȥ���������Ƥ��륳�ޥ�ɹԥ��ץ����Ǥ��� 
 .TP 3
 classnames 
-1 つ以上のクラス名です。 
+1 �İʾ�Υ��饹̾�Ǥ��� 
 .RE
 
 .LP
-.RE
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3serialver\fP は、1 つ以上のクラスの \f2serialVersionUID\fP を、展開しているクラスへコピーするのに適した形式で返します。引数を指定しないで呼び出すと、使用方法が表示されます。
+\f3serialver\fP �ϡ�1 �İʾ�Υ��饹�� \f2serialVersionUID\fP ��Ÿ�����Ƥ��륯�饹�إ��ԡ�����Τ�Ŭ�����������֤��ޤ�����������ꤷ�ʤ��ǸƤӽФ��ȡ�������ˡ��ɽ������ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
-\-classpath <: で区切られたディレクトリと zip や jar ファイル> 
-アプリケーションのクラスおよびリソースの検索パスを設定します。 
+\-classpath <: �Ƕ��ڤ�줿�ǥ��쥯�ȥ�� zip �� jar �ե�����> 
+���ץꥱ�������Υ��饹����ӥ꥽�����θ����ѥ������ꤷ�ޤ��� 
 .RE
 
 .LP
 .RS 3
 .TP 3
 \-show 
-簡単なユーザーインタフェースを表示します。完全指定のクラス名を入力して、Enter キーか [Show] ボタンを押し、シリアルバージョン UID を表示します。 
+��ñ�ʥ桼�������󥿥ե�������ɽ�����ޤ�����������Υ��饹̾�����Ϥ��ơ�Enter ��������Show�ץܥ���򲡤������ꥢ��С������ UID ��ɽ�����ޤ��� 
 .TP 3
 \-Joption 
-Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���\f2option\fP �ˤϡ�java(1)�Υ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ��� 
 .RE
 
 .LP
-.SH "注"
-.LP
-
+.SH "��"
 .LP
 .LP
-\f3serialver\fP コマンドは、指定されたクラスをその仮想マシン内に読み込んで初期化しますが、デフォルトではセキュリティーマネージャーの設定は行いません。信頼できないクラスとともに \f3serialver\fP を実行する場合には、次のオプションを使ってセキュリティーマネージャーを設定できます。
-.LP
-.RS 3
-
+\f3serialver\fP ���ޥ�ɤϡ����ꤵ�줿���饹�򤽤β��ۥޥ�������ɤ߹���ǽ�������ޤ������ǥե���ȤǤϥ������ƥ����ޥ͡����㡼������ϹԤ��ޤ��󡣿���Ǥ��ʤ����饹�ȤȤ�� \f3serialver\fP ��¹Ԥ�����ˤϡ����Υ��ץ�����Ȥäƥ������ƥ����ޥ͡����㡼������Ǥ��ޤ���
 .LP
 .LP
 \f2\-J\-Djava.security.manager\fP
 .LP
-.RE
 .LP
-また、必要であれば、次のオプションを使ってセキュリティーポリシーを指定できます。
-.LP
-.RS 3
-
+�ޤ���ɬ�פǤ���С����Υ��ץ�����Ȥäƥ������ƥ����ݥꥷ�������Ǥ��ޤ���
 .LP
 .LP
 \f2\-J\-Djava.security.policy=<policy file>\fP
 .LP
-.RE
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
 .na

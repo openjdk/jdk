@@ -19,102 +19,133 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH apt 1 "02 Jun 2010"
+.TH apt 1 "14 Apr 2011"
 
 .LP
 .SH "NAME"
 .LP
 .LP
-\f2apt\fP \- 注釈処理ツール
+\f2apt\fP \- ��������ġ���
 .LP
-.SH "形式"
-.LP
-.LP
-\f2apt [\-classpath \fP\f2classpath\fP] [\-sourcepath \f2sourcepath\fP] [\-d \f2directory\fP] [\-s \f2directory\fP] [\-factorypath \f2path\fP] [\-factory \f2class\fP] [\-print] [\-nocompile] [\-A\f2key\fP[\f2=val\fP] ...][\f2javac option\fP] sourcefiles [@files]
-.LP
-.SH "パラメータ"
+.SH "����"
 .LP
 .LP
-オプションは順不同です。特定のオプションに適用されるパラメータについては、下記の「オプション」を参照してください。
+\f2apt [\-classpath \fP\f2classpath\fP] [\-sourcepath \f2sourcepath\fP] [\-d \f2directory\fP] [\-s \f2directory\fP] [\-factorypath \f2path\fP] [\-factory \f2class\fP] [\-print] [\-nocompile] [\-A\f2key\fP[\f2=val\fP] ...] [\f2javac option\fP] sourcefiles [@files]
+.LP
+.SH "�ѥ�᡼��"
+.LP
+.LP
+���ץ����λ������˷�ޤ�Ϥ���ޤ�������Υ��ץ�����Ŭ�Ѥ����ѥ�᡼���ˤĤ��Ƥϡ������Ρ֥��ץ����פ򻲾Ȥ��Ƥ���������
 .LP
 .RS 3
 .TP 3
 sourcefiles 
-ゼロ、1 つ、または複数の処理対象のソースファイル 
+������1 �ġ��ޤ���ʣ���ν����оݤΥ������ե����� 
 .TP 3
 @files 
-ソースファイルまたは他のオプションを一覧表示する 1 つまたは複数のファイル 
+�������ե�����ޤ���¾�Υ��ץ��������ɽ������ 1 �Ĥޤ���ʣ���Υե����� 
 .RE
 
 .LP
-.SH "説明"
+.SH "����"
 .LP
 .LP
-注釈処理ツール \f2apt\fP は、新しいリフレクト API とサポートインフラストラクチャーから構成され、プログラム注釈を処理します。\f2apt\fP リフレクト API は、 構築時のソースベースで、プログラム構造に関する読み取り専用ビューを提供します。これらのリフレクト API は、総称を追加した後に、Java(TM) プログラミング言語の型システムを正しくモデル化するように設計されています。最初に、\f2apt\fP は、新しいソースコードと他のファイルを作成する注釈プロセッサを実行します。次に、\f2apt\fP は、元のソースファイルと生成したソースファイルの両方をコンパイルするため、開発が楽になります。ツールとのインタフェースに使用されるリフレクト API などの API は、\f2com.sun.mirror\fP のサブパッケージです。
+��������ġ��� \f2apt\fP �ϡ���������ե쥯�� API �ȥ��ݡ��ȥ���ե饹�ȥ饯���㡼���鹽�����졢�ץ�����������������ޤ���\f2apt\fP ��ե쥯�� API �ϡ� ���ۻ��Υ������١����ǡ��ץ�����๽¤�˴ؤ����ɤ߼�����ѥӥ塼���󶡤��ޤ��������Υ�ե쥯�� API �ϡ����Τ��ɲä�����ˡ�Java(TM) �ץ�����ߥ󥰸���η������ƥ����������ǥ벽����褦���߷פ���Ƥ��ޤ����ǽ�ˡ�\f2apt\fP �ϡ������������������ɤ�¾�Υե�����������������ץ����å���¹Ԥ��ޤ������ˡ�\f2apt\fP �ϡ����Υ������ե���������������������ե������ξ���򥳥�ѥ��뤹�뤿�ᡢ��ȯ���ڤˤʤ�ޤ����ġ���ȤΥ��󥿥ե������˻��Ѥ�����ե쥯�� API �ʤɤ� API �ϡ�\f2com.sun.mirror\fP �Υ��֥ѥå������Ǥ���
 .LP
 .LP
-ツールの機能に関する詳細と、\f2apt\fP を使用した開発方法については、
+�ġ���ε�ǽ�˴ؤ���ܺ٤ȡ�\f2apt\fP ����Ѥ�����ȯ��ˡ�ˤĤ��Ƥϡ�
 .na
-\f4「\fP\f4apt\fP\f3 入門」\fP @
+\f4��apt �����\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.html�򻲾Ȥ��Ƥ���������
 .LP
 .RS 3
 .TP 3
-注: 
-\f2apt\fP の機能は、\f2javac(1)\fP ツールの一部となった注釈処理インフラストラクチャーに組み込まれ、すべての Java コンパイラで使用できるように標準化されました。この新しいインフラストラクチャーは、言語モデルおよび Java プラットフォームの一部となった注釈処理 API に依存します。注釈プロセッサの開発は、新しい API および \f2javac\fP ツールに基づいて行うようお勧めします。 
+��: 
+\f2apt\fP �ε�ǽ�ϡ�\f2javac(1)\fP �ġ���ΰ����Ȥʤä������������ե饹�ȥ饯���㡼���Ȥ߹��ޤ졢���٤Ƥ� Java ����ѥ���ǻ��ѤǤ���褦��ɸ�ಽ����ޤ��������ο���������ե饹�ȥ饯���㡼�ϡ������ǥ뤪��� Java �ץ�åȥե�����ΰ����Ȥʤä�������� API �˰�¸���ޤ�������ץ����å��γ�ȯ�ϡ������� API ����� \f2javac\fP �ġ���˴�Ť��ƹԤ��褦�����ᤷ�ޤ��� 
 .RE
 
 .LP
-.SH "オプション"
+.SH "���ץ����"
 .LP
 .SS 
-apt 固有のオプション
+apt ��ͭ�Υ��ץ����
 .LP
 .RS 3
 .TP 3
 \-s dir 
-プロセッサの生成するソースファイルを置くディレクトリルートを指定します。 ファイルは、パッケージの名前空間に基づいてサブディレクトリに置かれます。 
+�ץ����å����������륽�����ե�������֤��ǥ��쥯�ȥ�롼�Ȥ���ꤷ�ޤ��� �ե�����ϡ��ѥå�������̾�����֤˴�Ť��ƥ��֥ǥ��쥯�ȥ���֤���ޤ��� 
 .TP 3
 \-nocompile 
-ソースファイルをクラスファイルにコンパイルしません。 
+�������ե�����򥯥饹�ե�����˥���ѥ��뤷�ޤ��� 
 .TP 3
 \-print 
-指定したタイプのテキスト表現を出力します。 注釈処理またはコンパイルは行いません。 
+���ꤷ�������פΥƥ�����ɽ������Ϥ��ޤ��� ��������ޤ��ϥ���ѥ���ϹԤ��ޤ��� 
 .TP 3
 \-A[key[=val]] 
-注釈プロセッサへ渡すオプションです。 このオプションは、\f2apt\fP が直接解釈するのではなく、それぞれのプロセッサによって使用できるように変えられます。 
+����ץ����å����Ϥ����ץ����Ǥ��� ���Υ��ץ����ϡ�\f2apt\fP ��ľ�ܲ�᤹��ΤǤϤʤ������줾��Υץ����å��ˤ�äƻ��ѤǤ���褦���Ѥ����ޤ��� 
 .TP 3
 \-factorypath path 
-注釈プロセッサファクトリを検索する場所を指定します。 このオプションを使用する場合、クラスパスのファクトリは検索されません。 
+����ץ����å��ե����ȥ�򸡺����������ꤷ�ޤ��� ���Υ��ץ�������Ѥ����硢���饹�ѥ��Υե����ȥ�ϸ�������ޤ��� 
 .TP 3
 \-factory classname 
-使用する注釈プロセッサファクトリの名前です。 デフォルトの検出プロセスを省略します。 
+���Ѥ�������ץ����å��ե����ȥ��̾���Ǥ��� �ǥե���Ȥθ��Хץ��������ά���ޤ��� 
+.TP 3
+\-version 
+�С������������Ϥ��ޤ��� 
+.TP 3
+\-X 
+��ɸ�४�ץ����˴ؤ�������ɽ�����ޤ��� 
 .RE
 
 .LP
 .SS 
-javac と共用するオプション
+javac �ȶ��Ѥ��륪�ץ����
 .LP
 .RS 3
 .TP 3
 \-d dir 
-プロセッサと javac 生成のクラスファイルを置く場所を指定します。 
+�ץ����å��� javac �����Υ��饹�ե�������֤�������ꤷ�ޤ��� 
 .TP 3
-\-cp path or \-classpath path 
-ユーザークラスファイルと注釈プロセッサファクトリを検索する場所を指定します。\f2\-factorypath\fP が指定されている場合、クラスパスのファクトリは検索されません。 
+\-cp path �ޤ��� \-classpath path 
+�桼�������饹�ե����������ץ����å��ե����ȥ�򸡺����������ꤷ�ޤ���\f2\-factorypath\fP �����ꤵ��Ƥ����硢���饹�ѥ��Υե����ȥ�ϸ�������ޤ��� 
 .RE
 
 .LP
 .LP
-\f2javac\fP オプションの詳細については、javac(1) のマニュアルページを参照してください。
+\f2javac\fP ���ץ����ξܺ٤ˤĤ��Ƥϡ�javac(1) �Υޥ˥奢��ڡ����򻲾Ȥ��Ƥ���������
 .LP
-.SH "注"
+.SS 
+��ɸ�४�ץ����
+.LP
+.RS 3
+.TP 3
+\-XListAnnotationTypes 
+����η��˸��Ф����ꥹ��. 
+.TP 3
+\-XListDeclarations 
+���ꤪ�����������󥯥롼�ɤ����ꥹ��. 
+.TP 3
+\-XPrintAptRounds 
+�������ӺƵ�Ū�� \f2apt\fP �饦��ɤ˴ؤ���������Ϥ���. 
+.TP 3
+\-XPrintFactoryInfo 
+�������׵᤹��ե����ȥ������˴ؤ���������Ϥ���. 
+.TP 3
+\-XclassesAsDecls 
+���饹�ե�����ȥ������ե������ξ���򡢽����оݤ�����Ȥ��ƽ������ޤ��� 
+.RE
+
 .LP
 .LP
-\f2apt\fP の機能は、\f2javac\fP により提供される標準注釈処理インフラストラクチャーに組み込まれました。今後の JDK リリースでは、\f2apt\fP および関連する API のサポートが中止する可能性があります。
+\f3��\fP: ��������ɸ�४�ץ����ʤΤǡ�ͽ��ʤ��ѹ�������ǽ��������ޤ���
 .LP
-.SH "関連項目"
+.SH "��"
+.LP
+.LP
+\f2apt\fP �ε�ǽ�ϡ�\f2javac\fP �ˤ���󶡤����ɸ�������������ե饹�ȥ饯���㡼���Ȥ߹��ޤ�ޤ���������� JDK ��꡼���Ǥϡ�\f2apt\fP ����Ӵ�Ϣ���� API �Υ��ݡ��Ȥ���ߤ����ǽ��������ޤ���
+.LP
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2
