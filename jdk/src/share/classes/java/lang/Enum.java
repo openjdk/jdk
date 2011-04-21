@@ -36,9 +36,8 @@ import java.io.ObjectStreamException;
  *
  * More information about enums, including descriptions of the
  * implicitly declared methods synthesized by the compiler, can be
- * found in <i>The Java&trade; Language Specification, Third
- * Edition</i>, <a
- * href="http://java.sun.com/docs/books/jls/third_edition/html/classes.html#8.9">&sect;8.9</a>.
+ * found in section 8.9 of
+ * <cite>The Java&trade; Language Specification</cite>.
  *
  * <p> Note that when using an enumeration type as the type of a set
  * or as the type of the keys in a map, specialized and efficient

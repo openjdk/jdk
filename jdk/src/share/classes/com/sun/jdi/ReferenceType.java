@@ -30,9 +30,8 @@ import java.util.Map;
 
 /**
  * The type of an object in a target VM. ReferenceType encompasses
- * classes, interfaces, and array types as defined in the
- * <a href="http://java.sun.com/docs/books/jls/">
- * Java<sup><font size=-2>TM</font></sup> Language Specification</a>.
+ * classes, interfaces, and array types as defined in
+ * <cite>The Java&trade; Language Specification</cite>.
  * All ReferenceType objects belong to one of the following
  * subinterfaces:
  * {@link ClassType} for classes,
@@ -98,9 +97,7 @@ public interface ReferenceType
     /**
      * Gets the generic signature for this type if there is one.
      * Generic signatures are described in the
-     * <a href="http://java.sun.com/docs/books/vmspec">
-     * "Java<sup><font size=-2>TM</font></sup>
-     * Virtual Machine Specification, 3rd Edition.</a>
+     * <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @return a string containing the generic signature, or <code>null</code>
      * if there is no generic signature.

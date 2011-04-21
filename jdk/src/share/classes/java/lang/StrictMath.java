@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -613,11 +613,8 @@ public final class StrictMath {
     public static native double pow(double a, double b);
 
     /**
-     * Returns the closest {@code int} to the argument. The
-     * result is rounded to an integer by adding 1/2, taking the
-     * floor of the result, and casting the result to type {@code int}.
-     * In other words, the result is equal to the value of the expression:
-     * <p>{@code (int)Math.floor(a + 0.5f)}
+     * Returns the closest {@code int} to the argument, with ties
+     * rounding up.
      *
      * <p>Special cases:
      * <ul><li>If the argument is NaN, the result is 0.
@@ -635,15 +632,12 @@ public final class StrictMath {
      * @see     java.lang.Integer#MIN_VALUE
      */
     public static int round(float a) {
-        return (int)floor(a + 0.5f);
+        return Math.round(a);
     }
 
     /**
-     * Returns the closest {@code long} to the argument. The result
-     * is rounded to an integer by adding 1/2, taking the floor of the
-     * result, and casting the result to type {@code long}. In other
-     * words, the result is equal to the value of the expression:
-     * <p>{@code (long)Math.floor(a + 0.5d)}
+     * Returns the closest {@code long} to the argument, with ties
+     * rounding up.
      *
      * <p>Special cases:
      * <ul><li>If the argument is NaN, the result is 0.
@@ -662,7 +656,7 @@ public final class StrictMath {
      * @see     java.lang.Long#MIN_VALUE
      */
     public static long round(double a) {
-        return (long)floor(a + 0.5d);
+        return Math.round(a);
     }
 
     private static Random randomNumberGenerator;

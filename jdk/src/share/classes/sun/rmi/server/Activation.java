@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -98,6 +99,7 @@ import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.rmi.log.LogHandler;
 import sun.rmi.log.ReliableLog;
 import sun.rmi.registry.RegistryImpl;
@@ -147,10 +149,10 @@ public class Activation implements Serializable {
 
     /** maps activation id to its respective group id */
     private Map<ActivationID,ActivationGroupID> idTable =
-        new HashMap<ActivationID,ActivationGroupID>();
+        new ConcurrentHashMap<>();
     /** maps group id to its GroupEntry groups */
     private Map<ActivationGroupID,GroupEntry> groupTable =
-        new HashMap<ActivationGroupID,GroupEntry>();
+        new ConcurrentHashMap<>();
 
     private byte majorVersion = MAJOR_VERSION;
     private byte minorVersion = MINOR_VERSION;
@@ -236,9 +238,11 @@ public class Activation implements Serializable {
         groupSemaphore = getInt("sun.rmi.activation.groupThrottle", 3);
         groupCounter = 0;
         Runtime.getRuntime().addShutdownHook(shutdownHook);
+
+        // Use array size of 0, since the value from calling size()
+        // may be out of date by the time toArray() is called.
         ActivationGroupID[] gids =
-            groupTable.keySet().toArray(
-                new ActivationGroupID[groupTable.size()]);
+            groupTable.keySet().toArray(new ActivationGroupID[0]);
 
         synchronized (startupLock = new Object()) {
             // all the remote methods briefly synchronize on startupLock
@@ -271,6 +275,23 @@ public class Activation implements Serializable {
                     getTextResource("rmid.restart.group.warning"));
                 e.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Previous versions used HashMap instead of ConcurrentHashMap.
+     * Replace any HashMaps found during deserialization with
+     * ConcurrentHashMaps.
+     */
+    private void readObject(ObjectInputStream ois)
+        throws IOException, ClassNotFoundException
+    {
+        ois.defaultReadObject();
+        if (! (groupTable instanceof ConcurrentHashMap)) {
+            groupTable = new ConcurrentHashMap<>(groupTable);
+        }
+        if (! (idTable instanceof ConcurrentHashMap)) {
+            idTable = new ConcurrentHashMap<>(idTable);
         }
     }
 
@@ -488,9 +509,7 @@ public class Activation implements Serializable {
             ActivationGroupID id = new ActivationGroupID(systemStub);
             GroupEntry entry = new GroupEntry(id, desc);
             // table insertion must take place before log update
-            synchronized (groupTable) {
-                groupTable.put(id, entry);
-            }
+            groupTable.put(id, entry);
             addLogRecord(new LogRegisterGroup(id, desc));
             return id;
         }
@@ -515,11 +534,7 @@ public class Activation implements Serializable {
 
             // remove entry before unregister so state is updated before
             // logged
-            synchronized (groupTable) {
-                GroupEntry entry = getGroupEntry(id);
-                groupTable.remove(id);
-                entry.unregisterGroup(true);
-            }
+            removeGroupEntry(id).unregisterGroup(true);
         }
 
         public ActivationDesc setActivationDesc(ActivationID id,
@@ -637,12 +652,7 @@ public class Activation implements Serializable {
                 unexport(system);
 
                 // destroy all child processes (groups)
-                GroupEntry[] groupEntries;
-                synchronized (groupTable) {
-                    groupEntries = groupTable.values().
-                        toArray(new GroupEntry[groupTable.size()]);
-                }
-                for (GroupEntry groupEntry : groupEntries) {
+                for (GroupEntry groupEntry : groupTable.values()) {
                     groupEntry.shutdown();
                 }
 
@@ -693,10 +703,8 @@ public class Activation implements Serializable {
             }
 
             // destroy all child processes (groups) quickly
-            synchronized (groupTable) {
-                for (GroupEntry groupEntry : groupTable.values()) {
-                    groupEntry.shutdownFast();
-                }
+            for (GroupEntry groupEntry : groupTable.values()) {
+                groupEntry.shutdownFast();
             }
         }
     }
@@ -708,13 +716,32 @@ public class Activation implements Serializable {
     private ActivationGroupID getGroupID(ActivationID id)
         throws UnknownObjectException
     {
-        synchronized (idTable) {
-            ActivationGroupID groupID = idTable.get(id);
-            if (groupID != null) {
-                return groupID;
-            }
+        ActivationGroupID groupID = idTable.get(id);
+        if (groupID != null) {
+            return groupID;
         }
         throw new UnknownObjectException("unknown object: " + id);
+    }
+
+    /**
+     * Returns the group entry for the group id, optionally removing it.
+     * Throws UnknownGroupException if the group is not registered.
+     */
+    private GroupEntry getGroupEntry(ActivationGroupID id, boolean rm)
+        throws UnknownGroupException
+    {
+        if (id.getClass() == ActivationGroupID.class) {
+            GroupEntry entry;
+            if (rm) {
+                entry = groupTable.remove(id);
+            } else {
+                entry = groupTable.get(id);
+            }
+            if (entry != null && !entry.removed) {
+                return entry;
+            }
+        }
+        throw new UnknownGroupException("group unknown");
     }
 
     /**
@@ -724,15 +751,17 @@ public class Activation implements Serializable {
     private GroupEntry getGroupEntry(ActivationGroupID id)
         throws UnknownGroupException
     {
-        if (id.getClass() == ActivationGroupID.class) {
-            synchronized (groupTable) {
-                GroupEntry entry = groupTable.get(id);
-                if (entry != null && !entry.removed) {
-                    return entry;
-                }
-            }
-        }
-        throw new UnknownGroupException("group unknown");
+        return getGroupEntry(id, false);
+    }
+
+    /**
+     * Removes and returns the group entry for the group id. Throws
+     * UnknownGroupException if the group is not registered.
+     */
+    private GroupEntry removeGroupEntry(ActivationGroupID id)
+        throws UnknownGroupException
+    {
+        return getGroupEntry(id, true);
     }
 
     /**
@@ -744,11 +773,9 @@ public class Activation implements Serializable {
         throws UnknownObjectException
     {
         ActivationGroupID gid = getGroupID(id);
-        synchronized (groupTable) {
-            GroupEntry entry = groupTable.get(gid);
-            if (entry != null) {
-                return entry;
-            }
+        GroupEntry entry = groupTable.get(gid);
+        if (entry != null && !entry.removed) {
+            return entry;
         }
         throw new UnknownObjectException("object's group removed");
     }
@@ -882,9 +909,7 @@ public class Activation implements Serializable {
             }
 
             // table insertion must take place before log update
-            synchronized (idTable) {
-                idTable.put(id, groupID);
-            }
+            idTable.put(id, groupID);
 
             if (addRecord) {
                 addLogRecord(new LogRegisterObject(id, desc));
@@ -901,10 +926,8 @@ public class Activation implements Serializable {
                 restartSet.remove(id);
             }
 
-            // table insertion must take place before log update
-            synchronized (idTable) {
-                idTable.remove(id);
-            }
+            // table removal must take place before log update
+            idTable.remove(id);
             if (addRecord) {
                 addLogRecord(new LogUnregisterObject(id));
             }
@@ -919,9 +942,7 @@ public class Activation implements Serializable {
                      objects.entrySet())
             {
                 ActivationID id = entry.getKey();
-                synchronized (idTable) {
-                    idTable.remove(id);
-                }
+                idTable.remove(id);
                 ObjectEntry objEntry = entry.getValue();
                 objEntry.removed = true;
             }

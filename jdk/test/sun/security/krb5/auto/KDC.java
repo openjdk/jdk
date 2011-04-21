@@ -228,7 +228,33 @@ public class KDC {
     }
 
     /**
-     * Write all principals' keys from multiple KDCsinto one keytab file.
+     * Writes or appends KDC keys into a keytab. See doc for writeMultiKtab.
+     * @param append true if append, otherwise, overwrite.
+     */
+    private static void writeKtab0(String tab, boolean append, KDC... kdcs)
+            throws IOException, KrbException {
+        KeyTab ktab = append ? KeyTab.getInstance(tab) : KeyTab.create(tab);
+        for (KDC kdc: kdcs) {
+            for (String name : kdc.passwords.keySet()) {
+                char[] pass = kdc.passwords.get(name);
+                int kvno = 0;
+                if (Character.isDigit(pass[pass.length-1])) {
+                    kvno = pass[pass.length-1] - '0';
+                }
+                ktab.addEntry(new PrincipalName(name,
+                        name.indexOf('/') < 0 ?
+                            PrincipalName.KRB_NT_UNKNOWN :
+                            PrincipalName.KRB_NT_SRV_HST),
+                            pass,
+                            kvno,
+                            true);
+            }
+        }
+        ktab.save();
+    }
+
+    /**
+     * Writes all principals' keys from multiple KDCs into one keytab file.
      * Note that the keys for the krbtgt principals will not be written.
      * <p>
      * Attention: This method references krb5.conf settings. If you need to
@@ -252,17 +278,16 @@ public class KDC {
      */
     public static void writeMultiKtab(String tab, KDC... kdcs)
             throws IOException, KrbException {
-        KeyTab ktab = KeyTab.create(tab);
-        for (KDC kdc: kdcs) {
-            for (String name : kdc.passwords.keySet()) {
-                ktab.addEntry(new PrincipalName(name,
-                        name.indexOf('/') < 0 ?
-                            PrincipalName.KRB_NT_UNKNOWN :
-                            PrincipalName.KRB_NT_SRV_HST),
-                            kdc.passwords.get(name), -1, true);
-            }
-        }
-        ktab.save();
+        writeKtab0(tab, false, kdcs);
+    }
+
+    /**
+     * Appends all principals' keys from multiple KDCs to one keytab file.
+     * See writeMultiKtab for details.
+     */
+    public static void appendMultiKtab(String tab, KDC... kdcs)
+            throws IOException, KrbException {
+        writeKtab0(tab, true, kdcs);
     }
 
     /**
@@ -270,6 +295,13 @@ public class KDC {
      */
     public void writeKtab(String tab) throws IOException, KrbException {
         KDC.writeMultiKtab(tab, this);
+    }
+
+    /**
+     * Appends keys in this KDC to a ktab.
+     */
+    public void appendKtab(String tab) throws IOException, KrbException {
+        KDC.appendMultiKtab(tab, this);
     }
 
     /**
@@ -691,7 +723,10 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.addresses,
+                    body.addresses != null  // always set caddr
+                            ? body.addresses
+                            : new HostAddresses(
+                                new InetAddress[]{InetAddress.getLocalHost()}),
                     null);
             EncryptionKey skey = keyForUser(body.sname, e3, true);
             if (skey == null) {
@@ -716,7 +751,10 @@ public class KDC {
                     till, body.rtime,
                     body.crealm,
                     body.sname,
-                    body.addresses
+                    body.addresses != null  // always set caddr
+                            ? body.addresses
+                            : new HostAddresses(
+                                new InetAddress[]{InetAddress.getLocalHost()})
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
             TGSRep tgsRep = new TGSRep(null,
