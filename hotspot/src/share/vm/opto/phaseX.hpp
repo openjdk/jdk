@@ -471,6 +471,13 @@ public:
     _delay_transform = delay;
   }
 
+  // Clone loop predicates. Defined in loopTransform.cpp.
+  Node* clone_loop_predicates(Node* old_entry, Node* new_entry);
+  Node*  move_loop_predicates(Node* old_entry, Node* new_entry);
+  // Create a new if below new_entry for the predicate to be cloned
+  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
+                                        Deoptimization::DeoptReason reason);
+
 #ifndef PRODUCT
 protected:
   // Sub-quadratic implementation of VerifyIterativeGVN.

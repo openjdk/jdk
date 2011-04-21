@@ -32,6 +32,7 @@
 //------------------------------VectorNode--------------------------------------
 // Vector Operation
 class VectorNode : public Node {
+  virtual uint size_of() const { return sizeof(*this); }
  protected:
   uint _length; // vector length
   virtual BasicType elt_basic_type() const = 0; // Vector element basic type
