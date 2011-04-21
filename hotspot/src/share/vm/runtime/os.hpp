@@ -658,6 +658,10 @@ class os: AllStatic {
   // Hook for os specific jvm options that we don't want to abort on seeing
   static bool obsolete_option(const JavaVMOption *option);
 
+  // Read file line by line. If line is longer than bsize,
+  // rest of line is skipped. Returns number of bytes read or -1 on EOF
+  static int get_line_chars(int fd, char *buf, const size_t bsize);
+
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.hpp"

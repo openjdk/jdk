@@ -185,7 +185,7 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
         this->print(tty, 0);
       }
       assert(method->can_be_statically_bound(), "must be a MH invoker method");
-      assert(AllowTransitionalJSR292 || _f2 >= constantPoolOopDesc::CPCACHE_INDEX_TAG, "BSM index initialized");
+      assert(_f2 >= constantPoolOopDesc::CPCACHE_INDEX_TAG, "BSM index initialized");
       // SystemDictionary::find_method_handle_invoke only caches
       // methods which signature classes are on the boot classpath,
       // otherwise the newly created method is returned.  To avoid
