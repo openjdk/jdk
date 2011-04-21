@@ -67,28 +67,6 @@ static bool find_field(instanceKlass* ik,
     return ik->find_local_field(name_symbol, signature_symbol, fd);
 }
 
-static bool find_hacked_field(instanceKlass* ik,
-                              Symbol* name_symbol, Symbol* signature_symbol,
-                              fieldDescriptor* fd,
-                              bool allow_super = false) {
-  bool found = find_field(ik, name_symbol, signature_symbol, fd, allow_super);
-  if (!found && AllowTransitionalJSR292) {
-    Symbol* backup_sig = SystemDictionary::find_backup_signature(signature_symbol);
-    if (backup_sig != NULL) {
-      found = find_field(ik, name_symbol, backup_sig, fd, allow_super);
-      if (TraceMethodHandles) {
-        ResourceMark rm;
-        tty->print_cr("MethodHandles: %s.%s: backup for %s => %s%s",
-                      ik->name()->as_C_string(), name_symbol->as_C_string(),
-                      signature_symbol->as_C_string(), backup_sig->as_C_string(),
-                      (found ? "" : " (NOT FOUND)"));
-      }
-    }
-  }
-  return found;
-}
-#define find_field find_hacked_field  /* remove after AllowTransitionalJSR292 */
-
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
 compute_offset(int &dest_offset,
@@ -1453,32 +1431,41 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, TRAPS) {
       }
     }
 #ifdef ASSERT
-  assert(st_method() == method && st.bci() == bci,
-         "Wrong stack trace");
-  st.next();
-  // vframeStream::method isn't GC-safe so store off a copy
-  // of the methodOop in case we GC.
-  if (!st.at_end()) {
-    st_method = st.method();
-  }
+    assert(st_method() == method && st.bci() == bci,
+           "Wrong stack trace");
+    st.next();
+    // vframeStream::method isn't GC-safe so store off a copy
+    // of the methodOop in case we GC.
+    if (!st.at_end()) {
+      st_method = st.method();
+    }
 #endif
+
+    // the format of the stacktrace will be:
+    // - 1 or more fillInStackTrace frames for the exception class (skipped)
+    // - 0 or more <init> methods for the exception class (skipped)
+    // - rest of the stack
+
     if (!skip_fillInStackTrace_check) {
-      // check "fillInStackTrace" only once, so we negate the flag
-      // after the first time check.
-      skip_fillInStackTrace_check = true;
-      if (method->name() == vmSymbols::fillInStackTrace_name()) {
+      if ((method->name() == vmSymbols::fillInStackTrace_name() ||
+           method->name() == vmSymbols::fillInStackTrace0_name()) &&
+          throwable->is_a(method->method_holder())) {
         continue;
       }
+      else {
+        skip_fillInStackTrace_check = true; // gone past them all
+      }
     }
-    // skip <init> methods of the exceptions klass. If there is <init> methods
-    // that belongs to a superclass of the exception  we are going to skipping
-    // them in stack trace. This is simlar to classic VM.
     if (!skip_throwableInit_check) {
+      assert(skip_fillInStackTrace_check, "logic error in backtrace filtering");
+
+      // skip <init> methods of the exception class and superclasses
+      // This is simlar to classic VM.
       if (method->name() == vmSymbols::object_initializer_name() &&
           throwable->is_a(method->method_holder())) {
         continue;
       } else {
-        // if no "Throwable.init()" method found, we stop checking it next time.
+        // there are none or we've seen them all - either way stop checking
         skip_throwableInit_check = true;
       }
     }
@@ -2333,7 +2320,6 @@ void java_lang_invoke_MethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::MethodHandle_klass();
   if (k != NULL && EnableInvokeDynamic) {
     bool allow_super = false;
-    if (AllowTransitionalJSR292)  allow_super = true;  // temporary, to access java.dyn.MethodHandleImpl
     compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::java_lang_invoke_MethodType_signature(), allow_super);
     compute_offset(_vmtarget_offset,  k, vmSymbols::vmtarget_name(),  vmSymbols::object_signature(),                      allow_super);
     compute_offset(_vmentry_offset,   k, vmSymbols::vmentry_name(),   vmSymbols::machine_word_signature(),                allow_super);

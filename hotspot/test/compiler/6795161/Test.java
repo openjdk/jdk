@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 6795161
  * @summary Escape analysis leads to data corruption
- * @run main/othervm -server -Xcomp -XX:CompileOnly=Test -XX:+DoEscapeAnalysis Test
+ * @run main/othervm -server  -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:CompileOnly=Test -XX:+DoEscapeAnalysis Test
  */
 
 class Test_Class_1 {
