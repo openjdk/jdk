@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.PrivateKey;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.MessageDigest;
@@ -146,7 +147,12 @@ abstract class RSASignature extends java.security.SignatureSpi
             byte[] keyBlob = generatePublicKeyBlob(
                 keyBitLength, modulusBytes, exponentBytes);
 
-            publicKey = importPublicKey(keyBlob, keyBitLength);
+            try {
+                publicKey = importPublicKey(keyBlob, keyBitLength);
+
+            } catch (KeyStoreException e) {
+                throw new InvalidKeyException(e);
+            }
 
         } else {
             publicKey = (sun.security.mscapi.RSAPublicKey) key;
@@ -381,11 +387,13 @@ abstract class RSASignature extends java.security.SignatureSpi
      */
     // used by RSACipher
     static native byte[] generatePublicKeyBlob(
-        int keyBitLength, byte[] modulus, byte[] publicExponent);
+        int keyBitLength, byte[] modulus, byte[] publicExponent)
+            throws InvalidKeyException;
 
     /**
      * Imports a public-key BLOB.
      */
     // used by RSACipher
-    static native RSAPublicKey importPublicKey(byte[] keyBlob, int keySize);
+    static native RSAPublicKey importPublicKey(byte[] keyBlob, int keySize)
+        throws KeyStoreException;
 }
