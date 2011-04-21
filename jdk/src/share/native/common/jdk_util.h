@@ -28,6 +28,7 @@
 
 #include "jni.h"
 #include "jvm.h"
+#include "jdk_util_md.h"
 
 #ifdef __cplusplus
 extern "C" {

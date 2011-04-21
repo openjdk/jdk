@@ -77,7 +77,7 @@ void AwtTextArea::Dispose()
 LPCTSTR AwtTextArea::GetClassName() {
     static BOOL richedLibraryLoaded = FALSE;
     if (!richedLibraryLoaded) {
-        ::LoadLibrary(TEXT("RICHED20.DLL"));
+        JDK_LoadSystemLibrary("RICHED20.DLL");
         richedLibraryLoaded = TRUE;
     }
     return RICHEDIT_CLASS;

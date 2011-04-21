@@ -40,10 +40,6 @@ import javax.net.ssl.SSLException;
  */
 final class CipherSuiteList {
 
-    // lists of supported and default enabled ciphersuites
-    // created on demand
-    private static CipherSuiteList supportedSuites, defaultSuites;
-
     private final Collection<CipherSuite> cipherSuites;
     private String[] suiteNames;
 
@@ -206,57 +202,8 @@ final class CipherSuiteList {
      */
     static synchronized void clearAvailableCache() {
         if (CipherSuite.DYNAMIC_AVAILABILITY) {
-            supportedSuites = null;
-            defaultSuites = null;
             CipherSuite.BulkCipher.clearAvailableCache();
             JsseJce.clearEcAvailable();
         }
     }
-
-    /**
-     * Return the list of all available CipherSuites with a priority of
-     * minPriority or above.
-     * Should be called with the Class lock held.
-     */
-    private static CipherSuiteList buildAvailableCache(int minPriority) {
-        // SortedSet automatically arranges ciphersuites in default
-        // preference order
-        Set<CipherSuite> cipherSuites = new TreeSet<>();
-        Collection<CipherSuite> allowedCipherSuites =
-                                    CipherSuite.allowedCipherSuites();
-        for (CipherSuite c : allowedCipherSuites) {
-            if ((c.allowed == false) || (c.priority < minPriority)) {
-                continue;
-            }
-
-            if (c.isAvailable()) {
-                cipherSuites.add(c);
-            }
-        }
-
-        return new CipherSuiteList(cipherSuites);
-    }
-
-    /**
-     * Return supported CipherSuites in preference order.
-     */
-    static synchronized CipherSuiteList getSupported() {
-        if (supportedSuites == null) {
-            supportedSuites =
-                buildAvailableCache(CipherSuite.SUPPORTED_SUITES_PRIORITY);
-        }
-        return supportedSuites;
-    }
-
-    /**
-     * Return default enabled CipherSuites in preference order.
-     */
-    static synchronized CipherSuiteList getDefault() {
-        if (defaultSuites == null) {
-            defaultSuites =
-                buildAvailableCache(CipherSuite.DEFAULT_SUITES_PRIORITY);
-        }
-        return defaultSuites;
-    }
-
 }

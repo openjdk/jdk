@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,14 +75,23 @@ public class BasicTests {
 
         // Test 3 - load an "bad" agent (agentmain throws an exception)
         System.out.println(" - Test: Load a bad agent");
+        System.out.println("INFO: This test will cause error messages "
+            + "to appear in the application log about SilverBullet.jar "
+            + "not being found and an agent failing to start.");
         try {
             vm.loadAgent(badagent);
+            throw new RuntimeException(
+                "AgentInitializationException not thrown as expected!");
         } catch (AgentInitializationException x) {
-            System.out.println(" - AgentInitializationException throws as expected!");
+            System.out.println(
+                " - AgentInitializationException thrown as expected!");
         }
 
         // Test 4 - detach from the VM and attempt a load (should throw IOE)
         System.out.println(" - Test: Detach from VM");
+        System.out.println("INFO: This test will cause error messages "
+            + "to appear in the application log about a BadAgent including "
+            + "a RuntimeException and an InvocationTargetException.");
         vm.detach();
         try {
             vm.loadAgent(agent);

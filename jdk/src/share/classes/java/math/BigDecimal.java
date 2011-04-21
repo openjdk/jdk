@@ -2905,12 +2905,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Converts this {@code BigDecimal} to a {@code BigInteger}.
-     * This conversion is analogous to a <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code long} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: any fractional part of this
+     * This conversion is analogous to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code long} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * any fractional part of this
      * {@code BigDecimal} will be discarded.  Note that this
      * conversion can lose information about the precision of the
      * {@code BigDecimal} value.
@@ -2942,13 +2941,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Converts this {@code BigDecimal} to a {@code long}.  This
-     * conversion is analogous to a <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code short} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: any fractional part of this
+     * Converts this {@code BigDecimal} to a {@code long}.
+     * This conversion is analogous to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code short} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * any fractional part of this
      * {@code BigDecimal} will be discarded, and if the resulting
      * "{@code BigInteger}" is too big to fit in a
      * {@code long}, only the low-order 64 bits are returned.
@@ -3011,13 +3009,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Converts this {@code BigDecimal} to an {@code int}.  This
-     * conversion is analogous to a <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code short} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: any fractional part of this
+     * Converts this {@code BigDecimal} to an {@code int}.
+     * This conversion is analogous to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code short} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * any fractional part of this
      * {@code BigDecimal} will be discarded, and if the resulting
      * "{@code BigInteger}" is too big to fit in an
      * {@code int}, only the low-order 32 bits are returned.
@@ -3095,12 +3092,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Converts this {@code BigDecimal} to a {@code float}.
-     * This conversion is similar to the <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code float} defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this {@code BigDecimal} has too great a
+     * This conversion is similar to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code float} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this {@code BigDecimal} has too great a
      * magnitude to represent as a {@code float}, it will be
      * converted to {@link Float#NEGATIVE_INFINITY} or {@link
      * Float#POSITIVE_INFINITY} as appropriate.  Note that even when
@@ -3119,12 +3115,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Converts this {@code BigDecimal} to a {@code double}.
-     * This conversion is similar to the <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code float} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this {@code BigDecimal} has too great a
+     * This conversion is similar to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code float} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this {@code BigDecimal} has too great a
      * magnitude represent as a {@code double}, it will be
      * converted to {@link Double#NEGATIVE_INFINITY} or {@link
      * Double#POSITIVE_INFINITY} as appropriate.  Note that even when

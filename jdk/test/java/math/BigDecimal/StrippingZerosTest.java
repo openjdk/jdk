@@ -25,6 +25,8 @@
  * @test
  * @bug 4108852
  * @summary A few tests of stripTrailingZeros
+ * @run main StrippingZerosTest
+ * @run main/othervm -XX:+AggressiveOpts StrippingZerosTest
  * @author Joseph D. Darcy
  */
 
@@ -53,6 +55,11 @@ public class StrippingZerosTest {
             {new BigDecimal("10000000e2"),      new BigDecimal("1e9")},
             {new BigDecimal("1000000e3"),       new BigDecimal("1e9")},
             {new BigDecimal("100000e4"),        new BigDecimal("1e9")},
+            // BD value which larger than Long.MaxValue
+            {new BigDecimal("1.0000000000000000000000000000"),    new BigDecimal("1")},
+            {new BigDecimal("-1.0000000000000000000000000000"),   new BigDecimal("-1")},
+            {new BigDecimal("1.00000000000000000000000000001"),   new BigDecimal("1.00000000000000000000000000001")},
+            {new BigDecimal("1000000000000000000000000000000e4"), new BigDecimal("1e34")},
         };
 
         for(int i = 0; i < testCases.length; i++) {

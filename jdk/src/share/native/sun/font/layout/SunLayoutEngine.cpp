@@ -186,7 +186,11 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
   jchar buffer[256];
   jchar* chars = buffer;
   if (len > 256) {
-    chars = (jchar*)malloc(len * sizeof(jchar));
+    size_t size = len * sizeof(jchar);
+    if (size / sizeof(jchar) != len) {
+      return;
+    }
+    chars = (jchar*)malloc(size);
     if (chars == 0) {
       return;
     }
