@@ -1632,7 +1632,6 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
     igvn.replace_node(n, n->in(1));
   }
   assert(predicate_count()==0, "should be clean!");
-  igvn.optimize();
 }
 
 //------------------------------Optimize---------------------------------------
@@ -1689,7 +1688,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1697,7 +1696,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1705,7 +1704,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
     }
@@ -1743,21 +1742,13 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
-    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
+      PhaseIdealLoop ideal_loop( igvn, true);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
-      // Perform loop predication optimization during first iteration after CCP.
-      // After that switch it off and cleanup unused loop predicates.
-      if (loop_predication) {
-        loop_predication = false;
-        cleanup_loop_predicates(igvn);
-        if (failing())  return;
-      }
     }
   }
 
