@@ -3128,7 +3128,6 @@ void TemplateTable::invokedynamic(int byte_no) {
     return;
   }
 
-  assert(byte_no == f1_oop, "use this argument");
   prepare_invoke(rax, rbx, byte_no);
 
   // rax: CallSite object (f1)
@@ -3139,14 +3138,14 @@ void TemplateTable::invokedynamic(int byte_no) {
   Register rax_callsite      = rax;
   Register rcx_method_handle = rcx;
 
-  if (ProfileInterpreter) {
-    // %%% should make a type profile for any invokedynamic that takes a ref argument
-    // profile this call
-    __ profile_call(r13);
-  }
+  // %%% should make a type profile for any invokedynamic that takes a ref argument
+  // profile this call
+  __ profile_call(r13);
 
-  __ load_heap_oop(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rcx)));
+  __ verify_oop(rax_callsite);
+  __ load_heap_oop(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rdx)));
   __ null_check(rcx_method_handle);
+  __ verify_oop(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
   __ jump_to_method_handle_entry(rcx_method_handle, rdx);
 }
