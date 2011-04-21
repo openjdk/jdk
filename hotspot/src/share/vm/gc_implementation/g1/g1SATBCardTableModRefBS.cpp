@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,9 @@ G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap,
 
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
-  assert(pre_val->is_oop_or_null(true), "Error");
+  // Nulls should have been already filtered.
+  assert(pre_val->is_oop(true), "Error");
+
   if (!JavaThread::satb_mark_queue_set().is_active()) return;
   Thread* thr = Thread::current();
   if (thr->is_Java_thread()) {
@@ -56,20 +58,6 @@ void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
   } else {
     MutexLocker x(Shared_SATB_Q_lock);
     JavaThread::satb_mark_queue_set().shared_satb_queue()->enqueue(pre_val);
-  }
-}
-
-// When we know the current java thread:
-template <class T> void
-G1SATBCardTableModRefBS::write_ref_field_pre_static(T* field,
-                                                    oop new_val,
-                                                    JavaThread* jt) {
-  if (!JavaThread::satb_mark_queue_set().is_active()) return;
-  T heap_oop = oopDesc::load_heap_oop(field);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop pre_val = oopDesc::decode_heap_oop_not_null(heap_oop);
-    assert(pre_val->is_oop(true /* ignore mark word */), "Error");
-    jt->satb_mark_queue().enqueue(pre_val);
   }
 }
 
