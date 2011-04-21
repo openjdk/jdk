@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.jgss.krb5;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlContext;
@@ -38,7 +39,13 @@ import sun.security.krb5.Credentials;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import sun.misc.SharedSecrets;
+import sun.security.krb5.PrincipalName;
 /**
  * Utilities for obtaining and converting Kerberos tickets.
  *
@@ -75,7 +82,7 @@ public class Krb5Util {
 
         // 1. Try to find service ticket in acc subject
         Subject accSubj = Subject.getSubject(acc);
-        KerberosTicket ticket = (KerberosTicket) SubjectComber.find(accSubj,
+        KerberosTicket ticket = SubjectComber.find(accSubj,
             serverPrincipal, clientPrincipal, KerberosTicket.class);
 
         if (ticket != null) {
@@ -87,7 +94,7 @@ public class Krb5Util {
             // 2. Try to get ticket from login
             try {
                 loginSubj = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-                ticket = (KerberosTicket) SubjectComber.find(loginSubj,
+                ticket = SubjectComber.find(loginSubj,
                     serverPrincipal, clientPrincipal, KerberosTicket.class);
                 if (ticket != null) {
                     return ticket; // found it
@@ -102,13 +109,13 @@ public class Krb5Util {
         // Try to get TGT to acquire service ticket
 
         // 3. Try to get TGT from acc subject
-        KerberosTicket tgt = (KerberosTicket) SubjectComber.find(accSubj,
+        KerberosTicket tgt = SubjectComber.find(accSubj,
             tgsPrincipal, clientPrincipal, KerberosTicket.class);
 
         boolean fromAcc;
         if (tgt == null && loginSubj != null) {
             // 4. Try to get TGT from login subject
-            tgt = (KerberosTicket) SubjectComber.find(loginSubj,
+            tgt = SubjectComber.find(loginSubj,
                 tgsPrincipal, clientPrincipal, KerberosTicket.class);
             fromAcc = false;
         } else {
@@ -145,14 +152,14 @@ public class Krb5Util {
 
         // Try to get ticket from acc's Subject
         Subject accSubj = Subject.getSubject(acc);
-        KerberosTicket ticket = (KerberosTicket)
+        KerberosTicket ticket =
             SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
                   KerberosTicket.class);
 
         // Try to get ticket from Subject obtained from GSSUtil
         if (ticket == null && !GSSUtil.useSubjectCredsOnly(caller)) {
             Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-            ticket = (KerberosTicket) SubjectComber.find(subject,
+            ticket = SubjectComber.find(subject,
                 serverPrincipal, clientPrincipal, KerberosTicket.class);
         }
         return ticket;
@@ -182,37 +189,152 @@ public class Krb5Util {
         return subject;
     }
 
+    // A special KerberosKey, used as keys read from a KeyTab object.
+    // Each time new keys are read from KeyTab objects in the private
+    // credentials set, old ones are removed and new ones added.
+    public static class KeysFromKeyTab extends KerberosKey {
+        public KeysFromKeyTab(KerberosKey key) {
+            super(key.getPrincipal(), key.getEncoded(),
+                    key.getKeyType(), key.getVersionNumber());
+        }
+    }
+
     /**
-     * Retrieves the keys for the specified server principal from
-     * the Subject in the specified AccessControlContext.
-     * If the ticket can not be found in the Subject, and if
-     * useSubjectCredsOnly is false, then obtain keys from
-     * a LoginContext.
+     * Credentials of a service, the private secret to authenticate its
+     * identity, which can be:
+     *   1. Some KerberosKeys (generated from password)
+     *   2. A KeyTab (for a typical service)
+     *   3. A TGT (for a user2user service. Not supported yet)
      *
-     * NOTE: This method is used by JSSE Kerberos Cipher Suites
+     * Note that some creds can coexist. For example, a user2user service
+     * can use its keytab (or keys) if the client can successfully obtain a
+     * normal service ticket, otherwise, it can uses the TGT (actually, the
+     * session key of the TGT) if the client can only acquire a service ticket
+     * of ENC-TKT-IN-SKEY style.
      */
-    public static KerberosKey[] getKeys(GSSCaller caller,
+    public static class ServiceCreds {
+        private KerberosPrincipal kp;
+        private List<KeyTab> ktabs;
+        private List<KerberosKey> kk;
+        private Subject subj;
+        //private KerberosTicket tgt;   // user2user, not supported yet
+
+        private static ServiceCreds getInstance(
+                Subject subj, String serverPrincipal) {
+
+            ServiceCreds sc = new ServiceCreds();
+            sc.subj = subj;
+
+            for (KerberosPrincipal p: subj.getPrincipals(KerberosPrincipal.class)) {
+                if (serverPrincipal == null ||
+                        p.getName().equals(serverPrincipal)) {
+                    sc.kp = p;
+                    serverPrincipal = p.getName();
+                    break;
+                }
+            }
+            if (sc.kp == null) {
+                // Compatibility with old behavior: even when there is no
+                // KerberosPrincipal, we can find one from KerberosKeys
+                List<KerberosKey> keys = SubjectComber.findMany(
+                        subj, null, null, KerberosKey.class);
+                if (!keys.isEmpty()) {
+                    sc.kp = keys.get(0).getPrincipal();
+                    serverPrincipal = sc.kp.getName();
+                    if (DEBUG) {
+                        System.out.println(">>> ServiceCreds: no kp?"
+                                + " find one from kk: " + serverPrincipal);
+                    }
+                } else {
+                    return null;
+                }
+            }
+            sc.ktabs = SubjectComber.findMany(
+                        subj, null, null, KeyTab.class);
+            sc.kk = SubjectComber.findMany(
+                        subj, serverPrincipal, null, KerberosKey.class);
+            if (sc.ktabs.isEmpty() && sc.kk.isEmpty()) {
+                return null;
+            }
+            return sc;
+        }
+
+        public String getName() {
+            return kp.getName();
+        }
+
+        public KerberosKey[] getKKeys() {
+            if (ktabs.isEmpty()) {
+                return kk.toArray(new KerberosKey[kk.size()]);
+            } else {
+                List<KerberosKey> keys = new ArrayList<>();
+                for (KeyTab ktab: ktabs) {
+                    for (KerberosKey k: ktab.getKeys(kp)) {
+                        keys.add(k);
+                    }
+                }
+                // Compatibility: also add keys to privCredSet. Remove old
+                // ones first, only remove those from keytab.
+                if (!subj.isReadOnly()) {
+                    Set<Object> pcs = subj.getPrivateCredentials();
+                    synchronized (pcs) {
+                        Iterator<Object> iterator = pcs.iterator();
+                        while (iterator.hasNext()) {
+                            Object obj = iterator.next();
+                            if (obj instanceof KeysFromKeyTab) {
+                                KerberosKey key = (KerberosKey)obj;
+                                if (Objects.equals(key.getPrincipal(), kp)) {
+                                    iterator.remove();
+                                }
+                            }
+                        }
+                    }
+                    for (KerberosKey key: keys) {
+                        subj.getPrivateCredentials().add(new KeysFromKeyTab(key));
+                    }
+                }
+                return keys.toArray(new KerberosKey[keys.size()]);
+            }
+        }
+
+        public EncryptionKey[] getEKeys() {
+            KerberosKey[] kkeys = getKKeys();
+            EncryptionKey[] ekeys = new EncryptionKey[kkeys.length];
+            for (int i=0; i<ekeys.length; i++) {
+                ekeys[i] =  new EncryptionKey(
+                            kkeys[i].getEncoded(), kkeys[i].getKeyType(),
+                            new Integer(kkeys[i].getVersionNumber()));
+            }
+            return ekeys;
+        }
+
+        public void destroy() {
+            kp = null;
+            ktabs = null;
+            kk = null;
+        }
+    }
+    /**
+     * Retrieves the ServiceCreds for the specified server principal from
+     * the Subject in the specified AccessControlContext. If not found, and if
+     * useSubjectCredsOnly is false, then obtain from a LoginContext.
+     *
+     * NOTE: This method is also used by JSSE Kerberos Cipher Suites
+     */
+    public static ServiceCreds getServiceCreds(GSSCaller caller,
         String serverPrincipal, AccessControlContext acc)
                 throws LoginException {
 
         Subject accSubj = Subject.getSubject(acc);
-        List<KerberosKey> kkeys = (List<KerberosKey>)SubjectComber.findMany(
-                accSubj, serverPrincipal, null, KerberosKey.class);
-
-        if (kkeys == null && !GSSUtil.useSubjectCredsOnly(caller)) {
+        ServiceCreds sc = null;
+        if (accSubj != null) {
+            sc = ServiceCreds.getInstance(accSubj, serverPrincipal);
+        }
+        if (sc == null && !GSSUtil.useSubjectCredsOnly(caller)) {
             Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-            kkeys = (List<KerberosKey>) SubjectComber.findMany(subject,
-                serverPrincipal, null, KerberosKey.class);
+            sc = ServiceCreds.getInstance(subject, serverPrincipal);
         }
-
-        int len;
-        if (kkeys != null && (len = kkeys.size()) > 0) {
-            KerberosKey[] keys = new KerberosKey[len];
-            kkeys.toArray(keys);
-            return keys;
-        } else {
-            return null;
-        }
+        return sc;
     }
 
     public static KerberosTicket credsToTicket(Credentials serviceCreds) {
@@ -247,4 +369,17 @@ public class Krb5Util {
             kerbTicket.getRenewTill(),
             kerbTicket.getClientAddresses());
     }
+
+    /**
+     * A helper method to get EncryptionKeys from a javax..KeyTab
+     * @param ktab the javax..KeyTab class
+     * @param cname the PrincipalName
+     * @return the EKeys, never null, might be empty
+     */
+    public static EncryptionKey[] keysFromJavaxKeyTab(
+            KeyTab ktab, PrincipalName cname) {
+        return SharedSecrets.getJavaxSecurityAuthKerberosAccess().
+                keyTabGetEncryptionKeys(ktab, cname);
+    }
+
 }
