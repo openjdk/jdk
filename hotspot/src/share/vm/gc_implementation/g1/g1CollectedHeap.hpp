@@ -28,7 +28,9 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/parNew/parGCAllocBuffer.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
@@ -57,6 +59,7 @@ class HeapRegionRemSetIterator;
 class ConcurrentMark;
 class ConcurrentMarkThread;
 class ConcurrentG1Refine;
+class GenerationCounters;
 
 typedef OverflowTaskQueue<StarTask>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
@@ -235,6 +238,9 @@ private:
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
   HeapRegion* _gc_alloc_region_list;
+
+  // Helper for monitoring and management support.
+  G1MonitoringSupport* _g1mm;
 
   // Determines PLAB size for a particular allocation purpose.
   static size_t desired_plab_sz(GCAllocPurpose purpose);
@@ -550,6 +556,9 @@ protected:
   HeapWord* expand_and_allocate(size_t word_size);
 
 public:
+
+  G1MonitoringSupport* g1mm() { return _g1mm; }
+
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.

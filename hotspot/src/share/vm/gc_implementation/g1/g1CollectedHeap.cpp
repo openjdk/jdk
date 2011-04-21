@@ -1161,6 +1161,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
                 PrintGC, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */);
 
     double start = os::elapsedTime();
@@ -1339,6 +1340,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
 
   return true;
 }
@@ -1970,6 +1972,10 @@ jint G1CollectedHeap::initialize() {
   G1AllocRegion::setup(this, dummy_region);
 
   init_mutator_alloc_region();
+
+  // Do create of the monitoring and management support so that
+  // values in the heap have been properly initialized.
+  _g1mm = new G1MonitoringSupport(this, &_g1_storage);
 
   return JNI_OK;
 }
@@ -3186,6 +3192,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */);
 
     // If the secondary_free_list is not empty, append it to the
@@ -3425,6 +3432,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
+
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
       (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
@@ -5338,6 +5347,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
+      g1mm()->update_eden_counters();
       return new_alloc_region;
     }
   }
