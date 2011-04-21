@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 
 #define CERTIFICATE_PARSING_EXCEPTION \
                             "java/security/cert/CertificateParsingException"
+#define INVALID_KEY_EXCEPTION \
+                            "java/security/InvalidKeyException"
 #define KEY_EXCEPTION       "java/security/KeyException"
 #define KEYSTORE_EXCEPTION  "java/security/KeyStoreException"
 #define PROVIDER_EXCEPTION  "java/security/ProviderException"
@@ -1398,7 +1400,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getPublicKeyB
 
     jbyteArray blob = NULL;
     DWORD dwBlobLen;
-    BYTE* pbKeyBlob;
+    BYTE* pbKeyBlob = NULL;
 
     __try
     {
@@ -1656,7 +1658,7 @@ jbyteArray generateKeyBlob(
         // Sanity check
         jsize jPublicExponentLength = env->GetArrayLength(jPublicExponent);
         if (jPublicExponentLength > sizeof(pRsaPubKey->pubexp)) {
-            ThrowException(env, KEY_EXCEPTION, NTE_BAD_TYPE);
+            ThrowException(env, INVALID_KEY_EXCEPTION, NTE_BAD_TYPE);
             __leave;
         }
         // The length argument must be the smaller of jPublicExponentLength
