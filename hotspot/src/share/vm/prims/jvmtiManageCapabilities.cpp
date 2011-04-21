@@ -319,8 +319,11 @@ void JvmtiManageCapabilities::update() {
   bool enter_all_methods =
     interp_events ||
     avail.can_generate_breakpoint_events;
-  UseFastEmptyMethods = !enter_all_methods;
-  UseFastAccessorMethods = !enter_all_methods;
+  if (enter_all_methods) {
+    // Disable these when tracking the bytecodes
+    UseFastEmptyMethods = false;
+    UseFastAccessorMethods = false;
+  }
 
   if (avail.can_generate_breakpoint_events) {
     RewriteFrequentPairs = false;

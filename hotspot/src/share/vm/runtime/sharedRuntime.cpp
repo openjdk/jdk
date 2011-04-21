@@ -1700,9 +1700,11 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
     message = generate_class_cast_message(objName, targetKlass->external_name());
   } else {
     // %%% need to get the MethodType string, without messing around too much
+    const char* desc = NULL;
     // Get a signature from the invoke instruction
     const char* mhName = "method handle";
     const char* targetType = "the required signature";
+    int targetArity = -1, mhArity = -1;
     vframeStream vfst(thread, true);
     if (!vfst.at_end()) {
       Bytecode_invoke call(vfst.method(), vfst.bci());
@@ -1716,20 +1718,35 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
           && target->is_method_handle_invoke()
           && required == target->method_handle_type()) {
         targetType = target->signature()->as_C_string();
+        targetArity = ArgumentCount(target->signature()).size();
       }
     }
-    klassOop kignore; int fignore;
-    methodOop actual_method = MethodHandles::decode_method(actual,
-                                                          kignore, fignore);
+    klassOop kignore; int dmf_flags = 0;
+    methodOop actual_method = MethodHandles::decode_method(actual, kignore, dmf_flags);
+    if ((dmf_flags & ~(MethodHandles::_dmf_has_receiver |
+                       MethodHandles::_dmf_does_dispatch |
+                       MethodHandles::_dmf_from_interface)) != 0)
+      actual_method = NULL;  // MH does extra binds, drops, etc.
+    bool has_receiver = ((dmf_flags & MethodHandles::_dmf_has_receiver) != 0);
     if (actual_method != NULL) {
-      if (methodOopDesc::is_method_handle_invoke_name(actual_method->name()))
-        mhName = "$";
+      mhName = actual_method->signature()->as_C_string();
+      mhArity = ArgumentCount(actual_method->signature()).size();
+      if (!actual_method->is_static())  mhArity += 1;
+    } else if (java_lang_invoke_MethodHandle::is_instance(actual)) {
+      oopDesc* mhType = java_lang_invoke_MethodHandle::type(actual);
+      mhArity = java_lang_invoke_MethodType::ptype_count(mhType);
+      stringStream st;
+      java_lang_invoke_MethodType::print_signature(mhType, &st);
+      mhName = st.as_string();
+    }
+    if (targetArity != -1 && targetArity != mhArity) {
+      if (has_receiver && targetArity == mhArity-1)
+        desc = " cannot be called without a receiver argument as ";
       else
-        mhName = actual_method->signature()->as_C_string();
-      if (mhName[0] == '$')
-        mhName = actual_method->signature()->as_C_string();
+        desc = " cannot be called with a different arity as ";
     }
     message = generate_class_cast_message(mhName, targetType,
+                                          desc != NULL ? desc :
                                           " cannot be called as ");
   }
   if (TraceMethodHandles) {
