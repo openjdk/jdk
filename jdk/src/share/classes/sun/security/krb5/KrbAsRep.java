@@ -37,6 +37,8 @@ import sun.security.krb5.internal.crypto.EType;
 import sun.security.util.*;
 import java.io.IOException;
 import java.util.Objects;
+import javax.security.auth.kerberos.KeyTab;
+import sun.security.jgss.krb5.Krb5Util;
 
 /**
  * This class encapsulates a AS-REP message that the KDC sends to the
@@ -90,29 +92,32 @@ class KrbAsRep extends KrbKdcRep {
     }
 
     /**
-     * Called by KrbAsReqBuilder to resolve a AS-REP message using keys.
-     * @param keys user provided keys, not null
+     * Called by KrbAsReqBuilder to resolve a AS-REP message using a keytab.
+     * @param ktab the keytab, not null
      * @param asReq the original AS-REQ sent, used to validate AS-REP
+     * @param cname the user principal name, used to locate keys in ktab
      */
-    void decryptUsingKeys(EncryptionKey[] keys, KrbAsReq asReq)
+    void decryptUsingKeyTab(KeyTab ktab, KrbAsReq asReq, PrincipalName cname)
             throws KrbException, Asn1Exception, IOException {
         EncryptionKey dkey = null;
         int encPartKeyType = rep.encPart.getEType();
         Integer encPartKvno = rep.encPart.kvno;
-        try {
-            dkey = EncryptionKey.findKey(encPartKeyType, encPartKvno, keys);
-        } catch (KrbException ke) {
-            if (ke.returnCode() == Krb5.KRB_AP_ERR_BADKEYVER) {
-                // Fallback to no kvno. In some cases, keytab is generated
-                // not by sysadmin but Java's ktab command
-                dkey = EncryptionKey.findKey(encPartKeyType, keys);
+            try {
+                dkey = EncryptionKey.findKey(encPartKeyType, encPartKvno,
+                        Krb5Util.keysFromJavaxKeyTab(ktab, cname));
+            } catch (KrbException ke) {
+                if (ke.returnCode() == Krb5.KRB_AP_ERR_BADKEYVER) {
+                    // Fallback to no kvno. In some cases, keytab is generated
+                    // not by sysadmin but Java's ktab command
+                    dkey = EncryptionKey.findKey(encPartKeyType,
+                            Krb5Util.keysFromJavaxKeyTab(ktab, cname));
+                }
             }
-        }
-        if (dkey == null) {
-            throw new KrbException(Krb5.API_INVALID_ARG,
-                "Cannot find key for type/kvno to decrypt AS REP - " +
-                EType.toString(encPartKeyType) + "/" + encPartKvno);
-        }
+            if (dkey == null) {
+                throw new KrbException(Krb5.API_INVALID_ARG,
+                    "Cannot find key for type/kvno to decrypt AS REP - " +
+                    EType.toString(encPartKeyType) + "/" + encPartKvno);
+            }
         decrypt(dkey, asReq);
     }
 

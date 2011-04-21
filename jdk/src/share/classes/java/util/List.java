@@ -134,9 +134,11 @@ public interface List<E> extends Collection<E> {
      * @param o element whose presence in this list is to be tested
      * @return <tt>true</tt> if this list contains the specified element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this list (optional)
+     *         is incompatible with this list
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements (optional)
+     *         list does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     boolean contains(Object o);
 
@@ -245,9 +247,11 @@ public interface List<E> extends Collection<E> {
      * @param o element to be removed from this list, if present
      * @return <tt>true</tt> if this list contained the specified element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this list (optional)
+     *         is incompatible with this list
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements (optional)
+     *         list does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this list
      */
@@ -265,10 +269,13 @@ public interface List<E> extends Collection<E> {
      *         specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
-     *         list (optional)
+     *         list
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified collection contains one
      *         or more null elements and this list does not permit null
-     *         elements (optional), or if the specified collection is null
+     *         elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>),
+     *         or if the specified collection is null
      * @see #contains(Object)
      */
     boolean containsAll(Collection<?> c);
@@ -334,9 +341,11 @@ public interface List<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>removeAll</tt> operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of this list
-     *         is incompatible with the specified collection (optional)
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this list contains a null element and the
-     *         specified collection does not permit null elements (optional),
+     *         specified collection does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
@@ -354,9 +363,11 @@ public interface List<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of this list
-     *         is incompatible with the specified collection (optional)
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this list contains a null element and the
-     *         specified collection does not permit null elements (optional),
+     *         specified collection does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
@@ -493,9 +504,11 @@ public interface List<E> extends Collection<E> {
      * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this list (optional)
+     *         is incompatible with this list
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements (optional)
+     *         list does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     int indexOf(Object o);
 
@@ -510,9 +523,11 @@ public interface List<E> extends Collection<E> {
      * @return the index of the last occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this list (optional)
+     *         is incompatible with this list
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements (optional)
+     *         list does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     int lastIndexOf(Object o);
 
