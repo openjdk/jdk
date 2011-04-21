@@ -379,11 +379,13 @@ abstract class RSASignature extends java.security.SignatureSpi
     /**
      * Generates a public-key BLOB from a key's components.
      */
-    private native byte[] generatePublicKeyBlob(
+    // used by RSACipher
+    static native byte[] generatePublicKeyBlob(
         int keyBitLength, byte[] modulus, byte[] publicExponent);
 
     /**
      * Imports a public-key BLOB.
      */
-    private native RSAPublicKey importPublicKey(byte[] keyBlob, int keySize);
+    // used by RSACipher
+    static native RSAPublicKey importPublicKey(byte[] keyBlob, int keySize);
 }
