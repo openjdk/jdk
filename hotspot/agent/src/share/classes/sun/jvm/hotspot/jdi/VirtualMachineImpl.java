@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -798,12 +798,11 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
     }
 
     public String description() {
-        String[] versionParts = {"" + vmmgr.majorInterfaceVersion(),
-                                 "" + vmmgr.minorInterfaceVersion(),
-                                 name()};
         return java.text.MessageFormat.format(java.util.ResourceBundle.
                                               getBundle("com.sun.tools.jdi.resources.jdi").getString("version_format"),
-                                              versionParts);
+                                              "" + vmmgr.majorInterfaceVersion(),
+                                              "" + vmmgr.minorInterfaceVersion(),
+                                              name());
     }
 
     public String version() {

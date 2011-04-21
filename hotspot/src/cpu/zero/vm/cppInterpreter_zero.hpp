@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2010 Red Hat, Inc.
+ * Copyright 2007, 2008, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,20 @@
   static int native_entry(methodOop method, intptr_t UNUSED, TRAPS);
   static int accessor_entry(methodOop method, intptr_t UNUSED, TRAPS);
   static int empty_entry(methodOop method, intptr_t UNUSED, TRAPS);
+  static int method_handle_entry(methodOop method, intptr_t UNUSED, TRAPS);
 
  public:
   // Main loop of normal_entry
   static void main_loop(int recurse, TRAPS);
+
+ private:
+  // Helpers for method_handle_entry
+  static void process_method_handle(oop method_handle, TRAPS);
+  static void insert_vmslots(int insert_before, int num_slots, TRAPS);
+  static void remove_vmslots(int first_slot, int num_slots, TRAPS);
+  static BasicType result_type_of_handle(oop method_handle);
+  static intptr_t* calculate_unwind_sp(ZeroStack* stack, oop method_handle);
+  static void throw_exception(JavaThread* thread, Symbol* name,char *msg=NULL);
 
  private:
   // Fast result type determination
