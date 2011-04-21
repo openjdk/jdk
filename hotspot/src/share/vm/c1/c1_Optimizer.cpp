@@ -644,7 +644,7 @@ void NullCheckVisitor::do_CheckCast      (CheckCast*       x) {}
 void NullCheckVisitor::do_InstanceOf     (InstanceOf*      x) {}
 void NullCheckVisitor::do_MonitorEnter   (MonitorEnter*    x) { nce()->handle_AccessMonitor(x); }
 void NullCheckVisitor::do_MonitorExit    (MonitorExit*     x) { nce()->handle_AccessMonitor(x); }
-void NullCheckVisitor::do_Intrinsic      (Intrinsic*       x) { nce()->clear_last_explicit_null_check(); }
+void NullCheckVisitor::do_Intrinsic      (Intrinsic*       x) { nce()->handle_Intrinsic(x);     }
 void NullCheckVisitor::do_BlockBegin     (BlockBegin*      x) {}
 void NullCheckVisitor::do_Goto           (Goto*            x) {}
 void NullCheckVisitor::do_If             (If*              x) {}
@@ -1023,6 +1023,12 @@ void NullCheckEliminator::handle_AccessMonitor(AccessMonitor* x) {
 
 void NullCheckEliminator::handle_Intrinsic(Intrinsic* x) {
   if (!x->has_receiver()) {
+    if (x->id() == vmIntrinsics::_arraycopy) {
+      for (int i = 0; i < x->number_of_arguments(); i++) {
+        x->set_arg_needs_null_check(i, !set_contains(x->argument_at(i)));
+      }
+    }
+
     // Be conservative
     clear_last_explicit_null_check();
     return;

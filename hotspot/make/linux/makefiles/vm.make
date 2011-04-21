@@ -142,13 +142,15 @@ COMPILER2_PATHS += $(HS_COMMON_SRC)/share/vm/opto
 COMPILER2_PATHS += $(HS_COMMON_SRC)/share/vm/libadt
 COMPILER2_PATHS += $(GENERATED)/adfiles
 
+SHARK_PATHS := $(GAMMADIR)/src/share/vm/shark
+
 # Include dirs per type.
 Src_Dirs/CORE      := $(CORE_PATHS)
 Src_Dirs/COMPILER1 := $(CORE_PATHS) $(COMPILER1_PATHS)
 Src_Dirs/COMPILER2 := $(CORE_PATHS) $(COMPILER2_PATHS)
 Src_Dirs/TIERED    := $(CORE_PATHS) $(COMPILER1_PATHS) $(COMPILER2_PATHS)
 Src_Dirs/ZERO      := $(CORE_PATHS)
-Src_Dirs/SHARK     := $(CORE_PATHS)
+Src_Dirs/SHARK     := $(CORE_PATHS) $(SHARK_PATHS)
 Src_Dirs := $(Src_Dirs/$(TYPE))
 
 COMPILER2_SPECIFIC_FILES := opto libadt bcEscapeAnalyzer.cpp chaitin\* c2_\* runtime_\*
