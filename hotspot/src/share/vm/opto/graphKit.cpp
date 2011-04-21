@@ -2950,8 +2950,7 @@ static void hook_memory_on_init(GraphKit& kit, int alias_idx,
 
 //---------------------------set_output_for_allocation-------------------------
 Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
-                                          const TypeOopPtr* oop_type,
-                                          bool raw_mem_only) {
+                                          const TypeOopPtr* oop_type) {
   int rawidx = Compile::AliasIdxRaw;
   alloc->set_req( TypeFunc::FramePtr, frameptr() );
   add_safepoint_edges(alloc);
@@ -2975,7 +2974,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
                                                  rawoop)->as_Initialize();
   assert(alloc->initialization() == init,  "2-way macro link must work");
   assert(init ->allocation()     == alloc, "2-way macro link must work");
-  if (ReduceFieldZeroing && !raw_mem_only) {
+  {
     // Extract memory strands which may participate in the new object's
     // initialization, and source them from the new InitializeNode.
     // This will allow us to observe initializations when they occur,
@@ -3036,11 +3035,9 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
 // the type to a constant.
 // The optional arguments are for specialized use by intrinsics:
 //  - If 'extra_slow_test' if not null is an extra condition for the slow-path.
-//  - If 'raw_mem_only', do not cast the result to an oop.
 //  - If 'return_size_val', report the the total object size to the caller.
 Node* GraphKit::new_instance(Node* klass_node,
                              Node* extra_slow_test,
-                             bool raw_mem_only, // affect only raw memory
                              Node* *return_size_val) {
   // Compute size in doublewords
   // The size is always an integral number of doublewords, represented
@@ -3111,7 +3108,7 @@ Node* GraphKit::new_instance(Node* klass_node,
                      size, klass_node,
                      initial_slow_test);
 
-  return set_output_for_allocation(alloc, oop_type, raw_mem_only);
+  return set_output_for_allocation(alloc, oop_type);
 }
 
 //-------------------------------new_array-------------------------------------
@@ -3121,7 +3118,6 @@ Node* GraphKit::new_instance(Node* klass_node,
 Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
                           Node* length,         // number of array elements
                           int   nargs,          // number of arguments to push back for uncommon trap
-                          bool raw_mem_only,    // affect only raw memory
                           Node* *return_size_val) {
   jint  layout_con = Klass::_lh_neutral_value;
   Node* layout_val = get_layout_helper(klass_node, layout_con);
@@ -3266,7 +3262,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
   }
 
-  Node* javaoop = set_output_for_allocation(alloc, ary_type, raw_mem_only);
+  Node* javaoop = set_output_for_allocation(alloc, ary_type);
 
   // Cast length on remaining path to be as narrow as possible
   if (map()->find_edge(length) >= 0) {
