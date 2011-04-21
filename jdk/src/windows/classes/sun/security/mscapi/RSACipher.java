@@ -219,7 +219,12 @@ public final class RSACipher extends CipherSpi {
                 byte[] keyBlob = RSASignature.generatePublicKeyBlob(
                     keyBitLength, modulusBytes, exponentBytes);
 
-                key = RSASignature.importPublicKey(keyBlob, keyBitLength);
+                try {
+                    key = RSASignature.importPublicKey(keyBlob, keyBitLength);
+
+                } catch (KeyStoreException e) {
+                    throw new InvalidKeyException(e);
+                }
 
             } else {
                 throw new InvalidKeyException("Unsupported key type: " + key);
