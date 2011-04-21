@@ -489,6 +489,9 @@ class Compile : public Phase {
   // remove the opaque nodes that protect the predicates so that the unused checks and
   // uncommon traps will be eliminated from the graph.
   void cleanup_loop_predicates(PhaseIterGVN &igvn);
+  bool is_predicate_opaq(Node * n) {
+    return _predicate_opaqs->contains(n);
+  }
 
   // Compilation environment.
   Arena*            comp_arena()                { return &_comp_arena; }

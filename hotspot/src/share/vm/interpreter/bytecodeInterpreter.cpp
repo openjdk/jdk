@@ -554,7 +554,7 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 /* 0xB0 */ &&opc_areturn,     &&opc_return,         &&opc_getstatic,    &&opc_putstatic,
 /* 0xB4 */ &&opc_getfield,    &&opc_putfield,       &&opc_invokevirtual,&&opc_invokespecial,
-/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,&&opc_default,      &&opc_new,
+/* 0xB8 */ &&opc_invokestatic,&&opc_invokeinterface,&&opc_invokedynamic,&&opc_new,
 /* 0xBC */ &&opc_newarray,    &&opc_anewarray,      &&opc_arraylength,  &&opc_athrow,
 
 /* 0xC0 */ &&opc_checkcast,   &&opc_instanceof,     &&opc_monitorenter, &&opc_monitorexit,
@@ -568,7 +568,7 @@ BytecodeInterpreter::run(interpreterState istate) {
 /* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
 /* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_return_register_finalizer,        &&opc_default,      &&opc_default,
+/* 0xE4 */ &&opc_default,     &&opc_fast_aldc,      &&opc_fast_aldc_w,  &&opc_return_register_finalizer,
 /* 0xE8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
@@ -1718,8 +1718,7 @@ run:
         }
         // Need to throw illegal monitor state exception
         CALL_VM(InterpreterRuntime::throw_illegal_monitor_state_exception(THREAD), handle_exception);
-        // Should never reach here...
-        assert(false, "Should have thrown illegal monitor exception");
+        ShouldNotReachHere();
       }
 
       /* All of the non-quick opcodes. */
@@ -2146,6 +2145,74 @@ run:
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(3, 2);
         }
+
+      CASE(_fast_aldc_w):
+      CASE(_fast_aldc): {
+        if (!EnableInvokeDynamic) {
+          // We should not encounter this bytecode if !EnableInvokeDynamic.
+          // The verifier will stop it.  However, if we get past the verifier,
+          // this will stop the thread in a reasonable way, without crashing the JVM.
+          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeError(THREAD),
+                  handle_exception);
+          ShouldNotReachHere();
+        }
+
+        u2 index;
+        int incr;
+        if (opcode == Bytecodes::_fast_aldc) {
+          index = pc[1];
+          incr = 2;
+        } else {
+          index = Bytes::get_native_u2(pc+1);
+          incr = 3;
+        }
+
+        // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+        // This kind of CP cache entry does not need to match the flags byte, because
+        // there is a 1-1 relation between bytecode type and CP entry type.
+        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        if (cache->is_f1_null()) {
+          CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
+                  handle_exception);
+        }
+
+        VERIFY_OOP(cache->f1());
+        SET_STACK_OBJECT(cache->f1(), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(incr, 1);
+      }
+
+      CASE(_invokedynamic): {
+        if (!EnableInvokeDynamic) {
+          // We should not encounter this bytecode if !EnableInvokeDynamic.
+          // The verifier will stop it.  However, if we get past the verifier,
+          // this will stop the thread in a reasonable way, without crashing the JVM.
+          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeError(THREAD),
+                  handle_exception);
+          ShouldNotReachHere();
+        }
+
+        int index = Bytes::get_native_u4(pc+1);
+
+        // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+        // This kind of CP cache entry does not need to match the flags byte, because
+        // there is a 1-1 relation between bytecode type and CP entry type.
+        assert(constantPoolCacheOopDesc::is_secondary_index(index), "incorrect format");
+        ConstantPoolCacheEntry* cache = cp->secondary_entry_at(index);
+        if (cache->is_f1_null()) {
+          CALL_VM(InterpreterRuntime::resolve_invokedynamic(THREAD),
+                  handle_exception);
+        }
+
+        VERIFY_OOP(cache->f1());
+        oop method_handle = java_lang_invoke_CallSite::target(cache->f1());
+        CHECK_NULL(method_handle);
+
+        istate->set_msg(call_method_handle);
+        istate->set_callee((methodOop) method_handle);
+        istate->set_bcp_advance(5);
+
+        UPDATE_PC_AND_RETURN(0); // I'll be back...
+      }
 
       CASE(_invokeinterface): {
         u2 index = Bytes::get_native_u2(pc+1);
