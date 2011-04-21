@@ -316,7 +316,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     Register tmp2 = rbx;
     __ push(tmp);
     __ push(tmp2);
-    __ load_heap_oop(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
+    // Load without verification to keep code size small. We need it because
+    // begin_initialized_entry_offset has to fit in a byte. Also, we know it's not null.
+    __ load_heap_oop_not_null(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
     __ get_thread(tmp);
     __ cmpptr(tmp, Address(tmp2, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc)));
     __ pop(tmp2);

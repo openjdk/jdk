@@ -146,7 +146,6 @@ class SymbolPropertyTable;
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
   template(MethodHandle_klass,           java_lang_invoke_MethodHandle,     Pre_JSR292) \
   template(MemberName_klass,             java_lang_invoke_MemberName,       Pre_JSR292) \
-  template(MethodHandleImpl_klass,       sun_dyn_MethodHandleImpl,          Opt) /* AllowTransitionalJSR292 ONLY */ \
   template(MethodHandleNatives_klass,    java_lang_invoke_MethodHandleNatives, Pre_JSR292) \
   template(AdapterMethodHandle_klass,    java_lang_invoke_AdapterMethodHandle, Pre_JSR292) \
   template(BoundMethodHandle_klass,      java_lang_invoke_BoundMethodHandle, Pre_JSR292) \
@@ -154,7 +153,6 @@ class SymbolPropertyTable;
   template(MethodType_klass,             java_lang_invoke_MethodType,       Pre_JSR292) \
   template(MethodTypeForm_klass,         java_lang_invoke_MethodTypeForm,   Pre_JSR292) \
   template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
-  template(Linkage_klass,                java_lang_invoke_Linkage,          Opt) /* AllowTransitionalJSR292 ONLY */ \
   template(CallSite_klass,               java_lang_invoke_CallSite,         Pre_JSR292) \
   /* Note: MethodHandle must be first, and CallSite last in group */          \
                                                                               \
@@ -422,8 +420,6 @@ public:
     initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
 
-  static Symbol* find_backup_symbol(Symbol* symbol, const char* from_prefix, const char* to_prefix);
-
 public:
   #define WK_KLASS_DECLARE(name, ignore_symbol, option) \
     static klassOop name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); }
@@ -444,9 +440,6 @@ public:
   static klassOop abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
 
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
-
-  static Symbol* find_backup_class_name(Symbol* class_name_symbol);
-  static Symbol* find_backup_signature(Symbol* signature_symbol);
 
 private:
   // Tells whether ClassLoader.loadClassInternal is present
