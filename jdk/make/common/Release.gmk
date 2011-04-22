@@ -609,8 +609,8 @@ $(RT_JAR_FILELIST) + $(RES_JAR_FILELIST): \
 	@$(java-vm-cleanup)
 
 # Create the manifest file.
-JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
-$(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
+RT_JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/rt_manifest.tmp
+$(RT_JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(prep-target)
 	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
 	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
@@ -618,21 +618,28 @@ $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(ECHO) >> $@
 	$(CAT) $(BEANMANIFEST) >> $@
 
+OTHER_JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/other_manifest.tmp
+$(OTHER_JAR_MANIFEST_FILE): $(MAINMANIFEST)
+	$(prep-target)
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
+	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+	       $(MAINMANIFEST) >> $@
+
 # Create resources.jar containing non-class files
 RESOURCES_JAR=$(ABS_TEMPDIR)/resources-orig.jar
-$(RESOURCES_JAR): $(RES_JAR_FILELIST) $(JAR_MANIFEST_FILE)
+$(RESOURCES_JAR): $(RES_JAR_FILELIST) $(OTHER_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(OTHER_JAR_MANIFEST_FILE) $@ \
 	        @$(RES_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
 # Create jsse.jar containing SunJSSE implementation classes
 JSSE_JAR=$(ABS_TEMPDIR)/jsse-orig.jar
-$(JSSE_JAR): $(JAR_MANIFEST_FILE)
+$(JSSE_JAR): $(OTHER_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(OTHER_JAR_MANIFEST_FILE) $@ \
 		$(JSSE_CLASSES_DIRS) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
@@ -676,10 +683,10 @@ endif
 
 # Create rt.jar
 RT_JAR=$(ABS_TEMPDIR)/rt-orig.jar
-$(RT_JAR): $(RT_JAR_FILELIST) $(JAR_MANIFEST_FILE)
+$(RT_JAR): $(RT_JAR_FILELIST) $(RT_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(RT_JAR_MANIFEST_FILE) $@ \
 	        @$(RT_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
