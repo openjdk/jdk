@@ -1161,6 +1161,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
                 PrintGC, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */);
 
     double start = os::elapsedTime();
@@ -1339,6 +1340,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
 
   return true;
 }
@@ -1971,6 +1973,10 @@ jint G1CollectedHeap::initialize() {
 
   init_mutator_alloc_region();
 
+  // Do create of the monitoring and management support so that
+  // values in the heap have been properly initialized.
+  _g1mm = new G1MonitoringSupport(this, &_g1_storage);
+
   return JNI_OK;
 }
 
@@ -2112,6 +2118,28 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     ((cause == GCCause::_gc_locker           && GCLockerInvokesConcurrent) ||
      (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
+
+#ifndef PRODUCT
+void G1CollectedHeap::allocate_dummy_regions() {
+  // Let's fill up most of the region
+  size_t word_size = HeapRegion::GrainWords - 1024;
+  // And as a result the region we'll allocate will be humongous.
+  guarantee(isHumongous(word_size), "sanity");
+
+  for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
+    // Let's use the existing mechanism for the allocation
+    HeapWord* dummy_obj = humongous_obj_allocate(word_size);
+    if (dummy_obj != NULL) {
+      MemRegion mr(dummy_obj, word_size);
+      CollectedHeap::fill_with_object(mr);
+    } else {
+      // If we can't allocate once, we probably cannot allocate
+      // again. Let's get out of the loop.
+      break;
+    }
+  }
+}
+#endif // !PRODUCT
 
 void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
@@ -3164,6 +3192,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */);
 
     // If the secondary_free_list is not empty, append it to the
@@ -3338,6 +3367,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         doConcurrentMark();
       }
 
+      allocate_dummy_regions();
+
 #if YOUNG_LIST_VERBOSE
       gclog_or_tty->print_cr("\nEnd of the pause.\nYoung_list:");
       _young_list->print();
@@ -3401,6 +3432,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
+
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
       (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
@@ -5314,6 +5347,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
+      g1mm()->update_eden_counters();
       return new_alloc_region;
     }
   }

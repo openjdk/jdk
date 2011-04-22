@@ -456,31 +456,35 @@ bool CardTableModRefBS::mark_card_deferred(size_t card_index) {
 }
 
 
-void CardTableModRefBS::non_clean_card_iterate(Space* sp,
-                                               MemRegion mr,
-                                               DirtyCardToOopClosure* dcto_cl,
-                                               MemRegionClosure* cl) {
+void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
+                                                                 MemRegion mr,
+                                                                 DirtyCardToOopClosure* dcto_cl,
+                                                                 ClearNoncleanCardWrapper* cl) {
   if (!mr.is_empty()) {
     int n_threads = SharedHeap::heap()->n_par_threads();
     if (n_threads > 0) {
 #ifndef SERIALGC
-      par_non_clean_card_iterate_work(sp, mr, dcto_cl, cl, n_threads);
+      non_clean_card_iterate_parallel_work(sp, mr, dcto_cl, cl, n_threads);
 #else  // SERIALGC
       fatal("Parallel gc not supported here.");
 #endif // SERIALGC
     } else {
-      non_clean_card_iterate_work(mr, cl);
+      // We do not call the non_clean_card_iterate_serial() version below because
+      // we want to clear the cards (which non_clean_card_iterate_serial() does not
+      // do for us), and the ClearNoncleanCardWrapper closure itself does the work
+      // of finding contiguous dirty ranges of cards to process (and clear).
+      cl->do_MemRegion(mr);
     }
   }
 }
 
-// NOTE: For this to work correctly, it is important that
-// we look for non-clean cards below (so as to catch those
-// marked precleaned), rather than look explicitly for dirty
-// cards (and miss those marked precleaned). In that sense,
-// the name precleaned is currently somewhat of a misnomer.
-void CardTableModRefBS::non_clean_card_iterate_work(MemRegion mr,
-                                                    MemRegionClosure* cl) {
+// The iterator itself is not MT-aware, but
+// MT-aware callers and closures can use this to
+// accomplish dirty card iteration in parallel. The
+// iterator itself does not clear the dirty cards, or
+// change their values in any manner.
+void CardTableModRefBS::non_clean_card_iterate_serial(MemRegion mr,
+                                                      MemRegionClosure* cl) {
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (mri.word_size() > 0) {
@@ -661,7 +665,7 @@ public:
 
 void CardTableModRefBS::verify_clean_region(MemRegion mr) {
   GuaranteeNotModClosure blk(this);
-  non_clean_card_iterate_work(mr, &blk);
+  non_clean_card_iterate_serial(mr, &blk);
 }
 
 // To verify a MemRegion is entirely dirty this closure is passed to
