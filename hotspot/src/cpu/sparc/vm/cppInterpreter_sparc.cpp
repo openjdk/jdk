@@ -551,6 +551,26 @@ address InterpreterGenerator::generate_accessor_entry(void) {
   return NULL;
 }
 
+address InterpreterGenerator::generate_Reference_get_entry(void) {
+#ifndef SERIALGC
+  if (UseG1GC) {
+    // We need to generate have a routine that generates code to:
+    //   * load the value in the referent field
+    //   * passes that value to the pre-barrier.
+    //
+    // In the case of G1 this will record the value of the
+    // referent in an SATB buffer if marking is active.
+    // This will cause concurrent marking to mark the referent
+    // field as live.
+    Unimplemented();
+  }
+#endif // SERIALGC
+
+  // If G1 is not enabled then attempt to go through the accessor entry point
+  // Reference.get is an accessor
+  return generate_accessor_entry();
+}
+
 //
 // Interpreter stub for calling a native method. (C++ interpreter)
 // This sets up a somewhat different looking stack for calling the native method
