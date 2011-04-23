@@ -2196,11 +2196,12 @@ typeArrayHandle ClassFileParser::sort_methods(objArrayHandle methods,
                                               TRAPS) {
   typeArrayHandle nullHandle;
   int length = methods()->length();
-  // If JVMTI original method ordering is enabled we have to
+  // If JVMTI original method ordering or sharing is enabled we have to
   // remember the original class file ordering.
   // We temporarily use the vtable_index field in the methodOop to store the
   // class file index, so we can read in after calling qsort.
-  if (JvmtiExport::can_maintain_original_method_order()) {
+  // Put the method ordering in the shared archive.
+  if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
     for (int index = 0; index < length; index++) {
       methodOop m = methodOop(methods->obj_at(index));
       assert(!m->valid_vtable_index(), "vtable index should not be set");
@@ -2214,8 +2215,9 @@ typeArrayHandle ClassFileParser::sort_methods(objArrayHandle methods,
                               methods_parameter_annotations(),
                               methods_default_annotations());
 
-  // If JVMTI original method ordering is enabled construct int array remembering the original ordering
-  if (JvmtiExport::can_maintain_original_method_order()) {
+  // If JVMTI original method ordering or sharing is enabled construct int
+  // array remembering the original ordering
+  if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
     typeArrayOop new_ordering = oopFactory::new_permanent_intArray(length, CHECK_(nullHandle));
     typeArrayHandle method_ordering(THREAD, new_ordering);
     for (int index = 0; index < length; index++) {
