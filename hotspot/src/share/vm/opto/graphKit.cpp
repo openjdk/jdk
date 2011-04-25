@@ -1033,14 +1033,10 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       ciMethod* method = iter.get_method(ignore);
-      inputs = method->arg_size_no_receiver();
-      // Add a receiver argument, maybe:
-      if (code != Bytecodes::_invokestatic &&
-          code != Bytecodes::_invokedynamic)
-        inputs += 1;
       // (Do not use ciMethod::arg_size(), because
       // it might be an unloaded method, which doesn't
       // know whether it is static or not.)
+      inputs = method->invoke_arg_size(code);
       int size = method->return_type()->size();
       depth = size - inputs;
     }
