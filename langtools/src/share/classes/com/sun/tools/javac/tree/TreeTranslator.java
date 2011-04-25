@@ -363,7 +363,7 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
-    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+    public void visitTypeUnion(JCTypeUnion tree) {
         tree.alternatives = translate(tree.alternatives);
         result = tree;
     }

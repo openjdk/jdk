@@ -37,7 +37,7 @@ import java.util.List;
  *   this . <em>typeArguments</em> <em>identifier</em> ( <em>arguments</em> )
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 15.12"
+ * @jls section 15.12
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

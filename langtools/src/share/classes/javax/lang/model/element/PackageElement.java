@@ -43,7 +43,7 @@ public interface PackageElement extends Element, QualifiedNameable {
      *
      * @return the fully qualified name of this package, or an
      * empty name if this is an unnamed package
-     * @jls3 6.7 Fully Qualified Names and Canonical Names
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      */
     Name getQualifiedName();
 
@@ -63,7 +63,7 @@ public interface PackageElement extends Element, QualifiedNameable {
      *
      * @return {@code true} is this is an unnamed package and {@code
      * false} otherwise
-     * @jls3 7.4.2 Unnamed Packages
+     * @jls 7.4.2 Unnamed Packages
      */
     boolean isUnnamed();
 

@@ -58,9 +58,11 @@ import javax.annotation.processing.Processor;
  * standard file manager such as the one returned by {@linkplain
  * #getStandardFileManager getStandardFileManager}.
  *
- * <p>An instance implementing this interface must conform to the Java
- * Language Specification and generate class files conforming to the
- * Java Virtual Machine specification.  The versions of these
+ * <p>An instance implementing this interface must conform to
+ * <cite>The Java&trade; Language Specification</cite>
+ * and generate class files conforming to
+ * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * The versions of these
  * specifications are defined in the {@linkplain Tool} interface.
  *
  * Additionally, an instance of this interface supporting {@link

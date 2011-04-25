@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *       </em>block</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.19"
+ * @jls section 14.19
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
