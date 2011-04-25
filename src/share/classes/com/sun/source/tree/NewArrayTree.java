@@ -37,7 +37,7 @@ import java.util.List;
  *   new <em>type</em> <em>dimensions</em> [ ] <em>initializers</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 15.10"
+ * @jls section 15.10
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

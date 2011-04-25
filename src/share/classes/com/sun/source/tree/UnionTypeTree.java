@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,17 @@
  * questions.
  */
 
-package javax.lang.model.type;
+package com.sun.source.tree;
 
 import java.util.List;
 
 /**
- * Represents a disjunctive type.
+ * A tree node for a union type expression in a multicatch var declaration.
  *
- * As of the {@link javax.lang.model.SourceVersion#RELEASE_7
- * RELEASE_7} source version, disjunctive types can appear as the type
- * of a multi-catch exception parameter.
+ * @author Maurizio Cimadamore
  *
  * @since 1.7
  */
-public interface DisjunctiveType extends TypeMirror {
-
-    /**
-     * Return the alternatives comprising this disjunctive type.
-     *
-     * The alternatives are formally referred to as <i>disjuncts</i>.
-     *
-     * @return the alternatives comprising this disjunctive type.
-     */
-    List<? extends TypeMirror> getAlternatives();
+public interface UnionTypeTree extends Tree {
+    List<? extends Tree> getTypeAlternatives();
 }

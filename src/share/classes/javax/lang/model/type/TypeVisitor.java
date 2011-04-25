@@ -164,12 +164,12 @@ public interface TypeVisitor<R, P> {
     R visitUnknown(TypeMirror t, P p);
 
     /**
-     * Visits a disjunctive type.
+     * Visits a union type.
      *
      * @param t the type to visit
      * @param p a visitor-specified parameter
      * @return  a visitor-specified result
      * @since 1.7
      */
-    R visitDisjunctive(DisjunctiveType t, P p);
+    R visitUnion(UnionType t, P p);
 }

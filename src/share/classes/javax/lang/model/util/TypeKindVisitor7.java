@@ -94,7 +94,7 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
     }
 
     /**
-     * This implementation visits a {@code DisjunctiveType} by calling
+     * This implementation visits a {@code UnionType} by calling
      * {@code defaultAction}.
      *
      * @param t  {@inheritDoc}
@@ -102,7 +102,7 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
      * @return the result of {@code defaultAction}
      */
     @Override
-    public R visitDisjunctive(DisjunctiveType t, P p) {
+    public R visitUnion(UnionType t, P p) {
         return defaultAction(t, p);
     }
 }
