@@ -317,7 +317,9 @@ void AwtButton::_SetLabel(void *param)
             badAlloc = 1;
         } else {
             c->SetText(labelStr);
-            JNU_ReleaseStringPlatformChars(env, label, labelStr);
+            if (label != NULL) {
+                JNU_ReleaseStringPlatformChars(env, label, labelStr);
+            }
         }
     }
 
