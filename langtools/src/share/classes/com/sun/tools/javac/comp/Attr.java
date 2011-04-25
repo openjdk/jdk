@@ -1112,7 +1112,7 @@ public class Attr extends JCTree.Visitor {
             Type ctype = attribStat(c.param, catchEnv);
             if (TreeInfo.isMultiCatch(c)) {
                 //multi-catch parameter is implicitly marked as final
-                c.param.sym.flags_field |= FINAL | DISJUNCTION;
+                c.param.sym.flags_field |= FINAL | UNION;
             }
             if (c.param.sym.kind == Kinds.VAR) {
                 c.param.sym.setData(ElementKind.EXCEPTION_PARAMETER);
@@ -2632,10 +2632,10 @@ public class Attr extends JCTree.Visitor {
          * @param tree    The tree making up the variable reference.
          * @param env     The current environment.
          * @param v       The variable's symbol.
-         * @see JLS 3rd Ed. (8.9 Enums)
+         * @jls  section 8.9 Enums
          */
         private void checkEnumInitializer(JCTree tree, Env<AttrContext> env, VarSymbol v) {
-            // JLS 3rd Ed.:
+            // JLS:
             //
             // "It is a compile-time error to reference a static field
             // of an enum type that is not a compile-time constant
@@ -2908,7 +2908,7 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, TYP, pkind, pt);
     }
 
-    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+    public void visitTypeUnion(JCTypeUnion tree) {
         ListBuffer<Type> multicatchTypes = ListBuffer.lb();
         for (JCExpression typeTree : tree.alternatives) {
             Type ctype = attribType(typeTree, env);
@@ -2916,7 +2916,7 @@ public class Attr extends JCTree.Visitor {
                           chk.checkClassType(typeTree.pos(), ctype),
                           syms.throwableType);
             if (!ctype.isErroneous()) {
-                //check that alternatives of a disjunctive type are pairwise
+                //check that alternatives of a union type are pairwise
                 //unrelated w.r.t. subtyping
                 if (chk.intersects(ctype,  multicatchTypes.toList())) {
                     for (Type t : multicatchTypes) {
