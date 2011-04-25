@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  */
 
 /*
- * This test tests for various things as follows:
+ * This tests for various things as follows:
  * Ensures that:
  *   1. uneccessary execs do not occur
  *   2. the environment is pristine,  users environment variable wrt.
@@ -84,7 +84,9 @@ public class ExecutionEnvironment {
     static int errors = 0;
     static int passes = 0;
 
-    private static void createTestJar() {
+    static final String LIBJVM = TestHelper.isWindows ? "jvm.dll" : "libjvm.so";
+
+    static void createTestJar() {
         try {
             List<String> codeList = new ArrayList<String>();
             codeList.add("static void printValue(String name, boolean property) {\n");
@@ -127,6 +129,7 @@ public class ExecutionEnvironment {
                 testJarFile.getAbsolutePath());
 
         if (!tr.isNotZeroOutput()) {
+            System.out.println(tr);
             throw new RuntimeException("Error: No output at all. Did the test execute ?");
         }
 
@@ -177,7 +180,6 @@ public class ExecutionEnvironment {
 
         Map<String, String> env = new HashMap<String, String>();
 
-
         if (TestHelper.isLinux) {
             for (String x : LD_PATH_STRINGS) {
                 String pairs[] = x.split("=");
@@ -209,7 +211,7 @@ public class ExecutionEnvironment {
             verifyJavaLibraryPathOverride(tr, true);
 
             // try changing the model from 32 to 64 bit
-            if (TestHelper.java64Cmd != null && TestHelper.is32Bit) {
+            if (TestHelper.dualModePresent() && TestHelper.is32Bit) {
                 // verify the override occurs
                 env.clear();
                 for (String x : LD_PATH_STRINGS) {
@@ -326,7 +328,7 @@ public class ExecutionEnvironment {
         File symLink = null;
         String libPathPrefix = TestHelper.isSDK ? "jre/lib" : "/lib";
         symLink = new File(TestHelper.JAVAHOME, libPathPrefix +
-                TestHelper.getJreArch() + "/libjvm.so");
+                TestHelper.getJreArch() + "/" + LIBJVM);
         if (symLink.exists()) {
             System.out.println("FAIL: The symlink exists " +
                     symLink.getAbsolutePath());

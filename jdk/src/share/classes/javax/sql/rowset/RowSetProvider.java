@@ -204,9 +204,9 @@ public class RowSetProvider {
      *
      */
     static private ClassLoader getContextClassLoader() throws SecurityException {
-        return (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
 
-            public Object run() {
+            public ClassLoader run() {
                 ClassLoader cl = null;
 
                 cl = Thread.currentThread().getContextClassLoader();
@@ -284,9 +284,9 @@ public class RowSetProvider {
     static private String getSystemProperty(final String propName) {
         String property = null;
         try {
-            property = (String) AccessController.doPrivileged(new PrivilegedAction() {
+            property = AccessController.doPrivileged(new PrivilegedAction<String>() {
 
-                public Object run() {
+                public String run() {
                     return System.getProperty(propName);
                 }
             });
