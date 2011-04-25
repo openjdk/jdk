@@ -74,8 +74,9 @@ public class Types {
     final JavacMessages messages;
     final Names names;
     final boolean allowBoxing;
+    final boolean allowCovariantReturns;
+    final boolean allowObjectToPrimitiveCast;
     final ClassReader reader;
-    final Source source;
     final Check chk;
     List<Warner> warnStack = List.nil();
     final Name capturedName;
@@ -92,9 +93,11 @@ public class Types {
         context.put(typesKey, this);
         syms = Symtab.instance(context);
         names = Names.instance(context);
-        allowBoxing = Source.instance(context).allowBoxing();
+        Source source = Source.instance(context);
+        allowBoxing = source.allowBoxing();
+        allowCovariantReturns = source.allowCovariantReturns();
+        allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
         reader = ClassReader.instance(context);
-        source = Source.instance(context);
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
@@ -949,8 +952,9 @@ public class Types {
             return true;
 
         if (t.isPrimitive() != s.isPrimitive())
-            return allowBoxing && (isConvertible(t, s, warn) || isConvertible(s, t, warn));
-
+            return allowBoxing && (
+                    isConvertible(t, s, warn)
+                    || (allowObjectToPrimitiveCast && isConvertible(s, t, warn)));
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);
@@ -3070,7 +3074,7 @@ public class Types {
 
         if (hasSameArgs(r1, r2))
             return covariantReturnType(r1.getReturnType(), r2res, warner);
-        if (!source.allowCovariantReturns())
+        if (!allowCovariantReturns)
             return false;
         if (isSubtypeUnchecked(r1.getReturnType(), r2res, warner))
             return true;
@@ -3087,7 +3091,7 @@ public class Types {
     public boolean covariantReturnType(Type t, Type s, Warner warner) {
         return
             isSameType(t, s) ||
-            source.allowCovariantReturns() &&
+            allowCovariantReturns &&
             !t.isPrimitive() &&
             !s.isPrimitive() &&
             isAssignable(t, s, warner);
@@ -3293,7 +3297,7 @@ public class Types {
         }
         if (giveWarning && !isReifiable(reverse ? from : to))
             warn.warn(LintCategory.UNCHECKED);
-        if (!source.allowCovariantReturns())
+        if (!allowCovariantReturns)
             // reject if there is a common method signature with
             // incompatible return types.
             chk.checkCompatibleAbstracts(warn.pos(), from, to);
@@ -3320,7 +3324,7 @@ public class Types {
         Type t2 = to;
         if (disjointTypes(t1.getTypeArguments(), t2.getTypeArguments()))
             return false;
-        if (!source.allowCovariantReturns())
+        if (!allowCovariantReturns)
             // reject if there is a common method signature with
             // incompatible return types.
             chk.checkCompatibleAbstracts(warn.pos(), from, to);
