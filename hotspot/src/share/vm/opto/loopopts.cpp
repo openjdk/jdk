@@ -2262,6 +2262,9 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                  stmt1
 //                    |
 //                    v
+//               loop predicate
+//                    |
+//                    v
 //                  stmt2 clone
 //                    |
 //                    v
@@ -2270,9 +2273,6 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //        dom      /  |
 //         :      v   v
 //         :  false   true
-//         :  |       |
-//         :  |       v
-//         :  | loop predicate
 //         :  |       |
 //         :  |       v
 //         :  |    newloop<-----+
@@ -2330,7 +2330,6 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 
-  Node* entry = head->in(LoopNode::EntryControl);
   int dd = dom_depth(head);
 
   // Step 1: find cut point
@@ -2627,8 +2626,6 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
   // Backedge of the surviving new_head (the clone) is original last_peel
   _igvn.hash_delete(new_head_clone);
-  Node* new_entry = move_loop_predicates(entry, new_head_clone->in(LoopNode::EntryControl));
-  new_head_clone->set_req(LoopNode::EntryControl, new_entry);
   new_head_clone->set_req(LoopNode::LoopBackControl, last_peel);
   _igvn._worklist.push(new_head_clone);
 
