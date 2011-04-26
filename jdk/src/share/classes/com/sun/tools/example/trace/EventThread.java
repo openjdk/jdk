@@ -49,7 +49,8 @@ public class EventThread extends Thread {
     private boolean vmDied = true;     // VMDeath occurred
 
     // Maps ThreadReference to ThreadTrace instances
-    private Map traceMap = new HashMap();
+    private Map<ThreadReference, ThreadTrace> traceMap =
+       new HashMap<>();
 
     EventThread(VirtualMachine vm, String[] excludes, PrintWriter writer) {
         super("event-handler");
@@ -63,6 +64,7 @@ public class EventThread extends Thread {
      * As long as we are connected, get event sets off
      * the queue and dispatch the events within them.
      */
+    @Override
     public void run() {
         EventQueue queue = vm.eventQueue();
         while (connected) {
@@ -208,7 +210,7 @@ public class EventThread extends Thread {
      * creating one if needed.
      */
     ThreadTrace threadTrace(ThreadReference thread) {
-        ThreadTrace trace = (ThreadTrace)traceMap.get(thread);
+        ThreadTrace trace = traceMap.get(thread);
         if (trace == null) {
             trace = new ThreadTrace(thread);
             traceMap.put(thread, trace);
@@ -297,7 +299,7 @@ public class EventThread extends Thread {
     }
 
     void threadDeathEvent(ThreadDeathEvent event)  {
-        ThreadTrace trace = (ThreadTrace)traceMap.get(event.thread());
+        ThreadTrace trace = traceMap.get(event.thread());
         if (trace != null) {  // only want threads we care about
             trace.threadDeathEvent(event);   // Forward event
         }
@@ -309,9 +311,8 @@ public class EventThread extends Thread {
      */
     private void classPrepareEvent(ClassPrepareEvent event)  {
         EventRequestManager mgr = vm.eventRequestManager();
-        List fields = event.referenceType().visibleFields();
-        for (Iterator it = fields.iterator(); it.hasNext(); ) {
-            Field field = (Field)it.next();
+        List<Field> fields = event.referenceType().visibleFields();
+        for (Field field : fields) {
             ModificationWatchpointRequest req =
                      mgr.createModificationWatchpointRequest(field);
             for (int i=0; i<excludes.length; ++i) {
@@ -323,7 +324,7 @@ public class EventThread extends Thread {
     }
 
     private void exceptionEvent(ExceptionEvent event) {
-        ThreadTrace trace = (ThreadTrace)traceMap.get(event.thread());
+        ThreadTrace trace = traceMap.get(event.thread());
         if (trace != null) {  // only want threads we care about
             trace.exceptionEvent(event);      // Forward event
         }

@@ -156,6 +156,7 @@ abstract class LValue {
         return new LValueArrayElement(interiorGetValue(), index);
     }
 
+   @Override
     public String toString() {
         try {
             return interiorGetValue().toString();
@@ -419,6 +420,7 @@ abstract class LValue {
             this.var = var;
         }
 
+      @Override
         Value getValue() {
             if (jdiValue == null) {
                 jdiValue = frame.getValue(var);
@@ -426,12 +428,14 @@ abstract class LValue {
             return jdiValue;
         }
 
+      @Override
         void setValue0(Value val) throws InvalidTypeException,
                                          ClassNotLoadedException {
             frame.setValue(var, val);
             jdiValue = val;
         }
 
+      @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             throw new ParseException(var.name() + " is not a method");
         }
@@ -469,6 +473,7 @@ abstract class LValue {
             }
         }
 
+      @Override
         Value getValue() throws InvocationException, InvalidTypeException,
                                 ClassNotLoadedException, IncompatibleThreadStateException,
                                 ParseException {
@@ -485,6 +490,7 @@ abstract class LValue {
             }
         }
 
+        @Override
         void setValue0(Value val) throws ParseException,
                                          InvalidTypeException,
                                         ClassNotLoadedException {
@@ -495,6 +501,7 @@ abstract class LValue {
             jdiValue = val;
         }
 
+        @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             if (matchingMethod != null) {
                 throw new ParseException("Invalid consecutive invocations");
@@ -531,6 +538,7 @@ abstract class LValue {
             }
         }
 
+        @Override
         Value getValue() throws InvocationException, InvalidTypeException,
                                 ClassNotLoadedException, IncompatibleThreadStateException,
                                 ParseException {
@@ -548,6 +556,7 @@ abstract class LValue {
             }
         }
 
+        @Override
         void setValue0(Value val)
                            throws ParseException, InvalidTypeException,
                                   ClassNotLoadedException {
@@ -562,6 +571,7 @@ abstract class LValue {
             jdiValue = val;
         }
 
+        @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             if (matchingMethod != null) {
                 throw new ParseException("Invalid consecutive invocations");
@@ -589,6 +599,7 @@ abstract class LValue {
             this.arrayRef = value;
         }
 
+        @Override
         Value getValue() {
             if (jdiValue == null) {
                 jdiValue = arrayRef.virtualMachine().mirrorOf(arrayRef.length());
@@ -596,10 +607,12 @@ abstract class LValue {
             return jdiValue;
         }
 
+        @Override
         void setValue0(Value value) throws ParseException  {
             throw new ParseException("Cannot set constant: " + value);
         }
 
+        @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             throw new ParseException("Array element is not a method");
         }
@@ -618,6 +631,7 @@ abstract class LValue {
             this.index = index;
         }
 
+        @Override
         Value getValue() {
             if (jdiValue == null) {
                 jdiValue = array.getValue(index);
@@ -625,12 +639,14 @@ abstract class LValue {
             return jdiValue;
         }
 
+        @Override
         void setValue0(Value val) throws InvalidTypeException,
                                          ClassNotLoadedException  {
             array.setValue(index, val);
             jdiValue = val;
         }
 
+        @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             throw new ParseException("Array element is not a method");
         }
@@ -643,6 +659,7 @@ abstract class LValue {
             this.value = value;
         }
 
+        @Override
         Value getValue() {
             if (jdiValue == null) {
                 jdiValue = value;
@@ -650,10 +667,12 @@ abstract class LValue {
             return jdiValue;
         }
 
+        @Override
         void setValue0(Value val) throws ParseException {
             throw new ParseException("Cannot set constant: " + value);
         }
 
+        @Override
         void invokeWith(List<Value> arguments) throws ParseException {
             throw new ParseException("Constant is not a method");
         }
