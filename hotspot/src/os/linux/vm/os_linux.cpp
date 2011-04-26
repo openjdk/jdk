@@ -4170,6 +4170,23 @@ jint os::init_2(void)
         UseNUMA = false;
       }
     }
+    // With SHM large pages we cannot uncommit a page, so there's not way
+    // we can make the adaptive lgrp chunk resizing work. If the user specified
+    // both UseNUMA and UseLargePages (or UseSHM) on the command line - warn and
+    // disable adaptive resizing.
+    if (UseNUMA && UseLargePages && UseSHM) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseSHM)) {
+          UseLargePages = false;
+        } else {
+          warning("UseNUMA is not fully compatible with SHM large pages, disabling adaptive resizing");
+          UseAdaptiveSizePolicy = false;
+          UseAdaptiveNUMAChunkSizing = false;
+        }
+      } else {
+        UseNUMA = false;
+      }
+    }
     if (!UseNUMA && ForceNUMA) {
       UseNUMA = true;
     }
