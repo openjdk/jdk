@@ -1,4 +1,4 @@
-." Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,328 +19,244 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javadoc 1 "02 Jun 2010"
-.SH "名前"
-javadoc \- Java API ドキュメントジェネレータ
-.RS 3
-
+.TH javadoc 1 "14 Apr 2011"
+.SH "̾��"
+javadoc \- Java API �ɥ�����ȥ����ͥ졼��
 .LP
-.LP
-Java ソースファイルから、API ドキュメントの HTML ページを生成します。このドキュメントで紹介されている Javadoc の例は、Sun Solaris を使用した場合のものです。
-.LP
-.RE
-.SH "形式"
-.LP
+Java �������ե����뤫�顢API �ɥ�����Ȥ� HTML �ڡ������������ޤ������Υɥ�����ȤǾҲ𤵤�Ƥ��� Javadoc ����ϡ� Solaris ����Ѥ������Τ�ΤǤ���
+.SH "����"
 .LP
 \f4javadoc\fP\f2\ [\ \fP\f2options\fP\f2\ ]\ [\ packagenames\ ]\ [\ sourcefilenames\ ]\ [\ \-subpackages\fP\ \f2pkg1:pkg2:...\fP\f2\ ]\ [\ \fP\f2@argfiles\fP\f2\ ]\fP
 .LP
-.LP
-引数を指定する順序は任意です。Javadoc ツールでの、処理対象の \f2.java\fP ファイルを決定する方法の詳細については、「ソースファイルの処理」を参照してください。
-.LP
-.RS 3
-
-.LP
+��������ꤹ������Ǥ�դǤ���Javadoc �ġ���ǤΡ������оݤ� .java �ե��������ꤹ����ˡ�ξܺ٤ˤĤ��Ƥϡ��֥������ե�����ν�����\f2�򻲾�\fP���Ƥ���������
 .RS 3
 .TP 3
 options 
-このドキュメントで説明されているコマンド行オプションです。Javadoc オプションの標準的な使用法については、「使用例」を参照してください。 
+���Υɥ�����Ȥ���������Ƥ��륳�ޥ�ɹԥ��ץ����Ǥ���Javadoc ���ץ�����ɸ��Ū�ʻ���ˡ�ˤĤ��Ƥϡ��ֻ�����פ򻲾Ȥ��Ƥ��������� 
 .TP 3
 packagenames 
-スペースで区切られた一連のパッケージ名です。 たとえば、\f2java.lang\ java.lang.reflect\ java.awt\fP のように指定します。ドキュメント化するパッケージを個別に指定する必要があります。ワイルドカードは使用不可です。 再帰的処理のためには、\-subpackages を使用します。Javadoc ツールは、\f2\-sourcepath\fP を使ってこれらのパッケージ名を検索します。「1 つ以上のパッケージのドキュメント化」の例を参照してください。 
+���ڡ����Ƕ��ڤ�줿��Ϣ�Υѥå�����̾�Ǥ������Ȥ��С� \f2java.lang\ java.lang.reflect\ java.awt �Τ褦�˻��ꤷ�ޤ�\fP���ɥ�����Ȳ�����ѥå���������̤˻��ꤹ��ɬ�פ�����ޤ����磻��ɥ����ɤϻ����ԲĤǤ����Ƶ�Ū�����Τ���ˤϡ�\-subpackages ����Ѥ��ޤ���Javadoc �ġ���ϡ�\f2\-sourcepath\fP ����Ѥ��Ƥ����Υѥå�����̾�򸡺����ޤ�����1 �İʾ�Υѥå������Υɥ�����Ȳ��פ���򻲾Ȥ��Ƥ��������� 
 .TP 3
 sourcefilenames 
-スペースで区切られた一連のソースファイル名です。各ファイルは、パスで始まります。アスタリスク (*) などのワイルドカードを含めることができます。 Javadoc ツールが処理するのは、ファイル名が「.java」という拡張子で終わり、その拡張子を除いた名前が実際に有効なクラス名であるすべてのファイルです (
+���ڡ����Ƕ��ڤ�줿��Ϣ�Υ������ե�����̾�Ǥ��� �ƥե�����ϡ��ѥ��ǻϤޤ�ޤ����������ꥹ�� (*) �ʤɤΥ磻��ɥ����ɤ�ޤ�뤳�Ȥ��Ǥ��ޤ���Javadoc �ġ��뤬��������Τϡ��ե�����̾����.java�פȤ�����ĥ�Ҥǽ���ꡢ���γ�ĥ�Ҥ������̾�����ºݤ�ͭ���ʥ��饹̾�Ǥ��뤹�٤ƤΥե�����Ǥ� (
 .na
-\f2「Identifiers」\fP @
+\f2��Identifiers��\fP @
 .fi
-http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625を参照)。したがって、ハイフンを含む名前 (\f2X\-Buffer\fP など) や、その他の無効な文字を含む名前を付けることによって、それらのファイルをドキュメント化の対象から除外できます。これは、テスト用のファイルや、テンプレートから生成されたファイルの場合に便利です。 ソースファイル名の前に指定したパスによって、javadoc がそのファイルを検索する場所が決まります。Javadoc ツールは、これらのソースファイル名を検索するときに \f2\-sourcepath\fP は使いません。相対パスは、現在のディレクトリからの相対パスです。 \f2Button.java\fP を渡すことは、\f2./Button.java\fP を渡すことと同じです。ソースファイル名をフルパスで指定すると、\f2/home/src/java/awt/Graphics*.java\fP のようになります。「1 つ以上のクラスのドキュメント化」の例を参照してください。また、「パッケージとクラスのドキュメント化」の例のように、パッケージ名とソースファイル名を混在させることもできます。 
+http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625�򻲾�)���������äơ��ϥ��ե��ޤ�̾�� ( \f2X\-Buffer\fP �ʤ�) �䡢����¾��̵����ʸ����ޤ�̾�����դ��뤳�Ȥˤ�äơ������Υե������ɥ�����Ȳ����оݤ�������Ǥ��ޤ�������ϡ��ƥ����ѤΥե�����䡢�ƥ�ץ졼�Ȥ����������줿�ե�����ξ��������Ǥ����������ե�����̾�����˻��ꤷ���ѥ��ˤ�äơ�javadoc �����Υե�����򸡺������꤬��ޤ�ޤ���Javadoc �ġ���ϡ������Υ������ե�����̾�򸡺�����Ȥ��ˤ� \f2\-sourcepath\fP ����Ѥ��ޤ������Хѥ��ϸ��ߤΥǥ��쥯�ȥ�����Ȥ��뤿�ᡢ \f2Button.java\fP ���Ϥ����Ȥϡ� \f2./Button.java\fP ���Ϥ����Ȥ�Ʊ���Ǥ����������ե�����̾��ե�ѥ��ǻ��ꤹ��ȡ� \f2/home/src/java/awt/Graphics*.java �Τ褦�ˤʤ�ޤ�\fP�� ��1 �İʾ�Υ��饹�Υɥ�����Ȳ��פ���򻲾Ȥ��Ƥ����������ޤ����֥ѥå������ȥ��饹�Υɥ�����Ȳ��פ���Τ褦�ˡ��ѥå�����̾�ȥ������ե�����̾�򺮺ߤ����뤳�Ȥ�Ǥ��ޤ��� 
 .TP 3
 \-subpackages pkg1:pkg2:... 
-ソースファイルから指定されたパッケージおよびそのサブパッケージ内に再帰的にドキュメントを生成します。パッケージ名またはソースファイル名を指定する必要はありません。 
+�������ե����뤫����ꤵ�줿�ѥå���������Ӥ��Υ��֥ѥå�������˺Ƶ�Ū�˥ɥ�����Ȥ��������ޤ����ѥå�����̾�ޤ��ϥ������ե�����̾����ꤹ��ɬ�פϤ���ޤ��� 
 .TP 3
 @argfiles 
-Javadoc オプション、パッケージ名、およびソースファイル名を任意の順序で並べたリストが含まれる 1 つ以上のファイルです。このファイルの中では、ワイルドカード (*) および \f2\-J\fP オプションは指定できません。  
+Javadoc ���ץ���󡢥ѥå�����̾������ӥ������ե�����̾��Ǥ�դν�����¤٤��ꥹ�Ȥ��ޤޤ�� 1 �İʾ�Υե�����Ǥ����磻��ɥ����� (*) �� \f2\-J\fP ���ץ����ϡ����Υե��������Ǥϻ���Ǥ��ޤ���  
 .RE
-
+.SH " ����"
 .LP
-.RE
-.SH " 説明"
+\f3Javadoc\fP �ġ���ϡ���Ϣ�� Java �������ե�����ˤ����������ӥɥ�����ơ�����󥳥��Ȥ���Ϥ����ǥե���ȤǤ� public ���饹��protected ���饹������Ҥˤ��줿���饹 (ƿ̾���������饹�Ͻ���)�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤˤĤ�������������Ϣ�� HTML �ڡ������������ޤ����ޤ���API (���ץꥱ�������ץ�����ߥ󥰥��󥿥ե�����) �ɥ�����Ȥ������䡢��Ϣ�Υ������ե�����μ����ɥ�����Ȥ������˻��ѤǤ��ޤ���
 .LP
-.LP
-\f3Javadoc\fP ツールは、一連の Java ソースファイルにある宣言およびドキュメンテーションコメントを解析し、デフォルトでは public クラス、protected クラス、入れ子にされたクラス (匿名の内部クラスは除く)、インタフェース、コンストラクタ、メソッド、およびフィールドについて説明した一連の HTML ページを生成します。また、API (アプリケーションプログラミングインタフェース) ドキュメントの生成や、一連のソースファイルの実装ドキュメントの生成に使用できます。
-.LP
-.LP
-Javadoc ツールは、パッケージ全体、個々のソースファイル、またはその両方に対して実行できます。javadoc ツールをパッケージ全体に対して実行する場合は、最上位ディレクトリから再帰的にたどるために \f2\-subpackages\fP を使用するか、パッケージ名の明示的なリストを渡します。個々ソースファイルに対して javadoc を実行する場合は、一連のソース (\f2.java\fP) ファイル名を渡します。具体的な例は、このドキュメントの最後に紹介します。次に、Javadoc によるソースファイルの処理について説明します。
-.LP
+Javadoc �ġ���ϡ��ѥå��������Ρ��ġ��Υ������ե����롢�ޤ��Ϥ���ξ�����Ф��Ƽ¹ԤǤ��ޤ����ѥå��������ΤΥɥ�����Ȳ���Ԥ��ˤϡ�\f2\-subpackages\fP ����Ѥ��ƺǾ�̥ǥ��쥯�ȥ꤫�鲼���˺Ƶ�Ū�ˤ��ɤ뤫���ѥå�����̾������Ū�ʥꥹ�Ȥ��Ϥ��ޤ����ġ��������ե�������Ф��� javadoc ��¹Ԥ�����ϡ���Ϣ�Υ����� (.\f2.java\fP) �ե�����̾���Ϥ��ޤ�������Ū����ϡ����Υɥ�����ȤκǸ�˾Ҳ𤷤ޤ������ˡ�Javadoc �ˤ�륽�����ե�����ν����ˤĤ����������ޤ���
 .SS 
-ソースファイルの処理
+�������ե�����ν���
 .LP
-.LP
-Javadoc ツールは、末尾に \f2.java\fP の付いたファイル以外に、ソースファイルで説明する他のファイルも処理します。個々のソースファイル名を明示的に渡すことによって Javadoc ツールを実行する場合、どの \f2.java\fP ファイルを処理するかを正確に指定できます。ただし、多くの開発者はこの方法では作業しません。 パッケージ名を渡すほうが簡単だからです。ソースファイル名を明示的に指定しなくても、Javadoc ツールは 3 つの方法で実行できます。この方法は、(1) パッケージ名を渡す、(2) \f2\-subpackages\fP を使用する、(3) ソースファイル名にワイルドカードを使用する (\f2*.java\fP) という方法です。これらの方法を使用する場合、Javadoc ツールは、\f2.java\fP ファイルが次のすべての要件を満たしている場合にかぎり、このファイルを処理します。
-.LP
+Javadoc �ġ���ϡ���������\f2.java\fP�פΥե�����������������Ǥʤ����֥������ե�����פ��������뤽��¾�Υե������������ޤ����ġ��Υ������ե�����̾������Ū���Ϥ����Ȥˤ�ä� Javadoc �ġ����¹Ԥ����硢�ɤ� \f2.java\fP �ե������������뤫�����Τ˻���Ǥ��ޤ�����������¿���γ�ȯ�ԤϤ�����ˡ�ǤϺ�Ȥ��ޤ��󡣥ѥå�����̾���Ϥ��ۤ�����ñ������Ǥ����������ե�����̾������Ū�˻��ꤷ�ʤ��Ƥ⡢Javadoc �ġ���� 3 �Ĥ���ˡ�Ǽ¹ԤǤ��ޤ���������ˡ�Ȥϡ�(1) �ѥå�����̾���Ϥ���(2) \f2\-subpackages\fP ����Ѥ��롢(3) �������ե�����̾�ǥ磻��ɥ����ɤ���Ѥ��� (\f2*.java\fP)���� 3 �ĤǤ��������ξ�硢Javadoc �ġ��뤬��\f2.java\fP�ץե�����ν�����Ԥ��Τϡ����Υե����뤬���Τ��٤Ƥ��׷���������������Ǥ���
 .RS 3
 .TP 2
 o
-名前から \f2.java\fP の接尾辞を取り除くと、実際に有効なクラス名になっている (有効な文字については、
+̾��������������\f2.java\fP�פ�������ȼºݤ�ͭ���ʥ��饹̾�ˤʤäƤ��� (ͭ����ʸ���ˤĤ��Ƥ�
 .na
-\f2「Identifiers」\fP @
+\f2��Identifiers��\fP @
 .fi
-http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625を参照) 
+http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625�򻲾�) 
 .TP 2
 o
-ソースツリーのルートから相対的なディレクトリパスが、区切り文字をドットに変換すると、実際に有効なパッケージ名になっている 
+�������ĥ꡼�Υ롼�Ȥ�������Ū�ʥǥ��쥯�ȥ�ѥ��������ڤ�ʸ����ɥåȤ��Ѵ�����ȡ��ºݤ�ͭ���ʥѥå�����̾�ˤʤäƤ��� 
 .TP 2
 o
-パッケージ文には有効なパッケージ名が含まれる (前項目で指定) 
+�ѥå�����ʸ�ˤ�ͭ���ʥѥå�����̾���ޤޤ�� (�����ܤǻ���) 
 .RE
-
 .LP
-.LP
-\f3リンクの処理\fP \- Javadoc ツールは、処理の実行中に、その実行でドキュメント化されるパッケージ、クラス、およびメンバーの名前に対して、自動的に相互参照リンクを追加します。このようなリンクは、次のような場所に追加されます。
-.LP
+\f3��󥯤ν���\fP \- Javadoc �ġ���ϡ������μ¹���ˡ����μ¹Ԥǥɥ�����Ȳ������ѥå����������饹������ӥ��С���̾�����Ф��ơ���ưŪ����߻��ȥ�󥯤��ɲä��ޤ������Τ褦�ʥ�󥯤ϡ����Τ褦�ʾ����ɲä���ޤ���
 .RS 3
 .TP 2
 o
-宣言 (戻り値の型、引数の型、フィールドの型) 
+��� (����ͤη��������η����ե�����ɤη�) 
 .TP 2
 o
-\f2@see\fP タグから生成された [関連項目] セクション 
+\f2@see\fP ���������������줿 [��Ϣ����] ��������� 
 .TP 2
 o
-\f2{@link}\fP タグから生成されたインラインテキスト 
+\f2{@link}\fP ���������������줿����饤��ƥ����� 
 .TP 2
 o
-\f2@throws\fP タグから生成された例外の名前 
+\f2@throws\fP ���������������줿�㳰��̾�� 
 .TP 2
 o
-"インタフェースのメンバーに対する [定義] リンクと、クラスのメンバーに対する [オーバーライド] リンク 
+���󥿥ե������Υ��С����Ф��������ץ�󥯤ȡ����饹�Υ��С����Ф���֥����С��饤�ɡץ�� 
 .TP 2
 o
-パッケージ、クラス、およびメンバーを列挙している概要テーブル 
+�ѥå����������饹������ӥ��С�����󤷤Ƥ��복�ץơ��֥� 
 .TP 2
 o
-パッケージおよびクラスの継承ツリー 
+�ѥå���������ӥ��饹�ηѾ��ĥ꡼ 
 .TP 2
 o
-索引 
+���� 
 .RE
-
 .LP
+���ޥ�ɹԤǻ��ꤷ�ʤ��ä����饹�ˤĤ��Ƥδ�¸�Υƥ����� (�̤����������ƥ�����) ���Ф��ƥϥ��ѡ���󥯤��ɲä���ˤϡ�\f2\-link\fP ����� \f2\-linkoffline\fP ���ץ��������ѤǤ��ޤ���
 .LP
-コマンド行で指定しなかったクラスについての既存のテキスト (別に生成したテキスト) に対してハイパーリンクを追加するには、\f2\-link\fP および \f2\-linkoffline\fP オプションを利用できます。
+\f3����¾�ν����ˤĤ��Ƥξܺ�\fP \- Javadoc �ġ���ϡ��¹Ԥ��뤿�Ӥ� 1 �Ĥδ����ʥɥ�����Ȥ�������ޤ����ɥ�����Ȥ��ɲ��������뤳�ȤϤǤ��ޤ��󡣤ĤޤꡢJavadoc �ġ���ΰ����μ¹Է�̤��������ꡢ�������Ƥ�ľ���Ȥ����줿�ꤹ�뤳�ȤϤǤ��ޤ��󡣤����������ҤΤ褦�ˡ������μ¹Է�̤��Ф��ƥ�󥯤��ɲä��뤳�ȤϤǤ��ޤ���
 .LP
+���������ͳ���顢Javadoc �ġ���ϡ�������¹Ԥ��뤿��� java ����ѥ����ɬ�פȤ���java ����ѥ���˰�¸���Ƥ��ޤ���Javadoc �ġ���ϡ� \f2javac\fP �ΰ�����ƤӽФ�������򥳥�ѥ��뤷�ޤ��������С��μ�����̵�뤷�ޤ���Javadoc �ġ���ϡ����饹���ؤ�ޤ९�饹��˭�٤�����ɽ���ȥ��饹�Ρֻ��ѡ״ط����ۤ������ξ��󤫤� HTML ���������ޤ�������ˡ�Javadoc �ġ���ϡ������������ɤΥɥ�����ơ�����󥳥��Ȥ��顢�桼�������󶡤����ɥ�����Ȥ�������ޤ���
 .LP
-\f3その他の処理についての詳細\fP \- Javadoc ツールは、実行するたびに 1 つの完全なドキュメントを作成します。 ドキュメントを追加生成することはできません。 つまり、Javadoc ツールの以前の実行結果を修正したり、その内容を直接組み入れたりすることはできません。ただし、前述のように、以前の実行結果に対してリンクを追加することはできます。
+�ºݤˤϡ�Javadoc �ġ���ϡ��᥽�å����Τ�����ʤ����ʥ����֥ե�����Ǥ���褦�� \f2.java\fP �������ե�����Ǥ�ư��ޤ����������äơ�API �κ������ˤϡ������򵭽Ҥ��������߷פ��ᤤ�ʳ��ǡ��ɥ�����ơ�����󥳥��Ȥ򵭽Ҥ��� javadoc �ġ����¹ԤǤ��ޤ���
 .LP
-.LP
-実装上の理由から、Javadoc ツールは、処理を実行するために java コンパイラを必要とし、java コンパイラに依存しています。Javadoc ツールは \f2javac\fP の一部を呼び出すことにより、宣言をコンパイルし、メンバーの実装は無視します。Javadoc ツールは、クラス階層を含むクラスの豊富な内部表現とクラスの「使用」関係を構築し、その情報から HTML を生成します。さらに、Javadoc ツールは、ソースコードのドキュメンテーションコメントから、ユーザーの提供したドキュメントも取得します。
-.LP
-.LP
-Javadoc ツールは、メソッド本体のない純粋なスタブファイルである \f2.java\fP ソースファイルに対しても、実行することができます。したがって、API の作成時には、実装を記述する前の設計の早い段階で、ドキュメンテーションコメントを記述して javadoc ツールを実行できます。
-.LP
-.LP
-コンパイラに依存することによって、HTML 出力は、実際の実装に正確に対応します。 実際の実装は、明示的なソースコードにではなく、暗黙のソースコードに依存する場合があります。たとえば、Javadoc ツールは、\f2.class\fP ファイル内に存在するが、ソースコード内には存在しない
+����ѥ���˰�¸���뤳�Ȥˤ�äơ�HTML ���Ϥϡ��ºݤμ��������Τ��б����ޤ����ºݤμ����ϡ�����Ū�ʥ����������ɤˤǤϤʤ������ۤΥ����������ɤ˰�¸�����礬����ޤ������Ȥ��С�Javadoc �ġ���ϡ�.class �ե�����ˤ�¸�ߤ��뤬�����������ɤˤ�¸�ߤ��ʤ� 
 .na
-\f2デフォルトコンストラクタ\fP @
+\f2�ǥե���ȥ��󥹥ȥ饯��\fP @
 .fi
-http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36154 (Java 言語仕様のセクション 8.6.7) をドキュメント化します。
+http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36154 (Java ������ͤΥ�������� 8.6.7) \f2��ɥ�����Ȳ�\fP ���ޤ���
 .LP
+�̾Javadoc �ġ���Ǥϡ��������ե�����Υ����ɤ��Դ����ޤ��ϥ��顼��ޤ�Ǥ�����Ǥ�ɥ�����Ȥ������Ǥ��ޤ������Τ��ᡢ�ǥХå���ȥ�֥륷�塼�ƥ��󥰤�λ�������˥ɥ�����Ȥ������Ǥ��ޤ������Ȥ��С�Java ������ͤˤ��ȡ���ݥ᥽�åɤ�ޤ९�饹�ϡ����켫����ݤȤ����������ʤ���Фʤ�ޤ��󡣤��Υ��顼�򸡽Ф���ȡ�javac ����ѥ������ߤ��ޤ�����Javadoc �ġ���Ϸٹ��Ф����˽�����³�Ԥ��ޤ���Javadoc �ġ���ϥɥ�����ơ�����󥳥��Ȥδ���Ū�ʥ����å���Ԥ��ޤ����ɥ�����ơ�����󥳥��Ȥ���ܤ��������å�����ɬ�פ�������ϡ�DocCheck �ɥå���åȤ���Ѥ��Ƥ���������
 .LP
-通常、Javadoc ツールでは、ソースファイルのコードが不完全またはエラーを含んでいる場合でもドキュメントを生成できます。このため、デバッグやトラブルシューティングを完了する前にドキュメントを生成できます。たとえば、Java 言語仕様によると、抽象メソッドを含むクラスは、それ自体抽象として宣言されなければなりません。このエラーを検出すると、javac コンパイラは停止しますが、Javadoc ツールは警告を出さずに処理を続行します。Javadoc ツールはドキュメンテーションコメントの基本的なチェックを行います。ドキュメンテーションコメントをより詳しくチェックする必要がある場合は、DocCheck ドックレットを使用してください。
-.LP
-.LP
-Javadoc ツールは、ドキュメントの内部構造を構築する際、参照クラスをすべてロードします。このため、Javadoc ツールは、ブートストラップクラス、拡張機能、またはユーザークラスにかかわらず、すべての参照クラスを検索できなければなりません。詳細は、
+Javadoc �ġ���ϡ��ɥ�����Ȥ�������¤���ۤ���ݡ����ȥ��饹�򤹤٤ƥ����ɤ��ޤ������Τ��ᡢJavadoc �ġ���ϡ��֡��ȥ��ȥ�åץ��饹����ĥ��ǽ���ޤ��ϥ桼�������饹�ˤ�����餺�����٤Ƥλ��ȥ��饹�򸡺��Ǥ��ʤ���Фʤ�ޤ��󡣾ܺ٤ϡ�
 .na
-\f2「クラスの検索方法」\fP @
+\f2�֥��饹�θ�����ˡ��\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.htmlを参照してください。通常、作成するクラスは、拡張機能としてロードするか、Javadoc ツールのクラスパス内に置く必要があります。
-.LP
+http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.html�򻲾Ȥ��Ƥ����������̾�������륯�饹�ϡ���ĥ��ǽ�Ȥ��ƥ����ɤ��뤫��Javadoc �ġ���Υ��饹�ѥ�����֤�ɬ�פ�����ޤ���
 .SS 
-Javadoc のドックレット
+Javadoc �Υɥå���å�
 .LP
-.LP
-Javadoc ツールの出力の内容と形式は、ドックレットを使ってカスタマイズできます。Javadoc ツールには、標準ドックレットと呼ばれるデフォルトの「組み込み」ドックレットがあります。 標準ドックレットは、HTML 形式の API ドキュメントを生成します。標準ドックレットを修正またはサブクラス化することや、HTML、XML、MIF、RTF などの好みの出力形式を生成する独自のドックレットを記述することも可能です。ドックレットとその使用法については、次の項目を参照してください。
-.LP
+Javadoc �ġ���ν��Ϥ����Ƥȷ����ϡ��ɥå���åȤ�Ȥäƥ������ޥ����Ǥ��ޤ���Javadoc �ġ���ˤϡ�ɸ��ɥå���åȤȸƤФ��ǥե���ȤΡ��Ȥ߹��ߡץɥå���åȤ�����ޤ���ɸ��ɥå���åȤϡ�HTML ������ API �ɥ�����Ȥ��������ޤ���ɸ��ɥå���åȤ����ޤ��ϥ��֥��饹�����뤳�Ȥ䡢HTML��XML��MIF��RTF �ʤɤι��ߤν��Ϸ��������������ȼ��Υɥå���åȤ򵭽Ҥ��뤳�Ȥ��ǽ�Ǥ����ɥå���åȤȤ��λ���ˡ�ˤĤ��Ƥϡ����ι��ܤ򻲾Ȥ��Ƥ���������
 .RS 3
 .TP 2
 o
 .na
-\f2Javadoc のドックレット\fP @
+\f2Javadoc �Υɥå���å�\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/javadoc/index.html 
 .TP 2
 o
-\f2\-doclet\fP コマンド行オプション 
+\f2\-doclet\fP ���ޥ�ɹԥ��ץ���� 
 .RE
-
 .LP
-.LP
-\f2\-doclet\fP コマンド行オプションでカスタムドックレットが指定されていない場合、Javadoc ツールは、デフォルトの標準ドックレットを使用します。javadoc ツールには、使用されているドックレットに関係なく使用できるコマンド行オプションがあります。標準ドックレットでは、これらのほかに、いくつかのコマンド行オプションが追加されます。どちらのオプションについても、このあとの「オプション」で説明します。
-.LP
+\f2\-doclet\fP ���ޥ�ɹԥ��ץ����ǥ�������ɥå���åȤ����ꤵ��Ƥ��ʤ���硢Javadoc �ġ���ϡ��ǥե���Ȥ�ɸ��ɥå���åȤ���Ѥ��ޤ���javadoc �ġ���ˤϡ����Ѥ���Ƥ���ɥå���åȤ˴ط��ʤ����ѤǤ��륳�ޥ�ɹԥ��ץ���󤬤���ޤ���ɸ��ɥå���åȤǤϡ������Τۤ��ˡ������Ĥ��Υ��ޥ�ɹԥ��ץ�����ɲä���ޤ����ɤ���Υ��ץ����ˤĤ��Ƥ⡢���Τ��ȤΡ֥��ץ����פ��������ޤ���
 .SS 
-関連ドキュメントおよびドックレット
-.LP
+��Ϣ�ɥ�����Ȥ���ӥɥå���å�
 .RS 3
 .TP 2
 o
 .na
-\f2Javadoc に施された機能強化\fP @
+\f2Javadoc �˻ܤ��줿��ĥ��ǽ\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/javadoc/index.html \- Javadoc で追加された改良点の詳細 
+http://java.sun.com/javase/6/docs/technotes/guides/javadoc/index.html \- Javadoc 1.4 ���ɲä��줿�������ξܺ� 
 .TP 2
 o
 .na
 \f2Javadoc FAQ\fP @
 .fi
-http://java.sun.com/j2se/javadoc/faq/index.html \- 頻繁に寄せられる質問に対する回答、Javadoc 関連のツールについての情報、およびバグの回避方法 
+http://java.sun.com/j2se/javadoc/faq/index.html \- ���ˤ˴󤻤��������Ф��������Javadoc ��Ϣ�Υġ���ˤĤ��Ƥξ��󡢤���ӥХ��β�����ˡ 
 .TP 2
 o
 .na
 \f2How to Write Doc Comments for Javadoc\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html \- ドキュメンテーションコメントの記述方法に関する Sun の規約 
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html \- �ɥ�����ơ�����󥳥��Ȥε�����ˡ�˴ؤ��� Sun �ε��� 
 .TP 2
 o
 .na
 \f2Requirements for Writing API Specifications\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingapispecs/index.html \- Java 2 プラットフォーム仕様を記述する際に使用された標準要件。この情報は、ソースファイルのドキュメンテーションコメント形式で API 仕様を記述する場合にも、その他の形式で記述する場合にも役立ちます。検証可能なアサーションを満たすパッケージ、クラス、インタフェース、フィールド、およびメソッドについての要件を定めています。 
+http://java.sun.com/j2se/javadoc/writingapispecs/index.html \- Java SE �ץ�åȥե�������ͤ򵭽Ҥ���ݤ˻��Ѥ��줿ɸ���׷盧�ξ���ϡ��������ե�����Υɥ�����ơ�����󥳥��ȷ����� API ���ͤ򵭽Ҥ�����ˤ⡢����¾�η����ǵ��Ҥ�����ˤ���Ω���ޤ������ڲ�ǽ�ʥ������������������ѥå����������饹�����󥿥ե��������ե�����ɡ�����ӥ᥽�åɤˤĤ��Ƥ��׷�����Ƥ��ޤ��� 
 .TP 2
 o
 .na
-\f2ドキュメンテーションコメントの仕様\fP @
+\f2�ɥ�����ơ�����󥳥��Ȥλ���\fP @
 .fi
-http://java.sun.com/docs/books/jls/first_edition/html/18.doc.html \- ドキュメンテーションコメントのオリジナル仕様については、『Java Language Specification』 (James Gosling、Bill Joy、Guy Steele 共著) の初版の第 18 章「Documentation Comments」を参照してください。この章は、第 2 版では削除されました。  
+http://java.sun.com/docs/books/jls/first_edition/html/18.doc.html \- �ɥ�����ơ�����󥳥��ȤΥ��ꥸ�ʥ���ͤˤĤ��Ƥϡ���Java Language Specification�� (James Gosling��Bill Joy��Guy Steele ����) �ν��Ǥ��� 18 �ϡ�Documentation Comments�פ򻲾Ȥ��Ƥ������������ξϤϡ��� 2 �ǤǤϺ������ޤ����� 
 .TP 2
 o
 .na
-\f2DocCheck ドックレット\fP @
+\f2DocCheck �ɥå���å�\fP @
 .fi
-http://java.sun.com/javadoc/doccheck \- ソースファイル内のドキュメンテーションコメントをチェックし、検出されたエラーや不正のレポートを生成します。Sun Doc Check ユーティリティーの一部です。Sun Doc Check ユーティリティーの一部です。 
+http://java.sun.com/javadoc/doccheck \- �������ե�������Υɥ�����ơ�����󥳥��Ȥ�����å��������Ф��줿���顼�������Υ�ݡ��Ȥ��������ޤ���Doc Check �桼�ƥ���ƥ����ΰ����Ǥ��� 
 .TP 2
 o
 .na
-\f2MIF ドックレット\fP @
+\f2MIF �ɥå���å�\fP @
 .fi
-http://java.sun.com/javadoc/mifdoclet \- MIF、FrameMaker、PDF の書式で API ドキュメントを自動生成します。MIF は Adobe FrameMaker の交換書式です。 
+http://java.sun.com/javadoc/mifdoclet \- MIF��FrameMaker��PDF �ν񼰤� API �ɥ�����Ȥ�ư�������ޤ���MIF �� Adobe FrameMaker �θ򴹽񼰤Ǥ��� 
 .RE
-
-.LP
 .SS 
-用語
+�Ѹ�
 .LP
-.LP
-\f2「ドキュメンテーションコメント」\fP、\f2「doc コメント」\fP、\f2「主説明」\fP、\f2「タグ」\fP、\f2「ブロックタグ」\fP、および\f2「インラインタグ」\fPの用語については、「ドキュメンテーションコメント」で説明します。次のその他の用語は、Javadoc ツールのコンテキストで特定の意味を持ちます。
-.LP
+\f2�֥ɥ�����ơ�����󥳥��ȡ�\fP��\f2��doc �����ȡ�\fP��\f2�ּ�������\fP��\f2�֥�����\fP��\f2�֥֥��å�������\fP�������\f2�֥���饤�󥿥���\fP���Ѹ�ˤĤ��Ƥϡ��֥ɥ�����ơ�����󥳥��ȡפ��������ޤ��ʲ��Τ���¾���Ѹ�ϡ�Javadoc �ġ���Υ���ƥ����Ȥ�����ΰ�̣������ޤ���
 .RS 3
 .TP 3
-生成ドキュメント (generated document) 
-javadoc ツールが Java ソースコード内のドキュメンテーションコメントから生成したドキュメントのことです。デフォルトの生成ドキュメントは HTML 形式で、標準ドックレットによって作成されます。 
+�����ɥ������ (generated document) 
+javadoc �ġ��뤬 Java ��������������Υɥ�����ơ�����󥳥��Ȥ������������ɥ�����ȤΤ��ȤǤ����ǥե���Ȥ������ɥ�����Ȥ� HTML �����ǡ�ɸ��ɥå���åȤˤ�äƺ�������ޤ��� 
 .LP
 .TP 3
-名前 (name) 
-Java 言語で書かれたプログラム要素の名前、つまりパッケージ、クラス、インタフェース、フィールド、コンストラクタ、またはメソッドの名前のことです。名前は、\f2java.lang.String.equals(java.lang.Object)\fP のように完全修飾することも、\f2equals(Object)\fP のように部分修飾することもできます。 
+̾�� (name) 
+Java ����ǽ񤫤줿�ץ���������Ǥ�̾�����Ĥޤ�ѥå����������饹�����󥿥ե��������ե�����ɡ����󥹥ȥ饯�����ޤ��ϥ᥽�åɤ�̾���Τ��ȤǤ���̾���ϡ� \f2java.lang.String.equals(java.lang.Object)\fP �Τ褦�ʴ�������̾�ˤ��뤳�Ȥ⡢ \f2equals(Object)\fP �Τ褦����ʬ����̾�ˤ��뤳�Ȥ�Ǥ��ޤ��� 
 .LP
 .TP 3
-ドキュメント化されるクラス (documented classes) 
-javadoc ツールの実行によって詳細なドキュメントが生成されるクラスおよびインタフェースのことです。ドキュメント化するには、ソースファイルが使用可能でなければならず、ソースファイル名またはパッケージ名を javadoc コマンドに渡され、アクセス修飾子 (public、protected、package\-private または private) によってフィルタ処理されないようにしなければなりません。ドキュメント化されるクラスは、javadoc ツールの出力に組み込まれるクラス、つまり「包含クラス」とも呼ばれます。 
+�ɥ�����Ȳ�����륯�饹 (documented classes) 
+javadoc �ġ���μ¹Ԥˤ�äƾܺ٤ʥɥ�����Ȥ���������륯�饹����ӥ��󥿥ե������Τ��ȤǤ����ɥ�����Ȳ�����ˤϡ��������ե����뤬���Ѳ�ǽ�Ǥʤ���Фʤ餺���������ե�����̾�ޤ��ϥѥå�����̾�� javadoc ���ޥ�ɤ��Ϥ��졢�������������� (public��protected��package\-private �ޤ��� private) �ˤ�äƥե��륿��������ʤ��褦�ˤ��ʤ���Фʤ�ޤ��󡣥ɥ�����Ȳ�����륯�饹�ϡ�javadoc �ġ���ν��Ϥ��Ȥ߹��ޤ�륯�饹���Ĥޤ����ޥ��饹�פȤ�ƤФ�ޤ��� 
 .LP
 .TP 3
-包含クラス (included classes) 
-ツールの実行によって詳細なドキュメントが生成されるクラスおよびインタフェースのことです。「ドキュメント化されるクラス」 と同じ。 
+��ޥ��饹 (included classes) 
+�ġ���μ¹Ԥˤ�äƾܺ٤ʥɥ�����Ȥ���������륯�饹����ӥ��󥿥ե������Τ��ȤǤ����֥ɥ�����Ȳ�����륯�饹�פ�Ʊ���� 
 .LP
 .TP 3
-除外クラス (excluded classes) 
-ツールの実行によって詳細なドキュメントが生成されないクラスおよびインタフェースのことです。 
+�������饹 (excluded classes) 
+�ġ���μ¹Ԥˤ�äƾܺ٤ʥɥ�����Ȥ���������ʤ����饹����ӥ��󥿥ե������Τ��ȤǤ��� 
 .LP
 .TP 3
-参照クラス (referenced classes) 
-ドキュメント化されるクラスおよびインタフェースの定義 (実装) またはドキュメンテーションコメントの中で明示的に参照されているクラスおよびインタフェースのことです。参照の例としては、戻り値の型、パラメータの型、キャストの型、拡張されたクラス、実装されたインタフェース、インポートされたクラス、メソッド本体で使用されるクラス、@see、{@link}、{@linkplain}、{@inheritDoc} タグなどがあります。この定義は 
+���ȥ��饹 (referenced classes) 
+�ɥ�����Ȳ�����륯�饹����ӥ��󥿥ե���������� (����) �ޤ��ϥɥ�����ơ�����󥳥��Ȥ��������Ū�˻��Ȥ���Ƥ��륯�饹����ӥ��󥿥ե������Τ��ȤǤ������Ȥ���Ȥ��Ƥϡ�����ͤη����ѥ�᡼���η������㥹�Ȥη�����ĥ���줿���饹���������줿���󥿥ե�����������ݡ��Ȥ��줿���饹���᥽�å����Τǻ��Ѥ���륯�饹��@see��{@link}��{@linkplain}��{@inheritDoc} �����ʤɤ�����ޤ������������ 
 .na
 \f21.3\fP @
 .fi
-http://java.sun.com/j2se/1.3/docs/tooldocs/solaris/javadoc.html#referencedclasses から変更されています。javadoc ツールを実行するときは、Javadoc のブートクラスパスおよびクラスパス内にあるすべての参照クラスをメモリーにロードする必要があります。参照クラスが見つからない場合は、「クラスが見つかりません」という警告が表示されます。Javadoc ツールは、クラスの存在とそのメンバーの完全指定の名前を判別するのに必要なすべての情報を、.class ファイルから引き出すことができます。 
+http://java.sun.com/j2se/1.3/docs/tooldocs/solaris/javadoc.html#referencedclasses �����ѹ�����Ƥ��ޤ���javadoc �ġ����¹Ԥ���Ȥ��ϡ�Javadoc �Υ֡��ȥ��饹�ѥ�����ӥ��饹�ѥ���ˤ��뤹�٤Ƥλ��ȥ��饹����꡼�˥����ɤ���ɬ�פ�����ޤ������ȥ��饹�����Ĥ���ʤ����ϡ��֥��饹�����Ĥ���ޤ���פȤ����ٹ�ɽ������ޤ���Javadoc �ġ���ϡ����饹��¸�ߤȤ��Υ��С��δ��������̾����Ƚ�̤���Τ�ɬ�פʤ��٤Ƥξ����.class �ե����뤫������Ф����Ȥ��Ǥ��ޤ��� 
 .LP
 .TP 3
-外部参照クラス (external referenced classes) 
-参照クラスのうち、javadoc ツールの実行中にドキュメントが生成されないクラスのことです。つまり、これらのクラスは、コマンド行で Javadoc ツールに渡されていません。生成ドキュメント内でこれらのクラスにリンクしている箇所は、「外部参照」または「外部リンク」と呼ばれます。たとえば、\f2java.awt\fP パッケージに対してだけ Javadoc ツールを実行した場合、\f2Object\fP などの \f2java.lang\fP 内のすべてのクラスが外部参照クラスになります。外部参照クラスにリンクするには、\f2\-link\fP および \f2\-linkoffline\fP オプションを使用します。外部参照クラスには、通常そのソースコメントを javadoc ツールの実行で利用できないという重要な特徴があります。この場合、それらのコメントを継承することはできません。 
+�������ȥ��饹 (external referenced classes) 
+���ȥ��饹�Τ�����javadoc �ġ���μ¹���˥ɥ�����Ȥ���������ʤ����饹�Τ��ȤǤ����Ĥޤꡢ�����Υ��饹�ϡ����ޥ�ɹԤ� Javadoc �ġ�����Ϥ���Ƥ��ޤ��������ɥ��������Ǥ����Υ��饹�˥�󥯤��Ƥ���ս�ϡ��ֳ������ȡפޤ��ϡֳ�����󥯡פȸƤФ�ޤ������Ȥ��С�Javadoc �ġ���μ¹��оݤ� \f2java.awt\fP �ѥå������ΤߤǤ����硢 \f2java.lang\fP ��Τ��٤ƤΥ��饹 ( \f2Object\fP�ʤ�) ���������ȥ��饹�ˤʤ�ޤ����������ȥ��饹�˥�󥯤���ˤϡ� \f2\-link\fP ����� \f2\-linkoffline\fP ���ץ�������Ѥ��ޤ����������ȥ��饹�ˤϡ��̾綠�Υ����������Ȥ� javadoc �ġ���μ¹Ԥ����ѤǤ��ʤ��Ȥ������פ���ħ������ޤ������ξ�硢�����Υ����Ȥ�Ѿ����뤳�ȤϤǤ��ޤ��� 
 .RE
-
+.SH "�������ե�����"
 .LP
-.SH "ソースファイル"
-.LP
-.LP
-Javadoc ツールは、4 種類の異なるソースファイルから出力結果を生成します。そのファイルは、クラスの Java 言語ソースファイル (\f2.java\fP)、パッケージコメントファイル、概要コメントファイル、およびその他の処理されないファイルです。また、ドキュメント化しないがソースツリーに存在する場合があるテストファイルやテンプレートファイルについても説明します。
-.LP
+Javadoc �ġ���� 4 ����ΰۤʤ�֥������ץե����뤫����Ϥ��������ޤ������� 4 ����Ȥϡ����饹�� Java ���쥽�����ե����� (\f2.java\fP)���ѥå����������ȥե����롢���ץ����ȥե����롢����Ӥ���¾�ν�������ʤ��ե�����Ǥ����ޤ����ɥ�����Ȳ����ʤ����������ĥ꡼��¸�ߤ����礬����ƥ��ȥե������ƥ�ץ졼�ȥե�����ˤĤ��Ƥ��������ޤ���
 .SS 
-クラスソースコードファイル
+���饹�����������ɥե�����
 .LP
-.LP
-それぞれのクラスまたはインタフェース、およびそのメンバーは、独自のドキュメンテーションコメントを持つことができ、それを \f2.java\fP ファイル内に保持します。ドキュメンテーションコメントの詳細は、「ドキュメンテーションコメント」を参照してください。
-.LP
+���줾��Υ��饹�ޤ��ϥ��󥿥ե�����������Ӥ��Υ��С��ϡ��ȼ��Υɥ�����ơ�����󥳥��Ȥ���Ĥ��Ȥ��Ǥ�������� \f2.java\fP �ե���������ݻ����ޤ����ɥ�����ơ�����󥳥��Ȥξܺ٤ϡ��֥ɥ�����ơ�����󥳥��ȡפ򻲾Ȥ��Ƥ���������
 .SS 
-パッケージコメントファイル
+�ѥå����������ȥե�����
 .LP
+���줾��Υѥå������ϡ��ȼ��Υɥ�����ơ�����󥳥��Ȥ���Ĥ��Ȥ��Ǥ�����������ѤΡ֥������ץե�������ݻ����ޤ����������Ƥϡ�Javadoc �ġ���ˤ�ä���������복�ץڡ������Ȥ߹��ޤ�ޤ������Υ����Ȥˤϡ��̾���Υѥå��������Τ����ƤϤޤ�ɥ�����Ȥ򵭽Ҥ��ޤ���
 .LP
-それぞれのパッケージは、独自のドキュメンテーションコメントを持つことができ、それを専用の「ソース」ファイルに保持します。 その内容は、Javadoc ツールによって生成される概要ページに組み込まれます。このコメントには、通常、そのパッケージ全体に当てはまるドキュメントを記述します。
-.LP
-.LP
-パッケージコメントファイルを作成する場合、コメントの格納先として、次の 2 つのファイルのいずれかを選択できます。
-.LP
+�ѥå����������ȥե��������������硢�����Ȥγ�Ǽ��Ȥ��ơ����� 2 �ĤΥե�����Τ����줫������Ǥ��ޤ���
 .RS 3
 .TP 2
 o
-\f2package\-info.java\fP \- パッケージ宣言、パッケージ注釈、パッケージコメント、および Javadoc タグを格納できます。このファイルは JDK 5.0 で導入されたものであり、package.html よりも推奨されています。 
+\f2package\-info.java\fP \- �ѥå�����������ѥå��������ᡢ�ѥå����������ȡ������ Javadoc �������Ǽ�Ǥ��ޤ������Υե�����ϰ��̤ˡ�package.html ����侩����ޤ��� 
 .TP 2
 o
-\f2package.html\fP \- 格納できるのはパッケージコメントと Javadoc タグだけです。 パッケージ注釈は格納できません。 
+\f2package.html\fP \- ��Ǽ�Ǥ���Τϥѥå����������Ȥ� Javadoc ���������Ǥ����ѥå���������ϳ�Ǽ�Ǥ��ޤ��� 
 .RE
-
 .LP
+�ƥѥå������Ǥϡ�ñ��� \f2package.html\fP �ե����롢ñ��� \f2package\-info.java\fP �ե�����Τ����줫������Ǥ��ޤ���������ξ�������򤹤뤳�ȤϤǤ��ޤ��󡣤��Τɤ��餫�Υե������ \f2.java\fP �ե�����ȤȤ�ˡ��������ĥ꡼��Τ��Υѥå������Υǥ��쥯�ȥ�������֤��Ƥ���������
 .LP
-各パッケージは、単一の \f2package.html\fP ファイル、単一の \f2package\-info.java\fP ファイルのいずれかを持つことができますが、両方を持つことはできません。このどちらかのファイルを \f2.java\fP ファイルとともに、ソースツリー内のそのパッケージのディレクトリ内に配置してください。
+\f4package\-info.java\fP \- ���Υե�����ˤϡ����ι�¤�Υѥå����������Ȥ��Ǽ�Ǥ��ޤ��� �����Ȥϥѥå�����������������֤��ޤ���
 .LP
-.LP
-\f4package\-info.java\fP \- このファイルには、次の構造のパッケージコメントを格納できます。 コメントはパッケージ宣言の前に配置します。
-.LP
-.LP
-File:\f2java/applet/package\-info.java\fP
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
+File: \f2java/applet/package\-info.java\fP
 .nf
 \f3
 .fl
 /**
 .fl
- * Provides the classes necessary to create an
+ * Provides the classes necessary to create an  
 .fl
  * applet and the classes an applet uses 
 .fl
@@ -372,285 +288,91 @@ package java.lang.applet;
 .fl
 \fP
 .fi
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 352 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-42
-
 .LP
+�����ȶ��ڤ�ʸ���� \f2/**\fP �� \f2/*\fP ��¸�ߤ��Ƥ���ɬ�פ�����ޤ�������ֹԤι�Ƭ�Υ������ꥹ���Ͼ�ά���Ƥ⤫�ޤ��ޤ���
 .LP
-コメント区切り文字の \f2/**\fP と \f2/*\fP は記述する必要がありますが、中間行の行頭のアスタリスクは省略してもかまいません。
+\f4package.html\fP \- ���Υե�����ˤϡ����ι�¤�Υѥå����������Ȥ��Ǽ�Ǥ��ޤ��������Ȥ� \f2<body>\fP ����������֤��ޤ���
 .LP
-.LP
-\f4package.html\fP \- このファイルには、次の構造のパッケージコメントを格納できます。 コメントは \f2<body>\fP 要素内に配置します。
-.LP
-.LP
-File:\f2java/applet/package.html\fP
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
+File: \f2java/applet/package.html\fP
 .nf
 \f3
 .fl
-<HTML>
-.fl
-<BODY>
-.fl
-Provides the classes necessary to create an applet and the
-.fl
-classes an applet uses to communicate with its applet context.
-.fl
-<p>
+<HTML> <BODY> Provides the classes necessary to create an applet and the classes an applet uses to communicate with its applet context.<p>
 .fl
 The applet framework involves two entities: the applet
 .fl
-and the applet context. An applet is an embeddable
-.fl
-window (see the {@link java.awt.Panel} class) with a
-.fl
-few extra methods that the applet context can use to
-.fl
-initialize, start, and stop the applet. 
-.fl
-
-.fl
-@since 1.0 
-.fl
-@see java.awt
-.fl
-</BODY>
-.fl
-</HTML>
+and the applet context. An applet is an embeddable window (see the {@link java.awt.Panel} class) with a few extra methods that the applet context can use to initialize, start, and stop the applet.@since 1.0 @see java.awt </BODY> </HTML>
 .fl
 \fP
 .fi
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 405 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-40
-
 .LP
-.LP
-これは単なる通常の HTML ファイルであり、パッケージ宣言を含んでいない点に注意してください。パッケージコメントファイルの内容は、ほかのすべてのコメントと同様に HTML で記述されています。それは、このドキュメンテーションコメントには、コメント区切り文字である \f2/**\fP と \f2*/\fP、および行頭のアスタリスクを含めてはならない、ということです。コメントを書く場合は、最初の文をパッケージの概要とし、\f2<body>\fP と最初の文の間にタイトルやその他のテキストを含めないようにします。パッケージタグを含めることはできますが、ほかのドキュメンテーションコメントと同様、すべてのブロックタグは、主説明のあとに置かなければなりません。パッケージコメントファイルに \f2@see\fP タグを追加する場合は、完全指定の名前を使用する必要があります。詳細は、 
+�����ñ�ʤ��̾�� HTML �ե�����Ǥ��ꡢ�ѥå����������ޤ�Ǥ��ʤ��������դ��Ƥ����������ѥå����������ȥե���������Ƥϡ��ۤ��Τ��٤ƤΥ����Ȥ�Ʊ�ͤ� HTML �ǵ��Ҥ��ޤ�����1 �Ĥ����㳰������ޤ�������ϡ����Υɥ�����ơ�����󥳥��Ȥˤϡ������ȶ��ڤ�ʸ�� �Ǥ��� \f2/**\fP �� \f2*/\fP ������ӹ�Ƭ�Υ������ꥹ����ޤ�ƤϤʤ�ʤ����Ȥ������Ǥ��������Ȥ�񤯾��ϡ��ǽ��ʸ��ѥå������γ��פȤ��� \f2<body>\fP �Ⱥǽ��ʸ�δ֤˥����ȥ�䤽��¾�Υƥ����Ȥ�ޤ�ʤ��褦�ˤ��ޤ����ѥå�����������ޤ�뤳�ȤϤǤ��ޤ������ۤ��Υɥ�����ơ�����󥳥��Ȥ�Ʊ�͡����٤ƤΥ֥��å������ϡ��������Τ��Ȥ��֤��ʤ���Фʤ�ޤ��� \f2@see\fP ������ѥå����������ȥե�������ɲä�����ˤϡ���������̾����Ѥ���ɬ�פ�����ޤ����ܺ٤ϡ� 
 .na
-\f2package.html\fP の例 @
+\f2package.html\fP���� @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#packagecommentsを参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#packagecomments�򻲾Ȥ��Ƥ���������
 .LP
-.LP
-\f3パッケージコメントファイルの処理\fP \- Javadoc ツールは、実行時にパッケージコメントファイルを自動的に検索し、このファイルを見つけると次の処理を行います。
-.LP
+\f3�ѥå����������ȥե�����ν���\fP \- Javadoc �ġ���ϡ��¹Ի��˥ѥå����������ȥե������ưŪ�˸����������Υե�����򸫤Ĥ���ȼ��ν�����Ԥ��ޤ���
 .RS 3
 .TP 2
 o
-処理できるようにコメントをコピーする (\f2package.html\fP の場合であれば、\f2<body>\fP と \f2</body>\fP HTML タグの間にある内容をすべてコピーする。\f2<head>\fP を含め、そこに \f2<title>\fP やソースファイルの著作権記述などの情報を配置することもできるが、生成後のドキュメンテーションにはそれらは一切表示されない) 
+�����Ǥ���褦�˥����Ȥ򥳥ԡ�����( \f2package.html\fP �ξ��Ǥ���С� \f2<body>\fP �� \f2</body>\fP HTML �����δ֤ˤ������Ƥ򤹤٤ƥ��ԡ����롣 \f2<head>\fP ����������ޤᡢ������ \f2<title>\fP �䥽�����ե������������Ҥʤɤξ�������֤��뤳�Ȥ�Ǥ��뤬��������Υɥ�����ơ������ˤϤ����ϰ���ɽ������ʤ�) 
 .TP 2
 o
-パッケージタグがあれば、すべて処理する 
+�ѥå���������������С����٤ƽ������� 
 .TP 2
 o
-生成したパッケージの概要ページの最後に、処理したテキストを挿入する (例: 
+���������ѥå������γ��ץڡ����κǸ�ˡ����������ƥ����Ȥ��������� (��: 
 .na
-\f2パッケージの概要\fP @
+\f2�ѥå������γ���\fP @
 .fi
 http://java.sun.com/javase/6/docs/api/java/applet/package\-summary.html) 
 .TP 2
 o
-パッケージの概要ページの先頭に、パッケージコメントの最初の文をコピーする。さらに、概要ページのパッケージリストに、パッケージ名とパッケージコメントの最初の文を追加する (例: 
+�ѥå������γ��ץڡ�������Ƭ�ˡ��ѥå����������Ȥκǽ��ʸ�򥳥ԡ����롣����ˡ����ץڡ����Υѥå������ꥹ�Ȥˡ��ѥå�����̾�ȥѥå����������Ȥκǽ��ʸ���ɲä��� (��: 
 .na
-\f2概要の要約\fP @
+\f2���פ�����\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/overview\-summary.html)。文の末尾は、クラスやメンバーの主説明の最初の文の末尾と同じ規則によって判断される 
+http://java.sun.com/javase/6/docs/api/overview\-summary.html)��ʸ�������ϡ����饹����С��μ������κǽ��ʸ��������Ʊ����§�ˤ�ä�Ƚ�Ǥ���� 
 .RE
-
-.LP
 .SS 
-概要コメントファイル
+���ץ����ȥե�����
 .LP
+�ɥ�����Ȳ�����ƥ��ץꥱ�������ޤ��ϥѥå��������åȤϡ��ȼ��γ��ץɥ�����ơ�����󥳥��Ȥ���Ĥ��Ȥ��Ǥ�����������ѤΡ֥������ץե�������ݻ�����ޤ����������Ƥϡ�Javadoc �ġ���ˤ�ä���������복�ץڡ������Ȥ߹��ޤ�ޤ������Υ����Ȥˤϡ��̾���ץꥱ�������ޤ��ϥѥå��������å����Τ����ƤϤޤ�ɥ�����Ȥ򵭽Ҥ��ޤ���
 .LP
-ドキュメント化する各アプリケーションまたはパッケージセットは、独自の概要ドキュメンテーションコメントを持つことができ、それは専用の「ソース」ファイルに保持されます。 その内容は、Javadoc ツールによって生成される概要ページに組み込まれます。このコメントには、通常、アプリケーションまたはパッケージセット全体に当てはまるドキュメントを記述します。
+���ץ����ȥե�������������ˤϡ��ե������Ǥ�դ�̾�� (�̾�� \f4overview.html\fP) ���դ��������Ǥ�դξ�� (�̾�ϥ������ĥ꡼�κǾ��) �����֤Ǥ��ޤ������Ȥ��С� \f2java.applet\fP �ѥå������Υ������ե����뤬 \f2/home/user/src/java/applet\fP �ǥ��쥯�ȥ�˳�Ǽ����Ƥ���С����ץ����ȥե������ \f2/home/user/src/overview.html �˺����Ǥ��ޤ�\fP��
 .LP
+�ۤʤ�ѥå������Υ��åȤ��Ф��� javadoc ��ʣ����¹Ԥ�����ϡ�Ʊ�� 1 �ĤΥ������ե�����Υ��åȤ��Ф���ʣ���γ��ץ����ȥե����������Ǥ��ޤ������Ȥ��С������ɥ�����ơ�������Ѥ� \-private ����ꤷ�� javadoc �� 1 ��¹Ԥ������ȡ������ɥ�����ơ�������Ѥˤ��Υ��ץ�������ꤷ�ʤ��Ǻ��ټ¹Ԥ��뤳�Ȥ��Ǥ��ޤ������ξ�硢�Ƴ��ץ����ȥե������ 1 ʸ�ܤǡ����Υɥ�����ơ�����������Ѥޤ��������ѤȤ��Ƶ��ҤǤ��ޤ���
 .LP
-概要コメントファイルを作成する場合は、ファイルに任意の名前を付け、任意の場所に置くことができます。ただし、通常は、ファイル名を \f4overview.html\fP にして、ソースツリーの最上位レベルに置きます。たとえば、\f2java.applet\fP パッケージのソースファイルが \f2/home/user/src/java/applet\fP ディレクトリに含まれている場合は、\f2/home/user/src/overview.html\fP に概要コメントファイルを作成できます。
+���ץ����ȥե���������Ƥϡ����ҤΥѥå����������ȥե������Ʊ�͡�HTML �ǵ��Ҥ��줿 1 �Ĥ��礭�ʥɥ�����ơ�����󥳥��ȤǤ����ܺ٤ϡ����Ҥ������򻲾Ȥ��Ƥ��������������򷫤��֤��ȡ����Υ����Ȥ򵭽Ҥ�����ϡ��ǽ��ʸ�򥢥ץꥱ�������ޤ��ϥѥå��������åȤ�����Ȥ��� \f2<body>\fP �Ⱥǽ��ʸ�δ֤˥����ȥ뤽��¾�Υƥ����Ȥ�ޤ�ʤ��褦�ˤ��ޤ������ץ�����ޤ�뤳�Ȥ��Ǥ��ޤ����ۤ��Υɥ�����ơ�����󥳥��Ȥ�Ʊ������ \f2{@link}\fP �ʤɤΥ���饤�󥿥���������٤ƤΥ����ϡ��������Τ��Ȥ����֤���ɬ�פ�����ޤ��� \f2@see\fP �������ɲä�����ˤϡ���������̾����Ѥ���ɬ�פ�����ޤ���
 .LP
-.LP
-異なるパッケージのセットに対して javadoc を複数回実行する場合は、同じ 1 つのソースファイルのセットに対して複数の概要コメントファイルを作成できます。たとえば、内部ドキュメンテーション用に \-private を指定して javadoc を 1 回実行したあと、公開ドキュメンテーション用にそのオプションを指定しないで再度実行することができます。この場合、各概要コメントファイルの 1 文目で、そのドキュメンテーションを公開用または内部用として記述できます。
-.LP
-.LP
-概要コメントファイルの内容は、前述のパッケージコメントファイルと同様、HTML で記述された 1 つの大きなドキュメンテーションコメントです。詳細は、前述の説明を参照してください。要点を繰り返すと、このコメントを記述する場合は、最初の文をアプリケーションまたはパッケージセットの要約とし、\f2<body>\fP と最初の文の間にタイトルその他のテキストを含めないようにします。概要タグを含めることができます。 どのドキュメンテーションコメントについても、インラインタグ (\f2{@link}\fP など) 以外のすべてのタグは、主説明のあとに置く必要があります。\f2@see\fP タグを追加する場合は、完全指定の名前を使用しなければなりません。
-.LP
-.LP
-Javadoc ツールの実行時に、\-overview オプションを使って概要コメントファイル名を指定します。このファイルは、パッケージコメントファイルと同じように処理されます。
-.LP
+Javadoc �ġ���μ¹Ի��ˡ�\-overview ���ץ�����ȤäƳ��ץ����ȥե�����̾����ꤷ�ޤ������Υե�����ϡ��ѥå����������ȥե������Ʊ���褦�˽�������ޤ���
 .RS 3
 .TP 2
 o
-\f2<body>\fP タグと \f2</body>\fP タグの間にあるすべての内容を処理のためにコピーする 
+\f2<body>\fP ������ \f2</body>\fP �����δ֤ˤ��뤹�٤Ƥ����Ƥ�����оݤȤ��ƥ��ԡ����� 
 .TP 2
 o
-概要タグがあればすべて処理する 
+���ץ���������С����٤ƽ������� 
 .TP 2
 o
-生成した概要ページの最後に、処理したテキストを挿入する (例: 
+�����������ץڡ����κǸ�ˡ����������ƥ����Ȥ��������� (��: 
 .na
-\f2概要の要約\fP @
+\f2���פ�����\fP @
 .fi
 http://java.sun.com/javase/6/docs/api/overview\-summary.html) 
 .TP 2
 o
-概要ページの先頭に、概要コメントの最初の文をコピーする 
+���ץڡ�������Ƭ�ˡ����ץ����Ȥκǽ��ʸ�򥳥ԡ����� 
 .RE
-
-.LP
 .SS 
-その他の未処理のファイル
+����¾��̤�����Υե�����
 .LP
+�������ˤϡ�Javadoc �ġ���ˤ�ä�������Υǥ��쥯�ȥ�˥��ԡ�����롢����¾��Ǥ�դΥե������ޤ�뤳�Ȥ��Ǥ��ޤ������̤ˡ����Τ褦�ʥե�����ˤϡ�����ե��å��ե����롢����ץ�� Java ������ (.java) ����ӥ��饹 (.class) �ե����롢���Ƥ��̾�� Java �������ե�����Υɥ�����ơ�����󥳥��Ȥαƶ�������ʤ���Ω���� HTML �ե�����ʤɤ�����ޤ���
 .LP
-ソースには、Javadoc ツールによって生成先のディレクトリにコピーされる、その他の任意のファイルを含めることができます。一般に、このようなファイルには、グラフィックファイル、サンプルの Java ソース (.java) およびクラス (.class) ファイル、内容が通常の Java ソースファイルのドキュメンテーションコメントの影響を受けない独立した HTML ファイルなどがあります。
+��������ʤ��ե������ޤ��ˤϡ�\f4doc\-files\fP �Ȥ���̾���Υǥ��쥯�ȥ���ˤ����Υե���������֤��ޤ������Υǥ��쥯�ȥ�ϡ��������ե����뤬��Ǽ���줿Ǥ�դΥѥå������ǥ��쥯�ȥ�Υ��֥ǥ��쥯�ȥ�ˤ��ޤ������Τ褦�ʥ��֥ǥ��쥯�ȥ�ϡ��ѥå��������Ȥ� 1 ���ѰդǤ��ޤ������᡼��������ץ륳���ɡ��������ե����롢.class �ե����롢���ץ�åȡ������ HTML �ե�����򤳤Υǥ��쥯�ȥ�˳�Ǽ�Ǥ��ޤ������Ȥ��С��ܥ���β��� \f2button.gif\fP �� \f2java.awt.Button\fP ���饹�Υɥ�����ơ������˴ޤ����ˤϡ����Υե������ \f2/home/user/src/java/awt/doc\-files/\fP �ǥ��쥯�ȥ�������֤��ޤ����ʤ��� \f2doc\-files\fP �ǥ��쥯�ȥ�� \f2/home/user/src/java/doc\-files\fP �����֤��뤳�ȤϤǤ��ޤ��󡣤ʤ��ʤ顢 \f2java\fP �ϥѥå������ǤϤʤ�����Ǥ����Ĥޤꡢjava ��ľ�ܴޤޤ�Ƥ��륽�����ե������ 1 �Ĥ�¸�ߤ��Ƥ��ޤ���
 .LP
-.LP
-未処理のファイルをソースに含めるには、それらのファイルを \f4doc\-files\fP というディレクトリに置きます。 このディレクトリは、ソースファイルがある任意のパッケージディレクトリの下に作成できます。このようなサブディレクトリは、パッケージごとに 1 つ用意できます。イメージ、サンプルコード、ソースファイル、.class ファイル、アプレット、および HTML ファイルをこのディレクトリに格納できます。たとえば、ボタンのイメージ \f2button.gif\fP を \f2java.awt.Button\fP クラスのドキュメントに含める場合は、そのファイルを \f2/home/user/src/java/awt/doc\-files/\fP ディレクトリに置きます。\f2doc\-files\fP ディレクトリを \f2/home/user/src/java/doc\-files\fP に置くことはできません。 これは、\f2java\fP はパッケージではなく、そのディレクトリそのものにソースファイルが入っていないからです。
-.LP
-.LP
-これらの未処理のファイルへのリンクは、すべて明示的に記述する必要があります。 これは、Javadoc ツールがそれらのファイルを見ずに、単にディレクトリとその内容を生成先にコピーするだけだからです。たとえば、\f2Button.java\fP のドキュメンテーションコメント内のリンクは、次のようになります。
-.LP
+������̤�����Υե�����ؤΥ�󥯤ϡ����٤�����Ū�˵��Ҥ���ɬ�פ�����ޤ�������ϡ�Javadoc �ġ��뤬�����Υե�����򸫤��ˡ�ñ�˥ǥ��쥯�ȥ�Ȥ������Ƥ�������˥��ԡ��������������Ǥ������Ȥ��С� \f2Button.java\fP �Υɥ�����ơ�����󥳥�����Υ�󥯤ϡ����Τ褦�ˤʤ�ޤ���
 .nf
 \f3
 .fl
@@ -664,23 +386,16 @@ o
 .fl
 \fP
 .fi
-
-.LP
 .SS 
-テストファイルおよびテンプレートファイル
+�ƥ��ȥե����뤪��ӥƥ�ץ졼�ȥե�����
 .LP
+�����γ�ȯ�Ԥ��顢�ƥ��ȥե����뤪��ӥƥ�ץ졼�ȥե�������б����륽�����ե�����ζ᤯�Υ������ĥ꡼����¸�������Ȥ�����˾������ޤ������Ĥޤꡢ�����Υ������ե������Ʊ���ǥ��쥯�ȥ�ޤ��ϥ��֥ǥ��쥯�ȥ����¸�������Ȥ������ȤǤ���
 .LP
-一部の開発者から、テストファイルおよびテンプレートファイルを対応するソースファイルの近くのソースツリーに保存したいという要望がありました。つまり、これらのソースファイルと同じディレクトリまたはサブディレクトリに保存したいということです。
+���̤Υ������ե�����̾������Ū���Ϥ��� Javadoc �ġ����¹Ԥ�����ϡ��ƥ��ȥե����뤪��ӥƥ�ץ졼�ȥե������տ�Ū�˽������ơ���������ʤ��褦�ˤ��뤳�Ȥ��Ǥ��ޤ������������ѥå�����̾�ޤ��ϥ磻��ɥ����ɤ��Ϥ����ϡ��ʲ��Υ롼��˽��äơ������Υƥ��ȥե����뤪��ӥƥ�ץ졼�ȥե����뤬��������ʤ��褦�ˤ���ɬ�פ�����ޤ���
 .LP
+�ƥ��ȥե�����ȥƥ�ץ졼�ȥե�����ΰ㤤�ϡ��ƥ��ȥե�����ϡ������ǥ���ѥ����ǽ�ʥ������ե�����Ǥ���Τ��Ф��ơ��ƥ�ץ졼�ȥե�����ϡ������ǤϤʤ��Ȥ������Ǥ������������ƥ�ץ졼�ȥե�������.java�פǽ���뤳�Ȥ��Ǥ��ޤ���
 .LP
-個別のソースファイル名で明示的に渡して Javadoc ツールを実行する場合は、テストファイルおよびテンプレートファイルを意図的に除外して、処理されないようにすることができます。ただし、パッケージ名またはワイルドカードで渡す場合は、以下のルールに従って、これらのテストファイルおよびテンプレートファイルが処理されないようにする必要があります。
-.LP
-.LP
-テストファイルとテンプレートファイルの違いは、テストファイルは、正当でコンパイル可能なソースファイルであるのに対して、テンプレートファイルは、そうではないという点です。 ただし、テンプレートファイルも「.java」で終わることができます。
-.LP
-.LP
-\f3テストファイル\fP \- 開発者の多くは、あるパッケージのコンパイル可能で実行可能なテストファイルをそのパッケージのソースファイルと同じディレクトリに配置したいと考えています。しかしテストファイルは、名前なしパッケージなど、ソースファイルパッケージとは別のパッケージに属させたいとも考えています (そのため、テストファイルには package ステートメントがないか、またはソースとは別の package ステートメントがある)。このような状況では、コマンド行で指定されているソースのパッケージ名を指定してそのソースがドキュメント化されているときに、テストファイルは警告またはエラーを引き起こします。そのようなテストファイルはサブディレクトリに配置する必要があります。\f2com.package1\fP に追加する場合は、それらのテストファイルを、ハイフンが含まれるためパッケージ名としては無効になるサブディレクトリに配置します。
-.LP
+\f3�ƥ��ȥե�����\fP \- ��ȯ�Ԥ�¿���ϡ�����ѥå������Υ���ѥ����ǽ�Ǽ¹Բ�ǽ�ʥƥ��ȥե�����򤽤Υѥå������Υ������ե������Ʊ���ǥ��쥯�ȥ�����֤������ȹͤ��Ƥ��ޤ����������ƥ��ȥե�����ϡ�̾���ʤ��ѥå������ʤɡ��������ե�����ѥå������Ȥ��̤Υѥå�������°���������Ȥ�ͤ��Ƥ��ޤ� (���Τ��ᡢ�ƥ��ȥե�����ˤ� package ���ơ��ȥ��Ȥ��ʤ������ޤ��ϥ������Ȥ��̤� package ���ơ��ȥ��Ȥ�����)�����Τ褦�ʾ����Ǥϡ����ޥ�ɹԤǻ��ꤵ��Ƥ��륽�����Υѥå�����̾����ꤷ�Ƥ��Υ��������ɥ�����Ȳ�����Ƥ���Ȥ��ˡ��ƥ��ȥե�����Ϸٹ�ޤ��ϥ��顼������������ޤ������Τ褦�ʥƥ��ȥե�����ϥ��֥ǥ��쥯�ȥ�����֤���ɬ�פ�����ޤ������Ȥ��С� \f2com.package1\fP ��Υ������ե�������Ф���ƥ��ȥե�������ɲä�����ϼ��Τ褦�ˡ��ϥ��ե��ޤ�Ǥ��뤿��˥ѥå�����̾�Ȥ��Ƥ�̵���Ǥ���褦�ʥ��֥ǥ��쥯�ȥ���ˡ������Υե���������֤��ޤ���
 .nf
 \f3
 .fl
@@ -688,248 +403,189 @@ o
 .fl
 \fP
 .fi
-
 .LP
+��������ȡ�Javadoc �ġ���ǤϷٹ�ʤ��� test �ǥ��쥯�ȥ�򥹥��åפ��ޤ���
 .LP
-こうすると、Javadoc ツールでは警告なしで test ディレクトリをスキップします。
+�ƥ��ȥե������ doc �����Ȥ��ޤޤ���硢���Τ褦�˥磻��ɥ����ɤ�ޤ���ƥ��ȥ������ե�����̾���Ϥ��ƥƥ��ȥե�����Υɥ�����Ȥ���������褦�ˡ�Javadoc �ġ�����̸Ĥ˼¹ԤǤ���褦������Ǥ��ޤ������Ȥ��С� \f2com/package1/test\-files/*.java �ʤɤǤ�\fP��
 .LP
-.LP
-テストファイルに doc コメントが含まれる場合、次のようにワイルドカードを含んだテストソースファイル名で渡してテストファイルのドキュメントを生成するように、Javadoc ツールを別個に実行できるように設定できます。 たとえば、\f2com/package1/test\-files/*.java\fP などです。
-.LP
-.LP
-\f3ソースファイルのテンプレート\fP \- テンプレートファイルの名前は「.java」で終わることもありますが、テンプレートファイルはコンパイルできません。ソースディレクトリに保持したいソースファイルのテンプレートがある場合は、このファイル名にハイフン (\f2Buffer\-Template.java\fP など) やその他の不正な Java 文字を使用します。 こうすることで、処理されないようになります。これは、Javadoc ツールが処理するのは、「.java」接尾辞を除いた名前が 正規のクラス名であるソースファイルだけであるためです (
+\f3�������ե�����Υƥ�ץ졼��\fP \- �ƥ�ץ졼�ȥե������̾���ϡ�.java�פǽ���뤳�Ȥ⤢��ޤ������ƥ�ץ졼�ȥե�����ϥ���ѥ���Ǥ��ޤ��󡣥������ǥ��쥯�ȥ�����ݻ��������������ե�����Υƥ�ץ졼�Ȥ�������ϡ� \f2Buffer\-Template.java\fP �Τ褦�˥ϥ��ե�䤽��¾��̵���� Java ʸ����̾���˴ޤ�뤳�Ȥǡ��ƥ�ץ졼�Ȥ���������ʤ��褦�ˤ��ޤ�������ϡ�Javadoc �ġ��뤬��������Τϡ���.java���������������̾���� �����Υ��饹̾�Ǥ��륽�����ե���������Ǥ��뤿��Ǥ� (
 .na
-\f2「識別子」\fP @
+\f2��Identifiers��\fP @
 .fi
-http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625参照)。
+http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625����)��
+.SH "���������ե�����"
 .LP
-.SH "生成されるファイル"
+�ǥե���ȤǤϡ�javadoc �ġ���ϡ�HTML �����Υɥ�����Ȥ���������ɸ��ɥå���åȤ�Ȥ��ޤ������Υɥå���åȤϡ��ʲ��μ���Υե�������������ޤ������줾��� HTML �ڡ����ϡ��ġ��Υե�������������ޤ���javadoc ����������ե������̾���ˤϡ����饹�䥤�󥿥ե�������̾���ˤ��ʤ����Τȡ������Ǥʤ���� ( \f2package\-summary.html �ʤ�\fP) �� 2 ���ब����ޤ�����ԤΥ��롼�פΥե�����̾�ˤϡ����ԤΥ��롼�פȥե�����̾�����礷�ʤ��褦�ˡ��ϥ��ե󤬴ޤޤ�Ƥ��ޤ���
 .LP
-.LP
-デフォルトでは、javadoc ツールは、HTML 形式のドキュメントを生成する標準ドックレットを使います。このドックレットは、以下の種類のファイルを生成します。 それぞれの HTML ページは、個々のファイルに相当します。javadoc が生成するファイルの名前には、クラスやインタフェースの名前にちなんだものと、そうでないもの (\f2package\-summary.html\fP など) の 2 種類があります。後者のグループのファイル名には、前者のグループとファイル名が競合しないように、ハイフンが含まれています。
-.LP
-.LP
-\f3基本内容ページ\fP
-.LP
+\f3�������ƥڡ���\fP
 .RS 3
 .TP 2
 o
-ドキュメント化するクラスまたはインタフェースごとに 1 つの\f3クラスページまたはインタフェースページ\fP (\f2クラス名\fP\f2.html\fP)  
+�ɥ�����Ȳ����륯�饹�ޤ��ϥ��󥿥ե��������Ȥ� 1 �Ĥ�\f3���饹�ڡ����ޤ��ϥ��󥿥ե������ڡ���\fP (\f2���饹̾\fP\f2.html\fP) 
 .TP 2
 o
-ドキュメント化するパッケージごとに 1 つの\f3パッケージページ\fP (\f2package\-summary.html\fP)。Javadoc ツールは、ソースツリーのパッケージディレクトリ内に \f2package.html\fP または \f2package\-info.java\fP というファイルがあれば、その中の HTML テキストをこのページに組み入れます。  
+�ɥ�����Ȳ�����ѥå��������Ȥ� 1 �Ĥ�\f3�ѥå������ڡ���\fP (\f2package\-summary.html\fP)��Javadoc �ġ���ϡ� \f2package.html\fP �ޤ��� \f2package\-info.java\fP �Ȥ���̾���Υե�������� HTML �ƥ����Ȥ򤹤٤��Ȥ�����ޤ��� 
 .TP 2
 o
-パッケージセット全体に対して 1 つの\f3概要ページ\fP (\f2overview\-summary.html\fP)。これは、生成ドキュメントの先頭ページになります。Javadoc ツールは、\f2\-overview\fP オプションで指定されたファイル内の HTML テキストをこのページに組み入れます。このページのファイルは、javadoc に複数のパッケージ名を渡した場合にだけ作成されます。詳細は、「HTML フレーム」を参照してください。 
+�ѥå������Υ��å����Τ��Ф��� 1 �Ĥ�\f3���ץڡ���\fP (\f2overview\-summary.html\fP)������ϡ������ɥ�����Ȥ���Ƭ�ڡ����ˤʤ�ޤ���Javadoc �ġ���ϡ�\f2\-overview\fP ���ץ����ǻ��ꤵ�줿�ե�������� HTML �ƥ����Ȥ򤹤٤��Ȥ�����ޤ������Υڡ����Υե�����ϡ�javadoc ��ʣ���Υѥå�����̾���Ϥ������ˤ�����������ޤ����ܺ٤ϡ���HTML �ե졼��פ򻲾Ȥ��Ƥ��������� 
 .RE
-
 .LP
-.LP
-\f3相互参照ページ\fP
-.LP
+\f3��߻��ȥڡ���\fP
 .RS 3
 .TP 2
 o
-\f3パッケージのセット全体に対して 1 つのクラス階層ページ\fP (\f2overview\-tree.html\fP)。このページを表示するには、ナビゲーションバーの [概要] をクリックしてから、[階層ツリー] をクリックします。  
+\f3�ѥå������Υ��å����Τ��Ф��� 1 �ĤΥ��饹���إڡ���\fP (\f2overview\-tree.html\fP)�����Υڡ�����ɽ������ˤϡ��ʥӥ��������С��� [����] �򥯥�å����Ƥ��顢[���إĥ꡼] �򥯥�å����ޤ��� 
 .TP 2
 o
-\f3パッケージごとに 1 つのクラス階層ページ\fP (\f2package\-tree.html\fP)。 特定のパッケージ、クラス、またはインタフェースのページを表示してから、[階層ツリー] をクリックすると、そのパッケージのクラス階層が表示されます。  
+\f3�ѥå��������Ȥ� 1 �ĤΥ��饹���إڡ���\fP (\f2package\-tree.html\fP)�������ɽ������ˤϡ�����Υѥå����������饹���ޤ��ϥ��󥿥ե������Υڡ����˰�ư����[���إĥ꡼] �򥯥�å����Ƥ��Υѥå������γ��ؤ�ɽ�������ޤ��� 
 .TP 2
 o
-\f3パッケージごとに 1 つの [使用] ページ\fP (\f2package\-use.html\fP)と、\f3クラスおよびインタフェースごとに 1 つずつの [使用] ページ\fP (\f2class\-use/\fP\f2クラス名\fP\f2.html\fP)。このページには、特定のクラス、インタフェース、またはパッケージの一部を使っているパッケージ、クラス、メソッド、コンストラクタ、およびフィールドについて記述されます。クラスまたはインタフェース A を例にして考えると、その [使用] ページには、A のサブクラス、A として宣言されたフィールド、A を返すメソッド、A 型のパラメータを持つメソッドおよびコンストラクタが表示されます。 このページを表示するには、まず、パッケージ、クラス、またはインタフェースのページに移動してから、ナビゲーションバーの [使用] リンクをクリックします。  
+\f3�ѥå��������Ȥ� 1 �Ĥ� [����] �ڡ���\fP (\f2package\-use.html\fP) �ȡ����饹����ӥ��󥿥ե��������Ȥ� 1 �Ĥ��Ĥ� [����] �ڡ��� (\f2class\-use/\fP\f2���饹̾\fP\f2.html\fP)�����Υڡ����ˤϡ�����Υ��饹�����󥿥ե��������ޤ��ϥѥå������ΰ�����ȤäƤ���ѥå����������饹���᥽�åɡ����󥹥ȥ饯��������ӥե�����ɤˤĤ��Ƶ��Ҥ���ޤ������饹�ޤ��ϥ��󥿥ե����� A ����ˤ��ƹͤ���ȡ����� [����] �ڡ����ˤϡ�A �Υ��֥��饹��A �Ȥ���������줿�ե�����ɡ�A ���֤��᥽�åɡ�A ���Υѥ�᡼������ĥ᥽�åɤ���ӥ��󥹥ȥ饯����ɽ������ޤ��� ���Υڡ�����ɽ������ˤϡ��ޤ����ѥå����������饹���ޤ��ϥ��󥿥ե������Υڡ����˰�ư���Ƥ��顢�ʥӥ��������С��� [����] ��󥯤򥯥�å����ޤ��� 
 .TP 2
 o
-\f3非推奨 API ページ\fP (\f2deprecated\-list.html\fP)。 推奨されないすべての名前が一覧表示されます。非推奨名は、一般に改良された API が存在するために使用が推奨されていない API の名前であり、通常、それに置き換わる名前が提示されています。非推奨 API は、将来の実装では削除される可能性があります。  
+\f3��侩 API �ڡ���\fP (\f2deprecated\-list.html\fP)���侩����ʤ�̾�������٤ư���ɽ������ޤ�����侩̾�ϡ����̤˲��ɤ��줿 API ��¸�ߤ��뤿��˻��Ѥ��侩����Ƥ��ʤ� API ��̾���Ǥ��ꡢ�̾������֤������̾�����󼨤���Ƥ��ޤ�����侩 API �ϡ�����μ����ǤϺ��������ǽ��������ޤ��� 
 .TP 2
 o
-\f3定数フィールド値ページ\fP (\f2constant\-values.html\fP)。 static フィールドの値用です。  
+\f3����ե�������ͥڡ���\fP (\f2constant\-values.html\fP)��static �ե�����ɤ����ѤǤ��� 
 .TP 2
 o
-\f3直列化されたフォームページ\fP (\f2serialized\-form.html\fP)。 直列化および外部化可能なクラスです。これらの各クラスには、直列化フィールドおよびメソッドに関する説明があります。これらの情報は、API を使う開発者ではなく、再実装を行う開発者に必要な情報です。ナビゲーションバーにこのページへのリンクはありませんが、直列化されたクラスに移動して、そのクラスの説明にある [関連項目] セクションで [直列化された形式] をクリックすると、この情報を取得できます。標準ドックレットは、直列化された形式のページを自動的に生成します。ここには、Serializable を実装する public または非 public のクラスが組み込まれており、さらに、\f2readObject\fP メソッド、\f2writeObject\fP メソッド、直列化されたフィールド、および \f2@serial\fP タグ、\f2@serialField\fP タグ、\f2@serialData\fP タグからのドキュメンテーションコメントが組み込まれています。直列化が可能な public クラスを除外するには、そのクラスまたはそのクラスが属するパッケージを \f2@serial exclude\fP タグで指定します。 直列化が可能な package private クラスを含めるには、そのクラスまたはそのクラスが属するパッケージを \f2@serial include\fP タグで指定します。バージョン 1.4 では、\f2\-private\fP オプションの指定なしで javadoc ツールを実行することにより、public クラスおよび private クラスの完全に直列化されたクラスを生成できます。  
+\f3ľ�󲽤��줿�����ڡ���\fP (\f2serialized\-form.html\fP)��ľ�󲽲�ǽ���ĳ�������ǽ�ʥ��饹�˴ؤ�������ѤǤ��������γƥ��饹�ˤϡ�ľ�󲽥ե�����ɤ���ӥ᥽�åɤ˴ؤ�������������ޤ��������ξ���ϡ�API ��Ȥ���ȯ�ԤǤϤʤ����Ƽ�����Ԥ���ȯ�Ԥ�ɬ�פʾ���Ǥ����ʥӥ��������С��ˤ��Υڡ����ؤΥ�󥯤Ϥ���ޤ��󤬡�ľ�󲽤��줿���饹�˰�ư���ơ����Υ��饹�������ˤ���ִ�Ϣ���ܡץ��������ǡ�ľ�󲽤��줿�����פ򥯥�å�����ȡ����ξ��������Ǥ��ޤ���ɸ��ɥå���åȤ�ľ�󲽤��줿�����ڡ�����ư�������ޤ���Serializable ��������뤹�٤ƤΥ��饹 (public �ޤ��� �� public) ���ޤޤ��ۤ��� \f2readObject\fP �᥽�åɤ� \f2writeObject\fP �᥽�åɡ�ľ�󲽤����ե�����ɡ������ \f2@serial\fP��\f2@serialField\fP��\f2@serialData\fP ��������Υɥ�����ơ�����󥳥��Ȥ�ޤޤ�ޤ���public ľ�󲽲�ǽ���饹���������ˤϡ����Υ��饹 (�ޤ��Ϥ��Υѥå�����) �� \f2@serial exclude\fP �ǥޡ������ޤ���package\-private ľ�󲽲�ǽ���饹��ޤ��ˤϡ����Υ��饹 (�ޤ��Ϥ��Υѥå�����) �� \f2@serial include\fP �ǥޡ������ޤ����С������ 1.4 �Ǥ� \f2\-private\fP ���ץ����λ���ʤ��� javadoc �ġ����¹Ԥ��뤳�Ȥˤ�ꡢpublic ���饹����� private ���饹�δ�����ľ�󲽤��줿���饹�������Ǥ��ޤ��� 
 .TP 2
 o
-\f3索引\fP (\f2index\-*.html\fP)。 すべてのクラス名、インタフェース名、コンストラクタ名、フィールド名、およびメソッド名が、アルファベット順に並んでいます。索引は、Unicode を扱えるように国際化されています。 1 つのファイルとして生成することも、先頭文字 (英語の場合 A 〜 Z) ごとに別々のファイルとして生成することもできます。 
+\f3����\fP (\f2index\-*.html\fP)�����٤ƤΥ��饹�����󥿥ե����������󥹥ȥ饯�����ե�����ɡ�����ӥ᥽�åɤ�̾��������ե��٥åȽ���¤�Ǥ��ޤ��������ϡ�Unicode �򰷤���褦�˹�ݲ�����Ƥ��ޤ���1 �ĤΥե�����Ȥ����������뤳�Ȥ⡢��Ƭʸ�� (�Ѹ�ξ�� A ��� Z) ���Ȥ��̡��Υե�����Ȥ����������뤳�Ȥ�Ǥ��ޤ��� 
 .RE
-
 .LP
-.LP
-\f3サポートファイル\fP
-.LP
+\f3���ݡ��ȥե�����\fP
 .RS 3
 .TP 2
 o
-\f3ヘルプページ\fP (\f2help\-doc.html\fP)。 ナビゲーションバーや前述の各ページに関する説明が記載されています。\f2\-helpfile\fP を使うと、デフォルトのヘルプファイルに代わる独自のカスタムヘルプファイルを提供することもできます。  
+\f3�إ�ץڡ���\fP (\f2help\-doc.html\fP)���ʥӥ��������С������Ҥγƥڡ����˴ؤ������������ܤ���Ƥ��ޤ����ǥե���ȤΥإ�ץե�����������ȼ��Υ�������إ�ץե�������󶡤���ˤϡ�\f2\-helpfile\fP ����Ѥ��ޤ��� 
 .TP 2
 o
-表示用の HTML フレームを作成する 1 つの \f3index.html ファイル\fP。このファイルは、フレーム付きの先頭ページを表示する場合にロードします。このファイル自体には、テキスト内容は含まれていません。  
+ɽ���Ѥ� HTML �ե졼���������� 1 �Ĥ� \f3index.html �ե�����\fP�����Υե�����ϡ��ե졼���դ�����Ƭ�ڡ�����ɽ��������˥����ɤ��ޤ������Υե����뼫�Τˤϡ��ƥ��������Ƥϴޤޤ�Ƥ��ޤ��� 
 .TP 2
 o
-複数の\f3フレームファイル\fP (\f2*\-frame.html\fP)。 パッケージ、クラス、およびインタフェースのリストが含まれています。 HTML フレームを表示するときに使用されます。  
+ʣ����\f3�ե졼��ե�����\fP (\f2*\-frame.html\fP)���ѥå����������饹������ӥ��󥿥ե������Υꥹ�Ȥ��ޤޤ�Ƥ��ޤ���HTML �ե졼���ɽ������Ȥ��˻��Ѥ���ޤ��� 
 .TP 2
 o
-\f3パッケージリスト\fPファイル (\f2package\-list\fP)。 \f2\-link\fP オプションおよび \f2\-linkoffline\fP オプションで使用されます。これは、HTML ファイルではなくテキストファイルであり、どのリンクからもアクセスできません。  
+\f3�ѥå������ꥹ��\fP�ե����� (\f2package\-list\fP)�� \f2\-link\fP ����� \f2\-linkoffline\fP ���ץ����ǻ��Ѥ���ޤ�������ϡ�HTML �ե�����ǤϤʤ��ƥ����ȥե�����Ǥ��ꡢ�ɤΥ�󥯤���⥢�������Ǥ��ޤ��� 
 .TP 2
 o
-\f3スタイルシート\fPファイル (\f2stylesheet.css\fP)。 生成されるページ上のいくつかの要素について、色、フォントファミリ、フォントサイズ、フォントのスタイル、および配置を制御します。  
+\f3�������륷����\fP�ե����� (\f2stylesheet.css\fP)�����������ڡ�����Τ����Ĥ������ǤˤĤ��ơ������ե���ȥե��ߥꡢ�ե���ȥ��������ե���ȤΥ������롢��������֤����椷�ޤ��� 
 .TP 2
 o
-\f3doc\-files\fP ディレクトリ。 生成先ディレクトリにコピーするイメージ、サンプルコード、ソースコードなどのファイルがすべて格納されます。これらのファイルは、Javadoc ツールによって処理されないため、ファイル内に javadoc タグがあっても無視されます。このディレクトリは、ソースツリーの中にある場合にのみ生成されます。 
+\f3doc\-files\fP �ǥ��쥯�ȥꡣ������ǥ��쥯�ȥ�˥��ԡ����륤�᡼��������ץ륳���ɡ������������ɤʤɤΥե����뤬���٤Ƴ�Ǽ����ޤ��������Υե�����ϡ�Javadoc �ġ���ˤ�äƽ�������ʤ����ᡢ�ե�������� ��avadoc ���������äƤ�̵�뤵��ޤ������Υǥ��쥯�ȥ�ϡ��������ĥ꡼����ˤ�����ˤΤ���������ޤ��� 
 .RE
-
 .LP
+\f3HTML �ե졼��\fP
 .LP
-\f3HTML フレーム\fP
+Javadoc �ġ���ϡ����οޤ˼����褦�ˡ�2 ��� 3 �Ĥ� HTML �ե졼����������ޤ���1 �ĤΥѥå����������ʤ���� (�ޤ��ϥѥå��������ʤ����) �ϡ��ѥå������ΰ������ά���뤳�Ȥˤ�äƺ����ɬ�פʿ��Υե졼���������ޤ���ñ��Υѥå�������°���륽�����ե����� (*.java) �ޤ���ñ��Υѥå�����̾������Ȥ��� javadoc ���ޥ�ɤ��Ϥ����ϡ���¦����˥��饹�ΰ�����ɽ������ե졼�� (C) 1 �Ĥ�������������ޤ���Javadoc ��ʣ���Υѥå�����̾���Ϥ������ϡ����ץڡ��� (Detail) �˲ä��ơ����٤ƤΥѥå����������ɽ�������� 3 �Υե졼�� (P) ����������ޤ������γ��ץڡ����Υե�����̾�ϡ� \f2overview\-summary.html �Ǥ�\fP���������äơ����Υե�����ϡ�2 �İʾ�Υѥå�����̾���Ϥ������ˤ�����������ޤ����֥ե졼��ʤ��ץ�󥯤򥯥�å����뤫��overview\-summary.html ��ǽ��ɽ������ȡ��ե졼����ά�Ǥ��ޤ���
 .LP
+HTML �ե졼��˴���Ƥ��ʤ����ϡ�����Υե졼����������ӥ��������뤹��ˤϡ����Υե졼��ˡ֥ե��������פ��ʤ���Фʤ�ʤ����Ȥ����դ��Ƥ����������ե졼��˥ե���������Ϳ����ˤϡ����Υե졼��򥯥�å����ޤ������Τ褦�ˤ���ȡ�¿���Υ֥饦���Ǥϡ����������ڡ���������ȤäƤ��Υե졼��򥹥������뤷���ꡢ�ְ����ץ�˥塼���ޥ�ɤ�ȤäƤ��Υե졼������������Ǥ��ޤ���
 .LP
-Javadoc ツールは、下の図に示すように、2 〜 3 つの HTML フレームを生成します。1 つのパッケージしかない場合 (またはパッケージがない場合) は、パッケージの一覧を省略することによって最低限必要な数のフレームを作成します。単一のパッケージに属するソースファイル (*.java) または単一のパッケージ名を引数として javadoc コマンドに渡す場合は、左側の列にクラスの一覧を表示するフレーム (C) 1 つだけが作成されます。Javadoc に複数のパッケージ名を渡した場合は、概要ページ (Detail) に加えて、すべてのパッケージを一覧表示する第 3 のフレーム (P) が作成されます。この概要ページのファイル名は、\f2overview\-summary.html\fP です。したがって、このファイルは、2 つ以上のパッケージ名を渡した場合にだけ作成されます。[フレームなし] リンクをクリックするか、overview\-summary.html を最初に表示すると、フレームを省略できます。
-.LP
-.LP
-HTML フレームに慣れていない場合は、特定のフレームを印刷およびスクロールするには、そのフレームに「フォーカス」がなければならないことに注意してください。フレームにフォーカスを与えるには、そのフレームをクリックします。このようにすると、多くのブラウザでは、矢印キーやページキーを使ってそのフレームをスクロールしたり、[印刷] メニューコマンドを使ってそのフレームを印刷したりできます。
-.LP
-.nf
-\f3
-.fl
-              \-\-\-\-\-\-\-\-\-\-\-\-                  \-\-\-\-\-\-\-\-\-\-\-\-
-.fl
-              |C| Detail |                  |P| Detail |
-.fl
-              | |        |                  | |        |
-.fl
-              | |        |                  |\-|        |
-.fl
-              | |        |                  |C|        |
-.fl
-              | |        |                  | |        |
-.fl
-              | |        |                  | |        |
-.fl
-              \-\-\-\-\-\-\-\-\-\-\-\-                  \-\-\-\-\-\-\-\-\-\-\-\-
-.fl
-             javadoc *.java           javadoc java.lang java.awt
-.fl
-\fP
-.fi
-
-.LP
-.LP
-HTML フレームが必要かどうかによって、次のどちらかのファイルを開始ページとしてロードします。
-.LP
+HTML �ե졼�बɬ�פ��ɤ����ˤ�äơ����Τɤ��餫�Υե�����򳫻ϥڡ����Ȥ��ƥ����ɤ��ޤ���
 .RS 3
 .TP 2
 o
-\f2index.html\fP (フレームあり) 
+\f2index.html\fP (�ե졼�ढ��) 
 .TP 2
 o
-\f2overview\-summary.html\fP (フレームなし) 
+\f2overview\-summary.html\fP (�ե졼��ʤ�) 
 .RE
-
 .LP
+\f3���������ե�����ι�¤\fP
 .LP
-\f3生成されるファイルの構造\fP
+��������륯�饹�ե����뤪��ӥ��󥿥ե������ե�����ϡ�Java �������ե����뤪��ӥ��饹�ե������Ʊ���ǥ��쥯�ȥ곬�ؤ���������ޤ���1 �ĤΥ��֥ѥå������ˤĤ� 1 �ĤΥǥ��쥯�ȥꡢ�Ȥ�����¤�ˤʤ�ޤ���
 .LP
+���Ȥ��С� \f2java.applet.Applet\fP ���饹�Ѥ��������줿�ɥ�����Ȥϡ� \f2java/applet/Applet.html\fP �˳�Ǽ����ޤ���������Υǥ��쥯�ȥ��̾���� \f2apidocs\fP ���Ȥ���ȡ�java.applet �ѥå������Υե����빽¤�ϡ����β��˹��ۤ���ޤ������ҤΤ褦�ˡ���frame�פȤ������̾���˴ޤ�ե�����ϡ����٤ƺ���ޤ��Ϻ����Υե졼���ɽ������ޤ�������ʳ��� HTML �ե�����ϡ����٤Ʊ�¦�Υե졼���ɽ������ޤ���
 .LP
-生成されるクラスファイルおよびインタフェースファイルは、Java ソースファイルおよびクラスファイルと同じディレクトリ階層に編成されます。1 つのサブパッケージにつき 1 つのディレクトリ、という構造になります。
-.LP
-.LP
-たとえば、\f2java.applet.Applet\fP クラスに対して生成されるドキュメントは、\f2java/applet/Applet.html\fP に格納されます。生成先のディレクトリの名前が \f2apidocs\fP だとすると、java.applet パッケージのファイル構造は、その下に構築されます。前述のように、「frame」という語を名前に含むファイルは、すべて左上または左下のフレームに表示されます。それ以外の HTML ファイルは、すべて右側のフレームに表示されます。
-.LP
-.RS 3
-
-.LP
-.LP
-注 \- 下の階層図で、ディレクトリは\f3太字\fP (\f3bold\fP) で示してあります。アスタリスク (\f2*\fP) は、javadoc への引数がパッケージ名ではなくソースファイル名 (*.java) である場合に省略されるファイルおよびディレクトリを示しています。また、引数がソースファイル名の場合は、\f2package\-list\fP は作成されますが、内容は空です。doc\-files ディレクトリは、ソースツリー内に存在する場合にのみ、生成先に作成されます。
-.LP
-.RE
+�� \- ���γ��ؿޤǡ��ǥ��쥯�ȥ��\f3����\fP (bold) �Ǽ����Ƥ���ޤ����������ꥹ�� (\f2*\fP) �ϡ�javadoc �ؤΰ������ѥå�����̾�ǤϤʤ��������ե�����̾ (*.java) �Ǥ�����˾�ά�����ե����뤪��ӥǥ��쥯�ȥ�򼨤��Ƥ��ޤ����ޤ����������������ե�����̾�ξ�硢 \f2package\-list\fP �Ϻ�������ޤ�����������Ȥ϶��Ǥ���doc\-files �ǥ��쥯�ȥ�ϡ��������ĥ꡼���¸�ߤ�����ˤΤߡ�������˺�������ޤ���
 .nf
 \f3
 .fl
 
 .fl
-\fP\f3apidocs\fP                             最上位ディレクトリ
+\fP\f3apidocs\fP                             �Ǿ�̥ǥ��쥯�ȥ�
 .fl
-   index.html                       HTML フレームを設定する初期ページ
+   index.html                       HTML �ե졼������ꤹ�����ڡ���
 .fl
- * overview\-summary.html            全パッケージのリスト。 先頭に要約文がある
+ * overview\-summary.html            ���ѥå������Υꥹ�ȡ���Ƭʸ�ˤ�������դ�
 .fl
-   overview\-tree.html               全パッケージのクラス階層のリスト
+   overview\-tree.html               ���ѥå������Υ��饹���ؤΥꥹ��
 .fl
-   deprecated\-list.html             全パッケージの推奨されない API のリスト
+   deprecated\-list.html             ���ѥå���������侩 API �Υꥹ��
 .fl
-   constant\-values.html             全パッケージの static フィールドの値のリスト
+   constant\-values.html             ���ѥå������� static �ե�����ɤ��ͤΥꥹ��
 .fl
-   serialized\-form.html             全パッケージの直列化された形式のリスト
+   serialized\-form.html             ���ѥå�������ľ�󲽤��줿�����Υꥹ��
 .fl
- * overview\-frame.html              全パッケージのリスト。 左上のフレームに表示される
+ * overview\-frame.html              ���ѥå������Υꥹ�ȡ�����Υե졼��ǻ��Ѥ����
 .fl
-   allclasses\-frame.html            全パッケージの全クラスのリスト。 左下のフレームに表示される
+   allclasses\-frame.html            ���ѥå������������饹�Υꥹ�ȡ������Υե졼��ǻ��Ѥ����
 .fl
-   help\-doc.html                    これらのページの構成を示すユーザーヘルプを表示する
+   help\-doc.html                    �����Υڡ����ι����򼨤��桼�����إ�פΥꥹ��
 .fl
-   index\-all.html                   \-splitindex オプションなしで作成されたデフォルト索引
+   index\-all.html                   \-splitindex ���ץ�������ꤷ�ʤ��ä����˺��������ǥե���Ȥκ���
 .fl
-   \f3index\-files\fP                      \-splitindex オプションを指定して作成されたディレクトリ
+   \f3index\-files\fP                      \-splitindex ���ץ�������ꤷ�����˺��������ǥ��쥯�ȥ�
 .fl
-       index\-<number>.html          \-splitindex オプションを指定して作成された索引ファイル
+       index\-<number>.html          \-splitindex ���ץ�������ꤷ�����˺������������ե�����
 .fl
-   package\-list                     パッケージ名のリスト。 外部参照を解決するためだけに使用される
+   package\-list                     �ѥå�����̾�Υꥹ�ȡ��������Ȥ��褹�뤿������˻��Ѥ����
 .fl
-   stylesheet.css                   フォント、色、配置を定義する HTML スタイルシート
+   stylesheet.css                   �ե���ȡ��������֤�������� HTML �������륷����
 .fl
-   \f3java\fP                             パッケージディレクトリ
+   \f3java\fP                             �ѥå������ǥ��쥯�ȥ�
 .fl
-       \f3applet\fP                       サブパッケージディレクトリ
+       \f3applet\fP                       ���֥ѥå������ǥ��쥯�ȥ�
 .fl
-            Applet.html             Applet クラスのページ
+            Applet.html             Applet ���饹�Υڡ���
 .fl
-            AppletContext.html      AppletContext インタフェースのページ
+            AppletContext.html      AppletContext ���󥿥ե������Υڡ���
 .fl
-            AppletStub.html         AppletStub インタフェースのページ
+            AppletStub.html         AppletStub ���󥿥ե������Υڡ���
 .fl
-            AudioClip.html          AudioClip インタフェースのページ
+            AudioClip.html          AudioClip ���󥿥ե������Υڡ���
 .fl
-          * package\-summary.html    このパッケージのクラスのリスト。 先頭に要約文がある
+          * package\-summary.html    ���Υѥå������Υ��饹�Υꥹ�ȡ���Ƭʸ�ˤ�������դ�
 .fl
-          * package\-frame.html      このパッケージのクラスのリスト。 左下のフレームに表示される
+          * package\-frame.html      ���Υѥå������Υ��饹�Υꥹ�ȡ������Υե졼��ǻ��Ѥ����
 .fl
-          * package\-tree.html       このパッケージのクラス階層のリスト
+          * package\-tree.html       ���Υѥå������Υ��饹���ؤΥꥹ��
 .fl
-            package\-use             このパッケージが使用されている場所のリスト
+            package\-use             ���Υѥå����������Ѥ���Ƥ�����Υꥹ��
 .fl
-            \f3doc\-files\fP               イメージやサンプルのファイルが格納されるディレクトリ
+            \f3doc\-files\fP               �����䥵��ץ�ե�������ݻ�����ǥ��쥯�ȥ�
 .fl
-            \f3class\-use\fP               API が使用されている場所のページを格納するディレクトリ
+            \f3class\-use\fP               API �����Ѥ���Ƥ�����Υڡ������ݻ�����ǥ��쥯�ȥ�
 .fl
-                Applet.html         Applet クラスを使用するページ
+                Applet.html         Applet ���饹�λ��Ѥ˴ؤ���ڡ���
 .fl
-                AppletContext.html  AppletContext インタフェースを使用するページ
+                AppletContext.html  AppletContext ���󥿥ե������λ��Ѥ˴ؤ���ڡ���
 .fl
-                AppletStub.html     AppletStub インタフェースを使用するページ
+                AppletStub.html     AppletStub ���󥿥ե������λ��Ѥ˴ؤ���ڡ���
 .fl
-                AudioClip.html      AudioClip インタフェースを使用するページ
+                AudioClip.html      AudioClip ���󥿥ե������λ��Ѥ˴ؤ���ڡ���
 .fl
-   \f3src\-html\fP                         ソースコードディレクトリ
+   \f3src\-html\fP                         �����������ɥǥ��쥯�ȥ�
 .fl
-       \f3java\fP                         パッケージディレクトリ
+       \f3java\fP                         �ѥå������ǥ��쥯�ȥ�
 .fl
-           \f3applet\fP                   サブパッケージディレクトリ
+           \f3applet\fP                   ���֥ѥå������ǥ��쥯�ȥ�
 .fl
-                Applet.html         Applet ソースコードのページ
+                Applet.html         Applet �����������ɤΥڡ���
 .fl
-                AppletContext.html  AppletContext ソースコードのページ
+                AppletContext.html  AppletContext �����������ɤΥڡ���
 .fl
-                AppletStub.html     AppletStub ソースコードのページ
+                AppletStub.html     AppletStub �����������ɤΥڡ���
 .fl
-                AudioClip.html      AudioClip ソースコードのページ
+                AudioClip.html      AudioClip �����������ɤΥڡ���
 .fl
 .fi
-
-.LP
 .SS 
-生成される API 宣言
+��������� API ���
 .LP
-.LP
-Javadoc ツールは、それぞれのクラス、インタフェース、フィールド、コンストラクタ、およびメソッドの説明の最初に、その API 用の宣言を生成します。 この宣言は、その API 項目の宣言です。たとえば、\f2Boolean\fP クラスの宣言は、次のようになります。
-.LP
+Javadoc �ġ���ϡ����줾��Υ��饹�����󥿥ե��������ե�����ɡ����󥹥ȥ饯��������ӥ᥽�åɤ������κǽ�ˡ����� API �Ѥ�������������ޤ������Ȥ��С� \f2Boolean\fP ���饹������ϡ����Τ褦�ˤʤ�ޤ���
 .LP
 \f2public final class Boolean\fP
 .br
@@ -937,29 +593,20 @@ Javadoc ツールは、それぞれのクラス、インタフェース、フィ
 .br
 \f2implements Serializable\fP
 .LP
-.LP
-また、\f2Boolean.valueOf\fP メソッドの宣言は、次のようになります。
-.LP
+�ޤ��� \f2Boolean.valueOf\fP �᥽�åɤ�����ϡ����Τ褦�ˤʤ�ޤ���
 .LP
 \f2public static Boolean valueOf(String s)\fP
 .LP
+Javadoc �ġ���Ǥϡ������� \f2public\fP�� \f2protected\fP�� \f2private\fP�� \f2abstract\fP�� \f2final\fP�� \f2static\fP�� \f2transient\fP������� \f2volatile\fP ���Ȥ߹���ޤ����� \f2synchronized\fP �� \f2native\fP ���Ȥ߹���ޤ��󡣤�����Ԥ� 2 �Ĥν����Ҥϡ������ξܺ٤ȸ��ʤ���Ƥ��뤿�ᡢAPI ���ͤˤϴޤޤ�ޤ���
 .LP
-Javadoc ツールは、修飾子 \f2public\fP、\f2protected\fP、\f2private\fP、\f2abstract\fP、\f2final\fP、\f2static\fP、\f2transient\fP、および \f2volatile\fP を組み込むことができますが、\f2synchronized\fP と \f2native\fP を組み込むことができません。これら後者の 2 つの修飾子は、実装の詳細と見なされているため、API 仕様には含まれません。
+API �Ǥϡ��¹������ޥ�ƥ������ˤĤ��ơ�������� \f2synchronized\fP �˰�¸����ΤǤϤʤ��������Ȥμ������Ȥ��ƥɥ�����Ȳ����٤��Ǥ��� \f2���Ȥ��С���1 �Ĥ� Enumeration ��\fP ʣ���Υ���åɤ����¹Ԥ��ƻ��Ѥ��뤳�ȤϤǤ��ʤ��פʤɤȵ��Ҥ��ޤ����ɥ�����Ȥˤϡ������Υ��ޥ�ƥ�������¸�������ˡ�򵭽Ҥ���٤��ǤϤ���ޤ��󡣤��Ȥ��С� \f2Hashtable\fP �ϥ���åɤ��Ф��ư����Ǥ���ɬ�פ�����ޤ������֥������ݡ��Ȥ���뤹�٤ƤΥ᥽�åɤ�Ʊ��������Ф����¸��Ǥ���פΤ褦�ˤϻ��ꤹ�뺬��Ϥ���ޤ��󡣥Х��åȥ�٥������Ū��Ʊ�������븢����Ĥ��Ƥ���ɬ�פ�����ޤ�����������С������٤��¹������󶡤���ޤ���
+.SH "�ɥ�����ơ�����󥳥���"
 .LP
-.LP
-API では、並行性のセマンティクスについて、キーワード \f2synchronized\fP に依存するのではなく、コメントによる主説明としてドキュメント化する必要があります。 たとえば、「1 つの \f2Enumeration\fP を複数のスレッドから並行して使用することはできない」などのコメントを記述します。ドキュメントには、これらのセマンティクスを実現する方法を記述するべきではありません。たとえば、\f2Hashtable\fP はスレッドに対して安全である必要がありますが、「エクスポートされるすべてのメソッドを同期化すればそれを実現できる」のようには指定する根拠はありません。バケットレベルで内部的に同期化する権利を残しておく必要があります。 そうすれば、より高度な並行性が提供されます。
-.LP
-.SH "ドキュメンテーションコメント"
-.LP
-.LP
-オリジナルの「ドキュメンテーションコメントの仕様」は、「関連項目」を参照してください。
-.LP
+���ꥸ�ʥ�Ρ֥ɥ�����ơ�����󥳥��Ȥλ��͡פϡ��ִ�Ϣ���ܡפ򻲾Ȥ��Ƥ���������
 .SS 
-ソースコードへのコメントの挿入
+�����������ɤؤΥ����Ȥ�����
 .LP
-.LP
-ソースコードの任意のクラス、インタフェース、メソッド、コンストラクタ、またはフィールドの宣言の前に、ドキュメンテーションコメント ("doc comments") を記述することができます。各パッケージにドキュメンテーションコメントを作成できます。 構文は若干異なりますが、概要にもドキュメンテーションコメントを作成できます。ドキュメンテーションコメントは、非公式に「Javadoc コメント」と呼ばれています (この用語は商標関連の使用法に違反)。ドキュメンテーションコメントは、コメントの始まりを示す文字列 \f2/**\fP と、コメントの終わりを示す文字列 \f2*/\fP の間にある文字で構成されます。行の先頭のアスタリスクは、各行に記述できます。 詳細は、以下で説明します。コメントのテキストは、複数行にわたって記述できます。
-.LP
+�����������ɤ�Ǥ�դΥ��饹�����󥿥ե��������᥽�åɡ����󥹥ȥ饯�����ޤ��ϥե�����ɤ���������ˡ��ɥ�����ơ�����󥳥��� ("doc comments") �򵭽Ҥ��뤳�Ȥ��Ǥ��ޤ����ƥѥå������˥ɥ�����ơ�����󥳥��Ȥ�����Ǥ��ޤ�����ʸ�ϼ㴳�ۤʤ�ޤ��������פˤ�ɥ�����ơ�����󥳥��Ȥ�����Ǥ��ޤ����ɥ�����ơ�����󥳥��Ȥϡ�������ˡ�Javadoc �����ȡפȸƤФ�Ƥ��ޤ� (�����Ѹ�Ͼ�ɸ��Ϣ�λ���ˡ�˰�ȿ)���ɥ�����ơ�����󥳥��Ȥϡ������Ȥ�Ϥޤ�򼨤�ʸ���� \f2/**\fP �ȡ������Ȥ򽪤��򼨤�ʸ���� \f2*/\fP �δ֤ˤ���ʸ�����鹽������ޤ����Ԥ���Ƭ�Υ������ꥹ���ϡ��ƹԤ˵��ҤǤ��ޤ����ܺ٤ϡ��ʲ����������ޤ��������ȤΥƥ����Ȥϡ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ���
 .nf
 \f3
 .fl
@@ -973,26 +620,19 @@ API では、並行性のセマンティクスについて、キーワード \f2
 .fl
 \fP
 .fi
-
 .LP
-.LP
-次のようにして 1 行に記述すると、スペースを節約できます。
-.LP
+���Τ褦�ˤ��� 1 �Ԥ˵��Ҥ���ȡ����ڡ���������Ǥ��ޤ���
 .nf
 \f3
 .fl
-/** This comment takes up only one line. */
+/** This comment takes up only one line.*/
 .fl
 \fP
 .fi
-
 .LP
+\f3�����Ȥ�����\fP \- �ɥ�����ơ�����󥳥��Ȥϡ����饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����ɤ������ľ�����֤���Ƥ���Ȥ��ˤ���ǧ������ޤ������饹���㡢�᥽�åɤ��㡢����ӥե�����ɤ���򻲾Ȥ��Ƥ����������᥽�åɤ����Τ��֤���Ƥ���ɥ�����ơ�����󥳥��Ȥ�̵�뤵��ޤ���javadoc �ġ���Ǥϡ�1 �Ĥ����ʸ�ˤĤ� 1 �ĤΥɥ�����ơ�����󥳥��Ȥ�����ǧ������ޤ���
 .LP
-\f3コメントの配置\fP \- ドキュメンテーションコメントは、クラス、インタフェース、コンストラクタ、メソッド、またはフィールドの宣言の直前に置かれているときにだけ認識されます。 クラスの例、メソッドの例、およびフィールドの例を参照してください。メソッドの本体に置かれているドキュメンテーションコメントは無視されます。javadoc ツールでは、1 つの宣言文につき 1 つのドキュメンテーションコメントだけが認識されます。
-.LP
-.LP
-よくある間違いは、クラスのコメントとクラスの宣言の間に \f2import\fP 文を置いてしまうことです。このような記述はしないでください。 このようなクラスコメントは無視されます。
-.LP
+�褯����ְ㤤�ϡ����饹�����Ȥȥ��饹����δ֤� \f2import\fP ʸ���֤��Ƥ��ޤ����ȤǤ������Τ褦�ʵ��ҤϤ��ʤ��Ǥ������������Τ褦�ʥ��饹�����Ȥ�̵�뤵��ޤ���
 .nf
 \f3
 .fl
@@ -1014,11 +654,8 @@ API では、並行性のセマンティクスについて、キーワード \f2
 .fl
 \fP
 .fi
-
 .LP
-.LP
-\f3ドキュメンテーションコメントは主説明のあとにタグセクションが続く\fP \- コメントの開始区切り文字である \f2/**\fP のあとからタグセクションまでが主説明になります。タグセクションは、先頭文字が \f2@\fP である行で定義される最初のブロックタグから始まります (行の先頭のアスタリスク、空白、および行の先頭の区切り文字 \f2/**\fP は除く)。主説明を記述せず、タグセクションだけのコメントを記述することもできます。主説明は、タグセクション以降に続けることはできません。タグの引数は、複数行にわたって記述できます。タグの数に制限はありません。 何回も記述できるタグと、1 回しか記述できないタグがあります。例えば、次の \f2@see\fP からタグセクションが始まります。
-.LP
+\f3�ɥ�����ơ�����󥳥��Ȥϼ������Τ��Ȥ˥������������³�� \- �����Ȥγ��϶��ڤ�ʸ���Ǥ���\fP \f2/**\fP �Τ��Ȥ��饿�����������ޤǤ��������ˤʤ�ޤ����������������ϡ��Ԥ���Ƭ�ˤ���ǽ�� \f2@\fP ����������ǽ�Υ֥��å���������Ϥޤ�ޤ� (��Ƭ�Υ������ꥹ����������Ƭ�ζ��ڤ�ʸ�� \f2/**\fP �Ͻ���)���������򵭽Ҥ����������������������Υ����Ȥ򵭽Ҥ��뤳�Ȥ�Ǥ��ޤ����������ϡ��������������ʹߤ�³���뤳�ȤϤǤ��ޤ��󡣥����ΰ����ϡ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ��������ο������¤Ϥ���ޤ��󡣲���⵭�ҤǤ��륿���ȡ�1 �󤷤����ҤǤ��ʤ�����������ޤ������Ȥ��С����� \f2@see\fP �ϡ��������������򳫻Ϥ��Ƥ��ޤ���
 .nf
 \f3
 .fl
@@ -1032,11 +669,8 @@ API では、並行性のセマンティクスについて、キーワード \f2
 .fl
 \fP
 .fi
-
 .LP
-.LP
-\f3ブロックタグとインラインタグ\fP \- 「タグ」は、Javadoc が処理できる、ドキュメンテーションコメント内の特別なキーワードです。\f2@tag\fP のように記述するブロックタグ (「スタンドアロンタグ」とも呼ばれる) と、インラインタグ (\f2{@tag}\fP のように中括弧で囲んで記述) の 2 種類のタグがあります。ブロックタグが正しく解釈されるためには、行の先頭のアスタリスク、空白、区切り文字 (\f2/**\fP) を除いて、行の先頭に置かなければなりません。これは、テキスト内のそれ以外の位置で \f2@\fP 文字を使用しても、タグの開始としては解釈されないことを意味しています。行の最初に \f2@\fP 文字を使用してもタグとして解釈されないようにするには、HTML エンティティーの「\f2@\fP」を使用してください。それぞれのブロックタグには、対応付けられたテキストがあります。 このテキストは、タグのあとから、次のタグの前、またはドキュメンテーションコメントの最後までの間に記述されたテキスト (タグやコメント区切り文字を除く) です。この関連テキストは複数行にわたって記述できます。インラインタグは、テキストを記述できる場所であればどこにでも置くことができ、正しく解釈されます。次のコード例には、ブロックタグ \f2@deprecated\fP と、インラインタグ \f2{@link}\fP が含まれています。
-.LP
+\f3�֥��å������ȥ���饤�󥿥�\fP \- \f2�֥�����\fP�ϡ�Javadoc �������Ǥ��롢�ɥ�����ơ�����󥳥���������̤ʥ�����ɤǤ��������ˤ� 2 ���ढ��ޤ���1 �Ĥ� @tag �Τ褦��ɽ�������֥��å����� \f2(��ɸ�ॿ���פȤ�ƤФ��)��\fP �⤦ 1 �Ĥ� {@tag} �Τ褦�����̤ǰϤޤ�륤��饤�󥿥� \f2�Ǥ�\fP���֥��å���������������ᤵ��뤿��ˤϡ��Ԥ���Ƭ�Υ������ꥹ�������򡢶��ڤ�ʸ�� (\f2/**\fP) ������ơ��Ԥ���Ƭ���֤��ʤ���Фʤ�ޤ��󡣤���ϡ� \f2@\fP ʸ����ƥ���������̤ξ��ǻ��Ѥ������ˤϥ����γ��ϤȤ��Ʋ�ᤵ��ʤ����Ȥ��̣���Ƥ��ޤ����Ԥ���Ƭ�� \f2@\fP ʸ������Ѥ��Ƥ⤽�줬��ᤵ��ʤ��褦�ˤ���ˤϡ�HTML ����ƥ��ƥ��� \f2&#064;\fP ����Ѥ��ޤ������줾��Υ֥��å������ˤϡ��б��դ���줿�ƥ����Ȥ�����ޤ������Υƥ����Ȥϡ������Τ��Ȥ��顢���Υ����������ޤ��ϥɥ�����ơ�����󥳥��ȤκǸ�ޤǤδ֤˵��Ҥ��줿�ƥ����� (�����䥳���ȶ��ڤ�ʸ�������) �Ǥ������δ�Ϣ�ƥ����Ȥ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ�������饤�󥿥��ϡ��ƥ����Ȥ򵭽ҤǤ�����Ǥ���Фɤ��ˤǤ��֤����Ȥ��Ǥ�����������ᤵ��ޤ���������ˤϥ֥��å����� \f2@deprecated\fP �ȥ���饤�󥿥� \f2{@link}\fP ���ޤޤ�Ƥ��ޤ���
 .nf
 \f3
 .fl
@@ -1048,17 +682,12 @@ API では、並行性のセマンティクスについて、キーワード \f2
 .fl
 \fP
 .fi
-
 .LP
+\f3�����Ȥ� HTML �ǵ��Ҥ���\fP \- �ƥ����Ȥ� HTML �����ǵ��Ҥ��ʤ���Фʤ�ޤ��󡣤���ϡ�HTML �Υ���ƥ��ƥ�����Ȥ�ɬ�פ����뤳�ȡ������ HTML ��������ѤǤ��뤳�Ȥ��̣���ޤ������Ҥ��� HTML �ΥС������Ȥ��Ƥϡ����Ѥ���֥饦�������ݡ��Ȥ���Ǥ�դΥС���������ѤǤ��ޤ���ɸ��ɥå���åȤϡ����������ǥ��󥰥������륷���� (CSS) �ȥե졼���ޤᡢ���٤Ƥ���ʬ (�ɥ�����ơ�����󥳥��Ȱʳ�����ʬ) �� HTML 3.2 �˽�򤷤������ɤ���������褦�˺�������Ƥ��ޤ������������ե졼�ॻ�å��б��Τ��ᡢ���������ƥե�����ˤϡ�HTML 4.0�פȵ��Ҥ���ޤ���
 .LP
-\f3コメントは HTML で記述する\fP \- テキストは HTML 形式で記述しなければなりません。 これは、HTML のエンティティーを使う必要があること、および HTML タグを使用できることを意味します。記述する HTML のバージョンとしては、使用するブラウザがサポートする任意のバージョンを使用できます。 標準ドックレットは、カスケーディングスタイルシート (CSS) とフレームを含め、すべての部分 (ドキュメンテーションコメント以外の部分) で HTML 3.2 に準拠したコードを生成するように作成されています。ただし、フレームセット対応のため、生成される各ファイルには「HTML 4.0」と記述されます。
+���Ȥ��С���꾮���� (\f2<\fP) ���椪��Ӥ���礭�� (\f2>\fP) ����Υ���ƥ��ƥ����ϡ� \f2<\fP ����� \f2>\fP �ȵ��Ҥ��٤��Ǥ���Ʊ�ͤˡ�����ѥ���� (\f2&\fP) �� \f2&\fP �ȵ��Ҥ��٤��Ǥ���������Ǥϥܡ���ɤ� HTML ���� \f2<b>\fP ��������Ƥ��ޤ���
 .LP
-.LP
-たとえば、より小さい (\f2<\fP) およびより大きい (\f2>\fP) という記号は\f2<\fP および \f2>\fP として記述する必要があります。同様に、アンパサンド (\f2&\fP) は、\f2&\fP と記述する必要があります。次の例では、ボールドの HTML タグ \f2<b>\fP を使っています。
-.LP
-.LP
-次に、ドキュメンテーションコメントを示します。
-.LP
+���ˡ��ɥ�����ơ�����󥳥��Ȥ򼨤��ޤ���
 .nf
 \f3
 .fl
@@ -1072,20 +701,12 @@ API では、並行性のセマンティクスについて、キーワード \f2
 .fl
 \fP
 .fi
-
 .LP
+\f3��Ƭ�Υ������ꥹ��\fP \- javadoc �ˤ��ɥ�����ơ�����󥳥��Ȥβ��ϻ��ˡ��ƹԤ���Ƭ�ˤ��륢�����ꥹ�� (\f2*\fP) ʸ�����˴�����ޤ����ǽ�Υ������ꥹ�� (\f2*\fP) ʸ��������ˤ������䥿�֤��˴�����ޤ����С������ 1.4 ����ϡ��Ԥ���Ƭ�Υ������ꥹ�����ά���Ƥ⡢��Ƭ�ζ���ʸ���Ϻ������ʤ��ʤ�ޤ��������Τ��ᡢ���������ľ�ܥɥ�����ơ�����󥳥��Ȥ� \f2<PRE>\fP ������˥ڡ����Ȥ��Ƥ⡢����ǥ�Ȥ��ݻ�����ޤ����̾�֥饦���ϡ�����ʸ���򥿥֤����Χ�˲�ᤷ�ޤ�������ǥ�Ȥε����Ϻ��ޡ�����ˤʤ�ޤ� (���ڤ�ʸ�� \f2/**\fP �ޤ��� \f2<PRE>\fP �����ǤϤʤ�)��
 .LP
-\f3行頭のアスタリスク\fP \- Javadoc は、ドキュメンテーションコメントを解析するときに、各行の先頭にあるアスタリスク (\f2*\fP) をすべて破棄します。 また、最初のアスタリスク (\f2*\fP) より前の空白とタブも破棄します。バージョン 1.4 からは、行の先頭のアスタリスクを省略しても、先頭の空白文字は削除されなくなりました。このため、コード例を直接ドキュメンテーションコメントの \f2<PRE>\fP タグ内にペーストしても、インデントが保持されます。通常、ブラウザは、空白文字をタブよりも一律に解釈します。インデントは区切り文字 \f2/**\fP または \f2<PRE>\fP タグよりも左寄りになります。
+\f3�ǽ��ʸ\fP \- �ƥɥ�����ơ�����󥳥��Ȥκǽ��ʸ�ϡ��������Ƥ��륨��ƥ��ƥ����˴ؤ���ʷ餫�Ĵ���������ʸ�Ǥ���ɬ�פ�����ޤ������Ρֺǽ��ʸ�פϡ�ľ��˥��ڡ��������֡��ޤ��ϲ��Ԥ�³���ǽ�Υԥꥪ�� (�������뤬�Ѹ�����ꤵ��Ƥ�����)���ޤ��Ϻǽ�Υ�����������֤ǽ����ޤ����ǽ��ʸ�ϡ�Javadoc �ġ���ˤ�ä� HTML �ڡ����κǽ�ˤ�����С��γ��פ���ʬ�˥��ԡ�����ޤ���
 .LP
-.LP
-\f3最初の文\fP \- 各ドキュメンテーションコメントの最初の文は、宣言されているエンティティーに関する簡潔かつ完全な要約文である必要があります。この「最初の文」は、直後にスペース、タブ、または改行が続く最初のピリオド (ロケールが英語に設定されている場合)、または最初のタグがある位置で終わります。最初の文は、Javadoc ツールによって HTML ページの最初にあるメンバーの概要の部分にコピーされます。
-.LP
-.LP
-\f3複数フィールドの宣言\fP \- Java では、1 つの文で複数のフィールドを宣言できます。 ただし、この文には、1 つのドキュメンテーションコメントしか記述できません。 そのコメントが、すべてのフィールドに対してコピーされます。したがって、フィールドごとにドキュメンテーションコメントを記述する必要がある場合は、各フィールドを別々の文で宣言しなければなりません。たとえば、次のドキュメンテーションコメントは、1 つの宣言として記述すると不適切です。 この場合は、宣言を 2 つに分けることをお勧めします。
-.LP
-.RS 3
-
-.LP
+\f3ʣ���ե�����ɤ����\fP \- Java �Ǥϡ�1 �Ĥ�ʸ��ʣ���Υե�����ɤ�����Ǥ��ޤ���������������ʸ�ˤϡ�1 �ĤΥɥ�����ơ�����󥳥��Ȥ������ҤǤ��ޤ��󡣤��Υ����Ȥ������٤ƤΥե�����ɤ��Ф��ƥ��ԡ�����ޤ����������äơ��ե�����ɤ��Ȥ˥ɥ�����ơ�����󥳥��Ȥ򵭽Ҥ���ɬ�פ�������ϡ��ƥե�����ɤ��̡���ʸ��������ʤ���Фʤ�ޤ��󡣤��Ȥ��С����Υɥ�����ơ�����󥳥��Ȥϡ�1 �Ĥ�����Ȥ��Ƶ��Ҥ������Ŭ�ڤǤ������ξ��ϡ������ 2 �Ĥ�ʬ���뤳�Ȥ򤪴��ᤷ�ޤ���
 .nf
 \f3
 .fl
@@ -1099,145 +720,105 @@ public int x, y;      // Avoid this
 .fl
 \fP
 .fi
-.RE
-
 .LP
-.LP
-上記のコードからは、次のようなドキュメントが生成されます。
-.LP
-.RS 3
-
-.LP
+�嵭�Υ����ɤ���ϡ����Τ褦�ʥɥ�����Ȥ���������ޤ���
 .nf
 \f3
 .fl
 public int \fP\f3x\fP
 .fl
 .fi
-
-.LP
 .RS 3
 The horizontal and vertical distances of point (x,y) 
 .RE
-
-.LP
 .nf
 \f3
 .fl
 public int \fP\f3y\fP
 .fl
 .fi
-
-.LP
 .RS 3
 The horizontal and vertical distances of point (x,y) 
 .RE
-
 .LP
-.RE
-.LP
-\f3見出しタグはなるべく使用しない\fP \- メンバーに対してドキュメンテーションコメントを記述するときには、<H1> や <H2> などの HTML 見出しタグは、なるべく使わないでください。 Javadoc ツールは、完全に構造化されたドキュメントを作成するので、このような構造化タグが使われていると、生成ドキュメントの形式が悪影響を受けることがあります。ただし、クラスやパッケージのコメントでは、これらの見出しタグを使って独自の構造を組み立ててかまいません。
-.LP
+\f3���Ф������Ϥʤ�٤����Ѥ��ʤ�\fP \- ���С����Ф��ƥɥ�����ơ�����󥳥��Ȥ򵭽Ҥ���Ȥ��ˤϡ�<H1> �� <H2> �ʤɤ� HTML ���Ф������ϡ��ʤ�٤��Ȥ�ʤ��Ǥ��������� Javadoc �ġ���ϡ������˹�¤�����줿�ɥ�����Ȥ��������Τǡ����Τ褦�ʹ�¤���������Ȥ��Ƥ���ȡ������ɥ�����Ȥη��������ƶ�������뤳�Ȥ�����ޤ��������������饹��ѥå������Υ����ȤǤϡ������θ��Ф�������Ȥä��ȼ��ι�¤���Ȥ�Ω�ƤƤ��ޤ��ޤ���
 .SS 
-メソッドコメントの自動コピー
+�᥽�åɥ����Ȥμ�ư���ԡ�
 .LP
-.LP
-Javadoc ツールには、次の 2 つの場合に、クラスおよびインタフェースのメソッドコメントをコピーまたは「継承」する機能があります。コンストラクタ、フィールド、および入れ子のクラスは、ドキュメンテーションコメントを継承しません。
-.LP
+Javadoc �ġ���ˤϡ����� 2 �Ĥξ��ˡ����饹����ӥ��󥿥ե������Υ᥽�åɥ����Ȥ򥳥ԡ��ޤ��ϡַѾ��פ��뵡ǽ������ޤ������󥹥ȥ饯�����ե�����ɡ����������ҤΥ��饹�ϡ��ɥ�����ơ�����󥳥��Ȥ�Ѿ����ޤ���
 .RS 3
 .TP 2
 o
-\f3自動的にコメントを継承して、見つからないテキストを埋める\fP \- 主説明、または \f2@return\fP タグ、\f2@param\fP タグ、\f2@throws\fP  タグが、メソッドコメントで見つからない場合、Javadoc ツールは、オーバーライドしたメソッドまたは実装している場合はそのメソッドから、対応する主説明またはタグコメントを、次のアルゴリズムに従ってコピーします。 
+\f3��ưŪ�˥����Ȥ�Ѿ����Ƹ��Ĥ���ʤ��ƥ����Ȥ�����\fP \- �������� \f2@return\fP ������ \f2@param\fP �������ޤ��� \f2@throws\fP  �������᥽�åɥ����Ȥ˸��Ĥ���ʤ���硢Javadoc �ġ���ϡ������С��饤�ɤޤ��ϼ������Ƥ�����Ϥ����оݤȤʤ�᥽�åɤ��顢�б�����������ޤ��ϥ��������Ȥ򡢼��Υ��르�ꥺ��˽��äƥ��ԡ����ޤ��� 
 .LP
-厳密には、特定のパラメータの \f2@param\fP タグが見つからない場合、そのパラメータのコメントが、上位の継承階層のメソッドからコピーされます。特定の例外の \f2@throws\fP タグが見つからない場合、その例外が宣言されている場合にかぎり、その \f2@throws\fP タグがコピーされます。 
+��̩�ˤϡ�����Υѥ�᡼���� \f2@param\fP ���������Ĥ���ʤ���硢���Υѥ�᡼���Υ����Ȥ�����̤ηѾ����ؤΥ᥽�åɤ��饳�ԡ�����ޤ���������㳰�� \f2@throws\fP ���������Ĥ���ʤ���硢�����㳰���������Ƥ�����ˤ����ꡢ \f2@throws\fP ���������ԡ�����ޤ��� 
 .LP
-この動作はバージョン 1.3 以前の動作とは対照的です。 これまでのバージョンでは、主説明またはタグが存在すれば、コメントは一切継承されませんでした。  
+����ư��ϥС������ 1.3 ������ư��Ȥ��о�Ū�Ǥ�������ޤǤΥС������Ǥϡ��������ޤ��ϥ�����¸�ߤ���С������Ȥϰ��ڷѾ�����ޤ���Ǥ�����  
 .TP 2
 o
-\f3{@inheritDoc} タグを持つコメントを明示的に継承する\fP \- インラインタグ \f2{@inheritDoc}\fP を、メソッドの主説明、または \f2@return\fP、\f2@param\fP、\f2@throws\fP タグコメントに挿入します。 継承した対応する主説明またはタグコメントは、その箇所にコピーされます。 
+\f3{@inheritDoc} ������ޤॳ���Ȥ�����Ū�˷Ѿ�����\fP \- ����饤�󥿥� \f2{@inheritDoc}\fP �򡢥᥽�åɤμ�������ޤ��� \f2@return\fP�� \f2@param\fP �� \f2@throws\fP �Τ����줫�Υ�������������������ޤ����б�����Ѿ����줿�������ޤ��ϥ��������Ȥ����ΰ��֤˥��ԡ�����ޤ��� 
 .RE
-
 .LP
+�ɥ�����ơ�����󥳥��Ȥ�ºݤ˥��ԡ������Ѥ���ˤϡ��Ѿ������᥽�åɤΥ������ե����뤬 \-sourcepath �ǻ��ꤷ���ѥ��������֤���Ƥ��뤳�Ȥ�ɬ�פˤʤ�ޤ������ޥ�ɹԤǡ����饹��ѥå��������Ϥ�ɬ�פϤ���ޤ��󡣤������ϡ����饹���ɥ�����Ȳ�����륯�饹�Ǥʤ���Фʤ�ʤ��ä� 1.3.x �����Υ�꡼���Ȱۤʤ�ޤ���
 .LP
-ドキュメンテーションコメントを実際にコピーに利用するには、継承したメソッドのソースファイルが \-sourcepath で指定したパスだけに置かれていることが必要になります。コマンド行で、クラスもパッケージも渡す必要はありません。この点は、クラスがドキュメント化されるクラスでなければならなかった 1.3.x 以前のリリースと異なります。
-.LP
-.LP
-\f3クラスおよびインタフェースからの継承\fP \- クラスおよびインタフェースから継承する次の 3 つの場合に、コメントの継承が行われます。
-.LP
+\f3���饹����ӥ��󥿥ե���������ηѾ�\fP \- ���饹����ӥ��󥿥ե���������Ѿ����뼡�� 3 �Ĥξ��ˡ������ȤηѾ����Ԥ��ޤ���
 .RS 3
 .TP 2
 o
-クラスのメソッドがスーパークラスのメソッドをオーバーライドしている 
+���饹�Υ᥽�åɤ������ѡ����饹�Υ᥽�åɤ򥪡��С��饤�ɤ��Ƥ��� 
 .TP 2
 o
-インタフェースのメソッドがスーパーインタフェースのメソッドをオーバーライドしている 
+���󥿥ե������Υ᥽�åɤ������ѡ����󥿥ե������Υ᥽�åɤ򥪡��С��饤�ɤ��Ƥ��� 
 .TP 2
 o
-クラスのメソッドがインタフェースのメソッドを実装している 
+���饹�Υ᥽�åɤ����󥿥ե������Υ᥽�åɤ�������Ƥ��� 
 .RE
-
 .LP
+�ǽ�� 2 �ĤΥ����� (�᥽�åɤ������С��饤�ɤ��Ƥ�����) �Ǥϡ�Javadoc �ġ���ϡ����Υ����Ȥ��Ѿ�����Ƥ��뤫�ɤ����ˤ�����餺�������С��饤�ɤ��Ƥ���᥽�åɤΥɥ��������ˡ֥����С��饤�ɡפȤ��������Ф����������������С��饤�ɤ���Ƥ���᥽�åɤؤΥ�󥯤�񤭹��ߤޤ���
 .LP
-最初の 2 つのケース (メソッドがオーバーライドしている場合) では、Javadoc ツールは、そのコメントが継承されているかどうかにかかわらず、オーバーライドしているメソッドのドキュメント内に「オーバーライド」という小見出しを生成し、オーバーライドされているメソッドへのリンクを書き込みます。
+3 ���ܤΥ����� (����Υ��饹�Υ᥽�åɤ����󥿥ե������Υ᥽�åɤ�������Ƥ�����) �Ǥϡ�javadoc �ġ���ϡ������С��饤�ɤ��Ƥ���᥽�åɤΥɥ��������ˡ�����פȤ��������Ф�������������������Ƥ���᥽�åɤؤΥ�󥯤�񤭹��ߤޤ�������ϡ������Ȥ��Ѿ�����Ƥ��뤫�ɤ����ˤ������ޤ���
 .LP
-.LP
-3 つ目のケース (特定のクラスのメソッドがインタフェースのメソッドを実装している場合) では、javadoc ツールは、オーバーライドしているメソッドのドキュメント内に「定義」という小見出しを生成し、実装されているメソッドへのリンクを書き込みます。これは、コメントが継承されているかどうかにかかわりません。
-.LP
-.LP
-\f3メソッドの説明が継承されるアルゴリズム\fP \- あるメソッドにドキュメンテーションコメントが記述されていない場合、または {@inheritDoc} タグがある場合、Javadoc ツールは、次のようなアルゴリズムを使用して適切なコメントを検索します。 このアルゴリズムは、もっとも適切なドキュメンテーションコメントを検索できるように設計されており、スーパークラスよりもインタフェースが優先されるようになっています。
-.LP
+\f3�᥽�åɤ��������Ѿ�����륢�르�ꥺ��\fP \- ����᥽�åɤ˥ɥ�����ơ�����󥳥��Ȥ����Ҥ���Ƥ��ʤ���硢�ޤ��� {@inheritDoc} �����������硢Javadoc �ġ���ϡ����Τ褦�ʥ��르�ꥺ�����Ѥ���Ŭ�ڤʥ����Ȥ򸡺����ޤ��� ���Υ��르�ꥺ��ϡ���äȤ�Ŭ�ڤʥɥ�����ơ�����󥳥��Ȥ򸡺��Ǥ���褦���߷פ���Ƥ��ꡢ�����ѡ����饹���⥤�󥿥ե�������ͥ�褵���褦�ˤʤäƤ��ޤ���
 .RS 3
 .TP 3
 1.
-直接に実装されている (または、拡張されている) インタフェースを、メソッドの宣言で implements (または extends) キーワードのあとに登場する順序で、1 つずつ調べる。このメソッドについて最初に見つかったドキュメンテーションコメントを採用する 
+ľ�ܤ˼�������Ƥ��� (�ޤ��ϡ���ĥ����Ƥ���) ���󥿥ե������򡢥᥽�åɤ������ implements (�ޤ��� extends) ������ɤΤ��Ȥ��о줹�����ǡ�1 �Ĥ���Ĵ�٤롣���Υ᥽�åɤˤĤ��ƺǽ�˸��Ĥ��ä��ɥ�����ơ�����󥳥��Ȥ���Ѥ��� 
 .TP 3
 2.
-手順 1 でドキュメンテーションコメントが見つからなかった場合は、直接実装されている (または、拡張されている) インタフェースのそれぞれに対して、このアルゴリズム全体を再帰的に適用する (その際の順序は、手順 1 でインタフェースを調べたときの順序と同じ) 
+��� 1 �ǥɥ�����ơ�����󥳥��Ȥ����Ĥ���ʤ��ä����ϡ�ľ�ܼ�������Ƥ��� (�ޤ��ϡ���ĥ����Ƥ���) ���󥿥ե������Τ��줾����Ф��ơ����Υ��르�ꥺ�����Τ�Ƶ�Ū��Ŭ�Ѥ��� (���κݤν���ϡ���� 1 �ǥ��󥿥ե�������Ĵ�٤��Ȥ��ν����Ʊ��) 
 .TP 3
 3.
-手順 2 でドキュメンテーションコメントが見つからなかった場合で、このクラスが Object 以外のクラスである (インタフェースではない) 場合は、次のように処理する 
+��� 2 �ǥɥ�����ơ�����󥳥��Ȥ����Ĥ���ʤ��ä����ǡ����Υ��饹�� Object �ʳ��Υ��饹�Ǥ��� (���󥿥ե������ǤϤʤ�) ���ϡ����Τ褦�˽������� 
 .RS 3
 .TP 3
 a.
-スーパークラスにこのメソッドについてのドキュメンテーションコメントが記述されていれば、そのコメントを採用する 
+�����ѡ����饹�ˤ��Υ᥽�åɤˤĤ��ƤΥɥ�����ơ�����󥳥��Ȥ����Ҥ���Ƥ���С����Υ����Ȥ���Ѥ��� 
 .TP 3
 b.
-手順 3a でドキュメンテーションコメントが見つからなかった場合は、スーパークラスに対して、このアルゴリズム全体を適用する 
+��� 3a �ǥɥ�����ơ�����󥳥��Ȥ����Ĥ���ʤ��ä����ϡ������ѡ����饹���Ф��ơ����Υ��르�ꥺ�����Τ�Ŭ�Ѥ��� 
 .RE
 .RE
-
+.SH "javadoc ����"
 .LP
-.SH "javadoc タグ"
+Javadoc �ġ���ϡ�Java �Υɥ�����ơ�����󥳥�����������ޤ줿���̤ʥ�������Ϥ��ޤ��������Υɥ�����ơ�����󥿥���Ȥ��ȡ��񼰤����ä������� API �ɥ�����Ȥ򥽡��������ɤ��鼫ưŪ�������Ǥ��ޤ��������ϡ֥��åȥޡ����׵��� (\f2@\fP) �ǻϤޤꡢ��ʸ���Ⱦ�ʸ���ζ��̤�����ޤ��������ϡ���ʸ���Ⱦ�ʸ������Ѥ��ơ�ɽ������Ƥ���Ȥ�������Ϥ���ɬ�פ�����ޤ��������ϡ��Ԥ���Ƭ (��Ԥ������Ⱦ�ά��ǽ�ʥ������ꥹ���Ͻ���) ���֤��ʤ���Фʤ�ޤ��󡣴���Ȥ��ơ�Ʊ��̾���Υ����� 1 ����ˤޤȤ�Ƶ��Ҥ���褦�ˤ��ޤ������Ȥ��С� \f2@see\fP �����Ϥ��٤�Ʊ���������֤��ޤ���
 .LP
-.LP
-Javadoc ツールは、Java のドキュメンテーションコメント内に埋め込まれた特別なタグを解析します。これらのドキュメンテーションタグを使うと、書式の整った完全な API ドキュメントをソースコードから自動的に生成できます。タグは、単価記号 (\f2@\fP) で始まり、大文字と小文字が区別されます。 これらのタグは、定められたとおりの大文字と小文字を使用して記述する必要があります。タグは、行の先頭 (先行する空白と省略可能なアスタリスクは除く) に置かなければなりません。慣例として、同じ名前のタグは 1 か所にまとめて記述するようにします。たとえば、\f2@see\fP タグが複数ある場合は、すべてを 1 か所にまとめて記述します。 
-.LP
-.LP
-タグには 2 つのタイプがあります。
-.LP
+�����ˤ� 2 �ĤΥ����פ�����ޤ���
 .RS 3
 .TP 2
 o
-\f3ブロックタグ\fP \- 主説明に続くタグセクション内にのみ記述可能。ブロックタグは、\f2@tag\fP の形式をとります。 
+\f3�֥��å�����\fP \- ��������³�����������������ˤΤߵ��Ҳ�ǽ���֥��å������ϡ� \f2@tag\fP �η�����Ȥ�ޤ��� 
 .TP 2
 o
-\f3インラインタグ\fP \- コメントの主説明内またはブロックタグのコメント内に記述可能。インラインタグは、\f2{@tag}\fP のように中括弧で囲みます。 
+\f3����饤�󥿥�\fP \- �������⡢�ޤ��ϥ֥��å������Υ�������˵��Ҳ�ǽ������饤�󥿥��ϡ� \f2{@tag}\fP.�Τ褦�����̤ǰϤߤޤ��� 
 .RE
-
 .LP
-.LP
-今後のリリースで導入されるタグについては、
+����Υ�꡼����Ƴ������륿���ˤĤ��Ƥϡ�
 .na
-\f2「Proposed Javadoc Tags」\fP @
+\f2��Proposed Javadoc Tags��\fP @
 .fi
-http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください。
+http://java.sun.com/j2se/javadoc/proposed\-tags.html�򻲾Ȥ��Ƥ���������
 .LP
-.LP
-現時点で有効なタグは、次のとおりです。
-.LP
-.RS 3
-
-.LP
+��������ͭ���ʥ����ϡ����ΤȤ���Ǥ���
 .LP
 .TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
@@ -1267,7 +848,7 @@ http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください�
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-\f3導入された JDK/SDK のバージョン\fP
+\f3Ƴ�����줿 JDK/SDK �ΥС������\fP
 .br
 .di
 .nr a| \n(dn
@@ -1278,7 +859,7 @@ http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください�
 .nf
 .ll \n(34u
 .nr 80 0
-.nr 38 \w\f3タグ\fP
+.nr 38 \w\f3����\fP
 .if \n(80<\n(38 .nr 80 \n(38
 .nr 38 \w\f2@author\fP
 .if \n(80<\n(38 .nr 80 \n(38
@@ -1373,7 +954,7 @@ http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください�
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 1124 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 867 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -1392,7 +973,7 @@ http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください�
 .ta \n(80u \n(81u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'\f3タグ\fP\h'|\n(41u'
+\&\h'|\n(40u'\f3����\fP\h'|\n(41u'
 .mk ##
 .nr 31 \n(##
 .sp |\n(##u-1v
@@ -1486,74 +1067,38 @@ http://java.sun.com/j2se/javadoc/proposed\-tags.htmlを参照してください�
 .rm a+
 .TE
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-44
-
 .LP
-.RE
-.LP
-カスタムタグについては、\-tag オプションを参照してください。
-.LP
+�������ॿ���ˤĤ��Ƥϡ�\-tag ���ץ����򻲾Ȥ��Ƥ���������
 .RS 3
 .TP 3
 @author\  name\-text 
-\-author オプションが使われている場合、生成ドキュメントに「著者」の項目を追加し、指定された \f2name\-text\fP を書き込みます。1 つのドキュメンテーションコメントに複数の \f2@author\fP タグを含めることができます。1 つの \f2@author\fP タグに 1 つの名前を指定することも、1 つのタグに複数の名前を指定することもできます。前者の場合は、Javadoc ツールによって、名前と名前の間にコンマ (\f2,\fP) とスペースが挿入されます。後者の場合は、テキスト全体が、解析されることなく、生成ドキュメントにそのままコピーされます。したがって、コンマではなく、各言語に対応した名前区切り文字を使う必要があるときは、1 つのタグに複数の名前を指定してください。 
+\-author ���ץ���󤬻��Ѥ���Ƥ����硢���ꤵ�줿 \f2name\-text\fP ��ޤ� [������] ����ȥ�������ɥ�����Ȥ��ɲä��ޤ���1 �ĤΥɥ�����ơ�����󥳥��Ȥ�ʣ���� \f2@author\fP ������ޤ�뤳�Ȥ��Ǥ��ޤ���1 �Ĥ� \f2@author\fP ������ 1 �Ĥ�̾������ꤹ�뤳�Ȥ⡢ʣ����̾������ꤹ�뤳�Ȥ�Ǥ��ޤ������Ԥξ��ϡ�Javadoc �ġ���ˤ�ä�̾����̾���δ֤˥���� (\f2,\fP) �ȶ�����������ޤ�����Ԥξ��ϡ��ƥ��������Τ������Ϥ���뤳�Ȥʤ��������ɥ�����Ȥˤ��Τޤޥ��ԡ�����ޤ����������äơ�����ޤǤϤʤ����Ƹ�����б�����̾�����ڤ�ʸ����Ȥ�ɬ�פ�����Ȥ��ϡ�1 �ĤΥ�����ʣ����̾������ꤷ�Ƥ��������� 
 .RE
-
 .LP
-.RS 3
-
-.LP
-.LP
-詳細については、「タグを使用できる場所」および 
+�ܺ٤ˤĤ��Ƥϡ��֥�������ѤǤ�����פ���� 
 .na
-\f2@author タグのドキュメント\fP @
+\f2@author �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@authorを参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@author�򻲾Ȥ��Ƥ���������
 .LP
-.LP
-
-.LP
-.RE
 .RS 3
 .TP 3
-@deprecated\  deprecated\-text 
-.RS 3
-
-.LP
-.LP
-注: JDK 5.0 から、
-.na
-\f2@Deprecated 注釈\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/javadoc/deprecation/deprecation.htmlを使って特定のプログラム要素を非推奨にできるようになりました。
-.LP
+@deprecated\  deprecated\-text ��: @Deprecated �����Ȥä�����Υץ���������Ǥ���侩�ˤǤ��ޤ���  
 .RE
-.RE
-.RS 3
-
 .LP
+���� API ��ư�³���ޤ��������� API ����Ѥ���٤��ǤϤʤ����Ȥ򼨤������Ȥ��ɲä��ޤ���Javadoc �ġ���ϡ� \f2deprecated\-text\fP ������������˰�ư���ƥ�����å��ˤ����������˥ܡ���ɤηٹ�ֿ侩����ޤ��󡣡פ��ɲä��ޤ������Υ����ϡ����٤ƤΥɥ�����ơ�����󥳥��ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ���
 .LP
-この API は動作し続けますが、この API を使用するべきではないことを示すコメントを追加します。Javadoc ツールは、\f2deprecated\-text\fP を主説明の前に移動してイタリックにし、その前にボールドの警告「推奨されません。」を追加します。このタグは、すべてのドキュメンテーションコメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。
+\f2deprecated\-text\fP �κǽ��ʸ�Ǥϡ����ʤ��Ȥ⡢���� API ���侩����ʤ��ʤä������ȡ����ػ��Ѥ���٤� API ���ɼԤ��󼨤���ɬ�פ�����ޤ���Javadoc �ġ���ϡ����κǽ��ʸ�����򡢳��ץ��������Ⱥ����˥��ԡ����ޤ������Τ��Ȥ�ʸ�Ǥϡ����� API ���侩����ʤ���ͳ���������뤳�Ȥ�Ǥ��ޤ��������API ��ؤ����� \f2{@link}\fP ���� ( Javadoc 1.2 �ʹߤξ��) ��ޤ��٤��Ǥ���
 .LP
-.LP
-\f2deprecated\-text\fP の最初の文では、少なくとも、その API が推奨されなくなった時期と、代替使用するべき API を読者に提示する必要があります。Javadoc ツールは、この最初の文だけを、概要セクションと索引にコピーします。そのあとの文では、その API が推奨されない理由を説明することもできます。また、代わりの API を指し示す \f2{@link}\fP タグ (Javadoc 1.2 以降の場合) を含める必要があります。 次のように記述します。
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@deprecated タグのドキュメント\fP @
+\f2@deprecated �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@deprecatedを参照してください。
-.LP
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@deprecated�򻲾Ȥ��Ƥ���������
 .RS 3
 .TP 2
 o
-Javadoc 1.2 以降では、\f2{@link}\fP タグを使用します。これにより、必要な場所にインラインでリンクを作成できます。例を示します。 
-.RE
-
-.LP
-.RS 3
-
-.LP
+Javadoc 1.2 �ʹߤǤ� \f2{@link}\fP ��������Ѥ��ޤ�������ˤ�ꡢɬ�פʾ��˥���饤��ǥ�󥯤�����Ǥ��ޤ������Ȥ��С� 
 .nf
 \f3
 .fl
@@ -1567,106 +1112,71 @@ Javadoc 1.2 以降では、\f2{@link}\fP タグを使用します。これによ
 .fl
 \fP
 .fi
-.RE
-
-.LP
-.RS 3
 .TP 2
 o
-Javadoc 1.1 では、各 \f2@deprecated\fP タグに対して \f2@see\fP タグ (インラインにはできない) を記述するのが標準の形式です。 
+Javadoc 1.1 �ξ���ɸ������ϡ� \f2@see\fP ���� (����饤����Բ�) �� \f2@deprecated\fP �������Ȥ˺������뤳�ȤǤ��� 
 .RE
-
 .LP
-.LP
-推奨されないタグについての詳細は、
+�侩����ʤ������ˤĤ��Ƥξܺ٤ϡ�
 .na
-\f2@deprecated タグ\fP @
+\f2@deprecated ����\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/javadoc/deprecation/index.htmlのドキュメントを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/javadoc/deprecation/index.html�Υɥ�����Ȥ򻲾Ȥ��Ƥ���������
 .LP
-.LP
-
-.LP
-.RE
 .RS 3
 .TP 3
 {@code\  text} 
-\f2<code>{@literal}</code>\fP と同等です。 
-.RE
-
+\f2<code>{@literal}</code>\fP ��Ʊ���Ǥ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-テキストを HTML マークアップまたは入れ子になった javadoc タグとして解釈せずに、\f2text\fP を \f2code\fP フォントで表示します。これにより doc コメントでは、パラメータの種類 (\f2<Object>\fP)、不等号 (\f23 < 4\fP)、または矢印 (\f2<\-\fP) などで、HTML エンティティー (\f2<\fP および \f2>\fP) ではなく、通常の山括弧 (\f2<\fP および \f2>\fP) を使用できます。たとえば doc コメントのテキスト
-.LP
+�ƥ����Ȥ� \f2HTML �ޡ������å�\fP �ޤ��� \f2����Ҥˤʤä� javadoc ����\fP �Ȥ��Ʋ�᤻���ˡ�text �򥳡��ɥե���Ȥ�ɽ�����ޤ������Τ��ᡢ�ɥ�����ơ�����󥳥�������̾�λ���� (\f2<\fP ����� \f2>\fP) �� HTML ����ƥ��ƥ��� (\f2<\fP ����� \f2>\fP) ������˻��ѤǤ��ޤ������Ȥ��С��ѥ�᡼���η� (\f2<Object>\fP)�������� (\f23 < 4\fP)����� (\f2<\-\fP) �ʤɤǤ������Ȥ��С����Υɥ�����ơ�����󥳥��� 
 .nf
 \f3
 .fl
      \fP\f4{@code A<B>C}\fP\f3
 .fl
-            
+          
 .fl
 \fP
 .fi
-
 .LP
-.LP
-は、生成された HTML ページで、次のようにそのまま表示されます。
-.LP
+�ϡ��������줿 HTML �ڡ����ǡ����Τ褦�ˤ��Τޤ�ɽ������ޤ��� 
 .nf
 \f3
 .fl
      \fP\f4A<B>C\fP\f3
 .fl
-            
+          
 .fl
 \fP
 .fi
-
 .LP
+���������ܤ��٤����ϡ� \f2<B>\fP �������Ȥ��Ʋ�ᤵ�줺�����Υե���Ȥϥ����ɥե���Ȥˤʤ롢�Ȥ������Ǥ��� 
 .LP
-注目すべき点として、\f2<B>\fP は太字であると解釈されませんが、コードフォントになります。
+�����ɥե���Ȥʤ���Ʊ����ǽ��¸�����ˤϡ�\f2{@literal}\fP ����Ѥ��ޤ��� 
 .LP
-.LP
-コードフォントなしで同じ機能を実現するには、\f2{@literal}\fP を使用します。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 {@docRoot} 
-生成されるページから見た、生成ドキュメントの (生成先の) ルートディレクトリへの相対パスを表します。このタグは、著作権のページや会社のロゴなど、生成されるすべてのページから参照するファイルを組み込むときに便利です。通常は、各ページの下部から著作権のページにリンクします。 
-.RE
-
+���������ڡ������鸫���������ɥ�����Ȥ� (�������) �롼�ȥǥ��쥯�ȥ�ؤ����Хѥ���ɽ���ޤ������Υ����ϡ�����Υڡ������ҤΥ����ʤɡ���������뤹�٤ƤΥڡ������黲�Ȥ���ե�������Ȥ߹���Ȥ��������Ǥ����̾�ϡ��ƥڡ����β�����������Υڡ����˥�󥯤��ޤ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-この \f2{@docRoot}\fP タグは、コマンド行からも、ドキュメンテーションコメントの中でも使用できます。このタグは、@return、@param、@deprecated などの任意のタグのテキスト部分を含む、すべてのドキュメンテーションコメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。
-.LP
+���� \f2{@docRoot}\fP �����ϡ����ޥ�ɹԤǤ�ɥ�����ơ�����󥳥�����Ǥ���ѤǤ��ޤ������Υ����ϡ�@return��@param��@deprecated �ʤɤ�Ǥ�դΥ����Υƥ�������ʬ��ޤࡢ���٤ƤΥɥ�����ơ�����󥳥��ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ��� 
 .RS 3
 .TP 3
 1.
-コマンド行では、ヘッダー、フッター、またはボトムノートは次のように定義します。 
+���ޥ�ɹԤǤϡ��إå������եå������ޤ��ϥܥȥ�Ρ��Ȥϼ��Τ褦��������ޤ��� 
 .nf
 \f3
 .fl
    javadoc \-bottom '<a href="{@docRoot}/copyright.html">Copyright</a>'
 .fl
-              
+            
 .fl
 \fP
 .fi
 .LP
-\- \f2{@docRoot}\fP をこのように利用する場合、一部の Makefile プログラムでは、中括弧 { } 文字をエスケープする必要があります。たとえば、Inprise MAKE バージョン 5.2 を Windows 上で実行する場合は、「\f2{{@docRoot}}\fP」のように、中括弧を二重にする必要があります。さらに、\f2\-bottom\fP などのオプションに対する引数を、単一引用符ではなく、二重引用符で囲む必要があります。 \f2href\fP 引数の値を囲む引用符は省略します。  
+�� \- \f2{@docRoot}\fP �� Makefile ��Ǥ��Τ褦�����Ѥ����硢������ Makefile �ץ������Ǥϡ����� { } ʸ���򥨥������פ���ɬ�פ�����ޤ������Ȥ��С�Inprise MAKE �С������ 5.2 �� Windows ��Ǽ¹Ԥ�����ϡ� \f2{{@docRoot}} �Τ褦�ˡ����̤���Ťˤ���ɬ�פ�����ޤ�\fP������ˡ� \f2\-bottom\fP �ʤɤΥ��ץ������Ф��������ñ�������ǤϤʤ���Ű�����ǰϤ�ɬ�פ⤢��ޤ� ( \f2href\fP �ΰ�����Ϥ������Ͼ�ά)��  
 .TP 3
 2.
-ドキュメンテーションコメントの中では、次のように使用します。 
+�ɥ�����ơ�����󥳥��Ȥ���Ǥϡ����Τ褦�˻��Ѥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -1676,16 +1186,13 @@ http://java.sun.com/javase/6/docs/technotes/guides/javadoc/deprecation/index.htm
 .fl
     */
 .fl
-              
+            
 .fl
 \fP
 .fi
 .RE
-
 .LP
-.LP
-このタグが必要な理由は、生成ドキュメントが、サブパッケージと同じ深さを持つ階層構造のディレクトリに格納されるからです。次に例を示します。
-.LP
+���Υ�����ɬ�פ���ͳ�ϡ������ɥ�����Ȥ������֥ѥå�������Ʊ����������ĳ��ع�¤�Υǥ��쥯�ȥ�˳�Ǽ����뤫��Ǥ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -1695,201 +1202,118 @@ http://java.sun.com/javase/6/docs/technotes/guides/javadoc/deprecation/index.htm
 .fl
 \fP
 .fi
-
 .LP
-.LP
-次のように解決されます。
-.LP
+���Τ褦�˲�褵��ޤ��� 
 .nf
 \f3
 .fl
-  <a href="../../copyright.html">      java/lang/Object.java の場合
+  <a href="../../copyright.html">      java/lang/Object.java �ξ��
 .fl
           
 .fl
 \fP
 .fi
-
 .LP
-.LP
-および
-.LP
+���� 
 .nf
 \f3
 .fl
-  <a href="../../../copyright.html">   java/lang/ref/Reference.java の場合
+  <a href="../../../copyright.html">   java/lang/ref/Reference.java �ξ��
 .fl
           
 .fl
 \fP
 .fi
-
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @exception\  class\-name\  description 
-\f2@exception\fP タグは、\f2@throws\fP タグと同義です。 
-.RE
-
+\f2@exception\fP ������ \f2@throws\fP ��Ʊ���Ǥ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 {@inheritDoc}\  
-もっとも近い継承可能なクラスまたは実装可能なインタフェースから、このタグの現在のドキュメンテーションコメントに、ドキュメントを継承 (コピー) します。この機能により、より汎用的なコメントを継承ツリーの上位に記述し、コピーしたテキストを使って記述することができます。 
-.RE
-
+��äȤ�ᤤ�Ѿ���ǽ�ʥ��饹�ޤ��ϼ�����ǽ�ʥ��󥿥ե��������顢���Υ����θ��ߤΥɥ�����ơ�����󥳥��Ȥˡ��ɥ�����Ȥ�Ѿ� (���ԡ�) ���ޤ������ε�ǽ�ˤ�ꡢ�������Ū�ʥ����Ȥ�Ѿ��ĥ꡼�ξ�̤˵��Ҥ������ԡ������ƥ����Ȥ�ȤäƵ��Ҥ��뤳�Ȥ��Ǥ��ޤ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-このタグは、ドキュメンテーションコメントの次の位置でのみ有効です。
-.LP
+���Υ����ϡ��ɥ�����ơ�����󥳥��Ȥμ��ΰ��֤ǤΤ�ͭ���Ǥ��� 
 .RS 3
 .TP 2
 o
-メソッドの主説明ブロック内。この場合、主説明は、上位階層のクラスまたはインタフェースからコピーされる 
+�᥽�åɤμ������֥��å��⡣���ξ�硢�������ϡ���̳��ؤΥ��饹�ޤ��ϥ��󥿥ե��������饳�ԡ������ 
 .TP 2
 o
-メソッドの @return、@param、@throws タグのテキスト引数内。この場合、タグテキストは、上位階層の対応するタグからコピーされる 
+�᥽�åɤ� @return��@param��@throws �����Υƥ����Ȱ����⡣���ξ�硢�����ƥ����Ȥϡ���̳��ؤ��б����륿�����饳�ԡ������ 
 .RE
-
 .LP
+�Ѿ����ؤǥ����Ȥ򸫤Ĥ�����ˡ�˴ؤ������Τ������ˤĤ��ơ��֥᥽�åɥ����Ȥμ�ư���ԡ��פ򻲾Ȥ��Ƥ������������Υ��������Ĥ���ʤ���硢�����Ȥϡ����������������롼��˱����ơ���ưŪ�˷Ѿ�����뤫�ɤ�������ޤ�ޤ��� 
 .LP
-継承階層でコメントを見つける方法に関する正確な説明について、「メソッドコメントの自動コピー」を参照してください。このタグが見つからない場合、コメントは、この節で説明するルールに応じて、自動的に継承されるかどうかが決まります。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
-{@link\ \  package.class#member\ \  label}\  
-表示テキスト \f2label\fP とのインラインリンクを挿入します。 \f2label\fP は、参照クラスの指定されたパッケージ、クラス、またはメンバーの名前のドキュメンテーションを指し示します。このタグは、@return、@param、@deprecated などの任意のタグのテキスト部分を含む、すべてのドキュメンテーションコメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。 
-.RE
-
+{@link\  package.class#member\  label} 
+ɽ���ƥ����� \f2label\fP �ȤΥ���饤���󥯤��������ޤ���label �ϡ����ȥ��饹�λ��ꤵ�줿�ѥå����������饹���ޤ��ϥ��С���̾���Υɥ�����ơ�������ؤ������ޤ������Υ����ϡ�@return��@param��@deprecated �ʤɤ�Ǥ�դΥ����Υƥ�������ʬ��ޤࡢ���٤ƤΥɥ�����ơ�����󥳥��ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ��� 
 .LP
-.RS 3
-
+���Υ����� \f2@see\fP �����ˤ褯���Ƥ��ޤ����ɤ���⡢\f2package.class\fP\f2#\fP\f2member\fP �� \f2label\fP �λ��Ȥλ�����Ʊ���ǡ�ͭ���ʹ�ʸ��ޤä���Ʊ���Ǥ����礭�ʰ㤤�ϡ� \f2{@link}\fP �Ǥϡ�[��Ϣ����] ���������˥�󥯤����֤��������ˡ�����饤��Υ�󥯤����������Ȥ������Ǥ����ޤ�������饤��ƥ����ȤΤۤ�����ʬ�ȶ��̤��뤿��ˡ� \f2{@link}\fP �����κǽ�ȺǸ�����̤򵭽Ҥ��ޤ�����٥����ǡ�}�פ�Ȥ�ɬ�פ�������ϡ�HTML ����ƥ��ƥ����Ρ�&#125;�פ�Ȥ��ޤ��� 
 .LP
+1 ʸ��ǻ��Ѳ�ǽ�� \f2{@link}\fP �����ο������¤Ϥ���ޤ��󡣤��Υ����ϡ��ɥ�����ơ�����󥳥��Ȥμ�������ʬ���ޤ��� @deprecated��@return��@param �ʤɤ�Ǥ�դΥ����Υƥ�������ʬ�ǻȤ����Ȥ��Ǥ��ޤ��� 
 .LP
-このタグは、\f2@see\fP タグとよく似ています。 どちらのタグも、\f2package.class\fP\f2#\fP\f2member\fP および \f2label\fP の参照の仕方が同じで、有効な構文もまったく同じです。大きな違いは、\f2{@link}\fP は、リンクを [関連項目] セクションに置くのではなく、インラインリンクを生成するということです。また、インラインテキストのほかの部分と区別するために、\f2{@link}\fP タグの最初と最後に中括弧を記述します。ラベルの中で「}」を使う必要がある場合は、HTML エンティティーの「}」を使います。
-.LP
-.LP
-1 つの文の中で使用できる \f2{@link}\fP タグの数に制限はありません。このタグは、ドキュメンテーションコメントの主説明部分、または @deprecated、@return、@param などの任意のタグのテキスト部分で使うことができます。
-.LP
-.LP
-たとえば、次のコメントでは \f2getComponentAt(int, int)\fP メソッドを参照しています。
-.LP
+���Ȥ��С����Υ����ȤǤ� \f2getComponentAt(int, int)\fP �᥽�åɤ򻲾Ȥ��Ƥ��ޤ��� 
 .nf
 \f3
 .fl
-{@link #getComponentAt(int, int) getComponentAt} メソッドを使用します。
+{@link #getComponentAt(int, int) getComponentAt} �᥽�åɤ���Ѥ��ޤ���
 .fl
         
 .fl
 \fP
 .fi
-
 .LP
-.LP
-標準ドックレットでは、上記のコメントから次の HTML が生成されます (このコメントが同じパッケージの別のクラスを参照している場合)。
-.LP
+ɸ��ɥå���åȤǤϡ��嵭�Υ����Ȥ��鼡�� HTML ����������ޤ� (���Υ����Ȥ�Ʊ���ѥå��������̤Υ��饹�򻲾Ȥ��Ƥ�����)�� 
 .nf
 \f3
 .fl
-<a href="Component.html#getComponentAt(int, int)">getComponentAt</a> メソッドを使用します。
+<a href="Component.html#getComponentAt(int, int)">getComponentAt</a> �᥽�åɤ���Ѥ��ޤ���
 .fl
         
 .fl
 \fP
 .fi
-
 .LP
-.LP
-この HTML は、Web ページ上では次のように表示されます。
-.LP
+���� HTML �ϡ�Web �ڡ�����Ǥϼ��Τ褦��ɽ������ޤ��� 
 .nf
 \f3
 .fl
-getComponentAt メソッドを使用します。
+getComponentAt �᥽�åɤ���Ѥ��ޤ���
 .fl
         
 .fl
 \fP
 .fi
-
 .LP
+\f2{@link}\fP ���ĥ���ƥɥ�����Ȳ�����ʤ����饹�ؤΥ�󥯤��ǽ�ˤ���ˤϡ�\f2\-link\fP ���ץ�������Ѥ��ޤ��� 
 .LP
-\f2{@link}\fP を、ドキュメント化の対象にしていないクラスにまで拡張するには、\f2\-link\fP オプションを使用します。
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2{@link} タグのドキュメント\fP @
+\f2{@link} �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#{@link}を参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#{@link}�򻲾Ȥ��Ƥ��������� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 {@linkplain\  package.class#member\  label} 
-リンクのラベルがコードフォントではなくプレーンテキストで表示される点以外は \f2{@link}\fP と同じです。ラベルがプレーンテキストで記述されていると便利です。例: 
-.RE
-
-.LP
-.RS 3
-
-.LP
+��󥯤Υ�٥뤬�����ɥե���ȤǤϤʤ��ץ졼��ƥ����Ȥ�ɽ����������ʳ��� \f2{@link}\fP ��Ʊ���Ǥ�����٥뤬�ץ졼��ƥ����Ȥǵ��Ҥ���Ƥ���������Ǥ���������򻲾Ȥ��Ƥ�����������: 
 .nf
 \f3
 .fl
-     {@linkplain add() the overridden method} を参照してください。
+     {@linkplain add() the overridden method} �򻲾Ȥ��Ƥ���������
 .fl
         
 .fl
 \fP
 .fi
-
 .LP
+����ϰʲ��Τ褦��ɽ������ޤ��� 
 .LP
-これは以下のように表示されます。
+the overridden method �򻲾Ȥ��Ƥ��������� 
 .LP
-.RS 3
-
-.LP
-.LP
-the overridden method を参照してください。
-.LP
-.RE
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 {@literal\  text} 
-テキストを HTML マークアップまたは入れ子になった javadoc タグとして解釈せずに、\f2text\fP を表示します。これにより doc コメントでは、パラメータの種類 (\f2<Object>\fP)、不等号 (\f23 < 4\fP)、または矢印 (\f2<\-\fP) などで、HTML エンティティー (\f2<\fP および \f2>\fP) ではなく、通常の山括弧 (\f2<\fP および \f2>\fP) を使用できます。たとえば doc コメントのテキスト 
-.RE
-
-.LP
-.RS 3
-
-.LP
+�ƥ����Ȥ� HTML �ޡ������åפޤ�������Ҥˤʤä� javadoc �����Ȥ��Ʋ�᤻���ˡ� \f2text\fP ��ɽ�����ޤ������Τ��ᡢ�ɥ�����ơ�����󥳥�������̾�λ���� (\f2<\fP ����� \f2>\fP) �� HTML ����ƥ��ƥ��� (\f2<\fP ����� \f2>\fP) ������˻��ѤǤ��ޤ������Ȥ��С��ѥ�᡼���η� (\f2<Object>\fP)�������� (\f23 < 4\fP)����� (\f2<\-\fP) �ʤɤǤ������Ȥ��С����Υɥ�����ơ�����󥳥��� 
 .nf
 \f3
 .fl
@@ -1899,40 +1323,22 @@ the overridden method を参照してください。
 .fl
 \fP
 .fi
-
 .LP
+�ϡ��������줿 HTML �ڡ����ϥ֥饦���Ǽ��Τ褦�ˤ��Τޤ�ɽ������ޤ��� 
 .LP
-は、生成された HTML ページはブラウザで次のようにそのまま表示されます。
+\f2\ \ \ \ \ \fPA<B>C  
 .LP
+���������ܤ��٤����ϡ� \f2<B>\fP �������Ȥ��Ʋ�ᤵ�줺�����Υե���Ȥϥ����ɥե���Ȥˤʤ롢�Ȥ������Ǥ��� 
 .LP
-\f2\ \ \ \ \ \fPA<B>C 
+�����ɥե���Ȥ�Ʊ����ǽ��¸�����ˤϡ�\f2{@code}\fP ����Ѥ��ޤ��� 
 .LP
-.LP
-注目すべき点として、\f2<B>\fP は太字であると解釈されません (コードフォントにならない)。
-.LP
-.LP
-コードフォントで同じ機能を実現するには、\f2{@code}\fP を使用します。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @param\  parameter\-name description 
-指定した \f2parameter\-name\fP と指定した \f2description\fP を使用してパラメータを「Parameters」セクションに追加します。doc コメントを記述するときは、\f2description\fP を複数行に続けることができます。このタグは、メソッド、コンストラクタ、またはクラスの doc コメント内でのみ有効です。 
-.RE
-
+���ꤵ�줿 \f2parameter\-name\fP �Τ��Ȥ˻��ꤵ�줿 \f2description\fP ��³���ѥ�᡼����[�ѥ�᡼��] �����������ɲä��ޤ����ɥ�����ơ�����󥳥��Ȥ򵭽Ҥ���Ȥ��ˤϡ� \f2description\fP ��ʣ���Ԥˤ錄�äƵ��Ҥ��뤳�Ȥ�Ǥ��ޤ������Υ����ϡ��᥽�åɡ����󥹥ȥ饯�����ޤ��ϥ��饹�� doc ��������ǤΤ�ͭ���Ǥ��� 
 .LP
-.RS 3
-
+\f2parameter\-name\fP �ϡ��᥽�åɤޤ��ϥ��󥹥ȥ饯���ǤΥѥ�᡼����̾���������饹���᥽�åɤޤ��ϥ��󥹥ȥ饯���Υ����ץѥ�᡼����̾���ˤʤ�ޤ�������̤ǥѥ�᡼��̾��Ϥ�ȡ����ѥ�᡼������Ѥ��뤳�Ȥ� ���ꤷ�ޤ��� 
 .LP
-.LP
-\f2parameter\-name\fP は、メソッドまたはコンストラクタでのパラメータの名前か、クラス、メソッドまたはコンストラクタのタイプパラメータの名前になります。山括弧でパラメータ名を囲むと、型パラメータを使用することを指定します。
-.LP
-.LP
-クラスの型パラメータの例:
-.LP
+���饹�η��ѥ�᡼������: 
 .nf
 \f3
 .fl
@@ -1950,11 +1356,8 @@ the overridden method を参照してください。
 .fl
 \fP
 .fi
-
 .LP
-.LP
-メソッドの型パラメータの例:
-.LP
+�᥽�åɤη��ѥ�᡼������: 
 .nf
 \f3
 .fl
@@ -1978,125 +1381,87 @@ the overridden method を参照してください。
 .fl
 \fP
 .fi
-
 .LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@param タグのドキュメント\fP @
+\f2@param �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@paramを参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@param�򻲾Ȥ��Ƥ��������� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @return\  description 
-[戻り値] セクションを追加して、\f2description\fP のテキストを書き込みます。このテキストでは、戻り値の型と、取り得る値の範囲について記述する必要があります。このタグは、メソッドのドキュメンテーションコメントでのみ有効です。 
-.RE
-
+[�����] �����������ɲä��ơ� \f2description\fP �Υƥ����Ȥ�񤭹��ߤޤ������Υƥ����ȤǤϡ�����ͤη��ȡ���������ͤ��ϰϤˤĤ��Ƶ��Ҥ���ɬ�פ�����ޤ������Υ����ϡ��᥽�åɤΥɥ�����ơ�����󥳥��ȤǤΤ�ͭ���Ǥ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@return タグのドキュメント\fP @
+\f2@return �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@returnを参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@return�򻲾Ȥ��Ƥ��������� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
-@see\ \  reference 
-[関連項目] 見出しを追加し、\f2reference\fP を指すリンクか、またはテキストエントリを書き込みます。1 つのドキュメンテーションコメントには、任意の数の \f2@see\fP タグを指定できます。 すべての \f2@see\fP タグの内容は、同じの見出しの下にグループ化されます。\f2@see\fP タグには、次の 3 種類の形式があります。 もっともよく使われるのは、3 番目の形式です。このタグは、すべてのドキュメンテーションコメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。パッケージ、クラス、またはメンバーに対するインラインリンクを文中に挿入する方法は、\f2{@link}\fP を参照してください。 
+@see\  reference 
+�ִ�Ϣ���ܡ׸��Ф����ɲä��� \f2reference ��ؤ���󥯤����ޤ��ϥƥ����ȥ���ȥ��񤭹��ߤޤ�\fP���ɥ�����ơ�����󥳥��Ȥˤ�Ǥ�դο��� \f2@see\fP ������ޤ�뤳�Ȥ��Ǥ��ޤ����������Ϥ��٤�Ʊ�����Ф��β��˥��롼�ײ�����ޤ��� \f2@see\fP �����ˤϡ����� 3 ����η���������ޤ�����äȤ�褯�Ȥ���Τϡ�3 ���ܤη����Ǥ������Υ����ϡ����٤ƤΥɥ�����ơ�����󥳥��ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ����ѥå����������饹���ޤ��ϥ��С����Ф��륤��饤���󥯤�ʸ�������������ˡ�ϡ�\f2{@link}\fP �򻲾Ȥ��Ƥ��������� 
 .RS 3
 .TP 3
 @see "string" 
-\f2string\fP のテキストエントリを追加します。リンクは生成されません。\f2string\fP は、書籍または URL ではアクセスできない情報の参照先です。Javadoc ツールは、最初の文字が二重引用符 (\f2"\fP) かどうかを調べて、この形式をほかの 2 つの形式と区別します。例を示します。 
+\f2string �Υƥ����ȥ���ȥ���ɲä��ޤ�\fP����󥯤���������ޤ��� \f2string\fP �ϡ����Ҥޤ��� URL �Ǥϥ��������Ǥ��ʤ�����λ�����Ǥ���Javadoc �ġ���ϡ��ǽ��ʸ������Ű����� (\f2"\fP) ���ɤ�����Ĵ�٤ơ����η�����ۤ��� 2 �Ĥη����ȶ��̤��ޤ������Ȥ��С� 
 .nf
 \f3
 .fl
      @see "The Java Programming Language"
-.fl
-                  
-.fl
-\fP
-.fi
-.LP
-これは次のようなテキストを生成します。  
-.RE
-.RS 3
-.RS 3
-
-.LP
-.RS 3
-.TP 3
-関連項目: 
-The Java Programming Language 
-.RE
-
-.LP
-.RE
-.RE
-.TP 3
-@see <a href="URL#value">label</a> 
-\f2URL\fP#\f2value\fP で定義されたとおりにリンクを追加します。\f2URL\fP#\f2value\fP は、相対 URL または絶対 URL です。Javadoc ツールは、最初の文字が「より小さい」記号 (\f2<\fP) かどうかを調べて、この形式をほかの 2 つの形式と区別します。例を示します。 
-.nf
-\f3
-.fl
-     @see <a href="spec.html#section">Java Spec</a>
 .fl
             
 .fl
 \fP
 .fi
 .LP
-これは次のようなリンクを生成します。  
+����ϼ��Τ褦�ʥƥ����Ȥ��������ޤ���  
+.RE
+.RE
+.RS 3
+.RS 3
 .RS 3
 .RS 3
 .TP 3
-関連項目: 
+��Ϣ����: 
+The Java Programming Language 
+.RE
+.RE
+.TP 3
+@see <a href="URL#value">label</a> 
+\f2URL\fP#\f2value\fP ��������줿�Ȥ���˥�󥯤��ɲä��ޤ��� \f2URL\fP#\f2value\fP ������ URL �ޤ������� URL �Ǥ���Javadoc �ġ���ϡ��ǽ��ʸ�����֤�꾮�����׵��� (\f2<\fP) ���ɤ�����Ĵ�٤ơ����η�����ۤ��� 2 �Ĥη����ȶ��̤��ޤ������Ȥ��С� 
+.nf
+\f3
+.fl
+     @see <a href="spec.html#section">Java Spec</a>
+.fl
+\fP
+.fi
+����ϼ��Τ褦�ʥ�󥯤��������ޤ��� 
+.RS 3
+.TP 3
+��Ϣ����: 
 Java Spec 
 .RE
-.RE
-.RE
-.RS 3
-
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @see\  package.class#member\  label 
-指定された名前を持つ、参照されている Java 言語のメンバーについてのドキュメントを指すリンクを、表示テキスト \f2label\fP とともに追加します。\f2label\fP は省略可能です。 \f2label\fP を省略すると、リンク先のメンバーの名前が適切に短縮されて表示されます。 「名前が表示される方法」を参照してください。\-noqualifier を使用すると、表示テキストからパッケージ名が全体的に削除されます。ラベルは、自動生成される表示テキストとは異なる表示テキストを指定する場合に使います。 
+�Ļ�Υƥ����� \f2label\fP ����ĥ�󥯤��ɲä��ޤ������Υ�󥯤ϡ�������Ȥʤ롢���ꤵ�줿 Java �����̾���Υɥ�����ơ�������ؤ��ޤ��� \f2label\fP �Ͼ�ά��ǽ�Ǥ���label ���ά����ȡ������Υ��С���̾����Ŭ�ڤ�û�̤����ɽ������ޤ��� ��̾����ɽ���������ˡ�פ򻲾Ȥ��Ƥ���������\-noqualifier ����Ѥ���ȡ�ɽ���ƥ����Ȥ���ѥå�����̾������Ū�˺������ޤ�����٥�ϡ���ư���������ɽ���ƥ����ȤȤϰۤʤ�ɽ���ƥ����Ȥ���ꤹ����˻Ȥ��ޤ��� 
 .LP
-バージョン 1.2 だけは、ラベルではなく、名前が <code> HTML タグ内に自動的に表示されます。 1.2.2 からは、ラベルを使用するか、しないかにかかわらず、<code> は常に表示テキストを囲むかたちで、含まれます。 
+�С������ 1.2 �����ϡ���٥�ǤϤʤ���̾���� <code> HTML ������˼�ưŪ��ɽ������ޤ��� 1.2.2 ����ϡ���٥����Ѥ��뤫�����ʤ����ˤ�����餺��<code> �Ͼ��ɽ���ƥ����Ȥ�Ϥफ�����ǡ��ޤޤ�ޤ��� 
 .LP
 .RS 3
 .TP 2
 o
-\f4package.class\fP\f4#\fP\f4member\fP には、参照されている任意の有効なプログラム要素の名前を指定します。 つまり、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、またはフィールドの名前です。 ただし、メンバー名ーの前のドットは、シャープ記号 (\f2#\fP) で置き換えます。\f2class\fP は、任意のトップレベルまたは入れ子にされたクラスまたはインタフェースを表します。\f2member\fP は、任意のコンストラクタ、メソッドまたはフィールド (入れ子にされたクラスまたはインタフェースではない) を表します。指定した名前が、ドキュメント化されているクラスに含まれている場合、Javadoc ツールは、その名前へのリンクを自動的に作成します。外部参照クラスへのリンクを作成するには、\f2\-link\fP オプションを使います。参照クラスに属していない名前のドキュメントを参照するには、ほかの 2 つの形式の \f2@see\fP タグを使います。この引数については、このあとの「名前の指定」で詳しく説明します。 
+\f4package.class\fP\f4#\fP\f4member\fP �ˤϡ����Ȥ���Ƥ���Ǥ�դ�ͭ���ʥץ���������Ǥ�̾������ꤷ�ޤ����Ĥޤꡢ�ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����ɤ�̾���Ǥ��������������С�̾�������ΥɥåȤϡ����㡼�׵��� (\f2#\fP) ���֤������ޤ��� \f2class\fP �ϡ�Ǥ�դΥȥåץ�٥�ޤ�������Ҥˤ��줿���饹�ޤ��ϥ��󥿥ե�������ɽ���ޤ��� \f2member\fP �ϡ�Ǥ�դΥ��󥹥ȥ饯�����᥽�åɤޤ��ϥե������ (����Ҥˤ��줿���饹�ޤ��ϥ��󥿥ե������ǤϤʤ�) ��ɽ���ޤ������ꤷ��̾�������ɥ�����Ȳ�����Ƥ��륯�饹�˴ޤޤ�Ƥ����硢Javadoc �ġ���ϡ�����̾���ؤΥ�󥯤�ưŪ�˺������ޤ����������ȥ��饹�ؤΥ�󥯤��������ˤϡ�\f2\-link\fP ���ץ�����Ȥ��ޤ���������Υ��饹��°���Ƥ��ʤ�̾���Υɥ�����ơ������򻲾Ȥ���ˤϡ��Ĥ� 2 �Ĥ� \f2@see\fP �����Τ����Τɤ��餫����Ѥ��ޤ������ΰ����ˤĤ��Ƥϡ����Τ��ȤΡ�̾���λ���פǾܤ����������ޤ��� 
 .TP 2
 o
-\f4label\fP は、省略可能なテキストで、リンクのラベルとして表示されます。\f2label\fP には空白を含めることができます。\f2label\fP を省略すると、\f2package.class.member\fP が、現在のクラスおよびパッケージに応じて適切に短縮されて表示されます。 「名前が表示される方法」を参照してください。 
+\f4label\fP �ϡ���ά��ǽ�ʥƥ����Ȥǡ���󥯤Υ�٥�Ȥ���ɽ������ޤ��� \f2label\fP �ˤ϶����ޤ�뤳�Ȥ��Ǥ��ޤ��� \f2label\fP ���ά����ȡ�\f2package.class.member\fP �������ߤΥ��饹����ӥѥå������˱�����Ŭ�ڤ�û�̤����ɽ������ޤ�����̾����ɽ���������ˡ�פ򻲾Ȥ��Ƥ��������� 
 .TP 2
 o
-空白文字は、\f2package.class\fP\f2#\fP\f2member\fP と \f2label\fP の間の区切り文字です。括弧の内側の空白文字はラベルの先頭とは解釈されないため、メソッドのパラメータ間に空白文字を入れてもかまいません。 
+���򤬡� \f2package.class\fP\f2#\fP\f2member\fP �� \f2label\fP �δ֤ζ��ڤ�ʸ���ˤʤ�ޤ�����̤���¦�ζ���ʸ���ϥ�٥����Ƭ�Ȥϲ�ᤵ��ʤ����ᡢ�᥽�åɤΥѥ�᡼���֤˶���ʸ��������Ƥ⤫�ޤ��ޤ��� 
 .RE
 .LP
-\f3例\fP \- この例では、\f2Character\fP クラスにある \f2@see\fP タグが、\f2String\fP クラスの \f2equals\fP メソッドを参照しています。タグには、名前 \f2String#equals(Object)\fP とラベル \f2equals\fP の両方の引数が含まれています。 
-.RS 3
-
-.LP
+\f3��\fP \- ������Ǥϡ� \f2@see\fP ���� ( \f2Character\fP ���饹��) �� String ���饹�� \f2equals\fP �᥽�å� \f2�򻲾�\fP ���Ƥ��ޤ������Υ����ˤ�̾����\f2String#equals(Object)\fP�פȥ�٥��\f2equals\fP�פ�ξ���ΰ������ޤޤ�Ƥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -2106,62 +1471,33 @@ o
 .fl
   */
 .fl
-            
-.fl
 \fP
 .fi
-.RE
-.LP
-標準ドックレットは、次のような HTML を生成します。 
-.RS 3
-
-.LP
+ɸ��ɥå���åȤϡ����Τ褦�� HTML ���������ޤ��� 
 .nf
 \f3
 .fl
 <dl>
 .fl
-<dt><b>See also:</b>
+<dt><b>See Also:</b>
 .fl
 <dd><a href="../../java/lang/String#equals(java.lang.Object)"><code>equals<code></a>
 .fl
 </dl>
 .fl
-            
-.fl
 \fP
 .fi
-.RE
-.LP
-これは、ブラウザでは次のように表示され、ラベルがリンクテキストになります。  
-.RS 3
+����ϡ��֥饦���Ǥϼ��Τ褦��ɽ�����졢��٥뤬��󥯥ƥ����Ȥˤʤ�ޤ��� 
 .RS 3
 .TP 3
-関連項目: 
+��Ϣ����: 
 equals 
 .RE
-.RE
-.RE
-
 .LP
-.RS 3
-
+\f3̾���λ���\fP \- ���� \f2package.class\fP\f2#\fP\f2member\fP �Ȥ���̾���ϡ� \f2java.lang.String#toUpperCase()\fP �Τ褦�ʴ�������̾�ˤ��뤳�Ȥ⡢ \f2String#toUpperCase()\fP �� \f2#toUpperCase()\fP �Τ褦����������̾�ˤ��뤳�Ȥ�Ǥ��ޤ���̾�����������ꤵ��Ƥ��ʤ���硢Javadoc �ġ���ϡ�Java ����ѥ�����̾�θ�������Ǥ���̾���򸡺����ޤ����ܺ٤ϡ����Τ��ȤΡ�@see �θ�������פ򻲾Ȥ��Ƥ���������̾���ˤϡ��᥽�åɤ�ʣ���ΰ����δ֤ʤɡ���̤���¦�Ǥ���ж����ޤ�뤳�Ȥ��Ǥ��ޤ��� 
 .LP
+����ʬŪ�˻���פ���û��̾������ꤹ�뤳�Ȥ������ϡ����Ϥ���ʸ���������뤳�Ȥ䡢�����������ɤ��ɤߤ䤹���ʤ뤳�ȤǤ�������ɽ�ˡ����ޤ��ޤʷ�����̾���򼨤��ޤ��������ǡ� \f2Class\fP �ˤϥ��饹�ޤ��ϥ��󥿥ե������� \f2Type\fP �ˤϥ��饹�����󥿥ե����������󡢤ޤ��ϴ��ܥǡ������� \f2method\fP �ˤϥ᥽�åɤޤ��ϥ��󥹥ȥ饯���򡢤��줾�����Ǥ��ޤ��� 
 .LP
-
-.LP
-.LP
-\f3名前の指定\fP \- このタグに指定する \f2package.class\fP\f2#\fP\f2member\fP という名前は、\f2java.lang.String#toUpperCase()\fP のように完全指定することも、\f2String#toUpperCase()\fP や \f2#toUpperCase()\fP のように部分的に指定することもできます。名前が完全指定されていない場合、Javadoc ツールは、Java コンパイラの通常の検索順序でその名前を検索します。詳細は、このあとの「@see の検索順序」を参照してください。名前には、メソッドの複数の引数の間など、括弧の内側であれば空白を含めることができます。
-.LP
-.LP
-「部分的に指定」した短い名前を指定することの利点は、入力する文字数が減ることや、ソースコードが読みやすくなることです。次の表に、さまざまな形式の名前を示します。 この表の中で、\f2Class\fP にはクラスまたはインタフェースを、\f2Type\fP にはクラス、インタフェース、配列、または基本データ型を、そして \f2method\fP にはメソッドまたはコンストラクタを指定できます。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
-.RS 3
 .LP
 .TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
@@ -2191,7 +1527,7 @@ equals
 .ll \n(34u*1u/2u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f4@see\fP\f3\ \fP\f4package.class#member\fP\f3 の一般的な形式\fP
+\f4@see\fP\f3\ \fP\f4package.class#member\fP\f3 �ΰ���Ū�ʷ���\fP
 .br
 .di
 .nr a| \n(dn
@@ -2207,9 +1543,9 @@ equals
 .ll \n(34u*1u/2u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f3現在のクラスのメンバーを参照する\fP
+\f3���ߤΥ��饹�Υ��С��򻲾Ȥ���\fP
 .br
-\f2@see\fP\ \f2#\fP\f2field\fP
+\f2@see\fP\ \f2#\fP\f2�ե������\fP
 .br
 \f2@see\fP\ \f2#\fP\f2method(Type,\ Type,...)\fP
 .br
@@ -2233,21 +1569,21 @@ equals
 .ll \n(34u*1u/2u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f3現在の、またはインポートされたパッケージの別のクラスを参照する\fP
+\f3���ߤΡ��ޤ��ϥ���ݡ��Ȥ��줿�ѥå��������̤Υ��饹�򻲾Ȥ���\fP
 .br
-\f2@see\fP\ \f2Class\fP\f2#\fP\f2field\fP
+\f2@see\fP\ \f2���饹\fP\f2#\fP\f2�ե������\fP
 .br
-\f2@see\fP\ \f2Class\fP\f2#\fP\f2method(Type,\ Type,...)\fP
+\f2@see\fP\ \f2���饹\fP\f2#\fP\f2method(Type,\ Type,...)\fP
 .br
-\f2@see\fP\ \f2Class\fP\f2#\fP\f2method(Type\ argname,\ Type\ argname,...)\fP
+\f2@see\fP\ \f2���饹\fP\f2#\fP\f2method(Type\ argname,\ Type\ argname,...)\fP
 .br
-\f2@see\fP\ \f2Class\fP\f2#\fP\f2constructor(Type,\ Type,...)\fP
+\f2@see\fP\ \f2���饹\fP\f2#\fP\f2constructor(Type,\ Type,...)\fP
 .br
-\f2@see\fP\ \f2Class\fP\f2#\fP\f2constructor(Type\ argname,\ Type\ argname,...)\fP
+\f2@see\fP\ \f2���饹\fP\f2#\fP\f2constructor(Type\ argname,\ Type\ argname,...)\fP
 .br
 \f2@see\fP\ \f2Class.NestedClass\fP
 .br
-\f2@see\fP\ \f2Class\fP
+\f2@see\fP\ \f2���饹\fP
 .br
 .di
 .nr c| \n(dn
@@ -2263,9 +1599,9 @@ equals
 .ll \n(34u*1u/2u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f3別のパッケージの要素を参照する\fP\ (完全修飾)
+\f3�̤Υѥå����������Ǥ򻲾Ȥ���\fP\ (��������)
 .br
-\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2field\fP
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2�ե������\fP
 .br
 \f2@see\fP\ \f2package.Class\fP\f2#\fP\f2method(Type,\ Type,...)\fP
 .br
@@ -2279,7 +1615,7 @@ equals
 .br
 \f2@see\fP\ \f2package.Class\fP
 .br
-\f2@see\fP\ \f2package\fP
+\f2@see\fP\ \f2�ѥå�����\fP
 .br
 .di
 .nr d| \n(dn
@@ -2308,7 +1644,7 @@ equals
 .nr 40 \n(79+(0*\n(38)
 .nr 80 +\n(40
 .nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 1860 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 1358 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -2396,74 +1732,52 @@ equals
 .rm d+
 .TE
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-58
-.RE
-.RE
-
 .LP
-.RS 3
-
-.LP
-.LP
-上の表に対する補足事項を次に示します。
-.LP
+���ɽ���Ф�����­����򼡤˼����ޤ��� 
 .RS 3
 .TP 2
 o
-最初の種類の形式 (パッケージとクラスを省略) の場合、Javadoc ツールは、現在のクラスの階層だけを検索します。つまり、現在のクラスかインタフェース、そのスーパークラスかスーパーインタフェース、または現在のクラスかインタフェースを囲んでいるクラスかインタフェースからメンバーを検索します (このあとの検索手順 1 〜 3)。現在のパッケージのほかの部分や、ほかのパッケージは検索しません (検索手順 4 〜 5)。 
+�ǽ�μ���η��� (�ѥå������ȥ��饹���ά) �ξ�硢Javadoc �ġ���ϡ����ߤΥ��饹�γ��ؤ����򸡺����ޤ����Ĥޤꡢ���ߤΥ��饹�����󥿥ե����������Υ����ѡ����饹�������ѡ����󥿥ե��������ޤ��ϸ��ߤΥ��饹�����󥿥ե�������Ϥ�Ǥ��륯�饹�����󥿥ե�����������С��򸡺����ޤ� (���Τ��Ȥθ������ 1 ��� 3)�����ߤΥѥå������Τۤ�����ʬ�䡢�ۤ��Υѥå������ϸ������ޤ��� (������� 4 ��� 5)�� 
 .TP 2
 o
-メソッドまたはコンストラクタを指定するときに括弧を付けずに名前だけ (\f2getValue\fP など) を使用した場合、同じ名前のフィールドが存在しなければ、Javadoc ツールはそのメソッドに対して正しくリンクを作成します。 ただし、括弧と引数を追加するように促す警告メッセージを出力します。このメソッドがオーバーロードされている場合、Javadoc ツールは、検索で最初に見つかったメソッドにリンクします。 結果は前もって特定できません。 
+�᥽�åɤޤ��ϥ��󥹥ȥ饯���λ�����ˡ� \f2getValue\fP �Τ褦�˳�̤ʤ���̾������Ѥ�����硢Ʊ��̾���Υե�����ɤ�¸�ߤ��Ƥ��ʤ���С�Javadoc �ġ���ˤ�äƤ���̾���ؤΥ�󥯤���������������ޤ�������̤�������ɲä�桼������¥������ηٹ��å�������ɽ������ޤ������Υ᥽�åɤ������С������ɤ���Ƥ����硢Javadoc �ġ���ϡ������Ǻǽ�˸��Ĥ��ä��᥽�åɤ˥�󥯤��ޤ�����̤�����ä�����Ǥ��ޤ��� 
 .TP 2
 o
-入れ子にされたクラスは、上記のどの形式の場合も、単に「\f2inner\fP」ではなく、「\f2outer\fP\f2.\fP\f2inner\fP」として指定しなければなりません。 
+����Ҥˤʤä����饹�ϡ����٤Ƥη����ˤĤ��ơ� \f2outer\fP\f2.\fP\f2inner\fP �Ȥ��ƻ��ꤹ��ɬ�פ�����ޤ���ñ��� \f2inner\fP �ȤϤ��ʤ��Ǥ��������� 
 .TP 2
 o
-すでに述べたとおり、クラスとメンバーを区切るために、ドット (\f2.\fP) ではなくシャープ記号 (\f2#\fP) を使用することに注意してください。このように指定すると、Javadoc ツールは、あいまいさを解決できます。 ドットは、クラス、入れ子にされたクラス、パッケージ、およびサブパッケージを区切るためにも使用されます。ただし、Javadoc ツールでは一般に許容範囲が広く、あいまいさがなければ、ドットでも正しく解析されます。 その場合でも警告は表示されます。 
+���Ǥ˽Ҥ٤��褦�ˡ�\f2���饹�ȥ��С��Ȥδ֤ζ��ڤ�ʸ���Ȥ��Ƥϡ�\fP�ɥå� (\f2.\fP) �ǤϤʤ����㡼��ʸ�� (#) ����Ѥ��ޤ������Τ褦�˻��ꤹ��ȡ�Javadoc �ġ���ϡ������ޤ�������Ǥ��ޤ����ɥåȤϡ����饹������Ҥˤ��줿���饹���ѥå�����������ӥ��֥ѥå���������ڤ뤿��ˤ���Ѥ���ޤ�����������Javadoc �ġ���Ǥϰ��̤˵����ϰϤ������������ޤ������ʤ���С��ɥåȤǤ����������Ϥ���ޤ������ξ��Ǥ�ٹ��ɽ������ޤ��� 
 .RE
-
 .LP
+\f3@see �θ������\fP \- Javadoc �ġ���ϡ��������ե����� (.java)���ѥå������ե����� (package.html �ޤ��� package\-info.java) �ޤ��ϳ��ץե����� (overview.html) �˴ޤޤ�� \f2@see\fP ������������ޤ�����Ԥ� 2 �ĤΥե�����Ǥϡ����������̾���� \f2@see\fP �����˻��ꤷ�ʤ���Фʤ�ޤ��󡣥������ե�����Ǥϡ����������̾�����ޤ�����ʬ�����̾�������Ǥ��ޤ��� 
 .LP
-\f3@see の検索順序\fP \- Javadoc ツールは、ソースファイル (.java)、パッケージファイル (package.html または package\-info.java)、または概要ファイル (overview.html) の中に登場する \f2@see\fP タグを処理します。後者の 2 つのファイルでは、完全指定の名前を \f2@see\fP タグに指定しなければなりません。ソースファイルでは、完全指定の名前、または部分指定の名前を指定できます。
-.LP
-.LP
-Javadoc ツールは、\f2.java\fP ファイル内で完全指定でない名前が記述された \f2@see\fP タグを見つけると、Java コンパイラと同じ順序で指定された名前を検索します。 ただし、Javadoc ツールは、特定の名前空間のあいまいさを検出しません。 これは、ソースコードにこれらのエラーが存在していないことを前提としているためです。この検索順序は、Java 言語仕様第 2 版の第 6 章「Names」で正式に定義されています。Javadoc ツールは、関連するクラスとパッケージ、およびインポートされたクラスとパッケージのすべてから名前を検索します。具体的には、次の順序で検索します。
-.LP
+Javadoc �ġ���ϡ���������Ǥʤ�̾�������Ҥ��줿 \f2@see\fP ������ \f2.java �ե�������Ǹ��Ĥ���ȡ�\fP Java ����ѥ����Ʊ������ǻ��ꤵ�줿̾���򸡺����ޤ��� ��������Javadoc �ġ���ϡ������̾�����֤Τ����ޤ����򸡽Ф��ޤ��� ����ϡ������������ɤˤ����Υ��顼��¸�ߤ��Ƥ��ʤ����Ȥ�����Ȥ��Ƥ��뤿��Ǥ������θ�������ϡ�Java ��������� 2 �Ǥ��� 6 �ϡ�Names�פ��������������Ƥ��ޤ���Javadoc �ġ���ϡ���Ϣ���륯�饹�ȥѥå�����������ӥ���ݡ��Ȥ��줿���饹�ȥѥå������Τ��٤Ƥ���̾���򸡺����ޤ�������Ū�ˤϡ����ν���Ǹ������ޤ��� 
 .RS 3
 .TP 3
 1.
-現在のクラスまたはインタフェース 
+���ߤΥ��饹�ޤ��ϥ��󥿥ե����� 
 .TP 3
 2.
-外側を囲んでいるクラスとインタフェース (もっとも近いものから検索) 
+��¦��Ϥ�Ǥ��륯�饹�ȥ��󥿥ե����� (��äȤ�ᤤ��Τ��鸡��) 
 .TP 3
 3.
-スーパークラスとスーパーインタフェース (もっとも近いものから検索) 
+�����ѡ����饹�ȥ����ѡ����󥿥ե����� (��äȤ�ᤤ��Τ��鸡��) 
 .TP 3
 4.
-現在のパッケージ 
+���ߤΥѥå����� 
 .TP 3
 5.
-インポートされているパッケージ、クラス、およびインタフェース (import 文の順序に従って検索) 
+����ݡ��Ȥ���Ƥ���ѥå����������饹������ӥ��󥿥ե����� (import ʸ�ν���˽��äƸ���) 
 .RE
-
 .LP
+Javadoc �ġ���ϡ��ƥ��饹�ˤĤ��Ƽ�� 1 ��� 3 ��Ƶ�Ū��Ŭ�Ѥ��ʤ��顢���פ���̾�������Ĥ���ޤǸ�����³���ޤ����Ĥޤꡢ�ޤ����ߤΥ��饹�򸡺��������ˤ��Υ��饹��Ϥ�Ǥ��륯�饹 E �򸡺��������μ��� E �Υ����ѡ����饹�򸡺���������ˤ��μ��� E ��Ϥ�Ǥ��륯�饹�򸡺����ޤ���  ��� 4 �� 5 �Ǥϡ�1 �ĤΥѥå�������Υ��饹�ޤ��ϥ��󥿥ե������򸡺��������Ϸ�ޤäƤ��ޤ��󡣤��ν���ϡ��ġ��Υ���ѥ���ˤ�äưۤʤ�ޤ������ 5 �Ǥϡ�Javadoc �ġ���ϡ�java.lang �򸡺����ޤ������Υѥå������ϡ����٤ƤΥץ������˼�ưŪ�˥���ݡ��Ȥ���뤫��Ǥ��� 
 .LP
-Javadoc ツールは、各クラスについて手順 1 〜 3 を再帰的に適用しながら、一致する名前が見つかるまで検索を続けます。つまり、まず現在のクラスを検索し、次にそのクラスを囲んでいるクラス E を検索し、その次に E のスーパークラスを検索し、さらにその次に E を囲んでいるクラスを検索します。 手順 4 と 5 では、1 つのパッケージ内のクラスまたはインタフェースを検索する順序は決まっていません。 その順序は、個々のコンパイラによって異なります。手順 5 では、Javadoc ツールは、java.lang を検索します。 このパッケージは、すべてのプログラムに自動的にインポートされるからです。
+Javadoc �ġ���ϡ�ɬ�����⥵�֥��饹�򸡺�����Ȥϸ¤�ޤ��󡣤ޤ���javadoc �μ¹���ˤۤ��Υѥå������Υɥ�����Ȥ������������Ǥ⡢�ۤ��Υѥå������򸡺����ޤ��󡣤��Ȥ��С� \f2@see\fP ������ \f2java.awt.event.KeyEvent\fP ���饹��˴ޤޤ�Ƥ��ơ� \f2java.awt\fP �ѥå�������Τ���̾���򻲾Ȥ��Ƥ��Ƥ⡢���Υ��饹��Ǥ��Υѥå�����������ݡ��Ȥ���ʤ������ꡢjavadoc �Ϥ��Υѥå�������Ǥθ�����Ԥ��ޤ��� 
 .LP
+\f3̾����ɽ���������ˡ\fP \- \f2label\fP ���ά�������ϡ�\f2package.class.member\fP ��ɽ������ޤ������̤ˡ�package.class.member �ϡ����ߤΥ��饹����ӥѥå������˱�����Ŭ�ڤ�û�̤���ޤ�����û�̤����פȤϡ�ɬ�׺Ǿ��¤�̾��������ɽ�������Ȥ������ȤǤ������Ȥ��С� \f2String.toUpperCase()\fP �᥽�åɤˡ�Ʊ�����饹�Υ��С��ؤλ��ȤȤۤ��Υ��饹�Υ��С��ؤλ��Ȥ��ޤޤ�Ƥ����硢���饹̾��ɽ�������Τϸ�ԤΥ����������Ǥ� (����ɽ�򻲾�)�� 
 .LP
-Javadoc ツールは、必ずしもサブクラスを検索するとは限りません。 また、javadoc の実行中にほかのパッケージのドキュメントが生成される場合でも、ほかのパッケージを検索しません。たとえば、\f2@see\fP タグが \f2java.awt.event.KeyEvent\fP クラス内にあって、\f2java.awt\fP パッケージにある名前を参照している場合、Javadoc は、そのクラスがインポートしないかぎりそのパッケージを検索しません。
-.LP
-.LP
-\f3名前が表示される方法\fP \- \f2label\fP を省略すると、\f2package.class.member\fP が表示されます。一般に、package.class.member は、現在のクラスおよびパッケージに応じて適切に短縮されます。「短縮される」とは、必要最小限の名前だけが表示されるということです。たとえば、\f2String.toUpperCase()\fP メソッドに、同じクラスのメンバーへの参照とほかのクラスのメンバーへの参照が含まれている場合、クラス名が表示されるのは後者のケースだけです (次の表を参照)。
-.LP
-.LP
-パッケージ名を広域的に削除するには、\-noqualifier を使用します。
+�ѥå�����̾�򹭰�Ū�˺������ˤϡ�\-noqualifier ����Ѥ��ޤ���
 .br
-
-.LP
-.RE
-.RS 3
-.RS 3
 .LP
 .TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
@@ -2493,7 +1807,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-\f4String.toUpperCase()\fP\f3 での例\fP
+\f4String.toUpperCase() �Ǥ���\fP
 .br
 .di
 .nr a| \n(dn
@@ -2509,7 +1823,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f2@see\fP タグが同じクラスのメンバーを参照している
+\f2@see\fP ������Ʊ�����饹��Ʊ���ѥå������Υ��С��򻲾Ȥ��Ƥ���
 .br
 .di
 .nr b| \n(dn
@@ -2525,7 +1839,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(82 .ll \n(82u
 .in 0
-\f2toLowerCase()\fP (クラス名は省略)
+\f2toLowerCase()\fP (���饹̾�Ͼ�ά)
 .br
 .di
 .nr c| \n(dn
@@ -2541,7 +1855,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f2@see\fP タグが別のクラスのメンバーを参照している
+\f2@see\fP �������ۤʤ륯�饹��Ʊ���ѥå������Υ��С��򻲾Ȥ��Ƥ���
 .br
 .di
 .nr d| \n(dn
@@ -2573,7 +1887,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(82 .ll \n(82u
 .in 0
-\f2Character.toLowerCase(char)\fP (パッケージ名は省略し、クラス名を含む)
+\f2Character.toLowerCase(char)\fP (�ѥå�����̾�Ͼ�ά�������饹̾��ޤ�)
 .br
 .di
 .nr f| \n(dn
@@ -2589,7 +1903,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(80 .ll \n(80u
 .in 0
-\f2@see\fP タグが別のクラスのメンバーを参照している
+\f2@see\fP �������ۤʤ륯�饹���ۤʤ�ѥå������Υ��С��򻲾Ȥ��Ƥ���
 .br
 .di
 .nr g| \n(dn
@@ -2621,7 +1935,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ll \n(34u*1u/4u
 .if \n(.l<\n(82 .ll \n(82u
 .in 0
-\f2java.io.File.exists()\fP (パッケージ名とクラス名を含む)
+\f2java.io.File.exists()\fP (�ѥå�����̾�ȥ��饹̾��ޤ�)
 .br
 .di
 .nr i| \n(dn
@@ -2632,7 +1946,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .nf
 .ll \n(34u
 .nr 80 0
-.nr 38 \w\f3参照の種類\fP
+.nr 38 \w\f3���Ȥμ���\fP
 .if \n(80<\n(38 .nr 80 \n(38
 .80
 .rm 80
@@ -2654,7 +1968,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .nr 38 \n(h-
 .if \n(81<\n(38 .nr 81 \n(38
 .nr 82 0
-.nr 38 \w\f3表示される名前\fP
+.nr 38 \w\f3ɽ�������̾��\fP
 .if \n(82<\n(38 .nr 82 \n(38
 .82
 .rm 82
@@ -2676,7 +1990,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .nr 42 \n(81+(3*\n(38)
 .nr 82 +\n(42
 .nr TW \n(82
-.if t .if \n(TW>\n(.li .tm Table at line 1958 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 1434 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -2695,7 +2009,7 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .ta \n(80u \n(81u \n(82u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'\f3参照の種類\fP\h'|\n(41u'\h'|\n(42u'\f3表示される名前\fP
+\&\h'|\n(40u'\f3���Ȥμ���\fP\h'|\n(41u'\h'|\n(42u'\f3ɽ�������̾��\fP
 .mk ##
 .nr 31 \n(##
 .sp |\n(##u-1v
@@ -2814,22 +2128,14 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .rm i+
 .TE
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-28
-.RE
-.RE
-
 .LP
-.RS 3
-
-.LP
-.LP
-\f3@see の例\fP
+\f3@see ����\fP
 .br
-右側のコメントは、\f2@see\fP タグが別のパッケージ (\f2java.applet.Applet\fP など) のクラス内にある場合に、名前がどのように表示されるかを示しています。
-.LP
+��¦�Υ����Ȥϡ� \f2@see\fP ������ \f2java.applet.Applet\fP �Τ褦���̤Υѥå������Υ��饹��ˤ�����ˡ�̾�����ɤΤ褦��ɽ������뤫�򼨤��Ƥ��ޤ��� 
 .nf
 \f3
 .fl
-                                           関連項目: 
+                                           ��Ϣ����: 
 .fl
 @see java.lang.String                   //  String                          \fP\f3 
 .fl
@@ -2849,121 +2155,68 @@ Javadoc ツールは、必ずしもサブクラスを検索するとは限りま
 .fl
 @see "The Java Programming Language"    //  "The Java Programming Language"        \fP\f3 
 .fl
-          
-.fl
 \fP
 .fi
-
+\f2@see\fP ���ĥ���ƥɥ�����Ȳ�����ʤ����饹�ؤΥ�󥯤��ǽ�ˤ���ˤϡ�\f2\-link\fP ���ץ�������Ѥ��ޤ��� 
 .LP
-.LP
-\f2@see\fP を、ドキュメント化の対象にしていないクラスにまで拡張するには、\f2\-link\fP オプションを使用します。
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@see タグのドキュメント\fP @
+\f2@see �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@seeを参照してください。
-.LP
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@see�򻲾Ȥ��Ƥ���������  
 .RE
-.LP
-
+.RE
 .LP
 .RS 3
 .TP 3
 @serial\  field\-description | include | exclude 
-デフォルトの直列化可能フィールドのドキュメンテーションコメントで使用します。 
-.RE
-
+�ǥե���Ȥ�ľ�󲽲�ǽ�ե�����ɤΥɥ�����ơ�����󥳥��Ȥǻ��Ѥ��ޤ��� 
 .LP
-.RS 3
-
+\f2field\-description\fP (��ά��ǽ) �Ǥϡ��ե�����ɤΰ�̣������������������ͤΥꥹ�Ȥ򼨤�ɬ�פ�����ޤ���ɬ�פ˱����ơ�ʣ���ιԤ��Ϥä������򵭽ҤǤ��ޤ���ɸ��ɥå���åȤϡ����ξ����ľ�󲽤��줿�����Υڡ������ɲä��ޤ��� 
 .LP
+���饹��ľ�󲽤������Ȥ��Ф餯���Ƥ���ľ�󲽲�ǽ�ե�����ɤ򥯥饹���ɲä�����硢�������ˡ��ɲä����С��������̤���ʸ���ɲä���ɬ�פ�����ޤ��� 
 .LP
-\f2field\-description\fP (省略可能) では、フィールドの意味を説明し、取り得る値のリストを示す必要があります。必要に応じて、複数の行に渡って説明を記述できます。標準ドックレットは、この情報を、直列化された形式のページに追加します。
-.LP
-.LP
-クラスを直列化したあとしばらくしてから直列化可能フィールドをクラスに追加した場合、主説明に、追加したバージョンを識別する文を追加する必要があります。
-.LP
-.LP
-\f2include\fP および \f2exclude\fP 引数は、直列化された形式のページにクラスまたはパッケージを含めるか除外するかを示します。これらの引数には、次のような効果があります。
-.LP
+\f2include\fP ����� \f2exclude\fP �����ϡ�ľ�󲽤��줿�����Υڡ����˥��饹�ޤ��ϥѥå�������ޤ�뤫�������뤫�򼨤��ޤ��������ΰ����ˤϡ����Τ褦�ʸ��̤�����ޤ��� 
 .RS 3
 .TP 2
 o
-\f2Serializable\fP を実装している public または protected クラスは、通常はそのページに含められます。 ただし、そのクラスまたはそのクラスが属するパッケージが \f2@serial exclude\fP で指定されていると、そのページから除外されます。 
+\f2Serializable\fP ��������Ƥ��� public �ޤ��� protected ���饹�ϡ����Υ��饹 (�ޤ��Ϥ��Υѥå�����) �� \f2@serial exclude\fP �Ȥ��ƥޡ�������Ƥ��ʤ������ꡢ�ޤ���ޤ��� 
 .TP 2
 o
-\f2Serializable\fP を実装している private または package private クラスは、通常はそのページから除外されます。 ただし、そのクラスまたはそのクラスが属するパッケージが \f2@serial include\fP で指定されていると、そのページに含められます。 
+\f2Serializable\fP ��������Ƥ��� private �ޤ��� package\-private ���饹�ϡ����Υ��饹 (�ޤ��Ϥ��Υѥå�����) �� \f2@serial include\fP �Ȥ��� �ޡ�������Ƥ��ʤ������ꡢ��������ޤ��� 
 .RE
-
 .LP
+��: \f2javax.swing\fP �ѥå������� \f2@serial exclude\fP ( \f2package.html\fP �ޤ��� \f2package\-info.java\fP��) �Ȥ��ƥޡ�������Ƥ��ޤ���public ���饹 \f2java.security.BasicPermission\fP �� \f2@serial exclude\fP �Ȥ��ƥޡ�������Ƥ��ޤ���package\-private ���饹 \f2java.util.PropertyPermissionCollection\fP �� \f2@serial include\fP �Ȥ��ƥޡ�������Ƥ��ޤ��� 
 .LP
-例: \f2javax.swing\fP パッケージは、\f2@serial exclude\fP で指定されています (\f2package.html\fP または \f2package\-info.java\fP 内)。public クラス \f2java.security.BasicPermission\fP は、\f2@serial exclude\fP で指定されています。package private クラス \f2java.util.PropertyPermissionCollection\fP は、\f2@serial include\fP で指定されています。
+���饹��٥�ǻ��ꤵ�줿 @serial �����ϡ��ѥå�������٥�ǻ��ꤵ�줿 @serial �����򥪡��С��饤�ɤ��ޤ��� 
 .LP
-.LP
-クラスレベルで指定された @serial タグは、パッケージレベルで指定された @serial タグをオーバーライドします。
-.LP
-.LP
-これらのタグの使用法についての詳細と使用例は、「Java オブジェクト直列化仕様」の第 1.6 節
+�����Υ����λ���ˡ�ˤĤ��Ƥξܺ٤Ȼ�����ϡ���Java ���֥�������ľ�󲽻��͡פ��� 1.6 ��
 .na
-\f2「クラスの直列化可能なフィールドおよびデータの文書化」\fP @
+\f2�֥��饹��ľ�󲽲�ǽ�ʥե�����ɤ���ӥǡ�����ʸ�񲽡�\fP @
 .fi
-http://java.sun.com/javase/6/docs/platform/serialization/spec/serial\-arch.htmlを参照してください。また、
+http://java.sun.com/javase/6/docs/platform/serialization/spec/serial\-arch.html�򻲾Ȥ��Ƥ����������ޤ���
 .na
-\f2「直列化の FAQ」\fP @
+\f2��ľ�󲽤� FAQ��\fP @
 .fi
-http://java.sun.com/products/jdk/serialization/faq/#javadoc_warn_missingも参照してください。 この FAQ には、「\-private スイッチを指定しないで javadoc を実行しているのに private フィールドの @serial タグが見つからないという javadoc の警告が表示される」などの一般的な質問への回答が記載されています。直列化形式仕様にクラスを含める場合には、
+http://java.sun.com/products/jdk/serialization/faq/#javadoc_warn_missing�⻲�Ȥ��Ƥ������������� FAQ �ˤϡ���\-private �����å�����ꤷ�ʤ��� javadoc ��¹Ԥ��Ƥ���Τ� private �ե�����ɤ� @serial ���������Ĥ���ʤ��Ȥ��� javadoc �ηٹ�ɽ�������פʤɤΰ���Ū�ʼ���ؤβ��������ܤ���Ƥ��ޤ���ľ�󲽷������ͤ˥��饹��ޤ����ˤϡ�
 .na
-\f2「Sun の仕様」\fP @
+\f2��Sun �λ��͡�\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingapispecs/serialized\-criteria.htmlも参照してください。
+http://java.sun.com/j2se/javadoc/writingapispecs/serialized\-criteria.html�⻲�Ȥ��Ƥ��������� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @serialField\  field\-name\  field\-type\  field\-description 
-\f2Serializable\fP クラスの \f2serialPersistentFields\fP メンバーの \f2ObjectStreamField\fP コンポーネントをドキュメント化します。各 \f2ObjectStreamField\fP コンポーネントに対して \f2@serialField\fP タグを 1 つ使う必要があります。 
-.RE
-
+Serializable \f2���饹��\fP serialPersistentFields \f2���С���\fP ObjectStreamField ����ݡ��ͥ�� \f2��ɥ�����Ȳ�\fP ���ޤ���1 �Ĥ� \f2@serialField\fP ������� \f2ObjectStreamField\fP ����ݡ��ͥ�Ȥǻ��Ѥ��٤��Ǥ��� 
 .LP
-.RS 3
-
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @serialData\  data\-description 
-\f2data\-description\fP は、直列化された形式でのデータの型と順序を説明するテキストです。このデータには、特に、\f2writeObject\fP メソッドによって書き込まれる省略可能なデータ、および \f2Externalizable.writeExternal\fP メソッドによって書き込まれるすべてのデータ (基底クラスを含む) が含まれます。 
-.RE
-
+\f2data\-description\fP �ϡ�ľ�󲽤��줿�����ǤΥǡ����η��Ƚ������������ƥ����ȤǤ�������Ū�˸����ȡ����Υǡ����ˤϡ� \f2writeObject\fP �᥽�åɤˤ�äƽ񤭹��ޤ���ά��ǽ�ʥǡ���������� \f2Externalizable.writeExternal\fP �᥽�åɤˤ�äƽ񤭹��ޤ�뤹�٤ƤΥǡ��� (���쥯�饹��ޤ�) ���ޤޤ�ޤ��� 
 .LP
-.RS 3
-
+\f2@serialData\fP �����ϡ� \f2writeObject\fP�� \f2readObject\fP�� \f2writeExternal\fP�� \f2readExternal\fP�� \f2writeReplace\fP������� \f2readResolve\fP �᥽�åɤΥɥ�����ơ�����󥳥�����ǻ��ѤǤ��ޤ��� 
 .LP
-.LP
-\f2@serialData\fP タグは、\f2writeObject\fP、\f2readObject\fP、\f2writeExternal\fP、\f2readExternal\fP、\f2writeReplace\fP、および \f2readResolve\fP メソッドのドキュメンテーションコメントで使用できます。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @since\  since\-text 
-生成ドキュメントに [導入されたバージョン] 見出しを追加し、指定された \f2since\-text\fP を書き込みます。このテキストには、特別な内部構造はありません。このタグは、すべてのドキュメンテーションコメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。このタグは、特定の変更または機能が、\f2since\-text\fP に示されたソフトウェアリリース以降、存在していることを意味します。例を示します。 
-.RE
-
-.LP
-.RS 3
-
-.LP
+�����ɥ�����Ȥ� [Ƴ�����줿�С������] ���Ф����ɲä������ꤵ�줿 \f2since\-text\fP ��񤭹��ߤޤ������Υƥ����Ȥˤϡ����̤�������¤�Ϥ���ޤ��󡣤��Υ����ϡ����٤ƤΥɥ�����ơ�����󥳥��ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ������Υ����ϡ�������ѹ��ޤ��ϵ�ǽ���� \f2since\-text �˼����줿���եȥ�������꡼���ʹߡ�¸�ߤ��Ƥ��뤳�Ȥ��̣���ޤ�\fP�����Ȥ��С� 
 .nf
 \f3
 .fl
@@ -2973,52 +2226,26 @@ http://java.sun.com/j2se/javadoc/writingapispecs/serialized\-criteria.htmlも参
 .fl
 \fP
 .fi
-
 .LP
+Java �ץ�åȥե�����Υ����������ɤξ�硢���Υ����ϡ�Java �ץ�åȥե����� API ���ͤΥС������򼨤��ޤ��������ѹ��䵡ǽ����ե���󥹼������ɲä��줿�����򼨤��Ȥϸ¤�ޤ���ʣ���� @since ��������ѤǤ���ʣ���� @author �����Τ褦�˰����ޤ����ץ���������Ǥ�ʣ���� API �ǻ��Ѥ�����硢ʣ���Υ�������ѤǤ��ޤ��� 
 .LP
-Java プラットフォームのソースコードの場合、このタグは、Java プラットフォーム API 仕様のバージョンを示します。 その変更や機能がリファレンス実装に追加された時期を示すとは限りません。複数の @since タグを使用でき、複数の @author タグのように扱われます。プログラム要素が複数の API で使用される場合、複数のタグを使用できます。
-.LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
-@throws\  class\-name\  description\  
-\f2@throws\fP タグと \f2@exception\fP タグは同義です。生成ドキュメントに [例外] 小見出しを追加して、\f2class\-name\fP と \f2description\fP テキストを書き込みます。\f2class\-name\fP は、そのメソッドからスローされる可能性のある例外の名前です。このタグは、メソッド、コンストラクタの doc コメント内でのみ有効です。このクラスが完全指定の名前で記述されていない場合、Javadoc ツールは、検索順序に従ってクラスを探します。同じまたは異なる例外の doc コメントで、複数の \f2@throws\fP タグを使用できます。 
-.RE
-
+@throws\  class\-name\  description 
+\f2@throws\fP ������ \f2@exception\fP ������Ʊ���Ǥ��������ɥ�����Ȥˡ��㳰�׾����Ф����ɲä��ơ� \f2class\-name\fP ����� \f2description\fP �Υƥ����Ȥ�񤭹��ߤޤ��� \f2class\-name\fP �ϡ����Υ᥽�åɤ��饹����������ǽ���Τ����㳰��̾���Ǥ������Υ����ϡ��᥽�åɡ����󥹥ȥ饯���� doc ��������ǤΤ�ͭ���Ǥ������Υ��饹�����������̾���ǵ��Ҥ���Ƥ��ʤ���硢Javadoc �ġ���ϡ���������˽��äƥ��饹��õ���ޤ���Ʊ���ޤ��ϰۤʤ��㳰�� doc �����Ȥǡ�ʣ���� \f2@throws\fP ��������ѤǤ��ޤ��� 
 .LP
-.RS 3
-
+���٤ƤΥ����å��Ѥ��㳰���ɥ�����Ȳ������褦�ˤ��뤿��ˡ� \f2@throws\fP ������ throws ������㳰�Ѥ�¸�ߤ��ʤ����ϡ�@throws �����Τ���ɥ�����ȤǤ��뤫�Τ褦�ˡ�Javadoc �ġ���ˤ�ä��㳰�� HTML ���Ϥ������ʤ��Ǽ�ưŪ���ɲä���ޤ��� 
 .LP
+�����С��饤�ɤ����᥽�å�����㳰������Ū���������Ƥ�����Τߡ� \f2@throws\fP �ɥ�����ơ�����󤬤��Υ᥽�åɤ��饵�֥��饹�˥��ԡ�����ޤ������󥿥ե������᥽�åɤ�������᥽�åɤ˥��ԡ���������Ʊ�ͤǤ���@throws �˥ɥ�����ơ�������Ѿ�������ˤϡ�{@inheritDoc} ����ѤǤ��ޤ��� 
 .LP
-すべてのチェック済み例外がドキュメント化されるようにするために、\f2@throws\fP タグが throws 節内の例外用に存在しない場合は、@throws タグのあるドキュメントであるかのように、Javadoc ツールによって例外が HTML 出力に説明なしで自動的に追加されます。
-.LP
-.LP
-オーバーライドされるメソッド内で例外が明示的に宣言されている場合のみ、\f2@throws\fP ドキュメンテーションをそのメソッドからサブクラスにコピーされます。インタフェースメソッドから実装メソッドにコピーされる場合も同様です。@throws にドキュメンテーションを継承させるには、{@inheritDoc} を使用できます。
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@throws タグのドキュメント\fP @
+\f2@throws �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@exceptionを参照してください。
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@exception�򻲾Ȥ��Ƥ��������� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 {@value\  package.class#field} 
-\f2{@value}\fP が静的フィールドの doc コメントで 引数なしで使用されている場合、その定数の値が表示されます。 
-.RE
-
-.LP
-.RS 3
-
-.LP
+\f2{@value}\fP ����Ū�ե�����ɤ� doc �����Ȥ� �����ʤ��ǻ��Ѥ���Ƥ����硢����������ͤ�ɽ������ޤ��� 
 .nf
 \f3
 .fl
@@ -3034,11 +2261,8 @@ http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@exceptionを参�
 .fl
 \fP
 .fi
-
 .LP
-.LP
-任意の doc コメント内で引数 \f2package.class#field\fP ありで使用されている場合は、指定した定数の値が表示されます。
-.LP
+Ǥ�դΥɥ�����ơ�����󥳥�����ǰ��� \f2package.class#field\fP ����ǻ��Ѥ��줿���ϡ����λ��ꤵ�줿������ͤ�ɽ������ޤ��� 
 .nf
 \f3
 .fl
@@ -3056,448 +2280,130 @@ http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@exceptionを参�
 .fl
 \fP
 .fi
-
 .LP
+���� \f2package.class#field\fP �ϡ�@see ������Ʊ��η����ˤʤ�ޤ��������������С�����Ū�ե�����ɤˤʤ���Фʤ�ʤ������ۤʤ�ޤ��� 
 .LP
-引数 \f2package.class#field\fP は、@see 引数と同一の形式になります。ただし、メンバーが静的フィールドになければならない点が異なります。
-.LP
-.LP
-これらの定数での値は、
+����������Ǥ��ͤϡ�
 .na
-\f2定数フィールド値\fP @
+\f2����ե��������\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/constant\-values.htmlページにも表示されます。
+http://java.sun.com/javase/6/docs/api/constant\-values.html�ڡ����ˤ�ɽ������ޤ��� 
 .LP
-.LP
-
-.LP
-.RE
-.RS 3
 .TP 3
 @version\  version\-text 
-\-version オプションが使われている場合、生成ドキュメントに [バージョン] 小見出しを追加して、指定された \f2version\-text\fP を書き込みます。このタグは、このコードが含まれるソフトウェアの現在のバージョン番号を保持するように意図されています。 これに対し、@since は、このコードが導入されたバージョン番号を保持します。\f2version\-text\fP には、特別な内部構造はありません。バージョンタグを使用できる場所を調べるには、「タグを使用できる場所」を参照してください。 
-.RE
-
+\-version ���ץ���󤬻��Ѥ����ȡ������ɥ�����Ȥ� [�С������] �����Ф����ɲä������ꤵ�줿 \f2version\-text\fP ��񤭹��ߤޤ������Υ����ϡ����Υ����ɤ��ޤޤ�륽�եȥ������θ��ߤΥС�������ֹ���ݻ�����褦�˰տޤ���Ƥ��ޤ���������Ф���@since �ϡ����Υ����ɤ�Ƴ�����줿�С�������ֹ���ݻ����ޤ��� \f2version\-text\fP �ˤϡ����̤�������¤�Ϥ���ޤ��󡣥С�����󥿥�����ѤǤ������Ĵ�٤�ˤϡ��֥�������ѤǤ�����פ򻲾Ȥ��Ƥ��������� 
 .LP
-.RS 3
-
+1 �ĤΥɥ�����ơ�����󥳥��Ȥ�ʣ���� \f2@version\fP ������ޤ�뤳�Ȥ��Ǥ��ޤ�����̣�������ʤ��ϰ���ǡ�1 �Ĥ� \f2@version\fP ������ 1 �ĤΥС�������ֹ����ꤹ�뤳�Ȥ⡢ʣ���ΥС�������ֹ����ꤹ�뤳�Ȥ�Ǥ��ޤ������Ԥξ��ϡ�Javadoc �ġ���ˤ�ä�̾����̾���δ֤˥���� (\f2,\fP) �ȶ���̾���δ֤���������ޤ�����Ԥξ��ϡ��ƥ��������Τ������Ϥ���뤳�Ȥʤ��������ɥ�����Ȥˤ��Τޤޥ��ԡ�����ޤ����������äơ�����ޤǤϤʤ����Ƹ�����б�����̾�����ڤ�ʸ����Ȥ�ɬ�פ�����Ȥ��ϡ�1 �ĤΥ�����ʣ����̾������ꤷ�Ƥ��������� 
 .LP
-.LP
-1 つのドキュメンテーションコメントに複数の \f2@version\fP タグを含めることができます。必要に応じて、\f2@version\fP タグごとに 1 つのバージョン番号を指定することも、タグごとに複数のバージョン番号を指定することもできます。前者の場合は、Javadoc ツールによって、名前と名前の間にコンマ (\f2,\fP) とスペースが挿入されます。後者の場合は、テキスト全体が、解析されることなく、生成ドキュメントにそのままコピーされます。したがって、コンマではなく、各言語に対応した名前区切り文字を使う必要があるときは、1 つのタグに複数の名前を指定してください。
-.LP
-.LP
-詳細については、
+�ܺ٤ˤĤ��Ƥϡ�
 .na
-\f2@version タグのドキュメント\fP @
+\f2@version �����Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@versionを参照してください。
-.LP
-.RE
-.LP
-.SS 
-タグを使用できる場所
-.LP
-ここでは、タグを使用できる場所について説明します。\f2@see\fP、\f2@since\fP、\f2@deprecated\fP、\f2{@link}\fP、\f2{@linkplain}\fP および \f2{@docroot}\fP のタグは、すべての doc コメントで使用できます。
-.RS 3
-
-.LP
-.SS 
-概要のドキュメンテーションタグ
-.LP
-.LP
-概要タグは、概要ページのドキュメンテーションコメントで使用できるタグです。 このドキュメンテーションコメントは、通常 \f2overview.html\fP という名前ソースファイル内にあります。ほかのドキュメンテーションコメントの場合と同様に、これらのタグは、主説明のあとで使う必要があります。
-.LP
-.LP
-\f3注\fP \- バージョン 1.2 では、概要ドキュメント内の \f2{@link}\fP タグにバグがあります。テキストは正しく表示されますが、リンクが設定されません。現在のところ、\f2{@docRoot}\fP タグは、概要ドキュメント内では動作しません。
-.LP
-.RS 3
-
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f2@see\fP
-.br
-\f2@since\fP
-.br
-\f2@author\fP
-.br
-\f2@version\fP
-.br
-\f2{@link}\fP
-.br
-\f2{@linkplain}\fP
-.br
-\f2{@docRoot}\fP
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3概要タグ\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 2279 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3概要タグ\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-20
-
-.LP
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#@version�򻲾Ȥ��Ƥ���������  
 .RE
 .SS 
-パッケージドキュメンテーションタグ
+��������ѤǤ�����
 .LP
+�����Ǥϡ���������ѤǤ�����ˤĤ����������ޤ������٤ƤΥɥ�����ơ�����󥳥��Ȥǻ��Ѳ�ǽ�ʥ����ϼ��ΤȤ���Ǥ��� \f2@see\fP�� \f2@since\fP�� \f2@deprecated\fP�� \f2{@link}\fP�� \f2{@linkplain}\fP������� \f2{@docroot}\fP��
+.SS 
+���פΥɥ�����ơ�����󥿥�
 .LP
-パッケージタグは、パッケージのドキュメンテーションコメントで使用できるタグです。 このドキュメンテーションコメントは、\f2package.html\fP または \f2package\-info.java\fP という名前のソースファイル内にあります。ここで使用できる \f2@serial\fP タグは、\f2include\fP または \f2exclude\fP 引数を指定したものだけです。
+���ץ����ϡ����ץڡ����Υɥ�����ơ�����󥳥��Ȥǻ��ѤǤ��륿���Ǥ������Υɥ�����ơ�����󥳥��Ȥϡ��̾� \f2overview.html\fP �Ȥ���̾���Υ������ե�������ˤ���ޤ��� �ۤ��Υɥ�����ơ�����󥳥��Ȥξ���Ʊ�ͤˡ������Υ����ϡ��������Τ��ȤǻȤ�ɬ�פ�����ޤ���
 .LP
+\f3��\fP \- �С������ 1.2 �Ǥϡ����ץɥ��������� \f2{@link}\fP �����˥Х�������ޤ����ƥ����Ȥ�������ɽ������ޤ�������󥯤����ꤵ��ޤ��󡣸��ߤΤȤ����� \f2{@docRoot}\fP �����ϡ����ץɥ��������Ǥ�ư��ޤ���
+.LP
+\f3���ץ���\fP
 .RS 3
-
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f2@see\fP
-.br
-\f2@since\fP
-.br
-\f2@serial\fP
-.br
-\f2@author\fP
-.br
-\f2@version\fP
-.br
-\f2{@link}\fP
-.br
-\f2{@linkplain}\fP
-.br
-\f2{@docRoot}\fP
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3パッケージタグ\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 2315 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3パッケージタグ\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-22
-
-.LP
+.TP 2
+o
+\f2@see\fP 
+.TP 2
+o
+\f2@since\fP 
+.TP 2
+o
+\f2@author\fP 
+.TP 2
+o
+\f2@version\fP 
+.TP 2
+o
+\f2{@link}\fP 
+.TP 2
+o
+\f2{@linkplain}\fP 
+.TP 2
+o
+\f2{@docRoot}\fP 
 .RE
 .SS 
-クラスおよびインタフェースドキュメンテーションタグ
+�ѥå������ɥ�����ơ�����󥿥�
 .LP
+�ѥå����������ϡ��ѥå������Υɥ�����ơ�����󥳥��Ȥǻ��ѤǤ��륿���Ǥ������Υɥ�����ơ�����󥳥��Ȥ� \f2package.html\fP �ޤ��� \f2package\-info.java\fP �Ȥ���̾���Υ������ե�������ˤ���ޤ��������ǻ��ѤǤ��� \f2@serial\fP �����ϡ� \f2include\fP �ޤ��� \f2exclude\fP ���������ꤵ�줿��Τ����Ǥ���
 .LP
-次に、クラスまたはインタフェースのドキュメンテーションコメントで使用できるタグを示します。ここで使用できる \f2@serial\fP タグは、\f2include\fP または \f2exclude\fP 引数を指定したものだけです。
-.LP
+\f3�ѥå���������\fP
 .RS 3
-
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f3クラスおよびインタフェースタグ\fP
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f2@see\fP
-.br
-\f2@since\fP
-.br
-\f2@deprecated\fP
-.br
-\f2@serial\fP
-.br
-\f2@author\fP
-.br
-\f2@version\fP
-.br
-\f2{@link}\fP
-.br
-\f2{@linkplain}\fP
-.br
-\f2{@docRoot}\fP
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(b-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 2355 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-26
-
-.LP
+.TP 2
+o
+\f2@see\fP 
+.TP 2
+o
+\f2@since\fP 
+.TP 2
+o
+\f2@serial\fP 
+.TP 2
+o
+\f2@author\fP 
+.TP 2
+o
+\f2@version\fP 
+.TP 2
+o
+\f2{@link}\fP 
+.TP 2
+o
+\f2{@linkplain}\fP 
+.TP 2
+o
+\f2{@docRoot}\fP 
 .RE
-\f3次にクラスコメントの例を示します。\fP
+.SS 
+���饹����ӥ��󥿥ե������ɥ�����ơ�����󥿥�
 .LP
+���ˡ����饹�ޤ��ϥ��󥿥ե������Υɥ�����ơ�����󥳥��Ȥǻ��ѤǤ��륿���򼨤��ޤ��������ǻ��ѤǤ��� \f2@serial\fP �����ϡ� \f2include\fP �ޤ��� \f2exclude\fP ���������ꤵ�줿��Τ����Ǥ���
+.LP
+\f3���饹����ӥ��󥿥ե���������\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP 
+.TP 2
+o
+\f2@since\fP 
+.TP 2
+o
+\f2@deprecated\fP 
+.TP 2
+o
+\f2@serial\fP 
+.TP 2
+o
+\f2@author\fP 
+.TP 2
+o
+\f2@version\fP 
+.TP 2
+o
+\f2{@link}\fP 
+.TP 2
+o
+\f2{@linkplain}\fP  
+.TP 2
+o
+\f2{@docRoot}\fP 
+.RE
+\f3���˥��饹�����Ȥ���򼨤��ޤ���\fP
 .nf
 \f3
 .fl
@@ -3533,137 +2439,44 @@ class Window extends BaseWindow {
 .fl
 }
 .fl
-  
-.fl
 \fP
 .fi
-
-.LP
 .SS 
-フィールドドキュメンテーションタグ
+�ե�����ɥɥ�����ơ�����󥿥�
 .LP
+���ˡ��ե�����ɤΥɥ�����ơ�����󥳥��Ȥǻ��ѤǤ��륿���򼨤��ޤ���
 .LP
-次に、フィールドのドキュメンテーションコメントで使用できるタグを示します。
-.LP
+\f3�ե�����ɥ���\fP
 .RS 3
-
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f2@see\fP
-.br
-\f2@since\fP
-.br
-\f2@deprecated\fP
-.br
-\f2@serial\fP
-.br
-\f2@serialField\fP
-.br
-\f2{@link}\fP
-.br
-\f2{@linkplain}\fP
-.br
-\f2{@docRoot}\fP
-.br
-\f2{@value}\fP
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3フィールドタグ\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 2436 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3フィールドタグ\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-24
-
-.LP
+.TP 2
+o
+\f2@see\fP 
+.TP 2
+o
+\f2@since\fP 
+.TP 2
+o
+\f2@deprecated\fP 
+.TP 2
+o
+\f2@serial\fP 
+.TP 2
+o
+\f2@serialField\fP 
+.TP 2
+o
+\f2{@link}\fP 
+.TP 2
+o
+\f2{@linkplain}\fP 
+.TP 2
+o
+\f2{@docRoot}\fP 
+.TP 2
+o
+\f2{@value}\fP 
 .RE
-\f3次にフィールドコメントの例を示します。\fP
-.LP
+\f3���˥ե�����ɥ����Ȥ���򼨤��ޤ���\fP
 .nf
 \f3
 .fl
@@ -3679,170 +2492,50 @@ class Window extends BaseWindow {
 .fl
     int x = 1263732;
 .fl
-  
-.fl
 \fP
 .fi
-
-.LP
 .SS 
-コンストラクタおよびメソッドドキュメンテーションタグ
+���󥹥ȥ饯������ӥ᥽�åɥɥ�����ơ�����󥿥�
 .LP
+���ˡ����󥹥ȥ饯���ޤ��ϥ᥽�åɤΥɥ�����ơ�����󥳥��Ȥǻ��ѤǤ��륿���򼨤��ޤ����������� \f2@return\fP �ϥ��󥹥ȥ饯���Ǥϻ��ѤǤ����� \f2{@inheritDoc}\fP �ˤ���������¤�����ޤ��� \f2@serialData\fP �����������ľ�󲽥᥽�åɤ� doc �����ȤǤΤ߻��ѤǤ��ޤ���
 .LP
-次に、コンストラクタまたはメソッドのドキュメンテーションコメント内で表示できるタグを示します。 ただし、\f2@return\fP はコンストラクタでは表示できず、\f2{@inheritDoc}\fP は表示に制限があります。\f2@serialData\fP タグは特定の直列化メソッドの doc コメントでのみ使用できます。
-.LP
+\f3�᥽�åɤ���ӥ��󥹥ȥ饯������\fP
 .RS 3
-
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f3メソッドおよびコンストラクタタグ\fP
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/2u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f2@see\fP
-.br
-\f2@since\fP
-.br
-\f2@deprecated\fP
-.br
-\f2@param\fP
-.br
-\f2@return\fP
-.br
-\f2@throws\fP と \f2@exception\fP
-.br
-\f2@serialData\fP
-.br
-\f2{@link}\fP
-.br
-\f2{@linkplain}\fP
-.br
-\f2{@inheritDoc}\fP
-.br
-\f2{@docRoot}\fP
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(b-
-.if \n(80<\n(38 .nr 80 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr TW \n(80
-.if t .if \n(TW>\n(.li .tm Table at line 2503 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-30
-
-.LP
+.TP 2
+o
+\f2@see\fP 
+.TP 2
+o
+\f2@since\fP 
+.TP 2
+o
+\f2@deprecated\fP 
+.TP 2
+o
+\f2@param\fP 
+.TP 2
+o
+\f2@return\fP 
+.TP 2
+o
+\f2@throws\fP �� \f2@exception\fP 
+.TP 2
+o
+\f2@serialData\fP 
+.TP 2
+o
+\f2{@link}\fP 
+.TP 2
+o
+\f2{@linkplain}\fP 
+.TP 2
+o
+\f2{@inheritDoc}\fP 
+.TP 2
+o
+\f2{@docRoot}\fP 
 .RE
-\f3次にメソッドのドキュメンテーションコメントの例を示します。\fP
-.LP
+\f3���˥᥽�åɤΥɥ�����ơ�����󥳥��Ȥ���򼨤��ޤ���\fP
 .nf
 \f3
 .fl
@@ -3874,22 +2567,13 @@ class Window extends BaseWindow {
 .fl
     }
 .fl
-  
-.fl
 \fP
 .fi
-.RE
-.SH "オプション"
+.SH "���ץ����"
 .LP
+javadoc �ġ���ϡ��ɥå���åȤ�Ȥäƽ��Ϥ���ꤷ�ޤ���Javadoc �ġ���ϡ�\-doclet ���ץ����ǥ�������ɥå���åȤ����ꤵ��Ƥ�����ʳ��ϡ��ǥե���Ȥ�ɸ��ɥå���åȤ�Ȥ��ޤ���Javadoc �ġ���ˤϡ�Ǥ�դΥɥå���åȤȤȤ�˻��ѤǤ��륳�ޥ�ɹԥ��ץ���󤬤���ޤ��������Υ��ץ����ˤĤ��Ƥϡ����Τ��ȤΡ�Javadoc ���ץ����פ��������ޤ���ɸ��ɥå���åȤǤϡ����Τۤ��ˡ������Ĥ����ɲäΥ��ޥ�ɹԥ��ץ�����󶡤���ޤ��������Υ��ץ����ˤĤ��Ƥϡ����Τ��ȤΡ�ɸ��ɥå���åȤ��󶡤��륪�ץ����פ��������ޤ����ɤΥ��ץ����̾�⡢��ʸ���Ⱦ�ʸ�������̤���ޤ��󡣤����������ץ����ΰ����Ǥϡ���ʸ���Ⱦ�ʸ�������̤���ޤ���
 .LP
-javadoc ツールは、ドックレットを使って出力を決定します。Javadoc ツールは、\-doclet オプションでカスタムドックレットが指定されている場合以外は、デフォルトの標準ドックレットを使います。Javadoc ツールには、任意のドックレットとともに使用できるコマンド行オプションがあります。 これらのオプションについては、このあとの「Javadoc オプション」で説明します。標準ドックレットでは、このほかに、いくつかの追加のコマンド行オプションが提供されます。 これらのオプションについては、そのあとの「標準ドックレットが提供するオプション」で説明します。どのオプション名も、大文字と小文字が区別されません。 ただし、オプションの引数では、大文字と小文字が区別されます。
-.LP
-.LP
-オプションを次に示します。
-.LP
-.RS 3
-
-.LP
+���ץ����ϼ��ΤȤ���Ǥ���
 .LP
 .TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
@@ -4043,6 +2727,8 @@ javadoc ツールは、ドックレットを使って出力を決定します。
 .br
 \-\f2sourcepath\fP
 .br
+\-sourcetab
+.br
 \-splitindex
 .br
 \-stylesheetfile
@@ -4054,6 +2740,8 @@ javadoc ツールは、ドックレットを使って出力を決定します。
 \-taglet
 .br
 \-tagletpath
+.br
+\-top
 .br
 \-title
 .br
@@ -4101,7 +2789,7 @@ javadoc ツールは、ドックレットを使って出力を決定します。
 .nr 42 \n(81+(3*\n(38)
 .nr 82 +\n(42
 .nr TW \n(82
-.if t .if \n(TW>\n(.li .tm Table at line 2680 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 2009 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -4157,54 +2845,49 @@ javadoc ツールは、ドックレットを使って出力を決定します。
 .rm b+
 .rm c+
 .TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-123
-
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-127
 .LP
-.RE
-.LP
-\f2イタリック\fPで示されたオプションは、Javadoc の基本オプションであり、Javadoc ツールのフロントエンドによって提供され、すべてのドックレットで使用できます。標準ドックレット自体は、イタリックでないオプションを提供します。
-.LP
+\f2������å�\fP �Ǽ����줿���ץ����ϡ�Javadoc �δ��ܥ��ץ����Ǥ��ꡢJavadoc �ġ���Υե���ȥ���ɤˤ�ä��󶡤��졢���٤ƤΥɥå���åȤǻ��ѤǤ��ޤ���ɸ��ɥå���åȼ��Τϡ�������å��Ǥʤ����ץ������󶡤��ޤ���
 .SS 
-Javadoc オプション
-.LP
+Javadoc ���ץ����
 .RS 3
 .TP 3
 \-overview \ path/filename 
-Javadoc に対して、\f2path/filename\fP で指定された「ソース」ファイルから概要ドキュメント用のテキストを取得し、そのテキストを概要ページ (\f2overview\-summary.html\fP) に配置するように指定します。\f2path/filename\fP は、\f2\-sourcepath\fP への相対パスです。 
+Javadoc ���Ф��ơ�\f2path/filename\fP �ǻ��ꤵ�줿�֥������ץե����뤫�鳵�ץɥ�������ѤΥƥ����Ȥ�����������Υƥ����Ȥ��ץڡ��� (\f2overview\-summary.html\fP) �����֤���褦�˻��ꤷ�ޤ��� \f2path/filename\fP �ϡ������ȥǥ��쥯�ȥ꤫������Хѥ��Ǥ��� 
 .LP
-\f2filename\fP と \f2path\fP には、それぞれ任意の名前と場所を指定できますが、通常は、\f2overview.html\fP という名前を付けて、ソースツリー内の最上位のパッケージディレクトリがあるディレクトリに配置します。この場所に配置すると、\f2\-sourcepath\fP によってこのファイルが指し示されるので、パッケージをドキュメント化する際に \f2path\fP が不要になります。たとえば、\f2java.lang\fP パッケージのソースツリーが \f2/src/classes/java/lang/\fP の場合、概要ファイルを \f2/src/classes/overview.html\fP に配置できます。「使用例」を参照してください。 
+\f2filename\fP��Ǥ�դ�̾������Ѥ���\f2path\fP ��Ǥ�դ�����������򤹤뤳�Ȥ��ǽ�Ǥ������̾�� \f2overview.html\fP �Ȥ���̾�����դ����������ĥ꡼��κǾ�̥ѥå������ǥ��쥯�ȥ��ޤ�ǥ��쥯�ȥ�������֤��ޤ������ξ������֤���ȡ��ѥå�������ɥ�����Ȳ�����Ȥ��� \f2path\fP ����ꤹ��ɬ�פ��ʤ��ʤ�ޤ����ʤ��ʤ顢 \f2\-sourcepath\fP �ˤ�äƤ��Υե����뤬�ؤ�������뤫��Ǥ������Ȥ��С� \f2java.lang\fP �ѥå������Υ������ĥ꡼�� \f2/src/classes/java/lang/\fP �ξ�硢���ץե������ \f2/src/classes/overview.html\fP �����֤Ǥ��ޤ����ֻ�����פ򻲾Ȥ��Ƥ��������� 
 .LP
-\f2path/filename\fP で指定するファイルについては、「概要コメントファイル」を参照してください。 
+\f2path/filename\fP �ǻ��ꤹ��ե�����ˤĤ��Ƥϡ��ֳ��ץ����ȥե�����פ򻲾Ȥ��Ƥ��������� 
 .LP
-概要ページが作成されるのは、Javadoc に複数のパッケージ名を渡した場合だけです。詳細は、「HTML フレーム」を参照してください。 
+���ץڡ��������������Τϡ�Javadoc ��ʣ���Υѥå�����̾���Ϥ����������Ǥ����ܺ٤ϡ���HTML �ե졼��פ򻲾Ȥ��Ƥ��������� 
 .LP
-概要ページのタイトルは、\f2\-doctitle\fP によって設定されます。 
+���ץڡ����Υ����ȥ�ϡ�\f2\-doctitle\fP �ˤ�ä����ꤵ��ޤ��� 
 .LP
 .TP 3
 \-public 
-public クラスおよびメンバーだけを表示します。 
+public ���饹����ӥ��С�������ɽ�����ޤ��� 
 .LP
 .TP 3
 \-protected 
-protected および public のクラスとメンバーだけを表示します。これはデフォルトの設定です。 
+protected ����� public �Υ��饹�ȥ��С�������ɽ�����ޤ������줬�ǥե���ȤǤ��� 
 .LP
 .TP 3
 \-package 
-package、protected、および public のクラスとメンバーだけを表示します。 
+package��protected������� public �Υ��饹�ȥ��С�������ɽ�����ޤ��� 
 .LP
 .TP 3
 \-private 
-すべてのクラスとメンバーを表示します。 
+���٤ƤΥ��饹�ȥ��С���ɽ�����ޤ��� 
 .LP
 .TP 3
 \-help 
-オンラインヘルプを表示します。 Javadoc とドックレットのコマンド行オプションが一覧表示されます。 
+����饤��إ�פ�ɽ�����ޤ���Javadoc �ȥɥå���åȤΥ��ޥ�ɹԥ��ץ���󤬰���ɽ������ޤ��� 
 .LP
 .TP 3
 \-doclet\  class 
-ドキュメントの生成に使うドックレットを起動するためのクラスファイルを指定します。完全指定の名前を指定してください。このドックレットにより、出力の内容と形式が定義されます。\f4\-doclet\fP オプションが使われていない場合、Javadoc は、標準ドックレットを使ってデフォルトの HTML 形式を生成します。このクラスには、\f2start(Root)\fP メソッドが含まれていなければなりません。この起動クラスへのパスは、\f2\-docletpath\fP オプションによって定義されます。 
+�ɥ�����Ȥ������˻Ȥ��ɥå���åȤ�ư���뤿��Υ��饹�ե��������ꤷ�ޤ������������̾������ꤷ�Ƥ������������Υɥå���åȤˤ�ꡢ���Ϥ����Ƥȷ������������ޤ���\f4\-doclet\fP ���ץ���󤬻Ȥ��Ƥ��ʤ���硢Javadoc �ϡ�ɸ��ɥå���åȤ�Ȥäƥǥե���Ȥ� HTML �������������ޤ������Υ��饹�ˤ� \f2start(Root)\fP ���ޤޤ�Ƥ���ɬ�פ�����ޤ������ε�ư���饹�ؤΥѥ��� \f2\-docletpath\fP ���ץ����ˤ�ä��������ޤ��� 
 .LP
-たとえば、MIF ドックレットを呼び出すには、次のように指定します。 
+���Ȥ��С�MIF �ɥå���åȤ�ƤӽФ��ˤϡ����Τ褦�˻��ꤷ�ޤ��� 
 .nf
 \f3
 .fl
@@ -4213,17 +2896,17 @@ package、protected、および public のクラスとメンバーだけを表�
 \fP
 .fi
 .LP
-特定のドックレットを実行した完全な例については、
+����Υɥå���åȤ�¹Ԥ�����������ˤĤ��Ƥϡ�
 .na
-\f2MIF Doclet のドキュメント\fP @
+\f2MIF Doclet �Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.htmlを参照してください。 
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html�򻲾Ȥ��Ƥ��������� 
 .LP
 .TP 3
 \-docletpath\  classpathlist 
-\f2\-doclet\fP オプションで指定されているドックレット開始クラスファイル、およびそれが依存するすべての jar ファイルへのパスを指定します。開始クラスファイルが jar ファイル内にある場合、以下の例のように jar ファイルのパスが指定されます。絶対パスまたは現在のディレクトリからの相対パスを指定できます。\f2classpathlist\fP には、複数のパスまたは JAR ファイルを含めることができます。 その場合、各パスまたは JAR ファイルを、Solaris の場合にはコロン (:)、Windows の場合にはセミコロン (;) で区切ります。目的のドックレット開始クラスがすでに検索パス内にある場合は、このオプションは不要です。 
+\f2\-doclet\fP ���ץ����ǻ��ꤵ�줿�ɥå���åȳ��ϥ��饹�ե����롢 ����Ӥ��Υ��饹����¸���뤹�٤Ƥ� JAR �ե�����ؤΥѥ�����ꤷ�ޤ������ϥ��饹�ե����뤬 jar �ե�������ˤ����硢�ʲ�����Τ褦�� jar �ե�����Υѥ������ꤵ��ޤ������Хѥ��ޤ��ϸ��ߤΥǥ��쥯�ȥ꤫������Хѥ������Ǥ��ޤ��� \f2classpathlist\fP �ˤϡ�ʣ���Υѥ��ޤ��� JAR �ե������ޤ�뤳�Ȥ��Ǥ��ޤ��� ���ξ�硢�ƥѥ��ޤ��� JAR �ե������Solaris �ξ��ˤϥ����� (:)��Windows �ξ��ˤϥ��ߥ����� (;) �Ƕ��ڤ�ޤ�����Ū�Υɥå���åȳ��ϥ��饹�����Ǥ˸����ѥ���ˤ�����ϡ����Υ��ץ��������פǤ��� 
 .LP
-jar ファイルへのパスの例には、ドックレット開始クラスファイルが含まれています。jar ファイル名が含まれている点に注目してください。 
+jar �ե�����ؤΥѥ�����ˤϡ��ɥå���åȳ��ϥ��饹�ե����뤬�ޤޤ�Ƥ��ޤ���jar �ե�����̾���ޤޤ�Ƥ����������ܤ��Ƥ��������� 
 .nf
 \f3
 .fl
@@ -4231,7 +2914,7 @@ jar ファイルへのパスの例には、ドックレット開始クラスフ�
 .fl
 \fP
 .fi
-ドックレット開始クラスファイルのパスの例。クラスファイル名が省略されている点に注目してください。 
+�ɥå���åȳ��ϥ��饹�ե�����Υѥ����㡣���饹�ե�����̾����ά����Ƥ����������ܤ��Ƥ��������� 
 .nf
 \f3
 .fl
@@ -4239,212 +2922,40 @@ jar ファイルへのパスの例には、ドックレット開始クラスフ�
 .fl
 \fP
 .fi
-特定のドックレットを実行した完全な例については、
+����Υɥå���åȤ�¹Ԥ�����������ˤĤ��Ƥϡ�
 .na
-\f2MIF Doclet のドキュメント\fP @
+\f2MIF Doclet �Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.htmlを参照してください。 
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html�򻲾Ȥ��Ƥ��������� 
 .LP
 .TP 3
 \-1.1 
-\f2この機能は、Javadoc 1.4 では削除されました。代替機能はありません。このオプションは、Javadoc 1.1 によって生成されるのと同じ外見と機能を持つドキュメントを作成するためのものでした。 入れ子のクラスはサポートされていません。このオプションが必要な場合は、Javadoc 1.2 または 1.3 を使用してください。\fP 
+\f2���ε�ǽ�� Javadoc 1.4 ����������ޤ��������ص�ǽ�Ϥ���ޤ��󡣤��Υ��ץ����ϡ�Javadoc 1.1 �ˤ�ä����������Τ�Ʊ�������ȵ�ǽ����ĥɥ�����Ȥ�������뤿��Τ�ΤǤ���������ҤΥ��饹�ϥ��ݡ��Ȥ���Ƥ��ޤ��󡣤��Υ��ץ����ɬ�פʾ��ϡ�Javadoc 1.2 �ޤ��� 1.3 ����Ѥ��Ƥ���������\fP 
 .LP
 .TP 3
 \-source release 
-受け付けるソースコードのバージョンを指定します。\f2release\fP には次の値を指定できます。 
+�����դ��륽���������ɤΥС���������ꤷ�ޤ���\f2release\fP �ˤϼ����ͤ����Ǥ��ޤ��� 
+.RS 3
+.TP 2
+o
+\f31.5\fP \- javadoc �ϡ�JDK 1.5 ��Ƴ�����줿���Τʤɤθ��쵡ǽ��ޤॳ���ɤ�����դ��ޤ���\f3\-source\fP �ե饰�����Ѥ���ʤ��ä����Υ���ѥ���Υǥե����ư��ϡ�1.5 �Τ�Τˤʤ�ޤ��� 
+.TP 2
+o
+\f31.4\fP Javadoc �ϡ�JDK 1.4 ��Ƴ�����줿��������������ޤॳ���ɤ�����դ��ޤ��� 
+.TP 2
+o
+\f31.3\fP Javadoc �ϡ�JDK 1.3 �ʹߤ�Ƴ�����줿��������������Ρ��ޤ���¾�θ��쵡ǽ�򥵥ݡ��Ȥ��ޤ��� 
+.RE
 .LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Javadoc は、JDK 1.5 で導入された総称および他の言語機能を含んだコードを受け付けます。\f3\-source\fP フラグを指定しないと、コンパイラはデフォルトとして 1.5 の動作をします。
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Javadoc は、JDK 1.4 で導入された、アサーションを含むコードを受け付けます。
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Javadoc は、JDK 1.3 以降に導入されたアサーション、総称、または他の言語機能をサポートしません。
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 31 0
-.nr 32 0
-.nr 38 \w\f31
-.if \n(31<\n(38 .nr 31 \n(38
-.nr 38 \w.5\fP
-.if \n(32<\n(38 .nr 32 \n(38
-.nr 38 \w\f31
-.if \n(31<\n(38 .nr 31 \n(38
-.nr 38 \w.4\fP
-.if \n(32<\n(38 .nr 32 \n(38
-.nr 38 \w\f31
-.if \n(31<\n(38 .nr 31 \n(38
-.nr 38 \w.3\fP
-.if \n(32<\n(38 .nr 32 \n(38
-.80
-.rm 80
-.nr 60 \n(31
-.nr 38 \n(60+\n(32
-.if \n(38>\n(80 .nr 80 \n(38
-.if \n(38<\n(80 .nr 60 +(\n(80-\n(38)/2
-.nr 81 0
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 60 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 2790 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(60u \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f31.5\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(60u \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f31.4\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(60u \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f31.3\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-14
-.LP
-javac でコードをコンパイルするときに使用した値に対応する \f2release\fP の値を使用します。 
+javac �ǥ����ɤ򥳥�ѥ��뤹��Ȥ��˻��Ѥ����ͤ��б����� \f2release\fP ���ͤ���Ѥ��ޤ��� 
 .LP
 .TP 3
 \-sourcepath\  sourcepathlist 
-\f2javadoc\fP コマンドにパッケージ名または \f2\-subpackages\fP を渡すときに、ソースファイル (\f2.java\fP) を検索するためのパスを指定します。\f2sourcepathlist\fP には、コロン (\f2:\fP) で区切って複数のパスを含めることができます。Javadoc ツールは、指定されたパス以下のすべてのサブディレクトリを検索します。このオプションを使って、ドキュメント化されるソースファイルの位置だけでなく、それ自体はドキュメント化されないがドキュメント化されるソースファイルから継承されたコメントを持つソースファイルの位置も確認できます。 
+�ѥå�����̾�ޤ��� \-subpackages �� javadoc ���ޥ�ɤ��Ϥ��Ȥ��ϡ��������ե����� (.\f2.java\fP) �򸫤Ĥ��뤿��� \f2�����ѥ�\fP ����� \f2���ޤ�\fP ��\f2sourcepathlist\fP �ˤϡ������� (\f2:\fP) �Ƕ��ڤä�ʣ���Υѥ���ޤ�뤳�Ȥ��Ǥ��ޤ���Javadoc �ġ���ϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ������Υ��ץ�����Ȥäơ��ɥ�����Ȳ�����륽�����ե�����ΰ��֤����Ǥʤ������켫�Τϥɥ�����Ȳ�����ʤ����ɥ�����Ȳ�����륽�����ե����뤫��Ѿ����줿�����Ȥ���ĥ������ե�����ΰ��֤��ǧ�Ǥ��ޤ��� 
 .LP
-\f2\-sourcepath\fP オプションは、javadoc コマンドにパッケージ名を渡すときにだけ使用できます。 \f2javadoc\fP コマンドに渡される \f2.java\fP ファイルは、このパスからは検索されません。\f2.java\fP ファイルを検索するには、そのファイルのあるディレクトリに cd によって移動するか、または各ファイルの先頭にパスを含めます (「1 つ以上のクラスのドキュメント化」を参照)。\f2\-sourcepath\fP が省略された場合、Javadoc は、クラスパスを使ってソースファイルを検索します (\-classpath を参照)。したがって、デフォルトの \-sourcepath は、クラスパスの値です。\-classpath も省略してパッケージ名を Javadoc に渡すと、Javadoc は現在のディレクトリおよびそのサブディレクトリからソースファイルを検索します。 
+\f2\-sourcepath\fP ���ץ�������ѤǤ���Τϡ�javadoc ���ޥ�ɤ˥ѥå�����̾���Ϥ��������Ǥ������Υѥ�����ϡ�javadoc ���ޥ�ɤ��Ϥ��줿 \f2.java\fP �ե������ \f2����\fP ����ޤ��� \f2.java\fP �ե�����򸡺�����ˤϡ����Υե�����Τ���ǥ��쥯�ȥ�� cd �ˤ�äư�ư���뤫���ޤ��ϳƥե��������Ƭ�˥ѥ���ޤ�ޤ� (��1 �İʾ�Υ��饹�Υɥ�����Ȳ��פ򻲾�)�� \f2\-sourcepath\fP ����ά���줿��硢Javadoc �ϡ����饹�ѥ���Ȥäƥ������ե�����򸡺����ޤ� (\-classpath �򻲾�)���������äơ��ǥե���Ȥ� \-sourcepath �ϡ����饹�ѥ����ͤǤ���\-classpath ���ά���ƥѥå�����̾�� Javadoc ���Ϥ��ȡ�Javadoc �ϸ��ߤΥǥ��쥯�ȥꤪ��Ӥ��Υ��֥ǥ��쥯�ȥ꤫�饽�����ե�����򸡺����ޤ��� 
 .LP
-\f2sourcepathlist\fP には、ドキュメント化するパッケージ名のソースツリーのルートディレクトリを設定します。たとえば、\f2com.mypackage\fP というパッケージをドキュメント化する場合に、そのソースファイルが次の場所にあるとします。 
+\f2sourcepathlist\fP �ˤϡ��ɥ�����Ȳ�����ѥå�����̾�Υ������ĥ꡼�Υ롼�ȥǥ��쥯�ȥ�����ꤷ�ޤ������Ȥ��С� \f2com.mypackage\fP �Ȥ���̾���Υѥå�������ɥ�����Ȳ�������ˡ����Υ������ե����뤬���ξ��ˤ���Ȥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -4452,16 +2963,16 @@ javac でコードをコンパイルするときに使用した値に対応す�
 .fl
 \fP
 .fi
-この場合、次のようにして \f2sourcepath\fP を \f2/home/user/src\fP、つまり \f2com/mypackage\fP を含むディレクトリに指定し、それからパッケージ名 \f2com.mypackage\fP を指定します。 
+���ΤȤ����Τ褦�ˡ� \f2sourcepath\fP ��com/mypackage ��ޤ�ǥ��쥯�ȥ�Ǥ��� \f2/home/user/src\fP �˻��ꤷ�����ȡ� �ѥå�����̾ \f2com.mypackage\fP ����ꤷ�ޤ��� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-sourcepath /home/user/src/ com.mypackage\fP
 .fl
 .fi
-この方法は、ソースパスの値とパッケージ名を連結して、ドットを (円記号) 「\\」に変えると、パッケージのフルパス (C:\\user\\src\\com\\mypackage) になることを理解すると簡単です。\f2/home/user/src/com/mypackage\fP. 
+������ˡ�ϡ��������ѥ����ͤȥѥå�����̾��Ϣ�뤷�ơ��ɥåȤ� (�ߵ���) ��\\�פ��Ѥ���ȡ��ѥå������Υե�ѥ� \f2/home/user/src/com/mypackage �ˤʤ뤳�Ȥ����򤹤�ȴ�ñ�Ǥ�\fP�� 
 .LP
-2 つのソースパスを設定するには、次のようにします。 
+2 �ĤΥ������ѥ������ꤹ��ˤϡ����Τ褦�ˤ��ޤ��� 
 .nf
 \f3
 .fl
@@ -4471,132 +2982,124 @@ javac でコードをコンパイルするときに使用した値に対応す�
 .LP
 .TP 3
 \-classpath\  classpathlist 
-Javadoc が参照クラス (\f2.class\fP ファイル) を検索するパスを指定します。 参照クラスとは、ドキュメント化されるクラスとそれらのクラスによって参照されるすべてのクラスのことです。\f2classpathlist\fP には、コロン (\f2:\fP) で区切って複数のパスを含めることができます。Javadoc ツールは、指定されたパスの以下すべてのサブディレクトリを検索します。\f2classpathlist\fP を指定するときは、
+javadoc �����ȥ��饹 (\f2.class\fP �ե�����) �θ�����Ԥ��Ȥ��˻��Ѥ���ѥ�����ꤷ�ޤ������ȥ��饹�Ȥϡ��ɥ�����Ȳ�����륯�饹�ȡ������Υ��饹���黲�Ȥ���뤹�٤ƤΥ��饹��ؤ��ޤ���\f2classpathlist\fP �ˤϡ������� (\f2:\fP) �Ƕ��ڤä�ʣ���Υѥ���ޤ�뤳�Ȥ��Ǥ��ޤ��� Javadoc �ġ���ϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ���classpathlist ����ꤹ��Ȥ��ϡ�
 .na
-\f2クラスパス\fP @
+\f2���饹�ѥ�\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#generalのドキュメントにある指示に従ってください。 
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#general�Υɥ�����Ȥˤ���ؼ� \f2�˽��äƤ�������\fP�� 
 .LP
-\f2\-sourcepath\fP が省略されている場合、Javadoc ツールは、\f2\-classpath\fP を使って、クラスファイルだけでなくソースファイルも検索します (下位互換性のため)。したがって、ソースファイルとクラスファイルを別々のパスから検索する必要がある場合は、\f2\-sourcepath\fP と \f2\-classpath\fP の両方を使います。 
+\f2\-sourcepath\fP ����ά�����ȡ�Javadoc �ġ���ϥ��饹�ե�����򸡺�����Ȥ������Ǥʤ����������ե�����򸡺�����Ȥ��ˤ� \f2\-classpath\fP ����Ѥ��ޤ� (���̸ߴ����Τ���)���������äơ��������ե�����ȥ��饹�ե�������̡��Υѥ����鸡������ɬ�פ�������ϡ� \f2\-sourcepath\fP �� \f2\-classpath ��ξ����Ȥ��ޤ�\fP.�� 
 .LP
-たとえば、\f2com.mypackage\fP をドキュメント化する場合に、ソースファイルがディレクトリ \f2/home/user/src/com/mypackage\fP にあり、このパッケージが \f2/home/user/lib\fP 内のライブラリを使うのであれば、次のように指定します。 
+���Ȥ��С� \f2com.mypackage\fP ��ɥ�����Ȳ�������ˡ����Υ������ե����뤬�ǥ��쥯�ȥ� \f2/home/user/src/com/mypackage\fP ��˳�Ǽ����Ƥ��ꡢ���Υѥå������� \f2/home/user/lib\fP ��Υ饤�֥��˰�¸���Ƥ���Ȥ��ޤ������ΤȤ����Τ褦�˻��ꤷ�ޤ��� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-classpath /home/user/lib \-sourcepath /home/user/src com.mypackage\fP
 .fl
 .fi
-ほかのツールと同様に、\f2\-classpath\fP が指定されていない場合は、CLASSPATH 環境変数が設定されていれば、Javadoc ツールはこの環境変数を使います。どちらも設定されていない場合、Javadoc ツールは現在のディレクトリからクラスを検索します。 
+\f2\-classpath\fP �����ꤵ��ʤ��ä���硢Javadoc �ġ���Ϥۤ��Υġ����Ʊ������CLASSPATH �Ķ��ѿ������ꤵ��Ƥ���Ф����ͤ���Ѥ��ޤ����ɤ�������ꤵ��Ƥ��ʤ���硢Javadoc �ġ���ϸ��ߤΥǥ��쥯�ȥ꤫�饯�饹�򸡺����ޤ��� 
 .LP
-Javadoc ツールは拡張機能クラスおよびブートストラップクラスに関連しているため、Javadoc ツールが \f2\-classpath\fP を使用してユーザークラスを検索する方法についての詳細は、
+Javadoc �ġ��뤬 \f2\-classpath\fP ����Ѥ��ƥ桼�������饹�򸡺�������ˡ�ˤĤ��ơ���ĥ���饹��֡��ȥ��ȥ�åץ��饹�ȴ�Ϣ�դ����������Ƥ����������ꤹ��ˤϡ�
 .na
-\f2「クラスの検索方法」\fP @
+\f2�֥��饹�θ�����ˡ��\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.htmlをご覧ください。  
+http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.html�򻲾Ȥ��Ƥ���������  
 .LP
-便宜上、\f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
+�ص��塢 \f2*\fP �Υ١���̾��ޤ९�饹�ѥ����Ǥϡ� \f2.jar\fP �ޤ��� \f2.JAR\fP ���ĥ�Ҥ˻��ĥǥ��쥯�ȥ���Τ��٤ƤΥե�����Υꥹ�Ȥ���ꤹ��Τ�Ʊ���Ȥߤʤ���ޤ� (java �ץ������Ϥ��� 2 �ĤθƤӽФ�����̤Ǥ��ʤ�)��
 .br
 .br
-たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。 ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。\f2*\fP だけから成るクラスパスエントリは、カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。\f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。  
+���Ȥ��С��ǥ��쥯�ȥ� \f2foo\fP �� \f2a.jar\fP �� \f2b.JAR\fP ���ޤޤ�Ƥ����硢���饹�ѥ����� \f2foo/*\fP �� \f2A.jar:b.JAR\fP ��Ÿ������ޤ�����������JAR �ե�����ν��֤�̤����Ȥʤ�ޤ������Υꥹ�Ȥˤϡ������ե������ޤᡢ���ꤵ�줿�ǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե����뤬�ޤޤ�ޤ���* ������������ \f2���饹�ѥ�����ȥ�ϡ�\fP �����ȥǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե�����Υꥹ�Ȥ�Ÿ������ޤ��� \f2CLASSPATH\fP �Ķ��ѿ��⡢������ˤ�Ʊ�ͤ�Ÿ������ޤ������饹�ѥ��Υ磻��ɥ�����Ÿ����ɬ����Java ���ۥޥ���ε�ư���˼¹Ԥ���ޤ����������äơ�\f2System.getenv("CLASSPATH")\fP �ƤӽФ��Τ褦�˴Ķ����䤤��碌��Ԥ�ʤ��¤ꡢJava �ץ�����बŸ������Ƥ��ʤ��磻��ɥ����ɤ�ǧ�����뤳�ȤϤ���ޤ���  
 .LP
 .TP 3
 \-subpackages\ \ package1:package2:... 
-ソースファイルから指定されたパッケージおよびそのサブパッケージ内に再帰的にドキュメントを生成します。このオプションは、ソースコードに新しいサブパッケージを追加する際に便利です。新しいサブパッケージは自動的に組み込まれます。各 \f2package\fP 引数は、任意の最上位サブパッケージ (\f2java\fP など) または完全指定のパッケージ (\f2javax.swing\fP など) になります。ソースファイルを含める必要はありません。引数は、コロンで区切られます (すべてのオペレーティングシステム)。ワイルドカードは不要です (使用不可)。パッケージの検索場所を指定するには、\f2\-sourcepath\fP を使用します。このオプションは、「ソースファイルの処理」で説明したとおり、ソースツリーにあるがパッケージには属していないソースファイルを処理しないので役立ちます。 
+�������ե����뤫����ꤵ�줿�ѥå���������Ӥ��Υ��֥ѥå�������˺Ƶ�Ū�˥ɥ�����Ȥ��������ޤ������Υ��ץ����ϡ������������ɤ˿��������֥ѥå��������ɲä���ݤ������Ǥ������������֥ѥå������ϼ�ưŪ���Ȥ߹��ޤ�ޤ����� \f2package\fP �����ϡ�Ǥ�դκǾ�̥��֥ѥå����� ( \f2java\fP �ʤ�) �ޤ��ϴ��������ѥå����� ( \f2javax.swing\fP �ʤ�) �ˤʤ�ޤ����������ե������ޤ��ɬ�פϤ���ޤ��󡣰����ϡ�������Ƕ��ڤ��ޤ� (���٤ƤΥ��ڥ졼�ƥ��󥰥����ƥ�)���磻��ɥ����ɤ����פǤ� (�����Բ�)���ѥå������θ���������ꤹ��ˤϡ�\f2\-sourcepath\fP ����Ѥ��ޤ������Υ��ץ����ϡ��֥������ե�����ν����פ����������Ȥ��ꡢ�������ĥ꡼�ˤ��뤬�ѥå������ˤ�°���Ƥ��ʤ��������ե������������ʤ��Τ���Ω���ޤ��� 
 .LP
-例を示します。 
+���Ȥ��С� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-d docs \-sourcepath /home/user/src \-subpackages java:javax.swing\fP
 .fl
 .fi
-このコマンドは、「java」および「javax.swing」という名前のパッケージとこれらのサブパッケージ全部のドキュメントを生成します。 
+���Υ��ޥ�ɤϡ���java�פ���ӡ�javax.swing�פȤ���̾���Υѥå������Ȥ����Υ��֥ѥå����������Υɥ�����Ȥ��������ޤ��� 
 .LP
-\f2\-exclude\fP とともに \f2\-subpackages\fP を使用すると、特定のパッケージを除外できます。 
+\f2\-subpackages\fP �� \f2\-exclude\fP ���Ȥ߹�碌�ƻ��Ѥ���ȡ�����Υѥå�����������Ǥ��ޤ��� 
 .LP
 .TP 3
 \-exclude\ \ packagename1:packagename2:... 
-指定されたパッケージとそのサブパッケージを \f2\-subpackages\fP によって作成されたリストから無条件に除外します。過去の \f2\-subpackages\fP オプションの指定によって組み込まれたパッケージ、または将来組み込まれるパッケージも除外の対象となります。例を示します。 
+���ꤵ�줿�ѥå������Ȥ��Υ��֥ѥå������� \f2\-subpackages\fP �ˤ�äƺ������줿�ꥹ�Ȥ���̵���˽������ޤ��� ���� \f2\-subpackages\fP ���ץ����λ���ˤ�ä��Ȥ߹��ޤ줿�ѥå��������ޤ��Ͼ����Ȥ߹��ޤ��ѥå�������������оݤȤʤ�ޤ��� ������򼨤��ޤ��� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-sourcepath /home/user/src \-subpackages java \-exclude java.net:java.lang\fP
 .fl
 .fi
-このうち、\f2java.io\fP、\f2java.util\fP、\f2java.math\fP は組み込まれますが、\f2java.net\fP と \f2java.lang\fP 以下のパッケージは除外されます。ただし、\f2java.lang\fP のサブパッケージである \f2java.lang.ref\fP は除外されます。 
+���ξ�硢 \f2java.io\fP�� \f2java.util\fP�� \f2java.math\fP �ʤɤ��ޤ��졢 \f2java.net\fP �� \f2java.lang\fP ��롼�Ȥ˻��ĥѥå���������������ޤ������ξ�硢 \f2java.lang\fP �Υ��֥ѥå������Ǥ��� \f2java.lang.ref\fP �����������������դ��Ƥ��������� 
 .LP
 .TP 3
 \-bootclasspath\  classpathlist 
-ブートクラスが存在するパスを指定します。ブートクラスとは、通常、Java プラットフォームのコアクラスのことです。ブートクラスパスは、Javadoc ツールがソースファイルとクラスファイルを探すときに使う検索パスの一部です。詳細は、
+�֡��ȥ��饹��¸�ߤ���ѥ�����ꤷ�ޤ����֡��ȥ��饹�Ȥϡ��̾Java �ץ�åȥե�����Υ������饹�Τ��ȤǤ����֡��ȥ��饹�ѥ��ϡ�Javadoc �ġ��뤬�������ե�����ȥ��饹�ե������õ���Ȥ��˻Ȥ������ѥ��ΰ����Ǥ����ܺ٤ϡ�
 .na
-\f2「javac と javadoc がクラスを検索する方法」\fP @
+\f2�֥��饹�θ�����ˡ��\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.html#srcfilesを参照してください。\f2classpathlist\fP 内の複数のディレクトリは、コロン (:) で区切ります。 
+http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.html#srcfiles�򻲾Ȥ��Ƥ��������������� (:) �� \f2classpathlist\fP ��Υǥ��쥯�ȥ�֤ζ��ڤ�ʸ���Ȥ��ƻ��Ѥ��ޤ��� 
 .LP
 .TP 3
 \-extdirs\  dirlist 
-拡張機能クラスが存在するディレクトリを指定します。拡張機能クラスとは、Java 拡張機能機構を使うすべてのクラスです。extdirs は、Javadoc ツールがソースファイルとクラスファイルを探すときに使う検索パスの一部です。詳細は、前述の \f2\-classpath\fP を参照してください。\f2dirlist\fP 内の複数のディレクトリは、コロン (:) で区切ります。 
+��ĥ��ǽ���饹��¸�ߤ���ǥ��쥯�ȥ����ꤷ�ޤ�����ĥ��ǽ���饹�Ȥϡ�Java ��ĥ��ǽ������Ȥ����٤ƤΥ��饹�Ǥ���extdirs �ϡ�Javadoc �ġ��뤬�������ե�����ȥ��饹�ե������õ���Ȥ��˻Ȥ������ѥ��ΰ����Ǥ����ܺ٤ϡ����Ҥ� \f2\-classpath\fP �򻲾Ȥ��Ƥ��������������� (:) �� \f2dirlist\fP ��Υǥ��쥯�ȥ�֤ζ��ڤ�ʸ���Ȥ��ƻ��Ѥ��ޤ��� 
 .LP
 .TP 3
 \-verbose 
-javadoc の実行中に詳細なメッセージを表示します。verbose オプションを指定しないと、ソースファイルのロード時、ドキュメントの生成時 (ソースファイルごとに 1 つのメッセージ)、およびソート時にメッセージが表示されます。verbose オプションを指定すると、各 Java ソースファイルの解析に要した時間 (ミリ秒単位) など、追加のメッセージが表示されます。 
+javadoc �μ¹���˾ܺ٤ʥ�å�������ɽ�����ޤ���verbose ���ץ�������ꤷ�ʤ��ȡ��������ե�����Υ����ɻ����ɥ�����Ȥ������� (�������ե����뤴�Ȥ� 1 �ĤΥ�å�����)������ӥ����Ȼ��˥�å�������ɽ������ޤ���verbose ���ץ�������ꤹ��ȡ��� Java �������ե�����β��Ϥ��פ������� (�ߥ���ñ��) �ʤɡ��ɲäΥ�å�������ɽ������ޤ��� 
 .LP
 .TP 3
 \-quiet 
-エラーメッセージまたは警告メッセージ以外のメッセージを抑制し、警告とエラーだけが表示されるようにして、これらを特定しやすくします。バージョン文字列も抑制します。 
+���顼��å������ޤ��Ϸٹ��å������ʳ��Υ�å����������������ٹ�ȥ��顼������ɽ�������褦�ˤ��ơ����������ꤷ�䤹�����ޤ����С������ʸ������������ޤ��� 
 .LP
 .TP 3
 \-breakiterator\  
-英語言語というロケール固有のアルゴリズムではなく、
+�Ѹ�κǽ��ʸ����������ꤹ��ݤˡ��Ѹ��ѤΥ��������ͭ�Υ��르�ꥺ��ǤϤʤ���
 .na
 \f2java.text.BreakIterator\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/text/BreakIterator.html の国際化された文境界を使用して、英文の最初の文の終わりを判断します (他のすべてのロケールはすでに \f2BreakIterator\fP を使用)。\f2「最初の文」\fPとは、パッケージ、クラス、またはメンバーの主説明での最初の文のことです。この文は、パッケージ、クラス、またはメンバーの要約にコピーされ、アルファベット順のインデックスにコピーされます。 
+http://java.sun.com/javase/6/docs/api/java/text/BreakIterator.html �ι�ݲ����줿ʸ��������Ѥ��ޤ� (�ۤ��Τ��٤ƤΥ�������ǤϤ��Ǥ� \f2BreakIterator\fP �����Ѥ���Ƥ���)��\f2�ֺǽ��ʸ��\fP�Ȥϡ��ѥå����������饹���ޤ��ϥ��С��μ������Ǥκǽ��ʸ�Τ��ȤǤ�������ʸ�ϡ��ѥå����������饹���ޤ��ϥ��С�������˥��ԡ����졢����ե��٥åȽ�Υ���ǥå����˥��ԡ�����ޤ��� 
 .LP
-JDK 1.2 以降、BreakIterator クラスは、英語を除くすべての言語の文の終わりを判断するために、すでに使用されています。したがって、1.2 以降では、\f2\-breakiterator\fP オプションは英文以外には効果がありません。英文には、次のような独自のデフォルトのアルゴリズムがあります。 
+JDK 1.2 �ʹߡ�BreakIterator ���饹�ϡ��Ѹ��������٤Ƥθ����ʸ�ν�����Ƚ�Ǥ��뤿��ˡ����Ǥ˻��Ѥ���Ƥ��ޤ����������äơ� \f2\-breakiterator\fP ���ץ����ϡ�1.2 �ʹߤǤϱ�ʸ�ʳ��ˤϸ��̤�����ޤ��󡣱�ʸ�ˤϡ����Τ褦���ȼ��Υǥե���ȤΥ��르�ꥺ�ब����ޤ��� 
 .RS 3
 .TP 2
 o
-英文のデフォルトの文区切りアルゴリズム \- 空白または HTML ブロックタグ (\f2<P>\fP など) が続くピリオドで停止する 
+��ʸ�Υǥե���Ȥ�ʸ���ڤꥢ�르�ꥺ�� \- ����ޤ��� HTML �֥��å����� ( \f2<P>\fP �ʤ�) ��³���ԥꥪ�ɤ���ߤ��� 
 .TP 2
 o
-breakiterator 文区切りアルゴリズム \- 一般に、次の語が大文字で始まる場合、空白文字が続くピリオド、疑問符、または感嘆符で停止する。このアルゴリズムでは、ほとんどの省略表記が処理される (「The serial no. is valid」は処理されるが「Mr. Smith」は処理されない)。HTML タグや、数字または記号で始まる文では停止しない。HTML タグに埋め込まれている場合でも、「../filename」の最後のピリオドで停止する 
+breakiterator ʸ���ڤꥢ�르�ꥺ�� \- ���̤ˡ����θ줬��ʸ���ǻϤޤ��硢����ʸ����³���ԥꥪ�ɡ������䡢�ޤ��ϴ�ò�����ߤ��롣���Υ��르�ꥺ��Ǥϡ�The serial no. is valid�פʤɡ��ۤȤ�ɤξ�άɽ������������ޤ�������Mr. Smith�פʤɤϽ�������ޤ���HTML �����䡢�����ޤ��ϵ���ǻϤޤ�ʸ�Ǥ���ߤ��ʤ���HTML �����������ޤ�Ƥ�����Ǥ⡢��../filename�פκǸ�Υԥꥪ�ɤ���ߤ��� 
 .RE
-.RS 3
-
 .LP
-.LP
-注: 1.5.0 からは、1.4.x に設けられていた breakiterator 警告メッセージを削除し、デフォルトの文区切りアルゴリズムを変更していません。つまり、\\\-breakiterator オプションは、1.5.0 ではデフォルトではなくなり、またデフォルトにするつもりもありません。これは、「次のメジャーリリース」(1.5.0) でデフォルトを変更するという、以前の目的とは逆になっています。つまり、ソースコードを変更せず、1.4.x での breakiterator 警告を除去していない場合でも、1.5.0 からは何もする必要がなく、警告は消滅しています。 この逆戻りの理由は、breakiterator をデフォルトにするメリットよりも、デフォルトにするために必要となる、互換性のないソースの変更の方が負担が大きかったためです。この件で皆様に余分の手間をおかけし、混乱を招いたことをお詫びいたします。
-.LP
-.RE
+��: 1.5.0 ����ϡ�1.4.x ���ߤ����Ƥ��� breakiterator �ٹ��å��������������ǥե���Ȥ�ʸ���ڤꥢ�르�ꥺ����ѹ����Ƥ��ޤ��󡣤Ĥޤꡢ\\\-breakiterator ���ץ����ϡ�1.5.0 �Ǥϥǥե���ȤǤϤʤ��ʤꡢ�ޤ��ǥե���Ȥˤ���Ĥ��⤢��ޤ��󡣤���ϡ��ּ��Υ᥸�㡼��꡼����(1.5.0) �ǥǥե���Ȥ��ѹ�����Ȥ�������������Ū�ȤϵդˤʤäƤ��ޤ����Ĥޤꡢ�����������ɤ��ѹ�������1.4.x �Ǥ� breakiterator �ٹ�����Ƥ��ʤ����Ǥ⡢1.5.0 ����ϲ��⤹��ɬ�פ��ʤ����ٹ�Ͼ��Ǥ��Ƥ��ޤ������ε�������ͳ�ϡ�breakiterator ��ǥե���Ȥˤ�����åȤ��⡢�ǥե���Ȥˤ��뤿���ɬ�פȤʤ롢�ߴ����Τʤ����������ѹ���������ô���礭���ä�����Ǥ������η�ǳ��ͤ�;ʬ�μ�֤򤪤�����������򾷤������Ȥ��ͤӤ������ޤ���  
 .TP 3
 \-locale\  language_country_variant 
-.RS 3
 .LP
-\f3重要\fP \- \f2\-locale\fP オプションは、標準ドックレットが提供するすべてのオプション、またはその他の任意のドックレットの提供するすべてのオプションより前 (左側) に指定する必要があります。そうしないと、ナビゲーションバーが英語で表示されます。このコマンド行オプションだけは、指定する順序に依存します。
+\f3����\fP \- \f2\-locale\fP ���ץ����ϡ�\f2ɸ��ɥå���åȤ��󶡤��뤹�٤ƤΥ��ץ����\fP���ޤ��Ϥ���¾��Ǥ�դΥɥå���åȤ��󶡤��뤹�٤ƤΥ��ץ�������� (��¦) �˻��ꤹ��ɬ�פ�����ޤ����������ʤ��ȡ��ʥӥ��������С����Ѹ��ɽ������ޤ������Υ��ޥ�ɹԥ��ץ��������ϡ����ꤹ�����˰�¸���ޤ��� 
 .LP
-.RE
+Javadoc ���ɥ�����Ȥ���������Ȥ��˻Ȥ������������ꤷ�ޤ������ΰ����ϼ��Τ褦�ʡ�java.util.Locale �Υɥ�����ơ���������������Ƥ�����������̾���Ǥ��� \f2en_US\fP (�Ѹ졢�ƹ�) �ޤ��� \f2en_US_WIN\fP (Windows �ǻ��Ѥ����Ѹ�)�� 
 .LP
-Javadoc がドキュメントを生成するときに使うロケールを指定します。引数には、java.util.Locale のドキュメントで説明されているロケールの名前を指定します。たとえば、\f2en_US\fP (英語、米国)、\f2en_US_WIN\fP (Windows で使われる英語) などを指定します。 
-.LP
-ロケールを指定すると、指定したロケールのリソースファイルが Javadoc によって選択されて、メッセージ (ナビゲーションバー、リストと表の見出し、ヘルプファイルの目次、stylesheet.css のコメントなどの文字列) のために使われます。また、アルファベット順にソートされるリストのソート順、および最初の文の末尾を判別するための文の区切り文字も、指定したロケールによって決まります。ただし、このオプションは、ドキュメント化されるクラスのソースファイル内で指定されているドキュメンテーションコメントのテキストのロケールを決定するものではありません。 
+�����������ꤹ��ȡ����ꤷ����������Υ꥽�����ե����뤬 Javadoc �ˤ�ä����򤵤�ơ���å����� (�ʥӥ��������С����ꥹ�Ȥ�ɽ�θ��Ф����إ�ץե�������ܼ���stylesheet.css �Υ����Ȥʤɤ�ʸ����) �Τ���˻Ȥ��ޤ����ޤ�������ե��٥åȽ�˥����Ȥ����ꥹ�ȤΥ����Ƚ硢����Ӻǽ��ʸ��������Ƚ�̤��뤿���ʸ�ζ��ڤ�ʸ���⡢���ꤷ����������ˤ�äƷ�ޤ�ޤ��������������Υ��ץ����ϡ��ɥ�����Ȳ�����륯�饹�Υ������ե�������ǻ��ꤵ��Ƥ���ɥ�����ơ�����󥳥��ȤΥƥ����ȤΥ����������ꤹ���ΤǤϤ���ޤ��� 
 .LP
 .TP 3
 \-encoding\  name 
-ソースファイルのエンコーディングの名前 (\f2EUCJIS/SJIS\fP など) を指定します。このオプションが指定されていない場合は、プラットフォームのデフォルトコンバータが使われます。 
+�������ե�����Υ��󥳡��ǥ��󥰤�̾�� ( \f2EUCJIS/SJIS\fP �ʤ�) ����ꤷ�ޤ��� ���Υ��ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ��ץ�åȥե�����Υǥե���ȥ���С������Ȥ��ޤ��� 
 .LP
-\-docencoding および \-charset も参照してください。 
+\-docencoding ����� \-charset �⻲�Ȥ��Ƥ��������� 
 .LP
 .TP 3
 \-Jflag 
-javadoc を実行する実行時システム java に、\f2flag\fP を直接渡します。\f2J\fP と \f2flag\fP の間に空白を入れてはなりません。たとえば、生成ドキュメントを処理するためにシステムで 32M バイトのメモリーを確保しておく必要がある場合は、Java の \f2\-Xmx\fP オプションを次のように呼び出します。 \f2\-Xms\fP は、省略可能です。 これは、初期メモリーのサイズを設定するだけのオプションで、必要なメモリーの最小サイズがわかっている場合に便利です。 
+javadoc ��¹Ԥ���¹Ի������ƥ� java �ˡ�\f2flag\fP ��ľ���Ϥ��ޤ��� \f2J\fP �� \f2flag\fP �δ֤˶��������ʤ��褦�����դ��Ƥ������������Ȥ��С������ɥ�����Ȥν����ѤȤ���32M �Х��ȤΥ��꡼�򥷥��ƥ�ǳ��ݤ��Ƥ���ɬ�פ�������ˤϡ�java �� \f2\-Xmx\fP ���ץ����򼡤Τ褦�˸ƤӽФ��ޤ���\f2\-Xms\fP �Ͼ�ά��ǽ�Ǥ�������ϡ����꡼�ν�������������ꤹ������Υ��ץ����ǡ����꡼�κ���ɬ���̤��狼�äƤ�����������Ǥ��� 
 .nf
 \f3
 .fl
    % \fP\f3javadoc \-J\-Xmx32m \-J\-Xms32m\fP \f3com.mypackage\fP
 .fl
 .fi
-使用している javadoc のバージョンを確認するには、次のように java の「\f2\-version\fP」オプションを呼び出します。 
+���Ѥ��Ƥ��� javadoc �ΥС��������ǧ����ˤϡ����Τ褦�� Java ��\f2��\-version��\fP���ץ�����ƤӽФ��ޤ��� 
 .nf
 \f3
 .fl
@@ -4607,17 +3110,16 @@ javadoc を実行する実行時システム java に、\f2flag\fP を直接渡�
    Classic VM (build JDK\-1.2\-V, green threads, sunwjit)
 .fl
 .fi
-出力ストリームには標準ドックレットのバージョン番号が含まれます。 
+���ϥ��ȥ꡼��ˤ�ɸ��ɥå���åȤΥС�������ֹ椬�ޤޤ�ޤ��� 
 .RE
 .SS 
-標準ドックレットが提供するオプション
-.LP
+ɸ��ɥå���åȤ��󶡤��륪�ץ����
 .RS 3
 .TP 3
 \-d\  directory 
-生成された HTML ファイルを保存する生成先ディレクトリを指定します(「d」は「生成先 (destination)」の意味)。このオプションを省略すると、生成されたファイルは現在のディレクトリに保存されます。値 \f2directory\fP には、絶対ディレクトリ、または現在の作業ディレクトリからの相対ディレクトリを指定できます。バージョン 1.4 では、javadoc を実行すると生成先ディレクトリが自動的に作成されます。 
+�������줿 HTML �ե��������¸����������ǥ��쥯�ȥ����ꤷ�ޤ�(��d�פϡ������� (destination)�פΰ�̣)�����Υ��ץ������ά����ȡ��������줿�ե�����ϸ��ߤΥǥ��쥯�ȥ����¸����ޤ����� \f2directory\fP �ˤϡ����Хǥ��쥯�ȥꡢ�ޤ��ϸ��ߤκ�ȥǥ��쥯�ȥ꤫������Хǥ��쥯�ȥ�����Ǥ��ޤ����С������ 1.4 �Ǥϡ�javadoc ��¹Ԥ����������ǥ��쥯�ȥ꤬��ưŪ�˺�������ޤ��� 
 .LP
-たとえば、次の例では、\f2com.mypackage\fP パッケージのドキュメントを生成し、結果を \f2/home/user/doc/\fP ディレクトリに保存します。 
+���Ȥ��м��ξ�硢�ѥå����� \f2com.mypackage\fP �Υɥ�����Ȥ��������졢���η�̤� \f2/home/user/doc/\fP �ǥ��쥯�ȥ����¸����ޤ��� 
 .nf
 \f3
 .fl
@@ -4627,50 +3129,50 @@ javadoc を実行する実行時システム java に、\f2flag\fP を直接渡�
 .LP
 .TP 3
 \-use 
-ドキュメント化されるクラスおよびパッケージごとに 1 つの [使用] ページを組み込みます。このページには、その特定のクラスまたはパッケージの API を使っているパッケージ、クラス、メソッド、コンストラクタ、およびフィールドが記述されます。たとえば、クラス C を例にとると、クラス C を使っているものとしては、C のサブクラス、C として宣言されているフィールド、C を返すメソッド、および、型 C のパラメータを持つメソッドとコンストラクタがあります。 
+�ɥ�����Ȳ�����륯�饹����ӥѥå��������Ȥ� 1 �ĤΡֻ��ѡץڡ������Ȥ߹��ߤޤ������Υڡ����ˤϡ���������Υ��饹�ޤ��ϥѥå������� API ��ȤäƤ���ѥå����������饹���᥽�åɡ����󥹥ȥ饯��������ӥե�����ɤ����Ҥ���ޤ������Ȥ��С����饹 C ����ˤȤ�ȡ����饹 C ��ȤäƤ����ΤȤ��Ƥϡ�C �Υ��֥��饹��C �Ȥ����������Ƥ���ե�����ɡ�C ���֤��᥽�åɡ�����ӡ��� C �Υѥ�᡼������ĥ᥽�åɤȥ��󥹥ȥ饯��������ޤ��� 
 .LP
-たとえば、String の [使用] ページに何が表示されるかを見てみましょう。\f2java.awt.Font\fP クラスの \f2getName()\fP メソッドは、\f2String\fP 型を返します。したがって、\f2getName()\fP は \f2String\fP を使っているので、\f2String\fP の [使用] ページにはこのメソッドがあります。 
+���Ȥ��С�String �� [����] �ڡ����˲���ɽ������뤫�򸫤Ƥߤޤ��礦��java.awt.Font ���饹�� \f2getName()\fP �᥽�åɤϡ� \f2String\fP �����ͤ� \f2�֤��ޤ�\fP���������äơ� \f2getName()\fP �� \f2String\fP ����Ѥ��Ƥ���Τǡ�String �� [����] �ڡ����� \f2���Υ᥽�åɤ�ɽ������ޤ�\fP�� 
 .LP
-ただし、ドキュメント化されるのは API の使用だけであって、実装はドキュメント化されません。あるメソッドが、その実装の中で \f2String\fP を使っていても、引数として文字列をとったり、文字列を返したりしない場合は、\f2String\fP の「使用」とはみなされません。 
+���������ɥ�����Ȳ������Τ� API �λ��Ѥ����Ǥ��äơ������ϥɥ�����Ȳ�����ޤ��󡣤���᥽�åɤ������μ�������� \f2String\fP ��ȤäƤ��Ƥ⡢�����Ȥ���ʸ�����Ȥä��ꡢʸ������֤����ꤷ�ʤ����ϡ� \f2String\fP �Ρֻ��ѡפȤϤߤʤ���ޤ��� 
 .LP
-生成された [使用] ページにアクセスするには、目的のクラスまたはパッケージに移動し、ナビゲーションバーの [使用] リンクをクリックします。   
+�������줿 [����] �ڡ����˥�����������ˤϡ���Ū�Υ��饹�ޤ��ϥѥå������˰�ư�����ʥӥ��������С��� [����] ��󥯤򥯥�å����ޤ���  
 .TP 3
 \-version 
-生成ドキュメントに、@version のテキストを組み込みます。このテキストは、デフォルトでは省略されます。使用している Javadoc ツールのバージョンを確認するには、\f2\-J\-version\fP オプションを使用します。 
+�����ɥ�����Ȥˡ�@version �Υƥ����Ȥ��Ȥ߹��ߤޤ������Υƥ����Ȥϡ��ǥե���ȤǤϾ�ά����ޤ������Ѥ��Ƥ��� Javadoc �ġ���ΥС��������ǧ����ˤ� \f2\-J\-version\fP ���ץ�������Ѥ��ޤ��� 
 .LP
 .TP 3
 \-author 
-生成ドキュメントに、@author のテキストを組み込みます。 
+�����ɥ�����Ȥˡ�@author �Υƥ����Ȥ��Ȥ߹��ߤޤ��� 
 .LP
 .TP 3
 \-splitindex 
-索引ファイルをアルファベットごとに複数のファイルに分割し、文字ごとに 1 つのファイルと、アルファベット以外の文字で始まる索引エントリ用に 1 つのファイルを作成します。 
+�����ե�����򥢥�ե��٥åȤ��Ȥ�ʣ���Υե������ʬ�䤷��ʸ�����Ȥ� 1 �ĤΥե�����ȡ�����ե��٥åȰʳ���ʸ���ǻϤޤ��������ȥ��Ѥ� 1 �ĤΥե������������ޤ��� 
 .LP
 .TP 3
 \-windowtitle\  title 
-HTML の <title> タグに配置するタイトルを指定します。指定したタイトルは、ウィンドウのタイトルや、このページに対して作成されたブラウザのブックマーク (お気に入り) に表示されます。このタイトルには HTML タグを含めないでください。 タイトルに HTML タグが含まれていると、ブラウザがタグを正しく解釈できません。\f2title\fP の中で引用符を使う場合は、引用符をエスケープする必要があります。\-windowtitle が省略されている場合、Javadoc ツールは、このオプションの代わりに \-doctitle の値を使います。 
+HTML �� <title> ���������֤��륿���ȥ����ꤷ�ޤ������ꤷ�������ȥ�ϡ�������ɥ��Υ����ȥ�䡢���Υڡ������Ф��ƺ������줿�֥饦���Υ֥å��ޡ��� (����������) ��ɽ������ޤ������Υ����ȥ�ˤ� HTML ������ޤ�ʤ��Ǥ��������������ȥ�� HTML �������ޤޤ�Ƥ���ȡ��֥饦�������������������Ǥ��ޤ���\f2title\fP ����ǰ������Ȥ����ϡ�������򥨥������פ���ɬ�פ�����ޤ���\-windowtitle ����ά����Ƥ����硢Javadoc �ġ���ϡ����Υ��ץ���������� \-doctitle ���ͤ�Ȥ��ޤ��� 
 .nf
 \f3
 .fl
-  % \fP\f3javadoc \-windowtitle "Java 2 Platform" com.mypackage\fP
+  % \fP\f3javadoc \-windowtitle "Java SE Platform" com.mypackage\fP
 .fl
 .fi
 .TP 3
 \-doctitle\  title 
-概要ファイルの最上部の近くに配置するタイトルを指定します。タイトルは中央揃えになり、レベル 1 の見出しとして、上部ナビゲーションバーのすぐ下に置かれます。\f2title\fP には、HTML タグと空白を含めることができますが、これらを含める場合は、全体を引用符で囲まなければなりません。\f2title\fP の中で引用符を使う場合は、引用符をエスケープする必要があります。 
+���ץե�����κǾ����ζ᤯�����֤��륿���ȥ����ꤷ�ޤ��������ȥ�����·���ˤʤꡢ��٥� 1 �θ��Ф��Ȥ��ơ������ʥӥ��������С��Τ��������֤���ޤ���\f2title\fP �ˤϡ�HTML �����ȶ����ޤ�뤳�Ȥ��Ǥ��ޤ�����������ޤ����ϡ����Τ������ǰϤޤʤ���Фʤ�ޤ���\f2title\fP ����ǰ������Ȥ����ϡ�������򥨥������פ���ɬ�פ�����ޤ��� 
 .nf
 \f3
 .fl
-  % \fP\f3javadoc \-doctitle "Java (TM)" com.mypackage\fP
+  % \fP\f3javadoc \-doctitle "Java(TM)" com.mypackage\fP
 .fl
 .fi
 .TP 3
 \-title\  title 
-\f3このオプションは、現在は存在しません。\fPJavadoc 1.2 のベータ版にだけ存在しました。このオプションは、\f2\-doctitle\fP という名前に変更されました。名前を変更した理由は、このオプションが、ウィンドウのタイトルではなくドキュメントのタイトルを定義することを明確にするためです。 
+\f3���Υ��ץ����Ϥ⤦¸�ߤ��Ƥ��ޤ���\fP���Υ��ץ����� Javadoc 1.2 �Υ١����Ǥˤ���¸�ߤ��Ƥ��ޤ���Ǥ��������Υ��ץ�����̾���� \f2\-doctitle\fP ���ѹ�����ޤ�����̾�����ѹ�������ͳ�ϡ����Υ��ץ���󤬡�������ɥ��Υ����ȥ�ǤϤʤ��ɥ�����ȤΥ����ȥ��������뤳�Ȥ����Τˤ��뤿��Ǥ��� 
 .LP
 .TP 3
 \-header\  header 
-各出力ファイルの上端に配置するヘッダーテキストを指定します。ヘッダーは、上部ナビゲーションバーの右側に配置されます。\f2header\fP には、HTML タグと空白を含めることができますが、これらを含める場合は、全体を引用符で囲まなければなりません。\f2header\fP の中で引用符を使う場合は、引用符をエスケープする必要があります。 
+�ƽ��ϥե�����ξ�ü�����֤���إå����ƥ����Ȥ���ꤷ�ޤ����إå����ϡ������ʥӥ��������С��α�¦�����֤���ޤ���\f2header\fP �ˤϡ�HTML �����ȶ����ޤ�뤳�Ȥ��Ǥ��ޤ�����������ޤ����ϡ����Τ������ǰϤޤʤ���Фʤ�ޤ���\f2header\fP ����ǰ������Ȥ����ϡ�������򥨥������פ���ɬ�פ�����ޤ��� 
 .nf
 \f3
 .fl
@@ -4680,73 +3182,77 @@ HTML の <title> タグに配置するタイトルを指定します。指定し
 .LP
 .TP 3
 \-footer\  footer 
-各出力ファイルの下端に配置するフッターテキストを指定します。フッターは、下部ナビゲーションバーの右側に配置されます。 \f2footer\fP には、HTML タグと空白を含めることができますが、これらを含める場合は、全体を引用符で囲まなければなりません。\f2footer\fP の中で引用符を使う場合は、引用符をエスケープする必要があります。 
+�ƽ��ϥե�����β�ü�����֤���եå����ƥ����Ȥ���ꤷ�ޤ����եå����ϡ������ʥӥ��������С��α�¦�����֤���ޤ���\f2footer\fP �ˤϡ�HTML �����ȶ����ޤ�뤳�Ȥ��Ǥ��ޤ�����������ޤ����ϡ����Τ������ǰϤޤʤ���Фʤ�ޤ���\f2footer\fP ����ǰ������Ȥ����ϡ�������򥨥������פ���ɬ�פ�����ޤ��� 
+.LP
+.TP 3
+\-top 
+�ƽ��ϥե�����ξ�ü�����֤���ƥ����Ȥ���ꤷ�ޤ��� 
 .LP
 .TP 3
 \-bottom\  text 
-各出力ファイルの最下部に配置するテキストを指定します。このテキストは、下部ナビゲーションバーより下の、ページの最下部に配置されます。\f2text\fP には、HTML タグと空白を含めることができますが、これらを含める場合は、全体を引用符で囲まなければなりません。\f2text\fP の中で引用符を使う場合は、引用符をエスケープする必要があります。 
+�ƽ��ϥե�����κǲ��������֤���ƥ����Ȥ���ꤷ�ޤ������Υƥ����Ȥϡ������ʥӥ��������С���겼�Ρ��ڡ����κǲ��������֤���ޤ��� \f2text\fP �ˤϡ�HTML �����ȶ����ޤ�뤳�Ȥ��Ǥ��ޤ�����������ޤ����ϡ����Τ������ǰϤޤʤ���Фʤ�ޤ��󡣰������ \f2text\fP ��ǻ��Ѥ����硢������򥨥������פ��ʤ���Фʤ�ʤ���ǽ��������ޤ��� 
 .LP
 .TP 3
 \-link\  extdocURL 
-javadoc により生成された既存の外部参照クラスのドキュメンテーションへのリンクを作成します。引数を 1 つとります。 
+javadoc �ˤ���������줿��¸�γ������ȥ��饹�Υɥ�����ơ������ؤΥ�󥯤�������ޤ��������� 1 �ĤȤ�ޤ��� 
 .LP
 .RS 3
 .TP 2
 o
-\f4extdocURL\fP は、リンク先として指定する、javadoc によって生成された外部ドキュメントを含むディレクトリの絶対 URL または相対 URL です。あとで例を示します。このディレクトリ内にパッケージリストファイルが存在していなければなりません。 存在しない場合は、\f2\-linkoffline\fP を使用します。Javadoc ツールは、\f2パッケージリスト\fPファイルからパッケージ名を読み取り、これらのパッケージをその URL にリンクします。Javadoc ツールを実行すると、作成される \f2<A HREF>\fP リンク内に \f2extdocURL\fP の値がそのままコピーされます。したがって、\f2extdocURL\fP はファイルへの URL ではなく「ディレクトリへの URL」でなければなりません。 
+\f4extdocURL\fP �ϡ������Ȥ��ƻ��ꤹ�롢javadoc �ˤ�ä��������줿�����ɥ�����Ȥ�ޤ�ǥ��쥯�ȥ������ URL �ޤ������� URL �Ǥ������Ȥ���򼨤��ޤ������Υǥ��쥯�ȥ���˥ѥå������ꥹ�ȥե����뤬¸�ߤ��Ƥ��ʤ���Фʤ�ޤ��� ¸�ߤ��ʤ����ϡ�\f2\-linkoffline\fP ����Ѥ��ޤ���Javadoc �ġ���ϡ� \f2package\-list\fP �ե����뤫��ѥå�����̾���ɤ߼�ä����ȡ����� URL �Ǥ����Υѥå������˥�󥯤��ޤ���Javadoc �ġ���μ¹Ի��ˡ�\f2extdocURL\fP ���ͤ����Τޤޡ��������줿 \f2<A HREF>\fP �����˥��ԡ�����ޤ����������äơ�\f2extdocURL\fP �ϥե�����ؤ� URL �ǤϤʤ��֥ǥ��쥯�ȥ�ؤ� URL�פǤʤ���Фʤ�ޤ��� 
 .LP
-\f2extdocURL\fP への絶対リンクを使用すると、ユーザーのドキュメントを任意の Web サイト上のドキュメントにリンクできます。 相対位置へリンクするだけでよい場合は相対リンクを使用できます。相対リンクを使用する場合、\f2\-d\fP を使って、生成先ディレクトリからリンクされるパッケージのあるディレクトリの相対パスを指定する必要があります。 
+\f2extdocURL\fP �ؤ����Х�󥯤���Ѥ���ȡ��桼�����Υɥ�����Ȥ�Ǥ�դ� Web �����Ⱦ�Υɥ�����Ȥ˥�󥯤Ǥ��ޤ������а��֤إ�󥯤�������Ǥ褤�������Х�󥯤���ѤǤ��ޤ������Х�󥯤ξ�硢�桼�������Ϥ��ͤϡ�( \f2\-d\fP �ǻ��ꤵ�줿) ������ǥ��쥯�ȥ꤫�顢�����Ȥʤ�ѥå�������ޤ�ǥ��쥯�ȥ�ؤ����Хѥ��ˤ��٤��Ǥ��� 
 .LP
-通常、絶対リンクを指定する場合は、\f2http:\fPリンクを使用します。Web サーバーを持たないファイルシステムにリンクする場合は、\f2file:\fP リンクを使用できます。ただし、この方法は、すべてのユーザーが生成された同じファイルシステムを共有するドキュメントにアクセスする必要がある場合以外は使用しないでください。 
+�̾���Х�󥯤���ꤹ����ϡ� \f2http:\fP ��󥯤���Ѥ��ޤ���Web �����С�������ʤ��ե����륷���ƥ�˥�󥯤�����ϡ� \f2file: ��󥯤���ѤǤ��ޤ���\fP ��������������ˡ�ϡ����٤ƤΥ桼�������������줿Ʊ���ե����륷���ƥ��ͭ����ɥ�����Ȥ˥�����������ɬ�פ�������ʳ��ϻ��Ѥ��ʤ��Ǥ��������� 
 .LP
-いかなる場合にも、いかなるオペレーティングシステムでも、絶対 URL か相対 URL か、「http:」ベースか「file:」ベースかにかかわらず、スラッシュを区切り文字として使用します (
+���٤Ƥξ�硢���٤ƤΥ��ڥ졼�ƥ��󥰥����ƥ�ǡ����� URL ������ URL����http:�ץ١����ȡ�file:�ץ١����ˤ�����餺������å������ڤ�ʸ���Ȥ��ƻ��Ѥ��ޤ� (
 .na
 \f2URL Memo\fP @
 .fi
-http://www.ietf.org/rfc/rfc1738.txt で指定)。 
+http://www.ietf.org/rfc/rfc1738.txt �ǻ���)�� 
 .RS 3
 .TP 3
-http:ベースの絶対リンク: 
+http: �١��������Х��: 
 \f2\-link http://<host>/<directory>/<directory>/.../<name>\fP 
 .TP 3
-file:ベースの絶対リンク: 
+file: �١��������Х��: 
 \f2\-link file://<host>/<directory>/<directory>/.../<name>\fP 
 .TP 3
-相対リンク: 
+���Х��: 
 \f2\-link <directory>/<directory>/.../<name>\fP 
 .RE
 .RE
 .LP
-javadoc の実行時に複数の \f2\-link\fP オプションを指定して、複数のドキュメントへのリンクを作成することもできます。 \f3\-linkoffline または \-link の選択\fP
+javadoc �� 1 ��μ¹Ԥ�ʣ���� \f2\-link\fP ���ץ�������ꤹ��С�ʣ���Υɥ�����ȤؤΥ�󥯤�����Ǥ��ޤ��� \f3\-linkoffline �ޤ��� \-link ������\fP
 .br
-\f2\-link\fP を使用する場合: 
+\f2\-link\fP����Ѥ�����: 
 .RS 3
 .TP 2
 o
-外部 API ドキュメントへの相対パスを使用する場合 
+���� API �ɥ�����Ȥؤ����Хѥ�����Ѥ����� 
 .TP 2
 o
-外部 API ドキュメントへの絶対 URL を使用する場合 (プログラムがその URL に接続し、読み取りを行うことがシェルによって許可されている場合) 
+���� API �ɥ�����Ȥؤ����� URL ����Ѥ����� (�ץ�����ब���� URL ����³�����ɤ߼���Ԥ����Ȥ�������ˤ�äƵ��Ĥ���Ƥ�����) 
 .RE
-次のような場合は、\f2\-linkoffline\fP オプションを使用します。 
+\f2\-linkoffline\fP ����Ѥ�����: 
 .RS 3
 .TP 2
 o
-プログラムがその URL に接続し、読み取りを行うことがシェルによって許可されていない場合に外部 API ドキュメントへの絶対 URL を使用する場合。このような状況は、リンク先のドキュメントがファイアウォールの向こう側にある場合に発生します。 
+���� API �ɥ�����Ȥؤ����� URL ����Ѥ����� (�ץ�����ब���� URL ����³�����ɤ߼���Ԥ����Ȥ�������ˤ�äƵ��Ĥ���Ƥ��ʤ����)���Τ褦�ʾ����ϡ������Υɥ�����Ȥ��ե�������������θ�����¦�ˤ������ȯ�����ޤ��� 
 .RE
 .LP
-\f3外部ドキュメントへの絶対リンクの使用例\fP \- 
+\f3�����ɥ�����Ȥؤ����Х�󥯤λ�����\fP \- \f2java.lang\fP�� \f2java.io\fP ������¾�� Java �ץ�åȥե�����ѥå����� (
 .na
-\f2http://java.sun.com/j2se/1.5.0/docs/api\fP @
+\f2http://java.sun.com/javase/6/docs/api/\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/api 内の \f2java.lang\fP、\f2java.io\fP、その他の Java 2 プラットフォームパッケージにリンクしたい場合があります。 次のコマンドは、\f2com.mypackage\fP パッケージのドキュメントと Java 2 プラットフォームパッケージへのリンクを生成します。生成されたドキュメントには、たとえばクラスツリー内の \f2Object\fP クラスへのリンクが含まれています。\f2\-sourcepath\fP や \f2\-d\fP などの他のオプションは表示されません。 
+http://java.sun.com/javase/6/docs/api ��) �˥�󥯤������ͤ��ޤ������Υ��ޥ�ɤϡ�Java SE �ץ�åȥե�����ѥå������ؤΥ�󥯤�ޤ�����ѥå����� \f2com.mypackage\fP �Υɥ�����Ȥ��������ޤ����������줿�ɥ�����Ȥˤϡ����Ȥ��Х��饹�ĥ꡼��� \f2Object\fP ���饹�ؤΥ�󥯤��ޤޤ�Ƥ��ޤ����ʤ��� \f2\-sourcepath\fP �� \f2\-d\fP �ʤɡ�����¾�Υ��ץ����ϼ����Ƥ��ޤ��� 
 .nf
 \f3
 .fl
-  % \fP\f3javadoc \-link http://java.sun.com/j2se/1.5.0/docs/api com.mypackage\fP
+  % \fP\f3javadoc \-link http://java.sun.com/javase/6/docs/api com.mypackage\fP
 .fl
 .fi
-\f3外部ドキュメントへの相対リンクの使用例\fP \- 2 つのパッケージがあり、そのドキュメントが Javadoc ツールを複数回実行した結果生成されたものであるとします。 さらに、これらのドキュメントが相対パスで分割されているとします。この例の場合、2 つのパッケージは、API である \f2com.apipackage\fP とSPI (サービスプロバイダインタフェース) である \f2com.spipackage\fP です。ドキュメントの格納先は \f2docs/api/com/apipackage\fP パッケージと \f2docs/spi/com/spipackage\fP パッケージです。API パッケージのドキュメントがすでに生成されていて、現在のディレクトリが \f2docs\fP である場合、次のコマンドを実行することによって、この API ドキュメントへのリンクを持つ SPI パッケージをドキュメント化します。 
+\f3�����ɥ�����Ȥؤ����Х�󥯤λ�����\fP \- 2 �ĤΥѥå����������ꡢ���Υɥ�����Ȥ� Javadoc �ġ����ʣ����¹Ԥ�������������줿��ΤǤ���Ȥ��ޤ�������ˡ������Υɥ�����Ȥ����Хѥ���ʬ�䤵��Ƥ���Ȥ��ޤ���������ξ�硢�ѥå������ϡ�API �Ǥ��� \f2com.apipackage\fP �ȡ�SPI (�����ӥ��ץ��Х������󥿥ե�����) �Ǥ��� \f2com.spipackage\fP �Ǥ����ɥ�����Ȥγ�Ǽ��ϡ� \f2docs/api/com/apipackage\fP �� \f2docs/spi/com/spipackage\fP �Ǥ���API �ѥå������Υɥ�����ȤϤ��Ǥ������Ѥߤǡ� \f2docs\fP �������ȥǥ��쥯�ȥ�ˤʤäƤ���Ȳ��ꤹ��ȡ�API �ɥ�����ȤؤΥ�󥯤�ޤ� SPI �ѥå�������ɥ�����Ȳ�����ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -4754,43 +3260,43 @@ http://java.sun.com/j2se/1.5.0/docs/api 内の \f2java.lang\fP、\f2java.io\fP�
 .fl
 .fi
 .LP
-\f2\-link\fP 引数は、生成先ディレクトリ (\f2docs/spi\fP) の相対パスです。 
+\f2\-link\fP �ΰ����ϡ�������ǥ��쥯�ȥ� (\f2docs/spi\fP) ��������Хѥ��Ǥ��� 
 .LP
-\f3詳細\fP \- \f2\-link\fP オプションを使うと、「コードからは参照されていても、Javadoc の今回の実行ではドキュメント化されない」というクラスにリンクできるようになります。リンクから有効なページに移動できるようにするには、それらの HTML ページがある場所を調べ、その場所を \f2extdocURL\fP に指定する必要があります。このオプションを使うと、たとえば、サードパーティーのドキュメントから、\f2http://java.sun.com\fP にある \f2java.*\fP のドキュメントにリンクすることができます。 
+\f3�ܺ�\fP \- \f2\-link\fP ���ץ�����Ȥ��ȡ��֥����ɤ���ϻ��Ȥ���Ƥ��Ƥ⡢Javadoc �κ���μ¹ԤǤϥɥ�����Ȳ�����ʤ��פȤ������饹�˥�󥯤Ǥ���褦�ˤʤ�ޤ�����󥯤���ͭ���ʥڡ����˰�ư�Ǥ���褦�ˤ���ˤϡ������� HTML �ڡ������������Ĵ�١����ξ��� \f2extdocURL\fP �˻��ꤹ��ɬ�פ�����ޤ�������ˤ�ꡢ���Ȥ��С������ɥѡ��ƥ����Υɥ�����Ȥ��� \f2http://java.sun.com ��� java.*\fP �Υɥ�����ȤؤΥ�󥯤� \f2��ǽ�Ȥʤ�ޤ�\fP�� 
 .LP
-今回の実行で Javadoc によって生成されるドキュメント内の API だけを対象にリンクを作成する場合は、\f2\-link\fP オプションを省略します。\f2\-link\fP オプションが指定されていない場合、Javadoc ツールは、外部参照されたドキュメントへのリンクを作成しません。これは、そのドキュメントが存在するかどうか、および存在する場合はその場所を判別できないからです。 
+����μ¹Ԥ� Javadoc �ˤ�ä����������ɥ��������� API �������оݤ� \f2��󥯤����������ϡ�\fP \-link ���ץ������ά���ޤ��� \f2\-link\fP ���ץ���󤬻��ꤵ��Ƥ��ʤ���硢Javadoc �ġ���ϡ��������Ȥ��줿�ɥ�����ȤؤΥ�󥯤�������ޤ��󡣤���ϡ����Υɥ�����Ȥ�¸�ߤ��뤫�ɤ����������¸�ߤ�����Ϥ��ξ���Ƚ�̤Ǥ��ʤ�����Ǥ��� 
 .LP
-このオプションでは、生成ドキュメント内の複数の場所にリンクを作成できます。 
+���Υ��ץ����Ǥϡ������ɥ���������ʣ���ξ��˥�󥯤�����Ǥ��ޤ��� 
 .LP
-また、このオプションを使うと、複数のパッケージ群の間にクロスリンクを作成することもできます。つまり、ある一式のパッケージに対して javadoc を実行したあと、別の一式のパッケージに対して javadoc を実行し、これら 2 つのパッケージ群の間にクロスリンクを作成できます。 
+�⤦ 1 �Ĥ����Ӥϡ��ѥå��������åȴ֤ǤΥ�������󥯤Ǥ��������Υѥå��������åȤ��Ф��� javadoc ��¹Ԥ������ȡ�¾���Υѥå��������åȤ��Ф��� javadoc ����ټ¹Ԥ��뤳�Ȥˤ�ꡢξ���åȴ֤��������Υ�󥯤�����Ǥ��ޤ��� 
 .LP
-\f3クラスの参照方法\fP \- 外部参照クラスへのリンクを、テキストラベルだけではなく実際に表示するには、次の方法でクラスを参照する必要があります。メソッドの本体でクラスを参照するだけでは十分ではありません。\f2import\fP 文または宣言で参照する必要があります。次に、クラス \f2java.io.File\fP を参照する方法の例を示します。 
+\f3���饹�λ�����ˡ\fP \- �������ȥ��饹�ؤΥ�󥯤򡢥ƥ����ȥ�٥�����ǤϤʤ��ºݤ�ɽ������ˤϡ�������ˡ�ǥ��饹�򻲾Ȥ���ɬ�פ�����ޤ����᥽�åɤ����Τǥ��饹�򻲾Ȥ�������ǤϽ�ʬ�ǤϤ���ޤ��󡣤����Υ��饹�ϡ� \f2import\fP ʸ������Τ�����ξ��ǻ��Ȥ���Ƥ���ɬ�פ�����ޤ���Here are examples of how the class \f2java.io.File\fP can be referenced: 
 .RS 3
 .TP 2
 o
-すべての種類の \f2import\fP 文の場合: ワイルドカードによるインポート、名前による明示的なインポート、または \f2java.lang.*\fP に対する自動的なインポート。たとえば、次のようにすれば十分です。
+���٤Ƥμ���� \f2import\fP ʸ�ξ��: �磻��ɥ����ɤˤ�륤��ݡ��ȡ�̾���ˤ������Ū�ʥ���ݡ��ȡ��ޤ��� \f2java.lang.* ���Ф��뼫ưŪ�ʥ���ݡ���\fP�����Ȥ��С����Τ褦�ˤ���н�ʬ�Ǥ���
 .br
 \f2import java.io.*;\fP
 .br
-1.3.x および 1.2.x では、名前による明示的なインポートだけです。ワイルドカードによるインポート文も、自動インポート \f2java.lang.*\fP も使用できません。 
+1.3.x ����� 1.2.x �Ǥϡ�̾���ˤ������Ū�ʥ���ݡ��Ȥ����Ǥ����磻��ɥ����ɤˤ�륤��ݡ���ʸ�⡢ \f2java.lang.* �μ�ư����ݡ��Ȥ���ѤǤ��ޤ���\fP�� 
 .TP 2
 o
-宣言の場合:
+����ξ��:
 .br
 \f2void foo(File f) {}\fP
 .br
-この参照を使用し、メソッド、コンストラクタ、フィールド、クラス、またはインタフェースの戻り値の型またはパラメータの型に置くか、\f2implements\fP、\f2extends\fP、または \f2throws\fP 文に置きます。 
+���λ��Ȥ���Ѥ����᥽�åɡ����󥹥ȥ饯�����ե�����ɡ����饹���ޤ��ϥ��󥿥ե�����������ͤη��ޤ��ϥѥ�᡼���η����֤����� \f2implements\fP�� \f2extends\fP ���ޤ��� \f2throws\fP ʸ���֤��ޤ��� 
 .RE
 .LP
-この結果、\f2\-link\fP オプションを使用しても、この制限のために誤って表示されない多くのリンクが多数発生する可能性があります。テキストはハイパーテキストリンクが付けられずに表示されます。これらのリンクが表示する警告から、このリンクを認識できます。クラスを正しく参照し、それによってリンクを追加するためのもっとも安全な方法は上で説明したとおり、当該のクラスをインポートすることです。 
+���פʷ�̤Ȥ��ơ� \f2\-link\fP ���ץ����λ��ѻ��ˡ��������¤Τ���˸��ä�ɽ������ʤ���󥯤�¿��ȯ�������ǽ��������ޤ����ƥ����Ȥϥϥ��ѡ��ƥ����ȥ�󥯤��դ���줺��ɽ������ޤ��������Υ�󥯤�ɽ������ٹ𤫤顢���Υ�󥯤�ǧ���Ǥ��ޤ������饹�����������Ȥ�������ˤ�äƥ�󥯤��ɲä��뤿��Τ�äȤ��������ˡ�Ͼ�����������Ȥ��ꡢ�����Υ��饹�򥤥�ݡ��Ȥ��뤳�ȤǤ��� 
 .LP
-\f3パッケージリスト\fP \- \f2\-link\fP オプションは、\f2package\-list\fP という名前のファイルを要求します。 このファイルは、Javadoc ツールによって生成され、\f2\-link\fP によって指定した URL に存在します。\f2package\-list\fP ファイルは、その場所にあるドキュメント化されたパッケージの名前のリストが入った単純なテキストファイルです。前の例では、Javadoc ツールは指定された URL にある \f2package\-list\fP という名前のファイルを探し、パッケージ名を読み込んで、その URL にあるそれらのパッケージへのリンクを作成しました。 
+\f3�ѥå������ꥹ��\fP \- \f2\-link\fP ���ץ������������ǽ����ˤϡ�Javadoc �ġ���ˤ�ä���������� \f2package\-list\fP �Ȥ���̾���Υե����뤬���桼������ \f2\-link\fP �˻��ꤷ�� URL ��¸�ߤ��Ƥ���ɬ�פ�����ޤ��� \f2package\-list\fP �ե�����ϡ����ξ��ˤ���ɥ�����Ȳ����줿�ѥå�������̾���Υꥹ�Ȥ����ä�ñ��ʥƥ����ȥե�����Ǥ���������Ǥϡ�Javadoc �ġ���ϡ����ꤵ�줿 URL �� \f2package\-list\fP �Ȥ���̾���Υե�����򸡺������ѥå�����̾���ɤ߹�������ȡ����� URL �ˤ��뤽���Υѥå������ؤΥ�󥯤�������ޤ����� 
 .LP
-たとえば、Java プラットフォーム v5.0 API のパッケージリストは 
+���Ȥ��С�Java SE 6 API �Υѥå������ꥹ�Ȥ� 
 .na
-\f2http://java.sun.com/j2se/1.5.0/docs/api/package\-list\fP @
+\f2http://java.sun.com/javase/6/docs/api/package\-list\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/api/package\-list にあり、次のような内容で始まっています。 
+http://java.sun.com/javase/6/docs/api/package\-list �ˤ��ꡢ���Τ褦�����ƤǻϤޤäƤ��ޤ��� 
 .nf
 \f3
 .fl
@@ -4808,64 +3314,64 @@ http://java.sun.com/j2se/1.5.0/docs/api/package\-list にあり、次のよう�
 .fl
   java.awt.font
 .fl
-  その他 ...
+  ����¾
 .fl
 \fP
 .fi
 .LP
-\f2\-link\fP オプションを指定せずに javadoc を実行した場合、外部参照クラスに属する名前を見つけると、javadoc はその名前をリンクを持たない形で出力します。一方、\f2\-link\fP オプションを指定した場合は、指定した \f2extdocURL\fP にある \f2package\-list\fP ファイルから該当するパッケージ名が検索されます。パッケージ名が見つかると、\f2extdocURL\fP が名前の前に付加されます。 
+\f2\-link\fP ���ץ�������ꤻ���� javadoc ��¹Ԥ�����硢�������ȥ��饹��°����̾���򸫤Ĥ���ȡ�javadoc �Ϥ���̾�����󥯤�����ʤ����ǽ��Ϥ��ޤ��������� \f2\-link\fP ���ץ���󤬻��ꤵ�줿��硢Javadoc �ġ���ϡ� \f2���ꤵ�줿\fP \f2extdocURL\fP �ξ��ˤ��� package\-list �ե�������ǡ����Υѥå�����̾�򸡺����ޤ����ѥå�����̾�����Ĥ���ȡ�\f2extdocURL\fP ��̾���������ղä���ޤ��� 
 .LP
-すべてのリンクが正しく機能するためには、外部参照のすべてのドキュメントが、指定した URL に存在していなければなりません。Javadoc ツールは、指定された package\-list が存在するかどうかを調べるだけで、指定された URL に目的のページが存在するかどうかはチェックしません。 
+���٤ƤΥ�󥯤���������ǽ���뤿��ˤϡ��������ȤΤ��٤ƤΥɥ�����Ȥ������ꤷ�� URL ��¸�ߤ��Ƥ��ʤ���Фʤ�ޤ���Javadoc �ġ���ϡ����ꤵ�줿 package\-list ��¸�ߤ��뤫�ɤ�����Ĵ�٤�����ǡ����ꤵ�줿 URL ����Ū�Υڡ�����¸�ߤ��뤫�ɤ����ϥ����å����ޤ��� 
 .LP
-\f3複数のリンク\fP \- 複数の \f2\-link\fP オプションを指定すると、生成された任意の数の外部ドキュメントに対してリンクを設定できます。Javadoc 1.2 には、複数の \f2\-link\fP オプションを指定できないというバグがあります。これは 1.2.2 で修正されました。 
+\f3ʣ���Υ��\fP \- ʣ���� \f2\-link\fP ���ץ�������ꤹ��ȡ�Ǥ�դο��γ��������ɥ�����ȤؤΥ�󥯤�����Ǥ��ޤ���Javadoc 1.2 �ˤϡ�ʣ���� \f2\-link\fP ���ޥ�ɤ����Ǥ��ʤ��Ȥ����Х�������ޤ�������� 1.2.2 �ǽ�������ޤ����� 
 .LP
-リンクする外部ドキュメントごとに、次のように別々のリンクオプションを指定します。 
+��󥯤��볰���ɥ�����Ȥ��Ȥˡ����Τ褦���̡��Υ�󥯥��ץ�������ꤷ�ޤ��� 
 .LP
-\ \  \f2% \fP\f4javadoc \-link\fP \f2extdocURL1\fP \f4\-link\fP \f2extdocURL2\fP \f2...\fP\f4\-link\fP \f2extdocURLn\fP \f4com.mypackage\fP 
+\ \  \f2% \fP\f4javadoc \-link\fP \f2extdocURL1\fP \f4\-link\fP \f2extdocURL2\fP \f2... \fP\f4\-link\fP \f2extdocURLn\fP \f4com.mypackage\fP 
 .LP
-\f2extdocURL1\fP、\f2extdocURL2\fP、... \f2extdocURLn\fP は、それぞれ外部ドキュメントのルートを指し、各ルートには \f2package\-list\fP という名前のファイルが入っています。 
+\f2extdocURL1\fP��\f2extdocURL2\fP��... \f2extdocURLn\fP �ϡ����줾�쳰���ɥ�����ȤΥ롼�Ȥ�ؤ����ƥ롼�Ȥˤϡ� \f2package\-list\fP �Ȥ���̾���Υե����뤬���äƤ��ޤ��� 
 .LP
-\f3クロスリンク\fP \- まだ生成されていない 2 つ以上のドキュメントをクロスリンクする場合は、「ブートストラップ」が必要になります。つまり、どのドキュメントについても \f2package\-list\fP が存在していない場合は、最初のドキュメントに対して javadoc ツールを実行する時点で、2 番目のドキュメントの \f2package\-list\fP がまだ存在していません。したがって、外部リンクを作成するには、2 番目のドキュメントを生成したあとで、最初のドキュメントを生成し直す必要があります。 
+\f3���������\fP \- �ޤ���������Ƥ��ʤ� 2 �İʾ�Υɥ�����Ȥ򥯥�����󥯤�����ϡ��֥֡��ȥ��ȥ�åספ�ɬ�פˤʤ�ޤ����Ĥޤꡢ�ɤΥɥ�����ȤˤĤ��Ƥ� \f2package\-list\fP ��¸�ߤ��Ƥ��ʤ����ϡ��ǽ�Υɥ�����Ȥ��Ф��� Javadoc �ġ����¹Ԥ�������ǡ�2 ���ܤΥɥ�����Ȥ� \f2package\-list\fP �Ϥޤ�¸�ߤ��Ƥ��ޤ��󡣤������äơ�������󥯤��������ˤϡ�2 ���ܤΥɥ�����Ȥ������������Ȥǡ��ǽ�Υɥ�����Ȥ�������ľ��ɬ�פ�����ޤ��� 
 .LP
-この場合、最初のドキュメント生成の目的は、そのドキュメントの \f2package\-list\fP を作成することです。 パッケージ名をすべて把握している場合は、package\-list を手動で作成することもできます。次に、2 番目のドキュメントとその外部リンクを生成します。必要な外部の \f2package\-list\fP ファイルが存在しない場合、Javadoc ツールは警告を表示します。 
+���ξ�硢�ǽ�Υɥ��������������Ū�ϡ� \f2package\-list\fP ��������뤳�ȤǤ����ѥå�����̾�򤹤٤��İ����Ƥ�����ϡ�package\-list ���ư�Ǻ������Ƥ⤫�ޤ��ޤ��󡣼��ˡ�2 ���ܤΥɥ�����ȤȤ��γ�����󥯤��������ޤ���ɬ�פʳ����� \f2package\-list\fP �ե����뤬¸�ߤ��ʤ����ϡ�Javadoc �ġ��뤫��ٹ𤬽��Ϥ���ޤ��� 
 .LP
 .TP 3
 \-linkoffline\  extdocURL\  packagelistLoc 
-このオプションは、\f2\-link\fP オプションを変えたものです。 どちらも、javadoc によって生成された外部参照クラスのドキュメントへのリンクを作成します。Javadoc ツール自体がオフラインになっているとき (Web 接続を使ってドキュメントにアクセスできないとき)、Web 上のドキュメントにリンクするには、\f2\-linkoffline\fP オプションを使用します。 
+���Υ��ץ����� \f2\-link\fP �ΥХꥨ�������� 1 �ĤǤ����ɤ���⡢�������ȥ��饹�� javadoc �����ɥ�����ȤؤΥ�󥯤�������ޤ���Javadoc \f2�ġ��뼫�Τ�\fP ���ե饤��ˤʤäƤ���Ȥ� (Web ��³��Ȥäƥɥ�����Ȥ˥��������Ǥ��ʤ��Ȥ�)��Web ��Υɥ�����Ȥ˥�󥯤���ˤϡ�\-linkoffline ���ץ�������Ѥ��ޤ��� 
 .LP
-厳密には、外部ドキュメントの \f2package\-list\fP ファイルにアクセスできないとき、またはこのファイルが \f2extdocURL\fP で指定された場所とは異なる場所 (通常、\f2packageListLoc\fP で指定可能なローカルな場所) に存在するとき、\f2\-linkoffline\fP を使用します。したがって、\f2extdocURL\fP に WWW 上でしかアクセスできない場合は、\f2\-linkoffline\fP を指定することにより、ドキュメントの生成時に javadoc ツールが Web に接続できなければならないという制約がなくなります。 
+��̩�ˤϡ� \f2����\fP �ɥ�����Ȥ� \f2package\-list\fP �ե�����˥��������Ǥ��ʤ��Ȥ����ޤ��Ϥ��Υե����뤬 \f2extdocURL\fP �ǻ��ꤵ�줿���Ȥϰۤʤ��� (�̾\f2packageListLoc\fP �ǻ����ǽ�ʥ�������ʾ��) ��¸�ߤ���Ȥ���\-linkoffline ����Ѥ��ޤ����������äơ�WWW ��ͳ�Ǥ��� \f2extdocURL\fP �˥��������Ǥ��ʤ���硢 \f2\-linkoffline\fP ����ꤹ�뤳�Ȥˤ�ꡢ�ɥ�����Ȥ��������� Javadoc �ġ��뤬 Web ����³�Ǥ��ʤ���Фʤ�ʤ��Ȥ������󤬤ʤ��ʤ�ޤ��� 
 .LP
-さらに、ドキュメントを更新するための「ハッキング」としての使用も可能です。パッケージのセット全体に対して javadoc を実行したあと、変更した一部のパッケージだけに対して javadoc を実行します。 こうして、更新されたファイルを、オリジナルのファイルセットに挿入できるようにします。例をあとで示します。 
+����ˡ��ɥ�����Ȥ򹹿����뤿��Ρ֥ϥå��󥰡פȤ��Ƥλ��Ѥ��ǽ�Ǥ����ѥå������Υ��å����Τ��Ф��� javadoc ��¹Ԥ������ȡ��ѹ����������Υѥå������������Ф��� javadoc ��¹Ԥ��ޤ����������ơ��������줿�ե�����򡢥��ꥸ�ʥ�Υե����륻�åȤ������Ǥ���褦�ˤ��ޤ�����򤢤ȤǼ����ޤ��� 
 .LP
-\f2\-linkoffline\fP オプションは引数を 2 つ取ります。 最初の引数は \f2<a href>\fP リンクに組み込まれる文字列を指定する引数、2 番目の引数は \f2package\-list\fP の検索場所を指定する引数です。 
+\f2\-linkoffline\fP ���ץ����ϰ����� 2 �ļ��ޤ���1 �Ĥϡ� \f2<a href>\fP ��󥯤��Ȥ߹��ޤ��ʸ�����ɽ���������⤦ 1 �Ĥ� \f2package\-list\fP �θ������򼨤������Ǥ��� 
 .RS 3
 .TP 2
 o
-\f4extdocURL\fP は、リンク先として指定する、javadoc によって生成された外部ドキュメントを含むディレクトリの絶対 URL または相対 URL です。相対リンクを使用する場合、\f2\-d\fP を使って、生成先ディレクトリからリンクされるパッケージのルートの相対パスを指定する必要があります。詳細は、\f2\-link\fP オプションの \f2extdocURL\fP を参照してください。 
+\f4extdocURL\fP �ϡ������Ȥ��ƻ��ꤹ�롢javadoc �ˤ�ä��������줿�����ɥ�����Ȥ�ޤ�ǥ��쥯�ȥ������ URL �ޤ������� URL �Ǥ������Х�󥯤ξ�硢�����ͤϡ�( \f2\-d\fP �ǻ��ꤵ�줿) ������ǥ��쥯�ȥ꤫������ѥå������Υ롼�Ȥؤ����Хѥ��ˤ��٤��Ǥ����ܺ٤ϡ�\-link ���ץ����� \f2extdocURL\fP \f2�򻲾�\fP ���Ƥ��������� 
 .TP 2
 o
-\f4packagelistLoc\fP には、外部ドキュメントの \f2package\-list\fP ファイルが入っているディレクトリのパスまたは URL を指定します。これは、URL (http: または file:)or file:)とファイルパスのどちらでもかまいません。また、絶対パスと相対パスのどちらでも指定できます。相対パスの場合は、javadoc が実行されるカレントディレクトリからの相対パスとして指定します。\f2package\-list\fP というファイル名は含めないでください。 
+\f4packagelistLoc\fP �ϡ������ɥ�����Ȥ� \f2package\-list\fP �ե������ޤ�ǥ��쥯�ȥ�ؤΥѥ��ޤ��� URL �Ǥ�������ϡ�URL (http: �ޤ��� file:) �Ǥ�ե�����ѥ��Ǥ⤫�ޤ��ޤ��󤷡����Хѥ��Ǥ����Хѥ��Ǥ⤫�ޤ��ޤ������Хѥ��ξ��ϡ�javadoc ���¹Ԥ���륫���ȥǥ��쥯�ȥ꤫������Хѥ��Ȥ��ƻ��ꤷ�ޤ����ե�����̾ \f2package\-list\fP �ϴޤ�ʤ��Ǥ��������� 
 .RE
 .LP
-javadoc の 1 回の実行で、複数の \f2\-linkoffline\fP オプションを指定できます。1.2.2 より前は、複数のオプションを指定することはできませんでした。 
+1 ��� javadoc �¹Ԥ�ʣ���� \f2\-linkoffline\fP ���ץ��������Ǥ��ޤ���1.2.2 ������ϡ�ʣ���Υ��ץ�������ꤹ�뤳�ȤϤǤ��ޤ���Ǥ����� 
 .LP
-\f3外部ドキュメントへの絶対リンクを使った例\fP \- \f2http://java.sun.com/j2se/1.5.0/docs/api\fP 内の \f2java.lang\fP、\f2java.io\fP、、およびその他の Java 2 プラットフォームパッケージにリンクしたくても、Web にアクセスできない 場合について考えてみます。この場合は、ブラウザで 
+\f3�����ɥ�����Ȥؤ����Х�󥯤λ�����\fP \- http://java.sun.com/javase/6/docs/api ��� \f2java.lang\fP�� \f2java.io\fP ������Ӥ���¾�� Java SE �ץ�åȥե�����ѥå����� \f2�˥�󥯤������Ƥ�\fP Web �˥��������Ǥ��ʤ�����ͤ��ޤ����֥饦���� \f2��\fP 
 .na
-\f2http://java.sun.com/j2se/1.5.0/docs/api/package\-list\fP @
+\f2http://java.sun.com/javase/6/docs/api/package\-list\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/api/package\-list にある \f2package\-list\fP ファイルを開き、ローカルディレクトリに保存します。 さらに、2 番目の引数 \f2packagelistLoc\fP にこのローカルコピーの場所を指定します。この例では、パッケージリストファイルはカレントディレクトリ "\f2.\fP" に保存されています。次のコマンドは、Java 2 プラットフォーム API へのリンクを含む、\f2com.mypackage\fP パッケージのドキュメントを生成します。生成されたドキュメントには、たとえばクラスツリー内の \f2Object\fP クラスへのリンクが含まれています。\f2\-sourcepath\fP などの他の必要なオプションは表示されません。 
+http://java.sun.com/javase/6/docs/api/package\-list �ˤ��� package\-list �ե�����򳫤���������������ǥ��쥯�ȥ����¸������ 2 ���� \f2packagelistLoc\fP �Ǥ��Υ������륳�ԡ��ؤΥѥ�����ꤷ�ޤ���������Ǥϡ��ѥå������ꥹ�ȥե�����ϥ����ȥǥ��쥯�ȥ� "\f2.\fP" ����¸����Ƥ��ޤ������Υ��ޥ�ɤϡ�Java SE �ץ�åȥե�����ѥå������ؤΥ�󥯤�ޤ�����ѥå����� \f2com.mypackage\fP �Υɥ�����Ȥ��������ޤ����������줿�ɥ�����Ȥˤϡ����Ȥ��Х��饹�ĥ꡼��� \f2Object\fP ���饹�ؤΥ�󥯤��ޤޤ�Ƥ��ޤ����ʤ��� \f2\-sourcepath\fP �ʤɡ�����¾��ɬ�ץ��ץ����ϼ�����Ƥ��ޤ��� 
 .nf
 \f3
 .fl
-% \fP\f3javadoc \-linkoffline http://java.sun.com/j2se/1.5.0/docs/api . com.mypackage\fP
+% \fP\f3javadoc \-linkoffline http://java.sun.com/javase/6/docs/api . com.mypackage\fP
 .fl
 .fi
 .LP
-\f3外部ドキュメントへの相対リンクの使用例\fP \- 通常、\f2\-linkoffline\fP に相対パスを指定することはありません。 \f2\-link\fP で同じことができるからです。\f2\-linkoffline\fP を使用する際、\f2package\-list\fP には通常ローカルのファイルを指定します。 相対リンクを使用する際も、リンク先のファイルには通常ローカルのファイルを指定します。したがって、\f2\-linkoffline\fP の 2 つの引数に別々のパスを指定する必要はありません。2 つの引数が同一である場合は、\f2\-link\fP を使用できます。\f2\-link\fP の相対リンクの例を参照してください。 
+\f3�����ɥ�����Ȥؤ����Х�󥯤λ�����\fP \- \f2\-linkoffline\fP �����Хѥ�����Ѥ��뤳�Ȥϡ����ޤꤢ��ޤ�����ͳ��ñ��ǡ��̾�� \f2\-link\fP �ǽ�ʬ������Ǥ��� \f2\-linkoffline\fP ����Ѥ���ݡ� \f2package\-list\fP �ˤ��̾��������Υե��������ꤷ�ޤ��� ���Х�󥯤���Ѥ���ݤ⡢�����Υե�����ˤ��̾��������Υե��������ꤷ�ޤ����������äơ� \f2\-linkoffline �� 2 �Ĥΰ������̡��Υѥ�����ꤹ��ɬ�פϤ���ޤ���\fP��2 �Ĥΰ�����Ʊ��Ǥ�����ϡ� \f2\-link\fP ����ѤǤ��ޤ��� \f2\-link\fP �����Х�󥯤���򻲾Ȥ��Ƥ��������� 
 .LP
-\f4package\-list\fP\f3 ファイルを手動で作成\fP \- \f2package\-list\fP ファイルがまだ存在しなくても、ドキュメントのリンク先のパッケージ名がわかっている場合は、このファイルを自分で作成し、\f2packagelistLoc\fP でそのパスを指定することができます。\f2com.apipackage\fP が最初に生成され、\f2com.spipackage\fP のパッケージリストが存在しないという前出の例を参照してください。この方法は、パッケージ名はわかっているものの、まだ公開されていない、新しい外部ドキュメントにリンクするドキュメントを生成する必要がある場合に便利です。また、\f2package\-list\fP ファイルが生成されない Javadoc 1.0 や 1.1 などで生成されたパッケージ向けに \f2package\-list\fP ファイルを作成するときにも、この方法を利用します。同様に、2 つの会社が未公開の \f2package\-list\fP ファイルを共有することもできるため、クロスリンクを設定したドキュメントを同時にリリースすることも可能です。 
+\f4package\-list\fP\f3 �ե�������ư�Ǻ���\fP \- \f2package\-list\fP �ե����뤬�ޤ�¸�ߤ��ʤ��Ƥ⡢�ɥ�����ȤΥ����Υѥå�����̾���狼�äƤ�����ϡ����Υե������ʬ�Ǻ�������packagelistLoc \f2�Ǥ��Υѥ�����ꤹ�뤳�Ȥ��Ǥ��ޤ���\fPcom.apipackage ���ǽ���������������� \f2com.spipackage\fP �Υѥå������ꥹ�Ȥ�¸�ߤ��Ƥ��ʤ��ä��Ȥ����� \f2���ФΥ�������\fP ����Ȥ��Ƶ󤲤��ޤ���������ˡ�ϡ��ѥå�����̾�Ϥ狼�äƤ����ΤΡ��ޤ���������Ƥ��ʤ��������������ɥ�����Ȥ˥�󥯤���ɥ�����Ȥ���������ɬ�פ�������������Ǥ����ޤ���Javadoc 1.0 �ޤ��� 1.1 ���������줿�ѥå������� \f2package\-list\fP �ե�������������ɬ�פ�������ˤ⡢������ˡ���Ȥ��ޤ��������ΥС������Ǥϡ� \f2package\-list\fP �ե��������������Ƥ��ޤ���Ǥ�����Ʊ�ͤˡ�2 �Ĥδ�Ȥ�̤������ \f2package\-list\fP �ե������ͭ����С���������󥯤�ޤ�ɥ�����Ȥ�Ʊ���˥�꡼�����뤳�Ȥ��ǽ�Ȥʤ�ޤ��� 
 .LP
-\f3複数のドキュメントへのリンク\fP \- \f2\-linkoffline\fP は、参照先の生成ドキュメントごとに 1 つずつ指定します。 次の例では、わかりやすくするためにオプションごとに行を分けています。 
+\f3ʣ���Υɥ�����ȤؤΥ��\fP \- ������Ȥʤ������ɥ�����Ȥ��Ȥ� \f2\-linkoffline\fP �� 1 �󤺤Ĵޤ�뤳�Ȥ��Ǥ��ޤ����狼��䤹�����뤿��ˡ����ץ���󤴤Ȥ˲��Ԥ��Ƽ����Ƥ��ޤ��� 
 .LP
 \f2% \fP\f4javadoc \-linkoffline\fP \f2extdocURL1\fP \f2packagelistLoc1\fP \f2\\\fP
 .br
@@ -4873,24 +3379,24 @@ http://java.sun.com/j2se/1.5.0/docs/api/package\-list にある \f2package\-list
 .br
 \f2\ \ \ \ \ \ \ \ \ \ ...\fP 
 .LP
-\f3ドキュメントの更新\fP \- 前述の \f2\-linkoffline\fP オプションのもうひとつの用途は、プロジェクトに大量のパッケージが含まれていて、すでにツリー全体に対して javadoc の実行が完了している場合に、次の実行では、少量の変更を手早く加えたあと、ソースツリーのごく一部に対してだけ javadoc を再実行する場合に便利です。これは、ドキュメンテーションコメントに対してだけ変更を加え、宣言は変更しない場合にのみ正しく処理されるので、ハッキングのようなものです。ソースコードの宣言を追加、削除、または変更した場合は、索引、パッケージツリー、継承されるメンバーのリスト、[使用] ページなどの場所で、リンクが壊れることがあります。 
+\f3�ɥ�����Ȥι���\fP \- ���Ҥ� \f2\-linkoffline\fP ���ץ����Τ⤦�ҤȤĤ����Ӥϡ��ץ��������Ȥ����̤Υѥå��������ޤޤ�Ƥ��ơ����Ǥ˥ĥ꡼���Τ��Ф��� javadoc �μ¹Ԥ���λ���Ƥ�����ˡ����μ¹ԤǤϡ����̤��ѹ�����᤯�ä������ȡ��������ĥ꡼�Τ����������Ф��Ƥ��� javadoc ��Ƽ¹Ԥ�����������Ǥ�������ϡ��ɥ�����ơ�����󥳥��Ȥ��Ф��Ƥ����ѹ���ä���������ѹ����ʤ����ˤΤ����������������Τǡ��ϥå��󥰤Τ褦�ʤ�ΤǤ��������������ɤ�������ɲá�������ޤ����ѹ��������ϡ��������ѥå������ĥ꡼���Ѿ��������С��Υꥹ�ȡ��ֻ��ѡץڡ����ʤɤξ��ǡ���󥯤�����뤳�Ȥ�����ޤ��� 
 .LP
-まず、今回の実行で使用する新しい生成先ディレクトリ (\f2update\fP) を作成します。元の生成先ディレクトリの名前が \f2html\fP だとします。もっとも単純な例では、\f2html\fP ディレクトリの親ディレクトリに移動 (cd) します。\f2\-linkoffline\fP の最初の引数にカレントディレクトリ "." を指定し、2 番目の引数に \f2html\fP への相対パスを指定します。 ここで、\f2package\-list\fP が検索されます。 更新対照のパッケージのパッケージ名だけを指定してください。 
+�ޤ������ο����������ʼ¹��ѤȤ��ơ�������������ǥ��쥯�ȥ� ( \f2update\fP ��̿̾) ��������ޤ�������������ǥ��쥯�ȥ��̾���� \f2html\fP ���ä��Ȥ��ޤ�����äȤ�ñ�����Ǥϡ� \f2html �ǥ��쥯�ȥ�οƥǥ��쥯�ȥ�˰�ư (cd) ���ޤ�\fP�� \f2\-linkoffline\fP ���� 1 �����򥫥��ȥǥ��쥯�ȥ��.�פ����ꤷ���� 2 ������package\-list ���ޤޤ�Ƥ��� \f2html\fP �ؤ����Хѥ������ꤷ�� \f2��������ѥå������Υѥå�����̾�Τߤ�\fP�Ϥ��ޤ��� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-d update \-linkoffline . html com.mypackage\fP
 .fl
 .fi
-Javadoc ツールの終了後、\f2update/com/package\fP 内の生成されたクラスのページをコピーし (概要や索引を除く)、\f2html/com/package\fP 内の元のファイルに上書きします。 
+Javadoc �ĥ꡼�ν�λ�塢 \f2update/com/package\fP ����������줿���饹�Υڡ����򥳥ԡ��� (���פ�����Ͻ���)�� \f2html/com/package ��θ��Υե�����˾�񤭤��ޤ�\fP�� 
 .LP
 .TP 3
 \-linksource\  
-各ソースファイル (行番号付き) の HTML バージョンを作成し、標準 HTML ドキュメントからソースファイルへのリンクを追加します。リンクは、ソースファイル内に宣言されているクラス、インタフェース、コンストラクタ、メソッド、フィールドに対して作成されます。デフォルトコンストラクタ、生成されたクラスに対しては作成されません。 
+�ƥ������ե����� (���ֹ��դ�) �� HTML �С��������������ɸ�� HTML �ɥ�����Ȥ��饽�����ե�����ؤΥ�󥯤��ɲä��ޤ�����󥯤ϡ��������ե���������������Ƥ��륯�饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ե�����ɤ��Ф��ƺ�������ޤ����ǥե���ȥ��󥹥ȥ饯�����������줿���饹���Ф��ƤϺ�������ޤ��� 
 .LP
-\f3このオプションは、\fP\f4\-public\fP\f3、\fP\f4\-package\fP\f3、\fP\f4\-protected\fP\f3、\fP\f4\-private\fP\f3 の各オプションとは関係なく、非公開のクラス、フィールド、非公開のメソッドの本体をはじめとする組み込まれたソースファイル内のすべての非公開実装の詳細を公開します。\fP\f2\-private\fP オプションを指定しないかぎり、非公開のクラスやインタフェースの一部には、リンクを介してアクセスできないことがあります。 
+\f3���Υ��ץ����ϡ�\fP\f4\-public\fP\f3�� \fP\f4\-package\fP\f3�� \fP\f4\-protected\fP\f3 �� \fP\f4\-private\fP\f3 �γƥ��ץ����Ȥϴط��ʤ���������Υ��饹���ե�����ɡ�������Υ᥽�åɤ����Τ�Ϥ���Ȥ����Ȥ߹��ޤ줿�������ե�������Τ��٤Ƥ�����������ξܺ٤�������ޤ���\fP\f2\-private\fP ���ץ�����ʻ���ƻ��ꤷ�ʤ������ꡢ������Τ��٤ƤΥ��饹�䥤�󥿥ե������˥�󥯷�ͳ�ǥ��������Ǥ���ȤϤ�����ޤ��� 
 .LP
-各リンクは、その宣言内の識別子名の上に作成されます。たとえば、\f2Button\fP クラスのソースコードヘのリンクは、「Button」という語の上に作成されます。 
+�ƥ�󥯤ϡ����������μ��̻�̾�ξ�˺�������ޤ������Ȥ��С� \f2Button\fP ���饹�Υ����������ɤؤΥ�󥯤ϡ���Button�פȤ�����ξ�˺�������ޤ��� 
 .nf
 \f3
 .fl
@@ -4902,7 +3408,7 @@ Javadoc ツールの終了後、\f2update/com/package\fP 内の生成された�
 .fl
 \fP
 .fi
-Button クラスの \f2getLabel()\fP メソッドのソースコードへのリンクは、「getLabel」という語の上に作成されます。 
+�ޤ���Button ���饹�� \f2getLabel()\fP �᥽�åɤΥ����������ɤؤΥ�󥯤ϡ���getLabel�פȤ�����ξ�˺�������ޤ��� 
 .nf
 \f3
 .fl
@@ -4913,26 +3419,21 @@ Button クラスの \f2getLabel()\fP メソッドのソースコードへのリ�
 .LP
 .TP 3
 \-group\  groupheading\  packagepattern:packagepattern:... 
-概要ページの複数のパッケージを、指定したグループに分けて、グループごとに表を作成します。各グループは、それぞれ別の \f2\-group\fP オプションで指定します。これらのグループは、コマンド行で指定した順序でページに表示されます。 各グループ内では、パッケージがアルファベット順に並べられます。指定した \f2\-group\fP オプションごとに、\f2packagepattern\fP 式のリストと一致するパッケージが、見出し \f2groupheading\fP を持つ 1 つの表にまとめて表示されます。 
+���ץڡ�����ʣ���Υѥå������򡢻��ꤷ�����롼�פ�ʬ���ơ����롼�פ��Ȥ�ɽ��������ޤ����ƥ��롼�פϡ����줾���̤� \f2\-group\fP ���ץ����ǻ��ꤷ�ޤ��������Υ��롼�פϡ����ޥ�ɹԤǻ��ꤷ������ǥڡ�����ɽ������ޤ����ƥ��롼����Ǥϡ��ѥå�����������ե��٥åȽ���¤٤��ޤ������������ \f2\-group\fP ���ץ����Ǥϡ� \f2packagepattern\fP ���Υꥹ�Ȥ˰��פ���ѥå��������� \f2groupheading\fP �Ȥ������Ф���ɽ��ɽ������ޤ��� 
 .RS 3
 .TP 2
 o
-\f4groupheading\fP には、任意のテキストを指定でき、空白を含めることができます。指定したテキストは、グループの表見出しになります。 
+\f4groupheading\fP �ˤϡ�Ǥ�դΥƥ����Ȥ����Ǥ��������ޤ�뤳�Ȥ��Ǥ��ޤ������ꤷ���ƥ����Ȥϡ����롼�פ�ɽ���Ф��ˤʤ�ޤ��� 
 .TP 2
 o
-\f4packagepattern\fP には、任意のパッケージ名、または任意のパッケージ名の先頭部分とそれに続く 1 つのアスタリスク (\f2*\fP) を指定できます。アスタリスクは、「任意の文字に一致する」という意味のワイルドカードです。ワイルドカードとして指定できるのは、アスタリスクだけです。1 つのグループには、コロン (\f2:\fP) で区切って複数のパターンを含めることができます。 
-.RE
-.RS 3
-
-.LP
-.LP
-\f3注: パターンやパターンリスト内でアスタリスクを使う場合は、\fP\f4"java.lang*:java.util"\fP\f3 のように、パターンリストを引用符で囲む必要があります。\fP
-.LP
+\f4packagepattern\fP �ˤϡ�Ǥ�դΥѥå�����̾���ޤ���Ǥ�դΥѥå�����̾����Ƭ��ʬ�Ȥ����³�� 1 �ĤΥ������ꥹ�� (\f2*\fP) �����Ǥ��ޤ��� �������ꥹ���ϡ���Ǥ�դ�ʸ���˰��פ���פȤ�����̣�Υ磻��ɥ����ɤǤ����磻��ɥ����ɤȤ��ƻ���Ǥ���Τϡ��������ꥹ�������Ǥ���1 �ĤΥ��롼�פˤϡ������� (\f2:\fP) �Ƕ��ڤä�ʣ���Υѥ������ޤ�뤳�Ȥ��Ǥ��ޤ��� 
 .RE
 .LP
-\f2\-group\fP オプションが指定されていない場合は、すべてのパッケージが、「パッケージ」という見出しの 1 つのグループに入れられます。ドキュメント化されるパッケージの中に、指定したグループのどのグループにも入らないパッケージがある場合、このようなパッケージは「その他のパッケージ」という見出しを持つ独立したグループに入れられます。 
+\f3��: �ѥ������ѥ�����ꥹ����ǥ������ꥹ����Ȥ����ϡ� \fP\f4"java.lang*:java.util" �Τ褦�ˡ��ѥ�����ꥹ�Ȥ������ǰϤ�ɬ�פ�����ޤ���\fP 
 .LP
-たとえば、次のようにオプションを指定すると、ドキュメント化される 5 つのパッケージは、コアパッケージ、拡張機能パッケージ、およびその他のパッケージに分けられます。「java.lang*」では、最後のドットを指定していないことに注目してください。 「java.lang.*」のようにドットを入れると、java.lang パッケージは除外されることになります。 
+�桼������ \f2\-group\fP ���ץ����� 1 �Ĥ���ꤷ�ʤ��ä���硢�֥ѥå������פȤ������Ф��� 1 �ĤΥ��롼����ˡ����٤ƤΥѥå����������֤���ޤ����ɥ�����Ȳ������ѥå���������ˡ����ꤷ�����롼�פΤɤΥ��롼�פˤ�����ʤ��ѥå������������硢���Τ褦�ʥѥå������ϡ֤���¾�Υѥå������פȤ������Ф��������Ω�������롼�פ�������ޤ��� 
+.LP
+���Ȥ��С����Τ褦�˥��ץ�������ꤹ��ȡ��ɥ�����Ȳ������ 5 �ĤΥѥå������ϡ������ѥå���������ĥ��ǽ�ѥå�����������Ӥ���¾�Υѥå�������ʬ�����ޤ�����java.lang*�פǤϡ��Ǹ�ΥɥåȤ���ꤷ�Ƥ��ʤ����Ȥ����ܤ��Ƥ�����������java.lang.*�פΤ褦�˥ɥåȤ������ȡ�java.lang �ѥå������Ͻ�������뤳�Ȥˤʤ�ޤ��� 
 .nf
 \f3
 .fl
@@ -4943,56 +3444,52 @@ o
             java.lang java.lang.reflect java.util javax.servlet java.new\fP
 .fl
 .fi
-この結果、次のようなグループ化が行われます。 
-.RS 3
+���η�̡����Τ褦�ʥ��롼�ײ����Ԥ��ޤ��� 
 .RS 3
 .TP 3
-コアパッケージ 
+�����ѥå����� 
 \f2java.lang\fP 
 \f2java.lang.reflect\fP 
 \f2java.util\fP 
 .TP 3
-拡張機能パッケージ 
+��ĥ��ǽ�ѥå����� 
 \f2javax.servlet\fP 
 .TP 3
-その他のパッケージ 
+����¾�Υѥå����� 
 \f2java.new\fP 
-.RE
-
-.LP
 .RE
 .LP
 .TP 3
 \-nodeprecated 
-推奨されない API をドキュメントに生成しないようにします。このオプションを指定すると、\-nodeprecatedlist オプションを指定した場合と同じ効果があることに加えて、ドキュメントのほかの部分全体でも、推奨されない API が生成されません。このオプションは、コードを記述しているとき、推奨されないコードによって気を散らされたくない場合に便利です。 
+�侩����ʤ� API ��ɥ�����Ȥ��������ʤ��褦�ˤ��ޤ������Υ��ץ�������ꤹ��ȡ�\-nodeprecatedlist ���ץ�������ꤷ������Ʊ�����̤����뤳�Ȥ˲ä��ơ��ɥ�����ȤΤۤ�����ʬ���ΤǤ⡢�侩����ʤ� API ����������ޤ��󡣤��Υ��ץ����ϡ������ɤ򵭽Ҥ��Ƥ���Ȥ����侩����ʤ������ɤˤ�äƵ��򻶤餵�줿���ʤ����������Ǥ��� 
 .LP
 .TP 3
 \-nodeprecatedlist 
-推奨されない API のリストを含むファイル (deprecated\-list.html)、およびナビゲーションバーのそのページへのリンクが生成されないようにします。ただし、ドキュメントのほかの部分では、推奨されない API が生成されます。このオプションは、推奨されない API がソースコードに含まれておらず、ナビゲーションバーをすっきりと見せたい場合に便利です。 
+�侩����ʤ� API �Υꥹ�Ȥ�ޤ�ե����� (deprecated\-list.html)������ӥʥӥ��������С��Τ��Υڡ����ؤΥ�󥯤���������ʤ��褦�ˤ��ޤ������������ɥ�����ȤΤۤ�����ʬ�Ǥϡ��侩����ʤ� API ����������ޤ������Υ��ץ����ϡ��侩����ʤ� API �������������ɤ˴ޤޤ�Ƥ��餺���ʥӥ��������С��򤹤ä���ȸ����������������Ǥ��� 
 .LP
 .TP 3
 \-nosince 
-生成ドキュメントから、@since タグに対応する「導入されたバージョン」 セクションを省略します。 
+�����ɥ�����Ȥ��顢@since �������б������Ƴ�����줿�С������� �����������ά���ޤ��� 
 .LP
 .TP 3
 \-notree 
-生成されるドキュメントからクラスおよびインタフェースの階層ページを省略します。これらのページには、ナビゲーションバーの「ツリー」ボタンからアクセスできます。デフォルトでは、階層が生成されます。 
+���������ɥ�����Ȥ��饯�饹����ӥ��󥿥ե������γ��إڡ������ά���ޤ��������Υڡ����ˤϡ��ʥӥ��������С��Ρ֥ĥ꡼�ץܥ��󤫤饢�������Ǥ��ޤ����ǥե���ȤǤϡ����ؤ���������ޤ��� 
 .LP
 .TP 3
 \-noindex 
-生成ドキュメントから、索引を省略します。デフォルトでは、索引が生成されます。 
+�����ɥ�����Ȥ��顢�������ά���ޤ����ǥե���ȤǤϡ���������������ޤ��� 
 .LP
 .TP 3
 \-nohelp 
-出力の各ページの最上部と最下部にあるナビゲーションバーから [ヘルプ] リンクを省略します。 
+���Ϥγƥڡ����κǾ����Ⱥǲ����ˤ���ʥӥ��������С�����֥إ�סץ�󥯤��ά���ޤ��� 
 .LP
 .TP 3
 \-nonavbar 
-生成されるページの最上部と最下部に表示されるナビゲーションバー、ヘッダー、およびフッターを生成しないようにします。このオプションは、bottom オプションには影響を与えません。\f2\-nonavbar\fP オプションは、印刷するためだけにファイルを PostScript または PDF に変換する場合など、内容だけが重要で、ナビゲーションの必要がない場合に便利です。 
+���������ڡ����κǾ����Ⱥǲ�����ɽ�������ʥӥ��������С����إå���������ӥեå������������ʤ��褦�ˤ��ޤ������Υ��ץ����ϡ�bottom ���ץ����ˤϱƶ���Ϳ���ޤ��� \f2\-nonavbar\fP ���ץ����ϡ��������뤿������˥ե������ PostScript �ޤ��� PDF ���Ѵ�������ʤɡ����Ƥ��������פǡ��ʥӥ���������ɬ�פ��ʤ����������Ǥ��� 
 .LP
 .TP 3
 \-helpfile\  path/filename 
-上部と下部のナビゲーションバーの [ヘルプ] リンクのリンク先となる代替ヘルプファイル \f2path/filename\fP のパスを指定します。このオプションが指定されていない場合、Javadoc ツールは、ハードコードされているヘルプファイル \f2help\-doc.html\fP を自動的に作成します。このオプションを使うと、そのデフォルトの動作をオーバーライドできます。\f2filename\fP にはどんなファイル名でも指定でき、\f2help\-doc.html\fP には限定されません。例を示します。 
+�����Ȳ����Υʥӥ��������С��Ρ֥إ�סץ�󥯤Υ����Ȥʤ����إإ�ץե����� \f2path/filename\fP �Υѥ�����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��ʤ��ȡ�Javadoc �ġ���ϡ��ġ�����ǥϡ��ɥ����ɤ���Ƥ���إ�ץե����� \f2help\-doc.html\fP ��ư�������ޤ������Υ��ץ�����Ȥ��ȡ����Υǥե���Ȥ�ư��򥪡��С��饤�ɤǤ��ޤ���\f2filename\fP �ˤϤɤ�ʥե�����̾�Ǥ����Ǥ��� \f2help\-doc.html �ˤϸ��ꤵ��ޤ���\fP Javadoc �ġ���ϡ��ʥӥ��������С���Υ�󥯤�ɬ�פ˱�����Ĵ�����ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -5001,7 +3498,7 @@ o
 .fi
 .TP 3
 \-stylesheetfile\  path/filename 
-代替 HTML スタイルシートファイルのパスを指定します。このオプションが指定されていない場合、Javadoc ツールは、ハードコードされているスタイルシートファイル \f2stylesheet.css\fP を自動的に作成します。このオプションを使うと、そのデフォルトの動作をオーバーライドできます。\f2filename\fP にはどんなファイル名でも指定でき、\f2stylesheet.css\fP には限定されません。例を示します。 
+���� HTML �������륷���ȥե�����Υѥ�����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��ʤ��ȡ�Javadoc �ġ���ϡ��ġ�����ǥϡ��ɥ����ɤ���Ƥ��륹�����륷���ȥե����� \f2stylesheet.css\fP ��ư�������ޤ������Υ��ץ�����Ȥ��ȡ����Υǥե���Ȥ�ư��򥪡��С��饤�ɤǤ��ޤ���\f2filename\fP �ˤϤɤ�ʥե�����̾�Ǥ����Ǥ��� \f2stylesheet.css �ˤϸ��ꤵ��ޤ���\fP�����Ȥ��С� 
 .nf
 \f3
 .fl
@@ -5010,22 +3507,22 @@ o
 .fi
 .TP 3
 \-serialwarn 
-@serial タグがない場合は、コンパイル時に警告を生成します。デフォルトでは、Javadoc 1.2.2 以降のバージョンでは、直列化の警告は生成されません。1.2.2 より前の初期バージョンでは、警告が生成されます。このオプションを使用すると、直列化の警告が表示されるので、デフォルトの直列化可能フィールドと \f2writeExternal\fP メソッドを適切にドキュメント化するのに役立ちます。 
+@serial �������ʤ����ϡ�����ѥ�����˷ٹ���������ޤ����ǥե���ȤǤϡ�Javadoc 1.2.2 �ʹߤΥС������Ǥϡ�ľ�󲽤ηٹ����������ޤ���1.2.2 ������ν���С������Ǥϡ��ٹ���������ޤ������Υ��ץ�������Ѥ���ȡ�ľ�󲽤ηٹ�ɽ�������Τǡ��ǥե���Ȥ�ľ�󲽲�ǽ�ե�����ɤ� \f2writeExternal\fP �᥽�åɤ�Ŭ�ڤ˥ɥ�����Ȳ�����Τ���Ω���ޤ��� 
 .LP
 .TP 3
 \-charset\  name 
-このドキュメント用の HTML 文字セットを指定します。この名前は、
+���Υɥ�������Ѥ� HTML ʸ�����åȤ���ꤷ�ޤ�������̾���ϡ�
 .na
 \f2IANA Registry\fP @
 .fi
-http://www.iana.org/assignments/character\-sets で与えられた、推奨される MIME 名でなければなりません。例を示します。 
+http://www.iana.org/assignments/character\-sets ��Ϳ����줿���侩����� MIME ̾�Ǥʤ���Фʤ�ޤ��󡣤��Ȥ��С� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-charset "iso\-8859\-1" mypackage\fP
 .fl
 .fi
-生成されるすべてのページの先頭に、次の行が挿入されます。  
+��������뤹�٤ƤΥڡ�������Ƭ�ˡ����ιԤ���������ޤ���  
 .nf
 \f3
 .fl
@@ -5033,34 +3530,34 @@ http://www.iana.org/assignments/character\-sets で与えられた、推奨さ�
 .fl
 \fP
 .fi
-この META タグについては、
+���� META �����ˤĤ��Ƥϡ�
 .na
-\f2HTML の標準\fP @
+\f2HTML ��ɸ��\fP @
 .fi
-http://www.w3.org/TR/REC\-html40/charset.html#h\-5.2.2 (4197265 および 4137321) を参照してください。 
+http://www.w3.org/TR/REC\-html40/charset.html#h\-5.2.2 (4197265 ����� 4137321) �򻲾Ȥ��Ƥ��������� 
 .LP
-\-encoding および \-docencoding も参照してください。 
+\-encoding ����� \-docencoding �⻲�Ȥ��Ƥ��������� 
 .LP
 .TP 3
 \-docencoding\  name 
-生成される HTML ファイルのエンコーディングを指定します。この名前は、
+��������� HTML �ե�����Υ��󥳡��ǥ��󥰤���ꤷ�ޤ�������̾���ϡ�
 .na
 \f2IANA Registry\fP @
 .fi
-http://www.iana.org/assignments/character\-sets で与えられた、推奨される MIME 名でなければなりません。このオプションを省略しながら \-encoding を使用した場合、生成される HTML ファイルのエンコードは、\-encoding によって決められます。例: 
+http://www.iana.org/assignments/character\-sets ��Ϳ����줿���侩����� MIME ̾�Ǥʤ���Фʤ�ޤ��󡣤��Υ��ץ������ά���ʤ��� \-encoding ����Ѥ�����硢��������� HTML �ե�����Υ��󥳡��ɤϡ�\-encoding �ˤ�äƷ����ޤ�����: 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-docencoding "ISO\-8859\-1" mypackage\fP
 .fl
 .fi
-\-encoding および \-charset も参照してください。 
+\-encoding ����� \-charset �⻲�Ȥ��Ƥ��������� 
 .LP
 .TP 3
 \-keywords 
-HTML メタキーワードタグを、クラスごとに生成されるファイルに追加します。これらのタグは、メタタグを検索するサーチエンジンがページを見つける場合に役立ちます。インターネット全体を検索する多くのサーチエンジンは、ページがメタタグを誤用しているため、メタタグを調べません。 一方、検索を自身の Web サイトに限定している企業では、サーチエンジンがメタタグを調べることによってメリットを得られます。 
+HTML �᥿������ɥ����򡢥��饹���Ȥ����������ե�������ɲä��ޤ��������Υ����ϡ��᥿�����򸡺����륵�������󥸥󤬥ڡ����򸫤Ĥ��������Ω���ޤ������󥿡��ͥå����Τ򸡺�����¿���Υ��������󥸥�ϡ��ڡ������᥿��������Ѥ��Ƥ��뤿�ᡢ�᥿������Ĵ�٤ޤ��󡣰����������򼫿Ȥ� Web �����Ȥ˸��ꤷ�Ƥ����ȤǤϡ����������󥸥󤬥᥿������Ĵ�٤뤳�Ȥˤ�äƥ��åȤ������ޤ��� 
 .LP
-メタタグには、クラスの完全修飾名と、フィールドおよびメソッドの修飾されていない名前が含まれます。コンストラクタは、クラス名と同じであるため含まれません。たとえば、クラス String は次のキーワードで開始します。 
+�᥿�����ˤϡ����饹�δ�������̾�ȡ��ե�����ɤ���ӥ᥽�åɤν�������Ƥ��ʤ�̾�����ޤޤ�ޤ������󥹥ȥ饯���ϡ����饹̾��Ʊ���Ǥ��뤿��ޤޤ�ޤ��󡣤��Ȥ��С����饹 String �ϼ��Υ�����ɤǳ��Ϥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5077,29 +3574,29 @@ HTML メタキーワードタグを、クラスごとに生成されるファイ
 .LP
 .TP 3
 \-tag\ \ tagname:Xaoptcmf:"taghead" 
-Javadoc ツールがドキュメンテーションコメント内の引数を 1 つ取る単純なカスタムブロックタグ \f2@\fP\f2tagname\fP を解釈できるようにします。これにより、Javadoc ツールはタグ名の「スペルチェック」を行うことができるので、ソースコード内のすべてのカスタムタグに \f2\-tag\fP オプションを組み込むことをお勧めします。今回の実行で出力されないタグは、\f2X\fP を付けて無効にします。 
+Javadoc �ġ��뤬�ɥ�����ơ�����󥳥�����ΰ����� 1 �ļ��ñ��ʥ�������֥��å����� \f2@\fP\f2tagname\fP ����Ǥ���褦�ˤ��ޤ���Javadoc �ġ���ϥ���̾�Ρ֥��ڥ�����å��פ�Ԥ����Ȥ��Ǥ���Τǡ����������������¸�ߤ��뤹�٤ƤΥ������ॿ���ˤĤ��ơ� \f2\-tag\fP ���ץ�����ޤ�뤳�Ȥ����פǤ�������μ¹ԤǤϽ��Ϥ���ʤ������ϡ�X ���դ���̵�� \f2�ˤ��ޤ�\fP�� 
 .LP
-コロン (\f4:\fP) は常に区切り文字になります。\f2tagname\fP でコロンを使用するには、「タグ名でのコロンの使用」を参照してください。 
+������ (\f4:\fP) ����˶��ڤ�ʸ���ˤʤ�ޤ���tagname \f2�ǥ��������Ѥ�����ˡ�ˤĤ��Ƥϡ�\fP �֥���̾�ǤΥ�����λ��ѡפ򻲾Ȥ��Ƥ��������� 
 .LP
-\f2\-tag\fP オプションは、タグの見出し「taghead」を太字で出力します。 その次の行には、このオプションの引数で指定したテキストが続きます。 以下の例を参照してください。ブロックタグと同様、この引数のテキストにはインラインタグを含めることができます。 このインラインタグも解釈されます。出力は、引数を 1 つ取る標準のタグ (\f2@return\fP、\f2@author\fP など) の出力とよく似ています。\f2taghead\fP を省略すると、\f2tagname\fP が見出しとして表示されます。 
+\f2\-tag\fP ���ץ����ϡ������θ��Ф���taghead�פ������ǽ��Ϥ��ޤ��� ���μ��ιԤˤϡ����Υ��ץ����ΰ����ǻ��ꤷ���ƥ����Ȥ�³���ޤ��� �ʲ�����򻲾Ȥ��Ƥ����������֥��å�������Ʊ�͡����ΰ����Υƥ����Ȥˤϥ���饤�󥿥���ޤ�뤳�Ȥ��Ǥ��ޤ������Υ���饤�󥿥����ᤵ��ޤ������Ϥϡ������� 1 �ļ��ɸ��Υ��� ( \f2@return\fP �� \f2@author\fP �ʤ�) �ν��ϤȤ褯���Ƥ��ޤ���\f2taghead\fP ���ά����ȡ�\f2tagname\fP �����Ф��Ȥ���ɽ������ޤ��� 
 .LP
-\f3タグの配置\fP \- 引数の \f4Xaoptcmf\fP 部分は、ソースコード内のタグを配置できる位置と、\f2X\fP を使ってこのタグを無効にできるかどうかを特定します。タグの配置位置を制限しない場合は \f4a\fP を指定します。 それ以外の文字の組み合わせも可能です。 \f4X\fP (タグの無効化)
+\f3����������\fP \- ������ \f4Xaoptcmf\fP ��ʬ�ϡ���������������Υ��������֤Ǥ�����֤ȡ� ��ȤäƤ��Υ�����̵���ˤǤ��뤫�ɤ��������ꤷ�ޤ��� \f2X\fP). ���������ְ��֤����¤��ʤ����� \f4a\fP ����ꤷ�ޤ�������ʳ���ʸ�����Ȥ߹�碌���ǽ�Ǥ��� \f4X\fP (������̵����)
 .br
-\f4a\fP (すべての位置)
+\f4a\fP (���٤�)
 .br
-\f4o\fP (概要)
+\f4o\fP (����)
 .br
-\f4p\fP (パッケージ)
+\f4p\fP (�ѥå�����)
 .br
-\f4t\fP (型すなわちクラスおよびインタフェース)
+\f4t\fP (�����Ĥޤꥯ�饹�ȥ��󥿥ե�����)
 .br
-\f4c\fP (コンストラクタ)
+\f4c\fP (���󥹥ȥ饯��)
 .br
-\f4m\fP (メソッド)
+\f4m\fP (�᥽�å�)
 .br
-\f4f\fP (フィールド) 
+\f4f\fP (�ե������) 
 .LP
-\f3シングルタグの例\fP \- ソースコード内の任意の位置で使用で気るタグのタグオプションの例を示します。 
+\f3���󥰥륿������\fP \- ���������������Ǥ�դΰ��֤ǻ��ѤǤ��륿���Υ������ץ�������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -5107,7 +3604,7 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-@todo をコンストラクタ、メソッド、フィールドのみで使用する場合は、以下のオプションを使用します。 
+@todo �򥳥󥹥ȥ饯�����᥽�åɡ��ե�����ɤΤߤǻ��Ѥ�����ϡ��ʲ��Υ��ץ�������Ѥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5115,7 +3612,7 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-上の例の最後のコロン (\f2:\fP) は、パラメータ区切り子ですが、見出しテキストの一部になっています (以下の例を参照)。次の例のように、\f2@todo\fP タグを含むソースコードでは、いずれかのタグオプションを使用します。 
+�����κǸ�Υ����� (\f2:\fP) �ϡ��ѥ�᡼�����ڤ�ҤǤ��������Ф��ƥ����Ȥΰ����ˤʤäƤ��ޤ� (�ʲ�����򻲾�)��������Τ褦�ˡ� \f2@todo\fP ������ޤॽ���������ɤǤϡ������줫�Υ������ץ�������Ѥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5123,7 +3620,7 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-\f3タグ名にコロンを使用する\fP \- コロン (:) をバックスラッシュでエスケープすると、コロンをタグ名に使用することができます。このドキュメンテーションコメントの中では、次のように使用します。 
+\f3����̾�˥��������Ѥ���\fP \- ������ (:) ��Хå�����å���ǥ��������פ���ȡ�������򥿥�̾�˻��Ѥ��뤳�Ȥ��Ǥ��ޤ������Υɥ�����ơ�����󥳥��Ȥ���Ǥϡ����Τ褦�˻��Ѥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5135,7 +3632,7 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-でこのタグオプションを使用すると、  
+�Ǥ��Υ������ץ�������Ѥ���ȡ�  
 .nf
 \f3
 .fl
@@ -5143,9 +3640,9 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-\f3タグ名のスペルチェック (タグの無効化)\fP \- ソースコード内に配置した一部のカスタムタグの出力を抑制したい場合があります。この場合も、ソースコード内にすべてのタグを配置し、出力を抑制しないタグを有効にし、出力を抑制するタグを無効にします。タグを無効にするには、\f2X\fP を指定します。指定しないと、そのタグは有効になります。 これにより、Javadoc ツールは、検出したタグが入力ミスなどによる未知のタグであるかどうかを特定できます。未知のタグを検出した場合、Javadoc ツールは警告を出力します。 
+\f3����̾�Υ��ڥ�����å� (������̵����)\fP \- ������������������֤��������Υ������ॿ���ν��Ϥ�������������礬����ޤ������ξ��⡢��������������ˤ��٤ƤΥ��������֤������Ϥ��������ʤ�������ͭ���ˤ������Ϥ��������륿����̵���ˤ��ޤ��� \f2X\fP ��¸�ߤ�����ϥ�����̵���ˤʤꡢ¸�ߤ��ʤ����ϥ�����ͭ���ˤʤ�ޤ�������ˤ�ꡢJavadoc �ġ���ϡ����Ф������������ϥߥ��ʤɤˤ��̤�ΤΥ����Ǥ��뤫�ɤ���������Ǥ��ޤ���̤�ΤΥ����򸡽Ф�����硢Javadoc �ġ���Ϸٹ����Ϥ��ޤ��� 
 .LP
-すでに配置されている値に \f2X\fP を追加できます。 こうしておけば、\f2X\fP を削除するだけでタグを有効にすることができます。たとえば、@todo タグの出力を抑制したい場合、次のように指定します。 
+���Ǥ����֤���Ƥ����ͤ� \f2X\fP ���ɲäǤ��ޤ����������Ƥ����С� \f2X ������������ǥ�����ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ�\fP�����Ȥ��С�@todo �����ν��Ϥ�������������硢���Τ褦�˻��ꤷ�ޤ��� 
 .nf
 \f3
 .fl
@@ -5153,7 +3650,7 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 .fl
 \fP
 .fi
-さらに単純な指定方法もあります。 
+�����ñ��ʻ�����ˡ�⤢��ޤ��� 
 .nf
 \f3
 .fl
@@ -5162,13 +3659,13 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 \fP
 .fi
 .LP
-構文 \f2\-tag todo:X\fP は、\f2@todo\fP が taglet で定義されている場合も有効です。 
+��ʸ \f2\-tag todo:X\fP �ϡ� \f2@todo\fP ��������åȤ��������Ƥ��Ƥ�ͭ���Ǥ��� 
 .LP
-\f3タグの順序\fP \- \f2\-tag\fP (および \f2\-taglet\fP) オプションの順序によって、その出力順序が決定します。カスタムタグと標準タグを組み合わせて使用することもできます。標準タグのタグオプションは、順序を決定するためだけのプレースホルダです。これらは標準タグ名のみを使用します。(標準タグの小見出しは変更できません。)これについては、以下の例で説明します。 
+\f3�����ν��\fP \- \f2\-tag\fP (����� \f2\-taglet\fP) ���ץ����ν���ˤ�äơ������ν��Ͻ礬��ޤ�ޤ����������ॿ����ɸ�ॿ�����Ȥ߹�碌�ƻ��Ѥ��뤳�Ȥ�Ǥ��ޤ���ɸ�ॿ���Υ������ץ����ϡ��������ꤹ�뤿������Υץ졼���ۥ���Ǥ���������ɸ�ॿ��̾�Τߤ���Ѥ��ޤ���(ɸ�ॿ���ξ����Ф����ѹ��Ǥ��ޤ���)����ˤĤ��Ƥϡ��ʲ�������������ޤ��� 
 .LP
-\f2\-tag\fP がない場合、\f2\-taglet\fP の位置によってその順序が決定します。タグが両方とも存在する場合、コマンド行の最後にあるほうがその順序を決定します。これは、タグやタグレットがコマンド行に指定された順番に処理されるためです。たとえば、\f2\-taglet\fP と \f2\-tag\fP の両方が todo という名前を持っている場合、コマンド行の最後にあるほうが順序を決定します。 
+\f2\-tag\fP ��¸�ߤ��ʤ����ϡ� \f2\-taglet\fP �ΰ��֤ˤ�äƤ��ν������ޤ�ޤ���������ξ���Ȥ�¸�ߤ����硢���ޥ�ɹԤκǸ�ˤ���ۤ������ν������ꤷ�ޤ�������ϡ������䥿����åȤ����ޥ�ɹԤ˻��ꤵ�줿���֤˽�������뤿��Ǥ������Ȥ��С� \f2\-taglet\fP �� \f2\-tag\fP ��ξ���� todo �Ȥ���̾������äƤ����硢���ޥ�ɹԤκǸ�ˤ���ۤ����������ꤷ�ޤ��� 
 .LP
-\f3タグの完全セットの例\fP \- この例では、出力の「Parameters」と「Throws」の間に「To Do」を挿入します。X を使用して、@example が、ソースコード内の今回の実行では出力されないタグであることを指定します。@argfile を使用する場合は、次のように、引数ファイル内の別々の行にタグを配置できます。 行の継続を示す文字は不要です。 
+\f3�����δ������åȤ���\fP \- ������Ǥϡ����ϤΡ�Parameters�פȡ�Throws�פδ֤ˡ�To Do�פ��������ޤ���X ����Ѥ��ơ�@example ������������������κ���μ¹ԤǤϽ��Ϥ���ʤ������Ǥ��뤳�Ȥ���ꤷ�ޤ���@argfile ����Ѥ�����ϡ����Τ褦�ˡ������ե���������̡��ιԤ˥��������֤Ǥ��ޤ����Ԥη�³�򼨤�ʸ�������פǤ��� 
 .nf
 \f3
 .fl
@@ -5187,37 +3684,37 @@ Javadoc ツールがドキュメンテーションコメント内の引数を 1 
 \fP
 .fi
 .LP
-javadoc がドキュメンテーションコメントを解析する際に検出されたタグのうち、標準タグでも \f2\-tag\fP や \f2\-taglet\fP で渡されるタグでもないものは、未知のタグの見なされます。 この場合、警告がスローされます。 
+javadoc ���ɥ�����ơ�����󥳥��Ȥ���Ϥ���ݤ˸������줿�����Τ�����ɸ�ॿ���Ǥ⡢ \f2\-tag\fP �� \f2\-taglet\fP ���Ϥ��줿�����Ǥ�ʤ���ΤϤ��٤�̤�ΤΥ����Ȥߤʤ��졢�ٹ𤬥���������ޤ��� 
 .LP
-標準タグは、最初、デフォルトの順序でリスト内に内部的に格納されます。\f2\-tag\fP オプションを使用すると、このリストに追加されるタグ、すなわち標準タグの位置がデフォルトの位置から移動します。つまり、標準タグに \f2\-tag\fP オプションを付けなければ、これらはデフォルトの位置に配置されたままになります。 
+ɸ�ॿ���ϡ��ǽ顢�ǥե���Ȥν���ǥꥹ���������Ū�˳�Ǽ����ޤ��� \f2\-tag\fP ���ץ�������Ѥ���ȡ����Υꥹ�Ȥ��ɲä���륿�������ʤ��ɸ�ॿ���ΰ��֤��ǥե���Ȥΰ��֤����ư���ޤ����Ĥޤꡢɸ�ॿ���� \f2\-tag\fP ���ץ������դ��ʤ���С������ϥǥե���Ȥΰ��֤����֤��줿�ޤޤˤʤ�ޤ��� 
 .LP
-\f3競合の回避\fP \- 固有の名前空間を分割するには、パッケージに使用されている \f2com.mycompany.todo\fP のように、ドット (.) 区切りの命名規則を使用します。Sun は、今後も名前にドットを含まない標準タグを作成します。ユーザーが作成したタグは、Sun が提供する同じ名前のタグの動作をオーバーライドします。つまり、ユーザーが \f2@todo\fP という名前のタグまたはタグレットを作成している場合、Sun があとから同じ名前の標準タグを作成しても、そのタグまたはタグレットは元の動作を保持します。 
+\f3����β���\fP \- ��ͭ��̾�����֤�٤���ʬ����ˤϡ��ѥå������˻��Ѥ���Ƥ��� \f2com.mycompany.todo �Ȥ���̾���Τ褦�ˡ��ɥå� (.) ����ڤ국��Ȥ���̾����Ȥ��ޤ�\fP��Oracle �ϡ������̾���˥ɥåȤ�ޤޤʤ�ɸ�ॿ����������ޤ����桼�������������������ϡ�Oracle ���󶡤���Ʊ��̾���Υ�����ư��򥪡��С��饤�ɤ��ޤ����Ĥޤꡢ \f2@todo\fP �Ȥ���̾���Υ����ޤ��ϥ�����åȤ�桼����������������硢Oracle �����θ�Ʊ��̾����ɸ�ॿ������������Ȥ��Ƥ⡢����ư��Ͼ�˥桼�������������ư���Ʊ���ˤʤ�ޤ��� 
 .LP
-\f3注釈 vs. Javadoc タグ\fP \- 一般に、追加する必要のあるマークアップが、ドキュメンテーションに影響を与えたりドキュメンテーションを生成したりするためのものである場合、そのマークアップは javadoc タグにすべきです。 それ以外の場合は注釈にすべきです。
+\f3���� vs. Javadoc ����\fP \- ���̤ˡ��ɲä���ɬ�פΤ���ޡ������åפ����ɥ�����ơ������˱ƶ���Ϳ������ɥ�����ơ����������������ꤹ�뤿��Τ�ΤǤ����硢���Υޡ������åפ� javadoc �����ˤ��٤��Ǥ�������ʳ��ξ�������ˤ��٤��Ǥ���
 .na
-\f2「Comparing Annotations and Javadoc Tags」\fP @
+\f2��Comparing Annotations and Javadoc Tags��\fP @
 .fi
-http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#annotationsを参照してください。 
+http://java.sun.com/j2se/javadoc/writingdoccomments/index.html#annotations�򻲾Ȥ��Ƥ��������� 
 .LP
-\-taglet オプションを使用して、より複雑なブロックタグやカスタムインラインタグを 作成することができます。 
+\-taglet ���ץ�������Ѥ��ơ����ʣ���ʥ֥��å������䥫�����।��饤�󥿥��� �������뤳�Ȥ��Ǥ��ޤ��� 
 .LP
 .TP 3
 \-taglet\ \ class 
-そのタグのドキュメントの生成に使うドックレットを起動するためのクラスファイルを指定します。クラスの完全指定名を指定してください。このタグレットは、カスタムタグのテキスト引数の数も定義します。タグレットは、これらの引数を受け付け、処理し、出力を生成します。外部ドキュメントとサンプルタグレットについては、以下を参照してください。 
+���Υ����Υɥ�����Ȥ������˻Ȥ��ɥå���åȤ�ư���뤿��Υ��饹�ե��������ꤷ�ޤ������饹�δ�������̾����ꤷ�Ƥ������������Υ�����åȤϡ��������ॿ���Υƥ����Ȱ����ο���������ޤ���������åȤϡ������ΰ���������դ��������������Ϥ��������ޤ��������ɥ�����Ȥȥ���ץ륿����åȤˤĤ��Ƥϡ��ʲ��򻲾Ȥ��Ƥ��������� 
 .RS 3
 .TP 2
 o
 .na
-\f2「タグレットの概要」\fP @
+\f2�֥�����åȤγ��ס�\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/javadoc/taglet/overview.html 
 .RE
 .LP
-タグレットは、標準タグまたはインラインタグで便利です。タグレットは任意の数の引数をとることができます。 また、テキストを太字にする、箇条書きを作成する、テキストをファイルに書き出す、その他のプロセスを開始するなどのカスタム動作を実装できます。 
+������åȤϡ��֥��å������ޤ��ϥ���饤�󥿥��������Ǥ���������åȤ�Ǥ�դο��ΰ�����Ȥ뤳�Ȥ��Ǥ��ޤ����ޤ����ƥ����Ȥ������ˤ��롢�վ�񤭤�������롢�ƥ����Ȥ�ե�����˽񤭽Ф�������¾�Υץ������򳫻Ϥ���ʤɤΥ�������ư�������Ǥ��ޤ��� 
 .LP
-タグレットで指定できるのは、タグの配置場所と配置形式のみです。その他のすべての決定は、ドックレットによって行われます。タグレットを使用しても、包含クラスのリストからクラス名を削除するなどの処理は実行できません。ただし、タグのテキストをファイルに出力したり、別のプロセスをトリガーするなどの副作用は得られます。 
+������åȤǻ���Ǥ���Τϡ����������־������ַ����ΤߤǤ�������¾�Τ��٤Ƥη���ϡ��ɥå���åȤˤ�äƹԤ��ޤ���������åȤ���Ѥ��Ƥ⡢��ޥ��饹�Υꥹ�Ȥ��饯�饹̾��������ʤɤν����ϼ¹ԤǤ��ޤ��󡣤������������Υƥ����Ȥ�ե�����˽��Ϥ����ꡢ�̤Υץ�������ȥꥬ������ʤɤ������Ѥ������ޤ��� 
 .LP
-タグレットのパスを指定するには、\f2\-tagletpath\fP オプションを使用します。以下は、生成されるページの「Parameter」と「Throws」の間に「To Do」タグレットを挿入する例です。 
+������åȤΥѥ�����ꤹ��ˤϡ�\f2\-tagletpath\fP ���ץ�������Ѥ��ޤ����ʲ��ϡ����������ڡ����Ρ�Parameter�פȡ�Throws�פδ֤ˡ�To Do�ץ�����åȤ�����������Ǥ��� 
 .nf
 \f3
 .fl
@@ -5238,25 +3735,25 @@ http://java.sun.com/javase/6/docs/technotes/guides/javadoc/taglet/overview.html
 \fP
 .fi
 .LP
-\f2\-tag\fP オプションの代わりに \f2\-taglet\fP オプションを使用することもできますが、読みやすさを考慮するなら、\f2\-tag\fP オプションを使用したほうがよいでしょう。 
+�ޤ��� \f2\-taglet\fP ���ץ����� \f2\-tag\fP ���ץ���������˻��Ѥ��뤳�Ȥ�Ǥ��ޤ�������������Ȳ��������㲼�����ǽ��������ޤ��� 
 .LP
 .TP 3
 \-tagletpath\ \ tagletpathlist 
-taglet クラスファイル (.class) の検索パスを指定します。\f2tagletpathlist\fP には、コロン (\f2:\fP) で区切って複数のパスを含めることができます。Javadoc ツールは、指定されたパスの以下すべてのサブディレクトリを検索します。 
+taglet ���饹�ե����� (.class) �θ����ѥ�����ꤷ�ޤ���\f2tagletpathlist\fP �ˤϡ������� (\f2:\fP) �Ƕ��ڤä�ʣ���Υѥ���ޤ�뤳�Ȥ��Ǥ��ޤ���Javadoc �ġ���ϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ��� 
 .LP
 .TP 3
 \-docfilessubdirs\  
-\f2doc\-files\fP ディレクトリの深いコピーを有効にします。つまり、コピー先には、サブディレクトリとすべてのコンテンツがコピーされます。たとえば、\f2doc\-files/example/images\fP ディレクトリとその中のファイルがコピーされます。ここでも、サブディレクトリを除外する指定が可能です。 
+��\f2doc\-files\fP�ץǥ��쥯�ȥ�ο������ԡ���ͭ���ˤ��ޤ����Ĥޤꡢ���ԡ���ˤϡ����֥ǥ��쥯�ȥ�Ȥ��٤ƤΥ���ƥ�Ĥ����ԡ�����ޤ������Ȥ��С��ǥ��쥯�ȥ� \f2doc\-files/example/images\fP �Ȥ��Τ��٤Ƥ����Ƥ����ԡ�����ޤ��������Ǥ⡢���֥ǥ��쥯�ȥ�����������꤬��ǽ�Ǥ��� 
 .LP
 .TP 3
 \-excludedocfilessubdir\ \ name1:name2... 
-所定の名前の \f2doc\-files\fP サブディレクトリを除外します。これにより、SCCS とその他のソースコード制御サブディレクトリのコピーを防ぎます。 
+��\f2doc\-files\fP�פΡ����ꤵ�줿̾���Υ��֥ǥ��쥯�ȥ�򤹤٤ƽ������ޤ�������ˤ�ꡢSCCS �Ȥ���¾�Υ��������������極�֥ǥ��쥯�ȥ�Υ��ԡ����ɤ��ޤ��� 
 .LP
 .TP 3
 \-noqualifier\ \ all\  | \ packagename1:packagename2:... 
-出力されるクラス名の先頭のパッケージ名 (パッケージ修飾子) を省略します。\f2\-noqualifier\fP の引数として \f2all\fP を指定した場合、すべてのパッケージ修飾子がすべて省略されます。 削除する複数のパッケージ名をコロンで区切って、ワイルドカードとともに指定することもできます。クラスまたはインタフェース名が表示される位置からパッケージ名が削除されます。 
+���Ϥ���륯�饹̾����Ƭ�Υѥå�����̾ (�ѥå�����������) ���ά���ޤ��� \f2\-noqualifier\fP �ΰ����ϡ���\f2all\fP��(���٤ƤΥѥå����������Ҥ���ά�����)�������ҤȤ��ƺ�����٤��ѥå������Υ�������ڤ�ꥹ�� (�磻��ɥ����ɤ��)���Τ����줫�Ȥʤ�ޤ������饹�ޤ��ϥ��󥿥ե�����̾��ɽ���������֤���ѥå�����̾���������ޤ��� 
 .LP
-次の例では、すべてのパッケージ修飾子を省略します。 
+������Ǥϡ����٤ƤΥѥå����������Ҥ��ά���ޤ��� 
 .nf
 \f3
 .fl
@@ -5264,7 +3761,7 @@ taglet クラスファイル (.class) の検索パスを指定します。\f2tag
 .fl
 \fP
 .fi
-次の例では、パッケージ修飾子 java.lang および java.io を省略します。 
+������Ǥϡ��ѥå����������� java.lang ����� java.io ���ά���ޤ��� 
 .nf
 \f3
 .fl
@@ -5272,7 +3769,7 @@ taglet クラスファイル (.class) の検索パスを指定します。\f2tag
 .fl
 \fP
 .fi
-次の例では、java で始まるパッケージ修飾子と com.sun というサブパッケージ (javax ではない) を省略します。 
+������Ǥϡ�java �ǻϤޤ�ѥå����������Ҥ� com.sun �Ȥ������֥ѥå����� (javax �ǤϤʤ�) ���ά���ޤ��� 
 .nf
 \f3
 .fl
@@ -5280,63 +3777,54 @@ taglet クラスファイル (.class) の検索パスを指定します。\f2tag
 .fl
 \fP
 .fi
-パッケージ修飾子が上記の動作に従って表示される場合、名前は適切に短くされます。 詳細は「名前の表示方法」を参照してください。この規則は、\f2\-noqualifier\fP を使用したかどうかにかかわらず有効です。 
+�ѥå����������Ҥ��嵭��ư��˽��ä�ɽ��������硢̾����Ŭ�ڤ�û������ޤ����ܺ٤ϡ�̾����ɽ����ˡ�פ򻲾Ȥ��Ƥ������������ε�§�ϡ� \f2\-noqualifier\fP ����Ѥ��뤫�ɤ����ˤ�����餺ͭ���Ǥ��� 
 .LP
 .TP 3
 \-notimestamp\  
-タイムスタンプが抑制されます。 各ページ先頭近くにある、生成された HTML 内の HTML コメントでタイムスタンプが隠されます。Javadoc を 2 つのソースベースで実行し、それらに対して diff を実行するときにこのオプションを使用すると、タイムスタンプによって diff が発生しなくなるので便利です (このオプションを使用しないと、各ページで diff になります)。タイムスタンプには Javadoc のバージョン番号が含まれており、次のようになります。 
+�����ॹ����פ���������ޤ����ƥڡ�����Ƭ�᤯�ˤ��롢�������줿 HTML ��� HTML �����Ȥǥ����ॹ����פ�������ޤ���Javadoc �� 2 �ĤΥ������١����Ǽ¹Ԥ����������Ф��� diff ��¹Ԥ���Ȥ��ˤ��Υ��ץ�������Ѥ���ȡ������ॹ����פˤ�ä� diff ��ȯ�����ʤ��ʤ�Τ������Ǥ� (���Υ��ץ�������Ѥ��ʤ��ȡ��ƥڡ����� diff �ˤʤ�ޤ�)�������ॹ����פˤ� Javadoc �ΥС�������ֹ椬�ޤޤ�Ƥ��ꡢ���Τ褦�ˤʤ�ޤ��� 
 .nf
 \f3
 .fl
-     <!\-\- Generated by javadoc (build 1.5.0\-internal) on Tue Jun 22 09:57:24 PDT 2004 \-\->
+     <!\-\- Generated by javadoc (build 1.5.0_01) on Thu Apr 02 14:04:52 IST 2009 \-\->
 .fl
 \fP
 .fi
 .LP
 .TP 3
 \-nocomment\  
-主説明およびすべてのタグを含むコメント本文全体を抑制し、宣言だけを生成します。このオプションにより、元は異なる目的のためだったソースファイルを再利用し、新しいプロジェクトの早い段階でスケルトン HTML ドキュメントを作成できるようになりました。 
+����������Ӥ��٤ƤΥ�����ޤॳ������ʸ���Τ�������������������������ޤ������Υ��ץ����ˤ�ꡢ���ϰۤʤ���Ū�Τ�����ä��������ե����������Ѥ����������ץ��������Ȥ��ᤤ�ʳ��ǥ�����ȥ� HTML �ɥ�����Ȥ�����Ǥ���褦�ˤʤ�ޤ����� 
+.LP
+.TP 3
+\-sourcetab tabLength 
+��������ǳƥ��֤������������ο�����ꤷ�ޤ��� 
 .RE
-.SH "コマンド行引数ファイル"
+.SH "���ޥ�ɹ԰����ե�����"
 .LP
+javadoc �Υ��ޥ�ɹԤ�û��������ʷ�ˤ����ꤹ�뤿��ˡ� \f2javadoc\fP ���ޥ�ɤ��Ф������ ( \f2\-J\fP ���ץ��������) �����ä� 1 �İʾ�Υե��������ꤹ�뤳�Ȥ��Ǥ��ޤ������Τ��Ȥ����Ѥ���С��ɤΥ��ڥ졼�ƥ��󥰥����ƥ��Ǥ⡢Ǥ�դ�Ĺ���� javadoc ���ޥ�ɤ�����Ǥ��ޤ���
 .LP
-\f2javadoc\fP のコマンド行を短くしたり簡潔にしたりするために、\f2javadoc\fP コマンドに対する引数 (\f2\-J\fP オプションを除く) が入った 1 つ以上のファイルを指定することができます。このことを利用すれば、どのオペレーティングシステム上でも、任意の長さの javadoc コマンドを作成できます。
+�����ե�����ˤϡ�javac �Υ��ץ����ȥ������ե�����̾��ͳ���Ȥ߹�碌�Ƶ��ҤǤ��ޤ����ե�������γư����ϡ����ڡ����ޤ��ϲ��ԤǶ��ڤ�ޤ����ե�����̾�˶��򤬴ޤޤ�Ƥ�����ϡ����Υե�����̾���Τ���Ű�����ǰϤߤޤ���
 .LP
+�����ե�������Υե�����̾�ϡ����ߤΥǥ��쥯�ȥ꤫�鸫�����Хѥ��ˤʤ�ޤ��������ե�����ΰ��֤��鸫�����Хѥ��ǤϤ���ޤ��󡣰����ե�������Υե�����̾�ꥹ�ȤǤϡ��磻��ɥ����� (*) �ϻ��ѤǤ��ޤ��󡣤��Ȥ��С� \f2*.java\fP �Ȥϻ���Ǥ��ޤ��󡣰����ե�������ΰ����� \f2@\fP ʸ������Ѥ��ơ�ʣ���Υե������Ƶ�Ū�˲�᤹�뤳�Ȥϥ��ݡ��Ȥ���Ƥ��ޤ��󡣤ޤ��� \f2\-J\fP ���ץ����⥵�ݡ��Ȥ���Ƥ��ޤ��� ���Υ��ץ����ϵ�ư�ġ�����Ϥ���ޤ�������ư�ġ���Ǥϰ����ե�����򥵥ݡ��Ȥ��Ƥ��ʤ�����Ǥ���
 .LP
-引数ファイルには、javac のオプションとソースファイル名を自由に組み合わせて記述できます。ファイル内の各引数は、スペースまたは改行で区切ります。ファイル名に空白が含まれている場合は、そのファイル名全体を二重引用符で囲みます。
-.LP
-.LP
-引数ファイル内のファイル名は、現在のディレクトリから見た相対パスになります。引数ファイルの位置から見た相対パスではありません。引数ファイル内のファイル名リストでは、ワイルドカード (*) は使用できません。たとえば、\f2*.java\fP とは指定できません。引数ファイル内の引数で \f2@\fP 文字を使用して、複数のファイルを再帰的に解釈することはサポートされていません。また、\f2\-J\fP オプションもサポートされていません。 このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
-.LP
-.LP
-javadoc を実行するときに、各引数ファイルのパスとファイル名の先頭に \f2@\fP 文字を付けて渡します。javadoc は、\f2@\fP 文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
-.LP
+javadoc ��¹Ԥ���Ȥ��ˡ��ư����ե�����Υѥ��ȥե�����̾����Ƭ�� \f2@\fP ʸ�����դ����Ϥ��ޤ���javadoc �ϡ�\f2@\fP ʸ���ǻϤޤ�����򸫤Ĥ���ȡ����Υե���������Ƥ�Ÿ�����ư����ꥹ�Ȥ��������ޤ���
 .SS 
-引数ファイルを 1 つ指定する例
+�����ե������ 1 �Ļ��ꤹ����
 .LP
-.LP
-\f2argfile\fP という名前の引数ファイルにすべての Javadoc 引数を格納し、次のように使用することができます。
-.LP
+���Τ褦�ˡ���\f2argfile\fP�פȤ���̾����ñ��ΰ����ե�������ˡ�Javadoc �Τ��٤Ƥΰ������Ǽ���ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc @argfile\fP
 .fl
 .fi
-
 .LP
-.LP
-この引数ファイルには、次の例で示されている 2 つのファイルの内容を両方とも入れることができます。
-.LP
+���ΰ����ե�����ˤϡ�������Ǽ�����Ƥ��� 2 �ĤΥե���������Ƥ�ξ���Ȥ�����뤳�Ȥ��Ǥ��ޤ���
 .SS 
-引数ファイルを 2 つ指定する例
+�����ե������ 2 �Ļ��ꤹ����
 .LP
+2 �Ĥΰ����ե����������Ǥ��ޤ���1 �Ĥ� Javadoc ���ץ�����ѡ��⤦ 1 �Ĥϥѥå�����̾�ޤ��ϥ������ե�����̾�ѤǤ����ʤ������Υꥹ�ȤǤϹԷ�³ʸ������Ѥ��Ƥ��ޤ���
 .LP
-Javadoc オプション用に 1 つ、ソースファイル名用に 1 つというように、2 つの引数ファイルを作成し、次のようにして使用することができます。なお、このあとのリストでは、行の継続文字を使用していません。
-.LP
-.LP
-以下の内容を含む \f2options\fP という名前のファイルを作成します。
-.LP
+�������Ƥ�ޤࡢ��\f2options\fP�פȤ���̾���Υե������������ޤ���
 .nf
 \f3
 .fl
@@ -5346,27 +3834,24 @@ Javadoc オプション用に 1 つ、ソースファイル名用に 1 つとい
 .fl
      \-splitindex
 .fl
-     \-windowtitle 'Java 2 Platform v1.3 API Specification'
+     \-windowtitle 'Java SE 7 API Specification'
 .fl
-     \-doctitle 'Java(TM) 2 Platform 5.0 API Specification'
+     \-doctitle 'Java SE 7 API Specification'
 .fl
-     \-header '<b>Java 2 Platform </b><br><font size="\-1">5.0</font>'
+     \-header '<b>Java(TM) SE 7</b>'
 .fl
-     \-bottom 'Copyright 1993\-2000 Sun Microsystems, Inc. All Rights Reserved.'
+     \-bottom 'Copyright &copy; 1993\-2011 Oracle and/or its affiliates. All rights reserved.'
 .fl
      \-group "Core Packages" "java.*"
 .fl
-     \-overview /java/pubs/ws/1.5/src/share/classes/overview\-core.html
+     \-overview /java/pubs/ws/1.7.0/src/share/classes/overview\-core.html
 .fl
-     \-sourcepath /java/pubs/ws/1.5/src/share/classes
+     \-sourcepath /java/pubs/ws/1.7.0/src/share/classes
 .fl
 \fP
 .fi
-
 .LP
-.LP
-以下の内容を含む \f2packages\fP という名前のファイルを作成します。
-.LP
+�������Ƥ�ޤࡢ��\f2packages\fP�פȤ���̾���Υե������������ޤ���
 .nf
 \f3
 .fl
@@ -5378,115 +3863,89 @@ Javadoc オプション用に 1 つ、ソースファイル名用に 1 つとい
 .fl
 \fP
 .fi
-
 .LP
-.LP
-そのあと、次のコマンドを使用して javadoc を実行します。
-.LP
+���Τ��ȡ����Υ��ޥ�ɤ���Ѥ��� javadoc ��¹Ԥ��ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc @options @packages\fP
 .fl
 .fi
-
-.LP
 .SS 
-パス付きの引数ファイルの例
+�ѥ��դ��ΰ����ե��������
 .LP
-.LP
-引数ファイルには、パスを指定できます。 ただし、そのファイル内に指定されたファイル名は、現在の作業ディレクトリから見た相対パスになります。 つまり、下の例の場合は、\f2path1\fP や \f2path2\fP から見た相対パスではありません。
-.LP
+�����ե�����ˤϡ��ѥ������Ǥ��ޤ��������������Υե�������˻��ꤵ�줿�ե�����̾�ϡ����ߤκ�ȥǥ��쥯�ȥ꤫�鸫�����Хѥ��ˤʤ�ޤ����Ĥޤꡢ������ξ��ϡ� \f2path1\fP �� \f2path2\fP ���鸫�����Хѥ��ǤϤ���ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc @path1/options @path2/packages\fP
 .fl
 .fi
-
-.LP
 .SS 
-オプションの引数の例
+���ץ����ΰ�������
 .LP
-.LP
-次に、Javadoc オプションに対する引数だけを引数ファイルに格納する例を示します。ここでは、\f2\-bottom\fP を例に取り上げます。 そのオプションには、かなり長い引数を指定することがあるからです。まず、このオプションのテキスト引数になる次のような内容を含む、\f2bottom\fP という名前のファイルを作成します。
-.LP
+���ˡ�Javadoc ���ץ������Ф����������������ե�����˳�Ǽ������򼨤��ޤ��������Ǥ� \f2\-bottom\fP ���ץ�������Ѥ��ޤ����Ȥ����Τ⡢������Ĺ���ʤ��ǽ�������뤫��Ǥ������Τ褦�ʥƥ����Ȱ�����ޤࡢ��\f2bottom\fP�פȤ���̾���Υե����������Ǥ��ޤ���
 .nf
 \f3
 .fl
-'<font size="\-1"><a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit a 
+<font size="\-1">
 .fl
-bug or feature</a><br><br>Java is a trademark or registered trademark of 
+      <a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit a bug or feature</a><br/>
 .fl
-Sun Microsystems, Inc. in the US and other countries.<br>Copyright 1993\-2000 Sun 
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
 .fl
-Microsystems, Inc. 901 San Antonio Road,<br>Palo Alto, California, 94303, U.S.A. 
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
 .fl
-All Rights Reserved.</font>'
+      Other names may be trademarks of their respective owners.</font>
 .fl
 \fP
 .fi
-
 .LP
-.LP
-そのあと、次のようにして Javadoc ツールを実行します。
-.LP
+���Τ��ȡ����Τ褦�ˤ��� Javadoc �ġ����¹Ԥ��ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-bottom @bottom @packages\fP
 .fl
 .fi
-
 .LP
-.LP
-また、引数ファイルの先頭に \f2\-bottom\fP オプションを組み込んでおけば、次のようにして実行できます。
-.LP
+���뤤�ϡ������ե��������Ƭ�� \f2\-bottom\fP ���ץ������Ȥ߹�������ȡ����Τ褦�˼¹Ԥ��Ƥ⤫�ޤ��ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc @bottom @packages\fP
 .fl
 .fi
-.SH "名前"
-実行
-.SH "Javadoc の実行"
+.SH "̾��"
+�¹�
+.SH "Javadoc �μ¹�"
 .LP
+\f3�С�������ֹ�\fP \- javadoc �ΥС�������ֹ��Ƚ�̤���ˤϡ�\f3javadoc \-J\-version\fP ����Ѥ��ޤ������ϥ��ȥ꡼��ˤ�ɸ��ɥå���åȤΥС�������ֹ椬�ޤޤ�ޤ������ν��Ϥ�̵���ˤ���ˤϡ� \f2\-quiet\fP ����Ѥ��ޤ���
 .LP
-\f3バージョン番号\fP \- javadoc のバージョン番号を判別するには、\f3javadoc \-J\-version\fP を使用します。出力ストリームには標準ドックレットのバージョン番号が含まれます。\f2\-quiet\fP で無効にできます。
-.LP
-.LP
-\f3公開プログラムインタフェース\fP \- Java 言語で記述されたプログラムから Javadoc ツールを起動するとき使用します。このインタフェースは \f2com.sun.tools.javadoc.Main\fP にあります (javadoc は再入可能)。詳細は、
+\f3�����ץ�����।�󥿥ե�����\fP \- Java ����ǵ��Ҥ��줿�ץ�����फ�� Javadoc �ġ����ư����Ȥ����Ѥ��ޤ������Υ��󥿥ե������� \f2com.sun.tools.javadoc.Main �ˤ���ޤ�\fP (javadoc �Ϻ�����ǽ)���ܺ٤ϡ�
 .na
-\f2「標準ドックレット」\fP @
+\f2��ɸ��ɥå���åȡ�\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/javadoc/standard\-doclet.html#runningprogrammaticallyを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/javadoc/standard\-doclet.html#runningprogrammatically�򻲾Ȥ��Ƥ���������
 .LP
-.LP
-\f3ドックレットの実行\fP \- 下記の説明は、標準 HTML ドックレットを呼び出すためのものです。カスタムドックレットを呼び出すには、\-doclet および \-docletpath オプションを使用します。特定のドックレットを実行した完全な例については、
+\f3�ɥå���åȤμ¹�\fP \- �����������ϡ�ɸ�� HTML �ɥå���åȤ�ƤӽФ�����Τ�ΤǤ�����������ɥå���åȤ�ƤӽФ��ˤϡ�\-doclet ����� \-docletpath ���ץ�������Ѥ��ޤ�������Υɥå���åȤ�¹Ԥ�����������ˤĤ��Ƥϡ�
 .na
-\f2MIF Doclet のドキュメント\fP @
+\f2MIF Doclet �Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.htmlを参照してください。
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html�򻲾Ȥ��Ƥ���������
+.SH "��ñ����"
 .LP
-.SH "簡単な例"
-.LP
-.LP
-javadoc は、パッケージ全体に対して実行することも、個々のソースファイルに対して実行することもできます。各パッケージ名は、それぞれのパッケージ名に対応するディレクトリ名を持ちます。次の例では、ソースファイルは \f2/home/src/java/awt/*.java\fP にあります。生成先ディレクトリは \f2/home/html\fP です。
-.LP
+javadoc �ϡ��ѥå��������Τ��Ф��Ƽ¹Ԥ��뤳�Ȥ⡢�ġ��Υ������ե�������Ф��Ƽ¹Ԥ��뤳�Ȥ�Ǥ��ޤ����ƥѥå�����̾�ϡ����줾��Υѥå�����̾���б�����ǥ��쥯�ȥ�̾������ޤ���������Ǥϡ��������ե������ \f2/home/src/java/awt/*.java �ˤ���ޤ�\fP��������ǥ��쥯�ȥ�� \f2/home/html �Ǥ�\fP��
 .SS 
-1 つ以上のパッケージのドキュメント化
+1 �İʾ�Υѥå������Υɥ�����Ȳ�
 .LP
+����ѥå�������ɥ�����Ȳ�����ˤϡ����Υѥå������Υ������ե����� (\f2*.java\fP) �򡢤��Υѥå�������Ʊ��̾���Υǥ��쥯�ȥ���˳�Ǽ����ɬ�פ�����ޤ����ѥå�����̾�� ( \f2java.awt.color\fP �Τ褦�˥ɥåȤǶ��ڤ�줿) �����Ĥ��μ��̻Ҥ��鹽������Ƥ����硢��¦�μ��̻Ҥ˿ʤि�Ӥˡ����μ��̻Ҥ���꿼�����֥ǥ��쥯�ȥ���б����Ƥ���ɬ�פ�����ޤ� ( \f2java/awt/color\fP �ʤ�)�� ñ��ѥå������Υ������ե������ 2 ���롼�פ�ʬ�����ۤʤ���ˤ��뤽�Τ褦�� 2 �ĤΥǥ��쥯�ȥ�ĥ꡼��ˤ��줾���Ǽ���Ƥ⤫�ޤ��ޤ��󡣤�����������ξ���Υǥ��쥯�ȥ�ؤΥѥ��� \f2\-sourcepath\fP �����ꤹ��ɬ�פ�����ޤ�����: \f2src1/java/awt/color\fP ����� \f2src2/java/awt/color\fP��
 .LP
-パッケージをドキュメント化するには、そのパッケージのソースファイル (\f2*.java\fP) が、パッケージと同じ名前を持つディレクトリ内に存在していなければなりません。パッケージ名が複数の識別子で構成されている (\f2java.awt.color\fP のように、各識別子はドットで区切られている) 場合は、後続の各識別子が下位のサブディレクトリに対応していなければなりません (\f2java/awt/color\fP など)。1 つのパッケージのための複数のソースファイルを、異なる場所にある 2 つのディレクトリツリーに分けて格納することも可能です (\f2src1/java/awt/color\fP と \f2src2/java/awt/color\fP など)。 ただし、その場合は、\f2\-sourcepath\fP によって、その両方の場所を指定しなければなりません。
-.LP
-.LP
-javadoc を実行するには、\f2cd\fP コマンドを使ってディレクトリを変更するか、または \f2\-sourcepath\fP オプションを使用します。以下の例では、両方の方法について説明します。
-.LP
+javadoc ��¹Ԥ���ˤϡ� \f2cd\fP ����Ѥ��ƥǥ��쥯�ȥ���ѹ����뤫�� \f2\-sourcepath\fP ���ץ�������Ѥ��ޤ����ʲ�����Ǥϡ�ξ������ˡ�ˤĤ����������ޤ���
 .RS 3
 .TP 2
 o
-\f3ケース 1 \- 1 つ以上のパッケージからの起動を再帰的に実行\fP \- この例では javadoc が任意のディレクトリから実行できるように、\-sourcepath を使用し、再帰的処理のために \-subpackages (1.4 の新オプション) を使用します。これは、\f2java\fP のサブパッケージ (\f2java.net\fP および \f2java.lang\fP をルートとするパッケージを除く) を処理します。ただし、\f2java.lang\fP のサブパッケージである \f2java.lang.ref\fP は除外されます。 
+\f3������ 1 \- 1 �İʾ�Υѥå���������ε�ư��Ƶ�Ū�˼¹�\fP \- ������Ǥ� javadoc ��Ǥ�դΥǥ��쥯�ȥ꤫��¹ԤǤ���褦�ˡ�\-sourcepath ����Ѥ����Ƶ�Ū�����Τ���� \-subpackages (1.4 �ο����ץ����) ����Ѥ��ޤ�������ϡ� \f2java\fP �ǥ��쥯�ȥ�Υ��֥ѥå������򤿤ɤ�ޤ��������κݤˡ� \f2java.net\fP �� \f2java.lang\fP ��롼�Ȥ˻��ĥѥå������Ͻ�������ޤ������ΤȤ��� \f2java.lang �Υ��֥ѥå�����\fP�Ǥ��� java.lang.ref �� \f2��������ޤ�\fP�� 
 .nf
 \f3
 .fl
@@ -5494,10 +3953,10 @@ o
 .fl
 .fi
 .LP
-その他のパッケージツリーを巡回するには、\f2java:javax:org.xml.sax\fP のように、\f2\-subpackages\fP 引数にその名前を追加します。  
+�ۤ��Υѥå������ĥ꡼�Ⲽ���ˤ��ɤ�ˤϡ� \f2java:javax:org.xml.sax �Τ褦�ˡ�\fP �����Υѥå�������̾���� \-subpackages \f2�ΰ������������ɲä��ޤ�\fP��  
 .TP 2
 o
-\f3ケース 2 \- ルートソースディレクトリに移ってから明示的なパッケージに対して実行\fP \- 完全指定のパッケージ名の親ディレクトリに移ります。次に、ドキュメント化する 1 つ以上のパッケージ名を指定して javadoc を実行します。 
+\f3������ 2 \- �롼�ȥ������ǥ��쥯�ȥ�˰ܤäƤ�������Ū�ʥѥå��������Ф��Ƽ¹�\fP \- ��������Υѥå�����̾�οƥǥ��쥯�ȥ�˰ܤ�ޤ������ˡ��ɥ�����Ȳ����� 1 �İʾ�Υѥå�����̾����ꤷ�� javadoc ��¹Ԥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5508,7 +3967,7 @@ o
 .fi
 .TP 2
 o
-\f3ケース 3 \- 任意のディレクトリから実行。 ソースファイルは 1 つのディレクトリツリー内にある\fP \- このケースでは、現在のディレクトリがどこであってもかまいません。最上位パッケージの親ディレクトリを \f2\-sourcepath\fP に指定し、ドキュメント化する 1 つ以上のパッケージ名を指定して javadoc を実行します。 
+\f3������ 3 \- Ǥ�դΥǥ��쥯�ȥ꤫��¹ԡ��������ե������ 1 �ĤΥǥ��쥯�ȥ�ĥ꡼��ˤ���\fP \- ���Υ������Ǥϡ����ߤΥǥ��쥯�ȥ꤬�ɤ��Ǥ��äƤ⤫�ޤ��ޤ��󡣺Ǿ�̥ѥå������οƥǥ��쥯�ȥ�� \f2\-sourcepath\fP �˻��ꤷ���ɥ�����Ȳ����� 1 �İʾ�Υѥå�����̾����ꤷ�� javadoc ��¹Ԥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5517,7 +3976,7 @@ o
 .fi
 .TP 2
 o
-\f3ケース 4 \- 任意のディレクトリから実行。 ソースファイルは複数のディレクトリツリー内にある\fP \- これはケース 3 と似ていますが、パッケージが複数のディレクトリツリーに存在します。それぞれのツリーのルートへのパスを \f2\-sourcepath\fP に指定し (コロンで区切る)、ドキュメント化する 1 つ以上のパッケージ名を指定して javadoc を実行します。1 つのパッケージのすべてのソースファイルが、1 つのルートディレクトリの下に存在しなければならない、ということはありません。 ソースパスとして指定された場所のどこかで見つかれば十分です。 
+\f3������ 4 \- Ǥ�դΥǥ��쥯�ȥ꤫��¹ԡ��������ե������ʣ���Υǥ��쥯�ȥ�ĥ꡼��ˤ���\fP \- ����ϥ����� 3 �Ȼ��Ƥ��ޤ������ѥå�������ʣ���Υǥ��쥯�ȥ�ĥ꡼��¸�ߤ��ޤ������줾��Υĥ꡼�Υ롼�ȤؤΥѥ��� \f2\-sourcepath\fP �˻��ꤷ (������Ƕ��ڤ�)���ɥ�����Ȳ����� 1 �İʾ�Υѥå�����̾����ꤷ�� javadoc ��¹Ԥ��ޤ���1 �ĤΥѥå������Τ��٤ƤΥ������ե����뤬��1 �ĤΥ롼�ȥǥ��쥯�ȥ�β���¸�ߤ��ʤ���Фʤ�ʤ����Ȥ������ȤϤ���ޤ��󡣥������ѥ��Ȥ��ƻ��ꤵ�줿���Τɤ����Ǹ��Ĥ���н�ʬ�Ǥ��� 
 .nf
 \f3
 .fl
@@ -5525,21 +3984,16 @@ o
 .fl
 .fi
 .RE
-
 .LP
-.LP
-結果: 上記のどのケースでも、\f2java.awt\fP と \f2java.awt.event\fP パッケージ内の public および protected クラスとインタフェースについて、HTML 形式のドキュメントが生成され、指定された生成先ディレクトリ (\f2/home/html\fP) に HTML ファイルが保存されます。2 つ以上のパッケージが生成されているので、ドキュメントは、パッケージのリスト、クラスのリスト、およびメインのクラスページという 3 つのフレームを持つことになります。
-.LP
+���: ���٤ƤΥ������ǥѥå����� \f2java.awt\fP ����� \f2java.awt.event\fP ��� public ����� protected ���饹�ȥ��󥿥ե������ˤĤ��ơ�HTML �����Υɥ�����Ȥ��������졢���ꤵ�줿������ǥ��쥯�ȥ� (\f2/home/html\fP) �� HTML �ե����뤬��¸����ޤ���2 �İʾ�Υѥå���������������Ƥ���Τǡ��ɥ�����Ȥϡ��ѥå������Υꥹ�ȡ����饹�Υꥹ�ȡ�����ӥᥤ��Υ��饹�ڡ����Ȥ��� 3 �ĤΥե졼�����Ĥ��Ȥˤʤ�ޤ���
 .SS 
-1 つ以上のクラスのドキュメント化
+1 �İʾ�Υ��饹�Υɥ�����Ȳ�
 .LP
-.LP
-また、1 つ以上のソースファイル (\f2.java\fP) を渡して、Javadoc ツールを実行することもできます。javadoc は、次の 2 つのどちらかの方法で実行できます。 1 つは、\f2cd\fP コマンドでディレクトリを変更する方法、もう 1 つは \f2.java\fP ファイルへのパスを完全指定する方法です。相対パスは、現在のディレクトリを起点とします。ソースファイル名を渡すときは、\f2\-sourcepath\fP オプションは無視されます。アスタリスク (*) のようなコマンド行ワイルドカードを使用すると、クラスのグループを指定できます。
-.LP
+�ޤ���1 �İʾ�Υ������ե����� (\f2.java\fP) ���Ϥ��ơ�Javadoc �ġ����¹Ԥ��뤳�Ȥ�Ǥ��ޤ���javadoc �ϡ����� 2 �Ĥ���ˡ�Τ����줫�Ǽ¹ԤǤ��ޤ���1 �Ĥ� \f2cd\fP ����Ѥ��ƥǥ��쥯�ȥ���ѹ�������ˡ���⤦ 1 �Ĥ� \f2.java\fP �ե�����ؤΥѥ������˻��ꤹ����ˡ�Ǥ������Хѥ��ϡ����ߤΥǥ��쥯�ȥ�����Ȥ��ޤ����������ե�����̾���Ϥ��Ȥ��ϡ� \f2\-sourcepath\fP ���ץ�����̵�뤵��ޤ����������ꥹ�� (*) �Τ褦�ʥ��ޥ�ɹԥ磻��ɥ����ɤ���Ѥ���ȡ����饹�Υ��롼�פ����Ǥ��ޤ���
 .RS 3
 .TP 2
 o
-\f3ケース 1 \- ソースディレクトリに移る\fP \- \f2.java\fP ファイルのあるディレクトリに移ります。次に、ドキュメント化する 1 つ以上のソースファイルの名前を指定して javadoc を実行します。 
+\f3������ 1 \- �������ǥ��쥯�ȥ�˰ܤ�\fP \- \f2.java\fP �ե�����Τ���ǥ��쥯�ȥ�˰ܤ�ޤ������ˡ��ɥ�����Ȳ����� 1 �İʾ�Υ������ե������̾������ꤷ�� javadoc ��¹Ԥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -5548,10 +4002,10 @@ o
   % \f3javadoc \-d /home/html Button.java Canvas.java Graphics*.java\fP
 .fl
 .fi
-この例では、クラス \f2Button\fP と \f2Canvas\fP、および名前が \f2Graphics\fP で始まるクラスについて、HTML 形式のドキュメントが生成されます。パッケージ名ではなくソースファイルが javadoc に引数として渡されているので、ドキュメントは、クラスのリストとメインページという 2 つのフレームを持つことになります。 
+������Ǥϡ����饹 \f2Button\fP �� \f2Canvas\fP �������̾���� \f2Graphics �ǻϤޤ륯�饹�ˤĤ��ơ�HTML �����Υɥ�����Ȥ���������ޤ�\fP���ѥå�����̾�ǤϤʤ��������ե����뤬 javadoc �˰����Ȥ����Ϥ���Ƥ���Τǡ��ɥ�����Ȥϡ����饹�Υꥹ�Ȥȥᥤ��ڡ����Ȥ��� 2 �ĤΥե졼�����Ĥ��Ȥˤʤ�ޤ��� 
 .TP 2
 o
-\f3ケース 2 \- パッケージのルートディレクトリに移る\fP \- これは、同じルート内にある複数のサブパッケージの個々のソースファイルをドキュメント化する場合に便利です。パッケージのルートディレクトリに移り、各ソースファイルを、ルートからのパスとともに指定します。 
+\f3������ 2 \- �ѥå������Υ롼�ȥǥ��쥯�ȥ�˰ܤ�\fP \- ����ϡ�Ʊ���롼����ˤ���ʣ���Υ��֥ѥå������θġ��Υ������ե������ɥ�����Ȳ�������������Ǥ����ѥå������Υ롼�ȥǥ��쥯�ȥ�˰ܤꡢ�ƥ������ե�����򡢥롼�Ȥ���Υѥ��ȤȤ�˻��ꤷ�ޤ��� 
 .nf
 \f3
 .fl
@@ -5560,103 +4014,88 @@ o
   % \f3javadoc \-d /home/html java/awt/Button.java java/applet/Applet.java\fP
 .fl
 .fi
-この例では、\f2Button\fP クラスおよび \f2Applet\fP クラスについて、HTML 形式のドキュメントが生成されます。 
+������Ǥϡ����饹 \f2Button\fP ����� \f2Applet �ˤĤ��ơ�HTML �����Υɥ�����Ȥ���������ޤ�\fP�� 
 .TP 2
 o
-\f3ケース 3 \- 任意のディレクトリから\fP \- このケースでは、現在のディレクトリがどこであってもかまいません。ドキュメント化する \f2.java\fP ファイルへの絶対パス (または、現在のディレクトリからの相対パス) を指定して javadoc を実行します。 
+\f3������ 3 \- Ǥ�դΥǥ��쥯�ȥ꤫��\fP \- ���Υ������Ǥϡ����ߤΥǥ��쥯�ȥ꤬�ɤ��Ǥ��äƤ⤫�ޤ��ޤ��󡣥ɥ�����Ȳ����� .java �ե�����ؤ����Хѥ� (�ޤ��ϥ����ȥǥ��쥯�ȥ꤫������Хѥ�) ����ꤷ�� \f2javadoc\fP ��¹Ԥ��ޤ��� 
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-d /home/html /home/src/java/awt/Button.java /home/src/java/awt/Graphics*.java\fP
 .fl
 .fi
-この例では、クラス \f2Button\fP と、名前が \f2Graphics\fP で始まるクラスについて、HTML 形式のドキュメントが生成されます。 
+������Ǥϡ����饹 \f2Button\fP �ȡ�̾���� \f2Graphics �ǻϤޤ륯�饹�ˤĤ��ơ�HTML �����Υɥ�����Ȥ���������ޤ�\fP�� 
 .RE
-
-.LP
 .SS 
-パッケージとクラスのドキュメント化
+�ѥå������ȥ��饹�Υɥ�����Ȳ�
 .LP
-.LP
-パッケージ全体と個々のクラスを同時に指定してドキュメント化することもできます。次に前述の 2 つの例を組み合わせた例を示します。\f2\-sourcepath\fP は、パッケージへのパスに対しては使用できますが、個々のクラスのパスに対しては使用できません。
-.LP
+�ѥå��������Τȸġ��Υ��饹��Ʊ���˻��ꤷ�ƥɥ�����Ȳ����뤳�Ȥ�Ǥ��ޤ����������Ҥ� 2 �Ĥ�����Ȥ߹�碌����򼨤��ޤ��� \f2\-sourcepath\fP �ϡ��ѥå������ؤΥѥ����Ф��Ƥϻ��ѤǤ��ޤ������ġ��Υ��饹�Υѥ����Ф��Ƥϻ��ѤǤ��ޤ���
 .nf
 \f3
 .fl
   % \fP\f3javadoc \-d /home/html \-sourcepath /home/src java.awt /home/src/java/applet/Applet.java\fP
 .fl
 .fi
-
 .LP
+������Ǥϡ��ѥå����� \f2java.awt\fP �ȥ��饹 \f2Applet �ˤĤ��ơ�HTML �����Υɥ�����Ȥ���������ޤ�\fP��Javadoc �ġ���ϡ� \f2Applet.java �������ե�������˥ѥå��������������С�\fP ��������˴�Ť��� \f2Applet �Υѥå�����̾��\fP Ƚ�ꤷ�ޤ���
+.SH "������"
 .LP
-この例では、パッケージ \f2java.awt\fP と、クラス \f2Applet\fP について、HTML 形式のドキュメントが生成されます。Javadoc ツールは、\f2Applet\fP のパッケージ名を、\f2Applet.java\fP ソースファイル内のパッケージ宣言 (その宣言がある場合) から判別します。
+Javadoc �ġ���ˤ�¿���������ʥ��ץ���󤬤��ꡢ������ˤϤۤ��Υ��ץ����������ˤ˻Ȥ����Τ�����ޤ��������ǾҲ𤹤�Τϡ�Java �ץ�åȥե����� API ���Ф��� Javadoc �ġ����¹Ԥ���Ȥ��˻��Ѥ���ºݤΥ��ޥ�ɤǤ��������Ǥϡ�Java SE Platform, Standard Edition, v1.2 �� (��) 1500 �Ĥ� public ����� protected ���饹�Υɥ�����Ȥ��������뤿��ˡ�180M �Х��ȤΥ��꡼����Ѥ��ޤ���
 .LP
-.SH "使用例"
-.LP
-.LP
-Javadoc ツールには多くの便利なオプションがあり、その中にはほかのオプションよりも頻繁に使われるものがあります。ここで紹介するのは、Java プラットフォーム API に対して Javadoc ツールを実行するときに使用する実際のコマンドです。Java 2 Platform, Standard Edition, v1.2 に存在する、約 1500 個の public および protected クラスについてドキュメントを生成するために、180M バイトのメモリーを使用しました。
-.LP
-.LP
-同じ例を 2 回掲載します。 最初の例はコマンド行から実行するもので、2 番目の例は Makefile から実行するものです。オプションの引数に絶対パスを使用しているため、任意のディレクトリからこの \f2javadoc\fP コマンドを実行できます。
-.LP
+Ʊ����� 2 ��Ǻܤ��ޤ����ǽ����ϥ��ޥ�ɹԤ���¹Ԥ����Τǡ�2 ���ܤ���� Makefile ����¹Ԥ����ΤǤ������ץ����ΰ��������Хѥ������Ѥ���Ƥ��뤿�ᡢƱ�� \f2javadoc\fP ���ޥ�ɤ�ɤΥǥ��쥯�ȥ꤫��Ǥ�¹ԤǤ��ޤ���
 .SS 
-コマンド行の例
+���ޥ�ɹԤ���
 .LP
-.LP
-次のコマンド行の例は 900 文字を超えているため、DOS などのシェルには大きすぎます。この制限を回避するには、コマンド行引数ファイルを使用します。 または、シェルスクリプトを記述します。
-.LP
+������ϡ�DOS �ʤɤΰ����Υ�����Ǥ�Ĺ�������ǽ��������ޤ����������¤���򤹤�ˤϡ����ޥ�ɹ԰����ե��������Ѥ��ޤ����ޤ��ϡ������륹����ץȤ򵭽Ҥ��ޤ���
 .nf
 \f3
 .fl
-% javadoc \-sourcepath /java/jdk/src/share/classes            \\ 
+% javadoc \-sourcepath /java/jdk/src/share/classes \\ 
 .fl
-    \-overview /java/jdk/src/share/classes/overview.html      \\ 
+    \-overview /java/jdk/src/share/classes/overview.html \\ 
 .fl
-    \-d /java/jdk/build/api                                   \\ 
+    \-d /java/jdk/build/api \\ 
 .fl
-    \-use                                                     \\ 
+    \-use \\ 
 .fl
-    \-splitIndex                                              \\ 
+    \-splitIndex \\ 
 .fl
-    \-windowtitle 'Java 2 Platform 5.0 API Specification'    \\ 
+    \-windowtitle 'Java Platform, Standard Edition 7 API Specification' \\ 
 .fl
-    \-doctitle 'Java(TM) 2 Platform 5.0 API Specification' \\ 
+    \-doctitle 'Java Platform, Standard Edition 7 API Specification' \\ 
 .fl
-    \-header '<b>Java 2 Platform </b><br><font size="\-1">5.0</font>' \\ 
+    \-header '<b>Java(TM) SE 7</b>' \\ 
 .fl
-    \-bottom '<font size="\-1"><a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit 
+    \-bottom '<font size="\-1">
 .fl
-a bug or feature</a><br><br>Java is a trademark or registered trademark of Sun Microsystems, 
+      <a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit a bug or feature</a><br/>
 .fl
-Inc. in the US and other countries.<br>Copyright 1993\-1999 Sun Microsystems, Inc. 
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
 .fl
-901 San Antonio Road,<br>Palo Alto, California, 94303, U.S.A. All Rights Reserved.</font>' \\  
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
+.fl
+      Other names may be trademarks of their respective owners.</font>' \\ 
 .fl
     \-group "Core Packages" "java.*:com.sun.java.*:org.omg.*" \\ 
 .fl
-    \-group "Extension Packages" "javax.*"                    \\ 
+    \-group "Extension Packages" "javax.*" \\ 
 .fl
-    \-J\-Xmx180m                                               \\  
+    \-J\-Xmx180m \\  
 .fl
     @packages
 .fl
 \fP
 .fi
-
 .LP
-.LP
-上記のコマンドで、\f2packages\fP は、処理対象のパッケージ名 (\f2java.applet java.lang\fP など) が入っているファイルの名前です。各オプションの、単一引用符で囲まれた引数の内側には、改行文字を挿入できません。たとえば、この例をコピー＆ペーストする場合は、\f2\-bottom\fP オプションから改行文字を削除してください。さらに、このあとの「注」も参照してください。
-.LP
+�嵭�Υ��ޥ�ɤǡ� \f2packages\fP �ϡ������оݤΥѥå�����̾ ( \f2java.applet java.lang\fP �ʤ�) �����äƤ���ե������̾���Ǥ����ƥ��ץ����Ρ�ñ�������ǰϤޤ줿��������¦�ˤϡ�����ʸ���������Ǥ��ޤ��󡣤��Ȥ��С�������򥳥ԡ����ڡ����Ȥ�����ϡ� \f2\-bottom\fP ���ץ���󤫤����ʸ���������Ƥ�������������ˡ����Τ��ȤΡ����פ⻲�Ȥ��Ƥ���������
 .SS 
-Makefile の例
+Makefile ����
 .LP
-.LP
-ここでは、GNU Makefile の例を示します。Windows の Makefile の例については、
+�����Ǥϡ�GNU Makefile ����򼨤��ޤ���Windows �� Makefile ����ˤĤ��Ƥϡ�
 .na
-\f2Windows の Makefile の作成方法\fP @
+\f2Windows �� Makefile �κ�����ˡ\fP @
 .fi
-http://java.sun.com/j2se/javadoc/faq/index.html#makefilesを参照してください。
-.LP
+http://java.sun.com/j2se/javadoc/faq/index.html#makefiles�򻲾Ȥ��Ƥ���������
 .nf
 \f3
 .fl
@@ -5692,101 +4131,83 @@ javadoc \-\fP\f3sourcepath\fP\f3 $(SRCDIR)              \\   /* Sets path for so
 .fl
         
 .fl
-WINDOWTITLE = 'Java 2 Platform v1.2 API Specification'
+WINDOWTITLE = 'Java(TM) SE 7 API Specification'
 .fl
-DOCTITLE = 'Java(TM) 2 Platform v1.2 API Specification'
+DOCTITLE = 'Java(TM) Platform Standard Edition 7 API Specification'
 .fl
-HEADER = '<b>Java 2 Platform </b><br><font size="\-1">v1.2</font>'
+HEADER = '<b>Java(TM) SE 7</font>'
 .fl
-BOTTOM = '<font size="\-1"><a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit
+BOTTOM = '<font size="\-1">
 .fl
-    a bug or feature</a><br><br>Java is a trademark or registered trademark 
+      <a href="http://java.sun.com/cgi\-bin/bugreport.cgi">Submit a bug or feature</a><br/>
 .fl
-    of Sun Microsystems, Inc. in the US and other countries.<br>Copyright 1993\-1999    
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
 .fl
-    Sun Microsystems, Inc. 901 San Antonio Road,<br>Palo Alto, California, 94303, U.S.A.  
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
 .fl
-    All Rights Reserved.</font>'
+      Other names may be trademarks of their respective owners.</font>'
 .fl
 GROUPCORE = '"Core Packages" "java.*:com.sun.java.*:org.omg.*"'
 .fl
 GROUPEXT  = '"Extension Packages" "javax.*"'
 .fl
-SRCDIR = '/java/jdk/1.2/src/share/classes'
+SRCDIR = '/java/jdk/1.7.0/src/share/classes'
 .fl
 \fP
 .fi
-
 .LP
+Makefile �ΰ����ϡ�ñ�������ǰϤߤޤ���
 .LP
-Makefile の引数は、単一引用符で囲みます。
-.LP
-.LP
-\f3注\fP
-.LP
+\f3��\fP
 .RS 3
 .TP 2
 o
-\f2\-windowtitle\fP オプションを省略すると、Javadoc ツールによって、ドキュメントタイトルがウィンドウタイトルにコピーされます。\f2\-windowtitle\fP のテキストは、基本的に \f2\-doctitle\fP と同じです。 ただし、HTML タグは使用しません。 HTML タグは、ウィンドウタイトルにそのままのテキストとして表示されてしまいます。 
+\-windowtitle \f2���ץ������ά����ȡ�\fP Javadoc �ġ���ˤ�äƥɥ�����ȥ����ȥ뤬������ɥ������ȥ�˥��ԡ�����ޤ��� \f2\-windowtitle\fP �Υƥ����Ȥϴ���Ū�� \f2\-doctitle\fP �Τ�Τ�Ʊ���Ǥ�����HTML ������ޤޤʤ������ۤʤ�ޤ�������ϡ�HTML ������ raw �ƥ����ȤȤ��ƥ�����ɥ������ȥ����ɽ�������Τ��ɤ�����Ǥ��� 
 .TP 2
 o
-この例のように \f2\-footer\fP オプションを省略すると、Javadoc ツールによって、ヘッダーテキストがフッターにコピーされます。 
+�����ǹԤäƤ���褦�� \f2\-footer\fP ���ץ������ά����ȡ�Javadoc �ġ���ˤ�äƥإå����Υƥ����Ȥ��եå����˥��ԡ�����ޤ��� 
 .TP 2
 o
-この例では必要ありませんが、\-\f2classpath\fP および \-\f2link\fP も重要なオプションです。 
+������Ǥ�ɬ�פ���ޤ��󤬡�\-\f2classpath\fP �� \-\f2link\fP ����פʥ��ץ����Ǥ��� 
 .RE
-
-.LP
-.SH "トラブルシューティング"
-.LP
+.SH "�ȥ�֥륷�塼�ƥ���"
 .SS 
-一般的なトラブルシューティング
-.LP
+����Ū�ʥȥ�֥륷�塼�ƥ���
 .RS 3
 .TP 2
 o
-\f3Javadoc FAQ\fP \- 一般的なバグおよびトラブルシューティングのヒントは、
+\f3Javadoc FAQ\fP \- ����Ū�ʥХ�����ӥȥ�֥륷�塼�ƥ��󥰤Υҥ�Ȥϡ�
 .na
-\f2「Javadoc FAQ」\fP @
+\f2��Javadoc FAQ��\fP @
 .fi
-http://java.sun.com/j2se/javadoc/faq/index.html#B で参照できます。 
+http://java.sun.com/j2se/javadoc/faq/index.html#B �ǻ��ȤǤ��ޤ��� 
 .TP 2
 o
-\f3バグおよび制限事項\fP \- バグの一部は、「Important Bug Fixes and Changes」 でも参照できます。 
+\f3�Х���������»���\fP \- �Х��ΰ����ϡ���Important Bug Fixes and Changes�� �Ǥ⻲�ȤǤ��ޤ��� 
 .TP 2
 o
-\f3バージョン番号\fP \- 「バージョン番号」を参照してください。 
+\f3�С�������ֹ�\fP \- �֥С�������ֹ�פ򻲾Ȥ��Ƥ��������� 
 .TP 2
 o
-\f3有効なクラスだけをドキュメント化\fP \- パッケージをドキュメント化するとき、Javadoc は、有効なクラス名で構成されているファイルのみを読み込みます。たとえば、ファイル名にハイフン「\-」を含めることで、javadoc によるファイルの解析を防ぐことができます。 
+\f3ͭ���ʥ��饹������ɥ�����Ȳ�\fP \- �ѥå�������ɥ�����Ȳ�����Ȥ���Javadoc �ϡ�ͭ���ʥ��饹̾�ǹ�������Ƥ���ե�����Τߤ��ɤ߹��ߤޤ������Ȥ��С��ե�����̾�˥ϥ��ե��\-�פ�ޤ�뤳�Ȥǡ�javadoc �ˤ��ե�����β��Ϥ��ɤ����Ȥ��Ǥ��ޤ��� 
 .RE
-
-.LP
 .SS 
-エラーと警告
+���顼�ȷٹ�
 .LP
-.LP
-エラーおよび警告メッセージには、ファイル名と宣言行 (ドキュメンテーションコメント内の特定の行ではない) の行番号が含まれます。
-.LP
+���顼����ӷٹ��å������ˤϡ��ե�����̾������� (�ɥ�����ơ�����󥳥����������ιԤǤϤʤ�) �ι��ֹ椬�ޤޤ�ޤ���
 .RS 3
 .TP 2
 o
-\f2"error:cannot read:Class1.java"\fP Javadoc ツールはカレントディレクトリに Class1.java クラスをロードしようとしています。絶対パスまたは相対パスとともに表示されるクラス名は、この例の場合 \f2./Class1.java\fP と同じです。 
+\f2"error: cannot read: Class1.java"\fP Javadoc �ġ���ϥ����ȥǥ��쥯�ȥ�� Class1.java ���饹������ɤ��褦�Ȥ��Ƥ��ޤ������Хѥ��ޤ������Хѥ��ȤȤ��ɽ������륯�饹̾�ϡ�������ξ�� \f2./Class1.java ��Ʊ���Ǥ�\fP�� 
 .RE
-
-.LP
-.SH "環境"
-.LP
+.SH "�Ķ�"
 .RS 3
 .TP 3
 CLASSPATH 
-Javadoc がユーザークラスのファイルを探すときに使うパスを指定する環境変数です。この環境変数は、\f2\-classpath\fP オプションによってオーバーライドされます。ディレクトリは、次のようにコロンで区切ります。 
+Javadoc ���桼�������饹�Υե������õ���Ȥ��˻Ȥ��ѥ�����ꤹ��Ķ��ѿ��Ǥ������δĶ��ѿ��ϡ� \f2\-classpath\fP ���ץ����ˤ�äƥ����С��饤�ɤ���ޤ����ǥ��쥯�ȥ�ϡ����Τ褦�˥�����Ƕ��ڤ�ޤ��� 
 .:/home/classes:/usr/local/java/classes 
 .RE
-
-.LP
-.SH "関連項目"
-.LP
+.SH "��Ϣ����"
 .RS 3
 .TP 2
 o
@@ -5806,7 +4227,7 @@ javap(1)
 .TP 2
 o
 .na
-\f2Javadoc のホームページ\fP @
+\f2Javadoc �Υۡ���ڡ���\fP @
 .fi
 http://java.sun.com/j2se/javadoc/index.jsp 
 .TP 2
@@ -5818,16 +4239,14 @@ http://java.sun.com/j2se/javadoc/writingdoccomments/index.html
 .TP 2
 o
 .na
-\f2クラスパスの設定\fP @
+\f2���饹�ѥ�������\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/tools/index.html#general 
 .TP 2
 o
 .na
-\f2javac と javadoc がクラスを検索する方法\fP @
+\f2javac �� javadoc �����饹�򸡺�������ˡ\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/tools/findingclasses.html#srcfiles (tools.jar) 
 .RE
-
-.LP
  
