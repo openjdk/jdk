@@ -26,8 +26,6 @@
 package com.sun.tools.example.debug.gui;
 
 import java.io.*;
-import java.util.*;
-
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
@@ -38,6 +36,7 @@ import com.sun.tools.example.debug.bdi.*;
 
 public class GUI extends JPanel {
 
+    private static final long serialVersionUID = 3292463234530679091L;
     private CommandTool cmdTool;
     private ApplicationTool appTool;
     //###HACK##
@@ -87,7 +86,7 @@ public class GUI extends JPanel {
         threadTreeTool = new ThreadTreeTool(env);
         threadTreeTool.setPreferredSize(new java.awt.Dimension(200, 450));
 
-        JTabbedPane treePane = new JTabbedPane(JTabbedPane.BOTTOM);
+        JTabbedPane treePane = new JTabbedPane(SwingConstants.BOTTOM);
         treePane.addTab("Source", null, sourceTreeTool);
         treePane.addTab("Classes", null, classTreeTool);
         treePane.addTab("Threads", null, threadTreeTool);
@@ -139,12 +138,9 @@ public class GUI extends JPanel {
     }
 
     public static void main(String argv[]) {
-        String remote = null;
         String clsName = "";
         String progArgs = "";
         String javaArgs = "";
-        boolean verbose = false;        //### Not implemented.
-
         final Environment env = new Environment();
 
         JPanel mainPanel = new GUI(env);
@@ -246,13 +242,14 @@ public class GUI extends JPanel {
         frame.setContentPane(mainPanel);
 
         frame.addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 env.terminate();
             }
         });
 
         frame.pack();
-        frame.show();
+        frame.setVisible(true);
 
     }
 

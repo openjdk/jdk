@@ -31,8 +31,6 @@ import java.util.*;
 import com.sun.jdi.*;
 import com.sun.jdi.request.*;
 
-import com.sun.tools.example.debug.bdi.*;
-
 import javax.swing.*;
 
 /**
@@ -101,6 +99,7 @@ public class SourceModel extends AbstractListModel {
 
     // **** Implement ListModel  *****
 
+    @Override
     public Object getElementAt(int index) {
         if (sourceLines == null) {
             initialize();
@@ -108,6 +107,7 @@ public class SourceModel extends AbstractListModel {
         return sourceLines.get(index);
     }
 
+    @Override
     public int getSize() {
         if (sourceLines == null) {
             initialize();

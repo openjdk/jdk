@@ -26,7 +26,6 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.*;
-import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import com.sun.jdi.connect.*;
 import com.sun.tools.example.debug.expr.ExpressionParser;
@@ -56,7 +55,7 @@ public class ExecutionManager {
 
   // Session Listeners
 
-    Vector<SessionListener> sessionListeners = new Vector<SessionListener>();
+    ArrayList<SessionListener> sessionListeners = new ArrayList<SessionListener>();
 
     public void addSessionListener(SessionListener listener) {
         sessionListeners.add(listener);
@@ -68,7 +67,7 @@ public class ExecutionManager {
 
   // Spec Listeners
 
-  Vector<SpecListener> specListeners = new Vector<SpecListener>();
+  ArrayList<SpecListener> specListeners = new ArrayList<SpecListener>();
 
     public void addSpecListener(SpecListener cl) {
         specListeners.add(cl);
@@ -80,7 +79,7 @@ public class ExecutionManager {
 
     // JDI Listeners
 
-    Vector<JDIListener> jdiListeners = new Vector<JDIListener>();
+    ArrayList<JDIListener> jdiListeners = new ArrayList<JDIListener>();
 
     /**
      * Adds a JDIListener
@@ -105,50 +104,50 @@ public class ExecutionManager {
 
   // App Echo Listeners
 
-    private Vector<OutputListener> appEchoListeners = new Vector<OutputListener>();
+    private ArrayList<OutputListener> appEchoListeners = new ArrayList<OutputListener>();
 
     public void addApplicationEchoListener(OutputListener l) {
-        appEchoListeners.addElement(l);
+        appEchoListeners.add(l);
     }
 
     public void removeApplicationEchoListener(OutputListener l) {
-        appEchoListeners.removeElement(l);
+        appEchoListeners.remove(l);
     }
 
   // App Output Listeners
 
-    private Vector<OutputListener> appOutputListeners = new Vector<OutputListener>();
+    private ArrayList<OutputListener> appOutputListeners = new ArrayList<OutputListener>();
 
     public void addApplicationOutputListener(OutputListener l) {
-        appOutputListeners.addElement(l);
+        appOutputListeners.add(l);
     }
 
     public void removeApplicationOutputListener(OutputListener l) {
-        appOutputListeners.removeElement(l);
+        appOutputListeners.remove(l);
     }
 
   // App Error Listeners
 
-    private Vector<OutputListener> appErrorListeners = new Vector<OutputListener>();
+    private ArrayList<OutputListener> appErrorListeners = new ArrayList<OutputListener>();
 
     public void addApplicationErrorListener(OutputListener l) {
-        appErrorListeners.addElement(l);
+        appErrorListeners.add(l);
     }
 
     public void removeApplicationErrorListener(OutputListener l) {
-        appErrorListeners.removeElement(l);
+        appErrorListeners.remove(l);
     }
 
   // Diagnostic Listeners
 
-    private Vector<OutputListener> diagnosticsListeners = new Vector<OutputListener>();
+    private ArrayList<OutputListener> diagnosticsListeners = new ArrayList<OutputListener>();
 
     public void addDiagnosticsListener(OutputListener l) {
-        diagnosticsListeners.addElement(l);
+        diagnosticsListeners.add(l);
     }
 
     public void removeDiagnosticsListener(OutputListener l) {
-        diagnosticsListeners.removeElement(l);
+        diagnosticsListeners.remove(l);
     }
 
   ///////////    End Listener Registration    //////////////
@@ -159,7 +158,9 @@ public class ExecutionManager {
     }
 
     void ensureActiveSession() throws NoSessionException {
-        if (session == null) throw new NoSessionException();
+        if (session == null) {
+         throw new NoSessionException();
+      }
     }
 
     public EventRequestManager eventRequestManager() {
@@ -293,6 +294,7 @@ public class ExecutionManager {
         ensureActiveSession();
         if (f != null) {
             frameGetter = new ExpressionParser.GetFrame() {
+                @Override
                 public StackFrame get() /* throws IncompatibleThreadStateException */ {
                     return f;
                 }
@@ -628,35 +630,35 @@ public class ExecutionManager {
      */
 
     private void notifyInterrupted() {
-        Vector l = (Vector)sessionListeners.clone();
+      ArrayList<SessionListener> l = new ArrayList<SessionListener>(sessionListeners);
         EventObject evt = new EventObject(this);
         for (int i = 0; i < l.size(); i++) {
-            ((SessionListener)l.elementAt(i)).sessionInterrupt(evt);
+            l.get(i).sessionInterrupt(evt);
         }
     }
 
     private void notifyContinued() {
-        Vector l = (Vector)sessionListeners.clone();
+        ArrayList<SessionListener> l = new ArrayList<SessionListener>(sessionListeners);
         EventObject evt = new EventObject(this);
         for (int i = 0; i < l.size(); i++) {
-            ((SessionListener)l.elementAt(i)).sessionContinue(evt);
+            l.get(i).sessionContinue(evt);
         }
     }
 
     private void notifySessionStart() {
-        Vector l = (Vector)sessionListeners.clone();
+        ArrayList<SessionListener> l = new ArrayList<SessionListener>(sessionListeners);
         EventObject evt = new EventObject(this);
         for (int i = 0; i < l.size(); i++) {
-            ((SessionListener)l.elementAt(i)).sessionStart(evt);
+            l.get(i).sessionStart(evt);
         }
     }
 
     private void notifySessionDeath() {
 /*** noop for now
-        Vector l = (Vector)sessionListeners.clone();
+        ArrayList<SessionListener> l = new ArrayList<SessionListener>(sessionListeners);
         EventObject evt = new EventObject(this);
         for (int i = 0; i < l.size(); i++) {
-            ((SessionListener)l.elementAt(i)).sessionDeath(evt);
+            ((SessionListener)l.get(i)).sessionDeath(evt);
         }
 ****/
     }
@@ -684,6 +686,7 @@ public class ExecutionManager {
     }
 
     private InputListener appInput = new InputListener() {
+        @Override
         public String getLine() {
             // Don't allow reader to be interrupted -- catch and retry.
             String line = null;
@@ -703,6 +706,7 @@ public class ExecutionManager {
             // Run in Swing event dispatcher thread.
             final String input = line;
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     echoInputLine(input);
                 }
@@ -714,37 +718,40 @@ public class ExecutionManager {
     private static String newline = System.getProperty("line.separator");
 
     private void echoInputLine(String line) {
-        Vector l = (Vector)appEchoListeners.clone();
+        ArrayList<OutputListener> l = new ArrayList<OutputListener>(appEchoListeners);
         for (int i = 0; i < l.size(); i++) {
-            OutputListener ol = (OutputListener)l.elementAt(i);
+            OutputListener ol = l.get(i);
             ol.putString(line);
             ol.putString(newline);
         }
     }
 
     private OutputListener appOutput = new OutputListener() {
+      @Override
         public void putString(String string) {
-            Vector l = (Vector)appOutputListeners.clone();
+            ArrayList<OutputListener> l = new ArrayList<OutputListener>(appEchoListeners);
             for (int i = 0; i < l.size(); i++) {
-                ((OutputListener)l.elementAt(i)).putString(string);
+                l.get(i).putString(string);
             }
         }
     };
 
     private OutputListener appError = new OutputListener() {
+      @Override
         public void putString(String string) {
-            Vector l = (Vector)appErrorListeners.clone();
+            ArrayList<OutputListener> l = new ArrayList<OutputListener>(appEchoListeners);
             for (int i = 0; i < l.size(); i++) {
-                ((OutputListener)l.elementAt(i)).putString(string);
+                l.get(i).putString(string);
             }
         }
     };
 
    private OutputListener diagnostics = new OutputListener() {
+      @Override
         public void putString(String string) {
-            Vector l = (Vector)diagnosticsListeners.clone();
+            ArrayList<OutputListener> l = new ArrayList<OutputListener>(diagnosticsListeners);
             for (int i = 0; i < l.size(); i++) {
-                ((OutputListener)l.elementAt(i)).putString(string);
+                l.get(i).putString(string);
             }
         }
    };

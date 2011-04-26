@@ -31,7 +31,6 @@ import java.awt.event.*;
 import java.util.Vector;
 import java.util.List;
 
-import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 
 //### This is currently just a placeholder!
@@ -57,6 +56,7 @@ class JDBMenuBar extends JMenuBar {
 
         JMenuItem openItem = new JMenuItem("Open...", 'O');
         openItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 openCommand();
             }
@@ -93,6 +93,7 @@ class JDBMenuBar extends JMenuBar {
 
         JMenuItem monitorItem = new JMenuItem("Monitor Expression...", 'M');
         monitorItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 monitorCommand();
             }
@@ -101,6 +102,7 @@ class JDBMenuBar extends JMenuBar {
 
         JMenuItem unmonitorItem = new JMenuItem("Unmonitor Expression...");
         unmonitorItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 unmonitorCommand();
             }
@@ -110,6 +112,7 @@ class JDBMenuBar extends JMenuBar {
         JMenu breakpointMenu = new JMenu("Breakpoint");
         JMenuItem stopItem = new JMenuItem("Stop in...", 'S');
         stopItem.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 buildBreakpoint();
             }
@@ -176,6 +179,7 @@ class JDBMenuBar extends JMenuBar {
         mi.setToolTipText(toolTip);
         final String cmd = command;
         mi.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 interpreter.executeCommand(cmd);
             }

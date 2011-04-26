@@ -25,12 +25,10 @@
 
 package com.sun.tools.example.debug.gui;
 
-import java.io.*;
 import java.util.*;
 
 import javax.swing.*;
 import javax.swing.tree.*;
-import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -39,6 +37,8 @@ import com.sun.tools.example.debug.event.*;
 import com.sun.tools.example.debug.bdi.*;
 
 public class ClassTreeTool extends JPanel {
+
+    private static final long serialVersionUID = 526178912591739259L;
 
     private Environment env;
 
@@ -49,7 +49,7 @@ public class ClassTreeTool extends JPanel {
     private JTree tree;
     private DefaultTreeModel treeModel;
     private ClassTreeNode root;
-    private SearchPath sourcePath;
+//    private SearchPath sourcePath;
 
     private CommandInterpreter interpreter;
 
@@ -87,6 +87,7 @@ public class ClassTreeTool extends JPanel {
         ******/
 
         MouseListener ml = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 int selRow = tree.getRowForLocation(e.getX(), e.getY());
                 TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
@@ -121,6 +122,7 @@ public class ClassTreeTool extends JPanel {
 
         // SessionListener
 
+        @Override
         public void sessionStart(EventObject e) {
             // Get system classes and any others loaded before attaching.
             try {
@@ -134,19 +136,24 @@ public class ClassTreeTool extends JPanel {
             }
         }
 
+        @Override
         public void sessionInterrupt(EventObject e) {}
+        @Override
         public void sessionContinue(EventObject e) {}
 
         // JDIListener
 
+        @Override
         public void classPrepare(ClassPrepareEventSet e) {
             root.addClass(e.getReferenceType());
         }
 
+        @Override
         public void classUnload(ClassUnloadEventSet e) {
             root.removeClass(e.getClassName());
         }
 
+        @Override
         public void vmDisconnect(VMDisconnectEventSet e) {
             // Clear contents of this view.
             root = createClassTree(HEADING);
@@ -169,6 +176,7 @@ public class ClassTreeTool extends JPanel {
             this.refTy = refTy;
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -185,6 +193,7 @@ public class ClassTreeTool extends JPanel {
             return (refTy == null);
         }
 
+        @Override
         public boolean isLeaf() {
             return !isPackage();
         }

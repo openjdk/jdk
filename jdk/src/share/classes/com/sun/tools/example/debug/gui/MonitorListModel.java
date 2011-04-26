@@ -42,10 +42,12 @@ public class MonitorListModel extends AbstractListModel {
         //### remove listeners on exit!
     }
 
+    @Override
     public Object getElementAt(int index) {
         return monitors.get(index);
     }
 
+    @Override
     public int getSize() {
         return monitors.size();
     }
@@ -70,7 +72,7 @@ public class MonitorListModel extends AbstractListModel {
         return Collections.unmodifiableList(monitors);
     }
 
-    public Iterator iterator() {
+    public Iterator<?> iterator() {
         return monitors().iterator();
     }
 
@@ -80,7 +82,8 @@ public class MonitorListModel extends AbstractListModel {
 
     private class MonitorListListener implements ContextListener {
 
-        public void currentFrameChanged(CurrentFrameChangedEvent e) {
+        @Override
+        public void currentFrameChanged(final CurrentFrameChangedEvent e) {
             invalidate();
         }
     }
