@@ -110,6 +110,7 @@ GDB            = $(UTILS_USR_BIN_PATH)gdb
 GREP           = $(UTILS_COMMAND_PATH)grep
 GUNZIP         = $(UTILS_COMMAND_PATH)gunzip
 HEAD           = $(UTILS_USR_BIN_PATH)head
+HG             = hg
 ID             = $(UTILS_COMMAND_PATH)id
 ISAINFO        = $(UTILS_COMMAND_PATH)isainfo
 KSH            = $(UTILS_COMMAND_PATH)ksh
