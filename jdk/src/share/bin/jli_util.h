@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ char *JLI_StringDup(const char *s1);
 void  JLI_MemFree(void *ptr);
 int   JLI_StrCCmp(const char *s1, const char* s2);
 
-
 #define JLI_StrLen(p1)          strlen((p1))
 #define JLI_StrChr(p1, p2)      strchr((p1), (p2))
 #define JLI_StrRChr(p1, p2)     strrchr((p1), (p2))
@@ -48,6 +47,7 @@ int   JLI_StrCCmp(const char *s1, const char* s2);
 #define JLI_StrSpn(p1, p2)      strspn((p1), (p2))
 #define JLI_StrCSpn(p1, p2)     strcspn((p1), (p2))
 #define JLI_StrPBrk(p1, p2)     strpbrk((p1), (p2))
+#define JLI_StrTok(p1, p2)      strtok((p1), (p2))
 
 /* On Windows lseek() is in io.h rather than the location dictated by POSIX. */
 #ifdef _WIN32

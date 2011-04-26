@@ -30,7 +30,7 @@ import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;
 
-public class FloatingDecimal{
+public strictfp class FloatingDecimal{
     boolean     isExceptional;
     boolean     isNegative;
     int         decExponent;

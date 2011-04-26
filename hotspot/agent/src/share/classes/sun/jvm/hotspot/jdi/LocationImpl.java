@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,7 @@ public class LocationImpl extends MirrorImpl implements Location {
         return method().hashCode() + (int)codeIndex();
     }
 
-    public int compareTo(Object object) {
-        LocationImpl other = (LocationImpl)object;
+    public int compareTo(Location other) {
         int rc = method().compareTo(other.method());
         if (rc == 0) {
             long diff = codeIndex() - other.codeIndex();

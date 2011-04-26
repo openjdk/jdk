@@ -335,9 +335,8 @@ public class BasicColorChooserUI extends ColorChooserUI
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of {@code BasicColorChooserUI}.
      */
     public class PropertyHandler implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent e) {

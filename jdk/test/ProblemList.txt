@@ -288,12 +288,6 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
 
 # jdk_math
 
-# Problems with rounding add failures on solaris-sparcv9 and -server
-java/math/BigDecimal/AddTests.java			 	solaris-sparcv9
-
-# Should be samevm? But seems problematic with samevm on windows
-java/math/BigInteger/ModPow65537.java			 	generic-all
-
 ############################################################################
 
 # jdk_misc

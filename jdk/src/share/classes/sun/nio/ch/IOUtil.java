@@ -50,9 +50,8 @@ class IOUtil {
         int lim = src.limit();
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
-        ByteBuffer bb = null;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
         try {
-            bb = Util.getTemporaryDirectBuffer(rem);
             bb.put(src);
             bb.flip();
             // Do not update src until we see how many bytes were written
@@ -187,9 +186,8 @@ class IOUtil {
             return readIntoNativeBuffer(fd, dst, position, nd, lock);
 
         // Substitute a native buffer
-        ByteBuffer bb = null;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(dst.remaining());
         try {
-            bb = Util.getTemporaryDirectBuffer(dst.remaining());
             int n = readIntoNativeBuffer(fd, bb, position, nd, lock);
             bb.flip();
             if (n > 0)

@@ -52,9 +52,9 @@ public class ClassValueTest {
     static String nameForCV1(Class<?> type) {
         return "CV1:" + type.getName();
     }
-    static int countForCV1;
-    static final ClassValue<String> CV1 = new CV1();
-    private static class CV1 extends ClassValue<String> {
+    int countForCV1;
+    final ClassValue<String> CV1 = new CV1();
+    private class CV1 extends ClassValue<String> {
         protected String computeValue(Class<?> type) {
             countForCV1++;
             return nameForCV1(type);
@@ -103,8 +103,8 @@ public class ClassValueTest {
     static String nameForCVN(Class<?> type, int n) {
         return "CV[" + n + "]" + type.getName();
     }
-    static int countForCVN;
-    static class CVN extends ClassValue<String> {
+    int countForCVN;
+    class CVN extends ClassValue<String> {
         final int n;
         CVN(int n) { this.n = n; }
         protected String computeValue(Class<?> type) {

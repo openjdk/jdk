@@ -55,6 +55,11 @@ program_default_rule: all
 
 program: $(ACTUAL_PROGRAM)
 
+# reuse the mapfiles in the launcher's directory, the same should
+# be applicable to the tool launchers as well.
+FILES_m = $(BUILDDIR)/java/main/java/mapfile-$(ARCH)
+include $(BUILDDIR)/common/Mapfile-vers.gmk
+
 include $(JDK_TOPDIR)/make/common/Rules.gmk
 
 ifdef NEVER_ACT_AS_SERVER_CLASS_MACHINE

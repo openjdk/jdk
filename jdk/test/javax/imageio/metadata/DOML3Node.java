@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 6559064
+ * @bug 6559064 6942504
  *
  * @summary Verify DOM L3 Node APIs behave as per Image I/O spec.
  *
@@ -34,6 +34,7 @@
 
 import javax.imageio.metadata.IIOMetadataNode;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Node;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.UserDataHandler;
 
@@ -74,7 +75,7 @@ public class DOML3Node {
         }
 
         try {
-            node.setUserData("key");
+            node.getUserData("key");
             throw new RuntimeException("No expected DOM exception");
         } catch (DOMException e) {
         }
@@ -105,12 +106,6 @@ public class DOML3Node {
 
         try {
             node.isDefaultNamespace("namespaceURI");
-            throw new RuntimeException("No expected DOM exception");
-        } catch (DOMException e) {
-        }
-
-        try {
-            node.lookupPrefix("namespaceURI");
             throw new RuntimeException("No expected DOM exception");
         } catch (DOMException e) {
         }
