@@ -1118,6 +1118,10 @@ endef
 MINIMUM_OS_NAME    := $(REQUIRED_OS_NAME)
 MINIMUM_OS_VERSION := $(REQUIRED_OS_VERSION)
 MINIMUM_OS_ARCH    := $(ARCH)
+ALL_SOURCE_TIPS     = $(shell \
+  if [ -f $(SOURCE_TIPS) ] ; then \
+    $(CAT) $(SOURCE_TIPS) ; \
+  fi)
 
 $(JDK_INFO_FILE): FRC
 	$(prep-target)
@@ -1125,6 +1129,7 @@ $(JDK_INFO_FILE): FRC
 	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 
 # Create release file to identify this image
 identify-image-jdk:: $(JDK_INFO_FILE)
@@ -1135,6 +1140,7 @@ $(JRE_INFO_FILE): FRC
 	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 
 # Create release file to identify this image
 identify-image-jre:: $(JRE_INFO_FILE)
