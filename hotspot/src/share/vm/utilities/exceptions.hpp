@@ -144,7 +144,7 @@ class Exceptions {
                              const char* message,
                              ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
-  static void throw_stack_overflow_exception(Thread* thread, const char* file, int line);
+  static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, methodHandle method);
 
   // for AbortVMOnException flag
   NOT_PRODUCT(static void debug_check_abort(Handle exception, const char* message = NULL);)
