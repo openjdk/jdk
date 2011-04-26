@@ -251,9 +251,9 @@ public final class Byte extends Number implements Comparable<Byte> {
      * </blockquote>
      *
      * <i>DecimalNumeral</i>, <i>HexDigits</i>, and <i>OctalDigits</i>
-     * are defined in <a href="http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#48282">&sect;3.10.1</a>
-     * of the <a href="http://java.sun.com/docs/books/jls/html/">Java
-     * Language Specification</a>.
+     * are as defined in section 3.10.1 of
+     * <cite>The Java&trade; Language Specification</cite>,
+     * except that underscores are not accepted between digits.
      *
      * <p>The sequence of characters following an optional
      * sign and/or radix specifier ("{@code 0x}", "{@code 0X}",

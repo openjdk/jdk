@@ -1818,9 +1818,9 @@ import sun.misc.FormattedFloatingDecimal;
  * </pre></blockquote>
  *
  * <p> The maximum number of arguments is limited by the maximum dimension of a
- * Java array as defined by the <a
- * href="http://java.sun.com/docs/books/vmspec/">Java Virtual Machine
- * Specification</a>.  If the argument index is does not correspond to an
+ * Java array as defined by
+ * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * If the argument index is does not correspond to an
  * available argument, then a {@link MissingFormatArgumentException} is thrown.
  *
  * <p> If there are more arguments than format specifiers, the extra arguments
@@ -2403,8 +2403,7 @@ public final class Formatter implements Closeable, Flushable {
      *         string.  If there are more arguments than format specifiers, the
      *         extra arguments are ignored.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -2443,8 +2442,7 @@ public final class Formatter implements Closeable, Flushable {
      *         string.  If there are more arguments than format specifiers, the
      *         extra arguments are ignored.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format

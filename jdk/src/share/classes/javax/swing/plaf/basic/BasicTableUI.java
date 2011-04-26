@@ -730,9 +730,8 @@ public class BasicTableUI extends TableUI
 //
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicTableUI.
+     * Instantiate it only within subclasses of {@code BasicTableUI}.
      * <p>As of Java 2 platform v1.3 this class is no longer used.
      * Instead <code>JTable</code>
      * overrides <code>processKeyBinding</code> to dispatch the event to
@@ -761,9 +760,8 @@ public class BasicTableUI extends TableUI
 //
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicTableUI.
+     * Instantiate it only within subclasses of {@code BasicTableUI}.
      */
     public class FocusHandler implements FocusListener {
         // NOTE: This class exists only for backward compatability. All
@@ -784,7 +782,6 @@ public class BasicTableUI extends TableUI
 //
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTableUI.
      */
