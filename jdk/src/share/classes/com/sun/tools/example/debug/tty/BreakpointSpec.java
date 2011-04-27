@@ -30,7 +30,6 @@ import com.sun.jdi.request.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 
 class BreakpointSpec extends EventRequestSpec {
     String methodId;
@@ -58,6 +57,7 @@ class BreakpointSpec extends EventRequestSpec {
     /**
      * The 'refType' is known to match, return the EventRequest.
      */
+    @Override
     EventRequest resolveEventRequest(ReferenceType refType)
                            throws AmbiguousMethodException,
                                   AbsentInformationException,
@@ -91,12 +91,14 @@ class BreakpointSpec extends EventRequestSpec {
         return (methodId != null);
     }
 
+    @Override
     public int hashCode() {
         return refSpec.hashCode() + lineNumber +
             ((methodId != null) ? methodId.hashCode() : 0) +
             ((methodArgs != null) ? methodArgs.hashCode() : 0);
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof BreakpointSpec) {
             BreakpointSpec breakpoint = (BreakpointSpec)obj;
@@ -114,6 +116,7 @@ class BreakpointSpec extends EventRequestSpec {
         }
     }
 
+    @Override
     String errorMessageFor(Exception e) {
         if (e instanceof AmbiguousMethodException) {
             return (MessageOutput.format("Method is overloaded; specify arguments",
@@ -140,6 +143,7 @@ class BreakpointSpec extends EventRequestSpec {
         }
     }
 
+    @Override
     public String toString() {
         StringBuffer buffer = new StringBuffer(refSpec.toString());
         if (isMethodBreakpoint()) {
