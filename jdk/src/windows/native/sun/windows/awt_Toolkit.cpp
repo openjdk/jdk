@@ -740,18 +740,34 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
               canDispose = syncCS.TryEnter();
           }
           if (canDispose) {
-              AwtObject *o = (AwtObject *)wParam;
-              o->Dispose();
-              if (shouldEnterCriticalSection) {
-                  syncCS.Leave();
+              if(wParam != NULL) {
+                  AwtObject *o = (AwtObject *) JNI_GET_PDATA((jobject)wParam);
+                  if(o != NULL && theAwtObjectList.Remove(o)) {
+                      o->Dispose();
+                  }
+                  if (shouldEnterCriticalSection) {
+                      syncCS.Leave();
+                  }
               }
           } else {
               AwtToolkit::GetInstance().PostMessage(WM_AWT_DISPOSE, wParam, lParam);
           }
           return 0;
       }
+      case WM_AWT_DISPOSEPDATA: {
+          /*
+           * NOTE: synchronization routine (like in WM_AWT_DISPOSE) was omitted because
+           * this handler is called ONLY while disposing Cursor and Font objects where
+           * synchronization takes place.
+           */
+          AwtObject *o = (AwtObject *) wParam;
+          if(o != NULL && theAwtObjectList.Remove(o)) {
+              o->Dispose();
+          }
+          return 0;
+      }
       case WM_AWT_DELETEOBJECT: {
-          AwtObject *p = (AwtObject *)wParam;
+          AwtObject *p = (AwtObject *) wParam;
           if (p->CanBeDeleted()) {
               // all the messages for this component are processed, so
               // it can be deleted
