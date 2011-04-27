@@ -32,6 +32,8 @@ public class TokenMgrError extends Error
     * Ordinals for various reasons why an Error of this type can be thrown.
     */
 
+    private static final long serialVersionUID = -6236440836177601522L;
+
    /**
     * Lexical error occured.
     */
@@ -136,6 +138,7 @@ public class TokenMgrError extends Error
     *
     * from this method for such cases in the release version of your parser.
     */
+   @Override
    public String getMessage() {
       return super.getMessage();
    }

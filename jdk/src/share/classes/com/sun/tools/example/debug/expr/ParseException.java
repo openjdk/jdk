@@ -37,6 +37,8 @@ package com.sun.tools.example.debug.expr;
  */
 public class ParseException extends Exception {
 
+  private static final long serialVersionUID = 7978489144303647901L;
+
   /**
    * This constructor is used by the method "generateParseException"
    * in the generated parser.  Calling this constructor generates
@@ -119,20 +121,21 @@ public class ParseException extends Exception {
    * of the final stack trace, and hence the correct error message
    * gets displayed.
    */
+  @Override
   public String getMessage() {
     if (!specialConstructor) {
       return super.getMessage();
     }
     String expected = "";
     int maxSize = 0;
-    for (int i = 0; i < expectedTokenSequences.length; i++) {
-      if (maxSize < expectedTokenSequences[i].length) {
-        maxSize = expectedTokenSequences[i].length;
+    for (int[] expectedTokenSequence : expectedTokenSequences) {
+      if (maxSize < expectedTokenSequence.length) {
+        maxSize = expectedTokenSequence.length;
       }
-      for (int j = 0; j < expectedTokenSequences[i].length; j++) {
-        expected += tokenImage[expectedTokenSequences[i][j]] + " ";
+      for (int j = 0; j < expectedTokenSequence.length; j++) {
+        expected += tokenImage[expectedTokenSequence[j]] + " ";
       }
-      if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0) {
+      if (expectedTokenSequence[expectedTokenSequence.length - 1] != 0) {
         expected += "...";
       }
       expected += eol + "    ";
@@ -140,7 +143,9 @@ public class ParseException extends Exception {
     String retval = "Encountered \"";
     Token tok = currentToken.next;
     for (int i = 0; i < maxSize; i++) {
-      if (i != 0) retval += " ";
+      if (i != 0) {
+         retval += " ";
+      }
       if (tok.kind == 0) {
         retval += tokenImage[0];
         break;

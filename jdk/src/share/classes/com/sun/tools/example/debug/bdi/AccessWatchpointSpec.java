@@ -26,7 +26,6 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.*;
-import com.sun.jdi.request.*;
 
 public class AccessWatchpointSpec extends WatchpointSpec {
 
@@ -38,6 +37,7 @@ public class AccessWatchpointSpec extends WatchpointSpec {
     /**
      * The 'refType' is known to match.
      */
+   @Override
     void resolve(ReferenceType refType) throws InvalidTypeException,
                                              NoSuchFieldException {
         if (!(refType instanceof ClassType)) {
@@ -51,6 +51,7 @@ public class AccessWatchpointSpec extends WatchpointSpec {
                    .createAccessWatchpointRequest(field));
     }
 
+   @Override
     public boolean equals(Object obj) {
         return (obj instanceof AccessWatchpointSpec) && super.equals(obj);
     }

@@ -27,11 +27,8 @@ package com.sun.tools.example.debug.tty;
 
 import com.sun.jdi.Location;
 import com.sun.jdi.AbsentInformationException;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.io.*;
 
