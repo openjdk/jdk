@@ -2805,17 +2805,26 @@ void G1CollectedHeap::verify(bool allow_dirty,
                              bool silent,
                              bool use_prev_marking) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
-    if (!silent) { gclog_or_tty->print("roots "); }
+    if (!silent) { gclog_or_tty->print("Roots (excluding permgen) "); }
     VerifyRootsClosure rootsCl(use_prev_marking);
     CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
-    process_strong_roots(true,  // activate StrongRootsScope
-                         false,
-                         SharedHeap::SO_AllClasses,
+    // We apply the relevant closures to all the oops in the
+    // system dictionary, the string table and the code cache.
+    const int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+    process_strong_roots(true,      // activate StrongRootsScope
+                         true,      // we set "collecting perm gen" to true,
+                                    // so we don't reset the dirty cards in the perm gen.
+                         SharedHeap::ScanningOption(so),  // roots scanning options
                          &rootsCl,
                          &blobsCl,
                          &rootsCl);
+    // Since we used "collecting_perm_gen" == true above, we will not have
+    // checked the refs from perm into the G1-collected heap. We check those
+    // references explicitly below. Whether the relevant cards are dirty
+    // is checked further below in the rem set verification.
+    if (!silent) { gclog_or_tty->print("Permgen roots "); }
+    perm_gen()->oop_iterate(&rootsCl);
     bool failures = rootsCl.failures();
-    rem_set()->invalidate(perm_gen()->used_region(), false);
     if (!silent) { gclog_or_tty->print("HeapRegionSets "); }
     verify_region_sets();
     if (!silent) { gclog_or_tty->print("HeapRegions "); }

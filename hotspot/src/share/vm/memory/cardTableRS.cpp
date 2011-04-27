@@ -250,7 +250,34 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
                                                    cl->gen_boundary());
   ClearNoncleanCardWrapper clear_cl(dcto_cl, this);
 
-  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, sp->used_region_at_save_marks(),
+  const MemRegion urasm = sp->used_region_at_save_marks();
+#ifdef ASSERT
+  // Convert the assertion check to a warning if we are running
+  // CMS+ParNew until related bug is fixed.
+  MemRegion ur    = sp->used_region();
+  assert(ur.contains(urasm) || (UseConcMarkSweepGC && UseParNewGC),
+         err_msg("Did you forget to call save_marks()? "
+                 "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+                 "[" PTR_FORMAT ", " PTR_FORMAT ")",
+                 urasm.start(), urasm.end(), ur.start(), ur.end()));
+  // In the case of CMS+ParNew, issue a warning
+  if (!ur.contains(urasm)) {
+    assert(UseConcMarkSweepGC && UseParNewGC, "Tautology: see assert above");
+    warning("CMS+ParNew: Did you forget to call save_marks()? "
+            "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+            "[" PTR_FORMAT ", " PTR_FORMAT ")",
+             urasm.start(), urasm.end(), ur.start(), ur.end());
+    MemRegion ur2 = sp->used_region();
+    MemRegion urasm2 = sp->used_region_at_save_marks();
+    if (!ur.equals(ur2)) {
+      warning("CMS+ParNew: Flickering used_region()!!");
+    }
+    if (!urasm.equals(urasm2)) {
+      warning("CMS+ParNew: Flickering used_region_at_save_marks()!!");
+    }
+  }
+#endif
+  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm,
                                                    dcto_cl, &clear_cl);
 }
 
