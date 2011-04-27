@@ -3447,14 +3447,31 @@ void GraphKit::write_barrier_post(Node* oop_store,
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
-  // Smash zero into card
-  Node*   zero = __ ConI(0);
+  Node*   zero = __ ConI(0); // Dirty card value
   BasicType bt = T_BYTE;
+
+  if (UseCondCardMark) {
+    // The classic GC reference write barrier is typically implemented
+    // as a store into the global card mark table.  Unfortunately
+    // unconditional stores can result in false sharing and excessive
+    // coherence traffic as well as false transactional aborts.
+    // UseCondCardMark enables MP "polite" conditional card mark
+    // stores.  In theory we could relax the load from ctrl() to
+    // no_ctrl, but that doesn't buy much latitude.
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, bt, adr_type);
+    __ if_then(card_val, BoolTest::ne, zero);
+  }
+
+  // Smash zero into card
   if( !UseConcMarkSweepGC ) {
     __ store(__ ctrl(), card_adr, zero, bt, adr_type);
   } else {
     // Specialized path for CM store barrier
     __ storeCM(__ ctrl(), card_adr, zero, oop_store, adr_idx, bt, adr_type);
+  }
+
+  if (UseCondCardMark) {
+    __ end_if();
   }
 
   // Final sync IdealKit and GraphKit.
