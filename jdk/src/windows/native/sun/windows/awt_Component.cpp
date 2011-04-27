@@ -1969,7 +1969,9 @@ MsgRouting AwtComponent::WmDestroy()
 {
     // fix for 6259348: we should enter the SyncCall critical section before
     // disposing the native object, that is value 1 of lParam is intended for
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)this, (LPARAM)1);
+    if(m_peerObject != NULL) { // is not being terminating
+        AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)m_peerObject, (LPARAM)1);
+    }
 
     return mrConsume;
 }
@@ -6534,8 +6536,7 @@ Java_sun_awt_windows_WComponentPeer__1dispose(JNIEnv *env, jobject self)
 {
     TRY_NO_HANG;
 
-    PDATA pData = JNI_GET_PDATA(self);
-    AwtObject::_Dispose(pData);
+    AwtObject::_Dispose(self);
 
     CATCH_BAD_ALLOC;
 }
