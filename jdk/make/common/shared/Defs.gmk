@@ -646,7 +646,7 @@ endef
 
 # Create the HGTIP_FILENAME file
 define CreateHgTip
-$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME)
+$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME);\
 $(ECHO) $1/$(HGTIP_FILENAME)
 endef
 
