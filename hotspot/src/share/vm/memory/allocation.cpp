@@ -44,6 +44,14 @@ void* CHeapObj::operator new(size_t size){
   return (void *) AllocateHeap(size, "CHeapObj-new");
 }
 
+void* CHeapObj::operator new (size_t size, const std::nothrow_t&  nothrow_constant) {
+  char* p = (char*) os::malloc(size);
+#ifdef ASSERT
+  if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
+#endif
+  return p;
+}
+
 void CHeapObj::operator delete(void* p){
  FreeHeap(p);
 }
