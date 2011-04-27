@@ -50,6 +50,9 @@ import sun.security.rsa.RSAKeyFactory;
  * following algorithm names:
  *
  *  . "SHA1withRSA"
+ *  . "SHA256withRSA"
+ *  . "SHA384withRSA"
+ *  . "SHA512withRSA"
  *  . "MD5withRSA"
  *  . "MD2withRSA"
  *
@@ -63,7 +66,10 @@ abstract class RSASignature extends java.security.SignatureSpi
     // message digest implementation we use
     private final MessageDigest messageDigest;
 
-    // flag indicating whether the digest is reset
+    // message digest name
+    private final String messageDigestAlgorithm;
+
+    // flag indicating whether the digest has been reset
     private boolean needsReset;
 
     // the signing key
@@ -73,10 +79,15 @@ abstract class RSASignature extends java.security.SignatureSpi
     private Key publicKey = null;
 
 
+    /**
+     * Constructs a new RSASignature. Used by subclasses.
+     */
     RSASignature(String digestName) {
 
         try {
             messageDigest = MessageDigest.getInstance(digestName);
+            // Get the digest's canonical name
+            messageDigestAlgorithm = messageDigest.getAlgorithm();
 
         } catch (NoSuchAlgorithmException e) {
            throw new ProviderException(e);
@@ -88,6 +99,24 @@ abstract class RSASignature extends java.security.SignatureSpi
     public static final class SHA1 extends RSASignature {
         public SHA1() {
             super("SHA1");
+        }
+    }
+
+    public static final class SHA256 extends RSASignature {
+        public SHA256() {
+            super("SHA-256");
+        }
+    }
+
+    public static final class SHA384 extends RSASignature {
+        public SHA384() {
+            super("SHA-384");
+        }
+    }
+
+    public static final class SHA512 extends RSASignature {
+        public SHA512() {
+            super("SHA-512");
         }
     }
 
@@ -103,16 +132,7 @@ abstract class RSASignature extends java.security.SignatureSpi
         }
     }
 
-    /**
-     * Initializes this signature object with the specified
-     * public key for verification operations.
-     *
-     * @param publicKey the public key of the identity whose signature is
-     * going to be verified.
-     *
-     * @exception InvalidKeyException if the key is improperly
-     * encoded, parameters are missing, and so on.
-     */
+    // initialize for signing. See JCA doc
     protected void engineInitVerify(PublicKey key)
         throws InvalidKeyException
     {
@@ -158,24 +178,12 @@ abstract class RSASignature extends java.security.SignatureSpi
             publicKey = (sun.security.mscapi.RSAPublicKey) key;
         }
 
-        if (needsReset) {
-            messageDigest.reset();
-            needsReset = false;
-        }
+        this.privateKey = null;
+        resetDigest();
     }
 
-    /**
-     * Initializes this signature object with the specified
-     * private key for signing operations.
-     *
-     * @param privateKey the private key of the identity whose signature
-     * will be generated.
-     *
-     * @exception InvalidKeyException if the key is improperly
-     * encoded, parameters are missing, and so on.
-     */
-    protected void engineInitSign(PrivateKey key)
-        throws InvalidKeyException
+    // initialize for signing. See JCA doc
+    protected void engineInitSign(PrivateKey key) throws InvalidKeyException
     {
         // This signature accepts only RSAPrivateKey
         if ((key instanceof sun.security.mscapi.RSAPrivateKey) == false) {
@@ -189,10 +197,23 @@ abstract class RSASignature extends java.security.SignatureSpi
             null, RSAKeyPairGenerator.KEY_SIZE_MIN,
             RSAKeyPairGenerator.KEY_SIZE_MAX);
 
+        this.publicKey = null;
+        resetDigest();
+    }
+
+    /**
+     * Resets the message digest if needed.
+     */
+    private void resetDigest() {
         if (needsReset) {
             messageDigest.reset();
             needsReset = false;
         }
+    }
+
+    private byte[] getDigestValue() {
+        needsReset = false;
+        return messageDigest.digest();
     }
 
     /**
@@ -254,13 +275,12 @@ abstract class RSASignature extends java.security.SignatureSpi
      */
     protected byte[] engineSign() throws SignatureException {
 
-        byte[] hash = messageDigest.digest();
-        needsReset = false;
+        byte[] hash = getDigestValue();
 
         // Sign hash using MS Crypto APIs
 
         byte[] result = signHash(hash, hash.length,
-            messageDigest.getAlgorithm(), privateKey.getHCryptProvider(),
+            messageDigestAlgorithm, privateKey.getHCryptProvider(),
             privateKey.getHCryptKey());
 
         // Convert signature array from little endian to big endian
@@ -314,11 +334,10 @@ abstract class RSASignature extends java.security.SignatureSpi
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
-        byte[] hash = messageDigest.digest();
-        needsReset = false;
+        byte[] hash = getDigestValue();
 
         return verifySignedHash(hash, hash.length,
-            messageDigest.getAlgorithm(), convertEndianArray(sigBytes),
+            messageDigestAlgorithm, convertEndianArray(sigBytes),
             sigBytes.length, publicKey.getHCryptProvider(),
             publicKey.getHCryptKey());
     }
