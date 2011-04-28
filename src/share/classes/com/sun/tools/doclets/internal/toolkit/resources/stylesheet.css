@@ -2,16 +2,9 @@
 /*
 Overall document style
 */
-* {
-    margin:0;
-    padding:0;
-}
 body {
     font-family:Helvetica, Arial, sans-serif;
     color:#000000;
-}
-p {
-    margin:20px 0;
 }
 pre {
     font-size:1.0em;
@@ -30,35 +23,18 @@ h4 {
 }
 ul {
     margin:10px 0 10px 20px;
-}
-li {
-    list-style:disc;
-}
-dl dt {
-    font-size:0.95em;
-    font-weight:bold;
-    margin:10px 0 0 0;
-}
-dl dd {
-    margin:10px 0 10px 20px;
-}
-dl dd ul {
-    margin-left:0;
-}
-dl dd ul li {
-    list-style:none;
-    margin:10px 0 10px 0;
+    list-style-type:disc;
 }
 caption {
     background: #CCCCFF;
     color:#000000;
-    text-align: left;
-    font-size: 150%;
-    font-weight: bold;
-    border-left: 2px ridge;
-    border-right: 2px ridge;
-    border-top: 2px ridge;
-    padding-left: 5px;
+    text-align:left;
+    font-size:150%;
+    font-weight:bold;
+    border-left:2px ridge;
+    border-right:2px ridge;
+    border-top:2px ridge;
+    padding-left:5px;
     width:auto;
 }
 /*
@@ -70,11 +46,11 @@ Document title and Copyright styles
     color:#000000;
 }
 .legalCopy {
-    margin:7px;
+    margin:7px 0;
 }
 .bar {
     font-size:1em;
-    margin:10px 0 0 10px;
+    margin:10px 0 0 2px;
 }
 .bar a {
     font-weight:normal;
@@ -84,24 +60,21 @@ Navigation bar styles
 */
 .topNav {
     border-top:2px solid #C0C0C0;
-    margin:7px;
     padding:7px 0;
     height:2.8em;
-    width:99%;
+    width:100%;
     min-width:600px;
 }
 .bottomNav {
     border-top:2px solid #C0C0C0;
-    margin:7px;
     padding:7px 0;
     height:2.8em;
-    width:99%;
+    width:100%;
 }
 .subNav {
     border-bottom:2px solid #C0C0C0;
     float:left;
-    width:99%;
-    margin:7px;
+    width:100%;
     min-width:600px;
 }
 .subNav div {
@@ -120,7 +93,7 @@ Navigation bar styles
 /* Navigation bar list styles */
 .topNav ul.navList, .bottomNav ul.navList {
     background-color:#EEEEFF;
-    padding:7px 5px;
+    padding:4px 4px;
     margin:0;
     float:left;
     width:80%;
@@ -128,7 +101,7 @@ Navigation bar styles
 ul.navList li{
     list-style:none;
     float:left;
-    padding:3px 4px;
+    padding:0 4px;
     color:#000000;
     font-size:0.98em;
 }
@@ -142,14 +115,16 @@ ul.navList li.navBarCell1Rev {
 .subNav ul.navList {
     float:left;
     margin:0;
+    padding:0;
     font-size:0.8em;
     width:350px;
 }
 ul.subNavList {
     float:left;
-    margin:0;
     font-size:0.8em;
     width:350px;
+    margin:0;
+    padding:0;
 }
 ul.subNavList li{
     list-style:none;
@@ -161,16 +136,16 @@ Page header and footer styles
 */
 .header, .footer {
     clear:both;
-    margin:0 7px;
+    padding:10px 0;
 }
 .indexHeader {
     font-size:0.9em;
-    margin:10px 0 7px 10px;
+    margin:10px 0 0 2px;
 }
 .header ul {
     padding-left:20px;
 }
-/* Header and footer title styles */ 
+/* Header and footer title styles */
 .header h1.title {
     font-size:1.4em;
     text-align:center;
@@ -181,7 +156,6 @@ Page header and footer styles
     margin:0;
 }
 .subTitle {
-    margin:0;
     padding-top:10px;
 }
 /*
@@ -190,11 +164,11 @@ Page layout container styles
 .contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer,
 .constantValuesContainer {
     clear:both;
-    padding:10px 10px;
     position:relative;
+    padding-bottom:20px;
 }
 .indexContainer {
-    padding:0 0 10px 10px;
+    padding:0 0 0 2px;
     font-size:0.9em;
 }
 /*
@@ -221,7 +195,8 @@ Heading styles
 .indexContainer h2 {
     font-weight:normal;
     font-size:1.0em;
-    padding:10px 0 0 0;
+    padding:5px 0 0 0;
+    margin:10px 0 0 0;
 }
 .contentContainer h2 {
     margin:10px 0;
@@ -263,7 +238,7 @@ div.summary ul.blockList ul.blockList li.blockList h3 {
     background:#CCCCFF;
     border:0;
     border:2px ridge;
-    padding-left:5px;
+    margin:0;
 }
 div.summary ul.blockList ul.blockList ul.blockList li.blockList h3 {
     background:#EEEEFF;
@@ -274,23 +249,22 @@ div.details ul.blockList ul.blockList ul.blockList li.blockList h4,
 div.details ul.blockList ul.blockList ul.blockListLast li.blockList h4 {
     font-size:1.15em;
     font-weight:bold;
-    padding:0 0 10px 0;
+    padding:0 0 5px 0;
+    margin:0;
 }
 /*
 Table styles
 */
 .contentContainer table {
-    border-collapse: collapse ;
+    border-collapse:collapse ;
     width:100%;
 }
 .contentContainer table td, .contentContainer table th {
     border:2px ridge;
-    padding:3px;
 }
 /* Constant values page table styles */
 .constantValuesContainer table {
-    border-collapse: collapse ;
-    margin:0 0 10px 0;
+    border-collapse:collapse;
 }
 .constantValuesContainer table caption{
     font-size:0.95em;
@@ -303,12 +277,9 @@ Table styles
 }
 /* Class-use/Package-use page table styles */
 .classUseContainer table {
-    border-collapse: collapse ;
+    border-collapse:collapse ;
     width:100%;
-    margin:0 0 15px 0;
-}
-.classUseContainer ul li ul li table {
-    margin-bottom:30px;
+    margin:0 0 10px 0;
 }
 .classUseContainer ul li ul li table caption{
     font-size:0.95em;
@@ -365,6 +336,7 @@ ul.horizontal li {
 /* Container specific list styles */
 .indexContainer ul {
     margin:0;
+    padding:0;
 }
 .indexContainer ul li {
     list-style:none;
@@ -376,6 +348,7 @@ ul.horizontal li {
     list-style:none;
     border:0;
     border-bottom:2px ridge;
+    height:1%;
 }
 .serializedFormContainer ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockListLast {
     list-style:none;
@@ -395,6 +368,7 @@ ul.blockList ul.blockList ul.blockList li.blockList {
 div.details ul.blockList ul.blockList ul.blockList li.blockList {
     border:0;
     border-bottom:2px ridge;
+    height:1%;
 }
 /* Definition list styles */
 ul.blockList li.blockList dl{
@@ -413,9 +387,17 @@ dl.nameValue dt, dl.nameValue dd{
 ul.blockList li.blockList pre{
     margin:0 0 15px 0;
 }
+.description dl dt {
+    font-size:0.95em;
+    font-weight:bold;
+    margin:5px 0 0 0;
+}
+.description dl dd {
+    margin:10px 0 10px 20px;
+}
 /* List content styles */
 ul.blockList li.blockList ul.blockList li.blockList pre{
-    margin:10px 0 15px 0;
+    margin:10px 0 10px 0;
 }
 ul.blockList li.blockList ul.blockList li.blockList ul.blockList li.blockList pre,
 ul.blockList li.blockList ul.blockList li.blockList ul.blockListLast li.blockList pre{
