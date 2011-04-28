@@ -1,0 +1,126 @@
+." Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jvisualvm 1 "14 Apr 2011"
+
+.LP
+.SH "名前"
+\f2jvisualvm\fP \- Java 仮想マシンの監視、トラブルシューティング、およびプロファイリングツール
+.LP
+.RS 3
+.TP 2
+o
+形式 
+.TP 2
+o
+パラメータ 
+.TP 2
+o
+説明 
+.TP 2
+o
+オプション 
+.TP 2
+o
+使用方法 
+.TP 2
+o
+関連項目 
+.RE
+
+.LP
+.SH "形式"
+.LP
+.nf
+\f3
+.fl
+        \fP\f3jvisualvm\fP [ \f2options\fP ]
+.fl
+.fi
+
+.LP
+.SH "パラメータ"
+.LP
+.LP
+オプションを使用する場合、コマンド名の直後に記述してください。オプションの指定順序に決まりはありません。特定のオプションに適用されるパラメータについては、このあとの「オプション」を参照してください。
+.LP
+.SH " 説明"
+.LP
+.LP
+Java VisualVM は、指定された Java 仮想マシン (JVM(*)) で Java テクノロジベースのアプリケーション (Java アプリケーション) が実行されているときに、その Java アプリケーションに関する詳細な情報を提供する直感的なグラフィカルユーザーインタフェースです。Java VisualVM という名前は、Java VisualVM が JVM ソフトウェアに関する情報を「視覚的に」提供するという事実に由来しています。
+.LP
+.LP
+Java VisualVM は、いくつかの監視、トラブルシューティング、およびプロファイリングユーティリティーを 1 つのツールに統合します。たとえば、スタンドアロンツール \f2jmap\fP、 \f2jinfo\fP、 \f2jstat\fP 、および \f2jstack\fP で提供されている機能のほとんどが、Java VisualVM に組み込まれています。JConsole ツールによって提供される一部の機能など、ほかの機能はオプションのプラグインとして追加できます。
+.LP
+.SH "オプション"
+.LP
+.LP
+次のオプションは、Java VisualVM を起動したときに実行可能になります。
+.LP
+.RS 3
+.TP 3
+\-J<jvm_option>\  
+この \f2<jvm_option>\fP を JVM ソフトウェアに渡します。 
+.RE
+
+.LP
+.SH "使用方法"
+.LP
+.LP
+Java VisualVM は、Java アプリケーションの開発者がアプリケーションのトラブルシューティングを行なったり、アプリケーションのパフォーマンスを監視および改善したりするのに役立ちます。Java VisualVM を使用すると、開発者はヒープダンプの生成および解析、メモリーリークの特定、ガベージコレクションの実行および監視、およびメモリーと CPU の簡易プロファイリングの実行が可能になります。Java VisualVM の機能を拡張するプラグインもいくつかあります。たとえば、JConsole ツールのほとんどの機能は、MBeans タブおよび JConsole Plug\-in Wrapper プラグインを介して使用できます。標準の Java VisualVM プラグインのカタログから選択するには、Java VisualVM メニューの「ツール」>「プラグイン」を選択します。
+.LP
+.LP
+Java VisualVM を起動するには、次のコマンドを実行します。
+.LP
+.nf
+\f3
+.fl
+%  jvisualvm \fP\f4<options>\fP\f3
+.fl
+\fP
+.fi
+
+.LP
+.SH "関連項目"
+.LP
+.LP
+Java VisualVM の詳細は、次のページを参照してください。
+.LP
+.RS 3
+.TP 2
+o
+.na
+\f2Java VisualVM 開発者のサイト\fP @
+.fi
+https://visualvm.dev.java.net 
+.TP 2
+o
+.na
+\f2Java SE プラットフォームでの Java VisualVM のドキュメント\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/visualvm/index.html 
+.RE
+
+.LP
+.LP
+\f2(* 「Java 仮想マシン」と「JVM」という用語は、Java プラットフォームの仮想マシンを意味しています。)\fP
+.LP
+ 
