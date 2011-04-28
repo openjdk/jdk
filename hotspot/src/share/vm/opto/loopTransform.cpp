@@ -632,6 +632,8 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
 }
 
 
+#define MAX_UNROLL 16 // maximum number of unrolls for main loop
+
 //------------------------------policy_unroll----------------------------------
 // Return TRUE or FALSE if the loop should be unrolled or not.  Unroll if
 // the loop is a CountedLoop and the body is small enough.
@@ -646,10 +648,11 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
   // protect against over-unrolling
   if (cl->trip_count() <= 1) return false;
 
-  // Check for stride being a small enough constant
-  if (abs(cl->stride_con()) > (1<<3)) return false;
-
   int future_unroll_ct = cl->unrolled_count() * 2;
+  if (future_unroll_ct > MAX_UNROLL) return false;
+
+  // Check for initial stride being a small enough constant
+  if (abs(cl->stride_con()) > (1<<2)*future_unroll_ct) return false;
 
   // Don't unroll if the next round of unrolling would push us
   // over the expected trip count of the loop.  One is subtracted
