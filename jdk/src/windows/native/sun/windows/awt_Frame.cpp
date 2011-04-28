@@ -340,12 +340,16 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
             }
             break;
         case WM_SETFOCUS:
+            if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
+
             if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
                 AwtSetActiveWindow();
             }
             mr = mrConsume;
             break;
         case WM_KILLFOCUS:
+            if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
+
             if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
                 AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
 
