@@ -1144,56 +1144,6 @@ $(SCTPAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(SCTPAP
 
 #############################################################
 #
-# tracingdocs
-#
-
-ALL_OTHER_TARGETS += tracingdocs
-
-TRACING_DOCDIR      := $(JRE_API_DOCSDIR)/tracing
-TRACING2COREAPI     := ../$(JDKJRE2COREAPI)
-TRACING_DOCTITLE    := Java$(TRADEMARK) Platform Tracing
-TRACING_WINDOWTITLE := Platform Tracing
-TRACING_HEADER      := <strong>Platform Tracing</strong>
-TRACING_BOTTOM      := $(call CommonBottom,$(TRACING_FIRST_COPYRIGHT_YEAR))
-# TRACING_PKGS is located in NON_CORE_PKGS.gmk
-
-TRACING_INDEX_HTML    = $(TRACING_DOCDIR)/index.html
-TRACING_OPTIONS_FILE  = $(DOCSTMPDIR)/tracing.options
-TRACING_PACKAGES_FILE = $(DOCSTMPDIR)/tracing.packages
-
-tracingdocs: $(TRACING_INDEX_HTML)
-
-# Set relative location to core api document root
-$(TRACING_INDEX_HTML): GET2DOCSDIR=$(TRACING2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(TRACING_INDEX_HTML): $(TRACING_OPTIONS_FILE) $(TRACING_PACKAGES_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(TRACING_OPTIONS_FILE),$(TRACING_PACKAGES_FILE))
-	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
-	  @$(TRACING_OPTIONS_FILE) @$(TRACING_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(TRACING_OPTIONS_FILE):
-	$(prep-target)
-	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS))			; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH))	; \
-	  $(call OptionPair,-encoding,ascii)				; \
-	  $(call OptionOnly,-nodeprecatedlist)				; \
-	  $(call OptionPair,-doctitle,$(TRACING_DOCTITLE))		; \
-	  $(call OptionPair,-windowtitle,$(TRACING_WINDOWTITLE) $(DRAFT_WINTITLE));\
-	  $(call OptionPair,-header,$(TRACING_HEADER)$(DRAFT_HEADER))	; \
-	  $(call OptionPair,-bottom,$(TRACING_BOTTOM)$(DRAFT_BOTTOM))	; \
-	  $(call OptionTrip,-linkoffline,$(TRACING2COREAPI),$(COREAPI_DOCSDIR)/); \
-        ) >> $@
-
-# Create a file with the package names in it
-$(TRACING_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TRACING_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(TRACING_PKGS))
-
-#############################################################
-#
 # Get a cache of all the directories
 
 $(DIRECTORY_CACHE): $(ALL_EXISTING_SOURCE_DIRS)
