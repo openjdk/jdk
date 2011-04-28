@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ class PSPermGen : public PSOldGen {
 
   // MarkSweep code
   virtual void precompact();
-
-  // Parallel old
-  virtual void move_and_update(ParCompactionManager* cm);
 
   virtual const char* name() const { return "PSPermGen"; }
 };

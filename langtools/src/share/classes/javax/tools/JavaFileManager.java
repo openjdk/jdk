@@ -49,17 +49,16 @@ import static javax.tools.JavaFileObject.Kind;
  * names must be given in the Java Virtual Machine internal form of
  * fully qualified class and interface names.  For convenience '.'
  * and '/' are interchangeable.  The internal form is defined in
- * chapter four of the
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/jvms-maintenance.html">Java
- * Virtual Machine Specification</a>.
+ * chapter four of
+ * <cite>The Java&trade; Virtual Machine Specification</cite>.
 
  * <blockquote><p>
  *   <i>Discussion:</i> this means that the names
  *   "java/lang.package-info", "java/lang/package-info",
  *   "java.lang.package-info", are valid and equivalent.  Compare to
- *   binary name as defined in the
- *   <a href="http://java.sun.com/docs/books/jls/">Java Language
- *   Specification (JLS)</a> section 13.1 "The Form of a Binary".
+ *   binary name as defined in
+ *   <cite>The Java&trade; Language Specification</cite>,
+ *   section 13.1 "The Form of a Binary".
  * </p></blockquote>
  *
  * <p>The case of names is significant.  All names should be treated
@@ -173,7 +172,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Infers a binary name of a file object based on a location.  The
-     * binary name returned might not be a valid JLS binary name.
+     * binary name returned might not be a valid binary name according to
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @param location a location
      * @param file a file object

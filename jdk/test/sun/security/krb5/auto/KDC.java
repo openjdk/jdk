@@ -691,7 +691,10 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.addresses,
+                    body.addresses != null  // always set caddr
+                            ? body.addresses
+                            : new HostAddresses(
+                                new InetAddress[]{InetAddress.getLocalHost()}),
                     null);
             EncryptionKey skey = keyForUser(body.sname, e3, true);
             if (skey == null) {
@@ -716,7 +719,10 @@ public class KDC {
                     till, body.rtime,
                     body.crealm,
                     body.sname,
-                    body.addresses
+                    body.addresses != null  // always set caddr
+                            ? body.addresses
+                            : new HostAddresses(
+                                new InetAddress[]{InetAddress.getLocalHost()})
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
             TGSRep tgsRep = new TGSRep(null,

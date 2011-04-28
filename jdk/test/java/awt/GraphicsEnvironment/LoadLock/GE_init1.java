@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,17 @@
  * questions.
  */
 
-package com.sun.source.tree;
-
-import java.util.List;
-
-/**
- * A tree node for a disjunctive type expression in a multicatch var declaration.
- *
- *
- * @author Maurizio Cimadamore
- *
- * @since 1.7
+/*
+ * @test
+ * @bug 7002839
+ * @summary Static init deadlock Win32GraphicsEnvironment and WToolkit
+ * @run main GE_init1
  */
-public interface DisjunctiveTypeTree extends Tree {
-    List<? extends Tree> getTypeAlternatives();
+
+import java.awt.Toolkit;
+
+public class GE_init1 {
+    public static void main(String[] args) {
+        Toolkit.getDefaultToolkit();
+    }
 }

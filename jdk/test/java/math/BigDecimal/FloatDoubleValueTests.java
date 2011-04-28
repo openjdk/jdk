@@ -25,6 +25,8 @@
  * @test
  * @bug 6274390
  * @summary Verify {float, double}Value methods work with condensed representation
+ * @run main FloatDoubleValueTests
+ * @run main/othervm -XX:+AggressiveOpts FloatDoubleValueTests
  */
 import java.math.*;
 
@@ -64,6 +66,7 @@ public class FloatDoubleValueTests {
 
     static void checkDouble(BigDecimal bd, double d) {
         double dbd = bd.doubleValue();
+
         if (d != dbd ) {
             String message = String.format("Bad conversion:"+
                                            "got %g (%a)\texpected %g (%a)",
@@ -156,9 +159,29 @@ public class FloatDoubleValueTests {
         }
     }
 
+    static void testFloatValue1() {
+        checkFloat(new BigDecimal("85070591730234615847396907784232501249"), 8.507059e+37f);
+        checkFloat(new BigDecimal("7784232501249e12"), 7.7842326e24f);
+        checkFloat(new BigDecimal("907784232501249e-12"),907.78424f);
+        checkFloat(new BigDecimal("7784e8"),7.7839997e11f);
+        checkFloat(new BigDecimal("9077e-8"),9.077e-5f);
+
+    }
+
+    static void testDoubleValue1() {
+        checkDouble(new BigDecimal("85070591730234615847396907784232501249"), 8.507059173023462e37);
+        checkDouble(new BigDecimal("7784232501249e12"), 7.784232501249e24);
+        checkDouble(new BigDecimal("907784232501249e-12"), 907.784232501249);
+        checkDouble(new BigDecimal("7784e8"), 7.784e11);
+        checkDouble(new BigDecimal("9077e-8"), 9.077e-5);
+
+    }
+
     public static void main(String[] args) throws Exception {
         testFloatDoubleValue();
         testDoubleValue();
         testFloatValue();
+        testFloatValue1();
+        testDoubleValue1();
     }
 }
