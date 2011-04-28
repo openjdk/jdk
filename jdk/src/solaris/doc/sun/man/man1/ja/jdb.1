@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jdb 1 "02 Jun 2010"
+.TH jdb 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jdb \- Java デバッガ
-.LP
-.RS 3
-
+.SH "̾��"
+jdb \- Java �ǥХå�
 .LP
 .LP
-\f3jdb\fP は、Java 言語プログラムのバグを見つけて修正するために使用するツールです。
+\f3jdb\fP �ϡ�Java ����ץ������ΥХ��򸫤Ĥ��ƽ������뤿��˻��Ѥ���ġ���Ǥ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,41 +39,32 @@ jdb \- Java デバッガ
 
 .LP
 .RS 3
-
-.LP
-.RS 3
 .TP 3
 options 
-次に示すコマンド行オプション 
+���˼������ޥ�ɹԥ��ץ���� 
 .TP 3
 class 
-デバッグを開始するクラスの名前 
+�ǥХå��򳫻Ϥ��륯�饹��̾�� 
 .TP 3
 arguments 
-\f2class\fP の \f2main()\fP メソッドに渡す引数 
+class �� \f2main()\fP �᥽�åɤ��Ϥ� \f2����\fP 
 .RE
 
 .LP
-.RE
-.SH " 説明"
-.LP
-
+.SH " ����"
 .LP
 .LP
-Java デバッガ \f3jdb\fP は、Java クラス用の簡単なコマンド行デバッガです。
+Java �ǥХå� \f3jdb\fP �ϡ�Java ���饹�Ѥδ�ñ�ʥ��ޥ�ɹԥǥХå��Ǥ���
 .na
 \f2Java Platform Debugger Architecture\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html を視覚的に実行し、ローカルまたはリモートの Java Virtual Machine の検査とデバッグを行うことができます。
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html ����Ū�˼¹Ԥ�����������ޤ��ϥ�⡼�Ȥ� Java Virtual Machine �θ����ȥǥХå���Ԥ����Ȥ��Ǥ��ޤ���
 .LP
 .SS 
-jdb セッションの開始
-.LP
-.RS 3
-
+jdb ���å����γ���
 .LP
 .LP
-jdb セッションを開始するにはさまざまな方法があります。もっとも頻繁に使われるのは、デバッグするアプリケーションのメインクラスを使用して、\f3jdb\fP から新しい Java 仮想マシン (VM) を起動する方法です。コマンド行で、 \f3java\fP の代わりに \f3jdb\fP コマンドを入力します。たとえば、アプリケーションのメインクラスが MyClass の場合は、JDB 環境でデバッグするときに次のコマンドを使用します。
+jdb ���å����򳫻Ϥ���ˤϤ��ޤ��ޤ���ˡ������ޤ�����äȤ����ˤ˻Ȥ���Τϡ��ǥХå����륢�ץꥱ�������Υᥤ�󥯥饹����Ѥ��ơ�\f3jdb\fP ���鿷���� Java ���ۥޥ��� (VM) ��ư������ˡ�Ǥ������ޥ�ɹԤǡ�\f3java\fP ������� \f3jdb\fP ���ޥ�ɤ����Ϥ��ޤ������Ȥ��С����ץꥱ�������Υᥤ�󥯥饹�� MyClass �ξ��ϡ�JDB �Ķ��ǥǥХå�����Ȥ��˼��Υ��ޥ�ɤ���Ѥ��ޤ���
 .LP
 .nf
 \f3
@@ -91,10 +76,10 @@ jdb セッションを開始するにはさまざまな方法があります。�
 
 .LP
 .LP
-この方法で起動すると、\f3jdb\fP は、指定されたパラメータを使って 2 つ目の Java VM を呼び出します。 次に、指定されたクラスをロードして、クラスの最初の命令を実行する前に VM を停止させます。
+������ˡ�ǵ�ư����ȡ�\f3jdb\fP �ϡ����ꤵ�줿�ѥ�᡼����Ȥä� 2 ���ܤ� Java VM ��ƤӽФ��ޤ������ˡ����ꤵ�줿���饹������ɤ��ơ����饹�κǽ��̿���¹Ԥ������� VM ����ߤ����ޤ���
 .LP
 .LP
-\f3jdb\fP のもう 1 つの使用方法は、すでに起動している Java VM に jdb を接続することです。jdb が接続する VM を、その実行中に起動するための構文を次に示します。これは、インプロセスデバッグ用ライブラリをロードし、接続の種類を指定します。
+\f3jdb\fP �Τ⤦ 1 �Ĥλ�����ˡ�ϡ����Ǥ˵�ư���Ƥ��� Java VM �� jdb ����³���뤳�ȤǤ���jdb ����³���� VM �򡢤��μ¹���˵�ư���뤿��ι�ʸ�򼡤˼����ޤ�������ϡ�����ץ������ǥХå��ѥ饤�֥�������ɤ�����³�μ������ꤷ�ޤ���
 .LP
 .nf
 \f3
@@ -106,7 +91,7 @@ jdb セッションを開始するにはさまざまな方法があります。�
 
 .LP
 .LP
-たとえば、次のコマンドは、MyClass アプリケーションを実行して、\f3jdb\fP があとでそのアプリケーションに接続できるようにします。
+���Ȥ��С����Υ��ޥ�ɤϡ�MyClass ���ץꥱ��������¹Ԥ��ơ�\f3jdb\fP �����ȤǤ��Υ��ץꥱ����������³�Ǥ���褦�ˤ��ޤ���
 .LP
 .nf
 \f3
@@ -118,7 +103,7 @@ jdb セッションを開始するにはさまざまな方法があります。�
 
 .LP
 .LP
-次のコマンドを使用して、\f3jdb\fP を VM に接続できます。
+���Υ��ޥ�ɤ���Ѥ��ơ�\f3jdb\fP �� VM ����³�Ǥ��ޤ���
 .LP
 .nf
 \f3
@@ -130,45 +115,42 @@ jdb セッションを開始するにはさまざまな方法があります。�
 
 .LP
 .LP
-この場合、\f3jdb\fP は新しい VM を起動する代わりに既存の VM に接続されるため、\f3jdb\fP コマンド行には「MyClass」は指定しません。
+���ξ�硢\f3jdb\fP �Ͽ����� VM ��ư��������˴�¸�� VM ����³����뤿�ᡢ\f3jdb\fP ���ޥ�ɹԤˤϡ�MyClass�פϻ��ꤷ�ޤ���
 .LP
 .LP
-デバッガを VM に接続するにはほかにもさまざまな方法があり、すべて \f3jdb\fP でサポートされています。接続オプションについては、Java Platform Debugger Architecture の
+�ǥХå��� VM ����³����ˤϤۤ��ˤ⤵�ޤ��ޤ���ˡ�����ꡢ���٤� \f3jdb\fP �ǥ��ݡ��Ȥ���Ƥ��ޤ�����³���ץ����ˤĤ��Ƥϡ�Java Platform Debugger Architecture ��
 .na
-\f2ドキュメント\fP @
+\f2�ɥ������\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.htmlを参照してください。\f3jdb\fP で使用するために J2SE 1.4.2 以前の VM を起動する方法については、
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html�򻲾Ȥ��Ƥ���������\f3jdb\fP �ǻ��Ѥ��뤿��� J2SE 1.4.2 ������ VM ��ư������ˡ�ˤĤ��Ƥϡ�
 .na
-\f21.4.2 のドキュメント\fP @
+\f21.4.2 �Υɥ������\fP @
 .fi
-http://java.sun.com/j2se/1.4.2/docs/guide/jpda/conninv.htmlを参照してください。
+http://java.sun.com/j2se/1.4.2/docs/guide/jpda/conninv.html�򻲾Ȥ��Ƥ���������
 .LP
 .SS 
-基本 jdb コマンド
+���� jdb ���ޥ��
 .LP
 .LP
-基本的な \f3jdb\fP コマンドの一覧を示します。Java デバッガがサポートするコマンドはこれ以外にもあり、それらは \f3jdb\fP の \f2help\fP コマンドを使用して表示できます。
-.LP
-.RS 3
-
+����Ū�� \f3jdb\fP ���ޥ�ɤΰ����򼨤��ޤ���Java �ǥХå������ݡ��Ȥ��륳�ޥ�ɤϤ���ʳ��ˤ⤢�ꡢ������ \f3jdb\fP �� \f2help\fP ���ޥ�ɤ���Ѥ���ɽ���Ǥ��ޤ���
 .LP
 .RS 3
 .TP 3
-help または ? 
-もっとも重要な \f3jdb\fP コマンド \f2help\fP は、認識されたコマンドのリストに簡潔な説明を付けて表示します。 
+help �ޤ��� ? 
+��äȤ���פ� \f3jdb\fP ���ޥ�� \f2help\fP �ϡ�ǧ�����줿���ޥ�ɤΥꥹ�Ȥ˴ʷ���������դ���ɽ�����ޤ��� 
 .TP 3
 run 
-\f3jdb\fP を起動して必要なブレークポイントを設定したあとに、このコマンドを使用して、デバッグするアプリケーションの実行を開始できます。このコマンドは、既存の VM に接続している場合とは異なり、デバッグするアプリケーションが \f3jdb\fP から起動したときにだけ使用できます。 
+\f3jdb\fP ��ư����ɬ�פʥ֥졼���ݥ���Ȥ����ꤷ�����Ȥˡ����Υ��ޥ�ɤ���Ѥ��ơ��ǥХå����륢�ץꥱ�������μ¹Ԥ򳫻ϤǤ��ޤ������Υ��ޥ�ɤϡ���¸�� VM ����³���Ƥ�����Ȥϰۤʤꡢ�ǥХå����륢�ץꥱ������� \f3jdb\fP ���鵯ư�����Ȥ��ˤ������ѤǤ��ޤ��� 
 .TP 3
 cont 
-ブレークポイント、例外、またはステップ実行のあとで、デバッグするアプリケーションの実行を継続します。 
+�֥졼���ݥ���ȡ��㳰���ޤ��ϥ��ƥå׼¹ԤΤ��Ȥǡ��ǥХå����륢�ץꥱ�������μ¹Ԥ��³���ޤ��� 
 .TP 3
 print 
-Java オブジェクトおよびプリミティブ値を表示します。プリミティブ型の変数またはフィールドの場合には、実際の値が出力されます。オブジェクトの場合には、短い説明が出力されます。オブジェクトについては、以降の \f2dump\fP コマンドの説明を参照してください。 
+Java ���֥������Ȥ���ӥץ�ߥƥ����ͤ�ɽ�����ޤ����ץ�ߥƥ��ַ����ѿ��ޤ��ϥե�����ɤξ��ˤϡ��ºݤ��ͤ����Ϥ���ޤ������֥������Ȥξ��ˤϡ�û�����������Ϥ���ޤ������֥������ȤˤĤ��Ƥϡ��ʹߤ� \f2dump\fP ���ޥ�ɤ������򻲾Ȥ��Ƥ��������� 
 .LP
-\f2注:局所変数を表示するには、その変数を含むクラスが \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP オプションでコンパイルされていなければなりません。 
+\f2��: �ɽ��ѿ���ɽ������ˤϡ������ѿ���ޤ९�饹�� \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP ���ץ����ǥ���ѥ��뤵��Ƥ���ɬ�פ�����ޤ��� 
 .LP
-\f2print\fP では、メソッドの呼び出しを含む多数の簡単な Java 式がサポートされています。 次に例を示します。 
+\f2print\fP �Ǥϡ��᥽�åɤθƤӽФ���ޤ�¿���δ�ñ�� Java �������ݡ��Ȥ���Ƥ��ޤ���������򼨤��ޤ��� 
 .RS 3
 .TP 2
 o
@@ -178,25 +160,22 @@ o
 \f2print myObj.myInstanceField\fP 
 .TP 2
 o
-\f2print i + j + k\fP (i、j、および k はプリミティブであり、フィールドまたは局所変数のいずれか) 
+\f2print i + j + k\fP (i��j������� k �ϥץ�ߥƥ��֤Ǥ��ꡢ�ե�����ɤޤ��϶ɽ��ѿ��Τ����줫) 
 .TP 2
 o
-\f2print myObj.myMethod()\fP (myMethod が null 以外を返す場合) 
+\f2print myObj.myMethod()\fP (myMethod �� null �ʳ����֤����) 
 .TP 2
 o
 \f2print new java.lang.String("Hello").length()\fP 
 .RE
 .TP 3
 dump 
-プリミティブ値の場合には、このコマンドは \f2print\fP と同じです。オブジェクトの場合には、オブジェクト内に定義されている各フィールドの現在の値が出力されます。static フィールドと instance フィールドが出力されます。 
+�ץ�ߥƥ����ͤξ��ˤϡ����Υ��ޥ�ɤ� \f2print\fP ��Ʊ���Ǥ������֥������Ȥξ��ˤϡ����֥�����������������Ƥ���ƥե�����ɤθ��ߤ��ͤ����Ϥ���ޤ���static �ե�����ɤ� instance �ե�����ɤ����Ϥ���ޤ��� 
 .LP
-\f2dump\fP コマンドでは、\f2print\fP コマンドと同じ式がサポートされます。  
+\f2dump\fP ���ޥ�ɤǤϡ�\f2print\fP ���ޥ�ɤ�Ʊ���������ݡ��Ȥ���ޤ���  
 .TP 3
 threads 
-現在実行中のスレッドを一覧表示します。スレッドごとに、名前と現在の状態、およびほかのコマンドに使用できるインデックスが出力されます。 次に例を示します。 
-.RS 3
-
-.LP
+���߼¹���Υ���åɤ����ɽ�����ޤ�������åɤ��Ȥˡ�̾���ȸ��ߤξ��֡�����Ӥۤ��Υ��ޥ�ɤ˻��ѤǤ��륤��ǥå��������Ϥ���ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -204,163 +183,144 @@ threads
 .fl
 \fP
 .fi
-.RE
-この例では、スレッドインデックスは 4 であり、スレッドは java.lang.Thread のインスタンスです。 スレッドの名前は「main」であり、現在実行中です。 
+������Ǥϡ�����åɥ���ǥå����� 4 �Ǥ��ꡢ����åɤ� java.lang.Thread �Υ��󥹥��󥹤Ǥ�������åɤ�̾���ϡ�main�פǤ��ꡢ���߼¹���Ǥ��� 
 .TP 3
 thread 
-現在のスレッドにするスレッドを選択します。多くの \f3jdb\fP コマンドは、現在のスレッドの設定に基づいて実行されます。スレッドは、\f2threads\fP コマンドで説明したスレッドインデックスとともに指定します。 
+���ߤΥ���åɤˤ��륹��åɤ����򤷤ޤ���¿���� \f3jdb\fP ���ޥ�ɤϡ����ߤΥ���åɤ�����˴�Ť��Ƽ¹Ԥ���ޤ�������åɤϡ�\f2threads\fP ���ޥ�ɤ�������������åɥ���ǥå����ȤȤ�˻��ꤷ�ޤ��� 
 .TP 3
 where 
-引数を指定しないで \f2where\fP を実行すると、現在のスレッドのスタックがダンプされます。 \f2where all\fP コマンドは、現在のスレッドグループにあるスレッドのスタックを、すべてダンプします。 \f2where\fP \f2threadindex\fP は、指定されたスレッドのスタックをダンプします。 
+\f2��������ꤷ�ʤ���\fP where ��¹Ԥ���ȡ����ߤΥ���åɤΥ����å�������פ���ޤ��� \f2where all\fP ���ޥ�ɤϡ����ߤΥ���åɥ��롼�פˤ��륹��åɤΥ����å��򤹤٤ƥ���פ��ޤ��� \f2where\fP \f2threadindex\fP �ϡ����ꤵ�줿����åɤΥ����å������פ��ޤ��� 
 .LP
-現在のスレッドが (ブレークポイントか \f2suspend\fP コマンドによって) 中断している場合は、局所変数とフィールドは \f2print\fP コマンドと \f2dump\fP コマンドで表示できます。\f2up\fP コマンドと \f2down\fP コマンドで、どのスタックフレームをカレントにするかを選ぶことができます。  
+���ߤΥ���åɤ� (�֥졼���ݥ���Ȥ� \f2suspend\fP ���ޥ�ɤˤ�ä�) ���Ǥ��Ƥ�����ϡ��ɽ��ѿ��ȥե�����ɤ� \f2print\fP ���ޥ�ɤ� \f2dump\fP ���ޥ�ɤ�ɽ���Ǥ��ޤ���\f2up\fP ���ޥ�ɤ� \f2down\fP ���ޥ�ɤǡ��ɤΥ����å��ե졼��򥫥��Ȥˤ��뤫�����֤��Ȥ��Ǥ��ޤ���  
 .RE
 
 .LP
-.RE
 .SS 
-ブレークポイント
-.LP
-.RS 3
-
+�֥졼���ݥ����
 .LP
 .LP
-ブレークポイントは、行番号またはメソッドの最初の命令で \f3jdb\fP に設定できます。 次に例を示します。
+�֥졼���ݥ���Ȥϡ����ֹ�ޤ��ϥ᥽�åɤκǽ��̿��� \f3jdb\fP ������Ǥ��ޤ���������򼨤��ޤ���
 .LP
 .RS 3
 .TP 2
 o
-\f2stop at MyClass:22\fP (MyClass が含まれるソースファイルの 22 行目の最初の命令にブレークポイントを設定) 
+\f2stop at MyClass:22\fP (MyClass ���ޤޤ�륽�����ե������ 22 ���ܤκǽ��̿��˥֥졼���ݥ���Ȥ�����) 
 .TP 2
 o
-\f2stop in java.lang.String.length\fP (\f2java.lang.String.length\fP メソッドの最初にブレークポイントを設定) 
+\f2stop in java.lang.String.length\fP (\f2java.lang.String.length\fP �᥽�åɤκǽ�˥֥졼���ݥ���Ȥ�����) 
 .TP 2
 o
-\f2stop in MyClass.<init>\fP (<init> は MyClass コンストラクタを識別) 
+\f2stop in MyClass.<init>\fP (<init> �� MyClass ���󥹥ȥ饯������) 
 .TP 2
 o
-\f2stop in MyClass.<clinit>\fP (<clinit> は MyClass の静的初期化コードを識別) 
+\f2stop in MyClass.<clinit>\fP (<clinit> �� MyClass ����Ū����������ɤ���) 
 .RE
 
 .LP
 .LP
-メソッドがオーバーロードされている場合には、メソッドの引数の型も指定して、ブレークポイントに対して適切なメソッドが選択されるようにしなければなりません。たとえば、「\f2MyClass.myMethod(int,java.lang.String)\fP」または「\f2MyClass.myMethod()\fP」と指定します。
+�᥽�åɤ������С������ɤ���Ƥ�����ˤϡ��᥽�åɤΰ����η�����ꤷ�ơ��֥졼���ݥ���Ȥ��Ф���Ŭ�ڤʥ᥽�åɤ����򤵤��褦�ˤ��ʤ���Фʤ�ޤ��󡣤��Ȥ��С���\f2MyClass.myMethod(int,java.lang.String)\fP�פޤ��ϡ�\f2MyClass.myMethod()\fP�פȻ��ꤷ�ޤ���
 .LP
 .LP
-\f2clear\fP コマンドは、「\f2clear\ MyClass:45\fP」のような構文を使用してブレークポイントを削除します。\f2clear\fP を使用するか、引数を指定しないでコマンドを使用すると、現在設定されているすべてのブレークポイントが表示されます。\f2cont\fP コマンドは実行を継続します。
+\f2clear\fP ���ޥ�ɤϡ���\f2clear\ MyClass:45\fP�פΤ褦�ʹ�ʸ����Ѥ��ƥ֥졼���ݥ���Ȥ������ޤ���\f2clear\fP ����Ѥ��뤫����������ꤷ�ʤ��ǥ��ޥ�ɤ���Ѥ���ȡ��������ꤵ��Ƥ��뤹�٤ƤΥ֥졼���ݥ���Ȥ�ɽ������ޤ���\f2cont\fP ���ޥ�ɤϼ¹Ԥ��³���ޤ���
 .LP
-.RE
 .SS 
-ステップ実行
-.LP
-.RS 3
-
+���ƥå׼¹�
 .LP
 .LP
-\f2step\fP コマンドは、現在のスタックフレームまたは呼び出されたメソッド内で、次の行を実行します。\f2next\fP コマンドは、現在のスタックフレームの次の行を実行します。
+\f2step\fP ���ޥ�ɤϡ����ߤΥ����å��ե졼��ޤ��ϸƤӽФ��줿�᥽�å���ǡ����ιԤ�¹Ԥ��ޤ���\f2next\fP ���ޥ�ɤϡ����ߤΥ����å��ե졼��μ��ιԤ�¹Ԥ��ޤ���
 .LP
-.RE
 .SS 
-例外
-.LP
-.RS 3
-
+�㳰
 .LP
 .LP
-スローしているスレッドの呼び出しスタック上のどこにも catch 文がない場合に例外が発生すると、VM は通常、例外トレースを出力して終了します。ただし、\f3jdb\fP 環境で実行している場合は、例外が発生すると \f3jdb\fP に制御が戻ります。次に、\f3jdb\fP を使用して例外の原因を診断します。
+���������Ƥ��륹��åɤθƤӽФ������å���Τɤ��ˤ� catch ʸ���ʤ������㳰��ȯ������ȡ�VM ���̾�㳰�ȥ졼������Ϥ��ƽ�λ���ޤ�����������\f3jdb\fP �Ķ��Ǽ¹Ԥ��Ƥ�����ϡ��㳰��ȯ������� \f3jdb\fP �����椬���ޤ������ˡ�\f3jdb\fP ����Ѥ����㳰�θ�������Ǥ��ޤ���
 .LP
 .LP
-たとえば、「\f2catch java.io.FileNotFoundException\fP」または「\f2catch mypackage.BigTroubleException\fP」のように \f2catch\fP コマンドを使用すると、デバッグされたアプリケーションは、ほかの例外がスローされたときに停止します。例外が特定のクラス (またはサブクラス) のインスタンスの場合は、アプリケーションは例外がスローされた場所で停止します。
+���Ȥ��С���\f2catch java.io.FileNotFoundException\fP�פޤ��ϡ�\f2catch mypackage.BigTroubleException\fP�פΤ褦�� \f2catch\fP ���ޥ�ɤ���Ѥ���ȡ��ǥХå����줿���ץꥱ�������ϡ��ۤ����㳰�����������줿�Ȥ�����ߤ��ޤ����㳰������Υ��饹 (�ޤ��ϥ��֥��饹) �Υ��󥹥��󥹤ξ��ϡ����ץꥱ���������㳰�����������줿������ߤ��ޤ���
 .LP
 .LP
-\f2ignore\fP コマンドを使うと、以前の \f2catch\fP コマンドの効果が無効になります。
+\f2ignore\fP ���ޥ�ɤ�Ȥ��ȡ������� \f2catch\fP ���ޥ�ɤθ��̤�̵���ˤʤ�ޤ���
 .LP
 .LP
-\f2注:\fP\f2ignore\fP コマンドでは、デバッグされる VM は例外を無視せず、デバッガだけが例外を無視します。
+\f2��: \fP\f2ignore\fP ���ޥ�ɤǤϡ��ǥХå������ VM ���㳰��̵�뤻�����ǥХå��������㳰��̵�뤷�ޤ���
 .LP
-.RE
-.RE
-.SH "コマンド行オプション"
-.LP
-
+.SH "���ޥ�ɹԥ��ץ����"
 .LP
 .LP
-コマンド行で Java アプリケーション起動ツールの代わりに \f3jdb\fP を使用する場合、\f3jdb\fP は、\f2\-D\fP、\f2\-classpath\fP、\f2\-X<option>\fP など、java コマンドと同じ数のオプションを受け入れます。
+���ޥ�ɹԤ� Java ���ץꥱ�������ư�ġ��������� \f3jdb\fP ����Ѥ����硢\f3jdb\fP �ϡ�\f2\-D\fP��\f2\-classpath\fP��\f2\-X<option>\fP �ʤɡ�java ���ޥ�ɤ�Ʊ�����Υ��ץ������������ޤ���
 .LP
 .LP
-\f3jdb\fP は、そのほかに次のオプションを受け入れます。
+\f3jdb\fP �ϡ����Τۤ��˼��Υ��ץ������������ޤ���
 .LP
 .RS 3
 .TP 3
 \-help 
-ヘルプメッセージを表示します。 
+�إ�ץ�å�������ɽ�����ޤ��� 
 .TP 3
 \-sourcepath <dir1:dir2:...> 
-指定されたパスを使用して、ソースファイルを検索します。このオプションが指定されていない場合は、デフォルトパスの「.」が使われます。 
+���ꤵ�줿�ѥ�����Ѥ��ơ��������ե�����򸡺����ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ��ǥե���ȥѥ��Ρ�.�פ��Ȥ��ޤ��� 
 .TP 3
 \-attach <address> 
-デフォルトの接続機構を使用して、すでに実行中の VM にデバッガを接続します。 
+�ǥե���Ȥ���³��������Ѥ��ơ����Ǥ˼¹���� VM �˥ǥХå�����³���ޤ��� 
 .TP 3
 \-listen <address> 
-実行中の VM が標準のコネクタを使って指定されたアドレスに接続するのを待機します。 
+�¹���� VM ��ɸ��Υ��ͥ�����Ȥäƻ��ꤵ�줿���ɥ쥹����³����Τ��Ե����ޤ��� 
 .TP 3
 \-listenany 
-実行中の VM が標準のコネクタを使って利用可能な任意のアドレスに接続するのを待機します。 
+�¹���� VM ��ɸ��Υ��ͥ�����Ȥä����Ѳ�ǽ��Ǥ�դΥ��ɥ쥹����³����Τ��Ե����ޤ��� 
 .TP 3
 \-launch 
-デバッグするアプリケーションを jdb の起動後ただちに起動します。このオプションによって、\f2run\fP コマンドを使用する必要がなくなります。デバッグするアプリケーションは、起動後、初期アプリケーションクラスがロードされる直前に停止します。その時点で、必要なブレークポイントを設定し、\f2cont\fP を使用して実行を継続できます。 
+�ǥХå����륢�ץꥱ�������� jdb �ε�ư�夿�����˵�ư���ޤ������Υ��ץ����ˤ�äơ�\f2run\fP ���ޥ�ɤ���Ѥ���ɬ�פ��ʤ��ʤ�ޤ����ǥХå����륢�ץꥱ�������ϡ���ư�塢������ץꥱ������󥯥饹�������ɤ����ľ������ߤ��ޤ������λ����ǡ�ɬ�פʥ֥졼���ݥ���Ȥ����ꤷ��\f2cont\fP ����Ѥ��Ƽ¹Ԥ��³�Ǥ��ޤ��� 
 .TP 3
 \-listconnectors 
-この VM で利用できるコネクタを一覧表示します。 
+���� VM �����ѤǤ��륳�ͥ��������ɽ�����ޤ��� 
 .TP 3
 \-connect <connector\-name>:<name1>=<value1>,... 
-一覧表示された引数の値と指定のコネクタを使ってターゲット VM に接続します。 
+����ɽ�����줿�������ͤȻ���Υ��ͥ�����Ȥäƥ������å� VM ����³���ޤ��� 
 .TP 3
 \-dbgtrace [flags] 
-jdb のデバッグ情報を出力します。 
+jdb �ΥǥХå��������Ϥ��ޤ��� 
 .TP 3
 \-tclient 
-Java HotSpot(tm) VM (クライアント) 内でアプリケーションを実行します。 
+Java HotSpot(tm) VM (���饤�����) ��ǥ��ץꥱ��������¹Ԥ��ޤ��� 
 .TP 3
 \-tserver 
-Java HotSpot(tm) VM (サーバー) 内でアプリケーションを実行します。 
+Java HotSpot(tm) VM (�����С�) ��ǥ��ץꥱ��������¹Ԥ��ޤ��� 
 .TP 3
 \-Joption 
-jdb の実行に使用される Java 仮想マシンに \f2option\fP を渡します。(アプリケーション Java 仮想マシンに対するオプションは、\f3run\fP コマンドに渡される)。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+jdb �μ¹Ԥ˻��Ѥ���� Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���(���ץꥱ������� Java ���ۥޥ�����Ф��륪�ץ����ϡ�\f3run\fP ���ޥ�ɤ��Ϥ����)�����Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ��� 
 .RE
 
 .LP
 .LP
-デバッガとデバッグを行う VM を接続するための代替機構に対して、その他のオプションがサポートされています。その他の接続オプションについては、Java Platform Debugger Architecture の
+�ǥХå��ȥǥХå���Ԥ� VM ����³���뤿������ص������Ф��ơ�����¾�Υ��ץ���󤬥��ݡ��Ȥ���Ƥ��ޤ�������¾����³���ץ����ˤĤ��Ƥϡ�Java Platform Debugger Architecture ��
 .na
-\f2ドキュメント\fP @
+\f2�ɥ������\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html�򻲾Ȥ��Ƥ���������
 .LP
 .SS 
-デバッグ対象のプロセスに転送されるオプション
+�ǥХå��оݤΥץ�������ž������륪�ץ����
 .LP
 .RS 3
 .TP 3
 \-v \-verbose[:class|gc|jni] 
-冗長モードにします。 
+��Ĺ�⡼�ɤˤ��ޤ��� 
 .TP 3
 \-D<name>=<value> 
-システムプロパティーを設定します。 
+�����ƥ�ץ��ѥƥ��������ꤷ�ޤ��� 
 .TP 3
 \-classpath <directories separated by ":"> 
-クラスを検索するディレクトリを一覧表示します。 
+���饹�򸡺�����ǥ��쥯�ȥ�����ɽ�����ޤ��� 
 .TP 3
 \-X<option> 
-非標準ターゲット VM オプションです。 
+��ɸ�ॿ�����å� VM ���ץ����Ǥ��� 
 .RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
-javac(1)、java(1)、javah(1)、javap(1)、javadoc(1)
+javac(1)��java(1)��javah(1)��javap(1)��javadoc(1)
 .LP
  

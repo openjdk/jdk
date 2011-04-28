@@ -19,41 +19,39 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jstack 1 "02 Jun 2010"
+.TH jstack 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jstack \- スタックトレース
+.SH "̾��"
+jstack \- �����å��ȥ졼��
 .br
 
 .LP
 .RS 3
 .TP 2
 o
-形式 
+���� 
 .TP 2
 o
-パラメータ
+�ѥ�᡼��
 .br
 .TP 2
 o
-説明 
+���� 
 .TP 2
 o
-オプション 
+���ץ���� 
 .TP 2
 o
-関連項目 
+��Ϣ���� 
 .TP 2
 o
-既知のバグ
+���ΤΥХ�
 .br
 .RE
 
 .LP
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -67,49 +65,42 @@ o
 .fi
 
 .LP
-.SH "パラメータ"
-.LP
-
+.SH "�ѥ�᡼��"
 .LP
 .LP
-各オプションは互いに排他的です。オプションを使用する場合、コマンド名の直後に記述します。オプションを参照してください。
+�ƥ��ץ����ϸߤ�����¾Ū�Ǥ������ץ�������Ѥ����硢���ޥ��̾��ľ��˵��Ҥ��ޤ������ץ����򻲾Ȥ��Ƥ���������
 .LP
 .RS 3
 .TP 3
 pid 
-印刷するスタックトレースのプロセス ID です。プロセスは Java プロセスである必要があります。マシン上で実行している Java プロセスの一覧を取得するには、jps(1) を使用します。 
+�������륹���å��ȥ졼���Υץ����� ID �Ǥ����ץ������� Java �ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ��� Java �ץ������ΰ������������ˤϡ�jps(1) ����Ѥ��ޤ��� 
 .RE
 
 .LP
 .RS 3
 .TP 3
 executable 
-コアダンプの作成元の Java 実行可能ファイルです。 
+��������פκ������� Java �¹Բ�ǽ�ե�����Ǥ��� 
 .br
 .TP 3
 core 
-印刷するスタックトレースのコアファイルです。 
+�������륹���å��ȥ졼���Υ����ե�����Ǥ��� 
 .br
 .TP 3
 remote\-hostname\-or\-IP 
-リモートデバッグサーバー (jsadebugd(1) を参照) のホスト名または IP アドレスです。 
+��⡼�ȥǥХå������С� (jsadebugd(1) �򻲾�) �Υۥ���̾�ޤ��� IP ���ɥ쥹�Ǥ��� 
 .br
 .TP 3
 server\-id 
-複数のデバッグサーバーが同一のリモートホストで実行している場合の、オプション固有の ID です。 
+ʣ���ΥǥХå������С���Ʊ��Υ�⡼�ȥۥ��ȤǼ¹Ԥ��Ƥ�����Ρ����ץ�����ͭ�� ID �Ǥ��� 
 .RE
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3jstack\fP は、指定された Java プロセスやコアファイルまたはリモートデバッグサーバーに対する Java スレッドの Java スタックトレースを印刷します。Java フレームごとに、フルクラス名、メソッド名、「bci」(バイトコードインデックス)、および行番号 (利用可能な場合) が印刷されます。\-m オプションを使用すると、jstack は、すべてのスレッドの Java フレームとネイティブフレームの両方を、「pc」(プログラムカウンタ) とともに印刷します。ネイティブフレームごとに、「pc」にもっとも近いネイティブシンボル (利用可能な場合) が印刷されます。C++ 分解名は分解解除されません。C++ 名を分解解除するには、このコマンドの出力を \f3c++filt\fP にパイプします。指定されたプロセスが 64 ビット VM 上で実行されている場合、\f2\-J\-d64\fP オプションを指定しなければならない場合があります。 次に例を示します。
+\f3jstack\fP �ϡ����ꤵ�줿 Java �ץ������䥳���ե�����ޤ��ϥ�⡼�ȥǥХå������С����Ф��� Java ����åɤ� Java �����å��ȥ졼����������ޤ���Java �ե졼�ऴ�Ȥˡ��ե륯�饹̾���᥽�å�̾����bci��(�Х��ȥ����ɥ���ǥå���)������ӹ��ֹ� (���Ѳ�ǽ�ʾ��) ����������ޤ���\-m ���ץ�������Ѥ���ȡ�jstack �ϡ����٤ƤΥ���åɤ� Java �ե졼��ȥͥ��ƥ��֥ե졼���ξ���򡢡�pc��(�ץ�����५����) �ȤȤ�˰������ޤ����ͥ��ƥ��֥ե졼�ऴ�Ȥˡ���pc�פˤ�äȤ�ᤤ�ͥ��ƥ��֥���ܥ� (���Ѳ�ǽ�ʾ��) ����������ޤ���C++ ʬ��̾��ʬ��������ޤ���C++ ̾��ʬ��������ˤϡ����Υ��ޥ�ɤν��Ϥ� \f3c++filt\fP �˥ѥ��פ��ޤ������ꤵ�줿�ץ������� 64 �ӥå� VM ��Ǽ¹Ԥ���Ƥ����硢\f2\-J\-d64\fP ���ץ�������ꤷ�ʤ���Фʤ�ʤ���礬����ޤ���������򼨤��ޤ���
 .br
-
-.LP
-.RS 3
 
 .LP
 .nf
@@ -119,51 +110,43 @@ jstack \-J\-d64 \-m pid
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f3注 \- このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。Windows プラットフォーム上で使用可能な唯一の jstack 形式は、次のとおりです。\fP
+\f3��\fP \- ���Υ桼�ƥ���ƥ����ϥ��ݡ����оݳ��Ǥ��ꡢ����� JDK �ΥС������Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���dbgeng.dll ��¸�ߤ��Ƥ��ʤ� Windows �����ƥ�Ǥϡ���Debugging Tools For Windows�פ򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ��󡣤ޤ��� \f2PATH\fP �Ķ��ѿ��ˤϡ��������åȥץ������ˤ�äƻ��Ѥ���� \f2jvm.dll\fP �ξ�ꡢ�ޤ��ϥ���å������ץե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ���������
 .LP
-.nf
-\f3
-.fl
-\fP\f3    jstack [\-l] pid \fP
-.fl
-.fi
-
 .LP
-.SH "オプション"
+������򼨤��ޤ��� \f2set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
 .LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-F 
-「jstack [\-l] pid」が応答しない場合にスタックダンプを強制します。 
+��jstack [\-l] pid�פ��������ʤ����˥����å�����פ������ޤ��� 
 .TP 3
 \-l 
-長形式のリスト。所有 java.util.concurrent の
+Ĺ�����Υꥹ�ȡ���ͭ java.util.concurrent ��
 .na
-\f2所有できるシンクロナイザ\fP @
+\f2��ͭ�Ǥ��륷�󥯥��ʥ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/util/concurrent/locks/AbstractOwnableSynchronizer.htmlの一覧など、ロックについての追加情報を印刷します。 
+http://java.sun.com/javase/6/docs/api/java/util/concurrent/locks/AbstractOwnableSynchronizer.html�ΰ����ʤɡ����å��ˤĤ��Ƥ��ɲþ����������ޤ��� 
 .TP 3
 \-m 
-混合モード (Java およびネイティブ C/C++ フレームの両方) のスタックトレースを印刷します。 
+����⡼�� (Java ����ӥͥ��ƥ��� C/C++ �ե졼���ξ��) �Υ����å��ȥ졼����������ޤ��� 
 .TP 3
 \-h 
-ヘルプメッセージを印刷します。
+�إ�ץ�å�������������ޤ���
 .br
 .br
 .TP 3
 \-help 
-ヘルプメッセージを印刷します。
+�إ�ץ�å���������Ϥ��ޤ���
 .br
 .RE
 
 .LP
-.SH "関連項目"
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2
@@ -181,11 +164,9 @@ jsadebugd(1)
 .RE
 
 .LP
-.SH "既知のバグ"
-.LP
-
+.SH "���ΤΥХ�"
 .LP
 .LP
-混合モードのスタックトレース (\-m オプション使用) は、リモートデバッグサーバーでは機能しません。
+����⡼�ɤΥ����å��ȥ졼�� (\-m ���ץ�������) �ϡ���⡼�ȥǥХå������С��Ǥϵ�ǽ���ޤ���
 .LP
  

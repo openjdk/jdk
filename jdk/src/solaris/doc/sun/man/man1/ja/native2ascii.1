@@ -1,4 +1,4 @@
-." Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH native2ascii 1 "02 Jun 2010"
+.TH native2ascii 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-native2ascii \- ネイティブ \- ASCII コンバータ
-.LP
-.RS 3
-
+.SH "̾��"
+native2ascii \- �ͥ��ƥ��� \- ASCII ����С���
 .LP
 .LP
-ネイティブコード (Latin 1 および Unicode 以外) のファイルを Unicode コードに変換します。
+���ݡ��Ȥ����ʸ�����󥳡��ǥ��󥰤�ʸ���Υե������ ASCII �ޤ��� Unicode ���������פ��뤤�Ϥ���ξ���Υե�������Ѵ����ޤ������εդ��Ѵ���Ԥ��ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -44,36 +38,34 @@ native2ascii \- ネイティブ \- ASCII コンバータ
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-Java コンパイラおよびその他の Java ツールは、Latin\-1 または Unicode コード (\\udddd 表記) 文字を含んだファイルだけを処理することができます。 \f2native2ascii\fP は、これら以外の文字コードのファイルを Latin\-1 または Unicode コードのファイルに変換します。
+\f2native2ascii\fP Java �¹ԴĶ��ǥ��ݡ��Ȥ����ʸ�����󥳡��ǥ��󥰤˥��󥳡��ɤ��줿�ե������ASCII �ǥ��󥳡��ɤ��줿�ե�������Ѵ����ޤ���ASCII ʸ�����åȤΰ����Ǥʤ����٤Ƥ�ʸ���� Unicode ���������� (��\\uxxxx�פ�ɽ��) ����Ѥ��ޤ������Υץ������ϡ�ISO\-8859\-1 ʸ�����åȤ˴ޤޤ�ʤ�ʸ�����ޤޤ�Ƥ���ץ��ѥƥ����ե������ɬ�פǤ������Υġ���ϡ����εդ��Ѵ���¹Ԥ��뤳�Ȥ�Ǥ��ޤ���
 .LP
 .LP
-\f2outputfile\fP を省略した場合、標準出力に出力されます。さらに、\f2inputfile\fP を省略した場合、標準入力から入力されます。
+\f2outputfile\fP ���ά������硢ɸ����Ϥ˽��Ϥ���ޤ�������ˡ� \f2inputfile\fP ���ά������硢ɸ�����Ϥ������Ϥ���ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-reverse 
-逆の処理を行います。つまり、Latin\-1 または Unicode コードのファイルをネイティブコードに変換します。
+�դν�����Ԥ��ޤ����ĤޤꡢISO\-8859\-1 �� Unicode ���������פ�Ȥäƥ��󥳡��ɤ��줿�ե������Java �¹ԴĶ��ǥ��ݡ��Ȥ����ʸ�����󥳡��ǥ��󥰤Υե�������Ѵ����ޤ���
 .br
 .br
 .TP 3
 \-encoding encoding_name 
-変換処理で使用するコードの名前を指定します。デフォルトのコードは、システムプロパティーの \f2file.encoding\fP から取得されます。\f2encoding_name\fP 文字列は、
+�Ѵ������ǻ��Ѥ���ʸ�����󥳡��ǥ��󥰤�̾������ꤷ�ޤ������Υ��ץ����¸�ߤ��ʤ����ϡ��ǥե���Ȥ�ʸ�����󥳡��ǥ��� ( \f2java.nio.charset.Charset.defaultCharset\fP �᥽�åɤ���������) �����Ѥ���ޤ��� \f2encoding_name\fP ʸ����ϡ�
 .na
-\f4「サポートされているエンコーディング」\fP @
+\f4�֥��ݡ��Ȥ���Ƥ���ʸ���󥨥󥳡��ǥ��󥰡�\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/intl/encoding.doc.htmlドキュメントに示されている、サポートされるエンコーディングの表の最初の列から取得される必要があります。 
+http://java.sun.com/javase/6/docs/technotes/guides/intl/encoding.doc.html�ɥ�����Ȥ˼�����Ƥ��롢Java �¹ԴĶ��ǥ��ݡ��Ȥ����ʸ�����󥳡��ǥ��󥰤�̾���ˤ���ɬ�פ�����ޤ���
+.br
+.br
 .TP 3
 \-Joption 
-Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���\f2option\fP �ˤϡ�java(1)�Υ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ��� 
 .RE
 
 .LP
