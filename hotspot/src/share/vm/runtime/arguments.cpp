@@ -2376,7 +2376,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       _gc_log_filename = strdup(tail);
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
-      FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
 
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
