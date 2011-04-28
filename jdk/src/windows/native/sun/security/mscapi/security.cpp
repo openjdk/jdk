@@ -81,6 +81,8 @@ ALG_ID MapHashAlgorithm(JNIEnv *env, jstring jHashAlgorithm) {
         (strcmp("SHA-1", pszHashAlgorithm) == 0)) {
 
         algId = CALG_SHA1;
+    } else if (strcmp("SHA1+MD5", pszHashAlgorithm) == 0) {
+        algId = CALG_SSL3_SHAMD5; // a 36-byte concatenation of SHA-1 and MD5
     } else if (strcmp("SHA-256", pszHashAlgorithm) == 0) {
         algId = CALG_SHA_256;
     } else if (strcmp("SHA-384", pszHashAlgorithm) == 0) {
@@ -473,11 +475,12 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_Key_cleanUp
 /*
  * Class:     sun_security_mscapi_RSASignature
  * Method:    signHash
- * Signature: ([BILjava/lang/String;JJ)[B
+ * Signature: (Z[BILjava/lang/String;JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
-  (JNIEnv *env, jclass clazz, jbyteArray jHash, jint jHashSize,
-        jstring jHashAlgorithm, jlong hCryptProv, jlong hCryptKey)
+  (JNIEnv *env, jclass clazz, jboolean noHashOID, jbyteArray jHash,
+        jint jHashSize, jstring jHashAlgorithm, jlong hCryptProv,
+        jlong hCryptKey)
 {
     HCRYPTHASH hHash = NULL;
     jbyte* pHashBuffer = NULL;
@@ -548,14 +551,20 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
 
         // Determine size of buffer
         DWORD dwBufLen = 0;
-        if (::CryptSignHash(hHash, dwKeySpec, NULL, NULL, NULL, &dwBufLen) == FALSE)
+        DWORD dwFlags = 0;
+
+        if (noHashOID == JNI_TRUE) {
+            dwFlags = CRYPT_NOHASHOID; // omit hash OID in NONEwithRSA signature
+        }
+
+        if (::CryptSignHash(hHash, dwKeySpec, NULL, dwFlags, NULL, &dwBufLen) == FALSE)
         {
             ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
             __leave;
         }
 
         pSignedHashBuffer = new jbyte[dwBufLen];
-        if (::CryptSignHash(hHash, dwKeySpec, NULL, NULL, (BYTE*)pSignedHashBuffer, &dwBufLen) == FALSE)
+        if (::CryptSignHash(hHash, dwKeySpec, NULL, dwFlags, (BYTE*)pSignedHashBuffer, &dwBufLen) == FALSE)
         {
             ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
             __leave;
