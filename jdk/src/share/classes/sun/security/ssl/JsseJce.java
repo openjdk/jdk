@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,9 +247,9 @@ final class JsseJce {
                 // the SunJSSE implementation does the actual crypto using
                 // a NONEwithRSA signature obtained from the cryptoProvider.
                 if (cryptoProvider.getService("Signature", algorithm) == null) {
-                    // Calling Signature.getInstance() and catching the exception
-                    // would be cleaner, but exceptions are a little expensive.
-                    // So we check directly via getService().
+                    // Calling Signature.getInstance() and catching the
+                    // exception would be cleaner, but exceptions are a little
+                    // expensive. So we check directly via getService().
                     try {
                         return Signature.getInstance(algorithm, "SunJSSE");
                     } catch (NoSuchProviderException e) {

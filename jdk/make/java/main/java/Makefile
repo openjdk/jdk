@@ -61,5 +61,4 @@ OTHER_CPPFLAGS += -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"'
 
 ifeq ($(PLATFORM), solaris)
 LDFLAGS += -R$(OPENWIN_LIB)
-LDFLAGS += -M mapfile-$(ARCH)
 endif

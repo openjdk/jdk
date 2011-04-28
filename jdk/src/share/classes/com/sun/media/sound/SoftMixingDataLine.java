@@ -505,7 +505,7 @@ public abstract class SoftMixingDataLine implements DataLine {
     }
 
     public Control[] getControls() {
-        return controls;
+        return Arrays.copyOf(controls, controls.length);
     }
 
     public boolean isControlSupported(Type control) {

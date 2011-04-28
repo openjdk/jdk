@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,8 @@ class InitSecContextToken extends InitialToken {
             //System.out.println("Sub-Session Key Missing in Authenticator.\n");
         }
 
-        OverloadedChecksum gssChecksum =
-            new OverloadedChecksum(context, apReq.getChecksum(), sessionKey);
+        OverloadedChecksum gssChecksum = new OverloadedChecksum(
+                context, apReq.getChecksum(), sessionKey, subKey);
         gssChecksum.setContextFlags(context);
         Credentials delegCred = gssChecksum.getDelegatedCreds();
         if (delegCred != null) {

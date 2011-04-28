@@ -38,8 +38,8 @@ import javax.lang.model.util.Types;
  * type, method, or constructor.
  * A type variable may also be declared implicitly, as by
  * the capture conversion of a wildcard type argument
- * (see chapter 5 of <i>The Java Language Specification, Third
- * Edition</i>).
+ * (see chapter 5 of
+ * <cite>The Java&trade; Language Specification</cite>).
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman

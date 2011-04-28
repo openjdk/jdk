@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   <em>value</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 15.28"
+ * @jls section 15.28
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -43,7 +43,7 @@ import java.lang.annotation.*;
  *
  * @author  Peter von der Ah&eacute;
  * @author  Joshua Bloch
- * @jls3 9.6.1.4 Override
+ * @jls 9.6.1.4 Override
  * @since 1.5
  */
 @Target(ElementType.METHOD)

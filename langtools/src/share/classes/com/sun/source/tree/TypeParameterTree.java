@@ -38,7 +38,7 @@ import javax.lang.model.element.Name;
  *   <em>name</em> extends <em>bounds</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 4.4"
+ * @jls section 4.4
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
