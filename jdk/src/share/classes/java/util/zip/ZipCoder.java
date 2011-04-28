@@ -28,6 +28,7 @@ package java.util.zip;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
@@ -87,7 +88,7 @@ final class ZipCoder {
         if (isutf8)
             return getBytes(s);
         if (utf8 == null)
-            utf8 = new ZipCoder(Charset.forName("UTF-8"));
+            utf8 = new ZipCoder(StandardCharset.UTF_8);
         return utf8.getBytes(s);
     }
 
@@ -96,7 +97,7 @@ final class ZipCoder {
         if (isutf8)
             return toString(ba, len);
         if (utf8 == null)
-            utf8 = new ZipCoder(Charset.forName("UTF-8"));
+            utf8 = new ZipCoder(StandardCharset.UTF_8);
         return utf8.toString(ba, len);
     }
 
@@ -112,7 +113,7 @@ final class ZipCoder {
 
     private ZipCoder(Charset cs) {
         this.cs = cs;
-        this.isutf8 = cs.name().equals("UTF-8");
+        this.isutf8 = cs.name().equals(StandardCharset.UTF_8.name());
     }
 
     static ZipCoder get(Charset charset) {

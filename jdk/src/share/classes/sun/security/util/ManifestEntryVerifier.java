@@ -191,8 +191,8 @@ public class ManifestEntryVerifier {
      *
      *
      */
-    public CodeSigner[] verify(Map<String, CodeSigner[]> verifiedSigners,
-                Map<String, CodeSigner[]> sigFileSigners)
+    public CodeSigner[] verify(Hashtable<String, CodeSigner[]> verifiedSigners,
+                Hashtable<String, CodeSigner[]> sigFileSigners)
         throws JarException
     {
         if (skip) {
