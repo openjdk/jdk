@@ -79,6 +79,12 @@ public final class SunMSCAPI extends Provider {
         /*
          * Signature engines
          */
+        // NONEwithRSA must be supplied with a pre-computed message digest.
+        // Only the following digest algorithms are supported: MD5, SHA-1,
+        // SHA-256, SHA-384, SHA-512 and a special-purpose digest algorithm
+        // which is a concatenation of SHA-1 and MD5 digests.
+        map.put("Signature.NONEwithRSA",
+            "sun.security.mscapi.RSASignature$Raw");
         map.put("Signature.SHA1withRSA",
             "sun.security.mscapi.RSASignature$SHA1");
         map.put("Signature.SHA256withRSA",
@@ -93,6 +99,8 @@ public final class SunMSCAPI extends Provider {
             "sun.security.mscapi.RSASignature$MD2");
 
         // supported key classes
+        map.put("Signature.NONEwithRSA SupportedKeyClasses",
+            "sun.security.mscapi.Key");
         map.put("Signature.SHA1withRSA SupportedKeyClasses",
             "sun.security.mscapi.Key");
         map.put("Signature.SHA256withRSA SupportedKeyClasses",

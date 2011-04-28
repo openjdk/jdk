@@ -49,6 +49,7 @@ import sun.security.rsa.RSAKeyFactory;
  * Objects should be instantiated by calling Signature.getInstance() using the
  * following algorithm names:
  *
+ *  . "NONEwithRSA"
  *  . "SHA1withRSA"
  *  . "SHA256withRSA"
  *  . "SHA384withRSA"
@@ -56,7 +57,12 @@ import sun.security.rsa.RSAKeyFactory;
  *  . "MD5withRSA"
  *  . "MD2withRSA"
  *
- * Note: RSA keys must be at least 512 bits long
+ * NOTE: RSA keys must be at least 512 bits long.
+ *
+ * NOTE: NONEwithRSA must be supplied with a pre-computed message digest.
+ *       Only the following digest algorithms are supported: MD5, SHA-1,
+ *       SHA-256, SHA-384, SHA-512 and a special-purpose digest algorithm
+ *       which is a concatenation of SHA-1 and MD5 digests.
  *
  * @since   1.6
  * @author  Stanley Man-Kit Ho
@@ -67,7 +73,7 @@ abstract class RSASignature extends java.security.SignatureSpi
     private final MessageDigest messageDigest;
 
     // message digest name
-    private final String messageDigestAlgorithm;
+    private String messageDigestAlgorithm;
 
     // flag indicating whether the digest has been reset
     private boolean needsReset;
@@ -78,6 +84,13 @@ abstract class RSASignature extends java.security.SignatureSpi
     // the verification key
     private Key publicKey = null;
 
+    /**
+     * Constructs a new RSASignature. Used by Raw subclass.
+     */
+    RSASignature() {
+        messageDigest = null;
+        messageDigestAlgorithm = null;
+    }
 
     /**
      * Constructs a new RSASignature. Used by subclasses.
@@ -94,6 +107,94 @@ abstract class RSASignature extends java.security.SignatureSpi
         }
 
         needsReset = false;
+    }
+
+    // Nested class for NONEwithRSA signatures
+    public static final class Raw extends RSASignature {
+
+        // the longest supported digest is 512 bits (SHA-512)
+        private static final int RAW_RSA_MAX = 64;
+
+        private final byte[] precomputedDigest;
+        private int offset = 0;
+
+        public Raw() {
+            precomputedDigest = new byte[RAW_RSA_MAX];
+        }
+
+        // Stores the precomputed message digest value.
+        @Override
+        protected void engineUpdate(byte b) throws SignatureException {
+            if (offset >= precomputedDigest.length) {
+                offset = RAW_RSA_MAX + 1;
+                return;
+            }
+            precomputedDigest[offset++] = b;
+        }
+
+        // Stores the precomputed message digest value.
+        @Override
+        protected void engineUpdate(byte[] b, int off, int len)
+                throws SignatureException {
+            if (offset + len > precomputedDigest.length) {
+                offset = RAW_RSA_MAX + 1;
+                return;
+            }
+            System.arraycopy(b, off, precomputedDigest, offset, len);
+            offset += len;
+        }
+
+        // Stores the precomputed message digest value.
+        @Override
+        protected void engineUpdate(ByteBuffer byteBuffer) {
+            int len = byteBuffer.remaining();
+            if (len <= 0) {
+                return;
+            }
+            if (offset + len > precomputedDigest.length) {
+                offset = RAW_RSA_MAX + 1;
+                return;
+            }
+            byteBuffer.get(precomputedDigest, offset, len);
+            offset += len;
+        }
+
+        @Override
+        protected void resetDigest(){
+            offset = 0;
+        }
+
+        // Returns the precomputed message digest value.
+        @Override
+        protected byte[] getDigestValue() throws SignatureException {
+            if (offset > RAW_RSA_MAX) {
+                throw new SignatureException("Message digest is too long");
+            }
+
+            // Determine the digest algorithm from the digest length
+            if (offset == 20) {
+                setDigestName("SHA1");
+            } else if (offset == 36) {
+                setDigestName("SHA1+MD5");
+            } else if (offset == 32) {
+                setDigestName("SHA-256");
+            } else if (offset == 48) {
+                setDigestName("SHA-384");
+            } else if (offset == 64) {
+                setDigestName("SHA-512");
+            } else if (offset == 16) {
+                setDigestName("MD5");
+            } else {
+                throw new SignatureException(
+                    "Message digest length is not supported");
+            }
+
+            byte[] result = new byte[offset];
+            System.arraycopy(precomputedDigest, 0, result, 0, offset);
+            offset = 0;
+
+            return result;
+        }
     }
 
     public static final class SHA1 extends RSASignature {
@@ -204,16 +305,20 @@ abstract class RSASignature extends java.security.SignatureSpi
     /**
      * Resets the message digest if needed.
      */
-    private void resetDigest() {
+    protected void resetDigest() {
         if (needsReset) {
             messageDigest.reset();
             needsReset = false;
         }
     }
 
-    private byte[] getDigestValue() {
+    protected byte[] getDigestValue() throws SignatureException {
         needsReset = false;
         return messageDigest.digest();
+    }
+
+    protected void setDigestName(String name) {
+        messageDigestAlgorithm = name;
     }
 
     /**
@@ -277,9 +382,12 @@ abstract class RSASignature extends java.security.SignatureSpi
 
         byte[] hash = getDigestValue();
 
+        // Omit the hash OID when generating a Raw signature
+        boolean noHashOID = this instanceof Raw;
+
         // Sign hash using MS Crypto APIs
 
-        byte[] result = signHash(hash, hash.length,
+        byte[] result = signHash(noHashOID, hash, hash.length,
             messageDigestAlgorithm, privateKey.getHCryptProvider(),
             privateKey.getHCryptKey());
 
@@ -308,8 +416,8 @@ abstract class RSASignature extends java.security.SignatureSpi
      * Sign hash using Microsoft Crypto API with HCRYPTKEY.
      * The returned data is in little-endian.
      */
-    private native static byte[] signHash(byte[] hash, int hashSize,
-        String hashAlgorithm, long hCryptProv, long hCryptKey)
+    private native static byte[] signHash(boolean noHashOID, byte[] hash,
+        int hashSize, String hashAlgorithm, long hCryptProv, long hCryptKey)
             throws SignatureException;
 
     /**
