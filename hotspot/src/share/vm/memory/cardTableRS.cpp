@@ -105,107 +105,111 @@ void CardTableRS::younger_refs_iterate(Generation* g,
   g->younger_refs_iterate(blk);
 }
 
-class ClearNoncleanCardWrapper: public MemRegionClosure {
-  MemRegionClosure* _dirty_card_closure;
-  CardTableRS* _ct;
-  bool _is_par;
-private:
-  // Clears the given card, return true if the corresponding card should be
-  // processed.
-  bool clear_card(jbyte* entry) {
-    if (_is_par) {
-      while (true) {
-        // In the parallel case, we may have to do this several times.
-        jbyte entry_val = *entry;
-        assert(entry_val != CardTableRS::clean_card_val(),
-               "We shouldn't be looking at clean cards, and this should "
-               "be the only place they get cleaned.");
-        if (CardTableRS::card_is_dirty_wrt_gen_iter(entry_val)
-            || _ct->is_prev_youngergen_card_val(entry_val)) {
-          jbyte res =
-            Atomic::cmpxchg(CardTableRS::clean_card_val(), entry, entry_val);
-          if (res == entry_val) {
-            break;
-          } else {
-            assert(res == CardTableRS::cur_youngergen_and_prev_nonclean_card,
-                   "The CAS above should only fail if another thread did "
-                   "a GC write barrier.");
-          }
-        } else if (entry_val ==
-                   CardTableRS::cur_youngergen_and_prev_nonclean_card) {
-          // Parallelism shouldn't matter in this case.  Only the thread
-          // assigned to scan the card should change this value.
-          *entry = _ct->cur_youngergen_card_val();
-          break;
-        } else {
-          assert(entry_val == _ct->cur_youngergen_card_val(),
-                 "Should be the only possibility.");
-          // In this case, the card was clean before, and become
-          // cur_youngergen only because of processing of a promoted object.
-          // We don't have to look at the card.
-          return false;
-        }
+inline bool ClearNoncleanCardWrapper::clear_card(jbyte* entry) {
+  if (_is_par) {
+    return clear_card_parallel(entry);
+  } else {
+    return clear_card_serial(entry);
+  }
+}
+
+inline bool ClearNoncleanCardWrapper::clear_card_parallel(jbyte* entry) {
+  while (true) {
+    // In the parallel case, we may have to do this several times.
+    jbyte entry_val = *entry;
+    assert(entry_val != CardTableRS::clean_card_val(),
+           "We shouldn't be looking at clean cards, and this should "
+           "be the only place they get cleaned.");
+    if (CardTableRS::card_is_dirty_wrt_gen_iter(entry_val)
+        || _ct->is_prev_youngergen_card_val(entry_val)) {
+      jbyte res =
+        Atomic::cmpxchg(CardTableRS::clean_card_val(), entry, entry_val);
+      if (res == entry_val) {
+        break;
+      } else {
+        assert(res == CardTableRS::cur_youngergen_and_prev_nonclean_card,
+               "The CAS above should only fail if another thread did "
+               "a GC write barrier.");
       }
-      return true;
+    } else if (entry_val ==
+               CardTableRS::cur_youngergen_and_prev_nonclean_card) {
+      // Parallelism shouldn't matter in this case.  Only the thread
+      // assigned to scan the card should change this value.
+      *entry = _ct->cur_youngergen_card_val();
+      break;
     } else {
-      jbyte entry_val = *entry;
-      assert(entry_val != CardTableRS::clean_card_val(),
-             "We shouldn't be looking at clean cards, and this should "
-             "be the only place they get cleaned.");
-      assert(entry_val != CardTableRS::cur_youngergen_and_prev_nonclean_card,
-             "This should be possible in the sequential case.");
-      *entry = CardTableRS::clean_card_val();
-      return true;
+      assert(entry_val == _ct->cur_youngergen_card_val(),
+             "Should be the only possibility.");
+      // In this case, the card was clean before, and become
+      // cur_youngergen only because of processing of a promoted object.
+      // We don't have to look at the card.
+      return false;
     }
   }
+  return true;
+}
 
-public:
-  ClearNoncleanCardWrapper(MemRegionClosure* dirty_card_closure,
-                           CardTableRS* ct) :
+
+inline bool ClearNoncleanCardWrapper::clear_card_serial(jbyte* entry) {
+  jbyte entry_val = *entry;
+  assert(entry_val != CardTableRS::clean_card_val(),
+         "We shouldn't be looking at clean cards, and this should "
+         "be the only place they get cleaned.");
+  assert(entry_val != CardTableRS::cur_youngergen_and_prev_nonclean_card,
+         "This should be possible in the sequential case.");
+  *entry = CardTableRS::clean_card_val();
+  return true;
+}
+
+ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
+  MemRegionClosure* dirty_card_closure, CardTableRS* ct) :
     _dirty_card_closure(dirty_card_closure), _ct(ct) {
     _is_par = (SharedHeap::heap()->n_par_threads() > 0);
-  }
-  void do_MemRegion(MemRegion mr) {
-    // We start at the high end of "mr", walking backwards
-    // while accumulating a contiguous dirty range of cards in
-    // [start_of_non_clean, end_of_non_clean) which we then
-    // process en masse.
-    HeapWord* end_of_non_clean = mr.end();
-    HeapWord* start_of_non_clean = end_of_non_clean;
-    jbyte*       entry = _ct->byte_for(mr.last());
-    const jbyte* first_entry = _ct->byte_for(mr.start());
-    while (entry >= first_entry) {
-      HeapWord* cur = _ct->addr_for(entry);
-      if (!clear_card(entry)) {
-        // We hit a clean card; process any non-empty
-        // dirty range accumulated so far.
-        if (start_of_non_clean < end_of_non_clean) {
-          MemRegion mr2(start_of_non_clean, end_of_non_clean);
-          _dirty_card_closure->do_MemRegion(mr2);
-        }
-        // Reset the dirty window while continuing to
-        // look for the next dirty window to process.
-        end_of_non_clean = cur;
-        start_of_non_clean = end_of_non_clean;
+}
+
+void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
+  assert(mr.word_size() > 0, "Error");
+  assert(_ct->is_aligned(mr.start()), "mr.start() should be card aligned");
+  // mr.end() may not necessarily be card aligned.
+  jbyte* cur_entry = _ct->byte_for(mr.last());
+  const jbyte* limit = _ct->byte_for(mr.start());
+  HeapWord* end_of_non_clean = mr.end();
+  HeapWord* start_of_non_clean = end_of_non_clean;
+  while (cur_entry >= limit) {
+    HeapWord* cur_hw = _ct->addr_for(cur_entry);
+    if ((*cur_entry != CardTableRS::clean_card_val()) && clear_card(cur_entry)) {
+      // Continue the dirty range by opening the
+      // dirty window one card to the left.
+      start_of_non_clean = cur_hw;
+    } else {
+      // We hit a "clean" card; process any non-empty
+      // "dirty" range accumulated so far.
+      if (start_of_non_clean < end_of_non_clean) {
+        const MemRegion mrd(start_of_non_clean, end_of_non_clean);
+        _dirty_card_closure->do_MemRegion(mrd);
       }
-      // Open the left end of the window one card to the left.
-      start_of_non_clean = cur;
-      // Note that "entry" leads "start_of_non_clean" in
-      // its leftward excursion after this point
-      // in the loop and, when we hit the left end of "mr",
-      // will point off of the left end of the card-table
-      // for "mr".
-      entry--;
+      // Reset the dirty window, while continuing to look
+      // for the next dirty card that will start a
+      // new dirty window.
+      end_of_non_clean = cur_hw;
+      start_of_non_clean = cur_hw;
     }
-    // If the first card of "mr" was dirty, we will have
-    // been left with a dirty window, co-initial with "mr",
-    // which we now process.
-    if (start_of_non_clean < end_of_non_clean) {
-      MemRegion mr2(start_of_non_clean, end_of_non_clean);
-      _dirty_card_closure->do_MemRegion(mr2);
-    }
+    // Note that "cur_entry" leads "start_of_non_clean" in
+    // its leftward excursion after this point
+    // in the loop and, when we hit the left end of "mr",
+    // will point off of the left end of the card-table
+    // for "mr".
+    cur_entry--;
   }
-};
+  // If the first card of "mr" was dirty, we will have
+  // been left with a dirty window, co-initial with "mr",
+  // which we now process.
+  if (start_of_non_clean < end_of_non_clean) {
+    const MemRegion mrd(start_of_non_clean, end_of_non_clean);
+    _dirty_card_closure->do_MemRegion(mrd);
+  }
+}
+
 // clean (by dirty->clean before) ==> cur_younger_gen
 // dirty                          ==> cur_youngergen_and_prev_nonclean_card
 // precleaned                     ==> cur_youngergen_and_prev_nonclean_card
@@ -246,8 +250,35 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
                                                    cl->gen_boundary());
   ClearNoncleanCardWrapper clear_cl(dcto_cl, this);
 
-  _ct_bs->non_clean_card_iterate(sp, sp->used_region_at_save_marks(),
-                                dcto_cl, &clear_cl);
+  const MemRegion urasm = sp->used_region_at_save_marks();
+#ifdef ASSERT
+  // Convert the assertion check to a warning if we are running
+  // CMS+ParNew until related bug is fixed.
+  MemRegion ur    = sp->used_region();
+  assert(ur.contains(urasm) || (UseConcMarkSweepGC && UseParNewGC),
+         err_msg("Did you forget to call save_marks()? "
+                 "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+                 "[" PTR_FORMAT ", " PTR_FORMAT ")",
+                 urasm.start(), urasm.end(), ur.start(), ur.end()));
+  // In the case of CMS+ParNew, issue a warning
+  if (!ur.contains(urasm)) {
+    assert(UseConcMarkSweepGC && UseParNewGC, "Tautology: see assert above");
+    warning("CMS+ParNew: Did you forget to call save_marks()? "
+            "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+            "[" PTR_FORMAT ", " PTR_FORMAT ")",
+             urasm.start(), urasm.end(), ur.start(), ur.end());
+    MemRegion ur2 = sp->used_region();
+    MemRegion urasm2 = sp->used_region_at_save_marks();
+    if (!ur.equals(ur2)) {
+      warning("CMS+ParNew: Flickering used_region()!!");
+    }
+    if (!urasm.equals(urasm2)) {
+      warning("CMS+ParNew: Flickering used_region_at_save_marks()!!");
+    }
+  }
+#endif
+  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm,
+                                                   dcto_cl, &clear_cl);
 }
 
 void CardTableRS::clear_into_younger(Generation* gen, bool clear_perm) {

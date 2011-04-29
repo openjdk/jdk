@@ -86,6 +86,9 @@ class Linux {
 
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
+
+  static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
+
  public:
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();
