@@ -3293,8 +3293,6 @@ void TemplateTable::invokedynamic(int byte_no) {
                              /*virtual*/ false, /*vfinal*/ false, /*indy*/ true);
   __ mov(SP, O5_savedSP);  // record SP that we wanted the callee to restore
 
-  __ verify_oop(G5_callsite);
-
   // profile this call
   __ profile_call(O4);
 
@@ -3307,8 +3305,10 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ sll(Rret, LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);  // get return address
 
+  __ verify_oop(G5_callsite);
   __ load_heap_oop(G5_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
   __ null_check(G3_method_handle);
+  __ verify_oop(G3_method_handle);
 
   // Adjust Rret first so Llast_SP can be same as Rret
   __ add(Rret, -frame::pc_return_offset, O7);

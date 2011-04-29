@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      size_t init_size,
                                      bool support_usage_threshold) :
   _g1h(g1h), CollectedMemoryPool(name,
-                                 MemoryPool::Heap,
-                                 init_size,
-                                 undefined_max(),
-                                 support_usage_threshold) {
+                                   MemoryPool::Heap,
+                                   init_size,
+                                   undefined_max(),
+                                   support_usage_threshold) {
   assert(UseG1GC, "sanity");
 }
 
@@ -48,44 +48,27 @@ size_t G1MemoryPoolSuper::eden_space_committed(G1CollectedHeap* g1h) {
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::eden_space_used(G1CollectedHeap* g1h) {
-  size_t young_list_length = g1h->young_list()->length();
-  size_t eden_used = young_list_length * HeapRegion::GrainBytes;
-  size_t survivor_used = survivor_space_used(g1h);
-  eden_used = subtract_up_to_zero(eden_used, survivor_used);
-  return eden_used;
+  return g1h->g1mm()->eden_space_used();
 }
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::survivor_space_committed(G1CollectedHeap* g1h) {
-  return MAX2(survivor_space_used(g1h), (size_t) HeapRegion::GrainBytes);
+  return g1h->g1mm()->survivor_space_committed();
 }
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::survivor_space_used(G1CollectedHeap* g1h) {
-  size_t survivor_num = g1h->g1_policy()->recorded_survivor_regions();
-  size_t survivor_used = survivor_num * HeapRegion::GrainBytes;
-  return survivor_used;
+  return g1h->g1mm()->survivor_space_used();
 }
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::old_space_committed(G1CollectedHeap* g1h) {
-  size_t committed = overall_committed(g1h);
-  size_t eden_committed = eden_space_committed(g1h);
-  size_t survivor_committed = survivor_space_committed(g1h);
-  committed = subtract_up_to_zero(committed, eden_committed);
-  committed = subtract_up_to_zero(committed, survivor_committed);
-  committed = MAX2(committed, (size_t) HeapRegion::GrainBytes);
-  return committed;
+  return g1h->g1mm()->old_space_committed();
 }
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::old_space_used(G1CollectedHeap* g1h) {
-  size_t used = overall_used(g1h);
-  size_t eden_used = eden_space_used(g1h);
-  size_t survivor_used = survivor_space_used(g1h);
-  used = subtract_up_to_zero(used, eden_used);
-  used = subtract_up_to_zero(used, survivor_used);
-  return used;
+  return g1h->g1mm()->old_space_used();
 }
 
 G1EdenPool::G1EdenPool(G1CollectedHeap* g1h) :

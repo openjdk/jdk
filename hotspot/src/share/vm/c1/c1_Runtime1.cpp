@@ -1026,9 +1026,21 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // first replace the tail, then the call
 #ifdef ARM
           if(stub_id == Runtime1::load_klass_patching_id && !VM_Version::supports_movw()) {
+            nmethod* nm = CodeCache::find_nmethod(instr_pc);
+            oop* oop_addr = NULL;
+            assert(nm != NULL, "invalid nmethod_pc");
+            RelocIterator oops(nm, copy_buff, copy_buff + 1);
+            while (oops.next()) {
+              if (oops.type() == relocInfo::oop_type) {
+                oop_Relocation* r = oops.oop_reloc();
+                oop_addr = r->oop_addr();
+                break;
+              }
+            }
+            assert(oop_addr != NULL, "oop relocation must exist");
             copy_buff -= *byte_count;
             NativeMovConstReg* n_copy2 = nativeMovConstReg_at(copy_buff);
-            n_copy2->set_data((intx) (load_klass()), instr_pc);
+            n_copy2->set_pc_relative_offset((address)oop_addr, instr_pc);
           }
 #endif
 

@@ -3527,8 +3527,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       Node* orig_tail = _gvn.transform( new(C, 3) SubINode(orig_length, start) );
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-      const bool raw_mem_only = true;
-      newcopy = new_array(klass_node, length, 0, raw_mem_only);
+      newcopy = new_array(klass_node, length, 0);
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -4325,8 +4324,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     int raw_adr_idx = Compile::AliasIdxRaw;
-    const bool raw_mem_only = true;
-
 
     Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
     if (array_ctl != NULL) {
@@ -4335,8 +4332,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       set_control(array_ctl);
       Node* obj_length = load_array_length(obj);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_array(obj_klass, obj_length, 0,
-                                  raw_mem_only, &obj_size);
+      Node* alloc_obj = new_array(obj_klass, obj_length, 0, &obj_size);
 
       if (!use_ReduceInitialCardMarks()) {
         // If it is an oop array, it requires very special treatment,
@@ -4408,7 +4404,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // It's an instance, and it passed the slow-path tests.
       PreserveJVMState pjvms(this);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_instance(obj_klass, NULL, raw_mem_only, &obj_size);
+      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size);
 
       copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
 
