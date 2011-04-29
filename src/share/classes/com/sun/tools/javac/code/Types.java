@@ -412,6 +412,7 @@ public class Types {
                     return
                         s.tag == BOT || s.tag == CLASS ||
                         s.tag == ARRAY || s.tag == TYPEVAR;
+                case WILDCARD: //we shouldn't be here - avoids crash (see 7034495)
                 case NONE:
                     return false;
                 default:
