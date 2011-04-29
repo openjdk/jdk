@@ -356,6 +356,7 @@ JAVA_JAVA_java = \
     java/util/regex/Matcher.java \
     java/util/regex/MatchResult.java \
     java/util/regex/ASCII.java \
+    java/util/regex/UnicodeProp.java \
     java/util/regex/PatternSyntaxException.java \
     java/util/prefs/Preferences.java \
         java/util/prefs/AbstractPreferences.java \

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -34,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
+import java.util.List;
 
 import build.tools.generatecharacter.CharacterName;
 
@@ -68,18 +68,17 @@ public class GenerateCharacter {
 
     final static boolean DEBUG = false;
 
-    final static int MAX_UNICODE_VALUE = 0xFFFF;
     final static String commandMarker = "$$";
     static String ROOT                        = "";
     static String DefaultUnicodeSpecFileName  = ROOT + "UnicodeData.txt";
     static String DefaultSpecialCasingFileName = ROOT + "SpecialCasing.txt";
+    static String DefaultPropListFileName     = ROOT + "PropList.txt";
     static String DefaultJavaTemplateFileName = ROOT + "Character.java.template";
     static String DefaultJavaOutputFileName   = ROOT + "Character.java";
     static String DefaultCTemplateFileName    = ROOT + "Character.c.template";
     static String DefaultCOutputFileName      = ROOT + "Character.c";
 
-    static String CharacterDataClassName      = "CharacterData";
-        static int plane = 0;
+    static int plane = 0;
 
     /* The overall idea is that, in the generated Character class source code,
     most character property data is stored in a special multi-level table whose
@@ -105,7 +104,11 @@ public class GenerateCharacter {
     entries are short rather than byte).
     */
 
-    /* The character properties are currently encoded into 32 bits in the following manner:
+    /* The character properties are currently encoded into A (32 bits)and B (16 bits)
+       two parts.
+
+    A: the low 32 bits are defined  in the following manner:
+
     1 bit Mirrored property.
     4 bits      Bidirectional category (see below) (unused if -nobidi switch specified)
     9 bits      A signed offset used for converting case .
@@ -148,6 +151,14 @@ public class GenerateCharacter {
            will produce the desired numeric value.
     5 bits  The digit offset (see description of previous field)
     5 bits      Character type (see below)
+
+    B: the high 16 bits are defined as:
+    1 bit Other_Lowercase property
+    1 bit Other_Uppercase property
+    1 bit Other_Alphabetic property
+    1 bit Other_Math property
+    1 bit Ideographic property
+    1 bit Noncharacter codepoint property
     */
 
 
@@ -173,8 +184,21 @@ public class GenerateCharacter {
                                         // case offset are 9 bits
                                         maskCase                =   0x01FF,
         shiftBidi           = 27,       maskBidi              = 0x78000000,
-        shiftMirrored       = 31,       maskMirrored          = 0x80000000,
+        shiftMirrored       = 31,       //maskMirrored          = 0x80000000,
         shiftPlane          = 16,       maskPlane = 0xFF0000;
+
+    // maskMirrored needs to be long, if up 16-bit
+    private static final long maskMirrored          = 0x80000000L;
+
+    // bit masks identify the 16-bit priperty field described above, in B
+    // table
+    private static final long
+        maskOtherLowercase  = 0x100000000L,
+        maskOtherUppercase  = 0x200000000L,
+        maskOtherAlphabetic = 0x400000000L,
+        maskOtherMath       = 0x800000000L,
+        maskIdeographic     = 0x1000000000L,
+        maskNoncharacterCP  = 0x2000000000L;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -258,7 +282,7 @@ public class GenerateCharacter {
     * The specification file is assumed to contain its data in sorted order by
     * character code; as a result, the array passed as an argument to this method
     * has its components in the same sorted order, with one entry for each defined
-        * Unicode character or character range.  (A range is indicated by two consecutive
+    * Unicode character or character range.  (A range is indicated by two consecutive
     * entries, such that the name of the first entry begins with "<" and ends with
     * "First>" and the second entry begins with "<" and ends with "Last>".)  This is
     * therefore a sparse representation of the character property data.
@@ -282,7 +306,8 @@ public class GenerateCharacter {
     * @see GenerateCharacter#buildOne
     */
 
-    static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps) {
+    static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps, PropList propList)
+    {
         long[] result;
         if (bLatin1 == true) {
             result = new long[256];
@@ -290,13 +315,13 @@ public class GenerateCharacter {
             result = new long[1<<16];
         }
         int k=0;
-                int codePoint = plane<<16;
+        int codePoint = plane<<16;
         UnicodeSpec nonCharSpec = new UnicodeSpec();
         for (int j = 0; j < data.length && k < result.length; j++) {
             if (data[j].codePoint == codePoint) {
                 result[k] = buildOne(codePoint, data[j], specialMaps);
                 ++k;
-                                ++codePoint;
+                ++codePoint;
             }
             else if(data[j].codePoint > codePoint) {
                 if (data[j].name.endsWith("Last>")) {
@@ -304,7 +329,7 @@ public class GenerateCharacter {
                     while (codePoint < data[j].codePoint && k < result.length) {
                         result[k] = buildOne(codePoint, data[j], specialMaps);
                         ++k;
-                                                ++codePoint;
+                        ++codePoint;
                     }
                 }
                 else {
@@ -312,15 +337,14 @@ public class GenerateCharacter {
                     while (codePoint < data[j].codePoint && k < result.length) {
                         result[k] = buildOne(codePoint, nonCharSpec, specialMaps);
                         ++k;
-                                                ++codePoint;
+                        ++codePoint;
                     }
                 }
                 k = data[j].codePoint & 0xFFFF;
-                                codePoint = data[j].codePoint;
+                codePoint = data[j].codePoint;
                 result[k] = buildOne(codePoint, data[j], specialMaps);
                 ++k;
-                                ++codePoint;
-
+                ++codePoint;
             }
             else {
                 System.out.println("An error has occured during spec mapping.");
@@ -333,8 +357,17 @@ public class GenerateCharacter {
         while (k < result.length) {
             result[k] = buildOne(codePoint, nonCharSpec, specialMaps);
             ++k;
-                        ++codePoint;
+            ++codePoint;
         }
+        // now add all extra supported properties from PropList, to the
+        // upper 16-bit
+        addExProp(result, propList, "Other_Lowercase", maskOtherLowercase);
+        addExProp(result, propList, "Other_Uppercase", maskOtherUppercase);
+        addExProp(result, propList, "Other_Alphabetic", maskOtherAlphabetic);
+        addExProp(result, propList, "Ideographic", maskIdeographic);
+        //addExProp(result, propList, "Other_Math", maskOtherMath);
+        //addExProp(result, propList, "Noncharacter_CodePoint", maskNoncharacterCP);
+
         return result;
     }
 
@@ -381,15 +414,15 @@ public class GenerateCharacter {
         // record the general category
         resultA |= us.generalCategory;
 
-    // record the numeric properties
-    NUMERIC: {
+        // record the numeric properties
+        NUMERIC: {
         STRANGE: {
             int val = 0;
-        // c is A-Z
+            // c is A-Z
             if ((c >= 0x0041) && (c <= 0x005A)) {
                 val = c - 0x0041;
                 resultA |= valueJavaSupradecimal;
-        // c is a-z
+            // c is a-z
             } else if ((c >= 0x0061) && (c <= 0x007A)) {
                 val = c - 0x0061;
                 resultA |= valueJavaSupradecimal;
@@ -428,7 +461,7 @@ public class GenerateCharacter {
         resultA |= valueStrangeNumeric;
         } // end NUMERIC
 
-    // record case mapping
+        // record case mapping
         int offset = 0;
         // might have a 1:M mapping
         int specialMap = SpecialCaseMap.find(c, specialCaseMaps);
@@ -458,12 +491,12 @@ public class GenerateCharacter {
             }
         }
         if ((us.hasTitleMap() && us.titleMap != us.upperMap) ||
-                (bHasUpper && us.hasLowerMap())) {
+            (bHasUpper && us.hasLowerMap())) {
             resultA |= maskTitleCase;
         }
         if (bHasUpper && !us.hasLowerMap() && !us.hasTitleMap() && verbose) {
-          System.out.println("Warning: Character " + hex4(c) + " has upper but " +
-                             "no title case; Java won't know this");
+            System.out.println("Warning: Character " + hex4(c) + " has upper but " +
+                               "no title case; Java won't know this");
         }
         if (offset < minOffsetSeen) minOffsetSeen = offset;
         if (offset > maxOffsetSeen) maxOffsetSeen = offset;
@@ -475,8 +508,7 @@ public class GenerateCharacter {
         }
         resultA |= ((offset & maskCase) << shiftCaseOffset);
 
-
-    // record lexical info about this character
+        // record lexical info about this character
         if (us.generalCategory == UnicodeSpec.LOWERCASE_LETTER
                 || us.generalCategory == UnicodeSpec.UPPERCASE_LETTER
                 || us.generalCategory == UnicodeSpec.TITLECASE_LETTER
@@ -537,6 +569,16 @@ public class GenerateCharacter {
             resultA = replacement;
         }
         return resultA;
+    }
+
+    static void addExProp(long[] map, PropList propList, String prop, long mask) {
+        List<Integer> cps = propList.codepoints(prop);
+        if (cps != null) {
+            for (Integer cp : cps) {
+                if (cp < map.length)
+                    map[cp] |= mask;
+            }
+        }
     }
 
     /**
@@ -645,8 +687,8 @@ OUTER:  for (int i = 0; i < n; i += m) {
     */
 
     static void generateCharacterClass(String theTemplateFileName,
-                     String theOutputFileName)
-            throws FileNotFoundException, IOException {
+                                       String theOutputFileName)
+        throws FileNotFoundException, IOException {
         BufferedReader in = new BufferedReader(new FileReader(theTemplateFileName));
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(theOutputFileName)));
         out.println(commentStart +
@@ -719,6 +761,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.length() >= 9 && x.substring(0, 7).equals("Lookup(") &&
                 x.substring(x.length()-1).equals(")") )
             return genAccess("A", x.substring(7, x.length()-1), (identifiers ? 2 : 32));
+        if (x.length() >= 11 && x.substring(0, 9).equals("LookupEx(") &&
+                x.substring(x.length()-1).equals(")") )
+            return genAccess("B", x.substring(9, x.length()-1), 16);
         if (x.equals("shiftType")) return Long.toString(shiftType);
         if (x.equals("shiftIdentifierInfo")) return Long.toString(shiftIdentifierInfo);
         if (x.equals("maskIdentifierInfo")) return "0x" + hex8(maskIdentifierInfo);
@@ -731,6 +776,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.equals("maskLowerCase")) return "0x" + hex8(maskLowerCase);
         if (x.equals("maskUpperCase")) return "0x" + hex8(maskUpperCase);
         if (x.equals("maskTitleCase")) return "0x" + hex8(maskTitleCase);
+        if (x.equals("maskOtherLowercase")) return "0x" + hex4(maskOtherLowercase >> 32);
+        if (x.equals("maskOtherUppercase")) return "0x" + hex4(maskOtherUppercase >> 32);
+        if (x.equals("maskOtherAlphabetic")) return "0x" + hex4(maskOtherAlphabetic >> 32);
+        if (x.equals("maskIdeographic")) return "0x" + hex4(maskIdeographic >> 32);
         if (x.equals("valueIgnorable")) return "0x" + hex8(valueIgnorable);
         if (x.equals("valueJavaUnicodeStart")) return "0x" + hex8(valueJavaUnicodeStart);
         if (x.equals("valueJavaOnlyStart")) return "0x" + hex8(valueJavaOnlyStart);
@@ -899,7 +948,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
         // If we ever need more than 32 bits to represent the character properties,
         // then a table "B" may be needed as well.
-        //  genTable(result, "B", tables[n - 1], 32, 16, sizes[n - 1], false, 0, true, true, false);
+        genTable(result, "B", tables[n - 1], 32, 16, sizes[n - 1], false, 0, true, true, false);
 
         totalBytes += ((((tables[n - 1].length * (identifiers ? 2 : 32)) + 31) >> 5) << 2);
         result.append(commentStart);
@@ -1080,9 +1129,9 @@ OUTER:  for (int i = 0; i < n; i += m) {
     */
 
     static void genTable(StringBuffer result, String name,
-             long[] table, int extract, int bits, int size,
-             boolean preshifted, int shift, boolean hexFormat,
-             boolean properties, boolean hexComment) {
+                         long[] table, int extract, int bits, int size,
+                         boolean preshifted, int shift, boolean hexFormat,
+                         boolean properties, boolean hexComment) {
 
         String atype = bits == 1 ? (Csyntax ? "unsigned long" : "int") :
             bits == 2 ? (Csyntax ? "unsigned long" : "int") :
@@ -1137,7 +1186,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
             char ch = '\u0000';
             int charsPerEntry = -entriesPerChar;
             for (int j=0; j<table.length; ++j) {
-                long entry = table[j] >> extract;
+                //long entry = table[j] >> extract;
+                long entry;
+                if ("A".equals(name))
+                    entry = (table[j] & 0xffffffffL) >> extract;
+                else
+                    entry = (table[j] >> extract);
                 if (shiftEntries) entry <<= shift;
                 if (entry >= (1L << bits)) {
                     FAIL("Entry too big");
@@ -1549,6 +1603,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String OutputFileName = null;
     static String UnicodeSpecFileName = null; // liu
     static String SpecialCasingFileName = null;
+    static String PropListFileName = null;
     static boolean useCharForByte = false;
     static int[] sizes;
     static int bins = 0; // liu; if > 0, then perform search
@@ -1668,20 +1723,28 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     SpecialCasingFileName = args[++j];
                 }
             }
-                        else if (args[j].equals("-plane")) {
-                                if (j == args.length -1) {
-                                        FAIL("Plane number missing after -plane");
-                                }
-                                else {
-                                        plane = Integer.parseInt(args[++j]);
-                                }
-                                if (plane > 0) {
-                                        bLatin1 = false;
-                                }
-                        }
-                        else if ("-usecharforbyte".equals(args[j])) {
-                                useCharForByte = true;
-                        }
+            else if (args[j].equals("-proplist")) {
+                if (j == args.length -1) {
+                    FAIL("File name missing after -proplist");
+                }
+                else {
+                    PropListFileName = args[++j];
+                }
+            }
+            else if (args[j].equals("-plane")) {
+                if (j == args.length -1) {
+                    FAIL("Plane number missing after -plane");
+                }
+                else {
+                    plane = Integer.parseInt(args[++j]);
+                }
+                if (plane > 0) {
+                    bLatin1 = false;
+                }
+            }
+            else if ("-usecharforbyte".equals(args[j])) {
+                useCharForByte = true;
+            }
             else if (args[j].equals("-latin1")) {
                 bLatin1 = true;
                 plane = 0;
@@ -1727,6 +1790,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (SpecialCasingFileName == null) {
             SpecialCasingFileName = DefaultSpecialCasingFileName;
             desc.append(" [-specialcasing " + SpecialCasingFileName + ']');
+        }
+        if (PropListFileName == null) {
+            PropListFileName = DefaultPropListFileName;
+            desc.append(" [-proplist " + PropListFileName + ']');
         }
         if (TemplateFileName == null) {
             TemplateFileName = (Csyntax ? DefaultCTemplateFileName
@@ -1877,12 +1944,13 @@ OUTER:  for (int i = 0; i < n; i += m) {
         try {
 
             UnicodeSpec[] data = UnicodeSpec.readSpecFile(new File(UnicodeSpecFileName), plane);
-
             specialCaseMaps = SpecialCaseMap.readSpecFile(new File(SpecialCasingFileName), plane);
+            PropList propList = PropList.readSpecFile(new File(PropListFileName), plane);
+
             if (verbose) {
                 System.out.println(data.length + " items read from Unicode spec file " + UnicodeSpecFileName); // liu
             }
-            long[] map = buildMap(data, specialCaseMaps);
+            long[] map = buildMap(data, specialCaseMaps, propList);
             if (verbose) {
                 System.err.println("Completed building of initial map");
             }
