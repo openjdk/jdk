@@ -1203,7 +1203,7 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_IME_COMPOSITIONFULL)
         WIN_MSG(WM_IME_SELECT)
         WIN_MSG(WM_IME_CHAR)
-        FMT_MSG(0x0288, "WM_IME_REQUEST")
+        FMT_MSG(WM_IME_REQUEST)
         WIN_MSG(WM_IME_KEYDOWN)
         WIN_MSG(WM_IME_KEYUP)
         FMT_MSG(0x02A1, "WM_MOUSEHOVER")
@@ -1733,7 +1733,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_IME_SELECT:
       case WM_IME_KEYUP:
       case WM_IME_KEYDOWN:
-      case 0x0288: // WM_IME_REQUEST
+      case WM_IME_REQUEST:
           CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_CHAR:
@@ -4657,10 +4657,6 @@ void* AwtComponent::SetNativeFocusOwner(void *self) {
 ret:
     if (c && ::IsWindow(c->GetHWnd())) {
         sm_focusOwner = c->GetHWnd();
-        AwtFrame *owner = (AwtFrame*)GetComponent(c->GetProxyToplevelContainer());
-        if (owner) {
-            owner->SetLastProxiedFocusOwner(sm_focusOwner);
-        }
     } else {
         sm_focusOwner = NULL;
     }
