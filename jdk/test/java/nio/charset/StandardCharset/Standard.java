@@ -29,9 +29,19 @@
  * @run main Standard
  */
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.io.*;
 import java.nio.charset.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Standard {
+
+    private final static String standardCharsets[] = {
+        "US-ASCII", "ISO-8859-1", "UTF-8",
+        "UTF-16BE", "UTF-16LE", "UTF-16" };
 
     public static void realMain(String[] args) {
         check(StandardCharset.US_ASCII instanceof Charset);
@@ -41,12 +51,35 @@ public class Standard {
         check(StandardCharset.UTF_16LE instanceof Charset);
         check(StandardCharset.UTF_16 instanceof Charset);
 
-        check("US-ASCII".equals(StandardCharset.US_ASCII.name());
-        check("ISO-8859-1".equals(StandardCharset.ISO_8859_1.name());
-        check("UTF-8".equals(StandardCharset.UTF_8.name());
-        check("UTF-16BE".equals(StandardCharset.UTF_16BE.name());
-        check("UTF-16LE".equals(StandardCharset.UTF_16LE.name());
-        check("UTF-16".equals(StandardCharset.UTF_16.name());
+        check("US-ASCII".equals(StandardCharset.US_ASCII.name()));
+        check("ISO-8859-1".equals(StandardCharset.ISO_8859_1.name()));
+        check("UTF-8".equals(StandardCharset.UTF_8.name()));
+        check("UTF-16BE".equals(StandardCharset.UTF_16BE.name()));
+        check("UTF-16LE".equals(StandardCharset.UTF_16LE.name()));
+        check("UTF-16".equals(StandardCharset.UTF_16.name()));
+
+        Set<String> charsets = new HashSet<>();
+        Field standardCharsetFields[] = StandardCharset.class.getFields();
+
+        for(Field charsetField : standardCharsetFields) {
+            check(StandardCharset.class == charsetField.getDeclaringClass());
+            check(Modifier.isFinal(charsetField.getModifiers()));
+            check(Modifier.isStatic(charsetField.getModifiers()));
+            check(Modifier.isPublic(charsetField.getModifiers()));
+            Object value;
+            try {
+                value = charsetField.get(null);
+            } catch(IllegalAccessException failure) {
+                unexpected(failure);
+                continue;
+            }
+            check(value instanceof Charset);
+            charsets.add(((Charset)value).name());
+        }
+
+        check(charsets.containsAll(Arrays.asList(standardCharsets)));
+        charsets.removeAll(Arrays.asList(standardCharsets));
+        check(charsets.isEmpty());
     }
 
     //--------------------- Infrastructure ---------------------------
