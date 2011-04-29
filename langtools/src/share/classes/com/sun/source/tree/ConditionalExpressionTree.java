@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>condition</em> ? <em>trueExpression</em> : <em>falseExpression</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 15.25"
+ * @jls section 15.25
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -172,7 +172,7 @@ class ConcurrentG1Refine: public CHeapObj {
 
   // hash a given key (index of card_ptr) with the specified size
   static unsigned int hash(size_t key, size_t size) {
-    return (unsigned int) key % size;
+    return (unsigned int) (key % size);
   }
 
   // hash a given key (index of card_ptr)
@@ -180,11 +180,11 @@ class ConcurrentG1Refine: public CHeapObj {
     return hash(key, _n_card_counts);
   }
 
-  unsigned ptr_2_card_num(jbyte* card_ptr) {
-    return (unsigned) (card_ptr - _ct_bot);
+  unsigned int ptr_2_card_num(jbyte* card_ptr) {
+    return (unsigned int) (card_ptr - _ct_bot);
   }
 
-  jbyte* card_num_2_ptr(unsigned card_num) {
+  jbyte* card_num_2_ptr(unsigned int card_num) {
     return (jbyte*) (_ct_bot + card_num);
   }
 

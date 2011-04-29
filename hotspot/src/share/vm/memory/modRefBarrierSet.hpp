@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,15 +87,6 @@ public:
   void read_region(MemRegion mr) {
     assert(false, "can't call");
   }
-
-  // Invoke "cl->do_oop" on (the address of) every possibly-modifed
-  // reference field in objects in "sp".  If "clear" is "true", the oops
-  // are no longer considered possibly modified after application of the
-  // closure.  If' "before_save_marks" is true, oops in objects allocated
-  // after the last call to "save_marks" on "sp" will not be considered.
-  virtual void mod_oop_in_space_iterate(Space* sp, OopClosure* cl,
-                                        bool clear = false,
-                                        bool before_save_marks = false) = 0;
 
   // Causes all refs in "mr" to be assumed to be modified.  If "whole_heap"
   // is true, the caller asserts that the entire heap is being invalidated,

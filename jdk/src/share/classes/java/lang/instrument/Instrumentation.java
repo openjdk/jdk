@@ -434,8 +434,9 @@ public interface Instrumentation {
      * avoiding these types of issues, is to use a unique package name for the
      * instrumentation classes.
      *
-     * <p> The <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual Machine
-     * Specification</a> specifies that a subsequent attempt to resolve a symbolic
+     * <p>
+     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * specifies that a subsequent attempt to resolve a symbolic
      * reference that the Java virtual machine has previously unsuccessfully attempted
      * to resolve always fails with the same error that was thrown as a result of the
      * initial resolution attempt. Consequently, if the JAR file contains an entry
@@ -487,8 +488,9 @@ public interface Instrumentation {
      * getName()} method on the <code>jarfile</code> and this is provided as the
      * parameter to the <code>appendToClassPathForInstrumentation</code> method.
      *
-     * <p> The <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual Machine
-     * Specification</a> specifies that a subsequent attempt to resolve a symbolic
+     * <p>
+     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * specifies that a subsequent attempt to resolve a symbolic
      * reference that the Java virtual machine has previously unsuccessfully attempted
      * to resolve always fails with the same error that was thrown as a result of the
      * initial resolution attempt. Consequently, if the JAR file contains an entry

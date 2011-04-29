@@ -29,7 +29,7 @@
  * Written by Martin Buchholz and Doug Lea with assistance from
  * members of JCP JSR-166 Expert Group and released to the public
  * domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 /*

@@ -36,9 +36,9 @@ import  java.security.ProtectionDomain;
  * to transform class files.
  * The transformation occurs before the class is defined by the JVM.
  * <P>
- * Note the term <i>class file</i> is used as defined in the chapter
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#80959">The class File Format</a>
- * of <i>The Java Virtual Machine Specification</i>, to mean a sequence
+ * Note the term <i>class file</i> is used as defined in section 3.1 of
+ * <cite>The Java&trade; Virtual Machine Specification</cite>,
+ * to mean a sequence
  * of bytes in class file format, whether or not they reside in a file.
  *
  * @see     java.lang.instrument.Instrumentation

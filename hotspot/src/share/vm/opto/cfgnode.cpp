@@ -1349,9 +1349,17 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
 static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *newn) {
   igvn->hash_delete(n);         // Remove from hash before hacking edges
 
+  Node* predicate_proj = NULL;
   uint j = 1;
-  for( uint i = phi->req()-1; i > 0; i-- ) {
-    if( phi->in(i) == val ) {   // Found a path with val?
+  for (uint i = phi->req()-1; i > 0; i--) {
+    if (phi->in(i) == val) {   // Found a path with val?
+      if (n->is_Region()) {
+        Node* proj = PhaseIdealLoop::find_predicate(n->in(i));
+        if (proj != NULL) {
+          assert(predicate_proj == NULL, "only one predicate entry expected");
+          predicate_proj = proj;
+        }
+      }
       // Add to NEW Region/Phi, no DU info
       newn->set_req( j++, n->in(i) );
       // Remove from OLD Region/Phi
@@ -1362,6 +1370,12 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
   // Register the new node but do not transform it.  Cannot transform until the
   // entire Region/Phi conglomerate has been hacked as a single huge transform.
   igvn->register_new_node_with_optimizer( newn );
+
+  // Clone loop predicates
+  if (predicate_proj != NULL) {
+    newn = igvn->clone_loop_predicates(predicate_proj, newn);
+  }
+
   // Now I can point to the new node.
   n->add_req(newn);
   igvn->_worklist.push(n);

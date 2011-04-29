@@ -629,7 +629,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     initial_gvn()->transform_no_reclaim(top());
 
     // Set up tf(), start(), and find a CallGenerator.
-    CallGenerator* cg;
+    CallGenerator* cg = NULL;
     if (is_osr_compilation()) {
       const TypeTuple *domain = StartOSRNode::osr_domain();
       const TypeTuple *range = TypeTuple::make_range(method()->signature());
@@ -644,9 +644,24 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       StartNode* s = new (this, 2) StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       init_start(s);
-      float past_uses = method()->interpreter_invocation_count();
-      float expected_uses = past_uses;
-      cg = CallGenerator::for_inline(method(), expected_uses);
+      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get && UseG1GC) {
+        // With java.lang.ref.reference.get() we must go through the
+        // intrinsic when G1 is enabled - even when get() is the root
+        // method of the compile - so that, if necessary, the value in
+        // the referent field of the reference object gets recorded by
+        // the pre-barrier code.
+        // Specifically, if G1 is enabled, the value in the referent
+        // field is recorded by the G1 SATB pre barrier. This will
+        // result in the referent being marked live and the reference
+        // object removed from the list of discovered references during
+        // reference processing.
+        cg = find_intrinsic(method(), false);
+      }
+      if (cg == NULL) {
+        float past_uses = method()->interpreter_invocation_count();
+        float expected_uses = past_uses;
+        cg = CallGenerator::for_inline(method(), expected_uses);
+      }
     }
     if (failing())  return;
     if (cg == NULL) {
@@ -1632,7 +1647,6 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
     igvn.replace_node(n, n->in(1));
   }
   assert(predicate_count()==0, "should be clean!");
-  igvn.optimize();
 }
 
 //------------------------------Optimize---------------------------------------
@@ -1689,7 +1703,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1697,7 +1711,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1705,7 +1719,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
     }
@@ -1743,21 +1757,13 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
-    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
+      PhaseIdealLoop ideal_loop( igvn, true);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
-      // Perform loop predication optimization during first iteration after CCP.
-      // After that switch it off and cleanup unused loop predicates.
-      if (loop_predication) {
-        loop_predication = false;
-        cleanup_loop_predicates(igvn);
-        if (failing())  return;
-      }
     }
   }
 
@@ -2050,6 +2056,52 @@ static bool oop_offset_is_sane(const TypeInstPtr* tp) {
   // Note that OffsetBot and OffsetTop are very negative.
 }
 
+// Eliminate trivially redundant StoreCMs and accumulate their
+// precedence edges.
+static void eliminate_redundant_card_marks(Node* n) {
+  assert(n->Opcode() == Op_StoreCM, "expected StoreCM");
+  if (n->in(MemNode::Address)->outcnt() > 1) {
+    // There are multiple users of the same address so it might be
+    // possible to eliminate some of the StoreCMs
+    Node* mem = n->in(MemNode::Memory);
+    Node* adr = n->in(MemNode::Address);
+    Node* val = n->in(MemNode::ValueIn);
+    Node* prev = n;
+    bool done = false;
+    // Walk the chain of StoreCMs eliminating ones that match.  As
+    // long as it's a chain of single users then the optimization is
+    // safe.  Eliminating partially redundant StoreCMs would require
+    // cloning copies down the other paths.
+    while (mem->Opcode() == Op_StoreCM && mem->outcnt() == 1 && !done) {
+      if (adr == mem->in(MemNode::Address) &&
+          val == mem->in(MemNode::ValueIn)) {
+        // redundant StoreCM
+        if (mem->req() > MemNode::OopStore) {
+          // Hasn't been processed by this code yet.
+          n->add_prec(mem->in(MemNode::OopStore));
+        } else {
+          // Already converted to precedence edge
+          for (uint i = mem->req(); i < mem->len(); i++) {
+            // Accumulate any precedence edges
+            if (mem->in(i) != NULL) {
+              n->add_prec(mem->in(i));
+            }
+          }
+          // Everything above this point has been processed.
+          done = true;
+        }
+        // Eliminate the previous StoreCM
+        prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
+        assert(mem->outcnt() == 0, "should be dead");
+        mem->disconnect_inputs(NULL);
+      } else {
+        prev = mem;
+      }
+      mem = prev->in(MemNode::Memory);
+    }
+  }
+}
+
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
 static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
@@ -2176,9 +2228,19 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     frc.inc_float_count();
     goto handle_mem;
 
+  case Op_StoreCM:
+    {
+      // Convert OopStore dependence into precedence edge
+      Node* prec = n->in(MemNode::OopStore);
+      n->del_req(MemNode::OopStore);
+      n->add_prec(prec);
+      eliminate_redundant_card_marks(n);
+    }
+
+    // fall through
+
   case Op_StoreB:
   case Op_StoreC:
-  case Op_StoreCM:
   case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:

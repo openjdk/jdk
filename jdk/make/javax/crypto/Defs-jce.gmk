@@ -31,9 +31,11 @@ include $(BUILDDIR)/common/Release.gmk
 JCE_MANIFEST_FILE    = $(TEMPDIR)/manifest.mf
 $(JCE_MANIFEST_FILE): $(MAINMANIFEST)
 	$(prep-target)
-	( $(SED) "s/@@RELEASE@@/$(RELEASE)/" $<; \
-	    $(ECHO) "Extension-Name: javax.crypto"; \
-	    $(ECHO) "Implementation-Vendor-Id: com.sun"; ) > $@
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#"           \
+               -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+               $(MAINMANIFEST) >> $@
+	$(ECHO) "Extension-Name: javax.crypto" >> $@
+	$(ECHO) "Implementation-Vendor-Id: com.sun" >> $@
 
 README-MAKEFILE_WARNING = \
     "\nPlease read make/javax/crypto/Makefile for further build instructions."
@@ -58,7 +60,7 @@ endef
 SIGNING_KEY_DIR    = /security/ws/JCE-signing/src
 SIGNING_KEYSTORE   = $(SIGNING_KEY_DIR)/KeyStore.jks
 SIGNING_PASSPHRASE = $(SIGNING_KEY_DIR)/passphrase.txt
-SIGNING_ALIAS      = jce_rsa
+SIGNING_ALIAS      = oracle_jce_rsa
 
 #
 # Defines for signing the various jar files.

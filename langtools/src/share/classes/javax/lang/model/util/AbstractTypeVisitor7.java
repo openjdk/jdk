@@ -67,11 +67,11 @@ public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R,
     }
 
     /**
-     * Visits a {@code DisjunctiveType} in a manner defined by a subclass.
+     * Visits a {@code UnionType} in a manner defined by a subclass.
      *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of the visit as defined by a subclass
      */
-    public abstract R visitDisjunctive(DisjunctiveType t, P p);
+    public abstract R visitUnion(UnionType t, P p);
 }

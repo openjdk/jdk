@@ -221,9 +221,7 @@ void LinkResolver::lookup_implicit_method(methodHandle& result,
       // Make sure the Java part of the runtime has been booted up.
       klassOop natives = SystemDictionary::MethodHandleNatives_klass();
       if (natives == NULL || instanceKlass::cast(natives)->is_not_initialized()) {
-        Symbol* natives_name = vmSymbols::java_lang_invoke_MethodHandleNatives();
-        if (natives != NULL && AllowTransitionalJSR292)  natives_name = Klass::cast(natives)->name();
-        SystemDictionary::resolve_or_fail(natives_name,
+        SystemDictionary::resolve_or_fail(vmSymbols::java_lang_invoke_MethodHandleNatives(),
                                           Handle(),
                                           Handle(),
                                           true,
