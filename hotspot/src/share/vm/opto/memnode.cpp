@@ -2155,9 +2155,12 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem     = in(MemNode::Memory);
   Node* address = in(MemNode::Address);
 
-  // Back-to-back stores to same address?  Fold em up.
-  // Generally unsafe if I have intervening uses...
-  if (mem->is_Store() && phase->eqv_uncast(mem->in(MemNode::Address), address)) {
+  // Back-to-back stores to same address?  Fold em up.  Generally
+  // unsafe if I have intervening uses...  Also disallowed for StoreCM
+  // since they must follow each StoreP operation.  Redundant StoreCMs
+  // are eliminated just before matching in final_graph_reshape.
+  if (mem->is_Store() && phase->eqv_uncast(mem->in(MemNode::Address), address) &&
+      mem->Opcode() != Op_StoreCM) {
     // Looking at a dead closed cycle of memory?
     assert(mem != mem->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
 

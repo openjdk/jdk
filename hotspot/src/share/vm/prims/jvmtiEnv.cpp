@@ -525,7 +525,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     ObjectLocker ol(loader, THREAD);
 
     // need the path as java.lang.String
-    Handle path = java_lang_String::create_from_str(segment, THREAD);
+    Handle path = java_lang_String::create_from_platform_dependent_str(segment, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       return JVMTI_ERROR_INTERNAL;

@@ -83,6 +83,11 @@ SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
 SUBDIRS_management = management
 SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole
+
+ifndef OPENJDK
+  SUBDIRS += usagetracker
+endif
+
 include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::

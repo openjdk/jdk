@@ -31,6 +31,8 @@
    @run main bug6796710
  */
 
+import sun.awt.SunToolkit;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -91,7 +93,7 @@ public class bug6796710 {
             }
         });
 
-        robot.waitForIdle();
+        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
 
         BufferedImage bufferedImage = getPnBottomImage();
 
@@ -101,7 +103,10 @@ public class bug6796710 {
             }
         });
 
-        robot.waitForIdle();
+        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+
+        // On Linux platforms realSync doesn't guaranties setSize completion
+        Thread.sleep(1000);
 
         if (!Util.compareBufferedImages(bufferedImage, getPnBottomImage())) {
             throw new RuntimeException("The test failed");
