@@ -39,7 +39,7 @@ package com.sun.source.tree;
  *       <em>elseStatement</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.9"
+ * @jls section 14.9
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

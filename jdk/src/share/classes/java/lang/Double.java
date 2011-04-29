@@ -392,9 +392,10 @@ public final class Double extends Number implements Comparable<Double> {
      * where <i>Sign</i>, <i>FloatingPointLiteral</i>,
      * <i>HexNumeral</i>, <i>HexDigits</i>, <i>SignedInteger</i> and
      * <i>FloatTypeSuffix</i> are as defined in the lexical structure
-     * sections of the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>. If {@code s} does not have the form of
+     * sections of
+     * <cite>The Java&trade; Language Specification</cite>,
+     * except that underscores are not accepted between digits.
+     * If {@code s} does not have the form of
      * a <i>FloatValue</i>, then a {@code NumberFormatException}
      * is thrown. Otherwise, {@code s} is regarded as
      * representing an exact decimal value in the usual
@@ -464,8 +465,8 @@ public final class Double extends Number implements Comparable<Double> {
      *       // Since this method allows integer-only strings as input
      *       // in addition to strings of floating-point literals, the
      *       // two sub-patterns below are simplifications of the grammar
-     *       // productions from the Java Language Specification, 2nd
-     *       // edition, section 3.10.2.
+     *       // productions from section 3.10.2 of
+     *       // <cite>The Java&trade; Language Specification</cite>.
      *
      *       // Digits ._opt Digits_opt ExponentPart_opt FloatTypeSuffix_opt
      *       "((("+Digits+"(\\.)?("+Digits+"?)("+Exp+")?)|"+

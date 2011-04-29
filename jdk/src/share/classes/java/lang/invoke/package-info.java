@@ -194,8 +194,8 @@
  * Method handle constants for subtags {@code REF_getStatic}, {@code REF_putStatic}, and {@code REF_invokeStatic}
  * may force class initialization on their first invocation, just like the corresponding bytecodes.
  * <p>
- * The rules of section 5.4.3 of the
- * <a href="http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#73492">JVM Specification</a>
+ * The rules of section 5.4.3 of
+ * <cite>The Java&trade; Virtual Machine Specification</cite>
  * apply to the resolution of {@code CONSTANT_MethodType}, {@code CONSTANT_MethodHandle},
  * and {@code CONSTANT_InvokeDynamic} constants,
  * by the execution of {@code invokedynamic} and {@code ldc} instructions.

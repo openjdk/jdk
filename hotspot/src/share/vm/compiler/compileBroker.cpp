@@ -847,9 +847,9 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 // Initialize the compilation queue
 void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
-#ifndef ZERO
+#if !defined(ZERO) && !defined(SHARK)
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
-#endif // !ZERO
+#endif // !ZERO && !SHARK
   if (c2_compiler_count > 0) {
     _c2_method_queue  = new CompileQueue("C2MethodQueue",  MethodCompileQueue_lock);
   }
@@ -1118,7 +1118,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
-  if (compiler(comp_level)->is_c2()) {
+  if (compiler(comp_level)->is_c2() || compiler(comp_level)->is_shark()) {
     method->constants()->resolve_string_constants(CHECK_0);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -1736,8 +1736,14 @@ void CompileBroker::handle_full_code_cache() {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
+      stringStream s;
+      // Dump code cache state into a buffer before locking the tty,
+      // because log_state() will use locks causing lock conflicts.
+      CodeCache::log_state(&s);
+      // Lock to prevent tearing
+      ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      CodeCache::log_state(xtty);
+      xtty->print(s.as_string());
       xtty->stamp();
       xtty->end_elem();
     }

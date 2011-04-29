@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442
+ *    6488442 7036905
  * @summary Basic tests for Currency class.
  */
 
@@ -249,7 +249,7 @@ public class CurrencyTest {
         testDisplayName("ITL", new Locale("it"), "Lira Italiana");
         testDisplayName("JPY", Locale.JAPANESE, "\u65e5\u672c\u5186");
         testDisplayName("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0");
-        testDisplayName("SEK", new Locale("sv"), "Svensk krona");
+        testDisplayName("SEK", new Locale("sv"), "svensk krona");
         testDisplayName("CNY", Locale.SIMPLIFIED_CHINESE, "\u4eba\u6c11\u5e01");
         testDisplayName("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u81fa\u5e63");
     }

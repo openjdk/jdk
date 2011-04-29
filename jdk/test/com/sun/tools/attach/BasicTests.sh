@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,9 @@ fi
 
 # Windows 2000 is a problem here, so we skip it, see 6962615
 osrev=`uname -a`
-if [ "`echo ${osrev} | grep 'CYGWIN'`" != "" ] ; then
-  if [ "`echo ${osrev} | grep '5.0'`" != "" ] ; then
-     echo "Treating as a pass, not testing Windows 2000"
-     exit 0
-  fi
+if [ "`echo ${osrev} | grep 'CYGWIN[^ ]*-5\.0'`" != "" ] ; then
+  echo "Treating as a pass, not testing Windows 2000"
+  exit 0
 fi
 if [ "`echo ${osrev} | grep 'Windows'`" != "" ] ; then
   if [ "`echo ${osrev} | grep '5 00'`" != "" ] ; then
@@ -58,7 +56,7 @@ fi
 
 startApplication -Dattach.test=true
 # pid = process-id, port = shutdown port
-                                                                                                      
+
 failures=0
 
 echo "Running tests ..."
@@ -68,6 +66,18 @@ $JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 stopApplication $port
+
+# Add these info messages to $OUTPUTFILE just in case someone
+# looks at it and wonders about the failures. We have to do
+# this after the application is stopped because it is writing
+# to $OUTPUTFILE.
+(
+echo ""
+echo "INFO: Test 2 will cause error messages about SilverBullet.jar" \
+    "and an agent failing to start."
+echo "INFO: Test 3 will cause error messages about BadAgent" \
+    "including a RuntimeException and an InvocationTargetException."
+) >> ${OUTPUTFILE}
 
 if [ $failures = 0 ]; 
   then echo "All tests passed.";

@@ -30,7 +30,7 @@
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 /**
@@ -218,8 +218,9 @@
  *
  * <h2><a name="MemoryVisibility">Memory Consistency Properties</a></h2>
  *
- * <a href="http://java.sun.com/docs/books/jls/third_edition/html/memory.html">
- * Chapter 17 of the Java Language Specification</a> defines the
+ * Chapter 17 of
+ * <cite>The Java&trade; Language Specification</cite>
+ * defines the
  * <i>happens-before</i> relation on memory operations such as reads and
  * writes of shared variables.  The results of a write by one thread are
  * guaranteed to be visible to a read by another thread only if the write

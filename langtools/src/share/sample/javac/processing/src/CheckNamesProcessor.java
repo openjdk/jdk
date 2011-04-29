@@ -152,7 +152,8 @@ public class CheckNamesProcessor extends AbstractProcessor {
      * Provide checks that an element and its enclosed elements follow
      * the usual naming conventions.
      *
-     * <p> Conventions from JLSv3 section 6.8:
+     * <p> Conventions from section 6.8 of
+     *     <cite>The Java&trade; Language Specification</cite>
      *
      * <ul>
      * <li> Classes and interfaces: camel case, first letter is uppercase
@@ -163,7 +164,8 @@ public class CheckNamesProcessor extends AbstractProcessor {
      * <li> non-final: camel case, initial lowercase
      * <li> constant: uppercase separated by underscores
      * </ul>
-     * <li> Packages: checks left as exercise for the reader, see JLSv3 section 7.7
+     * <li> Packages: checks left as exercise for the reader, see section 7.7 of
+     * <cite>The Java&trade; Language Specification</cite>.
      * </ul>
      */
     private static class NameChecker {
@@ -286,7 +288,7 @@ public class CheckNamesProcessor extends AbstractProcessor {
             public Void visitPackage(PackageElement e, Void p) {
                 /*
                  * Implementing the checks of package names is left
-                 * as an exercise for the reader, see JLSv3 section
+                 * as an exercise for the reader, see JLS section
                  * 7.7 for conventions.
                  */
 

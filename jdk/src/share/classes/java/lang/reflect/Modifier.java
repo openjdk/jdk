@@ -34,14 +34,8 @@ import sun.reflect.ReflectionFactory;
  * constants to decode class and member access modifiers.  The sets of
  * modifiers are represented as integers with distinct bit positions
  * representing different modifiers.  The values for the constants
- * representing the modifiers are taken from <a
- * href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/VMSpecTOC.doc.html"><i>The
- * Java</i><sup><small>TM</small></sup> <i>Virtual Machine Specification, Second
- * edition</i></a> tables
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#75734">4.1</a>,
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#88358">4.4</a>,
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#75568">4.5</a>, and
- * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#88478">4.7</a>.
+ * representing the modifiers are taken from the tables in sections 4.1, 4.4, 4.5, and 4.7 of
+ * <cite>The Java&trade; Virtual Machine Specification</cite>.
  *
  * @see Class#getModifiers()
  * @see Member#getModifiers()
@@ -214,14 +208,8 @@ class Modifier {
      *    public final synchronized strictfp
      * </pre></blockquote>
      * The modifier names are returned in an order consistent with the
-     * suggested modifier orderings given in <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html"><em>The
-     * Java Language Specification, Second Edition</em></a> sections
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/classes.doc.html#21613">&sect;8.1.1</a>,
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/classes.doc.html#78091">&sect;8.3.1</a>,
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/classes.doc.html#78188">&sect;8.4.3</a>,
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/classes.doc.html#42018">&sect;8.8.3</a>, and
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/interfaces.doc.html#235947">&sect;9.1.1</a>.
+     * suggested modifier orderings given in sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1 of
+     * <cite>The Java&trade; Language Specification</cite>.
      * The full modifier ordering used by this method is:
      * <blockquote> {@code
      * public protected private abstract static final transient
@@ -269,9 +257,8 @@ class Modifier {
     }
 
     /*
-     * Access modifier flag constants from <em>The Java Virtual
-     * Machine Specification, Second Edition</em>, tables 4.1, 4.4,
-     * 4.5, and 4.7.
+     * Access modifier flag constants from tables 4.1, 4.4, 4.5, and 4.7 of
+     * <cite>The Java&trade; Virtual Machine Specification</cite>
      */
 
     /**
@@ -403,7 +390,7 @@ class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a class.
      *
-     * @jls3 8.1.1 Class Modifiers
+     * @jls 8.1.1 Class Modifiers
      * @since 1.7
      */
     public static int classModifiers() {
@@ -416,7 +403,7 @@ class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to an inteface.
      *
-     * @jls3 9.1.1 Interface Modifiers
+     * @jls 9.1.1 Interface Modifiers
      * @since 1.7
      */
     public static int interfaceModifiers() {
@@ -429,7 +416,7 @@ class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a constructor.
      *
-     * @jls3 8.8.3 Constructor Modifiers
+     * @jls 8.8.3 Constructor Modifiers
      * @since 1.7
      */
     public static int constructorModifiers() {
@@ -442,7 +429,7 @@ class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a method.
      *
-     * @jls3 8.4.3 Method Modifiers
+     * @jls 8.4.3 Method Modifiers
      * @since 1.7
      */
     public static int methodModifiers() {
@@ -456,7 +443,7 @@ class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a field.
      *
-     * @jls3 8.3.1 Field Modifiers
+     * @jls 8.3.1 Field Modifiers
      * @since 1.7
      */
     public static int fieldModifiers() {

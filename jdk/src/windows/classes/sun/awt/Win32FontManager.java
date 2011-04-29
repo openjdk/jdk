@@ -103,6 +103,14 @@ public class Win32FontManager extends SunFontManager {
             });
     }
 
+    /**
+     * Whether registerFontFile expects absolute or relative
+     * font file names.
+     */
+    protected boolean useAbsoluteFontFileNames() {
+        return false;
+    }
+
     /* Unlike the shared code version, this expects a base file name -
      * not a full path name.
      * The font configuration file has base file names and the FontConfiguration

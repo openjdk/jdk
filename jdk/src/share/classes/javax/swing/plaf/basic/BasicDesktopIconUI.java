@@ -186,9 +186,8 @@ public class BasicDesktopIconUI extends DesktopIconUI {
     /**
      * Listens for mouse movements and acts on them.
      *
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of {@code BasicDesktopIconUI}.
      */
     public class MouseInputHandler extends MouseInputAdapter
     {
