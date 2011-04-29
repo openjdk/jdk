@@ -681,7 +681,7 @@ public abstract class Arc2D extends RectangularShape {
      * @see java.awt.geom.Arc2D.Float
      * @see java.awt.geom.Arc2D.Double
      */
-    Arc2D() {
+    protected Arc2D() {
         this(OPEN);
     }
 
