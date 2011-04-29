@@ -311,8 +311,8 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Get the list of classes and interfaces declared as imported.
-     * These are called "single-type-import declarations" in the
-     * Java Language Specification.
+     * These are called "single-type-import declarations" in
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @return an array of ClassDoc representing the imported classes.
      *
@@ -325,8 +325,8 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Get the list of packages declared as imported.
-     * These are called "type-import-on-demand declarations" in the
-     * Java Language Specification.
+     * These are called "type-import-on-demand declarations" in
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @return an array of PackageDoc representing the imported packages.
      *

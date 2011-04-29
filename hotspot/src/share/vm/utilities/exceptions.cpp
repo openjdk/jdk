@@ -207,7 +207,7 @@ void Exceptions::_throw_args(Thread* thread, const char* file, int line, Symbol*
 }
 
 
-void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line) {
+void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, methodHandle method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
     klassOop k = SystemDictionary::StackOverflowError_klass();
@@ -215,13 +215,13 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
     assert(instanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
     if (StackTraceInThrowable) {
-      java_lang_Throwable::fill_in_stack_trace(exception);
+      java_lang_Throwable::fill_in_stack_trace(exception, method());
     }
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
   }
-  _throw_oop(THREAD, file, line, exception());
+  _throw(THREAD, file, line, exception);
 }
 
 void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {

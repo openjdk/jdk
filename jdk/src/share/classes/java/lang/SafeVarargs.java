@@ -70,8 +70,8 @@ import java.lang.annotation.*;
  *
  * </ul>
  *
- * @jls3 4.7 Reifiable Types
- * @jls3 8.4.1 Formal Parameters
+ * @jls 4.7 Reifiable Types
+ * @jls 8.4.1 Formal Parameters
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

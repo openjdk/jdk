@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -45,55 +46,45 @@ import sun.util.locale.InternalLocaleBuilder.CaseInsensitiveString;
 
 public class LocaleExtensions {
 
-    private SortedMap<Character, Extension> _map;
-    private String _id;
+    private final Map<Character, Extension> extensionMap;
+    private final String id;
 
-    private static final SortedMap<Character, Extension> EMPTY_MAP =
-        Collections.unmodifiableSortedMap(new TreeMap<Character, Extension>());
+    public static final LocaleExtensions CALENDAR_JAPANESE
+        = new LocaleExtensions("u-ca-japanese",
+                               UnicodeLocaleExtension.SINGLETON,
+                               UnicodeLocaleExtension.CA_JAPANESE);
 
-    public static final LocaleExtensions EMPTY_EXTENSIONS;
-    public static final LocaleExtensions CALENDAR_JAPANESE;
-    public static final LocaleExtensions NUMBER_THAI;
+    public static final LocaleExtensions NUMBER_THAI
+        = new LocaleExtensions("u-nu-thai",
+                               UnicodeLocaleExtension.SINGLETON,
+                               UnicodeLocaleExtension.NU_THAI);
 
-    static {
-        EMPTY_EXTENSIONS = new LocaleExtensions();
-        EMPTY_EXTENSIONS._id = "";
-        EMPTY_EXTENSIONS._map = EMPTY_MAP;
-
-        CALENDAR_JAPANESE = new LocaleExtensions();
-        CALENDAR_JAPANESE._id = "u-ca-japanese";
-        CALENDAR_JAPANESE._map = new TreeMap<Character, Extension>();
-        CALENDAR_JAPANESE._map.put(Character.valueOf(UnicodeLocaleExtension.SINGLETON), UnicodeLocaleExtension.CA_JAPANESE);
-
-        NUMBER_THAI = new LocaleExtensions();
-        NUMBER_THAI._id = "u-nu-thai";
-        NUMBER_THAI._map = new TreeMap<Character, Extension>();
-        NUMBER_THAI._map.put(Character.valueOf(UnicodeLocaleExtension.SINGLETON), UnicodeLocaleExtension.NU_THAI);
-    }
-
-    private LocaleExtensions() {
+    private LocaleExtensions(String id, Character key, Extension value) {
+        this.id = id;
+        this.extensionMap = Collections.singletonMap(key, value);
     }
 
     /*
-     * Package local constructor, only used by InternalLocaleBuilder.
+     * Package private constructor, only used by InternalLocaleBuilder.
      */
     LocaleExtensions(Map<CaseInsensitiveChar, String> extensions,
-            Set<CaseInsensitiveString> uattributes, Map<CaseInsensitiveString, String> ukeywords) {
-        boolean hasExtension = (extensions != null && extensions.size() > 0);
-        boolean hasUAttributes = (uattributes != null && uattributes.size() > 0);
-        boolean hasUKeywords = (ukeywords != null && ukeywords.size() > 0);
+                     Set<CaseInsensitiveString> uattributes,
+                     Map<CaseInsensitiveString, String> ukeywords) {
+        boolean hasExtension = !LocaleUtils.isEmpty(extensions);
+        boolean hasUAttributes = !LocaleUtils.isEmpty(uattributes);
+        boolean hasUKeywords = !LocaleUtils.isEmpty(ukeywords);
 
         if (!hasExtension && !hasUAttributes && !hasUKeywords) {
-            _map = EMPTY_MAP;
-            _id = "";
+            id = "";
+            extensionMap = Collections.emptyMap();
             return;
         }
 
         // Build extension map
-        _map = new TreeMap<Character, Extension>();
+        SortedMap<Character, Extension> map = new TreeMap<>();
         if (hasExtension) {
             for (Entry<CaseInsensitiveChar, String> ext : extensions.entrySet()) {
-                char key = AsciiUtil.toLower(ext.getKey().value());
+                char key = LocaleUtils.toLower(ext.getKey().value());
                 String value = ext.getValue();
 
                 if (LanguageTag.isPrivateusePrefixChar(key)) {
@@ -104,54 +95,57 @@ public class LocaleExtensions {
                     }
                 }
 
-                Extension e = new Extension(key, AsciiUtil.toLowerString(value));
-                _map.put(Character.valueOf(key), e);
+                map.put(key, new Extension(key, LocaleUtils.toLowerString(value)));
             }
         }
 
         if (hasUAttributes || hasUKeywords) {
-            TreeSet<String> uaset = null;
-            TreeMap<String, String> ukmap = null;
+            SortedSet<String> uaset = null;
+            SortedMap<String, String> ukmap = null;
 
             if (hasUAttributes) {
-                uaset = new TreeSet<String>();
+                uaset = new TreeSet<>();
                 for (CaseInsensitiveString cis : uattributes) {
-                    uaset.add(AsciiUtil.toLowerString(cis.value()));
+                    uaset.add(LocaleUtils.toLowerString(cis.value()));
                 }
             }
 
             if (hasUKeywords) {
-                ukmap = new TreeMap<String, String>();
+                ukmap = new TreeMap<>();
                 for (Entry<CaseInsensitiveString, String> kwd : ukeywords.entrySet()) {
-                    String key = AsciiUtil.toLowerString(kwd.getKey().value());
-                    String type = AsciiUtil.toLowerString(kwd.getValue());
+                    String key = LocaleUtils.toLowerString(kwd.getKey().value());
+                    String type = LocaleUtils.toLowerString(kwd.getValue());
                     ukmap.put(key, type);
                 }
             }
 
             UnicodeLocaleExtension ule = new UnicodeLocaleExtension(uaset, ukmap);
-            _map.put(Character.valueOf(UnicodeLocaleExtension.SINGLETON), ule);
+            map.put(UnicodeLocaleExtension.SINGLETON, ule);
         }
 
-        if (_map.size() == 0) {
+        if (map.isEmpty()) {
             // this could happen when only privuateuse with special variant
-            _map = EMPTY_MAP;
-            _id = "";
+            id = "";
+            extensionMap = Collections.emptyMap();
         } else {
-            _id = toID(_map);
+            id = toID(map);
+            extensionMap = map;
         }
     }
 
     public Set<Character> getKeys() {
-        return Collections.unmodifiableSet(_map.keySet());
+        if (extensionMap.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Collections.unmodifiableSet(extensionMap.keySet());
     }
 
     public Extension getExtension(Character key) {
-        return _map.get(Character.valueOf(AsciiUtil.toLower(key.charValue())));
+        return extensionMap.get(LocaleUtils.toLower(key));
     }
 
     public String getExtensionValue(Character key) {
-        Extension ext = _map.get(Character.valueOf(AsciiUtil.toLower(key.charValue())));
+        Extension ext = extensionMap.get(LocaleUtils.toLower(key));
         if (ext == null) {
             return null;
         }
@@ -159,7 +153,7 @@ public class LocaleExtensions {
     }
 
     public Set<String> getUnicodeLocaleAttributes() {
-        Extension ext = _map.get(Character.valueOf(UnicodeLocaleExtension.SINGLETON));
+        Extension ext = extensionMap.get(UnicodeLocaleExtension.SINGLETON);
         if (ext == null) {
             return Collections.emptySet();
         }
@@ -168,7 +162,7 @@ public class LocaleExtensions {
     }
 
     public Set<String> getUnicodeLocaleKeys() {
-        Extension ext = _map.get(Character.valueOf(UnicodeLocaleExtension.SINGLETON));
+        Extension ext = extensionMap.get(UnicodeLocaleExtension.SINGLETON);
         if (ext == null) {
             return Collections.emptySet();
         }
@@ -177,16 +171,16 @@ public class LocaleExtensions {
     }
 
     public String getUnicodeLocaleType(String unicodeLocaleKey) {
-        Extension ext = _map.get(Character.valueOf(UnicodeLocaleExtension.SINGLETON));
+        Extension ext = extensionMap.get(UnicodeLocaleExtension.SINGLETON);
         if (ext == null) {
             return null;
         }
         assert (ext instanceof UnicodeLocaleExtension);
-        return ((UnicodeLocaleExtension)ext).getUnicodeLocaleType(AsciiUtil.toLowerString(unicodeLocaleKey));
+        return ((UnicodeLocaleExtension)ext).getUnicodeLocaleType(LocaleUtils.toLowerString(unicodeLocaleKey));
     }
 
     public boolean isEmpty() {
-        return _map.isEmpty();
+        return extensionMap.isEmpty();
     }
 
     public static boolean isValidKey(char c) {
@@ -201,7 +195,7 @@ public class LocaleExtensions {
         StringBuilder buf = new StringBuilder();
         Extension privuse = null;
         for (Entry<Character, Extension> entry : map.entrySet()) {
-            char singleton = entry.getKey().charValue();
+            char singleton = entry.getKey();
             Extension extension = entry.getValue();
             if (LanguageTag.isPrivateusePrefixChar(singleton)) {
                 privuse = extension;
@@ -221,19 +215,21 @@ public class LocaleExtensions {
         return buf.toString();
     }
 
-
+    @Override
     public String toString() {
-        return _id;
+        return id;
     }
 
     public String getID() {
-        return _id;
+        return id;
     }
 
+    @Override
     public int hashCode() {
-        return _id.hashCode();
+        return id.hashCode();
     }
 
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
@@ -241,6 +237,6 @@ public class LocaleExtensions {
         if (!(other instanceof LocaleExtensions)) {
             return false;
         }
-        return this._id.equals(((LocaleExtensions)other)._id);
+        return id.equals(((LocaleExtensions)other).id);
     }
 }

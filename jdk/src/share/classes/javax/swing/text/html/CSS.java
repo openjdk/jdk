@@ -62,7 +62,6 @@ import javax.swing.text.*;
  *   <li>background-repeat
  *   <li>background-position
  *   <li>background
- *   <li>background-repeat
  *   <li>text-decoration (with the exception of blink and overline)
  *   <li>vertical-align (only sup and super)
  *   <li>text-align (justify is treated as center)
@@ -75,7 +74,18 @@ import javax.swing.text.*;
  *   <li>padding-right
  *   <li>padding-bottom
  *   <li>padding-left
+ *   <li>padding
+ *   <li>border-top-style
+ *   <li>border-right-style
+ *   <li>border-bottom-style
+ *   <li>border-left-style
  *   <li>border-style (only supports inset, outset and none)
+ *   <li>border-top-color
+ *   <li>border-right-color
+ *   <li>border-bottom-color
+ *   <li>border-left-color
+ *   <li>border-color
+ *   <li>list-style-image
  *   <li>list-style-type
  *   <li>list-style-position
  * </ul>

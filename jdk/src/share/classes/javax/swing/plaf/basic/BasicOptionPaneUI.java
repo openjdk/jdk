@@ -911,9 +911,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * right. If <code>syncAllWidths</code> is true, the widths of each
      * component will be set to the largest preferred size width.
      *
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicOptionPaneUI.
+     * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public static class ButtonAreaLayout implements LayoutManager {
         protected boolean           syncAllWidths;
@@ -1115,9 +1114,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicOptionPaneUI.
+     * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
         /**
@@ -1161,9 +1159,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of BasicOptionPaneUI.
+     * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public class ButtonActionListener implements ActionListener {
         protected int buttonIndex;
