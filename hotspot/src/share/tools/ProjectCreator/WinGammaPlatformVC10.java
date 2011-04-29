@@ -497,6 +497,9 @@ class CompilerInterfaceVC10 extends CompilerInterface {
             addAttr(rv, "TargetMachine", "MachineX64");
         }
 
+        // We always want the /DEBUG option to get full symbol information in the pdb files
+        addAttr(rv, "GenerateDebugInformation", "true");
+
         return rv;
     }
 
@@ -504,8 +507,7 @@ class CompilerInterfaceVC10 extends CompilerInterface {
     Vector getDebugLinkerFlags() {
         Vector rv = new Vector();
 
-        // /DEBUG option
-        addAttr(rv, "GenerateDebugInformation", "true");
+        // Empty now that /DEBUG option is used by all configs
 
         return rv;
     }

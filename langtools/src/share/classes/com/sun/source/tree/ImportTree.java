@@ -35,7 +35,7 @@ package com.sun.source.tree;
  *   static import <em>qualifiedIdentifier</em> ;
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 7.5"
+ * @jls section 7.5
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

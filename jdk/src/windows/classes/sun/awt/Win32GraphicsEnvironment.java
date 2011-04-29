@@ -72,12 +72,6 @@ public class Win32GraphicsEnvironment
     }
 
     /**
-     * Noop function that just acts as an entry point for someone to force
-     * a static initialization of this class.
-     */
-    public static void init() {}
-
-    /**
      * Initializes native components of the graphics environment.  This
      * includes everything from the native GraphicsDevice elements to
      * the DirectX rendering layer.
@@ -207,14 +201,6 @@ public class Win32GraphicsEnvironment
 /*
  * ----END DISPLAY CHANGE SUPPORT----
  */
-
-    /**
-     * Whether registerFontFile expects absolute or relative
-     * font file names.
-     */
-    protected boolean useAbsoluteFontFileNames() {
-        return false;
-    }
 
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;

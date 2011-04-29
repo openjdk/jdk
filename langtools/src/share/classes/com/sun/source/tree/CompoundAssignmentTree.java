@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   <em>variable</em> <em>operator</em> <em>expression</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 15.26.2"
+ * @jls section 15.26.2
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

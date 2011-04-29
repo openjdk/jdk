@@ -63,6 +63,12 @@ bool Flag::is_unlocker() const {
 
 bool Flag::is_unlocked() const {
   if (strcmp(kind, "{diagnostic}") == 0) {
+    if (strcmp(name, "EnableInvokeDynamic") == 0 && UnlockExperimentalVMOptions && !UnlockDiagnosticVMOptions) {
+      // transitional logic to allow tests to run until they are changed
+      static int warned;
+      if (++warned == 1)  warning("Use -XX:+UnlockDiagnosticVMOptions before EnableInvokeDynamic flag");
+      return true;
+    }
     return UnlockDiagnosticVMOptions;
   } else if (strcmp(kind, "{experimental}") == 0 ||
              strcmp(kind, "{C2 experimental}") == 0) {

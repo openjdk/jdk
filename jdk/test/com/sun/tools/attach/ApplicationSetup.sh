@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ rm -f ${OUTPUTFILE}
 
 startApplication() 
 {
-  ${JAVA} $1 $2 $3 -jar "${TESTCLASSES}"/Application.jar > ${OUTPUTFILE} &
+  # put all output from the app into ${OUTPUTFILE}
+  ${JAVA} $1 $2 $3 -jar "${TESTCLASSES}"/Application.jar > ${OUTPUTFILE} 2>&1 &
   pid="$!"
 
   # MKS creates an intermediate shell to launch ${JAVA} so

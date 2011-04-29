@@ -1671,19 +1671,13 @@ void ClassVerifier::verify_ldc(
       VerificationType::long_type(),
       VerificationType::long2_type(), CHECK_VERIFY(this));
   } else if (tag.is_method_handle()) {
-    Symbol* methodHandle_name = vmSymbols::java_lang_invoke_MethodHandle();
-    if (AllowTransitionalJSR292 && !Universe::is_bootstrapping())
-      methodHandle_name = SystemDictionaryHandles::MethodHandle_klass()->name();
     current_frame->push_stack(
       VerificationType::reference_type(
-        methodHandle_name), CHECK_VERIFY(this));
+        vmSymbols::java_lang_invoke_MethodHandle()), CHECK_VERIFY(this));
   } else if (tag.is_method_type()) {
-    Symbol* methodType_name = vmSymbols::java_lang_invoke_MethodType();
-    if (AllowTransitionalJSR292 && !Universe::is_bootstrapping())
-      methodType_name = SystemDictionaryHandles::MethodType_klass()->name();
     current_frame->push_stack(
       VerificationType::reference_type(
-        methodType_name), CHECK_VERIFY(this));
+        vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
   } else {
     verify_error(bci, "Invalid index in ldc");
     return;
@@ -1950,8 +1944,7 @@ void ClassVerifier::verify_invoke_instructions(
   unsigned int types = (opcode == Bytecodes::_invokeinterface
                                 ? 1 << JVM_CONSTANT_InterfaceMethodref
                       : opcode == Bytecodes::_invokedynamic
-                                ? ((AllowTransitionalJSR292 ? 1 << JVM_CONSTANT_NameAndType : 0)
-                                  |1 << JVM_CONSTANT_InvokeDynamic)
+                                ? 1 << JVM_CONSTANT_InvokeDynamic
                                 : 1 << JVM_CONSTANT_Methodref);
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 

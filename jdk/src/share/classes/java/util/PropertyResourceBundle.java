@@ -104,8 +104,9 @@ import sun.util.ResourceBundleEnumeration;
  * from an InputStream or a Reader, which represents a property file.
  * Constructing a PropertyResourceBundle instance from an InputStream requires
  * that the input stream be encoded in ISO-8859-1.  In that case, characters
- * that cannot be represented in ISO-8859-1 encoding must be represented by
- * <a href="http://java.sun.com/docs/books/jls/third_edition/html/lexical.html#3.3">Unicode Escapes</a>,
+ * that cannot be represented in ISO-8859-1 encoding must be represented by Unicode Escapes
+ * as defined in section 3.3 of
+ * <cite>The Java&trade; Language Specification</cite>
  * whereas the other constructor which takes a Reader does not have that limitation.
  *
  * @see ResourceBundle
