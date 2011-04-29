@@ -652,43 +652,37 @@ void CardTableModRefBS::verify() {
 }
 
 #ifndef PRODUCT
-class GuaranteeNotModClosure: public MemRegionClosure {
-  CardTableModRefBS* _ct;
-public:
-  GuaranteeNotModClosure(CardTableModRefBS* ct) : _ct(ct) {}
-  void do_MemRegion(MemRegion mr) {
-    jbyte* entry = _ct->byte_for(mr.start());
-    guarantee(*entry != CardTableModRefBS::clean_card,
-              "Dirty card in region that should be clean");
+void CardTableModRefBS::verify_region(MemRegion mr,
+                                      jbyte val, bool val_equals) {
+  jbyte* start    = byte_for(mr.start());
+  jbyte* end      = byte_for(mr.last());
+  bool   failures = false;
+  for (jbyte* curr = start; curr <= end; ++curr) {
+    jbyte curr_val = *curr;
+    bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);
+    if (failed) {
+      if (!failures) {
+        tty->cr();
+        tty->print_cr("== CT verification failed: ["PTR_FORMAT","PTR_FORMAT"]");
+        tty->print_cr("==   %sexpecting value: %d",
+                      (val_equals) ? "" : "not ", val);
+        failures = true;
+      }
+      tty->print_cr("==   card "PTR_FORMAT" ["PTR_FORMAT","PTR_FORMAT"], "
+                    "val: %d", curr, addr_for(curr),
+                    (HeapWord*) (((size_t) addr_for(curr)) + card_size),
+                    (int) curr_val);
+    }
   }
-};
-
-void CardTableModRefBS::verify_clean_region(MemRegion mr) {
-  GuaranteeNotModClosure blk(this);
-  non_clean_card_iterate_serial(mr, &blk);
+  guarantee(!failures, "there should not have been any failures");
 }
 
-// To verify a MemRegion is entirely dirty this closure is passed to
-// dirty_card_iterate. If the region is dirty do_MemRegion will be
-// invoked only once with a MemRegion equal to the one being
-// verified.
-class GuaranteeDirtyClosure: public MemRegionClosure {
-  CardTableModRefBS* _ct;
-  MemRegion _mr;
-  bool _result;
-public:
-  GuaranteeDirtyClosure(CardTableModRefBS* ct, MemRegion mr)
-    : _ct(ct), _mr(mr), _result(false) {}
-  void do_MemRegion(MemRegion mr) {
-    _result = _mr.equals(mr);
-  }
-  bool result() const { return _result; }
-};
+void CardTableModRefBS::verify_not_dirty_region(MemRegion mr) {
+  verify_region(mr, dirty_card, false /* val_equals */);
+}
 
 void CardTableModRefBS::verify_dirty_region(MemRegion mr) {
-  GuaranteeDirtyClosure blk(this, mr);
-  dirty_card_iterate(mr, &blk);
-  guarantee(blk.result(), "Non-dirty cards in region that should be dirty");
+  verify_region(mr, dirty_card, true /* val_equals */);
 }
 #endif
 
