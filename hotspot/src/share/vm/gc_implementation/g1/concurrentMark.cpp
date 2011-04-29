@@ -1899,7 +1899,7 @@ void ConcurrentMark::completeCleanup() {
   while (!_cleanup_list.is_empty()) {
     HeapRegion* hr = _cleanup_list.remove_head();
     assert(hr != NULL, "the list was not empty");
-    hr->rem_set()->clear();
+    hr->par_clear();
     tmp_free_list.add_as_tail(hr);
 
     // Instead of adding one region at a time to the secondary_free_list,
