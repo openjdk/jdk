@@ -848,10 +848,9 @@ public class Throwable implements Serializable {
                 throw new NullPointerException("stackTrace[" + i + "]");
         }
 
-        if (this.stackTrace == null) // Immutable stack
-            return;
-
         synchronized (this) {
+            if (this.stackTrace == null) // Immutable stack
+                return;
             this.stackTrace = defensiveCopy;
         }
     }
@@ -958,18 +957,15 @@ public class Throwable implements Serializable {
         // trace field is a valid value indicating the stack trace
         // should not be set.
         getOurStackTrace();
-        ObjectOutputStream.PutField fields = s.putFields();
 
-        fields.put("detailMessage", detailMessage);
-        fields.put("cause", cause);
-        // Serialize a null stacktrace using the stack trace sentinel.
-        if (stackTrace == null)
-            fields.put("stackTrace", SentinelHolder.STACK_TRACE_SENTINEL);
-        else
-            fields.put("stackTrace", stackTrace);
-        fields.put("suppressedExceptions", suppressedExceptions);
-
-        s.writeFields();
+        StackTraceElement[] oldStackTrace = stackTrace;
+        try {
+            if (stackTrace == null)
+                stackTrace = SentinelHolder.STACK_TRACE_SENTINEL;
+            s.defaultWriteObject();
+        } finally {
+            stackTrace = oldStackTrace;
+        }
     }
 
     /**
