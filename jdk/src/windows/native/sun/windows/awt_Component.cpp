@@ -549,8 +549,6 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
 
     m_hwnd = hwnd;
 
-    ImmAssociateContext(NULL);
-
     SetDrawState((jint)JAWT_LOCK_SURFACE_CHANGED |
         (jint)JAWT_LOCK_BOUNDS_CHANGED |
         (jint)JAWT_LOCK_CLIP_CHANGED);
@@ -2022,25 +2020,6 @@ MsgRouting AwtComponent::WmExitMenuLoop(BOOL isTrackPopupMenu)
 
 MsgRouting AwtComponent::WmShowWindow(BOOL show, UINT status)
 {
-    // NULL-InputContext is associated to all window just after they created.
-    // ( see CreateHWnd() )
-    // But to TextField and TextArea on Win95, valid InputContext is associated
-    // by system after that. This is not happen on NT4.0
-    // For workaround, force context to NULL here.
-
-    // Fix for 4730228
-    // Check if we already have Java-associated input method
-    HIMC context = 0;
-    if (m_InputMethod != NULL) {
-        // If so get the appropriate context from it and use it instead of empty context
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        context = (HIMC)(UINT_PTR)(JNU_GetFieldByName(env, NULL, m_InputMethod, "context", "I").i);
-    }
-
-    if (ImmGetContext() != 0 && ImmGetContext() != context) {
-        ImmAssociateContext(context);
-    }
-
     return mrDoDefault;
 }
 
