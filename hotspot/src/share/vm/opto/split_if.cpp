@@ -399,6 +399,9 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
 #ifndef PRODUCT
   if( PrintOpto && VerifyLoopOptimizations )
     tty->print_cr("Split-if");
+  if (TraceLoopOpts) {
+    tty->print_cr("SplitIf");
+  }
 #endif
   C->set_major_progress();
   Node *region = iff->in(0);

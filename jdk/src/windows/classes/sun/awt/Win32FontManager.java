@@ -62,8 +62,11 @@ public class Win32FontManager extends SunFontManager {
                     String eudcFile = getEUDCFontFile();
                     if (eudcFile != null) {
                         try {
+                            /* Must use Java rasteriser since GDI doesn't
+                             * enumerate (allow direct use) of EUDC fonts.
+                             */
                             eudcFont = new TrueTypeFont(eudcFile, null, 0,
-                                                        false);
+                                                        true);
                         } catch (FontFormatException e) {
                         }
                     }

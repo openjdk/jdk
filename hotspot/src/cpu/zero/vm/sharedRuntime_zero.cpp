@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,17 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 methodHandle method,
-                                                int total_in_args,
-                                                int comp_args_on_stack,
-                                                BasicType *in_sig_bt,
-                                                VMRegPair *in_regs,
+                                                int compile_id,
+                                                int total_args_passed,
+                                                int max_arg,
+                                                BasicType *sig_bt,
+                                                VMRegPair *regs,
                                                 BasicType ret_type) {
 #ifdef SHARK
   return SharkCompiler::compiler()->generate_native_wrapper(masm,
                                                             method,
-                                                            in_sig_bt,
+                                                            compile_id,
+                                                            sig_bt,
                                                             ret_type);
 #else
   ShouldNotCallThis();

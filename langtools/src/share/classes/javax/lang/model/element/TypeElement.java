@@ -101,7 +101,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * an empty name if none
      *
      * @see Elements#getBinaryName
-     * @jls3 6.7 Fully Qualified Names and Canonical Names
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      */
     Name getQualifiedName();
 

@@ -19,29 +19,23 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH orbd 1 "02 Jun 2010"
+.TH orbd 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
+.SH "̾��"
 orbd \- The Object Request Broker Daemon
 .LP
-.RS 3
-
+.LP
+\f3orbd\fP �ϡ����饤����Ȥ��� CORBA �Ķ��Υ����С��ˤ����³���֥������Ȥ�Ʃ��Ū�˸������ƸƤӽФ�����˻��Ѥ��ޤ���
 .LP
 .LP
-\f3orbd\fP は、クライアントから CORBA 環境のサーバーにある持続オブジェクトを透過的に検索して呼び出すために使用します。
-.LP
-.LP
-\f3関連項目:\fP 
+\f3��Ϣ����:\fP 
 .na
-\f2ネームサービス\fP @
+\f2�͡��ॵ���ӥ�\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -52,42 +46,40 @@ orbd <\fP\f3options\fP\f3>
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3orbd\fP ツールに含まれるサーバーマネージャーを使うと、クライアントは CORBA 環境でサーバー上にある持続オブジェクトを透過的に検索して呼び出すことができます。持続サーバーは、ネームサービスに持続オブジェクト参照を発行する際、サーバーのポート番号の代わりに OBRD のポート番号をオブジェクト参照に含めます。持続オブジェクト参照のオブジェクト参照に ORBD ポート番号を含めることには、次のような利点があります。
+\f3orbd\fP �ġ���˴ޤޤ�륵���С��ޥ͡����㡼��Ȥ��ȡ����饤����Ȥ� CORBA �Ķ��ǥ����С���ˤ����³���֥������Ȥ�Ʃ��Ū�˸������ƸƤӽФ����Ȥ��Ǥ��ޤ�����³�����С��ϡ��͡��ॵ���ӥ��˻�³���֥������Ȼ��Ȥ�ȯ�Ԥ���ݡ������С��Υݡ����ֹ������� OBRD �Υݡ����ֹ�򥪥֥������Ȼ��Ȥ˴ޤ�ޤ�����³���֥������Ȼ��ȤΥ��֥������Ȼ��Ȥ� ORBD �ݡ����ֹ��ޤ�뤳�Ȥˤϡ����Τ褦������������ޤ���
 .LP
 .RS 3
 .TP 2
 o
-ネームサービスにあるオブジェクト参照が、サーバーのライフタイムと無関係になる。オブジェクト参照は、始めてインストールされたときはネームサービスのサーバーによりネームサービスに発行されますが、その後は、サーバーの開始またはシャットダウンの回数にかかわらず、ORBD がいつでも呼び出したクライアントに正しいオブジェクト参照を返します。 
+�͡��ॵ���ӥ��ˤ��륪�֥������Ȼ��Ȥ��������С��Υ饤�ե������̵�ط��ˤʤ롣���֥������Ȼ��Ȥϡ��Ϥ�ƥ��󥹥ȡ��뤵�줿�Ȥ��ϥ͡��ॵ���ӥ��Υ����С��ˤ��͡��ॵ���ӥ���ȯ�Ԥ���ޤ��������θ�ϡ������С��γ��Ϥޤ��ϥ���åȥ�����β���ˤ�����餺��ORBD �����ĤǤ�ƤӽФ������饤����Ȥ����������֥������Ȼ��Ȥ��֤��ޤ��� 
 .TP 2
 o
-クライアントは一度だけネーミングサービスのオブジェクト参照をルックアップする必要があるが、その後はサーバーのライフタイムによる変更とは無関係にこの参照を利用することができる 
+���饤����Ȥϰ��٤����͡��ߥ󥰥����ӥ��Υ��֥������Ȼ��Ȥ��å����åפ���ɬ�פ����뤬�����θ�ϥ����С��Υ饤�ե�����ˤ���ѹ��Ȥ�̵�ط��ˤ��λ��Ȥ����Ѥ��뤳�Ȥ��Ǥ��� 
 .RE
 
 .LP
 .LP
-ORBD のサーバーマネージャーにアクセスするには、servertool(1) を使用してサーバーを起動する必要があります。 servertool は、アプリケーションプログラマが、持続サーバーの登録、登録解除、起動、およびシャットダウンを行うためのコマンド行インタフェースです。サーバーマネージャーの詳細については、このドキュメントの\f2「サーバーマネージャー」\fPを参照してください。
+ORBD �Υ����С��ޥ͡����㡼�˥�����������ˤϡ�servertool(1) ����Ѥ��ƥ����С���ư����ɬ�פ�����ޤ���servertool �ϡ����ץꥱ�������ץ�����ޤ�����³�����С�����Ͽ����Ͽ�������ư������ӥ���åȥ������Ԥ�����Υ��ޥ�ɹԥ��󥿥ե������Ǥ��������С��ޥ͡����㡼�ξܺ٤ˤĤ��Ƥϡ����Υɥ�����ȤΡ֥����С��ޥ͡����㡼�פ򻲾Ȥ��Ƥ���������
 .LP
 .LP
-\f2orbd\fP を起動すると、ネームサービスも起動されます。ネームサービスについては、
+\f2orbd\fP ��ư����ȡ��͡��ॵ���ӥ��ⵯư����ޤ����͡��ॵ���ӥ��ˤĤ��Ƥϡ�
 .na
-\f2「ネームサービス」\fP @
+\f2�֥͡��ॵ���ӥ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html�򻲾Ȥ��Ƥ���������
 .LP
-.SH "オプション"
+.SH "���ץ����"
 .LP
 .SS 
-必須オプション
+ɬ�ܥ��ץ����
 .LP
 .RS 3
 .TP 3
 \-ORBInitialPort nameserverport 
-ネームサーバーを起動するポートの番号を指定します。\f2orbd\fP は、起動されると、このポート上で着信要求を待機します。Solaris ソフトウェアの使用時は、1024 より小さいポートでプロセスを開始する場合、root ユーザーになる必要があります。 このため、1024 または 1024 より大きいポートを使用することをお勧めします。 (必須) 
+�͡��ॵ���С���ư����ݡ��Ȥ��ֹ����ꤷ�ޤ���\f2orbd\fP �ϡ���ư�����ȡ����Υݡ��Ⱦ���忮�׵���Ե����ޤ���Solaris ���եȥ���������Ѥ����硢1024 ��꾮�����ݡ��Ⱦ�ǥץ������򳫻Ϥ���ˤϡ�root �桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ1024 �ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ򤪴��ᤷ�ޤ���(ɬ��) 
 .RE
 
 .LP
@@ -95,75 +87,75 @@ http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.htmlを参照�
 
 .LP
 .SS 
-その他のオプション
+����¾�Υ��ץ����
 .LP
 .RS 3
 .TP 3
 \-port port 
-ORBD を起動するポートを指定します。 ORBD は、このポートで、持続オブジェクトに対する要求を受け取ります。このポートのデフォルト値は 1049 です。 このポート番号は持続 Interoperable Object References (IOR) のポートフィールドに追加されます。(省略可) 
+ORBD ��ư����ݡ��Ȥ���ꤷ�ޤ���ORBD �ϡ����Υݡ��Ȥǡ���³���֥������Ȥ��Ф����׵��������ޤ������Υݡ��ȤΥǥե�����ͤ� 1049 �Ǥ������Υݡ����ֹ椬����³ Interoperable Object References (IOR). �Υݡ��ȥե�����ɤ��ɲä���ޤ���(��ά��) 
 .RE
 
 .LP
 .RS 3
 .TP 3
 \-defaultdb directory 
-ORBD 持続格納ディレクトリ \f2orb.db\fP が作成されるベースディレクトリを指定します。このオプションが指定されていない場合、デフォルト値は「./orb.db」となります。(省略可) 
+ORBD ��³��Ǽ�ǥ��쥯�ȥ� \f2orb.db\fP �����������١����ǥ��쥯�ȥ����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ���硢�ǥե�����ͤϡ�./orb.db�פȤʤ�ޤ���(��ά��) 
 .RE
 
 .LP
 .RS 3
 .TP 3
 \-serverPollingTime milliseconds 
-\f2servertool\fP を使用して登録された持続サーバーが正常に動作していることを ORBD が確認する回数を指定します。デフォルト値は 1,000 ミリ秒です。 「ミリ秒」の指定値は有効な整数値である必要があります。(省略可) 
+\f2servertool\fP ����Ѥ�����Ͽ���줿��³�����С��������ư��Ƥ��뤳�Ȥ� ORBD ����ǧ����������ꤷ�ޤ����ǥե�����ͤ� 1,000 �ߥ��äǤ���\f2milliseconds\fP �˻��ꤹ���ͤϡ�ͭ�������������Ǥʤ���Фʤ�ޤ���(��ά��) 
 .RE
 
 .LP
 .RS 3
 .TP 3
 \-serverStartupDelay milliseconds 
-\f2servertool\fP を使用して登録された持続サーバーを再起動してから、位置転送の例外を送信するまでの ORBD の待機時間を指定します。デフォルト値は 1,000 ミリ秒です。 「ミリ秒」の指定値は有効な整数値である必要があります。(省略可) 
+\f2servertool\fP ����Ѥ�����Ͽ���줿��³�����С���Ƶ�ư���Ƥ��顢����ž�����㳰����������ޤǤ� ORBD ���Ե����֤���ꤷ�ޤ����ǥե�����ͤ� 1,000 �ߥ��äǤ���\f2milliseconds\fP �˻��ꤹ���ͤϡ�ͭ�������������Ǥʤ���Фʤ�ޤ���(��ά��) 
 .RE
 
 .LP
 .RS 3
 .TP 3
 \-Joption 
-Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って背後の実行環境にオプションを渡すことはよく行われています。 
+Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���\f2option\fP �ˤϡ�java(1)�Υ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ���\f3\-J\fP ��Ȥä��ظ�μ¹ԴĶ��˥��ץ������Ϥ����ȤϤ褯�Ԥ��Ƥ��ޤ��� 
 .TP 3
  
 .RE
 
 .LP
-.SH "ネームサービスの起動と停止"
+.SH "�͡��ॵ���ӥ��ε�ư�����"
 .LP
 .LP
-ネームサービスは、
+�͡��ॵ���ӥ��ϡ�
 .na
-\f2CORBA オブジェクト\fP @
+\f2CORBA ���֥�������\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#CORBA%20objectにネーミングを可能にする CORBA サービスです。 ネーミングは名前をオブジェクト参照にバインドすることにより可能になります。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#CORBA%20object�˥͡��ߥ󥰤��ǽ�ˤ��� CORBA �����ӥ��Ǥ����͡��ߥ󥰤�̾���򥪥֥������Ȼ��Ȥ˥Х���ɤ��뤳�Ȥˤ���ǽ�ˤʤ�ޤ���
 .na
-\f2「ネームバインディング」\fP @
+\f2�֥͡���Х���ǥ��󥰡�\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#name%20bindingはネームサービスに格納され、クライアントは名前を与えて目的のオブジェクト参照を取得できます。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#name%20binding�ϥ͡��ॵ���ӥ��˳�Ǽ���졢���饤����Ȥ�̾����Ϳ������Ū�Υ��֥������Ȼ��Ȥ�����Ǥ��ޤ���
 .LP
 .LP
-ORBD は、クライアントまたはサーバーを実行する前に起動します。ORBD には、持続ネームサービスおよび一時ネームサービスが組み込まれています。 これらはどちらも COS ネームサービスの実装です。
+ORBD �ϡ����饤����Ȥޤ��ϥ����С���¹Ԥ������˵�ư���ޤ���ORBD �ˤϡ���³�͡��ॵ���ӥ�����Ӱ���͡��ॵ���ӥ����Ȥ߹��ޤ�Ƥ��ޤ��������Ϥɤ���� COS �͡��ॵ���ӥ��μ����Ǥ���
 .LP
 .LP
-\f3「持続」ネームサービス\fPは、ネーミングコンテキストに対して持続性を提供します。つまり、この情報は、サービスの停止や起動後にも維持され、サービスに障害が発生した場合でも回復できます。ORBD を再起動すると、持続ネームサービスはネーミングコンテキストのグラフを復元し、すべてのクライアントとサーバーの名前のバインディングが保持されます。
+\f3�ֻ�³�ץ͡��ॵ���ӥ�\fP�ϡ��͡��ߥ󥰥���ƥ����Ȥ��Ф��ƻ�³�����󶡤��ޤ����Ĥޤꡢ���ξ���ϡ������ӥ�����ߤ䵯ư��ˤ�ݻ����졢�����ӥ��˾㳲��ȯ���������Ǥ�����Ǥ��ޤ���ORBD ��Ƶ�ư����ȡ���³�͡��ॵ���ӥ��ϥ͡��ߥ󥰥���ƥ����ȤΥ���դ������������٤ƤΥ��饤����Ȥȥ����С���̾���ΥХ���ǥ��󥰤��ݻ�����ޤ���
 .LP
 .LP
 \ 
 .LP
 .LP
-下位互換性のため、旧バージョンの JDK に同梱されていた\f3一時ネームサービス\fPが、今回のリリースの J2SE にも同梱されています。一時ネームサービスでは、ネームサービスの実行中にのみネーミングコンテキストが保持されます。サービスが中断されると、ネーミングコンテキストは失われます。
+���̸ߴ����Τ��ᡢ��С������� JDK ��Ʊ������Ƥ���\f2����͡��ॵ���ӥ�\fP��������Υ�꡼���� J2SE �ˤ�Ʊ������Ƥ��ޤ�������͡��ॵ���ӥ��Ǥϡ��͡��ॵ���ӥ��μ¹���ˤΤߥ͡��ߥ󥰥���ƥ����Ȥ��ݻ�����ޤ��������ӥ������Ǥ����ȡ��͡��ߥ󥰥���ƥ����Ȥϼ����ޤ���
 .LP
 .LP
-\f2\-ORBInitialPort\fP 引数は、\f2orbd\fP の必須のコマンド行引数で、ネームサービスが実行されるポートの番号を設定するために使われます。以下の説明では、Java\ IDL Object Request Broker Daemon 用にポート 1050 を使用できることを前提としています。Solaris ソフトウェアの使用時は、1024 より小さいポートでプロセスを開始する場合は、root ユーザーになる必要があります。 このため、1024 または 1024 より大きいポートを使用することをお勧めします。
+\f2\-ORBInitialPort\fP �����ϡ�\f2orbd\fP ��ɬ�ܤΥ��ޥ�ɹ԰����ǡ��͡��ॵ���ӥ����¹Ԥ����ݡ��Ȥ��ֹ�����ꤹ�뤿��˻Ȥ��ޤ����ʲ��������Ǥϡ�JavaIDL Object Request Broker Daemon �Ѥ˥ݡ��� 1050 ����ѤǤ��뤳�Ȥ�����Ȥ��Ƥ��ޤ���Solaris ���եȥ���������Ѥ����硢1024 ��꾮�����ݡ��Ⱦ�ǥץ������򳫻Ϥ���ˤϡ�root �桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ1024 �ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ򤪴��ᤷ�ޤ���ɬ�פǤ�����̤Υݡ��Ȥ��ѹ����Ƥ���������
 .LP
 .LP
-UNIX コマンドシェルで \f2orbd\fP を起動するには、次のように入力します。
+UNIX ���ޥ�ɥ������ \f2orbd\fP ��ư����ˤϡ����Τ褦�����Ϥ��ޤ���
 .LP
 .nf
 \f3
@@ -175,7 +167,7 @@ UNIX コマンドシェルで \f2orbd\fP を起動するには、次のように
 
 .LP
 .LP
-Windows の MS\-DOS システムプロンプトでは、次のように入力します。
+Windows �� MS\-DOS �����ƥ�ץ���ץȤǤϡ����Τ褦�����Ϥ��ޤ���
 .LP
 .nf
 \f3
@@ -187,7 +179,7 @@ Windows の MS\-DOS システムプロンプトでは、次のように入力し
 
 .LP
 .LP
-これで ORBD が実行され、サーバーとクライアントのアプリケーションを実行できるようになります。クライアントとサーバーのアプリケーションは、実行時に、ネームサービスが実行されているポートの番号 (必要な場合はさらにマシン名) を認識している必要があります。これを実現する 1 つの方法は、次のコードをアプリケーションに追加することです。
+����� ORBD ���¹Ԥ��졢�����С��ȥ��饤����ȤΥ��ץꥱ��������¹ԤǤ���褦�ˤʤ�ޤ������饤����Ȥȥ����С��Υ��ץꥱ�������ϡ��¹Ի��ˡ��͡��ॵ���ӥ����¹Ԥ���Ƥ���ݡ��Ȥ��ֹ� (ɬ�פʾ��Ϥ���˥ޥ���̾) ��ǧ�����Ƥ���ɬ�פ�����ޤ��������¸����� 1 �Ĥ���ˡ�ϡ����Υ����ɤ򥢥ץꥱ���������ɲä��뤳�ȤǤ���
 .LP
 .nf
 \f3
@@ -205,7 +197,7 @@ Windows の MS\-DOS システムプロンプトでは、次のように入力し
 
 .LP
 .LP
-この例では、ネームサービスは、ホスト MyHost のポート 1050 上で実行されます。別の方法として、コマンド行からサーバーまたはクライアントのアプリケーションを実行するときに、ポート番号またはマシン名あるいはその両方を指定する方法もあります。たとえば、次のコマンド行オプションを使用して、「HelloApplication」を起動できます。
+������Ǥϡ��͡��ॵ���ӥ��ϡ��ۥ��� MyHost �Υݡ��� 1050 ��Ǽ¹Ԥ���ޤ����̤���ˡ�Ȥ��ơ����ޥ�ɹԤ��饵���С��ޤ��ϥ��饤����ȤΥ��ץꥱ��������¹Ԥ���Ȥ��ˡ��ݡ����ֹ�ޤ��ϥޥ���̾���뤤�Ϥ���ξ������ꤹ����ˡ�⤢��ޤ������Ȥ��С����Υ��ޥ�ɹԥ��ץ�������Ѥ��ơ���HelloApplication�פ�ư�Ǥ��ޤ���
 .LP
 .nf
 \f3
@@ -217,35 +209,35 @@ Windows の MS\-DOS システムプロンプトでは、次のように入力し
 
 .LP
 .LP
-ネームサービスを停止するには、適切なオペレーティングシステムコマンドを使用します。 たとえば、Solaris では \f2pkill orbd\fP を使用し、\f2orbd\fP が実行されている DOS ウィンドウでは \f2Ctrl+C\fP キーを使用します。一時ネームサービスの場合は、サービスが終了されると、ネームサービスに登録された名前が消去される場合があります。Java IDL ネームサービスは、明示的に停止されるまで実行されます。
+�͡��ॵ���ӥ�����ߤ���ˤϡ�Ŭ�ڤʥ��ڥ졼�ƥ��󥰥����ƥॳ�ޥ�ɤ���Ѥ��ޤ������Ȥ��С�Solaris ��� \f2pkill orbd\fP \f2��¹Ԥ����ꡢ\fP \f2orbd\fP ��ư����� DOS ������ɥ��� Ctrl+C �����򲡤����ꤷ�ޤ�������͡��ॵ���ӥ��ξ��ϡ������ӥ�����λ�����ȡ��͡��ॵ���ӥ�����Ͽ���줿̾�����õ����礬����ޤ���Java IDL �͡��ॵ���ӥ��ϡ�����Ū����ߤ����ޤǼ¹Ԥ���ޤ���
 .LP
 .LP
-ORDB に含まれるネームサービスの詳細については、
+ORDB �˴ޤޤ��͡��ॵ���ӥ��ξܺ٤ˤĤ��Ƥϡ�
 .na
-\f2「ネームサービス」\fP @
+\f2�֥͡��ॵ���ӥ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html�򻲾Ȥ��Ƥ���������
 .LP
-.SH "サーバーマネージャー"
+.SH "�����С��ޥ͡����㡼"
 .LP
 .LP
-ORBD のサーバーマネージャーにアクセスして持続サーバーを実行するには、servertool(1) を使用してサーバーを起動する必要があります。 servertool は、アプリケーションプログラマが、持続サーバーの登録、登録解除、起動、およびシャットダウンを行うためのコマンド行インタフェースです。servertool を使用してサーバーを起動する場合は、\f2orbd\fP が実行されている場所と同じポートとホストで起動する必要があります。サーバーを異なるポートで実行すると、ローカルコンテキスト用にデータベースに保存されている情報が無効になり、サービスが正しく動作しません。
+ORBD �Υ����С��ޥ͡����㡼�˥����������ƻ�³�����С���¹Ԥ���ˤϡ�servertool(1) ����Ѥ��ƥ����С���ư����ɬ�פ�����ޤ���servertool �ϡ����ץꥱ�������ץ�����ޤ�����³�����С�����Ͽ����Ͽ�������ư������ӥ���åȥ������Ԥ�����Υ��ޥ�ɹԥ��󥿥ե������Ǥ���\f2servertool\fP ����Ѥ��ƥ����С���ư������ϡ�\f2orbd\fP ���¹Ԥ���Ƥ������Ʊ���ݡ��Ȥȥۥ��Ȥǵ�ư����ɬ�פ�����ޤ��������С���ۤʤ�ݡ��ȤǼ¹Ԥ���ȡ��������륳��ƥ������Ѥ˥ǡ����١�������¸����Ƥ������̵���ˤʤꡢ�����ӥ���������ư��ޤ���
 .LP
 .SS 
-サーバーマネージャー:例
+�����С��ޥ͡����㡼: ��
 .LP
 .LP
-デモ用の
+�ǥ��Ѥ�
 .na
-\f2サンプルチュートリアル\fP @
+\f2����ץ���塼�ȥꥢ��\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlExample.htmlを使用し、チュートリアルの手順に従って、\f2idlj\fP コンパイラと \f2javac\fP コンパイラを実行します。サーバーマネージャーを実行するには、次の手順に従ってアプリケーションを実行します。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlExample.html����Ѥ������塼�ȥꥢ��μ��˽��äơ�\f2idlj\fP ����ѥ���� \f2javac\fP ����ѥ����¹Ԥ��ޤ��������С��ޥ͡����㡼��¹Ԥ���ˤϡ����μ��˽��äƥ��ץꥱ��������¹Ԥ��ޤ���
 .LP
 .LP
-\f2orbd\fP を起動します。
+\f2orbd\fP ��ư���ޤ���
 .LP
 .LP
-UNIX コマンドシェルで \f2orbd\fP を起動するには、次のように入力します。
+UNIX ���ޥ�ɥ������ \f2orbd\fP ��ư����ˤϡ����Τ褦�����Ϥ��ޤ���
 .LP
 .LP
 \ 
@@ -260,7 +252,7 @@ UNIX コマンドシェルで \f2orbd\fP を起動するには、次のように
 
 .LP
 .LP
-Windows の MS\-DOS システムプロンプトでは、次のように入力します。
+Windows �� MS\-DOS �����ƥ�ץ���ץȤǤϡ����Τ褦�����Ϥ��ޤ���
 .LP
 .nf
 \f3
@@ -272,13 +264,13 @@ Windows の MS\-DOS システムプロンプトでは、次のように入力し
 
 .LP
 .LP
-\f21050\fP はネームサーバーを実行するポートです。\f2\-ORBInitialPort\fP は必要なコマンド行の引数です。Solaris ソフトウェアの使用時は、1024 より小さいポートでプロセスを開始する場合は、root ユーザーになる必要があります。 このため、1024 または 1024 より大きいポートを使用することをお勧めします。
+\f21050\fP �ϥ͡��ॵ���С���¹Ԥ���ݡ��ȤǤ���\f2\-ORBInitialPort\fP ��ɬ�פʥ��ޥ�ɹԤΰ����Ǥ���Solaris ���եȥ���������Ѥ����硢1024 ��꾮�����ݡ��Ⱦ�ǥץ������򳫻Ϥ���ˤϡ�root �桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ1024 �ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ򤪴��ᤷ�ޤ���
 .LP
 .LP
-\f2servertool\fP を起動します。
+\f2servertool\fP ��ư���ޤ���
 .LP
 .LP
-Hello サーバーを起動するには、次のように入力します。
+Hello �����С���ư����ˤϡ����Τ褦�����Ϥ��ޤ���
 .LP
 .nf
 \f3
@@ -290,21 +282,21 @@ Hello サーバーを起動するには、次のように入力します。
 
 .LP
 .LP
-前回の手順と同様にネームサーバー (\f2orbd\fP) のポートを指定します。 たとえば \f2\-ORBInitialPort 1050\fP のようになります。\f2servertool\fP は、ネームサーバーと同じポート上で起動する必要があります。
+����μ���Ʊ�ͤ˥͡��ॵ���С� (\f2orbd\fP) �Υݡ��Ȥ���ꤷ�ޤ������Ȥ��� \f2\-ORBInitialPort 1050\fP �Τ褦�ˤʤ�ޤ���\f2servertool\fP �ϡ��͡��ॵ���С���Ʊ���ݡ��Ⱦ�ǵ�ư����ɬ�פ�����ޤ���
 .LP
 .LP
-\f2servertool\fP コマンド行インタフェースが表示されます。
+\f2servertool\fP ���ޥ�ɹԥ��󥿥ե�������ɽ������ޤ���
 .LP
 .LP
 
 .LP
 .LP
-\f2servertool\fP プロンプトから Hello サーバーを起動します。
+\f2servertool\fP �ץ���ץȤ��� Hello �����С���ư���ޤ���
 .LP
 .nf
 \f3
 .fl
-  servertool  > register \-server HelloServer \-classpath . \-applicationName
+  servertool  > register \-server HelloServer \-classpath .\-applicationName
 .fl
                 HelloServerApName
 .fl
@@ -313,13 +305,13 @@ Hello サーバーを起動するには、次のように入力します。
 
 .LP
 .LP
-\f2servertool\fP によってサーバーが登録されて、「HelloServerApName」という名前がサーバーに割り当てられ、サーバー ID が表示されます。
+\f2servertool\fP �ˤ�äƥ����С�����Ͽ����ơ���HelloServerApName�פȤ���̾���������С��˳�����Ƥ�졢�����С� ID ��ɽ������ޤ���
 .LP
 .LP
 
 .LP
 .LP
-別の端末ウィンドウまたはプロンプトからクライアントアプリケーションを実行します。
+�̤�ü��������ɥ��ޤ��ϥץ���ץȤ��饯�饤����ȥ��ץꥱ��������¹Ԥ��ޤ���
 .LP
 .LP
 \ 
@@ -334,33 +326,33 @@ Hello サーバーを起動するには、次のように入力します。
 
 .LP
 .LP
-この例の \f2\-ORBInitialHost localhost\fP は省略することができます。 ネームサーバーが Hello クライアントとして同一ホスト上で動作しているからです。ネームサーバーが別のホストで動作している場合は、IDL ネームサーバーが動作しているホストを \f2\-ORBInitialHost\fP \f2nameserverhost\fP で指定します。
+������� \f2\-ORBInitialHost localhost\fP �Ͼ�ά���뤳�Ȥ��Ǥ��ޤ����͡��ॵ���С��� Hello ���饤����ȤȤ���Ʊ��ۥ��Ⱦ��ư��Ƥ��뤫��Ǥ����͡��ॵ���С����̤Υۥ��Ȥ�ư��Ƥ�����ϡ�IDL �͡��ॵ���С���ư��Ƥ���ۥ��Ȥ� \f2\-ORBInitialHost\fP \f2nameserverhost\fP �ǻ��ꤷ�ޤ���
 .LP
 .LP
-前回の手順と同様にネームサーバー (\f2orbd\fP) のポートを指定します。 たとえば \f2\-ORBInitialPort 1050\fP のようになります。
-.LP
-.LP
-\ 
+����μ���Ʊ�ͤ˥͡��ॵ���С� (\f2orbd\fP) �Υݡ��Ȥ���ꤷ�ޤ������Ȥ��� \f2\-ORBInitialPort 1050\fP �Τ褦�ˤʤ�ޤ���
 .LP
 .LP
 \ 
 .LP
 .LP
-サーバーマネージャーの操作が終了したら、ネームサーバー (\f2orbd\fP) と \f2servertool\fP を停止するか終了してください。
+\ 
 .LP
 .LP
-DOS プロンプトで \f2orbd\fP をシャットダウンするには、サーバーを実行しているウィンドウを選択して \f2Ctrl+C\fP と入力します。UNIX シェルで \f2orbd\fP をシャットダウンするには、プロセスを検出して終了 (kill) します。サーバーを明示的に停止するまでは、呼び出し待機状態が続きます。
+�����С��ޥ͡����㡼������λ�����顢�͡��ॵ���С� (\f2orbd\fP) �� \f2servertool\fP ����ߤ��뤫��λ���Ƥ���������
 .LP
 .LP
-\f2servertool\fP をシャットダウンするには、\f2quit\fP と入力し、キーボードの \f2Enter\fP キーを押します。
+DOS �ץ���ץȤ� \f2orbd\fP �򥷥�åȥ����󤹤�ˤϡ������С���¹Ԥ��Ƥ��륦����ɥ������򤷤� \f2Ctrl+C\fP �����Ϥ��ޤ���UNIX ������� \f2orbd\fP �򥷥�åȥ����󤹤�ˤϡ��ץ������򸡽Ф��ƽ�λ (kill) ���ޤ��������С�������Ū����ߤ���ޤǤϡ��ƤӽФ��Ե����֤�³���ޤ���
 .LP
-.SH "関連項目"
+.LP
+\f2servertool\fP �򥷥�åȥ����󤹤�ˤϡ� \f2quit\fP �����Ϥ��ƥ����ܡ��ɤ� \f2Enter\fP �����򲡤��ޤ���
+.LP
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2
 o
 .na
-\f2ネームサービス\fP @
+\f2�͡��ॵ���ӥ�\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html
 .br

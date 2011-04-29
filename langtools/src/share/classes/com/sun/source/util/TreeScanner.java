@@ -355,7 +355,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
-    public R visitDisjunctiveType(DisjunctiveTypeTree node, P p) {
+    public R visitUnionType(UnionTypeTree node, P p) {
         return scan(node.getTypeAlternatives(), p);
     }
 

@@ -39,7 +39,7 @@ import java.util.List;
  *   static { <em>statements</em> }
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.2"
+ * @jls section 14.2
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

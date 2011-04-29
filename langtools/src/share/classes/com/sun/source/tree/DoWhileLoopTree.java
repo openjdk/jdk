@@ -35,7 +35,7 @@ package com.sun.source.tree;
  *   while ( <em>expression</em> );
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.13"
+ * @jls section 14.13
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
