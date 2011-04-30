@@ -71,11 +71,9 @@ public interface ClassLoaderReference extends ObjectReference {
      * <p>
      * No ordering of the returned list is guaranteed.
      * <p>
-     * See the revised
-     * <a href="http://java.sun.com/docs/books/vmspec/">Java
-     * Virtual Machine Specification</a> section
-     * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ConstantPool.doc.html#72007">5.3
-     * Creation and Loading</a>
+     * See
+     * <cite>The Java&trade; Virtual Machine Specification</cite>,
+     * section 5.3 - Creation and Loading
      * for more information on the initiating classloader.
      * <p>
      * Note that unlike {@link #definedClasses()}

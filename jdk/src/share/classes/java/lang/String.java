@@ -2819,8 +2819,8 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
@@ -2863,8 +2863,8 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
@@ -3066,9 +3066,8 @@ public final class String
      * if and only if <code>s.equals(t)</code> is <code>true</code>.
      * <p>
      * All literal strings and string-valued constant expressions are
-     * interned. String literals are defined in &sect;3.10.5 of the
-     * <a href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>
+     * interned. String literals are defined in section 3.10.5 of the
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @return  a string that has the same contents as this string, but is
      *          guaranteed to be from a pool of unique strings.

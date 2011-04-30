@@ -74,9 +74,7 @@ public interface TypeComponent extends Mirror, Accessible {
     /**
      * Gets the generic signature for this TypeComponent if there is one.
      * Generic signatures are described in the
-     * <a href="http://java.sun.com/docs/books/vmspec">
-     * "Java<sup><font size=-2>TM</font></sup>
-     * Virtual Machine Specification, 3rd Edition.</a>
+     * <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @return a string containing the generic signature, or <code>null</code>
      * if there is no generic signature.

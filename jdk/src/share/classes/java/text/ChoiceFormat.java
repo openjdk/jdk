@@ -136,8 +136,8 @@ import java.util.Arrays;
  * </pre>
  * </blockquote>
  * And the output result would be like the following:
- * <pre>
  * <blockquote>
+ * <pre>
  *   Format with -INF : is negative
  *   Format with -1.0 : is negative
  *   Format with 0 : is zero or fraction

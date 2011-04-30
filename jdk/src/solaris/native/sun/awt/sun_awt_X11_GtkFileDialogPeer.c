@@ -4,6 +4,7 @@
 #include <string.h>
 #include "gtk2_interface.h"
 #include "sun_awt_X11_GtkFileDialogPeer.h"
+#include "java_awt_FileDialog.h"
 #include "debug_assert.h"
 
 static JavaVM *jvm;
@@ -220,7 +221,7 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     const char *title = jtitle == NULL? "": (*env)->GetStringUTFChars(env, jtitle, 0);
 
-    if (mode == 1) {
+    if (mode == java_awt_FileDialog_SAVE) {
         /* Save action */
         dialog = fp_gtk_file_chooser_dialog_new(title, NULL,
                 GTK_FILE_CHOOSER_ACTION_SAVE, GTK_STOCK_CANCEL,
@@ -253,7 +254,11 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     /* Set the filename */
     if (jfile != NULL) {
         const char *filename = (*env)->GetStringUTFChars(env, jfile, 0);
-        fp_gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), filename);
+        if (mode == java_awt_FileDialog_SAVE) {
+            fp_gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), filename);
+        } else {
+            fp_gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), filename);
+        }
         (*env)->ReleaseStringUTFChars(env, jfile, filename);
     }
 
