@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -790,12 +790,6 @@ void PSYoungGen::compact() {
   from_mark_sweep()->compact(ZapUnusedHeapArea);
   // Mark sweep stores preserved markOops in to space, don't disturb!
   to_mark_sweep()->compact(false);
-}
-
-void PSYoungGen::move_and_update(ParCompactionManager* cm) {
-  PSParallelCompact::move_and_update(cm, PSParallelCompact::eden_space_id);
-  PSParallelCompact::move_and_update(cm, PSParallelCompact::from_space_id);
-  PSParallelCompact::move_and_update(cm, PSParallelCompact::to_space_id);
 }
 
 void PSYoungGen::print() const { print_on(tty); }

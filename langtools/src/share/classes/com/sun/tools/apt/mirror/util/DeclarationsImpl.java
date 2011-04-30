@@ -67,7 +67,8 @@ public class DeclarationsImpl implements Declarations {
 
     /**
      * {@inheritDoc}
-     * See JLS 2 sections 8.3 and 8.4.6.
+     * See sections 8.3 and 8.4.6 of
+     * <cite>The Java&trade; Language Specification</cite>
      */
     public boolean hides(MemberDeclaration sub, MemberDeclaration sup) {
         Symbol hider = ((DeclarationImpl) sub).sym;
@@ -107,7 +108,8 @@ public class DeclarationsImpl implements Declarations {
 
     /**
      * {@inheritDoc}
-     * See JLS 2 section 8.4.6.1.
+     * See section 8.4.6.1 of
+     * <cite>The Java&trade; Language Specification</cite>
      */
     public boolean overrides(MethodDeclaration sub, MethodDeclaration sup) {
         MethodSymbol overrider = ((MethodDeclarationImpl) sub).sym;

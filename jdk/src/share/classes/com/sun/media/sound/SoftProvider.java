@@ -24,6 +24,7 @@
  */
 package com.sun.media.sound;
 
+import java.util.Arrays;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiDevice.Info;
 import javax.sound.midi.spi.MidiDeviceProvider;
@@ -39,7 +40,7 @@ public class SoftProvider extends MidiDeviceProvider {
     private static Info[] softinfos = {softinfo};
 
     public MidiDevice.Info[] getDeviceInfo() {
-        return softinfos;
+        return Arrays.copyOf(softinfos, softinfos.length);
     }
 
     public MidiDevice getDevice(MidiDevice.Info info) {

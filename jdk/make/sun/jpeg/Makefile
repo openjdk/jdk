@@ -73,9 +73,14 @@ ifeq ($(PLATFORM), linux)
   # Recommended way to avoid such warning is to declare the variable as
   # volatile to prevent the optimization. However, this approach does not
   # work because we have to declare all variables as volatile in result.
-ifndef CROSS_COMPILE_ARCH
-  OTHER_CFLAGS += -Wno-clobbered
-endif
+  ifndef CROSS_COMPILE_ARCH
+    CC_43_OR_NEWER := \
+      $(shell $(EXPR) $(CC_MAJORVER) \> 4 \| \
+          \( $(CC_MAJORVER) = 4 \& $(CC_MINORVER) \>= 3 \) )
+    ifeq ($(CC_43_OR_NEWER),1)
+      OTHER_CFLAGS += -Wno-clobbered
+    endif
+  endif
 endif
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk

@@ -240,9 +240,7 @@ public class TitledBorder extends AbstractBorder
             int edge = (border instanceof TitledBorder) ? 0 : EDGE_SPACING;
             JLabel label = getLabel(c);
             Dimension size = label.getPreferredSize();
-            Insets insets = (border != null)
-                    ? border.getBorderInsets(c)
-                    : new Insets(0, 0, 0, 0);
+            Insets insets = getBorderInsets(border, c, new Insets(0, 0, 0, 0));
 
             int borderX = x + edge;
             int borderY = y + edge;
@@ -348,17 +346,8 @@ public class TitledBorder extends AbstractBorder
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         Border border = getBorder();
-        if (border == null) {
-            insets.set(0, 0, 0, 0);
-        }
-        else if (border instanceof AbstractBorder) {
-            AbstractBorder ab = (AbstractBorder) border;
-            insets = ab.getBorderInsets(c, insets);
-        }
-        else {
-            Insets i = border.getBorderInsets(c);
-            insets.set(i.top, i.left, i.bottom, i.right);
-        }
+        insets = getBorderInsets(border, c, insets);
+
         String title = getTitle();
         if ((title != null) && !title.isEmpty()) {
             int edge = (border instanceof TitledBorder) ? 0 : EDGE_SPACING;
@@ -588,9 +577,7 @@ public class TitledBorder extends AbstractBorder
             int edge = (border instanceof TitledBorder) ? 0 : EDGE_SPACING;
             JLabel label = getLabel(c);
             Dimension size = label.getPreferredSize();
-            Insets insets = (border != null)
-                    ? border.getBorderInsets(c)
-                    : new Insets(0, 0, 0, 0);
+            Insets insets = getBorderInsets(border, c, new Insets(0, 0, 0, 0));
 
             int baseline = label.getBaseline(size.width, size.height);
             switch (getPosition()) {
@@ -727,5 +714,20 @@ public class TitledBorder extends AbstractBorder
         this.label.setComponentOrientation(c.getComponentOrientation());
         this.label.setEnabled(c.isEnabled());
         return this.label;
+    }
+
+    private static Insets getBorderInsets(Border border, Component c, Insets insets) {
+        if (border == null) {
+            insets.set(0, 0, 0, 0);
+        }
+        else if (border instanceof AbstractBorder) {
+            AbstractBorder ab = (AbstractBorder) border;
+            insets = ab.getBorderInsets(c, insets);
+        }
+        else {
+            Insets i = border.getBorderInsets(c);
+            insets.set(i.top, i.left, i.bottom, i.right);
+        }
+        return insets;
     }
 }

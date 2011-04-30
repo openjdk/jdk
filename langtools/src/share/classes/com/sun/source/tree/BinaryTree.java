@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   <em>leftOperand</em> <em>operator</em> <em>rightOperand</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, sections 15.17 to 15.24"
+ * @jls sections 15.17 to 15.24
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
