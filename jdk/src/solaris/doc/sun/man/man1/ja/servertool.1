@@ -19,20 +19,14 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH servertool 1 "02 Jun 2010"
+.TH servertool 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-servertool \- Java(TM) IDL サーバーツール
+.SH "̾��"
+servertool \- Java(TM) IDL �����С��ġ���
 .LP
-.RS 3
-
-.LP
-\f3servertool\fP はアプリケーションプログラマが、持続サーバーの登録、登録解除、起動、および停止を行うためのコマンド行インタフェースを提供します。
-.RE
-.SH "形式"
-.LP
-
+\f3servertool\fP �ϥ��ץꥱ�������ץ�����ޤ�����³�����С�����Ͽ����Ͽ�������ư���������ߤ�Ԥ�����Υ��ޥ�ɹԥ��󥿥ե��������󶡤��ޤ��� 
+.SH "����"
 .LP
 .nf
 \f3
@@ -44,84 +38,76 @@ servertool \-ORBInitialPort \fP\f4nameserverport\fP\f3 \fP\f3options\fP\f3 [ \fP
 
 .LP
 .LP
-コマンドを入力しないで \f2servertool\fP を起動すると、コマンド行ツールとして \f2servertool >\fP プロンプトが表示されます。\f2servertool >\fP プロンプトにコマンドを入力します。
+���ޥ�ɤ����Ϥ��ʤ��� \f2servertool\fP ��ư����ȡ����ޥ�ɹԥġ���Ȥ��� \f2servertool >\fP �ץ���ץȤ�ɽ������ޤ���\f2servertool >\fP �ץ���ץȤ˥��ޥ�ɤ����Ϥ��ޤ���
 .LP
 .LP
-コマンドを入力して \f2servertool\fP を起動すると、Java IDL サーバーツールが起動し、コマンドを実行して終了します。
+���ޥ�ɤ����Ϥ��� \f2servertool\fP ��ư����ȡ�Java IDL �����С��ġ��뤬��ư�������ޥ�ɤ�¹Ԥ��ƽ�λ���ޤ���
 .LP
 .LP
-\f2\-ORBInitialPort\fP \f2nameserverport\fP オプションは\f3必須\fPです。\f2nameserverport\fP の値には、\f2orbd\fP が実行され、着信要求を待機しているポートを指定する必要があります。Solaris ソフトウェアの使用時は、1024 より小さいポートでプロセスを開始する場合は、root ユーザーになる必要があります。 このため、\f2nameserverport\fP として 1024 または 1024 より大きいポートを使用することをお勧めします。
+\f2\-ORBInitialPort\fP \f2nameserverport\fP ���ץ�����\f3ɬ��\fP�Ǥ��� \f2nameserverport\fP ���ͤˤϡ�\f2orbd\fP ���¹Ԥ��졢�忮�׵���Ե����Ƥ���ݡ��Ȥ���ꤹ��ɬ�פ�����ޤ���Solaris ���եȥ���������Ѥ����硢1024 ��꾮�����ݡ��Ⱦ�ǥץ������򳫻Ϥ���ˤϡ�root �桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ\f2nameserverport\fP�Ȥ��� 1024 �ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ򤪴��ᤷ�ޤ���
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f2servertool\fP はアプリケーションプログラマが、持続サーバーの登録、登録解除、起動、および停止を行うためのコマンド行インタフェースを提供します。そのほかに、サーバーに関するさまざまな統計情報を取得するためのコマンドも提供します。
+\f2servertool\fP �ϥ��ץꥱ�������ץ�����ޤ�����³�����С�����Ͽ����Ͽ�������ư���������ߤ�Ԥ�����Υ��ޥ�ɹԥ��󥿥ե��������󶡤��ޤ������Τۤ��ˡ������С��˴ؤ��뤵�ޤ��ޤ����׾����������뤿��Υ��ޥ�ɤ��󶡤��ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-ORBInitialHost nameserverhost 
-ネームサーバーが、実行され、着信要求を待機しているホストマシンを指定します。このオプションを指定しない場合、\f2nameserverhost\fP はデフォルトで \f2localhost\fP に設定されます。\f2orbd\fP と \f2servertool\fP が異なるマシン上で実行されている場合は、\f2orbd\fP が実行されているホストの名前と IP アドレスを指定する必要があります。 
+�͡��ॵ���С������¹Ԥ��졢�忮�׵���Ե����Ƥ���ۥ��ȥޥ������ꤷ�ޤ������Υ��ץ�������ꤷ�ʤ���硢\f2nameserverhost\fP �ϥǥե���Ȥ� \f2localhost\fP �����ꤵ��ޤ���\f2orbd\fP �� \f2servertool\fP ���ۤʤ�ޥ����Ǽ¹Ԥ���Ƥ�����ϡ�\f2orbd\fP ���¹Ԥ���Ƥ���ۥ��Ȥ�̾���� IP ���ɥ쥹����ꤹ��ɬ�פ�����ޤ��� 
 .TP 3
 \-Joption 
-Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って背後の実行環境にオプションを渡すことはよく行われています。 
+Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���\f2option\fP �ˤϡ�java(1)�Υ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ���\f3\-J\fP ��Ȥä��ظ�μ¹ԴĶ��˥��ץ������Ϥ����ȤϤ褯�Ԥ��Ƥ��ޤ��� 
 .RE
 
 .LP
-.SH "コマンド"
-.LP
-
+.SH "���ޥ��"
 .LP
 .RS 3
 .TP 3
 register \-server\ <server\ class\ name> \ \-classpath\ <classpath\ to\ server> [\ \-applicationName\ <application\ name> \-args\ <args\ to\ server> \-vmargs\ <flags\ to\ be\ passed\ to\ Java\ VM> \ ] 
-Object Request Broker Daemon (ORBD) に新規持続サーバーを登録します。サーバーが未登録の場合、登録して起動します。このコマンドによって、\f2\-server\fP オプションで識別されるサーバーのメインクラス内でインストールメソッドが呼び出されます。このインストールメソッドは、\f2public static void install(org.omg.CORBA.ORB)\fP になっている必要があります。インストールメソッドは、オプションであり、データベーススキーマの作成などの独自のサーバーインストール動作を開発者が指定できます。 
+Object Request Broker Daemon (ORBD) �˿�����³�����С�����Ͽ���ޤ��������С���̤��Ͽ�ξ�硢��Ͽ���Ƶ�ư���ޤ������Υ��ޥ�ɤˤ�äơ�\f2\-server\fP ���ץ����Ǽ��̤���륵���С��Υᥤ�󥯥饹��ǥ��󥹥ȡ���᥽�åɤ��ƤӽФ���ޤ������Υ��󥹥ȡ���᥽�åɤϡ�\f2public static void install(org.omg.CORBA.ORB)\fP �ˤʤäƤ���ɬ�פ�����ޤ������󥹥ȡ���᥽�åɤϡ����ץ����Ǥ��ꡢ�ǡ����١����������ޤκ����ʤɤ��ȼ��Υ����С����󥹥ȡ���ư���ȯ�Ԥ�����Ǥ��ޤ��� 
 .TP 3
 unregister \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> 
-サーバー ID またはアプリケーション名を使用して、ORBD のサーバーの登録を解除します。このコマンドによって、\f2\-server\fP オプションで識別されるサーバーのメインクラス内でアンインストールメソッドが呼び出されます。このアンインストールメソッドは、\f2public static void uninstall(org.omg.CORBA.ORB)\fP になっている必要があります。アンインストールメソッドは、オプションであり、インストールメソッドの動作の取り消しなどの独自のサーバーアンインストール動作を開発者が指定できます。 
+�����С� ID �ޤ��ϥ��ץꥱ�������̾����Ѥ��ơ�ORBD �Υ����С�����Ͽ�������ޤ������Υ��ޥ�ɤˤ�äơ�\f2\-server\fP ���ץ����Ǽ��̤���륵���С��Υᥤ�󥯥饹��ǥ��󥤥󥹥ȡ���᥽�åɤ��ƤӽФ���ޤ������Υ��󥤥󥹥ȡ���᥽�åɤϡ�\f2public static void uninstall(org.omg.CORBA.ORB)\fP �ˤʤäƤ���ɬ�פ�����ޤ������󥤥󥹥ȡ���᥽�åɤϡ����ץ����Ǥ��ꡢ���󥹥ȡ���᥽�åɤ�ư��μ��ä��ʤɤ��ȼ��Υ����С����󥤥󥹥ȡ���ư���ȯ�Ԥ�����Ǥ��ޤ��� 
 .TP 3
 getserverid \-applicationName\ <application\ name> 
-アプリケーションに関連付けられているサーバー ID を返します。 
+���ץꥱ�������˴�Ϣ�դ����Ƥ��륵���С� ID ���֤��ޤ��� 
 .TP 3
 list 
-ORBD に登録されているすべての持続サーバーに関する情報を一覧表示します。 
+ORBD ����Ͽ����Ƥ��뤹�٤Ƥλ�³�����С��˴ؤ����������ɽ�����ޤ��� 
 .TP 3
 listappnames 
-現在 ORBD に登録されているすべてのサーバーのアプリケーション名を一覧表示します。 
+���� ORBD ����Ͽ����Ƥ��뤹�٤ƤΥ����С��Υ��ץꥱ�������̾�����ɽ�����ޤ��� 
 .TP 3
 listactive 
-ORDB によって起動され、現在実行されているすべての持続サーバーに関する情報を一覧表示します。 
+ORDB �ˤ�äƵ�ư���졢���߼¹Ԥ���Ƥ��뤹�٤Ƥλ�³�����С��˴ؤ����������ɽ�����ޤ��� 
 .TP 3
 locate \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> [\-endpointType\ <endpointType>\ ] 
-登録されたサーバーで作成したすべての ORB の特定の型について端点 (ポート) を検出します。サーバーが実行されていない場合、起動されます。端点の型が指定されていない場合、サーバーの ORB ごとに関連付けられている plain 型 または non\-protected 型の端点が返されます。 
+��Ͽ���줿�����С��Ǻ����������٤Ƥ� ORB ������η��ˤĤ���ü�� (�ݡ���) �򸡽Ф��ޤ��������С����¹Ԥ���Ƥ��ʤ���硢��ư����ޤ���ü���η������ꤵ��Ƥ��ʤ���硢�����С��� ORB ���Ȥ˴�Ϣ�դ����Ƥ��� plain �� �ޤ��� non\-protected ����ü�����֤���ޤ��� 
 .TP 3
 locateperorb \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> [\-orbid\ <ORB\ name>\ ] 
-登録されたサーバーの特定の ORB で登録された端点 (ポート) を検出します。サーバーが実行されていない場合、起動されます。\f2orbid\fP が指定されていない場合は、デフォルト値の「""」が\f2orbid\fPに割り当てられます。ORB が空文字列の \f2orbid\fP で作成されている場合、登録したポートがすべて返されます。 
+��Ͽ���줿�����С�������� ORB ����Ͽ���줿ü�� (�ݡ���) �򸡽Ф��ޤ��������С����¹Ԥ���Ƥ��ʤ���硢��ư����ޤ���\f2orbid\fP �����ꤵ��Ƥ��ʤ����ϡ��ǥե�����ͤΡ�""�פ�\f2orbid\fP�˳�����Ƥ��ޤ���ORB ����ʸ����� \f2orbid\fP �Ǻ�������Ƥ����硢��Ͽ�����ݡ��Ȥ����٤��֤���ޤ��� 
 .TP 3
 orblist \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> 
-サーバー上に定義された ORB の ORBId を一覧表示します。ORBId はサーバーで作成された ORB の文字列名です。サーバーが実行されていない場合、起動されます。 
+�����С����������줿 ORB �� ORBId �����ɽ�����ޤ���ORBId �ϥ����С��Ǻ������줿 ORB ��ʸ����̾�Ǥ��������С����¹Ԥ���Ƥ��ʤ���硢��ư����ޤ��� 
 .TP 3
 shutdown \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> 
-ORBD に登録されたアクティブなサーバーを停止します。このコマンドの実行中に、\f2\-serverid\fP パラメータまたは \f2\-applicationName\fP パラメータで指定されたクラス内に定義された \f2shutdown()\fP メソッドも呼び出されてサーバープロセスを正しく停止します。 
+ORBD ����Ͽ���줿�����ƥ��֤ʥ����С�����ߤ��ޤ������Υ��ޥ�ɤμ¹���ˡ�\f2\-serverid\fP �ѥ�᡼���ޤ��� \f2\-applicationName\fP �ѥ�᡼���ǻ��ꤵ�줿���饹���������줿 \f2shutdown()\fP �᥽�åɤ�ƤӽФ���ƥ����С��ץ���������������ߤ��ޤ��� 
 .TP 3
 startup \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> 
-ORBD に登録されたサーバーを起動します。サーバーが実行されていない場合は、このコマンドでサーバーを起動します。サーバーがすでに実行されている場合は、ユーザーにエラーメッセージが返されます。 
+ORBD ����Ͽ���줿�����С���ư���ޤ��������С����¹Ԥ���Ƥ��ʤ����ϡ����Υ��ޥ�ɤǥ����С���ư���ޤ��������С������Ǥ˼¹Ԥ���Ƥ�����ϡ��桼�����˥��顼��å��������֤���ޤ��� 
 .TP 3
 help 
-サーバーがサーバーツールで使用できるすべてのコマンドを表示します。 
+�����С��������С��ġ���ǻ��ѤǤ��뤹�٤ƤΥ��ޥ�ɤ�ɽ�����ޤ��� 
 .TP 3
 quit 
-サーバーツールを終了します。 
+�����С��ġ����λ���ޤ��� 
 .RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 orbd(1)  

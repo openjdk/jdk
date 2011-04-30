@@ -25,6 +25,8 @@
  * @test
  * @bug 4984872
  * @summary Basic tests of toPlainString method
+ * @run main ToPlainStringTests
+ * @run main/othervm -XX:+AggressiveOpts ToPlainStringTests
  * @author Joseph D. Darcy
  */
 
@@ -60,6 +62,11 @@ public class ToPlainStringTests {
             {"8e-8",                    "0.00000008"},
             {"9e-9",                    "0.000000009"},
             {"9000e-12",                "0.000000009000"},
+
+            {"9000e-22",                 "0.0000000000000000009000"},
+            {"12345678901234567890",     "12345678901234567890"},
+            {"12345678901234567890e22",  "123456789012345678900000000000000000000000"},
+            {"12345678901234567890e-22", "0.0012345678901234567890"},
         };
 
         int errors = 0;
@@ -73,8 +80,8 @@ public class ToPlainStringTests {
                                    s + "'' from BigDecimal " +
                                    bd);
             }
-
-            if (!(s=("-"+bd.toPlainString())).equals("-"+testCase[1])) {
+            bd = new BigDecimal("-"+testCase[0]);
+            if (bd.signum()!=0 && !(s=(bd.toPlainString())).equals("-"+testCase[1])) {
                 errors++;
                 System.err.println("Unexpected plain result ``" +
                                    s + "'' from BigDecimal " +

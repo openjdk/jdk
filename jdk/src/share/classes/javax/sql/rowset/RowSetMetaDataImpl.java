@@ -912,7 +912,12 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * @since 1.6
      */
     public <T> T unwrap(java.lang.Class<T> iface) throws java.sql.SQLException {
-        return (T)this;
+
+        if(isWrapperFor(iface)) {
+            return iface.cast(this);
+        } else {
+            throw new SQLException("unwrap failed for:"+ iface);
+        }
     }
 
     /**
@@ -929,8 +934,9 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * @throws java.sql.SQLException  if an error occurs while determining whether this is a wrapper
      * for an object with the given interface.
      * @since 1.6
-     */    public boolean isWrapperFor(Class<?> interfaces) throws SQLException {
-        return false;
+     */
+    public boolean isWrapperFor(Class<?> interfaces) throws SQLException {
+        return interfaces.isInstance(this);
     }
 
     static final long serialVersionUID = 6893806403181801867L;

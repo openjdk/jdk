@@ -145,8 +145,7 @@ public class FieldImpl extends TypeComponentImpl implements Field {
     }
 
     // From interface Comparable
-    public int compareTo(Object object) {
-        Field field = (Field)object;
+    public int compareTo(Field field) {
         ReferenceTypeImpl declaringType = (ReferenceTypeImpl)declaringType();
         int rc = declaringType.compareTo(field.declaringType());
         if (rc == 0) {

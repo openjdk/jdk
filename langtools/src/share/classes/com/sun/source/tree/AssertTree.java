@@ -35,7 +35,7 @@ package com.sun.source.tree;
  *   assert <em>condition</em> : <em>detail</em> ;
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.10"
+ * @jls section 14.10
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

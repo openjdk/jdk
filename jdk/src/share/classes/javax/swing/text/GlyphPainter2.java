@@ -172,6 +172,11 @@ class GlyphPainter2 extends GlyphView.GlyphPainter {
         //italic carets and we do not.
         TextHitInfo hit = layout.hitTestChar(x - (float)alloc.getX(), 0);
         int pos = hit.getInsertionIndex();
+
+        if (pos == v.getEndOffset()) {
+            pos--;
+        }
+
         biasReturn[0] = hit.isLeadingEdge() ? Position.Bias.Forward : Position.Bias.Backward;
         return pos + v.getStartOffset();
     }

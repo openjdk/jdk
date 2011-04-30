@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmid 1 "02 Jun 2010"
+.TH rmid 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-rmid \- Java RMI 起動システムデーモン
-.LP
-.RS 3
-
+.SH "̾��"
+rmid \- Java RMI ��ư�����ƥ�ǡ����
 .LP
 .LP
-\f3rmid\fP で起動システムデーモンを開始すると、オブジェクトを仮想マシン (VM) に登録して起動できるようになります。
+\f3rmid\fP �ǵ�ư�����ƥ�ǡ����򳫻Ϥ���ȡ����֥������Ȥ��ۥޥ��� (VM) ����Ͽ���Ƶ�ư�Ǥ���褦�ˤʤ�ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,23 +39,21 @@ rmid [options]
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3rmid\fP ツールは、起動システムデーモンを開始します。起動システムデーモンを開始してからでないと、起動可能オブジェクトを起動システムに登録したり、VM 内で起動したりすることができません。起動可能なリモートオブジェクトを使ったプログラムの作成方法の詳細は、
+\f3rmid\fP �ġ���ϡ���ư�����ƥ�ǡ����򳫻Ϥ��ޤ�����ư�����ƥ�ǡ����򳫻Ϥ��Ƥ���Ǥʤ��ȡ���ư��ǽ���֥������Ȥ�ư�����ƥ����Ͽ�����ꡢVM ��ǵ�ư�����ꤹ�뤳�Ȥ��Ǥ��ޤ��󡣵�ư��ǽ�ʥ�⡼�ȥ��֥������Ȥ�Ȥä��ץ������κ�����ˡ�ξܺ٤ϡ�
 .na
-\f2「Java RMI 仕様」\fP @
+\f2��Java RMI ���͡�\fP @
 .fi
-http://java.sun.com/javase/6/docs/platform/rmi/spec/rmiTOC.htmlおよび
+http://java.sun.com/javase/6/docs/platform/rmi/spec/rmiTOC.html�����
 .na
-\f2「起動のチュートリアル」\fP @
+\f2�ֵ�ư�Υ��塼�ȥꥢ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.htmlを参照してくだ さい。
+http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.html�򻲾Ȥ��Ƥ���������
 .LP
 .LP
-デーモンを起動するには、次のように、セキュリティーポリシーファイルを指定して \f2rmid\fP コマンドを実行します。
+�ǡ�����ư����ˤϡ����Τ褦�ˡ��������ƥ����ݥꥷ���ե��������ꤷ�� \f2rmid\fP ���ޥ�ɤ�¹Ԥ��ޤ���
 .LP
 .nf
 \f3
@@ -73,23 +65,23 @@ http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.html�
 
 .LP
 .LP
-\f3注:\fP\f2rmid\fP の Sun の 実装を実行する場合、デフォルトでは、セキュリティーポリシーファイルを指定する必要があります。 それは、起動グループ用に VM を起動するために各 \f2ActivationGroupDesc\fP 内の情報を使用できるかどうかを \f2rmid\fP が検証できるようにするためです。特に、\f2ActivationGroupDesc\fP のコンストラクタに渡される \f2CommandEnvironment\fP や任意の \f2Properties\fP によって指定されるコマンドおよびオプションは、\f2rmid\fP のセキュリティーポリシーファイルの中で明示的に許可することが必要になりました。\f2sun.rmi.activation.execPolicy\fP プロパティーの値は、起動グループ用に VM を起動するために \f2ActivationGroupDesc\fP 内の情報を使用できるかどうかを判断するときに \f2rmid\fP が使用するポリシーを決定します。
+\f3��:\fP \f2rmid\fP �� Sun �� ������¹Ԥ����硢�ǥե���ȤǤϡ��������ƥ����ݥꥷ���ե��������ꤹ��ɬ�פ�����ޤ�������ϡ� \f2rmid\fP ����ư���롼���Ѥ� VM ��ư���뤿��˳� \f2ActivationGroupDesc\fP ��ξ������ѤǤ��뤫�ɤ����򸡾ڤǤ���褦�ˤ��뤿��Ǥ����äˡ�ActivationGroupDesc �Υ��󥹥ȥ饯�����Ϥ���� \f2CommandEnvironment\fP ��Ǥ�դ� \f2Properties\fP �ˤ�äƻ��ꤵ��� \f2���ޥ�ɤ����\fP���ץ����ϡ� \f2rmid\fP �Υ������ƥ����ݥꥷ���ե�������������Ū�˵��Ĥ��뤳�Ȥ�ɬ�פˤʤ�ޤ�����\f2sun.rmi.activation.execPolicy\fP �ץ��ѥƥ������ͤϡ� \f2��ư���롼���Ѥ� VM ��\fP ��ư���뤿��� \f2ActivationGroupDesc\fP ��ξ������ѤǤ��뤫�ɤ�����Ƚ�Ǥ���Ȥ��� rmid �����Ѥ���ݥꥷ������ꤷ�ޤ���
 .LP
 .LP
-\f2rmid\fP をデフォルト設定で実行すると、次のような処理が行われます。
+\f2rmid\fP ��ǥե��������Ǽ¹Ԥ���ȡ����Τ褦�ʽ������Ԥ��ޤ���
 .LP
 .RS 3
 .TP 2
 o
-アクティベータを起動し、デフォルトポート 1098 で内部レジストリを起動する 
+�����ƥ��١�����ư�����ǥե���ȥݡ��� 1098 �������쥸���ȥ��ư���� 
 .TP 2
 o
-この内部レジストリの中で、\f2ActivationSystem\fP を \f2java.rmi.activation.ActivationSystem\fP という名前にバインドする 
+���������쥸���ȥ����ǡ� \f2ActivationSystem\fP �� \f2java.rmi.activation.ActivationSystem �Ȥ���̾����\fP �Х���ɤ��� 
 .RE
 
 .LP
 .LP
-レジストリにほかのポートを指定するには、\f2rmid\fP の起動時に \f2\-port\fP オプションを指定しなければなりません。次に例を示します。
+�쥸���ȥ�ˤۤ��Υݡ��Ȥ���ꤹ��ˤϡ�rmid �ε�ư���� \f2\-port\fP ���ץ����� \f2���ꤷ�ʤ���Фʤ�ޤ���\fP��������򼨤��ޤ���
 .LP
 .nf
 \f3
@@ -101,44 +93,42 @@ o
 
 .LP
 .LP
-このコマンドは、起動システムデーモンを開始し、レジストリのデフォルトポート 1099 でレジストリを開始します。
+���Υ��ޥ�ɤϡ���ư�����ƥ�ǡ����򳫻Ϥ����쥸���ȥ�Υǥե���ȥݡ��� 1099 �ǥ쥸���ȥ�򳫻Ϥ��ޤ���
 .LP
 .SS 
-rmid を inetd/xinetd から開始する
+rmid �� inetd/xinetd ���鳫�Ϥ���
 .LP
 .LP
-\f2rmid\fP をコマンド行から開始するには、\f2inetd\fP (Solaris の場合)、または \f2xinetd\fP (Linux) を構成して \f2rmid\fP を必要に応じて開始する方法もあります。
+\f2rmid\fP �򥳥ޥ�ɹԤ��鳫�Ϥ���ˤϡ� \f2inetd\fP (Solaris �ξ��)���ޤ��� \f2xinetd\fP (Linux �ξ��) �������� \f2rmid\fP ��ɬ�פ˱����Ƴ��Ϥ�����ˡ�⤢��ޤ���
 .LP
 .LP
-\f2rmid\fP を開始すると、\f2System.inheritedChannel\fP メソッドを呼び出して、継承されたチャンネル (\f2inetd\fP/\f2xinetd\fP から継承) を取得しようとします。継承されたチャンネルが \f2null\fP であるか、\f2java.nio.channels.ServerSocketChannel\fP のインスタンスでなかった場合、\f2rmid\fP はそのチャンネルは \f2inetd\fP/\f2xinetd\fP によって起動されたものではないと判断し、前述のように起動します。
+\f2rmid\fP �򳫻Ϥ���ȡ�System.inheritedChannel �᥽�åɤ�ƤӽФ��ơ��Ѿ����줿�����ͥ� ( \f2inetd\fP/\f2xinetd\fP ����Ѿ�) ��������褦�Ȥ��ޤ��� �Ѿ����줿�����ͥ뤬 \f2null\fP �Ǥ��뤫�� \f2java.nio.channels.ServerSocketChannel\fP �Υ��󥹥��󥹤Ǥʤ��ä���硢 \f2rmid\fP rmid �Ϥ��Υ����ͥ�� \f2inetd\fP/\f2xinetd\fP �ˤ�äƵ�ư���줿��ΤǤϤʤ���Ƚ�Ǥ������ҤΤ褦�˵�ư���ޤ���
 .LP
 .LP
-継承されたチャンネルが \f2ServerSocketChannel\fP インスタンスである場合は、エクスポートするリモートオブジェクト、つまり \f2java.rmi.activation.ActivationSystem\fP がバインドされているレジストリと \f2java.rmi.activation.Activator\fP リモートオブジェクトに対する要求を受信するサーバーソケットとして、\f2ServerSocketChannel\fP から取得した \f2java.net.ServerSocket\fP を \f2rmid\fP では使用します。このモードでは、\f2rmid\fP の動作は、次のことを除いて、 コマンド行から起動した場合と同じです。
+�Ѿ����줿�����ͥ뤬 \f2ServerSocketChannel\fP ���󥹥��󥹤Ǥ�����ϡ� \f2rmid\fP �ϥ������ݡ��Ȥ����⡼�ȥ��֥������ȡ��Ĥޤ� java.rmi.activation.ActivationSystem ���Х���ɤ���Ƥ���쥸���ȥ�� java.rmi.activation.Activator ��⡼�ȥ��֥������Ȥ��Ф����׵��������륵���С������åȤȤ��ơ�ServerSocketChannel ����������� java.net.ServerSocket ����Ѥ��ޤ��� ���Υ⡼�ɤǤϡ� \f2rmid\fP ��ư��ϡ����Τ��Ȥ�����ơ� ���ޥ�ɹԤ��鵯ư��������Ʊ���Ǥ���
 .LP
 .RS 3
 .TP 2
 o
-\f2System.err\fP に対する出力は、ファイルにリダイレクトされる。このファイルは \f2java.io.tmpdir\fP システムプロパティーで指定されるディレクトリ (通常は \f2/var/tmp\fP または \f2/tmp\fP) にある。 ファイル名の接頭辞は \f2rmid\-err\fP で、接尾辞は \f2"tmp"\fP である 
+\f2System.err\fP ���Ф�����Ϥϡ��ե�����˥�����쥯�Ȥ���롣���Υե������ \f2java.io.tmpdir\fP �����ƥ�ץ��ѥƥ����ǻ��ꤵ���ǥ��쥯�ȥ� (�̾�� \f2/var/tmp\fP �ޤ��� \f2/tmp\fP) �ˤ��롣�ե�����̾����Ƭ���� \f2"rmid\-err"\fP �ǡ��������� \f2"tmp"\fP �Ǥ��� 
 .TP 2
 o
-\f2\-port\fP オプションは拒否される。このオプションを指定すると、\f2rmid\fP はエラーメッセージを出して終了する 
+\f2\-port\fP ���ץ����ϵ��ݤ���롣���Υ��ץ�������ꤹ��ȡ� \f2rmid\fP �ϥ��顼��å�������Ф��ƽ�λ���� 
 .TP 2
 o
-\f2\-log\fP オプションは必須。このオプションを指定しないと、\f2rmid\fP はエラーメッセージを出して終了する 
+\f2\-log\fP ���ץ�����ɬ�ܡ����Υ��ץ�������ꤷ�ʤ��ȡ� \f2rmid\fP �ϥ��顼��å�������Ф��ƽ�λ���� 
 .RE
 
 .LP
 .LP
-必要に応じてサービスを開始するように設定する詳細については、\f2inetd\fP (Solaris) または \f2xinetd\fP (Linux) のマニュアルページを参照してください。
+ɬ�פ˱����ƥ����ӥ��򳫻Ϥ���褦�����ꤹ��ܺ٤ˤĤ��Ƥϡ� \f2inetd\fP (Solaris) �ޤ��� \f2xinetd\fP (Linux) �Υޥ˥奢��ڡ����򻲾Ȥ��Ƥ���������
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-C<someCommandLineOption> 
-\f2rmid\fP の子プロセス (起動グループ) が作成されたときに、それぞれの子プロセスにコマンド行引数として渡されるオプションを指定します。たとえば、次のように指定すると、起動システムデーモ ンによって生成される各仮想マシンにプロパティーを渡すことができます。 
+\f2rmid\fP �λҥץ����� (��ư���롼��) ���������줿�Ȥ��ˡ����줾��λҥץ������˥��ޥ�ɹ԰����Ȥ����Ϥ���륪�ץ�������ꤷ�ޤ������Ȥ��С����Τ褦�˻��ꤹ��ȡ���ư�����ƥ�ǡ����ˤ�ä����������Ʋ��ۥޥ���˥ץ��ѥƥ������Ϥ����Ȥ��Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -146,7 +136,7 @@ o
 .fl
 \fP
 .fi
-コマンド行引数を子プロセスに渡す機能は、デバッグを行う場合に便利です。たとえば、次のようなコマンドを実行できます。 
+���ޥ�ɹ԰�����ҥץ��������Ϥ���ǽ�ϡ��ǥХå���Ԥ����������Ǥ������Ȥ��С����Τ褦�ʥ��ޥ�ɤ�¹ԤǤ��ޤ��� 
 .nf
 \f3
 .fl
@@ -154,11 +144,11 @@ o
 .fl
 \fP
 .fi
-このコマンドにより、すべての子 VM でサーバー呼び出しのログが作成されるようになります。 
+���Υ��ޥ�ɤˤ�ꡢ���٤Ƥλ� VM �ǥ����С��ƤӽФ��Υ��������������褦�ˤʤ�ޤ��� 
 .LP
 .TP 3
 \-J<someCommandLineOption> 
-\f2rmid\fP を実行している \f2java\fP インタプリタに渡すオプションを指定します。たとえば、\f2rmid\fP が \f2rmid.policy\fP という名前のポリシーファイルを使用するように指定するには、\f2rmid\fP のコマンド行で \f2\-J\fP オプションを使って、\f2java.security.policy\fP プロパティーを定義します。 次に例を示します。 
+rmid ��¹Ԥ��Ƥ��� \f2java\fP ���󥿥ץ꥿���Ϥ����ץ�������ꤷ�ޤ��� ���Ȥ��С� \f2rmid\fP �� \f2rmid.policy\fP �Ȥ���̾���Υݥꥷ���ե��������Ѥ���褦�˻��ꤹ��ˤϡ�rmid �Υ��ޥ�ɹԤ� \f2\-J\fP ���ץ�����Ȥäơ� \f2java.security.policy\fP �ץ��ѥƥ�����������ޤ��� ������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -168,16 +158,15 @@ o
 .fi
 .TP 3
 \-J\-Dsun.rmi.activation.execPolicy=<policy> 
-起動グループが実行されることになる VM の起動に使用するコマンドおよびコマンド行オプションをチェックするために、\f2rmid\fP が採用するポリシーを指定します。このオプションは、Java RMI 起動デーモンの Sun の実装だけに存在することに注意してください。コマンド行にこのプロパティーを指定しない場合、結果は \f2\-J\-Dsun.rmi.activation.execPolicy=default\fP を指定した場合と同じになります。\f2<policy>\fP に指定可能な値は、\f2default\fP、\f2<policyClassName>\fP、または \f2none\fP です。 それぞれの値について、このあと説明します。 
-.LP
+��ư���롼�פ��¹Ԥ���뤳�Ȥˤʤ� VM �ε�ư�˻��Ѥ��륳�ޥ�ɤ���ӥ��ޥ�ɹԥ��ץ���������å����뤿��ˡ� \f2rmid\fP �����Ѥ���ݥꥷ������ꤷ�ޤ������Υ��ץ����ϡ�Java RMI ��ư�ǡ����� Sun �μ���������¸�ߤ��뤳�Ȥ����դ��Ƥ������������ޥ�ɹԤˤ��Υץ��ѥƥ�������ꤷ�ʤ���硢��̤� \f2\-J\-Dsun.rmi.activation.execPolicy=default\fP ����ꤷ������Ʊ���ˤʤ�ޤ���\f2<policy>\fP �˻����ǽ���ͤϡ�\f2default\fP��\f2<policyClassName>\fP���ޤ��� \f2none\fP �Ǥ��� 
 .RS 3
 .TP 2
 o
-\f3default (または、このプロパティーが「指定されていない」場合)\fP 
+\f3default (�ޤ��ϡ����Υץ��ѥƥ������ֻ��ꤵ��Ƥ��ʤ��׾��)\fP 
 .LP
-デフォルトの \f2execPolicy\fP の場合、\f2rmid\fP が実行できるのは、\f2rmid\fP が使用する セキュリティーポリシーファイルの中で、実行する権限が \f2rmid\fP に与えられているコマンドおよびコマンド行オプションだけです。「デフォルト」の実行ポリシーで使用できるのは、デフォルトの起動グループ実装だけです。 
+�ǥե���Ȥ� \f2execPolicy\fP �ξ�硢 \f2rmid\fP ���¹ԤǤ���Τϡ� \f2rmid\fP �����Ѥ��륻�����ƥ����ݥꥷ���ե��������ǡ��¹Ԥ��븢�¤� \f2rmid\fP ��Ϳ�����Ƥ��륳�ޥ�ɤ���ӥ��ޥ�ɹԥ��ץ��������Ǥ����֥ǥե���ȡפμ¹ԥݥꥷ���ǻ��ѤǤ���Τϡ��ǥե���Ȥε�ư���롼�׼��������Ǥ��� 
 .LP
-\f2rmid\fP は、起動グループ用の VM を起動するときに、そのグループについて登録された起動グループ記述子である \f2ActivationGroupDesc\fP 内の情報を使用します。グループ記述子は、\f2ActivationGroupDesc.CommandEnvironment\fP を指定します (省略可能)。 これには、起動グループを開始する「コマンド」と、そのコマンド行に追加できるコマンド行「オプション」が含まれています。デフォルトでは、\f2rmid\fP は、\f2java.home\fP にある \f2java\fP コマンドを使用します。グループ記述子には、オプションとしてコマンド行に追加される「プロパティー」オーバーライドも含まれています。 このプロパティーは、次のように定義します。 
+\f2rmid �ϡ�\fP ��ư���롼���Ѥ� VM ��ư����Ȥ��ˡ����Υ��롼�פˤĤ�����Ͽ���줿��ư���롼�׵��һҤǤ��� \f2ActivationGroupDesc\fP ��ξ������Ѥ��ޤ������롼�׵��һҤϡ� \f2ActivationGroupDesc.CommandEnvironment\fP ����ꤷ�ޤ� (��ά��ǽ)������ˤϡ���ư���롼�פ򳫻Ϥ���֥��ޥ�ɡפȡ����Υ��ޥ�ɹԤ��ɲäǤ��륳�ޥ�ɹԡ֥��ץ����פ��ޤޤ�Ƥ��ޤ����ǥե���ȤǤϡ� \f2rmid ��\fP java.home �ˤ��� \f2java\fP ���ޥ�ɤ���Ѥ��ޤ��� ���롼�׵��һҤˤϡ����ץ����Ȥ��ƥ��ޥ�ɹԤ��ɲä����֥ץ��ѥƥ����ץ����С��饤�ɤ�ޤޤ�Ƥ��ޤ������Υץ��ѥƥ����ϡ����Τ褦��������ޤ��� 
 .nf
 \f3
 .fl
@@ -186,33 +175,33 @@ o
 \fP
 .fi
 .LP
-アクセス権 \f2com.sun.rmi.rmid.ExecPermission\fP を使用すると、グループ記述子の \f2CommandEnvironment\fP で指定されたコマンドを実行して起動グループを開始する権限を、\f2rmid\fP に対して許可することができます。アクセス権 \f2com.sun.rmi.rmid.ExecOptionPermission\fP を使用すると、グループ記述子でプロパティーオーバーライドとして指定されたコマンド行オプション、または \f2CommandEnvironment\fP でオプションとして指定されたコマンド行オプションを、起動グループを開始するときに \f2rmid\fP が使用できるようになります。 
+���������� \f2com.sun.rmi.rmid.ExecPermission\fP ����Ѥ���ȡ� \f2rmid\fP ���Ф��ơ����롼�׵��һҤ� \f2CommandEnvironment\fP �ǻ��ꤵ�줿���ޥ�ɤ�¹Ԥ��Ƶ�ư���롼�פ򳫻Ϥ��븢�¤���Ĥ��뤳�Ȥ��Ǥ��ޤ������������� \f2com.sun.rmi.rmid.ExecOptionPermission\fP ����Ѥ���ȡ����롼�׵��һҤǥץ��ѥƥ��������С��饤�ɤȤ��ƻ��ꤵ�줿���ޥ�ɹԥ��ץ���󡢤ޤ��� \f2CommandEnvironment\fP �ǥ��ץ����Ȥ��ƻ��ꤵ�줿���ޥ�ɹԥ��ץ����򡢵�ư���롼�פ򳫻Ϥ���Ȥ��� rmid �����ѤǤ���褦�ˤʤ�ޤ��� 
 .LP
-\f2rmid\fP にさまざまなコマンドおよびオプションを実行する権限を許可する場合は、アクセス権 \f2ExecPermission\fP および \f2ExecOptionPermission\fP を汎用的に許可する必要があります。 つまり、すべてのコードソースに対して許可します。 
+\f2rmid ��\fP ���ޤ��ޤʥ��ޥ�ɤ���ӥ��ץ�����¹Ԥ��븢�¤���Ĥ�����ϡ����������� \f2ExecPermission\fP ����� \f2ExecOptionPermission\fP ������Ū�˵��Ĥ���ɬ�פ�����ޤ����Ĥޤꡢ���٤ƤΥ����ɥ��������Ф��Ƶ��Ĥ��ޤ��� 
 .RS 3
 .TP 3
 ExecPermission 
-\f2ExecPermission\fP クラスは、起動グループを開始するために \f2rmid\fP が特定の「コマンド」を実行する権限を表します。 
+\f2ExecPermission\fP ���饹�ϡ���ư���롼�פ򳫻Ϥ��뤿��� \f2rmid ��\fP ����Ρ֥��ޥ�ɡפ�¹Ԥ��븢�¤�ɽ���ޤ��� 
 .LP
-\f3構文\fP
+\f3��ʸ\fP
 .br
-\f2ExecPermission\fP の「名前」は、\f2rmid\fP に実行を許可するコマンドのパス名です。「/*」 (「/」はファイル区切り文字 \f2File.separatorChar\fP) で終わるパス名は、そのディレクトリに含まれるすべてのファイルを示します。「/\-」で終わるパス名は、そのディレクトリに含まれるすべてのファイルとサブディレクトリ (再帰的に) を示します。パス名に特別なトークン「<<ALL FILES>>」を指定した場合は、\f3任意の\fPファイルを示します。 
+\f2ExecPermission\fP �Ρ�̾���פϡ� \f2rmid\fP �˼¹Ԥ���Ĥ��륳�ޥ�ɤΥѥ�̾�Ǥ�����/*�� (��/�פϥե�������ڤ�ʸ�� File.separatorChar) �ǽ����ѥ�̾�ϡ����Υǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե�����򼨤��ޤ��� ��/\-�פǽ����ѥ�̾�ϡ����Υǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե�����ȥ��֥ǥ��쥯�ȥ� (�Ƶ�Ū��) �򼨤��ޤ����ѥ�̾�����̤ʥȡ������<<ALL FILES>>�פ���ꤷ�����ϡ�\f3Ǥ�դ�\fP�ե�����򼨤��ޤ��� 
 .LP
-\f3注:\fP「*」を 1 つ指定しただけのパス名は、現在のディレクトリ内のすべてのファイルを表します。 また、「\-」を 1 つ指定しただけのパス名は、現在のディレクトリ内のすべてのファイルと、現在のディレクトリに含まれるすべてのファイルとサブディレクトリ (再帰的に) を表します。  
+\f3��:\fP ��*�פ� 1 �Ļ��ꤷ�������Υѥ�̾�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤ƤΥե������ɽ���ޤ����ޤ�����\-�פ� 1 �Ļ��ꤷ�������Υѥ�̾�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤ƤΥե�����ȡ����ߤΥǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե�����ȥ��֥ǥ��쥯�ȥ� (�Ƶ�Ū��) ��ɽ���ޤ���  
 .TP 3
 ExecOptionPermission 
-\f2ExecOptionPermission\fP クラスは、起動グループを開始するときに \f2rmid\fP が特定のコマンド行「オプション」を使用できる権限を表します。\f2ExecOptionPermission\fP の「名前」は、コマンド行オプションの値です。 
+\f2ExecOptionPermission\fP ���饹�ϡ���ư���롼�פ򳫻Ϥ���Ȥ��� \f2rmid �ϡ���ư���롼�פ򳫻Ϥ��륳�ޥ�ɤ�ޤä������ڤ��ޤ���\fP ����Υ��ޥ�ɹԡ֥��ץ����פ���ѤǤ��븢�¤�ɽ���ޤ��� \f2ExecOptionPermission\fP �Ρ�̾���פϡ����ޥ�ɹԥ��ץ������ͤǤ��� 
 .LP
-\f3構文\fP
+\f3��ʸ\fP
 .br
-オプションでは、ワイルドカードが限定的にサポートされます。アスタリスクは、ワイルドカードマッチを表します。 アスタリスクは、オプション名そのものとして使用できます。 つまり、任意のオプションを表すことができます。 また、オプション名の末尾に使用することもできます。 ただし、「.」か「=」の直後にアスタリスクを指定する必要があります。 
+���ץ����Ǥϡ��磻��ɥ����ɤ�����Ū�˥��ݡ��Ȥ���ޤ����������ꥹ���ϡ��磻��ɥ����ɥޥå���ɽ���ޤ��� �������ꥹ���ϡ����ץ����̾���Τ�ΤȤ��ƻ��ѤǤ��ޤ��� �ĤޤꡢǤ�դΥ��ץ�����ɽ�����Ȥ��Ǥ��ޤ��� �ޤ������ץ����̾�������˻��Ѥ��뤳�Ȥ�Ǥ��ޤ��� ����������.�פ���=�פ�ľ��˥������ꥹ������ꤹ��ɬ�פ�����ޤ��� 
 .LP
-例を示します。「*」、「\-Dfoo.*」、「\-Da.b.c=*」は有効ですが、「*foo」、「\-Da*b」、「ab*」は無効です。  
+��򼨤��ޤ�����*�ס���\-Dfoo.*�ס���\-Da.b.c=*�פ�ͭ���Ǥ�������*foo�ס���\-Da*b�ס���ab*�פ�̵���Ǥ���  
 .TP 3
-rmid のポリシーファイル 
-\f2rmid\fP にさまざまなコマンドおよびオプションを実行する権限を許可する場合は、アクセス権 \f2ExecPermission\fP および \f2ExecOptionPermission\fP を汎用的に許可する必要があります。 つまり、すべてのコードソースに対して許可します。これらのアクセス権をチェックするのは \f2rmid\fP だけなので、これらのアクセス権を汎用的に許可しても安全です。 
+rmid �Υݥꥷ���ե����� 
+\f2rmid ��\fP ���ޤ��ޤʥ��ޥ�ɤ���ӥ��ץ�����¹Ԥ��븢�¤���Ĥ�����ϡ����������� \f2ExecPermission\fP ����� \f2ExecOptionPermission\fP ������Ū�˵��Ĥ���ɬ�פ�����ޤ����Ĥޤꡢ���٤ƤΥ����ɥ��������Ф��Ƶ��Ĥ��ޤ��������Υ���������������å�����Τ� \f2rmid\fP �����ʤΤǡ������Υ���������������Ū�˵��Ĥ��Ƥ�����Ǥ��� 
 .LP
-\f2rmid\fP に各種の実行権限を許可するポリシーファイルの例を、次に示します。 
+rmid �˳Ƽ�μ¹Ը��¤���Ĥ���ݥꥷ���ե��������򡢼��˼����ޤ��� 
 .nf
 \f3
 .fl
@@ -220,13 +209,7 @@ grant {
 .fl
     permission com.sun.rmi.rmid.ExecPermission
 .fl
-        "/files/apps/java/jdk1.2.2/solaris/bin/java";
-.fl
-
-.fl
-    permission com.sun.rmi.rmid.ExecPermission
-.fl
-        "/files/apps/java/jdk1.2.2/solaris/bin/java_g";
+        "/files/apps/java/jdk1.7.0/solaris/bin/java";
 .fl
 
 .fl
@@ -256,29 +239,21 @@ grant {
 .fl
 \fP
 .fi
-最初の 2 つの付与されているアクセス権は、\f2rmid\fP に対し、パス名により明示的に指定される \f2java\fP コマンドおよび \f2java_g\fP コマンドの 1.2.2 バージョンの実行を許可します。デフォルトでは、\f2java.home\fP にあるバージョンの \f2java\fP コマンド (\f2rmid\fP が使用するのと同じバージョン) が使用されるため、そのコマンドは、ポリシーファイルで指定する必要はありません。3 番目のアクセス権は、\f2rmid\fP に対して、ディレクトリ \f2/files/apps/rmidcmds\fP 内の任意のコマンドの実行権限を許可します。 
+�ǽ����Ϳ����Ƥ��륢���������ϡ� \f2rmid\fP ���Ф����ѥ�̾�ˤ������Ū�˻��ꤵ��� \f2java\fP ���ޥ�ɤ� 1.7.0 �С������μ¹Ԥ���Ĥ��ޤ����ǥե���ȤǤϡ�java.home �ˤ���С������� \f2java\fP ���ޥ�� ( \f2rmid\fP �����Ѥ���Τ�Ʊ���С������) �����Ѥ���뤿�ᡢ���Υ��ޥ�ɤϡ��ݥꥷ���ե�����ǻ��ꤹ��ɬ�פϤ���ޤ���2 ���ܤΥ����������ϡ� \f2rmid\fP ���Ф��ơ��ǥ��쥯�ȥ� \f2/files/apps/rmidcmds\fP ���Ǥ�դΥ��ޥ�ɤμ¹Ը��¤���Ĥ��ޤ��� 
 .LP
-4 番目のアクセス権 \f2ExecOptionPermission\fP は、\f2rmid\fP に対して、セキュリティーポリシーファイルを \f2/files/policies/group.policy\fP として定義している起動グループの開始を許可します。5 番目のアクセス権は、起動グループが \f2java.security.debug\fP プロパティーを使用することを許可しています。最後のアクセス権は、起動グループが \f2sun.rmi\fP というプロパティー名の階層内の任意のプロパティーを使用することを許可しています。 
+3 ���ܤ���Ϳ����Ƥ��륢�������� \f2ExecOptionPermission\fP �ϡ� \f2rmid\fP ���Ф��ơ��������ƥ����ݥꥷ���ե������ \f2/files/policies/group.policy\fP �Ȥ���������Ƥ��뵯ư���롼�פγ��Ϥ���Ĥ��ޤ������Υ����������ϡ���ư���롼�פ� \f2java.security.debug\fP �ץ��ѥƥ�������Ѥ��뤳�Ȥ���Ĥ��Ƥ��ޤ����Ǹ�Υ����������ϡ���ư���롼�פ� \f2sun.rmi\fP �Ȥ����ץ��ѥƥ���̾�γ������Ǥ�դΥץ��ѥƥ�������Ѥ��뤳�Ȥ���Ĥ��Ƥ��ޤ��� 
 .LP
-ポリシーファイルを指定して \f2rmid\fP を起動するには、\f2rmid\fP のコマンド行で \f2java.security.policy\fP プロパティーを指定する必要があります。 次に例を示します。 
-.RS 3
-
+�ݥꥷ���ե��������ꤷ�� \f2rmid\fP ��ư����ˤϡ�rmid �Υ��ޥ�ɹԤ� \f2java.security.policy\fP �ץ��ѥƥ�������ꤹ��ɬ�פ�����ޤ��� ������򼨤��ޤ��� 
 .LP
-.LP
-\f2rmid \-J\-Djava.security.policy=rmid.policy\fP
-.LP
+\f2rmid \-J\-Djava.security.policy=rmid.policy\fP  
 .RE
-.RE
-.TP 2
-o
-.LP
 .TP 2
 o
 \f4<policyClassName>\fP 
 .LP
-デフォルトの動作では十分な柔軟性が得られない場合、管理者は、\f2rmid\fP の起動時に、\f2checkExecCommand\fP メソッドが所属するクラスの名前を指定して、rmid が実行するコマンドをチェックすることができます。 
+�ǥե���Ȥ�ư��ǤϽ�ʬ�ʽ������������ʤ���硢�����Ԥϡ� \f2rmid\fP �ε�ư���ˡ� \f2checkExecCommand\fP �᥽�åɤ���°���륯�饹��̾������ꤷ�ơ�rmid ���¹Ԥ��륳�ޥ�ɤ�����å����뤳�Ȥ��Ǥ��ޤ��� 
 .LP
-\f2policyClassName\fP には、引数なしのコンストラクタを持ち、次のような \f2checkExecCommand\fP メソッドを実装している public クラスを指定します。 
+\f2policyClassName\fP �ˤϡ������ʤ��Υ��󥹥ȥ饯������������Τ褦�� \f2checkExecCommand\fP �᥽�åɤ�������Ƥ��� public ���饹����ꤷ�ޤ��� 
 .nf
 \f3
 .fl
@@ -290,22 +265,21 @@ o
 .fl
 \fP
 .fi
-起動グループを開始する前に、\f2rmid\fP は、ポリシーの \f2checkExecCommand\fP メソッドを呼び出します。このとき、起動グループの記述子と、起動グループを開始するための完全なコマンドを含む配列をそのメソッドに渡します。\f2checkExecCommand\fP が \f2SecurityException\fP をスローすると、\f2rmid\fP はその起動グループを開始せず、オブジェクトの起動を試行している呼び出し側には \f2ActivationException\fP がスローされます。 
-.LP
+��ư���롼�פ򳫻Ϥ������ˡ� \f2rmid\fP �ϡ��ݥꥷ���� \f2checkExecCommand\fP �᥽�åɤ�ƤӽФ��ޤ������ΤȤ�����ư���롼�פε��һҤȡ���ư���롼�פ򳫻Ϥ��뤿��δ����ʥ��ޥ�ɤ�ޤ�����򤽤Υ᥽�åɤ��Ϥ��ޤ��� \f2checkExecCommand\fP �� \f2SecurityException\fP �򥹥�������ȡ� \f2rmid\fP �Ϥ��ε�ư���롼�פ򳫻Ϥ��������֥������Ȥε�ư���Ԥ��Ƥ���ƤӽФ�¦�ˤ� \f2ActivationException\fP ������������ޤ��� 
 .TP 2
 o
 \f3none\fP 
 .LP
-\f2sun.rmi.activation.execPolicy\fP プロパティーの値が「none」の場合、\f2rmid\fP は、起動グループを開始するコマンドをまったく検証しません。  
+\f2sun.rmi.activation.execPolicy\fP �ץ��ѥƥ������ͤ���none�פξ�硢 \f2rmid\fP �ϡ���ư���롼�פ򳫻Ϥ��륳�ޥ�ɤ�ޤä������ڤ��ޤ���  
 .RE
 .LP
 .TP 3
 \-log dir 
-起動システムデーモンがデータベースおよび関連情報を書き込むのに使うディレクトリの名前を指定します。デフォルトでは、\f2rmid\fP コマンドを実行したディレクトリに、\f2log\fP というログディレクトリが作成されます。 
+��ư�����ƥ�ǡ���󤬥ǡ����١�������Ӵ�Ϣ�����񤭹���Τ˻Ȥ��ǥ��쥯�ȥ��̾������ꤷ�ޤ����ǥե���ȤǤϡ�rmid ���ޥ�ɤ�¹Ԥ����ǥ��쥯�ȥ�ˡ� \f2log\fP �Ȥ��������ǥ��쥯�ȥ꤬��������ޤ��� 
 .LP
 .TP 3
 \-port port 
-\f2rmid\fP のレジストリが使うポートを指定します。起動システムデーモンは、このレジストリの中で、\f2java.rmi.activation.ActivationSystem\fP という名前で\f2ActivationSystem\fP をバインドします。したがって、ローカルマシン上の \f2ActivationSystem\fP は、次のように \f2Naming.lookup\fP メソッドを呼び出すことによって取得できます。 
+\f2rmid\fP �Υ쥸���ȥ꤬�Ȥ��ݡ��Ȥ���ꤷ�ޤ�����ư�����ƥ�ǡ����ϡ����Υ쥸���ȥ����ǡ� \f2java.rmi.activation.ActivationSystem\fP �Ȥ���̾����ActivationSystem ��Х���ɤ��ޤ����������äơ���������ޥ����� \f2ActivationSystem\fP �ϡ����Τ褦�� \f2Naming.lookup\fP �᥽�åɤ�ƤӽФ����Ȥˤ�äƼ����Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -322,16 +296,16 @@ o
 .fi
 .TP 3
 \-stop 
-\f2\-port\fP オプションによって指定されたポートの、現在の \f2rmid\fP 呼び出しを停止します。ポートが指定されていない場合は、ポート 1098 で実行されている \f2rmid\fP を停止します。 
+\-port ���ץ����ˤ�äƻ��ꤵ�줿�ݡ��ȤΡ����ߤ� \f2rmid\fP �ƤӽФ�����ߤ��ޤ��� �ݡ��Ȥ����ꤵ��Ƥ��ʤ����ϡ��ݡ��� 1098 �Ǽ¹Ԥ���Ƥ��� \f2rmid\fP ����ߤ��ޤ��� 
 .RE
-.SH "環境変数"
-.LP
 
+.LP
+.SH "�Ķ��ѿ�"
 .LP
 .RS 3
 .TP 3
 CLASSPATH 
-ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。例を示します。 
+�桼����������饹�ؤΥѥ��򥷥��ƥ�˻��ꤷ�ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ�����򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -342,15 +316,13 @@ CLASSPATH
 .RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
-rmic(1)、
+rmic(1)��
 .na
 \f2CLASSPATH\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath、java(1)
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath��java(1)
 .LP
  

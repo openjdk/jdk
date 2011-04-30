@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,10 @@ import javax.net.ssl.SSLSocket;
  *
  * @author David Brownell
  */
-final
-public class SSLSocketFactoryImpl extends SSLSocketFactory
-{
+final public class SSLSocketFactoryImpl extends SSLSocketFactory {
+
     private static SSLContextImpl defaultContext;
     private SSLContextImpl context;
-
 
     /**
      * Constructor used to instantiate the default factory. This method is
@@ -55,7 +53,7 @@ public class SSLSocketFactoryImpl extends SSLSocketFactory
      * java.security file is set.
      */
     public SSLSocketFactoryImpl() throws Exception {
-        this.context = DefaultSSLContextImpl.getDefaultImpl();
+        this.context = SSLContextImpl.DefaultSSLContext.getDefaultImpl();
     }
 
     /**
@@ -167,10 +165,8 @@ public class SSLSocketFactoryImpl extends SSLSocketFactory
      * is encrypted to provide confidentiality.
      */
     public String[] getDefaultCipherSuites() {
-        CipherSuiteList.clearAvailableCache();
-        return CipherSuiteList.getDefault().toStringArray();
+        return context.getDefaultCipherSuiteList(false).toStringArray();
     }
-
 
     /**
      * Returns the names of the cipher suites which could be enabled for use
@@ -181,7 +177,6 @@ public class SSLSocketFactoryImpl extends SSLSocketFactory
      * certain kinds of certificates to use certain cipher suites.
      */
     public String[] getSupportedCipherSuites() {
-        CipherSuiteList.clearAvailableCache();
-        return CipherSuiteList.getSupported().toStringArray();
+        return context.getSuportedCipherSuiteList().toStringArray();
     }
 }

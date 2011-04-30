@@ -19,31 +19,29 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jsadebugd 1 "02 Jun 2010"
+.TH jsadebugd 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jsadebugd \- サービスアビリティーエージェントデバッグデーモン
+.SH "̾��"
+jsadebugd \- �����ӥ����ӥ�ƥ�������������ȥǥХå��ǡ����
 .LP
 .RS 3
 .TP 2
 o
-形式 
+���� 
 .TP 2
 o
-パラメータ 
+�ѥ�᡼�� 
 .TP 2
 o
-説明 
+���� 
 .TP 2
 o
-関連項目 
+��Ϣ���� 
 .RE
 
 .LP
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -55,14 +53,12 @@ o
 .fi
 
 .LP
-.SH "パラメータ"
-.LP
-
+.SH "�ѥ�᡼��"
 .LP
 .RS 3
 .TP 3
 pid 
-デバッグサーバーが接続するプロセスのプロセス ID です。プロセスは Java プロセスである必要があります。マシン上で実行している Java プロセスの一覧を取得するには、jps(1) を使用します。単一のプロセスに接続できるデバッグサーバーのインスタンスは、1 つに制限されます。 
+�ǥХå������С�����³����ץ������Υץ����� ID �Ǥ����ץ������� Java �ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ��� Java �ץ������ΰ������������ˤϡ�jps(1) ����Ѥ��ޤ���ñ��Υץ���������³�Ǥ���ǥХå������С��Υ��󥹥��󥹤ϡ�1 �Ĥ����¤���ޤ��� 
 .RE
 
 .LP
@@ -74,37 +70,32 @@ executable
 .LP
 .RS 3
 .TP 3
-コアダンプの作成元になる Java 実行可能ファイルです。 
+��������פκ������ˤʤ� Java �¹Բ�ǽ�ե�����Ǥ��� 
 .RE
 
 .LP
 .RS 3
 .TP 3
 core 
-デバッグサーバーを接続するコアファイルです。 
+�ǥХå������С�����³���륳���ե�����Ǥ��� 
 .RE
 
 .LP
 .RS 3
 .TP 3
 server\-id 
-複数のデバッグサーバーが同一のマシン上で実行している場合に必要になる、オプション固有の ID です。この ID は、リモートクライアントが、接続先のデバッグサーバーを特定するために使用する必要があります。この ID は、単一のマシン内で一意でなければなりません。 
+ʣ���ΥǥХå������С���Ʊ��Υޥ����Ǽ¹Ԥ��Ƥ������ɬ�פˤʤ롢���ץ�����ͭ�� ID �Ǥ������� ID �ϡ���⡼�ȥ��饤����Ȥ�����³��ΥǥХå������С������ꤹ�뤿��˻��Ѥ���ɬ�פ�����ޤ������� ID �ϡ�ñ��Υޥ�����ǰ�դǤʤ���Фʤ�ޤ��� 
 .RE
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3jsadebugd\fP は、Java プロセスまたはコアファイルに接続し、デバッグサーバーとして機能します。jstack(1)、jmap(1)、および jinfo(1) などのリモートクライアントは、Java Remote Method Invocation (RMI) を使用しているサーバーに接続できます。\f2jsadebugd\fP を起動する前に、次のように指定して 
+\f3jsadebugd\fP �ϡ�Java �ץ������ޤ��ϥ����ե��������³�����ǥХå������С��Ȥ��Ƶ�ǽ���ޤ���jstack(1)��jmap(1)������� jinfo(1) �ʤɤΥ�⡼�ȥ��饤����Ȥϡ�Java Remote Method Invocation (RMI) ����Ѥ��Ƥ��륵���С�����³�Ǥ��ޤ��� \f2jsadebugd\fP ��ư�������ˡ����Τ褦�ˤ��� 
 .na
 \f2rmiregistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi を起動する必要があります。
-.LP
-.RS 3
-
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi ��ư����ɬ�פ�����ޤ���
 .LP
 .nf
 \f3
@@ -113,16 +104,18 @@ http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi を起動する
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-ここで、\f2$JAVA_HOME\fP は、JDK のインストールディレクトリです。rmiregistry が起動していない場合、jsadebugd は標準 (1099) ポートの rmiregistry を内部で起動します。デバッグサーバーは、SIGINT を送信する (Ctrl+C を押す) ことにより停止できます。
+�����ǡ� \f2$JAVA_HOME\fP �� JDK ���󥹥ȡ���ǥ��쥯�ȥ�Ǥ���rmiregistry ����ư���Ƥ��ʤ���硢jsadebugd ��ɸ�� (1099) �ݡ��Ȥ� rmiregistry �������ǵ�ư���ޤ����ǥХå������С��ϡ�SIGINT ���������� (Ctrl+C �򲡤�) ���Ȥˤ����ߤǤ��ޤ���
 .LP
 .LP
-\f3注 \- このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。 jsadebugd は、現時点では、Windows プラットフォームでは使用できません。\fP
+\f3��\fP \- ���Υ桼�ƥ���ƥ����ϥ��ݡ����оݳ��Ǥ��ꡢ����� JDK �ΥС������Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���dbgeng.dll ��¸�ߤ��Ƥ��ʤ� Windows �����ƥ�Ǥϡ���Debugging Tools For Windows�פ򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ��󡣤ޤ��� \f2PATH\fP �Ķ��ѿ��ˤϡ��������åȥץ������ˤ�äƻ��Ѥ���� \f2jvm.dll\fP �ξ�ꡢ�ޤ��ϥ���å������ץե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ���������
 .LP
-.SH "関連項目"
+.LP
+������򼨤��ޤ��� \f2set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
+.LP
+.SH "��Ϣ����"
 .LP
 .RS 3
 .TP 2

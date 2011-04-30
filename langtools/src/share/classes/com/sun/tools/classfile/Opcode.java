@@ -29,7 +29,7 @@ import static com.sun.tools.classfile.Instruction.Kind.*;
 import static com.sun.tools.classfile.Opcode.Set.*;
 
 /**
- * See JVMS3, chapter 6.
+ * See JVMS, chapter 6.
  *
  * <p>In addition to providing all the standard opcodes defined in JVMS,
  * this class also provides legacy support for the PicoJava extensions.

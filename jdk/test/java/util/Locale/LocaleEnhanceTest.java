@@ -33,8 +33,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Locale;
@@ -43,8 +45,10 @@ import java.util.Set;
 
 /**
  * @test
- * @bug 6875847 6992272 7002320 7015500 7023613
+ * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504
  * @summary test API changes to Locale
+ * @compile LocaleEnhanceTest.java
+ * @run main/othervm -esa LocaleEnhanceTest
  */
 public class LocaleEnhanceTest extends LocaleTestFmwk {
 
@@ -592,6 +596,9 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
         Locale locale = Locale.forLanguageTag("und-d-aa-00-bb-01-D-AA-10-cc-11-c-1234");
         assertEquals("extension", "aa-00-bb-01", locale.getExtension('d'));
         assertEquals("extension c", "1234", locale.getExtension('c'));
+
+        locale = Locale.forLanguageTag("und-U-ca-gregory-u-ca-japanese");
+        assertEquals("Unicode extension", "ca-gregory", locale.getExtension(Locale.UNICODE_LOCALE_EXTENSION));
 
         // redundant Unicode locale keys in an extension are ignored
         locale = Locale.forLanguageTag("und-u-aa-000-bb-001-bB-002-cc-003-c-1234");
@@ -1273,6 +1280,35 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             String out = loc.toString();
             assertEquals("Empty country field with non-empty script/extension with input: " + in, expected, out);
         }
+    }
+
+    /*
+     * 7033504: (lc) incompatible behavior change for ja_JP_JP and th_TH_TH locales
+     */
+    public void testBug7033504() {
+        checkCalendar(new Locale("ja", "JP", "jp"), "java.util.GregorianCalendar");
+        checkCalendar(new Locale("ja", "jp", "jp"), "java.util.GregorianCalendar");
+        checkCalendar(new Locale("ja", "JP", "JP"), "java.util.JapaneseImperialCalendar");
+        checkCalendar(new Locale("ja", "jp", "JP"), "java.util.JapaneseImperialCalendar");
+        checkCalendar(Locale.forLanguageTag("en-u-ca-japanese"),
+                      "java.util.JapaneseImperialCalendar");
+
+        checkDigit(new Locale("th", "TH", "th"), '0');
+        checkDigit(new Locale("th", "th", "th"), '0');
+        checkDigit(new Locale("th", "TH", "TH"), '\u0e50');
+        checkDigit(new Locale("th", "TH", "TH"), '\u0e50');
+        checkDigit(Locale.forLanguageTag("en-u-nu-thai"), '\u0e50');
+    }
+
+    private void checkCalendar(Locale loc, String expected) {
+        Calendar cal = Calendar.getInstance(loc);
+        assertEquals("Wrong calendar", expected, cal.getClass().getName());
+    }
+
+    private void checkDigit(Locale loc, Character expected) {
+        DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(loc);
+        Character zero = dfs.getZeroDigit();
+        assertEquals("Wrong digit zero char", expected, zero);
     }
 
     ///

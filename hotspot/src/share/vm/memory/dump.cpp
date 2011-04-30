@@ -623,24 +623,48 @@ public:
   }
 };
 
-// Itable indices are calculated based on methods array order
-// (see klassItable::compute_itable_index()).  Must reinitialize
+// Vtable and Itable indices are calculated based on methods array
+// order (see klassItable::compute_itable_index()).  Must reinitialize
 // after ALL methods of ALL classes have been reordered.
 // We assume that since checkconstraints is false, this method
 // cannot throw an exception.  An exception here would be
 // problematic since this is the VMThread, not a JavaThread.
 
-class ReinitializeItables: public ObjectClosure {
+class ReinitializeTables: public ObjectClosure {
 private:
   Thread* _thread;
 
 public:
-  ReinitializeItables(Thread* thread) : _thread(thread) {}
+  ReinitializeTables(Thread* thread) : _thread(thread) {}
+
+  // Initialize super vtable first, check if already initialized to avoid
+  // quadradic behavior.  The vtable is cleared in remove_unshareable_info.
+  void reinitialize_vtables(klassOop k) {
+    if (k->blueprint()->oop_is_instanceKlass()) {
+      instanceKlass* ik = instanceKlass::cast(k);
+      if (ik->vtable()->is_initialized()) return;
+      if (ik->super() != NULL) {
+        reinitialize_vtables(ik->super());
+      }
+      ik->vtable()->initialize_vtable(false, _thread);
+    }
+  }
 
   void do_object(oop obj) {
     if (obj->blueprint()->oop_is_instanceKlass()) {
       instanceKlass* ik = instanceKlass::cast((klassOop)obj);
+      ResourceMark rm(_thread);
       ik->itable()->initialize_itable(false, _thread);
+      reinitialize_vtables((klassOop)obj);
+#ifdef ASSERT
+      ik->vtable()->verify(tty, true);
+#endif // ASSERT
+    } else if (obj->blueprint()->oop_is_arrayKlass()) {
+      // The vtable for array klasses are that of its super class,
+      // ie. java.lang.Object.
+      arrayKlass* ak = arrayKlass::cast((klassOop)obj);
+      if (ak->vtable()->is_initialized()) return;
+      ak->vtable()->initialize_vtable(false, _thread);
     }
   }
 };
@@ -1205,9 +1229,9 @@ public:
     gen->ro_space()->object_iterate(&sort);
     gen->rw_space()->object_iterate(&sort);
 
-    ReinitializeItables reinit_itables(THREAD);
-    gen->ro_space()->object_iterate(&reinit_itables);
-    gen->rw_space()->object_iterate(&reinit_itables);
+    ReinitializeTables reinit_tables(THREAD);
+    gen->ro_space()->object_iterate(&reinit_tables);
+    gen->rw_space()->object_iterate(&reinit_tables);
     tty->print_cr("done. ");
     tty->cr();
 

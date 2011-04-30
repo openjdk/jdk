@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Specification-Title: Java Platform API Specification
 Specification-Version: 1.7
-Specification-Vendor: Oracle
+Specification-Vendor: Oracle Corporation
 Implementation-Title: Java Runtime Environment
 Implementation-Version: @@RELEASE@@
 Implementation-Vendor: @@COMPANY_NAME@@

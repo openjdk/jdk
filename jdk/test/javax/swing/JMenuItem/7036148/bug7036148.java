@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,33 @@
  * questions.
  */
 
-package com.sun.source.tree;
-
-import java.util.List;
-
-/**
- * A tree node for a disjunctive type expression in a multicatch var declaration.
- *
- *
- * @author Maurizio Cimadamore
- *
- * @since 1.7
+ /*
+ * @test
+ * @bug 7036148
+ * @summary NullPointerException with null JMenu name
+ * @author Alexander Potochkin
+ * @run main bug7036148
  */
-public interface DisjunctiveTypeTree extends Tree {
-    List<? extends Tree> getTypeAlternatives();
+
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+public class bug7036148 extends JFrame {
+    public bug7036148() {
+        JMenuBar bar = new JMenuBar();
+        Action menuAction = new AbstractAction(null, null){
+            public void actionPerformed(ActionEvent e) {
+            }
+        };
+        JMenu menu = new JMenu(menuAction);
+        menu.add(new JMenuItem("test"));
+        bar.add(menu);
+        setJMenuBar(bar);
+        pack();
+    }
+
+       public static void main(String[] args) {
+            new bug7036148();
+       }
 }

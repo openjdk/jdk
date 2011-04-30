@@ -118,10 +118,8 @@ public interface ObjectReference extends Value
      * enclosing class's class loader). Primitive values must be
      * either assignment compatible with the field type or must be
      * convertible to the field type without loss of information.
-     * See the <a href="http://java.sun.com/docs/books/jls/">
-     * Java<sup><font size=-2>TM</font></sup> Language Specification</a>.
-     * section
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#184206">5.2</a>
+     * See section 5.2 of
+     * <cite>The Java&trade; Language Specification</cite>
      * for more information on assignment
      * compatibility.
      *
@@ -182,18 +180,13 @@ public interface ObjectReference extends Value
      * component type is passed.  The component type can be a primitive type.
      * Autoboxing is not supported.
      *
-     * See the <a href="http://java.sun.com/docs/books/jls/">
-     * Java Language Specification</a>.
-     * section
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#184206">5.2</a>
+     * See section 5.2 of
+     * <cite>The Java&trade; Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, the method is invoked using dynamic lookup as
-     * documented in the
-     * <a href="http://java.sun.com/docs/books/jls/">
-     * Java Language Specification</a>
-     * second edition, section
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/expressions.doc.html#45606">15.12.4.4</a>;
+     * documented in section 15.12.4.4 of
+     * <cite>The Java&trade; Language Specification</cite>
      * in particular, overriding based on the runtime type of the object
      * mirrored by this {@link ObjectReference} will occur. This
      * behavior can be changed by specifying the
