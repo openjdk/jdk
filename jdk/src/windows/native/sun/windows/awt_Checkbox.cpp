@@ -384,7 +384,9 @@ void AwtCheckbox::_SetLabel(void *param)
         {
             c->SetText(labelStr);
             c->VerifyState();
-            JNU_ReleaseStringPlatformChars(env, label, labelStr);
+            if (label != NULL) {
+                JNU_ReleaseStringPlatformChars(env, label, labelStr);
+            }
         }
     }
 

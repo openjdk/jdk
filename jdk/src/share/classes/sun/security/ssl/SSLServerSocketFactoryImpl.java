@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      * java.security file is set.
      */
     public SSLServerSocketFactoryImpl() throws Exception {
-        this.context = DefaultSSLContextImpl.getDefaultImpl();
+        this.context = SSLContextImpl.DefaultSSLContext.getDefaultImpl();
     }
 
     /**
@@ -99,8 +99,7 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      * is encrypted to provide confidentiality.
      */
     public String[] getDefaultCipherSuites() {
-        CipherSuiteList.clearAvailableCache();
-        return CipherSuiteList.getDefault().toStringArray();
+        return context.getDefaultCipherSuiteList(true).toStringArray();
     }
 
     /**
@@ -114,8 +113,7 @@ public class SSLServerSocketFactoryImpl extends SSLServerSocketFactory
      * @return an array of cipher suite names
      */
     public String[] getSupportedCipherSuites() {
-        CipherSuiteList.clearAvailableCache();
-        return CipherSuiteList.getSupported().toStringArray();
+        return context.getSuportedCipherSuiteList().toStringArray();
     }
 
 }

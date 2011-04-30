@@ -95,8 +95,8 @@ import sun.reflect.annotation.*;
  * </pre></blockquote>
  *
  * <p> It is also possible to get the {@code Class} object for a named
- * type (or for void) using a class literal
- * (JLS Section <A HREF="http://java.sun.com/docs/books/jls/second_edition/html/expressions.doc.html#251530">15.8.2</A>).
+ * type (or for void) using a class literal.  See Section 15.8.2 of
+ * <cite>The Java&trade; Language Specification</cite>.
  * For example:
  *
  * <p> <blockquote>
@@ -521,7 +521,8 @@ public final
      *
      * <p> If this class object represents a reference type that is not an
      * array type then the binary name of the class is returned, as specified
-     * by the Java Language Specification, Second Edition.
+     * by
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * <p> If this class object represents a primitive type or void, then the
      * name returned is a {@code String} equal to the Java language
@@ -630,8 +631,8 @@ public final
      *     the type variables declared by this generic declaration
      * @throws java.lang.reflect.GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
-     *     the format specified in the Java Virtual Machine Specification,
-     *     3rd edition
+     *     the format specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @since 1.5
      */
     public TypeVariable<Class<T>>[] getTypeParameters() {
@@ -675,8 +676,8 @@ public final
      * returned.
      *
      * @throws java.lang.reflect.GenericSignatureFormatError if the generic
-     *     class signature does not conform to the format specified in the
-     *     Java Virtual Machine Specification, 3rd edition
+     *     class signature does not conform to the format specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the generic superclass
      *     refers to a non-existent type declaration
      * @throws java.lang.reflect.MalformedParameterizedTypeException if the
@@ -798,7 +799,8 @@ public final
      *
      * @throws java.lang.reflect.GenericSignatureFormatError
      *     if the generic class signature does not conform to the format
-     *     specified in the Java Virtual Machine Specification, 3rd edition
+     *     specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the generic
      *     superinterfaces refers to a non-existent type declaration
      * @throws java.lang.reflect.MalformedParameterizedTypeException

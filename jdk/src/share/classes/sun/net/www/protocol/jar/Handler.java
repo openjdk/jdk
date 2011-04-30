@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 package sun.net.www.protocol.jar;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.*;
-import java.util.*;
 import sun.net.www.ParseUtil;
 
 /*
@@ -42,7 +41,7 @@ public class Handler extends java.net.URLStreamHandler {
         return new JarURLConnection(u, this);
     }
 
-    private int indexOfBangSlash(String spec) {
+    private static int indexOfBangSlash(String spec) {
         int indexOfBang = spec.length();
         while((indexOfBang = spec.lastIndexOf('!', indexOfBang)) != -1) {
             if ((indexOfBang != (spec.length() - 1)) &&
@@ -55,6 +54,75 @@ public class Handler extends java.net.URLStreamHandler {
         return -1;
     }
 
+    /**
+     * Compare two jar URLs
+     */
+    @Override
+    protected boolean sameFile(URL u1, URL u2) {
+        if (!u1.getProtocol().equals("jar") || !u2.getProtocol().equals("jar"))
+            return false;
+
+        String file1 = u1.getFile();
+        String file2 = u2.getFile();
+        int sep1 = file1.indexOf(separator);
+        int sep2 = file2.indexOf(separator);
+
+        if (sep1 == -1 || sep2 == -1) {
+            return super.sameFile(u1, u2);
+        }
+
+        String entry1 = file1.substring(sep1 + 2);
+        String entry2 = file2.substring(sep2 + 2);
+
+        if (!entry1.equals(entry2))
+            return false;
+
+        URL enclosedURL1 = null, enclosedURL2 = null;
+        try {
+            enclosedURL1 = new URL(file1.substring(0, sep1));
+            enclosedURL2 = new URL(file2.substring(0, sep2));
+        } catch (MalformedURLException unused) {
+            return super.sameFile(u1, u2);
+        }
+
+        if (!super.sameFile(enclosedURL1, enclosedURL2)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    protected int hashCode(URL u) {
+        int h = 0;
+
+        String protocol = u.getProtocol();
+        if (protocol != null)
+            h += protocol.hashCode();
+
+        String file = u.getFile();
+        int sep = file.indexOf(separator);
+
+        if (sep == -1)
+            return h + file.hashCode();
+
+        URL enclosedURL = null;
+        String fileWithoutEntry = file.substring(0, sep);
+        try {
+            enclosedURL = new URL(fileWithoutEntry);
+            h += enclosedURL.hashCode();
+        } catch (MalformedURLException unused) {
+            h += fileWithoutEntry.hashCode();
+        }
+
+        String entry = file.substring(sep + 2);
+        h += entry.hashCode();
+
+        return h;
+    }
+
+
+    @Override
     protected void parseURL(URL url, String spec,
                             int start, int limit) {
         String file = null;
