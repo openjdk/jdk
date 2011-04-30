@@ -40,8 +40,7 @@ import javax.lang.model.element.Name;
  *   <em>modifiers</em> <em>type</em> <em>name</em> () default <em>defaultValue</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, sections 8.4, 8.6, 8.7,
- * 9.4, and 9.6"
+ * @jls sections 8.4, 8.6, 8.7, 9.4, and 9.6
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

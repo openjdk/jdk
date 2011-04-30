@@ -46,7 +46,7 @@ package javax.lang.model.element;
 
 public enum Modifier {
 
-    // See JLS2 sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1.
+    // See JLS sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1.
     // java.lang.reflect.Modifier includes INTERFACE, but that's a VMism.
 
     /** The modifier {@code public} */          PUBLIC,

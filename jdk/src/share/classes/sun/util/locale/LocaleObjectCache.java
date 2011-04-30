@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,24 +34,25 @@ package sun.util.locale;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public abstract class LocaleObjectCache<K, V> {
-    private ConcurrentHashMap<K, CacheEntry<K, V>> _map;
-    private ReferenceQueue<V> _queue = new ReferenceQueue<V>();
+    private ConcurrentMap<K, CacheEntry<K, V>> map;
+    private ReferenceQueue<V> queue = new ReferenceQueue<>();
 
     public LocaleObjectCache() {
         this(16, 0.75f, 16);
     }
 
     public LocaleObjectCache(int initialCapacity, float loadFactor, int concurrencyLevel) {
-        _map = new ConcurrentHashMap<K, CacheEntry<K, V>>(initialCapacity, loadFactor, concurrencyLevel);
+        map = new ConcurrentHashMap<>(initialCapacity, loadFactor, concurrencyLevel);
     }
 
     public V get(K key) {
         V value = null;
 
         cleanStaleEntries();
-        CacheEntry<K, V> entry = _map.get(key);
+        CacheEntry<K, V> entry = map.get(key);
         if (entry != null) {
             value = entry.get();
         }
@@ -63,11 +64,11 @@ public abstract class LocaleObjectCache<K, V> {
                 return null;
             }
 
-            CacheEntry<K, V> newEntry = new CacheEntry<K, V>(key, newVal, _queue);
+            CacheEntry<K, V> newEntry = new CacheEntry<>(key, newVal, queue);
 
             while (value == null) {
                 cleanStaleEntries();
-                entry = _map.putIfAbsent(key, newEntry);
+                entry = map.putIfAbsent(key, newEntry);
                 if (entry == null) {
                     value = newVal;
                     break;
@@ -79,11 +80,17 @@ public abstract class LocaleObjectCache<K, V> {
         return value;
     }
 
+    protected V put(K key, V value) {
+        CacheEntry<K, V> entry = new CacheEntry<>(key, value, queue);
+        CacheEntry<K, V> oldEntry = map.put(key, entry);
+        return (oldEntry == null) ? null : oldEntry.get();
+    }
+
     @SuppressWarnings("unchecked")
     private void cleanStaleEntries() {
         CacheEntry<K, V> entry;
-        while ((entry = (CacheEntry<K, V>)_queue.poll()) != null) {
-            _map.remove(entry.getKey());
+        while ((entry = (CacheEntry<K, V>)queue.poll()) != null) {
+            map.remove(entry.getKey());
         }
     }
 
@@ -94,15 +101,15 @@ public abstract class LocaleObjectCache<K, V> {
     }
 
     private static class CacheEntry<K, V> extends SoftReference<V> {
-        private K _key;
+        private K key;
 
         CacheEntry(K key, V value, ReferenceQueue<V> queue) {
             super(value, queue);
-            _key = key;
+            this.key = key;
         }
 
         K getKey() {
-            return _key;
+            return key;
         }
     }
 }

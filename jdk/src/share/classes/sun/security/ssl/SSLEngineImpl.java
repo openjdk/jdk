@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,8 +374,10 @@ final public class SSLEngineImpl extends SSLEngine {
         clientVerifyData = new byte[0];
         serverVerifyData = new byte[0];
 
-        enabledCipherSuites = CipherSuiteList.getDefault();
-        enabledProtocols = ProtocolList.getDefault(roleIsServer);
+        enabledCipherSuites =
+                sslContext.getDefaultCipherSuiteList(roleIsServer);
+        enabledProtocols =
+                sslContext.getDefaultProtocolList(roleIsServer);
 
         wrapLock = new Object();
         unwrapLock = new Object();
@@ -1883,8 +1885,8 @@ final public class SSLEngineImpl extends SSLEngine {
              * change them to the corresponding default ones.
              */
             if (roleIsServer != (!flag) &&
-                    ProtocolList.isDefaultProtocolList(enabledProtocols)) {
-                enabledProtocols = ProtocolList.getDefault(!flag);
+                    sslContext.isDefaultProtocolList(enabledProtocols)) {
+                enabledProtocols = sslContext.getDefaultProtocolList(!flag);
             }
 
             roleIsServer = !flag;
@@ -1907,8 +1909,8 @@ final public class SSLEngineImpl extends SSLEngine {
                  * change them to the corresponding default ones.
                  */
                 if (roleIsServer != (!flag) &&
-                        ProtocolList.isDefaultProtocolList(enabledProtocols)) {
-                    enabledProtocols = ProtocolList.getDefault(!flag);
+                        sslContext.isDefaultProtocolList(enabledProtocols)) {
+                    enabledProtocols = sslContext.getDefaultProtocolList(!flag);
                 }
 
                 roleIsServer = !flag;
@@ -1951,8 +1953,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * @return an array of cipher suite names
      */
     public String[] getSupportedCipherSuites() {
-        CipherSuiteList.clearAvailableCache();
-        return CipherSuiteList.getSupported().toStringArray();
+        return sslContext.getSuportedCipherSuiteList().toStringArray();
     }
 
     /**
@@ -1992,7 +1993,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * @return an array of protocol names.
      */
     public String[] getSupportedProtocols() {
-        return ProtocolList.getSupported().toStringArray();
+        return sslContext.getSuportedProtocolList().toStringArray();
     }
 
     /**

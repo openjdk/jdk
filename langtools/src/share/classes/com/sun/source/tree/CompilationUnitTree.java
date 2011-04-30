@@ -33,7 +33,7 @@ import com.sun.source.tree.LineMap;
  * Represents the abstract syntax tree for compilation units (source
  * files) and package declarations (package-info.java).
  *
- * @see "The Java Language Specification, 3rd ed, sections 7.3, and 7.4"
+ * @jls sections 7.3, and 7.4
  *
  * @author Peter von der Ah&eacute;
  * @since 1.6

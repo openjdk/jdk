@@ -56,10 +56,6 @@ build: unpacker
 
 vpath %.cpp $(SHARE_SRC)/native/$(PKGDIR)
 
-
-
-
-
 ifeq ($(STANDALONE),true)
   ZIPOBJDIR = $(OUTPUTDIR)/tmp/sun/java.util.zip/zip/$(OBJDIRNAME)
 
@@ -131,8 +127,9 @@ prop:
 pack200-tool:
 	$(call make-launcher, pack200, com.sun.java.util.jar.pack.Driver, , --pack)
 
+# ignore mapfile for non-product binary 
 unpacker:
-	$(MAKE) $(UNPACK_EXE) STANDALONE=true LDMAPFLAGS_OPT= LDMAPFLAGS_DBG=
+	$(MAKE) $(UNPACK_EXE) STANDALONE=true LDMAPFLAGS_DBG=
 
 ifeq ($(PLATFORM), windows)
 IMVERSIONVALUE=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)
@@ -147,8 +144,14 @@ winres::
 	$(ECHO) "Resource files not required for Unix"
 endif
 
+# Mapfile-vers.gmk, does not copy over the mapfile-vers-unpack200, when
+# the make utiliy is re-invoked, as in this case. In order to workaround
+# this special case, the mapfile required for the unpack200 command, is
+# explicitly copied over to the expected location.
 $(UNPACK_EXE): $(UNPACK_EXE_FILES_o) updatefiles winres
 	$(prep-target)
+	$(RM) $(TEMPDIR)/mapfile-vers
+	$(CP) mapfile-vers-unpack200 $(TEMPDIR)/mapfile-vers
 	$(LINKER)  $(LDDFLAGS) $(UNPACK_EXE_FILES_o) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
 ifdef MT
 	$(MT) /manifest $(OBJDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
