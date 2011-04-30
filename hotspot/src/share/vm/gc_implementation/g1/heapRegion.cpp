@@ -376,6 +376,17 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
+void HeapRegion::par_clear() {
+  assert(used() == 0, "the region should have been already cleared");
+  assert(capacity() == (size_t) HeapRegion::GrainBytes,
+         "should be back to normal");
+  HeapRegionRemSet* hrrs = rem_set();
+  hrrs->clear();
+  CardTableModRefBS* ct_bs =
+                   (CardTableModRefBS*)G1CollectedHeap::heap()->barrier_set();
+  ct_bs->clear(MemRegion(bottom(), end()));
+}
+
 // <PREDICTION>
 void HeapRegion::calc_gc_efficiency() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -600,7 +611,15 @@ HeapWord*
 HeapRegion::
 oops_on_card_seq_iterate_careful(MemRegion mr,
                                  FilterOutOfRegionClosure* cl,
-                                 bool filter_young) {
+                                 bool filter_young,
+                                 jbyte* card_ptr) {
+  // Currently, we should only have to clean the card if filter_young
+  // is true and vice versa.
+  if (filter_young) {
+    assert(card_ptr != NULL, "pre-condition");
+  } else {
+    assert(card_ptr == NULL, "pre-condition");
+  }
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // If we're within a stop-world GC, then we might look at a card in a
@@ -625,6 +644,15 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   }
 
   assert(!is_young(), "check value of filter_young");
+
+  // We can only clean the card here, after we make the decision that
+  // the card is not young. And we only clean the card if we have been
+  // asked to (i.e., card_ptr != NULL).
+  if (card_ptr != NULL) {
+    *card_ptr = CardTableModRefBS::clean_card_val();
+    // We must complete this write before we do any of the reads below.
+    OrderAccess::storeload();
+  }
 
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
