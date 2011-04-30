@@ -94,7 +94,10 @@ class Runtime1: public AllStatic {
   static int _generic_arraycopy_cnt;
   static int _primitive_arraycopy_cnt;
   static int _oop_arraycopy_cnt;
+  static int _generic_arraycopystub_cnt;
   static int _arraycopy_slowcase_cnt;
+  static int _arraycopy_checkcast_cnt;
+  static int _arraycopy_checkcast_attempt_cnt;
   static int _new_type_array_slowcase_cnt;
   static int _new_object_array_slowcase_cnt;
   static int _new_instance_slowcase_cnt;
@@ -174,7 +177,8 @@ class Runtime1: public AllStatic {
   static void trace_block_entry(jint block_id);
 
 #ifndef PRODUCT
-  static address throw_count_address()       { return (address)&_throw_count;       }
+  static address throw_count_address()               { return (address)&_throw_count;             }
+  static address arraycopy_count_address(BasicType type);
 #endif
 
   // directly accessible leaf routine

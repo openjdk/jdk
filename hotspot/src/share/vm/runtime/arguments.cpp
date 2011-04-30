@@ -59,7 +59,8 @@
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #endif
 
-#define DEFAULT_VENDOR_URL_BUG "http://java.sun.com/webapps/bugreport/crash.jsp"
+// Note: This is a special bug reporting site for the JVM
+#define DEFAULT_VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
 char**  Arguments::_jvm_flags_array             = NULL;
@@ -243,6 +244,13 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
+  { "UseParallelOldGCCompacting",
+                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
+  { "UseParallelDensePrefixUpdate",
+                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
+  { "UseParallelOldGCDensePrefix",
+                           JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
+  { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -799,26 +807,22 @@ bool Arguments::process_argument(const char* arg,
 
   JDK_Version since = JDK_Version();
 
-  if (parse_argument(arg, origin)) {
-    // do nothing
-  } else if (is_newly_obsolete(arg, &since)) {
-    enum { bufsize = 256 };
-    char buffer[bufsize];
-    since.to_string(buffer, bufsize);
-    jio_fprintf(defaultStream::error_stream(),
-      "Warning: The flag %s has been EOL'd as of %s and will"
-      " be ignored\n", arg, buffer);
-  } else {
-    if (!ignore_unrecognized) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Unrecognized VM option '%s'\n", arg);
-      // allow for commandline "commenting out" options like -XX:#+Verbose
-      if (strlen(arg) == 0 || arg[0] != '#') {
-        return false;
-      }
-    }
+  if (parse_argument(arg, origin) || ignore_unrecognized) {
+    return true;
   }
-  return true;
+
+  const char * const argname = *arg == '+' || *arg == '-' ? arg + 1 : arg;
+  if (is_newly_obsolete(arg, &since)) {
+    char version[256];
+    since.to_string(version, sizeof(version));
+    warning("ignoring option %s; support was removed in %s", argname, version);
+    return true;
+  }
+
+  jio_fprintf(defaultStream::error_stream(),
+              "Unrecognized VM option '%s'\n", argname);
+  // allow for commandline "commenting out" options like -XX:#+Verbose
+  return arg[0] == '#';
 }
 
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
@@ -961,6 +965,16 @@ void Arguments::set_mode_flags(Mode mode) {
   UseInterpreter             = true;
   UseCompiler                = true;
   UseLoopCounter             = true;
+
+#ifndef ZERO
+  // Turn these off for mixed and comp.  Leave them on for Zero.
+  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
+    UseFastAccessorMethods = mode == _int;
+  }
+  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
+    UseFastEmptyMethods = mode == _int;
+  }
+#endif
 
   // Default values may be platform/compiler dependent -
   // use the saved values

@@ -964,3 +964,14 @@ void CodeCache::log_state(outputStream* st) {
             nof_blobs(), nof_nmethods(), nof_adapters(),
             unallocated_capacity(), largest_free_block());
 }
+
+size_t CodeCache::largest_free_block() {
+  // This is called both with and without CodeCache_lock held so
+  // handle both cases.
+  if (CodeCache_lock->owned_by_self()) {
+    return _heap->largest_free_block();
+  } else {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    return _heap->largest_free_block();
+  }
+}

@@ -331,8 +331,6 @@ public class ConstantPool extends Oop implements ClassConstants {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
     }
-    if (getTagAt(i).value() == JVM_CONSTANT_InvokeDynamicTrans)
-        return null;
     int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
     TypeArray operands = getOperands();
     if (operands == null)  return null;  // safety first
@@ -368,7 +366,6 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_MethodHandle:       return "JVM_CONSTANT_MethodHandle";
     case JVM_CONSTANT_MethodType:         return "JVM_CONSTANT_MethodType";
     case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
-    case JVM_CONSTANT_InvokeDynamicTrans: return "JVM_CONSTANT_InvokeDynamic/transitional";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
     case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
@@ -428,7 +425,6 @@ public class ConstantPool extends Oop implements ClassConstants {
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
         case JVM_CONSTANT_InvokeDynamic:
-        case JVM_CONSTANT_InvokeDynamicTrans:
           visitor.doInt(new IntField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;
         }
@@ -592,7 +588,6 @@ public class ConstantPool extends Oop implements ClassConstants {
                   break;
               }
 
-              case JVM_CONSTANT_InvokeDynamicTrans:
               case JVM_CONSTANT_InvokeDynamic: {
                   dos.writeByte(cpConstType);
                   int value = getIntAt(ci);

@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javap 1 "02 Jun 2010"
+.TH javap 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-javap \- Java クラスファイル逆アセンブラ
-.LP
-.RS 3
-
+.SH "̾��"
+javap \- Java ���饹�ե�����ե�����֥�
 .LP
 .LP
-クラスファイルを逆アセンブルします。
+���饹�ե������ե�����֥뤷�ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,15 +39,10 @@ javap [ \fP\f3options\fP\f3 ] class. . .
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3javap\fP コマンドは、クラスファイルを逆アセンブルします。その出力は指定するオプションにより異なります。オプションを指定しない場合、\f3javap\fP は、そのパッケージ、渡されたクラスの protected および public のフィールドとメソッドを出力します。 \f3javap\fP はその出力を標準出力に表示します。たとえば、次のクラス宣言をコンパイルするとします。
-.LP
-.RS 3
-
+\f3javap\fP ���ޥ�ɤϡ����饹�ե������ե�����֥뤷�ޤ������ν��Ϥϻ��ꤹ�륪�ץ����ˤ��ۤʤ�ޤ������ץ�������ꤷ�ʤ���硢\f3javap\fP �ϡ����Υѥå��������Ϥ��줿���饹�� protected ����� public �Υե�����ɤȥ᥽�åɤ���Ϥ��ޤ���\f3javap\fP �Ϥ��ν��Ϥ�ɸ����Ϥ�ɽ�����ޤ������Ȥ��С����Υ��饹����򥳥�ѥ��뤹��Ȥ��ޤ���
 .LP
 .nf
 \f3
@@ -96,14 +85,10 @@ public class DocFooter extends Applet {
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f3javap DocFooter\fP がもたらす出力は次のようになります。
-.LP
-.RS 3
-
+\f3javap DocFooter\fP ���⤿�餹���Ϥϼ��Τ褦�ˤʤ�ޤ���
 .LP
 .nf
 \f3
@@ -126,14 +111,10 @@ public class DocFooter extends java.applet.Applet {
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f3javap \-c DocFooter\fP がもたらす出力は次のようになります。
-.LP
-.RS 3
-
+\f3javap \-c DocFooter\fP ���⤿�餹���Ϥϼ��Τ褦�ˤʤ�ޤ���
 .LP
 .nf
 \f3
@@ -244,41 +225,35 @@ Method void paint(java.awt.Graphics)
 .fl
 \fP
 .fi
-.RE
 
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
-\-help 
-\f3javap\fP のヘルプメッセージを出力します。 
+\-help \-\-help \-? 
+\f3javap\fP �Υإ�ץ�å���������Ϥ��ޤ��� 
+.TP 3
+\-version 
+�С����������ɽ�����ޤ��� 
 .TP 3
 \-l 
-行番号と局所変数テーブルを表示します。 
-.TP 3
-\-b 
-JDK 1.1 の \f3javap\fP との下位互換性を保証します。 
+���ֹ�ȶɽ��ѿ��ơ��֥��ɽ�����ޤ��� 
 .TP 3
 \-public 
-public クラスおよびメンバーだけを表示します。 
+public ���饹����ӥ��С�������ɽ�����ޤ��� 
 .TP 3
 \-protected 
-protected および public のクラスとメンバーだけを表示します。 
+protected ����� public �Υ��饹�ȥ��С�������ɽ�����ޤ��� 
 .TP 3
 \-package 
-package、protected、および public のクラスとメンバーだけを表示します。これはデフォルトの設定です。 
+package��protected������� public �Υ��饹�ȥ��С�������ɽ�����ޤ�������ϥǥե���Ȥ�����Ǥ��� 
 .TP 3
-\-private 
-すべてのクラスとメンバーを表示します。 
+\-private \-p 
+���٤ƤΥ��饹�ȥ��С���ɽ�����ޤ��� 
 .TP 3
 \-Jflag 
-ランタイムシステムに直接 \f2flag\fP を渡します。使用例を次に示します。 
-.RS 3
-
-.LP
+��󥿥��ॷ���ƥ��ľ�� \f2flag\fP ���Ϥ��ޤ���������򼡤˼����ޤ��� 
 .nf
 \f3
 .fl
@@ -288,23 +263,28 @@ javap \-J\-Djava.security.manager \-J\-Djava.security.policy=MyPolicy MyClassNam
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-s 
-内部の型シグニチャーを出力します。 
+�����η������˥��㡼����Ϥ��ޤ��� 
+.TP 3
+\-sysinfo 
+������Υ��饹�Υ����ƥ���� (�ѥ��������������ա�MD5 �ϥå���) ��ɽ�����ޤ��� 
+.TP 3
+\-constants 
+static final �����ɽ�����ޤ��� 
 .TP 3
 \-c 
-クラスの各メソッドのために逆アセンブルされるコード、すなわち Java バイトコードから成る命令を表示します。これらは
+���饹�γƥ᥽�åɤΤ���˵ե�����֥뤵��륳���ɡ����ʤ�� Java �Х��ȥ����ɤ�������̿���ɽ�����ޤ���������
 .na
-\f2「Java Virtual Machine Specification」\fP @
+\f2��Java Virtual Machine Specification��\fP @
 .fi
-http://java.sun.com/docs/books/vmspec/にドキュメント化されています。 
+http://java.sun.com/docs/books/vmspec/�˥ɥ�����Ȳ�����Ƥ��ޤ��� 
 .TP 3
 \-verbose 
-メソッドのスタックサイズ、および \f2locals\fP と \f2args\fP の数を出力します。 
+�᥽�åɤΥ����å�������������� \f2locals\fP �� \f2args\fP �ο�����Ϥ��ޤ��� 
 .TP 3
 \-classpath path 
-\f3javap\fP がクラスを探すために使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
+\f3javap\fP �����饹��õ������˻��Ѥ���ѥ�����ꤷ�ޤ����ǥե���Ȥޤ��� CLASSPATH �Ķ��ѿ�������񤭤��ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ����������äơ�\f2path\fP �ΰ��̷����ϼ��Τ褦�ˤʤ�ޤ��� 
 .nf
 \f3
 .fl
@@ -312,7 +292,7 @@ http://java.sun.com/docs/books/vmspec/にドキュメント化されています
 .fl
 \fP
 .fi
-例を示します。 
+������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -322,24 +302,19 @@ http://java.sun.com/docs/books/vmspec/にドキュメント化されています
 .fi
 .TP 3
 \-bootclasspath path 
-ブートストラップクラスをロードするパスを指定します。ブートストラップクラスは、デフォルトでは \f2jre/lib/rt.jar\fP および他のいくつかの JAR ファイル にある、コア Java 2 プラットフォームを実装するクラスです。 
+�֡��ȥ��ȥ�åץ��饹������ɤ���ѥ�����ꤷ�ޤ����֡��ȥ��ȥ�åץ��饹�ϡ��ǥե���ȤǤ� \f2jre/lib/rt.jar\fP �����¾�Τ����Ĥ��� JAR �ե����� �ˤ��롢���� Java 2 �ץ�åȥե������������륯�饹�Ǥ��� 
 .TP 3
 \-extdirs dirs 
-インストールされた拡張機能を検索する場所をオーバーライドします。The default location for extensions is the value of \f2java.ext.dirs\fP. 
+���󥹥ȡ��뤵�줿��ĥ��ǽ�򸡺�������򥪡��С��饤�ɤ��ޤ�����ĥ��ǽ�ϡ��ǥե���ȤǤ� \f2java.ext.dirs\fP �ˤ���ޤ��� 
 .RE
 
 .LP
-.SH "環境変数"
-.LP
-
+.SH "�Ķ��ѿ�"
 .LP
 .RS 3
 .TP 3
 CLASSPATH 
-ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。 次に例を示します。 
-.RS 3
-
-.LP
+�桼����������饹�ؤΥѥ��򥷥��ƥ�˻��ꤷ�ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -348,14 +323,11 @@ CLASSPATH
 \fP
 .fi
 .RE
-.RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
-javac(1)、 java(1)、jdb(1)、javah(1)、javadoc(1)
+javac(1)��java(1)��jdb(1)��javah(1)��javadoc(1)
 .LP
  
