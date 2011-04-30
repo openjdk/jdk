@@ -59,8 +59,8 @@ public interface VariableElement extends Element {
      * otherwise
      *
      * @see Elements#getConstantExpression(Object)
-     * @jls3 15.28 Constant Expression
-     * @jls3 4.12.4 final Variables
+     * @jls 15.28 Constant Expression
+     * @jls 4.12.4 final Variables
      */
     Object getConstantValue();
 }

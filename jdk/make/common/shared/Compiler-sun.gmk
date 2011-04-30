@@ -117,7 +117,10 @@ ifeq ($(ARCH_FAMILY), i586)
   LINT_XARCH_OPTION_OLD/64 += -Xarch=amd64
 endif
 # Pick the options we want based on the compiler being used. (5.9 or newer)
-ifeq ($(shell expr $(CC_MINORVER) \>= 9), 1)
+CC_59_OR_NEWER := \
+  $(shell expr $(CC_MAJORVER) \> 5 \| \
+      \( $(CC_MAJORVER) = 5 \& $(CC_MINORVER) \>= 9 \) )
+ifeq ($(CC_59_OR_NEWER), 1)
   XARCH_OPTION/32 = $(XARCH_OPTION_NEW/32)
   XARCH_OPTION/64 = $(XARCH_OPTION_NEW/64)
   LINT_XARCH_OPTION/32 = $(LINT_XARCH_OPTION_NEW/32)

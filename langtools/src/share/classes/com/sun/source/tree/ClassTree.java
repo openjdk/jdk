@@ -42,8 +42,7 @@ import javax.lang.model.element.Name;
  *   }
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed,
- * sections 8.1, 8.9, 9.1, and 9.6"
+ * @jls sections 8.1, 8.9, 9.1, and 9.6
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

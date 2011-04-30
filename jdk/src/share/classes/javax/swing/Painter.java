@@ -45,14 +45,16 @@ import java.awt.Graphics2D;
  * <code>Painter</code> that only works with subclasses of {@link java.awt.Component}.
  * In that case, when the <code>Painter</code> is declared, you may declare that
  * it requires a <code>Component</code>, allowing the paint method to be type safe. Ex:
- * <pre><code>
- *     Painter<Component> p = new Painter<Component>() {
- *         public void paint(Graphics2D g, Component c, int width, int height) {
- *             g.setColor(c.getBackground());
- *             //and so forth
- *         }
+ * <pre>
+ * {@code
+ * Painter<Component> p = new Painter<Component>() {
+ *     public void paint(Graphics2D g, Component c, int width, int height) {
+ *         g.setColor(c.getBackground());
+ *         //and so forth
  *     }
- * </code></pre></p>
+ * }
+ * }
+ * </pre></p>
  *
  * <p>This interface makes no guarantees of threadsafety.</p>
  *

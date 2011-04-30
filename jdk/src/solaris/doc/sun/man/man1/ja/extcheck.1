@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH extcheck 1 "02 Jun 2010"
+.TH extcheck 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-extcheck \- jar の競合検出ユーティリティー
-.LP
-.RS 3
-
+.SH "̾��"
+extcheck \- jar �ζ��縡�Х桼�ƥ���ƥ���
 .LP
 .LP
-\f3extcheck\fP は、ターゲットの jar ファイルと現在インストールされている拡張機能の jar ファイル間のバージョンの競合を検出します。
+\f3extcheck\fP �ϡ��������åȤ� jar �ե�����ȸ��ߥ��󥹥ȡ��뤵��Ƥ����ĥ��ǽ�� jar �ե�����֤ΥС������ζ���򸡽Ф��ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,39 +39,33 @@ extcheck [ \-verbose ] targetfile.jar
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3extcheck\fP ユーティリティーは、指定された Jar ファイルのタイトルおよびバージョンが Java(TM) 2 SDK にインストールされている拡張機能と競合していないかをチェックします。拡張機能をインストールする前に、このユーティリティーを使って、バージョンが同じか、より新しい拡張機能がすでにインストールされていないかどうかを調べることができます。
+\f3extcheck\fP �桼�ƥ���ƥ����ϡ����ꤵ�줿 Jar �ե�����Υ����ȥ뤪��ӥС������ Java(TM) 2 SDK �˥��󥹥ȡ��뤵��Ƥ����ĥ��ǽ�ȶ��礷�Ƥ��ʤ���������å����ޤ�����ĥ��ǽ�򥤥󥹥ȡ��뤹�����ˡ����Υ桼�ƥ���ƥ�����Ȥäơ��С������Ʊ��������꿷������ĥ��ǽ�����Ǥ˥��󥹥ȡ��뤵��Ƥ��ʤ����ɤ�����Ĵ�٤뤳�Ȥ��Ǥ��ޤ���
 .LP
 .LP
-\f3extcheck\fP ユーティリティーは、\f2targetfile.jar\fP ファイルのマニフェスト内のヘッダー \f2Specification\-title\fP および \f2Specification\-version\fP を、拡張機能ディレクトリ内に現在インストールされているすべての Jar ファイル内の対応するヘッダーと比較します。デフォルトでは、拡張機能ディレクトリは、\f2jre/lib/ext\fP です。\f3extcheck\fP ユーティリティーは、\f2java.lang.Package.isCompatibleWith\fP メソッドと同様の方法でバージョン番号を比較します。
+\f3extcheck\fP �桼�ƥ���ƥ����ϡ�targetfile.jar �ե�����Υޥ˥ե�������Υإå��� \f2Specification\-title\fP ����� \f2Specification\-version\fP �򡢳�ĥ��ǽ�ǥ��쥯�ȥ���˸��ߥ��󥹥ȡ��뤵��Ƥ��� \f2���٤Ƥ� Jar �ե��������\fP �б�����إå�������Ӥ��ޤ����ǥե���ȤǤϡ���ĥ��ǽ�ǥ��쥯�ȥ�ϡ�\f2jre/lib/ext\fP �Ǥ���\f3extcheck\fP �桼�ƥ���ƥ����ϡ�\f2java.lang.Package.isCompatibleWith\fP �᥽�åɤ�Ʊ�ͤ���ˡ�ǥС�������ֹ����Ӥ��ޤ���
 .LP
 .LP
-競合が検出されない場合のリターンコードは \f20\fP です。
+���礬���Ф���ʤ����Υ꥿���󥳡��ɤ� \f20\fP �Ǥ���
 .LP
 .LP
-拡張機能ディレクトリ内のいずれかの jar ファイルのマニフェストに、同一の \f2Specification\-title\fP、および同一またはより新しい \f2Specification\-version\fP 番号がある場合は、ゼロでないエラーコードが返されます。\f2targetfile.jar\fP のマニフェストに \f2Specification\-title\fP または \f2Specification\-version\fP 属性がない場合も、ゼロでないエラーコードが返されます。
+��ĥ��ǽ�ǥ��쥯�ȥ���Τ����줫�� jar �ե�����Υޥ˥ե����Ȥˡ�Ʊ��� \f2Specification\-title\fP �������Ʊ��ޤ��Ϥ�꿷���� \f2Specification\-version\fP �ֹ椬������ϡ������Ǥʤ����顼�����ɤ��֤���ޤ��� \f2targetfile.jar\fP �Υޥ˥ե����Ȥ� \f2Specification\-title\fP �ޤ��� \f2Specification\-version\fP °�����ʤ����⡢�����Ǥʤ����顼�����ɤ��֤���ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-verbose 
-拡張機能ディレクトリ内の Jar ファイルを、チェック時に一覧表示します。また、ターゲット jar ファイルのマニフェストの属性、および競合する jar ファイルについても報告します。 
+��ĥ��ǽ�ǥ��쥯�ȥ���� Jar �ե�����򡢥����å����˰���ɽ�����ޤ����ޤ����������å� jar �ե�����Υޥ˥ե����Ȥ�°��������Ӷ��礹�� jar �ե�����ˤĤ��Ƥ���𤷤ޤ��� 
 .TP 3
 \-Joption 
-Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���\f2option\fP �ˤϡ�java(1)�Υ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С�\f3\-J\-Xms48m\fP �Ȼ��ꤹ��ȡ��������ȥ��åץ��꡼�� 48M �Х��Ȥ����ꤵ��ޤ��� 
 .RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
 jar(1)

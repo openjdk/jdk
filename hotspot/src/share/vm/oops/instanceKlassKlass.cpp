@@ -690,7 +690,8 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
     guarantee(method_ordering->is_perm(),              "should be in permspace");
     guarantee(method_ordering->is_typeArray(),         "should be type array");
     int length = method_ordering->length();
-    if (JvmtiExport::can_maintain_original_method_order()) {
+    if (JvmtiExport::can_maintain_original_method_order() ||
+        (UseSharedSpaces && length != 0)) {
       guarantee(length == methods->length(),           "invalid method ordering length");
       jlong sum = 0;
       for (j = 0; j < length; j++) {

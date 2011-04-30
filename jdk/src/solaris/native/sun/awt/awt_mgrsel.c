@@ -136,7 +136,7 @@ awt_mgrsel_select(const char *selname, long extra_mask,
         || per_scr_owners == NULL || mgrsel == NULL)
     {
         DTRACE_PRINTLN("MG: select: unable to allocate memory");
-        if (namesbuf != NULL) free(per_scr_atoms);
+        if (namesbuf != NULL) free(namesbuf);
         if (names != NULL) free(names);
         if (per_scr_atoms != NULL) free(per_scr_atoms);
         if (per_scr_owners != NULL) free(per_scr_owners);

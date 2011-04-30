@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>type</em> []
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 10.1"
+ * @jls section 10.1
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

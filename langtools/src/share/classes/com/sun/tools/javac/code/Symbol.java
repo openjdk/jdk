@@ -1193,7 +1193,7 @@ public abstract class Symbol implements Element {
         }
 
         private boolean isOverridableIn(TypeSymbol origin) {
-            // JLS3 8.4.6.1
+            // JLS 8.4.6.1
             switch ((int)(flags_field & Flags.AccessFlags)) {
             case Flags.PRIVATE:
                 return false;
