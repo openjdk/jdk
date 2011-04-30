@@ -37,6 +37,7 @@ import java.security.CodeSource;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.misc.SharedSecrets;
+import sun.security.util.SignatureFileVerifier;
 
 /**
  * The <code>JarFile</code> class is used to read the contents of a jar file
@@ -178,7 +179,7 @@ class JarFile extends ZipFile {
                     byte[] b = getBytes(manEntry);
                     man = new Manifest(new ByteArrayInputStream(b));
                     if (!jvInitialized) {
-                        jv = new JarVerifier(b);
+                        jv = new JarVerifier(b, man);
                     }
                 } else {
                     man = new Manifest(super.getInputStream(manEntry));
@@ -297,10 +298,7 @@ class JarFile extends ZipFile {
             if (names != null) {
                 for (int i = 0; i < names.length; i++) {
                     String name = names[i].toUpperCase(Locale.ENGLISH);
-                    if (name.endsWith(".DSA") ||
-                        name.endsWith(".RSA") ||
-                        name.endsWith(".EC") ||
-                        name.endsWith(".SF")) {
+                    if (SignatureFileVerifier.isBlockOrSF(name)) {
                         // Assume since we found a signature-related file
                         // that the jar is signed and that we therefore
                         // need a JarVerifier and Manifest
@@ -329,17 +327,17 @@ class JarFile extends ZipFile {
             if (names != null) {
                 for (int i = 0; i < names.length; i++) {
                     JarEntry e = getJarEntry(names[i]);
-                    if (!e.isDirectory()) {
+                    if (!e.isDirectory() &&
+                            SignatureFileVerifier.isBlock(names[i])) {
                         if (mev == null) {
                             mev = new ManifestEntryVerifier
                                 (getManifestFromReference());
                         }
-                        byte[] b = getBytes(e);
-                        if (b != null && b.length > 0) {
-                            jv.beginEntry(e, mev);
-                            jv.update(b.length, b, 0, b.length, mev);
-                            jv.update(-1, null, 0, 0, mev);
-                        }
+                        String key = names[i].substring(
+                                0, names[i].lastIndexOf("."));
+                        jv.verifyBlock(names[i],
+                                getBytes(e),
+                                super.getInputStream(getJarEntry(key + ".SF")));
                     }
                 }
             }

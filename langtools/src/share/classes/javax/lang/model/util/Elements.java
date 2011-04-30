@@ -95,7 +95,7 @@ public interface Elements {
      * @param e  the element being examined
      * @return the documentation comment of the element, or {@code null}
      *          if there is none
-     * @jls3 3.6 White Space
+     * @jls 3.6 White Space
      */
     String getDocComment(Element e);
 
@@ -114,7 +114,7 @@ public interface Elements {
      * @return the binary name
      *
      * @see TypeElement#getQualifiedName
-     * @jls3 13.1 The Form of a Binary
+     * @jls 13.1 The Form of a Binary
      */
     Name getBinaryName(TypeElement type);
 
@@ -210,8 +210,8 @@ public interface Elements {
      * @param type   the type of which the first method is a member
      * @return {@code true} if and only if the first method overrides
      *          the second
-     * @jls3 8.4.8 Inheritance, Overriding, and Hiding
-     * @jls3 9.4.1 Inheritance and Overriding
+     * @jls 8.4.8 Inheritance, Overriding, and Hiding
+     * @jls 9.4.1 Inheritance and Overriding
      */
     boolean overrides(ExecutableElement overrider, ExecutableElement overridden,
                       TypeElement type);

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,18 @@
  * questions.
  */
 
-package javax.lang.model.type;
-
-import java.util.List;
-
-/**
- * Represents a disjunctive type.
- *
- * As of the {@link javax.lang.model.SourceVersion#RELEASE_7
- * RELEASE_7} source version, disjunctive types can appear as the type
- * of a multi-catch exception parameter.
- *
- * @since 1.7
+/*
+ * @test
+ * @bug 7002839
+ * @summary Static init deadlock Win32GraphicsEnvironment and WToolkit
+ * @run main GE_init2
  */
-public interface DisjunctiveType extends TypeMirror {
 
-    /**
-     * Return the alternatives comprising this disjunctive type.
-     *
-     * The alternatives are formally referred to as <i>disjuncts</i>.
-     *
-     * @return the alternatives comprising this disjunctive type.
-     */
-    List<? extends TypeMirror> getAlternatives();
+
+import java.awt.GraphicsEnvironment;
+
+public class GE_init2 {
+    public static void main(String[] args) {
+        GraphicsEnvironment.getLocalGraphicsEnvironment();
+    }
 }

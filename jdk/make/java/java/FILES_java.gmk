@@ -189,7 +189,6 @@ JAVA_JAVA_java = \
     java/util/ListResourceBundle.java \
         sun/util/EmptyListResourceBundle.java \
     java/util/Locale.java \
-        sun/util/locale/AsciiUtil.java \
         sun/util/locale/BaseLocale.java \
         sun/util/locale/Extension.java \
         sun/util/locale/InternalLocaleBuilder.java \
@@ -197,6 +196,7 @@ JAVA_JAVA_java = \
         sun/util/locale/LocaleExtensions.java \
         sun/util/locale/LocaleObjectCache.java \
         sun/util/locale/LocaleSyntaxException.java \
+        sun/util/locale/LocaleUtils.java \
         sun/util/locale/ParseStatus.java \
         sun/util/locale/StringTokenIterator.java \
         sun/util/locale/UnicodeLocaleExtension.java \

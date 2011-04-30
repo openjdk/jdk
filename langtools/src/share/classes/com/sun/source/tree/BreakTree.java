@@ -37,7 +37,7 @@ import javax.lang.model.element.Name;
  *   break <em>label</em> ;
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.15"
+ * @jls section 14.15
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

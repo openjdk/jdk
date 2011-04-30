@@ -79,8 +79,8 @@ public interface DeclaredType extends ReferenceType {
      * enclosing instance.
      *
      * @return a type mirror for the enclosing type
-     * @jls3 8.1.3 Inner Classes and Enclosing Instances
-     * @jls3 15.9.2 Determining Enclosing Instances
+     * @jls 8.1.3 Inner Classes and Enclosing Instances
+     * @jls 15.9.2 Determining Enclosing Instances
      */
     TypeMirror getEnclosingType();
 

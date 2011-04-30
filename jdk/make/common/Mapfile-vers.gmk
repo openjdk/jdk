@@ -52,8 +52,8 @@ ifeq ($(VARIANT), OPT)
   endif
   
   # If we are re-ordering functions in this solaris library, we need to make
-  #   sure that -xF is added to the compile lines. This option is critical and
-  #   enables the functions to be reordered.
+  # sure that -xF is added to the compile lines. This option is critical and
+  # enables the functions to be reordered.
   ifdef FILES_reorder
     CFLAGS_OPT   += -xF
     CXXFLAGS_OPT += -xF
@@ -75,7 +75,6 @@ ifndef LDNOMAP
 endif
 
 endif # PLATFORM
-
 
 ifeq ($(PLATFORM), linux)
 
