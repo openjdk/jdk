@@ -21,20 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that diamond in return context works w/o problems
- * @compile Pos02.java
- */
+// key: compiler.misc.diamond.and.explicit.params
+// key: compiler.err.cant.apply.diamond.1
 
-class Pos02<X> {
-
-    Pos02(X x) {}
-
-
-    Pos02<X> test(X x) {
-        return new Pos02<>(x);
+class DiamondAndAnonClass {
+    static class Foo<X> {
+        <Z> Foo() {}
+    }
+    void m() {
+        Foo<String> foo = new <Integer> Foo<>();
     }
 }
