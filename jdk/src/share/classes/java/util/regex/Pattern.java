@@ -667,8 +667,30 @@ import java.util.Arrays;
  * <p> Perl constructs not supported by this class: </p>
  *
  * <ul>
+ *    <li><p> Predefined character classes (Unicode character)
+ *    <p><tt>\h&nbsp;&nbsp;&nbsp;&nbsp;</tt>A horizontal whitespace
+ *    <p><tt>\H&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non horizontal whitespace
+ *    <p><tt>\v&nbsp;&nbsp;&nbsp;&nbsp;</tt>A vertical whitespace
+ *    <p><tt>\V&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non vertical whitespace
+ *    <p><tt>\R&nbsp;&nbsp;&nbsp;&nbsp;</tt>Any Unicode linebreak sequence
+ *    <tt>\u005cu000D\u005cu000A|[\u005cu000A\u005cu000B\u005cu000C\u005cu000D\u005cu0085\u005cu2028\u005cu2029]</tt>
+ *    <p><tt>\X&nbsp;&nbsp;&nbsp;&nbsp;</tt>Match Unicode
+ *    <a href="http://www.unicode.org/reports/tr18/#Default_Grapheme_Clusters">
+ *    <i>extended grapheme cluster</i></a>
+ *    </p></li>
  *
- *    <li><p> The conditional constructs <tt>(?{</tt><i>X</i><tt>})</tt> and
+ *    <li><p> The backreference constructs, <tt>\g{</tt><i>n</i><tt>}</tt> for
+ *    the <i>n</i><sup>th</sup><a href="#cg">capturing group</a> and
+ *    <tt>\g{</tt><i>name</i><tt>}</tt> for
+ *    <a href="#groupname">named-capturing group</a>.
+ *    </p></li>
+ *
+ *    <li><p> The named character construct, <tt>\N{</tt><i>name</i><tt>}</tt>
+ *    for a Unicode character by its name.
+ *    </p></li>
+ *
+ *    <li><p> The conditional constructs
+ *    <tt>(?(</tt><i>condition</i><tt>)</tt><i>X</i><tt>)</tt> and
  *    <tt>(?(</tt><i>condition</i><tt>)</tt><i>X</i><tt>|</tt><i>Y</i><tt>)</tt>,
  *    </p></li>
  *
@@ -685,10 +707,6 @@ import java.util.Arrays;
  * <p> Constructs supported by this class but not by Perl: </p>
  *
  * <ul>
- *
- *    <li><p> Possessive quantifiers, which greedily match as much as they can
- *    and do not back off, even when doing so would allow the overall match to
- *    succeed.  </p></li>
  *
  *    <li><p> Character-class union and intersection as described
  *    <a href="#cc">above</a>.</p></li>
@@ -722,13 +740,6 @@ import java.util.Arrays;
  *    at the point at which they appear, whether they are at the top level or
  *    within a group; in the latter case, flags are restored at the end of the
  *    group just as in Perl.  </p></li>
- *
- *    <li><p> Perl is forgiving about malformed matching constructs, as in the
- *    expression <tt>*a</tt>, as well as dangling brackets, as in the
- *    expression <tt>abc]</tt>, and treats them as literals.  This
- *    class also accepts dangling brackets but is strict about dangling
- *    metacharacters like +, ? and *, and will throw a
- *    {@link PatternSyntaxException} if it encounters them. </p></li>
  *
  * </ul>
  *
