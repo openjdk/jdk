@@ -30,6 +30,8 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.ietf.jgss.GSSException;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.KrbException;
@@ -47,8 +49,7 @@ public class DynamicKeytab {
         OneKDC k = new OneKDC(null);
         k.writeJAASConf();
 
-        new File(OneKDC.KTAB).delete();
-
+        Files.delete(Paths.get(OneKDC.KTAB));
 
         // Starts with no keytab
         c = Context.fromJAAS("client");
@@ -79,11 +80,13 @@ public class DynamicKeytab {
         connect();
 
         // Test 5: invalid keytab file, should ignore
-        new FileOutputStream(OneKDC.KTAB).write("BADBADBAD".getBytes());
+        try (FileOutputStream fos = new FileOutputStream(OneKDC.KTAB)) {
+            fos.write("BADBADBAD".getBytes());
+        }
         connect();
 
         // Test 6: delete keytab file, identical to revoke all
-        new File(OneKDC.KTAB).delete();
+        Files.delete(Paths.get(OneKDC.KTAB));
         try {
             connect();
             throw new Exception("Should not success");

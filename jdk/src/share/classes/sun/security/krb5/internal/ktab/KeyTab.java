@@ -92,10 +92,10 @@ public class KeyTab implements KeyTabConstants {
         tabName = filename;
         try {
             lastModified = new File(tabName).lastModified();
-            KeyTabInputStream kis =
-                new KeyTabInputStream(new FileInputStream(filename));
-            load(kis);
-            kis.close();
+            try (KeyTabInputStream kis =
+                    new KeyTabInputStream(new FileInputStream(filename))) {
+                load(kis);
+            }
         } catch (FileNotFoundException e) {
             entries.clear();
             isMissing = true;
@@ -439,10 +439,10 @@ public class KeyTab implements KeyTabConstants {
     public synchronized static KeyTab create(String name)
         throws IOException, RealmException {
 
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(name));
-        kos.writeVersion(KRB5_KT_VNO);
-        kos.close();
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(name))) {
+            kos.writeVersion(KRB5_KT_VNO);
+        }
         return new KeyTab(name);
     }
 
@@ -450,13 +450,13 @@ public class KeyTab implements KeyTabConstants {
      * Saves the file at the directory.
      */
     public synchronized void save() throws IOException {
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(tabName));
-        kos.writeVersion(kt_vno);
-        for (int i = 0; i < entries.size(); i++) {
-            kos.writeEntry(entries.elementAt(i));
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(tabName))) {
+            kos.writeVersion(kt_vno);
+            for (int i = 0; i < entries.size(); i++) {
+                kos.writeEntry(entries.elementAt(i));
+            }
         }
-        kos.close();
     }
 
     /**
@@ -519,9 +519,9 @@ public class KeyTab implements KeyTabConstants {
      * @exception IOException.
      */
     public synchronized void createVersion(File file) throws IOException {
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(file));
-        kos.write16(KRB5_KT_VNO);
-        kos.close();
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(file))) {
+            kos.write16(KRB5_KT_VNO);
+        }
     }
 }
