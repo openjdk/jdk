@@ -19,20 +19,14 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH idlj 1 "02 Jun 2010"
+.TH idlj 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-idlj \- IDL\-to\-Java コンパイラ
+.SH "̾��"
+idlj \- IDL\-to\-Java ����ѥ���
 .LP
-.RS 3
-
-.LP
-\f3idlj\fP は、指定された IDL ファイルから Java バインディングを生成します。
-.RE
-.SH "形式"
-.LP
-
+\f3idlj\fP �ϡ����ꤵ�줿 IDL �ե����뤫�� Java �Х���ǥ��󥰤��������ޤ��� 
+.SH "����"
 .LP
 .nf
 \f3
@@ -44,68 +38,118 @@ idlj [ \fP\f3options\fP\f3 ] \fP\f4idl\-file\fP\f3
 
 .LP
 .LP
-\f2idl\-file\fP は、インタフェース定義言語 (IDL) による定義が入ったファイルの名前です。\f2options\fP の順番は任意ですが、\f2idl\-file\fP よりも前に指定しなければなりません。
+\f2idl\-file\fP �ϡ����󥿥ե������������ (IDL) �ˤ����������ä��ե������̾���Ǥ���\f2options\fP �ν��֤�Ǥ�դǤ�����\f2idl\-file\fP �������˻��ꤷ�ʤ���Фʤ�ޤ���
 .LP
-.SH "説明"
+.SH "����"
 .LP
-
 .LP
-IDL\-to\-Java コンパイラは、指定された IDL ファイルについて Java バインディングを生成します。 バインディングの詳細は、
+IDL\-to\-Java ����ѥ���ϡ����ꤵ�줿 IDL �ե�����ˤĤ��� Java �Х���ǥ��󥰤��������ޤ����Х���ǥ��󥰤ξܺ٤ϡ�
 .na
 \f2OMG IDL to Java Language Mapping Specification\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/mapping/jidlMapping.html を参照してください。IDL\-to\-Java コンパイラの以前のリリースの中には、\f2idltojava\fP という名前だったものがあります。 
-.SS 
-クライアントバインディングおよびサーバーバインディングの発行
+http://java.sun.com/javase/6/docs/technotes/guides/idl/mapping/jidlMapping.html �򻲾Ȥ��Ƥ���������IDL\-to\-Java ����ѥ���ΰ����Υ�꡼������ˤϡ�\f2idltojava\fP �Ȥ���̾�����ä���Τ�����ޤ���
 .LP
-.RS 3
+.SS 
+���饤����ȥХ���ǥ��󥰤���ӥ����С��Х���ǥ��󥰤�ȯ��
+.LP
+.LP
+My.idl �Ȥ���̾���� IDL �ե�������Ф��� Java �Х���ǥ��󥰤���������ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
 
 .LP
-My.idl という名前の IDL ファイルに対して Java バインディングを生成するには、次のコマンドを実行します。 \f2idlj My.idl\fP
 .LP
-これにより、クライアント側のバインディングが生成されます。 このコマンドは、次のコマンドと等価です。 \f2idlj \fP\f4\-fclient\fP\f2 My.idl\fP
+����ˤ�ꡢ���饤�����¦�ΥХ���ǥ��󥰤���������ޤ������Υ��ޥ�ɤϡ����Υ��ޥ�ɤ������Ǥ���
 .LP
-クライアント側のバインディングには、サーバー側のスケルトンは組み込まれていません。インタフェースに対してサーバー側のバインディングを生成するには、次のコマンドを実行します。 \f2idlj \fP\f4\-fserver\fP\f2 My.idl\fP
-.LP
-サーバー側のバインディングには、クライアント側のバインディングに加えて、スケルトンが組み込まれてています。 これらは、すべて \f2POA\fP (継承モデル) クラスです。クライアント側とサーバー側の両方のバインディングを生成する場合は、次のコマンド (どれも等価) のうちの 1 つを使用します。 \f2idlj \fP\f4\-fclient \-fserver\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fall\fP\f2 My.idl\fP
-.LP
-.LP
-サーバー側のモデルとしては、2 つのモデルが可能です。それは、継承モデルと、Tie 委譲モデルです。
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient\fP My.idl
+.fl
+.fi
+
 .LP
 .LP
-デフォルトのサーバー側のモデルは、「移殖可能サーバント継承モデル」です。\f2My.idl\fP 内で \f2My\fP インタフェースが定義されている場合は、\f2MyPOA.java\fP というファイルが生成されます。\f2My\fP に対してその実装を提供し、この実装は \f2_MyPOA\fP から継承する必要があります。
+���饤�����¦�ΥХ���ǥ��󥰤ˤϡ������С�¦�Υ�����ȥ���Ȥ߹��ޤ�Ƥ��ޤ��󡣥��󥿥ե��������Ф��ƥ����С�¦�ΥХ���ǥ��󥰤���������ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fserver\fP My.idl
+.fl
+.fi
+
 .LP
 .LP
-\f2MyPOA.java\fP は 
+�����С�¦�ΥХ���ǥ��󥰤ˤϡ����饤�����¦�ΥХ���ǥ��󥰤Τۤ��ˡ�������ȥ��ޤޤ�Ƥ��ޤ��������Ϥ��٤ơ� \f2POA\fP (�Ĥޤ�Ѿ���ǥ�) ���饹�Ǥ������饤�����¦�ȥ����С�¦��ξ���ΥХ���ǥ��󥰤�����������ϡ����Υ��ޥ�� (�ɤ������) �Τ����� 1 �Ĥ���Ѥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient \-fserver\fP My.idl
+.fl
+idlj \f3\-fall\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+�����С�¦�ǲ�ǽ�ʥ�ǥ�� 2 �Ĥ���ޤ����Ѿ���ǥ�� Tie �Ѿ���ǥ�Ǥ���
+.LP
+.LP
+�ǥե���ȤΥ����С�¦�Υ�ǥ�ϡ��ְܿ���ǽ�����Х�ȷѾ���ǥ�פǤ���\f2My.idl\fP ��� \f2My\fP ���󥿥ե��������������Ƥ�����ϡ�\f2MyPOA.java\fP �Ȥ����ե����뤬��������ޤ������μ����� \f2My\fP ���󶡤���\f2MyPOA\fP ��Ѿ�����ɬ�פ�����ޤ���
+.LP
+.LP
+\f2MyPOA.java\fP �� 
 .na
 \f2org.omg.PortableServer.Servant\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/org/omg/PortableServer/Servant.html を拡張するストリームベースのスケルトンで、スケルトンが実装する IDL インタフェースに関連付けられている \f2InvokeHandler\fP インタフェースとオペレーションインタフェースを実装します。
+http://java.sun.com/javase/6/docs/api/org/omg/PortableServer/Servant.html ���ĥ���륹�ȥ꡼��١����Υ�����ȥ�ǡ�������ȥ󤬼������� IDL ���󥿥ե������˴�Ϣ�դ����Ƥ��� \f2InvokeHandler\fP ���󥿥ե������ȥ��ڥ졼����󥤥󥿥ե�������������ޤ���
 .LP
 .LP
 .na
 \f2Portable Object Adapter (POA)\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html の \f2PortableServer\fP モジュールは、ネイティブの \f2Servant\fP 型を定義します。Java プログラミング言語では、\f2Servant\fP 型は、Java の \f2org.omg.PortableServer.Servant\fP クラスにマッピングされています。これはあらゆる POA サーバント実装の基底クラスとなり多数のメソッドを提供します。 これらのメソッドはアプリケーションプログラマが呼び出すだけではなく、POA 自身からも呼び出され、場合によってはサーバントの動作を制御するためにユーザーがオーバーライドすることもあります。
+http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html �� \f2PortableServer\fP �⥸�塼��ϡ��ͥ��ƥ��֤� \f2Servant\fP ����������ޤ���Java �ץ�����ߥ󥰸���Ǥϡ�\f2Servant\fP ���� Java �� \f2org.omg.PortableServer.Servant\fP ���饹�˥ޥåפ���ޤ������Υ��饹�ϡ����٤Ƥ� POA �����Х�ȼ����δ��쥯�饹�Ȥ��Ƶ�ǽ�������ץꥱ�������ץ�����ޤ��ƤӽФ����ȤΤǤ��뤤���Ĥ��Υ᥽�åɤΤۤ��ˡ�POA ���Τ�Τˤ�äƸƤӽФ��졢�����Х�Ȥ�ư������椹�뤿��˥桼�����������С��饤�ɤǤ���᥽�åɤ��󶡤��ޤ���
 .LP
 .LP
-継承モデルのもう 1 つのオプションは、\f2\-oldImplBase\fP フラグを使用して、J2SE 1.4 より前のバージョンの Java プログラミング言語と互換性のあるサーバー側バインディングを生成することです。ただし、\f2\-oldImplBase\fP フラグを使用するのは、標準的な手法ではありません。これらの API は推奨されていません。このフラグを使用するのは、J2SE 1.3 で記述された既存のサーバーとの互換性を保つ場合だけです。その場合、既存の MAKEFILE を変更して \f2idlj\fP コンパイラに \f2\-oldImplBase\fP フラグを追加する必要があります。 フラグを追加しない場合、POA ベースのサーバー側マッピングが生成されます。下位互換性のあるサーバー側バインディングを生成するには、次のコマンドを使用します。
+�Ѿ���ǥ�Τ⤦ 1 �ĤΥ��ץ����ϡ�\f2\-oldImplBase\fP �ե饰����Ѥ��뤳�Ȥǡ�J2SE 1.4 ������ΥС������� Java �ץ�����ߥ󥰸���ȸߴ����Τ��륵���С�¦�Х���ǥ��󥰤��������뤳�ȤǤ�����������\f2\-oldImplBase\fP �ե饰����Ѥ���Τϡ�ɸ��Ū�ʼ�ˡ�ǤϤ���ޤ��󡣤����� API �Ϻ�����侩�ˤʤ�ͽ��Ǥ������Υե饰����Ѥ���Τϡ�J2SE 1.3 �ǵ��Ҥ��줿��¸�Υ����С��Ȥθߴ�����ɬ�פʾ������Ǥ������ξ��ˤϴ�¸�� MAKEFILE ���ѹ�����\f2idlj\fP ����ѥ���� \f2\-oldImplBase\fP �ե饰���ɲä���ɬ�פ�����ޤ����������ʤ��ȡ�POA �١����Υ����С�¦�ޥåԥ󥰤���������ޤ������̸ߴ����Τ��륵���С�¦�Х���ǥ��󥰤���������ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
 .LP
-\f2idlj \fP\f4\-fclient \-fserver\fP\f2 \fP\f4\-oldImplBase\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fall\fP\f2 \fP\f4\-oldImplBase\fP\f2 My.idl\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient \-fserver\fP \f3\-oldImplBase\fP My.idl
+.fl
+idlj \f3\-fall\fP \f3\-oldImplBase\fP My.idl
+.fl
+.fi
+
 .LP
-\f2My.idl\fP 内で \f2My\fP インタフェースが定義されている場合は、\f2_MyImplBase.java\fP というファイルが生成されます。\f2My\fP に対してその実装を提供し、この実装は \f2_MyImplBase\fP から継承しなければなりません。  
 .LP
-もう 1 つのサーバー側モデルは、Tie モデルと呼ばれるものです。このサーバー側モデルは、委譲モデルです。Tie とスケルトンを同時に生成することはできないため、それらは別々に生成しなければなりません。次のコマンドによって、Tie モデル用のバインディングが生成されます。
+\f2My.idl\fP ��� \f2My\fP ���󥿥ե��������������Ƥ�����ϡ�\f2_MyImplBase.java\fP �Ȥ����ե����뤬��������ޤ���\f2My\fP ���Ф��Ƥ��μ������󶡤������μ����� \f2_MyImplBase\fP ����Ѿ����ʤ���Фʤ�ޤ���
 .LP
-\f2idlj \fP\f4\-fall\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fallTIE\fP\f2 My.idl\fP
 .LP
-\f2My\fP というインタフェースの場合、上記の 2 番目のコマンドにより、\f2MyPOATie.java\fP が生成されます。\f2MyPOATie\fP のコンストラクタは、\f2delegate\fP を取ります。この例では、デフォルトの POA モデルを使用しているため、コンストラクタにも \f2poa\fP が必要です。\f2delegate\fP に対して実装を提供しなければなりませんが、この実装は \f2MyOperations\fP インタフェースから継承する必要があるだけで、その他のクラスから継承する必要はありません。しかし、この実装を ORB と一緒に使用するには、\f2MyPOATie\fP 内で実装をラップしなければなりません。たとえば、次のようにします。  
+�⤦ 1 �ĤΥ����С�¦��ǥ�ϡ�Tie ��ǥ�ȸƤФ���ΤǤ������Υ����С�¦��ǥ�ϡ��Ѿ���ǥ�Ǥ���Tie �ȥ�����ȥ��Ʊ�����������뤳�ȤϤǤ��ʤ����ᡢ�������̡����������ʤ���Фʤ�ޤ��󡣼��Υ��ޥ�ɤˤ�äơ�Tie ��ǥ��ѤΥХ���ǥ��󥰤���������ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fall\fP My.idl
+.fl
+idlj \f3\-fallTIE\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+\f2My\fP �Ȥ������󥿥ե������ξ�硢�嵭�� 2 ���ܤΥ��ޥ�ɤˤ�ꡢ\f2MyPOATie.java\fP ����������ޤ���\f2MyPOATie\fP �Υ��󥹥ȥ饯���ϡ�\f2delegate\fP ����ޤ���������Ǥϡ��ǥե���Ȥ� POA ��ǥ����Ѥ��Ƥ��뤿�ᡢ���󥹥ȥ饯���ˤ� \f2poa\fP ��ɬ�פǤ���\f2delegate\fP ���Ф��Ƽ������󶡤��ʤ���Фʤ�ޤ��󤬡����μ����� \f2MyOperations\fP ���󥿥ե���������Ѿ�����ɬ�פ���������ǡ�����¾�Υ��饹����Ѿ�����ɬ�פϤ���ޤ��󡣤����������μ����� ORB �Ȱ��˻��Ѥ���ˤϡ�\f2MyPOATie\fP ��Ǽ������åפ��ʤ���Фʤ�ޤ��󡣤��Ȥ��С����Τ褦�ˤ��ޤ���
+.LP
 .nf
 \f3
 .fl
@@ -143,16 +187,24 @@ http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html の \f2PortableS
 .fi
 
 .LP
-他の実装から継承しなければならない場合、標準の継承モデルではなく Tie モデルを使用することがあります。Java の場合は、インタフェースの継承の個数に制限はありませんが、クラスの継承に使用できるスロットは 1 つだけです。継承モデルを使用した場合は、そのスロットが占有されます。Tie モデルを使用した場合は、そのスロットが使用されず、ユーザーが独自の目的で使用することができます。ただし、間接参照のレベルが 1 つ導入されるという欠点があります。つまり、メソッドを呼び出すときに余分なメソッド呼び出しが発生します。 
 .LP
-IDL のバージョンから J2SE 1.4 より前のバージョンの Java 言語へのマッピングと互換性のある、サーバー側の Tie モデルのバインディングを生成するには、次のコマンドを使用します。
-.LP
-\f2idlj \fP\f4\-oldImplBase\fP\f2 \fP\f4\-fall\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-oldImplBase\fP\f2 \fP\f4\-fallTIE\fP\f2 My.idl\fP
+¾�μ�������Ѿ����ʤ���Фʤ�ʤ���硢ɸ��ηѾ���ǥ�ǤϤʤ� Tie ��ǥ����Ѥ��뤳�Ȥ�����ޤ���Java �ξ��ϡ����󥿥ե������ηѾ��θĿ������¤Ϥ���ޤ��󤬡����饹�ηѾ��˻��ѤǤ��륹���åȤ� 1 �Ĥ����Ǥ����Ѿ���ǥ����Ѥ������ϡ����Υ����åȤ���ͭ����ޤ���Tie ��ǥ����Ѥ������ϡ����Υ����åȤ����Ѥ��줺���桼�������ȼ�����Ū�ǻ��Ѥ��뤳�Ȥ��Ǥ��ޤ�����������������ˡ�ˤϡ��������Υ�٥뤬 1 ��Ƴ�������Ȥ�������������ޤ����᥽�åɤ�ƤӽФ��Ȥ��ˡ�;ʬ�ʥ᥽�åɸƤӽФ��� 1 ��ȯ�����ޤ���
 .LP
 .LP
-\f2My\fP というインタフェースの場合、これにより \f2My_Tie.java\fP が生成されます。\f2My_Tie\fP のコンストラクタは、\f2impl\fP を取ります。\f2impl\fP に対して実装を提供しなければなりませんが、その実装は \f2HelloOperations\fP インタフェースから継承する必要があるだけで、その他のクラスから継承する必要はありません。しかし、この実装を ORB と一緒に使用するには、\f2My_Tie\fP 内で実装をラップしなければなりません。たとえば、次のようにします。
+IDL �ΥС�����󤫤� J2SE 1.4 ������ΥС������� Java ����ؤΥޥåԥ󥰤ȸߴ����Τ��롢�����С�¦�� Tie ��ǥ�ΥХ���ǥ��󥰤���������ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-oldImplBase\fP \f3\-fall\fP My.idl
+.fl
+idlj \f3\-oldImplBase\fP \f3\-fallTIE\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+\f2My\fP �Ȥ������󥿥ե������ξ�硢����ˤ�� \f2My_Tie.java\fP ����������ޤ���\f2My_Tie\fP �Υ��󥹥ȥ饯���ϡ�\f2impl\fP ����ޤ���\f2impl\fP ���Ф��Ƽ������󶡤��ʤ���Фʤ�ޤ��󤬡����μ����� \f2HelloOperations\fP ���󥿥ե���������Ѿ�����ɬ�פ���������ǡ�����¾�Υ��饹����Ѿ�����ɬ�פϤ���ޤ��󡣤����������μ����� ORB �Ȱ��˻��Ѥ���ˤϡ�\f2My_Tie\fP ��Ǽ������åפ��ʤ���Фʤ�ޤ��󡣤��Ȥ��С����Τ褦�ˤ��ޤ���
 .LP
 .nf
 \f3
@@ -183,201 +235,383 @@ IDL のバージョンから J2SE 1.4 より前のバージョンの Java 言語
 .fi
 
 .LP
-.RE
 .SS 
-発行されたファイルの代替位置の指定
+ȯ�Ԥ��줿�ե���������ذ��֤λ���
 .LP
-.RS 3
-
 .LP
-発行されたファイルをカレントディレクトリ以外のディレクトリに置くには、次のようなコマンドでコンパイラを呼び出します。 
-.RS 3
-
+ȯ�Ԥ��줿�ե�����򥫥��ȥǥ��쥯�ȥ�ʳ��Υǥ��쥯�ȥ���֤��ˤϡ����Τ褦�ʥ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
 .LP
-\f2idlj \fP\f4\-td /altdir\fP\f2 My.idl\fP
-.RE
-\f2My\fP インタフェースの場合、バインディングは、\f2./My.java\fP ではなく、\f2/altdir/My.java\fP などに発行されます。
-.RE
-.SS 
-インクルードファイルの代替位置の指定
-.LP
-.RS 3
-
-.LP
-\f2My.idl\fP にもう 1 つの IDL ファイル \f2MyOther.idl\fP がインクルードされている場合、コンパイラは、ローカルディレクトリに \f2MyOther.idl\fP があるものと想定します。もしそのファイルが、たとえば \f2/includes\fP にある場合は、次のようなコマンドでコンパイラを呼び出します。 \f2idlj \fP\f4\-i /includes\fP\f2 My.idl\fP
-.LP
-また、もし \f2My.idl\fP に、たとえば \f2/moreIncludes\fP にある \f2Another.idl\fP もインクルードされているのであれば、次のようなコマンドでコンパイラを呼び出します。 \f2idlj \fP\f4\-i /includes \-i /moreIncludes\fP\f2 My.idl\fP
-.LP
-このような形式でインクルードを指定すると、コマンドが長くて複雑になります。 そこで、インクルードファイルを検索する場所をコンパイラに指示するための別の方法が用意されています。この方法は、環境変数の考え方と似ています。CLASSPATH にリストされているディレクトリ内に \f2idl.config\fP という名前のファイルを作成します。その \f2idl.config\fP の中に、次のような形式の行を入れます。  \f2includes=/includes;/moreIncludes\fP
-.LP
-コンパイラは、このファイルを検索し、インクルードリストを読み込みます。この例では、ディレクトリの間の区切り文字はセミコロン (;) になっています。この区切り文字は、プラットフォームによって異なります。たとえば、Windows プラットフォームではセミコロンですが、Unix プラットフォームではコロンです。 \f2インクルード\fPの詳細については、
-.na
-\f2CLASSPATH の設定\fP @
+.nf
+\f3
+.fl
+idlj \fP\f3\-td /altdir\fP My.idl
+.fl
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#general を参照してください。
-.RE
+
+.LP
+.LP
+\f2My\fP ���󥿥ե������ξ�硢�Х���ǥ��󥰤ϡ�\f2./My.java\fP �ǤϤʤ���\f2/altdir/My.java\fP �ʤɤ�ȯ�Ԥ���ޤ���
+.LP
 .SS 
-インクルードファイルに対するバインディングの発行
+���󥯥롼�ɥե���������ذ��֤λ���
 .LP
-.RS 3
+.LP
+\f2My.idl\fP �ˤ⤦ 1 �Ĥ� IDL �ե����� \f2MyOther.idl\fP �����󥯥롼�ɤ���Ƥ����硢����ѥ���ϡ���������ǥ��쥯�ȥ�� \f2MyOther.idl\fP �������Τ����ꤷ�ޤ����⤷���Υե����뤬�����Ȥ��� \f2/includes\fP �ˤ�����ϡ����Τ褦�ʥ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-i /includes\fP My.idl
+.fl
+.fi
 
 .LP
-デフォルトでは、コマンド行に指定した IDL ファイルで定義されているインタフェースや構造体などについてのみ、Java バインディングが生成されます。インクルードされたファイルで定義されている型については、Java バインディングは生成されません。たとえば、次の 2 つの IDL ファイルについて考えてみましょう。   \f4My.idl\fP
 .LP
-\f2#include <MyOther.idl>\fP
-.br
-\f2interface My\fP
-.br
-\f2{\fP
-.br
-\f2};\fP
-.br
-\f4MyOther.idl\fP 
+�ޤ����⤷ \f2My.idl\fP �ˡ����Ȥ��� \f2/moreIncludes\fP �ˤ��� \f2Another.idl\fP �⥤�󥯥롼�ɤ���Ƥ���ΤǤ���С����Τ褦�ʥ��ޥ�ɤǥ���ѥ����ƤӽФ��ޤ���
 .LP
-\f2interface MyOther\fP
-.br
-\f2{\fP
-.br
-\f2};\fP\  
+.nf
+\f3
+.fl
+idlj \fP\f3\-i /includes \-i /moreIncludes\fP My.idl
+.fl
+.fi
+
 .LP
-次のコマンドでは、\f2My\fP に対する Java バインディングだけが生成されます。 \f2idlj My.idl\fP
 .LP
-\f2My.idl\fP で定義されている型と、\f2My.idl\fP にインクルードされたファイル (この例では \f2MyOther.idl\fP) で定義されている型すべてについて Java バインディングを生成するには、次のコマンドを使用します。 \f2idlj \fP\f4\-emitAll\fP\f2 My.idl\fP
+���Τ褦�ʷ����ǥ��󥯥롼�ɤ���ꤹ��ȡ����ޥ�ɤ�Ĺ����ʣ���ˤʤ�ޤ��������ǡ����󥯥롼�ɥե�����򸡺�������򥳥�ѥ���˻ؼ����뤿����̤���ˡ���Ѱդ���Ƥ��ޤ���������ˡ�ϡ��Ķ��ѿ��ιͤ����Ȼ��Ƥ��ޤ���CLASSPATH �˥ꥹ�Ȥ���Ƥ���ǥ��쥯�ȥ���� \f2idl.config\fP �Ȥ���̾���Υե������������ޤ������� \f2idl.config\fP ����ˡ����Τ褦�ʷ����ιԤ�����ޤ���
 .LP
-このデフォルトの規則に関して注意しなければならないことがあります。グローバルスコープに指定した \f2#include\fP 文は、前述のとおりに処理されます。これらの \f2#include\fP 文は、インポート文と見なすことができます。それに対して、他の定義に囲まれたスコープ内に指定した \f2#include\fP 文は、本当の意味での \f2#include\fP 文として処理されます。 つまり、インクルードされたファイルにあるコードが、元のファイルにそのまま指定されているかのように処理され、それに対して Java バインディングが発行されます。次に例を示します。   \f4My.idl\fP
+.nf
+\f3
+.fl
+includes=/includes;/moreIncludes
+.fl
+\fP
+.fi
+
 .LP
-\f2#include <MyOther.idl>\fP
-.br
-\f2interface My\fP
-.br
-\f2{\fP
-.br
-\f2\  #include <Embedded.idl>\fP
-.br
-\f2};\ \fP  \f4MyOther.idl\fP
 .LP
-\f2interface MyOther\fP
-.br
-\f2{\fP
-.br
-\f2};\ \fP  \f4Embedded.idl\fP
+����ѥ���ϡ����Υե�����򸡺��������󥯥롼�ɥꥹ�Ȥ��ɤ߹��ߤޤ���������Ǥϡ��ǥ��쥯�ȥ�δ֤ζ��ڤ�ʸ���ϥ��ߥ����� (;) �ˤʤäƤ��ޤ������ζ��ڤ�ʸ���ϡ��ץ�åȥե�����ˤ�äưۤʤ�ޤ������Ȥ��С�Windows �ץ�åȥե�����Ǥϥ��ߥ�����Ǥ�����Unix �ץ�åȥե�����Ǥϥ�����Ǥ��� \f2���󥯥롼��\fP�ξܺ٤ˤĤ��Ƥϡ�
+.na
+\f2CLASSPATH ������\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#general �򻲾Ȥ��Ƥ���������
 .LP
-\f2enum E {one, two, three};\fP\  
-.LP
-このとき、次のコマンドを実行すると、 \f2idlj My.idl\fP
-.LP
-次のような一連の Java ファイルが生成されます。 \f2./MyHolder.java\fP
-.br
-\f2./MyHelper.java\fP
-.br
-\f2./_MyStub.java\fP
-.br
-\f2./MyPackage\fP
-.br
-\f2./MyPackage/EHolder.java\fP
-.br
-\f2./MyPackage/EHelper.java\fP
-.br
-\f2./MyPackage/E.java\fP
-.br
-\f2./My.java\fP
-.LP
-インポート文と見なされる \f2#include\fP に定義されているため、\f2MyOther.java\fP は生成されません。ただし、本当の意味での \f2#include\fP で定義されているため、\f2E.java\fP は生成されます。さらに、\f2Embedded.idl\fP が \f2My\fP インタフェースのスコープ内にインクルードされていたため、\f2My\fP のスコープ内 (つまり、\f2MyPackage\fP 内) に生成されています。 
-.LP
-上記の例で \f2\-emitAll\fP フラグを使用すれば、インクルードされたすべてのファイルにあるすべての型が発行されます。
-.LP
-.RE
 .SS 
-パッケージの接頭辞の挿入
+���󥯥롼�ɥե�������Ф���Х���ǥ��󥰤�ȯ��
 .LP
-.RS 3
+.LP
+�ǥե���ȤǤϡ����ޥ�ɹԤ˻��ꤷ�� IDL �ե�������������Ƥ��륤�󥿥ե������乽¤�ΤʤɤˤĤ��ƤΤߡ�Java �Х���ǥ��󥰤���������ޤ������󥯥롼�ɤ��줿�ե�������������Ƥ��뷿�ˤĤ��Ƥϡ�Java �Х���ǥ��󥰤���������ޤ��󡣤��Ȥ��С����� 2 �Ĥ� IDL �ե�����ˤĤ��ƹͤ��Ƥߤޤ��礦��
+.LP
 
 .LP
-ABC という名前の会社のために作業していて、次のような IDL ファイルを構築したとしましょう。   
-.br
-\f4Widgets.idl\fP 
 .LP
-\f2module Widgets\fP
-.br
-\f2{\fP
-.br
-\f2\  interface W1 {...};\fP
-.br
-\f2\  interface W2 {...};\fP
-.br
-\f2};\fP\  
+\f4My.idl\fP
 .LP
-このファイルに対して IDL\-to\-Java コンパイラを実行すると、\f2W1\fP および \f2W2\fP に対する Java バインディングが \f2Widgets\fP パッケージ内に生成されます。しかし、業界の慣例によると、会社のパッケージは、\f2com.<会社名>\fP という名前のパッケージ内に置くことになっています。そのため、\f2Widgets\fP パッケージでは不十分です。慣例に従うには、パッケージを \f2com.abc.Widgets\fP にする必要があります。このパッケージ接頭辞を \f2Widgets\fP モジュールに付加するには、次のコマンドを実行します。 \f2idlj \fP\f4\-pkgPrefix Widgets com.abc\fP\f2 Widgets.idl\fP
+.nf
+\f3
+.fl
+#include <MyOther.idl>
+.fl
+interface My
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
 .LP
-\f2Widgets.idl\fP をインクルードしている IDL ファイルがある場合は、そのコマンドにも \f2\-pkgPrefix\fP フラグが必要です。このフラグを指定しないと、その IDL ファイルは、\f2com.abc.Widgets\fP パッケージではなく、\f2Widgets\fP パッケージを検索することになります。 
-.LP
-接頭辞が必要なパッケージがいくつもある場合は、前述の \f2idl.config\fP ファイルで接頭辞を指定するのが簡単です。パッケージの接頭辞を指定する行は、それぞれ次の形式で記述します。
-.LP
-\f2PkgPrefix.<type>=<prefix>\fP
-.LP
-したがって、上記の例の場合は、次のように記述します。  \f2PkgPrefix.Widgets=com.abc\fP
+
 .LP
 .LP
-このオプションを使用しても、リポジトリ ID は影響を受けません。
+\f4MyOther.idl\fP
 .LP
-.RE
+.nf
+\f3
+.fl
+interface MyOther
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+���Υ��ޥ�ɤǤϡ�\f2My\fP ���Ф��� Java �Х���ǥ��󥰤�������������ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
+
+.LP
+.LP
+\f2My.idl\fP ���������Ƥ��뷿�ȡ�\f2My.idl\fP �˥��󥯥롼�ɤ��줿�ե����� (������Ǥ� \f2MyOther.idl\fP) ���������Ƥ��뷿���٤ƤˤĤ��� Java �Х���ǥ��󥰤���������ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-emitAll\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+���Υǥե���Ȥε�§�˴ؤ������դ��ʤ���Фʤ�ʤ����Ȥ�����ޤ����������Х륹�����פ˻��ꤷ�� \f2#include\fP ʸ�ϡ����ҤΤȤ���˽�������ޤ��������� \f2#include\fP ʸ�ϡ�����ݡ���ʸ�ȸ��ʤ����Ȥ��Ǥ��ޤ���������Ф��ơ�¾������˰Ϥޤ줿����������˻��ꤷ�� \f2#include\fP ʸ�ϡ������ΰ�̣�Ǥ� \f2#include\fP ʸ�Ȥ��ƽ�������ޤ����Ĥޤꡢ���󥯥롼�ɤ��줿�ե�����ˤ��륳���ɤ������Υե�����ˤ��Τޤ޻��ꤵ��Ƥ��뤫�Τ褦�˽������졢������Ф��� Java �Х���ǥ��󥰤�ȯ�Ԥ���ޤ������Ϥ�����Ǥ���
+.LP
+
+.LP
+.LP
+\f4My.idl\fP
+.LP
+.nf
+\f3
+.fl
+#include <MyOther.idl>
+.fl
+interface My
+.fl
+{
+.fl
+  #include <Embedded.idl>
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+\f4MyOther.idl\fP
+.LP
+.nf
+\f3
+.fl
+interface MyOther
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+\f4Embedded.idl\fP
+.LP
+.nf
+\f3
+.fl
+enum E {one, two, three};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+���ΤȤ������Υ��ޥ�ɤ�¹Ԥ���ȡ�
+.LP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
+
+.LP
+.LP
+���Τ褦�ʰ�Ϣ�� Java �ե����뤬��������ޤ���
+.LP
+.nf
+\f3
+.fl
+./MyHolder.java
+.fl
+./MyHelper.java
+.fl
+./_MyStub.java
+.fl
+./MyPackage
+.fl
+./MyPackage/EHolder.java
+.fl
+./MyPackage/EHelper.java
+.fl
+./MyPackage/E.java
+.fl
+./My.java
+.fl
+\fP
+.fi
+
+.LP
+.LP
+����ݡ���ʸ�ȸ��ʤ���� \f2#include\fP ���������Ƥ��뤿�ᡢ\f2MyOther.java\fP ����������ޤ��󡣤������������ΰ�̣�Ǥ� \f2#include\fP ���������Ƥ��뤿�ᡢ\f2E.java\fP ����������ޤ�������ˡ�\f2Embedded.idl\fP �� \f2My\fP ���󥿥ե������Υ���������˥��󥯥롼�ɤ���Ƥ������ᡢ\f2My\fP �Υ��������� (�Ĥޤꡢ\f2MyPackage\fP ��) ����������Ƥ��ޤ���
+.LP
+.LP
+�嵭����� \f2\-emitAll\fP �ե饰����Ѥ���С����󥯥롼�ɤ��줿���٤ƤΥե�����ˤ��뤹�٤Ƥη���ȯ�Ԥ���ޤ���
+.LP
 .SS 
-コンパイル前のシンボルの定義
+�ѥå���������Ƭ��������
 .LP
-.RS 3
+.LP
+ABC �Ȥ���̾���β�ҤΤ���˺�Ȥ��Ƥ��ơ����Τ褦�� IDL �ե�������ۤ����Ȥ��ޤ��礦��
+.LP
 
 .LP
-コンパイル用のシンボルが IDL ファイル内で定義されていない場合は、そのシンボルを定義する必要があります。 これは、たとえば、バインディング内にデバッグコードを組み入れるときに使用します。次のコマンドは、 \f2idlj \fP\f4\-d\fP\f2 MYDEF My.idl\fP
 .LP
-\f2My.idl\fP 内に \f2#define MYDEF\fP という行を指定した場合と等価です。
-.RE
+\f4Widgets.idl\fP
+.LP
+.nf
+\f3
+.fl
+module Widgets
+.fl
+{
+.fl
+  interface W1 {...};
+.fl
+  interface W2 {...};
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+���Υե�������Ф��� IDL\-to\-Java ����ѥ����¹Ԥ���ȡ�\f2W1\fP ����� \f2W2\fP ���Ф��� Java �Х���ǥ��󥰤� \f2Widgets\fP �ѥå����������������ޤ������������ȳ��δ���ˤ��ȡ���ҤΥѥå������ϡ�\f2com.<���̾>\fP �Ȥ���̾���Υѥå���������֤����ȤˤʤäƤ��ޤ������Τ��ᡢ\f2Widgets\fP �ѥå������Ǥ��Խ�ʬ�Ǥ�������˽����ˤϡ��ѥå������� \f2com.abc.Widgets\fP �ˤ���ɬ�פ�����ޤ������Υѥå�������Ƭ���� \f2Widgets\fP �⥸�塼����ղä���ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-pkgPrefix Widgets com.abc\fP Widgets.idl
+.fl
+.fi
+
+.LP
+.LP
+\f2Widgets.idl\fP �򥤥󥯥롼�ɤ��Ƥ��� IDL �ե����뤬������ϡ����Υ��ޥ�ɤˤ� \f2\-pkgPrefix\fP �ե饰��ɬ�פǤ������Υե饰����ꤷ�ʤ��ȡ����� IDL �ե�����ϡ�\f2com.abc.Widgets\fP �ѥå������ǤϤʤ���\f2Widgets\fP �ѥå������򸡺����뤳�Ȥˤʤ�ޤ���
+.LP
+.LP
+��Ƭ����ɬ�פʥѥå������������Ĥ⤢����ϡ����Ҥ� \f2idl.config\fP �ե��������Ƭ������ꤹ��Τ���ñ�Ǥ����ѥå���������Ƭ������ꤹ��Ԥϡ����줾�켡�η����ǵ��Ҥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+PkgPrefix.<type>=<prefix>
+.fl
+\fP
+.fi
+
+.LP
+�������äơ��嵭����ξ��ϡ����Τ褦�˵��Ҥ��ޤ��� 
+.nf
+\f3
+.fl
+PkgPrefix.Widgets=com.abc
+.fl
+\fP
+.fi
+
+.LP
+.LP
+���Υ��ץ�������Ѥ��Ƥ⡢��ݥ��ȥ� ID �ϱƶ�������ޤ���
+.LP
 .SS 
-既存のバインディングの保持
+����ѥ������Υ���ܥ�����
 .LP
-.RS 3
+.LP
+����ѥ����ѤΥ���ܥ뤬 IDL �ե���������������Ƥ��ʤ����ϡ����Υ���ܥ���������ɬ�פ�����ޤ�������ϡ����Ȥ��С��Х���ǥ�����˥ǥХå������ɤ��Ȥ������Ȥ��˻��Ѥ��ޤ������Υ��ޥ�ɤϡ�
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-d\fP MYDEF My.idl
+.fl
+.fi
 
 .LP
-Java バインディングファイルがすでに存在する場合は、\f2\-keep\fP フラグを指定すると、コンパイラによる上書きを回避できます。デフォルトでは、すでに存在するかどうかにかかわらず、すべてのファイルが生成されます。これらのファイルをカスタマイズした場合 (ただし、それらの内容が正確であるとき以外はカスタマイズは避ける)、\f2\-keep\fP オプションは有用です。次のコマンドは、 \f2idlj \fP\f4\-keep\fP\f2 My.idl\fP
 .LP
-クライアント側のバインディングで、まだ存在しないものをすべて発行します。
-.RE
+\f2My.idl\fP ��� \f2#define MYDEF\fP �Ȥ����Ԥ���ꤷ�����������Ǥ���
+.LP
 .SS 
-コンパイルの進捗状況の表示
+��¸�ΥХ���ǥ��󥰤��ݻ�
 .LP
-.RS 3
+.LP
+Java �Х���ǥ��󥰥ե����뤬���Ǥ�¸�ߤ�����ϡ�\f2\-keep\fP �ե饰����ꤹ��ȡ�����ѥ���ˤ���񤭤����Ǥ��ޤ����ǥե���ȤǤϡ����Ǥ�¸�ߤ��뤫�ɤ����ˤ�����餺�����٤ƤΥե����뤬��������ޤ��������Υե�����򥫥����ޥ���������� (�����������������Ƥ����ΤǤ���Ȥ��ʳ��ϥ������ޥ������򤱤�)��\-keep ���ץ�����ͭ�ѤǤ������Υ��ޥ�ɤϡ�
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-keep\fP My.idl
+.fl
+.fi
 
 .LP
-IDL\-to\-Java コンパイラは、実行の各段階で状態メッセージを生成します。「冗長」モード (メッセージが多いモード) にするには、\f2\-v\fP オプションを使用します。 \f2idlj \fP\f4\-v\fP\f2 My.idl\fP
 .LP
-デフォルトでは、コンパイラは冗長モードでは実行されません。
-.RE
+���饤�����¦�ΥХ���ǥ��󥰤ǡ��ޤ�¸�ߤ��ʤ���Τ򤹤٤�ȯ�Ԥ��ޤ���
+.LP
 .SS 
-バージョン情報の表示
+����ѥ���ο�Ľ������ɽ��
 .LP
-.RS 3
+.LP
+IDL\-to\-Java ����ѥ���ϡ��¹Ԥγ��ʳ��Ǿ��֥�å��������������ޤ����־�Ĺ�ץ⡼�� (��å�������¿���⡼��) �ˤ���ˤϡ�\f2\-v\fP ���ץ�������Ѥ��ޤ���
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-v\fP My.idl
+.fl
+.fi
 
 .LP
 .LP
-IDL\-to\-Java コンパイラのビルドバージョンを表示するには、コマンド行で \f2\-version\fP オプションを指定します。
+�ǥե���ȤǤϡ�����ѥ���Ͼ�Ĺ�⡼�ɤǤϼ¹Ԥ���ޤ���
+.LP
+.SS 
+�С����������ɽ��
 .LP
 .LP
-\f2idlj \-version\fP
+IDL\-to\-Java ����ѥ���Υӥ�ɥС�������ɽ������ˤϡ����ޥ�ɹԤ� \f2\-version\fP ���ץ�������ꤷ�ޤ���
 .LP
-.LP
-バージョン情報は、コンパイラによって生成されたバインディング内にも書き込まれています。このオプションをコマンド行に指定すると、それ以外のオプションを指定しても、すべて無視されます。
-.LP
-.RE
-.SH "オプション"
-.LP
+.nf
+\f3
+.fl
+idlj \-version
+.fl
+\fP
+.fi
 
+.LP
+.LP
+�С���������ϡ�����ѥ���ˤ�ä��������줿�Х���ǥ�����ˤ�񤭹��ޤ�Ƥ��ޤ������Υ��ץ����򥳥ޥ�ɹԤ˻��ꤹ��ȡ�����ʳ��Υ��ץ�������ꤷ�Ƥ⡢���٤�̵�뤵��ޤ���
+.LP
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-d symbol 
-このオプションは、IDL ファイルに次のような行を追加した場合と等価です。 
-.RS 3
-
-.LP
+���Υ��ץ����ϡ�IDL �ե�����˼��Τ褦�ʹԤ��ɲä������������Ǥ��� 
 .nf
 \f3
 .fl
@@ -385,33 +619,32 @@ IDL\-to\-Java コンパイラのビルドバージョンを表示するには、
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-emitAll 
-\f2#include\fP ファイル内で定義されているものも含めて、すべての型を発行します。 
+#include �ե����� ����������Ƥ����Τ�ޤ�ơ� \f2���٤Ƥη���\fP ȯ�Ԥ��ޤ��� 
 .TP 3
 \-fside 
-発行するバインディングを定義します。 \f2side\fP は、\f2client\fP、\f2server\fP、\f2serverTIE\fP、\f2all\fP、\f2allTIE\fP のどちらかです。\f2\-fserverTIE\fP または \f2\-fallTIE\fP オプションを指定すると、委譲モデルスケルトンが発行されます。このフラグを指定しなかった場合は、\f2\-fclient\fP が指定されたものと見なされます。 
+ȯ�Ԥ���Х���ǥ��󥰤�������ޤ���\f2side\fP �� \f2client\fP��\f2server\fP��\f2serverTIE\fP��\f2all\fP��\f2allTIE\fP �Τ����줫�ˤʤ�ޤ���\f2\-fserverTIE\fP �ޤ��� \f2\-fallTIE\fP ���ץ�������ꤹ��ȡ��Ѿ���ǥ륹����ȥ�ȯ�Ԥ���ޤ������Υե饰����ꤷ�ʤ��ä����ϡ�\f2\-fclient\fP �����ꤵ�줿��Τȸ��ʤ���ޤ��� 
 .TP 3
 \-i include\-path 
-デフォルトでは、インクルードファイルはカレントディレクトリから検索されます。このオプションを指定すると、ほかのディレクトリを追加できます。 
+�ǥե���ȤǤϡ����󥯥롼�ɥե�����ϥ����ȥǥ��쥯�ȥ꤫�鸡������ޤ������Υ��ץ�������ꤹ��ȡ��ۤ��Υǥ��쥯�ȥ���ɲäǤ��ޤ��� 
 .TP 3
 \-keep 
-生成されるファイルがすでに存在している場合は、そのファイルが上書きされません。デフォルトでは、上書きされます。 
+���������ե����뤬���Ǥ�¸�ߤ��Ƥ�����ϡ����Υե����뤬��񤭤���ޤ��󡣥ǥե���ȤǤϡ���񤭤���ޤ��� 
 .TP 3
 \-noWarn 
-警告メッセージを表示しないようにします。 
+�ٹ��å�������ɽ�����ʤ��褦�ˤ��ޤ��� 
 .TP 3
 \-oldImplBase 
-v1.4 より前の JDK ORB と互換性のあるスケルトンを生成します。デフォルトでは、POA 継承モデルのサーバー側バインディングが生成されます。このオプションを指定すると、\f2ImplBase\fP 継承モデルのクラスであるサーバー側バインディングが生成されるので、古いバージョンの Java プログラミング言語との下位互換性が得られます。 
+v1.4 ������� JDK ORB �ȸߴ����Τ��륹����ȥ���������ޤ����ǥե���ȤǤϡ�POA �Ѿ���ǥ�Υ����С�¦�Х���ǥ��󥰤���������ޤ������Υ��ץ�������ꤹ��ȡ�\f2ImplBase\fP �Ѿ���ǥ�Υ��饹�Ǥ��륵���С�¦�Х���ǥ��󥰤����������Τǡ��Ť��С������� Java �ץ�����ߥ󥰸���Ȥβ��̸ߴ����������ޤ��� 
 .TP 3
 \-pkgPrefix type prefix 
-\f2type\fP がファイルスコープで検出された場合は、その型に対して生成されるすべてのファイルについて、生成される Java パッケージ名に \f2prefix\fP という接頭辞が付加されます。\f2type\fP は、トップレベルモジュールの単純名か、どのモジュールよりも外側で定義された IDL 型の単純名のどちらかです。 
+\f2type\fP ���ե����륹�����פǸ��Ф��줿���ϡ����η����Ф�����������뤹�٤ƤΥե�����ˤĤ��ơ���������� Java �ѥå�����̾�� \f2prefix\fP �Ȥ�����Ƭ�����ղä���ޤ���\f2type\fP �ϡ��ȥåץ�٥�⥸�塼���ñ��̾�����ɤΥ⥸�塼����⳰¦��������줿 IDL ����ñ��̾�Τɤ��餫�Ǥ��� 
 .TP 3
 \-pkgTranslate type package 
-識別子の中にモジュール名 \f2type\fP が検出されると、生成される Java パッケージ内のすべてのファイルについて、識別子の中のその名前が \f2package\fP で置き換えられます。最初に \f2pkgPrefix\fP を変更します。\f2type\fP は、トップレベルのモジュール、またはすべてのモジュールの外部で定義された IDL 型の単純名です。 そして、完全なパッケージ名に正確に一致しなければなりません。 
+���̻Ҥ���˥⥸�塼��̾ type �����Ф����ȡ���������� Java �ѥå�������Τ��٤ƤΥե�����ˤĤ��ơ����̻Ҥ���Τ���̾���� package ���֤��������ޤ����ǽ�� \f2pkgPrefix\fP ���ѹ����ޤ���\f2type\fP �ϡ��ȥåץ�٥�Υ⥸�塼�롢�ޤ��Ϥ��٤ƤΥ⥸�塼��γ�����������줿 IDL ����ñ��̾�Ǥ��������ơ������ʥѥå�����̾�����Τ˰��פ��ʤ���Фʤ�ޤ��� 
 .LP
-1 つの識別子の中で複数の変換がマッチする場合は、もっとも長いマッチが選ばれます。たとえば、次のような引数が指定されている場合は、 
+1 �Ĥμ��̻Ҥ����ʣ�����Ѵ����ޥå�������ϡ���äȤ�Ĺ���ޥå������Ф�ޤ������Ȥ��С����Τ褦�ʰ��������ꤵ��Ƥ�����ϡ� 
 .nf
 \f3
 .fl
@@ -420,89 +653,85 @@ v1.4 より前の JDK ORB と互換性のあるスケルトンを生成します
 \fP
 .fi
 .LP
-次のような変換が実施されます。 
+���Τ褦���Ѵ����»ܤ���ޤ��� 
 .nf
 \f3
 .fl
-foo          => bar
+foo          =>      bar
 .fl
-foo.boo      => bar.boo
+foo.boo      =>      bar.boo
 .fl
-foo.baz      => buzz.fizz
+foo.baz      =>      buzz.fizz
 .fl
-foo.baz.bar  => buzz.fizz.bar
+foo.baz.bar  =>      buzz.fizz.bar
 .fl
 \fP
 .fi
 .LP
-次のパッケージ名を変換することはできません。 
+���Υѥå�����̾���Ѵ����뤳�ȤϤǤ��ޤ��� 
 .RS 3
 .TP 2
 o
 \f2org\fP 
 .TP 2
 o
-\f2org.omg\fP、または \f2org.omg\fP のサブパッケージ 
+\f2org.omg\fP���ޤ��� \f2org.omg\fP �Υ��֥ѥå����� 
 .RE
 .LP
-これらのパッケージ名を変換しようとすると、互換性のないコードが生成されます。 そして、\f2\-pkgTranslate\fP のあとの最初の引数としてそれらのパッケージを使用すると、エラーとして扱われます。  
+�����Υѥå�����̾���Ѵ����褦�Ȥ���ȡ��ߴ����Τʤ������ɤ���������ޤ��������ơ�\f2\-pkgTranslate\fP �Τ��Ȥκǽ�ΰ����Ȥ��Ƥ����Υѥå���������Ѥ���ȡ����顼�Ȥ��ư����ޤ���  
 .TP 3
 \-skeletonName xxx%yyy 
-\f2xxx%yyy\fP が、スケルトンに名前を付けるパターンとして使用されます。デフォルトは、次のとおりです。 
+\f2xxx%yyy\fP ����������ȥ��̾�����դ���ѥ�����Ȥ��ƻ��Ѥ���ޤ����ǥե���Ȥϼ��ΤȤ���Ǥ��� 
 .RS 3
 .TP 2
 o
-\f2POA\fP 基底クラスの場合は「%POA」(\f2\-fserver\fP または \f2\-fall\fP) 
+\f2POA\fP ���쥯�饹�ξ��ϡ�%POA��(\f2\-fserver\fP �ޤ��� \f2\-fall\fP) 
 .TP 2
 o
-\f2oldImplBase\fP クラスの場合は「_%ImplBase」(\f2\-oldImplBase\fP かつ (\f2\-fserver\fP または \f2\-fall\fP)) 
+\f2oldImplBase\fP ���饹�ξ��ϡ�_%ImplBase��(\f2\-oldImplBase\fP ���� (\f2\-fserver\fP �ޤ��� \f2\-fall\fP)) 
 .RE
 .TP 3
 \-td dir 
-出力ディレクトリとして、カレントディレクトリではなく、\f2dir\fP が使用されます。 
+���ϥǥ��쥯�ȥ�Ȥ��ơ������ȥǥ��쥯�ȥ�ǤϤʤ���\f2dir\fP �����Ѥ���ޤ��� 
 .TP 3
 \-tieName xxx%yyy 
-このパターンに従って Tie に名前が付けられます。デフォルトは、次のとおりです。 
+���Υѥ�����˽��ä� Tie ��̾�����դ����ޤ����ǥե���Ȥϼ��ΤȤ���Ǥ��� 
 .RS 3
 .TP 2
 o
-\f2POA\fP Tie 基底クラスの場合は「%POATie」(\f2\-fserverTie\fP または \f2\-fallTie\fP) 
+\f2POA\fP Tie ���쥯�饹�ξ��ϡ�%POATie��(\f2\-fserverTie\fP �ޤ��� \f2\-fallTie\fP) 
 .TP 2
 o
-\f2oldImplBase\fP Tie クラスの場合は「%_Tie」(\f2\-oldImplBase\fP かつ (\f2\-fserverTie\fP または \f2\-fallTie\fP)) 
+\f2oldImplBase\fP Tie ���饹�ξ��ϡ�%_Tie��(\f2\-oldImplBase\fP ���� (\f2\-fserverTie\fP �ޤ��� \f2\-fallTie\fP)) 
 .RE
 .TP 3
-\-verbose 
-冗長モードになります。 
+\-nowarn, \-verbose 
+��Ĺ�⡼�ɤˤʤ�ޤ��� 
 .TP 3
 \-version 
-バージョン情報を表示して終了します。 
+�С����������ɽ�����ƽ�λ���ޤ��� 
 .RE
 
 .LP
-各オプションの詳細については、「説明」のセクションを参照してください。 
-.SH "制約"
-.LP
-
+�ƥ��ץ����ξܺ٤ˤĤ��Ƥϡ��������פΥ��������򻲾Ȥ��Ƥ��������� 
+.SH "����"
 .LP
 .RS 3
 .TP 2
 o
-グローバルスコープ内のエスケープされた識別子は、IDL プリミティブ型の \f2Object\fP または \f2ValueBase\fP と同じ綴りであってはなりません。これらの識別子については、シンボルテーブルが事前にロードされており、これらの識別子の再定義を許可すると元の定義が上書きされてしまいます。これは、おそらく恒久的な制約です。 
+�������Х륹��������Υ��������פ��줿���̻Ҥϡ�IDL �ץ�ߥƥ��ַ��� \f2Object\fP �ޤ��� \f2ValueBase\fP ��Ʊ���֤�Ǥ��äƤϤʤ�ޤ��󡣤����μ��̻ҤˤĤ��Ƥϡ�����ܥ�ơ��֥뤬�����˥����ɤ���Ƥ��ꡢ�����μ��̻Ҥκ��������Ĥ���ȸ����������񤭤���Ƥ��ޤ��ޤ�������ϡ������餯����Ū������Ǥ��� 
 .TP 2
 o
-\f2fixed\fP という IDL 型はサポートされていません。 
+\f2fixed\fP �Ȥ��� IDL ���ϥ��ݡ��Ȥ���Ƥ��ޤ��� 
 .RE
 
 .LP
-.SH "既知の問題点"
-.LP
-
+.SH "���Τ�������"
 .LP
 .RS 3
 .TP 2
 o
-グローバル識別子についてインポートが生成されません。予期されないローカル impl を呼び出すと、例外を受け取ります。 しかし、その原因は、\f2ServerDelegate\fP DSI コード内の \f2NullPointerException\fP にあるようです。 
+�������Х뼱�̻ҤˤĤ��ƥ���ݡ��Ȥ���������ޤ���ͽ������ʤ��������� impl ��ƤӽФ��ȡ��㳰��������ޤ��� �����������θ����ϡ�\f2ServerDelegate\fP DSI ��������� \f2NullPointerException\fP �ˤ���褦�Ǥ��� 
 .RE
 
 .LP

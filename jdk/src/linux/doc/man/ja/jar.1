@@ -19,104 +19,93 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jar 1 "02 Jun 2010"
+.TH jar 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-jar \- Java ARchive ツール
+.SH "̾��"
+jar \- Java ARchive �ġ���
 .LP
-\f3jar\fP は複数のファイルを 1 つの JAR アーカイブファイルに結合します。 
+\f3jar\fP ��ʣ���Υե������ 1 �Ĥ� JAR ���������֥ե�����˷�礷�ޤ��� 
 .RS 3
 .TP 2
 o
-形式 
+���� 
 .TP 2
 o
-説明 
+���� 
 .TP 2
 o
-オプション 
+���ץ���� 
 .TP 2
 o
-コマンド行引数ファイル 
+���ޥ�ɹ԰����ե����� 
 .TP 2
 o
-例 
+�� 
 .TP 2
 o
-関連項目 
+��Ϣ���� 
 .RE
 
 .LP
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .RS 3
 .TP 3
-JAR ファイルの作成 
+JAR �ե�����κ��� 
 \f4jar c\fP\f2[v0Mmfe] [\fP\f2manifest\fP\f2] [\fP\f2jarfile\fP\f2] [\fP\f2entrypoint\fP\f2] [\-C\fP \f2dir\fP\f2]\fP \f2inputfiles\fP \f2[\-J\fP\f2option\fP\f2]\fP 
 .TP 3
-JAR ファイルの更新 
+JAR �ե�����ι��� 
 \f4jar u\fP\f2[v0Mmfe] [\fP\f2manifest\fP\f2] [\fP\f2jarfile\fP\f2] [\fP\f2entrypoint\fP\f2] [\-C\fP \f2dir\fP\f2]\fP \f2inputfiles\fP \f2[\-J\fP\f2option\fP\f2]\fP 
 .TP 3
-JAR ファイルの抽出 
+JAR �ե��������� 
 \f4jar x\fP\f2[vf] [\fP\f2jarfile\fP\f2] [\fP\f2inputfiles\fP\f2] [\-J\fP\f2option\fP\f2]\fP 
 .TP 3
-JAR ファイルの内容の表形式による一覧表示 
+JAR �ե���������Ƥ�ɽ�����ˤ�����ɽ�� 
 \f4jar t\fP\f2[vf] [\fP\f2jarfile\fP\f2] [\fP\f2inputfiles\fP\f2] [\-J\fP\f2option\fP\f2]\fP 
 .TP 3
-JAR ファイルへのインデックスの追加 
+JAR �ե�����ؤΥ���ǥå������ɲ� 
 \f4jar i\fP \f2jarfile\fP \f2[\-J\fP\f2option\fP\f2]\fP 
 .RE
 
 .LP
 .LP
-説明
-.LP
-.RS 3
-
+����
 .LP
 .RS 3
 .TP 3
 cuxtiv0Mmfe 
-\f2jar\fP コマンドを制御するオプション 
+\f2jar\fP ���ޥ�ɤ����椹�륪�ץ���� 
 .TP 3
 jarfile 
-作成 (\f2c\fP)、更新 (\f2u\fP)、抽出 (\f2x\fP)、または内容の一覧表示 (\f2t\fP) の対象となる JAR ファイル。\f2f\fP オプションとファイル名 \f2jarfile\fP とがペアになります。 つまり、片方を記述すれば、もう一方も記述する必要があります。\f2f\fP と \f2jarfile\fP を省略すると、標準入力から「JAR ファイル」が取得されるか (x および t の場合)、標準出力へ「JAR ファイル」が送信されます(c および u の場合)。 
+���� (\f2c\fP)������ (\f2u\fP)����� (\f2x\fP)���ޤ����ܼ�ɽ�� (\f2t\fP) ���оݤȤʤ� JAR �ե����롣\f2f\fP ���ץ����ȥե�����̾ \f2jarfile\fP �Ȥ��ڥ��ˤʤ�ޤ��� �Ĥޤꡢ�����򵭽Ҥ���С��⤦�����⵭�Ҥ���ɬ�פ�����ޤ��� \f2f\fP �� \f2jarfile\fP ���ά����ȡ�ɸ�����Ϥ����JAR �ե�����פ���������뤫 (x ����� t �ξ��)��ɸ����Ϥء�JAR �ե�����פ���������ޤ�(c ����� u �ξ��)�� 
 .TP 3
 inputfiles 
-\f2jarfile\fP に結合されるか (c および u の場合)、\f2jarfile\fP から抽出 (x の場合) または一覧表示 (t の場合) される、空白で区切られたファイルまたはディレクトリ。すべてのディレクトリは再帰的に処理されます。このファイルは、オプション \f2O\fP (ゼロ) を使用しないかぎり圧縮されます。 
+\f2jarfile\fP �˷�礵��뤫 (c ����� u �ξ��)��\f2jarfile\fP ������� (x �ξ��) �ޤ��ϰ���ɽ�� (t �ξ��) ����롢����Ƕ��ڤ�줿�ե�����ޤ��ϥǥ��쥯�ȥꡣ���٤ƤΥǥ��쥯�ȥ�ϺƵ�Ū�˽�������ޤ������Υե�����ϡ����ץ���� \f20\fP (����) ����Ѥ��ʤ������갵�̤���ޤ��� 
 .TP 3
 manifest 
-\f2name\fP\f2:\fP\f2value\fP のペアが、JAR ファイルの MANIFEST.MF に含まれている既存のマニフェストファイル。\f2\-m\fP オプションとファイル名 \f2manifest\fP とがペアになります。 つまり、片方を記述すれば、もう一方も記述する必要があります。\f3m\fP、\f3f\fP、および \f3e\fP の出現順序は、\f2manifest\fP、\f2jarfile\fP、\f2entrypoint\fP の出現順序と一致する必要があります。 
+JAR �ե������ MANIFEST.MF ��˴ޤ��٤� \f2name\fP\f2:\fP \f2value\fP �ڥ����ޤޤ�Ƥ����¸�Υޥ˥ե����ȥե����롣\f2m\fP ���ץ����ȥե�����̾ \f2manifest\fP �Ȥ��ڥ��ˤʤ�ޤ����Ĥޤꡢ�����򵭽Ҥ���С��⤦�����⵭�Ҥ���ɬ�פ�����ޤ���\f3m\fP��\f3f\fP������� \f3e\fP �νи�����ϡ�\f2manifest\fP��\f2jarfile\fP��\f2entrypoint\fP �νи�����Ȱ��פ���ɬ�פ�����ޤ��� 
 .TP 3
 entrypoint 
-実行可能 JAR ファイル内にバンドルされたスタンドアロンアプリケーションのアプリケーションエントリポイントとして設定するクラスの名前。\f2\-e\fP オプションと entrypoint は対になっています。 どちらかを指定する場合は両方とも指定する必要があります。\f3m\fP、\f3f\fP、および \f3e\fP の出現順序は、\f2manifest\fP、\f2jarfile\fP、\f2entrypoint\fP の出現順序と一致する必要があります。 
+�¹Բ�ǽ JAR �ե�������˥Х�ɥ뤵�줿������ɥ����󥢥ץꥱ�������Υ��ץꥱ������󥨥�ȥ�ݥ���ȤȤ������ꤹ�륯�饹��̾����\f2\-e\fP ���ץ����� entrypoint ���ФˤʤäƤ��ޤ����ɤ��餫����ꤹ�����ξ���Ȥ���ꤹ��ɬ�פ�����ޤ���\f3m\fP��\f3f\fP������� \f3e\fP �νи�����ϡ�\f2manifest\fP��\f2jarfile\fP��\f2entrypoint\fP �νи�����Ȱ��פ���ɬ�פ�����ޤ��� 
 .TP 3
 \-C\ dir 
-これに続く \f2inputfiles\fP 引数を処理する間、ディレクトリを \f2dir\fP へ一時的に変更します。\f2\-C\ \fP\f2dir\fP \f2inputfiles\fP のセットは複数使用できます。 
+�����³�� \f2inputfiles\fP �������������֡��ǥ��쥯�ȥ�� \f2dir\fP �ذ��Ū���ѹ����ޤ��� \f2\-C\ \fP\f2\-\ dir\fP \f2inputfiles\fP �Υ��åȤ�ʣ�����ѤǤ��ޤ��� 
 .TP 3
 \-Joption 
-Java 実行環境へ渡されるオプション。\f2\-J\fP と \f2option\fP の間には空白を入れないでください。 
+Java �¹ԴĶ����Ϥ���륪�ץ����\f2\-J\fP �� \f2option\fP �δ֤ˤ϶��������ʤ��Ǥ��������� 
 .RE
 
 .LP
-.RE
-.SH "説明"
+.SH "����"
 .LP
-
-.LP
-\f3jar\fP ツールは、複数のファイルを 1 つの JAR アーカイブファイルに結合します。 \f3jar\fP は、ZIP および 
+\f3jar\fP �ġ����ʣ���Υե������ 1 �Ĥ� JAR ���������֥ե�����˷�礷�ޤ���\f3jar\fP �ϡ�ZIP ����� 
 .na
 \f2ZLIB\fP @
 .fi
-http://www.gzip.org/zlib/ 圧縮形式をベースにした、汎用のアーカイブおよび圧縮ツールです。ただし \f3jar\fP ツールの主な目的は、いくつかの Java アプレットやアプリケーションを 1 個のアーカイブに統合することです。アプレットやアプリケーションのコンポーネント (ファイル、イメージ、およびサウンド) が 1 つのアーカイブに結合されていると、Java エージェント (ブラウザなど) は、それらのコンポーネントを 1 回の HTTP トランザクションでダウンロードすることができ、コンポーネントごとに新しい接続を必要とすることがありません。これによって、ダウンロードの回数が大幅に減ります。 また、\f3jar\fP はファイルを圧縮するので、ダウンロード時間も短くなります。また、ファイル内の個々のエントリにアプレット作成者による署名を書き込めるので、配布元の認証が可能になります。jar ツールの構文は、\f2tar\fP コマンドの構文とほぼ同じです。\f3JAR\fP アーカイブは、圧縮されているかどうかにかかわらず、クラスパスのエントリとして使用できます。 
+http://www.gzip.org/zlib/ ���̷����˴�Ť����ѤΥ��������֤���Ӱ��̥ġ���Ǥ��������� \f3jar\fP �ġ���μ����Ū�ϡ������Ĥ��� Java ���ץ�åȤ䥢�ץꥱ�������� 1 �ĤΥ��������֤����礹�뤳�ȤǤ������ץ�åȤ䥢�ץꥱ�������Υ���ݡ��ͥ�� (�ե����롢���᡼��������ӥ������) �� 1 �ĤΥ��������֤˷�礵��Ƥ���ȡ�Java ����������� (�֥饦���ʤ�) �ϡ������Υ���ݡ��ͥ�Ȥ� 1 ��� HTTP �ȥ�󥶥������ǥ���������ɤ��뤳�Ȥ��Ǥ�������ݡ��ͥ�Ȥ��Ȥ˿�������³��ɬ�פȤ��뤳�Ȥ�����ޤ��󡣤���ˤ�ꡢ����������ɻ��֤�������û�̤���ޤ����ޤ���\f3jar\fP �ϥե�����ΰ��̤�Ԥ��Τǡ�����������ɻ��֤������û�̤���ޤ����ޤ����ե�������θġ��Υ���ȥ�˥��ץ�åȺ����Ԥˤ���̾��񤭹����Τǡ����۸���ǧ�ڤ���ǽ�ˤʤ�ޤ���jar �ġ���ι�ʸ�ϡ�\f2tar\fP ���ޥ�ɤι�ʸ�Ȥۤ�Ʊ���Ǥ���\f3JAR\fP ���������֤ϡ����̤���Ƥ��뤫�ɤ����ˤ�����餺�����饹�ѥ��Υ���ȥ�Ȥ��ƻ��ѤǤ��ޤ��� 
 .LP
-複数のファイルを JAR ファイルへ結合する一般的な使用法は次のとおりです。
-.LP
-.RS 3
-
+ʣ���Υե������ JAR �ե�����ط�礹�����Ū�ʻ���ˡ�ϼ��ΤȤ���Ǥ���
 .LP
 .nf
 \f3
@@ -125,19 +114,15 @@ http://www.gzip.org/zlib/ 圧縮形式をベースにした、汎用のアーカ
 .fl
 \fP
 .fi
-.RE
 
 .LP
-この例では、現在のディレクトリにあるクラス (.class) ファイルがすべて、\f2myFile.jar\fP という名前のファイルに格納されます。jar ツールは自動的に、\f2META\-INF/MANIFEST.MF\fP という名前のマニフェストファイルエントリを生成します。これは常に、JAR ファイルの最初のエントリになります。マニフェストファイルは、アーカイブに関するメタ情報を宣言し、そのデータを \f2name\ :\ value\fP ペアとして格納します。jar ツールがマニフェストファイル内にメタ情報を格納する方法の詳細については、「
+������Ǥϡ����ߤΥǥ��쥯�ȥ�ˤ��륯�饹 (.class) �ե����뤬���٤ơ�\f2myFile.jar\fP �Ȥ���̾���Υե�����˳�Ǽ����ޤ���jar �ġ���ϼ�ưŪ�ˡ� \f2META\-INF/MANIFEST.MF\fP �Ȥ���̾���Υޥ˥ե����ȥե����륨��ȥ���������ޤ�������Ͼ�ˡ�JAR �ե�����κǽ�Υ���ȥ�ˤʤ�ޤ����ޥ˥ե����ȥե�����ϡ����������֤˴ؤ���᥿���������������Υǡ����� \f2name\ :\ value\fP �ڥ��Ȥ��Ƴ�Ǽ���ޤ���jar �ġ��뤬�ޥ˥ե����ȥե�������˥᥿������Ǽ������ˡ�ξܺ٤ˤĤ��Ƥϡ���
 .na
 \f2JAR file specification\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest」を参照してください。 
+http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest�פ򻲾Ȥ��Ƥ��������� 
 .LP
-既存のマニフェストファイル内に格納された \f2name\ :\ value\fP ペアを JAR ファイルに含める必要がある場合には、そのファイルを次のように \f2\-m\fP オプションを使って指定します。
-.LP
-.RS 3
-
+��¸�Υޥ˥ե����ȥե�������˳�Ǽ���줿 \f2name\ :\ value\fP �ڥ��� JAR �ե�����˴ޤ��ɬ�פ�������ˤϡ����Υե�����򼡤Τ褦�� \f2\-m\fP ���ץ�����Ȥäƻ��ꤷ�ޤ���
 .LP
 .nf
 \f3
@@ -146,20 +131,16 @@ http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest�
 .fl
 \fP
 .fi
-.RE
 
 .LP
-既存のマニフェストファイルは改行文字で終わっている必要があります。 マニフェストファイルが改行文字で終わっていない場合、\f3jar\fP はその最後の行を解析しません。
+��¸�Υޥ˥ե����ȥե�����ϲ���ʸ���ǽ���äƤ���ɬ�פ�����ޤ����ޥ˥ե����ȥե����뤬����ʸ���ǽ���äƤ��ʤ��ȡ�\f3jar\fP �Ϥ��κǽ��Ԥ���Ϥ��ޤ���
 .br
 
 .LP
 .br
 
 .LP
-\f3注:\ \fPコマンド行に \f2cmf\fP ではなく \f2cfm\fP が指定された jar コマンド (m と \-f オプションの順番を逆にする) の場合、\f3jar\fP コマンド行にまず JAR アーカイブの名前を指定し、続いてマニフェストファイルの名前を指定する必要があります。 次に例を示します。 
-.RS 3
-
-.LP
+\f3��:\ \fP���ޥ�ɹԤ� \f2cmf\fP �ǤϤʤ� \f2cfm\fP �����ꤵ�줿 jar ���ޥ�� (m �� \-f ���ץ����ν��֤�դˤ���) �ξ�硢\f3jar\fP ���ޥ�ɹԤˤޤ� JAR ���������֤�̾������ꤷ��³���ƥޥ˥ե����ȥե������̾������ꤹ��ɬ�פ�����ޤ��� ������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -167,15 +148,11 @@ http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest�
 .fl
 \fP
 .fi
-.RE
 
 .LP
-マニフェストは、RFC822 ASCII 形式で規定されたテキスト形式であるため、マニフェストファイルの内容を簡単に表示および編集できます。 
+�ޥ˥ե����Ȥϡ�RFC822 ASCII �����ǵ��ꤵ�줿�ƥ����ȷ����Ǥ��뤿�ᡢ�ޥ˥ե����ȥե���������Ƥ��ñ��ɽ��������Խ��Ǥ��ޤ��� 
 .LP
-JAR ファイルからファイルを抽出する場合は、\f2x\fP を使用します。
-.LP
-.RS 3
-
+JAR �ե����뤫��ե��������Ф�����ϡ� \f2x\fP ����Ѥ��ޤ���
 .LP
 .nf
 \f3
@@ -184,14 +161,10 @@ JAR ファイルからファイルを抽出する場合は、\f2x\fP を使用�
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-jar ファイルから個別のファイルを抽出する場合は、そのファイル名を指定します。
-.LP
-.RS 3
-
+jar �ե����뤫����̤Υե��������Ф�����ϡ����Υե�����̾����ꤷ�ޤ���
 .LP
 .nf
 \f3
@@ -200,18 +173,14 @@ jar ファイルから個別のファイルを抽出する場合は、そのフ�
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-JDK のバージョン 1.3 以降から、\f2jar\fP ユーティリティーで 
+JDK �ΥС������ 1.3 �ʹߤ��顢\f2jar\fP �桼�ƥ���ƥ����� 
 .na
 \f2JarIndex\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JARIndex がサポートされています。 JarIndex を使用すると、アプリケーションのクラスローダーで JAR ファイルからクラスがロードされるときの効率が向上します。アプリケーションまたはアプレットが複数の JAR ファイルにバンドルされている場合は、クラスがロードされるときに、必要な JAR ファイル以外のダウンロードおよびオープンは行われません。このパフォーマンスの最適化は、新しい \f2\-i\fP オプションを指定して \f2jar\fP を実行すると有効になります。このオプションを使うと、指定した JAR メインファイルとそのメインファイルが依存しているすべての JAR ファイルについて、パッケージ位置情報が生成されます。 メインファイルが依存している JAR ファイルは、JAR メインファイルのマニフェストの \f2Class\-Path\fP 属性に指定しておく必要があります。
-.LP
-.RS 3
-
+http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR_Index �����ݡ��Ȥ���Ƥ��ޤ��� JarIndex ����Ѥ���ȡ����ץꥱ�������Υ��饹���������� JAR �ե����뤫�饯�饹�������ɤ����Ȥ��θ�Ψ�����夷�ޤ������ץꥱ�������ޤ��ϥ��ץ�åȤ�ʣ���� JAR �ե�����˥Х�ɥ뤵��Ƥ�����ϡ����饹�������ɤ����Ȥ��ˡ�ɬ�פ� JAR �ե�����ʳ��Υ���������ɤ���ӥ����ץ�ϹԤ��ޤ��󡣤��Υѥե����ޥ󥹤κ�Ŭ���ϡ������� \f2\-i\fP ���ץ�������ꤷ�� \f2jar\fP ��¹Ԥ����ͭ���ˤʤ�ޤ������Υ��ץ�����Ȥ��ȡ����ꤷ�� JAR �ᥤ��ե�����ȡ����Υᥤ��ե����뤬��¸���Ƥ��뤹�٤Ƥ� JAR �ե�����ˤĤ��ơ��ѥå��������־�����������ޤ����ᥤ��ե����뤬��¸���Ƥ��� JAR �ե�����ϡ�JAR �ᥤ��ե�����Υޥ˥ե����Ȥ� \f2Class\-Path\fP °���˻��ꤷ�Ƥ���ɬ�פ�����ޤ���
 .LP
 .nf
 \f3
@@ -220,52 +189,42 @@ http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JARIndex がサ�
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-この例では、\f2INDEX.LIST\fP ファイルが \f2main.jar\fP の \f2META\-INF\fP ディレクトリに挿入されます。
+������Ǥϡ� \f2INDEX.LIST\fP �ե����뤬 \f2main.jar\fP �� \f2META\-INF\fP �ǥ��쥯�ȥ������������ޤ���
 .br
 .br
-このファイルに格納されている情報を使用して、アプリケーションのクラスローダーは、効率的にクラスをロードします。 インデックスファイルに位置情報を格納する方法の詳細は、 「\f2JarIndex\fP 仕様」を参照してください。
+���Υե�����˳�Ǽ����Ƥ���������Ѥ��ơ����ץꥱ�������Υ��饹���������ϡ���ΨŪ�˥��饹������ɤ��ޤ�������ǥå����ե�����˰��־�����Ǽ������ˡ�ξܺ٤ϡ���JarIndex ���͡פ򻲾Ȥ��Ƥ���������
 .br
 .br
-ディレクトリをコピーするには、まず \f2dir1\fP 内のファイルを圧縮して標準出力に出力し、続いて標準入力から \f2dir2\fP に抽出します (両方の \f2jar\fP コマンドから \f2\-f\fP オプションを省く)。 次に例を示します。
-.LP
-.RS 3
-
+�ǥ��쥯�ȥ�򥳥ԡ�����ˤϡ��ޤ� \f2dir1\fP ��Υե�����򰵽̤��� \f2stdout\fP �˽��Ϥ���³���� \f2stdin\fP ������Ф��� \f2dir2\fP �˽��Ϥ��ޤ� (\f2\-f\fP ���ץ����Ϥɤ���� \f2jar\fP ���ޥ�ɤǤ��ά)��
 .LP
 .nf
 \f3
 .fl
-% (cd dir1; jar c .) | (cd dir2; jar x)
+% (cd dir1; jar c .)| (cd dir2; jar x)
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f2jar\fP を使って JAR ファイルや JAR ファイルマニフェストを操作するコマンドサンプルを確認するには、「例」を参照してください。また、「
+\f2jar\fP ����Ѥ��� JAR �ե������ JAR �ޥ˥ե����ȥե���������륵��ץ륳�ޥ�ɤ��ǧ���������ϡ���ҤΡ���פ򻲾Ȥ��Ƥ����������ޤ�����
 .na
 \f2Java Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar」の JAR コースも参照してください。
+http://download.oracle.com/javase/tutorial/deployment/jar�פ� JAR �������⻲�Ȥ��Ƥ���������
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 c 
-\f2jarfile\fP の名前で新しいアーカイブファイルを作成するか (\f2f\fP が指定されている場合)、標準出力で作成します (\f2f\fP と \f2jarfile\fP が省略されている場合)。\f2inputfiles\fP で指定されたファイルとディレクトリを、このアーカイブに追加します。 
+f �����ꤵ�줿���� \f2jarfile\fP �Ȥ���̾���� \f2������\fP ���������֥ե������ \f2��������\fP f �� \f2jarfile\fP ����ά���줿����ɸ����Ϥ˾������Ϥ��ޤ���\f2inputfiles\fP �ǻ��ꤵ�줿�ե�����ȥǥ��쥯�ȥ�򡢤��Υ��������֤��ɲä��ޤ��� 
 .TP 3
 u 
-\f2inputfiles\fP で指定されたファイルとディレクトリを追加することにより、既存のファイル \f2jarfile\fP を更新します (\f2f\fP が指定されている場合)。 例を示します。 
-.RS 3
-
-.LP
+f �����ꤵ��Ƥ�����ˡ���¸�ե����� \f2jarfile\fP �� \f2����������Ū�ǡ�\fP \f2inputfiles\fP �˻��ꤵ�줿�ե������ǥ��쥯�ȥ���ɲä��ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -273,11 +232,7 @@ jar uf foo.jar foo.class
 .fl
 \fP
 .fi
-.RE
-上のコマンドは、ファイル \f2foo.class\fP を既存の JAR ファイル \f2foo.jar\fP に追加します。次の例に示すように、\f2\-u\fP オプションは、マニフェストエントリも更新できます。 
-.RS 3
-
-.LP
+��Υ��ޥ�ɤϡ��ե����� \f2foo.class\fP ���¸�� JAR �ե����� \f2foo.jar\fP ���ɲä��ޤ���������˼����褦�ˡ�\f2\-u\fP ���ץ����ϡ��ޥ˥ե����ȥ���ȥ�⹹���Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -285,20 +240,16 @@ jar umf manifest foo.jar
 .fl
 \fP
 .fi
-.RE
-\f2foo.jar\fP マニフェストをマニフェスト内の \f2name:value\fP ペアで更新します。 
+\f2foo.jar\fP �ޥ˥ե����Ȥ�ޥ˥ե�������� \f2name:value\fP �ڥ��ǹ������ޤ��� 
 .TP 3
 x 
-\f2jarfile\fP から (\f2f\fP が指定されている場合)、または標準入力から (\f2f\fP と \f2jarfile\fP が省略されている場合)、ファイルとディレクトリを抽出します。\f2inputfiles\fP が指定されている場合は、その指定したファイルとディレクトリだけが抽出されます。指定されていなければ、すべてのファイルとディレクトリが抽出されます。抽出されたファイルの日時は、アーカイブ内で設定されたものです。 
+f �����ꤵ�줿���� \f2jarfile\fP \f2����\fP �� \f2f\fP �� \f2jarfile\fP ����ά���줿����ɸ�����Ϥ��顢�ե������ǥ��쥯�ȥ����Ф��ޤ���\f2inputfiles\fP �����ꤵ��Ƥ�����ϡ����λ��ꤷ���ե�����ȥǥ��쥯�ȥ��������Ф���ޤ������ꤵ��Ƥ��ʤ���С����٤ƤΥե�����ȥǥ��쥯�ȥ꤬��Ф���ޤ�����Ф��줿�ե�����������ϡ�����������������ꤵ�줿��ΤǤ��� 
 .TP 3
 t 
-\f2jarfile\fP から (\f2f\fP が指定されている場合)、または標準入力から (\f2f\fP と \f2jarfile\fP が省略されている場合)、内容を表形式で一覧表示します。\f2inputfiles\fP が指定されている場合は、その指定したファイルとディレクトリだけが一覧表示されます。指定されていなければ、すべてのファイルとディレクトリが一覧表示されます。 
+f �����ꤵ�줿���� \f2jarfile\fP \f2����\fP �� \f2f\fP �� \f2jarfile\fP ����ά���줿����ɸ�����Ϥ��顢�ܼ���ɽ�����ޤ���\f2inputfiles\fP �����ꤵ��Ƥ�����ϡ����λ��ꤷ���ե�����ȥǥ��쥯�ȥ����������ɽ������ޤ������ꤵ��Ƥ��ʤ���С����٤ƤΥե�����ȥǥ��쥯�ȥ꤬����ɽ������ޤ��� 
 .TP 3
 i 
-指定された \f2jarfile\fP と、それに依存する JAR ファイルについて、インデックス情報を生成します。例を示します。 
-.RS 3
-
-.LP
+���ꤵ�줿 \f2jarfile\fP �ȡ�����˰�¸���� JAR �ե�����ˤĤ��ơ�����ǥå���������������ޤ������Ȥ��С� 
 .nf
 \f3
 .fl
@@ -306,29 +257,25 @@ jar i foo.jar
 .fl
 \fP
 .fi
-.RE
 .LP
-上のコマンドは、\f2foo.jar\fP 内に \f2INDEX.LIST\fP ファイルを生成します。 このファイルには、\f2foo.jar\fP と、\f2foo.jar\fP の \f2Class\-Path\fP 属性に指定されたすべての JAR ファイルに入っている各パッケージの位置情報が書き込まれています。 インデックスの例を参照してください。   
+��Υ��ޥ�ɤϡ�\f2foo.jar\fP ��� \f2INDEX.LIST\fP �ե�������������ޤ��� ���Υե�����ˤϡ�\f2foo.jar\fP �ȡ�\f2foo.jar\fP �� \f2Class\-Path\fP °���˻��ꤵ�줿���٤Ƥ� JAR �ե���������äƤ���ƥѥå������ΰ��־��󤬽񤭹��ޤ�Ƥ��ޤ�������ǥå�������򻲾Ȥ��Ƥ���������  
 .TP 3
 f 
-作成 (\f2c\fP)、更新 (\f2u\fP)、抽出 (\f2x\fP)、インデックス追加 (\f2i\fP)、または表示 (\f2t\fP) 対象のファイル \f2jarfile\fP を指定します。\f2f\fP オプションとファイル名 \f2jarfile\fP とがペアになります。 つまり、片方を記述すれば、もう一方も記述する必要があります。\f2f\fP と \f2jarfile\fP を省略すると、標準入力から JAR ファイル名が使用されたり (x および t の場合)、標準出力に jar ファイルが 送信されたりします (c および u の場合)。 
+���γƽ������оݤȤʤ�ե����� \f2jarfile\fP ����ꤷ�ޤ������� (\f2c\fP)������ (\f2u\fP)����� (\f2x\fP)������ǥå����ɲ� (\f2i\fP)���ޤ���ɽ�� (\f2t\fP)��\f2f\fP ���ץ����ȥե�����̾ \f2jarfile\fP �Ȥ��ڥ��ˤʤ�ޤ��� �Ĥޤꡢ�����򵭽Ҥ���С��⤦�����⵭�Ҥ���ɬ�פ�����ޤ���Omitting \f2f\fP �� \f2jarfile\fP ���ά����ȡ�x �� t �ξ��� \f2ɸ������\fP���� JAR �ե�����̾���������졢c �� u �ξ��� \f2ɸ�����\fP �� JAR �ե����뤬��������ޤ��� 
 .TP 3
 v 
-詳細な出力を標準出力に生成します。あとで例を示します。 
+�ܺ٤ʽ��Ϥ�ɸ����Ϥ��������ޤ������Ȥ���򼨤��ޤ��� 
 .TP 3
 0 
-(ゼロ) ZIP による圧縮を使用せずに、保存します。 
+(����) ZIP �ˤ�밵�̤���Ѥ����ˡ���¸���ޤ��� 
 .TP 3
 M 
-マニフェストファイルエントリを作成しません (c および u の場合)。 または、マニフェストファイルエントリが存在する場合にそれを削除します (u の場合)。 
+�ޥ˥ե����ȥե����륨��ȥ��������ޤ��� (c ����� u �ξ��)���ޤ��ϡ��ޥ˥ե����ȥե����륨��ȥ꤬¸�ߤ�����ˤ���������ޤ� (u �ξ��)�� 
 .TP 3
 m 
-\f2META\-INF/MANIFEST.MF\fP のファイルで指定したマニフェストファイル \f2manifest\fP の \f2name :value\fP の属性ペアを組み込みます。すでに同じ名前で存在しない限り、 \f2jar\fP はその \f2name\ :\ value\fP ペアを追加します。同じ名前で存在する場合は、\f2jar\fP はその値を更新します。 
+\f2META\-INF/MANIFEST.MF\fP �Υե�����ǻ��ꤷ���ޥ˥ե����ȥե����� \f2manifest\fP �� \f2name : value\fP ��°���ڥ����Ȥ߹��ߤޤ��� \f2jar\fP �ϡ����Ǥ�Ʊ��̾����¸�ߤ��ʤ������ꡢ���� \f2name:value\fP �ڥ����ɲä��ޤ���Ʊ��̾����¸�ߤ����硢 \f2jar\fP �Ϥ����ͤ򹹿����ޤ��� 
 .LP
-コマンド行で、\f3m\fP と \f3f\fP の文字は、\f2manifest\fP と \f2jarfile\fP の入力順序と同じ順序で記述する必要があります。たとえば、次のようにして使います。 
-.RS 3
-
-.LP
+���ޥ�ɹԤǡ�\f3m\fP �� \f3f\fP ��ʸ���ϡ�\f2manifest\fP �� \f2jarfile\fP �����Ͻ����Ʊ������ǵ��Ҥ���ɬ�פ�����ޤ������Ȥ��С����Τ褦�ˤ��ƻȤ��ޤ��� 
 .nf
 \f3
 .fl
@@ -336,22 +283,17 @@ jar cmf myManifestFile myFile.jar *.class
 .fl
 \fP
 .fi
-.RE
-デフォルトのマニフェストには含まれないマニフェストに、特別な目的の \f2name\ :\ value\fP の属性ペアを追加できます。たとえば、ベンダー情報、バージョン情報、パッケージシーリング、または JAR にバンドルされたアプリケーションを実行するための属性を追加できます。\f4\-m\fP オプションの使用例については、「Java Tutorial」 にある「
+�ǥե���ȤΥޥ˥ե����Ȥˤϴޤޤ�ʤ��ޥ˥ե����Ȥˡ����̤���Ū�� \f2name\ :\ value\fP ��°���ڥ����ɲäǤ��ޤ������Ȥ��С��٥�������󡢥С��������󡢥ѥå�����������󥰡��ޤ��� JAR �˥Х�ɥ뤵�줿���ץꥱ��������¹Ԥ��뤿���°�����ɲäǤ��ޤ�����Java Tutorial�פΡ�
 .na
 \f2JAR Files\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar/」コースを参照してください。 
-.LP
+http://download.oracle.com/javase/tutorial/deployment/jar/�ץ������򻲾Ȥ���  \f4\-m\fP ���ץ����λ�������ǧ���Ƥ��������� 
 .TP 3
 e 
-実行可能 JAR ファイル内にバンドルされたスタンドアロンアプリケーションのアプリケーションエントリポイントとして、\f2entrypoint\fP を設定します。このオプションを使用すると、マニフェストファイル内の \f2Main\-Class\fP 属性値が作成または上書きされます。 このオプションは、JAR ファイルの作成中または更新中に使用できます。 このオプションを使えば、マニフェストファイルを編集または作成することなしに、アプリケーションのエントリポイントを指定できます。
+�¹Բ�ǽ JAR �ե�������˥Х�ɥ뤵�줿������ɥ����󥢥ץꥱ�������Υ��ץꥱ������󥨥�ȥ�ݥ���ȤȤ��ơ�\f2entrypoint\fP �����ꤷ�ޤ������Υ��ץ�������Ѥ���ȡ��ޥ˥ե����ȥե�������� \f2Main\-Class\fP °���ͤ������ޤ��Ͼ�񤭤���ޤ������Υ��ץ����ϡ�JAR �ե�����κ�����ޤ��Ϲ�����˻��ѤǤ��ޤ������Υ��ץ�����Ȥ��С��ޥ˥ե����ȥե�������Խ��ޤ��Ϻ������뤳�Ȥʤ��ˡ����ץꥱ�������Υ���ȥ�ݥ���Ȥ����Ǥ��ޤ���
 .br
 .br
-たとえば、次のコマンドは \f2Main.jar\fP を作成しますが、その際、マニフェストファイル内の \f2Main\-Class\fP 属性値は \f2Main\fP に設定されます。 
-.RS 3
-
-.LP
+���Ȥ��С����Υ��ޥ�ɤǤ� \f2Main.jar\fP ����������ޤ��������κݡ��ޥ˥ե�������� \f2Main\-Class\fP °���ͤ� \f2Main\fP �����ꤵ��ޤ��� 
 .nf
 \f3
 .fl
@@ -359,12 +301,8 @@ jar cfe Main.jar Main Main.class
 .fl
 \fP
 .fi
-.RE
 .LP
-次のコマンドを実行すると java ランタイムから直接このアプリケーションを起動できます。 
-.RS 3
-
-.LP
+���Υ��ޥ�ɤ�¹Ԥ���� java ��󥿥��फ��ľ�ܤ��Υ��ץꥱ��������ư�Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -372,11 +310,7 @@ java \-jar Main.jar
 .fl
 \fP
 .fi
-.RE
-エントリポイントのクラス名が特定のパッケージ内に存在している場合、エントリポイントの区切り文字としてドット (「.」) またはスラッシュ (「/」) を使用できます。たとえば、\f2Main.class\fP が \f2foo\fP という名前のパッケージ内に存在している場合、次のようにしてエントリポイントを指定できます。 
-.RS 3
-
-.LP
+����ѥå�������˥���ȥ�ݥ���ȤΥ��饹̾���ޤޤ�Ƥ����硢�ɥå� (��.��) ������å��� (��/��) �Τ����줫��ʸ���򤽤ζ��ڤ�ʸ���Ȥ��ƻ��ѤǤ��ޤ������Ȥ��С� \f2Main.class\fP �� \f2foo\fP �Ȥ���̾���Υѥå������˴ޤޤ�Ƥ����硢����ȥ�ݥ���Ȥϼ��Τ褦�ˤ��ƻ���Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -384,11 +318,7 @@ jar \-cfe Main.jar foo/Main foo/Main.class
 .fl
 \fP
 .fi
-.RE
-または 
-.RS 3
-
-.LP
+�ޤ��� 
 .nf
 \f3
 .fl
@@ -396,18 +326,14 @@ jar \-cfe Main.jar foo.Main foo/Main.class
 .fl
 \fP
 .fi
-.RE
-\f3注:\ \fP \f2\-m\fP オプションと \f2\-e\fP オプションの両方を同時に指定する場合、指定されたマニフェストにも \f2Main\-Class\fP 属性が含まれていると、\f2Main.class\fP の指定があいまいになってエラーが発生し、JAR の作成または更新処理が異常終了します。 
+\f3��:\ \fP \f2\-m\fP ���ץ����� \f2\-e\fP ���ץ�����ξ����Ʊ���˻��ꤷ����硢���ꤷ���ޥ˥ե����Ȥˤ� \f2Main\-Class\fP °�����ޤޤ�Ƥ���С� \f2Main.class\fP �λ��꤬�����ޤ��ˤʤäƥ��顼��ȯ������JAR �κ��������乹���������۾ｪλ���ޤ��� 
 .LP
 .TP 3
 \-C \ dir 
-\f2jar\fP コマンドの実行中に後続の \f2inputfiles\fP 引数を処理するときに、一時的にディレクトリを変更します (\f2cd\fP\ \f2dir\fP)。この処理は、UNIX の \f2tar\fP ユーティリティーの \f2\-C\fP オプションの機能に類似しています。
+\f2jar\fP ���ޥ�ɤμ¹���˸�³�� \f2inputfiles\fP �������������Ȥ��ˡ����Ū�˥ǥ��쥯�ȥ���ѹ����ޤ� (cd \f2dir\fP)�����ν����ϡ�UNIX �� \f2tar\fP �桼�ƥ���ƥ����� \f2\-C\fP ���ץ����ε�ǽ��������Ƥ��ޤ���
 .br
 .br
-たとえば、次のコマンドは、\f2classes\fP ディレクトリに移動し、そのディレクトリから \f2bar.class\fP を \f2foo.jar\fP に追加します。 
-.RS 3
-
-.LP
+���Ȥ��С����Υ��ޥ�ɤϡ�\f2classes\fP �ǥ��쥯�ȥ�˰�ư�������Υǥ��쥯�ȥ꤫�� \f2bar.class\fP �� \f2foo.jar\fP ���ɲä��ޤ��� 
 .nf
 \f3
 .fl
@@ -415,23 +341,15 @@ jar uf foo.jar \-C classes bar.class
 .fl
 \fP
 .fi
-.RE
-次のコマンドでは、\f2classes\fP ディレクトリに移動し、\f2classes\fP ディレクトリ内のすべてのファイルを \f2foo.jar\fP に追加します (jar ファイルには classes ディレクトリを作成しません)。 次に元のディレクトリに戻ってから、\f2bin\fP ディレクトリに移動し、\f2xyz.class\fP を \f2foo.jar\fP に追加します。 
-.RS 3
-
-.LP
+���Υ��ޥ�ɤǤϡ�\f2classes\fP �ǥ��쥯�ȥ�˰�ư����\f2classes\fP �ǥ��쥯�ȥ���Τ��٤ƤΥե������ \f2foo.jar\fP ���ɲä��ޤ� (jar �ե�����ˤ� classes �ǥ��쥯�ȥ��������ޤ���)�����˸��Υǥ��쥯�ȥ����äƤ��顢\f2bin\fP �ǥ��쥯�ȥ�˰�ư����\f2xyz.class\fP �� \f2foo.jar\fP ���ɲä��ޤ��� 
 .nf
 \f3
 .fl
-jar uf foo.jar \-C classes . \-C bin xyz.class
+jar uf foo.jar \-C classes .\-C bin xyz.class
 .fl
 \fP
 .fi
-.RE
-\f2classes\fP に \f2bar1\fP と \f2bar2\fP が保持されている場合、\f2jar tf foo.jar\fP を使用すると、JAR ファイルには次の要素が含められます。 
-.RS 3
-
-.LP
+\f2classes\fP �˥ե����� \f2bar1\fP �� \f2bar2\fP ����Ǽ����Ƥ�����ˡ� \f2jar tf foo.jar\fP ���Ѥ����Ȥ��� JAR �ե��������Ȥ򡢼��˼����ޤ��� 
 .nf
 \f3
 .fl
@@ -447,30 +365,24 @@ xyz.class
 .fl
 \fP
 .fi
-.RE
 .LP
 .TP 3
 \-Joption 
-Java 実行環境に \f2option\fP を渡します。 \f2option\fP には、「Java アプリケーション起動ツール」のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f4\-J\-Xmx48M\fP と指定すると、最大メモリーは 48M バイトに設定されます。\f2\-J\fP を使って背後の実行環境にオプションを渡すことはよく行われています。 
+Java �¹ԴĶ��� \f2option\fP ���Ϥ��ޤ��� \f2option\fP �ˤϡ���Java ���ץꥱ�������ư�ġ���פΥ�ե���󥹥ڡ����˵��ܤ���Ƥ��륪�ץ����� 1 �Ļ��ꤷ�ޤ������Ȥ��С� \f4\-J\-Xmx48M\fP �Ȼ��ꤹ��ȡ�������꡼�� 48M �Х��Ȥ����ꤵ��ޤ���\f2\-J\fP ��Ȥä��ظ�μ¹ԴĶ��˥��ץ������Ϥ����ȤϤ褯�Ԥ��Ƥ��ޤ��� 
 .RE
 
 .LP
-.SH "コマンド行引数ファイル"
+.SH "���ޥ�ɹ԰����ե�����"
 .LP
-
+jar �Υ��ޥ�ɹԤ�û��������ʷ�ˤ����ꤹ�뤿��ˡ�jar ���ޥ�ɤ��Ф������ (\-J ���ץ��������) ��ޤ� 1 �İʾ�� \f2�ե������\fP ���ꤹ�뤳�Ȥ� \f2�Ǥ��ޤ�\fP ������ˤ�ꡢǤ�դ�Ĺ���� jar ���ޥ�ɤ�����Ǥ������ڥ졼�ƥ��󥰥����ƥ�ˤ�륳�ޥ�ɹԤ����¤����������ޤ��� 
 .LP
-jar のコマンド行を短くしたり簡潔にしたりするために、\f2jar\fP コマンドに対する引数 (\f2\-J\fP オプションを除く) を含む 1 つ以上のファイルを指定することができます。これにより、任意の長さの jar コマンドを作成でき、オペレーティングシステムによるコマンド行の制限から解放されます。 
-.LP
-引数ファイルにはオプションとファイル名を含めることができます。ファイル内の各引数は、スペースまたは改行で区切ります。引数ファイル内のファイル名は、現在のディレクトリから見た相対パスになります。 引数ファイルの位置から見た相対パスではありません。ワイルドカード (*) は、通常ならばオペレーティングシステムシェルによってあらゆる文字に解釈されますが、この場合はそのようには解釈されません。引数ファイル内の引数で \f2@\fP 文字を使用して、複数のファイルを再帰的に解釈することはサポートされていません。また、\f2\-J\fP オプションもサポートされていません。 このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
+�����ե�����ˤϥ��ץ����ȥե�����̾��ޤ�뤳�Ȥ��Ǥ��ޤ����ե�������γư����ϡ����ڡ����ޤ��ϲ��ԤǶ��ڤ�ޤ��������ե�������Υե�����̾�ϡ����ߤΥǥ��쥯�ȥ꤫�鸫�����Хѥ��ˤʤ�ޤ��������ե�����ΰ��֤��鸫�����Хѥ��ǤϤ���ޤ��󡣥磻��ɥ����� (*) �ϡ��̾�ʤ�Х��ڥ졼�ƥ��󥰥����ƥॷ����ˤ�äƤ�����ʸ���˲�ᤵ��ޤ��������ξ��Ϥ��Τ褦�ˤϲ�ᤵ��ޤ��󡣰����ե�������ΰ����� \f2@\fP ʸ������Ѥ��ơ�ʣ���Υե������Ƶ�Ū�˲�᤹�뤳�Ȥϥ��ݡ��Ȥ���Ƥ��ޤ��󡣤ޤ���\f2\-J\fP ���ץ����⥵�ݡ��Ȥ���Ƥ��ޤ��󡣤��Υ��ץ����ϵ�ư�ġ�����Ϥ���ޤ�������ư�ġ���Ǥϰ����ե�����򥵥ݡ��Ȥ��Ƥ��ʤ�����Ǥ���
 .LP
 .LP
-\f2jar\fP を実行するときに、各引数ファイルのパスとファイル名の先頭に \f2@\fP 文字を付けて渡します。\f2jar\fP は、\f2@\fP 文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
+\f2jar\fP ��¹Ԥ���Ȥ��ˡ��ư����ե�����Υѥ��ȥե�����̾����Ƭ�� \f2@\fP ʸ�����դ����Ϥ��ޤ��� \f2jar\fP �ϡ�\f2@\fP ʸ���ǻϤޤ�����򸫤Ĥ���ȡ����Υե���������Ƥ�Ÿ�����ư����ꥹ�Ȥ��������ޤ���
 .br
 .br
-次の例では、\f2find\fP コマンドから出力されたファイル名を \f2classes.list\fP 内に格納しています。 
-.LP
-.RS 3
-
+������ǡ� \f2classes.list\fP �ˤϡ� \f2find\fP ���ޥ�ɤˤ�äƽ��Ϥ��줿�ե������̾������Ǽ����ޤ��� 
 .LP
 .nf
 \f3
@@ -478,14 +390,10 @@ jar のコマンド行を短くしたり簡潔にしたりするために、\f2j
 % find \fP\f3.\fP \-name '*.class' \-print > classes.list
 .fl
 .fi
-.RE
 
 .LP
 .LP
-その後、引数ファイル構文を使って \f2jar\fP にリストを渡すと、\f2Classes.list\fP で \f2jar\fP コマンドを実行できます。
-.LP
-.RS 3
-
+���ˡ������ե����빽ʸ����Ѥ��� \f2classes.list\fP �� jar ���Ϥ����Ȥǡ� \f2���Υꥹ��\fP ���Ф��� \f2jar\fP ���ޥ�ɤ�¹ԤǤ��ޤ���
 .LP
 .nf
 \f3
@@ -494,13 +402,9 @@ jar のコマンド行を短くしたり簡潔にしたりするために、\f2j
 .fl
 \fP
 .fi
-.RE
 
 .LP
-引数ファイルはパスを指定できますが、相対パスが記述された引数ファイル内のすべてのファイル名は、渡されたパスに対して相対的ではなく、現在の作業ディレクトリに相対的となります。 次に例を示します。 
-.RS 3
-
-.LP
+�����ե�����ϥѥ������Ǥ��ޤ��������Хѥ������Ҥ��줿�����ե�������Τ��٤ƤΥե�����̾�ϡ��Ϥ��줿�ѥ����Ф�������Ū�ǤϤʤ������ߤκ�ȥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ������Ϥ�����Ǥ��� 
 .nf
 \f3
 .fl
@@ -508,20 +412,14 @@ jar のコマンド行を短くしたり簡潔にしたりするために、\f2j
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
 
 .LP
-.SH "例"
+.SH "��"
 .LP
-
-.LP
-特定のディレクトリ内のすべてのファイルをアーカイブに追加する (そのアーカイブがすでに存在する場合は、その内容を上書きする) には、次のようにします。\f2\-v\fP オプションを使用して情報を詳細に列挙するように指定すると、サイズや最新の更新日など、アーカイブ内のファイルについての詳細情報が表示されます。 
-.RS 3
-
-.LP
+����Υǥ��쥯�ȥ���Τ��٤ƤΥե�����򥢡������֤��ɲä��� (���Υ��������֤����Ǥ�¸�ߤ�����ϡ��������Ƥ��񤭤���) �ˤϡ����Τ褦�ˤ��ޤ���\f2\-v\fP ���ץ�������Ѥ��ƾ����ܺ٤���󤹤�褦�˻��ꤹ��ȡ���������ǿ��ι������ʤɡ�������������Υե�����ˤĤ��Ƥξܺپ���ɽ������ޤ��� 
 .nf
 \f3
 .fl
@@ -557,13 +455,9 @@ adding: spacemusic.au(in = 3079) (out= 73)(deflated 97%)
 .fl
 \fP
 .fi
-.RE
 
 .LP
-すでに画像、オーディオファイル、およびクラス用のサブディレクトリに分けている場合は、これらを単一の JAR ファイルに結合できます。 
-.RS 3
-
-.LP
+���Ǥ˲����������ǥ����ե����롢����ӥ��饹�ѤΥ��֥ǥ��쥯�ȥ��ʬ���Ƥ�����ϡ�������ñ��� JAR �ե�����˷��Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -607,13 +501,9 @@ audio/ bundle.jar classes/ images/
 .fl
 \fP
 .fi
-.RE
 
 .LP
-JAR ファイルのエントリ名を表示するには、「\f2t\fP」オプションを使用します。 
-.RS 3
-
-.LP
+JAR �ե�����Υ���ȥ�̾��ɽ������ˤϡ���\f2t\fP�ץ��ץ�������Ѥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -641,28 +531,24 @@ images/at_work.gif
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-クラスロードを高速にするためにインデックスファイルを JAR ファイルに追加するには、「\f2i\fP」オプションを使用します。
+���饹�����ɤ��®�ˤ��뤿��˥���ǥå����ե������ JAR �ե�������ɲä���ˤϡ���\f2i\fP�ץ��ץ�������Ѥ��ޤ���
 .br
 .br
-例:
+��:
 .br
 
 .LP
-.RS 3
-
-.LP
-たとえば、株取引アプリケーション用の相互依存したクラスを、\f2main.jar\fP、\f2buy.jar\fP、および \f2sell.jar\fP という 3 つの JAR ファイルに分割したとします。
+���Ȥ��С���������ץꥱ��������������¸���Ƥ��륯�饹��\f2main.jar\fP��\f2buy.jar\fP������� \f2sell.jar\fP �Ȥ��� 3 �Ĥ� JAR �ե������ʬ�䤷���Ȥ��ޤ���
 .br
 
 .LP
 .br
 
 .LP
-\f2main.jar\fP のマニフェストの \f2Class\-path\fP 属性に次のように指定した場合、 
+\f2main.jar\fP �Υޥ˥ե����Ȥ� \f2Class\-path\fP °���˼��Τ褦�˻��ꤷ����硢 
 .nf
 \f3
 .fl
@@ -672,7 +558,7 @@ Class\-Path: buy.jar sell.jar
 .fi
 
 .LP
-\f2\-i\fP オプションを使用すれば、アプリケーションのクラスの 読み込みを高速化できます。 
+\f2\-i\fP ���ץ�������Ѥ���С����ץꥱ�������Υ��饹�� �ɤ߹��ߤ��®���Ǥ��ޤ��� 
 .nf
 \f3
 .fl
@@ -682,38 +568,34 @@ Class\-Path: buy.jar sell.jar
 .fi
 
 .LP
-\f2INDEX.LIST\fP ファイルが \f2META\-INF\fP ディレクトリに挿入されます。この結果、アプリケーションのクラスローダーによってクラスまたは リソースの検索が行われるときに、適切な jar ファイルがダウンロードされます。
-.RE
-.SH "関連項目"
+\f2INDEX.LIST\fP �ե����뤬 \f2META\-INF\fP �ǥ��쥯�ȥ����������ޤ������η�̡����ץꥱ�������Υ��饹���������ˤ�äƥ��饹�ޤ��ϥ꥽�����θ������Ԥ���Ȥ��ˡ�Ŭ�ڤ� jar �ե����뤬����������ɤ���ޤ��� 
+.SH "��Ϣ����"
 .LP
-
 .LP
 .na
-\f2「JAR ファイルの概要」\fP @
+\f2JAR �ե�����γ���\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/jar/jarGuide.html
-.br
-
+.LP
 .LP
 .na
-\f2「JAR ファイルの仕様」\fP @
+\f2JAR �ե�����λ���\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html
-.br
-
+.LP
 .LP
 .na
-\f2「Jar インデックス」\fP @
+\f2JarIndex �λ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JARIndex
-.br
-
+http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR_Index
+.LP
 .LP
 .na
-\f2「Jar チュートリアル」\fP @
+\f2JAR ���塼�ȥꥢ��\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar (Java Software の Web サイト内)
-.br
-
+http://download.oracle.com/javase/tutorial/deployment/jar/index.html
 .LP
-pack200(1)  
+.LP
+pack200(1)
+.LP
+ 
