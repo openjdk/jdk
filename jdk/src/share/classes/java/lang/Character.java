@@ -4182,9 +4182,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("AVST", AVESTAN);
             aliases.put("BALI", BALINESE);
             aliases.put("BAMU", BAMUM);
+            aliases.put("BATK", BATAK);
             aliases.put("BENG", BENGALI);
             aliases.put("BOPO", BOPOMOFO);
             aliases.put("BRAI", BRAILLE);
+            aliases.put("BRAH", BRAHMI);
             aliases.put("BUGI", BUGINESE);
             aliases.put("BUHD", BUHID);
             aliases.put("CANS", CANADIAN_ABORIGINAL);
@@ -4228,6 +4230,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("LISU", LISU);
             aliases.put("LYCI", LYCIAN);
             aliases.put("LYDI", LYDIAN);
+            aliases.put("MAND", MANDAIC);
             aliases.put("MLYM", MALAYALAM);
             aliases.put("MONG", MONGOLIAN);
             aliases.put("MTEI", MEETEI_MAYEK);

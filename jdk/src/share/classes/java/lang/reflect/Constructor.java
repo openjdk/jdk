@@ -186,8 +186,8 @@ public final
      *     the type variables declared by this generic declaration
      * @throws GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
-     *     the format specified in the Java Virtual Machine Specification,
-     *     3rd edition
+     *     the format specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @since 1.5
      */
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
@@ -229,7 +229,8 @@ public final
      *     parameter types of the underlying method, in declaration order
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
-     *     specified in the Java Virtual Machine Specification, 3rd edition
+     *     specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the parameter
      *     types of the underlying method refers to a non-existent type
      *     declaration
@@ -273,7 +274,8 @@ public final
      *     thrown by the underlying method
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
-     *     specified in the Java Virtual Machine Specification, 3rd edition
+     *     specified in
+     *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
      *     {@code throws} clause refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if
@@ -468,8 +470,8 @@ public final
      *
      * <p>If the constructor's declaring class is an inner class in a
      * non-static context, the first argument to the constructor needs
-     * to be the enclosing instance; see <i>The Java Language
-     * Specification</i>, section 15.9.3.
+     * to be the enclosing instance; see section 15.9.3 of
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * <p>If the required access and argument checks succeed and the
      * instantiation will proceed, the constructor's declaring class
@@ -541,7 +543,8 @@ public final
      * constructor; returns {@code false} otherwise.
      *
      * @return true if and only if this constructor is a synthetic
-     * constructor as defined by the Java Language Specification.
+     * constructor as defined by
+     * <cite>The Java&trade; Language Specification</cite>.
      * @since 1.5
      */
     public boolean isSynthetic() {

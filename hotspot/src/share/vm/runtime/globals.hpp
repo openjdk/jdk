@@ -1358,13 +1358,6 @@ class CommandLineFlags {
   product(bool, UseParallelOldGC, false,                                    \
           "Use the Parallel Old garbage collector")                         \
                                                                             \
-  product(bool, UseParallelOldGCCompacting, true,                           \
-          "In the Parallel Old garbage collector use parallel compaction")  \
-                                                                            \
-  product(bool, UseParallelDensePrefixUpdate, true,                         \
-          "In the Parallel Old garbage collector use parallel dense"        \
-          " prefix update")                                                 \
-                                                                            \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
           "any dead space)")                                                \
@@ -1383,9 +1376,6 @@ class CommandLineFlags {
   product(uintx, ParallelOldDeadWoodLimiterStdDev, 80,                      \
           "The standard deviation used by the par compact dead wood"        \
           "limiter (a number between 0-100).")                              \
-                                                                            \
-  product(bool, UseParallelOldGCDensePrefix, true,                          \
-          "Use a dense prefix with the Parallel Old garbage collector")     \
                                                                             \
   product(uintx, ParallelGCThreads, 0,                                      \
           "Number of parallel threads parallel gc will use")                \

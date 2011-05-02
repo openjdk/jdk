@@ -175,8 +175,9 @@ public class Util {
     }
 
     /**
-     * According to the Java Language Specifications, all the outer classes
-     * and static inner classes are core classes.
+     * According to
+     * <cite>The Java&trade; Language Specification</cite>,
+     * all the outer classes and static inner classes are core classes.
      */
     public static boolean isCoreClass(ClassDoc cd) {
         return cd.containingClass() == null || cd.isStatic();

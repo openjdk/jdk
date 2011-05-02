@@ -77,11 +77,9 @@ public interface ArrayType extends ReferenceType {
      * as specified in the array declaration.
      * <P>
      * Note: The component type of a array will always be
-     * created or loaded before the array - see the
-     * <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     * Machine Specification</a>, section
-     * <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ConstantPool.doc.html#79473">5.3.3
-     * Creating Array Classes</a>.
+     * created or loaded before the array - see
+     * <cite>The Java&trade; Virtual Machine Specification</cite>,
+     * section 5.3.3 - Creating Array Classes.
      * However, although the component type will be loaded it may
      * not yet be prepared, in which case the type will be returned
      * but attempts to perform some operations on the returned type

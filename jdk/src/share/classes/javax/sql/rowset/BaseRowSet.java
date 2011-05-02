@@ -296,32 +296,32 @@ import javax.sql.rowset.serial.*;
 
 public abstract class BaseRowSet implements Serializable, Cloneable {
 
-/**
- * A constant indicating to a <code>RowSetReaderImpl</code> object
- * that a given parameter is a Unicode stream. This
- * <code>RowSetReaderImpl</code> object is provided as an extension of the
- * <code>SyncProvider</code> abstract class defined in the
- * <code>SyncFactory</code> static factory SPI mechanism.
- */
-public static final int UNICODE_STREAM_PARAM = 0;
+    /**
+     * A constant indicating to a <code>RowSetReaderImpl</code> object
+     * that a given parameter is a Unicode stream. This
+     * <code>RowSetReaderImpl</code> object is provided as an extension of the
+     * <code>SyncProvider</code> abstract class defined in the
+     * <code>SyncFactory</code> static factory SPI mechanism.
+     */
+    public static final int UNICODE_STREAM_PARAM = 0;
 
-/**
- * A constant indicating to a <code>RowSetReaderImpl</code> object
- * that a given parameter is a binary stream. A
- * <code>RowSetReaderImpl</code> object is provided as an extension of the
- * <code>SyncProvider</code> abstract class defined in the
- * <code>SyncFactory</code> static factory SPI mechanism.
- */
-public static final int BINARY_STREAM_PARAM = 1;
+    /**
+     * A constant indicating to a <code>RowSetReaderImpl</code> object
+     * that a given parameter is a binary stream. A
+     * <code>RowSetReaderImpl</code> object is provided as an extension of the
+     * <code>SyncProvider</code> abstract class defined in the
+     * <code>SyncFactory</code> static factory SPI mechanism.
+     */
+    public static final int BINARY_STREAM_PARAM = 1;
 
-/**
- * A constant indicating to a <code>RowSetReaderImpl</code> object
- * that a given parameter is an ASCII stream. A
- * <code>RowSetReaderImpl</code> object is provided as an extension of the
- * <code>SyncProvider</code> abstract class defined in the
- * <code>SyncFactory</code> static factory SPI mechanism.
- */
-public static final int ASCII_STREAM_PARAM = 2;
+    /**
+     * A constant indicating to a <code>RowSetReaderImpl</code> object
+     * that a given parameter is an ASCII stream. A
+     * <code>RowSetReaderImpl</code> object is provided as an extension of the
+     * <code>SyncProvider</code> abstract class defined in the
+     * <code>SyncFactory</code> static factory SPI mechanism.
+     */
+    public static final int ASCII_STREAM_PARAM = 2;
 
     /**
      * The <code>InputStream</code> object that will be
@@ -505,21 +505,21 @@ public static final int ASCII_STREAM_PARAM = 2;
      * custom mapping of user-defined types.
      * @serial
      */
-    private Map map;
+    private Map<String, Class<?>> map;
 
     /**
      * A <code>Vector</code> object that holds the list of listeners
      * that have registered with this <code>RowSet</code> object.
      * @serial
      */
-    private Vector listeners;
+    private Vector<RowSetListener> listeners;
 
     /**
      * A <code>Vector</code> object that holds the parameters set
      * for this <code>RowSet</code> object's current command.
      * @serial
      */
-    private Hashtable params; // could be transient?
+    private Hashtable<Integer, Object> params; // could be transient?
 
     /**
      * Constructs a new <code>BaseRowSet</code> object initialized with
@@ -529,7 +529,7 @@ public static final int ASCII_STREAM_PARAM = 2;
      */
     public BaseRowSet() {
         // allocate the listeners collection
-        listeners = new Vector();
+        listeners = new Vector<RowSetListener>();
     }
 
     /**
@@ -542,7 +542,7 @@ public static final int ASCII_STREAM_PARAM = 2;
      * a <code>RowSet</code> implementation extending this class.
      */
     protected void initParams() {
-        params = new Hashtable();
+        params = new Hashtable<Integer, Object>();
     }
 
     //--------------------------------------------------------------------

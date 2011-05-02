@@ -59,9 +59,7 @@ public class bug6989617 {
         toolkit.realSync();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                if (panel.getPaintRectangle() != null) {
-                    throw new RuntimeException("paint rectangle is not null");
-                }
+                panel.resetPaintRectangle();
                 button.repaint();
             }
         });

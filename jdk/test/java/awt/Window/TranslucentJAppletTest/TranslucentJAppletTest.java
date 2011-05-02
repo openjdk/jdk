@@ -43,6 +43,7 @@ public class TranslucentJAppletTest {
     private static void initAndShowGUI() {
         frame = new JFrame();
         JApplet applet = new JApplet();
+        applet.setBackground(new Color(0, 0, 0, 0));
         JPanel panel = new JPanel() {
             protected void paintComponent(Graphics g) {
                 paintComponentCalled = true;

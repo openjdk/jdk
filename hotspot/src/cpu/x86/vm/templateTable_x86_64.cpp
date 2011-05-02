@@ -147,12 +147,21 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         } else {
           __ leaq(rdx, obj);
         }
-        __ g1_write_barrier_pre(rdx, r8, rbx, val != noreg);
+        __ g1_write_barrier_pre(rdx /* obj */,
+                                rbx /* pre_val */,
+                                r15_thread /* thread */,
+                                r8  /* tmp */,
+                                val != noreg /* tosca_live */,
+                                false /* expand_call */);
         if (val == noreg) {
           __ store_heap_oop_null(Address(rdx, 0));
         } else {
           __ store_heap_oop(Address(rdx, 0), val);
-          __ g1_write_barrier_post(rdx, val, r8, rbx);
+          __ g1_write_barrier_post(rdx /* store_adr */,
+                                   val /* new_val */,
+                                   r15_thread /* thread */,
+                                   r8 /* tmp */,
+                                   rbx /* tmp2 */);
         }
 
       }

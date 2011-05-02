@@ -204,22 +204,21 @@ public abstract class SunJSSE extends java.security.Provider {
         put("Alg.Alias.TrustManagerFactory.SunPKIX", "PKIX");
         put("Alg.Alias.TrustManagerFactory.X509", "PKIX");
         put("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
-        if (isfips == false) {
-            put("SSLContext.SSL",
-                "sun.security.ssl.SSLContextImpl");
-            put("SSLContext.SSLv3",
-                "sun.security.ssl.SSLContextImpl");
-        }
-        put("SSLContext.TLS",
-            "sun.security.ssl.SSLContextImpl");
+
         put("SSLContext.TLSv1",
-            "sun.security.ssl.SSLContextImpl");
+            "sun.security.ssl.SSLContextImpl$TLS10Context");
+        put("Alg.Alias.SSLContext.TLS", "TLSv1");
+        if (isfips == false) {
+            put("Alg.Alias.SSLContext.SSL", "TLSv1");
+            put("Alg.Alias.SSLContext.SSLv3", "TLSv1");
+        }
+
         put("SSLContext.TLSv1.1",
-            "sun.security.ssl.SSLContextImpl");
+            "sun.security.ssl.SSLContextImpl$TLS11Context");
         put("SSLContext.TLSv1.2",
-            "sun.security.ssl.SSLContextImpl");
+            "sun.security.ssl.SSLContextImpl$TLS12Context");
         put("SSLContext.Default",
-            "sun.security.ssl.DefaultSSLContextImpl");
+            "sun.security.ssl.SSLContextImpl$DefaultSSLContext");
 
         /*
          * KeyStore

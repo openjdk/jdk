@@ -30,7 +30,7 @@ import java.util.List;
 import com.sun.tools.classfile.Type.*;
 
 /**
- * See JVMS3 4.4.4.
+ * See JVMS 4.4.4.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

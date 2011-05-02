@@ -779,8 +779,8 @@ public class PrintWriter extends Writer {
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
@@ -830,8 +830,8 @@ public class PrintWriter extends Writer {
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
@@ -874,8 +874,8 @@ public class PrintWriter extends Writer {
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
@@ -934,8 +934,8 @@ public class PrintWriter extends Writer {
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-     *         Virtual Machine Specification</a>.  The behaviour on a
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         The behaviour on a
      *         <tt>null</tt> argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *

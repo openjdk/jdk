@@ -232,8 +232,8 @@ public interface Element {
      *
      * @return the enclosed elements, or an empty list if none
      * @see Elements#getAllMembers
-     * @jls3 8.8.9 Default Constructor
-     * @jls3 8.9 Enums
+     * @jls 8.8.9 Default Constructor
+     * @jls 8.9 Enums
      */
     List<? extends Element> getEnclosedElements();
 
