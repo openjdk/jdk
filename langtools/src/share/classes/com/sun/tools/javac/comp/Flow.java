@@ -51,7 +51,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  unassignment analysis ensures that no final variable is assigned
  *  more than once.
  *
- *  <p>The second edition of the JLS has a number of problems in the
+ *  <p>The JLS has a number of problems in the
  *  specification of these flow analysis problems. This implementation
  *  attempts to address those issues.
  *
@@ -126,7 +126,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  don't have to worry about the return expression because this
  *  concept is only used for construcrors.
  *
- *  <p>There is no spec in JLS2 for when a variable is definitely
+ *  <p>There is no spec in the JLS for when a variable is definitely
  *  assigned at the end of a constructor, which is needed for final
  *  fields (8.3.1.2).  We implement the rule that V is DA at the end
  *  of the constructor iff it is DA and the end of the body of the
@@ -381,7 +381,7 @@ public class Flow extends TreeScanner {
         if (sym.adr >= firstadr && trackable(sym)) {
             if ((sym.flags() & FINAL) != 0) {
                 if ((sym.flags() & PARAMETER) != 0) {
-                    if ((sym.flags() & DISJUNCTION) != 0) { //multi-catch parameter
+                    if ((sym.flags() & UNION) != 0) { //multi-catch parameter
                         log.error(pos, "multicatch.parameter.may.not.be.assigned",
                                   sym);
                     }
@@ -1003,7 +1003,7 @@ public class Flow extends TreeScanner {
         thrown = List.nil();
         for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
-                    ((JCTypeDisjunction)l.head.param.vartype).alternatives :
+                    ((JCTypeUnion)l.head.param.vartype).alternatives :
                     List.of(l.head.param.vartype);
             for (JCExpression ct : subClauses) {
                 caught = chk.incl(ct.type, caught);
@@ -1075,7 +1075,7 @@ public class Flow extends TreeScanner {
             alive = true;
             JCVariableDecl param = l.head.param;
             List<JCExpression> subClauses = TreeInfo.isMultiCatch(l.head) ?
-                    ((JCTypeDisjunction)l.head.param.vartype).alternatives :
+                    ((JCTypeUnion)l.head.param.vartype).alternatives :
                     List.of(l.head.param.vartype);
             List<Type> ctypes = List.nil();
             List<Type> rethrownTypes = chk.diff(thrownInTry, caughtInTry);

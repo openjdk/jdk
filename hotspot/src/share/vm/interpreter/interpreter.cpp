@@ -208,12 +208,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     return empty;
   }
 
-  // Accessor method?
-  if (m->is_accessor()) {
-    assert(m->size_of_parameters() == 1, "fast code for accessors assumes parameter size = 1");
-    return accessor;
-  }
-
   // Special intrinsic method?
   // Note: This test must come _after_ the test for native methods,
   //       otherwise we will run into problems with JDK 1.2, see also
@@ -227,6 +221,15 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     case vmIntrinsics::_dsqrt : return java_lang_math_sqrt ;
     case vmIntrinsics::_dlog  : return java_lang_math_log  ;
     case vmIntrinsics::_dlog10: return java_lang_math_log10;
+
+    case vmIntrinsics::_Reference_get:
+                                return java_lang_ref_reference_get;
+  }
+
+  // Accessor method?
+  if (m->is_accessor()) {
+    assert(m->size_of_parameters() == 1, "fast code for accessors assumes parameter size = 1");
+    return accessor;
   }
 
   // Note: for now: zero locals for all non-empty methods

@@ -2719,12 +2719,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Converts this BigInteger to an {@code int}.  This
-     * conversion is analogous to a <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code long} to
-     * {@code int} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this BigInteger is too big to fit in an
+     * conversion is analogous to a
+     * <i>narrowing primitive conversion</i> from {@code long} to
+     * {@code int} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this BigInteger is too big to fit in an
      * {@code int}, only the low-order 32 bits are returned.
      * Note that this conversion can lose information about the
      * overall magnitude of the BigInteger value as well as return a
@@ -2740,12 +2739,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Converts this BigInteger to a {@code long}.  This
-     * conversion is analogous to a <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code long} to
-     * {@code int} as defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this BigInteger is too big to fit in a
+     * conversion is analogous to a
+     * <i>narrowing primitive conversion</i> from {@code long} to
+     * {@code int} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this BigInteger is too big to fit in a
      * {@code long}, only the low-order 64 bits are returned.
      * Note that this conversion can lose information about the
      * overall magnitude of the BigInteger value as well as return a
@@ -2763,12 +2761,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Converts this BigInteger to a {@code float}.  This
-     * conversion is similar to the <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code float} defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this BigInteger has too great a magnitude
+     * conversion is similar to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code float} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this BigInteger has too great a magnitude
      * to represent as a {@code float}, it will be converted to
      * {@link Float#NEGATIVE_INFINITY} or {@link
      * Float#POSITIVE_INFINITY} as appropriate.  Note that even when
@@ -2784,12 +2781,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Converts this BigInteger to a {@code double}.  This
-     * conversion is similar to the <a
-     * href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#25363"><i>narrowing
-     * primitive conversion</i></a> from {@code double} to
-     * {@code float} defined in the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>: if this BigInteger has too great a magnitude
+     * conversion is similar to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code float} as defined in section 5.1.3 of
+     * <cite>The Java&trade; Language Specification</cite>:
+     * if this BigInteger has too great a magnitude
      * to represent as a {@code double}, it will be converted to
      * {@link Double#NEGATIVE_INFINITY} or {@link
      * Double#POSITIVE_INFINITY} as appropriate.  Note that even when

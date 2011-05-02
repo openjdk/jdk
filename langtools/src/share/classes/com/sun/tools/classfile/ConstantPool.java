@@ -31,7 +31,7 @@ import java.io.OutputStream;
 import java.util.Iterator;
 
 /**
- * See JVMS3, section 4.5.
+ * See JVMS, section 4.5.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

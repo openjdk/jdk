@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.security.krb5.internal.rcache.*;
 import java.net.InetAddress;
 import sun.security.util.*;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class encapsulates a KRB-AP-REQ that a client sends to a
@@ -53,9 +54,6 @@ public class KrbApReq {
 
     private static CacheTable table = new CacheTable();
     private static boolean DEBUG = Krb5.DEBUG;
-
-    // default is address-less tickets
-    private boolean KDC_EMPTY_ADDRESSES_ALLOWED = true;
 
     /**
      * Contructs a AP-REQ message to send to the peer.
@@ -312,23 +310,19 @@ public class KrbApReq {
             table.put(client, time, currTime.getTime());
         }
 
-        // check to use addresses in tickets
-        if (Config.getInstance().useAddresses()) {
-            KDC_EMPTY_ADDRESSES_ALLOWED = false;
-        }
-
-        // sender host address
-        HostAddress sender = null;
         if (initiator != null) {
-            sender = new HostAddress(initiator);
-        }
-
-        if (sender != null || !KDC_EMPTY_ADDRESSES_ALLOWED) {
-            if (enc_ticketPart.caddr != null) {
-                if (sender == null)
-                    throw new KrbApErrException(Krb5.KRB_AP_ERR_BADADDR);
-                if (!enc_ticketPart.caddr.inList(sender))
-                    throw new KrbApErrException(Krb5.KRB_AP_ERR_BADADDR);
+            // sender host address
+            HostAddress sender = new HostAddress(initiator);
+            if (enc_ticketPart.caddr != null
+                    && !enc_ticketPart.caddr.inList(sender)) {
+                if (DEBUG) {
+                    System.out.println(">>> KrbApReq: initiator is "
+                            + sender.getInetAddress()
+                            + ", but caddr is "
+                            + Arrays.toString(
+                                enc_ticketPart.caddr.getInetAddresses()));
+                }
+                throw new KrbApErrException(Krb5.KRB_AP_ERR_BADADDR);
             }
         }
 

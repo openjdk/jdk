@@ -35,7 +35,7 @@ import javax.lang.model.element.Name;
  *   <em>label</em> : <em>statement</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.7"
+ * @jls section 14.7
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

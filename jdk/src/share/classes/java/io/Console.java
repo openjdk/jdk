@@ -148,8 +148,8 @@ public final class Console implements Flushable
     *         extra arguments are ignored.  The number of arguments is
     *         variable and may be zero.  The maximum number of arguments is
     *         limited by the maximum dimension of a Java array as defined by
-    *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-    *         Virtual Machine Specification</a>.  The behaviour on a
+    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+    *         The behaviour on a
     *         <tt>null</tt> argument depends on the <a
     *         href="../util/Formatter.html#syntax">conversion</a>.
     *
@@ -187,8 +187,8 @@ public final class Console implements Flushable
     *         extra arguments are ignored.  The number of arguments is
     *         variable and may be zero.  The maximum number of arguments is
     *         limited by the maximum dimension of a Java array as defined by
-    *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-    *         Virtual Machine Specification</a>.  The behaviour on a
+    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+    *         The behaviour on a
     *         <tt>null</tt> argument depends on the <a
     *         href="../util/Formatter.html#syntax">conversion</a>.
     *
@@ -220,8 +220,7 @@ public final class Console implements Flushable
     *         string.  If there are more arguments than format specifiers, the
     *         extra arguments are ignored.  The maximum number of arguments is
     *         limited by the maximum dimension of a Java array as defined by
-    *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-    *         Virtual Machine Specification</a>.
+    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
     *
     * @throws  IllegalFormatException
     *          If a format string contains an illegal syntax, a format
@@ -285,8 +284,7 @@ public final class Console implements Flushable
     *         string.  If there are more arguments than format specifiers, the
     *         extra arguments are ignored.  The maximum number of arguments is
     *         limited by the maximum dimension of a Java array as defined by
-    *         the <a href="http://java.sun.com/docs/books/vmspec/">Java
-    *         Virtual Machine Specification</a>.
+    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
     *
     * @throws  IllegalFormatException
     *          If a format string contains an illegal syntax, a format

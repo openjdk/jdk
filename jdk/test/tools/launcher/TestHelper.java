@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +21,28 @@
  * questions.
  */
 
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.FileVisitResult;
+import java.nio.file.SimpleFileVisitor;
 import javax.tools.ToolProvider;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.tools.JavaCompiler;
 
+import static java.nio.file.StandardCopyOption.*;
+
 /**
- * This class provides some common utilites for the launcher tests.
+ * This class provides some common utilities for the launcher tests.
  */
 public enum TestHelper {
     INSTANCE;
@@ -101,11 +108,39 @@ public enum TestHelper {
     }
 
     /*
+     * is a dual mode available in the test jdk
+     */
+    static boolean dualModePresent() {
+        return isDualMode && java64Cmd != null;
+    }
+
+    /*
      * usually the jre/lib/arch-name is the same as os.arch, except for x86.
      */
     static String getJreArch() {
         String arch = System.getProperty("os.arch");
         return arch.equals("x86") ? "i386" : arch;
+    }
+
+    /*
+     * get the complementary jre arch ie. if sparc then return sparcv9 and
+     * vice-versa.
+     */
+    static String getComplementaryJreArch() {
+        String arch = System.getProperty("os.arch");
+        if (arch != null) {
+            switch (arch) {
+                case "sparc":
+                    return "sparcv9";
+                case "sparcv9":
+                    return "sparc";
+                case "x86":
+                    return "amd64";
+                case "amd64":
+                    return "i386";
+            }
+        }
+        return null;
     }
 
     /*
@@ -168,6 +203,44 @@ public enum TestHelper {
         }
     }
 
+   static void copyFile(File src, File dst) throws IOException {
+        Path parent = dst.toPath().getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.copy(src.toPath(), dst.toPath(), COPY_ATTRIBUTES, REPLACE_EXISTING);
+    }
+
+    static void recursiveDelete(File target) throws IOException {
+        if (!target.exists()) {
+            return;
+        }
+        Files.walkFileTree(target.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                try {
+                    Files.deleteIfExists(dir);
+                } catch (IOException ex) {
+                    System.out.println("Error: could not delete: " + dir.toString());
+                    System.out.println(ex.getMessage());
+                    return FileVisitResult.TERMINATE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                try {
+                    Files.deleteIfExists(file);
+                } catch (IOException ex) {
+                    System.out.println("Error: could not delete: " + file.toString());
+                    System.out.println(ex.getMessage());
+                    return FileVisitResult.TERMINATE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
     static TestResult doExec(String...cmds) {
         return doExec(null, cmds);
     }
@@ -187,7 +260,7 @@ public enum TestHelper {
         }
         BufferedReader rdr = null;
         try {
-            List<String> outputList = new ArrayList<String>();
+            List<String> outputList = new ArrayList<>();
             pb.redirectErrorStream(true);
             Process p = pb.start();
             rdr = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -198,7 +271,9 @@ public enum TestHelper {
             }
             p.waitFor();
             p.destroy();
-            return new TestHelper.TestResult(cmdStr, p.exitValue(), outputList);
+
+            return new TestHelper.TestResult(cmdStr, p.exitValue(), outputList,
+                    env, new Throwable("current stack of the test"));
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException(ex.getMessage());
@@ -213,11 +288,16 @@ public enum TestHelper {
         StringBuilder status;
         int exitValue;
         List<String> testOutput;
+        Map<String, String> env;
+        Throwable t;
 
-        public TestResult(String str, int rv, List<String> oList) {
+        public TestResult(String str, int rv, List<String> oList,
+                Map<String, String> env, Throwable t) {
             status = new StringBuilder("Executed command: " + str + "\n");
             exitValue = rv;
             testOutput = oList;
+            this.env = env;
+            this.t = t;
         }
 
         void appendStatus(String x) {
@@ -262,11 +342,21 @@ public enum TestHelper {
 
         @Override
         public String toString() {
-            status = status.append("++++Test Output Begin++++\n");
+            status.append("++++Begin Test Info++++\n");
+            status.append("++++Test Environment++++\n");
+            for (String x : env.keySet()) {
+                status.append(x).append("=").append(env.get(x)).append("\n");
+            }
+            status.append("++++Test Output++++\n");
             for (String x : testOutput) {
                 appendStatus(x);
             }
-            status = status.append("++++Test Output End++++\n");
+            status.append("++++Test Stack Trace++++\n");
+            status.append(t.toString());
+            for (StackTraceElement e : t.getStackTrace()) {
+                status.append(e.toString());
+            }
+            status.append("++++End of Test Info++++\n");
             return status.toString();
         }
 

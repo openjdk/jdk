@@ -645,6 +645,15 @@ void klassVtable::adjust_method_entries(methodOop* old_methods, methodOop* new_m
   }
 }
 
+// CDS/RedefineClasses support - clear vtables so they can be reinitialized
+void klassVtable::clear_vtable() {
+  for (int i = 0; i < _length; i++) table()[i].clear();
+}
+
+bool klassVtable::is_initialized() {
+  return _length == 0 || table()[0].method() != NULL;
+}
+
 
 // Garbage collection
 void klassVtable::oop_follow_contents() {
