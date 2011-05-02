@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmic 1 "02 Jun 2010"
+.TH rmic 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-rmic \- Java RMI コンパイラ
-.LP
-.RS 3
-
+.SH "̾��"
+rmic \- Java RMI ����ѥ���
 .LP
 .LP
-\f3rmic\fP によって、JRMP または IIOP プロトコルを使用するリモートオブジェクトのスタブ、スケルトン、および Tie クラスが生成されます。また、OMG IDL も生成されます。
+\f3rmic\fP �ˤ�äơ�JRMP �ޤ��� IIOP �ץ��ȥ������Ѥ����⡼�ȥ��֥������ȤΥ����֡�������ȥ󡢤���� Tie ���饹����������ޤ����ޤ���OMG IDL ����������ޤ���
 .LP
-.RE
-.SH "形式"
-.LP
-
+.SH "����"
 .LP
 .nf
 \f3
@@ -45,12 +39,10 @@ rmic [ \fP\f3options\fP\f3 ] \fP\f4package\-qualified\-class\-name(s)\fP\f3
 .fi
 
 .LP
-.SH "説明"
-.LP
-
+.SH "����"
 .LP
 .LP
-\f3rmic\fP コンパイラによって、リモートオブジェクトの、スタブ、スケルトンクラスファイル (JRMP プロトコル)、およびスタブと Tie クラスファイルの組み合わせ (IIOP プロトコル) が生成されます。リモートオブジェクトの実装クラスであるこれらのクラスファイルは、Java プログラミング言語のクラスをコンパイルしたときに生成されます。リモート実装クラスは、\f2java.rmi.Remote\fP インタフェースを実装するクラスです。\f3rmic\fP コマンドでのクラス名は、そのクラスが \f3javac\fP コマンドでコンパイルが成功していて、かつ完全なパッケージ名が指定されている必要があります。たとえば、クラスファイル名 \f2HelloImpl\fP で \f3rmic\fP を実行するには、次のようにします。
+\f3rmic\fP ����ѥ���ˤ�äơ���⡼�ȥ��֥������ȤΡ������֡�������ȥ󥯥饹�ե����� (JRMP �ץ��ȥ���)������ӥ����֤� Tie ���饹�ե�������Ȥ߹�碌 (IIOP �ץ��ȥ���) ����������ޤ�����⡼�ȥ��֥������Ȥμ������饹�Ǥ��뤳���Υ��饹�ե�����ϡ�Java �ץ�����ߥ󥰸���Υ��饹�򥳥�ѥ��뤷���Ȥ�����������ޤ�����⡼�ȼ������饹�ϡ�\f2java.rmi.Remote\fP ���󥿥ե�������������륯�饹�Ǥ���\f3rmic\fP ���ޥ�ɤǤΥ��饹̾�ϡ����Υ��饹�� \f3javac\fP ���ޥ�ɤǥ���ѥ��뤬�������Ƥ��ơ����Ĵ����ʥѥå�����̾�����ꤵ��Ƥ���ɬ�פ�����ޤ������Ȥ��С����饹�ե�����̾ \f2HelloImpl\fP �� \f3rmic\fP ��¹Ԥ���ˤϡ����Τ褦�ˤ��ޤ���
 .LP
 .nf
 \f3
@@ -62,37 +54,32 @@ rmic hello.HelloImpl
 
 .LP
 .LP
-\f2HelloImpl_Stub.class\fP ファイルが、クラスのパッケージ名が付いた \f2hello\fP サブディレクトリに作成されます。
+\f2HelloImpl_Stub.class\fP �ե����뤬�����饹�Υѥå�����̾���դ��� \f2hello\fP ���֥ǥ��쥯�ȥ�˺�������ޤ���
 .LP
 .LP
-リモートオブジェクトの「スケルトン」は JRMP プロトコルサーバー側のエンティティーで、実際のリモートオブジェクト実装を呼び出すメソッドを含みます。
+��⡼�ȥ��֥������ȤΡ֥�����ȥ�פ� JRMP �ץ��ȥ��륵���С�¦�Υ���ƥ��ƥ����ǡ��ºݤΥ�⡼�ȥ��֥������ȼ�����ƤӽФ��᥽�åɤ�ޤߤޤ���
 .LP
 .LP
-リモートオブジェクトの「Tie」は、スケルトンと同様にサーバー側のエンティティーですが、IIOP プロトコルを使ってクライアントと通信します。
+��⡼�ȥ��֥������ȤΡ�Tie�פϡ�������ȥ��Ʊ�ͤ˥����С�¦�Υ���ƥ��ƥ����Ǥ�����IIOP �ץ��ȥ����Ȥäƥ��饤����Ȥ��̿����ޤ���
 .LP
 .LP
-「スタブ」とは、リモートオブジェクトのクライアント側での代理です。 スタブは、リモートオブジェクトのメソッド呼び出しを、実物のリモートオブジェクトが常駐するサーバーと通信する役割を持ちます。したがって、クライアントのリモートオブジェクトへの参照は、実際はローカルスタブへの参照となります。
+�֥����֡פȤϡ���⡼�ȥ��֥������ȤΥ��饤�����¦�Ǥ������Ǥ��������֤ϡ���⡼�ȥ��֥������ȤΥ᥽�åɸƤӽФ��򡢼�ʪ�Υ�⡼�ȥ��֥������Ȥ����󤹤륵���С����̿�������������ޤ����������äơ����饤����ȤΥ�⡼�ȥ��֥������Ȥؤλ��Ȥϡ��ºݤϥ������륹���֤ؤλ��ȤȤʤ�ޤ���
 .LP
 .LP
-デフォルトで \f3rmic\fP では、1.2 JRMP スタブプロトコルバージョンだけを使用するスタブクラスを生成します。 これは、\f2\-v1.2\fP オプションを指定した場合と同じ動作です。(5.0 以前では \f2\-vcompat\fP オプションがデフォルトであったことに注意。) IIOP プロトコル用のスタブおよび Tie クラスを生成するには \f2\-iiop\fP オプションを使用します。
+�ǥե���Ȥ� \f3rmic\fP �Ǥϡ�1.2 JRMP �����֥ץ��ȥ���С�������������Ѥ��륹���֥��饹���������ޤ�������ϡ�\f2\-v1.2\fP ���ץ�������ꤷ������Ʊ��ư��Ǥ���(5.0 �����Ǥ� \f2\-vcompat\fP ���ץ���󤬥ǥե���ȤǤ��ä����Ȥ����ա�IIOP �ץ��ȥ����ѤΥ����֤���� Tie ���饹����������ˤ� \f2\-iiop\fP ���ץ�������Ѥ��ޤ���
 .LP
 .LP
-スタブはリモートインタフェースだけを実装し、リモートオブジェクトが実装する局所インタフェースは実装していません。JRMP スタブはリモートオブジェクト自体が実装するリモートインタフェースと同じものを実装しているので、クライアントは、キャストや型チェックに Java プログラミング言語に組み込まれた演算子を使用することができます。IIOP の場合は、\f2PortableRemoteObject.narrow\fP メソッドを使わなければなりません。
+�����֤ϥ�⡼�ȥ��󥿥ե��������������������⡼�ȥ��֥������Ȥ���������ɽꥤ�󥿥ե������ϼ������Ƥ��ޤ���JRMP �����֤ϥ�⡼�ȥ��֥������ȼ��Τ����������⡼�ȥ��󥿥ե�������Ʊ����Τ�������Ƥ���Τǡ����饤����Ȥϡ����㥹�Ȥ䷿�����å��� Java �ץ�����ߥ󥰸�����Ȥ߹��ޤ줿�黻�Ҥ���Ѥ��뤳�Ȥ��Ǥ��ޤ���IIOP �ξ��ϡ�\f2PortableRemoteObject.narrow\fP �᥽�åɤ�Ȥ�ʤ���Фʤ�ޤ���
 .LP
-.SH "オプション"
-.LP
-
+.SH "���ץ����"
 .LP
 .RS 3
 .TP 3
 \-bootclasspath path 
-ブートストラップクラスファイルの位置をオーバーライドします。 
+�֡��ȥ��ȥ�åץ��饹�ե�����ΰ��֤򥪡��С��饤�ɤ��ޤ��� 
 .TP 3
 \-classpath path 
-\f3rmic\fP がクラスを探すためのパスを指定します。このオプションは、デフォルトや CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
-.RS 3
-
-.LP
+\f3rmic\fP �����饹��õ������Υѥ�����ꤷ�ޤ������Υ��ץ����ϡ��ǥե���Ȥ� CLASSPATH �Ķ��ѿ�������񤭤��ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ����������äơ�\f2path\fP �ΰ��̷����ϼ��Τ褦�ˤʤ�ޤ��� 
 .nf
 \f3
 .fl
@@ -100,11 +87,7 @@ rmic hello.HelloImpl
 .fl
 \fP
 .fi
-.RE
-例を示します。 
-.RS 3
-
-.LP
+��򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -112,13 +95,9 @@ rmic hello.HelloImpl
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-d directory 
-生成されたクラス階層の出力先ディレクトリのルートを指定します。このオプションを使えば、スタブ、スケルトン、および Tie ファイルを格納するディレクトリを指定できます。たとえば、次のようにして使います。 
-.RS 3
-
-.LP
+�������줿���饹���ؤν�����ǥ��쥯�ȥ�Υ롼�Ȥ���ꤷ�ޤ������Υ��ץ�����Ȥ��С������֡�������ȥ󡢤���� Tie �ե�������Ǽ����ǥ��쥯�ȥ�����Ǥ��ޤ������Ȥ��С����Τ褦�ˤ��ƻȤ��ޤ��� 
 .nf
 \f3
 .fl
@@ -126,49 +105,43 @@ rmic hello.HelloImpl
 .fl
 \fP
 .fi
-.RE
-\f2MyClass\fP から取得したスタブとスケルトンクラスを \f2/java/classes/foo\fP ディレクトリに置きます。\f2\-d\fP オプションが指定されていない場合は、\f2「\-d\ .」\fPが指定されていると見なされます。ターゲットクラスのパッケージ階層が現在のディレクトリに作成され、スタブ、Tie、およびスケルトンファイルがそのディレクトリに格納されます。(以前のバージョンの \f3rmic\fP では、\f2\-d\fP が指定されていない場合は、パッケージ階層は作成されず、出力ファイルはすべて現在のディレクトリに直接格納されていた)。
+MyClass ����������� \f2�����֤ȥ�����ȥ󥯥饹��\fP \f2/java/classes/foo\fP �ǥ��쥯�ȥ���֤��ޤ���\f2\-d\fP ���ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ�\f2��\-d\ .��\fP�����ꤵ��Ƥ���ȸ��ʤ���ޤ����������åȥ��饹�Υѥå��������ؤ����ߤΥǥ��쥯�ȥ�˺������졢�����֡�Tie������ӥ�����ȥ�ե����뤬���Υǥ��쥯�ȥ�˳�Ǽ����ޤ���(�����ΥС������� \f3rmic\fP �Ǥϡ�\f2\-d\fP �����ꤵ��Ƥ��ʤ����ϡ��ѥå��������ؤϺ������줺�����ϥե�����Ϥ��٤Ƹ��ߤΥǥ��쥯�ȥ��ľ�ܳ�Ǽ����Ƥ�����)
 .br
 \  
 .TP 3
 \-extdirs path 
-インストール型拡張機能の位置をオーバーライドします。 
+���󥹥ȡ��뷿��ĥ��ǽ�ΰ��֤򥪡��С��饤�ɤ��ޤ��� 
 .TP 3
 \-g 
-局所変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号情報だけが生成されます。 
-.LP
+�ɽ��ѿ���ޤह�٤ƤΥǥХå�������������ޤ����ǥե���ȤǤϡ����ֹ�����������������ޤ��� 
 .TP 3
 \-idl 
-\f2rmic\fP によって、指定したクラスおよび参照されたクラスの OMG IDL が生成されます。IDL では、プログラミング言語に依存せずに、宣言するだけでオブジェクトの API を指定することができます。IDL は、メソッドおよびデータの仕様として使用します。 CORBA バインディングを提供する任意の言語で、メソッドおよびデータの作成および呼び出しを行うことができます。これらの言語には、Java および C++ が含まれています。詳細は、
+\f2rmic\fP �ˤ�äơ����ꤷ�����饹����ӻ��Ȥ��줿���饹�� OMG IDL ����������ޤ���IDL �Ǥϡ��ץ�����ߥ󥰸���˰�¸�����ˡ������������ǥ��֥������Ȥ� API ����ꤹ�뤳�Ȥ��Ǥ��ޤ���IDL �ϡ��᥽�åɤ���ӥǡ����λ��ͤȤ��ƻ��Ѥ��ޤ���CORBA �Х���ǥ��󥰤��󶡤���Ǥ�դθ���ǡ��᥽�åɤ���ӥǡ����κ�������ӸƤӽФ���Ԥ����Ȥ��Ǥ��ޤ��������θ���ˤϡ�Java ����� C++ ���ޤޤ�Ƥ��ޤ����ܺ٤ϡ�
 .na
 \f2Java Language to IDL Mapping\fP @
 .fi
-http://www.omg.org/technology/documents/formal/java_language_mapping_to_omg_idl.htm (OMG) を参照してください。 
+http://www.omg.org/technology/documents/formal/java_language_mapping_to_omg_idl.htm (OMG) �򻲾Ȥ��Ƥ��������� 
 .LP
-\f2\-idl\fP オプションを使うときは、ほかのオプションも指定できます。  
+\f2\-idl\fP ���ץ�����Ȥ��Ȥ��ϡ��ۤ��Υ��ץ��������Ǥ��ޤ���  
 .RS 3
 .TP 3
-\-always または \-alwaysgenerate 
-既存のスタブ、Tie、および IDL が入力クラスより新しいときでも、強制的に生成し直します。 
+\-always �ޤ��� \-alwaysgenerate 
+��¸�Υ����֡�Tie������� IDL �����ϥ��饹��꿷�����Ȥ��Ǥ⡢����Ū��������ľ���ޤ��� 
 .TP 3
 \-factory 
-生成された IDL で factory キーワードを使います。 
+�������줿 IDL �� factory ������ɤ�Ȥ��ޤ��� 
 .TP 3
 \-idlModule\  fromJavaPackage[.class]\  toIDLModule 
-IDLEntity パッケージのマップを指定します。例を示します。 \f2\-idlModule foo.bar my::real::idlmod\fP 
+IDLEntity �ѥå������Υޥåפ���ꤷ�ޤ�����򼨤��ޤ��� \f2\-idlModule foo.bar my::real::idlmod\fP 
 .TP 3
 \-idlFile\  fromJavaPackage[.class]\  toIDLFile 
-IDLEntity ファイルのマップを指定します。例を示します。 \f2\-idlFile test.pkg.X TEST16.idl\fP\  
+IDLEntity �ե�����Υޥåפ���ꤷ�ޤ�����򼨤��ޤ��� \f2\-idlFile test.pkg.X TEST16.idl\fP\  
 .RE
-.LP
 .TP 3
 \-iiop 
-\f2rmic\fP によって、JRMP のスタブとスケルトンクラスの代わりに、IIOP のスタブと Tie クラスが生成されます。スタブクラスは、リモートオブジェクトのローカルプロキシで、クライアントからサーバーに呼び出しを送信するときに使われます。各リモートインタフェースにはスタブクラスが必要です。 スタブクラスによってリモートインタフェースが実装されます。クライアントでリモートオブジェクトを参照するときは、実際にはスタブを参照することになります。タイクラスは、サーバー側で着呼を処理し、その呼び出しを適切な実装クラスにディスパッチするときに使われます。各実装クラスには、タイクラスが必要です。 
+\f2rmic\fP �ˤ�äơ�JRMP �Υ����֤ȥ�����ȥ󥯥饹������ˡ�IIOP �Υ����֤� Tie ���饹����������ޤ��������֥��饹�ϡ���⡼�ȥ��֥������ȤΥ�������ץ������ǡ����饤����Ȥ��饵���С��˸ƤӽФ�����������Ȥ��˻Ȥ��ޤ����ƥ�⡼�ȥ��󥿥ե������ˤϥ����֥��饹��ɬ�פǤ��������֥��饹�ˤ�äƥ�⡼�ȥ��󥿥ե���������������ޤ������饤����Ȥǥ�⡼�ȥ��֥������Ȥ򻲾Ȥ���Ȥ��ϡ��ºݤˤϥ����֤򻲾Ȥ��뤳�Ȥˤʤ�ޤ����������饹�ϡ������С�¦����Ƥ�����������θƤӽФ���Ŭ�ڤʼ������饹�˥ǥ����ѥå�����Ȥ��˻Ȥ��ޤ����Ƽ������饹�ˤϡ��������饹��ɬ�פǤ��� 
 .LP
-\f2\-iiop\fP を使って \f2rmic\fP を呼び出すと、次の命名規約に準拠したスタブと Tie が生成されます。 
-.RS 3
-
-.LP
+\f2\-iiop\fP ��Ȥä� \f2rmic\fP ��ƤӽФ��ȡ�����̿̾����˽�򤷤������֤� Tie ����������ޤ��� 
 .nf
 \f3
 .fl
@@ -182,66 +155,60 @@ _<interfaceName>_tie.class
 .fl
 \fP
 .fi
-.RE
 .LP
-\f2\-iiop\fP オプションを使うときは、ほかのオプションも指定できます。  
+\f2\-iiop\fP ���ץ�����Ȥ��Ȥ��ϡ��ۤ��Υ��ץ��������Ǥ��ޤ���  
 .RS 3
 .TP 3
-\-always または \-alwaysgenerate 
-既存のスタブ、Tie、および IDL が入力クラスより新しいときでも、強制的に生成し直します。 
+\-always �ޤ��� \-alwaysgenerate 
+��¸�Υ����֡�Tie������� IDL �����ϥ��饹��꿷�����Ȥ��Ǥ⡢����Ū��������ľ���ޤ��� 
 .TP 3
 \-nolocalstubs 
-同じプロセスのクライアントとサーバーに対して最適化されたスタブを作成しません。 
+Ʊ���ץ������Υ��饤����Ȥȥ����С����Ф��ƺ�Ŭ�����줿�����֤�������ޤ��� 
 .TP 3
 \-noValueMethods 
-\f2\-idl\fP オプションとともに使われなければなりません。発行された IDL に、\f2valuetype\fP メソッドおよび初期化子を追加しません。このメソッドおよび初期化子は、\f2valuetype\fP の場合はオプションです。 \f2\-idl\fP オプションを使うときは、 \f2\-noValueMethods\fP オプションを指定しない限り生成されます。 
+����� \f2\-idl\fP ���ץ����ȤȤ�˻Ȥ��ʤ���Фʤ�ޤ���ȯ�Ԥ��줿 IDL �ˡ�\f2valuetype\fP �᥽�åɤ���ӽ�����Ҥ��ɲä��ޤ��󡣤��Υ᥽�åɤ���ӽ�����Ҥϡ�\f2valuetype\fP �ξ��ϥ��ץ����Ǥ��� \f2\-idl\fP ���ץ�����Ȥ��Ȥ��ϡ� \f2\-noValueMethods\fP ���ץ�������ꤷ�ʤ��¤���������ޤ��� 
 .TP 3
 \-poa 
-継承が \f2org.omg.CORBA_2_3.portable.ObjectImpl\fP から \f2org.omg.PortableServer.Servant\fP に変わります。 
+�Ѿ��� \f2org.omg.CORBA_2_3.portable.ObjectImpl\fP ���� \f2org.omg.PortableServer.Servant\fP ���Ѥ��ޤ��� 
 .LP
 .na
 \f2Portable Object Adapter\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html (POA) の \f2PortableServer\fP モジュールは、ネイティブの \f2Servant\fP 型を定義します。Java プログラミング言語では、\f2Servant\fP 型は、Java の \f2org.omg.PortableServer.Servant\fP クラスにマッピングされています。これはあらゆる POA サーバント実装の基底クラスとなり多数のメソッドを提供します。 これらのメソッドはアプリケーションプログラマが呼び出すだけではなく、POA 自身からも呼び出され、場合によってはサーバントの動作を制御するためにユーザーがオーバーライドすることもあります。OMG IDL to Java Language Mapping Specification、CORBA V 2.3.1 ptc/00\-01\-08.pdf に準拠しています。  
+http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html (POA) �� \f2PortableServer\fP �⥸�塼��ϡ��ͥ��ƥ��֤� \f2Servant\fP ����������ޤ���Java �ץ�����ߥ󥰸���Ǥϡ�\f2Servant\fP ���� Java �� \f2org.omg.PortableServer.Servant\fP ���饹�˥ޥåפ���ޤ������Υ��饹�ϡ����٤Ƥ� POA �����Х�ȼ����δ��쥯�饹�Ȥ��Ƶ�ǽ�������ץꥱ�������ץ�����ޤ��ƤӽФ����ȤΤǤ��뤤���Ĥ��Υ᥽�åɤΤۤ��ˡ�POA ���Τ�Τˤ�äƸƤӽФ��졢�����Х�Ȥ�ư������椹�뤿��˥桼�����������С��饤�ɤǤ���᥽�åɤ��󶡤��ޤ���OMG IDL to Java Language Mapping Specification��CORBA V 2.3.1 ptc/00\-01\-08.pdf �˽�򤷤Ƥ��ޤ���  
 .RE
 .TP 3
 \-J 
-\f2\-J\fP の後ろに続くオプションを \f2java\fP インタプリタに引き渡します。 \f2java\fP オプションと組み合わせて使います (\f2\-J\fP と \f2java\fP オプションの間にスペースは入れない)。 
+\f2\-J\fP �θ����³�����ץ����� \f2java\fP ���󥿥ץ꥿�˰����Ϥ��ޤ��� \f2java\fP ���ץ������Ȥ߹�碌�ƻȤ��ޤ� (\-J �� java ���ץ����δ֤˥��ڡ���������ʤ�)�� 
 .TP 3
-\-keep または \-keepgenerated 
-スタブ、スケルトン、または Tie クラスのための \f2.java\fP ソースファイルを \f2.class\fP ファイルと同じディレクトリに残します。 
+\-keep �ޤ��� \-keepgenerated 
+�����֡�������ȥ󡢤ޤ��� Tie ���饹�Τ���� \f2.java\fP �������ե������ \f2.class\fP �ե������Ʊ���ǥ��쥯�ȥ�˻Ĥ��ޤ��� 
 .TP 3
 \-nowarn 
-警告をオフにします。このオプションを指定すると、コンパイラは警告を表示しません。 
-.LP
+�ٹ�򥪥դˤ��ޤ������Υ��ץ�������ꤹ��ȡ�����ѥ���Ϸٹ��ɽ�����ޤ��� 
+.TP 3
+\-nowrite 
+����ѥ��뤷�����饹��ե����륷���ƥ�˽񤭹��ߤޤ��� 
 .TP 3
 \-vcompat 
-1.1 と 1.2 の両方の JRMP スタブプロトコルバージョンと互換性のあるスタブおよびスケルトンクラスを作成します。(5.0 以前のリリースではこのオプションはデフォルト。)生成されたスタブクラスは、JDK 1.1 仮想マシンにロードされると 1.1 スタブプロトコルバージョンを使用し、JDK 1.2 以降の仮想マシンにロードされると 1.2 スタブプロトコルバージョンを使用します。生成されたスケルトンクラスでは、1.1 と 1.2 の両方のスタブプロトコルバージョンをサポートします。生成されたクラスは両方の操作モードをサポートするために、サイズが大きくなります。 
+1.1 �� 1.2 ��ξ���� JRMP �����֥ץ��ȥ���С������ȸߴ����Τ��륹���֤���ӥ�����ȥ󥯥饹��������ޤ���(5.0 �����Υ�꡼���ǤϤ��Υ��ץ����ϥǥե���ȡ�)�������줿�����֥��饹�ϡ�JDK 1.1 ���ۥޥ���˥����ɤ����� 1.1 �����֥ץ��ȥ���С���������Ѥ���JDK 1.2 �ʹߤβ��ۥޥ���˥����ɤ����� 1.2 �����֥ץ��ȥ���С���������Ѥ��ޤ����������줿������ȥ󥯥饹�Ǥϡ�1.1 �� 1.2 ��ξ���Υ����֥ץ��ȥ���С������򥵥ݡ��Ȥ��ޤ����������줿���饹��ξ�������⡼�ɤ򥵥ݡ��Ȥ��뤿��ˡ����������礭���ʤ�ޤ��� 
 .TP 3
 \-verbose 
-コンパイラやリンカーが、コンパイルされているクラスやロードされているクラスファイルについてのメッセージを表示するようにします。 
-.LP
+����ѥ�����󥫡���������ѥ��뤵��Ƥ��륯�饹������ɤ���Ƥ��륯�饹�ե�����ˤĤ��ƤΥ�å�������ɽ������褦�ˤ��ޤ��� 
 .TP 3
 \-v1.1 
-1.1 JRMP スタブプロトコルバージョンのみのスタブおよびスケルトンクラスを生成します。このオプションが使用できるのは、JDK 1.1 から \f3rmic\fP ツールで生成され、アップグレードできない (さらにダイナミッククラスローディングを使用していない) 、既存の静的配備されたスタブクラスに対し、直列化互換性のあるスタブクラスを生成場合だけです。 
-.LP
+1.1 JRMP �����֥ץ��ȥ���С������ΤߤΥ����֤���ӥ�����ȥ󥯥饹���������ޤ������Υ��ץ���󤬻��ѤǤ���Τϡ�JDK 1.1 ���� \f3rmic\fP �ġ�����������졢���åץ��졼�ɤǤ��ʤ� (����˥����ʥߥå����饹�����ǥ��󥰤���Ѥ��Ƥ��ʤ�) ����¸����Ū�������줿�����֥��饹���Ф���ľ�󲽸ߴ����Τ��륹���֥��饹�������������Ǥ��� 
 .TP 3
 \-v1.2 
-(デフォルト) 1.2 JRMP スタブプロトコルバージョンのみのスタブクラスを生成します。スケルトンクラスは 1.2 スタブプロトコルバージョンで使用できないため、このオプションではスケルトンクラスは生成されません。生成されたスタブクラスは、JDK 1.1 仮想マシンにロードされても動作しません。 
+(�ǥե����) 1.2 JRMP �����֥ץ��ȥ���С������ΤߤΥ����֥��饹���������ޤ���������ȥ󥯥饹�� 1.2 �����֥ץ��ȥ���С������ǻ��ѤǤ��ʤ����ᡢ���Υ��ץ����Ǥϥ�����ȥ󥯥饹����������ޤ����������줿�����֥��饹�ϡ�JDK 1.1 ���ۥޥ���˥����ɤ���Ƥ�ư��ޤ��� 
 .RE
 
 .LP
-.SH "環境変数"
-.LP
-
+.SH "�Ķ��ѿ�"
 .LP
 .RS 3
 .TP 3
 CLASSPATH 
-ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。次に例を示します。 
-.RS 3
-
-.LP
+�桼����������饹�ؤΥѥ��򥷥��ƥ�˻��ꤷ�ޤ����ǥ��쥯�ȥ�ϥ������ʬ�䤷�ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
@@ -250,15 +217,12 @@ CLASSPATH
 \fP
 .fi
 .RE
-.RE
 
 .LP
-.SH "関連項目"
-.LP
-
+.SH "��Ϣ����"
 .LP
 .LP
-java(1)、javac(1)、
+java(1)��javac(1)��
 .na
 \f2CLASSPATH\fP @
 .fi
