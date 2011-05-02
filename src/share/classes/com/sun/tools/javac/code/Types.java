@@ -2314,7 +2314,7 @@ public class Types {
             if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(elemtype, t.tsym);
+                return new ArrayType(upperBound(elemtype), t.tsym);
         }
 
         @Override
