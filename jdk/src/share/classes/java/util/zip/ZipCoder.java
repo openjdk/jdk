@@ -34,6 +34,8 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
+import sun.nio.cs.ArrayDecoder;
+import sun.nio.cs.ArrayEncoder;
 
 /**
  * Utility class for zipfile name and comment decoding and encoding
@@ -47,6 +49,15 @@ final class ZipCoder {
         char[] ca = new char[len];
         if (len == 0)
             return new String(ca);
+        // UTF-8 only for now. Other ArrayDeocder only handles
+        // CodingErrorAction.REPLACE mode. ZipCoder uses
+        // REPORT mode.
+        if (isUTF8 && cd instanceof ArrayDecoder) {
+            int clen = ((ArrayDecoder)cd).decode(ba, 0, length, ca);
+            if (clen == -1)    // malformed
+                throw new IllegalArgumentException("MALFORMED");
+            return new String(ca, 0, clen);
+        }
         ByteBuffer bb = ByteBuffer.wrap(ba, 0, length);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = cd.decode(bb, cb, true);
@@ -69,6 +80,14 @@ final class ZipCoder {
         byte[] ba = new byte[len];
         if (len == 0)
             return ba;
+        // UTF-8 only for now. Other ArrayDeocder only handles
+        // CodingErrorAction.REPLACE mode.
+        if (isUTF8 && ce instanceof ArrayEncoder) {
+            int blen = ((ArrayEncoder)ce).encode(ca, 0, ca.length, ba);
+            if (blen == -1)    // malformed
+                throw new IllegalArgumentException("MALFORMED");
+            return Arrays.copyOf(ba, blen);
+        }
         ByteBuffer bb = ByteBuffer.wrap(ba);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = ce.encode(cb, bb, true);
@@ -85,7 +104,7 @@ final class ZipCoder {
 
     // assume invoked only if "this" is not utf8
     byte[] getBytesUTF8(String s) {
-        if (isutf8)
+        if (isUTF8)
             return getBytes(s);
         if (utf8 == null)
             utf8 = new ZipCoder(StandardCharset.UTF_8);
@@ -94,7 +113,7 @@ final class ZipCoder {
 
 
     String toStringUTF8(byte[] ba, int len) {
-        if (isutf8)
+        if (isUTF8)
             return toString(ba, len);
         if (utf8 == null)
             utf8 = new ZipCoder(StandardCharset.UTF_8);
@@ -102,18 +121,18 @@ final class ZipCoder {
     }
 
     boolean isUTF8() {
-        return isutf8;
+        return isUTF8;
     }
 
     private Charset cs;
     private CharsetDecoder dec;
     private CharsetEncoder enc;
-    private boolean isutf8;
+    private boolean isUTF8;
     private ZipCoder utf8;
 
     private ZipCoder(Charset cs) {
         this.cs = cs;
-        this.isutf8 = cs.name().equals(StandardCharset.UTF_8.name());
+        this.isUTF8 = cs.name().equals(StandardCharset.UTF_8.name());
     }
 
     static ZipCoder get(Charset charset) {
