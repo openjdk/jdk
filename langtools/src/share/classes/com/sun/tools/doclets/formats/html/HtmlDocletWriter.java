@@ -159,22 +159,42 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
-            // Search for lowercase version of {@docRoot}
-            index = lowerHtml.indexOf("{@docroot}", previndex);
-            // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
-            if (index < 0) {
-                buf.append(htmlstr.substring(previndex));
-                break;
-            }
-            // If next {@docroot} tag found, append htmlstr up to start of tag
-            buf.append(htmlstr.substring(previndex, index));
-            previndex = index + 10;  // length for {@docroot} string
-            // Insert relative path where {@docRoot} was located
-            buf.append(relativepathNoSlash);
-            // Append slash if next character is not a slash
-            if (relativepathNoSlash.length() > 0 && previndex < htmlstr.length()
-                    && htmlstr.charAt(previndex) != '/') {
-                buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+            if (configuration.docrootparent.length() > 0) {
+                // Search for lowercase version of {@docRoot}/..
+                index = lowerHtml.indexOf("{@docroot}/..", previndex);
+                // If next {@docRoot}/.. pattern not found, append rest of htmlstr and exit loop
+                if (index < 0) {
+                    buf.append(htmlstr.substring(previndex));
+                    break;
+                }
+                // If next {@docroot}/.. pattern found, append htmlstr up to start of tag
+                buf.append(htmlstr.substring(previndex, index));
+                previndex = index + 13;  // length for {@docroot}/.. string
+                // Insert docrootparent absolute path where {@docRoot}/.. was located
+
+                buf.append(configuration.docrootparent);
+                // Append slash if next character is not a slash
+                if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
+                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                }
+            } else {
+                // Search for lowercase version of {@docRoot}
+                index = lowerHtml.indexOf("{@docroot}", previndex);
+                // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
+                if (index < 0) {
+                    buf.append(htmlstr.substring(previndex));
+                    break;
+                }
+                // If next {@docroot} tag found, append htmlstr up to start of tag
+                buf.append(htmlstr.substring(previndex, index));
+                previndex = index + 10;  // length for {@docroot} string
+                // Insert relative path where {@docRoot} was located
+                buf.append(relativepathNoSlash);
+                // Append slash if next character is not a slash
+                if (relativepathNoSlash.length() > 0 && previndex < htmlstr.length() &&
+                        htmlstr.charAt(previndex) != '/') {
+                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                }
             }
         }
         return buf.toString();
@@ -2318,6 +2338,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public String commentTagsToString(Tag holderTag, Doc doc, Tag[] tags,
             boolean isFirstSentence) {
         StringBuilder result = new StringBuilder();
+        boolean textTagChange = false;
         // Array of all possible inline tags for this javadoc run
         configuration.tagletManager.checkTags(doc, tags, true);
         for (int i = 0; i < tags.length; i++) {
@@ -2333,13 +2354,26 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 result.append(output == null ? "" : output.toString());
                 if (originalLength == 0 && isFirstSentence && tagelem.name().equals("@inheritDoc") && result.length() > 0) {
                     break;
+                } else if (configuration.docrootparent.length() > 0 &&
+                        tagelem.name().equals("@docRoot") &&
+                        ((tags[i + 1]).text()).startsWith("/..")) {
+                    //If Xdocrootparent switch ON, set the flag to remove the /.. occurance after
+                    //{@docRoot} tag in the very next Text tag.
+                    textTagChange = true;
+                    continue;
                 } else {
-                        continue;
+                    continue;
                 }
             } else {
+                String text = tagelem.text();
+                //If Xdocrootparent switch ON, remove the /.. occurance after {@docRoot} tag.
+                if (textTagChange) {
+                    text = text.replaceFirst("/..", "");
+                    textTagChange = false;
+                }
                 //This is just a regular text tag.  The text may contain html links (<a>)
                 //or inline tag {@docRoot}, which will be handled as special cases.
-                String text = redirectRelativeLinks(tagelem.holder(), tagelem.text());
+                text = redirectRelativeLinks(tagelem.holder(), text);
 
                 // Replace @docRoot only if not represented by an instance of DocRootTaglet,
                 // that is, only if it was not present in a source file doc comment.

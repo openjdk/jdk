@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.javadoc.*;
 import java.util.*;
 import java.io.*;
+import java.net.*;
 
 /**
  * Configure the output based on the command line options.
@@ -48,6 +49,7 @@ import java.io.*;
  * @author Robert Field.
  * @author Atul Dambalkar.
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  */
 public class ConfigurationImpl extends Configuration {
 
@@ -108,6 +110,11 @@ public class ConfigurationImpl extends Configuration {
      * Argument for command line option "-stylesheetfile".
      */
     public String stylesheetfile = "";
+
+    /**
+     * Argument for command line option "-Xdocrootparent".
+     */
+    public String docrootparent = "";
 
     /**
      * True if command line option "-nohelp" is used. Default value is false.
@@ -239,6 +246,8 @@ public class ConfigurationImpl extends Configuration {
                 stylesheetfile =  os[1];
             } else  if (opt.equals("-charset")) {
                 charset =  os[1];
+            } else if (opt.equals("-xdocrootparent")) {
+                docrootparent = os[1];
             } else  if (opt.equals("-nohelp")) {
                 nohelp = true;
             } else  if (opt.equals("-splitindex")) {
@@ -322,7 +331,8 @@ public class ConfigurationImpl extends Configuration {
                    option.equals("-helpfile") ||
                    option.equals("-stylesheetfile") ||
                    option.equals("-charset") ||
-                   option.equals("-overview")) {
+                   option.equals("-overview") ||
+                   option.equals("-xdocrootparent")) {
             return 2;
         } else {
             return 0;
@@ -372,6 +382,13 @@ public class ConfigurationImpl extends Configuration {
                     return false;
                 }
                 nohelp = true;
+            } else if (opt.equals("-xdocrootparent")) {
+                try {
+                    new URL(os[1]);
+                } catch (MalformedURLException e) {
+                    reporter.printError(getText("doclet.MalformedURL", os[1]));
+                    return false;
+                }
             } else if (opt.equals("-overview")) {
                 if (nooverview == true) {
                     reporter.printError(getText("doclet.Option_conflict",
