@@ -4961,36 +4961,45 @@ public:
 
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
   CardTableModRefBS* _ct_bs;
 public:
-  G1VerifyCardTableCleanup(CardTableModRefBS* ct_bs)
-    : _ct_bs(ct_bs) { }
+  G1VerifyCardTableCleanup(G1CollectedHeap* g1h, CardTableModRefBS* ct_bs)
+    : _g1h(g1h), _ct_bs(ct_bs) { }
   virtual bool doHeapRegion(HeapRegion* r) {
-    MemRegion mr(r->bottom(), r->end());
     if (r->is_survivor()) {
-      _ct_bs->verify_dirty_region(mr);
+      _g1h->verify_dirty_region(r);
     } else {
-      _ct_bs->verify_clean_region(mr);
+      _g1h->verify_not_dirty_region(r);
     }
     return false;
   }
 };
 
+void G1CollectedHeap::verify_not_dirty_region(HeapRegion* hr) {
+  // All of the region should be clean.
+  CardTableModRefBS* ct_bs = (CardTableModRefBS*)barrier_set();
+  MemRegion mr(hr->bottom(), hr->end());
+  ct_bs->verify_not_dirty_region(mr);
+}
+
+void G1CollectedHeap::verify_dirty_region(HeapRegion* hr) {
+  // We cannot guarantee that [bottom(),end()] is dirty.  Threads
+  // dirty allocated blocks as they allocate them. The thread that
+  // retires each region and replaces it with a new one will do a
+  // maximal allocation to fill in [pre_dummy_top(),end()] but will
+  // not dirty that area (one less thing to have to do while holding
+  // a lock). So we can only verify that [bottom(),pre_dummy_top()]
+  // is dirty.
+  CardTableModRefBS* ct_bs = (CardTableModRefBS*) barrier_set();
+  MemRegion mr(hr->bottom(), hr->pre_dummy_top());
+  ct_bs->verify_dirty_region(mr);
+}
+
 void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
+  CardTableModRefBS* ct_bs = (CardTableModRefBS*) barrier_set();
   for (HeapRegion* hr = head; hr != NULL; hr = hr->get_next_young_region()) {
-    // We cannot guarantee that [bottom(),end()] is dirty.  Threads
-    // dirty allocated blocks as they allocate them. The thread that
-    // retires each region and replaces it with a new one will do a
-    // maximal allocation to fill in [pre_dummy_top(),end()] but will
-    // not dirty that area (one less thing to have to do while holding
-    // a lock). So we can only verify that [bottom(),pre_dummy_top()]
-    // is dirty. Also note that verify_dirty_region() requires
-    // mr.start() and mr.end() to be card aligned and pre_dummy_top()
-    // is not guaranteed to be.
-    MemRegion mr(hr->bottom(),
-                 ct_bs->align_to_card_boundary(hr->pre_dummy_top()));
-    ct_bs->verify_dirty_region(mr);
+    verify_dirty_region(hr);
   }
 }
 
@@ -5033,7 +5042,7 @@ void G1CollectedHeap::cleanUpCardTable() {
   g1_policy()->record_clear_ct_time( elapsed * 1000.0);
 #ifndef PRODUCT
   if (G1VerifyCTCleanup || VerifyAfterGC) {
-    G1VerifyCardTableCleanup cleanup_verifier(ct_bs);
+    G1VerifyCardTableCleanup cleanup_verifier(this, ct_bs);
     heap_region_iterate(&cleanup_verifier);
   }
 #endif

@@ -3336,11 +3336,11 @@ bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
   return true;
 }
 
-bool os::large_page_init() {
+void os::large_page_init() {
   if (!UseLargePages) {
     UseISM = false;
     UseMPSS = false;
-    return false;
+    return;
   }
 
   // print a warning if any large page related flag is specified on command line
@@ -3361,7 +3361,6 @@ bool os::large_page_init() {
             Solaris::mpss_sanity_check(warn_on_failure, &_large_page_size);
 
   UseLargePages = UseISM || UseMPSS;
-  return UseLargePages;
 }
 
 bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
@@ -4992,7 +4991,7 @@ jint os::init_2(void) {
 #endif
 }
 
-  FLAG_SET_DEFAULT(UseLargePages, os::large_page_init());
+  os::large_page_init();
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
