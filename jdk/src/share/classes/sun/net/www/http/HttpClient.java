@@ -301,7 +301,11 @@ public class HttpClient extends NetworkClient {
         } else {
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
-                security.checkConnect(url.getHost(), url.getPort());
+                if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
+                    security.checkConnect(InetAddress.getByName(url.getHost()).getHostAddress(), url.getPort());
+                } else {
+                    security.checkConnect(url.getHost(), url.getPort());
+                }
             }
             ret.url = url;
         }
@@ -457,11 +461,11 @@ public class HttpClient extends NetworkClient {
     protected synchronized void openServer() throws IOException {
 
         SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkConnect(host, port);
-        }
 
         if (keepingAlive) { // already opened
+            if (security != null) {
+                security.checkConnect(host, port);
+            }
             return;
         }
 
@@ -469,11 +473,19 @@ public class HttpClient extends NetworkClient {
             url.getProtocol().equals("https") ) {
 
             if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
+                sun.net.www.URLConnection.setProxiedHost(host);
+                if (security != null) {
+                    security.checkConnect(host,port);
+                }
                 privilegedOpenServer((InetSocketAddress) proxy.address());
                 usingProxy = true;
                 return;
             } else {
                 // make direct connection
+                if (security != null) {
+                    // redundant?
+                    security.checkConnect(host, port);
+                }
                 openServer(host, port);
                 usingProxy = false;
                 return;
@@ -484,11 +496,19 @@ public class HttpClient extends NetworkClient {
              * ftp url.
              */
             if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
+                sun.net.www.URLConnection.setProxiedHost(host);
+                if (security != null) {
+                    security.checkConnect(host,port);
+                }
                 privilegedOpenServer((InetSocketAddress) proxy.address());
                 usingProxy = true;
                 return;
             } else {
                 // make direct connection
+                if (security != null) {
+                    // redundant?
+                    security.checkConnect(host, port);
+                }
                 super.openServer(host, port);
                 usingProxy = false;
                 return;
