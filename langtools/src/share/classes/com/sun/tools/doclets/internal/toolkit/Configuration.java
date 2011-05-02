@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,7 @@ public abstract class Configuration {
             docencoding = encoding;
         }
 
-        classDocCatalog = new ClassDocCatalog(root.specifiedClasses());
+        classDocCatalog = new ClassDocCatalog(root.specifiedClasses(), this);
         initTagletManager(customTagStrs);
     }
 
@@ -677,15 +677,18 @@ public abstract class Configuration {
     }
 
     /**
-     * Return true if the doc element is getting documented, depending upon
-     * -nodeprecated option and @deprecated tag used. Return true if
-     * -nodeprecated is not used or @deprecated tag is not used.
+     * Return true if the ClassDoc element is getting documented, depending upon
+     * -nodeprecated option and the deprecation information. Return true if
+     * -nodeprecated is not used. Return false if -nodeprecated is used and if
+     * either ClassDoc element is deprecated or the containing package is deprecated.
+     *
+     * @param cd the ClassDoc for which the page generation is checked
      */
-    public boolean isGeneratedDoc(Doc doc) {
+    public boolean isGeneratedDoc(ClassDoc cd) {
         if (!nodeprecated) {
             return true;
         }
-        return (doc.tags("deprecated")).length == 0;
+        return !(Util.isDeprecated(cd) || Util.isDeprecated(cd.containingPackage()));
     }
 
     /**

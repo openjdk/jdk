@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,15 @@
  * questions.
  */
 
-package com.sun.tools.doclets.internal.toolkit.taglets;
+package pkg;
 
-import com.sun.javadoc.*;
+public class A {
+   /** Test constant. */
+   public static final String DEMO= "y";
+   public static final String THIS_IS_OK= "(x)";
 
-/**
- * A taglet that represents the @deprecated tag.
- *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
- *
- * @author Jamie Ho
- * @since 1.5
- */
+   public String DEMO_STRING = "<Hello World>";
 
-public class DeprecatedTaglet extends BaseTaglet{
-
-    public DeprecatedTaglet() {
-        name = "deprecated";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
-        return writer.deprecatedTagOutput(holder);
-    }
+   public A() {
+   }
 }
