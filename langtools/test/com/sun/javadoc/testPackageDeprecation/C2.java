@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,35 @@
  * questions.
  */
 
-package com.sun.tools.doclets.internal.toolkit.taglets;
-
-import com.sun.javadoc.*;
-
 /**
- * A taglet that represents the @deprecated tag.
+ * Another test class.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
- *
- * @author Jamie Ho
- * @since 1.5
+ * @author Bhavesh Patel
  */
+public class C2 {
 
-public class DeprecatedTaglet extends BaseTaglet{
-
-    public DeprecatedTaglet() {
-        name = "deprecated";
-    }
+    public static enum ModalExclusionType {
+        /**
+         * Test comment.
+         */
+        NO_EXCLUDE,
+        /**
+         * Another comment.
+         */
+        APPLICATION_EXCLUDE
+    };
 
     /**
-     * {@inheritDoc}
+     * A string constant.
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
-        return writer.deprecatedTagOutput(holder);
+    public static final String CONSTANT1 = "C2";
+
+    /**
+     * A sample method.
+     *
+     * @param param some parameter.
+     */
+    public void method(String param) {
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
             packgen = new PackageFrameWriter(configuration, packageDoc);
             String pkgName = Util.getPackageName(packageDoc);
             Content body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
-            Content pkgNameContent = new StringContent(pkgName);
+            Content pkgNameContent = new RawHtml(pkgName);
             Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
                     packgen.getTargetPackageLink(packageDoc, "classFrame", pkgNameContent));
             body.addContent(heading);

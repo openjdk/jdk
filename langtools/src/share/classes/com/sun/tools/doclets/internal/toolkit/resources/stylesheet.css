@@ -159,6 +159,16 @@ Page header and footer styles
     padding-top:10px;
 }
 /*
+Content styles
+*/
+.deprecatedContent {
+    margin:0;
+    padding:10px 0;
+}
+.docSummary {
+    padding-top:10px;
+}
+/*
 Page layout container styles
 */
 .contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer,
