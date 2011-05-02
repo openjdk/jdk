@@ -51,6 +51,7 @@ DEV_DOCS_URL-5 = http://java.sun.com/j2se/1.5.0/docs/index.html
 DEV_DOCS_URL-6 = http://download.oracle.com/javase/6/docs/index.html
 DEV_DOCS_URL-7 = http://download.oracle.com/javase/7/docs/index.html
 DEV_DOCS_URL = $(DEV_DOCS_URL-$(JDK_MINOR_VERSION))
+DOCS_BASE_URL = http://download.oracle.com/javase/7/docs
 
 # Url to Java Language Spec
 #JLS3_URL = http://java.sun.com/docs/books/jls/
@@ -205,7 +206,13 @@ COMMON_JAVADOCFLAGS =					\
                 -use					\
                 -keywords				\
 		$(ADDITIONAL_JAVADOCFLAGS)
-ADDITIONAL_JAVADOCFLAGS =
+
+ifdef OPENJDK
+  ADDITIONAL_JAVADOCFLAGS =				\
+                -Xdocrootparent $(DOCS_BASE_URL)
+else
+  ADDITIONAL_JAVADOCFLAGS =
+endif
 
 # Draft used for non-fcs documents
 JDK_IS_FCS = false
