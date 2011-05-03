@@ -26,7 +26,7 @@ package sun.awt;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharset;
+import java.nio.charset.StandardCharsets;
 import sun.nio.cs.HistoricallyNamedCharset;
 
 public class FontDescriptor implements Cloneable {
@@ -105,8 +105,8 @@ public class FontDescriptor implements Cloneable {
         if (useUnicode && unicodeEncoder == null) {
             try {
                 this.unicodeEncoder = isLE?
-                    StandardCharset.UTF_16LE.newEncoder():
-                    StandardCharset.UTF_16BE.newEncoder();
+                    StandardCharsets.UTF_16LE.newEncoder():
+                    StandardCharsets.UTF_16BE.newEncoder();
             } catch (IllegalArgumentException x) {}
         }
         return useUnicode;
