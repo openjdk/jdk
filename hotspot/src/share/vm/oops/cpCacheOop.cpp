@@ -104,7 +104,7 @@ void ConstantPoolCacheEntry::set_f1_if_null_atomic(oop f1) {
   void* result = Atomic::cmpxchg_ptr(f1, f1_addr, NULL);
   bool success = (result == NULL);
   if (success) {
-    update_barrier_set(f1_addr, f1);
+    update_barrier_set((void*) f1_addr, f1);
   }
 }
 
@@ -275,21 +275,23 @@ int ConstantPoolCacheEntry::bootstrap_method_index_in_cache() {
   return (int) bsm_cache_index;
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site,
-                                              methodHandle signature_invoker) {
+void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site, methodHandle signature_invoker) {
   assert(is_secondary_entry(), "");
+  // NOTE: it's important that all other values are set before f1 is
+  // set since some users short circuit on f1 being set
+  // (i.e. non-null) and that may result in uninitialized values for
+  // other racing threads (e.g. flags).
   int param_size = signature_invoker->size_of_parameters();
   assert(param_size >= 1, "method argument size must include MH.this");
-  param_size -= 1;              // do not count MH.this; it is not stacked for invokedynamic
-  if (Atomic::cmpxchg_ptr(call_site(), &_f1, NULL) == NULL) {
-    // racing threads might be trying to install their own favorites
-    set_f1(call_site());
-  }
+  param_size -= 1;  // do not count MH.this; it is not stacked for invokedynamic
   bool is_final = true;
   assert(signature_invoker->is_final_method(), "is_final");
-  set_flags(as_flags(as_TosState(signature_invoker->result_type()), is_final, false, false, false, true) | param_size);
+  int flags = as_flags(as_TosState(signature_invoker->result_type()), is_final, false, false, false, true) | param_size;
+  assert(_flags == 0 || _flags == flags, "flags should be the same");
+  set_flags(flags);
   // do not do set_bytecode on a secondary CP cache entry
   //set_bytecode_1(Bytecodes::_invokedynamic);
+  set_f1_if_null_atomic(call_site());  // This must be the last one to set (see NOTE above)!
 }
 
 

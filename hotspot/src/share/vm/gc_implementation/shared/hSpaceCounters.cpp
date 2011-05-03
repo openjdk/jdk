@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,22 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/shared/generationCounters.hpp"
+#include "gc_implementation/shared/hSpaceCounters.hpp"
+#include "memory/generation.hpp"
 #include "memory/resourceArea.hpp"
 
-
-GenerationCounters::GenerationCounters(const char* name,
-                                       int ordinal, int spaces,
-                                       VirtualSpace* v):
-                    _virtual_space(v) {
+HSpaceCounters::HSpaceCounters(const char* name,
+                               int ordinal,
+                               size_t max_size,
+                               size_t initial_capacity,
+                               GenerationCounters* gc) {
 
   if (UsePerfData) {
-
     EXCEPTION_MARK;
     ResourceMark rm;
 
-    const char* cns = PerfDataManager::name_space("generation", ordinal);
+    const char* cns =
+      PerfDataManager::name_space(gc->name_space(), "space", ordinal);
 
     _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1);
     strcpy(_name_space, cns);
@@ -45,24 +46,21 @@ GenerationCounters::GenerationCounters(const char* name,
     const char* cname = PerfDataManager::counter_name(_name_space, "name");
     PerfDataManager::create_string_constant(SUN_GC, cname, name, CHECK);
 
-    cname = PerfDataManager::counter_name(_name_space, "spaces");
-    PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None,
-                                     spaces, CHECK);
-
-    cname = PerfDataManager::counter_name(_name_space, "minCapacity");
-    PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
-                                     _virtual_space == NULL ? 0 :
-                                     _virtual_space->committed_size(), CHECK);
-
     cname = PerfDataManager::counter_name(_name_space, "maxCapacity");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
-                                     _virtual_space == NULL ? 0 :
-                                     _virtual_space->reserved_size(), CHECK);
+                                     (jlong)max_size, CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "capacity");
-    _current_size = PerfDataManager::create_variable(SUN_GC, cname,
-                                     PerfData::U_Bytes,
-                                     _virtual_space == NULL ? 0 :
-                                     _virtual_space->committed_size(), CHECK);
+    _capacity = PerfDataManager::create_variable(SUN_GC, cname,
+                                                 PerfData::U_Bytes,
+                                                 initial_capacity, CHECK);
+
+    cname = PerfDataManager::counter_name(_name_space, "used");
+    _used = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
+                                             (jlong) 0, CHECK);
+
+    cname = PerfDataManager::counter_name(_name_space, "initCapacity");
+    PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
+                                     initial_capacity, CHECK);
   }
 }
