@@ -28,7 +28,7 @@ package java.util.zip;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharset;
+import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
@@ -101,7 +101,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * @param out the actual output stream
      */
     public ZipOutputStream(OutputStream out) {
-        this(out, StandardCharset.UTF_8);
+        this(out, StandardCharsets.UTF_8);
     }
 
     /**
