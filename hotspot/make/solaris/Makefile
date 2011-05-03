@@ -296,7 +296,7 @@ clean_compiler1 clean_compiler2 clean_core clean_kernel:
 
 clean:  clean_compiler2 clean_compiler1 clean_core clean_docs clean_kernel
 
-include $(GAMMADIR)/make/$(OSNAME)/makefiles/cscope.make
+include $(GAMMADIR)/make/cscope.make
 
 #-------------------------------------------------------------------------------
 

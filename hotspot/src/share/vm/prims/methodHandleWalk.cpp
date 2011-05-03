@@ -82,10 +82,8 @@ void MethodHandleChain::set_method_handle(Handle mh, TRAPS) {
 
 void MethodHandleChain::set_last_method(oop target, TRAPS) {
   _is_last = true;
-  klassOop receiver_limit_oop = NULL;
-  int flags = 0;
-  methodOop m = MethodHandles::decode_method(target, receiver_limit_oop, flags);
-  _last_method = methodHandle(THREAD, m);
+  KlassHandle receiver_limit; int flags = 0;
+  _last_method = MethodHandles::decode_method(target, receiver_limit, flags);
   if ((flags & MethodHandles::_dmf_has_receiver) == 0)
     _last_invoke = Bytecodes::_invokestatic;
   else if ((flags & MethodHandles::_dmf_does_dispatch) == 0)
