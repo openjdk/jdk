@@ -189,6 +189,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   assert(thread->deopt_nmethod() == NULL, "Pending deopt!");
   thread->set_deopt_nmethod(deoptee.cb()->as_nmethod_or_null());
 
+  if (VerifyStack) {
+    thread->validate_frame_layout();
+  }
+
   // Create a growable array of VFrames where each VFrame represents an inlined
   // Java frame.  This storage is allocated with the usual system arena.
   assert(deoptee.is_compiled_frame(), "Wrong frame type");
@@ -421,6 +425,21 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   frame deopt_sender = stub_frame.sender(&dummy_map); // First is the deoptee frame
   deopt_sender = deopt_sender.sender(&dummy_map);     // Now deoptee caller
 
+  // It's possible that the number of paramters at the call site is
+  // different than number of arguments in the callee when method
+  // handles are used.  If the caller is interpreted get the real
+  // value so that the proper amount of space can be added to it's
+  // frame.
+  int sender_callee_parameters = callee_parameters;
+  if (deopt_sender.is_interpreted_frame()) {
+    methodHandle method = deopt_sender.interpreter_frame_method();
+    Bytecode_invoke cur = Bytecode_invoke_check(method,
+                                                deopt_sender.interpreter_frame_bci());
+    Symbol* signature = method->constants()->signature_ref_at(cur.index());
+    ArgumentSizeComputer asc(signature);
+    sender_callee_parameters = asc.size() + cur.has_receiver() ? 1 : 0;
+  }
+
   // Compute the amount the oldest interpreter frame will have to adjust
   // its caller's stack by. If the caller is a compiled frame then
   // we pretend that the callee has no parameters so that the
@@ -435,13 +454,12 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   if (deopt_sender.is_compiled_frame()) {
     caller_adjustment = last_frame_adjust(0, callee_locals);
-  } else if (callee_locals > callee_parameters) {
+  } else if (callee_locals > sender_callee_parameters) {
     // The caller frame may need extending to accommodate
     // non-parameter locals of the first unpacked interpreted frame.
     // Compute that adjustment.
-    caller_adjustment = last_frame_adjust(callee_parameters, callee_locals);
+    caller_adjustment = last_frame_adjust(sender_callee_parameters, callee_locals);
   }
-
 
   // If the sender is deoptimized the we must retrieve the address of the handler
   // since the frame will "magically" show the original pc before the deopt
@@ -568,6 +586,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 #ifndef PRODUCT
   if (VerifyStack) {
     ResourceMark res_mark;
+
+    thread->validate_frame_layout();
 
     // Verify that the just-unpacked frames match the interpreter's
     // notions of expression stack and locals

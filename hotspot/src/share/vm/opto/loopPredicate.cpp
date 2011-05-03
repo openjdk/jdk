@@ -700,32 +700,35 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
                                        int scale, Node* offset,
                                        Node* init, Node* limit, Node* stride,
                                        Node* range, bool upper) {
-  DEBUG_ONLY(ttyLocker ttyl);
-  if (TraceLoopPredicate) tty->print("rc_predicate ");
+  stringStream* predString = NULL;
+  if (TraceLoopPredicate) {
+    predString = new stringStream();
+    predString->print("rc_predicate ");
+  }
 
   Node* max_idx_expr  = init;
   int stride_con = stride->get_int();
   if ((stride_con > 0) == (scale > 0) == upper) {
     max_idx_expr = new (C, 3) SubINode(limit, stride);
     register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate) tty->print("(limit - stride) ");
+    if (TraceLoopPredicate) predString->print("(limit - stride) ");
   } else {
-    if (TraceLoopPredicate) tty->print("init ");
+    if (TraceLoopPredicate) predString->print("init ");
   }
 
   if (scale != 1) {
     ConNode* con_scale = _igvn.intcon(scale);
     max_idx_expr = new (C, 3) MulINode(max_idx_expr, con_scale);
     register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate) tty->print("* %d ", scale);
+    if (TraceLoopPredicate) predString->print("* %d ", scale);
   }
 
   if (offset && (!offset->is_Con() || offset->get_int() != 0)){
     max_idx_expr = new (C, 3) AddINode(max_idx_expr, offset);
     register_new_node(max_idx_expr, ctrl);
     if (TraceLoopPredicate)
-      if (offset->is_Con()) tty->print("+ %d ", offset->get_int());
-      else tty->print("+ offset ");
+      if (offset->is_Con()) predString->print("+ %d ", offset->get_int());
+      else predString->print("+ offset ");
   }
 
   CmpUNode* cmp = new (C, 3) CmpUNode(max_idx_expr, range);
@@ -733,7 +736,10 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
   BoolNode* bol = new (C, 2) BoolNode(cmp, BoolTest::lt);
   register_new_node(bol, ctrl);
 
-  if (TraceLoopPredicate) tty->print_cr("<u range");
+  if (TraceLoopPredicate) {
+    predString->print_cr("<u range");
+    tty->print(predString->as_string());
+  }
   return bol;
 }
 
@@ -957,4 +963,3 @@ bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
 
   return hoisted;
 }
-

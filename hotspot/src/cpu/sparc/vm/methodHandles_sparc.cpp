@@ -350,8 +350,9 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
-                              oopDesc* mh) {
-  printf("MH %s mh="INTPTR_FORMAT"\n", adaptername, (intptr_t) mh);
+                              oopDesc* mh,
+                              intptr_t* saved_sp) {
+  tty->print_cr("MH %s mh="INTPTR_FORMAT " saved_sp=" INTPTR_FORMAT, adaptername, (intptr_t) mh, saved_sp);
   print_method_handle(mh);
 }
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
@@ -361,6 +362,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ save_frame(16);
   __ set((intptr_t) adaptername, O0);
   __ mov(G3_method_handle, O1);
+  __ mov(I5_savedSP, O2);
   __ mov(G3_method_handle, L3);
   __ mov(Gargs, L4);
   __ mov(G5_method_type, L5);
