@@ -612,6 +612,44 @@ else
   COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
 endif
 
+# Create file with source information
+SOURCE_TIPS=$(ABS_OUTPUTDIR)/source_tips
+
+# The source tips can come from the Mercurial repository, or in the files
+#   $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
+#   directory as the original $(HGDIR) directory.
+#   These should not be := assignments, only used from the root Makefile.
+HG_VERSION = $(shell $(HG) version 2> $(DEV_NULL))
+HG_DIRECTORY=.hg
+HGTIP_FILENAME=.hgtip
+HG_SEARCH = ./REPO ./*/REPO ./*/*/REPO ./*/*/*/REPO
+REPO_LIST = $(patsubst ./%,%,$(patsubst %/,%,$(sort $(dir \
+    $(shell ( $(LS) -d $(HG_SEARCH:%/REPO=%/$(HG_DIRECTORY)) ; \
+              $(LS)    $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) ) \
+	        2> $(DEV_NULL))))))
+
+# Emit the repo:tip pairs to $@
+define GetSourceTips
+for i in $(REPO_LIST) IGNORE ; do \
+  if [ "$${i}" = "IGNORE" ] ; then \
+    continue; \
+  elif [ -d $${i}/$(HG_DIRECTORY) -a "$(HG_VERSION)" != "" ] ; then \
+    $(PRINTF) " %s:%s" \
+      "$${i}" `$(HG) tip --repository $${i} --template '{node|short}\n'` ; \
+  elif [ -f $${i}/$(HGTIP_FILENAME) ] ; then \
+    $(PRINTF) " %s:%s" \
+      "$${i}" `$(CAT) $${i}/$(HGTIP_FILENAME)` ; \
+  fi; \
+done >> $@
+$(PRINTF) "\n" >> $@
+endef
+
+# Create the HGTIP_FILENAME file
+define CreateHgTip
+$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME);\
+$(ECHO) $1/$(HGTIP_FILENAME)
+endef
+
 # Get the compiler specific settings (will run the compiler to find out)
 #   NOTE: COMPILER_PATH must be set by this time.
 #   Up until we include this file, we don't know what specific compiler
