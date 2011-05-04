@@ -72,11 +72,11 @@ public class JavacTypes implements javax.lang.model.util.Types {
     }
 
     public Element asElement(TypeMirror t) {
-        Type type = cast(Type.class, t);
-        switch (type.tag) {
-            case TypeTags.CLASS:
-            case TypeTags.ERROR:
-            case TypeTags.TYPEVAR:
+        switch (t.getKind()) {
+            case DECLARED:
+            case ERROR:
+            case TYPEVAR:
+                Type type = cast(Type.class, t);
                 return type.asElement();
             default:
                 return null;
