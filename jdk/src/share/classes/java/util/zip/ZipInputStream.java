@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharset;
 import static java.util.zip.ZipConstants64.*;
 
 /**
@@ -75,7 +76,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @param in the actual input stream
      */
     public ZipInputStream(InputStream in) {
-        this(in, Charset.forName("UTF-8"));
+        this(in, StandardCharset.UTF_8);
     }
 
     /**

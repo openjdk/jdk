@@ -30,14 +30,14 @@ import java.util.*;
 
 import javax.swing.*;
 import javax.swing.tree.*;
-import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 
-import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 
 public class SourceTreeTool extends JPanel {
+
+    private static final long serialVersionUID = 3336680912107956419L;
 
     private Environment env;
 
@@ -81,6 +81,7 @@ public class SourceTreeTool extends JPanel {
         ******/
 
         MouseListener ml = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 int selRow = tree.getRowForLocation(e.getX(), e.getY());
                 TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
@@ -112,6 +113,7 @@ public class SourceTreeTool extends JPanel {
 
     private class SourceTreeToolListener implements SourceListener {
 
+        @Override
         public void sourcepathChanged(SourcepathChangedEvent e) {
             sourcePath = sourceManager.getSourcePath();
             root = createDirectoryTree(HEADING);
@@ -121,6 +123,7 @@ public class SourceTreeTool extends JPanel {
     }
 
     private static class SourceOrDirectoryFilter implements FilenameFilter {
+        @Override
         public boolean accept(File dir, String name) {
             return (name.endsWith(".java") ||
                     new File(dir, name).isDirectory());
@@ -158,6 +161,7 @@ public class SourceTreeTool extends JPanel {
             this.isDirectory = isDirectory;
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -195,6 +199,7 @@ public class SourceTreeTool extends JPanel {
          * Returns the child <code>TreeNode</code> at index
          * <code>childIndex</code>.
          */
+        @Override
         public TreeNode getChildAt(int childIndex) {
             expandIfNeeded();
             return children[childIndex];
@@ -204,6 +209,7 @@ public class SourceTreeTool extends JPanel {
          * Returns the number of children <code>TreeNode</code>s the receiver
          * contains.
          */
+        @Override
         public int getChildCount() {
             expandIfNeeded();
             return children.length;
@@ -212,6 +218,7 @@ public class SourceTreeTool extends JPanel {
         /**
          * Returns the parent <code>TreeNode</code> of the receiver.
          */
+        @Override
         public TreeNode getParent() {
             return parent;
         }
@@ -221,11 +228,13 @@ public class SourceTreeTool extends JPanel {
          * If the receiver does not contain <code>node</code>, -1 will be
          * returned.
          */
+        @Override
         public int getIndex(TreeNode node) {
             expandIfNeeded();
             for (int i = 0; i < children.length; i++) {
-                if (children[i] == node)
+                if (children[i] == node) {
                     return i;
+            }
             }
             return -1;
         }
@@ -233,6 +242,7 @@ public class SourceTreeTool extends JPanel {
         /**
          * Returns true if the receiver allows children.
          */
+        @Override
         public boolean getAllowsChildren() {
             return isDirectory;
         }
@@ -240,6 +250,7 @@ public class SourceTreeTool extends JPanel {
         /**
          * Returns true if the receiver is a leaf.
          */
+        @Override
         public boolean isLeaf() {
             expandIfNeeded();
             return !isDirectory;
@@ -248,13 +259,16 @@ public class SourceTreeTool extends JPanel {
         /**
          * Returns the children of the receiver as an Enumeration.
          */
+        @Override
         public Enumeration children() {
             expandIfNeeded();
             return new Enumeration() {
                 int i = 0;
+                @Override
                 public boolean hasMoreElements() {
                     return (i < children.length);
                 }
+                @Override
                 public Object nextElement() throws NoSuchElementException {
                     if (i >= children.length) {
                         throw new NoSuchElementException();

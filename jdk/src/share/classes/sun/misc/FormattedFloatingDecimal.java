@@ -30,7 +30,7 @@ import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;
 
-public strictfp class FormattedFloatingDecimal{
+public class FormattedFloatingDecimal{
     boolean     isExceptional;
     boolean     isNegative;
     int         decExponent;  // value set at construction, then immutable
@@ -247,8 +247,7 @@ public strictfp class FormattedFloatingDecimal{
      * More difficult if subtracting and the argument
      * is a normalized a power of 2, as the ULP changes at these points.
      */
-    private static double
-    ulp( double dval, boolean subtracting ){
+    private static double ulp( double dval, boolean subtracting ){
         long lbits = Double.doubleToLongBits( dval ) & ~signMask;
         int binexp = (int)(lbits >>> expShift);
         double ulpval;
@@ -1157,8 +1156,7 @@ public strictfp class FormattedFloatingDecimal{
      * for a single-precision float.
      */
 
-    public double
-    doubleValue(){
+    public strictfp double doubleValue(){
         int     kDigits = Math.min( nDigits, maxDecimalDigits+1 );
         long    lValue;
         double  dValue;
@@ -1517,8 +1515,7 @@ public strictfp class FormattedFloatingDecimal{
      * ( because of the preference to a zero low-order bit ).
      */
 
-    public float
-        floatValue(){
+    public strictfp float floatValue(){
         int     kDigits = Math.min( nDigits, singleMaxDecimalDigits+1 );
         int     iValue;
         float   fValue;

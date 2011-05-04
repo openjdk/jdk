@@ -48,7 +48,7 @@ import java.io.IOException;
  */
 public class Deadlock {
     public static void main(String[] argv) {
-        Deadlock dl = new Deadlock();
+        new Deadlock();
 
         // Now find deadlock
         ThreadMonitor monitor = new ThreadMonitor();
@@ -112,6 +112,7 @@ public class Deadlock {
             this.mon2 = mon2;
             this.useSync = false;
         }
+        @Override
         public void run() {
             if (useSync) {
                 syncLock();
