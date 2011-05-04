@@ -867,12 +867,10 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1
   Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
   Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
 
-  // Pin loads from String::equals() argument since it could be NULL.
-  Node* str2_ctrl = (opcode == Op_StrEquals) ? control() : no_ctrl;
   Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
-  Node* str2_value   = make_load(str2_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str2_value   = make_load(no_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
   Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
-  Node* str2_offset  = make_load(str2_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str2_offset  = make_load(no_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
   Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
 
   Node* result = NULL;
@@ -1012,14 +1010,15 @@ bool LibraryCallKit::inline_string_equals() {
   if (!stopped()) {
     // Properly cast the argument to String
     argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
+    // This path is taken only when argument's type is String:NotNull.
+    argument = cast_not_null(argument, false);
 
     // Get counts for string and argument
     Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
     receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-    // Pin load from argument string since it could be NULL.
     Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-    argument_cnt  = make_load(control(), argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
     // Check for receiver count != argument count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
