@@ -211,9 +211,13 @@ $(DEMO_BUILD_SRCDIR)/%: $(DEMO_SRCDIR)/../java_crw_demo/%
 endif
 
 # Jar manifest file
-$(DEMO_MANIFEST): 
+MAINMANIFEST  = $(JDK_TOPDIR)/make/tools/manifest.mf
+$(DEMO_MANIFEST): $(MAINMANIFEST)
 	@$(prep-target)
-	$(ECHO) "Main-Class: $(DEMO_MAINCLASS)" > $@
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#"           \
+               -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+               $(MAINMANIFEST) >> $@
+	$(ECHO) "Main-Class: $(DEMO_MAINCLASS)" >> $@
 ifdef DEMO_MANIFEST_ATTR
 	$(ECHO) "$(DEMO_MANIFEST_ATTR)" >> $@
 endif

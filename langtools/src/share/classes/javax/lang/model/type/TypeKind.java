@@ -140,11 +140,11 @@ public enum TypeKind {
     OTHER,
 
     /**
-      * A disjunctive type.
+      * A union type.
       *
       * @since 1.7
       */
-    DISJUNCTIVE;
+    UNION;
 
     /**
      * Returns {@code true} if this kind corresponds to a primitive

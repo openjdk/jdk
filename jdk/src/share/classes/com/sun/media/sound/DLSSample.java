@@ -25,6 +25,7 @@
 package com.sun.media.sound;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
 import javax.sound.sampled.AudioFormat;
@@ -113,10 +114,10 @@ public class DLSSample extends SoundbankResource {
     }
 
     public byte[] getGuid() {
-        return guid;
+        return guid == null ? null : Arrays.copyOf(guid, guid.length);
     }
 
     public void setGuid(byte[] guid) {
-        this.guid = guid;
+        this.guid = guid == null ? null : Arrays.copyOf(guid, guid.length);
     }
 }

@@ -26,7 +26,7 @@
 package com.sun.tools.classfile;
 
 /**
- * See JVMS3, chapter 6.
+ * See JVMS, chapter 6.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

@@ -272,7 +272,7 @@ public class TreeScanner extends Visitor {
         scan(tree.arguments);
     }
 
-    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+    public void visitTypeUnion(JCTypeUnion tree) {
         scan(tree.alternatives);
     }
 

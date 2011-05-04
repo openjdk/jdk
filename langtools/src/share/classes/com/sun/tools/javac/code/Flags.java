@@ -231,9 +231,9 @@ public class Flags {
     public static final long PROPRIETARY = 1L<<38;
 
     /**
-     * Flag that marks a disjunction var in a multi-catch clause
+     * Flag that marks a a multi-catch parameter
      */
-    public static final long DISJUNCTION = 1L<<39;
+    public static final long UNION = 1L<<39;
 
     /**
      * Flag that marks a signature-polymorphic invoke method.
