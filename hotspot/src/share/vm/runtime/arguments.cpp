@@ -1423,6 +1423,11 @@ void Arguments::set_parallel_gc_flags() {
       }
     }
   }
+  if (UseNUMA) {
+    if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
+      FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
+    }
+  }
 }
 
 void Arguments::set_g1_gc_flags() {
