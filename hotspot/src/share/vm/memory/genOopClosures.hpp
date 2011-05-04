@@ -175,7 +175,7 @@ class VerifyOopClosure: public OopClosure {
  protected:
   template <class T> inline void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, obj));
+    guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, (oopDesc*) obj));
   }
  public:
   virtual void do_oop(oop* p);
