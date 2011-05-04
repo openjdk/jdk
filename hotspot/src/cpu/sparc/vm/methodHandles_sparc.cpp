@@ -645,9 +645,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // Live at this point:
       // - G5_klass        :  klass required by the target method
+      // - O0_argslot      :  argslot index in vmarg; may be required in the failing path
       // - O1_scratch      :  argument klass to test
       // - G3_method_handle:  adapter method handle
-      __ check_klass_subtype(O1_scratch, G5_klass, O0_argslot, O2_scratch, done);
+      __ check_klass_subtype(O1_scratch, G5_klass, O2_scratch, O3_scratch, done);
 
       // If we get here, the type check failed!
       __ load_heap_oop(G3_amh_argument,        O2_required);  // required class
