@@ -29,12 +29,10 @@ import java.awt.AWTError;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.Graphics;
-import java.awt.Toolkit;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorMap;
 import java.awt.datatransfer.FlavorTable;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 
@@ -66,8 +64,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import java.security.AccessControlContext;
-import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -171,7 +167,26 @@ public abstract class DataTransferer {
      */
     public static final DataFlavor javaTextEncodingFlavor;
 
-    private static SortedSet standardEncodings;
+    /**
+     * Lazy initialization of Standard Encodings.
+     */
+    private static class StandardEncodingsHolder {
+        private static final SortedSet standardEncodings = load();
+
+        private static SortedSet load() {
+            final Comparator comparator =
+                    new CharsetComparator(IndexedComparator.SELECT_WORST);
+            final SortedSet tempSet = new TreeSet(comparator);
+            tempSet.add("US-ASCII");
+            tempSet.add("ISO-8859-1");
+            tempSet.add("UTF-8");
+            tempSet.add("UTF-16BE");
+            tempSet.add("UTF-16LE");
+            tempSet.add("UTF-16");
+            tempSet.add(getDefaultTextCharset());
+            return Collections.unmodifiableSortedSet(tempSet);
+        }
+    }
 
     /**
      * Tracks whether a particular text/* MIME type supports the charset
@@ -509,18 +524,7 @@ public abstract class DataTransferer {
      * non-standard, character sets are not included.
      */
     public static Iterator standardEncodings() {
-        if (standardEncodings == null) {
-            TreeSet tempSet = new TreeSet(defaultCharsetComparator);
-            tempSet.add("US-ASCII");
-            tempSet.add("ISO-8859-1");
-            tempSet.add("UTF-8");
-            tempSet.add("UTF-16BE");
-            tempSet.add("UTF-16LE");
-            tempSet.add("UTF-16");
-            tempSet.add(getDefaultTextCharset());
-            standardEncodings = Collections.unmodifiableSortedSet(tempSet);
-        }
-        return standardEncodings.iterator();
+        return StandardEncodingsHolder.standardEncodings.iterator();
     }
 
     /**
@@ -2398,7 +2402,9 @@ search:
     public static DataFlavor[] setToSortedDataFlavorArray(Set flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
         flavorsSet.toArray(flavors);
-        Arrays.sort(flavors, defaultFlavorComparator);
+        final Comparator comparator =
+                new DataFlavorComparator(IndexedComparator.SELECT_WORST);
+        Arrays.sort(flavors, comparator);
         return flavors;
     }
 
@@ -2454,11 +2460,6 @@ search:
     public List getPlatformMappingsForFlavor(DataFlavor df) {
         return new ArrayList();
     }
-
-    private static CharsetComparator defaultCharsetComparator =
-        new CharsetComparator(IndexedComparator.SELECT_WORST);
-    private static DataFlavorComparator defaultFlavorComparator =
-        new DataFlavorComparator(IndexedComparator.SELECT_WORST);
 
     /**
      * A Comparator which includes a helper function for comparing two Objects
