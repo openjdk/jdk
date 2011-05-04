@@ -214,7 +214,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Closes this <code>FileCacheImageOututStream</code>.  All
+     * Closes this <code>FileCacheImageOutputStream</code>.  All
      * pending data is flushed to the output, and the cache file
      * is closed and removed.  The destination <code>OutputStream</code>
      * is not closed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class LocaleSyntaxException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    private int _index = -1;
+    private int index = -1;
 
     public LocaleSyntaxException(String msg) {
         this(msg, 0);
@@ -43,10 +43,10 @@ public class LocaleSyntaxException extends Exception {
 
     public LocaleSyntaxException(String msg, int errorIndex) {
         super(msg);
-        _index = errorIndex;
+        index = errorIndex;
     }
 
     public int getErrorIndex() {
-        return _index;
+        return index;
     }
 }

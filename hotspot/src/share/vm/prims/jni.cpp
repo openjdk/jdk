@@ -29,6 +29,9 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif // SERIALGC
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -1724,6 +1727,26 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
     o = JvmtiExport::jni_GetField_probe(thread, obj, o, k, fieldID, false);
   }
   jobject ret = JNIHandles::make_local(env, o->obj_field(offset));
+#ifndef SERIALGC
+  // If G1 is enabled and we are accessing the value of the referent
+  // field in a reference object then we need to register a non-null
+  // referent with the SATB barrier.
+  if (UseG1GC) {
+    bool needs_barrier = false;
+
+    if (ret != NULL &&
+        offset == java_lang_ref_Reference::referent_offset &&
+        instanceKlass::cast(k)->reference_type() != REF_NONE) {
+      assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+      needs_barrier = true;
+    }
+
+    if (needs_barrier) {
+      oop referent = JNIHandles::resolve(ret);
+      G1SATBCardTableModRefBS::enqueue(referent);
+    }
+  }
+#endif // SERIALGC
   DTRACE_PROBE1(hotspot_jni, GetObjectField__return, ret);
   return ret;
 JNI_END
