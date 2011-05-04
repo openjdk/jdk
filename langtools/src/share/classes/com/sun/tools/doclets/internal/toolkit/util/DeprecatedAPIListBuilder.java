@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,29 @@ package com.sun.tools.doclets.internal.toolkit.util;
 
 import com.sun.javadoc.*;
 import java.util.*;
+import com.sun.tools.doclets.internal.toolkit.Configuration;
 
 /**
- * Build list of all the deprecated classes, constructors, fields and methods.
+ * Build list of all the deprecated packages, classes, constructors, fields and methods.
  *
  * @author Atul M Dambalkar
  */
 public class DeprecatedAPIListBuilder {
 
-    public static final int NUM_TYPES = 11;
+    public static final int NUM_TYPES = 12;
 
-    public static final int INTERFACE = 0;
-    public static final int CLASS = 1;
-    public static final int ENUM = 2;
-    public static final int EXCEPTION = 3;
-    public static final int ERROR = 4;
-    public static final int ANNOTATION_TYPE = 5;
-    public static final int FIELD = 6;
-    public static final int METHOD = 7;
-    public static final int CONSTRUCTOR = 8;
-    public static final int ENUM_CONSTANT = 9;
-    public static final int ANNOTATION_TYPE_MEMBER = 10;
+    public static final int PACKAGE = 0;
+    public static final int INTERFACE = 1;
+    public static final int CLASS = 2;
+    public static final int ENUM = 3;
+    public static final int EXCEPTION = 4;
+    public static final int ERROR = 5;
+    public static final int ANNOTATION_TYPE = 6;
+    public static final int FIELD = 7;
+    public static final int METHOD = 8;
+    public static final int CONSTRUCTOR = 9;
+    public static final int ENUM_CONSTANT = 10;
+    public static final int ANNOTATION_TYPE_MEMBER = 11;
 
     /**
      * List of deprecated type Lists.
@@ -58,25 +60,33 @@ public class DeprecatedAPIListBuilder {
     /**
      * Constructor.
      *
-     * @param root Root of the tree.
+     * @param configuration the current configuration of the doclet
      */
-    public DeprecatedAPIListBuilder(RootDoc root) {
+    public DeprecatedAPIListBuilder(Configuration configuration) {
         deprecatedLists = new ArrayList<List<Doc>>();
         for (int i = 0; i < NUM_TYPES; i++) {
             deprecatedLists.add(i, new ArrayList<Doc>());
         }
-        buildDeprecatedAPIInfo(root);
+        buildDeprecatedAPIInfo(configuration);
     }
 
     /**
      * Build the sorted list of all the deprecated APIs in this run.
-     * Build separate lists for deprecated classes, constructors, methods and
-     * fields.
+     * Build separate lists for deprecated packages, classes, constructors,
+     * methods and fields.
      *
-     * @param root Root of the tree.
+     * @param configuration the current configuration of the doclet.
      */
-    private void buildDeprecatedAPIInfo(RootDoc root) {
-        ClassDoc[] classes = root.classes();
+    private void buildDeprecatedAPIInfo(Configuration configuration) {
+        PackageDoc[] packages = configuration.packages;
+        PackageDoc pkg;
+        for (int c = 0; c < packages.length; c++) {
+            pkg = packages[c];
+            if (Util.isDeprecated(pkg)) {
+                getList(PACKAGE).add(pkg);
+            }
+        }
+        ClassDoc[] classes = configuration.root.classes();
         for (int i = 0; i < classes.length; i++) {
             ClassDoc cd = classes[i];
             if (Util.isDeprecated(cd)) {
@@ -90,7 +100,7 @@ public class DeprecatedAPIListBuilder {
                     getList(ENUM).add(cd);
                 } else if (cd.isError()) {
                     getList(ERROR).add(cd);
-                }else if (cd.isAnnotationType()) {
+                } else if (cd.isAnnotationType()) {
                     getList(ANNOTATION_TYPE).add(cd);
                 }
             }
@@ -102,7 +112,7 @@ public class DeprecatedAPIListBuilder {
             }
             if (cd.isAnnotationType()) {
                 composeDeprecatedList(getList(ANNOTATION_TYPE_MEMBER),
-                    ((AnnotationTypeDoc) cd).elements());
+                        ((AnnotationTypeDoc) cd).elements());
             }
         }
         sortDeprecatedLists();

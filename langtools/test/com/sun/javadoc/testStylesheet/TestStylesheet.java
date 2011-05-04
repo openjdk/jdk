@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 /*
  * @test
- * @bug      4494033
+ * @bug      4494033 7028815
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib/
- * @build    JavadocTester
- * @build    TestStylesheet
+ * @build    JavadocTester TestStylesheet
  * @run main TestStylesheet
  */
 
 public class TestStylesheet extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4494033";
+    private static final String BUG_ID = "4494033-7028815";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -56,15 +55,18 @@ public class TestStylesheet extends JavadocTester {
                 "body {" + NL + "    font-family:Helvetica, Arial, sans-serif;" + NL +
                 "    color:#000000;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
-                "dl dd ul li {" + NL + "    list-style:none;" + NL +
-                "    margin:10px 0 10px 0;" + NL + "}"},
+                "ul {" + NL + "    margin:10px 0 10px 20px;" + NL +
+                "    list-style-type:disc;" + NL + "}"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.
         {BUG_ID + FS + "pkg" + FS + "A.html",
                 "<link rel=\"stylesheet\" type=\"text/css\" " +
                 "href=\"../stylesheet.css\" title=\"Style\">"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
+    private static final String[][] NEGATED_TEST = {
+        {BUG_ID + FS + "stylesheet.css",
+                "* {" + NL + "    margin:0;" + NL + "    padding:0;" + NL + "}"}
+    };
 
     /**
      * The entry point of the test.
