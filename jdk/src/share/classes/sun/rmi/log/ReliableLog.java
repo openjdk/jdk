@@ -380,9 +380,7 @@ public class ReliableLog {
             } catch (IOException e) {
                 throw e;
             } catch (Exception e) {
-                throw new IOException("snapshot failed with exception of type: " +
-                                      e.getClass().getName() +
-                                      ", message was: " + e.getMessage());
+                throw new IOException("snapshot failed", e);
             }
             lastSnapshot = System.currentTimeMillis();
         } finally {

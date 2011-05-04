@@ -432,8 +432,6 @@ class LinuxWatchService
 
     // -- native methods --
 
-    private static native void init();
-
     // sizeof inotify_event
     private static native int eventSize();
 
@@ -461,6 +459,5 @@ class LinuxWatchService
                 System.loadLibrary("nio");
                 return null;
         }});
-        init();
     }
 }

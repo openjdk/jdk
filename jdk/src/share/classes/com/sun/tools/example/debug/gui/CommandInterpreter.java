@@ -29,8 +29,6 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.jdi.*;
-import com.sun.jdi.request.*;
-
 import com.sun.tools.example.debug.bdi.*;
 
 public class CommandInterpreter {
@@ -93,9 +91,9 @@ public class CommandInterpreter {
         try {
             ThreadReference[] threads = threads();
             long threadID = Long.parseLong(id, 16);
-            for (int i = 0; i < threads.length; i++) {
-                if (threads[i].uniqueID() == threadID) {
-                    thread = threads[i];
+            for (ThreadReference thread2 : threads) {
+                if (thread2.uniqueID() == threadID) {
+                    thread = thread2;
                     break;
                 }
             }
@@ -239,15 +237,17 @@ public class CommandInterpreter {
         for (int i = 0 ; i < tlist.size() ; i++) {
             ThreadReference thr = tlist.get(i);
             int len = Utils.description(thr).length();
-            if (len > maxId)
+            if (len > maxId) {
                 maxId = len;
+            }
             String name = thr.name();
             int iDot = name.lastIndexOf('.');
             if (iDot >= 0 && name.length() > iDot) {
                 name = name.substring(iDot + 1);
             }
-            if (name.length() > maxName)
+            if (name.length() > maxName) {
                 maxName = name.length();
+        }
         }
         String maxNumString = String.valueOf(iThread + tlist.size());
         int maxNumDigits = maxNumString.length();
@@ -616,7 +616,6 @@ public class CommandInterpreter {
         int cnt = 1;
         if (t.hasMoreTokens()) {
             String idToken = t.nextToken();
-            int n;
             try {
                 cnt = Integer.valueOf(idToken).intValue();
             } catch (NumberFormatException e) {
@@ -885,7 +884,6 @@ public class CommandInterpreter {
     }
 
     private void commandStop(StringTokenizer t) throws NoSessionException {
-        Location bploc;
         String token;
 
         if (!t.hasMoreTokens()) {

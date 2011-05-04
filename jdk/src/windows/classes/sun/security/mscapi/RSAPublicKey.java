@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package sun.security.mscapi;
 
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
+import java.security.KeyException;
 import java.security.KeyRep;
+import java.security.ProviderException;
 import java.security.PublicKey;
 
 import sun.security.rsa.RSAPublicKeyImpl;
@@ -89,9 +91,14 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
     public BigInteger getPublicExponent() {
 
         if (exponent == null) {
-            publicKeyBlob = getPublicKeyBlob(hCryptKey);
 
-            exponent = new BigInteger(getExponent(publicKeyBlob));
+            try {
+                publicKeyBlob = getPublicKeyBlob(hCryptKey);
+                exponent = new BigInteger(1, getExponent(publicKeyBlob));
+
+            } catch (KeyException e) {
+                throw new ProviderException(e);
+            }
         }
 
         return exponent;
@@ -103,8 +110,14 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
     public BigInteger getModulus() {
 
         if (modulus == null) {
-            publicKeyBlob = getPublicKeyBlob(hCryptKey);
-            modulus = new BigInteger(getModulus(publicKeyBlob));
+
+            try {
+                publicKeyBlob = getPublicKeyBlob(hCryptKey);
+                modulus = new BigInteger(1, getModulus(publicKeyBlob));
+
+            } catch (KeyException e) {
+                throw new ProviderException(e);
+            }
         }
 
         return modulus;
@@ -147,7 +160,7 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
                 encoding = new RSAPublicKeyImpl(getModulus(),
                     getPublicExponent()).getEncoded();
 
-            } catch (InvalidKeyException e) {
+            } catch (KeyException e) {
                 // ignore
             }
         }
@@ -164,15 +177,15 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
     /*
      * Returns the Microsoft CryptoAPI representation of the key.
      */
-    private native byte[] getPublicKeyBlob(long hCryptKey);
+    private native byte[] getPublicKeyBlob(long hCryptKey) throws KeyException;
 
     /*
      * Returns the key's public exponent (in big-endian 2's complement format).
      */
-    private native byte[] getExponent(byte[] keyBlob);
+    private native byte[] getExponent(byte[] keyBlob) throws KeyException;
 
     /*
      * Returns the key's modulus (in big-endian 2's complement format).
      */
-    private native byte[] getModulus(byte[] keyBlob);
+    private native byte[] getModulus(byte[] keyBlob) throws KeyException;
 }

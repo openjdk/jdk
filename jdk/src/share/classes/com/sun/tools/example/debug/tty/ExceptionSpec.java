@@ -28,10 +28,6 @@ package com.sun.tools.example.debug.tty;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.request.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-
 class ExceptionSpec extends EventRequestSpec {
     private boolean notifyCaught;
     private boolean notifyUncaught;
@@ -51,6 +47,7 @@ class ExceptionSpec extends EventRequestSpec {
     /**
      * The 'refType' is known to match, return the EventRequest.
      */
+    @Override
     EventRequest resolveEventRequest(ReferenceType refType) {
         EventRequestManager em = refType.virtualMachine().eventRequestManager();
         ExceptionRequest excReq = em.createExceptionRequest(refType,
@@ -68,6 +65,7 @@ class ExceptionSpec extends EventRequestSpec {
         return notifyUncaught;
     }
 
+    @Override
     public int hashCode() {
         //Reference: Effective Java[tm] (Bloch, 2001), Item 8
         int result = 17;
@@ -77,6 +75,7 @@ class ExceptionSpec extends EventRequestSpec {
         return result;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof ExceptionSpec) {
             ExceptionSpec es = (ExceptionSpec)obj;
@@ -90,6 +89,7 @@ class ExceptionSpec extends EventRequestSpec {
         return false;
     }
 
+    @Override
     public String toString() {
         String s;
         if (notifyCaught && !notifyUncaught) {

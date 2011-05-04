@@ -143,6 +143,8 @@ import sun.security.action.GetPropertyAction;
  *
  * <h4>Standard charsets</h4>
  *
+ * <a name="standard">
+ *
  * <p> Every implementation of the Java platform is required to support the
  * following standard charsets.  Consult the release documentation for your
  * implementation to see if any other charsets are supported.  The behavior
@@ -213,6 +215,8 @@ import sun.security.action.GetPropertyAction;
  * determined during virtual-machine startup and typically depends upon the
  * locale and charset being used by the underlying operating system. </p>
  *
+ * <p>The {@link StandardCharset} class defines constants for each of the
+ * standard charsets.
  *
  * <h4>Terminology</h4>
  *

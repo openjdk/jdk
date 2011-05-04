@@ -25,15 +25,12 @@
 
 package com.sun.tools.example.debug.tty;
 
-import com.sun.jdi.*;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.event.ClassPrepareEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
 
 class EventRequestSpecList {
 

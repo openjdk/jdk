@@ -26,11 +26,8 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.*;
-import com.sun.jdi.request.*;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 
 public class MethodBreakpointSpec extends BreakpointSpec {
     String methodId;
@@ -47,6 +44,7 @@ public class MethodBreakpointSpec extends BreakpointSpec {
     /**
      * The 'refType' is known to match.
      */
+    @Override
     void resolve(ReferenceType refType) throws MalformedMemberNameException,
                                              AmbiguousMethodException,
                                              InvalidTypeException,
@@ -80,12 +78,14 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         return methodArgs;
     }
 
+    @Override
     public int hashCode() {
         return refSpec.hashCode() +
             ((methodId != null) ? methodId.hashCode() : 0) +
             ((methodArgs != null) ? methodArgs.hashCode() : 0);
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof MethodBreakpointSpec) {
             MethodBreakpointSpec breakpoint = (MethodBreakpointSpec)obj;
@@ -98,6 +98,7 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         }
     }
 
+    @Override
     public String errorMessageFor(Exception e) {
         if (e instanceof AmbiguousMethodException) {
             return ("Method " + methodName() + " is overloaded; specify arguments");
@@ -114,6 +115,7 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         }
     }
 
+    @Override
     public String toString() {
         StringBuffer buffer = new StringBuffer("breakpoint ");
         buffer.append(refSpec.toString());
@@ -257,7 +259,7 @@ public class MethodBreakpointSpec extends BreakpointSpec {
          */
         if ((name.indexOf('.') == -1) || name.startsWith("*.")) {
             try {
-                List refs = specs.runtime.findClassesMatchingPattern(name);
+                List<?> refs = specs.runtime.findClassesMatchingPattern(name);
                 if (refs.size() > 0) {  //### ambiguity???
                     name = ((ReferenceType)(refs.get(0))).name();
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,15 @@
 
 package sun.security.krb5.internal.tools;
 
+import java.io.File;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.*;
 import java.io.IOException;
 import java.util.Arrays;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import sun.security.util.Password;
+import javax.security.auth.kerberos.KeyTab;
 
 /**
  * Kinit tool for obtaining Kerberos v5 tickets.
@@ -153,7 +156,6 @@ public class Kinit {
             System.out.println("Principal is " + principal);
         }
         char[] psswd = options.password;
-        EncryptionKey[] skeys = null;
         boolean useKeytab = options.useKeytabFile();
         if (!useKeytab) {
             if (princName == null) {
@@ -186,17 +188,9 @@ public class Kinit {
                 }
             }
 
-            // assert princName and principal are nonnull
-            skeys = EncryptionKey.acquireSecretKeys(principal, ktabName);
-
-            if (skeys == null || skeys.length == 0) {
-                String msg = "No supported key found in keytab";
-                if (princName != null) {
-                    msg += " for principal " + princName;
-                }
-                throw new KrbException(msg);
-            }
-            builder = new KrbAsReqBuilder(principal, skeys);
+            builder = new KrbAsReqBuilder(principal, ktabName == null
+                    ? KeyTab.getInstance()
+                    : KeyTab.getInstance(new File(ktabName)));
         }
 
         KDCOptions opt = new KDCOptions();

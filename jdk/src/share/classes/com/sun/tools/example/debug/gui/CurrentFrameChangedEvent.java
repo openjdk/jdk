@@ -31,6 +31,7 @@ import java.util.EventObject;
 
 public class CurrentFrameChangedEvent extends EventObject {
 
+    private static final long serialVersionUID = 4214479486546762179L;
     private ThreadInfo tinfo;
     private int index;
     private boolean invalidate;
