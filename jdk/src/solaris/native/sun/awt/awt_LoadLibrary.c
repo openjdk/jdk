@@ -128,12 +128,12 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         }
     }
 
-    /* Calculate toolkit name, kind of toolkit (XAWT, Motif) and library to load */
+    /* Calculate library name to load */
     if (AWTIsHeadless()) {
-        strcpy(p, "/headless/libmawt");
+        strncpy(p, "/headless/libmawt.so", MAXPATHLEN-len-1);
     } else {
         /* Default AWT Toolkit on Linux and Solaris is XAWT. */
-        strcpy(p, "/xawt/libmawt");
+        strncpy(p, "/xawt/libmawt.so", MAXPATHLEN-len-1);
     }
 
     if (toolkit) {
@@ -143,22 +143,11 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         (*env)->DeleteLocalRef(env, propname);
     }
 
-    strcat(p, ".so");
-
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
                                "(Ljava/lang/String;)V",
                                JNU_NewStringPlatform(env, buf));
 
     awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
-
-/*
-  if (dlsym(awtHandle, "AWTCharRBearing") == NULL) {
-  printf("========= AWTCharRBearing not found\n"); fflush(stdout);
-  }
-  else {
-  printf("========= AWTCharRBearing was found\n"); fflush(stdout);
-  }
-*/
 
     return JNI_VERSION_1_2;
 }

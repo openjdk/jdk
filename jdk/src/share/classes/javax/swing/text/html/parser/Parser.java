@@ -966,6 +966,9 @@ class Parser implements DTDConstants {
             char data[] = {'&'};
             return data;
         }
+
+        boolean semicolon = false;
+
         switch (ch) {
           case '\n':
             ln++;
@@ -985,6 +988,8 @@ class Parser implements DTDConstants {
             break;
 
           case ';':
+            semicolon = true;
+
             ch = readCh();
             break;
         }
@@ -1006,7 +1011,7 @@ class Parser implements DTDConstants {
                 return new char[0];
             }
             /* given that there is not a match restore the entity reference */
-            String str = "&" + nm + ";";
+            String str = "&" + nm + (semicolon ? ";" : "");
 
             char b[] = new char[str.length()];
             str.getChars(0, b.length, b, 0);

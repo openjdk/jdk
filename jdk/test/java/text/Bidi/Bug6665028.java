@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * that this test case fails without the fix in some different ways,
  * including timeout, due to the memory corruption.
  * @build Bug6665028
- * @run main/othervm/timeout=60 -Xmx16m Bug6665028
+ * @run main/othervm -Xmx16m Bug6665028 10
  */
 
 import java.awt.font.TextAttribute;
@@ -36,6 +36,7 @@ import java.text.AttributedString;
 import java.text.Bidi;
 
 // test1() and test2() were derived from BidiEmbeddingTest.
+// Usage: java Bug6665028 [duration]
 public class Bug6665028 {
 
     private static boolean runrun = true;
@@ -50,6 +51,11 @@ public class Bug6665028 {
     }
 
     public static void main(String[] args) {
+        int duration = 45;
+        if (args.length == 1) {
+            duration = Math.max(1, Math.min(Integer.parseInt(args[0]), 45));
+        }
+
         Test[] tests = new Test[4];
         for (int i = 0; i < tests.length; i++) {
             Test t = new Test();
@@ -58,7 +64,7 @@ public class Bug6665028 {
         }
 
         try {
-            Thread.sleep(45000);
+            Thread.sleep(duration * 1000);
         } catch (InterruptedException e) {
         }
 
