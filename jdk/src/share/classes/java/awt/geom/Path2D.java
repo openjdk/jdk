@@ -732,7 +732,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *
          * @since 1.6
          */
-        public PathIterator getPathIterator(AffineTransform at) {
+        public final PathIterator getPathIterator(AffineTransform at) {
             if (at == null) {
                 return new CopyIterator(this);
             } else {
@@ -1461,7 +1461,7 @@ public abstract class Path2D implements Shape, Cloneable {
          *         of this {@code Shape}'s outline
          * @since 1.6
          */
-        public PathIterator getPathIterator(AffineTransform at) {
+        public final PathIterator getPathIterator(AffineTransform at) {
             if (at == null) {
                 return new CopyIterator(this);
             } else {
@@ -2342,8 +2342,8 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @since 1.6
      */
-    public PathIterator getPathIterator(AffineTransform at,
-                                        double flatness)
+    public final PathIterator getPathIterator(AffineTransform at,
+                                              double flatness)
     {
         return new FlatteningPathIterator(getPathIterator(at), flatness);
     }
