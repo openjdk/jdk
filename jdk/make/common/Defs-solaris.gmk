@@ -457,14 +457,15 @@ else
     # On X86, make sure tail call optimization is off
     #    The z and y are the tail call optimizations.
     ifeq ($(ARCH_FAMILY), i586)
-      ifeq ($(shell $(EXPR) $(CC_MAJORVER) \>= 5), 1)
-        ifeq ($(shell $(EXPR) $(CC_MINORVER) \> 8), 1)
-          #    Somehow, tail call optimization is creeping in.
-          #    Make sure it is off.
-	  # WARNING: These may cause compiler warnings about duplicate -O options
-          CC_XKEEPFRAME_OPTIONS  += -Wu,-O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
-          CXX_XKEEPFRAME_OPTIONS += -Qoption ube -O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
-        endif
+      CC_NEWER_THAN_58 := \
+        $(shell $(EXPR) $(CC_MAJORVER) \> 5 \| \
+	    \( $(CC_MAJORVER) = 5 \& $(CC_MINORVER) \> 8 \) )
+      ifeq ($(CC_NEWER_THAN_58),1)
+        #    Somehow, tail call optimization is creeping in.
+        #    Make sure it is off.
+        # WARNING: These may cause compiler warnings about duplicate -O options
+        CC_XKEEPFRAME_OPTIONS  += -Wu,-O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
+        CXX_XKEEPFRAME_OPTIONS += -Qoption ube -O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
       endif
     endif
   
@@ -481,14 +482,15 @@ else
         CXX_XKEEPFRAME_OPTIONS += -Qoption ube -Z~B
       endif
 
-      ifeq ($(shell $(EXPR) $(CC_MAJORVER) \>= 5), 1)
-        ifeq ($(shell $(EXPR) $(CC_MINORVER) \> 6), 1)
-          # Do NOT use frame pointer register as a general purpose opt register
-          CC_OPT/NONE            += -xregs=no%frameptr
-          CXX_OPT/NONE           += -xregs=no%frameptr
-          CC_XKEEPFRAME_OPTIONS  += -xregs=no%frameptr
-          CXX_XKEEPFRAME_OPTIONS += -xregs=no%frameptr
-        endif
+      CC_NEWER_THAN_56 := \
+        $(shell $(EXPR) $(CC_MAJORVER) \> 5 \| \
+	    \( $(CC_MAJORVER) = 5 \& $(CC_MINORVER) \> 6 \) )
+      ifeq ($(CC_NEWER_THAN_56),1)
+        # Do NOT use frame pointer register as a general purpose opt register
+        CC_OPT/NONE            += -xregs=no%frameptr
+        CXX_OPT/NONE           += -xregs=no%frameptr
+        CC_XKEEPFRAME_OPTIONS  += -xregs=no%frameptr
+        CXX_XKEEPFRAME_OPTIONS += -xregs=no%frameptr
       endif
     endif
   
@@ -566,8 +568,10 @@ else
     CFLAGS_REQUIRED_sparc    += -xregs=no%appl
     CFLAGS_REQUIRED_sparcv9  += -xregs=no%appl
   endif
-  ifeq ($(shell $(EXPR) $(CC_VER) \> 5.6), 1)
-    # We MUST allow data alignment of 4 for sparc V8 (32bit)
+  CC_NEWER_THAN_56 := \
+    $(shell $(EXPR) $(CC_MAJORVER) \> 5 \| \
+         \( $(CC_MAJORVER) = 5 \& $(CC_MINORVER) \> 6 \) )
+  ifeq ($(CC_NEWER_THAN_56),1)
     #     Presents an ABI issue with customer JNI libs? We must be able to
     #     to handle 4byte aligned objects? (rare occurance, but possible?)
     CFLAGS_REQUIRED_sparc += -xmemalign=4s

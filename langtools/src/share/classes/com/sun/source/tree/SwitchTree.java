@@ -37,7 +37,7 @@ import java.util.List;
  *   }
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.11"
+ * @jls section 14.11
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

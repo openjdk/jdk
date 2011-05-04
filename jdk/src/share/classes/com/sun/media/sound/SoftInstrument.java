@@ -76,7 +76,12 @@ public class SoftInstrument extends Instrument {
         return data;
     }
 
+    /* am: currently getPerformers() is not used (replaced with getPerformer(int))
     public SoftPerformer[] getPerformers() {
         return performers;
+    }
+    */
+    public SoftPerformer getPerformer(int index) {
+        return performers[index];
     }
 }

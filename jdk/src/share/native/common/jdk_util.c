@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,4 +98,8 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
     info->update_version = jdk_update_version;
     info->special_update_version = (unsigned int) jdk_special_version;
     info->thread_park_blocker = 1;
+    // Advertise presence of sun.misc.PostVMInitHook:
+    // future optimization: detect if this is enabled.
+    info->post_vm_init_hook_enabled = 1;
+
 }

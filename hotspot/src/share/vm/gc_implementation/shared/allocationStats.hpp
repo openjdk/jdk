@@ -76,7 +76,7 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
     _beforeSweep = 0;
     _coalBirths = 0;
     _coalDeaths = 0;
-    _splitBirths = split_birth? 1 : 0;
+    _splitBirths = (split_birth ? 1 : 0);
     _splitDeaths = 0;
     _returnedBytes = 0;
   }

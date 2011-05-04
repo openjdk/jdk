@@ -39,8 +39,7 @@ import javax.lang.model.element.Modifier;
  *   <em>flags</em> <em>annotations</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, sections
- * 8.1.1, 8.3.1, 8.4.3, 8.5.1, 8.8.3, 9.1.1, and 9.7"
+ * @jls sections 8.1.1, 8.3.1, 8.4.3, 8.5.1, 8.8.3, 9.1.1, and 9.7
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

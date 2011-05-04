@@ -2210,15 +2210,11 @@ public:
   void card_write_barrier_post(Register store_addr, Register new_val, Register tmp);
 
 #ifndef SERIALGC
-  // Array store and offset
-  void g1_write_barrier_pre(Register obj, Register index, int offset, Register tmp, bool preserve_o_regs);
+  // General G1 pre-barrier generator.
+  void g1_write_barrier_pre(Register obj, Register index, int offset, Register pre_val, Register tmp, bool preserve_o_regs);
 
+  // General G1 post-barrier generator
   void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-
-  // May do filtering, depending on the boolean arguments.
-  void g1_card_table_write(jbyte* byte_map_base,
-                           Register tmp, Register obj, Register new_val,
-                           bool region_filter, bool null_filter);
 #endif // SERIALGC
 
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack

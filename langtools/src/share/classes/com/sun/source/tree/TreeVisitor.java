@@ -95,7 +95,7 @@ public interface TreeVisitor<R,P> {
     R visitCompilationUnit(CompilationUnitTree node, P p);
     R visitTry(TryTree node, P p);
     R visitParameterizedType(ParameterizedTypeTree node, P p);
-    R visitDisjunctiveType(DisjunctiveTypeTree node, P p);
+    R visitUnionType(UnionTypeTree node, P p);
     R visitArrayType(ArrayTypeTree node, P p);
     R visitTypeCast(TypeCastTree node, P p);
     R visitPrimitiveType(PrimitiveTypeTree node, P p);
