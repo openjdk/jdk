@@ -395,10 +395,10 @@ public class Utilities {
                 // the length of the string measured as a whole may differ from
                 // the sum of individual character lengths, for example if
                 // fractional metrics are enabled; and we must guard from this.
-                while (metrics.charsWidth(txt, txtOffset, offset + 1) > (x - x0)) {
+                while (offset > 0 && metrics.charsWidth(txt, txtOffset, offset) > (x - x0)) {
                     offset--;
                 }
-                return (offset < 0 ? 0 : offset);
+                return offset;
             }
             currX = nextX;
         }

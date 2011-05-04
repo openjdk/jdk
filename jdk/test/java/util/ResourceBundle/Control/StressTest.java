@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
  * @test
  * @bug 5102289
  * @summary Stress test for ResourceBundle.getBundle with ResourceBundle.Control.
- * @run main/timeout=300/othervm -esa StressTest
+ * @run main/othervm -esa StressTest 2 15
  */
 
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+// Usage: java StressTest [threadsFactor [duration]]
 public class StressTest {
     static final Locale ROOT_LOCALE = new Locale("");
     static final Random rand = new Random();
@@ -60,16 +61,16 @@ public class StressTest {
     static volatile boolean runrun = true;
 
     public static void main(String[] args) {
-        int nThreads = 2;
+        int threadsFactor = 2;
         if (args.length > 0) {
-            nThreads = Math.max(Integer.parseInt(args[0]), 2);
+            threadsFactor = Math.max(2, Integer.parseInt(args[0]));
         }
-        int nSeconds = 180;
+        int duration = 180;
         if (args.length > 1) {
-            nSeconds = Integer.parseInt(args[1]);
+            duration = Math.max(5, Integer.parseInt(args[1]));
         }
         Locale.setDefault(Locale.US);
-        Thread[] tasks = new Thread[locales.length * nThreads];
+        Thread[] tasks = new Thread[locales.length * threadsFactor];
         counters = new AtomicIntegerArray(tasks.length);
 
         for (int i = 0; i < tasks.length; i++) {
@@ -84,8 +85,8 @@ public class StressTest {
         System.out.printf("%d processors, intervalForCounterCheck = %d [sec]%n",
                           nProcessors, intervalForCounterCheck);
         try {
-            for (int i = 0; runrun && i < nSeconds; i++) {
-                Thread.sleep(1000); // 1 seconds
+            for (int i = 0; runrun && i < duration; i++) {
+                Thread.sleep(1000); // 1 second
                 if ((i % intervalForCounterCheck) == 0) {
                     checkCounters();
                 }

@@ -35,7 +35,7 @@ import javax.lang.model.type.TypeKind;
  *   <em>primitiveTypeKind</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 4.2"
+ * @jls section 4.2
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

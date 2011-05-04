@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1423,7 +1423,8 @@ typedef struct {
      * the new bit is also added in the main/baseline.
      */
     unsigned int thread_park_blocker : 1;
-    unsigned int : 31;
+    unsigned int post_vm_init_hook_enabled : 1;
+    unsigned int : 30;
     unsigned int : 32;
     unsigned int : 32;
 } jdk_version_info;

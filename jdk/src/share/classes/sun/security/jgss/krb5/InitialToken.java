@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,8 +210,8 @@ abstract class InitialToken extends Krb5Token {
         // be passed in if this checksum type denotes a
         // raw_checksum. In that case, make Checksum class krb5
         // internal.
-        public OverloadedChecksum(Krb5Context context,
-                                  Checksum checksum, EncryptionKey key)
+        public OverloadedChecksum(Krb5Context context, Checksum checksum,
+                                  EncryptionKey key, EncryptionKey subKey)
             throws GSSException, KrbException, IOException {
 
             int pos = 0;
@@ -283,9 +283,17 @@ abstract class InitialToken extends Krb5Token {
                         new KrbCred(credBytes, EncryptionKey.NULL_KEY).
                         getDelegatedCreds()[0];
                 } else {
-                    delegCreds =
-                        new KrbCred(credBytes, key).
-                        getDelegatedCreds()[0];
+                    KrbCred cred;
+                    try {
+                        cred = new KrbCred(credBytes, key);
+                    } catch (KrbException e) {
+                        if (subKey != null) {
+                            cred = new KrbCred(credBytes, subKey);
+                        } else {
+                            throw e;
+                        }
+                    }
+                    delegCreds = cred.getDelegatedCreds()[0];
                 }
             }
         }
