@@ -246,6 +246,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_AttemptUpdate(Intrinsic* x);
   void do_NIOCheckIndex(Intrinsic* x);
   void do_FPIntrinsics(Intrinsic* x);
+  void do_Reference_get(Intrinsic* x);
 
   void do_UnsafePrefetch(UnsafePrefetch* x, bool is_store);
 
@@ -260,13 +261,14 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   // generic interface
 
-  void pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info);
+  void pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val, bool do_load, bool patch, CodeEmitInfo* info);
   void post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
 
   // specific implementations
   // pre barriers
 
-  void G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info);
+  void G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
+                                         bool do_load, bool patch, CodeEmitInfo* info);
 
   // post barriers
 

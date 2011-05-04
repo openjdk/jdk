@@ -353,9 +353,10 @@ public final class Float extends Number implements Comparable<Float> {
      * where <i>Sign</i>, <i>FloatingPointLiteral</i>,
      * <i>HexNumeral</i>, <i>HexDigits</i>, <i>SignedInteger</i> and
      * <i>FloatTypeSuffix</i> are as defined in the lexical structure
-     * sections of the <a
-     * href="http://java.sun.com/docs/books/jls/html/">Java Language
-     * Specification</a>. If {@code s} does not have the form of
+     * sections of
+     * <cite>The Java&trade; Language Specification</cite>,
+     * except that underscores are not accepted between digits.
+     * If {@code s} does not have the form of
      * a <i>FloatValue</i>, then a {@code NumberFormatException}
      * is thrown. Otherwise, {@code s} is regarded as
      * representing an exact decimal value in the usual

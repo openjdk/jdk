@@ -164,10 +164,8 @@ public interface ClassType extends ReferenceType {
      * component type is passed.  The component type can be a primitive type.
      * Autoboxing is not supported.
      *
-     * See the <a href="http://java.sun.com/docs/books/jls/">
-     * Java Language Specification</a>.
-     * section
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#184206">5.2</a>
+     * See Section 5.2 of
+     * <cite>The Java&trade; Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, all threads in the target VM are resumed while
@@ -280,10 +278,8 @@ public interface ClassType extends ReferenceType {
      * component type is passed.  The component type can be a primitive type.
      * Autoboxing is not supported.
      *
-     * See the <a href="http://java.sun.com/docs/books/jls/">
-     * Java Language Specification</a>.
-     * section
-     * <a href="http://java.sun.com/docs/books/jls/second_edition/html/conversions.doc.html#184206">5.2</a>
+     * See section 5.2 of
+     * <cite>The Java&trade; Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, all threads in the target VM are resumed while

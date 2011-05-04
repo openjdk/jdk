@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   ClearNoncleanCardWrapper clear_cl(dcto_cl, this);
 
   _ct_bs->non_clean_card_iterate(sp, sp->used_region_at_save_marks(),
-                                dcto_cl, &clear_cl, false);
+                                dcto_cl, &clear_cl);
 }
 
 void CardTableRS::clear_into_younger(Generation* gen, bool clear_perm) {

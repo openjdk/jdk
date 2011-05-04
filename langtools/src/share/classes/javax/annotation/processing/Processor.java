@@ -225,12 +225,13 @@ public interface Processor {
      * </dl>
      * </blockquote>
      *
-     * where <i>TypeName</i> is as defined in the <i>Java Language Specification</i>.
+     * where <i>TypeName</i> is as defined in
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @return the names of the annotation types supported by this processor
      * @see javax.annotation.processing.SupportedAnnotationTypes
-     * @jls3 3.8 Identifiers
-     * @jls3 6.5.5 Meaning of Type Names
+     * @jls 3.8 Identifiers
+     * @jls 6.5.5 Meaning of Type Names
      */
     Set<String> getSupportedAnnotationTypes();
 

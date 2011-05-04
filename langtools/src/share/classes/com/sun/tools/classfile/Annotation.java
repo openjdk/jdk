@@ -28,7 +28,7 @@ package com.sun.tools.classfile;
 import java.io.IOException;
 
 /**
- * See JVMS3, section 4.8.16.
+ * See JVMS, section 4.8.16.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -71,7 +71,7 @@ public class Annotation {
     public final element_value_pair element_value_pairs[];
 
     /**
-     * See JVMS3, section 4.8.16.1.
+     * See JVMS, section 4.8.16.1.
      */
     public static abstract class element_value {
         public static element_value read(ClassReader cr)

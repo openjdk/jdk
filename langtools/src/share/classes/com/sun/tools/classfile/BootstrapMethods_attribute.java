@@ -28,7 +28,7 @@ package com.sun.tools.classfile;
 import java.io.IOException;
 
 /**
- * See JVMS3 <TBD>
+ * See JVMS <TBD>
  * http://cr.openjdk.java.net/~jrose/pres/indy-javadoc-mlvm/
  *
  *  <p><b>This is NOT part of any supported API.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
         throws CertPathValidatorException
     {
         verifyRevocationStatus(currCert, prevKey, signFlag,
-                               allowSeparateKey, null);
+                   allowSeparateKey, null, mParams.getTrustAnchors());
     }
 
     /**
@@ -260,11 +260,12 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
      *                     circular dependencies, we assume they're
      *                     revoked while checking the revocation
      *                     status of this cert.
+     * @param trustAnchors a <code>Set</code> of <code>TrustAnchor</code>s
      */
     private void verifyRevocationStatus(X509Certificate currCert,
         PublicKey prevKey, boolean signFlag, boolean allowSeparateKey,
-        Set<X509Certificate> stackedCerts) throws CertPathValidatorException
-    {
+        Set<X509Certificate> stackedCerts,
+        Set<TrustAnchor> trustAnchors) throws CertPathValidatorException {
 
         String msg = "revocation status";
         if (debug != null) {
@@ -311,7 +312,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                 DistributionPointFetcher.getInstance();
             // all CRLs returned by the DP Fetcher have also been verified
             mApprovedCRLs.addAll(store.getCRLs(sel, signFlag, prevKey,
-                mSigProvider, mStores, reasonsMask, mAnchor));
+                mSigProvider, mStores, reasonsMask, trustAnchors));
         } catch (Exception e) {
             if (debug != null) {
                 debug.println("CrlRevocationChecker.verifyRevocationStatus() "
@@ -328,7 +329,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
             // Now that we have a list of possible CRLs, see which ones can
             // be approved
             mApprovedCRLs.addAll(verifyPossibleCRLs(mPossibleCRLs, currCert,
-                signFlag, prevKey, reasonsMask));
+                signFlag, prevKey, reasonsMask, trustAnchors));
         }
         if (debug != null) {
             debug.println("CrlRevocationChecker.verifyRevocationStatus() " +
@@ -353,9 +354,10 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
         // See if the cert is in the set of approved crls.
         if (debug != null) {
             BigInteger sn = currCert.getSerialNumber();
-            debug.println("starting the final sweep...");
+            debug.println("CrlRevocationChecker.verifyRevocationStatus() " +
+                            "starting the final sweep...");
             debug.println("CrlRevocationChecker.verifyRevocationStatus" +
-                          " cert SN: " + sn.toString());
+                            " cert SN: " + sn.toString());
         }
 
         CRLReason reasonCode = CRLReason.UNSPECIFIED;
@@ -497,9 +499,9 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
         certSel.setSubject(currCert.getIssuerX500Principal());
         certSel.setKeyUsage(mCrlSignUsage);
 
-        Set<TrustAnchor> newAnchors = mAnchor == null
-            ? mParams.getTrustAnchors()
-            : Collections.singleton(mAnchor);
+        Set<TrustAnchor> newAnchors =
+            (mAnchor == null ? mParams.getTrustAnchors() :
+                                Collections.singleton(mAnchor));
 
         PKIXBuilderParameters builderParams;
         if (mParams instanceof PKIXBuilderParameters) {
@@ -617,8 +619,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                             debug.println("CrlRevocationChecker.buildToNewKey()"
                                 + " index " + i + " checking " + cert);
                         }
-                        verifyRevocationStatus(cert, prevKey2, signFlag,
-                                               true, stackedCerts);
+                        verifyRevocationStatus(cert, prevKey2, signFlag, true,
+                                stackedCerts, newAnchors);
                         signFlag = certCanSignCrl(cert);
                         prevKey2 = cert.getPublicKey();
                     }
@@ -727,12 +729,14 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
      * @param signFlag <code>true</code> if prevKey was trusted to sign CRLs
      * @param prevKey the public key of the issuer of cert
      * @param reasonsMask the reason code mask
+     * @param trustAnchors a <code>Set</code> of <code>TrustAnchor</code>s>
      * @return a collection of approved crls (or an empty collection)
      */
     private Collection<X509CRL> verifyPossibleCRLs(Set<X509CRL> crls,
         X509Certificate cert, boolean signFlag, PublicKey prevKey,
-        boolean[] reasonsMask) throws CertPathValidatorException
-    {
+        boolean[] reasonsMask,
+        Set<TrustAnchor> trustAnchors) throws CertPathValidatorException {
+
         try {
             X509CertImpl certImpl = X509CertImpl.toImpl(cert);
             if (debug != null) {
@@ -764,7 +768,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                 DistributionPoint point = t.next();
                 for (X509CRL crl : crls) {
                     if (dpf.verifyCRL(certImpl, point, crl, reasonsMask,
-                        signFlag, prevKey, mSigProvider, mAnchor, mStores)) {
+                            signFlag, prevKey, mSigProvider,
+                            trustAnchors, mStores)) {
                         results.add(crl);
                     }
                 }
