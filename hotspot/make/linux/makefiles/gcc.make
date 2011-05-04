@@ -205,7 +205,7 @@ SONAMEFLAG = -Xlinker -soname=SONAME
 SHARED_FLAG = -shared
 
 # Keep symbols even they are not used
-AOUT_FLAGS += -export-dynamic
+AOUT_FLAGS += -Xlinker -export-dynamic
 
 #------------------------------------------------------------------------
 # Debug flags

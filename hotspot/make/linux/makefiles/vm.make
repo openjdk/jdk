@@ -102,6 +102,10 @@ CFLAGS += $(CFLAGS/NOEX)
 CFLAGS += $(EXTRA_CFLAGS)
 LFLAGS += $(EXTRA_CFLAGS)
 
+# Don't set excutable bit on stack segment
+# the same could be done by separate execstack command
+LFLAGS += -Xlinker -z -Xlinker noexecstack
+
 LIBS += -lm -ldl -lpthread
 
 # By default, link the *.o into the library, not the executable.
