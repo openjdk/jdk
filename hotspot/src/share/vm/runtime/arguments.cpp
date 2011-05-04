@@ -969,10 +969,10 @@ void Arguments::set_mode_flags(Mode mode) {
 #ifndef ZERO
   // Turn these off for mixed and comp.  Leave them on for Zero.
   if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
-    UseFastAccessorMethods = mode == _int;
+    UseFastAccessorMethods = (mode == _int);
   }
   if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
-    UseFastEmptyMethods = mode == _int;
+    UseFastEmptyMethods = (mode == _int);
   }
 #endif
 
@@ -1986,6 +1986,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
+
+  // Setup flags for mixed which is the default
+  set_mode_flags(_mixed);
 
   // Parse JAVA_TOOL_OPTIONS environment variable (if present)
   jint result = parse_java_tool_options_environment_variable(&scp, &scp_assembly_required);
