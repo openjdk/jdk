@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7017664
+ * @bug 7017664 7036906
  * @summary Basher for CompoundScopes
  */
 
@@ -127,8 +127,17 @@ public class CompoundScopeTest {
                     }
                 }
                 log("testing scope: " + root);
-                checkElems(root);
-                checkShadowed(root);
+                checkElems(root, null);
+                checkElems(root, new OddFilter());
+                checkShadowed(root, null);
+                checkShadowed(root, new OddFilter());
+            }
+        }
+
+        class OddFilter implements Filter<Symbol> {
+            public boolean accepts(Symbol s) {
+                Name numPart = s.name.subName(1, s.name.length());
+                return Integer.parseInt(numPart.toString()) % 2 != 0;
             }
         }
 
@@ -165,15 +174,20 @@ public class CompoundScopeTest {
          * Check that CompoundScope.getElements() correctly visits all symbols
          * in all subscopes (in the correct order)
          */
-        void checkElems(CompoundScope cs) {
-            List<Symbol> allSymbols = elems;
+        void checkElems(CompoundScope cs, Filter<Symbol> sf) {
             int count = 0;
-            for (Symbol s : cs.getElements()) {
+            ListBuffer<Symbol> found = ListBuffer.lb();
+            List<Symbol> allSymbols = sf == null ?
+                    elems :
+                    filter(elems, sf);
+            int expectedCount = allSymbols.length();
+            for (Symbol s : sf == null ? cs.getElements() : cs.getElements(sf)) {
                 checkSameSymbols(s, allSymbols.head);
                 allSymbols = allSymbols.tail;
+                found.append(s);
                 count++;
             }
-            if (count != elems.size()) {
+            if (count != expectedCount) {
                 error("CompoundScope.getElements() did not returned enough symbols");
             }
         }
@@ -182,20 +196,33 @@ public class CompoundScopeTest {
          * Check that CompoundScope.getElements() correctly visits all symbols
          * with a given name in all subscopes (in the correct order)
          */
-        void checkShadowed(CompoundScope cs) {
+        void checkShadowed(CompoundScope cs, Filter<Symbol> sf) {
             for (Map.Entry<Name, List<Symbol>> shadowedEntry : shadowedMap.entrySet()) {
                 int count = 0;
-                List<Symbol> shadowed = shadowedEntry.getValue();
+                List<Symbol> shadowed = sf == null ?
+                    shadowedEntry.getValue() :
+                    filter(shadowedEntry.getValue(), sf);
+                int expectedCount = shadowed.length();
                 Name name = shadowedEntry.getKey();
-                for (Symbol s : cs.getElementsByName(name)) {
+                for (Symbol s : sf == null ? cs.getElementsByName(name) : cs.getElementsByName(name, sf)) {
                     checkSameSymbols(s, shadowed.head);
                     shadowed = shadowed.tail;
                     count++;
                 }
-                if (count != shadowedEntry.getValue().size()) {
+                if (count != expectedCount) {
                     error("CompoundScope.lookup() did not returned enough symbols for name " + name);
                 }
             }
+        }
+
+        List<Symbol> filter(List<Symbol> elems, Filter<Symbol> sf) {
+            ListBuffer<Symbol> res = ListBuffer.lb();
+            for (Symbol s : elems) {
+                if (sf.accepts(s)) {
+                    res.append(s);
+                }
+            }
+            return res.toList();
         }
 
         void checkSameSymbols(Symbol found, Symbol req) {
