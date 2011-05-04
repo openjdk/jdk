@@ -60,11 +60,20 @@ AwtObject::~AwtObject()
 
 void AwtObject::Dispose()
 {
-    theAwtObjectList.Remove(this);
+    AwtToolkit::GetInstance().PostMessage(WM_AWT_DELETEOBJECT, (WPARAM)this, (LPARAM)0);
+}
+
+void AwtObject::_Dispose(jobject self)
+{
+    TRY_NO_VERIFY;
+
+    CriticalSection::Lock l(AwtToolkit::GetInstance().GetSyncCS());
 
     // value 0 of lParam means that we should not attempt to enter the
     // SyncCall critical section, as it was entered someshere earlier
-    AwtToolkit::GetInstance().PostMessage(WM_AWT_DELETEOBJECT, (WPARAM)this, (LPARAM)0);
+    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)self, (LPARAM)0);
+
+    CATCH_BAD_ALLOC;
 }
 
 void AwtObject::_Dispose(PDATA pData)
@@ -73,14 +82,10 @@ void AwtObject::_Dispose(PDATA pData)
 
     CriticalSection::Lock l(AwtToolkit::GetInstance().GetSyncCS());
 
-    if (pData != NULL) {
-        AwtObject *o = (AwtObject *)pData;
-        AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)o, (LPARAM)0);
-    }
+    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSEPDATA, (WPARAM)pData, (LPARAM)0);
 
     CATCH_BAD_ALLOC;
 }
-
 /*
  * Return the peer associated with some target.  This information is
  * maintained in a hashtable at the java level.
