@@ -960,7 +960,7 @@ void Arguments::set_mode_flags(Mode mode) {
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          (char*)Abstract_VM_Version::vm_info_string(), false);
+                          (char*)VM_Version::vm_info_string(), false);
 
   UseInterpreter             = true;
   UseCompiler                = true;
