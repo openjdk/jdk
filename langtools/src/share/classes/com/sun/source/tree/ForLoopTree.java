@@ -36,7 +36,7 @@ import java.util.List;
  *       <em>statement</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 14.14.1"
+ * @jls section 14.14.1
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

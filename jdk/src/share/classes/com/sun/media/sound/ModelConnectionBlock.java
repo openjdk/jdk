@@ -24,6 +24,8 @@
  */
 package com.sun.media.sound;
 
+import java.util.Arrays;
+
 /**
  * Connection blocks are used to connect source variable
  * to a destination variable.
@@ -117,19 +119,17 @@ public class ModelConnectionBlock {
     }
 
     public ModelSource[] getSources() {
-        return sources;
+        return Arrays.copyOf(sources, sources.length);
     }
 
     public void setSources(ModelSource[] source) {
-        this.sources = source;
+        this.sources = source == null ? no_sources : Arrays.copyOf(source, source.length);
     }
 
     public void addSource(ModelSource source) {
         ModelSource[] oldsources = sources;
         sources = new ModelSource[oldsources.length + 1];
-        for (int i = 0; i < oldsources.length; i++) {
-            sources[i] = oldsources[i];
-        }
+        System.arraycopy(oldsources, 0, sources, 0, oldsources.length);
         sources[sources.length - 1] = source;
     }
 }

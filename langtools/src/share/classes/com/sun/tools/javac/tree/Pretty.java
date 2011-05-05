@@ -1169,7 +1169,7 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void visitTypeDisjunction(JCTypeDisjunction tree) {
+    public void visitTypeUnion(JCTypeUnion tree) {
         try {
             printExprs(tree.alternatives, " | ");
         } catch (IOException e) {

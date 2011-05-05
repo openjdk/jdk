@@ -38,7 +38,7 @@ package com.sun.source.tree;
  *   ? super <em>bound</em>
  * </pre>
  *
- * @see "The Java Language Specification, 3rd ed, section 4.5.1"
+ * @jls section 4.5.1
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

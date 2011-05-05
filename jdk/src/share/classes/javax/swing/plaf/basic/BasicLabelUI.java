@@ -455,6 +455,8 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                 }
                 int dka = label.getDisplayedMnemonic();
                 inputMap.put(KeyStroke.getKeyStroke(dka, ActionEvent.ALT_MASK, true), RELEASE);
+                // Need this when the sticky keys are enabled
+                inputMap.put(KeyStroke.getKeyStroke(dka, 0, true), RELEASE);
                 // Need this if ALT is released before the accelerator
                 inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ALT, 0, true), RELEASE);
                 label.requestFocus();
@@ -467,7 +469,9 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
                 InputMap inputMap = SwingUtilities.getUIInputMap(label, JComponent.WHEN_FOCUSED);
                 if (inputMap != null) {
                     // inputMap should never be null.
-                    inputMap.remove(KeyStroke.getKeyStroke(label.getDisplayedMnemonic(), ActionEvent.ALT_MASK, true));
+                    int dka = label.getDisplayedMnemonic();
+                    inputMap.remove(KeyStroke.getKeyStroke(dka, ActionEvent.ALT_MASK, true));
+                    inputMap.remove(KeyStroke.getKeyStroke(dka, 0, true));
                     inputMap.remove(KeyStroke.getKeyStroke(KeyEvent.VK_ALT, 0, true));
                 }
                 if (labelFor instanceof Container &&

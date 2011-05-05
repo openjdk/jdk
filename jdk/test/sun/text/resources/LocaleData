@@ -6942,3 +6942,14 @@ CurrencyNames/zh_TW/xpt=\u94c2
 CurrencyNames/zh_TW/xts=XTS
 CurrencyNames/zh_TW/xxx=XXX
 CurrencyNames/zh_TW/yer=\u8449\u9580\u91cc\u96c5
+
+# bug 7036905
+CurrencyNames/de/afa=Afghani (1927-2002)
+CurrencyNames/de/afn=Afghani
+CurrencyNames/de/bob=Boliviano
+CurrencyNames/de/dem=Deutsche Mark
+CurrencyNames/de/mwk=Malawi Kwacha
+CurrencyNames/de/mxv=Mexican Unidad de Inversion (UDI)
+CurrencyNames/de/svc=El Salvador Colon
+
+CurrencyNames/it/bob=Boliviano
