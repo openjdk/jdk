@@ -35,7 +35,7 @@ package com.sun.source.tree;
  * </pre>
  *
  *
- * @see "The Java Language Specification, 3rd ed, section 14.12"
+ * @jls section 14.12
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

@@ -109,10 +109,9 @@ public class Package implements java.lang.reflect.AnnotatedElement {
     /**
      * Return the name of this package.
      *
-     * @return  The fully-qualified name of this package as defined in the
-     *          <em>Java Language Specification, Third Edition</em>
-     *          <a href="http://java.sun.com/docs/books/jls/third_edition/html/names.html#6.5.3">
-     *          &sect;6.5.3</a>, for example, {@code java.lang}
+     * @return  The fully-qualified name of this package as defined in section 6.5.3 of
+     *          <cite>The Java&trade; Language Specification</cite>,
+     *          for example, {@code java.lang}
      */
     public String getName() {
         return pkgName;

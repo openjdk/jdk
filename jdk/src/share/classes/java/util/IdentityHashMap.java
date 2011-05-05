@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -829,71 +829,82 @@ public class IdentityHashMap<K,V>
         }
     }
 
-    /**
-     * Since we don't use Entry objects, we use the Iterator
-     * itself as an entry.
-     */
     private class EntryIterator
         extends IdentityHashMapIterator<Map.Entry<K,V>>
-        implements Map.Entry<K,V>
     {
+        private Entry lastReturnedEntry = null;
+
         public Map.Entry<K,V> next() {
-            nextIndex();
-            return this;
+            lastReturnedEntry = new Entry(nextIndex());
+            return lastReturnedEntry;
         }
 
-        public K getKey() {
-            // Provide a better exception than out of bounds index
-            if (lastReturnedIndex < 0)
-                throw new IllegalStateException("Entry was removed");
-
-            return (K) unmaskNull(traversalTable[lastReturnedIndex]);
+        public void remove() {
+            lastReturnedIndex =
+                ((null == lastReturnedEntry) ? -1 : lastReturnedEntry.index);
+            super.remove();
+            lastReturnedEntry.index = lastReturnedIndex;
+            lastReturnedEntry = null;
         }
 
-        public V getValue() {
-            // Provide a better exception than out of bounds index
-            if (lastReturnedIndex < 0)
-                throw new IllegalStateException("Entry was removed");
+        private class Entry implements Map.Entry<K,V> {
+            private int index;
 
-            return (V) traversalTable[lastReturnedIndex+1];
-        }
+            private Entry(int index) {
+                this.index = index;
+            }
 
-        public V setValue(V value) {
-            // It would be mean-spirited to proceed here if remove() called
-            if (lastReturnedIndex < 0)
-                throw new IllegalStateException("Entry was removed");
-            V oldValue = (V) traversalTable[lastReturnedIndex+1];
-            traversalTable[lastReturnedIndex+1] = value;
-            // if shadowing, force into main table
-            if (traversalTable != IdentityHashMap.this.table)
-                put((K) traversalTable[lastReturnedIndex], value);
-            return oldValue;
-        }
+            public K getKey() {
+                checkIndexForEntryUse();
+                return (K) unmaskNull(traversalTable[index]);
+            }
 
-        public boolean equals(Object o) {
-            if (lastReturnedIndex < 0)
-                return super.equals(o);
+            public V getValue() {
+                checkIndexForEntryUse();
+                return (V) traversalTable[index+1];
+            }
 
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry e = (Map.Entry)o;
-            return e.getKey()   == getKey() &&
-                   e.getValue() == getValue();
-        }
+            public V setValue(V value) {
+                checkIndexForEntryUse();
+                V oldValue = (V) traversalTable[index+1];
+                traversalTable[index+1] = value;
+                // if shadowing, force into main table
+                if (traversalTable != IdentityHashMap.this.table)
+                    put((K) traversalTable[index], value);
+                return oldValue;
+            }
 
-        public int hashCode() {
-            if (lastReturnedIndex < 0)
-                return super.hashCode();
+            public boolean equals(Object o) {
+                if (index < 0)
+                    return super.equals(o);
 
-            return System.identityHashCode(getKey()) ^
-                   System.identityHashCode(getValue());
-        }
+                if (!(o instanceof Map.Entry))
+                    return false;
+                Map.Entry e = (Map.Entry)o;
+                return (e.getKey() == unmaskNull(traversalTable[index]) &&
+                       e.getValue() == traversalTable[index+1]);
+            }
 
-        public String toString() {
-            if (lastReturnedIndex < 0)
-                return super.toString();
+            public int hashCode() {
+                if (lastReturnedIndex < 0)
+                    return super.hashCode();
 
-            return getKey() + "=" + getValue();
+                return (System.identityHashCode(unmaskNull(traversalTable[index])) ^
+                       System.identityHashCode(traversalTable[index+1]));
+            }
+
+            public String toString() {
+                if (index < 0)
+                    return super.toString();
+
+                return (unmaskNull(traversalTable[index]) + "="
+                        + traversalTable[index+1]);
+            }
+
+            private void checkIndexForEntryUse() {
+                if (index < 0)
+                    throw new IllegalStateException("Entry was removed");
+            }
         }
     }
 

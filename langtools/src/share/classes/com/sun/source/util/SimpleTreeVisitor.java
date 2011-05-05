@@ -228,7 +228,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
         return defaultAction(node, p);
     }
 
-    public R visitDisjunctiveType(DisjunctiveTypeTree node, P p) {
+    public R visitUnionType(UnionTypeTree node, P p) {
         return defaultAction(node, p);
     }
 

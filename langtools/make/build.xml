@@ -464,7 +464,7 @@
     </target>
 
     <target name="javadoc-javac" depends="build-javac,-def-javadoc-tool">
-        <javadoc-tool name="javac" includes="${javac.includes}" options="${javadoc.jls3.option}"/>
+        <javadoc-tool name="javac" includes="${javac.includes}" options="${javadoc.jls.option}"/>
     </target>
 
     <target name="jtreg-javac" depends="build-javac,build-javap,-def-jtreg">
