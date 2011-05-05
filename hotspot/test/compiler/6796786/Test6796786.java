@@ -27,18 +27,17 @@
  * @bug 6796786
  * @summary invalid FP identity transform - (a - b) -> b - a
  *
- * @run main Test6796786
+ * @run main/othervm -Xbatch Test6796786
  */
 
 public class Test6796786 {
     static volatile float d1;
     static volatile float d2;
-    static float zero;
 
     public static void main(String[] args) {
         int total = 0;
         for (int i = 0; i < 100000; i++) {
-            if (Float.floatToRawIntBits(- (d1 - d1)) == Float.floatToRawIntBits(0.0f)) {
+            if (Float.floatToRawIntBits(- (d1 - d2)) == Float.floatToRawIntBits(-0.0f)) {
                 total++;
             }
         }
