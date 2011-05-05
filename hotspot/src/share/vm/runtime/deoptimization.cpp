@@ -437,7 +437,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                                                 deopt_sender.interpreter_frame_bci());
     Symbol* signature = method->constants()->signature_ref_at(cur.index());
     ArgumentSizeComputer asc(signature);
-    sender_callee_parameters = asc.size() + cur.has_receiver() ? 1 : 0;
+    sender_callee_parameters = asc.size() + (cur.has_receiver() ? 1 : 0);
   }
 
   // Compute the amount the oldest interpreter frame will have to adjust
