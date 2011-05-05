@@ -3975,6 +3975,9 @@ void G1CollectedHeap::drain_evac_failure_scan_stack() {
 oop
 G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
                                                oop old) {
+  assert(obj_in_cs(old),
+         err_msg("obj: "PTR_FORMAT" should still be in the CSet",
+                 (HeapWord*) old));
   markOop m = old->mark();
   oop forward_ptr = old->forward_to_atomic(old);
   if (forward_ptr == NULL) {
@@ -3997,7 +4000,13 @@ G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
     }
     return old;
   } else {
-    // Someone else had a place to copy it.
+    // Forward-to-self failed. Either someone else managed to allocate
+    // space for this object (old != forward_ptr) or they beat us in
+    // self-forwarding it (old == forward_ptr).
+    assert(old == forward_ptr || !obj_in_cs(forward_ptr),
+           err_msg("obj: "PTR_FORMAT" forwarded to: "PTR_FORMAT" "
+                   "should not be in the CSet",
+                   (HeapWord*) old, (HeapWord*) forward_ptr));
     return forward_ptr;
   }
 }
@@ -4308,11 +4317,10 @@ template <class T> void G1ParCopyHelper::mark_forwardee(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop(heap_oop);
-    assert((_g1->evacuation_failed()) || (!_g1->obj_in_cs(obj)),
-           "shouldn't still be in the CSet if evacuation didn't fail.");
     HeapWord* addr = (HeapWord*)obj;
-    if (_g1->is_in_g1_reserved(addr))
+    if (_g1->is_in_g1_reserved(addr)) {
       _cm->grayRoot(oop(addr));
+    }
   }
 }
 
