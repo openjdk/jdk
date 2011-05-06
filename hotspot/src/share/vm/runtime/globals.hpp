@@ -3708,6 +3708,10 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
+  diagnostic(bool, UseRicochetFrames, true,                                 \
+          "use ricochet stack frames for method handle combination, "       \
+          "if the platform supports them")                                  \
+                                                                            \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
