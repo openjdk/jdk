@@ -265,8 +265,6 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
   MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
 
   always_do_update_barrier = UseConcMarkSweepGC;
-  BlockOffsetArrayUseUnallocatedBlock =
-      BlockOffsetArrayUseUnallocatedBlock || ParallelGCThreads > 0;
 
   // Check validity of heap flags
   assert(OldSize     % min_alignment() == 0, "old space alignment");

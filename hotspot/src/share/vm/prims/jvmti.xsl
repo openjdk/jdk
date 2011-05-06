@@ -1039,34 +1039,14 @@ typedef struct {
   </a>
 </xsl:template>
 
-<xsl:template match="vmspeclink">
-  <xsl:if test="count(@id)=1">
-    <a>
-      <xsl:attribute name="href">
-        <xsl:text>http://java.sun.com/docs/books/vmspec/2nd-edition/html/</xsl:text>
-        <xsl:value-of select="@id"/>
-      </xsl:attribute>
-      <xsl:value-of select="@name"/>
-    </a>
-    <xsl:text> </xsl:text>
-    <xsl:choose>
-      <xsl:when test="count(@preposition)=1">
-        <xsl:value-of select="@preposition"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:text>of</xsl:text>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:text> the </xsl:text>
-  </xsl:if>
-  <a>
-    <xsl:attribute name="href">
-      <xsl:text>http://java.sun.com/docs/books/vmspec/</xsl:text>
-    </xsl:attribute>
-    <i>
-      <xsl:text>Java Virtual Machine Specification</xsl:text>
-    </i>
-  </a>
+<xsl:template match="vmspec">
+  <cite>
+    <xsl:text>The Java&#8482; Virtual Machine Specification</xsl:text>
+    <xsl:if test="count(@chapter)=1">
+      <xsl:text>, Chapter </xsl:text> 
+      <xsl:value-of select="@chapter"/>
+    </xsl:if>
+  </cite>
 </xsl:template>
 
 <xsl:template match="internallink">
