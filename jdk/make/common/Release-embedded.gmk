@@ -84,10 +84,10 @@ MakeHeadlessJarFileList: $(TOTAL_HEADLESS_JAR_FILELIST) $(JARSPLIT_JARFILE)
 
 # Create headless rt.jar
 HL_RT_JAR=$(ABS_TEMPDIR)/rt-hl-orig.jar
-$(HL_RT_JAR): MakeHeadlessJarFileList $(JAR_MANIFEST_FILE)
+$(HL_RT_JAR): MakeHeadlessJarFileList $(RT_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) ; \
-		$(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ @$(HEADLESS_RT_JAR_FILELIST) \
+		$(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(RT_JAR_MANIFEST_FILE) $@ @$(HEADLESS_RT_JAR_FILELIST) \
 		 $(JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR); $(java-vm-cleanup)
 
