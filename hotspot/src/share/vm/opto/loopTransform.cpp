@@ -1229,6 +1229,19 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
         new_limit = _igvn.intcon(limit->get_int() - stride_con);
         set_ctrl(new_limit, C->root());
       } else {
+        // Limit is not constant.
+        {
+          // Separate limit by Opaque node in case it is an incremented
+          // variable from previous loop to avoid using pre-incremented
+          // value which could increase register pressure.
+          // Otherwise reorg_offsets() optimization will create a separate
+          // Opaque node for each use of trip-counter and as result
+          // zero trip guard limit will be different from loop limit.
+          assert(has_ctrl(opaq), "should have it");
+          Node* opaq_ctrl = get_ctrl(opaq);
+          limit = new (C, 2) Opaque2Node( C, limit );
+          register_new_node( limit, opaq_ctrl );
+        }
         if (stride_con > 0 && ((limit_type->_lo - stride_con) < limit_type->_lo) ||
                    stride_con < 0 && ((limit_type->_hi - stride_con) > limit_type->_hi)) {
           // No underflow.
@@ -1278,24 +1291,19 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
         register_new_node(new_limit, ctrl);
       }
       assert(new_limit != NULL, "");
-      if (limit->outcnt() == 2) {
-        // Replace old limit if it is used only in loop tests.
-        _igvn.replace_node(limit, new_limit);
-      } else {
-        // Replace in loop test.
-        _igvn.hash_delete(cmp);
-        cmp->set_req(2, new_limit);
+      // Replace in loop test.
+      _igvn.hash_delete(cmp);
+      cmp->set_req(2, new_limit);
 
-        // Step 3: Find the min-trip test guaranteed before a 'main' loop.
-        // Make it a 1-trip test (means at least 2 trips).
+      // Step 3: Find the min-trip test guaranteed before a 'main' loop.
+      // Make it a 1-trip test (means at least 2 trips).
 
-        // Guard test uses an 'opaque' node which is not shared.  Hence I
-        // can edit it's inputs directly.  Hammer in the new limit for the
-        // minimum-trip guard.
-        assert(opaq->outcnt() == 1, "");
-        _igvn.hash_delete(opaq);
-        opaq->set_req(1, new_limit);
-      }
+      // Guard test uses an 'opaque' node which is not shared.  Hence I
+      // can edit it's inputs directly.  Hammer in the new limit for the
+      // minimum-trip guard.
+      assert(opaq->outcnt() == 1, "");
+      _igvn.hash_delete(opaq);
+      opaq->set_req(1, new_limit);
     }
 
     // Adjust max trip count. The trip count is intentionally rounded

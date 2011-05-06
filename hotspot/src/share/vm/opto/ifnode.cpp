@@ -546,6 +546,7 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   Node *new_bol = gvn->transform( new (gvn->C, 2) BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
   igvn->hash_delete( iff );
   iff->set_req_X( 1, new_bol, igvn );
+  igvn->_worklist.push( iff );
 }
 
 //------------------------------up_one_dom-------------------------------------
