@@ -341,6 +341,7 @@
   template(vmtarget_name,                             "vmtarget")                                 \
   template(vmentry_name,                              "vmentry")                                  \
   template(vmslots_name,                              "vmslots")                                  \
+  template(vmlayout_name,                             "vmlayout")                                 \
   template(vmindex_name,                              "vmindex")                                  \
   template(vmargslot_name,                            "vmargslot")                                \
   template(flags_name,                                "flags")                                    \
@@ -393,6 +394,7 @@
   template(void_signature,                            "V")                                        \
   template(byte_array_signature,                      "[B")                                       \
   template(char_array_signature,                      "[C")                                       \
+  template(int_array_signature,                       "[I")                                       \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
   template(object_boolean_signature,                  "(Ljava/lang/Object;)Z")                    \

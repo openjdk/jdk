@@ -36,7 +36,7 @@ enum platform_dependent_constants {
 
 // MethodHandles adapters
 enum method_handles_platform_dependent_constants {
-  method_handles_adapters_code_size = 10000
+  method_handles_adapters_code_size = 30000 DEBUG_ONLY(+ 10000)
 };
 
 class x86 {

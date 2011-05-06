@@ -1649,6 +1649,9 @@ int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
         if (fr->is_entry_frame()) {
           last_entry_frame = fr;
         }
+        if (fr->is_ricochet_frame()) {
+          fr->oops_ricochet_do(&blk, vf->register_map());
+        }
       }
       vf = vf->sender();
     }

@@ -339,7 +339,6 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //
@@ -361,6 +360,55 @@ void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool 
 }
 #endif
 
+//------------------------------------------------------------------------------
+// frame::adjust_unextended_sp
+void frame::adjust_unextended_sp() {
+  // If we are returning to a compiled MethodHandle call site, the
+  // saved_fp will in fact be a saved value of the unextended SP.  The
+  // simplest way to tell whether we are returning to such a call site
+  // is as follows:
+
+  nmethod* sender_nm = (_cb == NULL) ? NULL : _cb->as_nmethod_or_null();
+  if (sender_nm != NULL) {
+    // If the sender PC is a deoptimization point, get the original
+    // PC.  For MethodHandle call site the unextended_sp is stored in
+    // saved_fp.
+    if (sender_nm->is_deopt_mh_entry(_pc)) {
+      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, _fp));
+      _unextended_sp = _fp;
+    }
+    else if (sender_nm->is_deopt_entry(_pc)) {
+      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
+    }
+    else if (sender_nm->is_method_handle_return(_pc)) {
+      _unextended_sp = _fp;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// frame::update_map_with_saved_link
+void frame::update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr) {
+  // The interpreter and compiler(s) always save EBP/RBP in a known
+  // location on entry. We must record where that location is
+  // so this if EBP/RBP was live on callout from c2 we can find
+  // the saved copy no matter what it called.
+
+  // Since the interpreter always saves EBP/RBP if we record where it is then
+  // we don't have to always save EBP/RBP on entry and exit to c2 compiled
+  // code, on entry will be enough.
+  map->set_location(rbp->as_VMReg(), (address) link_addr);
+#ifdef AMD64
+  // this is weird "H" ought to be at a higher address however the
+  // oopMaps seems to have the "H" regs at the same address and the
+  // vanilla register.
+  // XXXX make this go away
+  if (true) {
+    map->set_location(rbp->as_VMReg()->next(), (address) link_addr);
+  }
+#endif // AMD64
+}
+
 
 //------------------------------------------------------------------------------
 // frame::sender_for_interpreter_frame
@@ -372,54 +420,13 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
 
-  // Stored FP.
-  intptr_t* saved_fp = link();
-
-  address sender_pc = this->sender_pc();
-  CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
-  assert(sender_cb, "sanity");
-  nmethod* sender_nm = sender_cb->as_nmethod_or_null();
-
-  if (sender_nm != NULL) {
-    // If the sender PC is a deoptimization point, get the original
-    // PC.  For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    if (sender_nm->is_deopt_mh_entry(sender_pc)) {
-      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, saved_fp));
-      unextended_sp = saved_fp;
-    }
-    else if (sender_nm->is_deopt_entry(sender_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, unextended_sp));
-    }
-    else if (sender_nm->is_method_handle_return(sender_pc)) {
-      unextended_sp = saved_fp;
-    }
-  }
-
-  // The interpreter and compiler(s) always save EBP/RBP in a known
-  // location on entry. We must record where that location is
-  // so this if EBP/RBP was live on callout from c2 we can find
-  // the saved copy no matter what it called.
-
-  // Since the interpreter always saves EBP/RBP if we record where it is then
-  // we don't have to always save EBP/RBP on entry and exit to c2 compiled
-  // code, on entry will be enough.
 #ifdef COMPILER2
   if (map->update_map()) {
-    map->set_location(rbp->as_VMReg(), (address) addr_at(link_offset));
-#ifdef AMD64
-    // this is weird "H" ought to be at a higher address however the
-    // oopMaps seems to have the "H" regs at the same address and the
-    // vanilla register.
-    // XXXX make this go away
-    if (true) {
-      map->set_location(rbp->as_VMReg()->next(), (address)addr_at(link_offset));
-    }
-#endif // AMD64
+    update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
 #endif // COMPILER2
 
-  return frame(sender_sp, unextended_sp, saved_fp, sender_pc);
+  return frame(sender_sp, unextended_sp, link(), sender_pc());
 }
 
 
@@ -427,6 +434,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
+  assert(!is_ricochet_frame(), "caller must handle this");
 
   // frame owned by optimizing compiler
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
@@ -438,31 +446,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
   // This is the saved value of EBP which may or may not really be an FP.
   // It is only an FP if the sender is an interpreter frame (or C1?).
-  intptr_t* saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
-
-  // If we are returning to a compiled MethodHandle call site, the
-  // saved_fp will in fact be a saved value of the unextended SP.  The
-  // simplest way to tell whether we are returning to such a call site
-  // is as follows:
-  CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
-  assert(sender_cb, "sanity");
-  nmethod* sender_nm = sender_cb->as_nmethod_or_null();
-
-  if (sender_nm != NULL) {
-    // If the sender PC is a deoptimization point, get the original
-    // PC.  For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    if (sender_nm->is_deopt_mh_entry(sender_pc)) {
-      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, saved_fp));
-      unextended_sp = saved_fp;
-    }
-    else if (sender_nm->is_deopt_entry(sender_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, unextended_sp));
-    }
-    else if (sender_nm->is_method_handle_return(sender_pc)) {
-      unextended_sp = saved_fp;
-    }
-  }
+  intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
@@ -472,23 +456,15 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     if (_cb->oop_maps() != NULL) {
       OopMapSet::update_register_map(this, map);
     }
+
     // Since the prolog does the save and restore of EBP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
-    map->set_location(rbp->as_VMReg(), (address) (sender_sp - frame::sender_sp_offset));
-#ifdef AMD64
-    // this is weird "H" ought to be at a higher address however the
-    // oopMaps seems to have the "H" regs at the same address and the
-    // vanilla register.
-    // XXXX make this go away
-    if (true) {
-      map->set_location(rbp->as_VMReg()->next(), (address) (sender_sp - frame::sender_sp_offset));
-    }
-#endif // AMD64
+    update_map_with_saved_link(map, saved_fp_addr);
   }
 
   assert(sender_sp != sp(), "must have changed");
-  return frame(sender_sp, unextended_sp, saved_fp, sender_pc);
+  return frame(sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
 }
 
 
@@ -502,6 +478,7 @@ frame frame::sender(RegisterMap* map) const {
   if (is_entry_frame())       return sender_for_entry_frame(map);
   if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
+  if (is_ricochet_frame())    return sender_for_ricochet_frame(map);
 
   if (_cb != NULL) {
     return sender_for_compiled_frame(map);
