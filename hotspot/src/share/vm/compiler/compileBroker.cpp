@@ -976,6 +976,15 @@ void CompileBroker::compile_method_base(methodHandle method,
     return;
   }
 
+  // If the requesting thread is holding the pending list lock
+  // then we just return. We can't risk blocking while holding
+  // the pending list lock or a 3-way deadlock may occur
+  // between the reference handler thread, a GC (instigated
+  // by a compiler thread), and compiled method registration.
+  if (instanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
+    return;
+  }
+
   // Outputs from the following MutexLocker block:
   CompileTask* task     = NULL;
   bool         blocking = false;
@@ -1304,17 +1313,8 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  if (!BackgroundCompilation) {
-    Symbol* class_name = method->method_holder()->klass_part()->name();
-    if (class_name->starts_with("java/lang/ref/Reference", 23)) {
-      // The reference handler thread can dead lock with the GC if compilation is blocking,
-      // so we avoid blocking compiles for anything in the java.lang.ref.Reference class,
-      // including inner classes such as ReferenceHandler.
-      return false;
-    }
-    return true;
-  }
-  return false;
+  assert(!instanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
+  return !BackgroundCompilation;
 }
 
 

@@ -22,29 +22,23 @@
 #  
 #
 
-#
-# The cscope.out file is made in the current directory and spans the entire
-# source tree.
-#
-# Things to note:
-#	1. We use relative names for cscope.
-#	2. We *don't* remove the old cscope.out file, because cscope is smart
-#	   enough to only build what has changed.  It can be confused, however,
-#	   if files are renamed or removed, so it may be necessary to manually
-#	   remove cscope.out if a lot of reorganization has occurred.
-#
+# The cscope.out file is generated in the current directory.  The old cscope.out
+# file is *not* removed because cscope is smart enough to only build what has
+# changed.  cscope can be confused if files are renamed or removed, so it may be
+# necessary to remove cscope.out (gmake cscope.clean) if a lot of reorganization
+# has occurred.
 
 include $(GAMMADIR)/make/scm.make
 
-NAWK	= /usr/xpg4/bin/awk
 RM	= rm -f
 HG	= hg
-CS_TOP	= ../..
+CS_TOP	= $(GAMMADIR)
 
 CSDIRS	= $(CS_TOP)/src $(CS_TOP)/make
 CSINCS	= $(CSDIRS:%=-I%)
 
 CSCOPE		= cscope
+CSCOPE_OUT	= cscope.out
 CSCOPE_FLAGS	= -b
 
 # Allow .java files to be added from the environment (CSCLASSES=yes).
@@ -61,25 +55,22 @@ ifndef	CSHEADERS
 RMCCHEADERS=	-o -name CClassHeaders
 endif
 
-# Use CS_GENERATED=x to include auto-generated files in the make directories.
-ifdef	CS_GENERATED
-CS_ADD_GENERATED	= -o -name '*.incl'
-else
-CS_PRUNE_GENERATED	= -o -name '${OS}_*_core' -o -name '${OS}_*_compiler?'
+# Ignore build products.
+CS_PRUNE_GENERATED	= -o -name '${OSNAME}_*_core' -o \
+			     -name '${OSNAME}_*_compiler?'
+
+# O/S-specific files for all systems are included by default.  Set CS_OS to a
+# space-separated list of identifiers to include only those systems.
+ifdef	CS_OS
+CS_PRUNE_OS	= $(patsubst %,-o -name '*%*',\
+		    $(filter-out ${CS_OS},linux macos solaris windows))
 endif
 
-# OS-specific files for other systems are excluded by default.  Use CS_OS=yes
-# to include platform-specific files for other platforms.
-ifndef	CS_OS
-CS_OS		= linux macos solaris win32
-CS_PRUNE_OS	= $(patsubst %,-o -name '*%*',$(filter-out ${OS},${CS_OS}))
-endif
-
-# Processor-specific files for other processors are excluded by default.  Use
-# CS_CPU=x to include platform-specific files for other platforms.
-ifndef	CS_CPU
-CS_CPU		= i486 sparc amd64 ia64
-CS_PRUNE_CPU	= $(patsubst %,-o -name '*%*',$(filter-out ${SRCARCH},${CS_CPU}))
+# CPU-specific files for all processors are included by default.  Set CS_CPU 
+# space-separated list identifiers to include only those CPUs.
+ifdef	CS_CPU
+CS_PRUNE_CPU	= $(patsubst %,-o -name '*%*',\
+		    $(filter-out ${CS_CPU},arm ppc sparc x86 zero))
 endif
 
 # What files should we include?  A simple rule might be just those files under
@@ -95,10 +86,14 @@ CS_PRUNE_STD	= $(SCM_DIRS) \
 		  -o -name '*demo' \
 		  -o -name pkgarchive
 
+# Placeholder for user-defined excludes.
+CS_PRUNE_EX	=
+
 CS_PRUNE	= $(CS_PRUNE_STD) \
 		  $(CS_PRUNE_OS) \
 		  $(CS_PRUNE_CPU) \
 		  $(CS_PRUNE_GENERATED) \
+		  $(CS_PRUNE_EX) \
 		  $(RMCCHEADERS)
 
 # File names to include.
@@ -114,49 +109,33 @@ CSFILENAMES	= -name '*.[ch]pp' \
 		  -o -name '*.ad' \
 		  $(ADDCLASSES)
 
+.PHONY:		cscope cscope.clean cscope.scratch TAGS.clean FORCE
 .PRECIOUS:	cscope.out
 
-cscope cscope.out: cscope.files FORCE
-	$(CSCOPE) $(CSCOPE_FLAGS)
+cscope $(CSCOPE_OUT): cscope.files FORCE
+	$(CSCOPE) -f $(CSCOPE_OUT) $(CSCOPE_FLAGS)
 
-# The .raw file is reordered here in an attempt to make cscope display the most
-# relevant files first.
-cscope.files: .cscope.files.raw
-	echo "$(CSINCS)" > $@
-	-egrep -v "\.java|\/make\/"	$< >> $@
-	-fgrep ".java"			$< >> $@
-	-fgrep "/make/"		$< >> $@
+cscope.clean:
+	$(QUIETLY) $(RM) $(CSCOPE_OUT) cscope.files
 
-.cscope.files.raw:  .nametable.files
-	-find $(CSDIRS) -type d \( $(CS_PRUNE) \) -prune -o \
-	    -type f \( $(CSFILENAMES) \) -print > $@
+cscope.scratch:  cscope.clean cscope
 
-cscope.clean:  nametable.clean
-	-$(RM) cscope.out cscope.files .cscope.files.raw
+# The raw list is reordered so cscope displays the most relevant files first.
+cscope.files:
+	$(QUIETLY)						\
+	raw=cscope.$$$$;					\
+	find $(CSDIRS) -type d \( $(CS_PRUNE) \) -prune -o	\
+	    -type f \( $(CSFILENAMES) \) -print > $$raw;	\
+	{							\
+	echo "$(CSINCS)";					\
+	egrep -v "\.java|/make/" $$raw;				\
+	fgrep ".java" $$raw;					\
+	fgrep "/make/" $$raw;					\
+	} > $@;							\
+	rm -f $$raw
 
 TAGS:  cscope.files FORCE
 	egrep -v '^-|^$$' $< | etags --members -
 
-TAGS.clean:  nametable.clean
-	-$(RM) TAGS
-
-# .nametable.files and .nametable.files.tmp are used to determine if any files
-# were added to/deleted from/renamed in the workspace.  If not, then there's
-# normally no need to rebuild the cscope database. To force a rebuild of
-# the cscope database: gmake nametable.clean.
-.nametable.files:  .nametable.files.tmp
-	( cmp -s $@ $< ) || ( cp $< $@ )
-	-$(RM) $<
-
-# `hg status' is slightly faster than `hg fstatus'. Both are
-# quite a bit slower on an NFS mounted file system, so this is
-# really geared towards repos on local file systems.
-.nametable.files.tmp:
-	-$(HG) fstatus -acmn > $@
-
-nametable.clean:
-	-$(RM) .nametable.files .nametable.files.tmp
-
-FORCE:
-
-.PHONY:		cscope cscope.clean TAGS.clean nametable.clean FORCE
+TAGS.clean:
+	$(RM) TAGS
