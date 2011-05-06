@@ -48,7 +48,7 @@ import sun.security.krb5.internal.ktab.KeyTab;
 public class SSL {
 
     private static String krb5Cipher;
-    private static final int LOOP_LIMIT = 1;
+    private static final int LOOP_LIMIT = 3;
     private static int loopCount = 0;
     private static volatile String server;
     private static volatile int port;
@@ -98,13 +98,13 @@ public class SSL {
         fos.close();
         f.deleteOnExit();
 
-        final Context c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        Context c;
         final Context s = Context.fromJAAS("ssl");
 
-        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
+        // There's no keytab file when server starts.
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
-        new Thread(new Runnable() {
+        Thread server = new Thread(new Runnable() {
             public void run() {
                 try {
                     s.doAs(new JsseServerAction(), null);
@@ -112,12 +112,57 @@ public class SSL {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
+        server.setDaemon(true);
+        server.start();
 
         // Warm the server
         Thread.sleep(2000);
 
+        // Now create the keytab
+
+        /*
+        // Add 3 versions of keys into keytab
+        KeyTab ktab = KeyTab.create(OneKDC.KTAB);
+        PrincipalName service = new PrincipalName(
+                "host/" + server, PrincipalName.KRB_NT_SRV_HST);
+        ktab.addEntry(service, "pass1".toCharArray(), 1);
+        ktab.addEntry(service, "pass2".toCharArray(), 2);
+        ktab.addEntry(service, "pass3".toCharArray(), 3);
+        ktab.save();
+
+        // and use the middle one as the  real key
+        kdc.addPrincipal("host/" + server, "pass2".toCharArray());
+         */
+        c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
         c.doAs(new JsseClientAction(), null);
+
+        // Add another version of key, make sure it can be loaded
+        Thread.sleep(2000);
+        ktab = KeyTab.getInstance(OneKDC.KTAB);
+        ktab.addEntry(service, "pass4".toCharArray(), 4, true);
+        ktab.save();
+        kdc.addPrincipal("host/" + server, "pass4".toCharArray());
+
+        c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
+        c.doAs(new JsseClientAction(), null);
+
+        // Revoke the old key
+        /*Thread.sleep(2000);
+        ktab = KeyTab.create(OneKDC.KTAB);
+        ktab.addEntry(service, "pass5".toCharArray(), 5, false);
+        ktab.save();
+
+        c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
+        try {
+            c.doAs(new JsseClientAction(), null);
+            throw new Exception("Should fail this time.");
+        } catch (SSLException e) {
+            // Correct behavior.
+        }*/
     }
 
     // Following codes copied from
@@ -126,6 +171,7 @@ public class SSL {
         public byte[] run(Context s, byte[] input) throws Exception {
             SSLSocketFactory sslsf =
                 (SSLSocketFactory) SSLSocketFactory.getDefault();
+            System.out.println("Connecting " + server + ":" + port);
             SSLSocket sslSocket = (SSLSocket) sslsf.createSocket(server, port);
 
             // Enable only a KRB5 cipher suite.
@@ -154,6 +200,9 @@ public class SSL {
             System.out.println("Server is: " + peer.toString());
 
             sslSocket.close();
+            // This line should not be needed. It's the server's duty to
+            // forget the old key
+            //sslSocket.getSession().invalidate();
             return null;
         }
     }
@@ -165,6 +214,7 @@ public class SSL {
             SSLServerSocket sslServerSocket =
                 (SSLServerSocket) sslssf.createServerSocket(0); // any port
             port = sslServerSocket.getLocalPort();
+            System.out.println("Listening on " + port);
 
             // Enable only a KRB5 cipher suite.
             String enabledSuites[] = {krb5Cipher};

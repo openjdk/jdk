@@ -230,7 +230,7 @@ public class SignerInfo implements DerEncoder {
         if (userCert == null)
             return null;
 
-        ArrayList<X509Certificate> certList = new ArrayList<>();
+        ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>();
         certList.add(userCert);
 
         X509Certificate[] pkcsCerts = block.getCertificates();
@@ -276,20 +276,132 @@ public class SignerInfo implements DerEncoder {
     /* Returns null if verify fails, this signerInfo if
        verify succeeds. */
     SignerInfo verify(PKCS7 block, byte[] data)
-            throws NoSuchAlgorithmException, SignatureException {
+    throws NoSuchAlgorithmException, SignatureException {
 
-        PKCS7.PKCS7Verifier p7v = PKCS7.PKCS7Verifier.from(block, this);
-        if (p7v == null) return null;
-        if (data == null) {
-            try {
-                data = block.getContentInfo().getContentBytes();
-            } catch (IOException e) {
-                throw new SignatureException("IO error verifying signature:\n" +
-                                             e.getMessage());
+        try {
+
+            ContentInfo content = block.getContentInfo();
+            if (data == null) {
+                data = content.getContentBytes();
             }
+
+            String digestAlgname = getDigestAlgorithmId().getName();
+
+            byte[] dataSigned;
+
+            // if there are authenticate attributes, get the message
+            // digest and compare it with the digest of data
+            if (authenticatedAttributes == null) {
+                dataSigned = data;
+            } else {
+
+                // first, check content type
+                ObjectIdentifier contentType = (ObjectIdentifier)
+                       authenticatedAttributes.getAttributeValue(
+                         PKCS9Attribute.CONTENT_TYPE_OID);
+                if (contentType == null ||
+                    !contentType.equals(content.contentType))
+                    return null;  // contentType does not match, bad SignerInfo
+
+                // now, check message digest
+                byte[] messageDigest = (byte[])
+                    authenticatedAttributes.getAttributeValue(
+                         PKCS9Attribute.MESSAGE_DIGEST_OID);
+
+                if (messageDigest == null) // fail if there is no message digest
+                    return null;
+
+                MessageDigest md = MessageDigest.getInstance(digestAlgname);
+                byte[] computedMessageDigest = md.digest(data);
+
+                if (messageDigest.length != computedMessageDigest.length)
+                    return null;
+                for (int i = 0; i < messageDigest.length; i++) {
+                    if (messageDigest[i] != computedMessageDigest[i])
+                        return null;
+                }
+
+                // message digest attribute matched
+                // digest of original data
+
+                // the data actually signed is the DER encoding of
+                // the authenticated attributes (tagged with
+                // the "SET OF" tag, not 0xA0).
+                dataSigned = authenticatedAttributes.getDerEncoding();
+            }
+
+            // put together digest algorithm and encryption algorithm
+            // to form signing algorithm
+            String encryptionAlgname =
+                getDigestEncryptionAlgorithmId().getName();
+
+            // Workaround: sometimes the encryptionAlgname is actually
+            // a signature name
+            String tmp = AlgorithmId.getEncAlgFromSigAlg(encryptionAlgname);
+            if (tmp != null) encryptionAlgname = tmp;
+            String algname = AlgorithmId.makeSigAlg(
+                    digestAlgname, encryptionAlgname);
+
+            Signature sig = Signature.getInstance(algname);
+            X509Certificate cert = getCertificate(block);
+
+            if (cert == null) {
+                return null;
+            }
+            if (cert.hasUnsupportedCriticalExtension()) {
+                throw new SignatureException("Certificate has unsupported "
+                                             + "critical extension(s)");
+            }
+
+            // Make sure that if the usage of the key in the certificate is
+            // restricted, it can be used for digital signatures.
+            // XXX We may want to check for additional extensions in the
+            // future.
+            boolean[] keyUsageBits = cert.getKeyUsage();
+            if (keyUsageBits != null) {
+                KeyUsageExtension keyUsage;
+                try {
+                    // We don't care whether or not this extension was marked
+                    // critical in the certificate.
+                    // We're interested only in its value (i.e., the bits set)
+                    // and treat the extension as critical.
+                    keyUsage = new KeyUsageExtension(keyUsageBits);
+                } catch (IOException ioe) {
+                    throw new SignatureException("Failed to parse keyUsage "
+                                                 + "extension");
+                }
+
+                boolean digSigAllowed = ((Boolean)keyUsage.get(
+                        KeyUsageExtension.DIGITAL_SIGNATURE)).booleanValue();
+
+                boolean nonRepuAllowed = ((Boolean)keyUsage.get(
+                        KeyUsageExtension.NON_REPUDIATION)).booleanValue();
+
+                if (!digSigAllowed && !nonRepuAllowed) {
+                    throw new SignatureException("Key usage restricted: "
+                                                 + "cannot be used for "
+                                                 + "digital signatures");
+                }
+            }
+
+            PublicKey key = cert.getPublicKey();
+            sig.initVerify(key);
+
+            sig.update(dataSigned);
+
+            if (sig.verify(encryptedDigest)) {
+                return this;
+            }
+
+        } catch (IOException e) {
+            throw new SignatureException("IO error verifying signature:\n" +
+                                         e.getMessage());
+
+        } catch (InvalidKeyException e) {
+            throw new SignatureException("InvalidKey: " + e.getMessage());
+
         }
-        p7v.update(data, 0, data.length);
-        return p7v.verify();
+        return null;
     }
 
     /* Verify the content of the pkcs7 block. */

@@ -47,7 +47,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Option]..."},
         {"Options.", "Optionen:"},
         {"Use.keytool.help.for.all.available.commands",
                  "\"keytool -help\" f\u00FCr alle verf\u00FCgbaren Befehle verwenden"},
@@ -67,6 +68,7 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Exportiert ein Zertifikat"}, //-exportcert
         {"Generates.a.key.pair",
                 "Generiert ein Schl\u00FCsselpaar"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Generiert einen Secret Key"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Zertifikatkettenl\u00E4nge: "},
         {"Certificate.i.1.", "Zertifikat[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Zertifikat-Fingerprint (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "Eintragstyp: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Keystore-Typ: "},
         {"Keystore.provider.", "Keystore-Provider: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -331,7 +331,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "M\u00F6chten Sie es trotzdem zu Ihrem eigenen Keystore hinzuf\u00FCgen? [Nein]:  "},
         {"Trust.this.certificate.no.", "Diesem Zertifikat vertrauen? [Nein]:  "},
-        {"YES", "JA"},
+        {"YES", "Ja"},
         {"New.prompt.", "Neues {0}: "},
         {"Passwords.must.differ", "Kennw\u00F6rter m\u00FCssen sich unterscheiden"},
         {"Re.enter.new.prompt.", "Neues {0} erneut eingeben: "},
@@ -368,7 +368,7 @@ public class Resources_de extends java.util.ListResourceBundle {
                  "Alias <{0}> verweist auf einen Eintragstyp, der kein Private Key-Eintrag ist. Der Befehl -keyclone unterst\u00FCtzt nur das Clonen von Private Key-Eintr\u00E4gen"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Warnung Warnung Warnung  *****************"},
         {"Signer.d.", "Signaturgeber #%d:"},
         {"Timestamp.", "Zeitstempel:"},
         {"Signature.", "Signatur:"},
@@ -378,20 +378,10 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "Kein Zertifikat vom SSL-Server"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* Integrit\u00E4t der im Keystore gespeicherten Informationen  *"},
+            "* Die Integrit\u00E4t der Informationen, die in Ihrem Keystore gespeichert sind, *\n* wurde NICHT gepr\u00FCft. Um die Integrit\u00E4t zu pr\u00FCfen, *\n* m\u00FCssen Sie Ihr Keystore-Kennwort angeben.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* Integrit\u00E4t der in srckeystore gespeicherten Informationen*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* ist NICHT verifiziert worden. Damit die Integrit\u00E4t verifiziert werden kann, *"},
-        {".you.must.provide.your.keystore.password.",
-            "* m\u00FCssen Sie Ihr Keystore-Kennwort angeben.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* m\u00FCssen Sie das Kennwort f\u00FCr srckeystore angeben.                *"},
-
+            "* Die Integrit\u00E4t der Informationen, die in Ihrem Srckeystore gespeichert sind, *\n* wurde NICHT gepr\u00FCft. Um die Integrit\u00E4t zu pr\u00FCfen, *\n* m\u00FCssen Sie Ihr Srckeystore-Kennwort angeben.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "Zertifikatantwort enth\u00E4lt keinen Public Key f\u00FCr <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Zertifikat der obersten Ebene in Antwort:\n"},
         {".is.not.trusted.", "... ist nicht vertrauensw\u00FCrdig. "},
         {"Install.reply.anyway.no.", "Antwort trotzdem installieren? [Nein]:  "},
-        {"NO", "NEIN"},
+        {"NO", "Nein"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Public Keys in Antwort und Keystore stimmen nicht \u00FCberein"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",

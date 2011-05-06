@@ -38,6 +38,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
@@ -939,10 +940,15 @@ JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_unload_event(
   nmethodLocker::lock_nmethod(nm, true /* zombie_ok */);
   return event;
 }
+
 JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
       const char* name, const void* code_begin, const void* code_end) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_DYNAMIC_CODE_GENERATED);
-  event._event_data.dynamic_code_generated.name = name;
+  // Need to make a copy of the name since we don't know how long
+  // the event poster will keep it around after we enqueue the
+  // deferred event and return. strdup() failure is handled in
+  // the post() routine below.
+  event._event_data.dynamic_code_generated.name = os::strdup(name);
   event._event_data.dynamic_code_generated.code_begin = code_begin;
   event._event_data.dynamic_code_generated.code_end = code_end;
   return event;
@@ -968,12 +974,19 @@ void JvmtiDeferredEvent::post() {
       nmethodLocker::unlock_nmethod(nm);
       break;
     }
-    case TYPE_DYNAMIC_CODE_GENERATED:
+    case TYPE_DYNAMIC_CODE_GENERATED: {
       JvmtiExport::post_dynamic_code_generated_internal(
-        _event_data.dynamic_code_generated.name,
+        // if strdup failed give the event a default name
+        (_event_data.dynamic_code_generated.name == NULL)
+          ? "unknown_code" : _event_data.dynamic_code_generated.name,
         _event_data.dynamic_code_generated.code_begin,
         _event_data.dynamic_code_generated.code_end);
+      if (_event_data.dynamic_code_generated.name != NULL) {
+        // release our copy
+        os::free((void *)_event_data.dynamic_code_generated.name);
+      }
       break;
+    }
     default:
       ShouldNotReachHere();
   }

@@ -1479,16 +1479,19 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         int h = height - (SCROLLBAR_AREA + (2 * MARGIN));
         hsb.setValue(hsb.getValue() + x);
 
+        int options = PAINT_ITEMS | PAINT_HSCROLL;
+
         Rectangle source = null;
         Point distance = null;
         if (x < 0) {
             source = new Rectangle(MARGIN + SPACE, MARGIN, w + x, h);
             distance = new Point(-x, 0);
+            options |= COPY_AREA;
         } else if (x > 0) {
             source = new Rectangle(MARGIN + SPACE + x, MARGIN, w - x, h);
             distance = new Point(-x, 0);
+            options |= COPY_AREA;
         }
-        int options = COPY_AREA | PAINT_ITEMS | PAINT_HSCROLL;
         repaint(vsb.getValue(), lastItemDisplayed(), options, source, distance);
     }
 

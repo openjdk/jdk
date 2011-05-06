@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,12 @@ public class ClassTree {
      */
     private void buildTree(ClassDoc[] classes, Configuration configuration) {
         for (int i = 0; i < classes.length; i++) {
+            // In the tree page (e.g overview-tree.html) do not include
+            // information of classes which are deprecated or are a part of a
+            // deprecated package.
             if (configuration.nodeprecated &&
-                    classes[i].tags("deprecated").length > 0) {
+                    (Util.isDeprecated(classes[i]) ||
+                    Util.isDeprecated(classes[i].containingPackage()))) {
                 continue;
             }
             if (classes[i].isEnum()) {

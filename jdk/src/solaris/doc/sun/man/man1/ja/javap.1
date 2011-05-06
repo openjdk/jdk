@@ -1,4 +1,4 @@
-." Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,41 +19,43 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javap 1 "02 Jun 2010"
+.TH javap 1 "07 May 2011"
 
 .LP
-.SH "åå‰"
-javap \- Java ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ©
-.LP
-.RS 3
-
+.SH "Ì¾Á°"
+javap \- Java ¥¯¥é¥¹¥Õ¥¡¥¤¥ëµÕ¥¢¥»¥ó¥Ö¥é
 .LP
 .LP
-ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚
+¥¯¥é¥¹¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£
 .LP
-.RE
-.SH "å½¢å¼"
-.LP
-
+.SH "·Á¼°"
 .LP
 .nf
 \f3
 .fl
-javap [ \fP\f3options\fP\f3 ] class. . .
+javap [ \fP\f3options\fP\f3 ] classes
 .fl
 \fP
 .fi
 
 .LP
-.SH "èª¬æ˜"
-.LP
-
+.SH "ÀâÌÀ"
 .LP
 .LP
-\f3javap\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚ãã®å‡ºåŠ›ã¯æŒ‡å®šã™ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã«ã‚ˆã‚Šç•°ãªã‚Šã¾ã™ã€‚ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’æŒ‡å®šã—ãªã„å ´åˆã€\f3javap\fP ã¯ã€ãã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã€æ¸¡ã•ã‚ŒãŸã‚¯ãƒ©ã‚¹ã® protected ãŠã‚ˆã³ public ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã¨ãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ \f3javap\fP ã¯ãã®å‡ºåŠ›ã‚’æ¨™æº–å‡ºåŠ›ã«è¡¨ç¤ºã—ã¾ã™ã€‚ãŸã¨ãˆã°ã€æ¬¡ã®ã‚¯ãƒ©ã‚¹å®£è¨€ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹ã¨ã—ã¾ã™ã€‚
+\f3javap\fP ¥³¥Ş¥ó¥É¤Ï¡¢1 ¤Ä¤Ş¤¿¤ÏÊ£¿ô¤Î¥¯¥é¥¹¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£¤½¤Î½ĞÎÏ¤Ï»ØÄê¤¹¤ë¥ª¥×¥·¥ç¥ó¤Ë¤è¤ê°Û¤Ê¤ê¤Ş¤¹¡£¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Ê¤¤¾ì¹ç¡¢\f3javap\fP ¤Ï¡¢¤½¤Î¥Ñ¥Ã¥±¡¼¥¸¡¢ÅÏ¤µ¤ì¤¿¥¯¥é¥¹¤Î protected ¤ª¤è¤Ó public ¤Î¥Õ¥£¡¼¥ë¥É¤È¥á¥½¥Ã¥É¤ò½ĞÎÏ¤·¤Ş¤¹¡£\f3javap\fP ¤Ï¤½¤Î½ĞÎÏ¤òÉ¸½à½ĞÎÏ¤ËÉ½¼¨¤·¤Ş¤¹¡£
 .LP
 .RS 3
+.TP 3
+options 
+¥³¥Ş¥ó¥É¹Ô¥ª¥×¥·¥ç¥ó¡£ 
+.TP 3
+classes 
+Ãí¼á¤Î½èÍıÂĞ¾İ¤È¤Ê¤ë 1 ¤Ä°Ê¾å¤Î¥¯¥é¥¹ \f2DocFooter.class\fP ¤Ê¤É) ¤Î¥ê¥¹¥È (¶õÇò¶èÀÚ¤ê)¡£¥¯¥é¥¹¥Ñ¥¹¤Ç¸«¤Ä¤«¤ë¥¯¥é¥¹¤Ï¡¢¥Õ¥¡¥¤¥ëÌ¾ ( \f2/home/user/myproject/src/DocFooter.class\fP ¤Ê¤É) ¤Ş¤¿¤Ï URL ( \f2file:///home/user/myproject/src/DocFooter.class\fP ¤Ê¤É) ¤Ç»ØÄê¤Ç¤­¤Ş¤¹¡£ 
+.RE
 
+.LP
+.LP
+¤¿¤È¤¨¤Ğ¡¢¼¡¤Î¥¯¥é¥¹Àë¸À¤ò¥³¥ó¥Ñ¥¤¥ë¤¹¤ë¤È¤·¤Ş¤¹¡£
 .LP
 .nf
 \f3
@@ -96,189 +98,177 @@ public class DocFooter extends Applet {
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f3javap DocFooter\fP ãŒã‚‚ãŸã‚‰ã™å‡ºåŠ›ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
-.LP
-.RS 3
-
+\f3javap DocFooter.class\fP ¤¬¤â¤¿¤é¤¹½ĞÎÏ¤Ï¼¡¤Î¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
 .LP
 .nf
 \f3
 .fl
-Compiled from DocFooter.java
+Compiled from "DocFooter.java"
 .fl
 public class DocFooter extends java.applet.Applet {
 .fl
-    java.lang.String date;
+  java.lang.String date;
 .fl
-    java.lang.String email;
+  java.lang.String email;
 .fl
-    public DocFooter();
+  public DocFooter();
 .fl
-    public void init();
+  public void init();
 .fl
-    public void paint(java.awt.Graphics);
+  public void paint(java.awt.Graphics);
 .fl
 }
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
-\f3javap \-c DocFooter\fP ãŒã‚‚ãŸã‚‰ã™å‡ºåŠ›ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
-.LP
-.RS 3
-
+\f3javap \-c DocFooter.class\fP ¤¬¤â¤¿¤é¤¹½ĞÎÏ¤Ï¼¡¤Î¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
 .LP
 .nf
 \f3
 .fl
-Compiled from DocFooter.java
+Compiled from "DocFooter.java"
 .fl
 public class DocFooter extends java.applet.Applet {
 .fl
-    java.lang.String date;
+  java.lang.String date;
 .fl
-    java.lang.String email;
+
 .fl
-    public DocFooter();
+  java.lang.String email;
 .fl
-    public void init();
+
 .fl
-    public void paint(java.awt.Graphics);
+  public DocFooter();
+.fl
+    Code:
+.fl
+       0: aload_0       
+.fl
+       1: invokespecial #1                  // Method java/applet/Applet."<init>":()V
+.fl
+       4: return        
+.fl
+
+.fl
+  public void init();
+.fl
+    Code:
+.fl
+       0: aload_0       
+.fl
+       1: sipush        500
+.fl
+       4: bipush        100
+.fl
+       6: invokevirtual #2                  // Method resize:(II)V
+.fl
+       9: aload_0       
+.fl
+      10: aload_0       
+.fl
+      11: ldc           #3                  // String LAST_UPDATED
+.fl
+      13: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      16: putfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      19: aload_0       
+.fl
+      20: aload_0       
+.fl
+      21: ldc           #6                  // String EMAIL
+.fl
+      23: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      26: putfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      29: return        
+.fl
+
+.fl
+  public void paint(java.awt.Graphics);
+.fl
+    Code:
+.fl
+       0: aload_1       
+.fl
+       1: new           #8                  // class java/lang/StringBuilder
+.fl
+       4: dup           
+.fl
+       5: invokespecial #9                  // Method java/lang/StringBuilder."<init>":()V
+.fl
+       8: aload_0       
+.fl
+       9: getfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      12: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      15: ldc           #11                 // String  by 
+.fl
+      17: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      20: invokevirtual #12                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+.fl
+      23: bipush        100
+.fl
+      25: bipush        15
+.fl
+      27: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      30: aload_1       
+.fl
+      31: aload_0       
+.fl
+      32: getfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      35: sipush        290
+.fl
+      38: bipush        15
+.fl
+      40: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      43: return        
 .fl
 }
 .fl
-
-.fl
-Method DocFooter()
-.fl
-   0 aload_0
-.fl
-   1 invokespecial #1 <Method java.applet.Applet()>
-.fl
-   4 return
-.fl
-
-.fl
-Method void init()
-.fl
-   0 aload_0
-.fl
-   1 sipush 500
-.fl
-   4 bipush 100
-.fl
-   6 invokevirtual #2 <Method void resize(int, int)>
-.fl
-   9 aload_0
-.fl
-  10 aload_0
-.fl
-  11 ldc #3 <String "LAST_UPDATED">
-.fl
-  13 invokevirtual #4 <Method java.lang.String getParameter(java.lang.String)>
-.fl
-  16 putfield #5 <Field java.lang.String date>
-.fl
-  19 aload_0
-.fl
-  20 aload_0
-.fl
-  21 ldc #6 <String "EMAIL">
-.fl
-  23 invokevirtual #4 <Method java.lang.String getParameter(java.lang.String)>
-.fl
-  26 putfield #7 <Field java.lang.String email>
-.fl
-  29 return
-.fl
-
-.fl
-Method void paint(java.awt.Graphics)
-.fl
-   0 aload_1
-.fl
-   1 new #8 <Class java.lang.StringBuffer>
-.fl
-   4 dup
-.fl
-   5 invokespecial #9 <Method java.lang.StringBuffer()>
-.fl
-   8 aload_0
-.fl
-   9 getfield #5 <Field java.lang.String date>
-.fl
-  12 invokevirtual #10 <Method java.lang.StringBuffer append(java.lang.String)>
-.fl
-  15 ldc #11 <String " by ">
-.fl
-  17 invokevirtual #10 <Method java.lang.StringBuffer append(java.lang.String)>
-.fl
-  20 invokevirtual #12 <Method java.lang.String toString()>
-.fl
-  23 bipush 100
-.fl
-  25 bipush 15
-.fl
-  27 invokevirtual #13 <Method void drawString(java.lang.String, int, int)>
-.fl
-  30 aload_1
-.fl
-  31 aload_0
-.fl
-  32 getfield #7 <Field java.lang.String email>
-.fl
-  35 sipush 290
-.fl
-  38 bipush 15
-.fl
-  40 invokevirtual #13 <Method void drawString(java.lang.String, int, int)>
-.fl
-  43 return
-.fl
 \fP
 .fi
-.RE
 
 .LP
-.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
-.LP
-
+.SH "¥ª¥×¥·¥ç¥ó"
 .LP
 .RS 3
 .TP 3
-\-help 
-\f3javap\fP ã®ãƒ˜ãƒ«ãƒ—ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
+\-help \-\-help \-? 
+\f3javap\fP ¤Î¥Ø¥ë¥×¥á¥Ã¥»¡¼¥¸¤ò½ĞÎÏ¤·¤Ş¤¹¡£ 
+.TP 3
+\-version 
+¥Ğ¡¼¥¸¥ç¥ó¾ğÊó¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-l 
-è¡Œç•ªå·ã¨å±€æ‰€å¤‰æ•°ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
-.TP 3
-\-b 
-JDK 1.1 ã® \f3javap\fP ã¨ã®ä¸‹ä½äº’æ›æ€§ã‚’ä¿è¨¼ã—ã¾ã™ã€‚ 
+¹ÔÈÖ¹æ¤È¶É½êÊÑ¿ô¥Æ¡¼¥Ö¥ë¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-public 
-public ã‚¯ãƒ©ã‚¹ãŠã‚ˆã³ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
+public ¥¯¥é¥¹¤ª¤è¤Ó¥á¥ó¥Ğ¡¼¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-protected 
-protected ãŠã‚ˆã³ public ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
+protected ¤ª¤è¤Ó public ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¡¼¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-package 
-packageã€protectedã€ãŠã‚ˆã³ public ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ã“ã‚Œã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®è¨­å®šã§ã™ã€‚ 
+package¡¢protected¡¢¤ª¤è¤Ó public ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¡¼¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£¤³¤ì¤Ï¥Ç¥Õ¥©¥ë¥È¤ÎÀßÄê¤Ç¤¹¡£ 
 .TP 3
-\-private 
-ã™ã¹ã¦ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
+\-private \-p 
+¤¹¤Ù¤Æ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¡¼¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-Jflag 
-ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã‚·ã‚¹ãƒ†ãƒ ã«ç›´æ¥ \f2flag\fP ã‚’æ¸¡ã—ã¾ã™ã€‚ä½¿ç”¨ä¾‹ã‚’æ¬¡ã«ç¤ºã—ã¾ã™ã€‚ 
-.RS 3
-
-.LP
+¥é¥ó¥¿¥¤¥à¥·¥¹¥Æ¥à¤ËÄ¾ÀÜ \f2flag\fP ¤òÅÏ¤·¤Ş¤¹¡£»ÈÍÑÎã¤ò¼¡¤Ë¼¨¤·¤Ş¤¹¡£ 
 .nf
 \f3
 .fl
@@ -288,74 +278,40 @@ javap \-J\-Djava.security.manager \-J\-Djava.security.policy=MyPolicy MyClassNam
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-s 
-å†…éƒ¨ã®å‹ã‚·ã‚°ãƒ‹ãƒãƒ£ãƒ¼ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
+ÆâÉô¤Î·¿¥·¥°¥Ë¥Á¥ã¡¼¤ò½ĞÎÏ¤·¤Ş¤¹¡£ 
+.TP 3
+\-sysinfo 
+½èÍıÃæ¤Î¥¯¥é¥¹¤Î¥·¥¹¥Æ¥à¾ğÊó (¥Ñ¥¹¡¢¥µ¥¤¥º¡¢ÆüÉÕ¡¢MD5 ¥Ï¥Ã¥·¥å) ¤òÉ½¼¨¤·¤Ş¤¹¡£ 
+.TP 3
+\-constants 
+static final Äê¿ô¤òÉ½¼¨¤·¤Ş¤¹¡£ 
 .TP 3
 \-c 
-ã‚¯ãƒ©ã‚¹ã®å„ãƒ¡ã‚½ãƒƒãƒ‰ã®ãŸã‚ã«é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã•ã‚Œã‚‹ã‚³ãƒ¼ãƒ‰ã€ã™ãªã‚ã¡ Java ãƒã‚¤ãƒˆã‚³ãƒ¼ãƒ‰ã‹ã‚‰æˆã‚‹å‘½ä»¤ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ã“ã‚Œã‚‰ã¯
+¥¯¥é¥¹¤Î³Æ¥á¥½¥Ã¥É¤Î¤¿¤á¤ËµÕ¥¢¥»¥ó¥Ö¥ë¤µ¤ì¤ë¥³¡¼¥É¡¢¤¹¤Ê¤ï¤Á Java ¥Ğ¥¤¥È¥³¡¼¥É¤«¤éÀ®¤ëÌ¿Îá¤òÉ½¼¨¤·¤Ş¤¹¡£¤³¤ì¤é¤Ï
 .na
-\f2ã€ŒJava Virtual Machine Specificationã€\fP @
+\f2¡ÖJava Virtual Machine Specification¡×\fP @
 .fi
-http://java.sun.com/docs/books/vmspec/ã«ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆåŒ–ã•ã‚Œã¦ã„ã¾ã™ã€‚ 
+http://java.sun.com/docs/books/vmspec/¤Ë¥É¥­¥å¥á¥ó¥È²½¤µ¤ì¤Æ¤¤¤Ş¤¹¡£ 
 .TP 3
 \-verbose 
-ãƒ¡ã‚½ãƒƒãƒ‰ã®ã‚¹ã‚¿ãƒƒã‚¯ã‚µã‚¤ã‚ºã€ãŠã‚ˆã³ \f2locals\fP ã¨ \f2args\fP ã®æ•°ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
+¥á¥½¥Ã¥É¤Î¥¹¥¿¥Ã¥¯¥µ¥¤¥º¡¢¤ª¤è¤Ó \f2locals\fP ¤È \f2args\fP ¤Î¿ô¤ò½ĞÎÏ¤·¤Ş¤¹¡£ 
 .TP 3
 \-classpath path 
-\f3javap\fP ãŒã‚¯ãƒ©ã‚¹ã‚’æ¢ã™ãŸã‚ã«ä½¿ç”¨ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¾ãŸã¯ CLASSPATH ç’°å¢ƒå¤‰æ•°è¨­å®šã‚’ä¸Šæ›¸ãã—ã¾ã™ã€‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¯ã‚³ãƒ­ãƒ³ã§åˆ†å‰²ã—ã¾ã™ã€‚ã—ãŸãŒã£ã¦ã€\f2path\fP ã®ä¸€èˆ¬å½¢å¼ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚ 
-.nf
-\f3
-.fl
-   .:<your_path>
-.fl
-\fP
-.fi
-ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚ 
-.nf
-\f3
-.fl
-.:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
+\f3javap\fP ¤¬¥¯¥é¥¹¤òÃµ¤¹¤¿¤á¤Ë»ÈÍÑ¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ş¤¿¤Ï CLASSPATH ´Ä¶­ÊÑ¿ôÀßÄê¤ò¾å½ñ¤­¤·¤Ş¤¹¡£ 
 .TP 3
 \-bootclasspath path 
-ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ã‚¯ãƒ©ã‚¹ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ã‚¯ãƒ©ã‚¹ã¯ã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ \f2jre/lib/rt.jar\fP ãŠã‚ˆã³ä»–ã®ã„ãã¤ã‹ã® JAR ãƒ•ã‚¡ã‚¤ãƒ« ã«ã‚ã‚‹ã€ã‚³ã‚¢ Java 2 ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ã‚’å®Ÿè£…ã™ã‚‹ã‚¯ãƒ©ã‚¹ã§ã™ã€‚ 
+¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¥¯¥é¥¹¤ò¥í¡¼¥É¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¥¯¥é¥¹¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï \f2jre/lib/rt.jar\fP ¤ª¤è¤ÓÂ¾¤Î¤¤¤¯¤Ä¤«¤Î JAR ¥Õ¥¡¥¤¥ë ¤Ë¤¢¤ë¡¢¥³¥¢ Java 2 ¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¤ò¼ÂÁõ¤¹¤ë¥¯¥é¥¹¤Ç¤¹¡£ 
 .TP 3
 \-extdirs dirs 
-ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚ŒãŸæ‹¡å¼µæ©Ÿèƒ½ã‚’æ¤œç´¢ã™ã‚‹å ´æ‰€ã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¾ã™ã€‚The default location for extensions is the value of \f2java.ext.dirs\fP. 
+¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤¿³ÈÄ¥µ¡Ç½¤ò¸¡º÷¤¹¤ë¾ì½ê¤ò¥ª¡¼¥Ğ¡¼¥é¥¤¥É¤·¤Ş¤¹¡£³ÈÄ¥µ¡Ç½¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï \f2java.ext.dirs\fP ¤Ë¤¢¤ê¤Ş¤¹¡£ 
 .RE
 
 .LP
-.SH "ç’°å¢ƒå¤‰æ•°"
-.LP
-
-.LP
-.RS 3
-.TP 3
-CLASSPATH 
-ãƒ¦ãƒ¼ã‚¶ãƒ¼å®šç¾©ã‚¯ãƒ©ã‚¹ã¸ã®ãƒ‘ã‚¹ã‚’ã‚·ã‚¹ãƒ†ãƒ ã«æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¯ã‚³ãƒ­ãƒ³ã§åˆ†å‰²ã—ã¾ã™ã€‚ æ¬¡ã«ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚ 
-.RS 3
-
-.LP
-.nf
-\f3
-.fl
-.:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
-.RE
-.RE
-
-.LP
-.SH "é–¢é€£é …ç›®"
-.LP
-
+.SH "´ØÏ¢¹àÌÜ"
 .LP
 .LP
-javac(1)ã€ java(1)ã€jdb(1)ã€javah(1)ã€javadoc(1)
+javac(1)¡¢java(1)¡¢jdb(1)¡¢javah(1)¡¢javadoc(1)
 .LP
  

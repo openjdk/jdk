@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <new>
 
 #include "memory/allocation.inline.hpp"
 #include "utilities/decoder.hpp"
@@ -46,7 +47,7 @@ ElfFile::ElfFile(const char* filepath) {
   m_status = Decoder::no_error;
 
   int len = strlen(filepath) + 1;
-  m_filepath = NEW_C_HEAP_ARRAY(char, len);
+  m_filepath = (const char*)os::malloc(len * sizeof(char));
   if (m_filepath != NULL) {
     strcpy((char*)m_filepath, filepath);
     m_file = fopen(filepath, "r");
@@ -74,7 +75,7 @@ ElfFile::~ElfFile() {
   }
 
   if (m_filepath != NULL) {
-    FREE_C_HEAP_ARRAY(char, m_filepath);
+    os::free((void*)m_filepath);
   }
 
   if (m_next != NULL) {
@@ -120,14 +121,14 @@ bool ElfFile::load_tables() {
       }
       // string table
       if (shdr.sh_type == SHT_STRTAB) {
-        ElfStringTable* table = new ElfStringTable(m_file, shdr, index);
+        ElfStringTable* table = new (std::nothrow) ElfStringTable(m_file, shdr, index);
         if (table == NULL) {
           m_status = Decoder::out_of_memory;
           return false;
         }
         add_string_table(table);
       } else if (shdr.sh_type == SHT_SYMTAB || shdr.sh_type == SHT_DYNSYM) {
-        ElfSymbolTable* table = new ElfSymbolTable(m_file, shdr);
+        ElfSymbolTable* table = new (std::nothrow) ElfSymbolTable(m_file, shdr);
         if (table == NULL) {
           m_status = Decoder::out_of_memory;
           return false;

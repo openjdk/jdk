@@ -168,11 +168,11 @@ public class Annotate {
             }
             JCIdent left = (JCIdent)assign.lhs;
             Symbol method = rs.resolveQualifiedMethod(left.pos(),
-                                                      env,
-                                                      a.type,
-                                                      left.name,
-                                                      List.<Type>nil(),
-                                                      null);
+                                                          env,
+                                                          a.type,
+                                                          left.name,
+                                                          List.<Type>nil(),
+                                                          null);
             left.sym = method;
             left.type = method.type;
             if (method.owner != a.type.tsym)
@@ -190,6 +190,15 @@ public class Annotate {
     Attribute enterAttributeValue(Type expected,
                                   JCExpression tree,
                                   Env<AttrContext> env) {
+        //first, try completing the attribution value sym - if a completion
+        //error is thrown, we should recover gracefully, and display an
+        //ordinary resolution diagnostic.
+        try {
+            expected.tsym.complete();
+        } catch(CompletionFailure e) {
+            log.error(tree.pos(), "cant.resolve", Kinds.kindName(e.sym), e.sym);
+            return new Attribute.Error(expected);
+        }
         if (expected.isPrimitive() || types.isSameType(expected, syms.stringType)) {
             Type result = attr.attribExpr(tree, env, expected);
             if (result.isErroneous())

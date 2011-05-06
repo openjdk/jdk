@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug     6558548
+ * @bug     6558548 7039937
  * @summary The compiler needs to be aligned with clarified specification of throws
  * @compile/fail/ref=T6558548_latest.out -XDrawDiagnostics T6558548.java
- * @compile/fail/ref=T6558548_6.out -source 6 -XDrawDiagnostics T6558548.java
+ * @compile/fail/ref=T6558548_6.out -source 6 -Xlint:-options -XDrawDiagnostics T6558548.java
  */
 
 class T6558548 {
@@ -12,7 +12,7 @@ class T6558548 {
     void checked() throws InterruptedException {}
     void runtime() throws IllegalArgumentException {}
 
-    void m1() {
+    void m1a() {
         try {
             throw new java.io.FileNotFoundException();
         }
@@ -20,7 +20,7 @@ class T6558548 {
         catch(java.io.IOException exc) { } // 6: ok; latest: unreachable
     }
 
-    void m1a() {
+    void m1b() {
         try {
             throw new java.io.IOException();
         }
@@ -28,11 +28,20 @@ class T6558548 {
         catch(java.io.IOException exc) { } //ok
     }
 
-    void m2() {
+    void m1c() {
         try {
-            nothing();
+            throw new java.io.FileNotFoundException();
         }
-        catch(Exception exc) { } // ok
+        catch(java.io.FileNotFoundException exc) { }
+        catch(Exception ex) { } //ok (Exception/Throwable always allowed)
+    }
+
+    void m1d() {
+        try {
+            throw new java.io.FileNotFoundException();
+        }
+        catch(java.io.FileNotFoundException exc) { }
+        catch(Throwable ex) { } //ok (Exception/Throwable always allowed)
     }
 
     void m3() {
@@ -131,7 +140,7 @@ class T6558548 {
             runtime();
         }
         catch(RuntimeException exc) { }
-        catch(Exception exc) { } //6: ok; latest: unreachable
+        catch(Exception exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m17() {
@@ -139,7 +148,7 @@ class T6558548 {
             nothing();
         }
         catch(RuntimeException exc) { }
-        catch(Exception exc) { } //6: ok; latest: unreachable
+        catch(Exception exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m18() {
@@ -148,7 +157,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(InterruptedException exc) { }
-        catch(Exception exc) { } //6: ok; latest: unreachable
+        catch(Exception exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m19() {
@@ -157,7 +166,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(InterruptedException exc) { } //never thrown in try
-        catch(Exception exc) { } //6: ok; latest: unreachable
+        catch(Exception exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m20() {
@@ -166,7 +175,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(InterruptedException exc) { } //never thrown in try
-        catch(Exception exc) { } //6: ok; latest: unreachable
+        catch(Exception exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m21() {
@@ -182,7 +191,7 @@ class T6558548 {
             runtime();
         }
         catch(RuntimeException exc) { }
-        catch(Exception exc) { } // 6: ok; latest: unreachable
+        catch(Exception exc) { } // 6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m23() {
@@ -190,7 +199,7 @@ class T6558548 {
             nothing();
         }
         catch(RuntimeException exc) { }
-        catch(Exception exc) { } // 6: ok; latest: unreachable
+        catch(Exception exc) { } // 6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m24() {
@@ -208,7 +217,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(Error exc) { }
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m26() {
@@ -217,7 +226,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(Error exc) { }
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m27() {
@@ -227,7 +236,7 @@ class T6558548 {
         catch(RuntimeException exc) { }
         catch(Error exc) { }
         catch(InterruptedException exc) { }
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m28() {
@@ -237,7 +246,7 @@ class T6558548 {
         catch(RuntimeException exc) { }
         catch(Error exc) { }
         catch(InterruptedException exc) { } //never thrown in try
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m29() {
@@ -247,7 +256,7 @@ class T6558548 {
         catch(RuntimeException exc) { }
         catch(Error exc) { }
         catch(InterruptedException exc) { } //never thrown in try
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m30() {
@@ -265,7 +274,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(Error exc) { }
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m32() {
@@ -274,7 +283,7 @@ class T6558548 {
         }
         catch(RuntimeException exc) { }
         catch(Error exc) { }
-        catch(Throwable exc) { } //6: ok; latest: unreachable
+        catch(Throwable exc) { } //6: ok; latest: ok (Exception/Throwable always allowed)
     }
 
     void m33() {

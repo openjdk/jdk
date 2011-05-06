@@ -45,7 +45,7 @@ public class Minst {
      */
 
     public static void method_entry(int cnum, int mnum) {
-        Class x = Minst.class;
+        Class<Minst> x = Minst.class;
         synchronized ( x ) {
             if ( engaged > 0 ) {
                 engaged = 0;

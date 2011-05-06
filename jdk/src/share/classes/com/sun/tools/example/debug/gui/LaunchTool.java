@@ -29,18 +29,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
-
-import java.io.IOException;
-
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -98,6 +90,7 @@ class LaunchTool {
             comp.add(panel);
         }
 
+        @Override
         String getText() {
             return textField.getText();
         }
@@ -114,6 +107,7 @@ class LaunchTool {
             comp.add(panel);
         }
 
+        @Override
         String getText() {
             return ((Connector.BooleanArgument)arg)
                            .stringValueOf(check.getModel().isSelected());
@@ -147,6 +141,7 @@ class LaunchTool {
 
         final boolean[] oked = {false};
         JPanel buttonPanel = okCancel( dialog, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 if (radioGroup.getSelection() == null) {
                     JOptionPane.showMessageDialog(dialog,
@@ -162,7 +157,7 @@ class LaunchTool {
         } );
         content.add(BorderLayout.SOUTH, buttonPanel);
         dialog.pack();
-        dialog.show();
+        dialog.setVisible(true);
 
         return oked[0] ?
             modelToConnector.get(radioGroup.getSelection()) :
@@ -178,7 +173,7 @@ class LaunchTool {
         Container content = dialog.getContentPane();
         JPanel guts = new JPanel();
         Border etched = BorderFactory.createEtchedBorder();
-        Border titled = BorderFactory.createTitledBorder(etched,
+        BorderFactory.createTitledBorder(etched,
                                 connector.description(),
                                 TitledBorder.LEFT, TitledBorder.TOP);
         guts.setBorder(etched);
@@ -199,6 +194,7 @@ class LaunchTool {
         content.add(guts);
 
         JPanel buttonPanel = okCancel( dialog, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 for (ArgRep ar : argReps) {
                     if (!ar.isSpecified()) {
@@ -236,7 +232,7 @@ class LaunchTool {
         } );
         content.add(BorderLayout.SOUTH, buttonPanel);
         dialog.pack();
-        dialog.show();
+        dialog.setVisible(true);
     }
 
     private JPanel okCancel(final JDialog dialog, ActionListener okListener) {
@@ -247,6 +243,7 @@ class LaunchTool {
         buttonPanel.add(cancel);
         ok.addActionListener(okListener);
         cancel.addActionListener( new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 dialog.setVisible(false);
                 dialog.dispose();

@@ -46,7 +46,7 @@ public:
     AwtObjectList();
 
     void Add(AwtObject* obj);
-    void Remove(AwtObject* obj);
+    BOOL Remove(AwtObject* obj);
 #ifdef DEBUG
     /* Used for sanity checks only. */
     AwtObject* LookUp(AwtObject* obj);

@@ -1380,6 +1380,12 @@ public:
   void trace_stack_from(vframe* start_vf)        PRODUCT_RETURN;
   void trace_frames()                            PRODUCT_RETURN;
 
+  // Print an annotated view of the stack frames
+  void print_frame_layout(int depth = 0, bool validate_only = false) PRODUCT_RETURN;
+  void validate_frame_layout() {
+    print_frame_layout(0, true);
+  }
+
   // Returns the number of stack frames on the stack
   int depth() const;
 

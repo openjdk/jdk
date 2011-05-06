@@ -100,11 +100,6 @@ JVM_CHECK_SYMBOLS = $(NM) -u -p $(LIBJVM.o) | \
 
 LINK_LIB.CC/PRE_HOOK += $(JVM_CHECK_SYMBOLS) || exit 1;
 
-# Some interfaces (_lwp_create) changed with LP64 and Solaris 7
-SOLARIS_7_OR_LATER := \
-$(shell uname -r | awk -F. '{ if ($$2 >= 7) print "-DSOLARIS_7_OR_LATER"; }')
-CFLAGS += ${SOLARIS_7_OR_LATER}
-
 # New architecture options started in SS12 (5.9), we need both styles to build.
 #   The older arch options for SS11 (5.8) or older and also for /usr/ccs/bin/as.
 #   Note: default for 32bit sparc is now the same as v8plus, so the

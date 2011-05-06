@@ -1223,21 +1223,6 @@ bool BoolNode::is_counted_loop_exit_test() {
 }
 
 //=============================================================================
-//------------------------------NegNode----------------------------------------
-Node *NegFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( in(1)->Opcode() == Op_SubF )
-    return new (phase->C, 3) SubFNode( in(1)->in(2), in(1)->in(1) );
-  return NULL;
-}
-
-Node *NegDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( in(1)->Opcode() == Op_SubD )
-    return new (phase->C, 3) SubDNode( in(1)->in(2), in(1)->in(1) );
-  return NULL;
-}
-
-
-//=============================================================================
 //------------------------------Value------------------------------------------
 // Compute sqrt
 const Type *SqrtDNode::Value( PhaseTransform *phase ) const {
