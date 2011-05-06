@@ -232,14 +232,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   }
 
   // compute size of arguments
-  int arg_size = target->arg_size();
-  if (code == Bytecodes::_invokedynamic) {
-    assert(!target->is_static(), "receiver explicit in method");
-    arg_size--;  // implicit, not really on stack
-  }
-  if (!target->is_loaded() && code == Bytecodes::_invokestatic) {
-    arg_size--;
-  }
+  int arg_size = target->invoke_arg_size(code);
   int arg_base = MAX2(state._stack_height - arg_size, 0);
 
   // direct recursive calls are skipped if they can be bound statically without introducing
