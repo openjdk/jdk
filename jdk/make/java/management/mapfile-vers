@@ -32,7 +32,9 @@ SUNWprivate_1.1 {
 	    Java_com_sun_management_UnixOperatingSystem_getFreeSwapSpaceSize;
 	    Java_com_sun_management_UnixOperatingSystem_getMaxFileDescriptorCount;
 	    Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount;
+	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad;
 	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime;
+	    Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad;
 	    Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize;
 	    Java_com_sun_management_UnixOperatingSystem_getTotalSwapSpaceSize;
 	    Java_com_sun_management_UnixOperatingSystem_initialize;
