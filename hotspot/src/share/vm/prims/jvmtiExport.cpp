@@ -1804,6 +1804,8 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, const jmethodID metho
 }
 
 void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) {
+  assert(name != NULL && name[0] != '\0', "sanity check");
+
   JavaThread* thread = JavaThread::current();
   // In theory everyone coming thru here is in_vm but we need to be certain
   // because a callee will do a vm->native transition

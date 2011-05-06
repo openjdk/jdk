@@ -274,7 +274,7 @@ class os: AllStatic {
   static char*  reserve_memory_special(size_t size, char* addr = NULL,
                 bool executable = false);
   static bool   release_memory_special(char* addr, size_t bytes);
-  static bool   large_page_init();
+  static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
   static bool   can_execute_large_page_memory();

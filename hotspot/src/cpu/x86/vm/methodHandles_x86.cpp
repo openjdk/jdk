@@ -315,56 +315,38 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
-                              intptr_t* saved_regs,
-                              intptr_t* entry_sp,
                               intptr_t* saved_sp,
-                              intptr_t* saved_bp) {
+                              oop mh,
+                              intptr_t* sp) {
   // called as a leaf from native code: do not block the JVM!
-  intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  printf("MH %s mh="INTPTR_FORMAT" sp=("INTPTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="INTPTR_FORMAT"\n",
-         adaptername, (intptr_t)mh, (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
-  if (last_sp != saved_sp && last_sp != NULL)
-    printf("*** last_sp="INTPTR_FORMAT"\n", (intptr_t)last_sp);
+  intptr_t* entry_sp = sp + LP64_ONLY(16) NOT_LP64(8);
+  tty->print_cr("MH %s mh="INTPTR_FORMAT" sp="INTPTR_FORMAT" saved_sp="INTPTR_FORMAT")",
+                adaptername, (intptr_t)mh, (intptr_t)entry_sp, saved_sp);
   if (Verbose) {
-    printf(" reg dump: ");
-    int saved_regs_count = (entry_sp-1) - saved_regs;
-    // 32 bit: rdi rsi rbp rsp; rbx rdx rcx (*) rax
-    int i;
-    for (i = 0; i <= saved_regs_count; i++) {
-      if (i > 0 && i % 4 == 0 && i != saved_regs_count)
-        printf("\n   + dump: ");
-      printf(" %d: "INTPTR_FORMAT, i, saved_regs[i]);
-    }
-    printf("\n");
-    int stack_dump_count = 16;
-    if (stack_dump_count < (int)(saved_bp + 2 - saved_sp))
-      stack_dump_count = (int)(saved_bp + 2 - saved_sp);
-    if (stack_dump_count > 64)  stack_dump_count = 48;
-    for (i = 0; i < stack_dump_count; i += 4) {
-      printf(" dump at SP[%d] "INTPTR_FORMAT": "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT"\n",
-             i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
-    }
     print_method_handle(mh);
   }
 }
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles)  return;
   BLOCK_COMMENT("trace_method_handle {");
-  __ push(rax);
-  __ lea(rax, Address(rsp, wordSize*6)); // entry_sp
   __ pusha();
+#ifdef _LP64
+  // Pass arguments carefully since the registers overlap with the calling convention.
+  // rcx: method handle
+  // r13: saved sp
+  __ mov(c_rarg2, rcx); // mh
+  __ mov(c_rarg1, r13); // saved sp
+  __ mov(c_rarg3, rsp); // sp
+  __ movptr(c_rarg0, (intptr_t) adaptername);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub), c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+#else
   // arguments:
-  __ push(rbp);               // interpreter frame pointer
-  __ push(rsi);               // saved_sp
-  __ push(rax);               // entry_sp
-  __ push(rcx);               // mh
-  __ push(rcx);
-  __ movptr(Address(rsp, 0), (intptr_t) adaptername);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub), 5);
+  // rcx: method handle
+  // rsi: saved sp
+  __ movptr(rbx, (intptr_t) adaptername);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub), rbx, rsi, rcx, rsp);
+#endif
   __ popa();
-  __ pop(rax);
   BLOCK_COMMENT("} trace_method_handle");
 }
 #endif //PRODUCT
