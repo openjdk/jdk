@@ -224,6 +224,12 @@ void PSOldGen::expand(size_t bytes) {
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_size_up(bytes, alignment);
   size_t aligned_expand_bytes = align_size_up(MinHeapDeltaBytes, alignment);
+
+  if (UseNUMA) {
+    // With NUMA we use round-robin page allocation for the old gen. Expand by at least
+    // providing a page per lgroup. Alignment is larger or equal to the page size.
+    aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
+  }
   if (aligned_bytes == 0){
     // The alignment caused the number of bytes to wrap.  An expand_by(0) will
     // return true with the implication that and expansion was done when it
