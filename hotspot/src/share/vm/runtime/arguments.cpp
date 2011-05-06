@@ -960,7 +960,7 @@ void Arguments::set_mode_flags(Mode mode) {
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          (char*)Abstract_VM_Version::vm_info_string(), false);
+                          (char*)VM_Version::vm_info_string(), false);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -1421,6 +1421,11 @@ void Arguments::set_parallel_gc_flags() {
       if (FLAG_IS_DEFAULT(PermMarkSweepDeadRatio)) {
         FLAG_SET_DEFAULT(PermMarkSweepDeadRatio, 5);
       }
+    }
+  }
+  if (UseNUMA) {
+    if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
+      FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
     }
   }
 }
@@ -2379,7 +2384,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       _gc_log_filename = strdup(tail);
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
-      FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
 
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
