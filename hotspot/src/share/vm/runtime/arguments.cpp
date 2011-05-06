@@ -1423,6 +1423,11 @@ void Arguments::set_parallel_gc_flags() {
       }
     }
   }
+  if (UseNUMA) {
+    if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
+      FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
+    }
+  }
 }
 
 void Arguments::set_g1_gc_flags() {
@@ -2376,7 +2381,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       _gc_log_filename = strdup(tail);
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
-      FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
 
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
