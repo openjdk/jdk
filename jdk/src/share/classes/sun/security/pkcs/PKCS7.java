@@ -38,7 +38,6 @@ import java.security.*;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateIssuerName;
-import sun.security.x509.KeyUsageExtension;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 import sun.security.x509.X509CRLImpl;
@@ -493,7 +492,7 @@ public class PKCS7 {
         // CRLs (optional)
         if (crls != null && crls.length != 0) {
             // cast to X509CRLImpl[] since X509CRLImpl implements DerEncoder
-            Set<X509CRLImpl> implCRLs = new HashSet<>(crls.length);
+            Set<X509CRLImpl> implCRLs = new HashSet<X509CRLImpl>(crls.length);
             for (X509CRL crl: crls) {
                 if (crl instanceof X509CRLImpl)
                     implCRLs.add((X509CRLImpl) crl);
@@ -531,168 +530,6 @@ public class PKCS7 {
     }
 
     /**
-     * Verifying signed data using an external chunked data source.
-     */
-    public static class PKCS7Verifier {
-
-        private final SignerInfo si;          // Signer to verify
-        private final MessageDigest md;       // MessageDigest object for chunks
-        private final Signature sig;          // Signature object for chunks
-
-        private PKCS7Verifier(SignerInfo si, MessageDigest md, Signature sig) {
-            this.si = si;
-            this.md = md;
-            this.sig = sig;
-        }
-
-        public static PKCS7Verifier from(PKCS7 block, SignerInfo si) throws
-                SignatureException, NoSuchAlgorithmException {
-
-            try {
-                MessageDigest md = null;
-                Signature sig;
-
-                ContentInfo content = block.getContentInfo();
-                String digestAlgname = si.getDigestAlgorithmId().getName();
-
-                // if there are authenticate attributes, feed data chunks to
-                // the message digest. In this case, pv.md is not null
-                if (si.authenticatedAttributes != null) {
-                    // first, check content type
-                    ObjectIdentifier contentType = (ObjectIdentifier)
-                           si.authenticatedAttributes.getAttributeValue(
-                             PKCS9Attribute.CONTENT_TYPE_OID);
-                    if (contentType == null ||
-                        !contentType.equals(content.contentType))
-                        return null;  // contentType does not match, bad SignerInfo
-
-                    // now, check message digest
-                    byte[] messageDigest = (byte[])
-                        si.authenticatedAttributes.getAttributeValue(
-                             PKCS9Attribute.MESSAGE_DIGEST_OID);
-
-                    if (messageDigest == null) // fail if there is no message digest
-                        return null;
-
-                    md = MessageDigest.getInstance(digestAlgname);
-                }
-
-                // put together digest algorithm and encryption algorithm
-                // to form signing algorithm
-                String encryptionAlgname =
-                    si.getDigestEncryptionAlgorithmId().getName();
-
-                // Workaround: sometimes the encryptionAlgname is actually
-                // a signature name
-                String tmp = AlgorithmId.getEncAlgFromSigAlg(encryptionAlgname);
-                if (tmp != null) encryptionAlgname = tmp;
-                String algname = AlgorithmId.makeSigAlg(
-                        digestAlgname, encryptionAlgname);
-
-                sig = Signature.getInstance(algname);
-                X509Certificate cert = si.getCertificate(block);
-
-                if (cert == null) {
-                    return null;
-                }
-                if (cert.hasUnsupportedCriticalExtension()) {
-                    throw new SignatureException("Certificate has unsupported "
-                                                 + "critical extension(s)");
-                }
-
-                // Make sure that if the usage of the key in the certificate is
-                // restricted, it can be used for digital signatures.
-                // XXX We may want to check for additional extensions in the
-                // future.
-                boolean[] keyUsageBits = cert.getKeyUsage();
-                if (keyUsageBits != null) {
-                    KeyUsageExtension keyUsage;
-                    try {
-                        // We don't care whether or not this extension was marked
-                        // critical in the certificate.
-                        // We're interested only in its value (i.e., the bits set)
-                        // and treat the extension as critical.
-                        keyUsage = new KeyUsageExtension(keyUsageBits);
-                    } catch (IOException ioe) {
-                        throw new SignatureException("Failed to parse keyUsage "
-                                                     + "extension");
-                    }
-
-                    boolean digSigAllowed = ((Boolean)keyUsage.get(
-                            KeyUsageExtension.DIGITAL_SIGNATURE)).booleanValue();
-
-                    boolean nonRepuAllowed = ((Boolean)keyUsage.get(
-                            KeyUsageExtension.NON_REPUDIATION)).booleanValue();
-
-                    if (!digSigAllowed && !nonRepuAllowed) {
-                        throw new SignatureException("Key usage restricted: "
-                                                     + "cannot be used for "
-                                                     + "digital signatures");
-                    }
-                }
-
-                PublicKey key = cert.getPublicKey();
-                sig.initVerify(key);
-                return new PKCS7Verifier(si, md, sig);
-            } catch (IOException e) {
-                throw new SignatureException("IO error verifying signature:\n" +
-                                             e.getMessage());
-
-            } catch (InvalidKeyException e) {
-                throw new SignatureException("InvalidKey: " + e.getMessage());
-
-            }
-        }
-
-        public void update(byte[] data, int off, int end)
-                throws SignatureException {
-            if (md != null) {
-                md.update(data, off, end-off);
-            } else {
-                sig.update(data, off, end-off);
-            }
-        }
-
-        public SignerInfo verify() throws SignatureException {
-            try {
-                // if there are authenticate attributes, get the message
-                // digest and compare it with the digest of data
-                if (md != null) {
-                    // now, check message digest
-                    byte[] messageDigest = (byte[])
-                        si.authenticatedAttributes.getAttributeValue(
-                             PKCS9Attribute.MESSAGE_DIGEST_OID);
-
-                    byte[] computedMessageDigest = md.digest();
-
-                    if (!MessageDigest.isEqual(
-                            messageDigest, computedMessageDigest)) {
-                        return null;
-                    }
-
-                    // message digest attribute matched
-                    // digest of original data
-
-                    // the data actually signed is the DER encoding of
-                    // the authenticated attributes (tagged with
-                    // the "SET OF" tag, not 0xA0).
-                    byte[] dataSigned = si.authenticatedAttributes.getDerEncoding();
-                    sig.update(dataSigned);
-                }
-
-                if (sig.verify(si.getEncryptedDigest())) {
-                    return si;
-                }
-
-            } catch (IOException e) {
-                throw new SignatureException("IO error verifying signature:\n" +
-                                             e.getMessage());
-            }
-            return null;
-        }
-    }
-
-    /**
      * This verifies a given SignerInfo.
      *
      * @param info the signer information.
@@ -717,16 +554,19 @@ public class PKCS7 {
     public SignerInfo[] verify(byte[] bytes)
     throws NoSuchAlgorithmException, SignatureException {
 
-        List<SignerInfo> intResult = new ArrayList<>();
+        Vector<SignerInfo> intResult = new Vector<SignerInfo>();
         for (int i = 0; i < signerInfos.length; i++) {
 
             SignerInfo signerInfo = verify(signerInfos[i], bytes);
             if (signerInfo != null) {
-                intResult.add(signerInfo);
+                intResult.addElement(signerInfo);
             }
         }
-        if (!intResult.isEmpty()) {
-            return intResult.toArray(new SignerInfo[intResult.size()]);
+        if (intResult.size() != 0) {
+
+            SignerInfo[] result = new SignerInfo[intResult.size()];
+            intResult.copyInto(result);
+            return result;
         }
         return null;
     }
