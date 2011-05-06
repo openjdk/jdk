@@ -27,13 +27,7 @@ package com.sun.tools.example.debug.tty;
 
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
-import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.EventRequest;
-
-import java.io.PrintStream;
-import java.util.StringTokenizer;
-import java.util.Collection;
-import java.util.Iterator;
 
 public class EventHandler implements Runnable {
 
@@ -59,6 +53,7 @@ public class EventHandler implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         EventQueue queue = Env.vm().eventQueue();
         while (connected) {

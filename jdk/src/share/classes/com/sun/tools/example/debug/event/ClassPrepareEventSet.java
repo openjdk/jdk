@@ -30,6 +30,8 @@ import com.sun.jdi.event.*;
 
 public class ClassPrepareEventSet extends AbstractEventSet {
 
+    private static final long serialVersionUID = 5958493423581010491L;
+
     ClassPrepareEventSet(EventSet jdiEventSet) {
         super(jdiEventSet);
     }
@@ -55,6 +57,7 @@ public class ClassPrepareEventSet extends AbstractEventSet {
         return ((ClassPrepareEvent)oneEvent).referenceType();
     }
 
+    @Override
     public void notify(JDIListener listener) {
         listener.classPrepare(this);
     }

@@ -861,11 +861,15 @@ public class Util {
      * @param doc the Doc to check.
      * @return true if the given Doc is deprecated.
      */
-    public static boolean isDeprecated(ProgramElementDoc doc) {
+    public static boolean isDeprecated(Doc doc) {
         if (doc.tags("deprecated").length > 0) {
             return true;
         }
-        AnnotationDesc[] annotationDescList = doc.annotations();
+        AnnotationDesc[] annotationDescList;
+        if (doc instanceof PackageDoc)
+            annotationDescList = ((PackageDoc)doc).annotations();
+        else
+            annotationDescList = ((ProgramElementDoc)doc).annotations();
         for (int i = 0; i < annotationDescList.length; i++) {
             if (annotationDescList[i].annotationType().qualifiedName().equals(
                    java.lang.Deprecated.class.getName())){

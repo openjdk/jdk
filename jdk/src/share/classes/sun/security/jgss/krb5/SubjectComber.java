@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,11 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.security.auth.kerberos.KeyTab;
 
 /**
- * This utility looks through the current Subject and retrieves a ticket or key
- * for the desired client/server principals.
+ * This utility looks through the current Subject and retrieves private
+ * credentials for the desired client/server principals.
  *
  * @author Ram Marti
  * @since 1.4.2
@@ -52,58 +53,70 @@ class SubjectComber {
     private SubjectComber() {  // Cannot create one of these
     }
 
-    static Object find(Subject subject, String serverPrincipal,
-        String clientPrincipal, Class credClass) {
+    static <T> T find(Subject subject, String serverPrincipal,
+        String clientPrincipal, Class<T> credClass) {
 
-        return findAux(subject, serverPrincipal, clientPrincipal, credClass,
+        return (T)findAux(subject, serverPrincipal, clientPrincipal, credClass,
             true);
     }
 
-    static Object findMany(Subject subject, String serverPrincipal,
-        String clientPrincipal, Class credClass) {
+    static <T> List<T> findMany(Subject subject, String serverPrincipal,
+        String clientPrincipal, Class<T> credClass) {
 
-        return findAux(subject, serverPrincipal, clientPrincipal, credClass,
+        return (List<T>)findAux(subject, serverPrincipal, clientPrincipal, credClass,
             false);
     }
 
     /**
-     * Find the ticket or key for the specified client/server principals
+     * Find private credentials for the specified client/server principals
      * in the subject. Returns null if the subject is null.
      *
-     * @return the ticket or key
+     * @return the private credentials
      */
-    private static Object findAux(Subject subject, String serverPrincipal,
-        String clientPrincipal, Class credClass, boolean oneOnly) {
+    private static <T> Object findAux(Subject subject, String serverPrincipal,
+        String clientPrincipal, Class<T> credClass, boolean oneOnly) {
 
         if (subject == null) {
             return null;
         } else {
-            List<Object> answer = (oneOnly ? null : new ArrayList<Object>());
+            List<T> answer = (oneOnly ? null : new ArrayList<T>());
 
-            if (credClass == KerberosKey.class) {
-                // We are looking for a KerberosKey credentials for the
-                // serverPrincipal
-                Iterator<KerberosKey> iterator =
-                    subject.getPrivateCredentials(KerberosKey.class).iterator();
+            if (credClass == KeyTab.class) {    // Principal un-related
+                // We are looking for credentials unrelated to serverPrincipal
+                Iterator<T> iterator =
+                    subject.getPrivateCredentials(credClass).iterator();
                 while (iterator.hasNext()) {
-                    KerberosKey key = iterator.next();
-                    if (serverPrincipal == null ||
-                        serverPrincipal.equals(key.getPrincipal().getName())) {
+                    T t = iterator.next();
+                    if (DEBUG) {
+                        System.out.println("Found " + credClass.getSimpleName());
+                    }
+                    if (oneOnly) {
+                        return t;
+                    } else {
+                        answer.add(t);
+                    }
+                }
+            } else if (credClass == KerberosKey.class) {
+                // We are looking for credentials for the serverPrincipal
+                Iterator<T> iterator =
+                    subject.getPrivateCredentials(credClass).iterator();
+                while (iterator.hasNext()) {
+                    T t = iterator.next();
+                    String name = ((KerberosKey)t).getPrincipal().getName();
+                    if (serverPrincipal == null || serverPrincipal.equals(name)) {
                          if (DEBUG) {
-                             System.out.println("Found key for "
-                                 + key.getPrincipal() + "(" +
-                                 key.getKeyType() + ")");
+                             System.out.println("Found " +
+                                     credClass.getSimpleName() + " for " + name);
                          }
                          if (oneOnly) {
-                             return key;
+                             return t;
                          } else {
                              if (serverPrincipal == null) {
                                  // Record name so that keys returned will all
                                  // belong to the same principal
-                                 serverPrincipal =
-                                     key.getPrincipal().getName();
+                                 serverPrincipal = name;
                              }
-                             answer.add(key);
+                             answer.add(t);
                          }
                     }
                 }
@@ -167,7 +180,7 @@ class SubjectComber {
                                                 serverPrincipal =
                                                 ticket.getServer().getName();
                                             }
-                                            answer.add(ticket);
+                                            answer.add((T)ticket);
                                         }
                                     }
                                 }

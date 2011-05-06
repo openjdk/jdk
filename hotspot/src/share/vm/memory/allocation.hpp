@@ -34,6 +34,8 @@
 #include "opto/c2_globals.hpp"
 #endif
 
+#include <new>
+
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
 #define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)
@@ -99,6 +101,7 @@ class AllocatedObj {
 class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
   void* operator new(size_t size);
+  void* operator new (size_t size, const std::nothrow_t&  nothrow_constant);
   void  operator delete(void* p);
   void* new_array(size_t size);
 };

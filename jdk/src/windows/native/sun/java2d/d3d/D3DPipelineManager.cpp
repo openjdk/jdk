@@ -187,6 +187,7 @@ void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
     }
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    RETURN_IF_NULL(env);
 
     pMgr = D3DPipelineManager::GetInstance();
     RETURN_IF_NULL(pMgr);

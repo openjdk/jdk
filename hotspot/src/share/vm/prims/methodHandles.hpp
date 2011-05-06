@@ -265,13 +265,13 @@ class MethodHandles: AllStatic {
   static inline address from_interpreted_entry(EntryKind ek);
 
   // helpers for decode_method.
-  static methodOop decode_methodOop(methodOop m, int& decode_flags_result);
-  static methodOop decode_vmtarget(oop vmtarget, int vmindex, oop mtype, klassOop& receiver_limit_result, int& decode_flags_result);
-  static methodOop decode_MemberName(oop mname, klassOop& receiver_limit_result, int& decode_flags_result);
-  static methodOop decode_MethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result);
-  static methodOop decode_DirectMethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result);
-  static methodOop decode_BoundMethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result);
-  static methodOop decode_AdapterMethodHandle(oop mh, klassOop& receiver_limit_result, int& decode_flags_result);
+  static methodOop    decode_methodOop(methodOop m, int& decode_flags_result);
+  static methodHandle decode_vmtarget(oop vmtarget, int vmindex, oop mtype, KlassHandle& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_MemberName(oop mname, KlassHandle& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_MethodHandle(oop mh, KlassHandle& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_DirectMethodHandle(oop mh, KlassHandle& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_BoundMethodHandle(oop mh, KlassHandle& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_AdapterMethodHandle(oop mh, KlassHandle& receiver_limit_result, int& decode_flags_result);
 
   // Find out how many stack slots an mh pushes or pops.
   // The result is *not* reported as a multiple of stack_move_unit();
@@ -317,7 +317,7 @@ class MethodHandles: AllStatic {
     _dmf_adapter_lsb    = 0x20,
     _DMF_ADAPTER_MASK   = (_dmf_adapter_lsb << CONV_OP_LIMIT) - _dmf_adapter_lsb
   };
-  static methodOop decode_method(oop x, klassOop& receiver_limit_result, int& decode_flags_result);
+  static methodHandle decode_method(oop x, KlassHandle& receiver_limit_result, int& decode_flags_result);
   enum {
     // format of query to getConstant:
     GC_JVM_PUSH_LIMIT = 0,

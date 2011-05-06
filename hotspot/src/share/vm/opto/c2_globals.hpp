@@ -183,6 +183,21 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
+  diagnostic(bool, LoopLimitCheck, true,                                    \
+          "Generate a loop limits check for overflow")                      \
+                                                                            \
+  develop(bool, TraceLoopLimitCheck, false,                                 \
+          "Trace generation of loop limits checks")                         \
+                                                                            \
+  diagnostic(bool, RangeLimitCheck, true,                                   \
+          "Additional overflow checks during range check elimination")      \
+                                                                            \
+  develop(bool, TraceRangeLimitCheck, false,                                \
+          "Trace additional overflow checks in RCE")                        \
+                                                                            \
+  diagnostic(bool, UnrollLimitCheck, true,                                  \
+          "Additional overflow checks during loop unroll")                  \
+                                                                            \
   product(bool, OptimizeFill, false,                                        \
           "convert fill/copy loops into intrinsic")                         \
                                                                             \

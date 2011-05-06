@@ -2826,7 +2826,9 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");
   assert((intptr_t)(addr + bytes) % alignment_hint == 0, "End should be aligned.");
-  Solaris::set_mpss_range(addr, bytes, alignment_hint);
+  if (UseLargePages && UseMPSS) {
+    Solaris::set_mpss_range(addr, bytes, alignment_hint);
+  }
 }
 
 // Tell the OS to make the range local to the first-touching LWP
@@ -3334,11 +3336,11 @@ bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
   return true;
 }
 
-bool os::large_page_init() {
+void os::large_page_init() {
   if (!UseLargePages) {
     UseISM = false;
     UseMPSS = false;
-    return false;
+    return;
   }
 
   // print a warning if any large page related flag is specified on command line
@@ -3359,7 +3361,6 @@ bool os::large_page_init() {
             Solaris::mpss_sanity_check(warn_on_failure, &_large_page_size);
 
   UseLargePages = UseISM || UseMPSS;
-  return UseLargePages;
 }
 
 bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
@@ -4990,7 +4991,7 @@ jint os::init_2(void) {
 #endif
 }
 
-  FLAG_SET_DEFAULT(UseLargePages, os::large_page_init());
+  os::large_page_init();
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
@@ -5041,6 +5042,20 @@ jint os::init_2(void) {
       FREE_C_HEAP_ARRAY(int, lgrp_ids);
       if (lgrp_num < 2) {
         // There's only one locality group, disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    // ISM is not compatible with the NUMA allocator - it always allocates
+    // pages round-robin across the lgroups.
+    if (UseNUMA && UseLargePages && UseISM) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseISM)) {
+          UseLargePages = false;
+        } else {
+          warning("UseNUMA is not compatible with ISM large pages, disabling NUMA allocator");
+          UseNUMA = false;
+        }
+      } else {
         UseNUMA = false;
       }
     }

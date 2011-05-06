@@ -26,6 +26,7 @@ package java.beans;
 
 import java.util.*;
 import java.lang.reflect.*;
+import java.util.Objects;
 import sun.reflect.misc.*;
 
 
@@ -181,10 +182,6 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         return method;
     }
 
-    private static boolean equals(Object o1, Object o2) {
-        return (o1 == null) ? (o2 == null) : o1.equals(o2);
-    }
-
     private void doProperty(Class type, PropertyDescriptor pd, Object oldInstance, Object newInstance, Encoder out) throws Exception {
         Method getter = pd.getReadMethod();
         Method setter = pd.getWriteMethod();
@@ -195,7 +192,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
             Object oldValue = oldGetExp.getValue();
             Object newValue = newGetExp.getValue();
             out.writeExpression(oldGetExp);
-            if (!equals(newValue, out.get(oldValue))) {
+            if (!Objects.equals(newValue, out.get(oldValue))) {
                 // Search for a static constant with this value;
                 Object e = (Object[])pd.getValue("enumerationValues");
                 if (e instanceof Object[] && Array.getLength(e) % 3 == 0) {
@@ -233,7 +230,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
                 Object oldValue = oldGetExp.getValue();
                 Object newValue = newGetExp.getValue();
                 out.writeExpression(oldGetExp);
-                if (!equals(newValue, out.get(oldValue))) {
+                if (!Objects.equals(newValue, out.get(oldValue))) {
                     out.writeStatement(new Statement(field, "set", new Object[] { oldInstance, oldValue }));
                 }
             }

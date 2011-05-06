@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,11 @@ public class TreeWriter extends AbstractTreeWriter {
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.addStyle(HtmlStyle.horizontal);
             for (int i = 0; i < packages.length; i++) {
-                if (packages[i].name().length() == 0) {
+                // If the package name length is 0 or if -nodeprecated option
+                // is set and the package is marked as deprecated, do not include
+                // the page in the list of package hierarchies.
+                if (packages[i].name().length() == 0 ||
+                        (configuration.nodeprecated && Util.isDeprecated(packages[i]))) {
                     continue;
                 }
                 String link = pathString(packages[i], "package-tree.html");

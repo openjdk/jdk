@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,69 +153,40 @@ public class NegTokenTarg extends SpNegoToken {
                         "did not have the Sequence tag");
             }
 
-            // parse negResult, if present
-            if (tmp1.data.available() > 0) {
+            // parse various fields if present
+            int lastField = -1;
+            while (tmp1.data.available() > 0) {
                 DerValue tmp2 = tmp1.data.getDerValue();
-                if (!tmp2.isContextSpecific((byte)0x00)) {
-                        throw new IOException("SPNEGO NegoTokenTarg : " +
-                        "did not have the right context tag for negResult");
-                }
-                negResult = tmp2.data.getEnumerated();
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenTarg: negotiated" +
-                                " result = " + getNegoResultString(negResult));
-                }
-            }
-
-            // parse supportedMech, if present
-            if (tmp1.data.available() > 0) {
-                DerValue tmp3 = tmp1.data.getDerValue();
-                if (!tmp3.isContextSpecific((byte)0x01)) {
-                    throw new IOException("SPNEGO NegoTokenTarg : " +
-                        "did not have the right context tag for supportedMech");
-                }
-                ObjectIdentifier mech = tmp3.data.getOID();
-                supportedMech = new Oid(mech.toString());
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenTarg: " +
-                                "supported mechanism = " + supportedMech);
-                }
-            }
-
-            // parse ResponseToken, if present
-            if (tmp1.data.available() > 0) {
-                DerValue tmp4 = tmp1.data.getDerValue();
-                if (!tmp4.isContextSpecific((byte)0x02)) {
-                    throw new IOException("SPNEGO NegoTokenTarg : did not" +
-                        " have the right context tag for response token");
-                }
-                responseToken = tmp4.data.getOctetString();
-            }
-
-            // parse mechListMIC if present and not in MS interop
-            if (!GSSUtil.useMSInterop() && (tmp1.data.available() > 0)) {
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenTarg: " +
-                                                "receiving MechListMIC");
-                }
-                DerValue tmp5 = tmp1.data.getDerValue();
-                if (!tmp5.isContextSpecific((byte)0x03)) {
-                    throw new IOException("SPNEGO NegoTokenTarg : " +
-                        "did not have the right context tag for mechListMIC");
-                }
-                mechListMIC = tmp5.data.getOctetString();
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenTarg: " +
-                                        "MechListMIC Token = " +
-                                        getHexBytes(mechListMIC));
-                }
-            } else {
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenTarg : " +
-                                        "no MIC token included");
+                if (tmp2.isContextSpecific((byte)0x00)) {
+                    lastField = checkNextField(lastField, 0);
+                    negResult = tmp2.data.getEnumerated();
+                    if (DEBUG) {
+                        System.out.println("SpNegoToken NegTokenTarg: negotiated" +
+                                    " result = " + getNegoResultString(negResult));
+                    }
+                } else if (tmp2.isContextSpecific((byte)0x01)) {
+                    lastField = checkNextField(lastField, 1);
+                    ObjectIdentifier mech = tmp2.data.getOID();
+                    supportedMech = new Oid(mech.toString());
+                    if (DEBUG) {
+                        System.out.println("SpNegoToken NegTokenTarg: " +
+                                    "supported mechanism = " + supportedMech);
+                    }
+                } else if (tmp2.isContextSpecific((byte)0x02)) {
+                    lastField = checkNextField(lastField, 2);
+                    responseToken = tmp2.data.getOctetString();
+                } else if (tmp2.isContextSpecific((byte)0x03)) {
+                    lastField = checkNextField(lastField, 3);
+                    if (!GSSUtil.useMSInterop()) {
+                        mechListMIC = tmp2.data.getOctetString();
+                        if (DEBUG) {
+                            System.out.println("SpNegoToken NegTokenTarg: " +
+                                                "MechListMIC Token = " +
+                                                getHexBytes(mechListMIC));
+                        }
+                    }
                 }
             }
-
         } catch (IOException e) {
             throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
                 "Invalid SPNEGO NegTokenTarg token : " + e.getMessage());

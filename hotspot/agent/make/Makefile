@@ -257,7 +257,7 @@ RMIC = $(JDK_HOME)/bin/rmic
 all: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	$(JAVAC) -source 1.4 -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	$(JAVAC) -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
 	$(RMIC) -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql
@@ -269,7 +269,7 @@ all: filelist
 allprof: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	$(JAVAC) -source 1.4 -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	$(JAVAC) -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
 	$(RMIC) -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql

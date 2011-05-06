@@ -154,7 +154,7 @@ public class BasicSplitPaneDivider extends Container
         setBackground(UIManager.getColor("SplitPane.background"));
     }
 
-    private void revalidate() {
+    private void revalidateSplitPane() {
         invalidate();
         if (splitPane != null) {
             splitPane.revalidate();
@@ -315,7 +315,7 @@ public class BasicSplitPaneDivider extends Container
                 setCursor((orientation == JSplitPane.HORIZONTAL_SPLIT) ?
                           Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR) :
                           Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
-                revalidate();
+                revalidateSplitPane();
             }
             else if (e.getPropertyName() == JSplitPane.
                       ONE_TOUCH_EXPANDABLE_PROPERTY) {
@@ -376,7 +376,7 @@ public class BasicSplitPaneDivider extends Container
                 add(rightButton);
             }
         }
-        revalidate();
+        revalidateSplitPane();
     }
 
 
