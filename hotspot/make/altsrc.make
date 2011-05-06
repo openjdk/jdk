@@ -24,7 +24,8 @@
 
 # This file defines variables and macros which are used in the makefiles to 
 # allow distributions to augment or replace common hotspot code with 
-# distribution-specific source files.
+# distribution-specific source files. This capability is disabled when
+# an OPENJDK build is requested, unless HS_ALT_SRC_REL has been set externally.
 
 # Requires: GAMMADIR
 # Provides:
@@ -33,13 +34,16 @@
 
 HS_COMMON_SRC_REL=src
 
-# This needs to be changed to a more generic location, but we keep it as this 
-# for now for compatibility
-HS_ALT_SRC_REL=src/closed
+ifneq ($(OPENJDK),true)
+  # This needs to be changed to a more generic location, but we keep it 
+  # as this for now for compatibility
+  HS_ALT_SRC_REL=src/closed
+else
+  HS_ALT_SRC_REL=NO_SUCH_PATH
+endif
 
 HS_COMMON_SRC=$(GAMMADIR)/$(HS_COMMON_SRC_REL)
 HS_ALT_SRC=$(GAMMADIR)/$(HS_ALT_SRC_REL)
-
 
 ## altsrc-equiv 
 # 
