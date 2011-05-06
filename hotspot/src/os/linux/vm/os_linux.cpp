@@ -2914,16 +2914,21 @@ static void set_coredump_filter(void) {
 
 static size_t _large_page_size = 0;
 
-bool os::large_page_init() {
+void os::large_page_init() {
   if (!UseLargePages) {
     UseHugeTLBFS = false;
     UseSHM = false;
-    return false;
+    return;
   }
 
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) && FLAG_IS_DEFAULT(UseSHM)) {
-    // Our user has not expressed a preference, so we'll try both.
-    UseHugeTLBFS = UseSHM = true;
+    // If UseLargePages is specified on the command line try both methods,
+    // if it's default, then try only HugeTLBFS.
+    if (FLAG_IS_DEFAULT(UseLargePages)) {
+      UseHugeTLBFS = true;
+    } else {
+      UseHugeTLBFS = UseSHM = true;
+    }
   }
 
   if (LargePageSizeInBytes) {
@@ -2978,7 +2983,6 @@ bool os::large_page_init() {
     _page_sizes[1] = default_page_size;
     _page_sizes[2] = 0;
   }
-
   UseHugeTLBFS = UseHugeTLBFS &&
                  Linux::hugetlbfs_sanity_check(warn_on_failure, _large_page_size);
 
@@ -2988,12 +2992,6 @@ bool os::large_page_init() {
   UseLargePages = UseHugeTLBFS || UseSHM;
 
   set_coredump_filter();
-
-  // Large page support is available on 2.6 or newer kernel, some vendors
-  // (e.g. Redhat) have backported it to their 2.4 based distributions.
-  // We optimistically assume the support is available. If later it turns out
-  // not true, VM will automatically switch to use regular page size.
-  return true;
 }
 
 #ifndef SHM_HUGETLB
@@ -4118,7 +4116,7 @@ jint os::init_2(void)
 #endif
   }
 
-  FLAG_SET_DEFAULT(UseLargePages, os::large_page_init());
+  os::large_page_init();
 
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {

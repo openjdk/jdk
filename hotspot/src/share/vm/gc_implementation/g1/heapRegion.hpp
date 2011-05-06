@@ -584,6 +584,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space);
+  void par_clear();
 
   void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
@@ -802,12 +803,16 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapWord*
   object_iterate_mem_careful(MemRegion mr, ObjectClosure* cl);
 
-  // In this version - if filter_young is true and the region
-  // is a young region then we skip the iteration.
+  // filter_young: if true and the region is a young region then we
+  // skip the iteration.
+  // card_ptr: if not NULL, and we decide that the card is not young
+  // and we iterate over it, we'll clean the card before we start the
+  // iteration.
   HeapWord*
   oops_on_card_seq_iterate_careful(MemRegion mr,
                                    FilterOutOfRegionClosure* cl,
-                                   bool filter_young);
+                                   bool filter_young,
+                                   jbyte* card_ptr);
 
   // A version of block start that is guaranteed to find *some* block
   // boundary at or before "p", but does not object iteration, and may
