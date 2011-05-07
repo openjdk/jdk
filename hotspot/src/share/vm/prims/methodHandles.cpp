@@ -66,8 +66,8 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
   "adapter_drop_args",
   "adapter_collect_args",
   "adapter_spread_args",
-  "adapter_flyby",
-  "adapter_ricochet",
+  "adapter_fold_args",
+  "adapter_unused_13",
 
   // optimized adapter types:
   "adapter_swap_args/1",
@@ -83,9 +83,76 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
   "adapter_prim_to_prim/f2d",
   "adapter_ref_to_prim/unboxi",
   "adapter_ref_to_prim/unboxl",
-  "adapter_spread_args/0",
-  "adapter_spread_args/1",
-  "adapter_spread_args/more",
+
+  // return value handlers for collect/filter/fold adapters:
+  "return/ref",
+  "return/int",
+  "return/long",
+  "return/float",
+  "return/double",
+  "return/void",
+  "return/S0/ref",
+  "return/S1/ref",
+  "return/S2/ref",
+  "return/S3/ref",
+  "return/S4/ref",
+  "return/S5/ref",
+  "return/any",
+
+  // spreading (array length cases 0, 1, ...)
+  "adapter_spread/0",
+  "adapter_spread/1/ref",
+  "adapter_spread/2/ref",
+  "adapter_spread/3/ref",
+  "adapter_spread/4/ref",
+  "adapter_spread/5/ref",
+  "adapter_spread/ref",
+  "adapter_spread/byte",
+  "adapter_spread/char",
+  "adapter_spread/short",
+  "adapter_spread/int",
+  "adapter_spread/long",
+  "adapter_spread/float",
+  "adapter_spread/double",
+
+  // blocking filter/collect conversions:
+  "adapter_collect/ref",
+  "adapter_collect/int",
+  "adapter_collect/long",
+  "adapter_collect/float",
+  "adapter_collect/double",
+  "adapter_collect/void",
+  "adapter_collect/0/ref",
+  "adapter_collect/1/ref",
+  "adapter_collect/2/ref",
+  "adapter_collect/3/ref",
+  "adapter_collect/4/ref",
+  "adapter_collect/5/ref",
+  "adapter_filter/S0/ref",
+  "adapter_filter/S1/ref",
+  "adapter_filter/S2/ref",
+  "adapter_filter/S3/ref",
+  "adapter_filter/S4/ref",
+  "adapter_filter/S5/ref",
+  "adapter_collect/2/S0/ref",
+  "adapter_collect/2/S1/ref",
+  "adapter_collect/2/S2/ref",
+  "adapter_collect/2/S3/ref",
+  "adapter_collect/2/S4/ref",
+  "adapter_collect/2/S5/ref",
+
+  // blocking fold conversions:
+  "adapter_fold/ref",
+  "adapter_fold/int",
+  "adapter_fold/long",
+  "adapter_fold/float",
+  "adapter_fold/double",
+  "adapter_fold/void",
+  "adapter_fold/1/ref",
+  "adapter_fold/2/ref",
+  "adapter_fold/3/ref",
+  "adapter_fold/4/ref",
+  "adapter_fold/5/ref",
 
   NULL
 };
@@ -96,13 +163,23 @@ int                       MethodHandles::_adapter_code_size = StubRoutines::meth
 
 jobject MethodHandles::_raise_exception_method;
 
+address MethodHandles::_adapter_return_handlers[CONV_TYPE_MASK+1];
+
 #ifdef ASSERT
 bool MethodHandles::spot_check_entry_names() {
   assert(!strcmp(entry_name(_invokestatic_mh), "invokestatic"), "");
   assert(!strcmp(entry_name(_bound_ref_mh), "bound_ref"), "");
   assert(!strcmp(entry_name(_adapter_retype_only), "adapter_retype_only"), "");
-  assert(!strcmp(entry_name(_adapter_ricochet), "adapter_ricochet"), "");
+  assert(!strcmp(entry_name(_adapter_fold_args), "adapter_fold_args"), "");
   assert(!strcmp(entry_name(_adapter_opt_unboxi), "adapter_ref_to_prim/unboxi"), "");
+  assert(!strcmp(entry_name(_adapter_opt_spread_char), "adapter_spread/char"), "");
+  assert(!strcmp(entry_name(_adapter_opt_spread_double), "adapter_spread/double"), "");
+  assert(!strcmp(entry_name(_adapter_opt_collect_int), "adapter_collect/int"), "");
+  assert(!strcmp(entry_name(_adapter_opt_collect_0_ref), "adapter_collect/0/ref"), "");
+  assert(!strcmp(entry_name(_adapter_opt_collect_2_S3_ref), "adapter_collect/2/S3/ref"), "");
+  assert(!strcmp(entry_name(_adapter_opt_filter_S5_ref), "adapter_filter/S5/ref"), "");
+  assert(!strcmp(entry_name(_adapter_opt_fold_3_ref), "adapter_fold/3/ref"), "");
+  assert(!strcmp(entry_name(_adapter_opt_fold_void), "adapter_fold/void"), "");
   return true;
 }
 #endif
@@ -112,6 +189,9 @@ bool MethodHandles::spot_check_entry_names() {
 // MethodHandles::generate_adapters
 //
 void MethodHandles::generate_adapters() {
+#ifdef TARGET_ARCH_NYI_6939861
+  if (FLAG_IS_DEFAULT(UseRicochetFrames))  UseRicochetFrames = false;
+#endif
   if (!EnableInvokeDynamic || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
@@ -126,7 +206,6 @@ void MethodHandles::generate_adapters() {
   g.generate();
 }
 
-
 //------------------------------------------------------------------------------
 // MethodHandlesAdapterGenerator::generate
 //
@@ -135,9 +214,59 @@ void MethodHandlesAdapterGenerator::generate() {
   for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
        ek < MethodHandles::_EK_LIMIT;
        ek = MethodHandles::EntryKind(1 + (int)ek)) {
-    StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-    MethodHandles::generate_method_handle_stub(_masm, ek);
+    if (MethodHandles::ek_supported(ek)) {
+      StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+      MethodHandles::generate_method_handle_stub(_masm, ek);
+    }
   }
+}
+
+
+#ifdef TARGET_ARCH_NYI_6939861
+// these defs belong in methodHandles_<arch>.cpp
+frame MethodHandles::ricochet_frame_sender(const frame& fr, RegisterMap *map) {
+  ShouldNotCallThis();
+  return fr;
+}
+void MethodHandles::ricochet_frame_oops_do(const frame& fr, OopClosure* f, const RegisterMap* reg_map) {
+  ShouldNotCallThis();
+}
+#endif //TARGET_ARCH_NYI_6939861
+
+
+//------------------------------------------------------------------------------
+// MethodHandles::ek_supported
+//
+bool MethodHandles::ek_supported(MethodHandles::EntryKind ek) {
+  MethodHandles::EntryKind ek_orig = MethodHandles::ek_original_kind(ek);
+  switch (ek_orig) {
+  case _adapter_unused_13:
+    return false;  // not defined yet
+  case _adapter_prim_to_ref:
+    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF);
+  case _adapter_collect_args:
+    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS);
+  case _adapter_fold_args:
+    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS);
+  case _adapter_opt_return_any:
+    return UseRicochetFrames;
+#ifdef TARGET_ARCH_NYI_6939861
+  // ports before 6939861 supported only three kinds of spread ops
+  case _adapter_spread_args:
+    // restrict spreads to three kinds:
+    switch (ek) {
+    case _adapter_opt_spread_0:
+    case _adapter_opt_spread_1:
+    case _adapter_opt_spread_more:
+      break;
+    default:
+      return false;
+      break;
+    }
+    break;
+#endif //TARGET_ARCH_NYI_6939861
+  }
+  return true;
 }
 
 
@@ -1564,6 +1693,8 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
   if (m->is_abstract()) { THROW(vmSymbols::java_lang_AbstractMethodError()); }
 
   java_lang_invoke_MethodHandle::init_vmslots(mh());
+  int vmargslot = m->size_of_parameters() - 1;
+  assert(java_lang_invoke_BoundMethodHandle::vmargslot(mh()) == vmargslot, "");
 
   if (VerifyMethodHandles) {
     verify_BoundMethodHandle_with_receiver(mh, m, CHECK);
@@ -1642,14 +1773,9 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
     DEBUG_ONLY(int this_pushes = decode_MethodHandle_stack_pushes(mh()));
     if (direct_to_method) {
       assert(this_pushes == slots_pushed, "BMH pushes one or two stack slots");
-      assert(slots_pushed <= MethodHandlePushLimit, "");
     } else {
       int target_pushes = decode_MethodHandle_stack_pushes(target());
       assert(this_pushes == slots_pushed + target_pushes, "BMH stack motion must be correct");
-      // do not blow the stack; use a Java-based adapter if this limit is exceeded
-      // FIXME
-      // if (slots_pushed + target_pushes > MethodHandlePushLimit)
-      //   err = "too many bound parameters";
     }
   }
 
@@ -1672,10 +1798,11 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   }
 
   java_lang_invoke_MethodHandle::init_vmslots(mh());
+  int argslot = java_lang_invoke_BoundMethodHandle::vmargslot(mh());
 
   if (VerifyMethodHandles) {
     int insert_after = argnum - 1;
-    verify_vmargslot(mh, insert_after, java_lang_invoke_BoundMethodHandle::vmargslot(mh()), CHECK);
+    verify_vmargslot(mh, insert_after, argslot, CHECK);
     verify_vmslots(mh, CHECK);
   }
 
@@ -1769,6 +1896,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
   Handle target(THREAD,    java_lang_invoke_AdapterMethodHandle::vmtarget(mh()));
   Handle src_mtype(THREAD, java_lang_invoke_MethodHandle::type(mh()));
   Handle dst_mtype(THREAD, java_lang_invoke_MethodHandle::type(target()));
+  Handle arg_mtype;
 
   const char* err = NULL;
 
@@ -1777,25 +1905,29 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
     switch (ek) {
     case _adapter_check_cast:     // target type of cast
     case _adapter_ref_to_prim:    // wrapper type from which to unbox
-    case _adapter_prim_to_ref:    // wrapper type to box into
-    case _adapter_collect_args:   // array type to collect into
     case _adapter_spread_args:    // array type to spread from
       if (!java_lang_Class::is_instance(argument())
           || java_lang_Class::is_primitive(argument()))
         { err = "adapter requires argument of type java.lang.Class"; break; }
-      if (ek == _adapter_collect_args ||
-          ek == _adapter_spread_args) {
+      if (ek == _adapter_spread_args) {
         // Make sure it is a suitable collection type.  (Array, for now.)
         Klass* ak = Klass::cast(java_lang_Class::as_klassOop(argument()));
-        if (!ak->oop_is_objArray()) {
-          { err = "adapter requires argument of type java.lang.Class<Object[]>"; break; }
-        }
+        if (!ak->oop_is_array())
+          { err = "spread adapter requires argument representing an array class"; break; }
+        BasicType et = arrayKlass::cast(ak->as_klassOop())->element_type();
+        if (et != dest && stack_move <= 0)
+          { err = "spread adapter requires array class argument of correct type"; break; }
       }
       break;
-    case _adapter_flyby:
-    case _adapter_ricochet:
+    case _adapter_prim_to_ref:    // boxer MH to use
+    case _adapter_collect_args:   // method handle which collects the args
+    case _adapter_fold_args:      // method handle which collects the args
+      if (!UseRicochetFrames) {
+        { err = "box/collect/fold operators are not supported"; break; }
+      }
       if (!java_lang_invoke_MethodHandle::is_instance(argument()))
         { err = "MethodHandle adapter argument required"; break; }
+      arg_mtype = Handle(THREAD, java_lang_invoke_MethodHandle::type(argument()));
       break;
     default:
       if (argument.not_null())
@@ -1806,6 +1938,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
 
   if (err == NULL) {
     // Check that the src/dest types are supplied if needed.
+    // Also check relevant parameter or return types.
     switch (ek) {
     case _adapter_check_cast:
       if (src != T_OBJECT || dest != T_OBJECT) {
@@ -1828,8 +1961,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
       }
       break;
     case _adapter_prim_to_ref:
-      if (!is_java_primitive(src) || dest != T_OBJECT
-          || argument() != Klass::cast(SystemDictionary::box_klass(src))->java_mirror()) {
+      if (!is_java_primitive(src) || dest != T_OBJECT) {
         err = "adapter requires primitive src conversion subfield"; break;
       }
       break;
@@ -1840,14 +1972,12 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
           err = "adapter requires src/dest conversion subfields for swap"; break;
         }
         int swap_size = type2size[src];
-        oop src_mtype  = java_lang_invoke_AdapterMethodHandle::type(mh());
-        oop dest_mtype = java_lang_invoke_AdapterMethodHandle::type(target());
-        int slot_limit = java_lang_invoke_AdapterMethodHandle::vmslots(target());
+        int slot_limit = java_lang_invoke_MethodHandle::vmslots(target());
         int src_slot   = argslot;
         int dest_slot  = vminfo;
         bool rotate_up = (src_slot > dest_slot); // upward rotation
         int src_arg    = argnum;
-        int dest_arg   = argument_slot_to_argnum(dest_mtype, dest_slot);
+        int dest_arg   = argument_slot_to_argnum(dst_mtype(), dest_slot);
         verify_vmargslot(mh, dest_arg, dest_slot, CHECK);
         if (!(dest_slot >= src_slot + swap_size) &&
             !(src_slot >= dest_slot + swap_size)) {
@@ -1855,8 +1985,8 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
         } else if (ek == _adapter_swap_args && !(src_slot > dest_slot)) {
           err = "source of swap must be deeper in stack";
         } else if (ek == _adapter_swap_args) {
-          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, dest_arg),
-                                           java_lang_invoke_MethodType::ptype(dest_mtype, src_arg),
+          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), dest_arg),
+                                           java_lang_invoke_MethodType::ptype(dst_mtype(), src_arg),
                                            dest_arg);
         } else if (ek == _adapter_rot_args) {
           if (rotate_up) {
@@ -1864,8 +1994,8 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
             // rotate up: [dest_slot..src_slot-ss] --> [dest_slot+ss..src_slot]
             // that is:   [src_arg+1..dest_arg] --> [src_arg..dest_arg-1]
             for (int i = src_arg+1; i <= dest_arg && err == NULL; i++) {
-              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, i),
-                                               java_lang_invoke_MethodType::ptype(dest_mtype, i-1),
+              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
+                                               java_lang_invoke_MethodType::ptype(dst_mtype(), i-1),
                                                i);
             }
           } else { // rotate down
@@ -1873,28 +2003,54 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
             // rotate down: [src_slot+ss..dest_slot] --> [src_slot..dest_slot-ss]
             // that is:     [dest_arg..src_arg-1] --> [dst_arg+1..src_arg]
             for (int i = dest_arg; i <= src_arg-1 && err == NULL; i++) {
-              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, i),
-                                               java_lang_invoke_MethodType::ptype(dest_mtype, i+1),
+              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
+                                               java_lang_invoke_MethodType::ptype(dst_mtype(), i+1),
                                                i);
             }
           }
         }
         if (err == NULL)
-          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype, src_arg),
-                                           java_lang_invoke_MethodType::ptype(dest_mtype, dest_arg),
+          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), src_arg),
+                                           java_lang_invoke_MethodType::ptype(dst_mtype(), dest_arg),
                                            src_arg);
       }
       break;
-    case _adapter_collect_args:
     case _adapter_spread_args:
+    case _adapter_collect_args:
+    case _adapter_fold_args:
       {
-        BasicType coll_type = (ek == _adapter_collect_args) ? dest : src;
-        BasicType elem_type = (ek == _adapter_collect_args) ? src : dest;
-        if (coll_type != T_OBJECT || elem_type != T_OBJECT) {
-          err = "adapter requires src/dest subfields"; break;
-          // later:
-          // - consider making coll be a primitive array
-          // - consider making coll be a heterogeneous collection
+        bool is_spread = (ek == _adapter_spread_args);
+        bool is_fold   = (ek == _adapter_fold_args);
+        BasicType coll_type = is_spread ? src : dest;
+        BasicType elem_type = is_spread ? dest : src;
+        // coll_type is type of args in collected form (or T_VOID if none)
+        // elem_type is common type of args in spread form (or T_VOID if missing or heterogeneous)
+        if (coll_type == 0 || elem_type == 0) {
+          err = "adapter requires src/dest subfields for spread or collect"; break;
+        }
+        if (is_spread && coll_type != T_OBJECT) {
+          err = "spread adapter requires object type for argument bundle"; break;
+        }
+        Handle spread_mtype = (is_spread ? dst_mtype : src_mtype);
+        int spread_slot = argslot;
+        int spread_arg  = argnum;
+        int slots_pushed = stack_move / stack_move_unit();
+        int coll_slot_count = type2size[coll_type];
+        int spread_slot_count = (is_spread ? slots_pushed : -slots_pushed) + coll_slot_count;
+        if (is_fold)  spread_slot_count = argument_slot_count(arg_mtype());
+        if (!is_spread) {
+          int init_slots = argument_slot_count(src_mtype());
+          int coll_slots = argument_slot_count(arg_mtype());
+          if (spread_slot_count > init_slots ||
+              spread_slot_count != coll_slots) {
+            err = "collect adapter has inconsistent arg counts"; break;
+          }
+          int next_slots = argument_slot_count(dst_mtype());
+          int unchanged_slots_in  = (init_slots - spread_slot_count);
+          int unchanged_slots_out = (next_slots - coll_slot_count - (is_fold ? spread_slot_count : 0));
+          if (unchanged_slots_in != unchanged_slots_out) {
+            err = "collect adapter continuation has inconsistent arg counts"; break;
+          }
         }
       }
       break;
@@ -1929,8 +2085,9 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
       }
       break;
     case _adapter_collect_args:
-      if (slots_pushed > 1) {
-        err = "adapter requires conversion subfield slots_pushed <= 1";
+    case _adapter_fold_args:
+      if (slots_pushed > 2) {
+        err = "adapter requires conversion subfield slots_pushed <= 2";
       }
       break;
     case _adapter_spread_args:
@@ -1950,32 +2107,36 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
   }
 
   if (err == NULL) {
-    // Make sure this adapter does not push too deeply.
+    // Make sure this adapter's stack pushing is accurately recorded.
     int slots_pushed = stack_move / stack_move_unit();
     int this_vmslots = java_lang_invoke_MethodHandle::vmslots(mh());
     int target_vmslots = java_lang_invoke_MethodHandle::vmslots(target());
+    int target_pushes = decode_MethodHandle_stack_pushes(target());
     if (slots_pushed != (target_vmslots - this_vmslots)) {
       err = "stack_move inconsistent with previous and current MethodType vmslots";
-    } else if (slots_pushed > 0)  {
-      // verify stack_move against MethodHandlePushLimit
-      int target_pushes = decode_MethodHandle_stack_pushes(target());
-      // do not blow the stack; use a Java-based adapter if this limit is exceeded
-      if (slots_pushed + target_pushes > MethodHandlePushLimit) {
-        err = "adapter pushes too many parameters";
+    } else {
+      int this_pushes = decode_MethodHandle_stack_pushes(mh());
+      if (slots_pushed + target_pushes != this_pushes) {
+        if (this_pushes == 0)
+          err = "adapter push count not initialized";
+        else
+          err = "adapter push count is wrong";
       }
     }
 
     // While we're at it, check that the stack motion decoder works:
-    DEBUG_ONLY(int target_pushes = decode_MethodHandle_stack_pushes(target()));
     DEBUG_ONLY(int this_pushes = decode_MethodHandle_stack_pushes(mh()));
     assert(this_pushes == slots_pushed + target_pushes, "AMH stack motion must be correct");
   }
 
   if (err == NULL && vminfo != 0) {
     switch (ek) {
-      case _adapter_swap_args:
-      case _adapter_rot_args:
-        break;                // OK
+    case _adapter_swap_args:
+    case _adapter_rot_args:
+    case _adapter_prim_to_ref:
+    case _adapter_collect_args:
+    case _adapter_fold_args:
+      break;                // OK
     default:
       err = "vminfo subfield is reserved to the JVM";
     }
@@ -2026,6 +2187,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   // adjust the adapter code to the internal EntryKind enumeration:
   EntryKind ek_orig = adapter_entry_kind(conv_op);
   EntryKind ek_opt  = ek_orig;  // may be optimized
+  EntryKind ek_try;             // temp
 
   // Finalize the vmtarget field (Java initialized it to null).
   if (!java_lang_invoke_MethodHandle::is_instance(target())) {
@@ -2034,16 +2196,22 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   }
   java_lang_invoke_AdapterMethodHandle::set_vmtarget(mh(), target());
 
-  if (VerifyMethodHandles) {
-    verify_AdapterMethodHandle(mh, argnum, CHECK);
-  }
-
   int stack_move = adapter_conversion_stack_move(conversion);
   BasicType src  = adapter_conversion_src_type(conversion);
   BasicType dest = adapter_conversion_dest_type(conversion);
   int vminfo     = adapter_conversion_vminfo(conversion); // should be zero
 
+  int slots_pushed = stack_move / stack_move_unit();
+
+  if (VerifyMethodHandles) {
+    verify_AdapterMethodHandle(mh, argnum, CHECK);
+  }
+
   const char* err = NULL;
+
+  if (!conv_op_supported(conv_op)) {
+    err = "adapter not yet implemented in the JVM";
+  }
 
   // Now it's time to finish the case analysis and pick a MethodHandleEntry.
   switch (ek_orig) {
@@ -2077,7 +2245,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         }
         break;
       case 1 *4+ 2:
-        if (src == T_INT && dest == T_LONG) {
+        if ((src == T_INT || is_subword_type(src)) && dest == T_LONG) {
           ek_opt = _adapter_opt_i2l;
         } else if (src == T_FLOAT && dest == T_DOUBLE) {
           ek_opt = _adapter_opt_f2d;
@@ -2110,7 +2278,44 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
     break;
 
   case _adapter_prim_to_ref:
-    goto throw_not_impl;        // allocates, hence could block
+    {
+      assert(UseRicochetFrames, "else don't come here");
+      // vminfo will be the location to insert the return value
+      vminfo = argslot;
+      ek_opt = _adapter_opt_collect_ref;
+      ensure_vmlayout_field(target, CHECK);
+      if (!OptimizeMethodHandles)  break;
+      switch (type2size[src]) {
+      case 1:
+        ek_try = EntryKind(_adapter_opt_filter_S0_ref + argslot);
+        if (ek_try < _adapter_opt_collect_LAST &&
+            ek_adapter_opt_collect_slot(ek_try) == argslot) {
+          assert(ek_adapter_opt_collect_count(ek_try) == 1 &&
+                 ek_adapter_opt_collect_type(ek_try) == T_OBJECT, "");
+          ek_opt = ek_try;
+          break;
+        }
+        // else downgrade to variable slot:
+        ek_opt = _adapter_opt_collect_1_ref;
+        break;
+      case 2:
+        ek_try = EntryKind(_adapter_opt_collect_2_S0_ref + argslot);
+        if (ek_try < _adapter_opt_collect_LAST &&
+            ek_adapter_opt_collect_slot(ek_try) == argslot) {
+          assert(ek_adapter_opt_collect_count(ek_try) == 2 &&
+                 ek_adapter_opt_collect_type(ek_try) == T_OBJECT, "");
+          ek_opt = ek_try;
+          break;
+        }
+        // else downgrade to variable slot:
+        ek_opt = _adapter_opt_collect_2_ref;
+        break;
+      default:
+        assert(false, "");
+        break;
+      }
+    }
+    break;
 
   case _adapter_swap_args:
   case _adapter_rot_args:
@@ -2136,29 +2341,180 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
     }
     break;
 
-  case _adapter_collect_args:
-    goto throw_not_impl;        // allocates, hence could block
-
   case _adapter_spread_args:
     {
-      // vminfo will be the required length of the array
-      int slots_pushed = stack_move / stack_move_unit();
-      int array_size   = slots_pushed + 1;
-      assert(array_size >= 0, "");
-      vminfo = array_size;
-      switch (array_size) {
-      case 0:   ek_opt = _adapter_opt_spread_0;       break;
-      case 1:   ek_opt = _adapter_opt_spread_1;       break;
-      default:  ek_opt = _adapter_opt_spread_more;    break;
+#ifdef TARGET_ARCH_NYI_6939861
+      // ports before 6939861 supported only three kinds of spread ops
+      if (!UseRicochetFrames) {
+        int array_size   = slots_pushed + 1;
+        assert(array_size >= 0, "");
+        vminfo = array_size;
+        switch (array_size) {
+        case 0:   ek_opt = _adapter_opt_spread_0;       break;
+        case 1:   ek_opt = _adapter_opt_spread_1;       break;
+        default:  ek_opt = _adapter_opt_spread_more;    break;
+        }
+        break;
       }
-      if ((vminfo & CONV_VMINFO_MASK) != vminfo)
-        goto throw_not_impl;    // overflow
+#endif //TARGET_ARCH_NYI_6939861
+      // vminfo will be the required length of the array
+      int array_size = (slots_pushed + 1) / (type2size[dest] == 2 ? 2 : 1);
+      vminfo = array_size;
+      // general case
+      switch (dest) {
+      case T_BOOLEAN : // fall through to T_BYTE:
+      case T_BYTE    : ek_opt = _adapter_opt_spread_byte;    break;
+      case T_CHAR    : ek_opt = _adapter_opt_spread_char;    break;
+      case T_SHORT   : ek_opt = _adapter_opt_spread_short;   break;
+      case T_INT     : ek_opt = _adapter_opt_spread_int;     break;
+      case T_LONG    : ek_opt = _adapter_opt_spread_long;    break;
+      case T_FLOAT   : ek_opt = _adapter_opt_spread_float;   break;
+      case T_DOUBLE  : ek_opt = _adapter_opt_spread_double;  break;
+      case T_OBJECT  : ek_opt = _adapter_opt_spread_ref;     break;
+      case T_VOID    : if (array_size != 0)  goto throw_not_impl;
+                       ek_opt = _adapter_opt_spread_ref;     break;
+      default        : goto throw_not_impl;
+      }
+      assert(array_size == 0 ||  // it doesn't matter what the spreader is
+             (ek_adapter_opt_spread_count(ek_opt) == -1 &&
+              (ek_adapter_opt_spread_type(ek_opt) == dest ||
+               (ek_adapter_opt_spread_type(ek_opt) == T_BYTE && dest == T_BOOLEAN))),
+             err_msg("dest=%d ek_opt=%d", dest, ek_opt));
+
+      if (array_size <= 0) {
+        // since the general case does not handle length 0, this case is required:
+        ek_opt = _adapter_opt_spread_0;
+        break;
+      }
+      if (dest == T_OBJECT) {
+        ek_try = EntryKind(_adapter_opt_spread_1_ref - 1 + array_size);
+        if (ek_try < _adapter_opt_spread_LAST &&
+            ek_adapter_opt_spread_count(ek_try) == array_size) {
+          assert(ek_adapter_opt_spread_type(ek_try) == dest, "");
+          ek_opt = ek_try;
+          break;
+        }
+      }
+      break;
     }
     break;
 
-  case _adapter_flyby:
-  case _adapter_ricochet:
-    goto throw_not_impl;        // runs Java code, hence could block
+  case _adapter_collect_args:
+    {
+      assert(UseRicochetFrames, "else don't come here");
+      int elem_slots = argument_slot_count(
+                           java_lang_invoke_MethodHandle::type(
+                               java_lang_invoke_AdapterMethodHandle::argument(mh()) ) );
+      // vminfo will be the location to insert the return value
+      vminfo = argslot;
+      ensure_vmlayout_field(target, CHECK);
+
+      // general case:
+      switch (dest) {
+      default       : if (!is_subword_type(dest))  goto throw_not_impl;
+                    // else fall through:
+      case T_INT    : ek_opt = _adapter_opt_collect_int;     break;
+      case T_LONG   : ek_opt = _adapter_opt_collect_long;    break;
+      case T_FLOAT  : ek_opt = _adapter_opt_collect_float;   break;
+      case T_DOUBLE : ek_opt = _adapter_opt_collect_double;  break;
+      case T_OBJECT : ek_opt = _adapter_opt_collect_ref;     break;
+      case T_VOID   : ek_opt = _adapter_opt_collect_void;    break;
+      }
+      assert(ek_adapter_opt_collect_slot(ek_opt) == -1 &&
+             ek_adapter_opt_collect_count(ek_opt) == -1 &&
+             (ek_adapter_opt_collect_type(ek_opt) == dest ||
+              ek_adapter_opt_collect_type(ek_opt) == T_INT && is_subword_type(dest)),
+             "");
+
+      if (dest == T_OBJECT && elem_slots == 1 && OptimizeMethodHandles) {
+        // filter operation on a ref
+        ek_try = EntryKind(_adapter_opt_filter_S0_ref + argslot);
+        if (ek_try < _adapter_opt_collect_LAST &&
+            ek_adapter_opt_collect_slot(ek_try) == argslot) {
+          assert(ek_adapter_opt_collect_count(ek_try) == elem_slots &&
+                 ek_adapter_opt_collect_type(ek_try) == dest, "");
+          ek_opt = ek_try;
+          break;
+        }
+        ek_opt = _adapter_opt_collect_1_ref;
+        break;
+      }
+
+      if (dest == T_OBJECT && elem_slots == 2 && OptimizeMethodHandles) {
+        // filter of two arguments
+        ek_try = EntryKind(_adapter_opt_collect_2_S0_ref + argslot);
+        if (ek_try < _adapter_opt_collect_LAST &&
+            ek_adapter_opt_collect_slot(ek_try) == argslot) {
+          assert(ek_adapter_opt_collect_count(ek_try) == elem_slots &&
+                 ek_adapter_opt_collect_type(ek_try) == dest, "");
+          ek_opt = ek_try;
+          break;
+        }
+        ek_opt = _adapter_opt_collect_2_ref;
+        break;
+      }
+
+      if (dest == T_OBJECT && OptimizeMethodHandles) {
+        // try to use a fixed length adapter
+        ek_try = EntryKind(_adapter_opt_collect_0_ref + elem_slots);
+        if (ek_try < _adapter_opt_collect_LAST &&
+            ek_adapter_opt_collect_count(ek_try) == elem_slots) {
+          assert(ek_adapter_opt_collect_slot(ek_try) == -1 &&
+                 ek_adapter_opt_collect_type(ek_try) == dest, "");
+          ek_opt = ek_try;
+          break;
+        }
+      }
+
+      break;
+    }
+
+  case _adapter_fold_args:
+    {
+      assert(UseRicochetFrames, "else don't come here");
+      int elem_slots = argument_slot_count(
+                           java_lang_invoke_MethodHandle::type(
+                               java_lang_invoke_AdapterMethodHandle::argument(mh()) ) );
+      // vminfo will be the location to insert the return value
+      vminfo = argslot + elem_slots;
+      ensure_vmlayout_field(target, CHECK);
+
+      switch (dest) {
+      default       : if (!is_subword_type(dest))  goto throw_not_impl;
+                    // else fall through:
+      case T_INT    : ek_opt = _adapter_opt_fold_int;     break;
+      case T_LONG   : ek_opt = _adapter_opt_fold_long;    break;
+      case T_FLOAT  : ek_opt = _adapter_opt_fold_float;   break;
+      case T_DOUBLE : ek_opt = _adapter_opt_fold_double;  break;
+      case T_OBJECT : ek_opt = _adapter_opt_fold_ref;     break;
+      case T_VOID   : ek_opt = _adapter_opt_fold_void;    break;
+      }
+      assert(ek_adapter_opt_collect_slot(ek_opt) == -1 &&
+             ek_adapter_opt_collect_count(ek_opt) == -1 &&
+             (ek_adapter_opt_collect_type(ek_opt) == dest ||
+              ek_adapter_opt_collect_type(ek_opt) == T_INT && is_subword_type(dest)),
+             "");
+
+      if (dest == T_OBJECT && elem_slots == 0 && OptimizeMethodHandles) {
+        // if there are no args, just pretend it's a collect
+        ek_opt = _adapter_opt_collect_0_ref;
+        break;
+      }
+
+      if (dest == T_OBJECT && OptimizeMethodHandles) {
+        // try to use a fixed length adapter
+        ek_try = EntryKind(_adapter_opt_fold_1_ref - 1 + elem_slots);
+        if (ek_try < _adapter_opt_fold_LAST &&
+            ek_adapter_opt_collect_count(ek_try) == elem_slots) {
+          assert(ek_adapter_opt_collect_slot(ek_try) == -1 &&
+                 ek_adapter_opt_collect_type(ek_try) == dest, "");
+          ek_opt = ek_try;
+          break;
+        }
+      }
+
+      break;
+    }
 
   default:
     // should have failed much earlier; must be a missing case here
@@ -2166,9 +2522,18 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
     // and fall through:
 
   throw_not_impl:
-    // FIXME: these adapters are NYI
-    err = "adapter not yet implemented in the JVM";
+    if (err == NULL)
+      err = "unknown adapter type";
     break;
+  }
+
+  if (err != NULL && (vminfo & CONV_VMINFO_MASK) != vminfo) {
+    // should not happen, since vminfo is used to encode arg/slot indexes < 255
+    err = "vminfo overflow";
+  }
+
+  if (err != NULL && !have_entry(ek_opt)) {
+    err = "adapter stub for this kind of method handle is missing";
   }
 
   if (err != NULL) {
@@ -2188,6 +2553,26 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   // There should be enough memory barriers on exit from native methods
   // to ensure that the MH is fully initialized to all threads before
   // Java code can publish it in global data structures.
+}
+
+void MethodHandles::ensure_vmlayout_field(Handle target, TRAPS) {
+  Handle mtype(THREAD, java_lang_invoke_MethodHandle::type(target()));
+  Handle mtform(THREAD, java_lang_invoke_MethodType::form(mtype()));
+  if (mtform.is_null()) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() > 0) {
+    if (java_lang_invoke_MethodTypeForm::vmlayout(mtform()) == NULL) {
+      // fill it in
+      Handle erased_mtype(THREAD, java_lang_invoke_MethodTypeForm::erasedType(mtform()));
+      TempNewSymbol erased_signature
+        = java_lang_invoke_MethodType::as_signature(erased_mtype(), /*intern:*/true, CHECK);
+      methodOop cookie
+        = SystemDictionary::find_method_handle_invoke(vmSymbols::invokeExact_name(),
+                                                      erased_signature,
+                                                      SystemDictionaryHandles::Object_klass(),
+                                                      THREAD);
+      java_lang_invoke_MethodTypeForm::init_vmlayout(mtform(), cookie);
+    }
+  }
 }
 
 //
@@ -2360,8 +2745,10 @@ JVM_END
 
 #ifndef PRODUCT
 #define EACH_NAMED_CON(template) \
-    template(MethodHandles,GC_JVM_PUSH_LIMIT) \
-    template(MethodHandles,GC_JVM_STACK_MOVE_UNIT) \
+  /* hold back this one until JDK stabilizes */ \
+  /* template(MethodHandles,GC_JVM_PUSH_LIMIT) */  \
+  /* hold back this one until JDK stabilizes */ \
+  /* template(MethodHandles,GC_JVM_STACK_MOVE_UNIT) */ \
     template(MethodHandles,ETF_HANDLE_OR_METHOD_NAME) \
     template(MethodHandles,ETF_DIRECT_HANDLE) \
     template(MethodHandles,ETF_METHOD_NAME) \
@@ -2385,9 +2772,8 @@ JVM_END
     template(java_lang_invoke_AdapterMethodHandle,OP_DROP_ARGS) \
     template(java_lang_invoke_AdapterMethodHandle,OP_COLLECT_ARGS) \
     template(java_lang_invoke_AdapterMethodHandle,OP_SPREAD_ARGS) \
-    template(java_lang_invoke_AdapterMethodHandle,OP_FLYBY) \
-    template(java_lang_invoke_AdapterMethodHandle,OP_RICOCHET) \
-    template(java_lang_invoke_AdapterMethodHandle,CONV_OP_LIMIT) \
+      /* hold back this one until JDK stabilizes */ \
+      /*template(java_lang_invoke_AdapterMethodHandle,CONV_OP_LIMIT)*/  \
     template(java_lang_invoke_AdapterMethodHandle,CONV_OP_MASK) \
     template(java_lang_invoke_AdapterMethodHandle,CONV_VMINFO_MASK) \
     template(java_lang_invoke_AdapterMethodHandle,CONV_VMINFO_SHIFT) \

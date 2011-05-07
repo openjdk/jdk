@@ -66,8 +66,8 @@ class MethodHandles: AllStatic {
     _adapter_drop_args     = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS,
     _adapter_collect_args  = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS,
     _adapter_spread_args   = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS,
-    _adapter_flyby         = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_FLYBY,
-    _adapter_ricochet      = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_RICOCHET,
+    _adapter_fold_args     = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS,
+    _adapter_unused_13     = _adapter_mh_first + 13,  //hole in the CONV_OP enumeration
     _adapter_mh_last       = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::CONV_OP_LIMIT - 1,
 
     // Optimized adapter types
@@ -93,10 +93,99 @@ class MethodHandles: AllStatic {
     _adapter_opt_unboxi,
     _adapter_opt_unboxl,
 
-    // spreading (array length cases 0, 1, >=2)
-    _adapter_opt_spread_0,
-    _adapter_opt_spread_1,
-    _adapter_opt_spread_more,
+    // %% Maybe tame the following with a VM_SYMBOLS_DO type macro?
+
+    // how a blocking adapter returns (platform-dependent)
+    _adapter_opt_return_ref,
+    _adapter_opt_return_int,
+    _adapter_opt_return_long,
+    _adapter_opt_return_float,
+    _adapter_opt_return_double,
+    _adapter_opt_return_void,
+    _adapter_opt_return_S0_ref,  // return ref to S=0 (last slot)
+    _adapter_opt_return_S1_ref,  // return ref to S=1 (2nd-to-last slot)
+    _adapter_opt_return_S2_ref,
+    _adapter_opt_return_S3_ref,
+    _adapter_opt_return_S4_ref,
+    _adapter_opt_return_S5_ref,
+    _adapter_opt_return_any,     // dynamically select r/i/l/f/d
+    _adapter_opt_return_FIRST = _adapter_opt_return_ref,
+    _adapter_opt_return_LAST  = _adapter_opt_return_any,
+
+    // spreading (array length cases 0, 1, ...)
+    _adapter_opt_spread_0,       // spread empty array to N=0 arguments
+    _adapter_opt_spread_1_ref,   // spread Object[] to N=1 argument
+    _adapter_opt_spread_2_ref,   // spread Object[] to N=2 arguments
+    _adapter_opt_spread_3_ref,   // spread Object[] to N=3 arguments
+    _adapter_opt_spread_4_ref,   // spread Object[] to N=4 arguments
+    _adapter_opt_spread_5_ref,   // spread Object[] to N=5 arguments
+    _adapter_opt_spread_ref,     // spread Object[] to N arguments
+    _adapter_opt_spread_byte,    // spread byte[] or boolean[] to N arguments
+    _adapter_opt_spread_char,    // spread char[], etc., to N arguments
+    _adapter_opt_spread_short,   // spread short[], etc., to N arguments
+    _adapter_opt_spread_int,     // spread int[], short[], etc., to N arguments
+    _adapter_opt_spread_long,    // spread long[] to N arguments
+    _adapter_opt_spread_float,   // spread float[] to N arguments
+    _adapter_opt_spread_double,  // spread double[] to N arguments
+    _adapter_opt_spread_FIRST = _adapter_opt_spread_0,
+    _adapter_opt_spread_LAST  = _adapter_opt_spread_double,
+
+    // blocking filter/collect conversions
+    // These collect N arguments and replace them (at slot S) by a return value
+    // which is passed to the final target, along with the unaffected arguments.
+    // collect_{N}_{T} collects N arguments at any position into a T value
+    // collect_{N}_S{S}_{T} collects N arguments at slot S into a T value
+    // collect_{T} collects any number of arguments at any position
+    // filter_S{S}_{T} is the same as collect_1_S{S}_{T} (a unary collection)
+    // (collect_2 is also usable as a filter, with long or double arguments)
+    _adapter_opt_collect_ref,    // combine N arguments, replace with a reference
+    _adapter_opt_collect_int,    // combine N arguments, replace with an int, short, etc.
+    _adapter_opt_collect_long,   // combine N arguments, replace with a long
+    _adapter_opt_collect_float,  // combine N arguments, replace with a float
+    _adapter_opt_collect_double, // combine N arguments, replace with a double
+    _adapter_opt_collect_void,   // combine N arguments, replace with nothing
+    // if there is a small fixed number to push, do so without a loop:
+    _adapter_opt_collect_0_ref,  // collect N=0 arguments, insert a reference
+    _adapter_opt_collect_1_ref,  // collect N=1 argument, replace with a reference
+    _adapter_opt_collect_2_ref,  // combine N=2 arguments, replace with a reference
+    _adapter_opt_collect_3_ref,  // combine N=3 arguments, replace with a reference
+    _adapter_opt_collect_4_ref,  // combine N=4 arguments, replace with a reference
+    _adapter_opt_collect_5_ref,  // combine N=5 arguments, replace with a reference
+    // filters are an important special case because they never move arguments:
+    _adapter_opt_filter_S0_ref,  // filter N=1 argument at S=0, replace with a reference
+    _adapter_opt_filter_S1_ref,  // filter N=1 argument at S=1, replace with a reference
+    _adapter_opt_filter_S2_ref,  // filter N=1 argument at S=2, replace with a reference
+    _adapter_opt_filter_S3_ref,  // filter N=1 argument at S=3, replace with a reference
+    _adapter_opt_filter_S4_ref,  // filter N=1 argument at S=4, replace with a reference
+    _adapter_opt_filter_S5_ref,  // filter N=1 argument at S=5, replace with a reference
+    // these move arguments, but they are important for boxing
+    _adapter_opt_collect_2_S0_ref,  // combine last N=2 arguments, replace with a reference
+    _adapter_opt_collect_2_S1_ref,  // combine N=2 arguments at S=1, replace with a reference
+    _adapter_opt_collect_2_S2_ref,  // combine N=2 arguments at S=2, replace with a reference
+    _adapter_opt_collect_2_S3_ref,  // combine N=2 arguments at S=3, replace with a reference
+    _adapter_opt_collect_2_S4_ref,  // combine N=2 arguments at S=4, replace with a reference
+    _adapter_opt_collect_2_S5_ref,  // combine N=2 arguments at S=5, replace with a reference
+    _adapter_opt_collect_FIRST = _adapter_opt_collect_ref,
+    _adapter_opt_collect_LAST  = _adapter_opt_collect_2_S5_ref,
+
+    // blocking folding conversions
+    // these are like collects, but retain all the N arguments for the final target
+    //_adapter_opt_fold_0_ref,   // same as _adapter_opt_collect_0_ref
+    // fold_{N}_{T} processes N arguments at any position into a T value, which it inserts
+    // fold_{T} processes any number of arguments at any position
+    _adapter_opt_fold_ref,       // process N arguments, prepend a reference
+    _adapter_opt_fold_int,       // process N arguments, prepend an int, short, etc.
+    _adapter_opt_fold_long,      // process N arguments, prepend a long
+    _adapter_opt_fold_float,     // process N arguments, prepend a float
+    _adapter_opt_fold_double,    // process N arguments, prepend a double
+    _adapter_opt_fold_void,      // process N arguments, but leave the list unchanged
+    _adapter_opt_fold_1_ref,     // process N=1 argument, prepend a reference
+    _adapter_opt_fold_2_ref,     // process N=2 arguments, prepend a reference
+    _adapter_opt_fold_3_ref,     // process N=3 arguments, prepend a reference
+    _adapter_opt_fold_4_ref,     // process N=4 arguments, prepend a reference
+    _adapter_opt_fold_5_ref,     // process N=5 arguments, prepend a reference
+    _adapter_opt_fold_FIRST = _adapter_opt_fold_ref,
+    _adapter_opt_fold_LAST  = _adapter_opt_fold_5_ref,
 
     _EK_LIMIT,
     _EK_FIRST = 0
@@ -110,6 +199,7 @@ class MethodHandles: AllStatic {
   enum {  // import java_lang_invoke_AdapterMethodHandle::CONV_OP_*
     CONV_OP_LIMIT         = java_lang_invoke_AdapterMethodHandle::CONV_OP_LIMIT,
     CONV_OP_MASK          = java_lang_invoke_AdapterMethodHandle::CONV_OP_MASK,
+    CONV_TYPE_MASK        = java_lang_invoke_AdapterMethodHandle::CONV_TYPE_MASK,
     CONV_VMINFO_MASK      = java_lang_invoke_AdapterMethodHandle::CONV_VMINFO_MASK,
     CONV_VMINFO_SHIFT     = java_lang_invoke_AdapterMethodHandle::CONV_VMINFO_SHIFT,
     CONV_OP_SHIFT         = java_lang_invoke_AdapterMethodHandle::CONV_OP_SHIFT,
@@ -123,6 +213,7 @@ class MethodHandles: AllStatic {
   static MethodHandleEntry* _entries[_EK_LIMIT];
   static const char*        _entry_names[_EK_LIMIT+1];
   static jobject            _raise_exception_method;
+  static address            _adapter_return_handlers[CONV_TYPE_MASK+1];
 
   // Adapters.
   static MethodHandlesAdapterBlob* _adapter_code;
@@ -147,39 +238,195 @@ class MethodHandles: AllStatic {
   }
 
   // Some adapter helper functions.
-  static void get_ek_bound_mh_info(EntryKind ek, BasicType& arg_type, int& arg_mask, int& arg_slots) {
+  static EntryKind ek_original_kind(EntryKind ek) {
+    if (ek <= _adapter_mh_last)  return ek;
     switch (ek) {
-    case _bound_int_mh        : // fall-thru
-    case _bound_int_direct_mh : arg_type = T_INT;    arg_mask = _INSERT_INT_MASK;  break;
-    case _bound_long_mh       : // fall-thru
-    case _bound_long_direct_mh: arg_type = T_LONG;   arg_mask = _INSERT_LONG_MASK; break;
-    case _bound_ref_mh        : // fall-thru
-    case _bound_ref_direct_mh : arg_type = T_OBJECT; arg_mask = _INSERT_REF_MASK;  break;
-    default: ShouldNotReachHere();
+    case _adapter_opt_swap_1:
+    case _adapter_opt_swap_2:
+      return _adapter_swap_args;
+    case _adapter_opt_rot_1_up:
+    case _adapter_opt_rot_1_down:
+    case _adapter_opt_rot_2_up:
+    case _adapter_opt_rot_2_down:
+      return _adapter_rot_args;
+    case _adapter_opt_i2i:
+    case _adapter_opt_l2i:
+    case _adapter_opt_d2f:
+    case _adapter_opt_i2l:
+    case _adapter_opt_f2d:
+      return _adapter_prim_to_prim;
+    case _adapter_opt_unboxi:
+    case _adapter_opt_unboxl:
+      return _adapter_ref_to_prim;
     }
-    arg_slots = type2size[arg_type];
+    if (ek >= _adapter_opt_spread_FIRST && ek <= _adapter_opt_spread_LAST)
+      return _adapter_spread_args;
+    if (ek >= _adapter_opt_collect_FIRST && ek <= _adapter_opt_collect_LAST)
+      return _adapter_collect_args;
+    if (ek >= _adapter_opt_fold_FIRST && ek <= _adapter_opt_fold_LAST)
+      return _adapter_fold_args;
+    if (ek >= _adapter_opt_return_FIRST && ek <= _adapter_opt_return_LAST)
+      return _adapter_opt_return_any;
+    assert(false, "oob");
+    return _EK_LIMIT;
   }
 
-  static void get_ek_adapter_opt_swap_rot_info(EntryKind ek, int& swap_bytes, int& rotate) {
-    int swap_slots = 0;
+  static bool ek_supported(MethodHandles::EntryKind ek);
+
+  static BasicType ek_bound_mh_arg_type(EntryKind ek) {
     switch (ek) {
-    case _adapter_opt_swap_1:     swap_slots = 1; rotate =  0; break;
-    case _adapter_opt_swap_2:     swap_slots = 2; rotate =  0; break;
-    case _adapter_opt_rot_1_up:   swap_slots = 1; rotate =  1; break;
-    case _adapter_opt_rot_1_down: swap_slots = 1; rotate = -1; break;
-    case _adapter_opt_rot_2_up:   swap_slots = 2; rotate =  1; break;
-    case _adapter_opt_rot_2_down: swap_slots = 2; rotate = -1; break;
-    default: ShouldNotReachHere();
+    case _bound_int_mh         : // fall-thru
+    case _bound_int_direct_mh  : return T_INT;
+    case _bound_long_mh        : // fall-thru
+    case _bound_long_direct_mh : return T_LONG;
+    default                    : return T_OBJECT;
     }
-    // Return the size of the stack slots to move in bytes.
-    swap_bytes = swap_slots * Interpreter::stackElementSize;
   }
 
-  static int get_ek_adapter_opt_spread_info(EntryKind ek) {
+  static int ek_adapter_opt_swap_slots(EntryKind ek) {
     switch (ek) {
-    case _adapter_opt_spread_0: return  0;
-    case _adapter_opt_spread_1: return  1;
-    default                   : return -1;
+    case _adapter_opt_swap_1        : return  1;
+    case _adapter_opt_swap_2        : return  2;
+    case _adapter_opt_rot_1_up      : return  1;
+    case _adapter_opt_rot_1_down    : return  1;
+    case _adapter_opt_rot_2_up      : return  2;
+    case _adapter_opt_rot_2_down    : return  2;
+    default : ShouldNotReachHere();   return -1;
+    }
+  }
+
+  static int ek_adapter_opt_swap_mode(EntryKind ek) {
+    switch (ek) {
+    case _adapter_opt_swap_1       : return  0;
+    case _adapter_opt_swap_2       : return  0;
+    case _adapter_opt_rot_1_up     : return  1;
+    case _adapter_opt_rot_1_down   : return -1;
+    case _adapter_opt_rot_2_up     : return  1;
+    case _adapter_opt_rot_2_down   : return -1;
+    default : ShouldNotReachHere();  return  0;
+    }
+  }
+
+  static int ek_adapter_opt_collect_count(EntryKind ek) {
+    assert(ek >= _adapter_opt_collect_FIRST && ek <= _adapter_opt_collect_LAST ||
+           ek >= _adapter_opt_fold_FIRST    && ek <= _adapter_opt_fold_LAST, "");
+    switch (ek) {
+    case _adapter_opt_collect_0_ref    : return  0;
+    case _adapter_opt_filter_S0_ref    :
+    case _adapter_opt_filter_S1_ref    :
+    case _adapter_opt_filter_S2_ref    :
+    case _adapter_opt_filter_S3_ref    :
+    case _adapter_opt_filter_S4_ref    :
+    case _adapter_opt_filter_S5_ref    :
+    case _adapter_opt_fold_1_ref       :
+    case _adapter_opt_collect_1_ref    : return  1;
+    case _adapter_opt_collect_2_S0_ref :
+    case _adapter_opt_collect_2_S1_ref :
+    case _adapter_opt_collect_2_S2_ref :
+    case _adapter_opt_collect_2_S3_ref :
+    case _adapter_opt_collect_2_S4_ref :
+    case _adapter_opt_collect_2_S5_ref :
+    case _adapter_opt_fold_2_ref       :
+    case _adapter_opt_collect_2_ref    : return  2;
+    case _adapter_opt_fold_3_ref       :
+    case _adapter_opt_collect_3_ref    : return  3;
+    case _adapter_opt_fold_4_ref       :
+    case _adapter_opt_collect_4_ref    : return  4;
+    case _adapter_opt_fold_5_ref       :
+    case _adapter_opt_collect_5_ref    : return  5;
+    default                            : return -1;  // sentinel value for "variable"
+    }
+  }
+
+  static int ek_adapter_opt_collect_slot(EntryKind ek) {
+    assert(ek >= _adapter_opt_collect_FIRST && ek <= _adapter_opt_collect_LAST ||
+           ek >= _adapter_opt_fold_FIRST    && ek <= _adapter_opt_fold_LAST, "");
+    switch (ek) {
+    case _adapter_opt_collect_2_S0_ref  :
+    case _adapter_opt_filter_S0_ref     : return 0;
+    case _adapter_opt_collect_2_S1_ref  :
+    case _adapter_opt_filter_S1_ref     : return 1;
+    case _adapter_opt_collect_2_S2_ref  :
+    case _adapter_opt_filter_S2_ref     : return 2;
+    case _adapter_opt_collect_2_S3_ref  :
+    case _adapter_opt_filter_S3_ref     : return 3;
+    case _adapter_opt_collect_2_S4_ref  :
+    case _adapter_opt_filter_S4_ref     : return 4;
+    case _adapter_opt_collect_2_S5_ref  :
+    case _adapter_opt_filter_S5_ref     : return 5;
+    default                             : return -1;  // sentinel value for "variable"
+    }
+  }
+
+  static BasicType ek_adapter_opt_collect_type(EntryKind ek) {
+    assert(ek >= _adapter_opt_collect_FIRST && ek <= _adapter_opt_collect_LAST ||
+           ek >= _adapter_opt_fold_FIRST    && ek <= _adapter_opt_fold_LAST, "");
+    switch (ek) {
+    case _adapter_opt_fold_int          :
+    case _adapter_opt_collect_int       : return T_INT;
+    case _adapter_opt_fold_long         :
+    case _adapter_opt_collect_long      : return T_LONG;
+    case _adapter_opt_fold_float        :
+    case _adapter_opt_collect_float     : return T_FLOAT;
+    case _adapter_opt_fold_double       :
+    case _adapter_opt_collect_double    : return T_DOUBLE;
+    case _adapter_opt_fold_void         :
+    case _adapter_opt_collect_void      : return T_VOID;
+    default                             : return T_OBJECT;
+    }
+  }
+
+  static int ek_adapter_opt_return_slot(EntryKind ek) {
+    assert(ek >= _adapter_opt_return_FIRST && ek <= _adapter_opt_return_LAST, "");
+    switch (ek) {
+    case _adapter_opt_return_S0_ref : return 0;
+    case _adapter_opt_return_S1_ref : return 1;
+    case _adapter_opt_return_S2_ref : return 2;
+    case _adapter_opt_return_S3_ref : return 3;
+    case _adapter_opt_return_S4_ref : return 4;
+    case _adapter_opt_return_S5_ref : return 5;
+    default                         : return -1;  // sentinel value for "variable"
+    }
+  }
+
+  static BasicType ek_adapter_opt_return_type(EntryKind ek) {
+    assert(ek >= _adapter_opt_return_FIRST && ek <= _adapter_opt_return_LAST, "");
+    switch (ek) {
+    case _adapter_opt_return_int    : return T_INT;
+    case _adapter_opt_return_long   : return T_LONG;
+    case _adapter_opt_return_float  : return T_FLOAT;
+    case _adapter_opt_return_double : return T_DOUBLE;
+    case _adapter_opt_return_void   : return T_VOID;
+    case _adapter_opt_return_any    : return T_CONFLICT;  // sentinel value for "variable"
+    default                         : return T_OBJECT;
+    }
+  }
+
+  static int ek_adapter_opt_spread_count(EntryKind ek) {
+    assert(ek >= _adapter_opt_spread_FIRST && ek <= _adapter_opt_spread_LAST, "");
+    switch (ek) {
+    case _adapter_opt_spread_0     : return  0;
+    case _adapter_opt_spread_1_ref : return  1;
+    case _adapter_opt_spread_2_ref : return  2;
+    case _adapter_opt_spread_3_ref : return  3;
+    case _adapter_opt_spread_4_ref : return  4;
+    case _adapter_opt_spread_5_ref : return  5;
+    default                        : return -1;  // sentinel value for "variable"
+    }
+  }
+
+  static BasicType ek_adapter_opt_spread_type(EntryKind ek) {
+    assert(ek >= _adapter_opt_spread_FIRST && ek <= _adapter_opt_spread_LAST, "");
+    switch (ek) {
+    // (there is no _adapter_opt_spread_boolean; we use byte)
+    case _adapter_opt_spread_byte   : return T_BYTE;
+    case _adapter_opt_spread_char   : return T_CHAR;
+    case _adapter_opt_spread_short  : return T_SHORT;
+    case _adapter_opt_spread_int    : return T_INT;
+    case _adapter_opt_spread_long   : return T_LONG;
+    case _adapter_opt_spread_float  : return T_FLOAT;
+    case _adapter_opt_spread_double : return T_DOUBLE;
+    default                         : return T_OBJECT;
     }
   }
 
@@ -228,11 +475,20 @@ class MethodHandles: AllStatic {
   // Bit mask of conversion_op values.  May vary by platform.
   static int adapter_conversion_ops_supported_mask();
 
+  static bool conv_op_supported(int conv_op) {
+    assert(conv_op_valid(conv_op), "");
+    return ((adapter_conversion_ops_supported_mask() & nth_bit(conv_op)) != 0);
+  }
+
   // Offset in words that the interpreter stack pointer moves when an argument is pushed.
   // The stack_move value must always be a multiple of this.
   static int stack_move_unit() {
     return frame::interpreter_frame_expression_stack_direction() * Interpreter::stackElementWords;
   }
+
+  // Adapter frame traversal.  (Implementation-specific.)
+  static frame ricochet_frame_sender(const frame& fr, RegisterMap* reg_map);
+  static void ricochet_frame_oops_do(const frame& fr, OopClosure* blk, const RegisterMap* reg_map);
 
   enum { CONV_VMINFO_SIGN_FLAG = 0x80 };
   // Shift values for prim-to-prim conversions.
@@ -429,6 +685,7 @@ class MethodHandles: AllStatic {
 
   // Fill in the fields of an AdapterMethodHandle mh.  (MH.type must be pre-filled.)
   static void init_AdapterMethodHandle(Handle mh, Handle target, int argnum, TRAPS);
+  static void ensure_vmlayout_field(Handle target, TRAPS);
 
 #ifdef ASSERT
   static bool spot_check_entry_names();
@@ -448,12 +705,54 @@ class MethodHandles: AllStatic {
     return same_basic_type_for_arguments(src, dst, raw, true);
   }
 
-  enum {                        // arg_mask values
+  static Symbol* convert_to_signature(oop type_str, bool polymorphic, TRAPS);
+
+#ifdef TARGET_ARCH_x86
+# include "methodHandles_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+#define TARGET_ARCH_NYI_6939861 1 //FIXME
+//# include "methodHandles_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+#define TARGET_ARCH_NYI_6939861 1 //FIXME
+//# include "methodHandles_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+#define TARGET_ARCH_NYI_6939861 1 //FIXME
+//# include "methodHandles_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+#define TARGET_ARCH_NYI_6939861 1 //FIXME
+//# include "methodHandles_ppc.hpp"
+#endif
+
+#ifdef TARGET_ARCH_NYI_6939861
+  // Here are some backward compatible declarations until the 6939861 ports are updated.
+  #define _adapter_flyby    (_EK_LIMIT + 10)
+  #define _adapter_ricochet (_EK_LIMIT + 11)
+  #define _adapter_opt_spread_1    _adapter_opt_spread_1_ref
+  #define _adapter_opt_spread_more _adapter_opt_spread_ref
+  enum {
     _INSERT_NO_MASK   = -1,
     _INSERT_REF_MASK  = 0,
     _INSERT_INT_MASK  = 1,
     _INSERT_LONG_MASK = 3
   };
+  static void get_ek_bound_mh_info(EntryKind ek, BasicType& arg_type, int& arg_mask, int& arg_slots) {
+    arg_type = ek_bound_mh_arg_type(ek);
+    arg_mask = 0;
+    arg_slots = type2size[arg_type];;
+  }
+  static void get_ek_adapter_opt_swap_rot_info(EntryKind ek, int& swap_bytes, int& rotate) {
+    int swap_slots = ek_adapter_opt_swap_slots(ek);
+    rotate = ek_adapter_opt_swap_mode(ek);
+    swap_bytes = swap_slots * Interpreter::stackElementSize;
+  }
+  static int get_ek_adapter_opt_spread_info(EntryKind ek) {
+    return ek_adapter_opt_spread_count(ek);
+  }
+
   static void insert_arg_slots(MacroAssembler* _masm,
                                RegisterOrConstant arg_slots,
                                int arg_mask,
@@ -466,8 +765,7 @@ class MethodHandles: AllStatic {
                                Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
-
-  static Symbol* convert_to_signature(oop type_str, bool polymorphic, TRAPS);
+#endif //TARGET_ARCH_NYI_6939861
 };
 
 

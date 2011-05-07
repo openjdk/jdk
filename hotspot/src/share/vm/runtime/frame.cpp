@@ -33,6 +33,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -169,6 +170,11 @@ void frame::set_pc(address   newpc ) {
 }
 
 // type testers
+bool frame::is_ricochet_frame() const {
+  RicochetBlob* rcb = SharedRuntime::ricochet_blob();
+  return (_cb == rcb && rcb != NULL && rcb->returns_to_bounce_addr(_pc));
+}
+
 bool frame::is_deoptimized_frame() const {
   assert(_deopt_state != unknown, "not answerable");
   return _deopt_state == is_deoptimized;
@@ -341,10 +347,16 @@ frame frame::java_sender() const {
 
 frame frame::real_sender(RegisterMap* map) const {
   frame result = sender(map);
-  while (result.is_runtime_frame()) {
+  while (result.is_runtime_frame() ||
+         result.is_ricochet_frame()) {
     result = result.sender(map);
   }
   return result;
+}
+
+frame frame::sender_for_ricochet_frame(RegisterMap* map) const {
+  assert(is_ricochet_frame(), "");
+  return MethodHandles::ricochet_frame_sender(*this, map);
 }
 
 // Note: called by profiler - NOT for current thread
@@ -529,6 +541,7 @@ jint frame::interpreter_frame_expression_stack_size() const {
 const char* frame::print_name() const {
   if (is_native_frame())      return "Native";
   if (is_interpreted_frame()) return "Interpreted";
+  if (is_ricochet_frame())    return "Ricochet";
   if (is_compiled_frame()) {
     if (is_deoptimized_frame()) return "Deoptimized";
     return "Compiled";
@@ -715,6 +728,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       st->print("v  ~RuntimeStub::%s", ((RuntimeStub *)_cb)->name());
     } else if (_cb->is_deoptimization_stub()) {
       st->print("v  ~DeoptimizationBlob");
+    } else if (_cb->is_ricochet_stub()) {
+      st->print("v  ~RichochetBlob");
     } else if (_cb->is_exception_stub()) {
       st->print("v  ~ExceptionBlob");
     } else if (_cb->is_safepoint_stub()) {
@@ -978,6 +993,9 @@ void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, 
 
 void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map) {
   assert(_cb != NULL, "sanity check");
+  if (_cb == SharedRuntime::ricochet_blob()) {
+    oops_ricochet_do(f, reg_map);
+  }
   if (_cb->oop_maps() != NULL) {
     OopMapSet::oops_do(this, reg_map, f);
 
@@ -994,6 +1012,11 @@ void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const Register
   // closure decides how it wants nmethods to be traced.
   if (cf != NULL)
     cf->do_code_blob(_cb);
+}
+
+void frame::oops_ricochet_do(OopClosure* f, const RegisterMap* map) {
+  assert(is_ricochet_frame(), "");
+  MethodHandles::ricochet_frame_oops_do(*this, f, map);
 }
 
 class CompiledArgumentOopFinder: public SignatureInfo {
