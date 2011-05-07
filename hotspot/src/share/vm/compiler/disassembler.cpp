@@ -283,10 +283,10 @@ void decode_env::print_address(address adr) {
         st->print("Stub::%s", desc->name());
         if (desc->begin() != adr)
           st->print("%+d 0x%p",adr - desc->begin(), adr);
-        else if (WizardMode) st->print(" " INTPTR_FORMAT, adr);
+        else if (WizardMode) st->print(" " PTR_FORMAT, adr);
         return;
       }
-      st->print("Stub::<unknown> " INTPTR_FORMAT, adr);
+      st->print("Stub::<unknown> " PTR_FORMAT, adr);
       return;
     }
 
@@ -314,8 +314,8 @@ void decode_env::print_address(address adr) {
     }
   }
 
-  // Fall through to a simple numeral.
-  st->print(INTPTR_FORMAT, (intptr_t)adr);
+  // Fall through to a simple (hexadecimal) numeral.
+  st->print(PTR_FORMAT, adr);
 }
 
 void decode_env::print_insn_labels() {
@@ -326,7 +326,7 @@ void decode_env::print_insn_labels() {
     cb->print_block_comment(st, p);
   }
   if (_print_pc) {
-    st->print("  " INTPTR_FORMAT ": ", (intptr_t) p);
+    st->print("  " PTR_FORMAT ": ", p);
   }
 }
 
@@ -432,7 +432,7 @@ address decode_env::decode_instructions(address start, address end) {
 void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (!load_library())  return;
   decode_env env(cb, st);
-  env.output()->print_cr("Decoding CodeBlob " INTPTR_FORMAT, cb);
+  env.output()->print_cr("Decoding CodeBlob " PTR_FORMAT, cb);
   env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
@@ -446,7 +446,7 @@ void Disassembler::decode(address start, address end, outputStream* st) {
 void Disassembler::decode(nmethod* nm, outputStream* st) {
   if (!load_library())  return;
   decode_env env(nm, st);
-  env.output()->print_cr("Decoding compiled method " INTPTR_FORMAT ":", nm);
+  env.output()->print_cr("Decoding compiled method " PTR_FORMAT ":", nm);
   env.output()->print_cr("Code:");
 
 #ifdef SHARK
@@ -478,9 +478,9 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
     int offset = 0;
     for (address p = nm->consts_begin(); p < nm->consts_end(); p += 4, offset += 4) {
       if ((offset % 8) == 0) {
-        env.output()->print_cr("  " INTPTR_FORMAT " (offset: %4d): " PTR32_FORMAT "   " PTR64_FORMAT, (intptr_t) p, offset, *((int32_t*) p), *((int64_t*) p));
+        env.output()->print_cr("  " PTR_FORMAT " (offset: %4d): " PTR32_FORMAT "   " PTR64_FORMAT, p, offset, *((int32_t*) p), *((int64_t*) p));
       } else {
-        env.output()->print_cr("  " INTPTR_FORMAT " (offset: %4d): " PTR32_FORMAT,                    (intptr_t) p, offset, *((int32_t*) p));
+        env.output()->print_cr("  " PTR_FORMAT " (offset: %4d): " PTR32_FORMAT,                    p, offset, *((int32_t*) p));
       }
     }
   }

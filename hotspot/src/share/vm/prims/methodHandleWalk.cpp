@@ -409,6 +409,11 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
+      case java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS: { //NYI, may GC
+        lose("unimplemented", CHECK_(empty));
+        break;
+      }
+
       case java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS: {
         klassOop array_klass_oop = NULL;
         BasicType array_type = java_lang_Class::as_BasicType(chain().adapter_arg_oop(),
@@ -452,9 +457,18 @@ MethodHandleWalker::walk(TRAPS) {
                     Bytecodes::_invokestatic, false, 3, &arglist[0], CHECK_(empty));
 
         // Spread out the array elements.
-        Bytecodes::Code aload_op = Bytecodes::_aaload;
-        if (element_type != T_OBJECT) {
-          lose("primitive array NYI", CHECK_(empty));
+        Bytecodes::Code aload_op = Bytecodes::_nop;
+        switch (element_type) {
+        case T_INT:       aload_op = Bytecodes::_iaload; break;
+        case T_LONG:      aload_op = Bytecodes::_laload; break;
+        case T_FLOAT:     aload_op = Bytecodes::_faload; break;
+        case T_DOUBLE:    aload_op = Bytecodes::_daload; break;
+        case T_OBJECT:    aload_op = Bytecodes::_aaload; break;
+        case T_BOOLEAN:   // fall through:
+        case T_BYTE:      aload_op = Bytecodes::_baload; break;
+        case T_CHAR:      aload_op = Bytecodes::_caload; break;
+        case T_SHORT:     aload_op = Bytecodes::_saload; break;
+        default:          lose("primitive array NYI", CHECK_(empty));
         }
         int ap = arg_slot;
         for (int i = 0; i < spread_length; i++) {
@@ -466,11 +480,6 @@ MethodHandleWalker::walk(TRAPS) {
         }
         break;
       }
-
-      case java_lang_invoke_AdapterMethodHandle::OP_FLYBY: //NYI, runs Java code
-      case java_lang_invoke_AdapterMethodHandle::OP_RICOCHET: //NYI, runs Java code
-        lose("unimplemented", CHECK_(empty));
-        break;
 
       default:
         lose("bad adapter conversion", CHECK_(empty));

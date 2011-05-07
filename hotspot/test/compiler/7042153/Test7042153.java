@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,24 @@
  *
  */
 
-#ifndef CPU_X86_VM_INTERPRETER_X86_HPP
-#define CPU_X86_VM_INTERPRETER_X86_HPP
+/**
+ * @test
+ * @bug 7042153
+ * @summary Bad folding of IfOps with unloaded constant arguments in C1
+ *
+ * @run main/othervm -Xcomp Test7042153
+ */
 
- public:
-  static Address::ScaleFactor stackElementScale() {
-    return NOT_LP64(Address::times_4) LP64_ONLY(Address::times_8);
+import java.lang.reflect.*;
+
+public class Test7042153 {
+  static public class Bar { }
+  static public class Foo { }
+
+  static volatile boolean z;
+  public static void main(String [] args) {
+    Class cx = Bar.class;
+    Class cy = Foo.class;
+    z = (cx == cy);
   }
-
-  // Offset from rsp (which points to the last stack element)
-  static int expr_offset_in_bytes(int i) { return stackElementSize * i; }
-
-  // Stack index relative to tos (which points at value)
-  static int expr_index_at(int i)        { return stackElementWords * i; }
-
-  // Already negated by c++ interpreter
-  static int local_index_at(int i) {
-    assert(i <= 0, "local direction already negated");
-    return stackElementWords * i;
-  }
-
-#endif // CPU_X86_VM_INTERPRETER_X86_HPP
+}
