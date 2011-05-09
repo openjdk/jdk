@@ -39,7 +39,7 @@ public class Shutdown {
     static void acceptAndReset(ServerSocketChannel ssc) throws IOException {
         SocketChannel peer = ssc.accept();
         try {
-            peer.setOption(StandardSocketOption.SO_LINGER, 0);
+            peer.setOption(StandardSocketOptions.SO_LINGER, 0);
             peer.configureBlocking(false);
             peer.write(ByteBuffer.wrap(new byte[128*1024]));
         } finally {

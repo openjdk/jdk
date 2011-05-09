@@ -65,55 +65,55 @@ import java.nio.channels.SelectionKey;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_DISABLE_FRAGMENTS
+ *     <td> {@link SctpStandardSocketOptions#SCTP_DISABLE_FRAGMENTS
  *                                          SCTP_DISABLE_FRAGMENTS} </td>
  *     <td> Enables or disables message fragmentation </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_EXPLICIT_COMPLETE
+ *     <td> {@link SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE
  *                                          SCTP_EXPLICIT_COMPLETE} </td>
  *     <td> Enables or disables explicit message completion </td>
  *   </tr>
  *    <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_FRAGMENT_INTERLEAVE
+ *     <td> {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
  *                                          SCTP_FRAGMENT_INTERLEAVE} </td>
  *     <td> Controls how the presentation of messages occur for the message
  *          receiver </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_INIT_MAXSTREAMS
+ *     <td> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
  *                                          SCTP_INIT_MAXSTREAMS} </td>
  *     <td> The maximum number of streams requested by the local endpoint during
  *          association initialization </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_NODELAY SCTP_NODELAY} </td>
+ *     <td> {@link SctpStandardSocketOptions#SCTP_NODELAY SCTP_NODELAY} </td>
  *     <td> Enables or disable a Nagle-like algorithm </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_PRIMARY_ADDR
+ *     <td> {@link SctpStandardSocketOptions#SCTP_PRIMARY_ADDR
  *                                          SCTP_PRIMARY_ADDR} </td>
  *     <td> Requests that the local SCTP stack use the given peer address as the
  *          association primary </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_SET_PEER_PRIMARY_ADDR
+ *     <td> {@link SctpStandardSocketOptions#SCTP_SET_PEER_PRIMARY_ADDR
  *                                          SCTP_SET_PEER_PRIMARY_ADDR} </td>
  *     <td> Requests that the peer mark the enclosed address as the association
  *          primary </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SO_SNDBUF
+ *     <td> {@link SctpStandardSocketOptions#SO_SNDBUF
  *                                          SO_SNDBUF} </td>
  *     <td> The size of the socket send buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SO_RCVBUF
+ *     <td> {@link SctpStandardSocketOptions#SO_RCVBUF
  *                                          SO_RCVBUF} </td>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SO_LINGER
+ *     <td> {@link SctpStandardSocketOptions#SO_LINGER
  *                                          SO_LINGER} </td>
  *     <td> Linger on close if data is present (when configured in blocking mode
  *          only) </td>
@@ -449,7 +449,7 @@ public abstract class SctpChannel
      * <P> This is a convience method and is equivalent to evaluating the
      * following expression:
      * <blockquote><pre>
-     * setOption(SctpStandardSocketOption.SCTP_INIT_MAXSTREAMS, SctpStandardSocketOption.InitMaxStreams.create(maxInStreams, maxOutStreams))
+     * setOption(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS, SctpStandardSocketOption.InitMaxStreams.create(maxInStreams, maxOutStreams))
      *  .connect(remote);
      * </pre></blockquote>
      *
@@ -651,7 +651,7 @@ public abstract class SctpChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see SctpStandardSocketOption
+     * @see SctpStandardSocketOptions
      */
     public abstract <T> T getOption(SctpSocketOption<T> name)
         throws IOException;
@@ -680,7 +680,7 @@ public abstract class SctpChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see SctpStandardSocketOption
+     * @see SctpStandardSocketOptions
      */
     public abstract <T> SctpChannel setOption(SctpSocketOption<T> name, T value)
         throws IOException;
@@ -731,7 +731,7 @@ public abstract class SctpChannel
      * MessageInfo} will return {@code false}, and more invocations of this
      * method will be necessary to completely consume the messgae. Only
      * one message at a time will be partially delivered in any stream. The
-     * socket option {@link SctpStandardSocketOption#SCTP_FRAGMENT_INTERLEAVE
+     * socket option {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
      * SCTP_FRAGMENT_INTERLEAVE} controls various aspects of what interlacing of
      * messages occurs.
      *
@@ -804,7 +804,7 @@ public abstract class SctpChannel
      * and sufficient room becomes available, then the remaining bytes in the
      * given byte buffer are transmitted as a single message. Sending a message
      * is atomic unless explicit message completion {@link
-     * SctpStandardSocketOption#SCTP_EXPLICIT_COMPLETE SCTP_EXPLICIT_COMPLETE}
+     * SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE SCTP_EXPLICIT_COMPLETE}
      * socket option is enabled on this channel's socket.
      *
      * <P> The message is transferred from the byte buffer as if by a regular

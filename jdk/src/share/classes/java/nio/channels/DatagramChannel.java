@@ -63,37 +63,37 @@ import java.nio.channels.spi.SelectorProvider;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_SNDBUF SO_SNDBUF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </td>
  *     <td> The size of the socket send buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_RCVBUF SO_RCVBUF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
  *     <td> Re-use address </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_BROADCAST SO_BROADCAST} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_BROADCAST SO_BROADCAST} </td>
  *     <td> Allow transmission of broadcast datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#IP_TOS IP_TOS} </td>
+ *     <td> {@link java.net.StandardSocketOptions#IP_TOS IP_TOS} </td>
  *     <td> The Type of Service (ToS) octet in the Internet Protocol (IP) header </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#IP_MULTICAST_IF IP_MULTICAST_IF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_IF IP_MULTICAST_IF} </td>
  *     <td> The network interface for Internet Protocol (IP) multicast datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#IP_MULTICAST_TTL
+ *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL
  *       IP_MULTICAST_TTL} </td>
  *     <td> The <em>time-to-live</em> for Internet Protocol (IP) multicast
  *       datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#IP_MULTICAST_LOOP
+ *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP
  *       IP_MULTICAST_LOOP} </td>
  *     <td> Loopback for Internet Protocol (IP) multicast datagrams </td>
  *   </tr>
