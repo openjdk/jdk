@@ -1,0 +1,2 @@
+T7034495.java:40:17: compiler.err.types.incompatible.diff.ret: T7034495.B<?>, T7034495.A<?>, foo()
+1 error

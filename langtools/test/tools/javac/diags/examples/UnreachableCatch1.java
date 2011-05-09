@@ -23,14 +23,21 @@
 
 // key: compiler.warn.unreachable.catch.1
 
+import java.io.*;
+
 class UnreachableCatch1 {
 
     void test() {
         try {
-            throw new IllegalArgumentException();
+            if (true) {
+                throw new FileNotFoundException();
+            }
+            else {
+                throw new EOFException();
+            }
         }
-        catch(Error err) { }
-        catch(RuntimeException rex) { }
-        catch(Throwable t) { } //unreachable
+        catch(FileNotFoundException fnf) { }
+        catch(EOFException eof) { }
+        catch(IOException ex) { } //unreachable
     }
 }

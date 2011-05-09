@@ -186,6 +186,9 @@ public enum Source {
     public boolean allowSimplifiedVarargs() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean allowObjectToPrimitiveCast() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:
