@@ -830,7 +830,14 @@ class HTMLCodec extends InputStream {
         if( -1 == iStartOffset ){
             throw new IOException(FAILURE_MSG + "invalid HTML format.");
         }
-        iReadCount = bufferedStream.skip(iStartOffset);
+
+        int curOffset = 0;
+        while (curOffset < iStartOffset){
+            curOffset += bufferedStream.skip(iStartOffset - curOffset);
+        }
+
+        iReadCount = curOffset;
+
         if( iStartOffset != iReadCount ){
             throw new IOException(FAILURE_MSG + "Byte stream ends in description.");
         }
