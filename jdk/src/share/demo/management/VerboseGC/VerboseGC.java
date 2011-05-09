@@ -95,9 +95,8 @@ public class VerboseGC {
         int port = -1;
         long interval = 5000; // default is 5 second interval
         long mins = 5;
-        for (int argIndex = 0; argIndex < args.length; argIndex++) {
-           String arg = args[argIndex];
-            if (args[argIndex].startsWith("-")) {
+        for (String arg: args) {
+            if (arg.startsWith("-")) {
                 if (arg.equals("-h") ||
                     arg.equals("-help") ||
                     arg.equals("-?")) {

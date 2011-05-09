@@ -32,7 +32,7 @@
  * 4872664 4803179 4892980 4900747 4945394 4938995 4979006 4994840 4997476
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
- * 6350801 6676425 6878475 6919132 6931676 6948903 7014645
+ * 6350801 6676425 6878475 6919132 6931676 6948903 7014645 7039066
  */
 
 import java.util.regex.*;
@@ -137,6 +137,7 @@ public class RegExTest {
         nonBmpClassComplementTest();
         unicodePropertiesTest();
         unicodeHexNotationTest();
+        unicodeClassesTest();
         if (failure)
             throw new RuntimeException("Failure in the RE handling.");
         else
@@ -3656,5 +3657,146 @@ public class RegExTest {
                  failCount++;
          }
          report("unicodeHexNotation");
-     }
+    }
+
+    private static void unicodeClassesTest() throws Exception {
+
+        Matcher lower  = Pattern.compile("\\p{Lower}").matcher("");
+        Matcher upper  = Pattern.compile("\\p{Upper}").matcher("");
+        Matcher ASCII  = Pattern.compile("\\p{ASCII}").matcher("");
+        Matcher alpha  = Pattern.compile("\\p{Alpha}").matcher("");
+        Matcher digit  = Pattern.compile("\\p{Digit}").matcher("");
+        Matcher alnum  = Pattern.compile("\\p{Alnum}").matcher("");
+        Matcher punct  = Pattern.compile("\\p{Punct}").matcher("");
+        Matcher graph  = Pattern.compile("\\p{Graph}").matcher("");
+        Matcher print  = Pattern.compile("\\p{Print}").matcher("");
+        Matcher blank  = Pattern.compile("\\p{Blank}").matcher("");
+        Matcher cntrl  = Pattern.compile("\\p{Cntrl}").matcher("");
+        Matcher xdigit = Pattern.compile("\\p{XDigit}").matcher("");
+        Matcher space  = Pattern.compile("\\p{Space}").matcher("");
+        Matcher bound  = Pattern.compile("\\b").matcher("");
+        Matcher word   = Pattern.compile("\\w++").matcher("");
+        // UNICODE_CHARACTER_CLASS
+        Matcher lowerU  = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher upperU  = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher ASCIIU  = Pattern.compile("\\p{ASCII}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alphaU  = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher digitU  = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alnumU  = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher punctU  = Pattern.compile("\\p{Punct}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher graphU  = Pattern.compile("\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher printU  = Pattern.compile("\\p{Print}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher blankU  = Pattern.compile("\\p{Blank}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher cntrlU  = Pattern.compile("\\p{Cntrl}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher xdigitU = Pattern.compile("\\p{XDigit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher spaceU  = Pattern.compile("\\p{Space}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher boundU  = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher wordU   = Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        // embedded flag (?U)
+        Matcher lowerEU  = Pattern.compile("(?U)\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher graphEU  = Pattern.compile("(?U)\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher wordEU   = Pattern.compile("(?U)\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+
+        Matcher bwb    = Pattern.compile("\\b\\w\\b").matcher("");
+        Matcher bwbU   = Pattern.compile("\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher bwbEU  = Pattern.compile("(?U)\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        // properties
+        Matcher lowerP  = Pattern.compile("\\p{IsLowerCase}").matcher("");
+        Matcher upperP  = Pattern.compile("\\p{IsUpperCase}").matcher("");
+        Matcher titleP  = Pattern.compile("\\p{IsTitleCase}").matcher("");
+        Matcher letterP = Pattern.compile("\\p{IsLetter}").matcher("");
+        Matcher alphaP  = Pattern.compile("\\p{IsAlphabetic}").matcher("");
+        Matcher ideogP  = Pattern.compile("\\p{IsIdeographic}").matcher("");
+        Matcher cntrlP  = Pattern.compile("\\p{IsControl}").matcher("");
+        Matcher spaceP  = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
+        Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
+        Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
+
+        // javaMethod
+        Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
+        Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
+        Matcher alphaJ  = Pattern.compile("\\p{javaAlphabetic}").matcher("");
+        Matcher ideogJ  = Pattern.compile("\\p{javaIdeographic}").matcher("");
+
+        for (int cp = 1; cp < 0x30000; cp++) {
+            String str = new String(Character.toChars(cp));
+            int type = Character.getType(cp);
+            if (// lower
+                POSIX_ASCII.isLower(cp)   != lower.reset(str).matches()  ||
+                Character.isLowerCase(cp) != lowerU.reset(str).matches() ||
+                Character.isLowerCase(cp) != lowerP.reset(str).matches() ||
+                Character.isLowerCase(cp) != lowerEU.reset(str).matches()||
+                Character.isLowerCase(cp) != lowerJ.reset(str).matches()||
+                // upper
+                POSIX_ASCII.isUpper(cp)   != upper.reset(str).matches()  ||
+                POSIX_Unicode.isUpper(cp) != upperU.reset(str).matches() ||
+                Character.isUpperCase(cp) != upperP.reset(str).matches() ||
+                Character.isUpperCase(cp) != upperJ.reset(str).matches() ||
+                // alpha
+                POSIX_ASCII.isAlpha(cp)   != alpha.reset(str).matches()  ||
+                POSIX_Unicode.isAlpha(cp) != alphaU.reset(str).matches() ||
+                Character.isAlphabetic(cp)!= alphaP.reset(str).matches() ||
+                Character.isAlphabetic(cp)!= alphaJ.reset(str).matches() ||
+                // digit
+                POSIX_ASCII.isDigit(cp)   != digit.reset(str).matches()  ||
+                Character.isDigit(cp)     != digitU.reset(str).matches() ||
+                // alnum
+                POSIX_ASCII.isAlnum(cp)   != alnum.reset(str).matches()  ||
+                POSIX_Unicode.isAlnum(cp) != alnumU.reset(str).matches() ||
+                // punct
+                POSIX_ASCII.isPunct(cp)   != punct.reset(str).matches()  ||
+                POSIX_Unicode.isPunct(cp) != punctU.reset(str).matches() ||
+                // graph
+                POSIX_ASCII.isGraph(cp)   != graph.reset(str).matches()  ||
+                POSIX_Unicode.isGraph(cp) != graphU.reset(str).matches() ||
+                POSIX_Unicode.isGraph(cp) != graphEU.reset(str).matches()||
+                // blank
+                POSIX_ASCII.isType(cp, POSIX_ASCII.BLANK)
+                                          != blank.reset(str).matches()  ||
+                POSIX_Unicode.isBlank(cp) != blankU.reset(str).matches() ||
+                // print
+                POSIX_ASCII.isPrint(cp)   != print.reset(str).matches()  ||
+                POSIX_Unicode.isPrint(cp) != printU.reset(str).matches() ||
+                // cntrl
+                POSIX_ASCII.isCntrl(cp)   != cntrl.reset(str).matches()  ||
+                POSIX_Unicode.isCntrl(cp) != cntrlU.reset(str).matches() ||
+                (Character.CONTROL == type) != cntrlP.reset(str).matches() ||
+                // hexdigit
+                POSIX_ASCII.isHexDigit(cp)   != xdigit.reset(str).matches()  ||
+                POSIX_Unicode.isHexDigit(cp) != xdigitU.reset(str).matches() ||
+                // space
+                POSIX_ASCII.isSpace(cp)   != space.reset(str).matches()  ||
+                POSIX_Unicode.isSpace(cp) != spaceU.reset(str).matches() ||
+                POSIX_Unicode.isSpace(cp) != spaceP.reset(str).matches() ||
+                // word
+                POSIX_ASCII.isWord(cp)   != word.reset(str).matches()  ||
+                POSIX_Unicode.isWord(cp) != wordU.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp) != wordEU.reset(str).matches()||
+                // bwordb
+                POSIX_ASCII.isWord(cp) != bwb.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp) != bwbU.reset(str).matches() ||
+                // properties
+                Character.isTitleCase(cp) != titleP.reset(str).matches() ||
+                Character.isLetter(cp)    != letterP.reset(str).matches()||
+                Character.isIdeographic(cp) != ideogP.reset(str).matches() ||
+                Character.isIdeographic(cp) != ideogJ.reset(str).matches() ||
+                (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
+                POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches())
+                failCount++;
+        }
+
+        // bounds/word align
+        twoFindIndexes(" \u0180sherman\u0400 ", bound, 1, 10);
+        if (!bwbU.reset("\u0180sherman\u0400").matches())
+            failCount++;
+        twoFindIndexes(" \u0180sh\u0345erman\u0400 ", bound, 1, 11);
+        if (!bwbU.reset("\u0180sh\u0345erman\u0400").matches())
+            failCount++;
+        twoFindIndexes(" \u0724\u0739\u0724 ", bound, 1, 4);
+        if (!bwbU.reset("\u0724\u0739\u0724").matches())
+            failCount++;
+        if (!bwbEU.reset("\u0724\u0739\u0724").matches())
+            failCount++;
+        report("unicodePredefinedClasses");
+    }
 }

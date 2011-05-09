@@ -26,8 +26,6 @@
 package com.sun.tools.example.debug.gui;
 
 import java.io.*;
-import java.util.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -35,12 +33,11 @@ import javax.swing.*;
 import com.sun.jdi.*;
 import com.sun.jdi.request.*;
 
-import com.sun.tools.example.debug.event.*;
 import com.sun.tools.example.debug.bdi.*;
 
-import java.util.List;
-
 public class SourceTool extends JPanel {
+
+    private static final long serialVersionUID = -5461299294186395257L;
 
     private Environment env;
 
@@ -99,6 +96,7 @@ public class SourceTool extends JPanel {
 
         // ContextListener
 
+        @Override
         public void currentFrameChanged(CurrentFrameChangedEvent e) {
             showSourceContext(e.getThread(), e.getIndex());
         }
@@ -108,6 +106,7 @@ public class SourceTool extends JPanel {
 
         // SourceListener
 
+        @Override
         public void sourcepathChanged(SourcepathChangedEvent e) {
             // Reload source view if its contents depend
             // on the source path.
@@ -120,12 +119,15 @@ public class SourceTool extends JPanel {
 
         // SpecListener
 
+        @Override
         public void breakpointSet(SpecEvent e) {
             breakpointResolved(e);
         }
 
+        @Override
         public void breakpointDeferred(SpecEvent e) { }
 
+        @Override
         public void breakpointDeleted(SpecEvent e) {
             BreakpointRequest req = (BreakpointRequest)e.getEventRequest();
             Location loc = req.location();
@@ -139,6 +141,7 @@ public class SourceTool extends JPanel {
             }
         }
 
+        @Override
         public void breakpointResolved(SpecEvent e) {
             BreakpointRequest req = (BreakpointRequest)e.getEventRequest();
             Location loc = req.location();
@@ -150,29 +153,40 @@ public class SourceTool extends JPanel {
             }
         }
 
+        @Override
         public void breakpointError(SpecErrorEvent e) {
             breakpointDeleted(e);
         }
 
+        @Override
         public void watchpointSet(SpecEvent e) {
         }
+        @Override
         public void watchpointDeferred(SpecEvent e) {
         }
+        @Override
         public void watchpointDeleted(SpecEvent e) {
         }
+        @Override
         public void watchpointResolved(SpecEvent e) {
         }
+        @Override
         public void watchpointError(SpecErrorEvent e) {
         }
 
+        @Override
         public void exceptionInterceptSet(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptDeferred(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptDeleted(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptResolved(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptError(SpecErrorEvent e) {
         }
     }
@@ -269,6 +283,7 @@ public class SourceTool extends JPanel {
 
     private class SourceLineRenderer extends DefaultListCellRenderer {
 
+        @Override
         public Component getListCellRendererComponent(JList list,
                                                       Object value,
                                                       int index,
@@ -301,6 +316,7 @@ public class SourceTool extends JPanel {
             return this;
         }
 
+        @Override
         public Dimension getPreferredSize() {
             Dimension dim = super.getPreferredSize();
             return new Dimension(dim.width, dim.height-5);
@@ -309,6 +325,7 @@ public class SourceTool extends JPanel {
     }
 
     private class STMouseListener extends MouseAdapter implements MouseListener {
+        @Override
         public void mousePressed(MouseEvent e) {
             if (e.isPopupTrigger()) {
                 showPopupMenu((Component)e.getSource(),
@@ -316,6 +333,7 @@ public class SourceTool extends JPanel {
             }
         }
 
+        @Override
         public void mouseReleased(MouseEvent e) {
             if (e.isPopupTrigger()) {
                 showPopupMenu((Component)e.getSource(),
@@ -354,6 +372,7 @@ public class SourceTool extends JPanel {
         private JMenuItem commandItem(String label, final String cmd) {
             JMenuItem item = new JMenuItem(label);
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     interpreter.executeCommand(cmd);
                 }
