@@ -763,7 +763,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         public void setValueAt(Object value, int row, int col) {
             if (col == COLUMN_FILENAME) {
-                JFileChooser chooser = getFileChooser();
+                final JFileChooser chooser = getFileChooser();
                 File f = (File)getValueAt(row, col);
                 if (f != null) {
                     String oldDisplayName = chooser.getName(f);
@@ -782,18 +782,25 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
                         // rename
                         FileSystemView fsv = chooser.getFileSystemView();
-                        File f2 = fsv.createFileObject(f.getParentFile(), newFileName);
+                        final File f2 = fsv.createFileObject(f.getParentFile(), newFileName);
                         if (f2.exists()) {
                             JOptionPane.showMessageDialog(chooser, MessageFormat.format(renameErrorFileExistsText,
                                     oldFileName), renameErrorTitleText, JOptionPane.ERROR_MESSAGE);
                         } else {
                             if (FilePane.this.getModel().renameFile(f, f2)) {
                                 if (fsv.isParent(chooser.getCurrentDirectory(), f2)) {
-                                    if (chooser.isMultiSelectionEnabled()) {
-                                        chooser.setSelectedFiles(new File[]{f2});
-                                    } else {
-                                        chooser.setSelectedFile(f2);
-                                    }
+                                    // The setSelectedFile method produces a new setValueAt invocation while the JTable
+                                    // is editing. Postpone file selection to be sure that edit mode of the JTable
+                                    // is completed
+                                    SwingUtilities.invokeLater(new Runnable() {
+                                        public void run() {
+                                            if (chooser.isMultiSelectionEnabled()) {
+                                                chooser.setSelectedFiles(new File[]{f2});
+                                            } else {
+                                                chooser.setSelectedFile(f2);
+                                            }
+                                        }
+                                    });
                                 } else {
                                     // Could be because of delay in updating Desktop folder
                                     // chooser.setSelectedFile(null);

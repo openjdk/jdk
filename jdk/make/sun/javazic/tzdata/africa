@@ -234,7 +234,21 @@ Rule	Egypt	1989	only	-	May	 6	1:00	1:00	S
 Rule	Egypt	1990	1994	-	May	 1	1:00	1:00	S
 # IATA (after 1990) says transitions are at 0:00.
 # Go with IATA starting in 1995, except correct 1995 entry from 09-30 to 09-29.
-Rule	Egypt	1995	max	-	Apr	lastFri	 0:00s	1:00	S
+
+# From Alexander Krivenyshev (2011-04-20):
+# "...Egypt's interim cabinet decided on Wednesday to cancel daylight
+# saving time after a poll posted on its website showed the majority of
+# Egyptians would approve the cancellation."
+#
+# Egypt to cancel daylight saving time
+# <a href="http://www.almasryalyoum.com/en/node/407168">
+# http://www.almasryalyoum.com/en/node/407168
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_egypt04.html">
+# http://www.worldtimezone.com/dst_news/dst_news_egypt04.html
+# </a>
+Rule	Egypt	1995	2010	-	Apr	lastFri	 0:00s	1:00	S
 Rule	Egypt	1995	2005	-	Sep	lastThu	23:00s	0	-
 # From Steffen Thorsen (2006-09-19):
 # The Egyptian Gazette, issue 41,090 (2006-09-18), page 1, reports:
@@ -335,7 +349,7 @@ Rule	Egypt	2008	only	-	Aug	lastThu	23:00s	0	-
 Rule	Egypt	2009	only	-	Aug	20	23:00s	0	-
 Rule	Egypt	2010	only	-	Aug	11	0:00	0	-
 Rule	Egypt	2010	only	-	Sep	10	0:00	1:00	S
-Rule	Egypt	2010	max	-	Sep	lastThu	23:00s	0	-
+Rule	Egypt	2010	only	-	Sep	lastThu	23:00s	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Cairo	2:05:00 -	LMT	1900 Oct

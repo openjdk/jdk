@@ -23,27 +23,36 @@
 
 /**
  * @test
- * @bug     7027667 7023591 7037091
+ * @bug     7036754
  *
- * @summary Verifies that aa clipped rectangles are drawn, not filled.
+ * @summary Verifies that there are no non-finite numbers when stroking
+ *          certain quadratic curves.
  *
- * @run     main Test7027667
+ * @author Jim Graham
+ * @run     main Test7036754
  */
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.awt.image.*;
-import static java.awt.RenderingHints.*;
 
-public class Test7027667 {
-    public static void main(String[] args) throws Exception {
-        BufferedImage bImg = new BufferedImage(512, 512, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = (Graphics2D) bImg.getGraphics();
-        g2d.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-        g2d.setClip(new Ellipse2D.Double(0, 0, 100, 100));
-        g2d.drawRect(10, 10, 100, 100);
-        if (new Color(bImg.getRGB(50, 50)).equals(Color.white)) {
-            throw new Exception("Rectangle should be drawn, not filled");
+public class Test7036754 {
+    public static void main(String argv[]) {
+        Shape s = new QuadCurve2D.Float(839.24677f, 508.97888f,
+                                        839.2953f, 508.97122f,
+                                        839.3438f, 508.96353f);
+        s = new BasicStroke(10f).createStrokedShape(s);
+        float nsegs[] = {2, 2, 4, 6, 0};
+        float coords[] = new float[6];
+        PathIterator pi = s.getPathIterator(null);
+        while (!pi.isDone()) {
+            int type = pi.currentSegment(coords);
+            for (int i = 0; i < nsegs[type]; i++) {
+                float c = coords[i];
+                if (Float.isNaN(c) || Float.isInfinite(c)) {
+                    throw new RuntimeException("bad value in stroke");
+                }
+            }
+            pi.next();
         }
     }
 }

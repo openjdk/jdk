@@ -21,29 +21,42 @@
  * questions.
  */
 
-/**
- * @test
- * @bug     7027667 7023591 7037091
- *
- * @summary Verifies that aa clipped rectangles are drawn, not filled.
- *
- * @run     main Test7027667
- */
+/* @test
+   @bug 7036025
+   @summary java.security.AccessControlException when creating JFileChooser in signed applet
+   @author Pavel Porvatov
+   @run main/othervm/policy=security.policy bug7036025
+*/
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import static java.awt.RenderingHints.*;
+import javax.swing.*;
+import java.io.File;
 
-public class Test7027667 {
+public class bug7036025 {
+    public static final String DIR = "c:/temp";
+
     public static void main(String[] args) throws Exception {
-        BufferedImage bImg = new BufferedImage(512, 512, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = (Graphics2D) bImg.getGraphics();
-        g2d.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-        g2d.setClip(new Ellipse2D.Double(0, 0, 100, 100));
-        g2d.drawRect(10, 10, 100, 100);
-        if (new Color(bImg.getRGB(50, 50)).equals(Color.white)) {
-            throw new Exception("Rectangle should be drawn, not filled");
+        String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+
+        if (!systemLookAndFeelClassName.toLowerCase().contains("windows")) {
+            System.out.println("The test is only for Windows OS.");
+
+            return;
         }
+
+        File file = new File(DIR);
+
+        if (!file.exists()) {
+            if (!file.mkdir()) {
+                throw new RuntimeException("Cannot create " + DIR);
+            }
+
+            file.deleteOnExit();
+        }
+
+        UIManager.setLookAndFeel(systemLookAndFeelClassName);
+
+        new JFileChooser(file);
+
+        System.out.println("Test passed for LookAndFeel " + UIManager.getLookAndFeel().getName());
     }
 }
