@@ -486,7 +486,7 @@ class SolarisWatchService
         void processDirectoryEvents(SolarisWatchKey key, int mask) {
             if ((mask & (FILE_MODIFIED | FILE_ATTRIB)) != 0) {
                 registerChildren(key.getDirectory(), key,
-                    key.events().contains(StandardWatchEventKind.ENTRY_CREATE));
+                    key.events().contains(StandardWatchEventKinds.ENTRY_CREATE));
             }
         }
 
@@ -504,14 +504,14 @@ class SolarisWatchService
 
             // entry modified
             if (((mask & (FILE_MODIFIED | FILE_ATTRIB)) != 0) &&
-                events.contains(StandardWatchEventKind.ENTRY_MODIFY))
+                events.contains(StandardWatchEventKinds.ENTRY_MODIFY))
             {
-                key.signalEvent(StandardWatchEventKind.ENTRY_MODIFY, node.name());
+                key.signalEvent(StandardWatchEventKinds.ENTRY_MODIFY, node.name());
             }
 
             // entry removed
             if (((mask & (FILE_REMOVED)) != 0) &&
-                events.contains(StandardWatchEventKind.ENTRY_DELETE))
+                events.contains(StandardWatchEventKinds.ENTRY_DELETE))
             {
                 // Due to 6636438/6636412 we may get a remove event for cases
                 // where a rmdir/unlink/rename is attempted but fails. Until
@@ -527,7 +527,7 @@ class SolarisWatchService
                 } catch (UnixException x) { }
 
                 if (removed)
-                    key.signalEvent(StandardWatchEventKind.ENTRY_DELETE, node.name());
+                    key.signalEvent(StandardWatchEventKinds.ENTRY_DELETE, node.name());
             }
             return false;
         }
@@ -547,7 +547,7 @@ class SolarisWatchService
             // if the ENTRY_MODIFY event is not enabled then we don't need
             // modification events for entries in the directory
             int events = FILE_NOFOLLOW;
-            if (parent.events().contains(StandardWatchEventKind.ENTRY_MODIFY))
+            if (parent.events().contains(StandardWatchEventKinds.ENTRY_MODIFY))
                 events |= (FILE_MODIFIED | FILE_ATTRIB);
 
             DirectoryStream<Path> stream = null;
@@ -567,7 +567,7 @@ class SolarisWatchService
 
                     // send ENTRY_CREATE if enabled
                     if (sendEvents) {
-                        parent.signalEvent(StandardWatchEventKind.ENTRY_CREATE, name);
+                        parent.signalEvent(StandardWatchEventKinds.ENTRY_CREATE, name);
                     }
 
                     // register it
@@ -602,12 +602,12 @@ class SolarisWatchService
             // update events, rembering if ENTRY_MODIFY was previously
             // enabled or disabled.
             boolean wasModifyEnabled = key.events()
-                .contains(StandardWatchEventKind.ENTRY_MODIFY);
+                .contains(StandardWatchEventKinds.ENTRY_MODIFY);
             key.setEvents(events);
 
             // check if ENTRY_MODIFY has changed
             boolean isModifyEnabled = events
-                .contains(StandardWatchEventKind.ENTRY_MODIFY);
+                .contains(StandardWatchEventKinds.ENTRY_MODIFY);
             if (wasModifyEnabled == isModifyEnabled) {
                 return;
             }
