@@ -109,7 +109,7 @@ AwtFrame::AwtFrame() {
     m_isMenuDropped = FALSE;
     m_isInputMethodWindow = FALSE;
     m_isUndecorated = FALSE;
-    m_lastProxiedFocusOwner = NULL;
+    m_imeTargetComponent = NULL;
     m_actualFocusedWindow = NULL;
     m_iconic = FALSE;
     m_zoomed = FALSE;
@@ -311,6 +311,8 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
     LRESULT retValue = 0L;
 
     AwtComponent *focusOwner = NULL;
+    AwtComponent *imeTargetComponent = NULL;
+
     // IME and input language related messages need to be sent to a window
     // which has the Java input focus
     switch (message) {
@@ -323,15 +325,29 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
         case WM_IME_COMPOSITIONFULL:
         case WM_IME_SELECT:
         case WM_IME_CHAR:
-        case 0x0288: // WM_IME_REQUEST
+        case WM_IME_REQUEST:
         case WM_IME_KEYDOWN:
         case WM_IME_KEYUP:
         case WM_INPUTLANGCHANGEREQUEST:
         case WM_INPUTLANGCHANGE:
+            if (message == WM_IME_STARTCOMPOSITION) {
+                SetImeTargetComponent(sm_focusOwner);
+            }
+            imeTargetComponent = AwtComponent::GetComponent(GetImeTargetComponent());
+            if (imeTargetComponent != NULL &&
+                imeTargetComponent != this) // avoid recursive calls
+            {
+                retValue = imeTargetComponent->WindowProc(message, wParam, lParam);
+                mr = mrConsume;
+            }
+            if (message == WM_IME_ENDCOMPOSITION) {
+                SetImeTargetComponent(NULL);
+            }
+            break;
         // TODO: when a Choice's list is dropped down and we're scrolling in
         // the list WM_MOUSEWHEEL messages come to the poxy, not to the list. Why?
         case WM_MOUSEWHEEL:
-            focusOwner = AwtComponent::GetComponent(GetLastProxiedFocusOwner());
+            focusOwner = AwtComponent::GetComponent(sm_focusOwner);
             if  (focusOwner != NULL &&
                  focusOwner != this) // avoid recursive calls
             {
@@ -340,12 +356,16 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
             }
             break;
         case WM_SETFOCUS:
+            if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
+
             if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
                 AwtSetActiveWindow();
             }
             mr = mrConsume;
             break;
         case WM_KILLFOCUS:
+            if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
+
             if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
                 AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
 

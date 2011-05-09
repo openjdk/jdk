@@ -30,6 +30,8 @@ import com.sun.jdi.event.*;
 
 public class VMStartEventSet extends AbstractEventSet {
 
+    private static final long serialVersionUID = -3384957227835478191L;
+
     VMStartEventSet(EventSet jdiEventSet) {
         super(jdiEventSet);
     }
@@ -44,6 +46,7 @@ public class VMStartEventSet extends AbstractEventSet {
         return ((VMStartEvent)oneEvent).thread();
     }
 
+   @Override
     public void notify(JDIListener listener) {
         listener.vmStart(this);
     }

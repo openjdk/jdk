@@ -72,9 +72,35 @@ class CharacterData01 extends CharacterData {
         return props;
     }
 
+    int getPropertiesEx(int ch) {
+        char offset = (char)ch;
+        int props = $$LookupEx(offset);
+        return props;
+    }
+
     int getType(int ch) {
         int props = getProperties(ch);
         return (props & $$maskType);
+    }
+
+    boolean isOtherLowercase(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherLowercase) != 0;
+    }
+
+    boolean isOtherUppercase(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherUppercase) != 0;
+    }
+ 
+    boolean isOtherAlphabetic(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherAlphabetic) != 0;
+    }
+
+    boolean isIdeographic(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskIdeographic) != 0;
     }
 
     boolean isJavaIdentifierStart(int ch) {

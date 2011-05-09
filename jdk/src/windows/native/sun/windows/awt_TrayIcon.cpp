@@ -926,8 +926,7 @@ Java_sun_awt_windows_WTrayIconPeer__1dispose(JNIEnv *env, jobject self)
 {
     TRY;
 
-    PDATA pData = JNI_GET_PDATA(self);
-    AwtObject::_Dispose(pData);
+    AwtObject::_Dispose(self);
 
     CATCH_BAD_ALLOC;
 }

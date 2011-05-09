@@ -168,7 +168,7 @@
 # A monument to Willett was unveiled on 1927-05-21, in an open space in
 # a 45-acre wood near Chislehurst, Kent that was purchased by popular
 # subscription and open to the public.  On the south face of the monolith,
-# designed by G. W. Miller, is the the William Willett Memorial Sundial,
+# designed by G. W. Miller, is the...William Willett Memorial Sundial,
 # which is permanently set to Summer Time.
 
 # From Winston Churchill (1934-04-28):
@@ -1808,7 +1808,7 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 #
 # All these events predate our cutoff date of 1970.  Unless we can
 # come up with more definitive info about the timekeeping during the
-# war years it's probably best just do do the following for now:
+# war years it's probably best just do...the following for now:
 Link	Europe/Oslo	Arctic/Longyearbyen
 
 # Poland

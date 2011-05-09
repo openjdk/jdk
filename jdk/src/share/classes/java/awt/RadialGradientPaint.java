@@ -49,9 +49,11 @@ import java.beans.ConstructorProperties;
  * from the focus point to the circumference will thus span all the gradient
  * colors.
  * <p>
- * Specifying a focus point outside of the circle's radius will result in the
- * focus being set to the intersection point of the focus-center line and the
- * perimeter of the circle.
+ * Specifying a focus point outside of the radius of the circle will cause
+ * the rings of the gradient pattern to be centered on the point just inside
+ * the edge of the circle in the direction of the focus point.
+ * The rendering will internally use this modified location as if it were
+ * the specified focus point.
  * <p>
  * The user must provide an array of floats specifying how to distribute the
  * colors along the gradient.  These values should range from 0.0 to 1.0 and
@@ -621,6 +623,11 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
 
     /**
      * Returns a copy of the focus point of the radial gradient.
+     * Note that if the focus point specified when the radial gradient
+     * was constructed lies outside of the radius of the circle, this
+     * method will still return the original focus point even though
+     * the rendering may center the rings of color on a different
+     * point that lies inside the radius.
      *
      * @return a {@code Point2D} object that is a copy of the focus point
      */

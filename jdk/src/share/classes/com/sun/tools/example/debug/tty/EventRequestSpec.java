@@ -30,9 +30,7 @@ import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.ExceptionRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.event.ClassPrepareEvent;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 abstract class EventRequestSpec {
 

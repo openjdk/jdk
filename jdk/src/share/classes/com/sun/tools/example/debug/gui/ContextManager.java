@@ -46,7 +46,7 @@ public class ContextManager {
 
     private boolean verbose;
 
-    private Vector<ContextListener> contextListeners = new Vector<ContextListener>();
+    private ArrayList<ContextListener> contextListeners = new ArrayList<ContextListener>();
 
     public ContextManager(Environment env) {
         classManager = env.getClassManager();
@@ -264,11 +264,11 @@ public class ContextManager {
 
     private void notifyCurrentFrameChanged(ThreadInfo tinfo, int index,
                                            boolean invalidate) {
-        Vector l = (Vector)contextListeners.clone();
+        ArrayList<ContextListener> l =  new ArrayList<ContextListener>(contextListeners);
         CurrentFrameChangedEvent evt =
             new CurrentFrameChangedEvent(this, tinfo, index, invalidate);
         for (int i = 0; i < l.size(); i++) {
-            ((ContextListener)l.elementAt(i)).currentFrameChanged(evt);
+            l.get(i).currentFrameChanged(evt);
         }
     }
 
@@ -277,28 +277,34 @@ public class ContextManager {
 
         // SessionListener
 
+        @Override
         public void sessionStart(EventObject e) {
             invalidateCurrentThread();
         }
 
+        @Override
         public void sessionInterrupt(EventObject e) {
             setCurrentThreadInvalidate(currentThread);
         }
 
+        @Override
         public void sessionContinue(EventObject e) {
             invalidateCurrentThread();
         }
 
         // JDIListener
 
+        @Override
         public void locationTrigger(LocationTriggerEventSet e) {
             setCurrentThreadInvalidate(e.getThread());
         }
 
+        @Override
         public void exception(ExceptionEventSet e) {
             setCurrentThreadInvalidate(e.getThread());
         }
 
+        @Override
         public void vmDisconnect(VMDisconnectEventSet e) {
             invalidateCurrentThread();
         }
