@@ -150,8 +150,8 @@ public:
     void CheckRetainActualFocusedWindow(HWND activatedOpositeHWnd);
     BOOL CheckActivateActualFocusedWindow(HWND deactivatedOpositeHWnd);
 
-    INLINE HWND GetLastProxiedFocusOwner() { return m_lastProxiedFocusOwner; }
-    INLINE void SetLastProxiedFocusOwner(HWND hwnd) { m_lastProxiedFocusOwner = hwnd; }
+    INLINE HWND GetImeTargetComponent() { return m_imeTargetComponent; }
+    INLINE void SetImeTargetComponent(HWND hwnd) { m_imeTargetComponent = hwnd; }
 
 protected:
     /* The frame is undecorated. */
@@ -179,9 +179,8 @@ private:
     /* The frame is an InputMethodWindow */
     BOOL m_isInputMethodWindow;
 
-    /* Retains the last/current sm_focusOwner proxied. Actually, it should be
-     * a component of an owned window last/currently active. */
-    HWND m_lastProxiedFocusOwner;
+    // retains the target component for the IME messages
+    HWND m_imeTargetComponent;
 
     /*
      * Fix for 4823903.

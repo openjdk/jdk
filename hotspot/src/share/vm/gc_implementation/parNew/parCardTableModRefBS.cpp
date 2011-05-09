@@ -33,44 +33,43 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
 
-void CardTableModRefBS::par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
-                                                        DirtyCardToOopClosure* dcto_cl,
-                                                        MemRegionClosure* cl,
-                                                        int n_threads) {
-  if (n_threads > 0) {
-    assert((n_threads == 1 && ParallelGCThreads == 0) ||
-           n_threads <= (int)ParallelGCThreads,
-           "# worker threads != # requested!");
-    // Make sure the LNC array is valid for the space.
-    jbyte**   lowest_non_clean;
-    uintptr_t lowest_non_clean_base_chunk_index;
-    size_t    lowest_non_clean_chunk_size;
-    get_LNC_array_for_space(sp, lowest_non_clean,
-                            lowest_non_clean_base_chunk_index,
-                            lowest_non_clean_chunk_size);
+void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
+                                                             DirtyCardToOopClosure* dcto_cl,
+                                                             ClearNoncleanCardWrapper* cl,
+                                                             int n_threads) {
+  assert(n_threads > 0, "Error: expected n_threads > 0");
+  assert((n_threads == 1 && ParallelGCThreads == 0) ||
+         n_threads <= (int)ParallelGCThreads,
+         "# worker threads != # requested!");
+  // Make sure the LNC array is valid for the space.
+  jbyte**   lowest_non_clean;
+  uintptr_t lowest_non_clean_base_chunk_index;
+  size_t    lowest_non_clean_chunk_size;
+  get_LNC_array_for_space(sp, lowest_non_clean,
+                          lowest_non_clean_base_chunk_index,
+                          lowest_non_clean_chunk_size);
 
-    int n_strides = n_threads * StridesPerThread;
-    SequentialSubTasksDone* pst = sp->par_seq_tasks();
-    pst->set_n_threads(n_threads);
-    pst->set_n_tasks(n_strides);
+  int n_strides = n_threads * StridesPerThread;
+  SequentialSubTasksDone* pst = sp->par_seq_tasks();
+  pst->set_n_threads(n_threads);
+  pst->set_n_tasks(n_strides);
 
-    int stride = 0;
-    while (!pst->is_task_claimed(/* reference */ stride)) {
-      process_stride(sp, mr, stride, n_strides, dcto_cl, cl,
-                     lowest_non_clean,
-                     lowest_non_clean_base_chunk_index,
-                     lowest_non_clean_chunk_size);
-    }
-    if (pst->all_tasks_completed()) {
-      // Clear lowest_non_clean array for next time.
-      intptr_t first_chunk_index = addr_to_chunk_index(mr.start());
-      uintptr_t last_chunk_index  = addr_to_chunk_index(mr.last());
-      for (uintptr_t ch = first_chunk_index; ch <= last_chunk_index; ch++) {
-        intptr_t ind = ch - lowest_non_clean_base_chunk_index;
-        assert(0 <= ind && ind < (intptr_t)lowest_non_clean_chunk_size,
-               "Bounds error");
-        lowest_non_clean[ind] = NULL;
-      }
+  int stride = 0;
+  while (!pst->is_task_claimed(/* reference */ stride)) {
+    process_stride(sp, mr, stride, n_strides, dcto_cl, cl,
+                   lowest_non_clean,
+                   lowest_non_clean_base_chunk_index,
+                   lowest_non_clean_chunk_size);
+  }
+  if (pst->all_tasks_completed()) {
+    // Clear lowest_non_clean array for next time.
+    intptr_t first_chunk_index = addr_to_chunk_index(mr.start());
+    uintptr_t last_chunk_index  = addr_to_chunk_index(mr.last());
+    for (uintptr_t ch = first_chunk_index; ch <= last_chunk_index; ch++) {
+      intptr_t ind = ch - lowest_non_clean_base_chunk_index;
+      assert(0 <= ind && ind < (intptr_t)lowest_non_clean_chunk_size,
+             "Bounds error");
+      lowest_non_clean[ind] = NULL;
     }
   }
 }
@@ -81,7 +80,7 @@ process_stride(Space* sp,
                MemRegion used,
                jint stride, int n_strides,
                DirtyCardToOopClosure* dcto_cl,
-               MemRegionClosure* cl,
+               ClearNoncleanCardWrapper* cl,
                jbyte** lowest_non_clean,
                uintptr_t lowest_non_clean_base_chunk_index,
                size_t    lowest_non_clean_chunk_size) {
@@ -127,7 +126,11 @@ process_stride(Space* sp,
                              lowest_non_clean_base_chunk_index,
                              lowest_non_clean_chunk_size);
 
-    non_clean_card_iterate_work(chunk_mr, cl);
+    // We do not call the non_clean_card_iterate_serial() version because
+    // we want to clear the cards, and the ClearNoncleanCardWrapper closure
+    // itself does the work of finding contiguous dirty ranges of cards to
+    // process (and clear).
+    cl->do_MemRegion(chunk_mr);
 
     // Find the next chunk of the stride.
     chunk_card_start += CardsPerStrideChunk * n_strides;
