@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,11 @@ class GenerationCounters: public CHeapObj {
   }
 
   virtual void update_all() {
-    _current_size->set_value(_virtual_space->committed_size());
+    _current_size->set_value(_virtual_space == NULL ? 0 :
+                             _virtual_space->committed_size());
   }
 
   const char* name_space() const        { return _name_space; }
-};
 
+};
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GENERATIONCOUNTERS_HPP

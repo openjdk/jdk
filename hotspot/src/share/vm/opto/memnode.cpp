@@ -1259,15 +1259,18 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
     return NULL; // Wait stable graph
   }
   uint cnt = mem->req();
-  for( uint i = 1; i < cnt; i++ ) {
+  for (uint i = 1; i < cnt; i++) {
+    Node* rc = region->in(i);
+    if (rc == NULL || phase->type(rc) == Type::TOP)
+      return NULL; // Wait stable graph
     Node *in = mem->in(i);
-    if( in == NULL ) {
+    if (in == NULL) {
       return NULL; // Wait stable graph
     }
   }
   // Check for loop invariant.
   if (cnt == 3) {
-    for( uint i = 1; i < cnt; i++ ) {
+    for (uint i = 1; i < cnt; i++) {
       Node *in = mem->in(i);
       Node* m = MemNode::optimize_memory_chain(in, addr_t, phase);
       if (m == mem) {
@@ -1281,38 +1284,37 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if ( !phase->eqv(this, this->Identity(phase)) )
+  if (!phase->eqv(this, this->Identity(phase)))
     return NULL;
 
   // Skip the split if the region dominates some control edge of the address.
-  if (cnt == 3 && !MemNode::all_controls_dominate(address, region))
+  if (!MemNode::all_controls_dominate(address, region))
     return NULL;
 
   const Type* this_type = this->bottom_type();
   int this_index  = phase->C->get_alias_index(addr_t);
   int this_offset = addr_t->offset();
   int this_iid    = addr_t->is_oopptr()->instance_id();
-  int wins = 0;
   PhaseIterGVN *igvn = phase->is_IterGVN();
   Node *phi = new (igvn->C, region->req()) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
-  for( uint i = 1; i < region->req(); i++ ) {
+  for (uint i = 1; i < region->req(); i++) {
     Node *x;
     Node* the_clone = NULL;
-    if( region->in(i) == phase->C->top() ) {
+    if (region->in(i) == phase->C->top()) {
       x = phase->C->top();      // Dead path?  Use a dead data op
     } else {
       x = this->clone();        // Else clone up the data op
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
-      if( this->in(0) == region ) {
-        x->set_req( 0, region->in(i) );
+      if (this->in(0) == region) {
+        x->set_req(0, region->in(i));
       } else {
-        x->set_req( 0, NULL );
+        x->set_req(0, NULL);
       }
-      for( uint j = 1; j < this->req(); j++ ) {
+      for (uint j = 1; j < this->req(); j++) {
         Node *in = this->in(j);
-        if( in->is_Phi() && in->in(0) == region )
-          x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
+        if (in->is_Phi() && in->in(0) == region)
+          x->set_req(j, in->in(i)); // Use pre-Phi input for the clone
       }
     }
     // Check for a 'win' on some paths
@@ -1321,12 +1323,11 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
     bool singleton = t->singleton();
 
     // See comments in PhaseIdealLoop::split_thru_phi().
-    if( singleton && t == Type::TOP ) {
+    if (singleton && t == Type::TOP) {
       singleton &= region->is_Loop() && (i != LoopNode::EntryControl);
     }
 
-    if( singleton ) {
-      wins++;
+    if (singleton) {
       x = igvn->makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -1340,13 +1341,11 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
       Node *y = x->Identity(igvn);
-      if( y != x ) {
-        wins++;
+      if (y != x) {
         x = y;
       } else {
         y = igvn->hash_find(x);
-        if( y ) {
-          wins++;
+        if (y) {
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -1360,13 +1359,9 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       igvn->remove_dead_node(the_clone);
     phi->set_req(i, x);
   }
-  if( wins > 0 ) {
-    // Record Phi
-    igvn->register_new_node_with_optimizer(phi);
-    return phi;
-  }
-  igvn->remove_dead_node(phi);
-  return NULL;
+  // Record Phi
+  igvn->register_new_node_with_optimizer(phi);
+  return phi;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1677,14 +1672,15 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   // If we are loading from a freshly-allocated object, produce a zero,
   // if the load is provably beyond the header of the object.
   // (Also allow a variable load from a fresh array to produce zero.)
-  if (ReduceFieldZeroing) {
+  const TypeOopPtr *tinst = tp->isa_oopptr();
+  bool is_instance = (tinst != NULL) && tinst->is_known_instance_field();
+  if (ReduceFieldZeroing || is_instance) {
     Node* value = can_see_stored_value(mem,phase);
     if (value != NULL && value->is_Con())
       return value->bottom_type();
   }
 
-  const TypeOopPtr *tinst = tp->isa_oopptr();
-  if (tinst != NULL && tinst->is_known_instance_field()) {
+  if (is_instance) {
     // If we have an instance type and our memory input is the
     // programs's initial memory state, there is no matching store,
     // so just return a zero of the appropriate type
