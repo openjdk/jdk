@@ -164,7 +164,7 @@ endif # solaris
 ifeq ($(PLATFORM), linux)
   MANBASEDIRS=$(JDK_TOPDIR)/src/linux/doc $(IMPORTDOCDIR)
   MAN1SUBDIR=man
-  JA_DIRNAME=ja_JP.$(JA_SOURCE_ENCODING)
+  JA_DIRNAME=ja_JP.UTF-8
 endif # linux
 
 define copy-man-pages
@@ -190,8 +190,7 @@ for manbase in $(MANBASEDIRS:%=%/$(MAN1SUBDIR)) ; do \
 done
 $(java-vm-cleanup)
 if [ "$(JA_DIRNAME)" != "" ] ; then \
-  $(MV) $1/man/ja $1/man/$(JA_DIRNAME); \
-  $(CD) $1/man && $(LN) -s $(JA_DIRNAME) ja; \
+  $(CD) $1/man && $(RM) ja && $(LN) -s $(JA_DIRNAME) ja; \
 fi
 endef
 

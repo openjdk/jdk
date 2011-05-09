@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,23 @@ public:
     return cv == CardTableRS::cur_youngergen_and_prev_nonclean_card;
   }
 
+};
+
+class ClearNoncleanCardWrapper: public MemRegionClosure {
+  MemRegionClosure* _dirty_card_closure;
+  CardTableRS* _ct;
+  bool _is_par;
+private:
+  // Clears the given card, return true if the corresponding card should be
+  // processed.
+  inline bool clear_card(jbyte* entry);
+  // Work methods called by the clear_card()
+  inline bool clear_card_serial(jbyte* entry);
+  inline bool clear_card_parallel(jbyte* entry);
+
+public:
+  ClearNoncleanCardWrapper(MemRegionClosure* dirty_card_closure, CardTableRS* ct);
+  void do_MemRegion(MemRegion mr);
 };
 
 #endif // SHARE_VM_MEMORY_CARDTABLERS_HPP
