@@ -1161,6 +1161,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
                 PrintGC, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */);
 
     double start = os::elapsedTime();
@@ -1339,6 +1340,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
 
   return true;
 }
@@ -1971,6 +1973,10 @@ jint G1CollectedHeap::initialize() {
 
   init_mutator_alloc_region();
 
+  // Do create of the monitoring and management support so that
+  // values in the heap have been properly initialized.
+  _g1mm = new G1MonitoringSupport(this, &_g1_storage);
+
   return JNI_OK;
 }
 
@@ -2112,6 +2118,28 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     ((cause == GCCause::_gc_locker           && GCLockerInvokesConcurrent) ||
      (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
+
+#ifndef PRODUCT
+void G1CollectedHeap::allocate_dummy_regions() {
+  // Let's fill up most of the region
+  size_t word_size = HeapRegion::GrainWords - 1024;
+  // And as a result the region we'll allocate will be humongous.
+  guarantee(isHumongous(word_size), "sanity");
+
+  for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
+    // Let's use the existing mechanism for the allocation
+    HeapWord* dummy_obj = humongous_obj_allocate(word_size);
+    if (dummy_obj != NULL) {
+      MemRegion mr(dummy_obj, word_size);
+      CollectedHeap::fill_with_object(mr);
+    } else {
+      // If we can't allocate once, we probably cannot allocate
+      // again. Let's get out of the loop.
+      break;
+    }
+  }
+}
+#endif // !PRODUCT
 
 void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
@@ -2777,17 +2805,26 @@ void G1CollectedHeap::verify(bool allow_dirty,
                              bool silent,
                              bool use_prev_marking) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
-    if (!silent) { gclog_or_tty->print("roots "); }
+    if (!silent) { gclog_or_tty->print("Roots (excluding permgen) "); }
     VerifyRootsClosure rootsCl(use_prev_marking);
     CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
-    process_strong_roots(true,  // activate StrongRootsScope
-                         false,
-                         SharedHeap::SO_AllClasses,
+    // We apply the relevant closures to all the oops in the
+    // system dictionary, the string table and the code cache.
+    const int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+    process_strong_roots(true,      // activate StrongRootsScope
+                         true,      // we set "collecting perm gen" to true,
+                                    // so we don't reset the dirty cards in the perm gen.
+                         SharedHeap::ScanningOption(so),  // roots scanning options
                          &rootsCl,
                          &blobsCl,
                          &rootsCl);
+    // Since we used "collecting_perm_gen" == true above, we will not have
+    // checked the refs from perm into the G1-collected heap. We check those
+    // references explicitly below. Whether the relevant cards are dirty
+    // is checked further below in the rem set verification.
+    if (!silent) { gclog_or_tty->print("Permgen roots "); }
+    perm_gen()->oop_iterate(&rootsCl);
     bool failures = rootsCl.failures();
-    rem_set()->invalidate(perm_gen()->used_region(), false);
     if (!silent) { gclog_or_tty->print("HeapRegionSets "); }
     verify_region_sets();
     if (!silent) { gclog_or_tty->print("HeapRegions "); }
@@ -3164,6 +3201,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
+    TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */);
 
     // If the secondary_free_list is not empty, append it to the
@@ -3338,6 +3376,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         doConcurrentMark();
       }
 
+      allocate_dummy_regions();
+
 #if YOUNG_LIST_VERBOSE
       gclog_or_tty->print_cr("\nEnd of the pause.\nYoung_list:");
       _young_list->print();
@@ -3401,6 +3441,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  g1mm()->update_counters();
+
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
       (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
@@ -5314,6 +5356,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
+      g1mm()->update_eden_counters();
       return new_alloc_region;
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class VerifyOopClosure: public OopClosure {
  protected:
   template <class T> inline void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj->is_oop_or_null(), "invalid oop");
+    guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, obj));
   }
  public:
   virtual void do_oop(oop* p);

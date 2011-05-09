@@ -127,7 +127,24 @@ class ciMethod : public ciObject {
   ciSignature* signature() const                 { return _signature; }
   ciType*      return_type() const               { return _signature->return_type(); }
   int          arg_size_no_receiver() const      { return _signature->size(); }
-  int          arg_size() const                  { return _signature->size() + (_flags.is_static() ? 0 : 1); }
+  // Can only be used on loaded ciMethods
+  int          arg_size() const                  {
+    check_is_loaded();
+    return _signature->size() + (_flags.is_static() ? 0 : 1);
+  }
+  // Report the number of elements on stack when invoking this method.
+  // This is different than the regular arg_size because invokdynamic
+  // has an implicit receiver.
+  int invoke_arg_size(Bytecodes::Code code) const {
+    int arg_size = _signature->size();
+    // Add a receiver argument, maybe:
+    if (code != Bytecodes::_invokestatic &&
+        code != Bytecodes::_invokedynamic) {
+      arg_size++;
+    }
+    return arg_size;
+  }
+
 
   // Method code and related information.
   address code()                                 { if (_code == NULL) load_code(); return _code; }
@@ -276,9 +293,9 @@ class ciMethod : public ciObject {
   void print_short_name(outputStream* st = tty);
 
   methodOop get_method_handle_target() {
-    klassOop receiver_limit_oop = NULL;
-    int flags = 0;
-    return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
+    KlassHandle receiver_limit; int flags = 0;
+    methodHandle m = MethodHandles::decode_method(get_oop(), receiver_limit, flags);
+    return m();
   }
 };
 

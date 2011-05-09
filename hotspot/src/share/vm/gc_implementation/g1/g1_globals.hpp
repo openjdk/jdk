@@ -300,6 +300,11 @@
   develop(uintx, G1StressConcRegionFreeingDelayMillis, 0,                   \
           "Artificial delay during concurrent region freeing")              \
                                                                             \
+  develop(uintx, G1DummyRegionsPerGC, 0,                                    \
+          "The number of dummy regions G1 will allocate at the end of "     \
+          "each evacuation pause in order to artificially fill up the "     \
+          "heap and stress the marking implementation.")                    \
+                                                                            \
   develop(bool, ReduceInitialCardMarksForG1, false,                         \
           "When ReduceInitialCardMarks is true, this flag setting "         \
           " controls whether G1 allows the RICM optimization")              \
