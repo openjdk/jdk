@@ -705,7 +705,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSAKeyPairGenerator_generateR
     HCRYPTPROV hCryptProv = NULL;
     HCRYPTKEY hKeyPair;
     DWORD dwFlags = (keySize << 16) | CRYPT_EXPORTABLE;
-    jobject keypair;
+    jobject keypair = NULL;
     const char* pszKeyContainerName = NULL; // UUID
 
     __try
