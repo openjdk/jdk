@@ -82,12 +82,20 @@ public class SourceToHTMLConverter {
         }
         PackageDoc[] pds = rd.specifiedPackages();
         for (int i = 0; i < pds.length; i++) {
-            convertPackage(configuration, pds[i], outputdir);
+            // If -nodeprecated option is set and the package is marked as deprecated,
+            // do not convert the package files to HTML.
+            if (!(configuration.nodeprecated && Util.isDeprecated(pds[i])))
+                convertPackage(configuration, pds[i], outputdir);
         }
         ClassDoc[] cds = rd.specifiedClasses();
         for (int i = 0; i < cds.length; i++) {
-            convertClass(configuration, cds[i],
-                    getPackageOutputDir(outputdir, cds[i].containingPackage()));
+            // If -nodeprecated option is set and the class is marked as deprecated
+            // or the containing package is deprecated, do not convert the
+            // package files to HTML.
+            if (!(configuration.nodeprecated &&
+                    (Util.isDeprecated(cds[i]) || Util.isDeprecated(cds[i].containingPackage()))))
+                convertClass(configuration, cds[i],
+                        getPackageOutputDir(outputdir, cds[i].containingPackage()));
         }
     }
 
@@ -106,7 +114,12 @@ public class SourceToHTMLConverter {
         String classOutputdir = getPackageOutputDir(outputdir, pd);
         ClassDoc[] cds = pd.allClasses();
         for (int i = 0; i < cds.length; i++) {
-            convertClass(configuration, cds[i], classOutputdir);
+            // If -nodeprecated option is set and the class is marked as deprecated,
+            // do not convert the package files to HTML. We do not check for
+            // containing package deprecation since it is already check in
+            // the calling method above.
+            if (!(configuration.nodeprecated && Util.isDeprecated(cds[i])))
+                convertClass(configuration, cds[i], classOutputdir);
         }
     }
 

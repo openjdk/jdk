@@ -21,24 +21,35 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that redundant type-arguments on non-generic constructor are accepted
- * @compile Pos01.java
+/**
+ * Another test class.
+ *
+ * @author Bhavesh Patel
  */
+public class C2 {
 
-class Pos01 {
+    public static enum ModalExclusionType {
+        /**
+         * Test comment.
+         */
+        NO_EXCLUDE,
+        /**
+         * Another comment.
+         */
+        APPLICATION_EXCLUDE
+    };
 
-    static class Foo<X> {
-        Foo(X t) {}
+    /**
+     * A string constant.
+     */
+    public static final String CONSTANT1 = "C2";
+
+    /**
+     * A sample method.
+     *
+     * @param param some parameter.
+     */
+    public void method(String param) {
+
     }
-
-    Foo<Integer> fi1 = new Foo<>(1);
-    Foo<Integer> fi2 = new Foo<Integer>(1);
-    Foo<Integer> fi3 = new <String> Foo<>(1);
-    Foo<Integer> fi4 = new <String> Foo<Integer>(1);
-    Foo<Integer> fi5 = new <String, String> Foo<>(1);
-    Foo<Integer> fi6 = new <String, String> Foo<Integer>(1);
 }
