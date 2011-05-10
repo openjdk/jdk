@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CI_CIMETHODHANDLE_HPP
 #define SHARE_VM_CI_CIMETHODHANDLE_HPP
 
+#include "ci/ciCallProfile.hpp"
 #include "ci/ciInstance.hpp"
 #include "prims/methodHandles.hpp"
 
@@ -33,7 +34,8 @@
 // The class represents a java.lang.invoke.MethodHandle object.
 class ciMethodHandle : public ciInstance {
 private:
-  ciMethod* _callee;
+  ciMethod*      _callee;
+  ciCallProfile* _profile;
 
   // Return an adapter for this MethodHandle.
   ciMethod* get_adapter(bool is_invokedynamic) const;
@@ -49,6 +51,9 @@ public:
 
   ciMethod* callee() const { return _callee; }
   void  set_callee(ciMethod* m) { _callee = m; }
+
+  ciCallProfile*     call_profile() const                 { return _profile;           }
+  void           set_call_profile(ciCallProfile* profile) {        _profile = profile; }
 
   // Return an adapter for a MethodHandle call.
   ciMethod* get_method_handle_adapter() const {

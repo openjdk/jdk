@@ -247,6 +247,7 @@ public:
 class MethodHandleCompiler : public MethodHandleWalker {
 private:
   methodHandle _callee;
+  int          _invoke_count;  // count the original call site has been executed
   KlassHandle  _rklass;        // Return type for casting.
   BasicType    _rtype;
   KlassHandle  _target_klass;
@@ -416,7 +417,7 @@ private:
   methodHandle get_method_oop(TRAPS) const;
 
 public:
-  MethodHandleCompiler(Handle root, methodHandle call_method, bool for_invokedynamic, TRAPS);
+  MethodHandleCompiler(Handle root, methodHandle call_method, int invoke_count, bool for_invokedynamic, TRAPS);
 
   // Compile the given MH chain into bytecode.
   methodHandle compile(TRAPS);

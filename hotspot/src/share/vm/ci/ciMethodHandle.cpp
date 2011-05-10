@@ -42,7 +42,7 @@ ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
   methodHandle callee(_callee->get_methodOop());
   // We catch all exceptions here that could happen in the method
   // handle compiler and stop the VM.
-  MethodHandleCompiler mhc(h, callee, is_invokedynamic, THREAD);
+  MethodHandleCompiler mhc(h, callee, call_profile()->count(), is_invokedynamic, THREAD);
   if (!HAS_PENDING_EXCEPTION) {
     methodHandle m = mhc.compile(THREAD);
     if (!HAS_PENDING_EXCEPTION) {

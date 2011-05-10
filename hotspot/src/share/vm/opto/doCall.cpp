@@ -73,7 +73,8 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // Note: When we get profiling during stage-1 compiles, we want to pull
   // from more specific profile data which pertains to this inlining.
   // Right now, ignore the information in jvms->caller(), and do method[bci].
-  ciCallProfile profile = jvms->method()->call_profile_at_bci(jvms->bci());
+  ciCallProfile profile    = jvms->method()->call_profile_at_bci(jvms->bci());
+  Bytecodes::Code bytecode = jvms->method()->java_code_at_bci(jvms->bci());
 
   // See how many times this site has been invoked.
   int site_count = profile.count();
@@ -116,7 +117,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (call_method->is_method_handle_invoke()) {
-    if (jvms->method()->java_code_at_bci(jvms->bci()) != Bytecodes::_invokedynamic) {
+    if (bytecode != Bytecodes::_invokedynamic) {
       GraphKit kit(jvms);
       Node* n = kit.argument(0);
 
@@ -128,14 +129,15 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         // Set the actually called method to have access to the class
         // and signature in the MethodHandleCompiler.
         method_handle->set_callee(call_method);
+        method_handle->set_call_profile(&profile);
 
         // Get an adapter for the MethodHandle.
         ciMethod* target_method = method_handle->get_method_handle_adapter();
-        CallGenerator* hit_cg = NULL;
-        if (target_method != NULL)
-          hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-        if (hit_cg != NULL && hit_cg->is_inline())
-          return hit_cg;
+        if (target_method != NULL) {
+          CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+          if (hit_cg != NULL && hit_cg->is_inline())
+            return hit_cg;
+        }
       }
 
       return CallGenerator::for_direct_call(call_method);
@@ -151,15 +153,16 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       // Set the actually called method to have access to the class
       // and signature in the MethodHandleCompiler.
       method_handle->set_callee(call_method);
+      method_handle->set_call_profile(&profile);
 
       // Get an adapter for the MethodHandle.
       ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-      CallGenerator* hit_cg = NULL;
-      if (target_method != NULL)
-        hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-      if (hit_cg != NULL && hit_cg->is_inline()) {
-        CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
-        return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
+      if (target_method != NULL) {
+        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+        if (hit_cg != NULL && hit_cg->is_inline()) {
+          CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
+          return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
+        }
       }
 
       // If something failed, generate a normal dynamic call.
