@@ -110,9 +110,11 @@ public interface Set<E> extends Collection<E> {
      * @param o element whose presence in this set is to be tested
      * @return <tt>true</tt> if this set contains the specified element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this set (optional)
+     *         is incompatible with this set
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         set does not permit null elements (optional)
+     *         set does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     boolean contains(Object o);
 
@@ -236,9 +238,11 @@ public interface Set<E> extends Collection<E> {
      * @param o object to be removed from this set, if present
      * @return <tt>true</tt> if this set contained the specified element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this set (optional)
+     *         is incompatible with this set
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         set does not permit null elements (optional)
+     *         set does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this set
      */
@@ -257,10 +261,13 @@ public interface Set<E> extends Collection<E> {
      *         specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
-     *         set (optional)
+     *         set
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified collection contains one
      *         or more null elements and this set does not permit null
-     *         elements (optional), or if the specified collection is null
+     *         elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>),
+     *         or if the specified collection is null
      * @see    #contains(Object)
      */
     boolean containsAll(Collection<?> c);
@@ -302,9 +309,11 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of this set
-     *         is incompatible with the specified collection (optional)
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this set contains a null element and the
-     *         specified collection does not permit null elements (optional),
+     *         specified collection does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      */
@@ -322,9 +331,11 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>removeAll</tt> operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of this set
-     *         is incompatible with the specified collection (optional)
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this set contains a null element and the
-     *         specified collection does not permit null elements (optional),
+     *         specified collection does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)

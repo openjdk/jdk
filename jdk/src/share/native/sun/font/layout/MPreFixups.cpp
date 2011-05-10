@@ -65,9 +65,9 @@ void MPreFixups::add(le_int32 baseIndex, le_int32 mpreIndex)
     }
 }
 
-void MPreFixups::apply(LEGlyphStorage &glyphStorage, LEErrorCode& success)
+void MPreFixups::apply(LEGlyphStorage &glyphStorage, LEErrorCode& leSuccess)
 {
-    if (LE_FAILURE(success)) {
+    if (LE_FAILURE(leSuccess)) {
         return;
     }
 

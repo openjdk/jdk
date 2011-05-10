@@ -156,9 +156,11 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
      * @throws UnsupportedOperationException if the <tt>removeAll</tt> operation
      *         is not supported by this set
      * @throws ClassCastException if the class of an element of this set
-     *         is incompatible with the specified collection (optional)
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this set contains a null element and the
-     *         specified collection does not permit null elements (optional),
+     *         specified collection does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)

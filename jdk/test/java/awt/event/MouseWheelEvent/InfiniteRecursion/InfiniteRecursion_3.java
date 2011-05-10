@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ import java.applet.Applet;
 public class InfiniteRecursion_3 extends Applet {
     final static Robot robot = Util.createRobot();
     final static int MOVE_COUNT = 5;
+    //*2 for both rotation directions,
+    //*2 as Java sends the wheel event to every for nested component in hierarchy under cursor
+    final static int EXPECTED_COUNT = MOVE_COUNT * 2 * 2;
     static int actualEvents = 0;
 
     public void init()
@@ -91,8 +94,10 @@ public class InfiniteRecursion_3 extends Applet {
         }
 
         Util.waitForIdle(robot);
-        if (actualEvents != MOVE_COUNT * 2) {
-            AbstractTest.fail("Expected events count: "+ MOVE_COUNT+" Actual events count: "+ actualEvents);
+        //Not fair to check for multiplier 4 as it's not specified actual number of WheelEvents
+        //result in a single wheel rotation.
+        if (actualEvents != EXPECTED_COUNT) {
+            AbstractTest.fail("Expected events count: "+ EXPECTED_COUNT+" Actual events count: "+ actualEvents);
         }
     }// start()
 }

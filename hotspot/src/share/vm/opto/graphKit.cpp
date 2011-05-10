@@ -1033,14 +1033,10 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       ciMethod* method = iter.get_method(ignore);
-      inputs = method->arg_size_no_receiver();
-      // Add a receiver argument, maybe:
-      if (code != Bytecodes::_invokestatic &&
-          code != Bytecodes::_invokedynamic)
-        inputs += 1;
       // (Do not use ciMethod::arg_size(), because
       // it might be an unloaded method, which doesn't
       // know whether it is static or not.)
+      inputs = method->invoke_arg_size(code);
       int size = method->return_type()->size();
       depth = size - inputs;
     }
@@ -2957,8 +2953,7 @@ static void hook_memory_on_init(GraphKit& kit, int alias_idx,
 
 //---------------------------set_output_for_allocation-------------------------
 Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
-                                          const TypeOopPtr* oop_type,
-                                          bool raw_mem_only) {
+                                          const TypeOopPtr* oop_type) {
   int rawidx = Compile::AliasIdxRaw;
   alloc->set_req( TypeFunc::FramePtr, frameptr() );
   add_safepoint_edges(alloc);
@@ -2982,7 +2977,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
                                                  rawoop)->as_Initialize();
   assert(alloc->initialization() == init,  "2-way macro link must work");
   assert(init ->allocation()     == alloc, "2-way macro link must work");
-  if (ReduceFieldZeroing && !raw_mem_only) {
+  {
     // Extract memory strands which may participate in the new object's
     // initialization, and source them from the new InitializeNode.
     // This will allow us to observe initializations when they occur,
@@ -3043,11 +3038,9 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
 // the type to a constant.
 // The optional arguments are for specialized use by intrinsics:
 //  - If 'extra_slow_test' if not null is an extra condition for the slow-path.
-//  - If 'raw_mem_only', do not cast the result to an oop.
 //  - If 'return_size_val', report the the total object size to the caller.
 Node* GraphKit::new_instance(Node* klass_node,
                              Node* extra_slow_test,
-                             bool raw_mem_only, // affect only raw memory
                              Node* *return_size_val) {
   // Compute size in doublewords
   // The size is always an integral number of doublewords, represented
@@ -3118,7 +3111,7 @@ Node* GraphKit::new_instance(Node* klass_node,
                      size, klass_node,
                      initial_slow_test);
 
-  return set_output_for_allocation(alloc, oop_type, raw_mem_only);
+  return set_output_for_allocation(alloc, oop_type);
 }
 
 //-------------------------------new_array-------------------------------------
@@ -3128,7 +3121,6 @@ Node* GraphKit::new_instance(Node* klass_node,
 Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
                           Node* length,         // number of array elements
                           int   nargs,          // number of arguments to push back for uncommon trap
-                          bool raw_mem_only,    // affect only raw memory
                           Node* *return_size_val) {
   jint  layout_con = Klass::_lh_neutral_value;
   Node* layout_val = get_layout_helper(klass_node, layout_con);
@@ -3273,7 +3265,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
   }
 
-  Node* javaoop = set_output_for_allocation(alloc, ary_type, raw_mem_only);
+  Node* javaoop = set_output_for_allocation(alloc, ary_type);
 
   // Cast length on remaining path to be as narrow as possible
   if (map()->find_edge(length) >= 0) {
@@ -3462,14 +3454,31 @@ void GraphKit::write_barrier_post(Node* oop_store,
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
-  // Smash zero into card
-  Node*   zero = __ ConI(0);
+  Node*   zero = __ ConI(0); // Dirty card value
   BasicType bt = T_BYTE;
+
+  if (UseCondCardMark) {
+    // The classic GC reference write barrier is typically implemented
+    // as a store into the global card mark table.  Unfortunately
+    // unconditional stores can result in false sharing and excessive
+    // coherence traffic as well as false transactional aborts.
+    // UseCondCardMark enables MP "polite" conditional card mark
+    // stores.  In theory we could relax the load from ctrl() to
+    // no_ctrl, but that doesn't buy much latitude.
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, bt, adr_type);
+    __ if_then(card_val, BoolTest::ne, zero);
+  }
+
+  // Smash zero into card
   if( !UseConcMarkSweepGC ) {
     __ store(__ ctrl(), card_adr, zero, bt, adr_type);
   } else {
     // Specialized path for CM store barrier
     __ storeCM(__ ctrl(), card_adr, zero, oop_store, adr_idx, bt, adr_type);
+  }
+
+  if (UseCondCardMark) {
+    __ end_if();
   }
 
   // Final sync IdealKit and GraphKit.

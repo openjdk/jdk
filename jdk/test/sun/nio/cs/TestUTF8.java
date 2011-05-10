@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4486841
+ * @bug 4486841 7040220
  * @summary Test UTF-8 charset
  */
 
@@ -68,6 +68,32 @@ public class TestUTF8 {
             cbf = CharBuffer.allocate(bb.length);
         }
         return dec.decode(bbf, cbf, true);
+    }
+
+    // copy/paste of the StringCoding.decode()
+    static char[] decode(Charset cs, byte[] ba, int off, int len) {
+        CharsetDecoder cd = cs.newDecoder();
+        int en = (int)(len * cd.maxCharsPerByte());
+        char[] ca = new char[en];
+        if (len == 0)
+            return ca;
+        cd.onMalformedInput(CodingErrorAction.REPLACE)
+          .onUnmappableCharacter(CodingErrorAction.REPLACE)
+          .reset();
+
+        ByteBuffer bb = ByteBuffer.wrap(ba, off, len);
+        CharBuffer cb = CharBuffer.wrap(ca);
+        try {
+            CoderResult cr = cd.decode(bb, cb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = cd.flush(cb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
+        return Arrays.copyOf(ca, cb.position());
     }
 
     static byte[] encode(char[] cc, String csn, boolean testDirect)
@@ -142,7 +168,14 @@ public class TestUTF8 {
         bb = encode(cc, csn, true);
         ccO = decode(bb, csn, true);
         if (!Arrays.equals(cc, ccO)) {
-            System.out.printf("    (direct) failed");
+            System.out.print("    (direct) failed");
+        }
+        // String.getBytes()/toCharArray() goes to ArrayDe/Encoder path
+        if (!Arrays.equals(bb, new String(cc).getBytes(csn))) {
+            System.out.printf("    String.getBytes() failed");
+        }
+        if (!Arrays.equals(cc, new String(bb, csn).toCharArray())) {
+            System.out.printf("    String.toCharArray() failed");
         }
         System.out.println();
     }
@@ -167,6 +200,12 @@ public class TestUTF8 {
         ccO = decode(bb, csn, true);
         if (!Arrays.equals(cc, ccO)) {
             System.out.printf("    decoding(direct) failed%n");
+        }
+        // new String(bb, csn).getBytes(csn) will not return
+        // the 6 bytes surrogates as in bb, so only test
+        // toCharArray() here.
+        if (!Arrays.equals(cc, new String(bb, csn).toCharArray())) {
+            System.out.printf("    String.toCharArray() failed");
         }
     }
 
@@ -274,6 +313,7 @@ public class TestUTF8 {
     static void checkMalformed(String csn) throws Exception {
         boolean failed = false;
         System.out.printf("    Check malformed <%s>...%n", csn);
+        Charset cs = Charset.forName(csn);
         for (boolean direct: new boolean[] {false, true}) {
             for (byte[] bins : malformed) {
                 int mlen = bins[0];
@@ -285,10 +325,15 @@ public class TestUTF8 {
                         ashex += Integer.toBinaryString((int)bin[i] & 0xff);
                 }
                 if (!cr.isMalformed()) {
-                    System.out.printf("        FAIL(direct=%b): [%s] not malformed.\n", direct, ashex);
+                    System.out.printf("        FAIL(direct=%b): [%s] not malformed.%n", direct, ashex);
                     failed = true;
                 } else if (cr.length() != mlen) {
-                    System.out.printf("        FAIL(direct=%b): [%s] malformed[len=%d].\n", direct, ashex, cr.length());
+                    System.out.printf("        FAIL(direct=%b): [%s] malformed[len=%d].%n", direct, ashex, cr.length());
+                    failed = true;
+                }
+                if (!Arrays.equals(decode(cs, bin, 0, bin.length),
+                                   new String(bin, csn).toCharArray())) {
+                    System.out.printf("        FAIL(new String(bb, %s)) failed%n", csn);
                     failed = true;
                 }
             }

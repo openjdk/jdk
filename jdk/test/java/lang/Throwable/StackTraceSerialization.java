@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug     4202914 4363318 6991528
+ * @bug     4202914 4363318 6991528 6998871
  * @summary Basic test of serialization of stack trace information
  * @author  Josh Bloch
  */
@@ -37,14 +37,52 @@ public class StackTraceSerialization {
         testWithFillInStackTrace();
     }
 
-    private static void testWithSetStackTrace() throws Exception {
-        Throwable t = new Throwable();
+    private static void testWithSetStackTrace() {
+        StackTraceElement[] stackTrace = {new StackTraceElement("foo", "bar", "baz", -1)};
 
-        t.setStackTrace(new StackTraceElement[]
-            {new StackTraceElement("foo", "bar", "baz", -1)});
+        Throwable t = new TestThrowable(true, false); // Immutable and empty stack
+        assertEmptyStackTrace(t);
+
+        // Verify fillInStackTrace is now a no-op.
+        t.fillInStackTrace();
+        assertEmptyStackTrace(t);
+
+        // Verify setStackTrace is now a no-op.
+        t.setStackTrace(stackTrace);
+        assertEmptyStackTrace(t);
+
+        // Verify null-handling
+        try {
+            t.setStackTrace(null);
+            throw new RuntimeException("No NPE on a null stack trace.");
+        } catch(NullPointerException npe) {
+            assertEmptyStackTrace(t);
+        }
+
+        try {
+            t.setStackTrace(new StackTraceElement[]{null});
+            throw new RuntimeException("No NPE on a null stack trace element.");
+        } catch(NullPointerException npe) {
+            assertEmptyStackTrace(t);
+        }
 
         if (!equal(t, reconstitute(t)))
-            throw new Exception("Unequal Throwables with set stacktrace");
+            throw new RuntimeException("Unequal Throwables with set stacktrace");
+
+        Throwable t2 = new Throwable();
+        t2.setStackTrace(stackTrace);
+        if (!equal(t2, reconstitute(t2)))
+            throw new RuntimeException("Unequal Throwables with set stacktrace");
+
+    }
+
+    private static class TestThrowable extends Throwable {
+        public TestThrowable(boolean enableSuppression,
+                             boolean writableStackTrace) {
+            super("the medium", null,
+                  enableSuppression,
+                  writableStackTrace);
+        }
     }
 
     private static void assertEmptyStackTrace(Throwable t) {
@@ -52,7 +90,7 @@ public class StackTraceSerialization {
             throw new AssertionError("Nonempty stacktrace.");
     }
 
-    private static void testWithFillInStackTrace() throws Exception {
+    private static void testWithFillInStackTrace() {
         Throwable original = null;
         try {
             a();
@@ -61,16 +99,14 @@ public class StackTraceSerialization {
         }
 
         if (!equal(original, reconstitute(original)))
-            throw new Exception("Unequal Throwables with filled-in stacktrace");
+            throw new RuntimeException("Unequal Throwables with filled-in stacktrace");
     }
-
 
     /**
      * Serialize the argument and return the deserialized result.
      */
-    private static Throwable reconstitute(Throwable t) throws Exception {
+    private static Throwable reconstitute(Throwable t) {
         Throwable result = null;
-
         try(ByteArrayOutputStream bout = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(bout)) {
             out.writeObject(t);
@@ -80,8 +116,9 @@ public class StackTraceSerialization {
                 ObjectInputStream in = new ObjectInputStream(bin)) {
                 result = (Throwable) in.readObject();
             }
+        } catch(IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
-
         return result;
     }
 

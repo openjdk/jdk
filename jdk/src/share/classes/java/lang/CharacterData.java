@@ -46,8 +46,25 @@ abstract class CharacterData {
     int toUpperCaseEx(int ch) {
         return toUpperCase(ch);
     }
+
     char[] toUpperCaseCharArray(int ch) {
         return null;
+    }
+
+    boolean isOtherLowercase(int ch) {
+        return false;
+    }
+
+    boolean isOtherUppercase(int ch) {
+        return false;
+    }
+
+    boolean isOtherAlphabetic(int ch) {
+        return false;
+    }
+
+    boolean isIdeographic(int ch) {
+        return false;
     }
 
     // Character <= 0xff (basic latin) is handled by internal fast-path

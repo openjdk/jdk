@@ -239,7 +239,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Gets the ith element of given table (if nonnull) with volatile
-     * read semantics.
+     * read semantics. Note: This is manually integrated into a few
+     * performance-sensitive methods to reduce call overhead.
      */
     @SuppressWarnings("unchecked")
     static final <K,V> HashEntry<K,V> entryAt(HashEntry<K,V>[] tab, int i) {
@@ -389,8 +390,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         else
                             node = new HashEntry<K,V>(hash, key, value, first);
                         int c = count + 1;
-                        if (c > threshold && first != null &&
-                            tab.length < MAXIMUM_CAPACITY)
+                        if (c > threshold && tab.length < MAXIMUM_CAPACITY)
                             rehash(node);
                         else
                             setEntryAt(tab, index, node);
@@ -647,7 +647,11 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Gets the jth element of given segment array (if nonnull) with
-     * volatile element access semantics via Unsafe.
+     * volatile element access semantics via Unsafe. (The null check
+     * can trigger harmlessly only during deserialization.) Note:
+     * because each element of segments array is set only once (using
+     * fully ordered writes), some performance-sensitive methods rely
+     * on this method only as a recheck upon null reads.
      */
     @SuppressWarnings("unchecked")
     static final <K,V> Segment<K,V> segmentAt(Segment<K,V>[] ss, int j) {
@@ -913,12 +917,19 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * @throws NullPointerException if the specified key is null
      */
     public V get(Object key) {
-        int hash = hash(key.hashCode());
-        for (HashEntry<K,V> e = entryForHash(segmentForHash(hash), hash);
-             e != null; e = e.next) {
-            K k;
-            if ((k = e.key) == key || (e.hash == hash && key.equals(k)))
-                return e.value;
+        Segment<K,V> s; // manually integrate access methods to reduce overhead
+        HashEntry<K,V>[] tab;
+        int h = hash(key.hashCode());
+        long u = (((h >>> segmentShift) & segmentMask) << SSHIFT) + SBASE;
+        if ((s = (Segment<K,V>)UNSAFE.getObjectVolatile(segments, u)) != null &&
+            (tab = s.table) != null) {
+            for (HashEntry<K,V> e = (HashEntry<K,V>) UNSAFE.getObjectVolatile
+                     (tab, ((long)(((tab.length - 1) & h)) << TSHIFT) + TBASE);
+                 e != null; e = e.next) {
+                K k;
+                if ((k = e.key) == key || (e.hash == h && key.equals(k)))
+                    return e.value;
+            }
         }
         return null;
     }
@@ -932,13 +943,21 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *         <tt>equals</tt> method; <tt>false</tt> otherwise.
      * @throws NullPointerException if the specified key is null
      */
+    @SuppressWarnings("unchecked")
     public boolean containsKey(Object key) {
-        int hash = hash(key.hashCode());
-        for (HashEntry<K,V> e = entryForHash(segmentForHash(hash), hash);
-             e != null; e = e.next) {
-            K k;
-            if ((k = e.key) == key || (e.hash == hash && key.equals(k)))
-                return true;
+        Segment<K,V> s; // same as get() except no need for volatile value read
+        HashEntry<K,V>[] tab;
+        int h = hash(key.hashCode());
+        long u = (((h >>> segmentShift) & segmentMask) << SSHIFT) + SBASE;
+        if ((s = (Segment<K,V>)UNSAFE.getObjectVolatile(segments, u)) != null &&
+            (tab = s.table) != null) {
+            for (HashEntry<K,V> e = (HashEntry<K,V>) UNSAFE.getObjectVolatile
+                     (tab, ((long)(((tab.length - 1) & h)) << TSHIFT) + TBASE);
+                 e != null; e = e.next) {
+                K k;
+                if ((k = e.key) == key || (e.hash == h && key.equals(k)))
+                    return true;
+            }
         }
         return false;
     }
@@ -1032,13 +1051,15 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>
      * @throws NullPointerException if the specified key or value is null
      */
+    @SuppressWarnings("unchecked")
     public V put(K key, V value) {
+        Segment<K,V> s;
         if (value == null)
             throw new NullPointerException();
         int hash = hash(key.hashCode());
         int j = (hash >>> segmentShift) & segmentMask;
-        Segment<K,V> s = segmentAt(segments, j);
-        if (s == null)
+        if ((s = (Segment<K,V>)UNSAFE.getObject          // nonvolatile; recheck
+             (segments, (j << SSHIFT) + SBASE)) == null) //  in ensureSegment
             s = ensureSegment(j);
         return s.put(key, hash, value, false);
     }
@@ -1050,13 +1071,15 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *         or <tt>null</tt> if there was no mapping for the key
      * @throws NullPointerException if the specified key or value is null
      */
+    @SuppressWarnings("unchecked")
     public V putIfAbsent(K key, V value) {
+        Segment<K,V> s;
         if (value == null)
             throw new NullPointerException();
         int hash = hash(key.hashCode());
         int j = (hash >>> segmentShift) & segmentMask;
-        Segment<K,V> s = segmentAt(segments, j);
-        if (s == null)
+        if ((s = (Segment<K,V>)UNSAFE.getObject
+             (segments, (j << SSHIFT) + SBASE)) == null)
             s = ensureSegment(j);
         return s.put(key, hash, value, true);
     }

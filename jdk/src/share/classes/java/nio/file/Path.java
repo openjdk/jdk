@@ -72,7 +72,7 @@ import java.util.Iterator;
  * directory and is UTF-8 encoded.
  * <pre>
  *     Path path = FileSystems.getDefault().getPath("logs", "access.log");
- *     BufferReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"));
+ *     BufferReader reader = Files.newBufferedReader(path, StandardCharset.UTF_8);
  * </pre>
  *
  * <a name="interop"><h4>Interoperability</h4></a>
