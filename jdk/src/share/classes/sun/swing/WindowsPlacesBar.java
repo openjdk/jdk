@@ -29,6 +29,8 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -79,7 +81,12 @@ public class WindowsPlacesBar extends JToolBar
         setBackground(bgColor);
         FileSystemView fsv = fc.getFileSystemView();
 
-        files = (File[])ShellFolder.get("fileChooserShortcutPanelFolders");
+        files = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+            public File[] run() {
+                return (File[]) ShellFolder.get("fileChooserShortcutPanelFolders");
+            }
+        });
+
         buttons = new JToggleButton[files.length];
         buttonGroup = new ButtonGroup();
         for (int i = 0; i < files.length; i++) {

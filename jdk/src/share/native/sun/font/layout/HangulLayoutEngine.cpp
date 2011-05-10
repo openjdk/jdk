@@ -162,7 +162,7 @@ static le_int32 decompose(LEUnicode syllable, LEUnicode &lead, LEUnicode &vowel,
         return 0;
     }
 
-    lead  = LJMO_FIRST + (sIndex / HSYL_LVCNT);
+    lead  = (LEUnicode)(LJMO_FIRST + (sIndex / HSYL_LVCNT));
     vowel = VJMO_FIRST + (sIndex % HSYL_LVCNT) / TJMO_COUNT;
     trail = TJMO_FIRST + (sIndex % TJMO_COUNT);
 
