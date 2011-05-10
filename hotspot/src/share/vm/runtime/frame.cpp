@@ -1423,7 +1423,7 @@ void FrameValues::describe(int owner, intptr_t* location, const char* descriptio
 }
 
 
-bool FrameValues::validate() {
+void FrameValues::validate() {
   _values.sort(compare);
   bool error = false;
   FrameValue prev;
@@ -1446,7 +1446,7 @@ bool FrameValues::validate() {
       prev = fv;
     }
   }
-  return error;
+  assert(!error, "invalid layout");
 }
 
 

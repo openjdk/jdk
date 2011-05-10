@@ -1712,7 +1712,10 @@ int AbstractInterpreter::layout_activation(methodOop method,
       // frames so place the locals adjacent to the varargs area.
       locals = fp + frame::memory_parameter_word_sp_offset + local_words - 1;
       if (caller->is_interpreted_frame()) {
-        *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + rounded_cls) - STACK_BIAS;
+        int parm_words  = method->size_of_parameters() * Interpreter::stackElementWords;
+        int delta = local_words - parm_words;
+        int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
+        *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
       }
     }
     if (TraceDeoptimization) {
