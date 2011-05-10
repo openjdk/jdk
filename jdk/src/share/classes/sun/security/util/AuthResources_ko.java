@@ -111,17 +111,15 @@ public class AuthResources_ko extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "\uD0A4 \uC800\uC7A5\uC18C \uC720\uD615\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
-        {"can.not.specify.Principal.with.a.",
-                "\uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uC774\uB984 \uC5C6\uC774 \uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uD074\uB798\uC2A4\uB97C \uC0AC\uC6A9\uD558\uB294"},
-        {"wildcard.class.without.a.wildcard.name",
-                "\uC8FC\uCCB4\uB97C \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "\uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uC774\uB984 \uC5C6\uC774 \uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uD074\uB798\uC2A4\uB97C \uC0AC\uC6A9\uD558\uB294 \uC8FC\uCCB4\uB97C \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
         {"expected.codeBase.or.SignedBy", "codeBase \uB610\uB294 SignedBy\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."},
         {"only.Principal.based.grant.entries.permitted",
                 "\uC8FC\uCCB4 \uAE30\uBC18 \uAD8C\uD55C \uBD80\uC5EC \uD56D\uBAA9\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4."},
         {"expected.permission.entry", "\uAD8C\uD55C \uD56D\uBAA9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
         {"number.", "\uC22B\uC790 "},
-        {"expected.", "\uD544\uC694\uD55C \uD56D\uBAA9: "},
-        {".read.end.of.file", ", \uD30C\uC77C\uC758 \uB05D\uC5D0 \uB3C4\uB2EC\uD588\uC2B5\uB2C8\uB2E4."},
+        {"expected.expect.read.end.of.file.",
+                "{0}\uC774(\uAC00) \uD544\uC694\uD558\uC9C0\uB9CC \uD30C\uC77C\uC758 \uB05D\uC5D0 \uB3C4\uB2EC\uD588\uC2B5\uB2C8\uB2E4."},
         {"expected.read.end.of.file", "';'\uC774 \uD544\uC694\uD558\uC9C0\uB9CC \uD30C\uC77C\uC758 \uB05D\uC5D0 \uB3C4\uB2EC\uD588\uC2B5\uB2C8\uB2E4."},
         {"line.", "\uD589 "},
         {".expected.", ": \uD544\uC694\uD55C \uD56D\uBAA9: '"},
@@ -136,6 +134,9 @@ public class AuthResources_ko extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "\uB110 \uC774\uB984\uC744 \uC81C\uACF5\uD588\uC2B5\uB2C8\uB2E4."}
 
     };
