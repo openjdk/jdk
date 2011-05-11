@@ -351,7 +351,7 @@ process_chunk_boundaries(Space* sp,
         // covers.
         const uintptr_t last_chunk_index_to_check = addr_to_chunk_index(last_block + last_block_size - 1)
                                                     - lowest_non_clean_base_chunk_index;
-        DEBUG_ONLY(const uintptr_t last_chunk_index = addr_to_chunk_index(used.end())
+        DEBUG_ONLY(const uintptr_t last_chunk_index = addr_to_chunk_index(used.last())
                                                       - lowest_non_clean_base_chunk_index;)
         assert(last_chunk_index_to_check <= last_chunk_index,
                err_msg("Out of bounds: last_chunk_index_to_check " INTPTR_FORMAT
