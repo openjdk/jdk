@@ -150,7 +150,9 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // Mapping from address to card marking array entry
   jbyte* byte_for(const void* p) const {
     assert(_whole_heap.contains(p),
-           "out of bounds access to card marking array");
+           err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   p, _whole_heap.start(), _whole_heap.end()));
     jbyte* result = &byte_map_base[uintptr_t(p) >> card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
@@ -451,14 +453,18 @@ public:
     size_t delta = pointer_delta(p, byte_map_base, sizeof(jbyte));
     HeapWord* result = (HeapWord*) (delta << card_shift);
     assert(_whole_heap.contains(result),
-           "out of bounds accessor from card marking array");
+           err_msg("Returning result = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   result, _whole_heap.start(), _whole_heap.end()));
     return result;
   }
 
   // Mapping from address to card marking array index.
   size_t index_for(void* p) {
     assert(_whole_heap.contains(p),
-           "out of bounds access to card marking array");
+           err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   p, _whole_heap.start(), _whole_heap.end()));
     return byte_for(p) - _byte_map;
   }
 

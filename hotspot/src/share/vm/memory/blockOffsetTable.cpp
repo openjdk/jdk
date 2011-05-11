@@ -541,20 +541,33 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_unsafe(
     // to go back by.
     size_t n_cards_back = entry_to_cards_back(offset);
     q -= (N_words * n_cards_back);
-    assert(q >= _sp->bottom(), "Went below bottom!");
+    assert(q >= _sp->bottom(),
+           err_msg("q = " PTR_FORMAT " crossed below bottom = " PTR_FORMAT,
+                   q, _sp->bottom()));
+    assert(q < _sp->end(),
+           err_msg("q = " PTR_FORMAT " crossed above end = " PTR_FORMAT,
+                   q, _sp->end()));
     index -= n_cards_back;
     offset = _array->offset_array(index);
   }
   assert(offset < N_words, "offset too large");
   index--;
   q -= offset;
+  assert(q >= _sp->bottom(),
+         err_msg("q = " PTR_FORMAT " crossed below bottom = " PTR_FORMAT,
+                 q, _sp->bottom()));
+  assert(q < _sp->end(),
+         err_msg("q = " PTR_FORMAT " crossed above end = " PTR_FORMAT,
+                 q, _sp->end()));
   HeapWord* n = q;
 
   while (n <= addr) {
     debug_only(HeapWord* last = q);   // for debugging
     q = n;
     n += _sp->block_size(n);
-    assert(n > q, err_msg("Looping at: " INTPTR_FORMAT, n));
+    assert(n > q,
+           err_msg("Looping at n = " PTR_FORMAT " with last = " PTR_FORMAT " _sp = [" PTR_FORMAT "," PTR_FORMAT ")",
+                   n, last, _sp->bottom(), _sp->end()));
   }
   assert(q <= addr, err_msg("wrong order for current (" INTPTR_FORMAT ") <= arg (" INTPTR_FORMAT ")", q, addr));
   assert(addr <= n, err_msg("wrong order for arg (" INTPTR_FORMAT ") <= next (" INTPTR_FORMAT ")", addr, n));
