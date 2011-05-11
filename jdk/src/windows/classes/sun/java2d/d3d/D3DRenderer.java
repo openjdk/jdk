@@ -102,15 +102,20 @@ class D3DRenderer extends BufferedRenderPipe {
             final ParallelogramPipe realpipe = d3dr.getAAParallelogramPipe();
             return new ParallelogramPipe() {
                 public void fillParallelogram(SunGraphics2D sg2d,
+                                              double ux1, double uy1,
+                                              double ux2, double uy2,
                                               double x, double y,
                                               double dx1, double dy1,
                                               double dx2, double dy2)
                 {
                     GraphicsPrimitive.tracePrimitive("D3DFillAAParallelogram");
                     realpipe.fillParallelogram(sg2d,
+                                               ux1, uy1, ux2, uy2,
                                                x, y, dx1, dy1, dx2, dy2);
                 }
                 public void drawParallelogram(SunGraphics2D sg2d,
+                                              double ux1, double uy1,
+                                              double ux2, double uy2,
                                               double x, double y,
                                               double dx1, double dy1,
                                               double dx2, double dy2,
@@ -118,6 +123,7 @@ class D3DRenderer extends BufferedRenderPipe {
                 {
                     GraphicsPrimitive.tracePrimitive("D3DDrawAAParallelogram");
                     realpipe.drawParallelogram(sg2d,
+                                               ux1, uy1, ux2, uy2,
                                                x, y, dx1, dy1, dx2, dy2,
                                                lw1, lw2);
                 }
@@ -167,21 +173,29 @@ class D3DRenderer extends BufferedRenderPipe {
             d3dr.fillSpans(sg2d, si, transx, transy);
         }
         public void fillParallelogram(SunGraphics2D sg2d,
+                                      double ux1, double uy1,
+                                      double ux2, double uy2,
                                       double x, double y,
                                       double dx1, double dy1,
                                       double dx2, double dy2)
         {
             GraphicsPrimitive.tracePrimitive("D3DFillParallelogram");
-            d3dr.fillParallelogram(sg2d, x, y, dx1, dy1, dx2, dy2);
+            d3dr.fillParallelogram(sg2d,
+                                   ux1, uy1, ux2, uy2,
+                                   x, y, dx1, dy1, dx2, dy2);
         }
         public void drawParallelogram(SunGraphics2D sg2d,
+                                      double ux1, double uy1,
+                                      double ux2, double uy2,
                                       double x, double y,
                                       double dx1, double dy1,
                                       double dx2, double dy2,
                                       double lw1, double lw2)
         {
             GraphicsPrimitive.tracePrimitive("D3DDrawParallelogram");
-            d3dr.drawParallelogram(sg2d, x, y, dx1, dy1, dx2, dy2, lw1, lw2);
+            d3dr.drawParallelogram(sg2d,
+                                   ux1, uy1, ux2, uy2,
+                                   x, y, dx1, dy1, dx2, dy2, lw1, lw2);
         }
         public void copyArea(SunGraphics2D sg2d,
                              int x, int y, int w, int h, int dx, int dy)
