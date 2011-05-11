@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jsadebugd 1 "02 Jun 2010"
+.TH jsadebugd 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jsadebugd \- Serviceability Agent Debug Daemon
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -41,35 +39,16 @@ jsadebugd \- Serviceability Agent Debug Daemon
 .LP
 .SH "PARAMETERS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 pid 
 process id of the process to which the debug server should attach. The process must be a Java process. To get a list of Java processes running on a machine, jps(1) may be used. At most one instance of the debug server may be attached to a single process. 
-.RE
-
-.LP
-.RS 3
 .TP 3
 executable 
-.RE
-
-.LP
-.RS 3
-.TP 3
 Java executable from which the core dump was produced 
-.RE
-
-.LP
-.RS 3
 .TP 3
 core 
 Core file to which the debug server should attach. 
-.RE
-
-.LP
-.RS 3
 .TP 3
 server\-id 
 Optional unique id, needed if multiple debug servers are started on the same machine. This ID must be used by remote clients to identify the particular debug server to attach. Within a single machine, this ID must be unique. 
@@ -78,17 +57,12 @@ Optional unique id, needed if multiple debug servers are started on the same mac
 .LP
 .SH "DESCRIPTION"
 .LP
-
-.LP
 .LP
 \f3jsadebugd\fP attaches to a Java process or core file and acts as a debug server. Remote clients such as jstack(1), jmap(1), and jinfo(1) can attach to the server using Java Remote Method Invocation (RMI). Before starting \f2jsadebugd\fP, 
 .na
 \f2rmiregistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi must be started with:
-.LP
-.RS 3
-
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#rmi must be started with:
 .LP
 .nf
 \f3
@@ -97,17 +71,16 @@ http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi must be started
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
 where \f2$JAVA_HOME\fP is the JDK installation directory. If rmiregistry was not started, jsadebugd will start an rmiregistry in a standard (1099) port internally. Debug server may be stopped by sending SIGINT (pressing Ctrl\-C) to it.
 .LP
 .LP
-\f3NOTE \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' needs to be installed to have these tools working. Also, \fP\f4PATH\fP\f3 environment variable should contain the location of \fP\f4jvm.dll\fP\f3 used by the target process or the location from which the Crash Dump file was produced.\fP
+\f3NOTE\fP \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' needs to be installed to have these tools working. Also, \f2PATH\fP environment variable should contain the location of \f2jvm.dll\fP used by the target process or the location from which the Crash Dump file was produced.
 .LP
 .LP
-\f3For example, \fP\f4set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
+For example, \f2set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
 .LP
 .SH "SEE ALSO"
 .LP
@@ -129,7 +102,7 @@ o
 .na
 \f2rmiregistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi 
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#rmi 
 .RE
 
 .LP

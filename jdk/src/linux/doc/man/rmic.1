@@ -1,4 +1,4 @@
-." Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmic 1 "02 Jun 2010"
+.TH rmic 1 "10 May 2011"
 
 .LP
 .SH "Name"
 rmic \- The Java RMI Compiler
 .LP
-.RS 3
-
-.LP
 .LP
 \f3rmic\fP generates stub, skeleton, and tie classes for remote objects using either the JRMP or IIOP protocols. Also generates OMG IDL.
 .LP
-.RE
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -46,8 +40,6 @@ rmic [ \fP\f3options\fP\f3 ] \fP\f4package\-qualified\-class\-name(s)\fP\f3
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3rmic\fP compiler generates stub and skeleton class files (JRMP protocol) and stub and tie class files (IIOP protocol) for remote objects. These classes files are generated from compiled Java programming language classes that are remote object implementation classes. A remote implementation class is a class that implements the interface \f2java.rmi.Remote\fP. The class names in the \f3rmic\fP command must be for classes that have been compiled successfully with the \f3javac\fP command and must be fully package qualified. For example, running \f3rmic\fP on the class file name \f2HelloImpl\fP as shown here:
@@ -81,8 +73,6 @@ A stub implements only the remote interfaces, not any local interfaces that the 
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 \-bootclasspath path 
@@ -90,9 +80,6 @@ Overrides location of bootstrap class files
 .TP 3
 \-classpath path 
 Specifies the path \f3rmic\fP uses to look up classes. This option overrides the default or the CLASSPATH environment variable if it is set. Directories are separated by colons. Thus the general format for \f2path\fP is: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -100,11 +87,7 @@ Specifies the path \f3rmic\fP uses to look up classes. This option overrides the
 .fl
 \fP
 .fi
-.RE
 For example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -112,13 +95,9 @@ For example:
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-d directory 
 Specifies the root destination directory for the generated class hierarchy. You can use this option to specify a destination directory for the stub, skeleton, and tie files. For example, the command 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -126,7 +105,6 @@ Specifies the root destination directory for the generated class hierarchy. You 
 .fl
 \fP
 .fi
-.RE
 would place the stub and skeleton classes derived from \f2MyClass\fP into the directory \f2/java/classes/foo\fP. If the \f2\-d\fP option is not specified, the default behavior is as if \f2"\-d\ ."\fP were specified: the package hierarchy of the target class is created in the current directory, and stub/tie/skeleton files are placed within it. (Note that in some previous versions of \f3rmic\fP, if \f2\-d\fP was not specified, then the package hierarchy was \f2not\fP created, and all of the output files were placed directly in the current directory.)
 .br
 \  
@@ -136,16 +114,16 @@ Overrides location of installed extensions
 .TP 3
 \-g 
 Enables generation of all debugging information, including local variables. By default, only line number information is generated. 
-.LP
 .TP 3
 \-idl 
 Causes \f2rmic\fP to generate OMG IDL for the classes specified and any classes referenced. IDL provides a purely declarative, programming language\-independent way of specifying an object's API. The IDL is used as a specification for methods and data that can be written in and invoked from any language that provides CORBA bindings. This includes Java and C++ among others. See the 
 .na
 \f2Java Language to IDL Mapping\fP @
 .fi
-http://www.omg.org/technology/documents/formal/java_language_mapping_to_omg_idl.htm (OMG) document for a complete description. 
-.LP
-When the \f2\-idl\fP option is used, other options also include:  
+http://www.omg.org/technology/documents/formal/java_language_mapping_to_omg_idl.htm (OMG) document for a complete description.
+.br
+.br
+When the \f2\-idl\fP option is used, other options also include: 
 .RS 3
 .TP 3
 \-always or \-alwaysgenerate 
@@ -160,31 +138,22 @@ Specifies IDLEntity package mapping. For example:\  \f2\-idlModule foo.bar my::r
 \-idlFile\  fromJavaPackage[.class]\  toIDLFile 
 Specifies IDLEntity file mapping. For example:\  \f2\-idlFile test.pkg.X TEST16.idl\fP.\  
 .RE
-.LP
 .TP 3
 \-iiop 
-Causes \f2rmic\fP to generate IIOP stub and tie classes, rather than JRMP stub and skeleton classes. A stub class is a local proxy for a remote object and is used by clients to send calls to a server. Each remote interface requires a stub class, which implements that remote interface. A client's reference to a remote object is actually a reference to a stub. Tie classes are used on the server side to process incoming calls, and dispatch the calls to the proper implementation class. Each implementation class requires a tie class. 
-.LP
+Causes \f2rmic\fP to generate IIOP stub and tie classes, rather than JRMP stub and skeleton classes. A stub class is a local proxy for a remote object and is used by clients to send calls to a server. Each remote interface requires a stub class, which implements that remote interface. A client's reference to a remote object is actually a reference to a stub. Tie classes are used on the server side to process incoming calls, and dispatch the calls to the proper implementation class. Each implementation class requires a tie class.
+.br
+.br
 Invoking \f2rmic\fP with the \f2\-iiop\fP generates stubs and ties that conform to this naming convention: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
 _<implementationName>_stub.class
 .fl
-\fP
-.br
-\f3
-.fl
 _<interfaceName>_tie.class
 .fl
 \fP
 .fi
-.RE
-.LP
-When the \f2\-iiop\fP option is used, other options also include:  
+When the \f2\-iiop\fP option is used, other options also include: 
 .RS 3
 .TP 3
 \-always or \-alwaysgenerate 
@@ -197,13 +166,11 @@ Do not create stubs optimized for same\-process clients and servers.
 Must be used with the \f2\-idl\fP option. Prevents addition of \f2valuetype\fP methods and initializers to emitted IDL. These methods and initializers are optional for \f2valuetype\fPs, and are generated unless the \f2\-noValueMethods\fP option is specified when using the \f2\-idl\fP option. 
 .TP 3
 \-poa 
-Changes the inheritance from \f2org.omg.CORBA_2_3.portable.ObjectImpl\fP to \f2org.omg.PortableServer.Servant\fP. 
-.LP
-The \f2PortableServer\fP module for the 
+Changes the inheritance from \f2org.omg.CORBA_2_3.portable.ObjectImpl\fP to \f2org.omg.PortableServer.Servant\fP. The \f2PortableServer\fP module for the 
 .na
 \f2Portable Object Adapter\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html (POA) defines the native \f2Servant\fP type. In the Java programming language, the \f2Servant\fP type is mapped to the Java \f2org.omg.PortableServer.Servant\fP class. It serves as the base class for all POA servant implementations and provides a number of methods that may be invoked by the application programmer, as well as methods which are invoked by the POA itself and may be overridden by the user to control aspects of servant behavior. Based on the OMG IDL to Java Language Mapping Specification, CORBA V 2.3.1 ptc/00\-01\-08.pdf.  
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/POA.html (POA) defines the native \f2Servant\fP type. In the Java programming language, the \f2Servant\fP type is mapped to the Java \f2org.omg.PortableServer.Servant\fP class. It serves as the base class for all POA servant implementations and provides a number of methods that may be invoked by the application programmer, as well as methods which are invoked by the POA itself and may be overridden by the user to control aspects of servant behavior. Based on the OMG IDL to Java Language Mapping Specification, CORBA V 2.3.1 ptc/00\-01\-08.pdf. 
 .RE
 .TP 3
 \-J 
@@ -214,18 +181,18 @@ Retains the generated \f2.java\fP source files for the stub, skeleton, and/or ti
 .TP 3
 \-nowarn 
 Turns off warnings. If used the compiler does not print out any warnings. 
-.LP
+.TP 3
+\-nowrite 
+Does not write compiled classes to the file system. 
 .TP 3
 \-vcompat 
 Generates stub and skeleton classes compatible with both the 1.1 and 1.2 JRMP stub protocol versions. (This option was the default in releases prior to 5.0.) The generated stub classes will use the 1.1 stub protocol version when loaded in a JDK 1.1 virtual machine and will use the 1.2 stub protocol version when loaded into a 1.2 (or later) virtual machine. The generated skeleton classes will support both 1.1 and 1.2 stub protocol versions. The generated classes are relatively large in order to support both modes of operation. 
 .TP 3
 \-verbose 
 Causes the compiler and linker to print out messages about what classes are being compiled and what class files are being loaded. 
-.LP
 .TP 3
 \-v1.1 
 Generates stub and skeleton classes for the 1.1 JRMP stub protocol version only. Note that this option is only useful for generating stub classes that are serialization\-compatible with pre\-existing, statically\-deployed stub classes that were generated by the \f3rmic\fP tool from JDK 1.1 and that cannot be upgraded (and dynamic class loading is not being used). 
-.LP
 .TP 3
 \-v1.2 
 (default) Generates stub classes for the 1.2 JRMP stub protocol version only. No skeleton classes are generated with this option because skeleton classes are not used with the 1.2 stub protocol version. The generated stub classes will not work if they are loaded into a JDK 1.1 virtual machine. 
@@ -234,15 +201,10 @@ Generates stub and skeleton classes for the 1.1 JRMP stub protocol version only.
 .LP
 .SH "ENVIRONMENT VARIABLES"
 .LP
-
-.LP
 .RS 3
 .TP 3
 CLASSPATH 
 Used to provide the system a path to user\-defined classes. Directories are separated by colons. For example, 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -251,18 +213,15 @@ Used to provide the system a path to user\-defined classes. Directories are sepa
 \fP
 .fi
 .RE
-.RE
 
 .LP
 .SH "SEE ALSO"
-.LP
-
 .LP
 .LP
 java(1), javac(1), 
 .na
 \f2CLASSPATH\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#classpath
 .LP
  
