@@ -1,4 +1,4 @@
-." Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javap 1 "14 Apr 2011"
+.TH javap 1 "07 May 2011"
 
 .LP
 .SH "名前"
@@ -33,7 +33,7 @@ javap \- Java クラスファイル逆アセンブラ
 .nf
 \f3
 .fl
-javap [ \fP\f3options\fP\f3 ] class. . .
+javap [ \fP\f3options\fP\f3 ] classes
 .fl
 \fP
 .fi
@@ -42,7 +42,20 @@ javap [ \fP\f3options\fP\f3 ] class. . .
 .SH "説明"
 .LP
 .LP
-\f3javap\fP コマンドは、クラスファイルを逆アセンブルします。その出力は指定するオプションにより異なります。オプションを指定しない場合、\f3javap\fP は、そのパッケージ、渡されたクラスの protected および public のフィールドとメソッドを出力します。\f3javap\fP はその出力を標準出力に表示します。たとえば、次のクラス宣言をコンパイルするとします。
+\f3javap\fP コマンドは、1 つまたは複数のクラスファイルを逆アセンブルします。その出力は指定するオプションにより異なります。オプションを指定しない場合、\f3javap\fP は、そのパッケージ、渡されたクラスの protected および public のフィールドとメソッドを出力します。\f3javap\fP はその出力を標準出力に表示します。
+.LP
+.RS 3
+.TP 3
+options 
+コマンド行オプション。 
+.TP 3
+classes 
+注釈の処理対象となる 1 つ以上のクラス \f2DocFooter.class\fP など) のリスト (空白区切り)。クラスパスで見つかるクラスは、ファイル名 ( \f2/home/user/myproject/src/DocFooter.class\fP など) または URL ( \f2file:///home/user/myproject/src/DocFooter.class\fP など) で指定できます。 
+.RE
+
+.LP
+.LP
+たとえば、次のクラス宣言をコンパイルするとします。
 .LP
 .nf
 \f3
@@ -88,24 +101,24 @@ public class DocFooter extends Applet {
 
 .LP
 .LP
-\f3javap DocFooter\fP がもたらす出力は次のようになります。
+\f3javap DocFooter.class\fP がもたらす出力は次のようになります。
 .LP
 .nf
 \f3
 .fl
-Compiled from DocFooter.java
+Compiled from "DocFooter.java"
 .fl
 public class DocFooter extends java.applet.Applet {
 .fl
-    java.lang.String date;
+  java.lang.String date;
 .fl
-    java.lang.String email;
+  java.lang.String email;
 .fl
-    public DocFooter();
+  public DocFooter();
 .fl
-    public void init();
+  public void init();
 .fl
-    public void paint(java.awt.Graphics);
+  public void paint(java.awt.Graphics);
 .fl
 }
 .fl
@@ -114,114 +127,116 @@ public class DocFooter extends java.applet.Applet {
 
 .LP
 .LP
-\f3javap \-c DocFooter\fP がもたらす出力は次のようになります。
+\f3javap \-c DocFooter.class\fP がもたらす出力は次のようになります。
 .LP
 .nf
 \f3
 .fl
-Compiled from DocFooter.java
+Compiled from "DocFooter.java"
 .fl
 public class DocFooter extends java.applet.Applet {
 .fl
-    java.lang.String date;
+  java.lang.String date;
 .fl
-    java.lang.String email;
+
 .fl
-    public DocFooter();
+  java.lang.String email;
 .fl
-    public void init();
+
 .fl
-    public void paint(java.awt.Graphics);
+  public DocFooter();
+.fl
+    Code:
+.fl
+       0: aload_0       
+.fl
+       1: invokespecial #1                  // Method java/applet/Applet."<init>":()V
+.fl
+       4: return        
+.fl
+
+.fl
+  public void init();
+.fl
+    Code:
+.fl
+       0: aload_0       
+.fl
+       1: sipush        500
+.fl
+       4: bipush        100
+.fl
+       6: invokevirtual #2                  // Method resize:(II)V
+.fl
+       9: aload_0       
+.fl
+      10: aload_0       
+.fl
+      11: ldc           #3                  // String LAST_UPDATED
+.fl
+      13: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      16: putfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      19: aload_0       
+.fl
+      20: aload_0       
+.fl
+      21: ldc           #6                  // String EMAIL
+.fl
+      23: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      26: putfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      29: return        
+.fl
+
+.fl
+  public void paint(java.awt.Graphics);
+.fl
+    Code:
+.fl
+       0: aload_1       
+.fl
+       1: new           #8                  // class java/lang/StringBuilder
+.fl
+       4: dup           
+.fl
+       5: invokespecial #9                  // Method java/lang/StringBuilder."<init>":()V
+.fl
+       8: aload_0       
+.fl
+       9: getfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      12: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      15: ldc           #11                 // String  by 
+.fl
+      17: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      20: invokevirtual #12                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+.fl
+      23: bipush        100
+.fl
+      25: bipush        15
+.fl
+      27: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      30: aload_1       
+.fl
+      31: aload_0       
+.fl
+      32: getfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      35: sipush        290
+.fl
+      38: bipush        15
+.fl
+      40: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      43: return        
 .fl
 }
-.fl
-
-.fl
-Method DocFooter()
-.fl
-   0 aload_0
-.fl
-   1 invokespecial #1 <Method java.applet.Applet()>
-.fl
-   4 return
-.fl
-
-.fl
-Method void init()
-.fl
-   0 aload_0
-.fl
-   1 sipush 500
-.fl
-   4 bipush 100
-.fl
-   6 invokevirtual #2 <Method void resize(int, int)>
-.fl
-   9 aload_0
-.fl
-  10 aload_0
-.fl
-  11 ldc #3 <String "LAST_UPDATED">
-.fl
-  13 invokevirtual #4 <Method java.lang.String getParameter(java.lang.String)>
-.fl
-  16 putfield #5 <Field java.lang.String date>
-.fl
-  19 aload_0
-.fl
-  20 aload_0
-.fl
-  21 ldc #6 <String "EMAIL">
-.fl
-  23 invokevirtual #4 <Method java.lang.String getParameter(java.lang.String)>
-.fl
-  26 putfield #7 <Field java.lang.String email>
-.fl
-  29 return
-.fl
-
-.fl
-Method void paint(java.awt.Graphics)
-.fl
-   0 aload_1
-.fl
-   1 new #8 <Class java.lang.StringBuffer>
-.fl
-   4 dup
-.fl
-   5 invokespecial #9 <Method java.lang.StringBuffer()>
-.fl
-   8 aload_0
-.fl
-   9 getfield #5 <Field java.lang.String date>
-.fl
-  12 invokevirtual #10 <Method java.lang.StringBuffer append(java.lang.String)>
-.fl
-  15 ldc #11 <String " by ">
-.fl
-  17 invokevirtual #10 <Method java.lang.StringBuffer append(java.lang.String)>
-.fl
-  20 invokevirtual #12 <Method java.lang.String toString()>
-.fl
-  23 bipush 100
-.fl
-  25 bipush 15
-.fl
-  27 invokevirtual #13 <Method void drawString(java.lang.String, int, int)>
-.fl
-  30 aload_1
-.fl
-  31 aload_0
-.fl
-  32 getfield #7 <Field java.lang.String email>
-.fl
-  35 sipush 290
-.fl
-  38 bipush 15
-.fl
-  40 invokevirtual #13 <Method void drawString(java.lang.String, int, int)>
-.fl
-  43 return
 .fl
 \fP
 .fi
@@ -284,44 +299,13 @@ http://java.sun.com/docs/books/vmspec/にドキュメント化されています。
 メソッドのスタックサイズ、および \f2locals\fP と \f2args\fP の数を出力します。 
 .TP 3
 \-classpath path 
-\f3javap\fP がクラスを探すために使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
-.nf
-\f3
-.fl
-   .:<your_path>
-.fl
-\fP
-.fi
-次に例を示します。 
-.nf
-\f3
-.fl
-.:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
+\f3javap\fP がクラスを探すために使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。 
 .TP 3
 \-bootclasspath path 
 ブートストラップクラスをロードするパスを指定します。ブートストラップクラスは、デフォルトでは \f2jre/lib/rt.jar\fP および他のいくつかの JAR ファイル にある、コア Java 2 プラットフォームを実装するクラスです。 
 .TP 3
 \-extdirs dirs 
 インストールされた拡張機能を検索する場所をオーバーライドします。拡張機能は、デフォルトでは \f2java.ext.dirs\fP にあります。 
-.RE
-
-.LP
-.SH "環境変数"
-.LP
-.RS 3
-.TP 3
-CLASSPATH 
-ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。次に例を示します。 
-.nf
-\f3
-.fl
-.:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
 .RE
 
 .LP
