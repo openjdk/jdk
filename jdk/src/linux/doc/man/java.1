@@ -1,4 +1,4 @@
-." Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH java 1 "02 Jun 2010"
+.TH java 1 "10 May 2011"
 
 .LP
 .SH "Name"
@@ -38,9 +38,6 @@ java \- the Java application launcher
 
 .LP
 .RS 3
-
-.LP
-.RS 3
 .TP 3
 options 
 Command\-line options. 
@@ -56,10 +53,7 @@ Argument passed to the \f3main\fP function.
 .RE
 
 .LP
-.RE
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3java\fP tool launches a Java application. It does this by starting a Java runtime environment, loading a specified class, and invoking that class's \f3main\fP method.
@@ -70,7 +64,7 @@ The method must be declared public and static, it must not return any value, and
 .nf
 \f3
 .fl
-    public static void main(String args[])
+public static void main(String args[])
 .fl
 \fP
 .fi
@@ -87,76 +81,79 @@ Non\-option arguments after the class name or JAR file name are passed to the \f
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .LP
 The launcher has a set of standard options that are supported on the current runtime environment and will be supported in future releases. In addition, the current implementations of the virtual machines support a set of non\-standard options that are subject to change in future releases.
 .LP
 .SH "Standard Options"
 .LP
-
-.LP
 .RS 3
 .TP 3
 \-client 
-.LP
-Select the Java HotSpot Client VM. A 64\-bit capable jdk currently ignores this option and instead uses the Java Hotspot Server VM. 
-.LP
+Select the Java HotSpot Client VM. A 64\-bit capable jdk currently ignores this option and instead uses the Java Hotspot Server VM.
+.br
+.br
 For default VM selection, see 
 .na
 \f2Server\-Class Machine Detection\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html  
+http://download.oracle.com/javase/7/docs/technotes/guides/vm/server\-class.html 
 .TP 3
 \-server 
-.LP
-Select the Java HotSpot Server VM. On a 64\-bit capable jdk only the Java Hotspot Server VM is supported so the \-server option is implicit. 
-.LP
+Select the Java HotSpot Server VM. On a 64\-bit capable jdk only the Java Hotspot Server VM is supported so the \-server option is implicit.
+.br
+.br
 For default VM selection, see 
 .na
 \f2Server\-Class Machine Detection\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html  
+http://download.oracle.com/javase/7/docs/technotes/guides/vm/server\-class.html 
 .TP 3
 \-agentlib:libname[=options] 
-Load native agent library \f2libname\fP, e.g. 
-.LP
-\-agentlib:hprof 
-.LP
-\-agentlib:jdwp=help 
-.LP
-\-agentlib:hprof=help 
-.LP
+Load native agent library \f2libname\fP, e.g.
+.br
+.br
+\-agentlib:hprof
+.br
+.br
+\-agentlib:jdwp=help
+.br
+.br
+\-agentlib:hprof=help
+.br
+.br
 For more information, see 
 .na
 \f2JVMTI Agent Command Line Options\fP @
 .fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting.  
+http://download.oracle.com/javase/7/docs/platform/jvmti/jvmti.html#starting. 
 .TP 3
 \-agentpath:pathname[=options] 
 Load a native agent library by full pathname. For more information, see 
 .na
 \f2JVMTI Agent Command Line Options\fP @
 .fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting. 
+http://download.oracle.com/javase/7/docs/platform/jvmti/jvmti.html#starting. 
 .TP 3
 \-classpath classpath 
 .TP 3
 \-cp classpath 
-Specify a list of directories, JAR archives, and ZIP archives to search for class files. Class path entries are separated by colons (\f3:\fP). Specifying \f3\-classpath\fP or \f3\-cp\fP overrides any setting of the \f3CLASSPATH\fP environment variable. 
-.LP
+Specify a list of directories, JAR archives, and ZIP archives to search for class files. Class path entries are separated by colons (\f3:\fP). Specifying \f3\-classpath\fP or \f3\-cp\fP overrides any setting of the \f3CLASSPATH\fP environment variable.
+.br
+.br
 If \f3\-classpath\fP and \f3\-cp\fP are not used and \f3CLASSPATH\fP is not set, the user class path consists of the current directory (\f4.\fP).  
-.LP
+.br
+.br
 As a special convenience, a class path element containing a basename of \f2*\fP is considered equivalent to specifying a list of all the files in the directory with the extension \f2.jar\fP or \f2.JAR\fP (a java program cannot tell the difference between the two invocations).
 .br
 .br
 For example, if directory \f2foo\fP contains \f2a.jar\fP and \f2b.JAR\fP, then the class path element \f2foo/*\fP is expanded to a \f2A.jar:b.JAR\fP, except that the order of jar files is unspecified. All jar files in the specified directory, even hidden ones, are included in the list. A classpath entry consisting simply of \f2*\fP expands to a list of all the jar files in the current directory. The \f2CLASSPATH\fP environment variable, where defined, will be similarly expanded. Any classpath wildcard expansion occurs before the Java virtual machine is started \-\- no Java program will ever see unexpanded wildcards except by querying the environment. For example; by invoking \f2System.getenv("CLASSPATH")\fP.  
-.LP
+.br
+.br
 For more information on class paths, see 
 .na
 \f2Setting the Class Path\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath.  
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#classpath. 
 .TP 3
 \-Dproperty=value 
 Set a system property value. 
@@ -164,19 +161,23 @@ Set a system property value.
 \-d32 
 .TP 3
 \-d64 
-Request that the program to be run in a 32\-bit or 64\-bit environment, respectively. If the requested environment is not installed or is not supported, an error is reported. 
-.LP
-Currently only the Java HotSpot Server VM supports 64\-bit operation, and the "\-server" option is implicit with the use of \-d64. And the "\-client" option is ignored with the use of \-d64. This is subject to change in a future release. 
-.LP
-If neither \f3\-d32\fP nor \f3\-d64\fP is specified, the default is to run in a 32\-bit environment, except for 64\-bit only systems. This is subject to change in a future release.  
+Request that the program to be run in a 32\-bit or 64\-bit environment, respectively. If the requested environment is not installed or is not supported, an error is reported.
+.br
+.br
+Currently only the Java HotSpot Server VM supports 64\-bit operation, and the "\-server" option is implicit with the use of \-d64. And the "\-client" option is ignored with the use of \-d64. This is subject to change in a future release.
+.br
+.br
+If neither \f3\-d32\fP nor \f3\-d64\fP is specified, the default is to run in a 32\-bit environment, except for 64\-bit only systems. This is subject to change in a future release. 
 .TP 3
 \-enableassertions[:<package name>"..." | :<class name> ] 
 .TP 3
 \-ea[:<package name>"..." | :<class name> ] 
-Enable assertions. Assertions are disabled by default. 
-.LP
-With no arguments, \f3enableassertions\fP or \f3\-ea\fP enables assertions. With one argument ending in \f2"..."\fP, the switch enables assertions in the specified package and any subpackages. If the argument is simply \f2"..."\fP, the switch enables assertions in the unnamed package in the current working directory. With one argument not ending in \f2"..."\fP, the switch enables assertions in the specified class. 
-.LP
+Enable assertions. Assertions are disabled by default.
+.br
+.br
+With no arguments, \f3enableassertions\fP or \f3\-ea\fP enables assertions. With one argument ending in \f2"..."\fP, the switch enables assertions in the specified package and any subpackages. If the argument is simply \f2"..."\fP, the switch enables assertions in the unnamed package in the current working directory. With one argument not ending in \f2"..."\fP, the switch enables assertions in the specified class.
+.br
+.br
 If a single command line contains multiple instances of these switches, they are processed in order before loading any classes. So, for example, to run a program with assertions enabled only in package \f2com.wombat.fruitbat\fP (and any subpackages), the following command could be used: 
 .nf
 \f3
@@ -185,26 +186,26 @@ java \-ea:com.wombat.fruitbat... <Main Class>
 .fl
 \fP
 .fi
-.LP
-The \f3\-enableassertions\fP and \f3\-ea\fP switches apply to \f2all\fP class loaders and to system classes (which do not have a class loader). There is one exception to this rule: in their no\-argument form, the switches do \f2not\fP apply to system. This makes it easy to turn on asserts in all classes except for system classes. A separate switch is provided to enable asserts in all system classes; see \f3\-enablesystemassertions\fP below.  
+The \f3\-enableassertions\fP and \f3\-ea\fP switches apply to \f2all\fP class loaders and to system classes (which do not have a class loader). There is one exception to this rule: in their no\-argument form, the switches do \f2not\fP apply to system. This makes it easy to turn on asserts in all classes except for system classes. A separate switch is provided to enable asserts in all system classes; see \f3\-enablesystemassertions\fP below. 
 .TP 3
 \-disableassertions[:<package name>"..." | :<class name> ] 
 .TP 3
 \-da[:<package name>"..." | :<class name> ] 
-Disable assertions. This is the default. 
-.LP
-With no arguments, \f3disableassertions\fP or \f3\-da\fP disables assertions. With one argument ending in \f2"..."\fP, the switch disables assertions in the specified package and any subpackages. If the argument is simply \f2"..."\fP, the switch disables assertions in the unnamed package in the current working directory. With one argument not ending in \f2"..."\fP, the switch disables assertions in the specified class. 
-.LP
+Disable assertions. This is the default.
+.br
+.br
+With no arguments, \f3disableassertions\fP or \f3\-da\fP disables assertions. With one argument ending in \f2"..."\fP, the switch disables assertions in the specified package and any subpackages. If the argument is simply \f2"..."\fP, the switch disables assertions in the unnamed package in the current working directory. With one argument not ending in \f2"..."\fP, the switch disables assertions in the specified class.
+.br
+.br
 To run a program with assertions enabled in package \f2com.wombat.fruitbat\fP but disabled in class \f2com.wombat.fruitbat.Brickbat\fP, the following command could be used: 
 .nf
 \f3
 .fl
-java \-ea:com.wombat.fruitbat... \-da:com.wombat.fruitbat.Brickbat <Main Class>
+java \-ea:com.wombat.fruitbat... \-da:com.wombat.fruitbat.Brickbat \fP\f4<Main Class>\fP\f3
 .fl
 \fP
 .fi
-.LP
-The \f3\-disableassertions\fP and \f3\-da\fP switches apply to \f2all\fP class loaders and to system classes (which do not have a class loader). There is one exception to this rule: in their no\-argument form, the switches do \f2not\fP apply to system. This makes it easy to turn on asserts in all classes except for system classes. A separate switch is provided to enable asserts in all system classes; see \f3\-disablesystemassertions\fP below.  
+The \f3\-disableassertions\fP and \f3\-da\fP switches apply to \f2all\fP class loaders and to system classes (which do not have a class loader). There is one exception to this rule: in their no\-argument form, the switches do \f2not\fP apply to system. This makes it easy to turn on asserts in all classes except for system classes. A separate switch is provided to enable asserts in all system classes; see \f3\-disablesystemassertions\fP below. 
 .TP 3
 \-enablesystemassertions 
 .TP 3
@@ -215,29 +216,36 @@ Enable asserts in all system classes (sets the \f2default assertion status\fP fo
 .TP 3
 \-dsa 
 Disables asserts in all system classes. 
-.LP
 .TP 3
 \-jar 
 Execute a program encapsulated in a JAR file. The first argument is the name of a JAR file instead of a startup class name. In order for this option to work, the manifest of the JAR file must contain a line of the form \f3Main\-Class: \fP\f4classname\fP. Here, \f2classname\fP identifies the class having the \f2public\ static\ void\ main(String[]\ args)\fP method that serves as your application's starting point. See the jar(1) and the Jar trail of the 
 .na
 \f2Java Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar for information about working with Jar files and Jar\-file manifests. 
-.LP
-When you use this option, the JAR file is the source of all user classes, and other user class path settings are ignored. 
-.LP
+http://download.oracle.com/javase/tutorial/deployment/jar for information about working with Jar files and Jar\-file manifests.
+.br
+.br
+When you use this option, the JAR file is the source of all user classes, and other user class path settings are ignored.
+.br
+.br
 Note that JAR files that can be run with the "java \-jar" option can have their execute permissions set so they can be run without using "java \-jar". Refer to 
 .na
 \f2Java Archive (JAR) Files\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/index.html.  
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/index.html. 
 .TP 3
 \-javaagent:jarpath[=options] 
 Load a Java programming language agent, see 
 .na
 \f2java.lang.instrument\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/lang/instrument/package\-summary.html. 
+http://download.oracle.com/javase/7/docs/api/java/lang/instrument/package\-summary.html. 
+.TP 3
+\-jre\-restrict\-search 
+Include user\-private JREs in the version search. 
+.TP 3
+\-no\-jre\-restrict\-search 
+Exclude user\-private JREs in the version search. 
 .TP 3
 \-verbose 
 .TP 3
@@ -254,8 +262,9 @@ Report information about use of native methods and other Java Native Interface a
 Display version information and exit. 
 .TP 3
 \-version:release 
-Specifies that the version specified by \f2release\fP is required by the class or jar file specified on the command line. If the version of the java command invoked does not meet this specification and an appropriate implementation is found on the system, the appropriate implementation will be used. 
-.LP
+Specifies that the version specified by \f2release\fP is required by the class or jar file specified on the command line. If the version of the java command invoked does not meet this specification and an appropriate implementation is found on the system, the appropriate implementation will be used.
+.br
+.br
 \f2release\fP not only can specify an exact version, but can also specify a list of versions called a version string. A version string is an ordered list of version ranges separated by spaces. A version range is either a version\-id, a version\-id followed by a star (*), a version\-id followed by a plus sign (+) , or two version\-ranges combined using an ampersand (&). The star means prefix match, the plus sign means this version or greater, and the ampersand means the logical anding of the two version\-ranges. For example: 
 .nf
 \f3
@@ -264,11 +273,13 @@ Specifies that the version specified by \f2release\fP is required by the class o
 .fl
 \fP
 .fi
-The meaning of the above is that the class or jar file requires either version 1.6.0_13, or a version with 1.6 as a version\-id prefix and that is not less than 1.6.0_10.. The exact syntax and definition of version strings may be found in Appendix A of the Java Network Launching Protocol & API Specification (JSR\-56). 
-.LP
-For jar files, the usual preference is to specify version requirements in the jar file manifest rather than on the command line. 
-.LP
-See the following NOTES section for important policy information on the use of this option.  
+The meaning of the above is that the class or jar file requires either version 1.6.0_13, or a version with 1.6 as a version\-id prefix and that is not less than 1.6.0_10.. The exact syntax and definition of version strings may be found in Appendix A of the Java Network Launching Protocol & API Specification (JSR\-56).
+.br
+.br
+For jar files, the usual preference is to specify version requirements in the jar file manifest rather than on the command line.
+.br
+.br
+See the following NOTES section for important policy information on the use of this option. 
 .TP 3
 \-showversion 
 Display version information and continue. 
@@ -278,6 +289,9 @@ Display version information and continue.
 \-help 
 Display usage information and exit. 
 .TP 3
+\-splash:imagepath 
+Show splash screen with image specified by \f2imagepath\fP. 
+.TP 3
 \-X 
 Display information about non\-standard options and exit. 
 .RE
@@ -285,9 +299,6 @@ Display information about non\-standard options and exit.
 .LP
 .SS 
 Non\-Standard Options
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -319,18 +330,20 @@ Disable class garbage collection. Use of this option will prevent memory recover
 Enable the incremental garbage collector. The incremental garbage collector, which is off by default, will reduce the occasional long garbage\-collection pauses during program execution. The incremental garbage collector will at times execute concurrently with the program and during such times will reduce the processor capacity available to the program. 
 .TP 3
 \-Xloggc:file 
-Report on each garbage collection event, as with \-verbose:gc, but log this data to \f2file\fP. In addition to the information \f2\-verbose:gc\fP gives, each reported event will be preceeded by the time (in seconds) since the first garbage\-collection event. 
-.LP
-Always use a local file system for storage of this file to avoid stalling the JVM due to network latency. The file may be truncated in the case of a full file system and logging will continue on the truncated file. This option overrides \f2\-verbose:gc\fP if both are given on the command line.  
-.LP
+Report on each garbage collection event, as with \-verbose:gc, but log this data to \f2file\fP. In addition to the information \f2\-verbose:gc\fP gives, each reported event will be preceeded by the time (in seconds) since the first garbage\-collection event.
+.br
+.br
+Always use a local file system for storage of this file to avoid stalling the JVM due to network latency. The file may be truncated in the case of a full file system and logging will continue on the truncated file. This option overrides \f2\-verbose:gc\fP if both are given on the command line. 
 .TP 3
 \-Xmsn 
-Specify the initial size, in bytes, of the memory allocation pool. This value must be a multiple of 1024 greater than 1MB. Append the letter \f2k\fP or \f2K\fP to indicate kilobytes, or \f2m\fP or \f2M\fP to indicate megabytes. The default value is chosen at runtime based on system configuration. For more information, see HotSpot Ergonomics
+Specify the initial size, in bytes, of the memory allocation pool. This value must be a multiple of 1024 greater than 1MB. Append the letter \f2k\fP or \f2K\fP to indicate kilobytes, or \f2m\fP or \f2M\fP to indicate megabytes. The default value is chosen at runtime based on system configuration. For more information, see 
+.na
+\f2HotSpot Ergonomics\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/vm/gc\-ergonomics.html
+.br
 .br
 Examples: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -340,19 +353,20 @@ Examples:
 .fl
        \-Xms6m
 .fl
-       
+
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-Xmxn 
-Specify the maximum size, in bytes, of the memory allocation pool. This value must a multiple of 1024 greater than 2MB. Append the letter \f2k\fP or \f2K\fP to indicate kilobytes, or \f2m\fP or \f2M\fP to indicate megabytes. The default value is chosen at runtime based on system configuration. For more information, see HotSpot Ergonomics
+Specify the maximum size, in bytes, of the memory allocation pool. This value must a multiple of 1024 greater than 2MB. Append the letter \f2k\fP or \f2K\fP to indicate kilobytes, or \f2m\fP or \f2M\fP to indicate megabytes. The default value is chosen at runtime based on system configuration. For more information, see 
+.na
+\f2HotSpot Ergonomics\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/vm/gc\-ergonomics.html
+.br
 .br
 Examples: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -362,28 +376,31 @@ Examples:
 .fl
        \-Xmx80m
 .fl
-       
+
 .fl
 \fP
 .fi
-.RE
 On Solaris 7 and Solaris 8 SPARC platforms, the upper limit for this value is approximately 4000m minus overhead amounts. On Solaris 2.6 and x86 platforms, the upper limit is approximately 2000m minus overhead amounts. On Linux platforms, the upper limit is approximately 2000m minus overhead amounts. 
 .TP 3
 \-Xprof 
 Profiles the running program, and sends profiling data to standard output. This option is provided as a utility that is useful in program development and is not intended to be used in production systems.  
-.LP
 .TP 3
 \-Xrs 
-Reduces use of operating\-system signals by the Java virtual machine (JVM). 
-.LP
-In a previous release, the Shutdown Hooks facility was added to allow orderly shutdown of a Java application. The intent was to allow user cleanup code (such as closing database connections) to run at shutdown, even if the JVM terminates abruptly. 
-.LP
-Sun's JVM catches signals to implement shutdown hooks for abnormal JVM termination. The JVM uses SIGHUP, SIGINT, and SIGTERM to initiate the running of shutdown hooks. 
-.LP
-The JVM uses a similar mechanism to implement the pre\-1.2 feature of dumping thread stacks for debugging purposes. Sun's JVM uses SIGQUIT to perform thread dumps. 
-.LP
-Applications embedding the JVM frequently need to trap signals like SIGINT or SIGTERM, which can lead to interference with the JVM's own signal handlers. The \f3\-Xrs\fP command\-line option is available to address this issue. When \f3\-Xrs\fP is used on Sun's JVM, the signal masks for SIGINT, SIGTERM, SIGHUP, and SIGQUIT are not changed by the JVM, and signal handlers for these signals are not installed. 
-.LP
+Reduces use of operating\-system signals by the Java virtual machine (JVM).
+.br
+.br
+In a previous release, the Shutdown Hooks facility was added to allow orderly shutdown of a Java application. The intent was to allow user cleanup code (such as closing database connections) to run at shutdown, even if the JVM terminates abruptly.
+.br
+.br
+Sun's JVM catches signals to implement shutdown hooks for abnormal JVM termination. The JVM uses SIGHUP, SIGINT, and SIGTERM to initiate the running of shutdown hooks.
+.br
+.br
+The JVM uses a similar mechanism to implement the pre\-1.2 feature of dumping thread stacks for debugging purposes. Sun's JVM uses SIGQUIT to perform thread dumps.
+.br
+.br
+Applications embedding the JVM frequently need to trap signals like SIGINT or SIGTERM, which can lead to interference with the JVM's own signal handlers. The \f3\-Xrs\fP command\-line option is available to address this issue. When \f3\-Xrs\fP is used on Sun's JVM, the signal masks for SIGINT, SIGTERM, SIGHUP, and SIGQUIT are not changed by the JVM, and signal handlers for these signals are not installed.
+.br
+.br
 There are two consequences of specifying \f3\-Xrs\fP: 
 .RS 3
 .TP 2
@@ -402,12 +419,11 @@ The VM uses \f2SIGUSR1\fP and \f2SIGUSR2\fP by default, which can sometimes conf
 .RE
 
 .LP
-.RE
 .SH "NOTES"
 .LP
-
 .LP
-The \f3\-version:\fP\f2release\fP command line option places no restrictions on the complexity of the release specification. However, only a restricted subset of the possible release specifications represent sound policy and only these are fully supported. These policies are: 
+The \f3\-version:\fP\f2release\fP command line option places no restrictions on the complexity of the release specification. However, only a restricted subset of the possible release specifications represent sound policy and only these are fully supported. These policies are:
+.LP
 .RS 3
 .TP 3
 1.
@@ -422,8 +438,7 @@ Any version greater than an arbitrarily precise version\-id. For example:
 .fl
 \fP
 .fi
-.LP
-Would utilize any version greater than 1.6.0_10. This is useful for a case where an interface was introduced (or a bug fixed) in the release specified.  
+This would utilize any version greater than \f21.6.0_10\fP. This is useful for a case where an interface was introduced (or a bug fixed) in the release specified. 
 .TP 3
 3.
 A version greater than an arbitrarily precise version\-id, bounded by the upper bound of that release family. For example: 
@@ -448,9 +463,22 @@ Similar to item 2. this is useful when a change was introduced in a release (1.7
 .RE
 
 .LP
-.SH "SEE ALSO"
+.SH "EXIT STATUS"
 .LP
+.LP
+The following exit values are generally returned by the launcher, typically when the launcher is called with the wrong arguments, serious errors, or exceptions thrown from the Java Virtual Machine. However, a Java application may choose to return any value using the API call \f2System.exit(exitValue)\fP.
+.LP
+.RS 3
+.TP 2
+o
+\f20\fP: Successful completion 
+.TP 2
+o
+\f2>0\fP: An error occurred 
+.RE
 
+.LP
+.SH "SEE ALSO"
 .LP
 .RS 3
 .TP 2
@@ -470,13 +498,13 @@ o
 .na
 \f2The Java Extensions Framework\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html 
+http://download.oracle.com/javase/7/docs/technotes/guides/extensions/index.html 
 .TP 2
 o
 .na
 \f2Security Features\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/index.html. 
+http://download.oracle.com/javase/7/docs/technotes/guides/security/index.html. 
 .TP 2
 o
 .na

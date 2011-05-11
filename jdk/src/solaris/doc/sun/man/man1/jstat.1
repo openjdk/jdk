@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jstat 1 "02 Jun 2010"
+.TH jstat 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jstat \- Java Virtual Machine Statistics Monitoring Tool
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -38,8 +36,6 @@ jstat \- Java Virtual Machine Statistics Monitoring Tool
 
 .LP
 .SH "PARAMETERS"
-.LP
-
 .LP
 .RS 3
 .TP 3
@@ -60,16 +56,14 @@ Virtual machine identifier, a string indicating the target Java virtual machine 
 The syntax of the vmid string largely corresponds to the syntax of a URI. The \f2vmid\fP can vary from a simple integer representing a local JVM to a more complex construction specifying a communications protocol, port number, and other implementation\-specific values. See Virtual Machine Identifier for details. 
 .TP 3
 interval[s|ms] 
-Sampling interval in the specified units, seconds (s) or milliseconds (ms). Default units are milliseconds.\  Must be a positive integer.\  If specified, \f3jstat\fP will produce its output at each interval. 
+Sampling interval in the specified units, seconds (s) or milliseconds (ms). Default units are milliseconds. Must be a positive integer. If specified, \f3jstat\fP will produce its output at each interval. 
 .TP 3
 count 
-Number of samples to display. Default value is infinity; that is, \f3jstat\fP displays statistics until the target JVM terminates or the \f3jstat\fP command is terminated.\  Must be a positive integer. 
+Number of samples to display. Default value is infinity; that is, \f3jstat\fP displays statistics until the target JVM terminates or the \f3jstat\fP command is terminated. Must be a positive integer. 
 .RE
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3jstat\fP tool displays performance statistics for an instrumented HotSpot Java virtual machine (JVM). The target JVM is identified by its virtual machine identifier, or \f2vmid\fP option described below.
@@ -81,9 +75,6 @@ The \f3jstat\fP tool displays performance statistics for an instrumented HotSpot
 .LP
 .SS 
 VIRTUAL MACHINE IDENTIFIER
-.LP
-.RS 3
-
 .LP
 .LP
 The syntax of the \f2vmid\fP string largely corresponds to the syntax of a URI:
@@ -115,10 +106,7 @@ The treatment of this parameter depends on implementation. For the optimized loc
 .RE
 
 .LP
-.RE
 .SH "OPTIONS"
-.LP
-
 .LP
 .LP
 The \f3jstat\fP command supports two types of options, general options and output options. General options cause \f3jstat\fP to display simple usage and version information. Output options determine the content and format of the statistical output.
@@ -150,14 +138,11 @@ Display list of statistics options. See the Output Options section below.
 .SS 
 OUTPUT OPTIONS
 .LP
-.RS 3
-
+.LP
+If you do not specify a general option, then you can specify output options. Output options determine the content and format of \f3jstat\fP's output, and consist of a single \f2statOption\fP, plus any of the other output options (\-h, \-t, and \-J). The \f2statOption\fP must come first.
 .LP
 .LP
-If you do not specify a general option, then you can specify output options. Output options determine the content and format of \f3jstat\fP's output, and consist of a single \f2statOption\fP, plus any of the other output options (\-h, \-t, and \-J).\  The \f2statOption\fP must come first.
-.LP
-.LP
-Output is formatted as a table, with columns are separated by spaces. A header row with titles describes the columns.\  Use the \f3\-h\fP option to set the frequency at which the header is displayed.\  Column header names are generally consistent between the different options. In general, if two options provide a column with the same name, then the data source for the two columns are the same.
+Output is formatted as a table, with columns are separated by spaces. A header row with titles describes the columns. Use the \f3\-h\fP option to set the frequency at which the header is displayed. Column header names are generally consistent between the different options. In general, if two options provide a column with the same name, then the data source for the two columns are the same.
 .LP
 .LP
 Use the \f3\-t\fP option to display a time stamp column, labeled \f2Timestamp\fP as the first column of output. The \f2Timestamp\fP column contains the elapsed time, in seconds, since startup of the target JVM. The resolution of the time stamp is dependent on various factors and is subject to variation due to delayed thread scheduling on heavily loaded systems.
@@ -171,7 +156,7 @@ Use the \f2interval\fP and \f2count\fP parameters to determine how frequently an
 .RS 3
 .TP 3
 \-statOption 
-Determines the statistics information that \f3jstat\fP displays. The following table lists the available options.\  Use the \f3\-options\fP general option to display the list of options for a particular platform installation.
+Determines the statistics information that \f3jstat\fP displays. The following table lists the available options. Use the \f3\-options\fP general option to display the list of options for a particular platform installation.
 .br
 .br
 .LP
@@ -457,7 +442,7 @@ HotSpot compilation method statistics.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 230 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 215 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -697,12 +682,8 @@ Pass \f2javaOption\fP to the \f3java\fP application launcher. For example, \f3\-
 .RE
 
 .LP
-.RE
 .SS 
 STATOPTIONS AND OUTPUT
-.LP
-.RS 3
-
 .LP
 .LP
 The following tables summarize the columns that \f3jstat\fP outputs for each \f2statOption\fP.
@@ -825,7 +806,7 @@ Time spent performing class load and unload operations.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 280 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 261 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -1082,7 +1063,7 @@ Class name and method for the last failed compilation.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 316 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 297 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -1546,7 +1527,7 @@ Total garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 386 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 367 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -2170,7 +2151,7 @@ Number of Young generation GC Events.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 460 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 441 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -2550,7 +2531,7 @@ Cause of current Garbage Collection.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 483 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 464 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -2866,7 +2847,7 @@ Young generation garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 537 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 518 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -3094,15 +3075,14 @@ Young generation garbage collection time.
 .rm 80 81
 .nr 34 \n(.lu
 .eo
-.am 80
+.am 81
 .br
 .di a+
 .35
 .ft \n(.f
 .ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
+.if \n(.l<\n(81 .ll \n(81u
 .in 0
-NGCMN\ \ \ \ \ \ \ \ \ T}~T{
 Minimum new generation capacity (KB).
 .br
 .di
@@ -3262,9 +3242,11 @@ Number of young generation GC events.
 .if \n(80<\n(38 .nr 80 \n(38
 .nr 38 \w\f3Column\fP
 .if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGCMX \ \ \
+.nr 38 \wNGCMN
 .if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGC \ \ \
+.nr 38 \wNGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGC
 .if \n(80<\n(38 .nr 80 \n(38
 .nr 38 \wS0CMX
 .if \n(80<\n(38 .nr 80 \n(38
@@ -3284,8 +3266,6 @@ Number of young generation GC events.
 .if \n(80<\n(38 .nr 80 \n(38
 .80
 .rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
 .nr 81 0
 .nr 38 \w\f3Description\fP
 .if \n(81<\n(38 .nr 81 \n(38
@@ -3293,6 +3273,8 @@ Number of young generation GC events.
 .if \n(81<\n(38 .nr 81 \n(38
 .81
 .rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
 .nr 38 \n(b-
 .if \n(81<\n(38 .nr 81 \n(38
 .nr 38 \n(c-
@@ -3321,7 +3303,7 @@ Number of young generation GC events.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 593 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 572 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -3348,11 +3330,11 @@ Number of young generation GC events.
 .ta \n(80u \n(81u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
+\&\h'|\n(40u'NGCMN\h'|\n(41u'
 .mk ##
 .nr 31 \n(##
 .sp |\n(##u-1v
-.nr 37 \n(40u
+.nr 37 \n(41u
 .in +\n(37u
 .a+
 .in -\n(37u
@@ -3364,7 +3346,7 @@ Number of young generation GC events.
 .ta \n(80u \n(81u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'NGCMX \ \ \\h'|\n(41u'
+\&\h'|\n(40u'NGCMX\h'|\n(41u'
 .mk ##
 .nr 31 \n(##
 .sp |\n(##u-1v
@@ -3380,7 +3362,7 @@ Number of young generation GC events.
 .ta \n(80u \n(81u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'NGC \ \ \\h'|\n(41u'
+\&\h'|\n(40u'NGC\h'|\n(41u'
 .mk ##
 .nr 31 \n(##
 .sp |\n(##u-1v
@@ -3522,7 +3504,7 @@ Number of young generation GC events.
 .rm i+
 .rm j+
 .TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-49
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
 
 .LP
 .SS 
@@ -3717,7 +3699,7 @@ Total garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 635 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 614 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -4062,7 +4044,7 @@ Total garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 677 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 656 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -4407,7 +4389,7 @@ Total garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 719 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 698 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -4792,7 +4774,7 @@ Total garbage collection time.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 769 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 748 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -5091,7 +5073,7 @@ Class name and method name identifying the compiled method. Class name uses "/" 
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 795 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 774 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -5176,10 +5158,7 @@ Class name and method name identifying the compiled method. Class name uses "/" 
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-19
 
 .LP
-.SS 
-
-.LP
-.SH ""
+.SH "EXAMPLES"
 .LP
 .LP
 This section presents some examples of monitoring a local JVM with a \f2lvmid\fP of 21891.
@@ -5355,7 +5334,6 @@ This example attaches to \f2lvmid\fP 40496 on the system named \f2remote.domain\
 .LP
 The \f2lvmid\fP is combined with the name of the remote host to construct a \f2vmid\fP of \f240496@remote.domain\fP. This \f2vmid\fP results in the use of the \f3rmi\fP protocol to communicate to the default \f3jstatd\fP server on the remote host. The \f3jstatd\fP server is located using the \f3rmiregistry\fP on \f2remote.domain\fP that is bound to the default \f3rmiregistry\fP port (port 1099).
 .LP
-.RE
 .SH "SEE ALSO"
 .LP
 .RS 3
