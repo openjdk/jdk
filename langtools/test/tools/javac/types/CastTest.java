@@ -42,12 +42,13 @@ import static com.sun.tools.javac.code.Flags.*;
  */
 public class CastTest extends TypeHarness {
 
-    Type[] allTypes;
+    Type[] types_no_boxing;
+    Type[] types_boxing;
 
     static final boolean T = true;
     static final boolean F = false;
 
-    boolean[][] cast_result = {
+    boolean[][] cast_result_no_boxing = {
                 //byte, short, int, long, float, double, char, bool, C, +C, I, T, byte[], short[], int[], long[], float[], double[], char[], bool[], C[], +C[], I[], T[]
     /*byte*/    { T   , T    , T  , T   , T    , T     , T   , F   , F, F , F, F, F     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
     /*short*/   { T   , T    , T  , T   , T    , T     , T   , F   , F, F , F, F, F     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
@@ -74,6 +75,25 @@ public class CastTest extends TypeHarness {
     /*I[]*/     { F   , F    , F  , F   , F    , F     , F   , F   , F, F , F, T, F     , F      , F    , F     , F      , F       , F     , F     , T  , F   , T  , T },
     /*T[]*/     { F   , F    , F  , F   , F    , F     , F   , F   , F, F , F, T, F     , F      , F    , F     , F      , F       , F     , F     , T  , T   , T  , T }};
 
+    boolean[][] cast_result_boxing = {
+                   //byte, short, int, long, float, double, char, bool, Byte, Short, Integer, Long, Float, Double, Character, Boolean, Object
+    /*byte*/       { T   , T    , T  , T   , T    , T     , T   , F   , T   , F    , F      , F   , F    , F     , F        , F ,      T },
+    /*short*/      { T   , T    , T  , T   , T    , T     , T   , F   , F   , T    , F      , F   , F    , F     , F        , F ,      T  },
+    /*int*/        { T   , T    , T  , T   , T    , T     , T   , F   , F   , F    , T      , F   , F    , F     , F        , F ,      T  },
+    /*long*/       { T   , T    , T  , T   , T    , T     , T   , F   , F   , F    , F      , T   , F    , F     , F        , F ,      T  },
+    /*float*/      { T   , T    , T  , T   , T    , T     , T   , F   , F   , F    , F      , F   , T    , F     , F        , F ,      T  },
+    /*double*/     { T   , T    , T  , T   , T    , T     , T   , F   , F   , F    , F      , F   , F    , T     , F        , F ,      T  },
+    /*char*/       { T   , T    , T  , T   , T    , T     , T   , F   , F   , F    , F      , F   , F    , F     , T        , F ,      T  },
+    /*bool*/       { F   , F    , F  , F   , F    , F     , F   , T   , F   , F    , F      , F   , F    , F     , F        , T ,      T  },
+    /*Byte*/       { T   , T    , T  , T   , T    , T     , F   , F   , T   , F    , F      , F   , F    , F     , F        , F ,      T  },
+    /*Short*/      { F   , T    , T  , T   , T    , T     , F   , F   , F   , T    , F      , F   , F    , F     , F        , F ,      T  },
+    /*Integer*/    { F   , F    , T  , T   , T    , T     , F   , F   , F   , F    , T      , F   , F    , F     , F        , F ,      T  },
+    /*Long*/       { F   , F    , F  , T   , T    , T     , F   , F   , F   , F    , F      , T   , F    , F     , F        , F ,      T  },
+    /*Float*/      { F   , F    , F  , F   , T    , T     , F   , F   , F   , F    , F      , F   , T    , F     , F        , F ,      T  },
+    /*Double*/     { F   , F    , F  , F   , F    , T     , F   , F   , F   , F    , F      , F   , F    , T     , F        , F ,      T  },
+    /*Character*/  { F   , F    , T  , T   , T    , T     , T   , F   , F   , F    , F      , F   , F    , F     , T        , F ,      T  },
+    /*Boolean*/    { F   , F    , F  , F   , F    , F     , F   , T   , F   , F    , F      , F   , F    , F     , F        , T ,      T  },
+    /*Object*/     { T   , T    , T  , T   , T    , T     , T   , T   , T   , T    , T      , T   , T    , T     , T        , T ,      T  }};
     CastTest() {
         Type[] primitiveTypes = {
             predef.byteType,
@@ -84,6 +104,15 @@ public class CastTest extends TypeHarness {
             predef.doubleType,
             predef.charType,
             predef.booleanType };
+
+        Type[] boxedTypes = new Type[primitiveTypes.length + 1];
+        for (int i = 0 ; i < primitiveTypes.length ; i++) {
+            boxedTypes[i] = box(primitiveTypes[i]);
+        }
+
+        boxedTypes[primitiveTypes.length] = predef.objectType;
+
+        types_boxing = join(Type.class, primitiveTypes, boxedTypes);
 
         Type[] referenceTypes = {
             fac.Class(),
@@ -97,15 +126,20 @@ public class CastTest extends TypeHarness {
             arrayTypes[idx++] = fac.Array(t);
         }
 
-        allTypes = join(Type.class, primitiveTypes, referenceTypes, arrayTypes);
+        types_no_boxing = join(Type.class, primitiveTypes, referenceTypes, arrayTypes);
     }
 
-    void test() {
-        for (int i = 0; i < allTypes.length ; i++) {
-            for (int j = 0; j < allTypes.length ; j++) {
-                assertCastable(allTypes[i], allTypes[j], cast_result[i][j]);
+    void test(Type[] all_types, boolean[][] cast_result) {
+        for (int i = 0; i < all_types.length ; i++) {
+            for (int j = 0; j < all_types.length ; j++) {
+                assertCastable(all_types[i], all_types[j], cast_result[i][j]);
             }
         }
+    }
+
+    void runTests() {
+        test(types_no_boxing, cast_result_no_boxing);
+        test(types_boxing, cast_result_boxing);
     }
 
     @SuppressWarnings("unchecked")
@@ -124,6 +158,6 @@ public class CastTest extends TypeHarness {
     }
 
     public static void main(String[] args) {
-        new CastTest().test();
+        new CastTest().runTests();
     }
 }
