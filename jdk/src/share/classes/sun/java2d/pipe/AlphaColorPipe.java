@@ -66,6 +66,8 @@ public class AlphaColorPipe implements CompositePipe, ParallelogramPipe {
     }
 
     public void fillParallelogram(SunGraphics2D sg,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2)
@@ -75,6 +77,8 @@ public class AlphaColorPipe implements CompositePipe, ParallelogramPipe {
     }
 
     public void drawParallelogram(SunGraphics2D sg,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2,
