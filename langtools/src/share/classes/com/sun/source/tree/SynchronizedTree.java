@@ -31,7 +31,7 @@ package com.sun.source.tree;
  * For example:
  * <pre>
  *   synchronized ( <em>expression</em> )
- *       </em>block</em>
+ *       <em>block</em>
  * </pre>
  *
  * @jls section 14.19
