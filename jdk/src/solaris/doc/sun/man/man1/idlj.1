@@ -1,4 +1,4 @@
-." Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,14 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH idlj 1 "02 Jun 2010"
+.TH idlj 1 "10 May 2011"
 
 .LP
 .SH "Name"
 idlj \- The IDL\-to\-Java Compiler
 .LP
-.RS 3
-
-.LP
-\f3idlj\fP generates Java bindings from a given IDL file.
-.RE
+\f3idlj\fP generates Java bindings from a given IDL file. 
 .SH "Synopsis"
-.LP
-
 .LP
 .nf
 \f3
@@ -48,28 +42,62 @@ where \f2idl\-file\fP is the name of a file containing Interface Definition Lang
 .LP
 .SH "Description"
 .LP
-
 .LP
 The IDL\-to\-Java Compiler generates the Java bindings for a given IDL file.\  For binding details, see the 
 .na
 \f2OMG IDL to Java Language Language Mapping Specification\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/mapping/jidlMapping.html. Some previous releases of the IDL\-to\-Java compiler were named \f2idltojava\fP. 
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/mapping/jidlMapping.html. Some previous releases of the IDL\-to\-Java compiler were named \f2idltojava\fP.
+.LP
 .SS 
 Emitting Client and Server Bindings
 .LP
-.RS 3
+.LP
+To generate Java bindings for an IDL file named My.idl:
+.LP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
 
 .LP
-To generate Java bindings for an IDL file named My.idl: \f2idlj My.idl\fP
 .LP
-This generates the client\-side bindings and is equivalent to: \f2idlj \fP\f4\-fclient\fP\f2 My.idl\fP
+This generates the client\-side bindings and is equivalent to:
 .LP
-The client\-side bindings do not include the server\-side skeleton. If you want to generate the server\-side bindings for the interfaces: \f2idlj \fP\f4\-fserver\fP\f2 My.idl\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient\fP My.idl
+.fl
+.fi
+
 .LP
-Server\-side bindings include the client\-side bindings plus the skeleton, all of which are \f2POA\fP (that is, Inheritance Model) classes. If you want to generate both client and server\-side bindings, use one of the following (equivalent) commands: \f2idlj \fP\f4\-fclient \-fserver\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fall\fP\f2 My.idl\fP
+.LP
+The client\-side bindings do not include the server\-side skeleton. If you want to generate the server\-side bindings for the interfaces:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fserver\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+Server\-side bindings include the client\-side bindings plus the skeleton, all of which are \f2POA\fP (that is, Inheritance Model) classes. If you want to generate both client and server\-side bindings, use one of the following (equivalent) commands:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient \-fserver\fP My.idl
+.fl
+idlj \f3\-fall\fP My.idl
+.fl
+.fi
+
 .LP
 .LP
 There are two possible server\-side models: the Inheritance Model and the Tie Delegation Model.
@@ -82,31 +110,47 @@ The default server\-side model is the \f2Portable Servant Inheritance Model\fP. 
 .na
 \f2org.omg.PortableServer.Servant\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/org/omg/PortableServer/Servant.html and implements the \f2InvokeHandler\fP interface and the operations interface associated with the IDL interface the skeleton implements.
+http://download.oracle.com/javase/7/docs/api/org/omg/PortableServer/Servant.html and implements the \f2InvokeHandler\fP interface and the operations interface associated with the IDL interface the skeleton implements.
 .LP
 .LP
 The \f2PortableServer\fP module for the 
 .na
 \f2Portable Object Adapter (POA)\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html defines the native \f2Servant\fP type. In the Java programming language, the \f2Servant\fP type is mapped to the Java \f2org.omg.PortableServer.Servant\fP class. It serves as the base class for all POA servant implementations and provides a number of methods that may be invoked by the application programmer, as well as methods which are invoked by the POA itself and may be overridden by the user to control aspects of servant behavior.
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/POA.html defines the native \f2Servant\fP type. In the Java programming language, the \f2Servant\fP type is mapped to the Java \f2org.omg.PortableServer.Servant\fP class. It serves as the base class for all POA servant implementations and provides a number of methods that may be invoked by the application programmer, as well as methods which are invoked by the POA itself and may be overridden by the user to control aspects of servant behavior.
 .LP
 .LP
 Another option for the Inheritance Model is to use the \f2\-oldImplBase\fP flag in order to generate server\-side bindings that are compatible with versions of the Java programming language prior to J2SE 1.4. Note that using the \f2\-oldImplBase\fP flag is non\-standard: these APIs are being deprecated. You would use this flag ONLY for compatibility with existing servers written in J2SE 1.3. In that case, you would need to modify an existing MAKEFILE to add the \f2\-oldImplBase\fP flag to the \f2idlj\fP compiler, otherwise POA\-based server\-side mappings will be generated. To generate server\-side bindings that are backwards compatible:
 .LP
-\f2idlj \fP\f4\-fclient \-fserver\fP\f2 \fP\f4\-oldImplBase\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fall\fP\f2 \fP\f4\-oldImplBase\fP\f2 My.idl\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fclient \-fserver\fP \f3\-oldImplBase\fP My.idl
+.fl
+idlj \f3\-fall\fP \f3\-oldImplBase\fP My.idl
+.fl
+.fi
+
 .LP
-Given an interface \f2My\fP defined in \f2My.idl\fP, the file \f2_MyImplBase.java\fP is generated. You must provide the implementation for \f2My\fP and it must inherit from \f2_MyImplBase\fP.  
+.LP
+Given an interface \f2My\fP defined in \f2My.idl\fP, the file \f2_MyImplBase.java\fP is generated. You must provide the implementation for \f2My\fP and it must inherit from \f2_MyImplBase\fP.
+.LP
 .LP
 The other server\-side model is called the Tie Model. This is a delegation model. Because it is not possible to generate ties and skeletons at the same time, they must be generated separately. The following commands generate the bindings for the Tie Model:
 .LP
-\f2idlj \fP\f4\-fall\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-fallTIE\fP\f2 My.idl\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-fall\fP My.idl
+.fl
+idlj \f3\-fallTIE\fP My.idl
+.fl
+.fi
+
 .LP
-For the interface \f2My\fP, the second command generates \f2MyPOATie.java\fP. The constructor to \f2MyPOATie\fP takes a \f2delegate\fP. In this example, using the default POA model, the constructor also needs a \f2poa\fP. You must provide the implementation for \f2delegate\fP, but it does not have to inherit from any other class, only the interface \f2MyOperations\fP. But to use it with the ORB, you must wrap your implementation within \f2MyPOATie\fP. For instance:  
+.LP
+For the interface \f2My\fP, the second command generates \f2MyPOATie.java\fP. The constructor to \f2MyPOATie\fP takes a \f2delegate\fP. In this example, using the default POA model, the constructor also needs a \f2poa\fP. You must provide the implementation for \f2delegate\fP, but it does not have to inherit from any other class, only the interface \f2MyOperations\fP. But to use it with the ORB, you must wrap your implementation within \f2MyPOATie\fP. For instance:
+.LP
 .nf
 \f3
 .fl
@@ -144,13 +188,21 @@ For the interface \f2My\fP, the second command generates \f2MyPOATie.java\fP. Th
 .fi
 
 .LP
-You might want to use the Tie model instead of the typical Inheritance model if your implementation must inherit from some other implementation. Java allows any number of interface inheritance, but there is only one slot for class inheritance. If you use the inheritance model, that slot is used up . By using the Tie Model, that slot is freed up for your own use. The drawback is that it introduces a level of indirection: one extra method call occurs when invoking a method. 
+.LP
+You might want to use the Tie model instead of the typical Inheritance model if your implementation must inherit from some other implementation. Java allows any number of interface inheritance, but there is only one slot for class inheritance. If you use the inheritance model, that slot is used up . By using the Tie Model, that slot is freed up for your own use. The drawback is that it introduces a level of indirection: one extra method call occurs when invoking a method.
+.LP
 .LP
 To generate server\-side, Tie model bindings that are compatible with versions of the IDL to Java language mapping in versions prior to J2SE 1.4.
 .LP
-\f2idlj \fP\f4\-oldImplBase\fP\f2 \fP\f4\-fall\fP\f2 My.idl\fP
-.br
-\f2idlj \fP\f4\-oldImplBase\fP\f2 \fP\f4\-fallTIE\fP\f2 My.idl\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-oldImplBase\fP \f3\-fall\fP My.idl
+.fl
+idlj \f3\-oldImplBase\fP \f3\-fallTIE\fP My.idl
+.fl
+.fi
+
 .LP
 .LP
 For the interface \f2My\fP, this will generate \f2My_Tie.java\fP. The constructor to \f2My_Tie\fP takes a \f2impl\fP. You must provide the implementation for \f2impl\fP, but it does not have to inherit from any other class, only the interface \f2HelloOperations\fP. But to use it with the ORB, you must wrap your implementation within \f2My_Tie\fP. For instance:
@@ -184,201 +236,383 @@ For the interface \f2My\fP, this will generate \f2My_Tie.java\fP. The constructo
 .fi
 
 .LP
-.RE
 .SS 
 Specifying Alternate Locations for Emitted Files
 .LP
-.RS 3
+.LP
+If you want to direct the emitted files to a directory other than the current directory, invoke the compiler as:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-td /altdir\fP My.idl
+.fl
+.fi
 
 .LP
-If you want to direct the emitted files to a directory other than the current directory, invoke the compiler as: 
-.RS 3
-
 .LP
-\f2idlj \fP\f4\-td /altdir\fP\f2 My.idl\fP
-.RE
 For the interface \f2My\fP, the bindings will be emitted to \f2/altdir/My.java\fP, etc., instead of \f2./My.java\fP.
-.RE
+.LP
 .SS 
 Specifying Alternate Locations for Include Files
 .LP
-.RS 3
+.LP
+If \f2My.idl\fP included another idl file, \f2MyOther.idl\fP, the compiler assumes that \f2MyOther.idl\fP resides in the local directory. If it resides in \f2/includes\fP, for example, then you would invoke the compiler with the following command:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-i /includes\fP My.idl
+.fl
+.fi
 
 .LP
-If \f2My.idl\fP included another idl file, \f2MyOther.idl\fP, the compiler assumes that \f2MyOther.idl\fP resides in the local directory. If it resides in \f2/includes\fP, for example, then you would invoke the compiler with the following command: \f2idlj \fP\f4\-i /includes\fP\f2 My.idl\fP
 .LP
-If \f2My.idl\fP also included \f2Another.idl\fP that resided in \f2/moreIncludes\fP, for example, then you would invoke the compiler with the following command: \f2idlj \fP\f4\-i /includes \-i /moreIncludes\fP\f2 My.idl\fP
+If \f2My.idl\fP also included \f2Another.idl\fP that resided in \f2/moreIncludes\fP, for example, then you would invoke the compiler with the following command:
 .LP
-Since this form of include can become irritatingly long, another means of indicating to the compiler where to search for included files is provided. This technique is similar to the idea of an environment variable. Create a file named \f2idl.config\fP in a directory that is listed in your CLASSPATH. Inside of \f2idl.config\fP, provide a line with the following form:  \f2includes=/includes;/moreIncludes\fP
+.nf
+\f3
+.fl
+idlj \fP\f3\-i /includes \-i /moreIncludes\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+Since this form of include can become irritatingly long, another means of indicating to the compiler where to search for included files is provided. This technique is similar to the idea of an environment variable. Create a file named \f2idl.config\fP in a directory that is listed in your CLASSPATH. Inside of \f2idl.config\fP, provide a line with the following form:
+.LP
+.nf
+\f3
+.fl
+includes=/includes;/moreIncludes
+.fl
+\fP
+.fi
+
+.LP
 .LP
 The compiler will find this file and read in the includes list. Note that in this example the separator character between the two directories is a semicolon (;). This separator character is platform dependent. On the Windows platform, use a semicolon, on the Unix platform, use a colon, etc. For more information on \f2includes\fP, see the 
 .na
 \f2Setting the Classpath\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#general.
-.RE
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#general.
+.LP
 .SS 
 Emitting Bindings for Include Files
 .LP
-.RS 3
+.LP
+By default, only those interfaces, structs, etc, that are defined in the idl file on the command line have Java bindings generated for them. The types defined in included files are not generated. For example, assume the following two idl files:
+.LP
 
 .LP
-By default, only those interfaces, structs, etc, that are defined in the idl file on the command line have Java bindings generated for them. The types defined in included files are not generated. For example, assume the following two idl files:   \f4My.idl\fP
 .LP
-\f2#include <MyOther.idl>\fP
-.br
-\f2interface My\fP
-.br
-\f2{\fP
-.br
-\f2};\fP
-.br
-\f4MyOther.idl\fP 
+\f4My.idl\fP
 .LP
-\f2interface MyOther\fP
-.br
-\f2{\fP
-.br
-\f2};\fP\  
+.nf
+\f3
+.fl
+#include <MyOther.idl>
+.fl
+interface My
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
 .LP
-The following command will only generate the java bindings for \f2My\fP: \f2idlj My.idl\fP
+
 .LP
-To generate all of the types in \f2My.idl\fP and all of the types in the files that \f2My.idl\fP includes (in this example, \f2MyOther.idl\fP), use the following command: \f2idlj \fP\f4\-emitAll\fP\f2 My.idl\fP
 .LP
-There is a caveat to the default rule. \f2#include\fP statements which appear at global scope are treated as described. These \f2#include\fP statements can be thought of as import statements. \f2#include\fP statements which appear within some enclosing scope are treated as true \f2#include\fP statements, meaning that the code within the included file is treated as if it appeared in the original file and, therefore, Java bindings are emitted for it. Here is an example:   \f4My.idl\fP
+\f4MyOther.idl\fP
 .LP
-\f2#include <MyOther.idl>\fP
-.br
-\f2interface My\fP
-.br
-\f2{\fP
-.br
-\f2\  #include <Embedded.idl>\fP
-.br
-\f2};\ \fP  \f4MyOther.idl\fP
+.nf
+\f3
+.fl
+interface MyOther
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
 .LP
-\f2interface MyOther\fP
-.br
-\f2{\fP
-.br
-\f2};\ \fP  \f4Embedded.idl\fP
+
 .LP
-\f2enum E {one, two, three};\fP\  
 .LP
-Running the following command: \f2idlj My.idl\fP
+The following command will only generate the java bindings for \f2My\fP:
 .LP
-will generate the following list of Java files: \f2./MyHolder.java\fP
-.br
-\f2./MyHelper.java\fP
-.br
-\f2./_MyStub.java\fP
-.br
-\f2./MyPackage\fP
-.br
-\f2./MyPackage/EHolder.java\fP
-.br
-\f2./MyPackage/EHelper.java\fP
-.br
-\f2./MyPackage/E.java\fP
-.br
-\f2./My.java\fP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
+
 .LP
-Notice that \f2MyOther.java\fP was not generated because it is defined in an import\-like \f2#include\fP. But \f2E.java\fP \f2was\fP generated because it was defined in a true \f2#include\fP. Also notice that since \f2Embedded.idl\fP was included within the scope of the interface \f2My\fP, it appears within the scope of \f2My\fP (that is,in \f2MyPackage\fP). 
+.LP
+To generate all of the types in \f2My.idl\fP and all of the types in the files that \f2My.idl\fP includes (in this example, \f2MyOther.idl\fP), use the following command:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-emitAll\fP My.idl
+.fl
+.fi
+
+.LP
+.LP
+There is a caveat to the default rule. \f2#include\fP statements which appear at global scope are treated as described. These \f2#include\fP statements can be thought of as import statements. \f2#include\fP statements which appear within some enclosing scope are treated as true \f2#include\fP statements, meaning that the code within the included file is treated as if it appeared in the original file and, therefore, Java bindings are emitted for it. Here is an example:
+.LP
+
+.LP
+.LP
+\f4My.idl\fP
+.LP
+.nf
+\f3
+.fl
+#include <MyOther.idl>
+.fl
+interface My
+.fl
+{
+.fl
+  #include <Embedded.idl>
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+\f4MyOther.idl\fP
+.LP
+.nf
+\f3
+.fl
+interface MyOther
+.fl
+{
+.fl
+};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+\f4Embedded.idl\fP
+.LP
+.nf
+\f3
+.fl
+enum E {one, two, three};
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+.LP
+Running the following command:
+.LP
+.nf
+\f3
+.fl
+idlj My.idl
+.fl
+\fP
+.fi
+
+.LP
+.LP
+will generate the following list of Java files:
+.LP
+.nf
+\f3
+.fl
+./MyHolder.java
+.fl
+./MyHelper.java
+.fl
+./_MyStub.java
+.fl
+./MyPackage
+.fl
+./MyPackage/EHolder.java
+.fl
+./MyPackage/EHelper.java
+.fl
+./MyPackage/E.java
+.fl
+./My.java
+.fl
+\fP
+.fi
+
+.LP
+.LP
+Notice that \f2MyOther.java\fP was not generated because it is defined in an import\-like \f2#include\fP. But \f2E.java\fP \f2was\fP generated because it was defined in a true \f2#include\fP. Also notice that since \f2Embedded.idl\fP was included within the scope of the interface \f2My\fP, it appears within the scope of \f2My\fP (that is,in \f2MyPackage\fP).
+.LP
 .LP
 If the \f2\-emitAll\fP flag had been used in the previous example, then all types in all included files would be emitted.
 .LP
-.RE
 .SS 
 Inserting Package Prefixes
 .LP
-.RS 3
+.LP
+Suppose that you work for a company named ABC that has constructed the following IDL file:
+.LP
 
 .LP
-Suppose that you work for a company named ABC that has constructed the following IDL file:   
-.br
-\f4Widgets.idl\fP 
 .LP
-\f2module Widgets\fP
-.br
-\f2{\fP
-.br
-\f2\  interface W1 {...};\fP
-.br
-\f2\  interface W2 {...};\fP
-.br
-\f2};\fP\  
+\f4Widgets.idl\fP
 .LP
-Running this file through the IDL\-to\-Java compiler will place the Java bindings for \f2W1\fP and \f2W2\fP within the package \f2Widgets\fP. But there is an industry convention that states that a company's packages should reside within a package named \f2com.<company name>\fP. The \f2Widgets\fP package is not good enough. To follow convention, it should be \f2com.abc.Widgets\fP. To place this package prefix onto the \f2Widgets\fP module, execute the following: \f2idlj \fP\f4\-pkgPrefix Widgets com.abc\fP\f2 Widgets.idl\fP
+.nf
+\f3
+.fl
+module Widgets
+.fl
+{
+.fl
+  interface W1 {...};
+.fl
+  interface W2 {...};
+.fl
+};
+.fl
+\fP
+.fi
+
 .LP
-If you have an IDL file which includes \f2Widgets.idl\fP, the \f2\-pkgPrefix\fP flag must appear in that command also. If it does not, then your IDL file will be looking for a \f2Widgets\fP package rather than a \f2com.abc.Widgets\fP package. 
+
+.LP
+.LP
+Running this file through the IDL\-to\-Java compiler will place the Java bindings for \f2W1\fP and \f2W2\fP within the package \f2Widgets\fP. But there is an industry convention that states that a company's packages should reside within a package named \f2com.<company name>\fP. The \f2Widgets\fP package is not good enough. To follow convention, it should be \f2com.abc.Widgets\fP. To place this package prefix onto the \f2Widgets\fP module, execute the following:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-pkgPrefix Widgets com.abc\fP Widgets.idl
+.fl
+.fi
+
+.LP
+.LP
+If you have an IDL file which includes \f2Widgets.idl\fP, the \f2\-pkgPrefix\fP flag must appear in that command also. If it does not, then your IDL file will be looking for a \f2Widgets\fP package rather than a \f2com.abc.Widgets\fP package.
+.LP
 .LP
 If you have a number of these packages that require prefixes, it might be easier to place them into the \f2idl.config\fP file described above. Each package prefix line should be of the form:
 .LP
-\f2PkgPrefix.<type>=<prefix>\fP
+.nf
+\f3
+.fl
+PkgPrefix.<type>=<prefix>
+.fl
+\fP
+.fi
+
 .LP
-So the line for the above example would be:  \f2PkgPrefix.Widgets=com.abc\fP
+So the line for the above example would be: 
+.nf
+\f3
+.fl
+PkgPrefix.Widgets=com.abc
+.fl
+\fP
+.fi
+
 .LP
 .LP
 The use of this option does not affect the Repository ID.
 .LP
-.RE
 .SS 
 Defining Symbols Before Compilation
 .LP
-.RS 3
+.LP
+You may need to define a symbol for compilation that is not defined within the IDL file, perhaps to include debugging code in the bindings. The command
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-d\fP MYDEF My.idl
+.fl
+.fi
 
 .LP
-You may need to define a symbol for compilation that is not defined within the IDL file, perhaps to include debugging code in the bindings. The command \f2idlj \fP\f4\-d\fP\f2 MYDEF My.idl\fP
 .LP
 is the equivalent of putting the line \f2#define MYDEF\fP inside \f2My.idl\fP.
-.RE
+.LP
 .SS 
 Preserving Pre\-Existing Bindings
 .LP
-.RS 3
+.LP
+If the Java binding files already exist, the \f2\-keep\fP flag will keep the compiler from overwriting them. The default is to generate all files without considering if they already exist. If you've customized those files (which you should not do unless you are very comfortable with their contents), then the \f2\-keep\fP option is very useful. The command
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-keep\fP My.idl
+.fl
+.fi
 
 .LP
-If the Java binding files already exist, the \f2\-keep\fP flag will keep the compiler from overwriting them. The default is to generate all files without considering if they already exist. If you've customized those files (which you should not do unless you are very comfortable with their contents), then the \f2\-keep\fP option is very useful. The command \f2idlj \fP\f4\-keep\fP\f2 My.idl\fP
 .LP
-emit all client\-side bindings that do not already exist.
-.RE
+emits all client\-side bindings that do not already exist.
+.LP
 .SS 
 Viewing Progress of Compilation
 .LP
-.RS 3
+.LP
+The IDL\-to\-Java compiler will generate status messages as it progresses through its phases of execution. Use the \f2\-v\fP option to activate this "verbose" mode:
+.LP
+.nf
+\f3
+.fl
+idlj \fP\f3\-v\fP My.idl
+.fl
+.fi
 
 .LP
-The IDL\-to\-Java compiler will generate status messages as it progresses through its phases of execution. Use the \f2\-v\fP option to activate this "verbose" mode: \f2idlj \fP\f4\-v\fP\f2 My.idl\fP
 .LP
 By default the compiler does not operate in verbose mode.
-.RE
+.LP
 .SS 
 Displaying Version Information
-.LP
-.RS 3
-
 .LP
 .LP
 To display the build version of the IDL\-to\-Java compiler, specify the \f2\-version\fP option on the command\-line:
 .LP
-.LP
-\f2idlj \-version\fP
+.nf
+\f3
+.fl
+idlj \-version
+.fl
+\fP
+.fi
+
 .LP
 .LP
 Version information also appears within the bindings generated by the compiler. Any additional options appearing on the command\-line are ignored.
 .LP
-.RE
 .SH "Options"
-.LP
-
 .LP
 .RS 3
 .TP 3
 \-d symbol 
 This is equivalent to the following line in an IDL file: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -386,7 +620,6 @@ This is equivalent to the following line in an IDL file:
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-emitAll 
 Emit all types, including those found in \f2#include\fP files. 
@@ -410,8 +643,9 @@ Generates skeletons compatible with pre\-1.4 JDK ORBs. By default, the POA Inher
 Wherever \f2type\fP is encountered at file scope, prefix the generated Java package name with \f2prefix\fP for all files generated for that type. The \f2type\fP is the simple name of either a top\-level module, or an IDL type defined outside of any module. 
 .TP 3
 \-pkgTranslate type package 
-Whenever the module name \f2type\fP is encountered in an identifier, replace it in the identifier with \f2package\fP for all files in the generated Java package. Note that \f2pkgPrefix\fP changes are made first. \f2type\fP is the simple name of either a top\-level module, or an IDL type defined outside of any module, and must match the full package name exactly. 
-.LP
+Whenever the module name \f2type\fP is encountered in an identifier, replace it in the identifier with \f2package\fP for all files in the generated Java package. Note that \f2pkgPrefix\fP changes are made first. \f2type\fP is the simple name of either a top\-level module, or an IDL type defined outside of any module, and must match the full package name exactly.
+.br
+.br
 If more than one translation matches an identifier, the longest match is chosen. For example, if the arguments include: 
 .nf
 \f3
@@ -420,7 +654,6 @@ If more than one translation matches an identifier, the longest match is chosen.
 .fl
 \fP
 .fi
-.LP
 The following translations would occur: 
 .nf
 \f3
@@ -435,7 +668,6 @@ foo.baz.bar  => buzz.fizz.bar
 .fl
 \fP
 .fi
-.LP
 The following package names cannot be translated: 
 .RS 3
 .TP 2
@@ -445,8 +677,7 @@ o
 o
 \f2org.omg\fP or any subpackages of \f2org.omg\fP 
 .RE
-.LP
-Any attempt to translate these packages will result in uncompilable code, and the use of these packages as the first argument after \f2\-pkgTranslate\fP will be treated as an error.  
+Any attempt to translate these packages will result in uncompilable code, and the use of these packages as the first argument after \f2\-pkgTranslate\fP will be treated as an error. 
 .TP 3
 \-skeletonName xxx%yyy 
 Use \f2xxx%yyy\fP as the pattern for naming the skeleton. The defaults are: 
@@ -481,10 +712,10 @@ Display version information and terminate.
 .RE
 
 .LP
-See the Description section for more option information. 
-.SH "Restrictions:"
 .LP
-
+See the Description section for more option information.
+.LP
+.SH "Restrictions:"
 .LP
 .RS 3
 .TP 2
@@ -497,8 +728,6 @@ The \f2fixed\fP IDL type is not supported.
 
 .LP
 .SH "Known Problems:"
-.LP
-
 .LP
 .RS 3
 .TP 2
