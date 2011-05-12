@@ -2176,6 +2176,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
                                            int tempcount, // Number of slots on java expression stack in use
                                            int popframe_extra_args,
                                            int moncount,  // Number of active monitors
+                                           int caller_actual_parameters,
                                            int callee_param_size,
                                            int callee_locals_size,
                                            frame* caller,
