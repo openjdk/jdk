@@ -25,10 +25,9 @@
 
 package com.sun.tools.example.debug.bdi;
 
-import java.util.EventObject;
-
 public class SpecErrorEvent extends SpecEvent {
 
+    private static final long serialVersionUID = 8162634387866409578L;
     private Exception reason;
 
     public SpecErrorEvent(EventRequestSpec eventRequestSpec,

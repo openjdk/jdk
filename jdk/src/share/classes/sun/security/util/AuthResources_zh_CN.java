@@ -111,17 +111,15 @@ public class AuthResources_zh_CN extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "\u5E94\u4E3A\u5BC6\u94A5\u5E93\u7C7B\u578B"},
-        {"can.not.specify.Principal.with.a.",
-                "\u6CA1\u6709\u901A\u914D\u7B26\u540D\u79F0, \u65E0\u6CD5\u4F7F\u7528"},
-        {"wildcard.class.without.a.wildcard.name",
-                "\u901A\u914D\u7B26\u7C7B\u6307\u5B9A\u4E3B\u7528\u6237"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "\u6CA1\u6709\u901A\u914D\u7B26\u540D\u79F0, \u65E0\u6CD5\u4F7F\u7528\u901A\u914D\u7B26\u7C7B\u6307\u5B9A\u4E3B\u7528\u6237"},
         {"expected.codeBase.or.SignedBy", "\u5E94\u4E3A codeBase \u6216 SignedBy"},
         {"only.Principal.based.grant.entries.permitted",
                 "\u53EA\u5141\u8BB8\u57FA\u4E8E\u4E3B\u7528\u6237\u7684\u6388\u6743\u6761\u76EE"},
         {"expected.permission.entry", "\u5E94\u4E3A\u6743\u9650\u6761\u76EE"},
         {"number.", "\u7F16\u53F7 "},
-        {"expected.", "\u5E94\u4E3A "},
-        {".read.end.of.file", ", \u8BFB\u53D6\u7684\u662F\u6587\u4EF6\u7ED3\u5C3E"},
+        {"expected.expect.read.end.of.file.",
+                "\u5E94\u4E3A{0}, \u8BFB\u53D6\u7684\u662F\u6587\u4EF6\u7ED3\u5C3E"},
         {"expected.read.end.of.file", "\u5E94\u4E3A ';', \u8BFB\u53D6\u7684\u662F\u6587\u4EF6\u7ED3\u5C3E"},
         {"line.", "\u884C "},
         {".expected.", ": \u5E94\u4E3A '"},
@@ -136,6 +134,9 @@ public class AuthResources_zh_CN extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "\u63D0\u4F9B\u7684\u540D\u79F0\u4E3A\u7A7A\u503C"}
 
     };

@@ -51,6 +51,7 @@ class Commands {
             final ThreadInfo threadInfo = ThreadInfo.getCurrentThreadInfo();
             final int stackFrame = threadInfo == null? 0 : threadInfo.getCurrentFrameIndex();
             Thread thread = new Thread("asynchronous jdb command") {
+                    @Override
                     public void run() {
                         try {
                             action();
@@ -95,6 +96,7 @@ class Commands {
             final ThreadInfo threadInfo = ThreadInfo.getCurrentThreadInfo();
             if ((threadInfo != null) && (threadInfo.getCurrentFrame() != null)) {
                 frameGetter = new ExpressionParser.GetFrame() {
+                        @Override
                         public StackFrame get() throws IncompatibleThreadStateException {
                             return threadInfo.getCurrentFrame();
                         }
@@ -224,7 +226,6 @@ class Commands {
     }
 
     void commandClass(StringTokenizer t) {
-        List<ReferenceType> list = Env.vm().allClasses();
 
         if (!t.hasMoreTokens()) {
             MessageOutput.println("No class specified.");
@@ -709,6 +710,7 @@ class Commands {
     void doKillThread(final ThreadReference threadToKill,
                       final StringTokenizer tokenizer) {
         new AsyncExecution() {
+                @Override
                 void action() {
                     doKill(threadToKill, tokenizer);
                 }
@@ -1118,7 +1120,6 @@ class Commands {
     }
 
     void commandStop(StringTokenizer t) {
-        Location bploc;
         String atIn;
         byte suspendPolicy = EventRequest.SUSPEND_ALL;
 
@@ -1665,6 +1666,7 @@ class Commands {
 
     void commandPrint(final StringTokenizer t, final boolean dumpObject) {
         new AsyncExecution() {
+                @Override
                 void action() {
                     doPrint(t, dumpObject);
                 }
@@ -1734,6 +1736,7 @@ class Commands {
 
     void commandLock(final StringTokenizer t) {
         new AsyncExecution() {
+                @Override
                 void action() {
                     doLock(t);
                 }
@@ -1809,6 +1812,7 @@ class Commands {
 
     void commandDisableGC(final StringTokenizer t) {
         new AsyncExecution() {
+                @Override
                 void action() {
                     doDisableGC(t);
                 }
@@ -1837,6 +1841,7 @@ class Commands {
 
     void commandEnableGC(final StringTokenizer t) {
         new AsyncExecution() {
+                @Override
                 void action() {
                     doEnableGC(t);
                 }
@@ -1892,6 +1897,7 @@ class Commands {
             }
         } else {
             new AsyncExecution() {
+                    @Override
                     void action() {
                         doSave(t);
                     }

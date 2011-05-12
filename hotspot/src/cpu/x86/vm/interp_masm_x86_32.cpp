@@ -383,32 +383,6 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
   movptr(Address(rsp, Interpreter::expr_offset_in_bytes(n)), val);
 }
 
-void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point) {
-  MacroAssembler::call_VM_leaf_base(entry_point, 0);
-}
-
-
-void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point, Register arg_1) {
-  push(arg_1);
-  MacroAssembler::call_VM_leaf_base(entry_point, 1);
-}
-
-
-void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2) {
-  push(arg_2);
-  push(arg_1);
-  MacroAssembler::call_VM_leaf_base(entry_point, 2);
-}
-
-
-void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
-  push(arg_3);
-  push(arg_2);
-  push(arg_1);
-  MacroAssembler::call_VM_leaf_base(entry_point, 3);
-}
-
-
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   lea(rsi, Address(rsp, wordSize));

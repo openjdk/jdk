@@ -239,6 +239,13 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
     snd_pcm_close(handle);
 }
 
+/** Workaround for cr 7033899, 7030629:
+ * dmix plugin doesn't like flush (snd_pcm_drop) when the buffer is empty
+ * (just opened, underruned or already flushed).
+ * Sometimes it causes PCM falls to -EBADFD error,
+ * sometimes causes bufferSize change.
+ * To prevent unnecessary flushes AlsaPcmInfo::isRunning & isFlushed are used.
+ */
 /* ******* ALSA PCM INFO ******************** */
 typedef struct tag_AlsaPcmInfo {
     snd_pcm_t* handle;
@@ -248,6 +255,8 @@ typedef struct tag_AlsaPcmInfo {
     int frameSize; // storage size in Bytes
     unsigned int periods;
     snd_pcm_uframes_t periodSize;
+    short int isRunning;    // see comment above
+    short int isFlushed;    // see comment above
 #ifdef GET_POSITION_METHOD2
     // to be used exclusively by getBytePosition!
     snd_pcm_status_t* positionStatus;
@@ -432,6 +441,9 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         return NULL;
     }
     memset(info, 0, sizeof(AlsaPcmInfo));
+    // initial values are: stopped, flushed
+    info->isRunning = 0;
+    info->isFlushed = 1;
 
     ret = openPCMfromDeviceID(deviceID, &(info->handle), isSource, FALSE /* do open device*/);
     if (ret == 0) {
@@ -587,6 +599,14 @@ int DAUDIO_Start(void* id, int isSource) {
         || (state == SND_PCM_STATE_RUNNING)
         || (state == SND_PCM_STATE_XRUN)
         || (state == SND_PCM_STATE_SUSPENDED);
+    if (ret) {
+        info->isRunning = 1;
+        // source line should keep isFlushed value until Write() is called;
+        // for target data line reset it right now.
+        if (!isSource) {
+            info->isFlushed = 0;
+        }
+    }
     TRACE1("< DAUDIO_Start %s\n", ret?"success":"error");
     return ret?TRUE:FALSE;
 }
@@ -606,6 +626,7 @@ int DAUDIO_Stop(void* id, int isSource) {
         ERROR1("ERROR in snd_pcm_pause: %s\n", snd_strerror(ret));
         return FALSE;
     }
+    info->isRunning = 0;
     TRACE0("< DAUDIO_Stop success\n");
     return TRUE;
 }
@@ -651,8 +672,7 @@ int xrun_recovery(AlsaPcmInfo* info, int err) {
             return -1;
         }
         return 1;
-    }
-    else if (err == -ESTRPIPE) {
+    } else if (err == -ESTRPIPE) {
         TRACE0("xrun_recovery: suspended.\n");
         ret = snd_pcm_resume(info->handle);
         if (ret < 0) {
@@ -667,11 +687,11 @@ int xrun_recovery(AlsaPcmInfo* info, int err) {
             return -1;
         }
         return 1;
-    }
-    else if (err == -EAGAIN) {
+    } else if (err == -EAGAIN) {
         TRACE0("xrun_recovery: EAGAIN try again flag.\n");
         return 0;
     }
+
     TRACE2("xrun_recovery: unexpected error %d: %s\n", err, snd_strerror(err));
     return -1;
 }
@@ -691,6 +711,7 @@ int DAUDIO_Write(void* id, char* data, int byteSize) {
         TRACE0("< DAUDIO_Write returning -1\n");
         return -1;
     }
+
     count = 2; // maximum number of trials to recover from underrun
     //frameSize = snd_pcm_bytes_to_frames(info->handle, byteSize);
     frameSize = (snd_pcm_sframes_t) (byteSize / info->frameSize);
@@ -712,6 +733,12 @@ int DAUDIO_Write(void* id, char* data, int byteSize) {
         }
     } while (TRUE);
     //ret =  snd_pcm_frames_to_bytes(info->handle, writtenFrames);
+
+    if (writtenFrames > 0) {
+        // reset "flushed" flag
+        info->isFlushed = 0;
+    }
+
     ret =  (int) (writtenFrames * info->frameSize);
     TRACE1("< DAUDIO_Write: returning %d bytes.\n", ret);
     return ret;
@@ -736,6 +763,11 @@ int DAUDIO_Read(void* id, char* data, int byteSize) {
         TRACE0("< DAUDIO_Read returning -1\n");
         return -1;
     }
+    if (!info->isRunning && info->isFlushed) {
+        // PCM has nothing to read
+        return 0;
+    }
+
     count = 2; // maximum number of trials to recover from error
     //frameSize = snd_pcm_bytes_to_frames(info->handle, byteSize);
     frameSize = (snd_pcm_sframes_t) (byteSize / info->frameSize);
@@ -784,12 +816,22 @@ int DAUDIO_Flush(void* id, int isSource) {
     int ret;
 
     TRACE0("DAUDIO_Flush\n");
+
+    if (info->isFlushed) {
+        // nothing to drop
+        return 1;
+    }
+
     ret = snd_pcm_drop(info->handle);
     if (ret != 0) {
         ERROR1("ERROR in snd_pcm_drop: %s\n", snd_strerror(ret));
         return FALSE;
     }
-    ret = DAUDIO_Start(id, isSource);
+
+    info->isFlushed = 1;
+    if (info->isRunning) {
+        ret = DAUDIO_Start(id, isSource);
+    }
     return ret;
 }
 
@@ -800,7 +842,7 @@ int DAUDIO_GetAvailable(void* id, int isSource) {
     int ret;
 
     state = snd_pcm_state(info->handle);
-    if (state == SND_PCM_STATE_XRUN) {
+    if (info->isFlushed || state == SND_PCM_STATE_XRUN) {
         // if in xrun state then we have the entire buffer available,
         // not 0 as alsa reports
         ret = info->bufferSizeInBytes;
@@ -841,7 +883,7 @@ INT64 DAUDIO_GetBytePosition(void* id, int isSource, INT64 javaBytePos) {
     snd_pcm_state_t state;
     state = snd_pcm_state(info->handle);
 
-    if (state != SND_PCM_STATE_XRUN) {
+    if (!info->isFlushed && state != SND_PCM_STATE_XRUN) {
 #ifdef GET_POSITION_METHOD2
         snd_timestamp_t* ts;
         snd_pcm_uframes_t framesAvail;

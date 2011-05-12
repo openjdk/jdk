@@ -130,6 +130,11 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
   Node* uniqc = proj_true->unique_ctrl_out();
   Node* entry = head->in(LoopNode::EntryControl);
   Node* predicate = find_predicate(entry);
+  if (predicate != NULL && LoopLimitCheck && UseLoopPredicate) {
+    // We may have two predicates, find first.
+    entry = find_predicate(entry->in(0)->in(0));
+    if (entry != NULL) predicate = entry;
+  }
   if (predicate != NULL) predicate = predicate->in(0);
   assert(proj_true->is_IfTrue() &&
          (predicate == NULL && uniqc == head ||
@@ -217,6 +222,7 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
 ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
                                                       Node_List &old_new) {
   LoopNode* head  = loop->_head->as_Loop();
+  bool counted_loop = head->is_CountedLoop();
   Node*     entry = head->in(LoopNode::EntryControl);
   _igvn.hash_delete(entry);
   _igvn._worklist.push(entry);
@@ -242,14 +248,14 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   // Fast (true) control
-  Node* iffast_pred = clone_loop_predicates(entry, iffast);
+  Node* iffast_pred = clone_loop_predicates(entry, iffast, !counted_loop);
   _igvn.hash_delete(head);
   head->set_req(LoopNode::EntryControl, iffast_pred);
   set_idom(head, iffast_pred, dom_depth(head));
   _igvn._worklist.push(head);
 
   // Slow (false) control
-  Node* ifslow_pred = move_loop_predicates(entry, ifslow);
+  Node* ifslow_pred = move_loop_predicates(entry, ifslow, !counted_loop);
   LoopNode* slow_head = old_new[head->_idx]->as_Loop();
   _igvn.hash_delete(slow_head);
   slow_head->set_req(LoopNode::EntryControl, ifslow_pred);

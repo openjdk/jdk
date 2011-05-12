@@ -2190,7 +2190,8 @@ JDWP "Java(tm) Debug Wire Protocol"
         (Out
             (byte eventKind "Event kind to request. "
                       "See <a href=\"#JDWP_EventKind\">JDWP.EventKind</a> "
-		      "for a complete list of events that can be requested. "
+		      "for a complete list of events that can be requested; "
+                      "some events may require a capability in order to be requested. "
 		      )
             (byte suspendPolicy 
                       "What threads are suspended when this event occurs? "
@@ -2732,6 +2733,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                     (Alt MonitorContendedEnter=JDWP.EventKind.MONITOR_CONTENDED_ENTER		    
 			 "Notification that a thread in the target VM is attempting "
 			 "to enter a monitor that is already acquired by another thread. "
+			 "Requires canRequestMonitorEvents capability - see "
+			 "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>. "
 			 "<p>Since JDWP version 1.6. "
 
                         (int requestID 
@@ -2743,6 +2746,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                     (Alt MonitorContendedEntered=JDWP.EventKind.MONITOR_CONTENDED_ENTERED		    
  			 "Notification of a thread in the target VM is entering a monitor "
 		         "after waiting for it to be released by another thread. "
+			 "Requires canRequestMonitorEvents capability - see "
+			 "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>. "
 			 "<p>Since JDWP version 1.6. "
 
                         (int requestID 
@@ -2753,6 +2758,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                     )
                     (Alt MonitorWait=JDWP.EventKind.MONITOR_WAIT		    
                          "Notification of a thread about to wait on a monitor object. "
+			 "Requires canRequestMonitorEvents capability - see "
+			 "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>. "
 			 "<p>Since JDWP version 1.6. "
  
                         (int requestID 
@@ -2764,6 +2771,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                     )
                     (Alt MonitorWaited=JDWP.EventKind.MONITOR_WAITED		
 			 "Notification that a thread in the target VM has finished waiting on "
+			 "Requires canRequestMonitorEvents capability - see "
+			 "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>. "
 		         "a monitor object. "
 			 "<p>Since JDWP version 1.6. "
 
@@ -3050,9 +3059,9 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Constant METHOD_EXIT            =41  )
     (Constant METHOD_EXIT_WITH_RETURN_VALUE =42  )
     (Constant MONITOR_CONTENDED_ENTER          =43  )
-    (Constant MONITOR_CONTENDED_ENTERED        =44  )
-    (Constant MONITOR_WAIT           =45  )
-    (Constant MONITOR_WAITED         =46  )
+    (Constant MONITOR_CONTENDED_ENTERED        =44 )
+    (Constant MONITOR_WAIT           =45 )
+    (Constant MONITOR_WAITED         =46 )
     (Constant VM_START               =90  )
     (Constant VM_INIT                =90  "obsolete - was used in jvmdi")
     (Constant VM_DEATH               =99  )

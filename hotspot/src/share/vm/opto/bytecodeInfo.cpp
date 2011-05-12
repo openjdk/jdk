@@ -310,13 +310,14 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
     return "inlining too deep";
   }
 
-  // We need to detect recursive inlining of method handle targets: if
-  // the current method is a method handle adapter and one of the
-  // callers is the same method as the callee, we bail out if
-  // MaxRecursiveInlineLevel is hit.
-  if (method()->is_method_handle_adapter()) {
+  // detect direct and indirect recursive inlining
+  {
+    // count the current method and the callee
+    int inline_level = (method() == callee_method) ? 1 : 0;
+    if (inline_level > MaxRecursiveInlineLevel)
+      return "recursively inlining too deep";
+    // count callers of current method and callee
     JVMState* jvms = caller_jvms();
-    int inline_level = 0;
     while (jvms != NULL && jvms->has_method()) {
       if (jvms->method() == callee_method) {
         inline_level++;
@@ -325,10 +326,6 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
       }
       jvms = jvms->caller();
     }
-  }
-
-  if (method() == callee_method && inline_depth() > MaxRecursiveInlineLevel) {
-    return "recursively inlining too deep";
   }
 
   int size = callee_method->code_size();
@@ -376,7 +373,6 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
   return true;
 }
 
-#ifndef PRODUCT
 //------------------------------print_inlining---------------------------------
 // Really, the failure_msg can be a success message also.
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
@@ -388,7 +384,6 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const c
     tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
   }
 }
-#endif
 
 //------------------------------ok_to_inline-----------------------------------
 WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallProfile& profile, WarmCallInfo* initial_wci) {

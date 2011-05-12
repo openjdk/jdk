@@ -251,9 +251,8 @@ LDFLAGS_COMMON += -Wl,-soname=$(LIB_PREFIX)$(LIBRARY).$(LIBRARY_SUFFIX)
 # statically link libgcc but will print a warning with the flag. We don't 
 # want the warning, so check gcc version first.
 #
-CC_VER_MAJOR := $(shell $(CC) -dumpversion | $(SED) 's/egcs-//' | $(CUT) -d'.' -f1)
-ifeq ("$(CC_VER_MAJOR)", "3")
-OTHER_LDFLAGS  += -static-libgcc
+ifeq ($(CC_MAJORVER),3)
+  OTHER_LDFLAGS  += -static-libgcc
 endif
 
 # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
@@ -355,7 +354,7 @@ HAVE_DPS = no
 # Japanese manpages
 #
 JA_SOURCE_ENCODING = eucJP
-JA_TARGET_ENCODINGS = eucJP
+JA_TARGET_ENCODINGS = UTF-8
 
 # Settings for the JDI - Serviceability Agent binding.
 HOTSPOT_SALIB_PATH   = $(HOTSPOT_IMPORT_PATH)/jre/lib/$(LIBARCH)

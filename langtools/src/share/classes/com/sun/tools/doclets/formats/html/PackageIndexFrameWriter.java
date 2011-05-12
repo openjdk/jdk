@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,10 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addAttr(HtmlAttr.TITLE, packagesLabel.toString());
         for(int i = 0; i < packages.length; i++) {
-            if (packages[i] != null) {
+            // Do not list the package if -nodeprecated option is set and the
+            // package is marked as deprecated.
+            if (packages[i] != null &&
+                    (!(configuration.nodeprecated && Util.isDeprecated(packages[i])))) {
                 ul.addContent(getPackage(packages[i]));
             }
         }
