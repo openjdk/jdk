@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jmap 1 "02 Jun 2010"
+.TH jmap 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jmap \- Memory Map
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -42,8 +40,6 @@ jmap \- Memory Map
 
 .LP
 .SH "PARAMETERS"
-.LP
-
 .LP
 .RS 3
 .TP 3
@@ -74,13 +70,8 @@ optional unique id, if multiple debug servers are running on the same remote hos
 .LP
 .SH "DESCRIPTION"
 .LP
-
-.LP
 .LP
 \f3jmap\fP prints shared object memory maps or heap memory details of a given process or core file or a remote debug server. If the given process is running on a 64\-bit VM, you may need to specify the \f2\-J\-d64\fP option, e.g.:
-.LP
-.RS 3
-
 .LP
 .nf
 \f3
@@ -89,10 +80,11 @@ jmap \-J\-d64 \-heap pid
 .fl
 \fP
 .fi
-.RE
 
 .LP
-\f3NOTE \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' needs to be installed to have these tools working. Also, \fP\f4PATH\fP\f3 environment variable should contain the location of \fP\f4jvm.dll\fP\f3 used by the target process or the location from which the Crash Dump file was produced.\fP 
+.LP
+\f3NOTE: This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' needs to be installed to have these tools working. Also, \fP\f4PATH\fP\f3 environment variable should contain the location of \fP\f4jvm.dll\fP\f3 used by the target process or the location from which the Crash Dump file was produced.\fP
+.LP
 .LP
 \f3For example, \fP\f4set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
 .LP
@@ -101,12 +93,10 @@ jmap \-J\-d64 \-heap pid
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 <no option> 
-When no option is used \f3jmap\fP prints shared object mappings. For each shared object loaded in the target VM, start address, the size of the mapping, and the full path of the shared object file are printed. This is similar to the Solaris \f3pmap\fP utility. 
+When no option is used jmap prints shared object mappings. For each shared object loaded in the target VM, start address, the size of the mapping, and the full path of the shared object file are printed. This is similar to the Solaris \f3pmap\fP utility. 
 .br
 .TP 3
 \-dump:[live,]format=b,file=<filename> 

@@ -25,13 +25,11 @@
 
 package com.sun.tools.example.debug.gui;
 
-import java.io.*;
 import java.util.*;
 import java.util.List;  // Must import explicitly due to conflict with javax.awt.List
 
 import javax.swing.*;
 import javax.swing.tree.*;
-import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -44,6 +42,8 @@ import com.sun.tools.example.debug.bdi.*;
 //### the time it is created is used throughout its lifetime.
 
 public class ThreadTreeTool extends JPanel {
+
+    private static final long serialVersionUID = 4168599992853038878L;
 
     private Environment env;
 
@@ -79,6 +79,7 @@ public class ThreadTreeTool extends JPanel {
         tree.setSelectionModel(new SingleLeafTreeSelectionModel());
 
         MouseListener ml = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 int selRow = tree.getRowForLocation(e.getX(), e.getY());
                 TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
@@ -131,6 +132,7 @@ public class ThreadTreeTool extends JPanel {
 
         // SessionListener
 
+        @Override
         public void sessionStart(EventObject e) {
             try {
                 for (ThreadReference thread : runtime.allThreads()) {
@@ -143,20 +145,25 @@ public class ThreadTreeTool extends JPanel {
             }
         }
 
+        @Override
         public void sessionInterrupt(EventObject e) {}
+        @Override
         public void sessionContinue(EventObject e) {}
 
 
         // JDIListener
 
+        @Override
         public void threadStart(ThreadStartEventSet e) {
             root.addThread(e.getThread());
         }
 
+        @Override
         public void threadDeath(ThreadDeathEventSet e) {
             root.removeThread(e.getThread());
         }
 
+        @Override
         public void vmDisconnect(VMDisconnectEventSet e) {
             // Clear the contents of this view.
             root = createThreadTree(HEADING);
@@ -193,6 +200,7 @@ public class ThreadTreeTool extends JPanel {
             }
         }
 
+        @Override
         public String toString() {
             return description;
         }
@@ -213,6 +221,7 @@ public class ThreadTreeTool extends JPanel {
             return (thread == null);
         }
 
+        @Override
         public boolean isLeaf() {
             return !isThreadGroup();
         }

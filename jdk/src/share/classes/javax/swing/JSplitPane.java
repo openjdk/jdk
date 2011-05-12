@@ -671,7 +671,7 @@ public class JSplitPane extends JComponent implements Accessible
      * which must be <code>true</code> for the child components
      * to be continuously
      * redisplayed and laid out during user intervention.
-     * The default value of this property is <code>false</code>.
+     * The default value of this property is look and feel dependent.
      * Some look and feels might not support continuous layout;
      * they will ignore this property.
      *

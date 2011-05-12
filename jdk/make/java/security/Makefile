@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2011 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,9 @@ PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-solaris
 
 else # PLATFORM
 
-# Register Microsoft CryptoAPI provider only on (non-64-bit) Windows platform.
+# Register Microsoft CryptoAPI provider only on Windows platform.
 ifeq ($(PLATFORM), windows)
-  ifneq ($(ARCH_DATA_MODEL), 64)
-    PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-windows
-  endif
+  PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-windows
 endif
 endif # PLATFORM
 

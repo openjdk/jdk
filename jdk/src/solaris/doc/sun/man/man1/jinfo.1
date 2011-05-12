@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jinfo 1 "02 Jun 2010"
+.TH jinfo 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jinfo \- Configuration Info
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -43,54 +41,55 @@ jinfo \- Configuration Info
 .LP
 .SH "PARAMETERS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 option 
 Options are mutually exclusive. Option, if used, should follow immediately after the command name. 
+.RE
+
+.LP
 .RS 3
 .TP 3
 pid 
 process id for which the configuration info is to be printed. The process must be a Java process. To get a list of Java processes running on a machine, jps(1) may be used. 
 .RE
+
+.LP
 .RS 3
 .TP 3
 executable 
 Java executable from which the core dump was produced. 
 .RE
+
+.LP
 .RS 3
 .TP 3
 core 
 core file for which the configuration info is to be printed. 
 .RE
+
+.LP
 .RS 3
 .TP 3
 remote\-hostname\-or\-IP 
 remote debug server's (see jsadebugd(1)) hostname or IP address. 
 .RE
+
+.LP
 .RS 3
 .TP 3
 server\-id 
 optional unique id, if multiple debug servers are running on the same remote host. 
 .RE
-.RE
 
 .LP
 .SH "DESCRIPTION"
 .LP
-
-.LP
 .LP
 \f3jinfo\fP prints Java configuration information for a given Java process or core file or a remote debug server. Configuration information includes Java System properties and Java virtual machine command line flags. If the given process is running on a 64\-bit VM, you may need to specify the \f2\-J\-d64\fP option, e.g.:
 .br
-
-.LP
-.RS 3
-
-.LP
 jinfo \-J\-d64 \-sysprops pid
-.RE
+.LP
 .LP
 \f3NOTE \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' need to be installed to have these tools working. Also, \fP\f4PATH\fP\f3 environment variable should contain the location of \fP\f4jvm.dll\fP\f3 used by the target process or the location from which the Crash Dump file was produced.\fP
 .LP
@@ -98,8 +97,6 @@ jinfo \-J\-d64 \-sysprops pid
 \f3For example, \fP\f4set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
 .LP
 .SH "OPTIONS"
-.LP
-
 .LP
 .RS 3
 .TP 3

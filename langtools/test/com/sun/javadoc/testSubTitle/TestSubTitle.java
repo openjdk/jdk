@@ -37,8 +37,7 @@ public class TestSubTitle extends JavadocTester {
     private static final String BUG_ID = "7010342";
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-            "<div class=\"subTitle\">" + NL + "<div class=\"block\">This is the " +
-            "description of package pkg.</div>" + NL + "</div>"
+            "<div class=\"block\">This is the description of package pkg.</div>"
         },
         {BUG_ID + FS + "pkg" + FS + "C.html",
             "<div class=\"subTitle\">pkg</div>"

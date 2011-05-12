@@ -25,10 +25,11 @@
 
 package com.sun.tools.example.debug.event;
 
-import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 
 public class ClassUnloadEventSet extends AbstractEventSet {
+
+    private static final long serialVersionUID = 8370341450345835866L;
 
     ClassUnloadEventSet(EventSet jdiEventSet) {
         super(jdiEventSet);
@@ -48,6 +49,7 @@ public class ClassUnloadEventSet extends AbstractEventSet {
         return ((ClassUnloadEvent)oneEvent).classSignature();
     }
 
+    @Override
     public void notify(JDIListener listener) {
         listener.classUnload(this);
     }

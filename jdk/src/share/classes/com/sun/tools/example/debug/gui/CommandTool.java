@@ -40,6 +40,8 @@ import com.sun.tools.example.debug.event.*;
 
 public class CommandTool extends JPanel {
 
+    private static final long serialVersionUID = 8613516856378346415L;
+
     private Environment env;
 
     private ContextManager context;
@@ -68,6 +70,7 @@ public class CommandTool extends JPanel {
         // Establish handler for incoming commands.
 
         script.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 interpreter.executeCommand(script.readln());
             }
@@ -107,15 +110,17 @@ public class CommandTool extends JPanel {
 
         // JDIListener
 
+        @Override
         public void accessWatchpoint(AccessWatchpointEventSet e) {
             setThread(e);
             for (EventIterator it = e.eventIterator(); it.hasNext(); ) {
-                Event evt = it.nextEvent();
+                it.nextEvent();
                 diagnostics.putString("Watchpoint hit: " +
                                       locationString(e));
             }
         }
 
+        @Override
         public void classPrepare(ClassPrepareEventSet e) {
             if (context.getVerboseFlag()) {
                 String name = e.getReferenceType().name();
@@ -123,6 +128,7 @@ public class CommandTool extends JPanel {
             }
         }
 
+        @Override
         public void classUnload(ClassUnloadEventSet e) {
             if (context.getVerboseFlag()) {
                 diagnostics.putString("Class " + e.getClassName() +
@@ -130,12 +136,14 @@ public class CommandTool extends JPanel {
             }
         }
 
+        @Override
         public void exception(ExceptionEventSet e) {
             setThread(e);
             String name = e.getException().referenceType().name();
             diagnostics.putString("Exception: " + name);
         }
 
+        @Override
         public void locationTrigger(LocationTriggerEventSet e) {
             String locString = locationString(e);
             setThread(e);
@@ -155,15 +163,17 @@ public class CommandTool extends JPanel {
             }
         }
 
+        @Override
         public void modificationWatchpoint(ModificationWatchpointEventSet e) {
             setThread(e);
             for (EventIterator it = e.eventIterator(); it.hasNext(); ) {
-                Event evt = it.nextEvent();
+                it.nextEvent();
                 diagnostics.putString("Watchpoint hit: " +
                                       locationString(e));
             }
         }
 
+        @Override
         public void threadDeath(ThreadDeathEventSet e) {
             if (context.getVerboseFlag()) {
                 diagnostics.putString("Thread " + e.getThread() +
@@ -171,6 +181,7 @@ public class CommandTool extends JPanel {
             }
         }
 
+        @Override
         public void threadStart(ThreadStartEventSet e) {
             if (context.getVerboseFlag()) {
                 diagnostics.putString("Thread " + e.getThread() +
@@ -178,16 +189,19 @@ public class CommandTool extends JPanel {
             }
         }
 
+        @Override
         public void vmDeath(VMDeathEventSet e) {
             script.setPrompt(DEFAULT_CMD_PROMPT);
             diagnostics.putString("VM exited");
         }
 
+        @Override
         public void vmDisconnect(VMDisconnectEventSet e) {
             script.setPrompt(DEFAULT_CMD_PROMPT);
             diagnostics.putString("Disconnected from VM");
         }
 
+        @Override
         public void vmStart(VMStartEventSet e) {
             script.setPrompt(DEFAULT_CMD_PROMPT);
             diagnostics.putString("VM started");
@@ -195,14 +209,17 @@ public class CommandTool extends JPanel {
 
         // SessionListener
 
+        @Override
         public void sessionStart(EventObject e) {}
 
+        @Override
         public void sessionInterrupt(EventObject e) {
             Thread.yield();  // fetch output
             diagnostics.putString("VM interrupted by user.");
             script.setPrompt(DEFAULT_CMD_PROMPT);
         }
 
+        @Override
         public void sessionContinue(EventObject e) {
             diagnostics.putString("Execution resumed.");
             script.setPrompt(DEFAULT_CMD_PROMPT);
@@ -210,23 +227,28 @@ public class CommandTool extends JPanel {
 
         // SpecListener
 
+        @Override
         public void breakpointSet(SpecEvent e) {
             EventRequestSpec spec = e.getEventRequestSpec();
             diagnostics.putString("Breakpoint set at " + spec + ".");
         }
+        @Override
         public void breakpointDeferred(SpecEvent e) {
             EventRequestSpec spec = e.getEventRequestSpec();
             diagnostics.putString("Breakpoint will be set at " +
                                   spec + " when its class is loaded.");
         }
+        @Override
         public void breakpointDeleted(SpecEvent e) {
             EventRequestSpec spec = e.getEventRequestSpec();
             diagnostics.putString("Breakpoint at " + spec.toString() + " deleted.");
         }
+        @Override
         public void breakpointResolved(SpecEvent e) {
             EventRequestSpec spec = e.getEventRequestSpec();
             diagnostics.putString("Breakpoint resolved to " + spec.toString() + ".");
         }
+        @Override
         public void breakpointError(SpecErrorEvent e) {
             EventRequestSpec spec = e.getEventRequestSpec();
             diagnostics.putString("Deferred breakpoint at " +
@@ -236,25 +258,35 @@ public class CommandTool extends JPanel {
 
 //### Add info for watchpoints and exceptions
 
+        @Override
         public void watchpointSet(SpecEvent e) {
         }
+        @Override
         public void watchpointDeferred(SpecEvent e) {
         }
+        @Override
         public void watchpointDeleted(SpecEvent e) {
         }
+        @Override
         public void watchpointResolved(SpecEvent e) {
         }
+        @Override
         public void watchpointError(SpecErrorEvent e) {
         }
 
+        @Override
         public void exceptionInterceptSet(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptDeferred(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptDeleted(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptResolved(SpecEvent e) {
         }
+        @Override
         public void exceptionInterceptError(SpecErrorEvent e) {
         }
 
@@ -263,6 +295,7 @@ public class CommandTool extends JPanel {
 
         // If the user selects a new current thread or frame, update prompt.
 
+        @Override
         public void currentFrameChanged(CurrentFrameChangedEvent e) {
             // Update prompt only if affect thread is current.
             ThreadReference thread = e.getThread();
