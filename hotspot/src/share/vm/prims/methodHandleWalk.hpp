@@ -113,6 +113,7 @@ public:
     tt_parameter,
     tt_temporary,
     tt_constant,
+    tt_symbolic,
     tt_illegal
   };
 
@@ -164,6 +165,10 @@ private:
   bool              _for_invokedynamic;
   int               _local_index;
 
+  // This array is kept in an unusual order, indexed by low-level "slot number".
+  // TOS is always _outgoing.at(0), so simple pushes and pops shift the whole _outgoing array.
+  // If there is a receiver in the current argument list, it is at _outgoing.at(_outgoing.length()-1).
+  // If a value at _outgoing.at(n) is T_LONG or T_DOUBLE, the value at _outgoing.at(n+1) is T_VOID.
   GrowableArray<SlotState> _outgoing;       // current outgoing parameter slots
   int                      _outgoing_argc;  // # non-empty outgoing slots
 
@@ -172,6 +177,11 @@ private:
   // If new_type != T_VOID, insert the new argument at that point.
   // Insert or delete a second empty slot as needed.
   void change_argument(BasicType old_type, int slot, BasicType new_type, const ArgToken& new_arg);
+
+  // Raw retype conversions for OP_RAW_RETYPE.
+  void retype_raw_conversion(BasicType src, BasicType dst, bool for_return, int slot, TRAPS);
+  void retype_raw_argument_type(BasicType src, BasicType dst, int slot, TRAPS) { retype_raw_conversion(src, dst, false, slot, CHECK); }
+  void retype_raw_return_type(  BasicType src, BasicType dst,           TRAPS) { retype_raw_conversion(src, dst, true,  -1,   CHECK); }
 
   SlotState* slot_state(int slot) {
     if (slot < 0 || slot >= _outgoing.length())
@@ -221,12 +231,12 @@ public:
   int max_locals() const { return _local_index; }
 
   // plug-in abstract interpretation steps:
-  virtual ArgToken make_parameter( BasicType type, klassOop tk, int argnum, TRAPS ) = 0;
-  virtual ArgToken make_prim_constant( BasicType type, jvalue* con, TRAPS ) = 0;
-  virtual ArgToken make_oop_constant( oop con, TRAPS ) = 0;
-  virtual ArgToken make_conversion( BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS ) = 0;
-  virtual ArgToken make_fetch( BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS ) = 0;
-  virtual ArgToken make_invoke( methodOop m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS ) = 0;
+  virtual ArgToken make_parameter(BasicType type, klassOop tk, int argnum, TRAPS) = 0;
+  virtual ArgToken make_prim_constant(BasicType type, jvalue* con, TRAPS) = 0;
+  virtual ArgToken make_oop_constant(oop con, TRAPS) = 0;
+  virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS) = 0;
+  virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS) = 0;
+  virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS) = 0;
 
   // For make_invoke, the methodOop can be NULL if the intrinsic ID
   // is something other than vmIntrinsics::_none.
@@ -252,6 +262,10 @@ private:
   BasicType    _rtype;
   KlassHandle  _target_klass;
   Thread*      _thread;
+
+  // Values used by the compiler.
+  static jvalue zero_jvalue;
+  static jvalue one_jvalue;
 
   // Fake constant pool entry.
   class ConstantValue {
@@ -417,7 +431,7 @@ private:
   methodHandle get_method_oop(TRAPS) const;
 
 public:
-  MethodHandleCompiler(Handle root, methodHandle call_method, int invoke_count, bool for_invokedynamic, TRAPS);
+  MethodHandleCompiler(Handle root, methodHandle callee, int invoke_count, bool for_invokedynamic, TRAPS);
 
   // Compile the given MH chain into bytecode.
   methodHandle compile(TRAPS);

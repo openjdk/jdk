@@ -142,18 +142,8 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   Register O2_form    = O2_scratch;
   Register O3_adapter = O3_scratch;
   __ load_heap_oop(Address(O0_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes,               O1_scratch)), O2_form);
-  // load_heap_oop(Address(O2_form,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
-  // deal with old JDK versions:
-  __ add(          Address(O2_form,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
-  __ cmp(O3_adapter, O2_form);
-  Label sorry_no_invoke_generic;
-  __ brx(Assembler::lessUnsigned, false, Assembler::pn, sorry_no_invoke_generic);
-  __ delayed()->nop();
-
-  __ load_heap_oop(Address(O3_adapter, 0), O3_adapter);
-  __ tst(O3_adapter);
-  __ brx(Assembler::zero, false, Assembler::pn, sorry_no_invoke_generic);
-  __ delayed()->nop();
+  __ load_heap_oop(Address(O2_form,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, O1_scratch)), O3_adapter);
+  __ verify_oop(O3_adapter);
   __ st_ptr(O3_adapter, Address(O4_argbase, 1 * Interpreter::stackElementSize));
   // As a trusted first argument, pass the type being called, so the adapter knows
   // the actual types of the arguments and return values.
@@ -163,12 +153,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ mov(O3_adapter, G3_method_handle);
   trace_method_handle(_masm, "invokeGeneric");
   __ jump_to_method_handle_entry(G3_method_handle, O1_scratch);
-
-  __ bind(sorry_no_invoke_generic); // no invokeGeneric implementation available!
-  __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
-  // mov(G3_method_handle, G3_method_handle);  // already in this register
-  __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
-  __ delayed()->nop();
 
   return entry_point;
 }

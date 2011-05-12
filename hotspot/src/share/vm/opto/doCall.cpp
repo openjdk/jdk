@@ -62,7 +62,10 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor) {
-  CallGenerator* cg;
+  CallGenerator*  cg;
+  ciMethod*       caller   = jvms->method();
+  int             bci      = jvms->bci();
+  Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
   guarantee(call_method != NULL, "failed method resolution");
 
   // Dtrace currently doesn't work unless all calls are vanilla
@@ -73,8 +76,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // Note: When we get profiling during stage-1 compiles, we want to pull
   // from more specific profile data which pertains to this inlining.
   // Right now, ignore the information in jvms->caller(), and do method[bci].
-  ciCallProfile profile    = jvms->method()->call_profile_at_bci(jvms->bci());
-  Bytecodes::Code bytecode = jvms->method()->java_code_at_bci(jvms->bci());
+  ciCallProfile profile = caller->call_profile_at_bci(bci);
 
   // See how many times this site has been invoked.
   int site_count = profile.count();
@@ -126,9 +128,10 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         ciObject* const_oop = oop_ptr->const_oop();
         ciMethodHandle* method_handle = const_oop->as_method_handle();
 
-        // Set the actually called method to have access to the class
-        // and signature in the MethodHandleCompiler.
+        // Set the callee to have access to the class and signature in
+        // the MethodHandleCompiler.
         method_handle->set_callee(call_method);
+        method_handle->set_caller(caller);
         method_handle->set_call_profile(&profile);
 
         // Get an adapter for the MethodHandle.
@@ -150,9 +153,10 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       ciCallSite*     call_site     = str.get_call_site();
       ciMethodHandle* method_handle = call_site->get_target();
 
-      // Set the actually called method to have access to the class
-      // and signature in the MethodHandleCompiler.
+      // Set the callee to have access to the class and signature in
+      // the MethodHandleCompiler.
       method_handle->set_callee(call_method);
+      method_handle->set_caller(caller);
       method_handle->set_call_profile(&profile);
 
       // Get an adapter for the MethodHandle.

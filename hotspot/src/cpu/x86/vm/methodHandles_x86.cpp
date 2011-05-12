@@ -163,7 +163,7 @@ void MethodHandles::RicochetFrame::generate_ricochet_blob(MacroAssembler* _masm,
   BLOCK_COMMENT("ricochet_blob.bounce");
 
   if (VerifyMethodHandles)  RicochetFrame::verify_clean(_masm);
-  trace_method_handle(_masm, "ricochet_blob.bounce");
+  trace_method_handle(_masm, "return/ricochet_blob.bounce");
 
   __ jmp(frame_address(continuation_offset_in_bytes()));
   __ hlt();
@@ -615,18 +615,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
                    rcx_argslot, rbx_temp, rdx_temp);
 
   // load up an adapter from the calling type (Java weaves this)
-  __ load_heap_oop(rdx_temp, Address(rax_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, rdi_temp)));
   Register rdx_adapter = rdx_temp;
-  // __ load_heap_oop(rdx_adapter, Address(rdx_temp, java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes()));
-  // deal with old JDK versions:
-  __ lea(rdi_temp, Address(rdx_temp, __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
-  __ cmpptr(rdi_temp, rdx_temp);
-  Label sorry_no_invoke_generic;
-  __ jcc(Assembler::below, sorry_no_invoke_generic);
-
-  __ load_heap_oop(rdx_adapter, Address(rdi_temp, 0));
-  __ testptr(rdx_adapter, rdx_adapter);
-  __ jcc(Assembler::zero, sorry_no_invoke_generic);
+  __ load_heap_oop(rdx_temp,    Address(rax_mtype, __ delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes,               rdi_temp)));
+  __ load_heap_oop(rdx_adapter, Address(rdx_temp,  __ delayed_value(java_lang_invoke_MethodTypeForm::genericInvoker_offset_in_bytes, rdi_temp)));
+  __ verify_oop(rdx_adapter);
   __ movptr(Address(rcx_argslot, 1 * Interpreter::stackElementSize), rdx_adapter);
   // As a trusted first argument, pass the type being called, so the adapter knows
   // the actual types of the arguments and return values.
@@ -636,12 +628,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ mov(rcx, rdx_adapter);
   trace_method_handle(_masm, "invokeGeneric");
   __ jump_to_method_handle_entry(rcx, rdi_temp);
-
-  __ bind(sorry_no_invoke_generic); // no invokeGeneric implementation available!
-  __ movptr(rcx_recv, Address(rcx_argslot, -1 * Interpreter::stackElementSize));  // recover original MH
-  __ push(rax_mtype);       // required mtype
-  __ push(rcx_recv);        // bad mh (1st stacked argument)
-  __ jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
 
   return entry_point;
 }
@@ -688,7 +674,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
     __ movptr(Address(rdx_temp, arg_slots, Interpreter::stackElementScale()), rbx_temp);
     __ addptr(rdx_temp, wordSize);
     __ cmpptr(rdx_temp, rax_argslot);
-    __ jcc(Assembler::less, loop);
+    __ jcc(Assembler::below, loop);
   }
 
   // Now move the argslot down, to point to the opened-up space.
@@ -731,7 +717,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
     __ movptr(Address(rdx_temp, arg_slots, Interpreter::stackElementScale()), rbx_temp);
     __ addptr(rdx_temp, -wordSize);
     __ cmpptr(rdx_temp, rsp);
-    __ jcc(Assembler::greaterEqual, loop);
+    __ jcc(Assembler::aboveEqual, loop);
   }
 
   // Now move the argslot up, to point to the just-copied block.
@@ -980,12 +966,21 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* saved_sp,
                               intptr_t* saved_bp) {
   // called as a leaf from native code: do not block the JVM!
+  bool has_mh = (strstr(adaptername, "return/") == NULL);  // return adapters don't have rcx_mh
   intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  tty->print_cr("MH %s mh="INTPTR_FORMAT" sp=("INTPTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="INTPTR_FORMAT,
-                adaptername, (intptr_t)mh, (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
-  if (last_sp != saved_sp && last_sp != NULL)
-    tty->print_cr("*** last_sp="INTPTR_FORMAT, (intptr_t)last_sp);
+  intptr_t* base_sp = last_sp;
+  typedef MethodHandles::RicochetFrame RicochetFrame;
+  RicochetFrame* rfp = (RicochetFrame*)((address)saved_bp - RicochetFrame::sender_link_offset_in_bytes());
+  if (!UseRicochetFrames || Universe::heap()->is_in((address) rfp->saved_args_base())) {
+    // Probably an interpreter frame.
+    base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
+  }
+  intptr_t    mh_reg = (intptr_t)mh;
+  const char* mh_reg_name = "rcx_mh";
+  if (!has_mh)  mh_reg_name = "rcx";
+  tty->print_cr("MH %s %s="PTR_FORMAT" sp=("PTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="PTR_FORMAT,
+                adaptername, mh_reg_name, mh_reg,
+                (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
   if (Verbose) {
     tty->print(" reg dump: ");
     int saved_regs_count = (entry_sp-1) - saved_regs;
@@ -996,18 +991,21 @@ void trace_method_handle_stub(const char* adaptername,
         tty->cr();
         tty->print("   + dump: ");
       }
-      tty->print(" %d: "INTPTR_FORMAT, i, saved_regs[i]);
+      tty->print(" %d: "PTR_FORMAT, i, saved_regs[i]);
     }
     tty->cr();
+    if (last_sp != saved_sp && last_sp != NULL)
+      tty->print_cr("*** last_sp="PTR_FORMAT, (intptr_t)last_sp);
     int stack_dump_count = 16;
     if (stack_dump_count < (int)(saved_bp + 2 - saved_sp))
       stack_dump_count = (int)(saved_bp + 2 - saved_sp);
     if (stack_dump_count > 64)  stack_dump_count = 48;
     for (i = 0; i < stack_dump_count; i += 4) {
-      tty->print_cr(" dump at SP[%d] "INTPTR_FORMAT": "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT" "INTPTR_FORMAT,
+      tty->print_cr(" dump at SP[%d] "PTR_FORMAT": "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT,
                     i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
     }
-    print_method_handle(mh);
+    if (has_mh)
+      print_method_handle(mh);
   }
 }
 
@@ -1073,7 +1071,6 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
           //OP_COLLECT_ARGS is below...
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS)
          |(!UseRicochetFrames ? 0 :
-           LP64_ONLY(FLAG_IS_DEFAULT(UseRicochetFrames) ? 0 :)
            java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() <= 0 ? 0 :
            ((1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF)
            |(1<<java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS)
@@ -1546,7 +1543,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 #else //_LP64
       if (ek == _adapter_opt_f2d) {
         __ fld_s(vmarg);        // load float to ST0
-        __ fstp_s(vmarg);       // store single
+        __ fstp_d(vmarg);       // store double
       } else {
         __ fld_d(vmarg);        // load double to ST0
         __ fstp_s(vmarg);       // store single
@@ -2353,7 +2350,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                        rbx_temp, rdi_temp);
         __ addptr(rsi_source, type2aelembytes(elem_type));
         __ cmpptr(rdx_fill_ptr, rax_argslot);
-        __ jcc(Assembler::greater, loop);
+        __ jcc(Assembler::above, loop);
       } else if (length_constant == 0) {
         // nothing to copy
       } else {
