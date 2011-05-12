@@ -85,15 +85,20 @@ REMOTE_impls = \
 	sun.rmi.registry.RegistryImpl \
 	sun.rmi.transport.DGCImpl
 
-ifeq ($(PLATFORM), windows)
-build: stubs
-else # PLATFORM
-ifneq ($(ARCH_DATA_MODEL), 32)
-build: stubs
-else # ARCH_DATA_MODEL
-build: stubs bin
+#
+# The java-rmi.cgi script in bin/ only gets delivered in certain situations
+#
+BUILD_TARGETS = stubs
+ifeq ($(PLATFORM), linux)
+  BUILD_TARGETS += bin
 endif
+ifeq ($(PLATFORM), solaris)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    BUILD_TARGETS += bin
+  endif
 endif
+
+build: $(BUILD_TARGETS)
 
 clean clobber:: bin.clean
 
