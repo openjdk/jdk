@@ -1452,13 +1452,26 @@ void FrameValues::validate() {
 
 void FrameValues::print() {
   _values.sort(compare);
-  intptr_t* v0 = _values.at(0).location;
-  intptr_t* v1 = _values.at(_values.length() - 1).location;
+  JavaThread* thread = JavaThread::current();
+
+  // Sometimes values like the fp can be invalid values if the
+  // register map wasn't updated during the walk.  Trim out values
+  // that aren't actually in the stack of the thread.
+  int min_index = 0;
+  int max_index = _values.length() - 1;
+  intptr_t* v0 = _values.at(min_index).location;
+  while (!thread->is_in_stack((address)v0)) {
+    v0 = _values.at(++min_index).location;
+  }
+  intptr_t* v1 = _values.at(max_index).location;
+  while (!thread->is_in_stack((address)v1)) {
+    v1 = _values.at(--max_index).location;
+  }
   intptr_t* min = MIN2(v0, v1);
   intptr_t* max = MAX2(v0, v1);
   intptr_t* cur = max;
   intptr_t* last = NULL;
-  for (int i = _values.length() - 1; i >= 0; i--) {
+  for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
       tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, cur, *cur);
