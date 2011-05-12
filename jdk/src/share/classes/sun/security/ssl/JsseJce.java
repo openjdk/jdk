@@ -62,7 +62,7 @@ final class JsseJce {
     // Flag indicating whether EC crypto is available.
     // If null, then we have not checked yet.
     // If yes, then all the EC based crypto we need is available.
-    private static volatile Boolean ecAvailable;
+    private static Boolean ecAvailable;
 
     // Flag indicating whether Kerberos crypto is available.
     // If true, then all the Kerberos-based crypto we need is available.
@@ -190,7 +190,7 @@ final class JsseJce {
         // no instantiation of this class
     }
 
-    static boolean isEcAvailable() {
+    synchronized static boolean isEcAvailable() {
         if (ecAvailable == null) {
             try {
                 JsseJce.getSignature(SIGNATURE_ECDSA);
@@ -206,7 +206,7 @@ final class JsseJce {
         return ecAvailable;
     }
 
-    static void clearEcAvailable() {
+    synchronized static void clearEcAvailable() {
         ecAvailable = null;
     }
 
