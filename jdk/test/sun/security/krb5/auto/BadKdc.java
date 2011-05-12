@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  */
 
 import java.io.*;
+import java.net.BindException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.security.auth.login.LoginException;
+import sun.security.krb5.Asn1Exception;
 import sun.security.krb5.Config;
 
 public class BadKdc {
@@ -34,7 +40,50 @@ public class BadKdc {
     static final Pattern re = Pattern.compile(
             ">>> KDCCommunication: kdc=kdc.rabbit.hole UDP:(\\d)...., " +
             "timeout=(\\d)000,");
+
+    /*
+     * There are several cases this test fails:
+     *
+     * 1. The random selected port is used by another process. No good way to
+     * prevent this happening, coz krb5.conf must be written before KDC starts.
+     * There are two different outcomes:
+     *
+     *  a. Cannot start the KDC. A BindException thrown.
+     *  b. When trying to access a non-existing KDC, a response is received!
+     *     Most likely a Asn1Exception thrown
+     *
+     * 2. Even if a KDC is started, and more than 20 seconds pass by, a timeout
+     * can still happens for the first UDP request. In fact, the KDC did not
+     * received it at all. This happens on almost all platforms, especially
+     * solaris-i586 and solaris-x64.
+     *
+     * To avoid them:
+     *
+     * 1. Catch those exceptions and ignore
+     *
+     * 2. a. Make the timeout longer? useless
+     *    b. Read the output carefully, if there is a timeout, it's OK.
+     *       Just make sure the retries times and KDCs are correct.
+     *       This is tough.
+     *    c. Feed the KDC a UDP packet first. The current "solution".
+     */
     public static void go(int[]... expected)
+            throws Exception {
+        try {
+            go0(expected);
+        } catch (BindException be) {
+            System.out.println("The random port is used by another process");
+        } catch (LoginException le) {
+            Throwable cause = le.getCause();
+            if (cause instanceof Asn1Exception) {
+                System.out.println("Bad packet possibly from another process");
+                return;
+            }
+            throw le;
+        }
+    }
+
+    public static void go0(int[]... expected)
             throws Exception {
         System.setProperty("sun.security.krb5.debug", "true");
 
@@ -78,20 +127,39 @@ public class BadKdc {
         KDC k = new KDC(OneKDC.REALM, OneKDC.KDCHOST, p, true);
         k.addPrincipal(OneKDC.USER, OneKDC.PASS);
         k.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
+        // Feed a packet to newly started KDC to warm it up
+        System.err.println("-------- IGNORE THIS ERROR MESSAGE --------");
+        new DatagramSocket().send(
+                new DatagramPacket("Hello".getBytes(), 5,
+                        InetAddress.getByName(OneKDC.KDCHOST), p));
         return k;
+    }
+
+    private static void test(int... expected) throws Exception {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        try {
+            test0(bo, expected);
+        } catch (Exception e) {
+            System.out.println("----------------- ERROR -----------------");
+            System.out.println(new String(bo.toByteArray()));
+            System.out.println("--------------- ERROR END ---------------");
+            throw e;
+        }
     }
 
     /**
      * One round of test for max_retries and timeout.
-     * @param timeout the expected timeout
      * @param expected the expected kdc# timeout kdc# timeout...
      */
-    private static void test(int... expected) throws Exception {
-        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+    private static void test0(ByteArrayOutputStream bo, int... expected)
+            throws Exception {
         PrintStream oldout = System.out;
         System.setOut(new PrintStream(bo));
-        Context c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
-        System.setOut(oldout);
+        try {
+            Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        } finally {
+            System.setOut(oldout);
+        }
 
         String[] lines = new String(bo.toByteArray()).split("\n");
         System.out.println("----------------- TEST -----------------");

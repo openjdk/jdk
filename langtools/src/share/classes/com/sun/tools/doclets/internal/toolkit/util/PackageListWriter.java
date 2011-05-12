@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,16 @@ public class PackageListWriter extends PrintWriter {
 
     protected void generatePackageListFile(RootDoc root) {
         PackageDoc[] packages = configuration.packages;
-        String[] names = new String[packages.length];
+        ArrayList<String> names = new ArrayList<String>();
         for (int i = 0; i < packages.length; i++) {
-            names[i] = packages[i].name();
+            // if the -nodeprecated option is set and the package is marked as
+            // deprecated, do not include it in the packages list.
+            if (!(configuration.nodeprecated && Util.isDeprecated(packages[i])))
+                names.add(packages[i].name());
         }
-        Arrays.sort(names);
-        for (int i = 0; i < packages.length; i++) {
-            println(names[i]);
+        Collections.sort(names);
+        for (int i = 0; i < names.size(); i++) {
+            println(names.get(i));
         }
     }
 }

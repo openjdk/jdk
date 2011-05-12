@@ -47,6 +47,7 @@ class PatternReferenceTypeSpec implements ReferenceTypeSpec {
     /**
      * Does the specified ReferenceType match this spec.
      */
+    @Override
     public boolean matches(ReferenceType refType) {
         if (isWild) {
             return refType.name().endsWith(classId);
@@ -55,10 +56,12 @@ class PatternReferenceTypeSpec implements ReferenceTypeSpec {
         }
     }
 
+    @Override
     public int hashCode() {
         return classId.hashCode();
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof PatternReferenceTypeSpec) {
             PatternReferenceTypeSpec spec = (PatternReferenceTypeSpec)obj;
@@ -89,6 +92,7 @@ class PatternReferenceTypeSpec implements ReferenceTypeSpec {
         }
     }
 
+    @Override
     public String toString() {
         return isWild? "*" + classId : classId;
     }

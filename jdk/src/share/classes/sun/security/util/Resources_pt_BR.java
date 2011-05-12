@@ -47,7 +47,8 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Op\u00E7\u00E3o]..."},
         {"Options.", "Op\u00E7\u00F5es:"},
         {"Use.keytool.help.for.all.available.commands",
                  "Use \"keytool -help\" para todos os comandos dispon\u00EDveis"},
@@ -67,8 +68,9 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                 "Exporta o certificado"}, //-exportcert
         {"Generates.a.key.pair",
                 "Gera um par de chaves"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
-                "Gera uma chave secreta"}, //-genseckey
+                "Gera uma chave Secreta"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
                 "Gera um certificado de uma solicita\u00E7\u00E3o de certificado"}, //-gencert
         {"Generates.CRL", "Gera CRL"}, //-gencrl
@@ -304,8 +306,6 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Comprimento da cadeia de certificados: "},
         {"Certificate.i.1.", "Certificado[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Fingerprint (MD5) do certificado: "},
-        {"Entry.type.trustedCertEntry.", "Tipo de entrada: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Tipo de \u00E1rea de armazenamento de chaves: "},
         {"Keystore.provider.", "Fornecedor da \u00E1rea de armazenamento de chaves: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -331,7 +331,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "Ainda deseja adicion\u00E1-lo \u00E0 sua \u00E1rea de armazenamento de chaves? [n\u00E3o]:  "},
         {"Trust.this.certificate.no.", "Confiar neste certificado? [n\u00E3o]:  "},
-        {"YES", "SIM"},
+        {"YES", "Sim"},
         {"New.prompt.", "Nova {0}: "},
         {"Passwords.must.differ", "As senhas devem ser diferentes"},
         {"Re.enter.new.prompt.", "Informe novamente a nova {0}: "},
@@ -368,7 +368,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                  "O alias <{0}> faz refer\u00EAncia a um tipo de entrada que n\u00E3o \u00E9 uma entrada de chave privada. O comando -keyclone oferece suporte somente \u00E0 clonagem de entradas de chave privada"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Advert\u00EAncia Advert\u00EAncia Advert\u00EAncia  *****************"},
         {"Signer.d.", "Signat\u00E1rio #%d:"},
         {"Timestamp.", "Timestamp:"},
         {"Signature.", "Assinatura:"},
@@ -378,20 +378,10 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "N\u00E3o \u00E9 um certificado do servidor SSL"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* A integridade das informa\u00E7\u00F5es armazenadas na sua \u00E1rea de armazenamento de chaves  *"},
+            "* A integridade das informa\u00E7\u00F5es armazenadas na sua \u00E1rea de armazenamento de chaves  *\n* N\u00C3O foi verificada!  Para que seja poss\u00EDvel verificar sua integridade, *\n* voc\u00EA deve fornecer a senha da \u00E1rea de armazenamento de chaves.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* A integridade das informa\u00E7\u00F5es armazenadas no srckeystore*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* N\u00C3O foi verificada! Para verificar a integridade destas informa\u00E7\u00F5es, *"},
-        {".you.must.provide.your.keystore.password.",
-            "* voc\u00EA deve fornecer a senha da sua \u00E1rea de armazenamento de chaves.                 *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* voc\u00EA deve fornecer a senha do srckeystore.                 *"},
-
+            "* A integridade das informa\u00E7\u00F5es armazenadas no srckeystore  *\n* N\u00C3O foi verificada!  Para que seja poss\u00EDvel verificar sua integridade, *\n* voc\u00EA deve fornecer a senha do srckeystore.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "A resposta do certificado n\u00E3o cont\u00E9m a chave p\u00FAblica de <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                 "Certificado de n\u00EDvel superior na resposta:\n"},
         {".is.not.trusted.", "... n\u00E3o \u00E9 confi\u00E1vel. "},
         {"Install.reply.anyway.no.", "Instalar resposta assim mesmo? [n\u00E3o]:  "},
-        {"NO", "N\u00C3O"},
+        {"NO", "N\u00E3o"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "As chaves p\u00FAblicas da resposta e da \u00E1rea de armazenamento de chaves n\u00E3o correspondem"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -440,9 +430,9 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                 "Advert\u00EAncia: Argumento(s) inv\u00E1lido(s) para o construtor: {0}"},
         {"Illegal.Principal.Type.type", "Tipo Principal Inv\u00E1lido: {0}"},
         {"Illegal.option.option", "Op\u00E7\u00E3o inv\u00E1lida: {0}"},
-        {"Usage.policytool.options.", "Uso: policytool [options]"},
+        {"Usage.policytool.options.", "Uso: policytool [op\u00E7\u00F5es]"},
         {".file.file.policy.file.location",
-                "  [-file <file>]    localiza\u00E7\u00E3o do arquivo de pol\u00EDtica"},
+                "  [-file <arquivo>]    localiza\u00E7\u00E3o do arquivo de pol\u00EDtica"},
         {"New", "Novo"},
         {"Open", "Abrir"},
         {"Save", "Salvar"},

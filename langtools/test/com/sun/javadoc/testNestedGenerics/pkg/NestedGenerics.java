@@ -21,24 +21,11 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that redundant type-arguments on non-generic constructor are accepted
- * @compile Pos01.java
- */
+package pkg;
 
-class Pos01 {
+import java.util.Map;
 
-    static class Foo<X> {
-        Foo(X t) {}
-    }
-
-    Foo<Integer> fi1 = new Foo<>(1);
-    Foo<Integer> fi2 = new Foo<Integer>(1);
-    Foo<Integer> fi3 = new <String> Foo<>(1);
-    Foo<Integer> fi4 = new <String> Foo<Integer>(1);
-    Foo<Integer> fi5 = new <String, String> Foo<>(1);
-    Foo<Integer> fi6 = new <String, String> Foo<Integer>(1);
+/** Contains {@link #foo} */
+public class NestedGenerics {
+  public static <A> void foo(Map<A, Map<A, A>> map) {}
 }

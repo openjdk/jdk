@@ -21,20 +21,35 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that diamond in return context works w/o problems
- * @compile Pos02.java
+/**
+ * Another test class.
+ *
+ * @author Bhavesh Patel
  */
+public class C2 {
 
-class Pos02<X> {
+    public static enum ModalExclusionType {
+        /**
+         * Test comment.
+         */
+        NO_EXCLUDE,
+        /**
+         * Another comment.
+         */
+        APPLICATION_EXCLUDE
+    };
 
-    Pos02(X x) {}
+    /**
+     * A string constant.
+     */
+    public static final String CONSTANT1 = "C2";
 
+    /**
+     * A sample method.
+     *
+     * @param param some parameter.
+     */
+    public void method(String param) {
 
-    Pos02<X> test(X x) {
-        return new Pos02<>(x);
     }
 }

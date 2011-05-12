@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,16 @@
 
 /*
  * @test
- * @bug 6708550
- * @summary Tests File encoding
- * @author Sergey Malenkov
+ * @bug     7040883 7034511
+ * @summary Compilation error: "length in Array is defined in an inaccessible class or interface"
+ * @compile T7040883.java
  */
 
-import java.io.File;
+public class T7040883 {
 
-public final class java_io_File extends AbstractTest<File> {
-    public static void main(String[] args) {
-        new java_io_File().test(true);
-    }
+    <Z> Z[] getListeners(Class<Z> z) { return null; }
 
-    @Override
-    protected File getObject() {
-        return new File("test.txt"); // NON-NLS: local file
-    }
-
-    @Override
-    protected File getAnotherObject() {
-        return new File("/pub/demo/"); // NON-NLS: path
+    void test(String s) {
+        int i = getListeners(s.getClass()).length;
     }
 }

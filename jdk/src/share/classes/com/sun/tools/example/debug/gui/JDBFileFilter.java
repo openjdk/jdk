@@ -28,7 +28,6 @@ package com.sun.tools.example.debug.gui;
 import java.io.File;
 import java.util.Hashtable;
 import java.util.Enumeration;
-import javax.swing.*;
 import javax.swing.filechooser.*;
 
 //### Renamed from 'ExampleFileFilter.java' provided with Swing demos.
@@ -93,8 +92,12 @@ public class JDBFileFilter extends FileFilter {
      */
     public JDBFileFilter(String extension, String description) {
         this();
-        if(extension!=null) addExtension(extension);
-        if(description!=null) setDescription(description);
+        if(extension!=null) {
+         addExtension(extension);
+      }
+        if(description!=null) {
+         setDescription(description);
+      }
     }
 
     /**
@@ -120,11 +123,13 @@ public class JDBFileFilter extends FileFilter {
      */
     public JDBFileFilter(String[] filters, String description) {
         this();
-        for (int i = 0; i < filters.length; i++) {
+        for (String filter : filters) {
             // add filters one by one
-            addExtension(filters[i]);
+            addExtension(filter);
         }
-        if(description!=null) setDescription(description);
+        if(description!=null) {
+         setDescription(description);
+      }
     }
 
     /**
@@ -136,6 +141,7 @@ public class JDBFileFilter extends FileFilter {
      * @see #getExtension
      * @see FileFilter#accepts
      */
+    @Override
     public boolean accept(File f) {
         if(f != null) {
             if(f.isDirectory()) {
@@ -196,6 +202,7 @@ public class JDBFileFilter extends FileFilter {
      * @see isExtensionListInDescription
      * @see FileFilter#getDescription
      */
+    @Override
     public String getDescription() {
         if(fullDescription == null) {
             if(description == null || isExtensionListInDescription()) {

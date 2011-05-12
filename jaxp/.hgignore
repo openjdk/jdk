@@ -4,3 +4,4 @@
 ^drop_included/
 ^webrev/
 /nbproject/private/
+^.hgtip
