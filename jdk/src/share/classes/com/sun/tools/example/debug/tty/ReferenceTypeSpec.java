@@ -35,7 +35,9 @@ interface ReferenceTypeSpec {
     boolean matches(ReferenceType refType);
     ClassPrepareRequest createPrepareRequest();
 
+    @Override
     int hashCode();
 
+    @Override
     boolean equals(Object obj);
 }

@@ -469,6 +469,7 @@ extern "C" void verify() {
 extern "C" void pp(void* p) {
   Command c("pp");
   FlagSetting fl(PrintVMMessages, true);
+  FlagSetting f2(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
     oop obj = oop(p);
     obj->print();
@@ -507,6 +508,17 @@ extern "C" void ps() { // print stack
 
 }
 
+extern "C" void pfl() {
+  // print frame layout
+  Command c("pfl");
+  JavaThread* p = JavaThread::active();
+  tty->print(" for thread: ");
+  p->print();
+  tty->cr();
+  if (p->has_last_Java_frame()) {
+    p->print_frame_layout();
+  }
+}
 
 extern "C" void psf() { // print stack frames
   {

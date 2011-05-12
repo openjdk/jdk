@@ -256,9 +256,9 @@ public class FcFontConfiguration extends FontConfiguration {
                 }
 
                 if (installedFallbackFontFiles != null) {
-                    System.arraycopy(fileNames, index,
-                                     installedFallbackFontFiles,
-                                     0, installedFallbackFontFiles.length);
+                    System.arraycopy(installedFallbackFontFiles, 0,
+                                     fileNames, fcFonts.length,
+                                     installedFallbackFontFiles.length);
                 }
 
                 result[fontIndex * NUM_STYLES + styleIndex]

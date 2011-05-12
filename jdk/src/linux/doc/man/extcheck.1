@@ -1,4 +1,4 @@
-." Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH extcheck 1 "02 Jun 2010"
+.TH extcheck 1 "10 May 2011"
 
 .LP
 .SH "Name"
 extcheck \- A utility to detect jar conflicts
 .LP
-.RS 3
-
-.LP
 .LP
 \f3extcheck\fP detects version conflicts between a target jar file and currently installed extension jar files.
 .LP
-.RE
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -46,8 +40,6 @@ extcheck [ \-verbose ] targetfile.jar
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3extcheck\fP utility checks a specified Jar file for title and version conflicts with any extensions installed in the Java(TM) SDK. Before installing an extension, you can use this utility to see if the same or a more recent version of the extension is already installed.
@@ -63,8 +55,6 @@ If the manifest of any jar file in the extensions directory has the same \f2Spec
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 \-verbose 
@@ -76,8 +66,6 @@ Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the 
 
 .LP
 .SH "SEE ALSO"
-.LP
-
 .LP
 .LP
 jar(1)

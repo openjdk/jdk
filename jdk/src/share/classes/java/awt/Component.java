@@ -2945,6 +2945,46 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Revalidates the component hierarchy up to the nearest validate root.
+     * <p>
+     * This method first invalidates the component hierarchy starting from this
+     * component up to the nearest validate root. Afterwards, the component
+     * hierarchy is validated starting from the nearest validate root.
+     * <p>
+     * This is a convenience method supposed to help application developers
+     * avoid looking for validate roots manually. Basically, it's equivalent to
+     * first calling the {@link #invalidate()} method on this component, and
+     * then calling the {@link #validate()} method on the nearest validate
+     * root.
+     *
+     * @see Container#isValidateRoot
+     * @since 1.7
+     */
+    public void revalidate() {
+        synchronized (getTreeLock()) {
+            invalidate();
+
+            Container root = getContainer();
+            if (root == null) {
+                // There's no parents. Just validate itself.
+                validate();
+            } else {
+                while (!root.isValidateRoot()) {
+                    if (root.getContainer() == null) {
+                        // If there's no validate roots, we'll validate the
+                        // topmost container
+                        break;
+                    }
+
+                    root = root.getContainer();
+                }
+
+                root.validate();
+            }
+        }
+    }
+
+    /**
      * Creates a graphics context for this component. This method will
      * return <code>null</code> if this component is currently not
      * displayable.

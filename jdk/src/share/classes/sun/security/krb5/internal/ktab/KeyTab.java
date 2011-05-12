@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,92 +51,138 @@ import java.util.Vector;
  * This class represents key table. The key table functions deal with storing
  * and retrieving service keys for use in authentication exchanges.
  *
+ * A KeyTab object is always constructed, if the file specified does not
+ * exist, it's still valid but empty. If there is an I/O error or file format
+ * error, it's invalid.
+ *
+ * The class is immutable on the read side (the write side is only used by
+ * the ktab tool).
+ *
  * @author Yanni Zhang
  */
 public class KeyTab implements KeyTabConstants {
-    int kt_vno;
-    private static KeyTab singleton = null;
+
     private static final boolean DEBUG = Krb5.DEBUG;
-    private static String name;
+    private static String defaultTabName = null;
+
+    // Attention: Currently there is no way to remove a keytab from this map,
+    // this might lead to a memory leak.
+    private static Map<String,KeyTab> map = new HashMap<>();
+
+    // KeyTab file does not exist. Note: a missing keytab is still valid
+    private boolean isMissing = false;
+
+    // KeyTab file is invalid, possibly an I/O error or a file format error.
+    private boolean isValid = true;
+
+    private final String tabName;
+    private long lastModified;
+    private int kt_vno;
+
     private Vector<KeyTabEntry> entries = new Vector<>();
 
-    private KeyTab(String filename) throws IOException, RealmException {
-        init(filename);
-    }
-
-    public static KeyTab getInstance(String s) {
-        name = parse(s);
-        if (name == null) {
-            return getInstance();
+    /**
+     * Constructs a KeyTab object.
+     *
+     * If there is any I/O error or format errot during the loading, the
+     * isValid flag is set to false, and all half-read entries are dismissed.
+     * @param filename path name for the keytab file, must not be null
+     */
+    private KeyTab(String filename) {
+        tabName = filename;
+        try {
+            lastModified = new File(tabName).lastModified();
+            try (KeyTabInputStream kis =
+                    new KeyTabInputStream(new FileInputStream(filename))) {
+                load(kis);
+            }
+        } catch (FileNotFoundException e) {
+            entries.clear();
+            isMissing = true;
+        } catch (Exception ioe) {
+            entries.clear();
+            isValid = false;
         }
-        return getInstance(new File(name));
     }
 
     /**
-     * Gets the single instance of KeyTab class.
+     * Read a keytab file. Returns a new object and save it into cache when
+     * new content (modified since last read) is available. If keytab file is
+     * invalid, the old object will be returned. This is a safeguard for
+     * partial-written keytab files or non-stable network. Please note that
+     * a missing keytab is valid, which is equivalent to an empty keytab.
+     *
+     * @param s file name of keytab, must not be null
+     * @return the keytab object, can be invalid, but never null.
+     */
+    private synchronized static KeyTab getInstance0(String s) {
+        long lm = new File(s).lastModified();
+        KeyTab old = map.get(s);
+        if (old != null && old.isValid() && old.lastModified == lm) {
+            return old;
+        }
+        KeyTab ktab = new KeyTab(s);
+        if (ktab.isValid()) {               // A valid new keytab
+            map.put(s, ktab);
+            return ktab;
+        } else if (old != null) {           // An existing old one
+            return old;
+        } else {
+            return ktab;                    // first read is invalid
+        }
+    }
+
+    /**
+     * Gets a KeyTab object.
+     * @param s the key tab file name.
+     * @return the KeyTab object, never null.
+     */
+    public static KeyTab getInstance(String s) {
+        if (s == null) {
+            return getInstance();
+        } else {
+            return getInstance0(s);
+        }
+    }
+
+    /**
+     * Gets a KeyTab object.
      * @param file the key tab file.
-     * @return single instance of KeyTab;
-     *  return null if error occurs while reading data out of the file.
+     * @return the KeyTab object, never null.
      */
     public static KeyTab getInstance(File file) {
-        try {
-            if (!(file.exists())) {
-                singleton = null;
-            } else {
-                String fname = file.getAbsolutePath();
-                // Since this class deals with file I/O operations,
-                // we want only one class instance existing.
-                if (singleton != null) {
-                    File kfile = new File(singleton.name);
-                    String kname = kfile.getAbsolutePath();
-                    if (kname.equalsIgnoreCase(fname)) {
-                       if (DEBUG) {
-                          System.out.println("KeyTab instance already exists");
-                       }
-                    }
-                } else {
-                    singleton = new KeyTab(fname);
-                }
-            }
-        } catch (Exception e) {
-            singleton = null;
-            if (DEBUG) {
-                System.out.println("Could not obtain an instance of KeyTab" +
-                                   e.getMessage());
-            }
+        if (file == null) {
+            return getInstance();
+        } else {
+            return getInstance0(file.getPath());
         }
-        return singleton;
     }
 
     /**
-     * Gets the single instance of KeyTab class.
-     * @return single instance of KeyTab; return null if default keytab file
-     *  does not exist, or error occurs while reading data from the file.
+     * Gets the default KeyTab object.
+     * @return the KeyTab object, never null.
      */
     public static KeyTab getInstance() {
-        try {
-            name = getDefaultKeyTab();
-            if (name != null) {
-                singleton = getInstance(new File(name));
-            }
-        } catch (Exception e) {
-            singleton = null;
-            if (DEBUG) {
-                System.out.println("Could not obtain an instance of KeyTab" +
-                                   e.getMessage());
-            }
-        }
-        return singleton;
+        return getInstance(getDefaultTabName());
+    }
+
+    public boolean isMissing() {
+        return isMissing;
+    }
+
+    public boolean isValid() {
+        return isValid;
     }
 
     /**
      * The location of keytab file will be read from the configuration file
      * If it is not specified, consider user.home as the keytab file's
      * default location.
+     * @return never null
      */
-    private static String getDefaultKeyTab() {
-        if (name != null) {
-            return name;
+    private static String getDefaultTabName() {
+        if (defaultTabName != null) {
+            return defaultTabName;
         } else {
             String kname = null;
             try {
@@ -145,7 +192,7 @@ public class KeyTab implements KeyTabConstants {
                     StringTokenizer st = new StringTokenizer(keytab_names, " ");
                     while (st.hasMoreTokens()) {
                         kname = parse(st.nextToken());
-                        if (kname != null) {
+                        if (new File(kname).exists()) {
                             break;
                         }
                     }
@@ -165,19 +212,20 @@ public class KeyTab implements KeyTabConstants {
                         new sun.security.action.GetPropertyAction("user.dir"));
                 }
 
-                if (user_home != null) {
-                    kname = user_home + File.separator  + "krb5.keytab";
-                }
+                kname = user_home + File.separator  + "krb5.keytab";
             }
+            defaultTabName = kname;
             return kname;
         }
     }
 
+    /**
+     * Parses some common keytab name formats
+     * @param name never null
+     * @return never null
+     */
     private static String parse(String name) {
-        String kname = null;
-        if (name == null) {
-            return null;
-        }
+        String kname;
         if ((name.length() >= 5) &&
             (name.substring(0, 5).equalsIgnoreCase("FILE:"))) {
             kname = name.substring(5);
@@ -192,18 +240,6 @@ public class KeyTab implements KeyTabConstants {
         } else
             kname = name;
         return kname;
-    }
-
-    private synchronized void init(String filename)
-        throws IOException, RealmException {
-
-        if (filename != null) {
-            KeyTabInputStream kis =
-                new KeyTabInputStream(new FileInputStream(filename));
-            load(kis);
-            kis.close();
-            name = filename;
-        }
     }
 
     private void load(KeyTabInputStream kis)
@@ -234,14 +270,13 @@ public class KeyTab implements KeyTabConstants {
      * etypes that have been configured for use. If there are multiple
      * keys with same etype, the one with the highest kvno is returned.
      * @param service the PrincipalName of the requested service
-     * @return an array containing all the service keys
+     * @return an array containing all the service keys, never null
      */
     public EncryptionKey[] readServiceKeys(PrincipalName service) {
         KeyTabEntry entry;
         EncryptionKey key;
         int size = entries.size();
         ArrayList<EncryptionKey> keys = new ArrayList<>(size);
-
         for (int i = size-1; i >= 0; i--) {
             entry = entries.elementAt(i);
             if (entry.service.match(service)) {
@@ -260,10 +295,7 @@ public class KeyTab implements KeyTabConstants {
                 }
             }
         }
-
         size = keys.size();
-        if (size == 0)
-            return null;
         EncryptionKey[] retVal = keys.toArray(new EncryptionKey[size]);
 
         // Sort keys according to default_tkt_enctypes
@@ -328,9 +360,12 @@ public class KeyTab implements KeyTabConstants {
         return false;
     }
 
-    public static String tabName() {
-        return name;
+    public String tabName() {
+        return tabName;
     }
+
+    /////////////////// THE WRITE SIDE ///////////////////////
+    /////////////// only used by ktab tool //////////////////
 
     /**
      * Adds a new entry in the key table.
@@ -394,7 +429,7 @@ public class KeyTab implements KeyTabConstants {
      */
     public synchronized static KeyTab create()
         throws IOException, RealmException {
-        String dname = getDefaultKeyTab();
+        String dname = getDefaultTabName();
         return create(dname);
     }
 
@@ -404,25 +439,24 @@ public class KeyTab implements KeyTabConstants {
     public synchronized static KeyTab create(String name)
         throws IOException, RealmException {
 
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(name));
-        kos.writeVersion(KRB5_KT_VNO);
-        kos.close();
-        singleton = new KeyTab(name);
-        return singleton;
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(name))) {
+            kos.writeVersion(KRB5_KT_VNO);
+        }
+        return new KeyTab(name);
     }
 
     /**
      * Saves the file at the directory.
      */
     public synchronized void save() throws IOException {
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(name));
-        kos.writeVersion(kt_vno);
-        for (int i = 0; i < entries.size(); i++) {
-            kos.writeEntry(entries.elementAt(i));
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(tabName))) {
+            kos.writeVersion(kt_vno);
+            for (int i = 0; i < entries.size(); i++) {
+                kos.writeEntry(entries.elementAt(i));
+            }
         }
-        kos.close();
     }
 
     /**
@@ -485,18 +519,9 @@ public class KeyTab implements KeyTabConstants {
      * @exception IOException.
      */
     public synchronized void createVersion(File file) throws IOException {
-        KeyTabOutputStream kos =
-                new KeyTabOutputStream(new FileOutputStream(file));
-        kos.write16(KRB5_KT_VNO);
-        kos.close();
-    }
-
-    public static void refresh() {
-        if (singleton != null) {
-            if (DEBUG) {
-                System.out.println("Refreshing Keytab");
-            }
-            singleton = null;
+        try (KeyTabOutputStream kos =
+                new KeyTabOutputStream(new FileOutputStream(file))) {
+            kos.write16(KRB5_KT_VNO);
         }
     }
 }

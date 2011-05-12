@@ -114,11 +114,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content packageHead = new RawHtml(heading);
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
+        addDeprecationInfo(div);
         if (packageDoc.inlineTags().length > 0 && ! configuration.nocomment) {
-            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
-            subTitleDiv.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(packageDoc, subTitleDiv);
-            div.addContent(subTitleDiv);
+            HtmlTree docSummaryDiv = new HtmlTree(HtmlTag.DIV);
+            docSummaryDiv.addStyle(HtmlStyle.docSummary);
+            addSummaryComment(packageDoc, docSummaryDiv);
+            div.addContent(docSummaryDiv);
             Content space = getSpace();
             Content descLink = getHyperLink("", "package_description",
                     descriptionLabel, "", "");
@@ -136,6 +137,28 @@ public class PackageWriterImpl extends HtmlDocletWriter
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.contentContainer);
         return div;
+    }
+
+    /**
+     * Add the package deprecation information to the documentation tree.
+     *
+     * @param div the content tree to which the deprecation information will be added
+     */
+    public void addDeprecationInfo(Content div) {
+        Tag[] deprs = packageDoc.tags("deprecated");
+        if (Util.isDeprecated(packageDoc)) {
+            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+            deprDiv.addContent(deprPhrase);
+            if (deprs.length > 0) {
+                Tag[] commentTags = deprs[0].inlineTags();
+                if (commentTags.length > 0) {
+                    addInlineDeprecatedComment(packageDoc, deprs[0], deprDiv);
+                }
+            }
+            div.addContent(deprDiv);
+        }
     }
 
     /**

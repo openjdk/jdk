@@ -1107,7 +1107,8 @@ Java_sun_font_FontConfigManager_getFontConfig
     arrlen = (*env)->GetArrayLength(env, fcCompFontArray);
     for (i=0; i<arrlen; i++) {
         FcFontSet* fontset;
-        int fn, j, fontCount, nfonts, minGlyphs;
+        int fn, j, fontCount, nfonts;
+        unsigned int minGlyphs;
         FcChar8 **family, **styleStr, **fullname, **file;
         jarray fcFontArr;
 

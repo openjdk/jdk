@@ -428,8 +428,6 @@ endif
 # Machines with 512Mb or less of real memory are considered low memory
 #    build machines and adjustments will be made to prevent excessing
 #    system swapping during the build.
-#    If we don't know, assume 512. Subtract 128 from MB for VM MAX.
-#    Don't set VM max over 1024-128=896.
 ifeq ($(JDK_HAS_MEM_INFO),)
   JDK_HAS_MEM_INFO=true
   export JDK_HAS_MEM_INFO
@@ -440,18 +438,8 @@ ifeq ($(JDK_HAS_MEM_INFO),)
       else \
         echo "false"; \
       fi)
-    MAX_VM_MEMORY := $(shell \
-      if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
-        expr $(MB_OF_MEMORY) '-' 128 2> $(DEV_NULL) ; \
-      else \
-        echo "896"; \
-      fi)
-    MIN_VM_MEMORY := $(shell \
-      if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
-        expr $(MAX_VM_MEMORY) '-' 8 2> $(DEV_NULL) ; \
-      else \
-        echo "128"; \
-      fi)
+    MAX_VM_MEMORY := 512
+    MIN_VM_MEMORY := $(MAX_VM_MEMORY)
   else
     MB_OF_MEMORY       := unknown
     LOW_MEMORY_MACHINE := true

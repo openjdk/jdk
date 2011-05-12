@@ -90,8 +90,8 @@ class DistributionPointFetcher {
      */
     Collection<X509CRL> getCRLs(X509CRLSelector selector, boolean signFlag,
         PublicKey prevKey, String provider, List<CertStore> certStores,
-        boolean[] reasonsMask,
-        Set<TrustAnchor> trustAnchors) throws CertStoreException {
+        boolean[] reasonsMask, Set<TrustAnchor> trustAnchors,
+        Date validity) throws CertStoreException {
 
         if (USE_CRLDP == false) {
             return Collections.emptySet();
@@ -122,7 +122,7 @@ class DistributionPointFetcher {
                 DistributionPoint point = t.next();
                 Collection<X509CRL> crls = getCRLs(selector, certImpl,
                     point, reasonsMask, signFlag, prevKey, provider,
-                    certStores, trustAnchors);
+                    certStores, trustAnchors, validity);
                 results.addAll(crls);
             }
             if (debug != null) {
@@ -143,7 +143,8 @@ class DistributionPointFetcher {
     private Collection<X509CRL> getCRLs(X509CRLSelector selector,
         X509CertImpl certImpl, DistributionPoint point, boolean[] reasonsMask,
         boolean signFlag, PublicKey prevKey, String provider,
-        List<CertStore> certStores, Set<TrustAnchor> trustAnchors) {
+        List<CertStore> certStores, Set<TrustAnchor> trustAnchors,
+        Date validity) {
 
         // check for full name
         GeneralNames fullName = point.getFullName();
@@ -196,7 +197,7 @@ class DistributionPointFetcher {
                 selector.setIssuerNames(null);
                 if (selector.match(crl) && verifyCRL(certImpl, point, crl,
                         reasonsMask, signFlag, prevKey, provider, trustAnchors,
-                        certStores)) {
+                        certStores, validity)) {
                     crls.add(crl);
                 }
             } catch (Exception e) {
@@ -280,13 +281,15 @@ class DistributionPointFetcher {
      * @param trustAnchors a {@code Set} of {@code TrustAnchor}s
      * @param certStores a {@code List} of {@code CertStore}s to be used in
      *        finding certificates and CRLs
+     * @param validity the time for which the validity of the CRL issuer's
+     *        certification path should be determined
      * @return true if ok, false if not
      */
     boolean verifyCRL(X509CertImpl certImpl, DistributionPoint point,
         X509CRL crl, boolean[] reasonsMask, boolean signFlag,
         PublicKey prevKey, String provider,
-        Set<TrustAnchor> trustAnchors,
-        List<CertStore> certStores) throws CRLException, IOException {
+        Set<TrustAnchor> trustAnchors, List<CertStore> certStores,
+        Date validity) throws CRLException, IOException {
 
         boolean indirectCRL = false;
         X509CRLImpl crlImpl = X509CRLImpl.toImpl(crl);
@@ -605,6 +608,7 @@ class DistributionPointFetcher {
             }
             params.setCertStores(certStores);
             params.setSigProvider(provider);
+            params.setDate(validity);
             try {
                 CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
                 PKIXCertPathBuilderResult result =

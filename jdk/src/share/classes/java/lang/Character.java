@@ -59,14 +59,14 @@ import java.util.Locale;
  * <p>The {@code char} data type (and therefore the value that a
  * {@code Character} object encapsulates) are based on the
  * original Unicode specification, which defined characters as
- * fixed-width 16-bit entities. The Unicode standard has since been
+ * fixed-width 16-bit entities. The Unicode Standard has since been
  * changed to allow for characters whose representation requires more
  * than 16 bits.  The range of legal <em>code point</em>s is now
  * U+0000 to U+10FFFF, known as <em>Unicode scalar value</em>.
  * (Refer to the <a
  * href="http://www.unicode.org/reports/tr27/#notation"><i>
  * definition</i></a> of the U+<i>n</i> notation in the Unicode
- * standard.)
+ * Standard.)
  *
  * <p><a name="BMP">The set of characters from U+0000 to U+FFFF is
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
@@ -5200,7 +5200,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is lowercase if its general category type, provided
      * by {@code Character.getType(ch)}, is
-     * {@code LOWERCASE_LETTER}.
+     * {@code LOWERCASE_LETTER}, or it has contributory property
+     * Other_Lowercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of lowercase characters:
      * <p><blockquote><pre>
@@ -5235,7 +5236,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is lowercase if its general category type, provided
      * by {@link Character#getType getType(codePoint)}, is
-     * {@code LOWERCASE_LETTER}.
+     * {@code LOWERCASE_LETTER}, or it has contributory property
+     * Other_Lowercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of lowercase characters:
      * <p><blockquote><pre>
@@ -5257,7 +5259,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since   1.5
      */
     public static boolean isLowerCase(int codePoint) {
-        return getType(codePoint) == Character.LOWERCASE_LETTER;
+        return getType(codePoint) == Character.LOWERCASE_LETTER ||
+               CharacterData.of(codePoint).isOtherLowercase(codePoint);
     }
 
     /**
@@ -5265,6 +5268,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <p>
      * A character is uppercase if its general category type, provided by
      * {@code Character.getType(ch)}, is {@code UPPERCASE_LETTER}.
+     * or it has contributory property Other_Uppercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of uppercase characters:
      * <p><blockquote><pre>
@@ -5298,7 +5302,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character (Unicode code point) is an uppercase character.
      * <p>
      * A character is uppercase if its general category type, provided by
-     * {@link Character#getType(int) getType(codePoint)}, is {@code UPPERCASE_LETTER}.
+     * {@link Character#getType(int) getType(codePoint)}, is {@code UPPERCASE_LETTER},
+     * or it has contributory property Other_Uppercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of uppercase characters:
      * <p><blockquote><pre>
@@ -5320,7 +5325,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since   1.5
      */
     public static boolean isUpperCase(int codePoint) {
-        return getType(codePoint) == Character.UPPERCASE_LETTER;
+        return getType(codePoint) == Character.UPPERCASE_LETTER ||
+               CharacterData.of(codePoint).isOtherUppercase(codePoint);
     }
 
     /**
@@ -5722,6 +5728,52 @@ class Character implements java.io.Serializable, Comparable<Character> {
     @Deprecated
     public static boolean isJavaLetterOrDigit(char ch) {
         return isJavaIdentifierPart(ch);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an alphabet.
+     * <p>
+     * A character is considered to be alphabetic if its general category type,
+     * provided by {@link Character#getType(int) getType(codePoint)}, is any of
+     * the following:
+     * <ul>
+     * <li> <code>UPPERCASE_LETTER</code>
+     * <li> <code>LOWERCASE_LETTER</code>
+     * <li> <code>TITLECASE_LETTER</code>
+     * <li> <code>MODIFIER_LETTER</code>
+     * <li> <code>OTHER_LETTER</code>
+     * <li> <code>LETTER_NUMBER</code>
+     * </ul>
+     * or it has contributory property Other_Alphabetic as defined by the
+     * Unicode Standard.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  <code>true</code> if the character is a Unicode alphabet
+     *          character, <code>false</code> otherwise.
+     * @since   1.7
+     */
+    public static boolean isAlphabetic(int codePoint) {
+        return (((((1 << Character.UPPERCASE_LETTER) |
+            (1 << Character.LOWERCASE_LETTER) |
+            (1 << Character.TITLECASE_LETTER) |
+            (1 << Character.MODIFIER_LETTER) |
+            (1 << Character.OTHER_LETTER) |
+            (1 << Character.LETTER_NUMBER)) >> getType(codePoint)) & 1) != 0) ||
+            CharacterData.of(codePoint).isOtherAlphabetic(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is a CJKV
+     * (Chinese, Japanese, Korean and Vietnamese) ideograph, as defined by
+     * the Unicode Standard.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  <code>true</code> if the character is a Unicode ideograph
+     *          character, <code>false</code> otherwise.
+     * @since   1.7
+     */
+    public static boolean isIdeographic(int codePoint) {
+        return CharacterData.of(codePoint).isIdeographic(codePoint);
     }
 
     /**
@@ -6430,7 +6482,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Determines if the specified character is a Unicode space character.
      * A character is considered to be a space character if and only if
-     * it is specified to be a space character by the Unicode standard. This
+     * it is specified to be a space character by the Unicode Standard. This
      * method returns true if the character's general category type is any of
      * the following:
      * <ul>
@@ -6458,7 +6510,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character (Unicode code point) is a
      * Unicode space character.  A character is considered to be a
      * space character if and only if it is specified to be a space
-     * character by the Unicode standard. This method returns true if
+     * character by the Unicode Standard. This method returns true if
      * the character's general category type is any of the following:
      *
      * <ul>
@@ -6908,7 +6960,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since 1.4
      */
     static char[] toUpperCaseCharArray(int codePoint) {
-        // As of Unicode 4.0, 1:M uppercasings only happen in the BMP.
+        // As of Unicode 6.0, 1:M uppercasings only happen in the BMP.
         assert isBmpCodePoint(codePoint);
         return CharacterData.of(codePoint).toUpperCaseCharArray(codePoint);
     }
@@ -6941,7 +6993,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Note: if the specified character is not assigned a name by
      * the <i>UnicodeData</i> file (part of the Unicode Character
      * Database maintained by the Unicode Consortium), the returned
-     * name is the same as the result of expression
+     * name is the same as the result of expression.
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')

@@ -236,6 +236,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   }
   Node* predicate_c = NULL;
   Node* predicate_x = NULL;
+  bool counted_loop = r->is_CountedLoop();
 
   Node *region_c = new (igvn->C, req_c + 1) RegionNode(req_c + 1);
   Node *phi_c    = con1;
@@ -294,16 +295,16 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   if (predicate_c != NULL) {
     assert(predicate_x == NULL, "only one predicate entry expected");
     // Clone loop predicates to each path
-    iff_c_t = igvn->clone_loop_predicates(predicate_c, iff_c_t);
-    iff_c_f = igvn->clone_loop_predicates(predicate_c, iff_c_f);
+    iff_c_t = igvn->clone_loop_predicates(predicate_c, iff_c_t, !counted_loop);
+    iff_c_f = igvn->clone_loop_predicates(predicate_c, iff_c_f, !counted_loop);
   }
   Node *iff_x_t = phase->transform(new (igvn->C, 1) IfTrueNode (iff_x));
   Node *iff_x_f = phase->transform(new (igvn->C, 1) IfFalseNode(iff_x));
   if (predicate_x != NULL) {
     assert(predicate_c == NULL, "only one predicate entry expected");
     // Clone loop predicates to each path
-    iff_x_t = igvn->clone_loop_predicates(predicate_x, iff_x_t);
-    iff_x_f = igvn->clone_loop_predicates(predicate_x, iff_x_f);
+    iff_x_t = igvn->clone_loop_predicates(predicate_x, iff_x_t, !counted_loop);
+    iff_x_f = igvn->clone_loop_predicates(predicate_x, iff_x_f, !counted_loop);
   }
 
   // Merge the TRUE paths
@@ -545,6 +546,7 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   Node *new_bol = gvn->transform( new (gvn->C, 2) BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
   igvn->hash_delete( iff );
   iff->set_req_X( 1, new_bol, igvn );
+  igvn->_worklist.push( iff );
 }
 
 //------------------------------up_one_dom-------------------------------------

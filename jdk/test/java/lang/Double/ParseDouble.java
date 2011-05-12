@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911 4421494 7021568
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494 7021568 7039369
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 

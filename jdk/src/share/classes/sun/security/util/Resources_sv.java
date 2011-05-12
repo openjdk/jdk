@@ -47,7 +47,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Alternativ]..."},
         {"Options.", "Alternativ:"},
         {"Use.keytool.help.for.all.available.commands",
                  "L\u00E4s \"Hj\u00E4lp - Nyckelverktyg\" f\u00F6r alla tillg\u00E4ngliga kommandon"},
@@ -67,6 +68,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Exporterar certifikat"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genererar nyckelpar"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genererar hemlig nyckel"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "L\u00E4ngd p\u00E5 certifikatskedja: "},
         {"Certificate.i.1.", "Certifikat[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Certifikatets fingeravtryck (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "Posttyp: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Nyckellagertyp: "},
         {"Keystore.provider.", "Nyckellagerleverant\u00F6r: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -331,7 +331,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "Vill du fortfarande l\u00E4gga till det i ditt eget nyckellagret? [nej]:  "},
         {"Trust.this.certificate.no.", "Litar du p\u00E5 det h\u00E4r certifikatet? [nej]:  "},
-        {"YES", "JA"},
+        {"YES", "Ja"},
         {"New.prompt.", "Nytt {0}: "},
         {"Passwords.must.differ", "L\u00F6senorden m\u00E5ste vara olika"},
         {"Re.enter.new.prompt.", "Ange nytt {0} igen: "},
@@ -368,7 +368,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                  "Aliaset <{0}> refererar till en posttyp som inte \u00E4r n\u00E5gon privat nyckelpost. Kommandot -keyclone har endast st\u00F6d f\u00F6r kloning av privata nyckelposter"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Varning Varning Varning  *****************"},
         {"Signer.d.", "Signerare #%d:"},
         {"Timestamp.", "Tidsst\u00E4mpel:"},
         {"Signature.", "Underskrift:"},
@@ -378,20 +378,10 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "Inget certifikat fr\u00E5n SSL-servern"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* Integriteten f\u00F6r den information som lagras i nyckellagerfilen  *"},
+            "* Integriteten f\u00F6r den information som lagras i nyckellagerfilen  *\n* har INTE verifierats!  Om du vill verifiera dess integritet *\n* m\u00E5ste du ange l\u00F6senordet f\u00F6r nyckellagret.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* Integriteten f\u00F6r informationen som lagras i srckeystore*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* har INTE verifierats!  Om du vill verifiera dess integritet, *"},
-        {".you.must.provide.your.keystore.password.",
-            "* m\u00E5ste du ange nyckellagerl\u00F6senord.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* du m\u00E5ste ange l\u00F6senordet f\u00F6r srckeystore.                *"},
-
+            "* Integriteten f\u00F6r den information som lagras i srckeystore*\n* har INTE verifierats!  Om du vill verifiera dess integritet *\n* m\u00E5ste du ange l\u00F6senordet f\u00F6r srckeystore.                *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "Certifikatsvaret inneh\u00E5ller inte n\u00E5gon offentlig nyckel f\u00F6r <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Toppniv\u00E5certifikatet i svaret:\n"},
         {".is.not.trusted.", "... \u00E4r inte betrott. "},
         {"Install.reply.anyway.no.", "Vill du installera svaret \u00E4nd\u00E5? [nej]:  "},
-        {"NO", "NEJ"},
+        {"NO", "Nej"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "De offentliga nycklarna i svaret och nyckellagret matchar inte varandra"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -639,9 +629,9 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"expected.permission.entry", "f\u00F6rv\u00E4ntade beh\u00F6righetspost"},
         {"number.", "antal "},
         {"expected.expect.read.end.of.file.",
-                "f\u00F6rv\u00E4ntade [{0}], l\u00E4ste [end of file]"},
+                "f\u00F6rv\u00E4ntade [{0}], l\u00E4ste [filslut]"},
         {"expected.read.end.of.file.",
-                "f\u00F6rv\u00E4ntade [;], l\u00E4ste [end of file]"},
+                "f\u00F6rv\u00E4ntade [;], l\u00E4ste [filslut]"},
         {"line.number.msg", "rad {0}: {1}"},
         {"line.number.expected.expect.found.actual.",
                 "rad {0}: f\u00F6rv\u00E4ntade [{1}], hittade [{2}]"},
