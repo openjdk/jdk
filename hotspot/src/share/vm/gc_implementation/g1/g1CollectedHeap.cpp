@@ -1162,7 +1162,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
                 PrintGC, true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
-    TraceMemoryManagerStats tms(true /* fullGC */);
+    TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
     double start = os::elapsedTime();
     g1_policy()->record_full_collection_start();
@@ -3202,7 +3202,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(false /* fullGC */);
+    TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
 
     // If the secondary_free_list is not empty, append it to the
     // free_list. No need to wait for the cleanup operation to finish;
