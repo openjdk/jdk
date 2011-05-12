@@ -31,6 +31,11 @@
  * JSR 292 reference implementation: method handle structure analysis
  */
 
+#ifdef PRODUCT
+#define print_method_handle(mh) {}
+#else //PRODUCT
+extern "C" void print_method_handle(oop mh);
+#endif //PRODUCT
 
 // -----------------------------------------------------------------------------
 // MethodHandleChain
@@ -206,8 +211,10 @@ MethodHandleWalker::walk(TRAPS) {
         lose("bad argument index", CHECK_(empty));
       }
 
+      bool retain_original_args = false;  // used by fold/collect logic
+
       // perform the adapter action
-      switch (chain().adapter_conversion_op()) {
+      switch (conv_op) {
       case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY:
         // No changes to arguments; pass the bits through.
         break;
@@ -216,51 +223,36 @@ MethodHandleWalker::walk(TRAPS) {
         // To keep the verifier happy, emit bitwise ("raw") conversions as needed.
         // See MethodHandles::same_basic_type_for_arguments for allowed conversions.
         Handle incoming_mtype(THREAD, chain().method_type_oop());
-        oop outgoing_mh_oop = chain().vmtarget_oop();
-        if (!java_lang_invoke_MethodHandle::is_instance(outgoing_mh_oop))
-          lose("outgoing target not a MethodHandle", CHECK_(empty));
-        Handle outgoing_mtype(THREAD, java_lang_invoke_MethodHandle::type(outgoing_mh_oop));
-        outgoing_mh_oop = NULL;  // GC safety
+        Handle outgoing_mtype;
+        {
+          oop outgoing_mh_oop = chain().vmtarget_oop();
+          if (!java_lang_invoke_MethodHandle::is_instance(outgoing_mh_oop))
+            lose("outgoing target not a MethodHandle", CHECK_(empty));
+          outgoing_mtype = Handle(THREAD, java_lang_invoke_MethodHandle::type(outgoing_mh_oop));
+        }
 
         int nptypes = java_lang_invoke_MethodType::ptype_count(outgoing_mtype());
         if (nptypes != java_lang_invoke_MethodType::ptype_count(incoming_mtype()))
           lose("incoming and outgoing parameter count do not agree", CHECK_(empty));
 
+        // Argument types.
         for (int i = 0, slot = _outgoing.length() - 1; slot >= 0; slot--) {
           SlotState* arg_state = slot_state(slot);
           if (arg_state->_type == T_VOID)  continue;
-          ArgToken arg = _outgoing.at(slot)._arg;
 
-          klassOop  in_klass  = NULL;
-          klassOop  out_klass = NULL;
-          BasicType inpbt  = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(incoming_mtype(), i), &in_klass);
-          BasicType outpbt = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(outgoing_mtype(), i), &out_klass);
-          assert(inpbt == arg.basic_type(), "sanity");
-
-          if (inpbt != outpbt) {
-            vmIntrinsics::ID iid = vmIntrinsics::for_raw_conversion(inpbt, outpbt);
-            if (iid == vmIntrinsics::_none) {
-              lose("no raw conversion method", CHECK_(empty));
-            }
-            ArgToken arglist[2];
-            arglist[0] = arg;         // outgoing 'this'
-            arglist[1] = ArgToken();  // sentinel
-            arg = make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
-            change_argument(inpbt, slot, outpbt, arg);
-          }
-
+          klassOop  src_klass = NULL;
+          klassOop  dst_klass = NULL;
+          BasicType src = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(incoming_mtype(), i), &src_klass);
+          BasicType dst = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(outgoing_mtype(), i), &dst_klass);
+          retype_raw_argument_type(src, dst, slot, CHECK_(empty));
           i++;  // We need to skip void slots at the top of the loop.
         }
 
-        BasicType inrbt  = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(incoming_mtype()));
-        BasicType outrbt = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(outgoing_mtype()));
-        if (inrbt != outrbt) {
-          if (inrbt == T_INT && outrbt == T_VOID) {
-            // See comments in MethodHandles::same_basic_type_for_arguments.
-          } else {
-            assert(false, "IMPLEMENT ME");
-            lose("no raw conversion method", CHECK_(empty));
-          }
+        // Return type.
+        {
+          BasicType src = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(incoming_mtype()));
+          BasicType dst = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(outgoing_mtype()));
+          retype_raw_return_type(src, dst, CHECK_(empty));
         }
         break;
       }
@@ -273,7 +265,7 @@ MethodHandleWalker::walk(TRAPS) {
         assert(dest == arg_state->_type, "");
         ArgToken arg = arg_state->_arg;
         ArgToken new_arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
-        assert(arg.index() == new_arg.index(), "should be the same index");
+        assert(arg.token_type() >= tt_symbolic || arg.index() == new_arg.index(), "should be the same index");
         debug_only(dest_klass = (klassOop)badOop);
         break;
       }
@@ -332,7 +324,7 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing value
         arglist[1] = ArgToken();  // sentinel
-        arg = make_invoke(NULL, boxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
+        arg = make_invoke(NULL, boxer, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
         change_argument(src, arg_slot, T_OBJECT, arg);
         break;
       }
@@ -404,13 +396,54 @@ MethodHandleWalker::walk(TRAPS) {
         break;
       }
 
-      case java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS: { //NYI, may GC
-        lose("unimplemented", CHECK_(empty));
-        break;
-      }
-
-      case java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS: { //NYI, may GC
-        lose("unimplemented", CHECK_(empty));
+      case java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS:
+        retain_original_args = true;   // and fall through:
+      case java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS: {
+        // call argument MH recursively
+        //{static int x; if (!x++) print_method_handle(chain().method_handle_oop()); --x;}
+        Handle recursive_mh(THREAD, chain().adapter_arg_oop());
+        if (!java_lang_invoke_MethodHandle::is_instance(recursive_mh())) {
+          lose("recursive target not a MethodHandle", CHECK_(empty));
+        }
+        Handle recursive_mtype(THREAD, java_lang_invoke_MethodHandle::type(recursive_mh()));
+        int argc = java_lang_invoke_MethodType::ptype_count(recursive_mtype());
+        int coll_slots = java_lang_invoke_MethodHandle::vmslots(recursive_mh());
+        BasicType rtype = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(recursive_mtype()));
+        ArgToken* arglist = NEW_RESOURCE_ARRAY(ArgToken, 1 + argc + 1);  // 1+: mh, +1: sentinel
+        arglist[0] = make_oop_constant(recursive_mh(), CHECK_(empty));
+        if (arg_slot < 0 || coll_slots < 0 || arg_slot + coll_slots > _outgoing.length()) {
+          lose("bad fold/collect arg slot", CHECK_(empty));
+        }
+        for (int i = 0, slot = arg_slot + coll_slots - 1; slot >= arg_slot; slot--) {
+          SlotState* arg_state = slot_state(slot);
+          BasicType  arg_type  = arg_state->_type;
+          if (arg_type == T_VOID)  continue;
+          ArgToken arg = _outgoing.at(slot)._arg;
+          if (i >= argc) { lose("bad fold/collect arg", CHECK_(empty)); }
+          arglist[1+i] = arg;
+          if (!retain_original_args)
+            change_argument(arg_type, slot, T_VOID, ArgToken(tt_void));
+        }
+        arglist[1+argc] = ArgToken();  // sentinel
+        oop invoker = java_lang_invoke_MethodTypeForm::vmlayout(
+                          java_lang_invoke_MethodType::form(recursive_mtype()) );
+        if (invoker == NULL || !invoker->is_method()) {
+          lose("bad vmlayout slot", CHECK_(empty));
+        }
+        // FIXME: consider inlining the invokee at the bytecode level
+        ArgToken ret = make_invoke(methodOop(invoker), vmIntrinsics::_none,
+                                   Bytecodes::_invokevirtual, false, 1+argc, &arglist[0], CHECK_(empty));
+        DEBUG_ONLY(invoker = NULL);
+        if (rtype == T_OBJECT) {
+          klassOop rklass = java_lang_Class::as_klassOop( java_lang_invoke_MethodType::rtype(recursive_mtype()) );
+          if (rklass != SystemDictionary::Object_klass() &&
+              !Klass::cast(rklass)->is_interface()) {
+            // preserve type safety
+            ret = make_conversion(T_OBJECT, rklass, Bytecodes::_checkcast, ret, CHECK_(empty));
+          }
+        }
+        int ret_slot = arg_slot + (retain_original_args ? coll_slots : 0);
+        change_argument(T_VOID, ret_slot, rtype, ret);
         break;
       }
 
@@ -504,7 +537,7 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad bound value", CHECK_(empty));
         }
       }
-      debug_only(arg_oop = badOop);
+      DEBUG_ONLY(arg_oop = badOop);
       change_argument(T_VOID, arg_slot, arg_type, arg);
     }
 
@@ -547,11 +580,10 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   }
   for (int i = 0; i < nptypes; i++) {
     klassOop  arg_type_klass = NULL;
-    BasicType arg_type = java_lang_Class::as_BasicType(
-                java_lang_invoke_MethodType::ptype(mtype(), i), &arg_type_klass);
+    BasicType arg_type = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::ptype(mtype(), i), &arg_type_klass);
     int index = new_local_index(arg_type);
     ArgToken arg = make_parameter(arg_type, arg_type_klass, index, CHECK);
-    debug_only(arg_type_klass = (klassOop) NULL);
+    DEBUG_ONLY(arg_type_klass = (klassOop) NULL);
     _outgoing.at_put(argp, make_state(arg_type, arg));
     if (type2size[arg_type] == 2) {
       // add the extra slot, so we can model the JVM stack
@@ -561,8 +593,7 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   }
   // call make_parameter at the end of the list for the return type
   klassOop  ret_type_klass = NULL;
-  BasicType ret_type = java_lang_Class::as_BasicType(
-              java_lang_invoke_MethodType::rtype(mtype()), &ret_type_klass);
+  BasicType ret_type = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(mtype()), &ret_type_klass);
   ArgToken  ret = make_parameter(ret_type, ret_type_klass, -1, CHECK);
   // ignore ret; client can catch it if needed
 }
@@ -611,6 +642,48 @@ int MethodHandleWalker::argument_count_slow() {
   return args_seen;
 }
 #endif
+
+
+// -----------------------------------------------------------------------------
+// MethodHandleWalker::retype_raw_conversion
+//
+// Do the raw retype conversions for OP_RETYPE_RAW.
+void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, bool for_return, int slot, TRAPS) {
+  if (src != dst) {
+    if (MethodHandles::same_basic_type_for_returns(src, dst, /*raw*/ true)) {
+      if (MethodHandles::is_float_fixed_reinterpretation_cast(src, dst)) {
+        if (for_return)  Untested("MHW return raw conversion");  // still untested
+        vmIntrinsics::ID iid = vmIntrinsics::for_raw_conversion(src, dst);
+        if (iid == vmIntrinsics::_none) {
+          lose("no raw conversion method", CHECK);
+        }
+        ArgToken arglist[2];
+        if (!for_return) {
+          // argument type conversion
+          ArgToken arg = _outgoing.at(slot)._arg;
+          assert(arg.token_type() >= tt_symbolic || src == arg.basic_type(), "sanity");
+          arglist[0] = arg;         // outgoing 'this'
+          arglist[1] = ArgToken();  // sentinel
+          arg = make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+          change_argument(src, slot, dst, arg);
+        } else {
+          // return type conversion
+          klassOop arg_klass = NULL;
+          arglist[0] = make_parameter(src, arg_klass, -1, CHECK);  // return value
+          arglist[1] = ArgToken();                                 // sentinel
+          (void) make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+        }
+      } else {
+        // Nothing to do.
+      }
+    } else if (src == T_OBJECT && is_java_primitive(dst)) {
+      // ref-to-prim: discard ref, push zero
+      lose("requested ref-to-prim conversion not expected", CHECK);
+    } else {
+      lose("requested raw conversion not allowed", CHECK);
+    }
+  }
+}
 
 
 // -----------------------------------------------------------------------------
@@ -719,6 +792,7 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_astore_1:
   case Bytecodes::_astore_2:
   case Bytecodes::_astore_3:
+  case Bytecodes::_iand:
   case Bytecodes::_i2l:
   case Bytecodes::_i2f:
   case Bytecodes::_i2d:
@@ -945,7 +1019,11 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
     break;
 
   default:
-    ShouldNotReachHere();
+    if (op == Bytecodes::_illegal)
+      lose("no such primitive conversion", THREAD);
+    else
+      lose("bad primitive conversion op", THREAD);
+    return make_prim_constant(type, &zero_jvalue, THREAD);
   }
 
   return make_parameter(type, tk, index, THREAD);
@@ -956,7 +1034,9 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
 // MethodHandleCompiler
 //
 
-static jvalue zero_jvalue;
+// Values used by the compiler.
+jvalue MethodHandleCompiler::zero_jvalue = { 0 };
+jvalue MethodHandleCompiler::one_jvalue  = { 1 };
 
 // Emit bytecodes for the given invoke instruction.
 MethodHandleWalker::ArgToken
@@ -964,18 +1044,18 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
                                   Bytecodes::Code op, bool tailcall,
                                   int argc, MethodHandleWalker::ArgToken* argv,
                                   TRAPS) {
+  ArgToken zero;
   if (m == NULL) {
     // Get the intrinsic methodOop.
     m = vmIntrinsics::method_for(iid);
     if (m == NULL) {
-      ArgToken zero;
       lose(vmIntrinsics::name_at(iid), CHECK_(zero));
     }
   }
 
-  klassOop  klass   = m->method_holder();
-  Symbol* name      = m->name();
-  Symbol* signature = m->signature();
+  klassOop klass     = m->method_holder();
+  Symbol*  name      = m->name();
+  Symbol*  signature = m->signature();
 
   if (tailcall) {
     // Actually, in order to make these methods more recognizable,
@@ -1041,7 +1121,6 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     if (rbt != _rtype) {
       if (rbt == T_VOID) {
         // push a zero of the right sort
-        ArgToken zero;
         if (_rtype == T_OBJECT) {
           zero = make_oop_constant(NULL, CHECK_(zero));
         } else {
@@ -1051,9 +1130,27 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
       } else if (_rtype == T_VOID) {
         // We'll emit a _return with something on the stack.
         // It's OK to ignore what's on the stack.
+      } else if (rbt == T_INT && is_subword_type(_rtype)) {
+        // Convert value to match return type.
+        switch (_rtype) {
+        case T_BOOLEAN: {
+          // boolean is treated as a one-bit unsigned integer.
+          // Cf. API documentation: java/lang/invoke/MethodHandles.html#explicitCastArguments
+          ArgToken one = make_prim_constant(T_INT, &one_jvalue, CHECK_(zero));
+          emit_load_constant(one);
+          emit_bc(Bytecodes::_iand);
+          break;
+        }
+        case T_BYTE:    emit_bc(Bytecodes::_i2b); break;
+        case T_CHAR:    emit_bc(Bytecodes::_i2c); break;
+        case T_SHORT:   emit_bc(Bytecodes::_i2s); break;
+        default: ShouldNotReachHere();
+        }
+      } else if (is_subword_type(rbt) && (is_subword_type(_rtype) || (_rtype == T_INT))) {
+        // The subword type was returned as an int and will be passed
+        // on as an int.
       } else {
-        tty->print_cr("*** rbt=%d != rtype=%d", rbt, _rtype);
-        assert(false, "IMPLEMENT ME");
+        lose("unknown conversion", CHECK_(zero));
       }
     }
     switch (_rtype) {
@@ -1216,16 +1313,16 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   typeArrayHandle exception_handlers(THREAD, Universe::the_empty_int_array());
   m->set_exception_table(exception_handlers());
 
-  // Set the invocation counter's count to the invoke count of the
-  // original call site.
-  InvocationCounter* ic = m->invocation_counter();
-  ic->set(InvocationCounter::wait_for_compile, _invoke_count);
-
   // Rewrite the method and set up the constant pool cache.
   objArrayOop m_array = oopFactory::new_system_objArray(1, CHECK_(empty));
   objArrayHandle methods(THREAD, m_array);
   methods->obj_at_put(0, m());
   Rewriter::rewrite(_target_klass(), cpool, methods, CHECK_(empty));  // Use fake class.
+
+  // Set the invocation counter's count to the invoke count of the
+  // original call site.
+  InvocationCounter* ic = m->invocation_counter();
+  ic->set(InvocationCounter::wait_for_compile, _invoke_count);
 
   // Create a new MDO
   {
@@ -1235,10 +1332,12 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
 
     // Iterate over all profile data and set the count of the counter
     // data entries to the original call site counter.
-    for (ProfileData* pd = mdo->first_data(); mdo->is_valid(pd); pd = mdo->next_data(pd)) {
-      if (pd->is_CounterData()) {
-        CounterData* cd = pd->as_CounterData();
-        cd->set_count(_invoke_count);
+    for (ProfileData* profile_data = mdo->first_data();
+         mdo->is_valid(profile_data);
+         profile_data = mdo->next_data(profile_data)) {
+      if (profile_data->is_CounterData()) {
+        CounterData* counter_data = profile_data->as_CounterData();
+        counter_data->set_count(_invoke_count);
       }
     }
   }
@@ -1257,7 +1356,6 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
 
 #ifndef PRODUCT
 
-#if 0
 // MH printer for debugging.
 
 class MethodHandlePrinter : public MethodHandleWalker {
@@ -1265,6 +1363,7 @@ private:
   outputStream* _out;
   bool          _verbose;
   int           _temp_num;
+  int           _param_state;
   stringStream  _strbuf;
   const char* strbuf() {
     const char* s = _strbuf.as_string();
@@ -1272,14 +1371,21 @@ private:
     return s;
   }
   ArgToken token(const char* str) {
-    return (ArgToken) str;
+    jvalue string_con;
+    string_con.j = (intptr_t) str;
+    return ArgToken(tt_symbolic, T_LONG, string_con);
+  }
+  const char* string(ArgToken token) {
+    return (const char*) (intptr_t) token.get_jlong();
   }
   void start_params() {
+    _param_state <<= 1;
     _out->print("(");
   }
   void end_params() {
     if (_verbose)  _out->print("\n");
     _out->print(") => {");
+    _param_state >>= 1;
   }
   void put_type_name(BasicType type, klassOop tk, outputStream* s) {
     const char* kname = NULL;
@@ -1299,9 +1405,10 @@ private:
 
 public:
   MethodHandlePrinter(Handle root, bool verbose, outputStream* out, TRAPS)
-    : MethodHandleWalker(root, THREAD),
+    : MethodHandleWalker(root, false, THREAD),
       _out(out),
       _verbose(verbose),
+      _param_state(0),
       _temp_num(0)
   {
     start_params();
@@ -1309,9 +1416,10 @@ public:
   virtual ArgToken make_parameter(BasicType type, klassOop tk, int argnum, TRAPS) {
     if (argnum < 0) {
       end_params();
-      return NULL;
+      return token("return");
     }
-    if (argnum == 0) {
+    if ((_param_state & 1) == 0) {
+      _param_state |= 1;
       _out->print(_verbose ? "\n  " : "");
     } else {
       _out->print(_verbose ? ",\n  " : ", ");
@@ -1341,8 +1449,15 @@ public:
     java_lang_boxing_object::print(type, con, &_strbuf);
     return maybe_make_temp("constant", type, "k");
   }
-  virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, ArgToken src, TRAPS) {
-    _strbuf.print("%s(%s", Bytecodes::name(op), (const char*)src);
+  void print_bytecode_name(Bytecodes::Code op) {
+    if (Bytecodes::is_defined(op))
+      _strbuf.print("%s", Bytecodes::name(op));
+    else
+      _strbuf.print("bytecode_%d", (int) op);
+  }
+  virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS) {
+    print_bytecode_name(op);
+    _strbuf.print("(%s", string(src));
     if (tk != NULL) {
       _strbuf.print(", ");
       put_type_name(type, tk, &_strbuf);
@@ -1350,8 +1465,8 @@ public:
     _strbuf.print(")");
     return maybe_make_temp("convert", type, "v");
   }
-  virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, ArgToken base, ArgToken offset, TRAPS) {
-    _strbuf.print("%s(%s, %s", Bytecodes::name(op), (const char*)base, (const char*)offset);
+  virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS) {
+    _strbuf.print("%s(%s, %s", Bytecodes::name(op), string(base), string(offset));
     if (tk != NULL) {
       _strbuf.print(", ");
       put_type_name(type, tk, &_strbuf);
@@ -1362,7 +1477,8 @@ public:
   virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid,
                                Bytecodes::Code op, bool tailcall,
                                int argc, ArgToken* argv, TRAPS) {
-    Symbol* name, sig;
+    Symbol* name;
+    Symbol* sig;
     if (m != NULL) {
       name = m->name();
       sig  = m->signature();
@@ -1372,7 +1488,7 @@ public:
     }
     _strbuf.print("%s %s%s(", Bytecodes::name(op), name->as_C_string(), sig->as_C_string());
     for (int i = 0; i < argc; i++) {
-      _strbuf.print("%s%s", (i > 0 ? ", " : ""), (const char*)argv[i]);
+      _strbuf.print("%s%s", (i > 0 ? ", " : ""), string(argv[i]));
     }
     _strbuf.print(")");
     if (!tailcall) {
@@ -1410,24 +1526,20 @@ public:
     if (HAS_PENDING_EXCEPTION) {
       oop ex = PENDING_EXCEPTION;
       CLEAR_PENDING_EXCEPTION;
-      out->print("\n*** ");
-      if (ex != Universe::virtual_machine_error_instance())
-        ex->print_on(out);
-      else
-        out->print("lose: %s", printer.lose_message());
-      out->print("\n}\n");
+      out->print(" *** ");
+      if (printer.lose_message() != NULL)  out->print("%s ", printer.lose_message());
+      out->print("}");
     }
     out->print("\n");
   }
 };
-#endif // 0
 
 extern "C"
 void print_method_handle(oop mh) {
   if (!mh->is_oop()) {
-    tty->print_cr("*** not a method handle: "INTPTR_FORMAT, (intptr_t)mh);
+    tty->print_cr("*** not a method handle: "PTR_FORMAT, (intptr_t)mh);
   } else if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-    //MethodHandlePrinter::print(mh);
+    MethodHandlePrinter::print(mh);
   } else {
     tty->print("*** not a method handle: ");
     mh->print();

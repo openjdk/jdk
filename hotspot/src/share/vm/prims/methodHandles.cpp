@@ -1099,6 +1099,14 @@ static oop object_java_mirror() {
   return Klass::cast(SystemDictionary::Object_klass())->java_mirror();
 }
 
+bool MethodHandles::is_float_fixed_reinterpretation_cast(BasicType src, BasicType dst) {
+  if (src == T_FLOAT)   return dst == T_INT;
+  if (src == T_INT)     return dst == T_FLOAT;
+  if (src == T_DOUBLE)  return dst == T_LONG;
+  if (src == T_LONG)    return dst == T_DOUBLE;
+  return false;
+}
+
 bool MethodHandles::same_basic_type_for_arguments(BasicType src,
                                                   BasicType dst,
                                                   bool raw,
@@ -1125,10 +1133,8 @@ bool MethodHandles::same_basic_type_for_arguments(BasicType src,
       return true;            // remaining case: byte fits in short
   }
   // allow float/fixed reinterpretation casts
-  if (src == T_FLOAT)   return dst == T_INT;
-  if (src == T_INT)     return dst == T_FLOAT;
-  if (src == T_DOUBLE)  return dst == T_LONG;
-  if (src == T_LONG)    return dst == T_DOUBLE;
+  if (is_float_fixed_reinterpretation_cast(src, dst))
+    return true;
   return false;
 }
 
@@ -1399,7 +1405,7 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
                                                       int argnum,
                                                       bool raw) {
   const char* err = NULL;
-  bool for_return = (argnum < 0);
+  const bool for_return = (argnum < 0);
 
   // just in case:
   if (src_type == T_ARRAY)  src_type = T_OBJECT;
@@ -1408,17 +1414,17 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
   // Produce some nice messages if VerifyMethodHandles is turned on:
   if (!same_basic_type_for_arguments(src_type, dst_type, raw, for_return)) {
     if (src_type == T_OBJECT) {
-      if (raw && dst_type == T_INT && is_always_null_type(src_klass))
-        return NULL;    // OK to convert a null pointer to a garbage int
-      err = ((argnum >= 0)
+      if (raw && is_java_primitive(dst_type))
+        return NULL;    // ref-to-prim discards ref and returns zero
+      err = (!for_return
              ? "type mismatch: passing a %s for method argument #%d, which expects primitive %s"
              : "type mismatch: returning a %s, but caller expects primitive %s");
     } else if (dst_type == T_OBJECT) {
-      err = ((argnum >= 0)
+      err = (!for_return
              ? "type mismatch: passing a primitive %s for method argument #%d, which expects %s"
              : "type mismatch: returning a primitive %s, but caller expects %s");
     } else {
-      err = ((argnum >= 0)
+      err = (!for_return
              ? "type mismatch: passing a %s for method argument #%d, which expects %s"
              : "type mismatch: returning a %s, but caller expects %s");
     }
@@ -1427,11 +1433,11 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
     if (!class_cast_needed(dst_klass, src_klass)) {
       if (raw)
         return NULL;    // reverse cast is OK; the MH target is trusted to enforce it
-      err = ((argnum >= 0)
+      err = (!for_return
              ? "cast required: passing a %s for method argument #%d, which expects %s"
              : "cast required: returning a %s, but caller expects %s");
     } else {
-      err = ((argnum >= 0)
+      err = (!for_return
              ? "reference mismatch: passing a %s for method argument #%d, which expects %s"
              : "reference mismatch: returning a %s, but caller expects %s");
     }
@@ -1452,7 +1458,7 @@ const char* MethodHandles::check_argument_type_change(BasicType src_type,
 
   size_t msglen = strlen(err) + strlen(src_name) + strlen(dst_name) + (argnum < 10 ? 1 : 11);
   char* msg = NEW_RESOURCE_ARRAY(char, msglen + 1);
-  if (argnum >= 0) {
+  if (!for_return) {
     assert(strstr(err, "%d") != NULL, "");
     jio_snprintf(msg, msglen, err, src_name, argnum, dst_name);
   } else {
@@ -2180,9 +2186,10 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
 }
 
 void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnum, TRAPS) {
-  int  argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
-  jint conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
-  jint conv_op    = adapter_conversion_op(conversion);
+  Handle argument   = java_lang_invoke_AdapterMethodHandle::argument(mh());
+  int    argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
+  jint   conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
+  jint   conv_op    = adapter_conversion_op(conversion);
 
   // adjust the adapter code to the internal EntryKind enumeration:
   EntryKind ek_orig = adapter_entry_kind(conv_op);
@@ -2241,7 +2248,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         } else if (src == T_DOUBLE && dest == T_FLOAT) {
           ek_opt = _adapter_opt_d2f;
         } else {
-          assert(false, "");
+          goto throw_not_impl;        // runs user code, hence could block
         }
         break;
       case 1 *4+ 2:
@@ -2250,11 +2257,11 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         } else if (src == T_FLOAT && dest == T_DOUBLE) {
           ek_opt = _adapter_opt_f2d;
         } else {
-          assert(false, "");
+          goto throw_not_impl;        // runs user code, hence could block
         }
         break;
       default:
-        assert(false, "");
+        goto throw_not_impl;        // runs user code, hence could block
         break;
       }
     }
@@ -2271,7 +2278,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         ek_opt = _adapter_opt_unboxl;
         break;
       default:
-        assert(false, "");
+        goto throw_not_impl;
         break;
       }
     }
@@ -2284,6 +2291,9 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
       vminfo = argslot;
       ek_opt = _adapter_opt_collect_ref;
       ensure_vmlayout_field(target, CHECK);
+      // for MethodHandleWalk:
+      if (java_lang_invoke_AdapterMethodHandle::is_instance(argument()))
+        ensure_vmlayout_field(argument, CHECK);
       if (!OptimizeMethodHandles)  break;
       switch (type2size[src]) {
       case 1:
@@ -2311,7 +2321,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
         ek_opt = _adapter_opt_collect_2_ref;
         break;
       default:
-        assert(false, "");
+        goto throw_not_impl;
         break;
       }
     }
@@ -2335,7 +2345,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
                   rotate > 0 ? _adapter_opt_rot_2_up : _adapter_opt_rot_2_down);
         break;
       default:
-        assert(false, "");
+        goto throw_not_impl;
         break;
       }
     }
@@ -2402,12 +2412,11 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   case _adapter_collect_args:
     {
       assert(UseRicochetFrames, "else don't come here");
-      int elem_slots = argument_slot_count(
-                           java_lang_invoke_MethodHandle::type(
-                               java_lang_invoke_AdapterMethodHandle::argument(mh()) ) );
+      int elem_slots = argument_slot_count(java_lang_invoke_MethodHandle::type(argument()));
       // vminfo will be the location to insert the return value
       vminfo = argslot;
       ensure_vmlayout_field(target, CHECK);
+      ensure_vmlayout_field(argument, CHECK);
 
       // general case:
       switch (dest) {
@@ -2472,12 +2481,11 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   case _adapter_fold_args:
     {
       assert(UseRicochetFrames, "else don't come here");
-      int elem_slots = argument_slot_count(
-                           java_lang_invoke_MethodHandle::type(
-                               java_lang_invoke_AdapterMethodHandle::argument(mh()) ) );
+      int elem_slots = argument_slot_count(java_lang_invoke_MethodHandle::type(argument()));
       // vminfo will be the location to insert the return value
       vminfo = argslot + elem_slots;
       ensure_vmlayout_field(target, CHECK);
+      ensure_vmlayout_field(argument, CHECK);
 
       switch (dest) {
       default       : if (!is_subword_type(dest))  goto throw_not_impl;
@@ -2527,13 +2535,29 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
     break;
   }
 
-  if (err != NULL && (vminfo & CONV_VMINFO_MASK) != vminfo) {
+  if (err == NULL && (vminfo & CONV_VMINFO_MASK) != vminfo) {
     // should not happen, since vminfo is used to encode arg/slot indexes < 255
     err = "vminfo overflow";
   }
 
-  if (err != NULL && !have_entry(ek_opt)) {
+  if (err == NULL && !have_entry(ek_opt)) {
     err = "adapter stub for this kind of method handle is missing";
+  }
+
+  if (err == NULL && ek_opt == ek_orig) {
+    switch (ek_opt) {
+    case _adapter_prim_to_prim:
+    case _adapter_ref_to_prim:
+    case _adapter_prim_to_ref:
+    case _adapter_swap_args:
+    case _adapter_rot_args:
+    case _adapter_collect_args:
+    case _adapter_fold_args:
+    case _adapter_spread_args:
+      // should be handled completely by optimized cases; see above
+      err = "init_AdapterMethodHandle should not issue this";
+      break;
+    }
   }
 
   if (err != NULL) {

@@ -698,6 +698,8 @@ class MethodHandles: AllStatic {
                                               KlassHandle receiver_klass,
                                               TRAPS);
 
+public:
+  static bool is_float_fixed_reinterpretation_cast(BasicType src, BasicType dst);
   static bool same_basic_type_for_arguments(BasicType src, BasicType dst,
                                             bool raw = false,
                                             bool for_return = false);

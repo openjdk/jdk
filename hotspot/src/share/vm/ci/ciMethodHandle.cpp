@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciClassList.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciUtilities.hpp"
 #include "prims/methodHandleWalk.hpp"
@@ -36,13 +37,13 @@
 // ciMethodHandle::get_adapter
 //
 // Return an adapter for this MethodHandle.
-ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
+ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) const {
   VM_ENTRY_MARK;
   Handle h(get_oop());
   methodHandle callee(_callee->get_methodOop());
   // We catch all exceptions here that could happen in the method
   // handle compiler and stop the VM.
-  MethodHandleCompiler mhc(h, callee, call_profile()->count(), is_invokedynamic, THREAD);
+  MethodHandleCompiler mhc(h, callee, _profile->count(), is_invokedynamic, THREAD);
   if (!HAS_PENDING_EXCEPTION) {
     methodHandle m = mhc.compile(THREAD);
     if (!HAS_PENDING_EXCEPTION) {
@@ -56,6 +57,22 @@ ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
   }
   CLEAR_PENDING_EXCEPTION;
   return NULL;
+}
+
+// ------------------------------------------------------------------
+// ciMethodHandle::get_adapter
+//
+// Return an adapter for this MethodHandle.
+ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
+  ciMethod* result = get_adapter_impl(is_invokedynamic);
+  if (result) {
+    // Fake up the MDO maturity.
+    ciMethodData* mdo = result->method_data();
+    if (mdo != NULL && _caller->method_data() != NULL && _caller->method_data()->is_mature()) {
+      mdo->set_mature();
+    }
+  }
+  return result;
 }
 
 
