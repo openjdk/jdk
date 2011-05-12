@@ -1623,6 +1623,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
                                            int tempcount,
                                            int popframe_extra_args,
                                            int moncount,
+                                           int caller_actual_parameters,
                                            int callee_param_count,
                                            int callee_local_count,
                                            frame* caller,
@@ -1698,24 +1699,35 @@ int AbstractInterpreter::layout_activation(methodOop method,
                      popframe_extra_args;
 
     int local_words = method->max_locals() * Interpreter::stackElementWords;
+    NEEDS_CLEANUP;
     intptr_t* locals;
-    if (caller->is_compiled_frame()) {
-      // Compiled frames do not allocate a varargs area so place them
-      // next to the register save area.
-      locals = fp + frame::register_save_words + local_words - 1;
-      // Caller wants his own SP back
-      int caller_frame_size = caller->cb()->frame_size();
-      *interpreter_frame->register_addr(I5_savedSP) = (intptr_t)(caller->fp() - caller_frame_size) - STACK_BIAS;
+    if (caller->is_interpreted_frame()) {
+      // Can force the locals area to end up properly overlapping the top of the expression stack.
+      intptr_t* Lesp_ptr = caller->interpreter_frame_tos_address() - 1;
+      // Note that this computation means we replace size_of_parameters() values from the caller
+      // interpreter frame's expression stack with our argument locals
+      int parm_words  = caller_actual_parameters * Interpreter::stackElementWords;
+      locals = Lesp_ptr + parm_words;
+      int delta = local_words - parm_words;
+      int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
+      *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
     } else {
-      assert(caller->is_interpreted_frame() || caller->is_entry_frame(), "only possible cases");
-      // The entry and interpreter frames are laid out like normal C
-      // frames so place the locals adjacent to the varargs area.
-      locals = fp + frame::memory_parameter_word_sp_offset + local_words - 1;
-      if (caller->is_interpreted_frame()) {
-        int parm_words  = method->size_of_parameters() * Interpreter::stackElementWords;
-        int delta = local_words - parm_words;
-        int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
-        *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
+      assert(caller->is_compiled_frame() || caller->is_entry_frame(), "only possible cases");
+      // Don't have Lesp available; lay out locals block in the caller
+      // adjacent to the register window save area.
+      //
+      // Compiled frames do not allocate a varargs area which is why this if
+      // statement is needed.
+      //
+      if (caller->is_compiled_frame()) {
+        locals = fp + frame::register_save_words + local_words - 1;
+      } else {
+        locals = fp + frame::memory_parameter_word_sp_offset + local_words - 1;
+      }
+      if (!caller->is_entry_frame()) {
+        // Caller wants his own SP back
+        int caller_frame_size = caller->cb()->frame_size();
+        *interpreter_frame->register_addr(I5_savedSP) = (intptr_t)(caller->fp() - caller_frame_size) - STACK_BIAS;
       }
     }
     if (TraceDeoptimization) {
