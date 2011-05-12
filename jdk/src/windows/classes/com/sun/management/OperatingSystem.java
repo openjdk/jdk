@@ -58,6 +58,8 @@ class OperatingSystem
     public native long getProcessCpuTime();
     public native long getFreePhysicalMemorySize();
     public native long getTotalPhysicalMemorySize();
+    public native double getSystemCpuLoad();
+    public native double getProcessCpuLoad();
 
     static {
         initialize();
