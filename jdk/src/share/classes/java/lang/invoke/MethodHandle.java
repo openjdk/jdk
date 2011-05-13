@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import sun.invoke.util.ValueConversions;
 import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
@@ -706,6 +707,9 @@ public abstract class MethodHandle {
      * @see MethodHandles#convertArguments
      */
     public MethodHandle asType(MethodType newType) {
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert "+type+" to "+newType);
+        }
         return MethodHandles.convertArguments(this, newType);
     }
 
@@ -748,13 +752,9 @@ public abstract class MethodHandle {
     public MethodHandle asSpreader(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
         if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
-        MethodType oldType = type();
-        int nargs = oldType.parameterCount();
+        int nargs = type().parameterCount();
         if (nargs < arrayLength)  throw newIllegalArgumentException("bad spread array length");
-        int keepPosArgs = nargs - arrayLength;
-        MethodType newType = oldType.dropParameterTypes(keepPosArgs, nargs);
-        newType = newType.insertParameterTypes(keepPosArgs, arrayType);
-        return MethodHandles.spreadArguments(this, newType);
+        return MethodHandleImpl.spreadArguments(this, arrayType, arrayLength);
     }
 
     /**
@@ -797,15 +797,18 @@ public abstract class MethodHandle {
      * @see #asVarargsCollector
      */
     public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
+        asCollectorChecks(arrayType, arrayLength);
+        MethodHandle collector = ValueConversions.varargsArray(arrayType, arrayLength);
+        return MethodHandleImpl.collectArguments(this, type.parameterCount()-1, collector);
+    }
+
+    private  void asCollectorChecks(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
-        if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
-        MethodType oldType = type();
-        int nargs = oldType.parameterCount();
-        if (nargs == 0)  throw newIllegalArgumentException("no trailing argument");
-        MethodType newType = oldType.dropParameterTypes(nargs-1, nargs);
-        newType = newType.insertParameterTypes(nargs-1,
-                    java.util.Collections.<Class<?>>nCopies(arrayLength, arrayElement));
-        return MethodHandles.collectArguments(this, newType);
+        if (arrayElement == null)
+            throw newIllegalArgumentException("not an array type", arrayType);
+        int nargs = type().parameterCount();
+        if (nargs == 0 || !type().parameterType(nargs-1).isAssignableFrom(arrayType))
+            throw newIllegalArgumentException("array type not assignable to trailing argument", this, arrayType);
     }
 
     /**

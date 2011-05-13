@@ -46,6 +46,7 @@ class MethodTypeForm {
     final long argCounts;               // packed slot & value counts
     final long primCounts;              // packed prim & double counts
     final int vmslots;                  // total number of parameter slots
+    private Object vmlayout;            // vm-specific information for calls
     final MethodType erasedType;        // the canonical erasure
 
     /*lazy*/ MethodType primsAsBoxes;   // replace prims by wrappers

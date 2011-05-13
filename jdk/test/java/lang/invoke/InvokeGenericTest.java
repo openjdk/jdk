@@ -53,6 +53,10 @@ public class InvokeGenericTest {
         if (vstr != null)  verbosity = Integer.parseInt(vstr);
     }
 
+    public static void main(String... av) throws Throwable {
+        new InvokeGenericTest().testFirst();
+    }
+
     @Test
     public void testFirst() throws Throwable {
         verbosity += 9; try {
@@ -103,7 +107,7 @@ public class InvokeGenericTest {
     void startTest(String name) {
         if (testName != null)  printCounts();
         if (verbosity >= 1)
-            System.out.println(name);
+            System.out.println("["+name+"]");
         posTests = negTests = 0;
         testName = name;
     }
@@ -356,6 +360,18 @@ public class InvokeGenericTest {
     }
 
     @Test
+    public void testSimplePrims() throws Throwable {
+        startTest("testSimplePrims");
+        countTest();
+        int[] args = { 1, 2 };
+        MethodHandle mh = callable(Object.class, Object.class);
+        Object res; List resl;
+        res = resl = (List) mh.invoke(args[0], args[1]);
+        //System.out.println(res);
+        assertEquals(Arrays.toString(args), res.toString());
+    }
+
+    @Test
     public void testAlternateName() throws Throwable {
         startTest("testAlternateName");
         countTest();
@@ -415,9 +431,9 @@ public class InvokeGenericTest {
         } catch (WrongMethodTypeException ex) {
             return;
         } catch (Exception ex) {
-            throw new RuntimeException("wrong exception calling "+target+target.type()+" on "+Arrays.asList(args)+" : "+ex);
+            throw new RuntimeException("wrong exception calling "+target+" on "+Arrays.asList(args), ex);
         }
-        throw new RuntimeException("bad success calling "+target+target.type()+" on "+Arrays.asList(args));
+        throw new RuntimeException("bad success calling "+target+" on "+Arrays.asList(args));
     }
 
     /** Make a list of all combinations of the given types, with the given arities.
