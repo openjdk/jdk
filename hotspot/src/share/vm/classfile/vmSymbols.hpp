@@ -471,6 +471,13 @@
   template(sun_management_ManagementFactory,           "sun/management/ManagementFactory")                        \
   template(sun_management_Sensor,                      "sun/management/Sensor")                                   \
   template(sun_management_Agent,                       "sun/management/Agent")                                    \
+  template(sun_management_GarbageCollectorImpl,        "sun/management/GarbageCollectorImpl")                     \
+  template(getGcInfoBuilder_name,                      "getGcInfoBuilder")                                        \
+  template(getGcInfoBuilder_signature,                 "()Lsun/management/GcInfoBuilder;")                        \
+  template(com_sun_management_GcInfo,                  "com/sun/management/GcInfo")                               \
+  template(com_sun_management_GcInfo_constructor_signature, "(Lsun/management/GcInfoBuilder;JJJ[Ljava/lang/management/MemoryUsage;[Ljava/lang/management/MemoryUsage;[Ljava/lang/Object;)V") \
+  template(createGCNotification_name,                  "createGCNotification")                                    \
+  template(createGCNotification_signature,             "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/sun/management/GcInfo;)V") \
   template(createMemoryPoolMBean_name,                 "createMemoryPoolMBean")                                   \
   template(createMemoryManagerMBean_name,              "createMemoryManagerMBean")                                \
   template(createGarbageCollectorMBean_name,           "createGarbageCollectorMBean")                             \
@@ -488,6 +495,7 @@
   template(java_lang_management_MemoryPoolMXBean,      "java/lang/management/MemoryPoolMXBean")                   \
   template(java_lang_management_MemoryManagerMXBean,   "java/lang/management/MemoryManagerMXBean")                \
   template(java_lang_management_GarbageCollectorMXBean,"java/lang/management/GarbageCollectorMXBean")             \
+  template(gcInfoBuilder_name,                         "gcInfoBuilder")                                           \
   template(createMemoryPool_name,                      "createMemoryPool")                                        \
   template(createMemoryManager_name,                   "createMemoryManager")                                     \
   template(createGarbageCollector_name,                "createGarbageCollector")                                  \
