@@ -190,7 +190,7 @@ public class MethodHandles {
      * is not symbolically accessible from the lookup class's loader,
      * the lookup can still succeed.
      * For example, lookups for {@code MethodHandle.invokeExact} and
-     * {@code MethodHandle.invokeGeneric} will always succeed, regardless of requested type.
+     * {@code MethodHandle.invoke} will always succeed, regardless of requested type.
      * <li>If there is a security manager installed, it can forbid the lookup
      * on various grounds (<a href="#secmgr">see below</a>).
      * By contrast, the {@code ldc} instruction is not subject to
@@ -590,10 +590,10 @@ public class MethodHandles {
          * Because of the general equivalence between {@code invokevirtual}
          * instructions and method handles produced by {@code findVirtual},
          * if the class is {@code MethodHandle} and the name string is
-         * {@code invokeExact} or {@code invokeGeneric}, the resulting
+         * {@code invokeExact} or {@code invoke}, the resulting
          * method handle is equivalent to one produced by
          * {@link java.lang.invoke.MethodHandles#exactInvoker MethodHandles.exactInvoker} or
-         * {@link java.lang.invoke.MethodHandles#genericInvoker MethodHandles.genericInvoker}
+         * {@link java.lang.invoke.MethodHandles#invoker MethodHandles.invoker}
          * with the same {@code type} argument.
          *
          * @param refc the class or interface from which the method is accessed
@@ -1148,7 +1148,7 @@ return mh1;
      * <li>an {@code Object[]} array containing more arguments
      * </ul>
      * <p>
-     * The invoker will behave like a call to {@link MethodHandle#invokeGeneric invokeGeneric} with
+     * The invoker will behave like a call to {@link MethodHandle#invoke invoke} with
      * the indicated {@code type}.
      * That is, if the target is exactly of the given {@code type}, it will behave
      * like {@code invokeExact}; otherwise it behave as if {@link MethodHandle#asType asType}
@@ -1166,7 +1166,7 @@ return mh1;
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-MethodHandle invoker = MethodHandles.genericInvoker(type);
+MethodHandle invoker = MethodHandles.invoker(type);
 int spreadArgCount = type.parameterCount - objectArgCount;
 invoker = invoker.asSpreader(Object[].class, spreadArgCount);
 return invoker;
@@ -1186,7 +1186,7 @@ return invoker;
 
     /**
      * Produces a special <em>invoker method handle</em> which can be used to
-     * invoke any method handle of the given type, as if by {@code invokeExact}.
+     * invoke any method handle of the given type, as if by {@link MethodHandle#invokeExact invokeExact}.
      * The resulting invoker will have a type which is
      * exactly equal to the desired type, except that it will accept
      * an additional leading argument of type {@code MethodHandle}.
@@ -1203,7 +1203,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      * For example, to emulate an {@code invokeExact} call to a variable method
      * handle {@code M}, extract its type {@code T},
      * look up the invoker method {@code X} for {@code T},
-     * and call the invoker method, as {@code X.invokeGeneric(T, A...)}.
+     * and call the invoker method, as {@code X.invoke(T, A...)}.
      * (It would not work to call {@code X.invokeExact}, since the type {@code T}
      * is unknown.)
      * If spreading, collecting, or other argument transformations are required,
@@ -1212,7 +1212,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      * <p>
      * <em>(Note:  The invoker method is not available via the Core Reflection API.
      * An attempt to call {@linkplain java.lang.reflect.Method#invoke Method.invoke}
-     * on the declared {@code invokeExact} or {@code invokeGeneric} method will raise an
+     * on the declared {@code invokeExact} or {@code invoke} method will raise an
      * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.)</em>
      * <p>
      * This method throws no reflective or security exceptions.
@@ -1226,20 +1226,20 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
 
     /**
      * Produces a special <em>invoker method handle</em> which can be used to
-     * invoke any method handle of the given type, as if by {@code invokeGeneric}.
+     * invoke any method handle compatible with the given type, as if by {@link MethodHandle#invoke invoke}.
      * The resulting invoker will have a type which is
      * exactly equal to the desired type, except that it will accept
      * an additional leading argument of type {@code MethodHandle}.
      * <p>
      * Before invoking its target, the invoker will apply reference casts as
-     * necessary and unbox and widen primitive arguments, as if by {@link #convertArguments convertArguments}.
-     * The return value of the invoker will be an {@code Object} reference,
-     * boxing a primitive value if the original type returns a primitive,
-     * and always null if the original type returns void.
+     * necessary and box, unbox, or widen primitive values, as if by {@link MethodHandle#asType asType}.
+     * Similarly, the return value will be converted as necessary.
+     * If the target is a {@linkplain MethodHandle#asVarargsCollector variable arity method handle},
+     * the required arity conversion will be made, again as if by {@link MethodHandle#asType asType}.
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
+publicLookup().findVirtual(MethodHandle.class, "invoke", type)
      * </pre></blockquote>
      * <p>
      * This method throws no reflective or security exceptions.
@@ -1247,8 +1247,17 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
      * @return a method handle suitable for invoking any method handle convertible to the given type
      */
     static public
+    MethodHandle invoker(MethodType type) {
+        return type.invokers().generalInvoker();
+    }
+
+    /**
+     * <em>Temporary alias</em> for {@link #invoker}, for backward compatibility with some versions of JSR 292.
+     * @deprecated Will be removed for JSR 292 Proposed Final Draft.
+     */
+    public static
     MethodHandle genericInvoker(MethodType type) {
-        return type.invokers().genericInvoker();
+        return invoker(type);
     }
 
     /**
@@ -2142,7 +2151,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * the given {@code target} on the incoming arguments,
      * and returning or throwing whatever the {@code target}
      * returns or throws.  The invocation will be as if by
-     * {@code target.invokeGeneric}.
+     * {@code target.invoke}.
      * The target's type will be checked before the
      * instance is created, as if by a call to {@code asType},
      * which may result in a {@code WrongMethodTypeException}.

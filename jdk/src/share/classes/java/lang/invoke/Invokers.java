@@ -43,10 +43,10 @@ class Invokers {
     private /*lazy*/ MethodHandle erasedInvoker;
     /*lazy*/ MethodHandle erasedInvokerWithDrops;  // for InvokeGeneric
 
-    // generic (untyped) invoker for the outgoing call
-    private /*lazy*/ MethodHandle genericInvoker;
+    // general invoker for the outgoing call
+    private /*lazy*/ MethodHandle generalInvoker;
 
-    // generic (untyped) invoker for the outgoing call; accepts a single Object[]
+    // general invoker for the outgoing call; accepts a single Object[]
     private final /*lazy*/ MethodHandle[] spreadInvokers;
 
     // invoker for an unbound callsite
@@ -77,13 +77,13 @@ class Invokers {
         return invoker;
     }
 
-    /*non-public*/ MethodHandle genericInvoker() {
+    /*non-public*/ MethodHandle generalInvoker() {
         MethodHandle invoker1 = exactInvoker();
-        MethodHandle invoker = genericInvoker;
+        MethodHandle invoker = generalInvoker;
         if (invoker != null)  return invoker;
-        MethodType genericType = targetType.generic();
-        invoker = MethodHandles.convertArguments(invoker1, invokerType(genericType));
-        genericInvoker = invoker;
+        MethodType generalType = targetType.generic();
+        invoker = MethodHandles.convertArguments(invoker1, invokerType(generalType));
+        generalInvoker = invoker;
         return invoker;
     }
 
@@ -93,7 +93,7 @@ class Invokers {
         if (invoker != null)  return invoker;
         MethodType erasedType = targetType.erase();
         if (erasedType == targetType.generic())
-            invoker = genericInvoker();
+            invoker = generalInvoker();
         else
             invoker = MethodHandles.convertArguments(invoker1, invokerType(erasedType));
         erasedInvoker = invoker;
@@ -103,7 +103,7 @@ class Invokers {
     /*non-public*/ MethodHandle spreadInvoker(int objectArgCount) {
         MethodHandle vaInvoker = spreadInvokers[objectArgCount];
         if (vaInvoker != null)  return vaInvoker;
-        MethodHandle gInvoker = genericInvoker();
+        MethodHandle gInvoker = generalInvoker();
         vaInvoker = gInvoker.asSpreader(Object[].class, targetType.parameterCount() - objectArgCount);
         spreadInvokers[objectArgCount] = vaInvoker;
         return vaInvoker;

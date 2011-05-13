@@ -1780,7 +1780,7 @@ public class MethodHandlesTest {
         assertCalled("invokee", args);
         // generic invoker
         countTest();
-        inv = MethodHandles.genericInvoker(type);
+        inv = MethodHandles.invoker(type);
         if (nargs <= 3) {
             calledLog.clear();
             switch (nargs) {

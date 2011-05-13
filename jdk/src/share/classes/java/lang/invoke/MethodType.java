@@ -39,7 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * matched between a method handle and all its callers,
  * and the JVM's operations enforce this matching at, specifically
  * during calls to {@link MethodHandle#invokeExact MethodHandle.invokeExact}
- * and {@link MethodHandle#invokeGeneric MethodHandle.invokeGeneric}, and during execution
+ * and {@link MethodHandle#invoke MethodHandle.invoke}, and during execution
  * of {@code invokedynamic} instructions.
  * <p>
  * The structure is a return type accompanied by any number of parameter types.
@@ -294,7 +294,7 @@ class MethodType implements java.io.Serializable {
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All parameters and the return type will be Object.
      * @param objectArgCount number of parameters
-     * @return a totally generic method type, given only its count of parameters
+     * @return a generally applicable method type, for all calls of the given argument count
      * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
      * @see #genericMethodType(int, boolean)
      */
