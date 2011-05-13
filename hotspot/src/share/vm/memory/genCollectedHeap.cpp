@@ -537,7 +537,7 @@ void GenCollectedHeap::do_collection(bool  full,
         // Timer for individual generations. Last argument is false: no CR
         TraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, gclog_or_tty);
         TraceCollectorStats tcs(_gens[i]->counters());
-        TraceMemoryManagerStats tmms(_gens[i]->kind());
+        TraceMemoryManagerStats tmms(_gens[i]->kind(),gc_cause());
 
         size_t prev_used = _gens[i]->used();
         _gens[i]->stat_record()->invocations++;

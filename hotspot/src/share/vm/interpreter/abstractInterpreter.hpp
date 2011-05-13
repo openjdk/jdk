@@ -175,19 +175,32 @@ class AbstractInterpreter: AllStatic {
                                     int temps,
                                     int popframe_args,
                                     int monitors,
+                                    int caller_actual_parameters,
                                     int callee_params,
                                     int callee_locals,
-                                    bool is_top_frame);
+                                    bool is_top_frame) {
+    return layout_activation(method,
+                             temps,
+                             popframe_args,
+                             monitors,
+                             caller_actual_parameters,
+                             callee_params,
+                             callee_locals,
+                             (frame*)NULL,
+                             (frame*)NULL,
+                             is_top_frame);
+  }
 
   static int       layout_activation(methodOop method,
-                                      int temps,
-                                      int popframe_args,
-                                      int monitors,
-                                      int callee_params,
-                                      int callee_locals,
-                                      frame* caller,
-                                      frame* interpreter_frame,
-                                      bool is_top_frame);
+                                     int temps,
+                                     int popframe_args,
+                                     int monitors,
+                                     int caller_actual_parameters,
+                                     int callee_params,
+                                     int callee_locals,
+                                     frame* caller,
+                                     frame* interpreter_frame,
+                                     bool is_top_frame);
 
   // Runtime support
   static bool       is_not_reached(                       methodHandle method, int bci);

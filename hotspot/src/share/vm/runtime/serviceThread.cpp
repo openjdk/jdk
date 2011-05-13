@@ -28,6 +28,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "services/gcNotifier.hpp"
 
 ServiceThread* ServiceThread::_instance = NULL;
 
@@ -81,6 +82,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
   while (true) {
     bool sensors_changed = false;
     bool has_jvmti_events = false;
+    bool has_gc_notification_event = false;
     JvmtiDeferredEvent jvmti_event;
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -95,9 +97,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
       MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
       while (!(sensors_changed = LowMemoryDetector::has_pending_requests()) &&
-             !(has_jvmti_events = JvmtiDeferredEventQueue::has_events())) {
+             !(has_jvmti_events = JvmtiDeferredEventQueue::has_events()) &&
+              !(has_gc_notification_event = GCNotifier::has_event())) {
         // wait until one of the sensors has pending requests, or there is a
-        // pending JVMTI event to post
+        // pending JVMTI event or JMX GC notification to post
         Service_lock->wait(Mutex::_no_safepoint_check_flag);
       }
 
@@ -112,6 +115,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (sensors_changed) {
       LowMemoryDetector::process_sensor_changes(jt);
+    }
+
+    if(has_gc_notification_event) {
+        GCNotifier::sendNotification(CHECK);
     }
   }
 }
