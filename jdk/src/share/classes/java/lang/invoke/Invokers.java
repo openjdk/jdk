@@ -82,7 +82,7 @@ class Invokers {
         MethodHandle invoker = generalInvoker;
         if (invoker != null)  return invoker;
         MethodType generalType = targetType.generic();
-        invoker = MethodHandles.convertArguments(invoker1, invokerType(generalType));
+        invoker = invoker1.asType(invokerType(generalType));
         generalInvoker = invoker;
         return invoker;
     }
@@ -95,7 +95,7 @@ class Invokers {
         if (erasedType == targetType.generic())
             invoker = generalInvoker();
         else
-            invoker = MethodHandles.convertArguments(invoker1, invokerType(erasedType));
+            invoker = invoker1.asType(invokerType(erasedType));
         erasedInvoker = invoker;
         return invoker;
     }
