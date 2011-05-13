@@ -1460,8 +1460,10 @@ class CommandLineFlags {
   product(intx, ParallelGCBufferWastePct, 10,                               \
           "wasted fraction of parallel allocation buffer.")                 \
                                                                             \
-  product(bool, ParallelGCRetainPLAB, true,                                 \
-          "Retain parallel allocation buffers across scavenges.")           \
+  diagnostic(bool, ParallelGCRetainPLAB, false,                             \
+             "Retain parallel allocation buffers across scavenges; "        \
+             " -- disabled because this currently conflicts with "          \
+             " parallel card scanning under certain conditions ")           \
                                                                             \
   product(intx, TargetPLABWastePct, 10,                                     \
           "target wasted space in last buffer as pct of overall allocation")\
@@ -1495,7 +1497,15 @@ class CommandLineFlags {
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  product(uintx, CMSParPromoteBlocksToClaim, 16,                             \
+  diagnostic(intx, ParGCStridesPerThread, 2,                                \
+          "The number of strides per worker thread that we divide up the "  \
+          "card table scanning work into")                                  \
+                                                                            \
+  diagnostic(intx, ParGCCardsPerStrideChunk, 256,                           \
+          "The number of cards in each chunk of the parallel chunks used "  \
+          "during card table scanning")                                     \
+                                                                            \
+  product(uintx, CMSParPromoteBlocksToClaim, 16,                            \
           "Number of blocks to attempt to claim when refilling CMS LAB for "\
           "parallel GC.")                                                   \
                                                                             \
