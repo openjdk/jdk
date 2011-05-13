@@ -313,7 +313,7 @@ class MethodHandleNatives {
     }
 
     /**
-     * The JVM wants to use a MethodType with invokeGeneric.  Give the runtime fair warning.
+     * The JVM wants to use a MethodType with inexact invoke.  Give the runtime fair warning.
      */
     static void notifyGenericMethodType(MethodType type) {
         type.form().notifyGenericMethodType();

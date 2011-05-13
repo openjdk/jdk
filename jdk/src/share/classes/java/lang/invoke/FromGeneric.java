@@ -160,7 +160,6 @@ class FromGeneric {
     /** Build an adapter of the given generic type, which invokes typedTarget
      *  on the incoming arguments, after unboxing as necessary.
      *  The return value is boxed if necessary.
-     * @param genericType  the required type of the result
      * @param typedTarget the target
      * @return an adapter method handle
      */
