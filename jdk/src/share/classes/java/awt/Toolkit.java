@@ -1190,10 +1190,7 @@ public abstract class Toolkit {
      * security manager's <code>checkPermission</code> method with a <code>
      * RuntimePermission("queuePrintJob")</code> permission.
      *
-     * @param   frame the parent of the print dialog. May be null if and only
-     *          if jobAttributes is not null and jobAttributes.getDialog()
-     *          returns JobAttributes.DialogType.NONE or
-     *          JobAttributes.DialogType.COMMON.
+     * @param   frame the parent of the print dialog. May not be null.
      * @param   jobtitle the title of the PrintJob. A null title is equivalent
      *          to "".
      * @param   jobAttributes a set of job attributes which will control the
