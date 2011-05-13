@@ -150,7 +150,9 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // Mapping from address to card marking array entry
   jbyte* byte_for(const void* p) const {
     assert(_whole_heap.contains(p),
-           "out of bounds access to card marking array");
+           err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   p, _whole_heap.start(), _whole_heap.end()));
     jbyte* result = &byte_map_base[uintptr_t(p) >> card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
@@ -173,18 +175,17 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // A variant of the above that will operate in a parallel mode if
   // worker threads are available, and clear the dirty cards as it
   // processes them.
-  // ClearNoncleanCardWrapper cl must wrap the DirtyCardToOopClosure dcto_cl,
-  // which may itself be modified by the method.
+  // XXX ??? MemRegionClosure above vs OopsInGenClosure below XXX
+  // XXX some new_dcto_cl's take OopClosure's, plus as above there are
+  // some MemRegionClosures. Clean this up everywhere. XXX
   void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
-                                                DirtyCardToOopClosure* dcto_cl,
-                                                ClearNoncleanCardWrapper* cl);
+                                                OopsInGenClosure* cl, CardTableRS* ct);
 
  private:
   // Work method used to implement non_clean_card_iterate_possibly_parallel()
   // above in the parallel case.
   void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                            DirtyCardToOopClosure* dcto_cl,
-                                            ClearNoncleanCardWrapper* cl,
+                                            OopsInGenClosure* cl, CardTableRS* ct,
                                             int n_threads);
 
  protected:
@@ -197,11 +198,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
   void clear_MemRegion(MemRegion mr);
 
   // *** Support for parallel card scanning.
-
-  enum SomeConstantsForParallelism {
-    StridesPerThread    = 2,
-    CardsPerStrideChunk = 256
-  };
 
   // This is an array, one element per covered region of the card table.
   // Each entry is itself an array, with one element per chunk in the
@@ -235,7 +231,7 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // covers the given address.
   uintptr_t addr_to_chunk_index(const void* addr) {
     uintptr_t card = (uintptr_t) byte_for(addr);
-    return card / CardsPerStrideChunk;
+    return card / ParGCCardsPerStrideChunk;
   }
 
   // Apply cl, which must either itself apply dcto_cl or be dcto_cl,
@@ -243,8 +239,8 @@ class CardTableModRefBS: public ModRefBarrierSet {
   void process_stride(Space* sp,
                       MemRegion used,
                       jint stride, int n_strides,
-                      DirtyCardToOopClosure* dcto_cl,
-                      ClearNoncleanCardWrapper* cl,
+                      OopsInGenClosure* cl,
+                      CardTableRS* ct,
                       jbyte** lowest_non_clean,
                       uintptr_t lowest_non_clean_base_chunk_index,
                       size_t lowest_non_clean_chunk_size);
@@ -457,14 +453,18 @@ public:
     size_t delta = pointer_delta(p, byte_map_base, sizeof(jbyte));
     HeapWord* result = (HeapWord*) (delta << card_shift);
     assert(_whole_heap.contains(result),
-           "out of bounds accessor from card marking array");
+           err_msg("Returning result = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   result, _whole_heap.start(), _whole_heap.end()));
     return result;
   }
 
   // Mapping from address to card marking array index.
   size_t index_for(void* p) {
     assert(_whole_heap.contains(p),
-           "out of bounds access to card marking array");
+           err_msg("Attempt to access p = "PTR_FORMAT" out of bounds of "
+                   " card marking array's _whole_heap = ["PTR_FORMAT","PTR_FORMAT")",
+                   p, _whole_heap.start(), _whole_heap.end()));
     return byte_for(p) - _byte_map;
   }
 
@@ -482,7 +482,7 @@ public:
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 
   static size_t par_chunk_heapword_alignment() {
-    return CardsPerStrideChunk * card_size_in_words;
+    return ParGCCardsPerStrideChunk * card_size_in_words;
   }
 
 };

@@ -322,7 +322,7 @@ bool PSScavenge::invoke_no_policy() {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t1("GC", PrintGC, !PrintGCDetails, gclog_or_tty);
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(false /* not full GC */);
+    TraceMemoryManagerStats tms(false /* not full GC */,gc_cause);
 
     if (TraceGen0Time) accumulated_time()->start();
 
