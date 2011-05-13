@@ -57,24 +57,27 @@ SA_LFLAGS += -mt -xnolib -norunpath
 endif
 
 # The libproc Pstack_iter() interface changed in Nevada-B159.
-# This logic needs to match
+# Use 'uname -r -v' to determine the Solaris version as per
+# Solaris Nevada team request. This logic needs to match:
 # agent/src/os/solaris/proc/saproc.cpp: set_has_newer_Pstack_iter():
 #   - skip SunOS 4 or older
 #   - skip Solaris 10 or older
-#   - skip two digit Nevada builds
-#   - skip three digit Nevada builds thru 149
-#   - skip Nevada builds 150-158
+#   - skip two digit internal Nevada builds
+#   - skip three digit internal Nevada builds thru 149
+#   - skip internal Nevada builds 150-158
+#   - if not skipped, print define for Nevada-B159 or later
 SOLARIS_11_B159_OR_LATER := \
 $(shell uname -r -v \
-    | sed -n ' \
-          /^[0-3]\. /b \
-          /^5\.[0-9] /b \
-          /^5\.10 /b \
-          / snv_[0-9][0-9]$/b \
-          / snv_[01][0-4][0-9]$/b \
-          / snv_15[0-8]$/b \
-          s/.*/-DSOLARIS_11_B159_OR_LATER/p \
-          ')
+    | sed -n \
+          -e '/^[0-4]\. /b' \
+          -e '/^5\.[0-9] /b' \
+          -e '/^5\.10 /b' \
+          -e '/ snv_[0-9][0-9]$/b' \
+          -e '/ snv_[01][0-4][0-9]$/b' \
+          -e '/ snv_15[0-8]$/b' \
+          -e 's/.*/-DSOLARIS_11_B159_OR_LATER/' \
+          -e 'p' \
+          )
 
 # Uncomment the following to simulate building on Nevada-B159 or later
 # when actually building on Nevada-B158 or earlier:
