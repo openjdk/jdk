@@ -681,6 +681,12 @@ public class Check {
                 "cant.apply.diamond.1",
                 t, diags.fragment("diamond.non.generic", t));
             return types.createErrorType(t);
+        } else if (tree.typeargs != null &&
+                tree.typeargs.nonEmpty()) {
+            log.error(tree.clazz.pos(),
+                "cant.apply.diamond.1",
+                t, diags.fragment("diamond.and.explicit.params", t));
+            return types.createErrorType(t);
         } else {
             return t;
         }

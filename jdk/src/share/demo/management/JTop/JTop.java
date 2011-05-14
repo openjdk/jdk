@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
@@ -69,10 +68,8 @@ import java.net.MalformedURLException;
 import static java.lang.management.ManagementFactory.*;
 
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.event.*;
 import javax.swing.table.*;
 
 /**
@@ -80,6 +77,8 @@ import javax.swing.table.*;
  * in a table.
  */
 public class JTop extends JPanel {
+
+    private static final long serialVersionUID = -1499762160973870696L;
     private MBeanServerConnection server;
     private ThreadMXBean tmbean;
     private MyTableModel tmodel;
@@ -122,29 +121,34 @@ public class JTop extends JPanel {
     }
 
     class MyTableModel extends AbstractTableModel {
+        private static final long serialVersionUID = -7877310288576779514L;
         private String[] columnNames = {"ThreadName",
                                         "CPU(sec)",
                                         "State"};
         // List of all threads. The key of each entry is the CPU time
         // and its value is the ThreadInfo object with no stack trace.
         private List<Map.Entry<Long, ThreadInfo>> threadList =
-            Collections.EMPTY_LIST;
+            Collections.emptyList();
 
         public MyTableModel() {
         }
 
+        @Override
         public int getColumnCount() {
             return columnNames.length;
         }
 
+        @Override
         public int getRowCount() {
             return threadList.size();
         }
 
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
 
+        @Override
         public Object getValueAt(int row, int col) {
             Map.Entry<Long, ThreadInfo> me = threadList.get(row);
             switch (col) {
@@ -164,7 +168,8 @@ public class JTop extends JPanel {
             }
         }
 
-        public Class getColumnClass(int c) {
+        @Override
+        public Class<?> getColumnClass(int c) {
             return getValueAt(0, c).getClass();
         }
 
@@ -207,12 +212,14 @@ public class JTop extends JPanel {
      * Format Double with 4 fraction digits
      */
     class DoubleRenderer extends DefaultTableCellRenderer {
+        private static final long serialVersionUID = 1704639497162584382L;
         NumberFormat formatter;
         public DoubleRenderer() {
             super();
             setHorizontalAlignment(JLabel.RIGHT);
         }
 
+        @Override
         public void setValue(Object value) {
             if (formatter==null) {
                 formatter = NumberFormat.getInstance();
@@ -238,12 +245,14 @@ public class JTop extends JPanel {
         }
 
         // Get the current thread info and CPU time
+        @Override
         public List<Map.Entry<Long, ThreadInfo>> doInBackground() {
             return getThreadList();
         }
 
         // fire table data changed to trigger GUI update
         // when doInBackground() is finished
+        @Override
         protected void done() {
             try {
                 // Set table model with the new thread list
@@ -290,6 +299,7 @@ public class JTop extends JPanel {
 
         // A timer task to update GUI per each interval
         TimerTask timerTask = new TimerTask() {
+            @Override
             public void run() {
                 // Schedule the SwingWorker to update the GUI
                 jtop.newSwingWorker().execute();
@@ -299,6 +309,7 @@ public class JTop extends JPanel {
         // Create the standalone window with JTop panel
         // by the event dispatcher thread
         SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
             public void run() {
                 createAndShowGUI(jtop);
             }

@@ -93,7 +93,7 @@ inline void     OrderAccess::release_store_ptr(volatile void*     p, void*    v)
 
 inline void     OrderAccess::store_fence(jbyte*  p, jbyte  v) {
   __asm__ volatile (  "xchgb (%2),%0"
-                    : "=r" (v)
+                    : "=q" (v)
                     : "0" (v), "r" (p)
                     : "memory");
 }
@@ -155,7 +155,7 @@ inline void     OrderAccess::store_ptr_fence(void**    p, void*    v) {
 // Must duplicate definitions instead of calling store_fence because we don't want to cast away volatile.
 inline void     OrderAccess::release_store_fence(volatile jbyte*  p, jbyte  v) {
   __asm__ volatile (  "xchgb (%2),%0"
-                    : "=r" (v)
+                    : "=q" (v)
                     : "0" (v), "r" (p)
                     : "memory");
 }

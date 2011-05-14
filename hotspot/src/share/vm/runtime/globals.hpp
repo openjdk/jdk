@@ -620,6 +620,9 @@ class CommandLineFlags {
   product(bool, UseSSE42Intrinsics, false,                                  \
           "SSE4.2 versions of intrinsics")                                  \
                                                                             \
+  product(bool, UseCondCardMark, false,                                     \
+          "Check for already marked card before updating card table")       \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
                                                                             \
@@ -1824,7 +1827,7 @@ class CommandLineFlags {
   develop(bool, VerifyBlockOffsetArray, false,                              \
           "Do (expensive!) block offset array verification")                \
                                                                             \
-  product(bool, BlockOffsetArrayUseUnallocatedBlock, false,                 \
+  diagnostic(bool, BlockOffsetArrayUseUnallocatedBlock, false,              \
           "Maintain _unallocated_block in BlockOffsetArray"                 \
           " (currently applicable only to CMS collector)")                  \
                                                                             \
@@ -2879,7 +2882,7 @@ class CommandLineFlags {
           "Max. no. of lines in the stack trace for Java exceptions "       \
           "(0 means all)")                                                  \
                                                                             \
-  NOT_EMBEDDED(develop(intx, GuaranteedSafepointInterval, 1000,             \
+  NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
                                                                             \

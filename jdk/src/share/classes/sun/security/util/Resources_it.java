@@ -47,7 +47,8 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Opzione]..."},
         {"Options.", "Opzioni:"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utilizzare \"keytool -help\" per visualizzare tutti i comandi disponibili"},
@@ -67,6 +68,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "Esporta il certificato"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genera una coppia di chiavi"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genera una chiave segreta"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Lunghezza catena certificati: "},
         {"Certificate.i.1.", "Certificato[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Impronta digitale certificato (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "Tipo di voce: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Tipo keystore: "},
         {"Keystore.provider.", "Provider keystore: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -368,7 +368,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                  "L''alias <{0}> fa riferimento a un tipo di voce che non \u00E8 una voce di chiave privata. Il comando -keyclone supporta solo la copia delle voci di chiave private."},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Avvertenza Avvertenza Avvertenza  *****************"},
         {"Signer.d.", "Firmatario #%d:"},
         {"Timestamp.", "Indicatore orario:"},
         {"Signature.", "Firma:"},
@@ -378,20 +378,10 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "Nessun certificato dal server SSL"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* L'integrit\u00E0 delle informazioni memorizzate nel keystore    *"},
+            "* L'integrit\u00E0 delle informazioni memorizzate nel keystore *\n* NON \u00E8 stata verificata. Per verificarne l'integrit\u00E0 *\n* \u00E8 necessario fornire la password del keystore.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* L'integrit\u00E0 delle informazioni salvate nel srckeystore*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* NON \u00E8 stata verificata. A tale scopo \u00E8 necessario fornire *"},
-        {".you.must.provide.your.keystore.password.",
-            "* la password del keystore.                                 *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* \u00C8 necessario fornire la password per il srckeystore.                *"},
-
+            "* L'integrit\u00E0 delle informazioni memorizzate nel srckeystore *\n* NON \u00E8 stata verificata. Per verificarne l'integrit\u00E0 *\n* \u00E8 necessario fornire la password del srckeystore.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "La risposta del certificato non contiene la chiave pubblica per <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "Certificato di primo livello nella risposta:\n"},
         {".is.not.trusted.", "...non \u00E8 considerato sicuro. "},
         {"Install.reply.anyway.no.", "Installare la risposta? [no]:  "},
-        {"NO", "NO"},
+        {"NO", "No"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Le chiavi pubbliche nella risposta e nel keystore non corrispondono"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",

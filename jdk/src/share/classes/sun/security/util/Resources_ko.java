@@ -47,7 +47,8 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [\uC635\uC158]..."},
         {"Options.", "\uC635\uC158:"},
         {"Use.keytool.help.for.all.available.commands",
                  "\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uBAA8\uB4E0 \uBA85\uB839\uC5D0 \"keytool -help\" \uC0AC\uC6A9"},
@@ -67,6 +68,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "\uC778\uC99D\uC11C\uB97C \uC775\uC2A4\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-exportcert
         {"Generates.a.key.pair",
                 "\uD0A4 \uC30D\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "\uBCF4\uC548 \uD0A4\uB97C \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "\uC778\uC99D\uC11C \uCCB4\uC778 \uAE38\uC774: "},
         {"Certificate.i.1.", "\uC778\uC99D\uC11C[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "\uC778\uC99D\uC11C \uC9C0\uBB38(SHA1): "},
-        {"Entry.type.trustedCertEntry.", "\uD56D\uBAA9 \uC720\uD615: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "\uD0A4 \uC800\uC7A5\uC18C \uC720\uD615: "},
         {"Keystore.provider.", "\uD0A4 \uC800\uC7A5\uC18C \uC81C\uACF5\uC790: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -368,7 +368,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                  "<{0}> \uBCC4\uCE6D\uC740 \uC804\uC6A9 \uD0A4 \uD56D\uBAA9\uC774 \uC544\uB2CC \uD56D\uBAA9 \uC720\uD615\uC744 \uCC38\uC870\uD569\uB2C8\uB2E4. -keyclone \uBA85\uB839\uC740 \uC804\uC6A9 \uD0A4 \uD56D\uBAA9\uC758 \uBCF5\uC81C\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4."},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  \uACBD\uACE0 \uACBD\uACE0 \uACBD\uACE0  *****************"},
         {"Signer.d.", "\uC11C\uBA85\uC790 #%d:"},
         {"Timestamp.", "\uC2DC\uAC04 \uAE30\uB85D:"},
         {"Signature.", "\uC11C\uBA85:"},
@@ -378,20 +378,10 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "SSL \uC11C\uBC84\uC5D0\uC11C \uAC00\uC838\uC628 \uC778\uC99D\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* \uD0A4 \uC800\uC7A5\uC18C\uC5D0 \uC800\uC7A5\uB41C \uC815\uBCF4\uC758 \uBB34\uACB0\uC131\uC774 *"},
+            "* \uD0A4 \uC800\uC7A5\uC18C\uC5D0 \uC800\uC7A5\uB41C \uC815\uBCF4\uC758 \uBB34\uACB0\uC131\uC774  *\n* \uD655\uC778\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4! \uBB34\uACB0\uC131\uC744 \uD655\uC778\uD558\uB824\uBA74, *\n* \uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638\uB97C \uC81C\uACF5\uD574\uC57C \uD569\uB2C8\uB2E4.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* srckeystore\uC5D0 \uC800\uC7A5\uB41C \uC815\uBCF4\uC758 \uBB34\uACB0\uC131\uC774*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* \uD655\uC778\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4! \uBB34\uACB0\uC131\uC744 \uD655\uC778\uD558\uB824\uBA74 *"},
-        {".you.must.provide.your.keystore.password.",
-            "* \uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638\uB97C \uC81C\uACF5\uD574\uC57C \uD569\uB2C8\uB2E4.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* srckeystore \uBE44\uBC00\uBC88\uD638\uB97C \uC81C\uACF5\uD574\uC57C \uD569\uB2C8\uB2E4.                *"},
-
+            "* srckeystore\uC5D0 \uC800\uC7A5\uB41C \uC815\uBCF4\uC758 \uBB34\uACB0\uC131\uC774  *\n* \uD655\uC778\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4! \uBB34\uACB0\uC131\uC744 \uD655\uC778\uD558\uB824\uBA74, *\n* srckeystore \uBE44\uBC00\uBC88\uD638\uB97C \uC81C\uACF5\uD574\uC57C \uD569\uB2C8\uB2E4.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "\uC778\uC99D\uC11C \uD68C\uC2E0\uC5D0 <{0}>\uC5D0 \uB300\uD55C \uACF5\uC6A9 \uD0A4\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},

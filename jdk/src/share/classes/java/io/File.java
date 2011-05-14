@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.beans.ConstructorProperties;
 import java.net.URI;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -247,7 +246,6 @@ public class File
      * @throws  NullPointerException
      *          If the <code>pathname</code> argument is <code>null</code>
      */
-    @ConstructorProperties("path")
     public File(String pathname) {
         if (pathname == null) {
             throw new NullPointerException();

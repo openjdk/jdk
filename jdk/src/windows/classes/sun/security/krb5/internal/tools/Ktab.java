@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ public class Ktab {
      * Lists key table name and entries in it.
      */
     void listKt() {
-        System.out.println("Keytab name: " + KeyTab.tabName());
+        System.out.println("Keytab name: " + table.tabName());
         KeyTabEntry[] entries = table.getEntries();
         if ((entries != null) && (entries.length > 0)) {
             String[][] output = new String[entries.length+1][showTime?3:2];

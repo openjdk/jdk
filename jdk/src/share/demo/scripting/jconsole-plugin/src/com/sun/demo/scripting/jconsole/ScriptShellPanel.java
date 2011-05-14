@@ -44,7 +44,10 @@ import javax.swing.text.*;
  * A JPanel subclass containing a scrollable text area displaying the
  * jconsole's script console.
  */
+
 class ScriptShellPanel extends JPanel {
+
+    private static final long serialVersionUID = 4116273141148726319L;
 
     // interface to evaluate script command and script prompt
     interface CommandProcessor {
@@ -75,9 +78,11 @@ class ScriptShellPanel extends JPanel {
         add(scroller, BorderLayout.CENTER);
 
         editor.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent e) {
             }
 
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 if (updating) return;
                 beginUpdate();
@@ -90,10 +95,12 @@ class ScriptShellPanel extends JPanel {
                         // Trim "\\n" combinations
                         final String cmd1 = trimContinuations(cmd);
                         commandExecutor.execute(new Runnable() {
+                            @Override
                             public void run() {
                                 final String result = executeCommand(cmd1);
 
                                 SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
                                     public void run() {
                                         if (result != null) {
                                             print(result + "\n");
@@ -113,6 +120,7 @@ class ScriptShellPanel extends JPanel {
                 }
             }
 
+            @Override
             public void removeUpdate(DocumentEvent e) {
             }
         });
@@ -121,6 +129,7 @@ class ScriptShellPanel extends JPanel {
         // the JEditorPane to update the caret's position precisely the
         // size of the insertion
         editor.addCaretListener(new CaretListener() {
+            @Override
             public void caretUpdate(CaretEvent e) {
                 int len = editor.getDocument().getLength();
                 if (e.getDot() > len) {
@@ -133,6 +142,7 @@ class ScriptShellPanel extends JPanel {
         hbox.add(Box.createGlue());
         JButton button = new JButton("Clear"); // FIXME: i18n?
         button.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 clear();
             }
@@ -148,6 +158,7 @@ class ScriptShellPanel extends JPanel {
         commandExecutor.shutdown();
     }
 
+    @Override
     public void requestFocus() {
         editor.requestFocus();
     }

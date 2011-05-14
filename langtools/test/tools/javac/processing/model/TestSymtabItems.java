@@ -44,6 +44,7 @@ import javax.lang.model.util.Types;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.util.Context;
 
@@ -62,6 +63,7 @@ public class TestSymtabItems {
         JavacFileManager.preRegister(c);
         Symtab syms = Symtab.instance(c);
         JavacTypes types = JavacTypes.instance(c);
+        JavaCompiler.instance(c);  // will init ClassReader.sourceCompleter
 
 //        print("noSymbol", syms.noSymbol);
 //        print("errSymbol", syms.errSymbol);

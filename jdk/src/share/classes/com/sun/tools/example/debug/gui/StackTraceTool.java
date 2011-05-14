@@ -25,20 +25,15 @@
 
 package com.sun.tools.example.debug.gui;
 
-import java.io.*;
-import java.util.*;
-import java.util.List;  // Must import explicitly due to conflict with javax.awt.List
-
 import javax.swing.*;
-import javax.swing.tree.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.*;
-
 import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 
 public class StackTraceTool extends JPanel {
+
+    private static final long serialVersionUID = 9140041989427965718L;
 
     private Environment env;
 
@@ -85,6 +80,7 @@ public class StackTraceTool extends JPanel {
 
         //### I suspect we handle the case badly that the VM is not interrupted.
 
+        @Override
         public void currentFrameChanged(CurrentFrameChangedEvent e) {
             // If the current frame of the thread appearing in this
             // view is changed, move the selection to track it.
@@ -103,6 +99,7 @@ public class StackTraceTool extends JPanel {
 
         // ListSelectionListener
 
+        @Override
         public void valueChanged(ListSelectionEvent e) {
             int index = list.getSelectedIndex();
             if (index != -1) {
@@ -117,6 +114,7 @@ public class StackTraceTool extends JPanel {
 
     private class StackFrameRenderer extends DefaultListCellRenderer {
 
+        @Override
         public Component getListCellRendererComponent(JList list,
                                                       Object value,
                                                       int index,
@@ -174,6 +172,7 @@ public class StackTraceTool extends JPanel {
             this.tinfo = tinfo;
         }
 
+        @Override
         public Object getElementAt(int index) {
             try {
                 return tinfo == null? null : tinfo.getFrame(index);
@@ -186,6 +185,7 @@ public class StackTraceTool extends JPanel {
             }
         }
 
+        @Override
         public int getSize() {
             try {
                 return tinfo == null? 1 : tinfo.getFrameCount();

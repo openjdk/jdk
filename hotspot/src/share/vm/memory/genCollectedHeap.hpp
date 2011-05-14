@@ -427,13 +427,13 @@ public:
   // explicitly mark reachable objects in younger generations, to avoid
   // excess storage retention.)  If "collecting_perm_gen" is false, then
   // roots that may only contain references to permGen objects are not
-  // scanned. The "so" argument determines which of the roots
+  // scanned; instead, the older_gens closure is applied to all outgoing
+  // references in the perm gen.  The "so" argument determines which of the roots
   // the closure is applied to:
   // "SO_None" does none;
   // "SO_AllClasses" applies the closure to all entries in the SystemDictionary;
   // "SO_SystemClasses" to all the "system" classes and loaders;
-  // "SO_Symbols_and_Strings" applies the closure to all entries in
-  // SymbolsTable and StringTable.
+  // "SO_Strings" applies the closure to all entries in the StringTable.
   void gen_process_strong_roots(int level,
                                 bool younger_gens_as_roots,
                                 // The remaining arguments are in an order

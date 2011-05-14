@@ -867,12 +867,10 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1
   Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
   Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
 
-  // Pin loads from String::equals() argument since it could be NULL.
-  Node* str2_ctrl = (opcode == Op_StrEquals) ? control() : no_ctrl;
   Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
-  Node* str2_value   = make_load(str2_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str2_value   = make_load(no_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
   Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
-  Node* str2_offset  = make_load(str2_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str2_offset  = make_load(no_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
   Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
 
   Node* result = NULL;
@@ -1012,14 +1010,15 @@ bool LibraryCallKit::inline_string_equals() {
   if (!stopped()) {
     // Properly cast the argument to String
     argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
+    // This path is taken only when argument's type is String:NotNull.
+    argument = cast_not_null(argument, false);
 
     // Get counts for string and argument
     Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
     receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-    // Pin load from argument string since it could be NULL.
     Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-    argument_cnt  = make_load(control(), argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
     // Check for receiver count != argument count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
@@ -3527,8 +3526,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       Node* orig_tail = _gvn.transform( new(C, 3) SubINode(orig_length, start) );
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-      const bool raw_mem_only = true;
-      newcopy = new_array(klass_node, length, 0, raw_mem_only);
+      newcopy = new_array(klass_node, length, 0);
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -4325,8 +4323,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     int raw_adr_idx = Compile::AliasIdxRaw;
-    const bool raw_mem_only = true;
-
 
     Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
     if (array_ctl != NULL) {
@@ -4335,8 +4331,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       set_control(array_ctl);
       Node* obj_length = load_array_length(obj);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_array(obj_klass, obj_length, 0,
-                                  raw_mem_only, &obj_size);
+      Node* alloc_obj = new_array(obj_klass, obj_length, 0, &obj_size);
 
       if (!use_ReduceInitialCardMarks()) {
         // If it is an oop array, it requires very special treatment,
@@ -4408,7 +4403,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // It's an instance, and it passed the slow-path tests.
       PreserveJVMState pjvms(this);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_instance(obj_klass, NULL, raw_mem_only, &obj_size);
+      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size);
 
       copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
 

@@ -47,7 +47,8 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Option]..."},
         {"Options.", "Options :"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utiliser \"keytool -help\" pour toutes les commandes disponibles"},
@@ -67,6 +68,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "Exporte le certificat"}, //-exportcert
         {"Generates.a.key.pair",
                 "G\u00E9n\u00E8re une paire de cl\u00E9s"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "G\u00E9n\u00E8re une cl\u00E9 secr\u00E8te"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Longueur de cha\u00EEne du certificat : "},
         {"Certificate.i.1.", "Certificat[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Empreinte du certificat (SHA1) : "},
-        {"Entry.type.trustedCertEntry.", "Type d'entr\u00E9e : trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Type de fichier de cl\u00E9s : "},
         {"Keystore.provider.", "Fournisseur de fichier de cl\u00E9s : "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -331,7 +331,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "Voulez-vous toujours l'ajouter \u00E0 votre fichier de cl\u00E9s ? [non] :  "},
         {"Trust.this.certificate.no.", "Faire confiance \u00E0 ce certificat ? [non] :  "},
-        {"YES", "OUI"},
+        {"YES", "Oui"},
         {"New.prompt.", "Nouveau {0} : "},
         {"Passwords.must.differ", "Les mots de passe doivent diff\u00E9rer"},
         {"Re.enter.new.prompt.", "Indiquez encore le nouveau {0} : "},
@@ -368,7 +368,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                  "L''entr\u00E9e \u00E0 laquelle l''alias <{0}> fait r\u00E9f\u00E9rence n''est pas une entr\u00E9e de type cl\u00E9 priv\u00E9e. La commande -keyclone prend uniquement en charge le clonage des cl\u00E9s priv\u00E9es"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Avertissement Avertissement Avertissement  *****************"},
         {"Signer.d.", "Signataire n\u00B0%d :"},
         {"Timestamp.", "Horodatage :"},
         {"Signature.", "Signature :"},
@@ -378,20 +378,10 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "Aucun certificat du serveur SSL"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* L'int\u00E9grit\u00E9 des informations stock\u00E9es dans votre fichier de cl\u00E9s *"},
+            "* L'int\u00E9grit\u00E9 des informations stock\u00E9es dans votre fichier de cl\u00E9s  *\n* n'a PAS \u00E9t\u00E9 v\u00E9rifi\u00E9e. Pour cela, *\n* vous devez fournir le mot de passe de votre fichier de cl\u00E9s.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* L'int\u00E9grit\u00E9 des informations stock\u00E9es dans le fichier de cl\u00E9s source *"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* n'a PAS \u00E9t\u00E9 v\u00E9rifi\u00E9e. Pour cela, *"},
-        {".you.must.provide.your.keystore.password.",
-            "* vous devez fournir le mot de passe de votre fichier de cl\u00E9s.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* vous devez fournir le mot de passe de votre fichier de cl\u00E9s source.                  *"},
-
+            "* L'int\u00E9grit\u00E9 des informations stock\u00E9es dans le fichier de cl\u00E9s source  *\n* n'a PAS \u00E9t\u00E9 v\u00E9rifi\u00E9e. Pour cela, *\n* vous devez fournir le mot de passe de votre fichier de cl\u00E9s source.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "La r\u00E9ponse au certificat ne contient pas de cl\u00E9 publique pour <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "Certificat de niveau sup\u00E9rieur dans la r\u00E9ponse :\n"},
         {".is.not.trusted.", "... non s\u00E9curis\u00E9. "},
         {"Install.reply.anyway.no.", "Installer la r\u00E9ponse quand m\u00EAme ? [non] :  "},
-        {"NO", "NON"},
+        {"NO", "Non"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Les cl\u00E9s publiques de la r\u00E9ponse et du fichier de cl\u00E9s ne concordent pas"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
