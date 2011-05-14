@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1285,11 +1285,12 @@ final class ServerHandshaker extends Handshaker {
 
             // check permission to access and use the secret key of the
             // Kerberized "host" service
-            if (kerberosKeys != null) {
-
+            if (kerberosKeys != null && kerberosKeys.length > 0) {
                 if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println("Using Kerberos key: " +
-                        kerberosKeys[0]);
+                    for (SecretKey k: kerberosKeys) {
+                        System.out.println("Using Kerberos key: " +
+                            k);
+                    }
                 }
 
                 String serverPrincipal =

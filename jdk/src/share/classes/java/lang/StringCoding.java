@@ -222,13 +222,13 @@ class StringCoding {
                 off = 0;
             }
         }
+        cd.onMalformedInput(CodingErrorAction.REPLACE)
+          .onUnmappableCharacter(CodingErrorAction.REPLACE)
+          .reset();
         if (cd instanceof ArrayDecoder) {
             int clen = ((ArrayDecoder)cd).decode(ba, off, len, ca);
             return safeTrim(ca, clen, cs, isTrusted);
         } else {
-            cd.onMalformedInput(CodingErrorAction.REPLACE)
-              .onUnmappableCharacter(CodingErrorAction.REPLACE)
-              .reset();
             ByteBuffer bb = ByteBuffer.wrap(ba, off, len);
             CharBuffer cb = CharBuffer.wrap(ca);
             try {
@@ -356,13 +356,13 @@ class StringCoding {
                 off = 0;
             }
         }
+        ce.onMalformedInput(CodingErrorAction.REPLACE)
+          .onUnmappableCharacter(CodingErrorAction.REPLACE)
+          .reset();
         if (ce instanceof ArrayEncoder) {
             int blen = ((ArrayEncoder)ce).encode(ca, off, len, ba);
             return safeTrim(ba, blen, cs, isTrusted);
         } else {
-            ce.onMalformedInput(CodingErrorAction.REPLACE)
-              .onUnmappableCharacter(CodingErrorAction.REPLACE)
-              .reset();
             ByteBuffer bb = ByteBuffer.wrap(ba);
             CharBuffer cb = CharBuffer.wrap(ca, off, len);
             try {

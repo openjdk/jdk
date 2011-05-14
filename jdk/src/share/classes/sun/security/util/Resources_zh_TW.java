@@ -47,7 +47,8 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [\u9078\u9805]..."},
         {"Options.", "\u9078\u9805:"},
         {"Use.keytool.help.for.all.available.commands",
                  "\u4F7F\u7528 \"keytool -help\" \u53D6\u5F97\u6240\u6709\u53EF\u7528\u7684\u547D\u4EE4"},
@@ -67,6 +68,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "\u532F\u51FA\u6191\u8B49"}, //-exportcert
         {"Generates.a.key.pair",
                 "\u7522\u751F\u91D1\u9470\u7D44"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "\u7522\u751F\u79D8\u5BC6\u91D1\u9470"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "\u6191\u8B49\u93C8\u9577\u5EA6: "},
         {"Certificate.i.1.", "\u6191\u8B49 [{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "\u6191\u8B49\u6307\u7D0B (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "\u8F38\u5165\u985E\u578B: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "\u91D1\u9470\u5132\u5B58\u5EAB\u985E\u578B: "},
         {"Keystore.provider.", "\u91D1\u9470\u5132\u5B58\u5EAB\u63D0\u4F9B\u8005: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -368,7 +368,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                  "\u5225\u540D <{0}> \u6240\u53C3\u7167\u7684\u9805\u76EE\u4E0D\u662F\u79C1\u5BC6\u91D1\u9470\u985E\u578B\u3002-keyclone \u547D\u4EE4\u50C5\u652F\u63F4\u79C1\u5BC6\u91D1\u9470\u9805\u76EE\u7684\u8907\u88FD"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  \u8B66\u544A \u8B66\u544A \u8B66\u544A  *****************"},
         {"Signer.d.", "\u7C3D\u7F72\u8005 #%d:"},
         {"Timestamp.", "\u6642\u6233:"},
         {"Signature.", "\u7C3D\u7AE0:"},
@@ -378,20 +378,10 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "\u6C92\u6709\u4F86\u81EA SSL \u4F3A\u670D\u5668\u7684\u6191\u8B49"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* \u8CC7\u8A0A\u7684\u5B8C\u6574\u6027\u5DF2\u5132\u5B58\u5728\u60A8\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u4E2D  *"},
+            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC\u91D1\u9470\u5132\u5B58\u5EAB\u4E2D\u8CC7\u8A0A  *\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C*\n* \u60A8\u5FC5\u9808\u63D0\u4F9B\u60A8\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u5BC6\u78BC\u3002                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* \u8CC7\u8A0A\u7684\u5B8C\u6574\u6027\u5DF2\u5132\u5B58\u5728 srckeystore \u4E2D *"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* \u5C1A\u672A\u88AB\u9A57\u8B49\uFF01\u70BA\u4E86\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C*"},
-        {".you.must.provide.your.keystore.password.",
-            "* \u60A8\u5FC5\u9808\u63D0\u4F9B\u60A8\u91D1\u9470\u5132\u5B58\u5EAB\u7684\u5BC6\u78BC\u3002                 *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* \u60A8\u5FC5\u9808\u63D0\u4F9B srckeystore \u5BC6\u78BC\u3002               *"},
-
+            "* \u5C1A\u672A\u9A57\u8B49\u5132\u5B58\u65BC srckeystore \u4E2D\u8CC7\u8A0A*\n* \u7684\u5B8C\u6574\u6027\uFF01\u82E5\u8981\u9A57\u8B49\u5176\u5B8C\u6574\u6027\uFF0C\u60A8\u5FC5\u9808 *\n* \u63D0\u4F9B srckeystore \u5BC6\u78BC\u3002          *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "\u6191\u8B49\u56DE\u8986\u4E26\u672A\u5305\u542B <{0}> \u7684\u516C\u958B\u91D1\u9470"},

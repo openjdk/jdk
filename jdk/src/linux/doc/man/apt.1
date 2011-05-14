@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH apt 1 "02 Jun 2010"
+.TH apt 1 "10 May 2011"
 
 .LP
 .SH "NAME"
@@ -50,21 +50,17 @@ One or more files that list source files or other options
 .SH "DESCRIPTION"
 .LP
 .LP
-The tool \f2apt\fP, annotation processing tool, includes a set of new reflective APIs and supporting infrastructure to process program annotations. The \f2apt\fP reflective APIs provide a build\-time, source\-based, read\-only view of program structure. These reflective APIs are designed to cleanly model the Java(TM) programming language's type system after the addition of generics. First, \f2apt\fP runs annotation processors that can produce new source code and other files. Next, \f2apt\fP can cause compilation of both original and generated source files, easing development. The reflective APIs and other APIs used to interact with the tool are subpackages of \f2com.sun.mirror\fP.
+\f3Note\fP: The \f2apt\fP tool and its associated API contained in the package \f2com.sun.mirror\fP have been deprecated since JDK 7 and are planned to be removed in the next major JDK release. Use the options available in the \f2javac(1)\fP tool and the APIs contained in the packages \f2javax.annotation.processing\fP and \f2javax.lang.model\fP to process annotations.
+.LP
+.LP
+The tool \f2apt\fP, annotation processing tool, includes reflective APIs and supporting infrastructure to process program annotations. The \f2apt\fP reflective APIs provide a build\-time, source\-based, read\-only view of program structure. These reflective APIs are designed to cleanly model the Java(TM) programming language's type system after the addition of generics. First, \f2apt\fP runs annotation processors that can produce new source code and other files. Next, \f2apt\fP can cause compilation of both original and generated source files, easing development. The reflective APIs and other APIs used to interact with the tool are subpackages of \f2com.sun.mirror\fP.
 .LP
 .LP
 A fuller discussion of how the tool operates as well as instructions for developing with \f2apt\fP are in 
 .na
 \f4Getting Started with \fP\f4apt\fP. @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.html
-.LP
-.RS 3
-.TP 3
-Note: 
-\f2The functionality of \fP\f2apt\fP has been subsumed by the annotation\-processing infrastructure that is now part of the \f2javac(1)\fP tool and standardized for use by all Java compilers. This new infrastructure relies on the language model and annotation\-processing APIs that are now part of the Java Platform. It is recommended that new annotation processor development be based on the new APIs and the \f2javac\fP tool. 
-.RE
-
+http://download.oracle.com/javase/7/docs/technotes/guides/apt/GettingStarted.html
 .LP
 .SH "OPTIONS"
 .LP
@@ -90,6 +86,12 @@ Specify where to find annotation processor factories; if this option is used, th
 .TP 3
 \-factory classname 
 Name of annotation processor factory to use; bypasses default discovery process 
+.TP 3
+\-version 
+Print version information. 
+.TP 3
+\-X 
+Display information about non\-standard options. 
 .RE
 
 .LP
@@ -109,10 +111,35 @@ Specify where to find user class files and annotation processor factories. If \f
 .LP
 Consult the javac(1) man page for information on \f2javac\fP options.
 .LP
+.SS 
+Non\-Standard Options
+.LP
+.RS 3
+.TP 3
+\-XListAnnotationTypes 
+List found annotation types. 
+.TP 3
+\-XListDeclarations 
+List specified and included declarations. 
+.TP 3
+\-XPrintAptRounds 
+Print information about initial and recursive \f2apt\fP rounds. 
+.TP 3
+\-XPrintFactoryInfo 
+Print information about which annotations a factory is asked to process. 
+.TP 3
+\-XclassesAsDecls 
+Treat both class and source files as declarations to process. 
+.RE
+
+.LP
+.LP
+\f3Note\fP: Because these options are non\-standard, they are subject to change without notice.
+.LP
 .SH "NOTES"
 .LP
 .LP
-The functionality of \f2apt\fP has been subsumed by the standard annotation\-processing infrastructure now offered by \f2javac\fP. Support for \f2apt\fP and its associated APIs may be discontinued in some future JDK release.
+The \f2apt\fP tool and its associated API contained in the package \f2com.sun.mirror\fP have been deprecated since JDK 7 and are planned to be removed in the next major JDK release. Use the options available in the \f2javac(1)\fP tool and the APIs contained in the packages \f2javax.annotation.processing\fP and \f2javax.lang.model\fP to process annotations.
 .LP
 .SH "SEE ALSO"
 .LP

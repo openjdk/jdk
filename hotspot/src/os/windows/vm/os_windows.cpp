@@ -2762,8 +2762,8 @@ static void cleanup_after_large_page_init() {
   _hToken = NULL;
 }
 
-bool os::large_page_init() {
-  if (!UseLargePages) return false;
+void os::large_page_init() {
+  if (!UseLargePages) return;
 
   // print a warning if any large page related flag is specified on command line
   bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages) ||
@@ -2808,7 +2808,7 @@ bool os::large_page_init() {
   }
 
   cleanup_after_large_page_init();
-  return success;
+  UseLargePages = success;
 }
 
 // On win32, one cannot release just a part of reserved memory, it's an
@@ -3561,7 +3561,7 @@ jint os::init_2(void) {
 #endif
 }
 
-  FLAG_SET_DEFAULT(UseLargePages, os::large_page_init());
+  os::large_page_init();
 
   // Setup Windows Exceptions
 

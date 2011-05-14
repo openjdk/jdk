@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,17 @@ public class IndexBuilder {
      * Should this doc element be added to the index map?
      */
     protected boolean shouldAddToIndexMap(Doc element) {
-        return !(noDeprecated && element.tags("deprecated").length > 0);
+        if (element instanceof PackageDoc)
+            // Do not add to index map if -nodeprecated option is set and the
+            // package is marked as deprecated.
+            return !(noDeprecated && Util.isDeprecated(element));
+        else
+            // Do not add to index map if -nodeprecated option is set and if the
+            // Doc is marked as deprecated or the containing package is marked as
+            // deprecated.
+            return !(noDeprecated &&
+                    (Util.isDeprecated(element) ||
+                    Util.isDeprecated(((ProgramElementDoc)element).containingPackage())));
     }
 
     /**

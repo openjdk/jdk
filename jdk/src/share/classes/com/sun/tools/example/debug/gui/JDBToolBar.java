@@ -26,10 +26,8 @@
 package com.sun.tools.example.debug.gui;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 
-import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 
 class JDBToolBar extends JToolBar {
@@ -92,6 +90,7 @@ class JDBToolBar extends JToolBar {
         button.setToolTipText(toolTip);
         final String cmd = command;
         button.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 interpreter.executeCommand(cmd);
             }

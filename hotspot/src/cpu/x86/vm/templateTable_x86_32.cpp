@@ -422,7 +422,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
   Label L_done, L_throw_exception;
   const Register con_klass_temp = rcx;  // same as Rcache
-  __ movptr(con_klass_temp, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(con_klass_temp, rax);
   __ cmpptr(con_klass_temp, ExternalAddress((address)Universe::systemObjArrayKlassObj_addr()));
   __ jcc(Assembler::notEqual, L_done);
   __ cmpl(Address(rax, arrayOopDesc::length_offset_in_bytes()), 0);
@@ -432,7 +432,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
   // Load the exception from the system-array which wraps it:
   __ bind(L_throw_exception);
-  __ movptr(rax, Address(rax, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  __ load_heap_oop(rax, Address(rax, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
   __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
 
   __ bind(L_done);
@@ -946,9 +946,9 @@ void TemplateTable::aastore() {
   __ jcc(Assembler::zero, is_null);
 
   // Move subklass into EBX
-  __ movptr(rbx, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, rax);
   // Move superklass into EAX
-  __ movptr(rax, Address(rdx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, rdx);
   __ movptr(rax, Address(rax, sizeof(oopDesc) + objArrayKlass::element_klass_offset_in_bytes()));
   // Compress array+index*wordSize+12 into a single register.  Frees ECX.
   __ lea(rdx, element_address);
@@ -2001,7 +2001,7 @@ void TemplateTable::_return(TosState state) {
   if (_desc->bytecode() == Bytecodes::_return_register_finalizer) {
     assert(state == vtos, "only valid state");
     __ movptr(rax, aaddress(0));
-    __ movptr(rdi, Address(rax, oopDesc::klass_offset_in_bytes()));
+    __ load_klass(rdi, rax);
     __ movl(rdi, Address(rdi, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
     __ testl(rdi, JVM_ACC_HAS_FINALIZER);
     Label skip_register_finalizer;
@@ -2948,7 +2948,7 @@ void TemplateTable::invokevirtual_helper(Register index, Register recv,
   // get receiver klass
   __ null_check(recv, oopDesc::klass_offset_in_bytes());
   // Keep recv in rcx for callee expects it there
-  __ movptr(rax, Address(recv, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, recv);
   __ verify_oop(rax);
 
   // profile this call
@@ -3028,7 +3028,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals();  // restore rdi
-  __ movptr(rdx, Address(rcx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rdx, rcx);
   __ verify_oop(rdx);
 
   // profile this call
@@ -3083,6 +3083,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_oop, "use this argument");
 
   if (!EnableInvokeDynamic) {
     // We should not encounter this bytecode if !EnableInvokeDynamic.
@@ -3095,7 +3096,6 @@ void TemplateTable::invokedynamic(int byte_no) {
     return;
   }
 
-  assert(byte_no == f1_oop, "use this argument");
   prepare_invoke(rax, rbx, byte_no);
 
   // rax: CallSite object (f1)
@@ -3106,14 +3106,14 @@ void TemplateTable::invokedynamic(int byte_no) {
   Register rax_callsite      = rax;
   Register rcx_method_handle = rcx;
 
-  if (ProfileInterpreter) {
-    // %%% should make a type profile for any invokedynamic that takes a ref argument
-    // profile this call
-    __ profile_call(rsi);
-  }
+  // %%% should make a type profile for any invokedynamic that takes a ref argument
+  // profile this call
+  __ profile_call(rsi);
 
-  __ movptr(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rcx)));
+  __ verify_oop(rax_callsite);
+  __ load_heap_oop(rcx_method_handle, Address(rax_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, rdx)));
   __ null_check(rcx_method_handle);
+  __ verify_oop(rcx_method_handle);
   __ prepare_to_jump_from_interpreted();
   __ jump_to_method_handle_entry(rcx_method_handle, rdx);
 }
@@ -3258,7 +3258,7 @@ void TemplateTable::_new() {
                 (int32_t)markOopDesc::prototype()); // header
       __ pop(rcx);   // get saved klass back in the register.
     }
-    __ movptr(Address(rax, oopDesc::klass_offset_in_bytes()), rcx);  // klass
+    __ store_klass(rax, rcx);  // klass
 
     {
       SkipIfEqual skip_if(_masm, &DTraceAllocProbes, 0);
@@ -3333,7 +3333,7 @@ void TemplateTable::checkcast() {
   __ movptr(rax, Address(rcx, rbx, Address::times_ptr, sizeof(constantPoolOopDesc)));
 
   __ bind(resolved);
-  __ movptr(rbx, Address(rdx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, rdx);
 
   // Generate subtype check.  Blows ECX.  Resets EDI.  Object in EDX.
   // Superklass in EAX.  Subklass in EBX.
@@ -3376,12 +3376,12 @@ void TemplateTable::instanceof() {
   __ push(atos);
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc) );
   __ pop_ptr(rdx);
-  __ movptr(rdx, Address(rdx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rdx, rdx);
   __ jmp(resolved);
 
   // Get superklass in EAX and subklass in EDX
   __ bind(quicked);
-  __ movptr(rdx, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rdx, rax);
   __ movptr(rax, Address(rcx, rbx, Address::times_ptr, sizeof(constantPoolOopDesc)));
 
   __ bind(resolved);
