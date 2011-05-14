@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,6 @@ class Test {
             else
                 throw new B2();
         }
-        catch(B1 | B2 ex) { }
+        catch(@UnionTypeInfo({"Test.B1", "Test.B2"}) B1 | B2 ex) { }
     }
 }

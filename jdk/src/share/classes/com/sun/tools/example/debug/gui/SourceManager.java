@@ -31,7 +31,6 @@ import java.util.*;
 import com.sun.jdi.*;
 
 import com.sun.tools.example.debug.event.*;
-import com.sun.tools.example.debug.bdi.*;
 
 /**
  * Manage the list of source files.
@@ -45,7 +44,7 @@ public class SourceManager {
     private List<SourceModel> sourceList;
     private SearchPath sourcePath;
 
-    private Vector<SourceListener> sourceListeners = new Vector<SourceListener>();
+    private ArrayList<SourceListener> sourceListeners = new ArrayList<SourceListener>();
 
     private Map<ReferenceType, SourceModel> classToSource = new HashMap<ReferenceType, SourceModel>();
 
@@ -79,18 +78,18 @@ public class SourceManager {
     }
 
     public void addSourceListener(SourceListener l) {
-        sourceListeners.addElement(l);
+        sourceListeners.add(l);
     }
 
     public void removeSourceListener(SourceListener l) {
-        sourceListeners.removeElement(l);
+        sourceListeners.remove(l);
     }
 
     private void notifySourcepathChanged() {
-        Vector l = (Vector)sourceListeners.clone();
+        ArrayList<SourceListener> l = new ArrayList<SourceListener>(sourceListeners);
         SourcepathChangedEvent evt = new SourcepathChangedEvent(this);
         for (int i = 0; i < l.size(); i++) {
-            ((SourceListener)l.elementAt(i)).sourcepathChanged(evt);
+            l.get(i).sourcepathChanged(evt);
         }
     }
 
@@ -163,6 +162,7 @@ public class SourceManager {
     private class SMClassListener extends JDIAdapter
                                    implements JDIListener {
 
+        @Override
         public void classPrepare(ClassPrepareEventSet e) {
             ReferenceType refType = e.getReferenceType();
             SourceModel sm = sourceForClass(refType);
@@ -171,6 +171,7 @@ public class SourceManager {
             }
         }
 
+        @Override
         public void classUnload(ClassUnloadEventSet e) {
             //### iterate through looking for (e.getTypeName()).
             //### then remove it.

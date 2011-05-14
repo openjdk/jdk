@@ -257,6 +257,11 @@ public abstract class GraphicsDevice {
      * 1.0f, and the background color alpha is set to 255 (completely opaque).
      * These values are not restored when returning to windowed mode.
      * <p>
+     * It is unspecified and platform-dependent how decorated windows operate
+     * in full-screen mode. For this reason, it is recommended to turn off
+     * the decorations in a {@code Frame} or {@code Dialog} object by using the
+     * {@code setUndecorated} method.
+     * <p>
      * When returning to windowed mode from an exclusive full-screen window,
      * any display changes made by calling {@code setDisplayMode} are
      * automatically restored to their original state.
@@ -272,6 +277,8 @@ public abstract class GraphicsDevice {
      * @see #setDisplayMode
      * @see Component#enableInputMethods
      * @see Component#setVisible
+     * @see Frame#setUndecorated
+     * @see Dialog#setUndecorated
      *
      * @since 1.4
      */

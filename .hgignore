@@ -2,3 +2,4 @@
 ^dist/
 /nbproject/private/
 ^webrev
+^.hgtip

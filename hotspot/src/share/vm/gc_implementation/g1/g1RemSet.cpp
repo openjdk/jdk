@@ -157,7 +157,6 @@ public:
   void set_try_claimed() { _try_claimed = true; }
 
   void scanCard(size_t index, HeapRegion *r) {
-    _cards_done++;
     DirtyCardToOopClosure* cl =
       r->new_dcto_closure(_oc,
                          CardTableModRefBS::Precise,
@@ -168,17 +167,14 @@ public:
     HeapWord* card_start = _bot_shared->address_for_index(index);
     HeapWord* card_end = card_start + G1BlockOffsetSharedArray::N_words;
     Space *sp = SharedHeap::heap()->space_containing(card_start);
-    MemRegion sm_region;
-    if (ParallelGCThreads > 0) {
-      // first find the used area
-      sm_region = sp->used_region_at_save_marks();
-    } else {
-      // The closure is not idempotent.  We shouldn't look at objects
-      // allocated during the GC.
-      sm_region = sp->used_region_at_save_marks();
-    }
+    MemRegion sm_region = sp->used_region_at_save_marks();
     MemRegion mr = sm_region.intersection(MemRegion(card_start,card_end));
-    if (!mr.is_empty()) {
+    if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
+      // We make the card as "claimed" lazily (so races are possible
+      // but they're benign), which reduces the number of duplicate
+      // scans (the rsets of the regions in the cset can intersect).
+      _ct_bs->set_card_claimed(index);
+      _cards_done++;
       cl->do_MemRegion(mr);
     }
   }
@@ -199,6 +195,9 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
     if (hrrs->iter_is_complete()) return false; // All done.
     if (!_try_claimed && !hrrs->claim_iter()) return false;
+    // If we ever free the collection set concurrently, we should also
+    // clear the card table concurrently therefore we won't need to
+    // add regions of the collection set to the dirty cards region.
     _g1h->push_dirty_cards_region(r);
     // If we didn't return above, then
     //   _try_claimed || r->claim_iter()
@@ -230,15 +229,10 @@ public:
         _g1h->push_dirty_cards_region(card_region);
       }
 
-       // If the card is dirty, then we will scan it during updateRS.
-      if (!card_region->in_collection_set() && !_ct_bs->is_card_dirty(card_index)) {
-        // We make the card as "claimed" lazily (so races are possible but they're benign),
-        // which reduces the number of duplicate scans (the rsets of the regions in the cset
-        // can intersect).
-        if (!_ct_bs->is_card_claimed(card_index)) {
-          _ct_bs->set_card_claimed(card_index);
-          scanCard(card_index, card_region);
-        }
+      // If the card is dirty, then we will scan it during updateRS.
+      if (!card_region->in_collection_set() &&
+          !_ct_bs->is_card_dirty(card_index)) {
+        scanCard(card_index, card_region);
       }
     }
     if (!_try_claimed) {
@@ -246,8 +240,6 @@ public:
     }
     return false;
   }
-  // Set all cards back to clean.
-  void cleanup() {_g1h->cleanUpCardTable();}
   size_t cards_done() { return _cards_done;}
   size_t cards_looked_up() { return _cards;}
 };
@@ -566,8 +558,9 @@ public:
     update_rs_cl.set_region(r);
     HeapWord* stop_point =
       r->oops_on_card_seq_iterate_careful(scanRegion,
-                                        &filter_then_update_rs_cset_oop_cl,
-                                        false /* filter_young */);
+                                          &filter_then_update_rs_cset_oop_cl,
+                                          false /* filter_young */,
+                                          NULL  /* card_ptr */);
 
     // Since this is performed in the event of an evacuation failure, we
     // we shouldn't see a non-null stop point
@@ -735,12 +728,6 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
                                 (OopClosure*)&mux :
                                 (OopClosure*)&update_rs_oop_cl));
 
-  // Undirty the card.
-  *card_ptr = CardTableModRefBS::clean_card_val();
-  // We must complete this write before we do any of the reads below.
-  OrderAccess::storeload();
-  // And process it, being careful of unallocated portions of TLAB's.
-
   // The region for the current card may be a young region. The
   // current card may have been a card that was evicted from the
   // card cache. When the card was inserted into the cache, we had
@@ -749,7 +736,7 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   // and tagged as young.
   //
   // We wish to filter out cards for such a region but the current
-  // thread, if we're running conucrrently, may "see" the young type
+  // thread, if we're running concurrently, may "see" the young type
   // change at any time (so an earlier "is_young" check may pass or
   // fail arbitrarily). We tell the iteration code to perform this
   // filtering when it has been determined that there has been an actual
@@ -759,7 +746,8 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   HeapWord* stop_point =
     r->oops_on_card_seq_iterate_careful(dirtyRegion,
                                         &filter_then_update_rs_oop_cl,
-                                        filter_young);
+                                        filter_young,
+                                        card_ptr);
 
   // If stop_point is non-null, then we encountered an unallocated region
   // (perhaps the unfilled portion of a TLAB.)  For now, we'll dirty the

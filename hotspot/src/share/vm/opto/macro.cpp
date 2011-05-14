@@ -221,9 +221,16 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     Node *shift = p2x->unique_out();
     Node *addp = shift->unique_out();
     for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-      Node *st = addp->last_out(j);
-      assert(st->is_Store(), "store required");
-      _igvn.replace_node(st, st->in(MemNode::Memory));
+      Node *mem = addp->last_out(j);
+      if (UseCondCardMark && mem->is_Load()) {
+        assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+        // The load is checking if the card has been written so
+        // replace it with zero to fold the test.
+        _igvn.replace_node(mem, intcon(0));
+        continue;
+      }
+      assert(mem->is_Store(), "store required");
+      _igvn.replace_node(mem, mem->in(MemNode::Memory));
     }
   } else {
     // G1 pre/post barriers
@@ -2147,6 +2154,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       debug_only(int old_macro_count = C->macro_count(););
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+      } else if (n->Opcode() == Op_LoopLimit) {
+        // Remove it from macro list and put on IGVN worklist to optimize.
+        C->remove_macro_node(n);
+        _igvn._worklist.push(n);
+        success = true;
       } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
         _igvn.replace_node(n, n->in(1));
         success = true;

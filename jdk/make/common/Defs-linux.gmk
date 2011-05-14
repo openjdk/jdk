@@ -354,7 +354,7 @@ HAVE_DPS = no
 # Japanese manpages
 #
 JA_SOURCE_ENCODING = eucJP
-JA_TARGET_ENCODINGS = eucJP
+JA_TARGET_ENCODINGS = UTF-8
 
 # Settings for the JDI - Serviceability Agent binding.
 HOTSPOT_SALIB_PATH   = $(HOTSPOT_IMPORT_PATH)/jre/lib/$(LIBARCH)

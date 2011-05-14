@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,23 @@ abstract class SpNegoToken extends GSSToken {
                 return "Reject";
         default:
                 return ("Unknown Negotiated Result: " + result);
+        }
+    }
+
+    /**
+     * Checks if the context tag in a sequence is in correct order. The "last"
+     * value must be smaller than "current".
+     * @param last the last tag seen
+     * @param current the current tag
+     * @return the current tag, used as the next value for last
+     * @throws GSSException if there's a wrong order
+     */
+    static int checkNextField(int last, int current) throws GSSException {
+        if (last < current) {
+            return current;
+        } else {
+            throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
+                "Invalid SpNegoToken token : wrong order");
         }
     }
 }

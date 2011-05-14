@@ -773,15 +773,13 @@ class GraphKit : public Phase {
 
   // implementation of object creation
   Node* set_output_for_allocation(AllocateNode* alloc,
-                                  const TypeOopPtr* oop_type,
-                                  bool raw_mem_only);
+                                  const TypeOopPtr* oop_type);
   Node* get_layout_helper(Node* klass_node, jint& constant_value);
   Node* new_instance(Node* klass_node,
                      Node* slow_test = NULL,
-                     bool raw_mem_only = false,
                      Node* *return_size_val = NULL);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
-                  bool raw_mem_only = false, Node* *return_size_val = NULL);
+                  Node* *return_size_val = NULL);
 
   // Handy for making control flow
   IfNode* create_and_map_if(Node* ctrl, Node* tst, float prob, float cnt) {

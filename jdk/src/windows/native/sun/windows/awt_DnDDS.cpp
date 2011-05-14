@@ -843,7 +843,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
             dropfiles->pt.x = m_dropPoint.x;
             dropfiles->pt.y = m_dropPoint.y;
             dropfiles->fNC = m_fNC;
-            dropfiles->fWide = TRUE; // good guess!
+            dropfiles->fWide = TRUE; // we publish only Unicode
             dataout += sizeof(DROPFILES);
         }
 

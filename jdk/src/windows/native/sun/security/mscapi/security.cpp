@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 
 #define CERTIFICATE_PARSING_EXCEPTION \
                             "java/security/cert/CertificateParsingException"
+#define INVALID_KEY_EXCEPTION \
+                            "java/security/InvalidKeyException"
 #define KEY_EXCEPTION       "java/security/KeyException"
 #define KEYSTORE_EXCEPTION  "java/security/KeyStoreException"
 #define PROVIDER_EXCEPTION  "java/security/ProviderException"
@@ -79,6 +81,8 @@ ALG_ID MapHashAlgorithm(JNIEnv *env, jstring jHashAlgorithm) {
         (strcmp("SHA-1", pszHashAlgorithm) == 0)) {
 
         algId = CALG_SHA1;
+    } else if (strcmp("SHA1+MD5", pszHashAlgorithm) == 0) {
+        algId = CALG_SSL3_SHAMD5; // a 36-byte concatenation of SHA-1 and MD5
     } else if (strcmp("SHA-256", pszHashAlgorithm) == 0) {
         algId = CALG_SHA_256;
     } else if (strcmp("SHA-384", pszHashAlgorithm) == 0) {
@@ -471,16 +475,18 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_Key_cleanUp
 /*
  * Class:     sun_security_mscapi_RSASignature
  * Method:    signHash
- * Signature: ([BILjava/lang/String;JJ)[B
+ * Signature: (Z[BILjava/lang/String;JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
-  (JNIEnv *env, jclass clazz, jbyteArray jHash, jint jHashSize,
-        jstring jHashAlgorithm, jlong hCryptProv, jlong hCryptKey)
+  (JNIEnv *env, jclass clazz, jboolean noHashOID, jbyteArray jHash,
+        jint jHashSize, jstring jHashAlgorithm, jlong hCryptProv,
+        jlong hCryptKey)
 {
     HCRYPTHASH hHash = NULL;
     jbyte* pHashBuffer = NULL;
     jbyte* pSignedHashBuffer = NULL;
     jbyteArray jSignedHash = NULL;
+    HCRYPTPROV hCryptProvAlt = NULL;
 
     __try
     {
@@ -490,8 +496,32 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
         // Acquire a hash object handle.
         if (::CryptCreateHash(HCRYPTPROV(hCryptProv), algId, 0, 0, &hHash) == FALSE)
         {
-            ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
-            __leave;
+            // Failover to using the PROV_RSA_AES CSP
+
+            DWORD cbData = 256;
+            BYTE pbData[256];
+            pbData[0] = '\0';
+
+            // Get name of the key container
+            ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_CONTAINER,
+                (BYTE *)pbData, &cbData, 0);
+
+            // Acquire an alternative CSP handle
+            if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL,
+                PROV_RSA_AES, 0) == FALSE)
+            {
+
+                ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
+                __leave;
+            }
+
+            // Acquire a hash object handle.
+            if (::CryptCreateHash(HCRYPTPROV(hCryptProvAlt), algId, 0, 0,
+                &hHash) == FALSE)
+            {
+                ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         // Copy hash from Java to native buffer
@@ -521,14 +551,20 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
 
         // Determine size of buffer
         DWORD dwBufLen = 0;
-        if (::CryptSignHash(hHash, dwKeySpec, NULL, NULL, NULL, &dwBufLen) == FALSE)
+        DWORD dwFlags = 0;
+
+        if (noHashOID == JNI_TRUE) {
+            dwFlags = CRYPT_NOHASHOID; // omit hash OID in NONEwithRSA signature
+        }
+
+        if (::CryptSignHash(hHash, dwKeySpec, NULL, dwFlags, NULL, &dwBufLen) == FALSE)
         {
             ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
             __leave;
         }
 
         pSignedHashBuffer = new jbyte[dwBufLen];
-        if (::CryptSignHash(hHash, dwKeySpec, NULL, NULL, (BYTE*)pSignedHashBuffer, &dwBufLen) == FALSE)
+        if (::CryptSignHash(hHash, dwKeySpec, NULL, dwFlags, (BYTE*)pSignedHashBuffer, &dwBufLen) == FALSE)
         {
             ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
             __leave;
@@ -544,6 +580,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSASignature_signHash
     }
     __finally
     {
+        if (hCryptProvAlt)
+            ::CryptReleaseContext(hCryptProvAlt, 0);
+
         if (pSignedHashBuffer)
             delete [] pSignedHashBuffer;
 
@@ -572,6 +611,7 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_RSASignature_verifySignedHas
     jbyte* pSignedHashBuffer = NULL;
     DWORD dwSignedHashBufferLen = jSignedHashSize;
     jboolean result = JNI_FALSE;
+    HCRYPTPROV hCryptProvAlt = NULL;
 
     __try
     {
@@ -582,8 +622,32 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_RSASignature_verifySignedHas
         if (::CryptCreateHash(HCRYPTPROV(hCryptProv), algId, 0, 0, &hHash)
             == FALSE)
         {
-            ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
-            __leave;
+            // Failover to using the PROV_RSA_AES CSP
+
+            DWORD cbData = 256;
+            BYTE pbData[256];
+            pbData[0] = '\0';
+
+            // Get name of the key container
+            ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_CONTAINER,
+                (BYTE *)pbData, &cbData, 0);
+
+            // Acquire an alternative CSP handle
+            if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL,
+                PROV_RSA_AES, 0) == FALSE)
+            {
+
+                ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
+                __leave;
+            }
+
+            // Acquire a hash object handle.
+            if (::CryptCreateHash(HCRYPTPROV(hCryptProvAlt), algId, 0, 0,
+                &hHash) == FALSE)
+            {
+                ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         // Copy hash and signedHash from Java to native buffer
@@ -614,6 +678,9 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_RSASignature_verifySignedHas
 
     __finally
     {
+        if (hCryptProvAlt)
+            ::CryptReleaseContext(hCryptProvAlt, 0);
+
         if (pSignedHashBuffer)
             delete [] pSignedHashBuffer;
 
@@ -646,15 +713,27 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSAKeyPairGenerator_generateR
         pszKeyContainerName = env->GetStringUTFChars(keyContainerName, NULL);
 
         // Acquire a CSP context (create a new key container).
+        // Prefer a PROV_RSA_AES CSP, when available, due to its support
+        // for SHA-2-based signatures.
         if (::CryptAcquireContext(
             &hCryptProv,
             pszKeyContainerName,
             NULL,
-            PROV_RSA_FULL,
+            PROV_RSA_AES,
             CRYPT_NEWKEYSET) == FALSE)
         {
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
-            __leave;
+            // Failover to using the default CSP (PROV_RSA_FULL)
+
+            if (::CryptAcquireContext(
+                &hCryptProv,
+                pszKeyContainerName,
+                NULL,
+                PROV_RSA_FULL,
+                CRYPT_NEWKEYSET) == FALSE)
+            {
+                ThrowException(env, KEY_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         // Generate an RSA keypair
@@ -1398,7 +1477,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getPublicKeyB
 
     jbyteArray blob = NULL;
     DWORD dwBlobLen;
-    BYTE* pbKeyBlob;
+    BYTE* pbKeyBlob = NULL;
 
     __try
     {
@@ -1656,7 +1735,7 @@ jbyteArray generateKeyBlob(
         // Sanity check
         jsize jPublicExponentLength = env->GetArrayLength(jPublicExponent);
         if (jPublicExponentLength > sizeof(pRsaPubKey->pubexp)) {
-            ThrowException(env, KEY_EXCEPTION, NTE_BAD_TYPE);
+            ThrowException(env, INVALID_KEY_EXCEPTION, NTE_BAD_TYPE);
             __leave;
         }
         // The length argument must be the smaller of jPublicExponentLength
@@ -1847,15 +1926,27 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSASignature_importPublicKey
         pbKeyBlob = (BYTE *) env->GetByteArrayElements(keyBlob, 0);
 
         // Acquire a CSP context (create a new key container).
+        // Prefer a PROV_RSA_AES CSP, when available, due to its support
+        // for SHA-2-based signatures.
         if (::CryptAcquireContext(
             &hCryptProv,
             NULL,
             NULL,
-            PROV_RSA_FULL,
+            PROV_RSA_AES,
             CRYPT_VERIFYCONTEXT) == FALSE)
         {
-            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-            __leave;
+            // Failover to using the default CSP (PROV_RSA_FULL)
+
+            if (::CryptAcquireContext(
+                &hCryptProv,
+                NULL,
+                NULL,
+                PROV_RSA_FULL,
+                CRYPT_VERIFYCONTEXT) == FALSE)
+            {
+                ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+                __leave;
+            }
         }
 
         // Import the public key
