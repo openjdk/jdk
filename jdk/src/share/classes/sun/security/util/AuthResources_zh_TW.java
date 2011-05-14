@@ -111,17 +111,15 @@ public class AuthResources_zh_TW extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "\u9810\u671F\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u985E\u578B"},
-        {"can.not.specify.Principal.with.a.",
-                "\u6C92\u6709\u842C\u7528\u5B57\u5143\u540D\u7A31\uFF0C\u7121\u6CD5\u6307\u5B9A"},
-        {"wildcard.class.without.a.wildcard.name",
-                "\u542B\u6709\u842C\u7528\u5B57\u5143\u985E\u5225\u7684 Principal"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "\u6C92\u6709\u842C\u7528\u5B57\u5143\u540D\u7A31\uFF0C\u7121\u6CD5\u6307\u5B9A\u542B\u6709\u842C\u7528\u5B57\u5143\u985E\u5225\u7684 Principal"},
         {"expected.codeBase.or.SignedBy", "\u9810\u671F\u7684 codeBase \u6216 SignedBy"},
         {"only.Principal.based.grant.entries.permitted",
                 "\u53EA\u5141\u8A31\u4EE5 Principal \u70BA\u57FA\u790E\u7684\u6388\u6B0A\u9805\u76EE"},
         {"expected.permission.entry", "\u9810\u671F\u7684\u6B0A\u9650\u9805\u76EE"},
         {"number.", "\u865F\u78BC "},
-        {"expected.", "\u9810\u671F\u7684 "},
-        {".read.end.of.file", "\uFF0C\u8B80\u53D6\u6A94\u6848\u7D50\u5C3E"},
+        {"expected.expect.read.end.of.file.",
+                "\u9810\u671F\u70BA {0}, \u8B80\u53D6\u6A94\u6848\u7D50\u5C3E"},
         {"expected.read.end.of.file", "\u9810\u671F\u7684 ';'\uFF0C\u8B80\u53D6\u6A94\u6848\u7D50\u5C3E"},
         {"line.", "\u884C "},
         {".expected.", ": \u9810\u671F '"},
@@ -136,6 +134,9 @@ public class AuthResources_zh_TW extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "\u63D0\u4F9B\u7A7A\u503C\u540D\u7A31"}
 
     };

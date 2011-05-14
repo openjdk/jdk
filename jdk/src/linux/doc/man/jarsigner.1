@@ -1,4 +1,4 @@
-." Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jarsigner 1 "02 Jun 2010"
+.TH jarsigner 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jarsigner \- JAR Signing and Verification Tool
 .LP
-.RS 3
-
-.LP
 .LP
 Generates signatures for Java ARchive (JAR) files, and verifies the signatures of signed JAR files.
 .LP
-.RE
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -50,8 +44,6 @@ Generates signatures for Java ARchive (JAR) files, and verifies the signatures o
 The jarsigner \-verify command can take zero or more keystore alias names after the jar filename. When specified, jarsigner will check that the certificate used to verify each signed entry in the jar file matches one of the keystore aliases. The aliases are defined in the keystore specified by \-keystore, or the default keystore.
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3jarsigner\fP tool is used for two purposes:
@@ -109,9 +101,6 @@ The default \f3jarsigner\fP behavior is to \f2sign\fP a JAR (or zip) file. Use t
 .SS 
 Keystore Aliases
 .LP
-.RS 3
-
-.LP
 .LP
 All keystore entities are accessed via unique \f2aliases\fP.
 .LP
@@ -121,23 +110,19 @@ When using \f3jarsigner\fP to sign a JAR file, you must specify the alias for th
 .nf
 \f3
 .fl
-    jarsigner \-keystore /working/mystore \-storepass myspass
+    jarsigner \-keystore /working/mystore \-storepass \fP\f4<keystore password>\fP\f3
 .fl
-      \-keypass dukekeypasswd MyJARFile.jar duke 
+      \-keypass \fP\f4<private key password>\fP\f3 MyJARFile.jar duke
 .fl
 \fP
 .fi
 
 .LP
 .LP
-Keystores are protected with a password, so the store password (in this case "myspass") must be specified. You will be prompted for it if you don't specify it on the command line. Similarly, private keys are protected in a keystore with a password, so the private key's password (in this case "dukekeypasswd") must be specified, and you will be prompted for it if you don't specify it on the command line and it isn't the same as the store password.
+Keystores are protected with a password, so the store password must be specified. You will be prompted for it if you don't specify it on the command line. Similarly, private keys are protected in a keystore with a password, so the private key's password must be specified, and you will be prompted for it if you don't specify it on the command line and it isn't the same as the store password.
 .LP
-.RE
 .SS 
 Keystore Location
-.LP
-.RS 3
-
 .LP
 .LP
 \f3jarsigner\fP has a \f2\-keystore\fP option for specifying the URL of the keystore to be used. The keystore is by default stored in a file named \f2.keystore\fP in the user's home directory, as determined by the \f2user.home\fP system property. On Solaris systems \f2user.home\fP defaults to the user's home directory.
@@ -145,12 +130,8 @@ Keystore Location
 .LP
 Note that the input stream from the \f2\-keystore\fP option is passed to the \f2KeyStore.load\fP method. If \f2NONE\fP is specified as the URL, then a null stream is passed to the \f2KeyStore.load\fP method. \f2NONE\fP should be specified if the \f2KeyStore\fP is not file\-based, for example, if it resides on a hardware token device.
 .LP
-.RE
 .SS 
 Keystore Implementation
-.LP
-.RS 3
-
 .LP
 .LP
 The \f2KeyStore\fP class provided in the \f2java.security\fP package supplies well\-defined interfaces to access and modify the information in a keystore. It is possible for there to be multiple different concrete implementations, where each implementation is that for a particular \f2type\fP of keystore.
@@ -166,13 +147,13 @@ Keystore implementations are provider\-based. More specifically, the application
 .na
 \f2How to Implement a Provider for the Java Cryptography Architecture\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/HowToImplAProvider.html.
+http://download.oracle.com/javase/7/docs/technotes/guides/security/crypto/HowToImplAProvider.html.
 .LP
 .LP
 Applications can choose different \f2types\fP of keystore implementations from different providers, using the "getInstance" factory method supplied in the \f2KeyStore\fP class. A keystore type defines the storage and data format of the keystore information, and the algorithms used to protect private keys in the keystore and the integrity of the keystore itself. Keystore implementations of different types are not compatible.
 .LP
 .LP
-\f3keytool\fP works on any file\-based keystore implementation. (It treats the keytore location that is passed to it at the command line as a filename and converts it to a FileInputStream, from which it loads the keystore information.) The \f3jarsigner\fP and \f3policytool\fP tools, on the other hand, can read a keystore from any location that can be specified using a URL.
+\f3keytool\fP works on any file\-based keystore implementation. (It treats the keystore location that is passed to it at the command line as a filename and converts it to a FileInputStream, from which it loads the keystore information.) The \f3jarsigner\fP and \f3policytool\fP tools, on the other hand, can read a keystore from any location that can be specified using a URL.
 .LP
 .LP
 For \f3jarsigner\fP and \f3keytool\fP, you can specify a keystore type at the command line, via the \f2\-storetype\fP option. For \f3Policy Tool\fP, you can specify a keystore type via the "Change Keystore" command in the Edit menu.
@@ -227,40 +208,35 @@ Note that if you us the PKCS#11 provider package, you should refer to the
 .na
 \f2KeyTool and JarSigner\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/p11guide.html#KeyToolJarSigner section of the Java PKCS#11 Reference Guide for details.
+http://download.oracle.com/javase/7/docs/technotes/guides/security/p11guide.html#KeyToolJarSigner section of the Java PKCS#11 Reference Guide for details.
 .LP
-.RE
 .SS 
 Supported Algorithms
 .LP
-.RS 3
-
 .LP
-.LP
-By default, \f3jarsigner\fP signs a JAR file using either
+By default, \f3jarsigner\fP signs a JAR file using one of the following:
 .LP
 .RS 3
 .TP 2
 o
-DSA (Digital Signature Algorithm) with the SHA\-1 digest algorithm, or 
+DSA (Digital Signature Algorithm) with the SHA1 digest algorithm 
 .TP 2
 o
-the RSA algorithm with the SHA\-256 digest algorithm. 
+RSA algorithm with the SHA256 digest algorithm. 
+.TP 2
+o
+EC (Elliptic Curve) cryptography algorithm with the SHA256 with ECDSA (Elliptic Curve Digital Signature Algorithm). 
 .RE
 
 .LP
 .LP
-That is, if the signer's public and private keys are DSA keys, \f3jarsigner\fP will sign the JAR file using the "SHA1withDSA" algorithm. If the signer's keys are RSA keys, \f3jarsigner\fP will attempt to sign the JAR file using the "SHA256withRSA" algorithm.
+That is, if the signer's public and private keys are DSA keys, \f3jarsigner\fP will sign the JAR file using the "SHA1withDSA" algorithm. If the signer's keys are RSA keys, \f3jarsigner\fP will attempt to sign the JAR file using the "SHA256withRSA" algorithm. If the signer's keys are EC keys, \f3jarsigner\fP will sign the JAR file using the "SHA256withECDSA" algorithm.
 .LP
 .LP
 These default signature algorithms can be overridden using the \f2\-sigalg\fP option.
 .LP
-.RE
 .SS 
 The Signed JAR File
-.LP
-.RS 3
-
 .LP
 .LP
 When \f3jarsigner\fP is used to sign a JAR file, the output signed JAR file is exactly the same as the input JAR file, except that it has two additional files placed in the META\-INF directory:
@@ -271,7 +247,7 @@ o
 a signature file, with a .SF extension, and 
 .TP 2
 o
-a signature block file, with a .DSA extension. 
+a signature block file, with a .DSA, .RSA, or .EC extension. 
 .RE
 
 .LP
@@ -281,22 +257,19 @@ The base file names for these two files come from the value of the \f2\-sigFile\
 .nf
 \f3
 .fl
-  \-sigFile MKSIGN
+\-sigFile MKSIGN
 .fl
 \fP
 .fi
 
 .LP
 .LP
-the files are named "MKSIGN.SF" and "MKSIGN.DSA".
+The files are named "MKSIGN.SF" and "MKSIGN.DSA".
 .LP
 .LP
 If no \f2\-sigfile\fP option appears on the command line, the base file name for the .SF and .DSA files will be the first 8 characters of the alias name specified on the command line, all converted to upper case. If the alias name has fewer than 8 characters, the full alias name is used. If the alias name contains any characters that are not allowed in a signature file name, each such character is converted to an underscore ("_") character in forming the file name. Legal characters include letters, digits, underscores, and hyphens.
 .LP
 \f3The Signature (.SF) File\fP
-.LP
-.RS 3
-
 .LP
 .LP
 A signature file (the .SF file) looks similar to the manifest file that is always included in a JAR file when \f3jarsigner\fP is used to sign the file. That is, for each source file included in the JAR file, the .SF file has three lines, just as in the manifest file, listing the following:
@@ -320,25 +293,14 @@ In the manifest file, the SHA digest value for each source file is the digest (h
 .LP
 The signature file also, by default, includes a header containing a hash of the whole manifest file. The presence of the header enables verification optimization, as described in JAR File Verification.
 .LP
-.RE
-\f3The Signature Block (.DSA) File\fP
+\f3The Signature Block File\fP
 .LP
-.RS 3
-
-.LP
-.LP
-The .SF file is signed and the signature is placed in the .DSA file. The .DSA file also contains, encoded inside it, the certificate or certificate chain from the keystore which authenticates the public key corresponding to the private key used for signing.
-.LP
-.RE
-.RE
+The .SF file is signed and the signature is placed in the signature block file. This file also contains, encoded inside it, the certificate or certificate chain from the keystore which authenticates the public key corresponding to the private key used for signing. The file has the extension .DSA, .RSA, or .EC depending on the digest algorithm used. 
 .SS 
 Signature Timestamp
 .LP
-.RS 3
-
 .LP
-.LP
-\f2jarsigner\fP tool can now generate and store a signature timestamp when signing a JAR file. In addition, \f2jarsigner\fP supports alternative signing mechanisms. This behavior is optional and is controlled by the user at the time of signing through these options:
+\f2jarsigner\fP tool can generate and store a signature timestamp when signing a JAR file. In addition, \f2jarsigner\fP supports alternative signing mechanisms. This behavior is optional and is controlled by the user at the time of signing through these options:
 .LP
 .RS 3
 .TP 2
@@ -359,12 +321,8 @@ o
 .LP
 Each of these options is detailed in the Options section below.
 .LP
-.RE
 .SS 
 JAR File Verification
-.LP
-.RS 3
-
 .LP
 .LP
 A successful JAR file verification occurs if the signature(s) are valid, and none of the files that were in the JAR file when the signatures were generated have been changed since then. JAR file verification involves the following steps:
@@ -372,18 +330,22 @@ A successful JAR file verification occurs if the signature(s) are valid, and non
 .RS 3
 .TP 3
 1.
-Verify the signature of the .SF file itself. 
-.LP
-That is, the verification ensures that the signature stored in each signature block (.DSA) file was in fact generated using the private key corresponding to the public key whose certificate (or certificate chain) also appears in the .DSA file. It also ensures that the signature is a valid signature of the corresponding signature (.SF) file, and thus the .SF file has not been tampered with.  
+Verify the signature of the .SF file itself.
+.br
+.br
+That is, the verification ensures that the signature stored in each signature block (.DSA) file was in fact generated using the private key corresponding to the public key whose certificate (or certificate chain) also appears in the .DSA file. It also ensures that the signature is a valid signature of the corresponding signature (.SF) file, and thus the .SF file has not been tampered with. 
 .TP 3
 2.
-Verify the digest listed in each entry in the .SF file with each corresponding section in the manifest. 
-.LP
-The .SF file by default includes a header containing a hash of the entire manifest file. When the header is present, then the verification can check to see whether or not the hash in the header indeed matches the hash of the manifest file. If that is the case, verification proceeds to the next step. 
-.LP
-If that is not the case, a less optimized verification is required to ensure that the hash in each source file information section in the .SF file equals the hash of its corresponding section in the manifest file (see The Signature (.SF) File). 
-.LP
-One reason the hash of the manifest file that is stored in the .SF file header may not equal the hash of the current manifest file would be because one or more files were added to the JAR file (using the \f2jar\fP tool) after the signature (and thus the .SF file) was generated. When the \f2jar\fP tool is used to add files, the manifest file is changed (sections are added to it for the new files), but the .SF file is not. A verification is still considered successful if none of the files that were in the JAR file when the signature was generated have been changed since then, which is the case if the hashes in the non\-header sections of the .SF file equal the hashes of the corresponding sections in the manifest file.  
+Verify the digest listed in each entry in the .SF file with each corresponding section in the manifest.
+.br
+.br
+The .SF file by default includes a header containing a hash of the entire manifest file. When the header is present, then the verification can check to see whether or not the hash in the header indeed matches the hash of the manifest file. If that is the case, verification proceeds to the next step.
+.br
+.br
+If that is not the case, a less optimized verification is required to ensure that the hash in each source file information section in the .SF file equals the hash of its corresponding section in the manifest file (see The Signature (.SF) File).
+.br
+.br
+One reason the hash of the manifest file that is stored in the .SF file header may not equal the hash of the current manifest file would be because one or more files were added to the JAR file (using the \f2jar\fP tool) after the signature (and thus the .SF file) was generated. When the \f2jar\fP tool is used to add files, the manifest file is changed (sections are added to it for the new files), but the .SF file is not. A verification is still considered successful if none of the files that were in the JAR file when the signature was generated have been changed since then, which is the case if the hashes in the non\-header sections of the .SF file equal the hashes of the corresponding sections in the manifest file. 
 .TP 3
 3.
 Read each file in the JAR file that has an entry in the .SF file. While reading, compute the file's digest, and then compare the result with the digest for this file in the manifest section. The digests should be the same, or verification fails. 
@@ -393,12 +355,8 @@ Read each file in the JAR file that has an entry in the .SF file. While reading,
 .LP
 If any serious verification failures occur during the verification process, the process is stopped and a security exception is thrown. It is caught and displayed by \f3jarsigner\fP.
 .LP
-.RE
 .SS 
 Multiple Signatures for a JAR File
-.LP
-.RS 3
-
 .LP
 .LP
 A JAR file can be signed by multiple people simply by running the \f3jarsigner\fP tool on the file multiple times, specifying the alias for a different person each time, as in:
@@ -435,10 +393,7 @@ When a JAR file is signed multiple times, there are multiple .SF and .DSA files 
 .LP
 Note: It is also possible for a JAR file to have mixed signatures, some generated by the JDK 1.1 \f3javakey\fP tool and others by \f3jarsigner\fP. That is, \f3jarsigner\fP can be used to sign JAR files already previously signed using \f3javakey\fP.
 .LP
-.RE
 .SH "OPTIONS"
-.LP
-
 .LP
 .LP
 The various \f3jarsigner\fP options are listed and described below. Note:
@@ -462,12 +417,15 @@ The \f2\-keystore\fP, \f2\-storepass\fP, \f2\-keypass\fP, \f2\-sigfile\fP, \f2\-
 .RS 3
 .TP 3
 \-keystore url 
-Specifies the URL that tells the keystore location. This defaults to the file \f2.keystore\fP in the user's home directory, as determined by the "user.home" system property. 
-.LP
-A keystore is required when signing, so you must explicitly specify one if the default keystore does not exist (or you want to use one other than the default). 
-.LP
-A keystore is \f2not\fP required when verifying, but if one is specified, or the default exists, and the \f2\-verbose\fP option was also specified, additional information is output regarding whether or not any of the certificates used to verify the JAR file are contained in that keystore. 
-.LP
+Specifies the URL that tells the keystore location. This defaults to the file \f2.keystore\fP in the user's home directory, as determined by the "user.home" system property.
+.br
+.br
+A keystore is required when signing, so you must explicitly specify one if the default keystore does not exist (or you want to use one other than the default).
+.br
+.br
+A keystore is \f2not\fP required when verifying, but if one is specified, or the default exists, and the \f2\-verbose\fP option was also specified, additional information is output regarding whether or not any of the certificates used to verify the JAR file are contained in that keystore.
+.br
+.br
 Note: the \f2\-keystore\fP argument can actually be a file name (and path) specification rather than a URL, in which case it will be treated the same as a "file:" URL. That is, 
 .nf
 \f3
@@ -494,79 +452,93 @@ o
 \f2\-storetype PKCS11\fP 
 .RE
 For example, this command lists the contents of the configured PKCS#11 token: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
    jarsigner \-keystore NONE \-storetype PKCS11 \-list
 .fl
-  
-.fl
 \fP
 .fi
-.RE
 .TP 3
 \-storetype storetype 
-Specifies the type of keystore to be instantiated. The default keystore type is the one that is specified as the value of the "keystore.type" property in the security properties file, which is returned by the static \f2getDefaultType\fP method in \f2java.security.KeyStore\fP. 
-.LP
-The PIN for a PCKS#11 token can also be specified using the \f2\-storepass\fP option. If none has been specified, keytool and jarsigner will prompt for the token PIN. If the token has a protected authentication path (such as a dedicated PIN\-pad or a biometric reader), then the \f2\-protected\fP option must be specified and no password options can be specified.  
+Specifies the type of keystore to be instantiated. The default keystore type is the one that is specified as the value of the "keystore.type" property in the security properties file, which is returned by the static \f2getDefaultType\fP method in \f2java.security.KeyStore\fP.
+.br
+.br
+The PIN for a PCKS#11 token can also be specified using the \f2\-storepass\fP option. If none has been specified, keytool and jarsigner will prompt for the token PIN. If the token has a protected authentication path (such as a dedicated PIN\-pad or a biometric reader), then the \f2\-protected\fP option must be specified and no password options can be specified. 
 .TP 3
-\-storepass password 
-Specifies the password which is required to access the keystore. This is only needed when signing (not verifying) a JAR file. In that case, if a \f2\-storepass\fP option is not provided at the command line, the user is prompted for the password. 
-.LP
-Note: The password shouldn't be specified on the command line or in a script unless it is for testing purposes, or you are on a secure system.  
+\-storepass[:env | :file] argument 
+Specifies the password which is required to access the keystore. This is only needed when signing (not verifying) a JAR file. In that case, if a \f2\-storepass\fP option is not provided at the command line, the user is prompted for the password.
+.br
+.br
+If the modifier \f2env\fP or \f2file\fP is not specified, then the password has the value \f2argument\fP. Otherwise, the password is retrieved as follows: 
+.RS 3
+.TP 2
+o
+\f2env\fP: Retrieve the password from the environment variable named \f2argument\fP 
+.TP 2
+o
+\f2file\fP: Retrieve the password from the file named \f2argument\fP 
+.RE
+Note: The password shouldn't be specified on the command line or in a script unless it is for testing purposes, or you are on a secure system. 
 .TP 3
-\-keypass password 
-Specifies the password used to protect the private key of the keystore entry addressed by the alias specified on the command line. The password is required when using \f3jarsigner\fP to sign a JAR file. If no password is provided on the command line, and the required password is different from the store password, the user is prompted for it. 
-.LP
-Note: The password shouldn't be specified on the command line or in a script unless it is for testing purposes, or you are on a secure system. Also, when typing in a password at the password prompt, the password is echoed (displayed exactly as typed), so be careful not to type it in front of anyone.  
+\-keypass[:env | :file] argument 
+Specifies the password used to protect the private key of the keystore entry addressed by the alias specified on the command line. The password is required when using \f3jarsigner\fP to sign a JAR file. If no password is provided on the command line, and the required password is different from the store password, the user is prompted for it.
+.br
+.br
+If the modifier \f2env\fP or \f2file\fP is not specified, then the password has the value \f2argument\fP. Otherwise, the password is retrieved as follows: 
+.RS 3
+.TP 2
+o
+\f2env\fP: Retrieve the password from the environment variable named \f2argument\fP 
+.TP 2
+o
+\f2file\fP: Retrieve the password from the file named \f2argument\fP 
+.RE
+Note: The password shouldn't be specified on the command line or in a script unless it is for testing purposes, or you are on a secure system. 
 .TP 3
 \-sigfile file 
-Specifies the base file name to be used for the generated .SF and .DSA files. For example, if \f2file\fP is "DUKESIGN", the generated .SF and .DSA files will be named "DUKESIGN.SF" and "DUKESIGN.DSA", and will be placed in the "META\-INF" directory of the signed JAR file. 
-.LP
-The characters in \f2file\fP must come from the set "a\-zA\-Z0\-9_\-". That is, only letters, numbers, underscore, and hyphen characters are allowed. Note: All lowercase characters will be converted to uppercase for the .SF and .DSA file names. 
-.LP
-If no \f2\-sigfile\fP option appears on the command line, the base file name for the .SF and .DSA files will be the first 8 characters of the alias name specified on the command line, all converted to upper case. If the alias name has fewer than 8 characters, the full alias name is used. If the alias name contains any characters that are not legal in a signature file name, each such character is converted to an underscore ("_") character in forming the file name.  
+Specifies the base file name to be used for the generated .SF and .DSA files. For example, if \f2file\fP is "DUKESIGN", the generated .SF and .DSA files will be named "DUKESIGN.SF" and "DUKESIGN.DSA", and will be placed in the "META\-INF" directory of the signed JAR file.
+.br
+.br
+The characters in \f2file\fP must come from the set "a\-zA\-Z0\-9_\-". That is, only letters, numbers, underscore, and hyphen characters are allowed. Note: All lowercase characters will be converted to uppercase for the .SF and .DSA file names.
+.br
+.br
+If no \f2\-sigfile\fP option appears on the command line, the base file name for the .SF and .DSA files will be the first 8 characters of the alias name specified on the command line, all converted to upper case. If the alias name has fewer than 8 characters, the full alias name is used. If the alias name contains any characters that are not legal in a signature file name, each such character is converted to an underscore ("_") character in forming the file name. 
 .TP 3
 \-sigalg algorithm 
-.RS 3
-
-.LP
-Specifies the name of the signature algorithm to use to sign the JAR file. 
-.LP
+Specifies the name of the signature algorithm to use to sign the JAR file.
+.br
+.br
 See 
 .na
 \f2Appendix A\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard signature algorithm names. This algorithm must be compatible with the private key used to sign the JAR file. If this option is not specified, SHA1withDSA or SHA256withRSA will be used depending on the type of private key. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
-.LP
-.RE
+http://download.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard signature algorithm names. This algorithm must be compatible with the private key used to sign the JAR file. If this option is not specified, SHA1withDSA, SHA256withRSA, or SHA256withECDSA will be used depending on the type of private key. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed. 
 .TP 3
 \-digestalg algorithm 
-.RS 3
-Specifies the name of the message digest algorithm to use when digesting the entries of a jar file. 
-.LP
+Specifies the name of the message digest algorithm to use when digesting the entries of a jar file.
+.br
+.br
 See 
 .na
 \f2Appendix A\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard message digest algorithm names. If this option is not specified, SHA\-256 will be used. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed.
-.LP
-.RE
+http://download.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA of the Java Cryptography Architecture for a list of standard message digest algorithm names. If this option is not specified, SHA256 will be used. There must either be a statically installed provider supplying an implementation of the specified algorithm or the user must specify one with the \f2\-providerClass\fP option, otherwise the command will not succeed. 
 .TP 3
 \-signedjar file 
-Specifies the name to be used for the signed JAR file. 
-.LP
-If no name is specified on the command line, the name used is the same as the input JAR file name (the name of the JAR file to be signed); in other words, that file is overwritten with the signed JAR file.  
+Specifies the name to be used for the signed JAR file.
+.br
+.br
+If no name is specified on the command line, the name used is the same as the input JAR file name (the name of the JAR file to be signed); in other words, that file is overwritten with the signed JAR file. 
 .TP 3
 \-verify 
-If this appears on the command line, the specified JAR file will be verified, not signed. If the verification is successful, "jar verified" will be displayed. If you try to verify an unsigned JAR file, or a JAR file signed with an unsupported algorithm (e.g., RSA when you don't have an RSA provider installed), the following is displayed: "jar is unsigned. (signatures missing or not parsable)" 
-.LP
-It is possible to verify JAR files signed using either \f3jarsigner\fP or the JDK 1.1 \f3javakey\fP tool, or both. 
-.LP
-For further information on verification, see JAR File Verification.  
+If this appears on the command line, the specified JAR file will be verified, not signed. If the verification is successful, "jar verified" will be displayed. If you try to verify an unsigned JAR file, or a JAR file signed with an unsupported algorithm (e.g., RSA when you don't have an RSA provider installed), the following is displayed: "jar is unsigned. (signatures missing or not parsable)"
+.br
+.br
+It is possible to verify JAR files signed using either \f3jarsigner\fP or the JDK 1.1 \f3javakey\fP tool, or both.
+.br
+.br
+For further information on verification, see JAR File Verification. 
 .TP 3
 \-certs 
 If this appears on the command line, along with the \f2\-verify\fP and \f2\-verbose\fP options, the output includes certificate information for each signer of the JAR file. This information includes 
@@ -578,7 +550,6 @@ the name of the type of certificate (stored in the .DSA file) that certifies the
 o
 if the certificate is an X.509 certificate (more specifically, an instance of \f2java.security.cert.X509Certificate\fP): the distinguished name of the signer 
 .RE
-.LP
 The keystore is also examined. If no keystore value is specified on the command line, the default keystore file (if any) will be checked. If the public key certificate for a signer matches an entry in the keystore, then the following information will also be displayed: 
 .RS 3
 .TP 2
@@ -596,26 +567,25 @@ If this appears on the command line, it indicates "verbose" mode, which causes \
 In the past, the .DSA (signature block) file generated when a JAR file was signed used to include a complete encoded copy of the .SF file (signature file) also generated. This behavior has been changed. To reduce the overall size of the output JAR file, the .DSA file by default doesn't contain a copy of the .SF file anymore. But if \f2\-internalsf\fP appears on the command line, the old behavior is utilized. \f3This option is mainly useful for testing; in practice, it should not be used, since doing so eliminates a useful optimization.\fP 
 .TP 3
 \-sectionsonly 
-If this appears on the command line, the .SF file (signature file) generated when a JAR file is signed does \f2not\fP include a header containing a hash of the whole manifest file. It just contains information and hashes related to each individual source file included in the JAR file, as described in The Signature (.SF) File . 
-.LP
-By default, this header is added, as an optimization. When the header is present, then whenever the JAR file is verified, the verification can first check to see whether or not the hash in the header indeed matches the hash of the whole manifest file. If so, verification proceeds to the next step. If not, it is necessary to do a less optimized verification that the hash in each source file information section in the .SF file equals the hash of its corresponding section in the manifest file. 
-.LP
-For further information, see JAR File Verification. 
-.LP
-\f3This option is mainly useful for testing; in practice, it should not be used, since doing so eliminates a useful optimization.\fP  
+If this appears on the command line, the .SF file (signature file) generated when a JAR file is signed does \f2not\fP include a header containing a hash of the whole manifest file. It just contains information and hashes related to each individual source file included in the JAR file, as described in The Signature (.SF) File .
+.br
+.br
+By default, this header is added, as an optimization. When the header is present, then whenever the JAR file is verified, the verification can first check to see whether or not the hash in the header indeed matches the hash of the whole manifest file. If so, verification proceeds to the next step. If not, it is necessary to do a less optimized verification that the hash in each source file information section in the .SF file equals the hash of its corresponding section in the manifest file.
+.br
+.br
+For further information, see JAR File Verification.
+.br
+.br
+\f3This option is mainly useful for testing; in practice, it should not be used, since doing so eliminates a useful optimization.\fP 
 .TP 3
 \-protected 
 Either \f2true\fP or \f2false\fP. This value should be specified as \f2true\fP if a password must be given via a protected authentication path such as a dedicated PIN reader. 
-.RE
-.RS 3
 .TP 3
-\-provider provider\-class\-name 
-Used to specify the name of cryptographic service provider's master class file when the service provider is not listed in the security properties file, \f2java.security\fP. 
-.LP
+\-providerClass provider\-class\-name 
+Used to specify the name of cryptographic service provider's master class file when the service provider is not listed in the security properties file, \f2java.security\fP.
+.br
+.br
 Used in conjunction with the \f2\-providerArg\fP \f2ConfigFilePath\fP option, keytool and jarsigner will install the provider dynamically (where \f2ConfigFilePath\fP is the path to the token configuration file). Here's an example of a command to list a PKCS#11 keystore when the Sun PKCS#11 provider has not been configured in the security properties file. 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -629,19 +599,16 @@ jarsigner \-keystore NONE \-storetype PKCS11 \\
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-providerName providerName 
-If more than one provider has been configured in the \f2java.security\fP security properties file, you can use the \f2\-providerName\fP option to target a specific provider instance. The argument to this option is the name of the provider. 
-.LP
+If more than one provider has been configured in the \f2java.security\fP security properties file, you can use the \f2\-providerName\fP option to target a specific provider instance. The argument to this option is the name of the provider.
+.br
+.br
 For the Sun PKCS#11 provider, \f2providerName\fP is of the form \f2SunPKCS11\-\fP\f2TokenName\fP, where \f2TokenName\fP is the name suffix that the provider instance has been configured with, as detailed in the 
 .na
 \f2configuration attributes table\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/p11guide.html#ATTRS. For example, the following command lists the contents of the PKCS#11 keystore provider instance with name suffix \f2SmartCard\fP: 
-.RS 3
-
-.LP
+http://download.oracle.com/javase/7/docs/technotes/guides/security/p11guide.html#ATTRS. For example, the following command lists the contents of the PKCS#11 keystore provider instance with name suffix \f2SmartCard\fP: 
 .nf
 \f3
 .fl
@@ -653,58 +620,59 @@ jarsigner \-keystore NONE \-storetype PKCS11 \\
 .fl
 \fP
 .fi
-.RE
 .TP 3
 \-Jjavaoption 
-Passes through the specified \f2javaoption\fP string directly to the Java interpreter. (\f3jarsigner\fP is actually a "wrapper" around the interpreter.) This option should not contain any spaces. It is useful for adjusting the execution environment or memory usage. For a list of possible interpreter options, type \f2java \-h\fP or \f2java \-X\fP at the command line. 
-.LP
+Passes through the specified \f2javaoption\fP string directly to the Java interpreter. (\f3jarsigner\fP is actually a "wrapper" around the interpreter.) This option should not contain any spaces. It is useful for adjusting the execution environment or memory usage. For a list of possible interpreter options, type \f2java \-h\fP or \f2java \-X\fP at the command line.  
 .TP 3
 \-tsa url 
-If \f2"\-tsa http://example.tsa.url"\fP appears on the command line when signing a JAR file then a timestamp is generated for the signature. The URL, \f2http://example.tsa.url\fP, identifies the location of the Time Stamping Authority (TSA). It overrides any URL found via the \f2\-tsacert\fP option. The \f2\-tsa\fP option does not require the TSA's public key certificate to be present in the keystore. 
-.LP
+If \f2"\-tsa http://example.tsa.url"\fP appears on the command line when signing a JAR file then a timestamp is generated for the signature. The URL, \f2http://example.tsa.url\fP, identifies the location of the Time Stamping Authority (TSA). It overrides any URL found via the \f2\-tsacert\fP option. The \f2\-tsa\fP option does not require the TSA's public key certificate to be present in the keystore.
+.br
+.br
 To generate the timestamp, \f2jarsigner\fP communicates with the TSA using the Time\-Stamp Protocol (TSP) defined in 
 .na
 \f2RFC 3161\fP @
 .fi
-http://www.ietf.org/rfc/rfc3161.txt. If successful, the timestamp token returned by the TSA is stored along with the signature in the signature block file. 
-.LP
+http://www.ietf.org/rfc/rfc3161.txt. If successful, the timestamp token returned by the TSA is stored along with the signature in the signature block file.  
 .TP 3
 \-tsacert alias 
-If \f2"\-tsacert alias"\fP appears on the command line when signing a JAR file then a timestamp is generated for the signature. The \f2alias\fP identifies the TSA's public key certificate in the keystore that is currently in effect. The entry's certificate is examined for a Subject Information Access extension that contains a URL identifying the location of the TSA. 
-.LP
-The TSA's public key certificate must be present in the keystore when using \f2\-tsacert\fP. 
-.LP
+If \f2"\-tsacert alias"\fP appears on the command line when signing a JAR file then a timestamp is generated for the signature. The \f2alias\fP identifies the TSA's public key certificate in the keystore that is currently in effect. The entry's certificate is examined for a Subject Information Access extension that contains a URL identifying the location of the TSA.
+.br
+.br
+The TSA's public key certificate must be present in the keystore when using \f2\-tsacert\fP.  
 .TP 3
 \-altsigner class 
-Specifies that an alternative signing mechanism be used. The fully\-qualified class name identifies a class file that extends the \f2com.sun.jarsigner.ContentSigner abstract class\fP. The path to this class file is defined by the \f2\-altsignerpath\fP option. If the \f2\-altsigner\fP option is used, \f2jarsigner\fP uses the signing mechanism provided by the specified class. Otherwise, \f2jarsigner\fP uses its default signing mechanism. 
-.LP
-For example, to use the signing mechanism provided by a class named \f2com.sun.sun.jarsigner.AuthSigner\fP, use the \f2jarsigner\fP option \f2"\-altsigner com.sun.jarsigner.AuthSigner"\fP 
-.LP
+Specifies that an alternative signing mechanism be used. The fully\-qualified class name identifies a class file that extends the \f2com.sun.jarsigner.ContentSigner abstract class\fP. The path to this class file is defined by the \f2\-altsignerpath\fP option. If the \f2\-altsigner\fP option is used, \f2jarsigner\fP uses the signing mechanism provided by the specified class. Otherwise, \f2jarsigner\fP uses its default signing mechanism.
+.br
+.br
+For example, to use the signing mechanism provided by a class named \f2com.sun.sun.jarsigner.AuthSigner\fP, use the \f2jarsigner\fP option \f2"\-altsigner com.sun.jarsigner.AuthSigner"\fP  
 .TP 3
 \-altsignerpath classpathlist 
-Specifies the path to the class file (the class file name is specified with the \f2\-altsigner\fP option described above) and any JAR files it depends on. If the class file is in a JAR file, then this specifies the path to that JAR file, as shown in the example below. 
-.LP
-An absolute path or a path relative to the current directory may be specified. If \f2classpathlist\fP contains multiple paths or JAR files, they should be separated with a colon (\f2:\fP) on Solaris and a semi\-colon (\f2;\fP) on Windows. This option is not necessary if the class is already in the search path. 
-.LP
+Specifies the path to the class file (the class file name is specified with the \f2\-altsigner\fP option described above) and any JAR files it depends on. If the class file is in a JAR file, then this specifies the path to that JAR file, as shown in the example below.
+.br
+.br
+An absolute path or a path relative to the current directory may be specified. If \f2classpathlist\fP contains multiple paths or JAR files, they should be separated with a colon (\f2:\fP) on Solaris and a semi\-colon (\f2;\fP) on Windows. This option is not necessary if the class is already in the search path.
+.br
+.br
 Example of specifying the path to a jar file that contains the class file: 
-.RS 3
-
-.LP
-.LP
-\f2\-altsignerpath /home/user/lib/authsigner.jar\fP
-.LP
-.RE
-.LP
-Note that the JAR file name is included. 
-.LP
+.nf
+\f3
+.fl
+\-altsignerpath /home/user/lib/authsigner.jar
+.fl
+\fP
+.fi
+Note that the JAR file name is included.
+.br
+.br
 Example of specifying the path to the jar file that contains the class file: 
-.RS 3
-.LP
-\f2\-altsignerpath /home/user/classes/com/sun/tools/jarsigner/\fP
-.LP
-.RE
-.LP
-Note that the JAR file name is omitted.  
+.nf
+\f3
+.fl
+\-altsignerpath /home/user/classes/com/sun/tools/jarsigner/
+.fl
+\fP
+.fi
+Note that the JAR file name is omitted. 
 .TP 3
 \-strict 
 During the signing or verifying process, some warning messages may be shown. If this option appears on the command line, the exit code of the tool will reflect the warning messages that are found. Read the "WARNINGS" section for details. 
@@ -712,25 +680,22 @@ During the signing or verifying process, some warning messages may be shown. If 
 \-verbose:sub\-options 
 For the verifying process, the \f2\-verbose\fP option takes sub\-options to determine how much information will be shown. If \f2\-certs\fP is also specified, the default mode (or sub\-option all) displays each entry as it is being processed and following that, the certificate information for each signer of the JAR file. If \f2\-certs\fP and the \f2\-verbose:grouped\fP sub\-option are specified, entries with the same signer info are grouped and displayed together along with their certificate information. If \f2\-certs\fP and the \f2\-verbose:summary\fP sub\-option are specified, then entries with the same signer info are grouped and displayed together along with their certificate information but details about each entry are summarized and displayed as "one entry (and more)". See the examples section for more information. 
 .RE
-.SH "EXAMPLES"
-.LP
 
+.LP
+.SH "EXAMPLES"
 .LP
 .SS 
 Signing a JAR File
 .LP
-.RS 3
-
 .LP
-.LP
-Suppose you have a JAR file named "bundle.jar" and you'd like to sign it using the private key of the user whose keystore alias is "jane" in the keystore named "mystore" in the "working" directory. Suppose the keystore password is "myspass" and the password for \f2jane\fP's private key is "j638klm". You can use the following to sign the JAR file and name the signed JAR file "sbundle.jar":
+Suppose you have a JAR file named "bundle.jar" and you'd like to sign it using the private key of the user whose keystore alias is "jane" in the keystore named "mystore" in the "working" directory. You can use the following to sign the JAR file and name the signed JAR file "sbundle.jar":
 .LP
 .nf
 \f3
 .fl
-    jarsigner \-keystore /working/mystore \-storepass myspass
+    jarsigner \-keystore /working/mystore \-storepass \fP\f4<keystore password>\fP\f3
 .fl
-      \-keypass j638klm \-signedjar sbundle.jar bundle.jar jane 
+      \-keypass \fP\f4<private key password>\fP\f3 \-signedjar sbundle.jar bundle.jar jane
 .fl
 \fP
 .fi
@@ -747,7 +712,7 @@ If you want to be prompted for the store password and the private key password, 
 .fl
     jarsigner \-keystore /working/mystore
 .fl
-      \-signedjar sbundle.jar bundle.jar jane 
+      \-signedjar sbundle.jar bundle.jar jane
 .fl
 \fP
 .fi
@@ -759,7 +724,7 @@ If the keystore to be used is the default keystore (the one named ".keystore" in
 .nf
 \f3
 .fl
-    jarsigner \-signedjar sbundle.jar bundle.jar jane 
+    jarsigner \-signedjar sbundle.jar bundle.jar jane
 .fl
 \fP
 .fi
@@ -771,18 +736,14 @@ Finally, if you want the signed JAR file to simply overwrite the input JAR file 
 .nf
 \f3
 .fl
-    jarsigner bundle.jar jane 
+    jarsigner bundle.jar jane
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .SS 
 Verifying a Signed JAR File
-.LP
-.RS 3
-
 .LP
 .LP
 To verify a signed JAR file, that is, to verify that the signature is valid and the JAR file has not been tampered with, use a command such as the following:
@@ -790,7 +751,7 @@ To verify a signed JAR file, that is, to verify that the signature is valid and 
 .nf
 \f3
 .fl
-    jarsigner \-verify sbundle.jar 
+    jarsigner \-verify sbundle.jar
 .fl
 \fP
 .fi
@@ -851,7 +812,7 @@ You can get more information if you use the \f2\-verbose\fP option. A sample use
 Verification with Certificate Information
 .LP
 .LP
-If you specify the \f2\-certs\fP option when verifying, along with the \f2\-verify\fP and \f2\-verbose\fP options, the output includes certificate information for each signer of the JAR file, including the certificate type, the signer distinguished name information (iff it's an X.509 certificate), and, in parentheses, the keystore alias for the signer if the public key certificate in the JAR file matches that in a keystore entry. For example,
+If you specify the \f2\-certs\fP option when verifying, along with the \f2\-verify\fP and \f2\-verbose\fP options, the output includes certificate information for each signer of the JAR file, including the certificate type, the signer distinguished name information (if and only if it's an X.509 certificate), and, in parentheses, the keystore alias for the signer if the public key certificate in the JAR file matches that in a keystore entry. For example,
 .LP
 .nf
 \f3
@@ -961,10 +922,7 @@ When the \f2\-certs\fP option is used, any identity database aliases are shown i
 .LP
 Note that the alias "duke" is in brackets to denote that it is an identity database alias, not a keystore alias.
 .LP
-.RE
 .SH "WARNINGS"
-.LP
-
 .LP
 During the signing/verifying process, jarsigner may display various warnings. These warning codes are defined as follows: 
 .nf
@@ -980,25 +938,25 @@ During the signing/verifying process, jarsigner may display various warnings. Th
 .fl
              This jar contains entries whose signer certificate has expired.
 .fl
-         
+
 .fl
          notYetValidCert         4
 .fl
              This jar contains entries whose signer certificate is not yet valid.
 .fl
-         
+
 .fl
          chainNotValidated       4
 .fl
              This jar contains entries whose certificate chain cannot be correctly validated.
 .fl
-         
+
 .fl
          badKeyUsage             8
 .fl
              This jar contains entries whose signer certificate's KeyUsage extension doesn't allow code signing.
 .fl
-         
+
 .fl
          badExtendedKeyUsage     8
 .fl
@@ -1006,33 +964,33 @@ During the signing/verifying process, jarsigner may display various warnings. Th
 .fl
              doesn't allow code signing.
 .fl
-         
+
 .fl
          badNetscapeCertType     8
 .fl
-             This jar contains entries whose signer certificate's NetscapeCertType extension 
+             This jar contains entries whose signer certificate's NetscapeCertType extension
 .fl
              doesn't allow code signing.
 .fl
-         
+
 .fl
          hasUnsignedEntry        16
 .fl
              This jar contains unsigned entries which have not been integrity\-checked.
 .fl
-         
+
 .fl
          notSignedByAlias        32
 .fl
              This jar contains signed entries which are not signed by the specified alias(es)
 .fl
-         
+
 .fl
          aliasNotInStore         32
 .fl
              This jar contains signed entries that are not signed by alias in this keystore
 .fl
-   
+
 .fl
 \fP
 .fi
@@ -1042,23 +1000,19 @@ During the signing/verifying process, jarsigner may display various warnings. Th
 When the \f2\-strict\fP option is provided, an OR\-value of warnings detected will be returned as the exit code of the tool. For example, if a certificate used to sign an entry is expired and has a keyUsage extension that does not allow it to sign a file, an exit code 12 (=4+8) will be returned.
 .LP
 .LP
-\f3Note\fP: Exit codes are reused because only 0\-255 is legal for Unix. In any case, if the signing/verifying process fails, the exit code
+\f3Note\fP: Exit codes are reused because only 0\-255 is legal for Unix. In any case, if the signing/verifying process fails, the following exit code will be returned:
 .LP
 .nf
 \f3
 .fl
-failure                 1 
+failure                 1
 .fl
 \fP
 .fi
 
 .LP
-will be returned. 
 .SS 
 Compatibility with JDK 1.1
-.LP
-.RS 3
-
 .LP
 .LP
 The \f3keytool\fP and \f3jarsigner\fP tools completely replace the \f3javakey\fP tool provided in JDK 1.1. These new tools provide more features than \f3javakey\fP, including the ability to protect the keystore and private keys with passwords, and the ability to verify signatures in addition to generating them.
@@ -1083,7 +1037,6 @@ o
 The following table explains how JAR files that were signed in JDK 1.1.x are treated in the Java 2 platform.
 .LP
 .LP
-.TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
 .de 35
 .ps \n(.s
@@ -1390,7 +1343,7 @@ Default privileges granted to all code plus privileges granted in policy file. (
 .nr 44 \n(83+(3*\n(38)
 .nr 84 +\n(44
 .nr TW \n(84
-.if t .if \n(TW>\n(.li .tm Table at line 1128 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 1082 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -1566,7 +1519,6 @@ Default privileges granted to all code plus privileges granted in policy file. (
 .rm g+
 .rm h+
 .rm i+
-.TE
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-42
 
 .LP
@@ -1591,8 +1543,6 @@ Only trusted identities can be imported into Java 2 SDK keystores.
 .LP
 .SH "SEE ALSO"
 .LP
-
-.LP
 .RS 3
 .TP 2
 o
@@ -1606,13 +1556,12 @@ the
 .na
 \f4Security\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/security/index.html trail of the 
+http://download.oracle.com/javase/tutorial/security/index.html trail of the 
 .na
 \f4Java Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/index.html for examples of the use of the \f3jarsigner\fP tool 
+http://download.oracle.com/javase/tutorial/index.html for examples of the use of the \f3jarsigner\fP tool 
 .RE
 
 .LP
-.RE
  

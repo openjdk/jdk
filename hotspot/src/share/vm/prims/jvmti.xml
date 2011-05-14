@@ -280,10 +280,8 @@
    <!ELEMENT externallink (#PCDATA|jvmti|code|i|b|tm)*>
    <!ATTLIST externallink id CDATA #REQUIRED>
 
-   <!ELEMENT vmspeclink EMPTY>
-   <!ATTLIST vmspeclink id CDATA #IMPLIED>
-   <!ATTLIST vmspeclink name CDATA #IMPLIED>
-   <!ATTLIST vmspeclink preposition CDATA #IMPLIED>
+   <!ELEMENT vmspec EMPTY>
+   <!ATTLIST vmspec chapter CDATA #IMPLIED>
 
    <!ELEMENT internallink (#PCDATA|jvmti|code|i|b)*>
    <!ATTLIST internallink id CDATA #REQUIRED>
@@ -2285,9 +2283,8 @@ jvmtiEnv *jvmti;
         Stack frames are referenced by depth.
         The frame at depth zero is the current frame.
         <p/>
-        Stack frames are as described in the 
-        <vmspeclink id="Overview.doc.html#17257"
-                    name="Frames section"/>.  
+        Stack frames are as described in
+        <vmspec chapter="3.6"/>,
         That is, they correspond to method 
         invocations (including native methods) but do not correspond to platform native or 
         VM internal frames.
@@ -2627,7 +2624,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <param id="use_java_stack">
 	  <jboolean/>
 	  <description>
-	    Return the stack showing the <vmspeclink/>
+	    Return the stack showing <vmspec/>
 	    model of the stack; 
 	    otherwise, show the internal representation of the stack with
 	    inlined and optimized methods missing.  If the virtual machine
@@ -2707,7 +2704,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	When the thread is resumed, the execution 
 	state of the thread is reset to the state
 	immediately before the called method was invoked.
-	That is (using the <vmspeclink/> terminology):
+	That is (using <vmspec/> terminology):
 	  <ul>
 	    <li>the current frame is discarded as the previous frame becomes the current one</li>
 	    <li>the operand stack is restored--the argument values are added back
@@ -2868,9 +2865,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       to return at any point during its execution.
       The method which will return early is referred to as the <i>called method</i>.
       The called method is the current method
-      (as defined by the 
-      <vmspeclink id="Overview.doc.html#17257"
-                  name="Frames section"/>) 
+      (as defined by
+      <vmspec chapter="3.6"/>) 
       for the specified thread at
       the time the function is called.
       <p/>
@@ -3576,10 +3572,8 @@ class C2 extends C1 implements I2 {
 	<field id="index">
 	  <jint/>
 	  <description>	    
-	    The index into the constant pool of the class. See the
-            <vmspeclink id="ClassFile.doc.html#20080"
-                        name="Constant Pool section"/>
-	    description.
+	    The index into the constant pool of the class. See the description in 
+      <vmspec chapter="4.4"/>.
 	  </description>
 	</field>
       </typedef>
@@ -5006,9 +5000,8 @@ class C2 extends C1 implements I2 {
 	    For references of this kind the <code>referrer_index</code>
             parameter to the <internallink id="jvmtiObjectReferenceCallback">
             jvmtiObjectReferenceCallback</internallink> is the index into
-            constant pool table of the class, starting at 1. See the
-            <vmspeclink id="ClassFile.doc.html#20080"
-                        name="Constant Pool section"/>
+            constant pool table of the class, starting at 1. See
+            <vmspec chapter="4.4"/>.
 	  </constant>
 	</constants>
 
@@ -6441,9 +6434,7 @@ class C2 extends C1 implements I2 {
 	been recorded as an initiating loader. Each 
 	class in the returned array was created by this class loader, 
 	either by defining it directly or by delegation to another class loader.
-        See the 
-        <vmspeclink id="ConstantPool.doc.html#72007"
-                    name="Creation and Loading section"/>.
+	See <vmspec chapter="5.3"/>.
 	<p/>
 	For JDK version 1.1 implementations that don't
 	recognize the distinction between initiating and defining class loaders,
@@ -6626,9 +6617,7 @@ class C2 extends C1 implements I2 {
 	For the class indicated by <code>klass</code>, return the access
 	flags
 	via <code>modifiers_ptr</code>.
-	Access flags are defined in the 
-        <vmspeclink id="ClassFile.doc.html"
-                    name="Class File Format chapter"/>.
+	Access flags are defined in <vmspec chapter="4"/>.
 	<p/>
 	If the class is an array class, then its public, private, and protected 
 	modifiers are the same as those of its component type. For arrays of 
@@ -6794,9 +6783,8 @@ class C2 extends C1 implements I2 {
       <description>
         For the class indicated by <code>klass</code>, 
         return the minor and major version numbers,
-        as defined in the
-        <vmspeclink id="ClassFile.doc.html"
-                        name="Class File Format chapter"/>.
+        as defined in
+        <vmspec chapter="4"/>. 
       </description>
       <origin>new</origin>
       <capabilities>
@@ -6839,10 +6827,8 @@ class C2 extends C1 implements I2 {
       <description>
 	For the class indicated by <code>klass</code>, 
         return the raw bytes of the constant pool in the format of the
-        <code>constant_pool</code> item of the 
-        <vmspeclink id="ClassFile.doc.html"
-                    name="Class File Format"
-                    preposition="in"/>.
+        <code>constant_pool</code> item of 
+        <vmspec chapter="4"/>.
         The format of the constant pool may differ between versions
         of the Class File Format, so, the 
         <functionlink id="GetClassVersionNumbers">minor and major 
@@ -7286,9 +7272,7 @@ class C2 extends C1 implements I2 {
 	<field id="class_bytes">
 	  <inbuf incount="class_byte_count"><uchar/></inbuf>
 	  <description>
-            Bytes defining class (in the 
-            <vmspeclink id="ClassFile.doc.html"
-                        name="Class File Format"/>)
+            Bytes defining class (in <vmspec chapter="4"/>)
 	  </description>
 	</field>
       </typedef>
@@ -7611,10 +7595,8 @@ class C2 extends C1 implements I2 {
 	<paramlink id="signature_ptr"/>.
 	<p/>
         Field signatures are defined in the JNI Specification and 
-        are referred to as 
-        <vmspeclink id="ClassFile.doc.html#14152"
-                    name="field descriptors"
-                    preposition="in"/>.
+        are referred to as <code>field descriptors</code> in
+        <vmspec chapter="4.3.2"/>.
       </description>
       <origin>jvmdiClone</origin>
       <capabilities>
@@ -7709,9 +7691,7 @@ class C2 extends C1 implements I2 {
       <description>
 	For the field indicated by <code>klass</code> and <code>field</code>
 	return the access flags via <code>modifiers_ptr</code>.
-	Access flags are defined in the 
-        <vmspeclink id="ClassFile.doc.html"
-                    name="Class File Format chapter"/>.
+	Access flags are defined in <vmspec chapter="4"/>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -7810,10 +7790,9 @@ class C2 extends C1 implements I2 {
 	return the method name via <code>name_ptr</code> and method signature via
 	<code>signature_ptr</code>.
         <p/>
-        Method signatures are defined in the JNI Specification and are referred to as
-        <vmspeclink id="ClassFile.doc.html#7035"
-                    name="method descriptors"
-                    preposition="in"/>.
+        Method signatures are defined in the JNI Specification and are 
+        referred to as <code>method descriptors</code> in 
+        <vmspec chapter="4.3.3"/>.
 	Note this is different
 	than method signatures as defined in the <i>Java Language Specification</i>.
       </description>
@@ -7902,9 +7881,7 @@ class C2 extends C1 implements I2 {
       <description>
 	For the method indicated by <code>method</code>,
 	return the access flags via <code>modifiers_ptr</code>.
-	Access flags are defined in the 
-        <vmspeclink id="ClassFile.doc.html"
-                    name="Class File Format chapter"/>.
+	Access flags are defined in <vmspec chapter="4"/>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -7941,9 +7918,7 @@ class C2 extends C1 implements I2 {
 	  including the local variables used to pass parameters to the
 	  method on its invocation. 
 	  <p/>
-	  See <code>max_locals</code> in the    
-          <vmspeclink id="ClassFile.doc.html#1546"
-                      name="Code Attribute section"/>.
+	  See <code>max_locals</code> in <vmspec chapter="4.7.3"/>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -8150,8 +8125,7 @@ class C2 extends C1 implements I2 {
 	    The local variable's type signature, encoded as a
 	    <internallink id="mUTF">modified UTF-8</internallink> string.
 	    The signature format is the same as that defined in
-            <vmspeclink id="ClassFile.doc.html#14152"
-                        name="Field Descriptors section"/>
+	    <vmspec chapter="4.3.2"/>.
 	  </description>
 	</field>
 	<field id="generic_signature">
@@ -10460,10 +10434,7 @@ myInit() {
       <synopsis>Add To Bootstrap Class Loader Search</synopsis>
       <description>
           This function can be used to cause instrumentation classes to be defined by the 
-          bootstrap class loader. See
-          <vmspeclink id="ConstantPool.doc.html#79383"
-                      name="Loading Using the Bootstrap Class Loader"
-                      preposition="in"/>.
+          bootstrap class loader. See <vmspec chapter="5.3.1"/>.
           After the bootstrap
 	  class loader unsuccessfully searches for a class, the specified platform-dependent 
 	  search path <paramlink id="segment"/> will be searched as well. Only one segment may be specified in 
@@ -10480,7 +10451,7 @@ myInit() {
           contain any classes or resources other than those to be defined by the bootstrap
           class loader for the purposes of instrumentation.
           <p/>
-          The <vmspeclink/> specifies that a subsequent attempt to resolve a symbolic
+          <vmspec/> specifies that a subsequent attempt to resolve a symbolic
           reference that the Java virtual machine has previously unsuccessfully attempted
           to resolve always fails with the same error that was thrown as a result of the
           initial resolution attempt. Consequently, if the JAR file contains an entry
@@ -10512,10 +10483,7 @@ myInit() {
       <synopsis>Add To System Class Loader Search</synopsis>
       <description>
 	  This function can be used to cause instrumentation classes to be
-	  defined by the system class loader. See
-          <vmspeclink id="ConstantPool.doc.html#79441"
-                      name="Loading Using a User-defined Class Loader"
-                      preposition="in"/>. 
+	  defined by the system class loader. See <vmspec chapter="5.3.2"/>.
 	  After the class loader unsuccessfully searches for a class, the specified platform-dependent search 
 	  path <paramlink id="segment"/> will be searched as well. Only one segment may be specified in the 
 	  <paramlink id="segment"/>. This function may be called multiple times to add multiple segments, the 
@@ -10536,7 +10504,7 @@ myInit() {
 	  which takes a single parameter of type <code>java.lang.String</code>. The method is not required 
 	  to have <code>public</code> access. 
 	  <p/>
-          The <vmspeclink/> specifies that a subsequent attempt to resolve a symbolic
+          <vmspec/> specifies that a subsequent attempt to resolve a symbolic
           reference that the Java virtual machine has previously unsuccessfully attempted
           to resolve always fails with the same error that was thrown as a result of the
           initial resolution attempt. Consequently, if the JAR file contains an entry
@@ -11438,7 +11406,7 @@ myInit() {
       at the finest granularity allowed by the VM. A single step event is
       generated whenever a thread reaches a new location. 
       Typically, single step events represent the completion of one VM 
-      instruction as defined in the <vmspeclink/>. However, some implementations 
+      instruction as defined in <vmspec/>. However, some implementations 
       may define locations differently. In any case the 
       <code>method</code> and <code>location</code>
       parameters  uniquely identify the current location and allow
@@ -13841,7 +13809,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       and can_get_source_debug_extension.
       PopFrame cannot have a native calling method.
       Removed incorrect statement in GetClassloaderClasses 
-      (see http://java.sun.com/docs/books/vmspec/2nd-edition/html/ConstantPool.doc.html#79383).
+      (see <vmspec chapter="4.4"/>).
   </change>
   <change date="24 July 2003" version="v79">
       XML and text fixes.

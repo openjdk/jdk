@@ -159,22 +159,42 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
-            // Search for lowercase version of {@docRoot}
-            index = lowerHtml.indexOf("{@docroot}", previndex);
-            // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
-            if (index < 0) {
-                buf.append(htmlstr.substring(previndex));
-                break;
-            }
-            // If next {@docroot} tag found, append htmlstr up to start of tag
-            buf.append(htmlstr.substring(previndex, index));
-            previndex = index + 10;  // length for {@docroot} string
-            // Insert relative path where {@docRoot} was located
-            buf.append(relativepathNoSlash);
-            // Append slash if next character is not a slash
-            if (relativepathNoSlash.length() > 0 && previndex < htmlstr.length()
-                    && htmlstr.charAt(previndex) != '/') {
-                buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+            if (configuration.docrootparent.length() > 0) {
+                // Search for lowercase version of {@docRoot}/..
+                index = lowerHtml.indexOf("{@docroot}/..", previndex);
+                // If next {@docRoot}/.. pattern not found, append rest of htmlstr and exit loop
+                if (index < 0) {
+                    buf.append(htmlstr.substring(previndex));
+                    break;
+                }
+                // If next {@docroot}/.. pattern found, append htmlstr up to start of tag
+                buf.append(htmlstr.substring(previndex, index));
+                previndex = index + 13;  // length for {@docroot}/.. string
+                // Insert docrootparent absolute path where {@docRoot}/.. was located
+
+                buf.append(configuration.docrootparent);
+                // Append slash if next character is not a slash
+                if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
+                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                }
+            } else {
+                // Search for lowercase version of {@docRoot}
+                index = lowerHtml.indexOf("{@docroot}", previndex);
+                // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
+                if (index < 0) {
+                    buf.append(htmlstr.substring(previndex));
+                    break;
+                }
+                // If next {@docroot} tag found, append htmlstr up to start of tag
+                buf.append(htmlstr.substring(previndex, index));
+                previndex = index + 10;  // length for {@docroot} string
+                // Insert relative path where {@docRoot} was located
+                buf.append(relativepathNoSlash);
+                // Append slash if next character is not a slash
+                if (relativepathNoSlash.length() > 0 && previndex < htmlstr.length() &&
+                        htmlstr.charAt(previndex) != '/') {
+                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                }
             }
         }
         return buf.toString();
@@ -1395,6 +1415,44 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Add package deprecation information to the documentation tree
+     *
+     * @param deprPkgs list of deprecated packages
+     * @param headingKey the caption for the deprecated package table
+     * @param tableSummary the summary for the deprecated package table
+     * @param tableHeader table headers for the deprecated package table
+     * @param contentTree the content tree to which the deprecated package table will be added
+     */
+    protected void addPackageDeprecatedAPI(List<Doc> deprPkgs, String headingKey,
+            String tableSummary, String[] tableHeader, Content contentTree) {
+        if (deprPkgs.size() > 0) {
+            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+                    getTableCaption(configuration().getText(headingKey)));
+            table.addContent(getSummaryTableHeader(tableHeader, "col"));
+            Content tbody = new HtmlTree(HtmlTag.TBODY);
+            for (int i = 0; i < deprPkgs.size(); i++) {
+                PackageDoc pkg = (PackageDoc) deprPkgs.get(i);
+                HtmlTree td = HtmlTree.TD(HtmlStyle.colOne,
+                        getPackageLink(pkg, getPackageName(pkg)));
+                if (pkg.tags("deprecated").length > 0) {
+                    addInlineDeprecatedComment(pkg, pkg.tags("deprecated")[0], td);
+                }
+                HtmlTree tr = HtmlTree.TR(td);
+                if (i % 2 == 0) {
+                    tr.addStyle(HtmlStyle.altColor);
+                } else {
+                    tr.addStyle(HtmlStyle.rowColor);
+                }
+                tbody.addContent(tr);
+            }
+            table.addContent(tbody);
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+            Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
+            contentTree.addContent(ul);
+        }
+    }
+
+    /**
      * Prine table header information about color, column span and the font.
      *
      * @param color Background color.
@@ -2120,7 +2178,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
             }
             text = (isplaintext) ?
-                refMemName : getCode() + refMemName + getCodeEnd();
+                refMemName : getCode() + Util.escapeHtmlChars(refMemName) + getCodeEnd();
 
             result.append(getDocLink(LinkInfoImpl.CONTEXT_SEE_TAG, containing,
                 refMem, (label.length() == 0)? text: label, false));
@@ -2280,6 +2338,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public String commentTagsToString(Tag holderTag, Doc doc, Tag[] tags,
             boolean isFirstSentence) {
         StringBuilder result = new StringBuilder();
+        boolean textTagChange = false;
         // Array of all possible inline tags for this javadoc run
         configuration.tagletManager.checkTags(doc, tags, true);
         for (int i = 0; i < tags.length; i++) {
@@ -2295,13 +2354,26 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 result.append(output == null ? "" : output.toString());
                 if (originalLength == 0 && isFirstSentence && tagelem.name().equals("@inheritDoc") && result.length() > 0) {
                     break;
+                } else if (configuration.docrootparent.length() > 0 &&
+                        tagelem.name().equals("@docRoot") &&
+                        ((tags[i + 1]).text()).startsWith("/..")) {
+                    //If Xdocrootparent switch ON, set the flag to remove the /.. occurance after
+                    //{@docRoot} tag in the very next Text tag.
+                    textTagChange = true;
+                    continue;
                 } else {
-                        continue;
+                    continue;
                 }
             } else {
+                String text = tagelem.text();
+                //If Xdocrootparent switch ON, remove the /.. occurance after {@docRoot} tag.
+                if (textTagChange) {
+                    text = text.replaceFirst("/..", "");
+                    textTagChange = false;
+                }
                 //This is just a regular text tag.  The text may contain html links (<a>)
                 //or inline tag {@docRoot}, which will be handled as special cases.
-                String text = redirectRelativeLinks(tagelem.holder(), tagelem.text());
+                text = redirectRelativeLinks(tagelem.holder(), text);
 
                 // Replace @docRoot only if not represented by an instance of DocRootTaglet,
                 // that is, only if it was not present in a source file doc comment.

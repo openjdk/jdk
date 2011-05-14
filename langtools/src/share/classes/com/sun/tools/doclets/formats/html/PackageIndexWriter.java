@@ -137,6 +137,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addPackagesList(PackageDoc[] packages, Content tbody) {
         for (int i = 0; i < packages.length; i++) {
             if (packages[i] != null && packages[i].name().length() > 0) {
+                if (configuration.nodeprecated && Util.isDeprecated(packages[i]))
+                    continue;
                 Content packageLinkContent = getPackageLink(packages[i],
                         getPackageName(packages[i]));
                 Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, packageLinkContent);
