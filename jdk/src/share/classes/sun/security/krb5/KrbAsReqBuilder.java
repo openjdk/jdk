@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.security.krb5;
 
 import java.io.IOException;
 import java.util.Arrays;
+import javax.security.auth.kerberos.KeyTab;
+import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.internal.HostAddresses;
 import sun.security.krb5.internal.KDCOptions;
 import sun.security.krb5.internal.KRBError;
@@ -42,13 +44,16 @@ import sun.security.krb5.internal.crypto.EType;
  * 1. Gather information to create AS-REQ
  * 2. Create and send AS-REQ
  * 3. Receive AS-REP and KRB-ERROR (-KRB_ERR_RESPONSE_TOO_BIG) and parse them
- * 4. Emit credentials and secret keys (for JAAS storeKey=true)
+ * 4. Emit credentials and secret keys (for JAAS storeKey=true with password)
  *
  * This class does not:
  * 1. Deal with real communications (KdcComm does it, and TGS-REQ)
  *    a. Name of KDCs for a realm
  *    b. Server availability, timeout, UDP or TCP
  *    d. KRB_ERR_RESPONSE_TOO_BIG
+ * 2. Stores its own copy of password, this means:
+ *    a. Do not change/wipe it before Builder finish
+ *    b. Builder will not wipe it for you
  *
  * With this class:
  * 1. KrbAsReq has only one constructor
@@ -70,19 +75,17 @@ public final class KrbAsReqBuilder {
     private HostAddresses addresses;
 
     // Secret source: can't be changed once assigned, only one (of the two
-    // sources) can be set and should be non-null
-    private EncryptionKey[] keys;
-    private char[] password;
+    // sources) can be set to non-null
+    private final char[] password;
+    private final KeyTab ktab;
 
     // Used to create a ENC-TIMESTAMP in the 2nd AS-REQ
-    private EncryptionKey pakey;
     private PAData[] paList;        // PA-DATA from both KRB-ERROR and AS-REP.
                                     // Used by getKeys() only.
                                     // Only AS-REP should be enough per RFC,
                                     // combined in case etypes are different.
 
     // The generated and received:
-    int[] eTypes;
     private KrbAsReq req;
     private KrbAsRep rep;
 
@@ -94,7 +97,7 @@ public final class KrbAsReqBuilder {
     private State state;
 
     // Called by other constructors
-    private KrbAsReqBuilder(PrincipalName cname)
+    private void init(PrincipalName cname)
             throws KrbException {
         if (cname.getRealm() == null) {
             cname.setRealm(Config.getInstance().getDefaultRealm());
@@ -114,14 +117,11 @@ public final class KrbAsReqBuilder {
      * This argument will neither be modified nor stored by the method.
      * @throws KrbException
      */
-    public KrbAsReqBuilder(PrincipalName cname, EncryptionKey[] keys)
+    public KrbAsReqBuilder(PrincipalName cname, KeyTab ktab)
             throws KrbException {
-        this(cname);
-        this.keys = new EncryptionKey[keys.length];
-        for (int i=0; i<keys.length; i++) {
-            this.keys[i] = (EncryptionKey)keys[i].clone();
-        }
-        eTypes = EType.getDefaults("default_tkt_enctypes", keys);
+        init(cname);
+        this.ktab = ktab;
+        this.password = null;
     }
 
     /**
@@ -137,30 +137,24 @@ public final class KrbAsReqBuilder {
      */
     public KrbAsReqBuilder(PrincipalName cname, char[] pass)
             throws KrbException {
-        this(cname);
+        init(cname);
         this.password = pass.clone();
-        eTypes = EType.getDefaults("default_tkt_enctypes");
+        this.ktab = null;
     }
 
     /**
-     * Retrieves an array of secret keys for the client. This is useful if
+     * Retrieves an array of secret keys for the client. This is used when
      * the client supplies password but need keys to act as an acceptor
      * (in JAAS words, isInitiator=true and storeKey=true)
-     * @return original keys if initiated with keys, or generated keys if
-     * password. In latter case, PA-DATA from server might be used to
-     * generate keys. All "default_tkt_enctypes" keys will be generated,
-     * Never null.
+     * @return generated keys from password. PA-DATA from server might be used.
+     * All "default_tkt_enctypes" keys will be generated, Never null.
+     * @throws IllegalStateException if not constructed from a password
      * @throws KrbException
      */
     public EncryptionKey[] getKeys() throws KrbException {
         checkState(State.REQ_OK, "Cannot get keys");
-        if (keys != null) {
-            EncryptionKey[] result = new EncryptionKey[keys.length];
-            for (int i=0; i<keys.length; i++) {
-                result[i] = (EncryptionKey)keys[i].clone();
-            }
-            return result;
-        } else {
+        if (password != null) {
+            int[] eTypes = EType.getDefaults("default_tkt_enctypes");
             EncryptionKey[] result = new EncryptionKey[eTypes.length];
 
             /*
@@ -205,6 +199,8 @@ public final class KrbAsReqBuilder {
                 }
             }
             return result;
+        } else {
+            throw new IllegalStateException("Required password not provided");
         }
     }
 
@@ -241,12 +237,22 @@ public final class KrbAsReqBuilder {
     /**
      * Build a KrbAsReq object from all info fed above. Normally this method
      * will be called twice: initial AS-REQ and second with pakey
+     * @param key null (initial AS-REQ) or pakey (with preauth)
      * @return the KrbAsReq object
      * @throws KrbException
      * @throws IOException
      */
-    private KrbAsReq build() throws KrbException, IOException {
-        return new KrbAsReq(pakey,
+    private KrbAsReq build(EncryptionKey key) throws KrbException, IOException {
+        int[] eTypes;
+        if (password != null) {
+            eTypes = EType.getDefaults("default_tkt_enctypes");
+        } else {
+            EncryptionKey[] ks = Krb5Util.keysFromJavaxKeyTab(ktab, cname);
+            eTypes = EType.getDefaults("default_tkt_enctypes",
+                    ks);
+            for (EncryptionKey k: ks) k.destroy();
+        }
+        return new KrbAsReq(key,
             options,
             cname,
             sname,
@@ -263,9 +269,10 @@ public final class KrbAsReqBuilder {
      * @throws Asn1Exception
      * @throws IOException
      */
-    private KrbAsReqBuilder resolve() throws KrbException, Asn1Exception, IOException {
-        if (keys != null) {
-            rep.decryptUsingKeys(keys, req);
+    private KrbAsReqBuilder resolve()
+            throws KrbException, Asn1Exception, IOException {
+        if (ktab != null) {
+            rep.decryptUsingKeyTab(ktab, req, cname);
         } else {
             rep.decryptUsingPassword(password, req, cname);
         }
@@ -292,9 +299,10 @@ public final class KrbAsReqBuilder {
     private KrbAsReqBuilder send() throws KrbException, IOException {
         boolean preAuthFailedOnce = false;
         KdcComm comm = new KdcComm(cname.getRealmAsString());
+        EncryptionKey pakey = null;
         while (true) {
             try {
-                req = build();
+                req = build(pakey);
                 rep = new KrbAsRep(comm.send(req.encoding()));
                 return this;
             } catch (KrbException ke) {
@@ -308,7 +316,10 @@ public final class KrbAsReqBuilder {
                     preAuthFailedOnce = true;
                     KRBError kerr = ke.getError();
                     if (password == null) {
-                        pakey = EncryptionKey.findKey(kerr.getEType(), keys);
+                        EncryptionKey[] ks = Krb5Util.keysFromJavaxKeyTab(ktab, cname);
+                        pakey = EncryptionKey.findKey(kerr.getEType(), ks);
+                        if (pakey != null) pakey = (EncryptionKey)pakey.clone();
+                        for (EncryptionKey k: ks) k.destroy();
                     } else {
                         PAData.SaltAndParams snp = PAData.getSaltAndParams(
                                 kerr.getEType(), kerr.getPA());
@@ -317,7 +328,7 @@ public final class KrbAsReqBuilder {
                             // does not recommend this
                             pakey = EncryptionKey.acquireSecretKey(password,
                                     snp.salt == null ? cname.getSalt() : snp.salt,
-                                    eTypes[0],
+                                    EType.getDefaults("default_tkt_enctypes")[0],
                                     null);
                         } else {
                             pakey = EncryptionKey.acquireSecretKey(password,
@@ -369,15 +380,8 @@ public final class KrbAsReqBuilder {
      */
     public void destroy() {
         state = State.DESTROYED;
-        if (keys != null) {
-            for (EncryptionKey k: keys) {
-                k.destroy();
-            }
-            keys = null;
-        }
         if (password != null) {
             Arrays.fill(password, (char)0);
-            password = null;
         }
     }
 

@@ -1721,14 +1721,14 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
         targetArity = ArgumentCount(target->signature()).size();
       }
     }
-    klassOop kignore; int dmf_flags = 0;
-    methodOop actual_method = MethodHandles::decode_method(actual, kignore, dmf_flags);
+    KlassHandle kignore; int dmf_flags = 0;
+    methodHandle actual_method = MethodHandles::decode_method(actual, kignore, dmf_flags);
     if ((dmf_flags & ~(MethodHandles::_dmf_has_receiver |
                        MethodHandles::_dmf_does_dispatch |
                        MethodHandles::_dmf_from_interface)) != 0)
-      actual_method = NULL;  // MH does extra binds, drops, etc.
+      actual_method = methodHandle();  // MH does extra binds, drops, etc.
     bool has_receiver = ((dmf_flags & MethodHandles::_dmf_has_receiver) != 0);
-    if (actual_method != NULL) {
+    if (actual_method.not_null()) {
       mhName = actual_method->signature()->as_C_string();
       mhArity = ArgumentCount(actual_method->signature()).size();
       if (!actual_method->is_static())  mhArity += 1;

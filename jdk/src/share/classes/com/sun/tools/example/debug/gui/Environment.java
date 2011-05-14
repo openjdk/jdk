@@ -26,8 +26,6 @@
 package com.sun.tools.example.debug.gui;
 
 import java.io.*;
-import java.util.*;
-
 import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 

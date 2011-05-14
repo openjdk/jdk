@@ -63,6 +63,20 @@ else # PLATFORM (i.e. solaris & linux)
 FILES_c     +=  UnixOperatingSystem_md.c
 
 FILES_export +=	com/sun/management/UnixOperatingSystem.java
+
+ifeq ($(PLATFORM),solaris)
+
+FILES_c     += SolarisOperatingSystem.c
+OTHER_LDLIBS += -lkstat
+
+endif # PLATFORM solaris
+
+ifeq ($(PLATFORM),linux)
+
+FILES_c     += LinuxOperatingSystem.c
+
+endif # PLATFORM linux
+
 endif # PLATFORM
 
 #

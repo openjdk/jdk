@@ -359,7 +359,7 @@ clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark:
 
 clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_shark clean_docs
 
-include $(GAMMADIR)/make/$(OSNAME)/makefiles/cscope.make
+include $(GAMMADIR)/make/cscope.make
 
 #-------------------------------------------------------------------------------
 

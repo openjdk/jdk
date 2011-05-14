@@ -193,6 +193,7 @@ public class SuppressedExceptions {
         // Make sure addSuppressed(null) throws an NPE
         try {
             t.addSuppressed(null);
+            throw new RuntimeException("NPE not thrown!");
         } catch(NullPointerException e) {
             ; // Expected
         }
@@ -204,7 +205,7 @@ public class SuppressedExceptions {
 
     private static class NoSuppression extends Throwable {
         public NoSuppression(boolean enableSuppression) {
-            super("The medium.", null, enableSuppression);
+            super("The medium.", null, enableSuppression, true);
         }
     }
 }

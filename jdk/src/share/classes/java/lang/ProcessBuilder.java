@@ -938,6 +938,11 @@ public final class ProcessBuilder
      * but at the very least the command must be a non-empty list of
      * non-null strings.
      *
+     * <p>A minimal set of system dependent environment variables may
+     * be required to start a process on some operating systems.
+     * As a result, the subprocess may inherit additional environment variable
+     * settings beyond those in the process builder's {@link #environment()}.
+     *
      * <p>If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}
      * method is called with the first component of this object's

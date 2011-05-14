@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,15 +121,16 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         }
         random.nextBytes(seed);
 
-        long[] handles = generateECKeyPair(keySize, encodedParams, seed);
-
-        // The 'params' object supplied above is equivalent to the native one
-        // so there is no need to fetch it.
-
-        // handles[0] points to the native private key
-        BigInteger s = new BigInteger(1, getEncodedBytes(handles[0]));
-
         try {
+
+            long[] handles = generateECKeyPair(keySize, encodedParams, seed);
+
+            // The 'params' object supplied above is equivalent to the native
+            // one so there is no need to fetch it.
+
+            // handles[0] points to the native private key
+            BigInteger s = new BigInteger(1, getEncodedBytes(handles[0]));
+
             PrivateKey privateKey =
                 new ECPrivateKeyImpl(s, (ECParameterSpec)params);
 
@@ -163,7 +164,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
      * The first handle points to the private key, the second to the public key.
      */
     private static native long[] generateECKeyPair(int keySize,
-        byte[] encodedParams, byte[] seed);
+        byte[] encodedParams, byte[] seed) throws GeneralSecurityException;
 
     /*
      * Extracts the encoded key data using the supplied handle.
