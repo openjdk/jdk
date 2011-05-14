@@ -1172,16 +1172,16 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
 
 Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* char_array, Node* start) {
   Node* string = str;
-  Node* offset = kit.make_load(NULL,
+  Node* offset = kit.make_load(kit.control(),
                                kit.basic_plus_adr(string, string, java_lang_String::offset_offset_in_bytes()),
                                TypeInt::INT, T_INT, offset_field_idx);
-  Node* count = kit.make_load(NULL,
+  Node* count = kit.make_load(kit.control(),
                               kit.basic_plus_adr(string, string, java_lang_String::count_offset_in_bytes()),
                               TypeInt::INT, T_INT, count_field_idx);
   const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
                                                    TypeAry::make(TypeInt::CHAR,TypeInt::POS),
                                                    ciTypeArrayKlass::make(T_CHAR), true, 0);
-  Node* value = kit.make_load(NULL,
+  Node* value = kit.make_load(kit.control(),
                               kit.basic_plus_adr(string, string, java_lang_String::value_offset_in_bytes()),
                               value_type, T_OBJECT, value_field_idx);
 
@@ -1342,7 +1342,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         }
         //         Node* offset = kit.make_load(NULL, kit.basic_plus_adr(arg, arg, offset_offset),
         //                                      TypeInt::INT, T_INT, offset_field_idx);
-        Node* count = kit.make_load(NULL, kit.basic_plus_adr(arg, arg, java_lang_String::count_offset_in_bytes()),
+        Node* count = kit.make_load(kit.control(), kit.basic_plus_adr(arg, arg, java_lang_String::count_offset_in_bytes()),
                                     TypeInt::INT, T_INT, count_field_idx);
         length = __ AddI(length, count);
         string_sizes->init_req(argi, NULL);

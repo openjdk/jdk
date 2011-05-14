@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jstatd 1 "02 Jun 2010"
+.TH jstatd 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jstatd \- Virtual Machine jstat Daemon
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -42,8 +40,6 @@ jstatd [ \fP\f4options\fP\f3 ]\fP
 .LP
 .SH "PARAMETERS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 options 
@@ -52,8 +48,6 @@ Command\-line options. The options may be in any order. If there are redundant o
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3jstatd\fP tool is an RMI server application that monitors for the creation and termination of instrumented HotSpot Java virtual machines (JVMs) and provides a interface to allow remote monitoring tools to attach to JVMs running on the local host.
@@ -65,8 +59,6 @@ The \f3jstatd\fP server requires the presence of an RMI registry on the local ho
 \f3NOTE:\fP This utility is unsupported and may or may not be available in future versions of the JDK. It is not currently available on the Windows 98 and Windows ME platforms.
 .LP
 .SH "OPTIONS"
-.LP
-
 .LP
 .LP
 The \f3jstatd\fP command supports the following options:
@@ -89,8 +81,6 @@ Pass \f2option\fP to the \f3java\fP launcher called by \f3javac\fP. For example,
 .LP
 .SH "SECURITY"
 .LP
-
-.LP
 .LP
 The \f3jstatd\fP server can only monitor JVMs for which it has the appropriate native access permissions. Therefor the \f3jstatd\fP process must be running with the same user credentials as the target JVMs. Some user credentials, such as the \f2root\fP user in UNIX(TM) based systems, have permission to access the instrumentation exported by any JVM on the system. A \f3jstatd\fP process running with such credentials can monitor any JVM on the system, but introduces additional security concerns.
 .LP
@@ -102,7 +92,7 @@ The \f3jstatd\fP server installs an instance of RMISecurityPolicy if no other se
 .na
 \f2Policy File Syntax\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.html.
+http://download.oracle.com/javase/7/docs/technotes/guides/security/PolicyFiles.html.
 .LP
 .LP
 The following policy file will allow the \f3jstatd\fP server to run without any security exceptions. This policy is less liberal then granting all permissions to all codebases, but is more liberal than a policy that grants the minimal permissions to run the \f3jstatd\fP server.
@@ -145,14 +135,10 @@ For sites with more restrictive security practices, it is possible to use a cust
 .LP
 .SH "REMOTE INTERFACE"
 .LP
-
-.LP
 .LP
 The interface exported by the \f3jstatd\fP process is proprietary and is guaranteed to change. Users and developers are discouraged from writing to this interface.
 .LP
 .SH "EXAMPLES"
-.LP
-
 .LP
 .LP
 Here are some examples of starting \f3jstatd\fP. Note that the \f3jstatd\fP scripts automatically start the server in the background.
@@ -264,7 +250,7 @@ o
 .na
 \f2rmiregistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi \- the Java Remote Object Registry 
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#rmi \- the Java Remote Object Registry 
 .RE
 
 .LP

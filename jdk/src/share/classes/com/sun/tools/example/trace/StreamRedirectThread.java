@@ -56,6 +56,7 @@ class StreamRedirectThread extends Thread {
     /**
      * Copy.
      */
+    @Override
     public void run() {
         try {
             char[] cbuf = new char[BUFFER_SIZE];

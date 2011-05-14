@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 
 /* Legal UTF-8 Byte Sequences
  *
@@ -77,7 +78,8 @@ class UTF_8 extends Unicode
         dst.position(dp - dst.arrayOffset());
     }
 
-    private static class Decoder extends CharsetDecoder {
+    private static class Decoder extends CharsetDecoder
+                                 implements ArrayDecoder {
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -353,9 +355,132 @@ class UTF_8 extends Unicode
             else
                 return decodeBufferLoop(src, dst);
         }
+
+        private static ByteBuffer getByteBuffer(ByteBuffer bb, byte[] ba, int sp)
+        {
+            if (bb == null)
+                bb = ByteBuffer.wrap(ba);
+            bb.position(sp);
+            return bb;
+        }
+
+        // returns -1 if there is malformed byte(s) and the
+        // "action" for malformed input is not REPLACE.
+        public int decode(byte[] sa, int sp, int len, char[] da) {
+            final int sl = sp + len;
+            int dp = 0;
+            int dlASCII = Math.min(len, da.length);
+            ByteBuffer bb = null;  // only necessary if malformed
+
+            // ASCII only optimized loop
+            while (dp < dlASCII && sa[sp] >= 0)
+                da[dp++] = (char) sa[sp++];
+
+            while (sp < sl) {
+                int b1 = sa[sp++];
+                if (b1 >= 0) {
+                    // 1 byte, 7 bits: 0xxxxxxx
+                    da[dp++] = (char) b1;
+                } else if ((b1 >> 5) == -2) {
+                    // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+                    if (sp < sl) {
+                        int b2 = sa[sp++];
+                        if (isMalformed2(b1, b2)) {
+                            if (malformedInputAction() != CodingErrorAction.REPLACE)
+                                return -1;
+                            da[dp++] = replacement().charAt(0);
+                            sp--;            // malformedN(bb, 2) always returns 1
+                        } else {
+                            da[dp++] = (char) (((b1 << 6) ^ b2)^
+                                           (((byte) 0xC0 << 6) ^
+                                            ((byte) 0x80 << 0)));
+                        }
+                        continue;
+                    }
+                    if (malformedInputAction() != CodingErrorAction.REPLACE)
+                        return -1;
+                    da[dp++] = replacement().charAt(0);
+                    return dp;
+                } else if ((b1 >> 4) == -2) {
+                    // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+                    if (sp + 1 < sl) {
+                        int b2 = sa[sp++];
+                        int b3 = sa[sp++];
+                        if (isMalformed3(b1, b2, b3)) {
+                            if (malformedInputAction() != CodingErrorAction.REPLACE)
+                                return -1;
+                            da[dp++] = replacement().charAt(0);
+                            sp -=3;
+                            bb = getByteBuffer(bb, sa, sp);
+                            sp += malformedN(bb, 3).length();
+                        } else {
+                            da[dp++] = (char)((b1 << 12) ^
+                                              (b2 <<  6) ^
+                                              (b3 ^
+                                              (((byte) 0xE0 << 12) ^
+                                              ((byte) 0x80 <<  6) ^
+                                              ((byte) 0x80 <<  0))));
+                        }
+                        continue;
+                    }
+                    if (malformedInputAction() != CodingErrorAction.REPLACE)
+                        return -1;
+                    da[dp++] = replacement().charAt(0);
+                    return dp;
+                } else if ((b1 >> 3) == -2) {
+                    // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    if (sp + 2 < sl) {
+                        int b2 = sa[sp++];
+                        int b3 = sa[sp++];
+                        int b4 = sa[sp++];
+                        int uc = ((b1 << 18) ^
+                                  (b2 << 12) ^
+                                  (b3 <<  6) ^
+                                  (b4 ^
+                                   (((byte) 0xF0 << 18) ^
+                                   ((byte) 0x80 << 12) ^
+                                   ((byte) 0x80 <<  6) ^
+                                   ((byte) 0x80 <<  0))));
+                        if (isMalformed4(b2, b3, b4) ||
+                            // shortest form check
+                            !Character.isSupplementaryCodePoint(uc)) {
+                            if (malformedInputAction() != CodingErrorAction.REPLACE)
+                                return -1;
+                            da[dp++] = replacement().charAt(0);
+                            sp -= 4;
+                            bb = getByteBuffer(bb, sa, sp);
+                            sp += malformedN(bb, 4).length();
+                        } else {
+                            da[dp++] = Character.highSurrogate(uc);
+                            da[dp++] = Character.lowSurrogate(uc);
+                        }
+                        continue;
+                    }
+                    if (malformedInputAction() != CodingErrorAction.REPLACE)
+                        return -1;
+                    da[dp++] = replacement().charAt(0);
+                    return dp;
+                } else {
+                    if (malformedInputAction() != CodingErrorAction.REPLACE)
+                        return -1;
+                    da[dp++] = replacement().charAt(0);
+                    sp--;
+                    bb = getByteBuffer(bb, sa, sp);
+                    CoderResult cr = malformedN(bb, 1);
+                    if (!cr.isError()) {
+                        // leading byte for 5 or 6-byte, but don't have enough
+                        // bytes in buffer to check. Consumed rest as malformed.
+                        return dp;
+                    }
+                    sp +=  cr.length();
+                }
+            }
+            return dp;
+        }
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static class Encoder extends CharsetEncoder
+                                 implements ArrayEncoder {
 
         private Encoder(Charset cs) {
             super(cs, 1.1f, 3.0f);
@@ -494,6 +619,51 @@ class UTF_8 extends Unicode
                 return encodeArrayLoop(src, dst);
             else
                 return encodeBufferLoop(src, dst);
+        }
+
+        // returns -1 if there is malformed char(s) and the
+        // "action" for malformed input is not REPLACE.
+        public int encode(char[] sa, int sp, int len, byte[] da) {
+            int sl = sp + len;
+            int dp = 0;
+            int dlASCII = dp + Math.min(len, da.length);
+
+            // ASCII only optimized loop
+            while (dp < dlASCII && sa[sp] < '\u0080')
+                da[dp++] = (byte) sa[sp++];
+
+            while (sp < sl) {
+                char c = sa[sp++];
+                if (c < 0x80) {
+                    // Have at most seven bits
+                    da[dp++] = (byte)c;
+                } else if (c < 0x800) {
+                    // 2 bytes, 11 bits
+                    da[dp++] = (byte)(0xc0 | (c >> 6));
+                    da[dp++] = (byte)(0x80 | (c & 0x3f));
+                } else if (Character.isSurrogate(c)) {
+                    if (sgp == null)
+                        sgp = new Surrogate.Parser();
+                    int uc = sgp.parse(c, sa, sp - 1, sl);
+                    if (uc < 0) {
+                        if (malformedInputAction() != CodingErrorAction.REPLACE)
+                            return -1;
+                        da[dp++] = replacement()[0];
+                    } else {
+                        da[dp++] = (byte)(0xf0 | ((uc >> 18)));
+                        da[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
+                        da[dp++] = (byte)(0x80 | ((uc >>  6) & 0x3f));
+                        da[dp++] = (byte)(0x80 | (uc & 0x3f));
+                        sp++;  // 2 chars
+                    }
+                } else {
+                    // 3 bytes, 16 bits
+                    da[dp++] = (byte)(0xe0 | ((c >> 12)));
+                    da[dp++] = (byte)(0x80 | ((c >>  6) & 0x3f));
+                    da[dp++] = (byte)(0x80 | (c & 0x3f));
+                }
+            }
+            return dp;
         }
     }
 }

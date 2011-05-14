@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,13 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
@@ -49,7 +51,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
@@ -428,6 +430,18 @@ public class JavacTrees extends Trees {
         } finally {
             if (oldSource != null)
                 log.useSource(oldSource);
+        }
+    }
+
+    @Override
+    public TypeMirror getLub(CatchTree tree) {
+        JCCatch ct = (JCCatch) tree;
+        JCVariableDecl v = ct.param;
+        if (v.type != null && v.type.getKind() == TypeKind.UNION) {
+            UnionClassType ut = (UnionClassType) v.type;
+            return ut.getLub();
+        } else {
+            return v.type;
         }
     }
 }

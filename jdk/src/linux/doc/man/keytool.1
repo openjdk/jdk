@@ -1,4 +1,4 @@
-." Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1998-2011 keytool tool, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH keytool 1 "02 Jun 2010"
+.TH keytool 1 "10 May 2011"
 
 .LP
 .SH "Name"
 keytool \- Key and Certificate Management Tool
 .LP
-.RS 3
-
 .LP
 Manages a keystore (database) of cryptographic keys, X.509 certificate chains, and trusted certificates.
-.RE
-.SH "SYNOPSIS"
 .LP
-
+.SH "SYNOPSIS"
 .LP
 .nf
 \f3
@@ -47,8 +43,6 @@ The keytool command interface has changed in Java SE 6. See the Changes Section 
 .LP
 .SH "DESCRIPTION"
 .LP
-
-.LP
 \f3keytool\fP is a key and certificate management utility. It allows users to administer their own public/private key pairs and associated certificates for use in self\-authentication (where the user authenticates himself/herself to other users/services) or data integrity and authentication services, using digital signatures. It also allows users to cache the public keys (in the form of certificates) of their communicating peers. 
 .LP
 A \f2certificate\fP is a digitally signed statement from one entity (person, company, etc.), saying that the public key (and some other information) of some other entity has a particular value. (See Certificates.) When data is digitally signed, the signature can be verified to check the data integrity and authenticity. \f2Integrity\fP means that the data has not been modified or tampered with, and \f2authenticity\fP means the data indeed comes from whoever claims to have created and signed it.
@@ -57,14 +51,12 @@ A \f2certificate\fP is a digitally signed statement from one entity (person, com
 \f3keytool\fP also enables users to administer secret keys used in symmetric encryption/decryption (e.g. DES).
 .LP
 .LP
-\f3keytool\fP stores the keys and certificates in a \f2keystore\fP. 
+\f3keytool\fP stores the keys and certificates in a \f2keystore\fP.
 .LP
 .SH "COMMAND AND OPTION NOTES"
 .LP
-
 .LP
-.LP
-The various commands and their options are listed and described below . Note:
+The various commands and their options are listed and described below. Note:
 .LP
 .RS 3
 .TP 2
@@ -114,6 +106,7 @@ The \f2\-help\fP command is the default. Thus, the command line
 .fl
 \fP
 .fi
+.LP
 is equivalent to 
 .nf
 \f3
@@ -128,10 +121,9 @@ is equivalent to
 .SS 
 Option Defaults
 .LP
-.RS 3
-
 .LP
-Below are the defaults for various option values. 
+Below are the defaults for various option values.
+.LP
 .nf
 \f3
 .fl
@@ -153,9 +145,13 @@ Below are the defaults for various option values.
 .fl
     1024 (when using \fP\f3\-genkeypair\fP\f3 and \-keyalg is "DSA")
 .fl
+    256 (when using \fP\f3\-genkeypair\fP\f3 and \-keyalg is "EC")
+.fl
     56 (when using \fP\f3\-genseckey\fP\f3 and \-keyalg is "DES")
 .fl
     168 (when using \fP\f3\-genseckey\fP\f3 and \-keyalg is "DESede")
+.fl
+
 .fl
 
 .fl
@@ -169,7 +165,7 @@ Below are the defaults for various option values.
 .fl
 \-storetype the value of the "keystore.type" property in the security properties file,
 .fl
-           which is returned by the static \fP\f4getDefaultType\fP\f3 method in 
+           which is returned by the static \fP\f4getDefaultType\fP\f3 method in
 .fl
            \fP\f4java.security.KeyStore\fP\f3
 .fl
@@ -181,25 +177,39 @@ Below are the defaults for various option values.
 .fl
 \-protected false
 .fl
-
-.fl
 \fP
 .fi
 
 .LP
-In generating a public/private key pair, the signature algorithm (\f2\-sigalg\fP option) is derived from the algorithm of the underlying private key: If the underlying private key is of type "DSA", the \f2\-sigalg\fP option defaults to "SHA1withDSA", and if the underlying private key is of type "RSA", \f2\-sigalg\fP defaults to "SHA256withRSA". Please consult the 
+.LP
+In generating a public/private key pair, the signature algorithm (\f2\-sigalg\fP option) is derived from the algorithm of the underlying private key:
+.LP
+.RS 3
+.TP 2
+o
+If the underlying private key is of type "DSA", the \f2\-sigalg\fP option defaults to "SHA1withDSA" 
+.TP 2
+o
+If the underlying private key is of type "RSA", the \f2\-sigalg\fP option defaults to "SHA256withRSA". 
+.TP 2
+o
+If the underlying private key is of type "EC", the \f2\-sigalg\fP option defaults to "SHA256withECDSA". 
+.RE
+
+.LP
+.LP
+Please consult the 
 .na
 \f2Java Cryptography Architecture API Specification & Reference\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA for a full list of \f2\-keyalg\fP and \f2\-sigalg\fP you can choose from.
-.RE
+http://download.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#AppA for a full list of \f2\-keyalg\fP and \f2\-sigalg\fP you can choose from.
+.LP
 .SS 
 Common Options
 .LP
-.RS 3
-
 .LP
-The \f2\-v\fP option can appear for all commands except \f2\-help\fP. If it appears, it signifies "verbose" mode; more information will be provided in the output. 
+The \f2\-v\fP option can appear for all commands except \f2\-help\fP. If it appears, it signifies "verbose" mode; more information will be provided in the output.
+.LP
 .LP
 There is also a \f2\-J\fP\f2javaoption\fP option that may appear for any command. If it appears, the specified \f2javaoption\fP string is passed through directly to the Java interpreter. This option should not contain any spaces. It is useful for adjusting the execution environment or memory usage. For a list of possible interpreter options, type \f2java \-h\fP or \f2java \-X\fP at the command line.
 .LP
@@ -209,46 +219,65 @@ These options may appear for all commands operating on a keystore:
 .RS 3
 .TP 3
 \-storetype storetype 
-This qualifier specifies the type of keystore to be instantiated. 
+.LP
+This qualifier specifies the type of keystore to be instantiated.  
 .TP 3
 \-keystore keystore 
+.LP
 The keystore location. 
 .LP
 If the JKS storetype is used and a keystore file does not yet exist, then certain \f3keytool\fP commands may result in a new keystore file being created. For example, if \f2keytool \-genkeypair\fP is invoked and the \f2\-keystore\fP option is not specified, the default keystore file named \f2.keystore\fP in the user's home directory will be created if it does not already exist. Similarly, if the \f2\-keystore \fP\f2ks_file\fP option is specified but \f2ks_file\fP does not exist, then it will be created 
 .LP
 Note that the input stream from the \f2\-keystore\fP option is passed to the \f2KeyStore.load\fP method. If \f2NONE\fP is specified as the URL, then a null stream is passed to the \f2KeyStore.load\fP method. \f2NONE\fP should be specified if the \f2KeyStore\fP is not file\-based (for example, if it resides on a hardware token device).  
 .TP 3
-\-storepass storepass 
+\-storepass[:env|:file] argument 
+.LP
 The password which is used to protect the integrity of the keystore. 
 .LP
-\f2storepass\fP must be at least 6 characters long. It must be provided to all commands that access the keystore contents. For such commands, if a \f2\-storepass\fP option is not provided at the command line, the user is prompted for it. 
+If the modifier \f2env\fP or \f2file\fP is not specified, then the password has the value \f2argument\fP, which must be at least 6 characters long. Otherwise, the password is retrieved as follows: 
+.RS 3
+.TP 2
+o
+\f2env\fP: Retrieve the password from the environment variable named \f2argument\fP 
+.TP 2
+o
+\f2file\fP: Retrieve the password from the file named \f2argument\fP 
+.RE
+.LP
+\f3Note\fP: All other options that require passwords, such as \f2\-keypass\fP, \f2\-srckeypass\fP, \f2\-destkeypass\fP \f2\-srcstorepass\fP, and \f2\-deststorepass\fP, accept the \f2env\fP and \f2file\fP modifiers. (Remember to separate the password option and the modifier with a colon, (\f2:\fP).) 
+.LP
+The password must be provided to all commands that access the keystore contents. For such commands, if a \f2\-storepass\fP option is not provided at the command line, the user is prompted for it. 
 .LP
 When retrieving information from the keystore, the password is optional; if no password is given, the integrity of the retrieved information cannot be checked and a warning is displayed.  
 .TP 3
 \-providerName provider_name 
-Used to identify a cryptographic service provider's name when listed in the security properties file. 
+.LP
+Used to identify a cryptographic service provider's name when listed in the security properties file.  
 .TP 3
 \-providerClass provider_class_name 
-Used to specify the name of cryptographic service provider's master class file when the service provider is not listed in the security properties file. 
+.LP
+Used to specify the name of cryptographic service provider's master class file when the service provider is not listed in the security properties file.  
 .TP 3
 \-providerArg provider_arg 
-Used in conjunction with \f2\-providerClass\fP. Represents an optional string input argument for the constructor of \f2provider_class_name\fP. 
+.LP
+Used in conjunction with \f2\-providerClass\fP. Represents an optional string input argument for the constructor of \f2provider_class_name\fP.  
 .TP 3
 \-protected 
+.LP
 Either \f2true\fP or \f2false\fP. This value should be specified as \f2true\fP if a password must be given via a protected authentication path such as a dedicated PIN reader. 
 .LP
 Note: Since there are two keystores involved in \f2\-importkeystore\fP command, two options, namely, \f2\-srcprotected\fP and \f2\-destprotected\fP are provided for the source keystore and the destination keystore respectively.  
 .TP 3
 \-ext {name{:critical}{=value}} 
-Denotes an X.509 certificate extension. The option can be used in \f2\-genkeypair\fP and \f2\-gencert\fP to embed extensions into the certificate generated, or in \f2\-certreq\fP to show what extensions are requested in the certificate request. The option can appear multiple times. name can be a supported extension name (see below) or an arbitrary OID number. value, if provided, denotes the parameter for the extension; if omitted, denotes the default value (if defined) of the extension or the extension requires no parameter. The \f2":critical"\fP modifier, if provided, means the extension's isCritical attribute is true; otherwise, false. 
-.RS 3
+.LP
+Denotes an X.509 certificate extension. The option can be used in \-genkeypair and \-gencert to embed extensions into the certificate generated, or in \f2\-certreq\fP to show what extensions are requested in the certificate request. The option can appear multiple times. name can be a supported extension name (see below) or an arbitrary OID number. value, if provided, denotes the parameter for the extension; if omitted, denotes the default value (if defined) of the extension or the extension requires no parameter. The \f2:critical\fP modifier, if provided, means the extension's isCritical attribute is true; otherwise, false. You may use \f2:c\fP in place of \f2:critical\fP.  
+.RE
 
 .LP
 .LP
 Currently keytool supports these named extensions (case\-insensitive):
 .LP
 .LP
-.TS
 .if \n+(b.=1 .nr d. \n(.c-\n(c.-1
 .de 35
 .ps \n(.s
@@ -478,7 +507,7 @@ same as SubjectInfoAccess. method can be "ocsp","caIssuers" or any OID.
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 289 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 319 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -649,7 +678,6 @@ same as SubjectInfoAccess. method can be "ocsp","caIssuers" or any OID.
 .rm h+
 .rm i+
 .rm j+
-.TE
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-38
 
 .LP
@@ -657,7 +685,7 @@ same as SubjectInfoAccess. method can be "ocsp","caIssuers" or any OID.
 For name as OID, value is the HEX dumped DER encoding of the extnValue for the extension excluding the OCTET STRING type and length bytes. Any extra character other than standard HEX numbers (0\-9, a\-f, A\-F) are ignored in the HEX string. Therefore, both \f2"01:02:03:04"\fP and \f2"01020304"\fP are accepted as identical values. If there's no value, the extension has an empty value field then.
 .LP
 .LP
-A special name \f2"honored"\fP, used in \-gencert only, denotes how the extensions included in the certificate request should be honored. The value for this name is a comma\-seperated list of \f2"all"\fP (all requested extensions are honored), \f2"name{:[critical|non\-critical]}"\fP (the named extension is honored, but using a different isCritical attribute) and \f2"\-name"\fP (used with all, denotes an exception). Requested extensions are not honored by default.
+A special name \f2'honored'\fP, used in \f2\-gencert\fP only, denotes how the extensions included in the certificate request should be honored. The value for this name is a comma separated list of \f2"all"\fP (all requested extensions are honored), \f2"name{:[critical|non\-critical]}"\fP (the named extension is honored, but using a different isCritical attribute) and \f2"\-name"\fP (used with all, denotes an exception). Requested extensions are not honored by default.
 .LP
 .LP
 If, besides the \-ext honored option, another named or OID \-ext option is provided, this extension will be added to those already honored. However, if this name (or OID) also appears in the honored value, its value and criticality overrides the one in the request.
@@ -668,32 +696,61 @@ The subjectKeyIdentifier extension is always created. For non self\-signed certi
 .LP
 \f3Note:\fP Users should be aware that some combinations of extensions (and other certificate fields) may not conform to the Internet standard. See Warning Regarding Certificate Conformance for details.
 .LP
-.RE
-.RE
-.RE
 .SH "COMMANDS"
-.LP
-
 .LP
 .SS 
 Creating or Adding Data to the Keystore
 .LP
 .RS 3
-
-.LP
-.RS 3
 .TP 3
-\-gencert {\-infile infile} {\-outfile outfile} {\-dname dname} {\-ext ext}* {\-rfc} {\-alias alias} {\-sigalg sigalg} {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] [\-keypass keypass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
+\-gencert {\-rfc} {\-infile infile} {\-outfile outfile} {\-alias alias} {\-sigalg sigalg} {\-dname dname} {\-startdate startdate {\-ext ext}* {\-validity valDays} [\-keypass keypass] {\-keystore keystore} [\-storepass storepass] {\-storetype storetype} {\-providername provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
 .LP
-Generates a certificate as a response to a certificate request file (which can be created by the \f2keytool \-certreq\fP command). The command reads the request from infile (if omitted, from the standard input), signs it using alias's private key, and output the X.509 certificate into outfile (if omitted, to the standard output). If \f2\-rfc\fP is specified, output format is BASE64\-encoded PEM; otherwise, a binary DER is created. 
+Generates a certificate as a response to a certificate request file (which can be created by the \f2keytool \-certreq\fP command). The command reads the request from \f2infile\fP (if omitted, from the standard input), signs it using alias's private key, and output the X.509 certificate into \f2outfile\fP (if omitted, to the standard output). If \f2\-rfc\fP is specified, output format is BASE64\-encoded PEM; otherwise, a binary DER is created. 
 .LP
-\f2sigalg\fP specifies the algorithm that should be used to sign the certificate. valDays tells the number of days for which the certificate should be considered valid. 
+\f2sigalg\fP specifies the algorithm that should be used to sign the certificate. \f2startdate\fP is the start time/date that the certificate is valid. \f2valDays\fP tells the number of days for which the certificate should be considered valid. 
 .LP
 If \f2dname\fP is provided, it's used as the subject of the generated certificate. Otherwise, the one from the certificate request is used. 
 .LP
-\f2ext\fP shows what X.509 extensions will be embedded in the certificate. Read Common Options for the grammar of \f2\-ext\fP.  
+\f2ext\fP shows what X.509 extensions will be embedded in the certificate. Read Common Options for the grammar of \f2\-ext\fP. 
+.LP
+The \f2\-gencert\fP command enables you to create certificate chains. The following example creates a certificate, \f2e1\fP, that contains three certificates in its certificate chain. 
+.LP
+The following commands creates four key pairs named \f2ca\fP, \f2ca1\fP, \f2ca2\fP, and \f2e1\fP: 
+.nf
+\f3
+.fl
+keytool \-alias ca \-dname CN=CA \-genkeypair
+.fl
+keytool \-alias ca1 \-dname CN=CA \-genkeypair
+.fl
+keytool \-alias ca2 \-dname CN=CA \-genkeypair
+.fl
+keytool \-alias e1 \-dname CN=E1 \-genkeypair
+.fl
+\fP
+.fi
+.LP
+The following two commands create a chain of signed certificates; \f2ca\fP signs ca1 and \f2ca1 signs ca2\fP, all of which are self\-issued: 
+.nf
+\f3
+.fl
+keytool \-alias ca1 \-certreq | keytool \-alias ca \-gencert \-ext san=dns:ca1 | keytool \-alias ca1 \-importcert
+.fl
+keytool \-alias ca2 \-certreq | $KT \-alias ca1 \-gencert \-ext san=dns:ca2 | $KT \-alias ca2 \-importcert
+.fl
+\fP
+.fi
+.LP
+The following command creates the certificate \f2e1\fP and stores it in the file \f2e1.cert\fP, which is signed by \f2ca2\fP. As a result, \f2e1\fP should contain \f2ca\fP, \f2ca1\fP, and \f2ca2\fP in its certificate chain: 
+.nf
+\f3
+.fl
+keytool \-alias e1 \-certreq | keytool \-alias ca2 \-gencert > e1.cert
+.fl
+\fP
+.fi
 .TP 3
-\-genkeypair {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} {\-sigalg sigalg} [\-dname dname] [\-keypass keypass] {\-startdate value} {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
+\-genkeypair {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} {\-sigalg sigalg} [\-dname dname] [\-keypass keypass] {\-startdate value} {\-ext ext}* {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
 .LP
 Generates a key pair (a public key and associated private key). Wraps the public key into an X.509 v3 self\-signed certificate, which is stored as a single\-element certificate chain. This certificate chain and the private key are stored in a new keystore entry identified by \f2alias\fP. 
 .LP
@@ -704,30 +761,18 @@ Generates a key pair (a public key and associated private key). Wraps the public
 \f2keypass\fP is a password used to protect the private key of the generated key pair. If no password is provided, the user is prompted for it. If you press RETURN at the prompt, the key password is set to the same password as that used for the keystore. \f2keypass\fP must be at least 6 characters long. 
 .LP
 \f2startdate\fP specifies the issue time of the certificate, also known as the "Not Before" value of the X.509 certificate's Validity field. 
-.RS 3
-
 .LP
-.LP
-The option value can be set in one of these two forms:
-.LP
+The option value can be set in one of these two forms: 
 .RS 3
 .TP 3
 1.
-.LP
-([+\-]\f2nnn\fP[ymdHMS])+  
+([+\-]\f2nnn\fP[ymdHMS])+ 
 .TP 3
 2.
-.LP
-[yyyy/mm/dd] [HH:MM:SS]  
+[yyyy/mm/dd] [HH:MM:SS] 
 .RE
-
 .LP
-.LP
-With the first form, the issue time is shifted by the specified value from the current time. The value is a concatenation of a sequence of sub values. Inside each sub value, the plus sign ("+") means shifting forward, and the minus sign ("\-") means shifting backward. The time to be shifted is \f2nnn\fP units of years, months, days, hours, minutes, or seconds (denoted by a single character of "y", "m", "d", "H", "M", or "S" respectively). The exact value of the issue time is calculated using the \f2java.util.GregorianCalendar.add(int field, int amount)\fP method on each sub value, from left to right. For example, by specifying \f2"\-startdate \-1y+1m\-1d"\fP, the issue time will be:
-.LP
-.RS 3
-
-.LP
+With the first form, the issue time is shifted by the specified value from the current time. The value is a concatenation of a sequence of sub values. Inside each sub value, the plus sign ("+") means shifting forward, and the minus sign ("\-") means shifting backward. The time to be shifted is \f2nnn\fP units of years, months, days, hours, minutes, or seconds (denoted by a single character of "y", "m", "d", "H", "M", or "S" respectively). The exact value of the issue time is calculated using the \f2java.util.GregorianCalendar.add(int field, int amount)\fP method on each sub value, from left to right. For example, by specifying \f2"\-startdate \-1y+1m\-1d"\fP, the issue time will be: 
 .nf
 \f3
 .fl
@@ -743,16 +788,10 @@ With the first form, the issue time is shifted by the specified value from the c
 .fl
 \fP
 .fi
-.RE
-
 .LP
+With the second form, the user sets the exact issue time in two parts, year/month/day and hour:minute:second (using the local time zone). The user may provide only one part, which means the other part is the same as the current date (or time). User must provide the exact number of digits as shown in the format definition (padding with 0 if shorter). When both the date and time are provided, there is one (and only one) space character between the two parts. The hour should always be provided in 24 hour format. 
 .LP
-With the second form, the user sets the exact issue time in two parts, year/month/day and hour:minute:second (using the local timezone). The user may provide only one part, which means the other part is the same as the current date (or time). User must provide the exact number of digits as shown in the format definition (padding with 0 if shorter). When both the date and time are provided, there is one (and only one) space character between the two parts. The hour should always be provided in 24 hour format.
-.LP
-.LP
-When the option is not provided, the start date is the current time. The option can be provided at most once.
-.LP
-.RE
+When the option is not provided, the start date is the current time. The option can be provided at most once. 
 .LP
 \f2valDays\fP specifies the number of days (starting at the date specified by \f2\-startdate\fP, or the current date if \f2\-startdate\fP is not specified) for which the certificate should be considered valid. 
 .LP
@@ -790,25 +829,17 @@ Which type of import is intended is indicated by the value of the \f2\-alias\fP 
 \f3If the alias points to a key entry\fP, then \f3keytool\fP assumes you are importing a certificate reply. 
 .RE
 \f3Importing a New Trusted Certificate\fP 
-.RS 3
 .LP
-Before adding the certificate to the keystore, \f3keytool\fP tries to verify it by attempting to construct a chain of trust from that certificate to a self\-signed certificate (belonging to a root CA), using trusted certificates that are already available in the keystore.
+Before adding the certificate to the keystore, \f3keytool\fP tries to verify it by attempting to construct a chain of trust from that certificate to a self\-signed certificate (belonging to a root CA), using trusted certificates that are already available in the keystore. 
 .LP
+If the \f2\-trustcacerts\fP option has been specified, additional certificates are considered for the chain of trust, namely the certificates in a file named "cacerts". 
 .LP
-If the \f2\-trustcacerts\fP option has been specified, additional certificates are considered for the chain of trust, namely the certificates in a file named "cacerts".
-.LP
-.LP
-If \f3keytool\fP fails to establish a trust path from the certificate to be imported up to a self\-signed certificate (either from the keystore or the "cacerts" file), the certificate information is printed out, and the user is prompted to verify it, e.g., by comparing the displayed certificate fingerprints with the fingerprints obtained from some other (trusted) source of information, which might be the certificate owner himself/herself. Be very careful to ensure the certificate is valid prior to importing it as a "trusted" certificate! \-\- see WARNING Regarding Importing Trusted Certificates. The user then has the option of aborting the import operation. If the \f2\-noprompt\fP option is given, however, there will be no interaction with the user.
-.LP
-.RE
+If \f3keytool\fP fails to establish a trust path from the certificate to be imported up to a self\-signed certificate (either from the keystore or the "cacerts" file), the certificate information is printed out, and the user is prompted to verify it, e.g., by comparing the displayed certificate fingerprints with the fingerprints obtained from some other (trusted) source of information, which might be the certificate owner himself/herself. Be very careful to ensure the certificate is valid prior to importing it as a "trusted" certificate! \-\- see WARNING Regarding Importing Trusted Certificates. The user then has the option of aborting the import operation. If the \f2\-noprompt\fP option is given, however, there will be no interaction with the user. 
 \f3Importing a Certificate Reply\fP 
-.RS 3
 .LP
-When importing a certificate reply, the certificate reply is validated using trusted certificates from the keystore, and optionally using the certificates configured in the "cacerts" keystore file (if the \f2\-trustcacerts\fP option was specified).
+When importing a certificate reply, the certificate reply is validated using trusted certificates from the keystore, and optionally using the certificates configured in the "cacerts" keystore file (if the \f2\-trustcacerts\fP option was specified). 
 .LP
-.LP
-The methods of determining whether the certificate reply is trusted are described in the following:
-.LP
+The methods of determining whether the certificate reply is trusted are described in the following: 
 .RS 3
 .TP 2
 o
@@ -817,12 +848,8 @@ o
 o
 \f3If the reply is a PKCS#7 formatted certificate chain or a sequence of X.509 certificates\fP, the chain is ordered with the user certificate first followed by zero or more CA certificates. If the chain ends with a self\-signed root CA certificate and \f2\-trustcacerts\fP option was specified, \f3keytool\fP will attempt to match it with any of the trusted certificates in the keystore or the "cacerts" keystore file. If the chain does not end with a self\-signed root CA certificate and the \f2\-trustcacerts\fP option was specified, \f3keytool\fP will try to find one from the trusted certificates in the keystore or the "cacerts" keystore file and add it to the end of the chain. If the certificate is not found and \f2\-noprompt\fP option is not specified, the information of the last certificate in the chain is printed out, and the user is prompted to verify it. 
 .RE
-
 .LP
-.LP
-If the public key in the certificate reply matches the user's public key already stored with under \f2alias\fP, the old certificate chain is replaced with the new certificate chain in the reply. The old chain can only be replaced if a valid \f2keypass\fP, the password used to protect the private key of the entry, is supplied. If no password is provided, and the private key password is different from the keystore password, the user is prompted for it.
-.LP
-.RE
+If the public key in the certificate reply matches the user's public key already stored with under \f2alias\fP, the old certificate chain is replaced with the new certificate chain in the reply. The old chain can only be replaced if a valid \f2keypass\fP, the password used to protect the private key of the entry, is supplied. If no password is provided, and the private key password is different from the keystore password, the user is prompted for it. 
 .LP
 This command was named \f2\-import\fP in previous releases. This old name is still supported in this release and will be supported in future releases, but for clarify the new name, \f2\-importcert\fP, is preferred going forward.    
 .TP 3
@@ -842,12 +869,10 @@ Note that if \f2\-noprompt\fP is provided, the user will not be prompted for a n
 .LP
 Prints the content of a PKCS #10 format certificate request, which can be generated by the keytool \-certreq command. The command reads the request from file; if omitted, from the standard input.  
 .RE
-.RE
+
+.LP
 .SS 
 Exporting Data
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -879,12 +904,8 @@ This command was named \f2\-export\fP in previous releases. This old name is sti
 .RE
 
 .LP
-.RE
 .SS 
 Displaying Data
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -896,25 +917,34 @@ This command by default prints the SHA1 fingerprint of a certificate. If the \f2
 .LP
 You cannot specify both \f2\-v\fP and \f2\-rfc\fP.  
 .TP 3
-\-printcert {\-file cert_file | \-sslserver host[:port]} {\-rfc} {\-v} {\-Jjavaoption} 
+\-printcert {\-file cert_file | \-sslserver host[:port]} {\-jarfile JAR_file {\-rfc} {\-v} {\-Jjavaoption} 
 .LP
+Reads the certificate from the file \f2cert_file\fP, the SSL server located at \f2host:port\fP, or the signed JAR file \f2JAR_file\fP (with the option \f2\-jarfile\fP and prints its contents in a human\-readable format. When no port is specified, the standard HTTPS port 443 is assumed. Note that \f2\-sslserver\fP and \f2\-file\fP options cannot be provided at the same time. Otherwise, an error is reported. If neither option is given, the certificate is read from stdin. 
 .LP
 If \f2\-rfc\fP is specified, keytool prints the certificate in PEM mode as defined by the Internet RFC 1421 standard. 
 .LP
 If the certificate is read from a file or stdin, it may be either binary encoded or in printable encoding format, as defined by the Internet RFC 1421 standard 
 .LP
-If the SSL server is behind a firewall, \f2\-J\-Dhttps.proxyHost=proxyhost\fP and \f2\-J\-Dhttps.proxyPort=proxyport\fP can be specified on the command line for proxy tunneling. See the JSSE Reference Guide for more information. 
+If the SSL server is behind a firewall, \f2\-J\-Dhttps.proxyHost=proxyhost\fP and \f2\-J\-Dhttps.proxyPort=proxyport\fP can be specified on the command line for proxy tunneling. See the 
+.na
+\f2JSSE Reference Guide\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/security/jsse/JSSERefGuide.html for more information. 
+.LP
+\f3Note\fP: This option can be used independently of a keystore.  
+.TP 3
+\-printcrl \-file crl_ {\-v} 
+.LP
+Reads the certificate revocation list (CRL) from the file \f2crl_file\fP. 
+.LP
+A Certificate Revocation List (CRL) is a list of digital certificates which have been revoked by the Certificate Authority (CA) that issued them. The CA generates \f2crl_file\fP. 
 .LP
 \f3Note\fP: This option can be used independently of a keystore.  
 .RE
 
 .LP
-.RE
 .SS 
 Managing the Keystore
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -940,25 +970,27 @@ Move an existing keystore entry from the specified \f2alias\fP to a new alias, \
 .RE
 
 .LP
-.RE
 .SS 
 Getting Help
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
 \-help 
 .LP
-Lists the basic commands and their options.  
+Lists the basic commands and their options. 
+.LP
+For more information about a specific command, enter the following, where \f2command_name\fP is the name of the command: 
+.nf
+\f3
+.fl
+    keytool \-\fP\f4command_name\fP\f3 \-help
+.fl
+\fP
+.fi
 .RE
 
 .LP
-.RE
 .SH "EXAMPLES"
-.LP
-
 .LP
 .LP
 Suppose you want to create a keystore for managing your public/private key pair and certificates from entities you trust.
@@ -966,20 +998,17 @@ Suppose you want to create a keystore for managing your public/private key pair 
 .SS 
 Generating Your Key Pair
 .LP
-.RS 3
-
-.LP
 .LP
 The first thing you need to do is create a keystore and generate the key pair. You could use a command such as the following:
 .LP
 .nf
 \f3
 .fl
-    keytool \-genkeypair \-dname "cn=Mark Jones, ou=JavaSoft, o=Sun, c=US"
+    keytool \-genkeypair \-dname "cn=Mark Jones, ou=Java, o=Oracle, c=US"
 .fl
-      \-alias business \-keypass kpi135 \-keystore /working/mykeystore
+      \-alias business \-keypass \fP\f4<new password for private key>\fP\f3 \-keystore /working/mykeystore
 .fl
-      \-storepass ab987c \-validity 180
+      \-storepass \fP\f4<new password for keystore>\fP\f3 \-validity 180
 .fl
 \fP
 .fi
@@ -989,10 +1018,10 @@ The first thing you need to do is create a keystore and generate the key pair. Y
 (Please note: This must be typed as a single line. Multiple lines are used in the examples just for legibility purposes.)
 .LP
 .LP
-This command creates the keystore named "mykeystore" in the "working" directory (assuming it doesn't already exist), and assigns it the password "ab987c". It generates a public/private key pair for the entity whose "distinguished name" has a common name of "Mark Jones", organizational unit of "JavaSoft", organization of "Sun" and two\-letter country code of "US". It uses the default "DSA" key generation algorithm to create the keys, both 1024 bits long.
+This command creates the keystore named "mykeystore" in the "working" directory (assuming it doesn't already exist), and assigns it the password specified by \f2<new password for keystore>\fP. It generates a public/private key pair for the entity whose "distinguished name" has a common name of "Mark Jones", organizational unit of "Java", organization of "Oracle" and two\-letter country code of "US". It uses the default "DSA" key generation algorithm to create the keys, both 1024 bits long.
 .LP
 .LP
-It creates a self\-signed certificate (using the default "SHA1withDSA" signature algorithm) that includes the public key and the distinguished name information. This certificate will be valid for 180 days, and is associated with the private key in a keystore entry referred to by the alias "business". The private key is assigned the password "kpi135".
+It creates a self\-signed certificate (using the default "SHA1withDSA" signature algorithm) that includes the public key and the distinguished name information. This certificate will be valid for 180 days, and is associated with the private key in a keystore entry referred to by the alias "business". The private key is assigned the password specified by \f2<new password for private key>\fP.
 .LP
 .LP
 The command could be significantly shorter if option defaults were accepted. As a matter of fact, no options are required; defaults are used for unspecified options that have default values, and you are prompted for any required values. Thus, you could simply have the following:
@@ -1006,16 +1035,14 @@ The command could be significantly shorter if option defaults were accepted. As 
 .fi
 
 .LP
-In this case, a keystore entry with alias "mykey" is created, with a newly\-generated key pair and a certificate that is valid for 90 days. This entry is placed in the keystore named ".keystore" in your home directory. (The keystore is created if it doesn't already exist.) You will be prompted for the distinguished name information, the keystore password, and the private key password. 
 .LP
-The rest of the examples assume you executed the \f2\-genkeypair\fP command without options specified, and that you responded to the prompts with values equal to those given in the first \f2\-genkeypair\fP command, above (a private key password of "kpi135", etc.)
+In this case, a keystore entry with alias "mykey" is created, with a newly\-generated key pair and a certificate that is valid for 90 days. This entry is placed in the keystore named ".keystore" in your home directory. (The keystore is created if it doesn't already exist.) You will be prompted for the distinguished name information, the keystore password, and the private key password.
 .LP
-.RE
+.LP
+The rest of the examples assume you executed the \f2\-genkeypair\fP command without options specified, and that you responded to the prompts with values equal to those given in the first \f2\-genkeypair\fP command, above (for example, a distinguished name of "cn=Mark Jones, ou=Java, o=Oracle, c=US").
+.LP
 .SS 
 Requesting a Signed Certificate from a Certification Authority
-.LP
-.RS 3
-
 .LP
 .LP
 So far all we've got is a self\-signed certificate. A certificate is more likely to be trusted by others if it is signed by a Certification Authority (CA). To get such a signature, you first generate a Certificate Signing Request (CSR), via the following:
@@ -1029,13 +1056,11 @@ So far all we've got is a self\-signed certificate. A certificate is more likely
 .fi
 
 .LP
+.LP
 This creates a CSR (for the entity identified by the default alias "mykey") and puts the request in the file named "MarkJ.csr". Submit this file to a CA, such as VeriSign, Inc. The CA will authenticate you, the requestor (usually off\-line), and then will return a certificate, signed by them, authenticating your public key. (In some cases, they will actually return a chain of certificates, each one authenticating the public key of the signer of the previous certificate in the chain.)
-.RE
+.LP
 .SS 
 Importing a Certificate for the CA
-.LP
-.RS 3
-
 .LP
 .LP
 You need to replace your self\-signed certificate with a certificate chain, where each certificate in the chain authenticates the public key of the signer of the previous certificate in the chain, up to a "root" CA.
@@ -1054,7 +1079,7 @@ If the certificate reply is a single certificate, you need a certificate for the
 
 .LP
 .LP
-The "cacerts" keystore file ships with five VeriSign root CA certificates, so you probably won't need to import a VeriSign certificate as a trusted certificate in your keystore. But if you request a signed certificate from a different CA, and a certificate authenticating that CA's public key hasn't been added to "cacerts", you will need to import a certificate from the CA as a "trusted certificate".
+The "cacerts" keystore file ships with several VeriSign root CA certificates, so you probably won't need to import a VeriSign certificate as a trusted certificate in your keystore. But if you request a signed certificate from a different CA, and a certificate authenticating that CA's public key hasn't been added to "cacerts", you will need to import a certificate from the CA as a "trusted certificate".
 .LP
 .LP
 A certificate from a CA is usually either self\-signed, or signed by another CA (in which case you also need a certificate authenticating that CA's public key). Suppose company ABC, Inc., is a CA, and you obtain a file named "ABCCA.cer" that is purportedly a self\-signed certificate from ABC, authenticating that CA's public key.
@@ -1074,13 +1099,11 @@ If you trust that the certificate is valid, then you can add it to your keystore
 .fi
 
 .LP
+.LP
 This creates a "trusted certificate" entry in the keystore, with the data from the file "ABCCA.cer", and assigns the alias "abc" to the entry.
-.RE
+.LP
 .SS 
 Importing the Certificate Reply from the CA
-.LP
-.RS 3
-
 .LP
 .LP
 Once you've imported a certificate authenticating the public key of the CA you submitted your certificate signing request to (or there's already such a certificate in the "cacerts" file), you can import the certificate reply and thereby replace your self\-signed certificate with a certificate chain. This chain is the one returned by the CA in response to your request (if the CA reply is a chain), or one constructed (if the CA reply is a single certificate) using the certificate reply and trusted certificates that are already available in the keystore where you import the reply or in the "cacerts" keystore file.
@@ -1095,16 +1118,14 @@ For example, suppose you sent your certificate signing request to VeriSign. You 
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .SS 
 Exporting a Certificate Authenticating Your Public Key
 .LP
-.RS 3
-
 .LP
-Suppose you have used the jarsigner(1) tool to sign a Java ARchive (JAR) file. Clients that want to use the file will want to authenticate your signature. 
+Suppose you have used the jarsigner(1) tool to sign a Java ARchive (JAR) file. Clients that want to use the file will want to authenticate your signature.
+.LP
 .LP
 One way they can do this is by first importing your public key certificate into their keystore as a "trusted" entry. You can export the certificate and supply it to your clients. As an example, you can copy your certificate to a file named \f2MJ.cer\fP via the following, assuming the entry is aliased by "mykey":
 .LP
@@ -1117,13 +1138,11 @@ One way they can do this is by first importing your public key certificate into 
 .fi
 
 .LP
+.LP
 Given that certificate, and the signed JAR file, a client can use the \f3jarsigner\fP tool to authenticate your signature.
-.RE
+.LP
 .SS 
 Importing Keystore
-.LP
-.RS 3
-
 .LP
 .LP
 The command "importkeystore" is used to import an entire keystore into another keystore, which means all entries from the source keystore, including keys and certificates, are all imported to the destination keystore within a single command. You can use this command to import entries from a different type of keystore. During the import, all new entries in the destination keystore will have the same alias names and protection passwords (for secret keys and private keys). If \f3keytool\fP has difficulties recover the private keys or secret keys from the source keystore, it will prompt you for a password. If it detects alias duplication, it will ask you for a new one, you can specify a new alias or simply allow \f3keytool\fP to overwrite the existing one.
@@ -1134,128 +1153,108 @@ For example, to import entries from a normal JKS type keystore key.jks into a PK
 .nf
 \f3
 .fl
-keytool \-importkeystore
+  keytool \-importkeystore
 .fl
     \-srckeystore key.jks \-destkeystore NONE
 .fl
     \-srcstoretype JKS \-deststoretype PKCS11
 .fl
-    \-srcstorepass changeit \-deststorepass topsecret
+    \-srcstorepass \fP\f4<source keystore password>\fP\f3 \-deststorepass \fP\f4<destination keystore password>\fP\f3
 .fl
 \fP
 .fi
 
 .LP
 .LP
-The importkeystore command can also be used to import a single entry from a source keystore to a destination keystore. In this case, besides the options you see in the above example, you need to specify the alias you want to import. With the srcalias option given, you can also specify the desination alias name in the command line, as well as protection password for a secret/private key and the destination protection password you want. In this way, you can issue a \f3keytool\fP command that will never ask you a question. This makes it very convenient to include a \f3keytool\fP command into a script file, like this:
+The importkeystore command can also be used to import a single entry from a source keystore to a destination keystore. In this case, besides the options you see in the above example, you need to specify the alias you want to import. With the srcalias option given, you can also specify the destination alias name in the command line, as well as protection password for a secret/private key and the destination protection password you want. The following command demonstrates this:
 .LP
 .nf
 \f3
 .fl
-keytool \-importkeystore
+  keytool \-importkeystore
 .fl
     \-srckeystore key.jks \-destkeystore NONE
 .fl
     \-srcstoretype JKS \-deststoretype PKCS11
 .fl
-    \-srcstorepass changeit \-deststorepass topsecret
+    \-srcstorepass \fP\f4<source keystore password>\fP\f3 \-deststorepass \fP\f4<destination keystore password>\fP\f3
 .fl
     \-srcalias myprivatekey \-destalias myoldprivatekey
 .fl
-    \-srckeypass oldkeypass \-destkeypass mynewkeypass
+    \-srckeypass \fP\f4<source entry password>\fP\f3 \-destkeypass \fP\f4<destination entry password>\fP\f3
 .fl
     \-noprompt
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .SS 
-Generating Certificates for a typical SSL Server
-.LP
-.RS 3
-
+Generating Certificates for a Typical SSL Server
 .LP
 .LP
-Keytool commands to generate keypairs and certificates for three entities, namely, Root CA (root), Intermadiate CA (ca), and SSL server (server) are as follows:
+The following are keytool commands to generate keypairs and certificates for three entities, namely, Root CA (root), Intermediate CA (ca), and SSL server (server). Ensure that you store all the certificates in the same keystore. In these examples, it is recommended that you specify RSA as the key algorithm.
 .LP
 .nf
 \f3
 .fl
-keytool \-keystore root.jks \-genkeypair \-alias root \-ext bc:c
+keytool \-genkeypair \-keystore root.jks \-alias root \-ext bc:c
 .fl
-keytool \-keystore ca.jks \-alias ca
+keytool \-genkeypair \-keystore ca.jks \-alias ca \-ext bc:c
 .fl
-keytool \-keystore server.jks \-alias server
+keytool \-genkeypair \-keystore server.jks \-alias server
 .fl
- 
+
 .fl
-keytool \-keystore root.jks \-alias root \-exportcert > root.pem
+keytool \-keystore root.jks \-alias root \-exportcert \-rfc > root.pem
 .fl
- 
+
 .fl
-keytool \-keystore ca.jks \-certreq \-alias ca | keytool \-keystore root.jks \-gencert \-alias root \-ext BC=0 > ca.pem
+keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore ca.jks \-certreq \-alias ca | keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore root.jks \-gencert \-alias root \-ext BC=0 \-rfc > ca.pem
 .fl
 keytool \-keystore ca.jks \-importcert \-alias ca \-file ca.pem
 .fl
- 
+
 .fl
-keytool \-keystore server.jks \-certreq \-alias server | keytool \-keystore ca.jks \-gencert \-alias ca \-ext ku:c=dig,kE >server.pem 
+keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore server.jks \-certreq \-alias server | keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore ca.jks \-gencert \-alias ca \-ext ku:c=dig,kE \-rfc > server.pem
 .fl
 cat root.pem ca.pem server.pem | keytool \-keystore server.jks \-importcert \-alias server
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .SH "TERMINOLOGY and WARNINGS"
 .LP
-
-.LP
 .SS 
 KeyStore
 .LP
-.RS 3
-
 .LP
 A keystore is a storage facility for cryptographic keys and certificates.
-.RE
+.LP
 .RS 3
-.TP 2
-o
 .TP 2
 o
 \f3KeyStore Entries\fP 
-.RS 3
-
 .LP
 Keystores may have different types of entries. The two most applicable entry types for \f3keytool\fP include: 
 .RS 3
 .TP 3
 1.
-\f3key entries\fP \- each holds very sensitive cryptographic key information, which is stored in a protected format to prevent unauthorized access. Typically, a key stored in this type of entry is a secret key, or a private key accompanied by the certificate "chain" for the corresponding public key. The \f3keytool\fP can handle both types od entry, while \f3jarsigner\fP tool only handle the latter type of entry, that is private keys and their associated certificate chains. 
+\f3key entries\fP \- each holds very sensitive cryptographic key information, which is stored in a protected format to prevent unauthorized access. Typically, a key stored in this type of entry is a secret key, or a private key accompanied by the certificate "chain" for the corresponding public key. The \f3keytool\fP can handle both types of entries, while the \f3jarsigner\fP tool only handle the latter type of entry, that is private keys and their associated certificate chains. 
 .TP 3
 2.
 \f3trusted certificate entries\fP \- each contains a single public key certificate belonging to another party. It is called a "trusted certificate" because the keystore owner trusts that the public key in the certificate indeed belongs to the identity identified by the "subject" (owner) of the certificate. The issuer of the certificate vouches for this, by signing the certificate. 
 .RE
-
-.LP
-.RE
 .TP 2
 o
 \f3KeyStore Aliases\fP 
-.RS 3
 .LP
-All keystore entries (key and trusted certificate entries) are accessed via unique \f2aliases\fP.
+All keystore entries (key and trusted certificate entries) are accessed via unique \f2aliases\fP. 
 .LP
+An alias is specified when you add an entity to the keystore using the \-genseckey command to generate a secret key, \-genkeypair command to generate a key pair (public and private key) or the \-importcert command to add a certificate or certificate chain to the list of trusted certificates. Subsequent \f3keytool\fP commands must use this same alias to refer to the entity. 
 .LP
-An alias is specified when you add an entity to the keystore using the \-genseckey command to generate a secret key, \-genkeypair command to generate a key pair (public and private key) or the \-importcert command to add a certificate or certificate chain to the list of trusted certificates. Subsequent \f3keytool\fP commands must use this same alias to refer to the entity.
-.LP
-.LP
-For example, suppose you use the alias \f2duke\fP to generate a new public/private key pair and wrap the public key into a self\-signed certificate (see Certificate Chains) via the following command:
-.LP
+For example, suppose you use the alias \f2duke\fP to generate a new public/private key pair and wrap the public key into a self\-signed certificate (see Certificate Chains) via the following command: 
 .nf
 \f3
 .fl
@@ -1263,9 +1262,8 @@ For example, suppose you use the alias \f2duke\fP to generate a new public/priva
 .fl
 \fP
 .fi
-
 .LP
-This specifies an inital password of "dukekeypasswd" required by subsequent commands to access the private key assocated with the alias \f2duke\fP. If you later want to change duke's private key password, you use a command like the following: 
+This specifies an initial password of "dukekeypasswd" required by subsequent commands to access the private key associated with the alias \f2duke\fP. If you later want to change duke's private key password, you use a command like the following: 
 .nf
 \f3
 .fl
@@ -1273,49 +1271,37 @@ This specifies an inital password of "dukekeypasswd" required by subsequent comm
 .fl
 \fP
 .fi
-
 .LP
 This changes the password from "dukekeypasswd" to "newpass". 
 .LP
-Please note: A password should not actually be specified on a command line or in a script unless it is for testing purposes, or you are on a secure system. If you don't specify a required password option on a command line, you will be prompted for it.
-.LP
-.RE
+Please note: A password should not actually be specified on a command line or in a script unless it is for testing purposes, or you are on a secure system. If you don't specify a required password option on a command line, you will be prompted for it.   
 .TP 2
 o
 \f3KeyStore Implementation\fP 
-.RS 3
+.LP
 The \f2KeyStore\fP class provided in the \f2java.security\fP package supplies well\-defined interfaces to access and modify the information in a keystore. It is possible for there to be multiple different concrete implementations, where each implementation is that for a particular \f2type\fP of keystore. 
 .LP
-Currently, two command\-line tools (\f3keytool\fP and \f3jarsigner\fP) and a GUI\-based tool named \f3Policy Tool\fP make use of keystore implementations. Since \f2KeyStore\fP is publicly available, users can write additional security applications that use it.
+Currently, two command\-line tools (\f3keytool\fP and \f3jarsigner\fP) and a GUI\-based tool named \f3Policy Tool\fP make use of keystore implementations. Since \f2KeyStore\fP is publicly available, users can write additional security applications that use it. 
 .LP
-.LP
-There is a built\-in default implementation, provided by Sun Microsystems. It implements the keystore as a file, utilizing a proprietary keystore type (format) named "JKS". It protects each private key with its individual password, and also protects the integrity of the entire keystore with a (possibly different) password.
-.LP
+There is a built\-in default implementation, provided by Oracle. It implements the keystore as a file, utilizing a proprietary keystore type (format) named "JKS". It protects each private key with its individual password, and also protects the integrity of the entire keystore with a (possibly different) password. 
 .LP
 Keystore implementations are provider\-based. More specifically, the application interfaces supplied by \f2KeyStore\fP are implemented in terms of a "Service Provider Interface" (SPI). That is, there is a corresponding abstract \f2KeystoreSpi\fP class, also in the \f2java.security\fP package, which defines the Service Provider Interface methods that "providers" must implement. (The term "provider" refers to a package or a set of packages that supply a concrete implementation of a subset of services that can be accessed by the Java Security API.) Thus, to provide a keystore implementation, clients must implement a "provider" and supply a KeystoreSpi subclass implementation, as described in 
 .na
 \f2How to Implement a Provider for the Java Cryptography Architecture\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/HowToImplAProvider.html.
+http://download.oracle.com/javase/7/docs/technotes/guides/security/crypto/HowToImplAProvider.html. 
 .LP
+Applications can choose different \f2types\fP of keystore implementations from different providers, using the "getInstance" factory method supplied in the \f2KeyStore\fP class. A keystore type defines the storage and data format of the keystore information, and the algorithms used to protect private/secret keys in the keystore and the integrity of the keystore itself. Keystore implementations of different types are not compatible. 
 .LP
-Applications can choose different \f2types\fP of keystore implementations from different providers, using the "getInstance" factory method supplied in the \f2KeyStore\fP class. A keystore type defines the storage and data format of the keystore information, and the algorithms used to protect private/secret keys in the keystore and the integrity of the keystore itself. Keystore implementations of different types are not compatible.
+\f3keytool\fP works on any file\-based keystore implementation. (It treats the keystore location that is passed to it at the command line as a filename and converts it to a FileInputStream, from which it loads the keystore information.) The \f3jarsigner\fP and \f3policytool\fP tools, on the other hand, can read a keystore from any location that can be specified using a URL. 
 .LP
+For \f3keytool\fP and \f3jarsigner\fP, you can specify a keystore type at the command line, via the \f2\-storetype\fP option. For \f3Policy Tool\fP, you can specify a keystore type via the "Keystore" menu. 
 .LP
-\f3keytool\fP works on any file\-based keystore implementation. (It treats the keytore location that is passed to it at the command line as a filename and converts it to a FileInputStream, from which it loads the keystore information.) The \f3jarsigner\fP and \f3policytool\fP tools, on the other hand, can read a keystore from any location that can be specified using a URL.
+If you don't explicitly specify a keystore type, the tools choose a keystore implementation based simply on the value of the \f2keystore.type\fP property specified in the security properties file. The security properties file is called \f2java.security\fP, and it resides in the security properties directory, \f2java.home\fP/lib/security, where \f2java.home\fP is the runtime environment's directory (the \f2jre\fP directory in the SDK or the top\-level directory of the Java 2 Runtime Environment).  
 .LP
+Each tool gets the \f2keystore.type\fP value and then examines all the currently\-installed providers until it finds one that implements keystores of that type. It then uses the keystore implementation from that provider. 
 .LP
-For \f3keytool\fP and \f3jarsigner\fP, you can specify a keystore type at the command line, via the \f2\-storetype\fP option. For \f3Policy Tool\fP, you can specify a keystore type via the "Keystore" menu.
-.LP
-.LP
-If you don't explicitly specify a keystore type, the tools choose a keystore implementation based simply on the value of the \f2keystore.type\fP property specified in the security properties file. The security properties file is called \f2java.security\fP, and it resides in the security properties directory, \f2java.home\fP/lib/security, where \f2java.home\fP is the runtime environment's directory (the \f2jre\fP directory in the SDK or the top\-level directory of the Java 2 Runtime Environment).
-.LP
-.LP
-Each tool gets the \f2keystore.type\fP value and then examines all the currently\-installed providers until it finds one that implements keystores of that type. It then uses the keystore implementation from that provider.
-.LP
-.LP
-The \f2KeyStore\fP class defines a static method named \f2getDefaultType\fP that lets applications and applets retrieve the value of the \f2keystore.type\fP property. The following line of code creates an instance of the default keystore type (as specified in the \f2keystore.type\fP property):
-.LP
+The \f2KeyStore\fP class defines a static method named \f2getDefaultType\fP that lets applications and applets retrieve the value of the \f2keystore.type\fP property. The following line of code creates an instance of the default keystore type (as specified in the \f2keystore.type\fP property): 
 .nf
 \f3
 .fl
@@ -1323,11 +1309,8 @@ The \f2KeyStore\fP class defines a static method named \f2getDefaultType\fP that
 .fl
 \fP
 .fi
-
 .LP
-.LP
-The default keystore type is "jks" (the proprietary type of the keystore implementation provided by Sun). This is specified by the following line in the security properties file:
-.LP
+The default keystore type is "jks" (the proprietary type of the keystore implementation provided by Oracle). This is specified by the following line in the security properties file: 
 .nf
 \f3
 .fl
@@ -1335,14 +1318,10 @@ The default keystore type is "jks" (the proprietary type of the keystore impleme
 .fl
 \fP
 .fi
-
 .LP
+To have the tools utilize a keystore implementation other than the default, you can change that line to specify a different keystore type. 
 .LP
-To have the tools utilize a keystore implementation other than the default, you can change that line to specify a different keystore type.
-.LP
-.LP
-For example, if you have a provider package that supplies a keystore implementation for a keystore type called "pkcs12", change the line to
-.LP
+For example, if you have a provider package that supplies a keystore implementation for a keystore type called "pkcs12", change the line to 
 .nf
 \f3
 .fl
@@ -1350,50 +1329,45 @@ For example, if you have a provider package that supplies a keystore implementat
 .fl
 \fP
 .fi
+.LP
+Note: case doesn't matter in keystore type designations. For example, "JKS" would be considered the same as "jks".  
+.RE
 
 .LP
-Note: case doesn't matter in keystore type designations. For example, "JKS" would be considered the same as "jks".
-.RE
-.RE
 .SS 
 Certificate
 .LP
+A \f3certificate\fP (also known as a \f3public\-key certificate\fP) is a digitally signed statement from one entity (the \f2issuer\fP), saying that the public key (and some other information) of another entity (the \f2subject\fP) has some specific value. 
 .RS 3
-
-.LP
-A \f3certificate\fP (also known as a \f3public\-key certificate\fP) is a digitally signed statement from one entity (the \f2issuer\fP), saying that the public key (and some other information) of another entity (the \f2subject\fP) has some specific value.
-.RE
-.RS 3
-.TP 2
-o
 .TP 2
 o
 \f3Certificate Terms\fP 
 .RS 3
-
-.LP
-.RS 3
 .TP 3
 Public Keys 
-These are numbers associated with a particular entity, and are intended to be known to everyone who needs to have trusted interactions with that entity. Public keys are used to verify signatures. 
+.LP
+These are numbers associated with a particular entity, and are intended to be known to everyone who needs to have trusted interactions with that entity. Public keys are used to verify signatures.  
 .TP 3
 Digitally Signed 
-If some data is \f2digitally signed\fP it has been stored with the "identity" of an entity, and a signature that proves that entity knows about the data. The data is rendered unforgeable by signing with the entity's private key. 
+.LP
+If some data is \f2digitally signed\fP it has been stored with the "identity" of an entity, and a signature that proves that entity knows about the data. The data is rendered unforgeable by signing with the entity's private key.  
 .TP 3
 Identity 
-A known way of addressing an entity. In some systems the identity is the public key, in others it can be anything from a Unix UID to an Email address to an X.509 Distinguished Name. 
+.LP
+A known way of addressing an entity. In some systems the identity is the public key, in others it can be anything from a Unix UID to an Email address to an X.509 Distinguished Name.  
 .TP 3
 Signature 
-A signature is computed over some data using the private key of an entity (the \f2signer\fP, which in the case of a certificate is also known as the \f2issuer\fP). 
+.LP
+A signature is computed over some data using the private key of an entity (the \f2signer\fP, which in the case of a certificate is also known as the \f2issuer\fP).  
 .TP 3
 Private Keys 
-These are numbers, each of which is supposed to be known only to the particular entity whose private key it is (that is, it's supposed to be kept secret). Private and public keys exist in pairs in all public key cryptography systems (also referred to as "public key crypto systems"). In a typical public key crypto system, such as DSA, a private key corresponds to exactly one public key. Private keys are used to compute signatures. 
+.LP
+These are numbers, each of which is supposed to be known only to the particular entity whose private key it is (that is, it's supposed to be kept secret). Private and public keys exist in pairs in all public key cryptography systems (also referred to as "public key crypto systems"). In a typical public key crypto system, such as DSA, a private key corresponds to exactly one public key. Private keys are used to compute signatures.  
 .TP 3
 Entity 
-An entity is a person, organization, program, computer, business, bank, or something else you are trusting to some degree. 
-.RE
-
 .LP
+An entity is a person, organization, program, computer, business, bank, or something else you are trusting to some degree.  
+.RE
 .LP
 Basically, public key cryptography requires access to users' public keys. In a large\-scale networked environment it is impossible to guarantee that prior relationships between communicating entities have been established or that a trusted repository exists with all used public keys. Certificates were invented as a solution to this public key distribution problem. Now a \f2Certification Authority\fP (CA) can act as a trusted third party. CAs are entities (for example, businesses) that are trusted to sign (issue) certificates for other entities. It is assumed that CAs will only create valid and reliable certificates, as they are bound by legal agreements. There are many public Certification Authorities, such as 
 .na
@@ -1407,26 +1381,22 @@ http://www.thawte.com/,
 .na
 \f2Entrust\fP @
 .fi
-http://www.entrust.com/, and so on. You can also run your own Certification Authority using products such as the Netscape/Microsoft Certificate Servers or the Entrust CA product for your organization.
+http://www.entrust.com/, and so on. You can also run your own Certification Authority using products such as Microsoft Certificate Server or the Entrust CA product for your organization. 
 .LP
+Using \f3keytool\fP, it is possible to display, import, and export certificates. It is also possible to generate self\-signed certificates. 
 .LP
-Using \f3keytool\fP, it is possible to display, import, and export certificates. It is also possible to generate self\-signed certificates.
-.LP
-.LP
-\f3keytool\fP currently handles X.509 certificates.
-.LP
-.RE
+\f3keytool\fP currently handles X.509 certificates.  
 .TP 2
 o
 \f3X.509 Certificates\fP 
-.RS 3
+.LP
 The X.509 standard defines what information can go into a certificate, and describes how to write it down (the data format). All the data in a certificate is encoded using two related standards called ASN.1/DER. \f2Abstract Syntax Notation 1\fP describes data. The \f2Definite Encoding Rules\fP describe a single way to store and transfer that data. 
 .LP
-All X.509 certificates have the following data, in addition to the signature:
-.LP
+All X.509 certificates have the following data, in addition to the signature: 
 .RS 3
 .TP 3
 Version 
+.LP
 This identifies which version of the X.509 standard applies to this certificate, which affects what information can be specified in it. Thus far, three versions are defined. \f3keytool\fP can import and export v1, v2, and v3 certificates. It generates v3 certificates. 
 .LP
 \f2X.509 Version 1\fP has been available since 1988, is widely deployed, and is the most generic. 
@@ -1436,475 +1406,86 @@ This identifies which version of the X.509 standard applies to this certificate,
 \f2X.509 Version 3\fP is the most recent (1996) and supports the notion of extensions, whereby anyone can define an extension and include it in the certificate. Some common extensions in use today are: \f2KeyUsage\fP (limits the use of the keys to particular purposes such as "signing\-only") and \f2AlternativeNames\fP (allows other identities to also be associated with this public key, e.g. DNS names, Email addresses, IP addresses). Extensions can be marked \f2critical\fP to indicate that the extension should be checked and enforced/used. For example, if a certificate has the KeyUsage extension marked critical and set to "keyCertSign" then if this certificate is presented during SSL communication, it should be rejected, as the certificate extension indicates that the associated private key should only be used for signing certificates and not for SSL use.  
 .TP 3
 Serial Number 
-The entity that created the certificate is responsible for assigning it a serial number to distinguish it from other certificates it issues. This information is used in numerous ways, for example when a certificate is revoked its serial number is placed in a Certificate Revocation List (CRL). 
+.LP
+The entity that created the certificate is responsible for assigning it a serial number to distinguish it from other certificates it issues. This information is used in numerous ways, for example when a certificate is revoked its serial number is placed in a Certificate Revocation List (CRL).  
 .TP 3
 Signature Algorithm Identifier 
-This identifies the algorithm used by the CA to sign the certificate. 
+.LP
+This identifies the algorithm used by the CA to sign the certificate.  
 .TP 3
 Issuer Name 
-The X.500 Distinguished Name of the entity that signed the certificate. This is normally a CA. Using this certificate implies trusting the entity that signed this certificate. (Note that in some cases, such as \f2root or top\-level\fP CA certificates, the issuer signs its own certificate.) 
+.LP
+The X.500 Distinguished Name of the entity that signed the certificate. This is normally a CA. Using this certificate implies trusting the entity that signed this certificate. (Note that in some cases, such as \f2root or top\-level\fP CA certificates, the issuer signs its own certificate.)  
 .TP 3
 Validity Period 
-Each certificate is valid only for a limited amount of time. This period is described by a start date and time and an end date and time, and can be as short as a few seconds or almost as long as a century. The validity period chosen depends on a number of factors, such as the strength of the private key used to sign the certificate or the amount one is willing to pay for a certificate. This is the expected period that entities can rely on the public value, if the associated private key has not been compromised. 
+.LP
+Each certificate is valid only for a limited amount of time. This period is described by a start date and time and an end date and time, and can be as short as a few seconds or almost as long as a century. The validity period chosen depends on a number of factors, such as the strength of the private key used to sign the certificate or the amount one is willing to pay for a certificate. This is the expected period that entities can rely on the public value, if the associated private key has not been compromised.  
 .TP 3
 Subject Name 
+.LP
 The name of the entity whose public key the certificate identifies. This name uses the X.500 standard, so it is intended to be unique across the Internet. This is the X.500 Distinguished Name (DN) of the entity, for example, 
 .nf
 \f3
 .fl
-    CN=Java Duke, OU=Java Software Division, O=Sun Microsystems Inc, C=US
+    CN=Java Duke, OU=Java Software Division, O=Oracle Corporation, C=US
 .fl
 \fP
 .fi
-(These refer to the subject's Common Name, Organizational Unit, Organization, and Country.) 
+.LP
+(These refer to the subject's Common Name, Organizational Unit, Organization, and Country.)  
 .TP 3
 Subject Public Key Information 
-This is the public key of the entity being named, together with an algorithm identifier which specifies which public key crypto system this key belongs to and any associated key parameters. 
-.RE
-
 .LP
+This is the public key of the entity being named, together with an algorithm identifier which specifies which public key crypto system this key belongs to and any associated key parameters.  
 .RE
 .TP 2
 o
 \f3Certificate Chains\fP 
-.RS 3
 .LP
-\f3keytool\fP can create and manage keystore "key" entries that each contain a private key and an associated certificate "chain". The first certificate in the chain contains the public key corresponding to the private key.
+\f3keytool\fP can create and manage keystore "key" entries that each contain a private key and an associated certificate "chain". The first certificate in the chain contains the public key corresponding to the private key. 
 .LP
+When keys are first generated (see the \-genkeypair command), the chain starts off containing a single element, a \f2self\-signed certificate\fP. A self\-signed certificate is one for which the issuer (signer) is the same as the subject (the entity whose public key is being authenticated by the certificate). Whenever the \f2\-genkeypair\fP command is called to generate a new public/private key pair, it also wraps the public key into a self\-signed certificate. 
 .LP
-When keys are first generated (see the \-genkeypair command), the chain starts off containing a single element, a \f2self\-signed certificate\fP. A self\-signed certificate is one for which the issuer (signer) is the same as the subject (the entity whose public key is being authenticated by the certificate). Whenever the \f2\-genkeypair\fP command is called to generate a new public/private key pair, it also wraps the public key into a self\-signed certificate.
+Later, after a Certificate Signing Request (CSR) has been generated (see the \-certreq command) and sent to a Certification Authority (CA), the response from the CA is imported (see \-importcert), and the self\-signed certificate is replaced by a chain of certificates. At the bottom of the chain is the certificate (reply) issued by the CA authenticating the subject's public key. The next certificate in the chain is one that authenticates the \f2CA\fP's public key. 
 .LP
+In many cases, this is a self\-signed certificate (that is, a certificate from the CA authenticating its own public key) and the last certificate in the chain. In other cases, the CA may return a chain of certificates. In this case, the bottom certificate in the chain is the same (a certificate signed by the CA, authenticating the public key of the key entry), but the second certificate in the chain is a certificate signed by a \f2different\fP CA, authenticating the public key of the CA you sent the CSR to. Then, the next certificate in the chain will be a certificate authenticating the second CA's key, and so on, until a self\-signed "root" certificate is reached. Each certificate in the chain (after the first) thus authenticates the public key of the signer of the previous certificate in the chain. 
 .LP
-Later, after a Certificate Signing Request (CSR) has been generated (see the \-certreq command) and sent to a Certification Authority (CA), the response from the CA is imported (see \-importcert), and the self\-signed certificate is replaced by a chain of certificates. At the bottom of the chain is the certificate (reply) issued by the CA authenticating the subject's public key. The next certificate in the chain is one that authenticates the \f2CA\fP's public key.
+Many CAs only return the issued certificate, with no supporting chain, especially when there is a flat hierarchy (no intermediates CAs). In this case, the certificate chain must be established from trusted certificate information already stored in the keystore. 
 .LP
+A different reply format (defined by the PKCS#7 standard) also includes the supporting certificate chain, in addition to the issued certificate. Both reply formats can be handled by \f3keytool\fP. 
 .LP
-In many cases, this is a self\-signed certificate (that is, a certificate from the CA authenticating its own public key) and the last certificate in the chain. In other cases, the CA may return a chain of certificates. In this case, the bottom certificate in the chain is the same (a certificate signed by the CA, authenticating the public key of the key entry), but the second certificate in the chain is a certificate signed by a \f2different\fP CA, authenticating the public key of the CA you sent the CSR to. Then, the next certificate in the chain will be a certificate authenticating the second CA's key, and so on, until a self\-signed "root" certificate is reached. Each certificate in the chain (after the first) thus authenticates the public key of the signer of the previous certificate in the chain.
-.LP
-.LP
-Many CAs only return the issued certificate, with no supporting chain, especially when there is a flat hierarchy (no intermediates CAs). In this case, the certificate chain must be established from trusted certificate information already stored in the keystore.
-.LP
-.LP
-A different reply format (defined by the PKCS#7 standard) also includes the supporting certificate chain, in addition to the issued certificate. Both reply formats can be handled by \f3keytool\fP.
-.LP
-.LP
-The top\-level (root) CA certificate is self\-signed. However, the trust into the root's public key does not come from the root certificate itself (anybody could generate a self\-signed certificate with the distinguished name of say, the VeriSign root CA!), but from other sources like a newspaper. The root CA public key is widely known. The only reason it is stored in a certificate is because this is the format understood by most tools, so the certificate in this case is only used as a "vehicle" to transport the root CA's public key. Before you add the root CA certificate to your keystore, you should view it (using the \f2\-printcert\fP option) and compare the displayed fingerprint with the well\-known fingerprint (obtained from a newspaper, the root CA's webpage, etc.).
-.LP
-.RE
+The top\-level (root) CA certificate is self\-signed. However, the trust into the root's public key does not come from the root certificate itself (anybody could generate a self\-signed certificate with the distinguished name of say, the VeriSign root CA!), but from other sources like a newspaper. The root CA public key is widely known. The only reason it is stored in a certificate is because this is the format understood by most tools, so the certificate in this case is only used as a "vehicle" to transport the root CA's public key. Before you add the root CA certificate to your keystore, you should view it (using the \f2\-printcert\fP option) and compare the displayed fingerprint with the well\-known fingerprint (obtained from a newspaper, the root CA's Web page, etc.).   
 .TP 2
 o
 \f3The cacerts Certificates File\fP 
-.RS 3
 .LP
-A certificates file named \f3"cacerts"\fP resides in the security properties directory, \f2java.home\fP/lib/security, where \f2java.home\fP is the runtime environment's directory (the \f2jre\fP directory in the SDK or the top\-level directory of the Java 2 Runtime Environment).
+A certificates file named \f3"cacerts"\fP resides in the security properties directory, \f2java.home\fP/lib/security, where \f2java.home\fP is the runtime environment's directory (the \f2jre\fP directory in the SDK or the top\-level directory of the Java 2 Runtime Environment).  
 .LP
+The "cacerts" file represents a system\-wide keystore with CA certificates. System administrators can configure and manage that file using \f3keytool\fP, specifying "jks" as the keystore type. The "cacerts" keystore file ships with a default set of root CA certificates; list them with the following command: 
+.nf
+\f3
+.fl
+keytool \-list \-keystore \fP\f4java.home\fP\f3/lib/security/cacerts
+.fl
+\fP
+.fi
 .LP
-The "cacerts" file represents a system\-wide keystore with CA certificates. System administrators can configure and manage that file using \f3keytool\fP, specifying "jks" as the keystore type. The "cacerts" keystore file ships with several root CA certificates with the following aliases and X.500 owner distinguished names:
+The initial password of the "cacerts" keystore file is "changeit". System administrators should change that password and the default access permission of that file upon installing the SDK. 
 .LP
-.RS 3
-.TP 2
-*
-\f3Alias\fP: thawtepersonalfreemailca
-.br
-\f3Owner DN\fP: EmailAddress=personal\-freemail@thawte.com,
-.br
-CN=Thawte Personal Freemail CA,
-.br
-OU=Certification Services Division,
-.br
-O=Thawte Consulting, L=Cape Town, ST=Western Cape, C=ZA 
-.TP 2
-*
-\f3Alias\fP: thawtepersonalbasicca
-.br
-\f3Owner DN\fP: EmailAddress=personal\-basic@thawte.com,
-.br
-CN=Thawte Personal Basic CA,
-.br
-OU=Certification Services Division,
-.br
-O=Thawte Consulting, L=Cape Town, ST=Western Cape, C=ZA 
-.TP 2
-*
-\f3Alias\fP: thawtepersonalpremiumca
-.br
-\f3Owner DN\fP: EmailAddress=personal\-premium@thawte.com,
-.br
-CN=Thawte Personal Premium CA,
-.br
-OU=Certification Services Division,
-.br
-O=Thawte Consulting, L=Cape Town, ST=Western Cape, C=ZA 
-.TP 2
-*
-\f3Alias\fP: thawteserverca
-.br
-\f3Owner DN\fP: EmailAddress=server\-certs@thawte.com,
-.br
-CN=Thawte Server CA, OU=Certification Services Division,
-.br
-O=Thawte Consulting cc, L=Cape Town, ST=Western Cape, C=ZA 
-.TP 2
-*
-\f3Alias\fP: thawtepremiumserverca
-.br
-\f3Owner DN\fP: EmailAddress=premium\-server@thawte.com,
-.br
-CN=Thawte Premium Server CA,
-.br
-OU=Certification Services Division,
-.br
-O=Thawte Consulting cc, L=Cape Town, ST=Western Cape, C=ZA 
-.TP 2
-*
-\f3Alias\fP: verisignclass1ca
-.br
-\f3Owner DN\fP: OU=Class 1 Public Primary Certification Authority,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass2ca
-.br
-\f3Owner DN\fP: OU=Class 2 Public Primary Certification Authority,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass3ca
-.br
-\f3Owner DN\fP: OU=Class 3 Public Primary Certification Authority,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignserverca
-.br
-\f3Owner DN\fP: OU=Secure Server Certification Authority,
-.br
-O="RSA Data Security, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass1g2ca
-.br
-\f3Owner DN\fP: OU=VeriSign Trust Network,
-.br
-OU="(c) 1998 VeriSign, Inc. \- For authorized use only",
-.br
-OU=Class 1 Public Primary Certification Authority \- G2,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass1g3ca
-.br
-\f3Owner DN\fP: CN=VeriSign Class 1 Public Primary Certification Authority \- G3, OU="(c) 1999 VeriSign, Inc. \- For authorized use only",
-.br
-OU=VeriSign Trust Network,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass2g2ca
-.br
-\f3Owner DN\fP: OU=VeriSign Trust Network,
-.br
-OU="(c) 1998 VeriSign, Inc. \- For authorized use only",
-.br
-OU=Class 2 Public Primary Certification Authority \- G2,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass2g3ca
-.br
-\f3Owner DN\fP: CN=VeriSign Class 2 Public Primary Certification Authority \- G3,
-.br
-OU="(c) 1999 VeriSign, Inc. \- For authorized use only",
-.br
-OU=VeriSign Trust Network,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass3g2ca
-.br
-\f3Owner DN\fP: OU=VeriSign Trust Network,
-.br
-OU="(c) 1998 VeriSign, Inc. \- For authorized use only",
-.br
-OU=Class 3 Public Primary Certification Authority \- G2,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: verisignclass3g3ca
-.br
-\f3Owner DN\fP: CN=VeriSign Class 3 Public Primary Certification Authority \- G3,
-.br
-OU="(c) 1999 VeriSign, Inc. \- For authorized use only",
-.br
-OU=VeriSign Trust Network,
-.br
-O="VeriSign, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: baltimorecodesigningca
-.br
-\f3Owner DN\fP: CN=Baltimore CyberTrust Code Signing Root,
-.br
-OU=CyberTrust, O=Baltimore, C=IE 
-.TP 2
-*
-\f3Alias\fP: gtecybertrustglobalca
-.br
-\f3Owner DN\fP: CN=GTE CyberTrust Global Root,
-.br
-OU="GTE CyberTrust Solutions, Inc.", O=GTE Corporation, C=US 
-.TP 2
-*
-\f3Alias\fP: baltimorecybertrustca
-.br
-\f3Owner DN\fP: CN=Baltimore CyberTrust Root,
-.br
-OU=CyberTrust, O=Baltimore, C=IE 
-.TP 2
-*
-\f3Alias\fP: gtecybertrust5ca
-.br
-\f3Owner DN\fP: CN=GTE CyberTrust Root 5,
-.br
-OU="GTE CyberTrust Solutions, Inc.", O=GTE Corporation, C=US 
-.TP 2
-*
-\f3Alias\fP: entrustclientca
-.br
-\f3Owner DN\fP: CN=Entrust.net Client Certification Authority,
-.br
-OU=(c) 1999 Entrust.net Limited,
-.br
-OU=www.entrust.net/Client_CA_Info/CPS incorp. by ref. limits liab.,
-.br
-O=Entrust.net, C=US 
-.TP 2
-*
-\f3Alias\fP: entrustglobalclientca
-.br
-\f3Owner DN\fP: CN=Entrust.net Client Certification Authority,
-.br
-OU=(c) 2000 Entrust.net Limited,
-.br
-OU=www.entrust.net/GCCA_CPS incorp. by ref. (limits liab.),
-.br
-O=Entrust.net 
-.TP 2
-*
-\f3Alias\fP: entrust2048ca
-.br
-\f3Owner DN\fP: CN=Entrust.net Certification Authority (2048),
-.br
-OU=(c) 1999 Entrust.net Limited,
-.br
-OU=www.entrust.net/CPS_2048 incorp. by ref. (limits liab.),
-.br
-O=Entrust.net 
-.TP 2
-*
-\f3Alias\fP: entrustsslca
-.br
-\f3Owner DN\fP: CN=Entrust.net Secure Server Certification Authority,
-.br
-OU=(c) 1999 Entrust.net Limited,
-.br
-OU=www.entrust.net/CPS incorp. by ref. (limits liab.),
-.br
-O=Entrust.net, C=US 
-.TP 2
-*
-\f3Alias\fP: entrustgsslca
-.br
-\f3Owner DN\fP: CN=Entrust.net Secure Server Certification Authority,
-.br
-OU=(c) 2000 Entrust.net Limited,
-.br
-OU=www.entrust.net/SSL_CPS incorp. by ref. (limits liab.),
-.br
-O=Entrust.net 
-.TP 2
-*
-\f3Alias\fP: godaddyclass2ca
-.br
-\f3Owner DN\fP: OU=Go Daddy Class 2 Certification Authority,
-.br
-O="The Go Daddy Group, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: starfieldclass2ca
-.br
-\f3Owner DN\fP: OU=Starfield Class 2 Certification Authority,
-.br
-O="Starfield Technologies, Inc.", C=US 
-.TP 2
-*
-\f3Alias\fP: valicertclass2ca
-.br
-\f3Owner DN\fP: EMAILADDRESS=info@valicert.com,
-.br
-CN=http://www.valicert.com/,
-.br
-OU=ValiCert Class 2 Policy Validation Authority,
-.br
-O="ValiCert, Inc.", L=ValiCert Validation Network 
-.TP 2
-*
-\f3Alias\fP: geotrustglobalca
-.br
-\f3Owner DN\fP: CN=GeoTrust Global CA,
-.br
-O=GeoTrust Inc., C=US 
-.TP 2
-*
-\f3Alias\fP: equifaxsecureca
-.br
-\f3Owner DN\fP: OU=Equifax Secure Certificate Authority,
-.br
-O=Equifax, C=US 
-.TP 2
-*
-\f3Alias\fP: equifaxsecureebusinessca1
-.br
-\f3Owner DN\fP: CN=Equifax Secure eBusiness CA\-1,
-.br
-O=Equifax Secure Inc., C=US 
-.TP 2
-*
-\f3Alias\fP: equifaxsecureebusinessca2
-.br
-\f3Owner DN\fP: OU=Equifax Secure eBusiness CA\-2,
-.br
-O=Equifax Secure, C=US 
-.TP 2
-*
-\f3Alias\fP: equifaxsecureglobalebusinessca1
-.br
-\f3Owner DN\fP: CN=Equifax Secure Global eBusiness CA\-1,
-.br
-O=Equifax Secure Inc., C=US 
-.TP 2
-*
-\f3Alias\fP: soneraclass1ca
-.br
-\f3Owner DN\fP: CN=Sonera Class1 CA, O=Sonera, C=FI 
-.TP 2
-*
-\f3Alias\fP: soneraclass2ca
-.br
-\f3Owner DN\fP: CN=Sonera Class2 CA, O=Sonera, C=FI 
-.TP 2
-*
-\f3Alias\fP: comodoaaaca
-.br
-\f3Owner DN\fP: CN=AAA Certificate Services,
-.br
-O=Comodo CA Limited, L=Salford, ST=Greater Manchester, C=GB 
-.TP 2
-*
-\f3Alias\fP: addtrustclass1ca
-.br
-\f3Owner DN\fP: CN=AddTrust Class 1 CA Root,
-.br
-OU=AddTrust TTP Network, O=AddTrust AB, C=SE 
-.TP 2
-*
-\f3Alias\fP: addtrustexternalca
-.br
-\f3Owner DN\fP: CN=AddTrust External CA Root,
-.br
-OU=AddTrust External TTP Network, O=AddTrust AB, C=SE 
-.TP 2
-*
-\f3Alias\fP: addtrustqualifiedca
-.br
-\f3Owner DN\fP: CN=AddTrust Qualified CA Root,
-.br
-OU=AddTrust TTP Network, O=AddTrust AB, C=SE 
-.TP 2
-*
-\f3Alias\fP: utnuserfirsthardwareca
-.br
-\f3Owner DN\fP: CN=UTN\-USERFirst\-Hardware,
-.br
-OU=http://www.usertrust.com, O=The USERTRUST Network,
-.br
-L=Salt Lake City, ST=UT, C=US 
-.TP 2
-*
-\f3Alias\fP: utnuserfirstclientauthemailca
-.br
-\f3Owner DN\fP: CN=UTN\-USERFirst\-Client Authentication and Email,
-.br
-OU=http://www.usertrust.com, O=The USERTRUST Network,
-.br
-L=Salt Lake City, ST=UT, C=US 
-.TP 2
-*
-\f3Alias\fP: utndatacorpsgcca
-.br
-\f3Owner DN\fP: CN=UTN \- DATACorp SGC,
-.br
-OU=http://www.usertrust.com, O=The USERTRUST Network,
-.br
-L=Salt Lake City, ST=UT, C=US 
-.TP 2
-*
-\f3Alias\fP: utnuserfirstobjectca
-.br
-\f3Owner DN\fP: CN=UTN\-USERFirst\-Object,
-.br
-OU=http://www.usertrust.com, O=The USERTRUST Network,
-.br
-L=Salt Lake City, ST=UT, C=US 
-.RE
-
-.LP
-.LP
-The initial password of the "cacerts" keystore file is "changeit". System administrators should change that password and the default access permission of that file upon installing the SDK.
-.LP
-.RS 3
-
-.LP
-
-.LP
-\f3IMPORTANT: Verify Your \fP\f4cacerts\fP\f3 File\fP
-.br
-
-.LP
-Since you trust the CAs in the \f2cacerts\fP file as entities for signing and issuing certificates to other entities, you must manage the \f2cacerts\fP file carefully. The \f2cacerts\fP file should contain only certificates of the CAs you trust. It is your responsibility to verify the trusted root CA certificates bundled in the \f2cacerts\fP file and make your own trust decisions. To remove an untrusted CA certificate from the \f2cacerts\fP file, use the delete option of the \f2keytool\fP command. You can find the \f2cacerts\fP file in the JRE installation directory. Contact your system administrator if you do not have permission to edit this file.
-.br
-
-.LP
-.RE
-
-.LP
-.RE
+\f3IMPORTANT: Verify Your \fP\f4cacerts\fP\f3 File\fP: Since you trust the CAs in the \f2cacerts\fP file as entities for signing and issuing certificates to other entities, you must manage the \f2cacerts\fP file carefully. The \f2cacerts\fP file should contain only certificates of the CAs you trust. It is your responsibility to verify the trusted root CA certificates bundled in the \f2cacerts\fP file and make your own trust decisions. To remove an untrusted CA certificate from the \f2cacerts\fP file, use the delete option of the \f2keytool\fP command. You can find the \f2cacerts\fP file in the JRE installation directory. Contact your system administrator if you do not have permission to edit this file.  
 .TP 2
 o
 \f3The Internet RFC 1421 Certificate Encoding Standard\fP 
-.RS 3
 .LP
-Certificates are often stored using the printable encoding format defined by the Internet RFC 1421 standard, instead of their binary encoding. This certificate format, also known as "Base 64 encoding", facilitates exporting certificates to other applications by email or through some other mechanism.
+Certificates are often stored using the printable encoding format defined by the Internet RFC 1421 standard, instead of their binary encoding. This certificate format, also known as "Base 64 encoding", facilitates exporting certificates to other applications by email or through some other mechanism. 
 .LP
+Certificates read by the \f2\-importcert\fP and \f2\-printcert\fP commands can be in either this format or binary encoded. 
 .LP
-Certificates read by the \f2\-importcert\fP and \f2\-printcert\fP commands can be in either this format or binary encoded.
+The \f2\-exportcert\fP command by default outputs a certificate in binary encoding, but will instead output a certificate in the printable encoding format, if the \f2\-rfc\fP option is specified. 
 .LP
+The \f2\-list\fP command by default prints the SHA1 fingerprint of a certificate. If the \f2\-v\fP option is specified, the certificate is printed in human\-readable format, while if the \f2\-rfc\fP option is specified, the certificate is output in the printable encoding format. 
 .LP
-The \f2\-exportcert\fP command by default outputs a certificate in binary encoding, but will instead output a certificate in the printable encoding format, if the \f2\-rfc\fP option is specified.
-.LP
-.LP
-The \f2\-list\fP command by default prints the SHA1 fingerprint of a certificate. If the \f2\-v\fP option is specified, the certificate is printed in human\-readable format, while if the \f2\-rfc\fP option is specified, the certificate is output in the printable encoding format.
-.LP
-.LP
-In its printable encoding format, the encoded certificate is bounded at the beginning by
-.LP
+In its printable encoding format, the encoded certificate is bounded at the beginning by 
 .nf
 \f3
 .fl
@@ -1912,11 +1493,8 @@ In its printable encoding format, the encoded certificate is bounded at the begi
 .fl
 \fP
 .fi
-
 .LP
-.LP
-and at the end by
-.LP
+and at the end by 
 .nf
 \f3
 .fl
@@ -1925,23 +1503,21 @@ and at the end by
 \fP
 .fi
 .RE
-.RE
 
 .LP
 .SS 
 X.500 Distinguished Names
 .LP
-.RS 3
-
 .LP
-X.500 Distinguished Names are used to identify entities, such as those which are named by the \f2subject\fP and \f2issuer\fP (signer) fields of X.509 certificates. \f3keytool\fP supports the following subparts: 
+X.500 Distinguished Names are used to identify entities, such as those which are named by the \f2subject\fP and \f2issuer\fP (signer) fields of X.509 certificates. \f3keytool\fP supports the following subparts:
+.LP
 .RS 3
 .TP 2
 o
 \f2commonName\fP \- common name of a person, e.g., "Susan Jones" 
 .TP 2
 o
-\f2organizationUnit\fP \- small organization (e.g, department or division) name, e.g., "Purchasing" 
+\f2organizationUnit\fP \- small organization (e.g., department or division) name, e.g., "Purchasing" 
 .TP 2
 o
 \f2organizationName\fP \- large organization name, e.g., "ABCSystems, Inc." 
@@ -1975,7 +1551,7 @@ where all the italicized items represent actual values and the above keywords ar
 .nf
 \f3
 .fl
-       CN=commonName
+        CN=commonName
 .fl
         OU=organizationUnit
 .fl
@@ -1997,17 +1573,19 @@ A sample distinguished name string is
 .nf
 \f3
 .fl
-CN=Mark Smith, OU=JavaSoft, O=Sun, L=Cupertino, S=California, C=US
+CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino, S=California, C=US
 .fl
 \fP
 .fi
 
 .LP
-and a sample command using such a string is 
+.LP
+and a sample command using such a string is
+.LP
 .nf
 \f3
 .fl
-keytool \-genkeypair \-dname "CN=Mark Smith, OU=JavaSoft, O=Sun, L=Cupertino,
+keytool \-genkeypair \-dname "CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino,
 .fl
 S=California, C=US" \-alias mark
 .fl
@@ -2024,7 +1602,7 @@ Order matters; each subcomponent must appear in the designated order. However, i
 .nf
 \f3
 .fl
-CN=Steve Meier, OU=SunSoft, O=Sun, C=US
+CN=Steve Meier, OU=Java, O=Oracle, C=US
 .fl
 \fP
 .fi
@@ -2036,7 +1614,7 @@ If a distinguished name string value contains a comma, the comma must be escaped
 .nf
 \f3
 .fl
-   cn=peter schuster, o=Sun Microsystems\\, Inc., o=sun, c=us
+   cn=Peter Schuster, ou=Java\\, Product Development, o=Oracle, c=US
 .fl
 \fP
 .fi
@@ -2045,14 +1623,12 @@ If a distinguished name string value contains a comma, the comma must be escaped
 .LP
 It is never necessary to specify a distinguished name string on a command line. If it is needed for a command, but not supplied on the command line, the user is prompted for each of the subcomponents. In this case, a comma does not need to be escaped by a "\\".
 .LP
-.RE
 .SS 
 WARNING Regarding Importing Trusted Certificates
 .LP
-.RS 3
-
 .LP
-IMPORTANT: Be sure to check a certificate very carefully before importing it as a trusted certificate! 
+IMPORTANT: Be sure to check a certificate very carefully before importing it as a trusted certificate!
+.LP
 .LP
 View it first (using the \f2\-printcert\fP command, or the \f2\-importcert\fP command without the \f2\-noprompt\fP option), and make sure that the displayed certificate fingerprint(s) match the expected ones. For example, suppose someone sends or emails you a certificate, and you put it in a file named \f2/tmp/cert\fP. Before you consider adding the certificate to your list of trusted certificates, you can execute a \f2\-printcert\fP command to view its fingerprints, as in
 .LP
@@ -2083,16 +1659,14 @@ View it first (using the \f2\-printcert\fP command, or the \f2\-importcert\fP co
 .fi
 
 .LP
-Then call or otherwise contact the person who sent the certificate, and compare the fingerprint(s) that you see with the ones that they show. Only if the fingerprints are equal is it guaranteed that the certificate has not been replaced in transit with somebody else's (for example, an attacker's) certificate. If such an attack took place, and you did not check the certificate before you imported it, you would end up trusting anything the attacker has signed (for example, a JAR file with malicious class files inside). 
+.LP
+Then call or otherwise contact the person who sent the certificate, and compare the fingerprint(s) that you see with the ones that they show. Only if the fingerprints are equal is it guaranteed that the certificate has not been replaced in transit with somebody else's (for example, an attacker's) certificate. If such an attack took place, and you did not check the certificate before you imported it, you would end up trusting anything the attacker has signed (for example, a JAR file with malicious class files inside).
+.LP
 .LP
 Note: it is not required that you execute a \f2\-printcert\fP command prior to importing a certificate, since before adding a certificate to the list of trusted certificates in the keystore, the \f2\-importcert\fP command prints out the certificate information and prompts you to verify it. You then have the option of aborting the import operation. Note, however, this is only the case if you invoke the \f2\-importcert\fP command without the \f2\-noprompt\fP option. If the \f2\-noprompt\fP option is given, there is no interaction with the user.
 .LP
-.RE
 .SS 
 Warning Regarding Passwords
-.LP
-.RS 3
-
 .LP
 .LP
 Most commands operating on a keystore require the store password. Some commands require a private/secret key password.
@@ -2103,12 +1677,8 @@ Passwords can be specified on the command line (in the \f2\-storepass\fP and \f2
 .LP
 If you don't specify a required password option on a command line, you will be prompted for it.
 .LP
-.RE
 .SS 
 Warning Regarding Certificate Conformance
-.LP
-.RS 3
-
 .LP
 .LP
 The Internet standard 
@@ -2117,38 +1687,30 @@ The Internet standard
 .fi
 http://tools.ietf.org/rfc/rfc5280.txt has defined a profile on conforming X.509 certificates, which includes what values and value combinations are valid for certificate fields and extensions. \f3keytool\fP has not enforced all these rules so it can generate certificates which do not conform to the standard, and these certificates might be rejected by JRE or other applications. Users should make sure that they provide the correct options for \f2\-dname\fP, \f2\-ext\fP, etc.
 .LP
-.RE
 .SH "SEE ALSO"
-.LP
-
 .LP
 .RS 3
 .TP 2
 o
-.LP
-jar(1) tool documentation  
+jar(1) tool documentation 
 .TP 2
 o
-.LP
-jarsigner(1) tool documentation  
+jarsigner(1) tool documentation 
 .TP 2
 o
-.LP
 the 
 .na
 \f4Security\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/security/index.html trail of the 
+http://download.oracle.com/javase/tutorial/security/index.html trail of the 
 .na
 \f4Java Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial for examples of the use of \f3keytool\fP  
+http://download.oracle.com/javase/tutorial/ for examples of the use of \f3keytool\fP 
 .RE
 
 .LP
 .SH "CHANGES"
-.LP
-
 .LP
 .LP
 The command interface for keytool changed in Java SE 6.
@@ -2184,19 +1746,19 @@ o
 .na
 \f2\-keyclone\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/solaris/keytool.html#keycloneCmd 
+http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#keycloneCmd 
 .TP 2
 o
 .na
 \f2\-identitydb\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/solaris/keytool.html#identitydbCmd 
+http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#identitydbCmd 
 .TP 2
 o
 .na
 \f2\-selfcert\fP @
 .fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/solaris/keytool.html#selfcertCmd 
+http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#selfcertCmd 
 .RE
 
 .LP

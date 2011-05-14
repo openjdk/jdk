@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,16 +95,15 @@ public class Klist {
             }
             break;
         case 'k':
-            if (klist.name == null) {
-                klist.target = KeyTab.getInstance();
-                klist.name = KeyTab.tabName();
-            } else klist.target = KeyTab.getInstance(klist.name);
-            if (klist.target != null) {
-                klist.displayTab();
-            } else {
+            try {
+                KeyTab ktab = KeyTab.getInstance(klist.name);
+                klist.target = ktab;
+                klist.name = ktab.tabName();
+            } catch (Exception e) {
                 klist.displayMessage("KeyTab");
                 System.exit(-1);
             }
+            klist.displayTab();
             break;
         default:
             if (klist.name != null) {
@@ -295,9 +294,10 @@ public class Klist {
 
     void displayMessage(String target) {
         if (name == null) {
-            name = "";
+            System.out.println("Default " + target + " not found.");
+        } else {
+            System.out.println(target + " " + name + " not found.");
         }
-        System.out.println(target + " " + name + " not found.");
     }
     /**
      * Reformats the date from the form -

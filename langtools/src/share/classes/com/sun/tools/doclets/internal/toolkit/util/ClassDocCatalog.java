@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.javadoc.*;
 import java.util.*;
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Configuration;
 
 /**
  * This class acts as an artificial PackageDoc for classes specified
@@ -88,13 +89,16 @@ import java.util.*;
       */
      private Map<String,Set<ClassDoc>> interfaces;
 
+     private Configuration configuration;
+
      /**
       * Construct a new ClassDocCatalog.
       *
       * @param classdocs the array of ClassDocs to catalog
       */
-     public ClassDocCatalog (ClassDoc[] classdocs) {
+     public ClassDocCatalog (ClassDoc[] classdocs, Configuration config) {
          init();
+         this.configuration = config;
          for (int i = 0; i < classdocs.length; i++) {
              addClassDoc(classdocs[i]);
          }
@@ -151,9 +155,10 @@ import java.util.*;
       private void addClass(ClassDoc classdoc, Map<String,Set<ClassDoc>> map) {
 
           PackageDoc pkg = classdoc.containingPackage();
-          if (pkg.isIncluded()) {
-              //No need to catalog this class since it's package is
-              //included on the command line
+          if (pkg.isIncluded() || (configuration.nodeprecated && Util.isDeprecated(pkg))) {
+              //No need to catalog this class if it's package is
+              //included on the command line or if -nodeprecated option is set
+              // and the containing package is marked as deprecated.
               return;
           }
           String key = Util.getPackageName(pkg);

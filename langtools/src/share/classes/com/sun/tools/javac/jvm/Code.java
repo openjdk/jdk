@@ -479,7 +479,12 @@ public class Code {
             state.pop(1);// index
             Type a = state.stack[state.stacksize-1];
             state.pop(1);
-            state.push(types.erasure(types.elemtype(a))); }
+            //sometimes 'null type' is treated as a one-dimensional array type
+            //see Gen.visitLiteral - we should handle this case accordingly
+            Type stackType = a.tag == BOT ?
+                syms.objectType :
+                types.erasure(types.elemtype(a));
+            state.push(stackType); }
             break;
         case goto_:
             markDead();

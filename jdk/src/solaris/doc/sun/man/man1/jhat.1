@@ -1,4 +1,4 @@
-." Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jhat 1 "02 Jun 2010"
+.TH jhat 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jhat \- Java Heap Analysis Tool
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -41,17 +39,17 @@ jhat \- Java Heap Analysis Tool
 .LP
 .SH "PARAMETERS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 options 
 Options, if used, should follow immediately after the command name. 
-.br
 .TP 3
 heap\-dump\-file 
 Java binary heap dump file to be browsed. For a dump file that contains multiple heap dumps, you may specify which dump in the file by appending "#<number> to the file name, i.e. "foo.hprof#3". 
-.SH "DESCRIPTION" 
+.RE
+
+.LP
+.SH "DESCRIPTION"
 .LP
 .LP
 The \f3jhat\fP command parses a java heap dump file and launches a webserver. jhat enables you to browse heap dumps using your favorite webbrowser. jhat supports pre\-designed queries (such as 'show all instances of a known class "Foo"') as well as \f3OQL\fP (\f3O\fPbject \f3Q\fPuery \f3L\fPanguage) \- a SQL\-like query language to query heap dumps. Help on OQL is available from the OQL help page shown by jhat. With the default port, OQL help is available at http://localhost:7000/oqlhelp/
@@ -69,7 +67,7 @@ Use jconsole(1) option to obtain a heap dump via
 .na
 \f2HotSpotDiagnosticMXBean\fP @
 .fi
-http://java.sun.com/javase/6/docs/jre/api/management/extension/com/sun/management/HotSpotDiagnosticMXBean.html at runtime; 
+http://download.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/HotSpotDiagnosticMXBean.html at runtime; 
 .TP 2
 o
 Heap dump will be generated when OutOfMemoryError is thrown by specifying \-XX:+HeapDumpOnOutOfMemoryError VM option; 
@@ -86,7 +84,8 @@ http://java.sun.com/developer/technicalArticles/Programming/HPROF.html.
 .LP
 \f3NOTE:\fP This tool is \f3experimental\fP and may \f3not\fP be available in future versions of the JDK.
 .LP
-.SH "OPTIONS"  
+.SH "OPTIONS"
+.LP
 .RS 3
 .TP 3
 \-stack false/true 
@@ -107,21 +106,22 @@ Specify a baseline heap dump. Objects in both heap dumps with the same object ID
 \-debug int 
 Set debug level for this tool. 0 means no debug output. Set higher values for more verbose modes. 
 .TP 3
-\-version\  
+\-version 
 Report version number and exit. 
 .TP 3
-\-h\  
+\-h 
 Output help message and exit. 
 .TP 3
-\-help\  
+\-help 
 Output help message and exit. 
 .TP 3
-\-J<flag>\  
+\-J<flag> 
 Pass <flag> to the Java virtual machine on which jhat is run. For example, \-J\-Xmx512m to use a maximum heap size of 512MB. 
 .RE
 
 .LP
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
+.LP
 .RS 3
 .TP 2
 o
@@ -136,5 +136,6 @@ o
 .fi
 http://java.sun.com/developer/technicalArticles/Programming/HPROF.html 
 .RE
-.RE
+
+.LP
  

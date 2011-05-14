@@ -289,6 +289,28 @@ inline Node *CountedLoopNode::limit() const { return loopexit() ? loopexit()->li
 inline Node *CountedLoopNode::incr() const { return loopexit() ? loopexit()->incr() : NULL; }
 inline Node *CountedLoopNode::phi() const { return loopexit() ? loopexit()->phi() : NULL; }
 
+//------------------------------LoopLimitNode-----------------------------
+// Counted Loop limit node which represents exact final iterator value:
+// trip_count = (limit - init_trip + stride - 1)/stride
+// final_value= trip_count * stride + init_trip.
+// Use HW instructions to calculate it when it can overflow in integer.
+// Note, final_value should fit into integer since counted loop has
+// limit check: limit <= max_int-stride.
+class LoopLimitNode : public Node {
+  enum { Init=1, Limit=2, Stride=3 };
+ public:
+  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(0,init,limit,stride) {
+    // Put it on the Macro nodes list to optimize during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node *Identity( PhaseTransform *phase );
+};
 
 // -----------------------------IdealLoopTree----------------------------------
 class IdealLoopTree : public ResourceObj {
@@ -775,6 +797,8 @@ public:
 
   bool is_counted_loop( Node *x, IdealLoopTree *loop );
 
+  Node* exact_limit( IdealLoopTree *loop );
+
   // Return a post-walked LoopNode
   IdealLoopTree *get_loop( Node *n ) const {
     // Dead nodes have no loop, so return the top level loop instead
@@ -837,7 +861,6 @@ public:
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
 
   // Return true if proj is for "proj->[region->..]call_uct"
-  // Return true if proj is for "proj->[region->..]call_uct"
   static bool is_uncommon_trap_proj(ProjNode* proj, Deoptimization::DeoptReason reason);
   // Return true for    "if(test)-> proj -> ...
   //                          |
@@ -860,10 +883,11 @@ public:
                                    PhaseIterGVN* igvn);
   static Node* clone_loop_predicates(Node* old_entry, Node* new_entry,
                                          bool move_predicates,
+                                         bool clone_limit_check,
                                          PhaseIdealLoop* loop_phase,
                                          PhaseIterGVN* igvn);
-  Node* clone_loop_predicates(Node* old_entry, Node* new_entry);
-  Node*  move_loop_predicates(Node* old_entry, Node* new_entry);
+  Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
+  Node*  move_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
 
   void eliminate_loop_predicates(Node* entry);
   static Node* skip_loop_predicates(Node* entry);
@@ -873,7 +897,7 @@ public:
   // Find a predicate
   static Node* find_predicate(Node* entry);
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(Node* ctrl,
+  BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
                          Node* init, Node* limit, Node* stride,
                          Node* range, bool upper);
@@ -903,11 +927,11 @@ public:
 
   // Range Check Elimination uses this function!
   // Constrain the main loop iterations so the affine function:
-  //    scale_con * I + offset  <  limit
+  //    low_limit <= scale_con * I + offset  <  upper_limit
   // always holds true.  That is, either increase the number of iterations in
   // the pre-loop or the post-loop until the condition holds true in the main
   // loop.  Scale_con, offset and limit are all loop invariant.
-  void add_constraint( int stride_con, int scale_con, Node *offset, Node *limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit );
+  void add_constraint( int stride_con, int scale_con, Node *offset, Node *low_limit, Node *upper_limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit );
 
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
