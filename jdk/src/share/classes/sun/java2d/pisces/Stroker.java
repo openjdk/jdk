@@ -27,6 +27,8 @@ package sun.java2d.pisces;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import static java.lang.Math.ulp;
+import static java.lang.Math.sqrt;
 
 import sun.awt.geom.PathConsumer2D;
 
@@ -130,7 +132,7 @@ final class Stroker implements PathConsumer2D {
     private static void computeOffset(final float lx, final float ly,
                                       final float w, final float[] m)
     {
-        final float len = (float)Math.sqrt(lx*lx + ly*ly);
+        final float len = (float) sqrt(lx*lx + ly*ly);
         if (len == 0) {
             m[0] = m[1] = 0;
         } else {
@@ -217,7 +219,7 @@ final class Stroker implements PathConsumer2D {
             // this normal's length is at least 0.5 and at most sqrt(2)/2 (because
             // we know the angle of the arc is > 90 degrees).
             float nx = my - omy, ny = omx - mx;
-            float nlen = (float)Math.sqrt(nx*nx + ny*ny);
+            float nlen = (float) sqrt(nx*nx + ny*ny);
             float scale = lineWidth2/nlen;
             float mmx = nx * scale, mmy = ny * scale;
 
@@ -246,8 +248,8 @@ final class Stroker implements PathConsumer2D {
         // define the bezier curve we're computing.
         // It is computed using the constraints that P1-P0 and P3-P2 are parallel
         // to the arc tangents at the endpoints, and that |P1-P0|=|P3-P2|.
-        float cv = (float)((4.0 / 3.0) * Math.sqrt(0.5-cosext2) /
-                           (1.0 + Math.sqrt(cosext2+0.5)));
+        float cv = (float) ((4.0 / 3.0) * sqrt(0.5-cosext2) /
+                            (1.0 + sqrt(cosext2+0.5)));
         // if clockwise, we need to negate cv.
         if (rev) { // rev is equivalent to isCW(omx, omy, mx, my)
             cv = -cv;
@@ -284,28 +286,20 @@ final class Stroker implements PathConsumer2D {
                     false);
     }
 
-    // Return the intersection point of the lines (x0, y0) -> (x1, y1)
-    // and (x0p, y0p) -> (x1p, y1p) in m[0] and m[1]
-    private void computeMiter(final float x0, final float y0,
-                              final float x1, final float y1,
-                              final float x0p, final float y0p,
-                              final float x1p, final float y1p,
-                              final float[] m, int off)
+    // Put the intersection point of the lines (x0, y0) -> (x1, y1)
+    // and (x0p, y0p) -> (x1p, y1p) in m[off] and m[off+1].
+    // If the lines are parallel, it will put a non finite number in m.
+    private void computeIntersection(final float x0, final float y0,
+                                     final float x1, final float y1,
+                                     final float x0p, final float y0p,
+                                     final float x1p, final float y1p,
+                                     final float[] m, int off)
     {
         float x10 = x1 - x0;
         float y10 = y1 - y0;
         float x10p = x1p - x0p;
         float y10p = y1p - y0p;
 
-        // if this is 0, the lines are parallel. If they go in the
-        // same direction, there is no intersection so m[off] and
-        // m[off+1] will contain infinity, so no miter will be drawn.
-        // If they go in the same direction that means that the start of the
-        // current segment and the end of the previous segment have the same
-        // tangent, in which case this method won't even be involved in
-        // miter drawing because it won't be called by drawMiter (because
-        // (mx == omx && my == omy) will be true, and drawMiter will return
-        // immediately).
         float den = x10*y10p - x10p*y10;
         float t = x10p*(y0-y0p) - y10p*(x0-x0p);
         t /= den;
@@ -321,7 +315,8 @@ final class Stroker implements PathConsumer2D {
     {
         if ((mx == omx && my == omy) ||
             (pdx == 0 && pdy == 0) ||
-            (dx == 0 && dy == 0)) {
+            (dx == 0 && dy == 0))
+        {
             return;
         }
 
@@ -332,12 +327,17 @@ final class Stroker implements PathConsumer2D {
             my = -my;
         }
 
-        computeMiter((x0 - pdx) + omx, (y0 - pdy) + omy, x0 + omx, y0 + omy,
-                     (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my,
-                     miter, 0);
+        computeIntersection((x0 - pdx) + omx, (y0 - pdy) + omy, x0 + omx, y0 + omy,
+                            (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my,
+                            miter, 0);
 
         float lenSq = (miter[0]-x0)*(miter[0]-x0) + (miter[1]-y0)*(miter[1]-y0);
 
+        // If the lines are parallel, lenSq will be either NaN or +inf
+        // (actually, I'm not sure if the latter is possible. The important
+        // thing is that -inf is not possible, because lenSq is a square).
+        // For both of those values, the comparison below will fail and
+        // no miter will be drawn, which is correct.
         if (lenSq < miterLimitSq) {
             emitLineTo(miter[0], miter[1], rev);
         }
@@ -566,8 +566,8 @@ final class Stroker implements PathConsumer2D {
 
         // if p1 == p2 && p3 == p4: draw line from p1->p4, unless p1 == p4,
         // in which case ignore if p1 == p2
-        final boolean p1eqp2 = within(x1,y1,x2,y2, 6 * Math.ulp(y2));
-        final boolean p3eqp4 = within(x3,y3,x4,y4, 6 * Math.ulp(y4));
+        final boolean p1eqp2 = within(x1,y1,x2,y2, 6 * ulp(y2));
+        final boolean p3eqp4 = within(x3,y3,x4,y4, 6 * ulp(y4));
         if (p1eqp2 && p3eqp4) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
@@ -583,7 +583,7 @@ final class Stroker implements PathConsumer2D {
         float dotsq = (dx1 * dx4 + dy1 * dy4);
         dotsq = dotsq * dotsq;
         float l1sq = dx1 * dx1 + dy1 * dy1, l4sq = dx4 * dx4 + dy4 * dy4;
-        if (Helpers.within(dotsq, l1sq * l4sq, 4 * Math.ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l4sq, 4 * ulp(dotsq))) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
         }
@@ -693,8 +693,6 @@ final class Stroker implements PathConsumer2D {
         return 8;
     }
 
-    // compute offset curves using bezier spline through t=0.5 (i.e.
-    // ComputedCurve(0.5) == IdealParallelCurve(0.5))
     // return the kind of curve in the right and left arrays.
     private int computeOffsetQuad(float[] pts, final int off,
                                   float[] leftOff, float[] rightOff)
@@ -703,56 +701,67 @@ final class Stroker implements PathConsumer2D {
         final float x2 = pts[off + 2], y2 = pts[off + 3];
         final float x3 = pts[off + 4], y3 = pts[off + 5];
 
-        float dx3 = x3 - x2;
-        float dy3 = y3 - y2;
-        float dx1 = x2 - x1;
-        float dy1 = y2 - y1;
+        final float dx3 = x3 - x2;
+        final float dy3 = y3 - y2;
+        final float dx1 = x2 - x1;
+        final float dy1 = y2 - y1;
 
-        // if p1=p2 or p3=p4 it means that the derivative at the endpoint
-        // vanishes, which creates problems with computeOffset. Usually
-        // this happens when this stroker object is trying to winden
-        // a curve with a cusp. What happens is that curveTo splits
-        // the input curve at the cusp, and passes it to this function.
-        // because of inaccuracies in the splitting, we consider points
-        // equal if they're very close to each other.
-
-        // if p1 == p2 && p3 == p4: draw line from p1->p4, unless p1 == p4,
-        // in which case ignore.
-        final boolean p1eqp2 = within(x1,y1,x2,y2, 6 * Math.ulp(y2));
-        final boolean p2eqp3 = within(x2,y2,x3,y3, 6 * Math.ulp(y3));
-        if (p1eqp2 || p2eqp3) {
-            getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
-            return 4;
-        }
-
-        // if p2-p1 and p4-p3 are parallel, that must mean this curve is a line
-        float dotsq = (dx1 * dx3 + dy1 * dy3);
-        dotsq = dotsq * dotsq;
-        float l1sq = dx1 * dx1 + dy1 * dy1, l3sq = dx3 * dx3 + dy3 * dy3;
-        if (Helpers.within(dotsq, l1sq * l3sq, 4 * Math.ulp(dotsq))) {
-            getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
-            return 4;
-        }
-
-        // this computes the offsets at t=0, 0.5, 1, using the property that
-        // for any bezier curve the vectors p2-p1 and p4-p3 are parallel to
-        // the (dx/dt, dy/dt) vectors at the endpoints.
+        // this computes the offsets at t = 0, 1
         computeOffset(dx1, dy1, lineWidth2, offset[0]);
         computeOffset(dx3, dy3, lineWidth2, offset[1]);
-        float x1p = x1 + offset[0][0]; // start
-        float y1p = y1 + offset[0][1]; // point
-        float x3p = x3 + offset[1][0]; // end
-        float y3p = y3 + offset[1][1]; // point
 
-        computeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff, 2);
-        leftOff[0] = x1p; leftOff[1] = y1p;
-        leftOff[4] = x3p; leftOff[5] = y3p;
-        x1p = x1 - offset[0][0]; y1p = y1 - offset[0][1];
-        x3p = x3 - offset[1][0]; y3p = y3 - offset[1][1];
-        computeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff, 2);
-        rightOff[0] = x1p; rightOff[1] = y1p;
-        rightOff[4] = x3p; rightOff[5] = y3p;
+        leftOff[0]  = x1 + offset[0][0];  leftOff[1] = y1 + offset[0][1];
+        leftOff[4]  = x3 + offset[1][0];  leftOff[5] = y3 + offset[1][1];
+        rightOff[0] = x1 - offset[0][0]; rightOff[1] = y1 - offset[0][1];
+        rightOff[4] = x3 - offset[1][0]; rightOff[5] = y3 - offset[1][1];
+
+        float x1p = leftOff[0]; // start
+        float y1p = leftOff[1]; // point
+        float x3p = leftOff[4]; // end
+        float y3p = leftOff[5]; // point
+
+        // Corner cases:
+        // 1. If the two control vectors are parallel, we'll end up with NaN's
+        //    in leftOff (and rightOff in the body of the if below), so we'll
+        //    do getLineOffsets, which is right.
+        // 2. If the first or second two points are equal, then (dx1,dy1)==(0,0)
+        //    or (dx3,dy3)==(0,0), so (x1p, y1p)==(x1p+dx1, y1p+dy1)
+        //    or (x3p, y3p)==(x3p-dx3, y3p-dy3), which means that
+        //    computeIntersection will put NaN's in leftOff and right off, and
+        //    we will do getLineOffsets, which is right.
+        computeIntersection(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff, 2);
+        float cx = leftOff[2];
+        float cy = leftOff[3];
+
+        if (!(isFinite(cx) && isFinite(cy))) {
+            // maybe the right path is not degenerate.
+            x1p = rightOff[0];
+            y1p = rightOff[1];
+            x3p = rightOff[4];
+            y3p = rightOff[5];
+            computeIntersection(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff, 2);
+            cx = rightOff[2];
+            cy = rightOff[3];
+            if (!(isFinite(cx) && isFinite(cy))) {
+                // both are degenerate. This curve is a line.
+                getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
+                return 4;
+            }
+            // {left,right}Off[0,1,4,5] are already set to the correct values.
+            leftOff[2] = 2*x2 - cx;
+            leftOff[3] = 2*y2 - cy;
+            return 6;
+        }
+
+        // rightOff[2,3] = (x2,y2) - ((left_x2, left_y2) - (x2, y2))
+        // == 2*(x2, y2) - (left_x2, left_y2)
+        rightOff[2] = 2*x2 - cx;
+        rightOff[3] = 2*y2 - cy;
         return 6;
+    }
+
+    private static boolean isFinite(float x) {
+        return (Float.NEGATIVE_INFINITY < x && x < Float.POSITIVE_INFINITY);
     }
 
     // This is where the curve to be processed is put. We give it
@@ -812,12 +821,12 @@ final class Stroker implements PathConsumer2D {
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            float len = (float) sqrt(dxs*dxs + dys*dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            float len = (float) sqrt(dxf*dxf + dyf*dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -834,7 +843,6 @@ final class Stroker implements PathConsumer2D {
         while(it.hasNext()) {
             int curCurveOff = it.next();
 
-            kind = 0;
             switch (type) {
             case 8:
                 kind = computeOffsetCubic(middle, curCurveOff, lp, rp);
@@ -843,24 +851,22 @@ final class Stroker implements PathConsumer2D {
                 kind = computeOffsetQuad(middle, curCurveOff, lp, rp);
                 break;
             }
-            if (kind != 0) {
-                emitLineTo(lp[0], lp[1]);
-                switch(kind) {
-                case 8:
-                    emitCurveTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], lp[6], lp[7], false);
-                    emitCurveTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], rp[6], rp[7], true);
-                    break;
-                case 6:
-                    emitQuadTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], false);
-                    emitQuadTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], true);
-                    break;
-                case 4:
-                    emitLineTo(lp[2], lp[3]);
-                    emitLineTo(rp[0], rp[1], true);
-                    break;
-                }
-                emitLineTo(rp[kind - 2], rp[kind - 1], true);
+            emitLineTo(lp[0], lp[1]);
+            switch(kind) {
+            case 8:
+                emitCurveTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], lp[6], lp[7], false);
+                emitCurveTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], rp[6], rp[7], true);
+                break;
+            case 6:
+                emitQuadTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], false);
+                emitQuadTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], true);
+                break;
+            case 4:
+                emitLineTo(lp[2], lp[3]);
+                emitLineTo(rp[0], rp[1], true);
+                break;
             }
+            emitLineTo(rp[kind - 2], rp[kind - 1], true);
         }
 
         this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;
@@ -887,7 +893,7 @@ final class Stroker implements PathConsumer2D {
             // we rotate it so that the first vector in the control polygon is
             // parallel to the x-axis. This will ensure that rotated quarter
             // circles won't be subdivided.
-            final float hypot = (float)Math.sqrt(x12 * x12 + y12 * y12);
+            final float hypot = (float) sqrt(x12 * x12 + y12 * y12);
             final float cos = x12 / hypot;
             final float sin = y12 / hypot;
             final float x1 = cos * pts[0] + sin * pts[1];
@@ -976,12 +982,12 @@ final class Stroker implements PathConsumer2D {
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            float len = (float) sqrt(dxs*dxs + dys*dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            float len = (float) sqrt(dxf*dxf + dyf*dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -999,20 +1005,18 @@ final class Stroker implements PathConsumer2D {
             int curCurveOff = it.next();
 
             kind = computeOffsetCubic(middle, curCurveOff, lp, rp);
-            if (kind != 0) {
-                emitLineTo(lp[0], lp[1]);
-                switch(kind) {
-                case 8:
-                    emitCurveTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], lp[6], lp[7], false);
-                    emitCurveTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], rp[6], rp[7], true);
-                    break;
-                case 4:
-                    emitLineTo(lp[2], lp[3]);
-                    emitLineTo(rp[0], rp[1], true);
-                    break;
-                }
-                emitLineTo(rp[kind - 2], rp[kind - 1], true);
+            emitLineTo(lp[0], lp[1]);
+            switch(kind) {
+            case 8:
+                emitCurveTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], lp[6], lp[7], false);
+                emitCurveTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], rp[6], rp[7], true);
+                break;
+            case 4:
+                emitLineTo(lp[2], lp[3]);
+                emitLineTo(rp[0], rp[1], true);
+                break;
             }
+            emitLineTo(rp[kind - 2], rp[kind - 1], true);
         }
 
         this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;
@@ -1050,12 +1054,12 @@ final class Stroker implements PathConsumer2D {
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float)Math.sqrt(dxs*dxs + dys*dys);
+            float len = (float) sqrt(dxs*dxs + dys*dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float)Math.sqrt(dxf*dxf + dyf*dyf);
+            float len = (float) sqrt(dxf*dxf + dyf*dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -1073,20 +1077,18 @@ final class Stroker implements PathConsumer2D {
             int curCurveOff = it.next();
 
             kind = computeOffsetQuad(middle, curCurveOff, lp, rp);
-            if (kind != 0) {
-                emitLineTo(lp[0], lp[1]);
-                switch(kind) {
-                case 6:
-                    emitQuadTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], false);
-                    emitQuadTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], true);
-                    break;
-                case 4:
-                    emitLineTo(lp[2], lp[3]);
-                    emitLineTo(rp[0], rp[1], true);
-                    break;
-                }
-                emitLineTo(rp[kind - 2], rp[kind - 1], true);
+            emitLineTo(lp[0], lp[1]);
+            switch(kind) {
+            case 6:
+                emitQuadTo(lp[0], lp[1], lp[2], lp[3], lp[4], lp[5], false);
+                emitQuadTo(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5], true);
+                break;
+            case 4:
+                emitLineTo(lp[2], lp[3]);
+                emitLineTo(rp[0], rp[1], true);
+                break;
             }
+            emitLineTo(rp[kind - 2], rp[kind - 1], true);
         }
 
         this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;

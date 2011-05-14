@@ -31,7 +31,6 @@ import com.sun.jdi.connect.*;
 
 import java.util.Map;
 import java.util.List;
-import java.util.Iterator;
 
 import java.io.PrintWriter;
 import java.io.FileWriter;
@@ -155,7 +154,8 @@ public class Trace {
      */
     VirtualMachine launchTarget(String mainArgs) {
         LaunchingConnector connector = findLaunchingConnector();
-        Map arguments = connectorArguments(connector, mainArgs);
+        Map<String, Connector.Argument> arguments =
+           connectorArguments(connector, mainArgs);
         try {
             return connector.launch(arguments);
         } catch (IOException exc) {
@@ -186,10 +186,8 @@ public class Trace {
      * Find a com.sun.jdi.CommandLineLaunch connector
      */
     LaunchingConnector findLaunchingConnector() {
-        List connectors = Bootstrap.virtualMachineManager().allConnectors();
-        Iterator iter = connectors.iterator();
-        while (iter.hasNext()) {
-            Connector connector = (Connector)iter.next();
+        List<Connector> connectors = Bootstrap.virtualMachineManager().allConnectors();
+        for (Connector connector : connectors) {
             if (connector.name().equals("com.sun.jdi.CommandLineLaunch")) {
                 return (LaunchingConnector)connector;
             }
@@ -200,8 +198,8 @@ public class Trace {
     /**
      * Return the launching connector's arguments.
      */
-    Map connectorArguments(LaunchingConnector connector, String mainArgs) {
-        Map arguments = connector.defaultArguments();
+    Map<String, Connector.Argument> connectorArguments(LaunchingConnector connector, String mainArgs) {
+        Map<String, Connector.Argument> arguments = connector.defaultArguments();
         Connector.Argument mainArg =
                            (Connector.Argument)arguments.get("main");
         if (mainArg == null) {

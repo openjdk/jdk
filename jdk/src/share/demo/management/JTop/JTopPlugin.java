@@ -40,13 +40,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.management.MBeanServerConnection;
+
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
-import com.sun.tools.jconsole.JConsolePlugin;
 import com.sun.tools.jconsole.JConsoleContext;
 import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
+import com.sun.tools.jconsole.JConsolePlugin;
 
 /**
  * JTopPlugin is a subclass to com.sun.tools.jconsole.JConsolePlugin
@@ -70,6 +70,7 @@ public class JTopPlugin extends JConsolePlugin implements PropertyChangeListener
     /*
      * Returns a JTop tab to be added in JConsole.
      */
+    @Override
     public synchronized Map<String, JPanel> getTabs() {
         if (tabs == null) {
             jtop = new JTop();
@@ -86,6 +87,7 @@ public class JTopPlugin extends JConsolePlugin implements PropertyChangeListener
     /*
      * Returns a SwingWorker which is responsible for updating the JTop tab.
      */
+    @Override
     public SwingWorker<?,?> newSwingWorker() {
         return jtop.newSwingWorker();
     }
@@ -101,10 +103,10 @@ public class JTopPlugin extends JConsolePlugin implements PropertyChangeListener
      * Property listener to reset the MBeanServerConnection
      * at reconnection time.
      */
+    @Override
     public void propertyChange(PropertyChangeEvent ev) {
         String prop = ev.getPropertyName();
         if (prop == JConsoleContext.CONNECTION_STATE_PROPERTY) {
-            ConnectionState oldState = (ConnectionState)ev.getOldValue();
             ConnectionState newState = (ConnectionState)ev.getNewValue();
             // JConsole supports disconnection and reconnection
             // The MBeanServerConnection will become invalid when

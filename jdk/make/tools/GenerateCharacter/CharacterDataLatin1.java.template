@@ -67,9 +67,35 @@ class CharacterDataLatin1 extends CharacterData {
      */
 
     int getProperties(int ch) {
-		char offset = (char)ch;
+        char offset = (char)ch;
         int props = $$Lookup(offset);
         return props;
+    }
+
+    int getPropertiesEx(int ch) {
+        char offset = (char)ch;
+        int props = $$LookupEx(offset);
+        return props;
+    }
+
+    boolean isOtherLowercase(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherLowercase) != 0;
+    }
+
+    boolean isOtherUppercase(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherUppercase) != 0;
+    }
+
+    boolean isOtherAlphabetic(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskOtherAlphabetic) != 0;
+    }
+
+    boolean isIdeographic(int ch) {
+        int props = getPropertiesEx(ch);
+        return (props & $$maskIdeographic) != 0;
     }
 
     int getType(int ch) {

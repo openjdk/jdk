@@ -100,12 +100,6 @@ public:
   // Pass along the argument to the superclass.
   ModRefBarrierSet(int max_covered_regions) :
     BarrierSet(max_covered_regions) {}
-
-#ifndef PRODUCT
-  // Verifies that the given region contains no modified references.
-  virtual void verify_clean_region(MemRegion mr) = 0;
-#endif
-
 };
 
 #endif // SHARE_VM_MEMORY_MODREFBARRIERSET_HPP

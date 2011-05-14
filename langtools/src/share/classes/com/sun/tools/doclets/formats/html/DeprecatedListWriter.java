@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,15 @@ import com.sun.tools.doclets.formats.html.markup.*;
 public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private static final String[] ANCHORS = new String[] {
-        "interface", "class", "enum", "exception", "error", "annotation_type",
-         "field", "method", "constructor", "enum_constant",
+        "package", "interface", "class", "enum", "exception", "error",
+        "annotation_type", "field", "method", "constructor", "enum_constant",
         "annotation_type_member"
     };
 
     private static final String[] HEADING_KEYS = new String[] {
-        "doclet.Deprecated_Interfaces", "doclet.Deprecated_Classes",
-        "doclet.Deprecated_Enums", "doclet.Deprecated_Exceptions",
-        "doclet.Deprecated_Errors",
+        "doclet.Deprecated_Packages", "doclet.Deprecated_Interfaces",
+        "doclet.Deprecated_Classes", "doclet.Deprecated_Enums",
+        "doclet.Deprecated_Exceptions", "doclet.Deprecated_Errors",
         "doclet.Deprecated_Annotation_Types",
         "doclet.Deprecated_Fields",
         "doclet.Deprecated_Methods", "doclet.Deprecated_Constructors",
@@ -59,9 +59,9 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     };
 
     private static final String[] SUMMARY_KEYS = new String[] {
-        "doclet.deprecated_interfaces", "doclet.deprecated_classes",
-        "doclet.deprecated_enums", "doclet.deprecated_exceptions",
-        "doclet.deprecated_errors",
+        "doclet.deprecated_packages", "doclet.deprecated_interfaces",
+        "doclet.deprecated_classes", "doclet.deprecated_enums",
+        "doclet.deprecated_exceptions", "doclet.deprecated_errors",
         "doclet.deprecated_annotation_types",
         "doclet.deprecated_fields",
         "doclet.deprecated_methods", "doclet.deprecated_constructors",
@@ -70,7 +70,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     };
 
     private static final String[] HEADER_KEYS = new String[] {
-        "doclet.Interface", "doclet.Class",
+        "doclet.Package", "doclet.Interface", "doclet.Class",
         "doclet.Enum", "doclet.Exceptions",
         "doclet.Errors",
         "doclet.AnnotationType",
@@ -116,7 +116,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             DeprecatedListWriter depr =
                    new DeprecatedListWriter(configuration, filename);
             depr.generateDeprecatedListFile(
-                   new DeprecatedAPIListBuilder(configuration.root));
+                   new DeprecatedAPIListBuilder(configuration));
             depr.close();
         } catch (IOException exc) {
             configuration.standardmessage.error(
@@ -149,8 +149,14 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 memberTableHeader[0] = configuration.getText("doclet.0_and_1",
                         configuration.getText(HEADER_KEYS[i]),
                         configuration.getText("doclet.Description"));
-                writers[i].addDeprecatedAPI(deprapi.getList(i),
-                        HEADING_KEYS[i], memberTableSummary, memberTableHeader, div);
+                // DeprecatedAPIListBuilder.PACKAGE == 0, so if i == 0, it is
+                // a PackageDoc.
+                if (i == DeprecatedAPIListBuilder.PACKAGE)
+                    addPackageDeprecatedAPI(deprapi.getList(i),
+                            HEADING_KEYS[i], memberTableSummary, memberTableHeader, div);
+                else
+                    writers[i - 1].addDeprecatedAPI(deprapi.getList(i),
+                            HEADING_KEYS[i], memberTableSummary, memberTableHeader, div);
             }
         }
         body.addContent(div);
