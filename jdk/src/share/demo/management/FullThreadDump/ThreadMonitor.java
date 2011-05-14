@@ -39,7 +39,6 @@ import java.lang.management.LockInfo;
 import java.lang.management.MonitorInfo;
 import javax.management.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * Example of using the java.lang.management API to dump stack trace
@@ -167,7 +166,8 @@ public class ThreadMonitor {
        }
     }
 
-    private void printMonitorInfo(ThreadInfo ti, MonitorInfo[] monitors) {
+    private void printMonitorInfo(ThreadInfo ti) {
+       MonitorInfo[] monitors = ti.getLockedMonitors();
        System.out.println(INDENT + "Locked monitors: count = " + monitors.length);
        for (MonitorInfo mi : monitors) {
            System.out.println(INDENT + "  - " + mi + " locked at ");
@@ -201,6 +201,7 @@ public class ThreadMonitor {
            ThreadInfo[] infos = tmbean.getThreadInfo(tids, true, true);
            for (ThreadInfo ti : infos) {
                printThreadInfo(ti);
+               printMonitorInfo(ti);
                printLockInfo(ti.getLockedSynchronizers());
                System.out.println();
            }

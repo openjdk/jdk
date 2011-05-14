@@ -69,8 +69,6 @@ endef
 # Settings and rules to validate the JDK build environment.
 
 ifeq ($(PLATFORM), solaris)
-  FREE_SPACE := $(shell $(DF) -b $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$2;}')
-  TEMP_FREE_SPACE := $(shell $(DF) -b $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$2;}')
   # What kind of system we are using (Variations are Solaris and OpenSolaris)
   OS_VERSION := $(shell uname -r)
   OS_VARIANT_NAME := $(strip $(shell head -1 /etc/release | awk '{print $$1;}') )
@@ -88,8 +86,6 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 ifeq ($(PLATFORM), linux)
-  FREE_SPACE := $(shell $(DF) --sync -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
-  TEMP_FREE_SPACE := $(shell $(DF) --sync -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
   # What kind of system we are using (Variation is the Linux vendor)
   OS_VERSION := $(shell uname -r)
   OS_VARIANT_NAME := $(shell \
@@ -118,8 +114,6 @@ ifeq ($(PLATFORM), linux)
 endif
 
 ifeq ($(PLATFORM), windows)
-  FREE_SPACE := $(shell $(DF) -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
-  TEMP_FREE_SPACE := $(shell $(DF) -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
   # Windows 2000 is 5.0, Windows XP is 5.1, Windows 2003 is 5.2
   #    Assume 5.0 (Windows 2000) if systeminfo does not help
   WINDOWS_MAPPING-5.0 := Windows2000
@@ -714,18 +708,6 @@ sane-outputdir:
 	    "          $(OUTPUTDIR) \n" \
 	    "      Either obtain these permissions or set ALT_OUTPUTDIR. \n" \
 	    "" >> $(ERROR_FILE) ; \
-	fi
-	@#
-	@# OUTPUTDIR must have enough free space...
-	@#
-	@if [ $(FREE_SPACE) -lt $(REQUIRED_FREE_SPACE) ]; then \
-	  $(ECHO) "WARNING: You may not have enough free space in your OUTPUTDIR. The \n" \
-	    "        current value of OUTPUTDIR is \n" \
-	    "            $(OUTPUTDIR) \n" \
-	    "        You need "$(REQUIRED_FREE_SPACE)" Kbytes free on this device to build \n" \
-	    "        and it appears that only "$(FREE_SPACE)" Kbytes are free. \n" \
-	    "        Either obtain more space or set ALT_OUTPUTDIR to a larger disk. \n" \
-	    "" >> $(WARNING_FILE) ; \
 	fi
 
 ######################################################

@@ -38,14 +38,18 @@ import javax.swing.text.*;
  * document. This is used in ScriptShellPanel class as document for editor.
  */
 public class EditableAtEndDocument extends PlainDocument {
+
+    private static final long serialVersionUID = 5358116444851502167L;
     private int mark;
 
+    @Override
     public void insertString(int offset, String text, AttributeSet a)
         throws BadLocationException {
         int len = getLength();
         super.insertString(len, text, a);
     }
 
+    @Override
     public void remove(int offs, int len) throws BadLocationException {
         int start = offs;
         int end = offs + len;

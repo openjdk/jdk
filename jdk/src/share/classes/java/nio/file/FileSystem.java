@@ -391,6 +391,13 @@ public abstract class FileSystem
      *   character is used to separate the subpatterns. Groups cannot be nested.
      *   </p></li>
      *
+     *   <li><p> Leading period<tt>&#47;</tt>dot characters in file name are
+     *   treated as regular characters in match operations. For example,
+     *   the {@code "*"} glob pattern matches file name {@code ".login"}.
+     *   The {@link Files#isHidden} method may be used to test whether a file
+     *   is considered hidden.
+     *   </p></li>
+     *
      *   <li><p> All other characters match themselves in an implementation
      *   dependent manner. This includes characters representing any {@link
      *   FileSystem#getSeparator name-separators}. </p></li>

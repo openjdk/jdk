@@ -1655,6 +1655,14 @@ class MacroAssembler: public Assembler {
   void call_VM_leaf(address entry_point,
                     Register arg_1, Register arg_2, Register arg_3);
 
+  // These always tightly bind to MacroAssembler::call_VM_leaf_base
+  // bypassing the virtual implementation
+  void super_call_VM_leaf(address entry_point);
+  void super_call_VM_leaf(address entry_point, Register arg_1);
+  void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
+  void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
+  void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
+
   // last Java Frame (fills frame anchor)
   void set_last_Java_frame(Register thread,
                            Register last_java_sp,

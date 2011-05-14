@@ -767,7 +767,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 #
 # As a result of the above Decree I believe the America/Rio_Branco
 # timezone shall be modified from UTC-5 to UTC-4 and a new timezone shall
-# be created to represent the the west side of the Para State. I
+# be created to represent the...west side of the Para State. I
 # suggest this new timezone be called Santarem as the most
 # important/populated city in the affected area.
 #
@@ -1365,6 +1365,24 @@ Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 # For now, we'll just record the time in Stanley, since we have no
 # better info.
 
+# From Steffen Thorsen (2011-04-01):
+# The Falkland Islands will not turn back clocks this winter, but stay on
+# daylight saving time.
+#
+# One source:
+# <a href="http://www.falklandnews.com/public/story.cfm?get=5914&source=3">
+# http://www.falklandnews.com/public/story.cfm?get=5914&source=3
+# </a>
+#
+# We have gotten this confirmed by a clerk of the legislative assembly:
+# Normally the clocks revert to Local Mean Time (UTC/GMT -4 hours) on the
+# third Sunday of April at 0200hrs and advance to Summer Time (UTC/GMT -3
+# hours) on the first Sunday of September at 0200hrs.
+#
+# IMPORTANT NOTE: During 2011, on a trial basis, the Falkland Islands
+# will not revert to local mean time, but clocks will remain on Summer
+# time (UTC/GMT - 3 hours) throughout the whole of 2011.  Any long term
+# change to local time following the trial period will be notified.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Falk	1937	1938	-	Sep	lastSun	0:00	1:00	S
 Rule	Falk	1938	1942	-	Mar	Sun>=19	0:00	0	-
@@ -1376,7 +1394,8 @@ Rule	Falk	1984	1985	-	Apr	lastSun	0:00	0	-
 Rule	Falk	1984	only	-	Sep	16	0:00	1:00	S
 Rule	Falk	1985	2000	-	Sep	Sun>=9	0:00	1:00	S
 Rule	Falk	1986	2000	-	Apr	Sun>=16	0:00	0	-
-Rule	Falk	2001	max	-	Apr	Sun>=15	2:00	0	-
+Rule	Falk	2001	2010	-	Apr	Sun>=15	2:00	0	-
+Rule	Falk	2012	max	-	Apr	Sun>=15	2:00	0	-
 Rule	Falk	2001	max	-	Sep	Sun>=1	2:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Stanley	-3:51:24 -	LMT	1890

@@ -24,12 +24,12 @@
 /* @test
    @bug 6596966
    @summary Some JFileChooser mnemonics do not work with sticky keys
- * @library ../../regtesthelpers
- * @build Util
    @run main bug6596966
    @author Pavel Porvatov
 */
 
+
+import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,6 +44,7 @@ public class bug6596966 {
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
+        SunToolkit toolkit = (SunToolkit) SunToolkit.getDefaultToolkit();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -68,17 +69,17 @@ public class bug6596966 {
             }
         });
 
-        Util.blockTillDisplayed(frame);
+        toolkit.realSync();
 
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyPress(KeyEvent.VK_L);
 
-        robot.waitForIdle();
+        toolkit.realSync();
 
-        Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
+        toolkit.getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
                 EventQueue.getMostRecentEventTime(), 0, KeyEvent.VK_L, 'L'));
 
-        robot.waitForIdle();
+        toolkit.realSync();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {

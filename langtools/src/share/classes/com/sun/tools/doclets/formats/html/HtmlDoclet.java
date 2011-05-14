@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,23 +198,27 @@ public class HtmlDoclet extends AbstractDoclet {
             PackageIndexFrameWriter.generate(configuration);
         }
         PackageDoc prev = null, next;
-        for(int i = 0; i < packages.length; i++) {
-            PackageFrameWriter.generate(configuration, packages[i]);
-            next = (i + 1 < packages.length && packages[i+1].name().length() > 0) ?
-                packages[i+1] : null;
-            //If the next package is unnamed package, skip 2 ahead if possible
-            next = (i + 2 < packages.length && next == null) ?
-                packages[i+2]: next;
-            AbstractBuilder packageSummaryBuilder = configuration.
-                getBuilderFactory().getPackageSummaryBuilder(
-                packages[i], prev, next);
-            packageSummaryBuilder.build();
-            if (configuration.createtree) {
-                PackageTreeWriter.generate(configuration,
-                        packages[i], prev, next,
-                        configuration.nodeprecated);
+        for (int i = 0; i < packages.length; i++) {
+            // if -nodeprecated option is set and the package is marked as
+            // deprecated, do not generate the package-summary.html, package-frame.html
+            // and package-tree.html pages for that package.
+            if (!(configuration.nodeprecated && Util.isDeprecated(packages[i]))) {
+                PackageFrameWriter.generate(configuration, packages[i]);
+                next = (i + 1 < packages.length &&
+                        packages[i + 1].name().length() > 0) ? packages[i + 1] : null;
+                //If the next package is unnamed package, skip 2 ahead if possible
+                next = (i + 2 < packages.length && next == null) ? packages[i + 2] : next;
+                AbstractBuilder packageSummaryBuilder =
+                        configuration.getBuilderFactory().getPackageSummaryBuilder(
+                        packages[i], prev, next);
+                packageSummaryBuilder.build();
+                if (configuration.createtree) {
+                    PackageTreeWriter.generate(configuration,
+                            packages[i], prev, next,
+                            configuration.nodeprecated);
+                }
+                prev = packages[i];
             }
-            prev = packages[i];
         }
     }
 

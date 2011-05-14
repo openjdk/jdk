@@ -960,7 +960,7 @@ void Arguments::set_mode_flags(Mode mode) {
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          (char*)Abstract_VM_Version::vm_info_string(), false);
+                          (char*)VM_Version::vm_info_string(), false);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -969,10 +969,10 @@ void Arguments::set_mode_flags(Mode mode) {
 #ifndef ZERO
   // Turn these off for mixed and comp.  Leave them on for Zero.
   if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
-    UseFastAccessorMethods = mode == _int;
+    UseFastAccessorMethods = (mode == _int);
   }
   if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
-    UseFastEmptyMethods = mode == _int;
+    UseFastEmptyMethods = (mode == _int);
   }
 #endif
 
@@ -1421,6 +1421,11 @@ void Arguments::set_parallel_gc_flags() {
       if (FLAG_IS_DEFAULT(PermMarkSweepDeadRatio)) {
         FLAG_SET_DEFAULT(PermMarkSweepDeadRatio, 5);
       }
+    }
+  }
+  if (UseNUMA) {
+    if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
+      FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
     }
   }
 }
@@ -1987,6 +1992,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
 
+  // Setup flags for mixed which is the default
+  set_mode_flags(_mixed);
+
   // Parse JAVA_TOOL_OPTIONS environment variable (if present)
   jint result = parse_java_tool_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {
@@ -2376,7 +2384,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       _gc_log_filename = strdup(tail);
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
-      FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
 
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {

@@ -1357,7 +1357,7 @@ class BacktraceBuilder: public StackObj {
 };
 
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable, TRAPS) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS) {
   if (!StackTraceInThrowable) return;
   ResourceMark rm(THREAD);
 
@@ -1373,6 +1373,16 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, TRAPS) {
   int max_depth = MaxJavaStackTraceDepth;
   JavaThread* thread = (JavaThread*)THREAD;
   BacktraceBuilder bt(CHECK);
+
+  // If there is no Java frame just return the method that was being called
+  // with bci 0
+  if (!thread->has_last_Java_frame()) {
+    if (max_depth >= 1 && method() != NULL) {
+      bt.push(method(), 0, CHECK);
+      set_backtrace(throwable(), bt.backtrace());
+    }
+    return;
+  }
 
   // Instead of using vframe directly, this version of fill_in_stack_trace
   // basically handles everything by hand. This significantly improved the
@@ -1477,7 +1487,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, TRAPS) {
   set_backtrace(throwable(), bt.backtrace());
 }
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method) {
   // No-op if stack trace is disabled
   if (!StackTraceInThrowable) {
     return;
@@ -1491,7 +1501,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable) {
   PRESERVE_EXCEPTION_MARK;
 
   JavaThread* thread = JavaThread::active();
-  fill_in_stack_trace(throwable, thread);
+  fill_in_stack_trace(throwable, method, thread);
   // ignore exceptions thrown during stack trace filling
   CLEAR_PENDING_EXCEPTION;
 }
