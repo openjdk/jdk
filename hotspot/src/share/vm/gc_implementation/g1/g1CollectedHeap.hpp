@@ -970,6 +970,8 @@ public:
   // The number of regions available for "regular" expansion.
   size_t expansion_regions() { return _expansion_regions; }
 
+  void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
+  void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_list(HeapRegion* head) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 

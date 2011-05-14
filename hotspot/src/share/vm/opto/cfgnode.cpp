@@ -1373,7 +1373,7 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
 
   // Clone loop predicates
   if (predicate_proj != NULL) {
-    newn = igvn->clone_loop_predicates(predicate_proj, newn);
+    newn = igvn->clone_loop_predicates(predicate_proj, newn, !n->is_CountedLoop());
   }
 
   // Now I can point to the new node.

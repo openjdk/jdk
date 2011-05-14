@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,13 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jps 1 "02 Jun 2010"
+.TH jps 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jps \- Java Virtual Machine Process Status Tool
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -41,8 +39,6 @@ jps \- Java Virtual Machine Process Status Tool
 .LP
 .SH "PARAMETERS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 options 
@@ -54,8 +50,6 @@ The host identifier of the host for which the process report should be generated
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3jps\fP tool lists the instrumented HotSpot Java Virtual Machines (JVMs) on the target system. The tool is limited to reporting information on JVMs for which it has the access permissions.
@@ -76,8 +70,6 @@ The list of JVMs produced by the \f3jps\fP command may be limited by the permiss
 \f3NOTE:\fP This utility is unsupported and may not be available in future versions of the JDK. It is not currently available on Windows 98 and Windows ME platforms.
 .LP
 .SH "OPTIONS"
-.LP
-
 .LP
 .LP
 The \f3jps\fP command supports a number of options that modify the output of the command. These options are subject to change or removal in the future.
@@ -106,9 +98,6 @@ Pass \f2option\fP to the \f3java\fP launcher called by \f3jps\fP. For example, \
 .LP
 .SS 
 HOST IDENTIFIER
-.LP
-.RS 3
-
 .LP
 .LP
 The host identifier, or \f2hostid\fP is a string that indicates the target system. The syntax of the \f2hostid\fP string largely corresponds to the syntax of a URI:
@@ -140,10 +129,7 @@ The treatment of this parameter depends on the implementation. For the optimized
 .RE
 
 .LP
-.RE
 .SH "OUTPUT FORMAT"
-.LP
-
 .LP
 .LP
 The output of the \f3jps\fP command follows the following pattern:
@@ -168,8 +154,6 @@ Where all output tokens are separated by white space. An \f2arg\fP that includes
 
 .LP
 .SH "EXAMPLES"
-.LP
-
 .LP
 .LP
 This section provides examples of the \f3jps\fP command.

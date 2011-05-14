@@ -23,22 +23,16 @@
 
 /*
  * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that redundant type-arguments on non-generic constructor are accepted
- * @compile Pos01.java
+ * @bug     7040883 7034511
+ * @summary Compilation error: "length in Array is defined in an inaccessible class or interface"
+ * @compile T7040883.java
  */
 
-class Pos01 {
+public class T7040883 {
 
-    static class Foo<X> {
-        Foo(X t) {}
+    <Z> Z[] getListeners(Class<Z> z) { return null; }
+
+    void test(String s) {
+        int i = getListeners(s.getClass()).length;
     }
-
-    Foo<Integer> fi1 = new Foo<>(1);
-    Foo<Integer> fi2 = new Foo<Integer>(1);
-    Foo<Integer> fi3 = new <String> Foo<>(1);
-    Foo<Integer> fi4 = new <String> Foo<Integer>(1);
-    Foo<Integer> fi5 = new <String, String> Foo<>(1);
-    Foo<Integer> fi6 = new <String, String> Foo<Integer>(1);
 }

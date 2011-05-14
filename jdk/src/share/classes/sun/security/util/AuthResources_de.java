@@ -111,17 +111,15 @@ public class AuthResources_de extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "Keystore-Typ erwartet"},
-        {"can.not.specify.Principal.with.a.",
-                "Principal kann nicht mit einer "},
-        {"wildcard.class.without.a.wildcard.name",
-                "Platzhalterklasse ohne Platzhalternamen angegeben werden"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "Principal kann nicht mit einer Platzhalterklasse ohne Platzhalternamen angegeben werden"},
         {"expected.codeBase.or.SignedBy", "codeBase oder SignedBy erwartet"},
         {"only.Principal.based.grant.entries.permitted",
                 "Nur Principal-basierte Berechtigungseintr\u00E4ge zul\u00E4ssig"},
         {"expected.permission.entry", "Berechtigungseintrag erwartet"},
         {"number.", "Nummer "},
-        {"expected.", "erwartet "},
-        {".read.end.of.file", ", Dateiende gelesen"},
+        {"expected.expect.read.end.of.file.",
+                "{0} erwartet, Dateiende gelesen"},
         {"expected.read.end.of.file", "\";\" erwartet, Dateiende gelesen"},
         {"line.", "Zeile "},
         {".expected.", ": erwartet: \""},
@@ -136,6 +134,9 @@ public class AuthResources_de extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "Nullname angegeben"}
 
     };

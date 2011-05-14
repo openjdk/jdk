@@ -1,4 +1,4 @@
-." Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH schemagen 1 "02 Jun 2010"
+.TH schemagen 1 "10 May 2011"
 
 .LP
 .SH "Name"
@@ -30,8 +30,7 @@ schemagen \- Java(TM) Architecture for XML Binding Schema Generator
 .br
 \f3Implementation Version:\fP 2.1.3
 .LP
-.SS 
-Launching schemagen
+.SH "Launching schemagen"
 .LP
 .LP
 The schema generator can be launched using the appropriate \f2schemagen\fP shell script in the \f2bin\fP directory for your platform.
@@ -46,9 +45,6 @@ We also provide an Ant task to run the schema generator \- see the instructions 
 .fi
 https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html.
 .LP
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -58,19 +54,13 @@ Note: Writing schema1.xsd
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
 If your java sources/classes reference other classes, they must be accessable on your system CLASSPATH environment variable, or they need to be given to the tool by using the \f2\-classpath\fP/\f2\-cp\fP options. Otherwise you will see errors when generating your schema.
 .LP
-.RS 3
-
-.LP
-\f3Command Line Options\fP
-.LP
-.RS 3
-
+.SS 
+Command Line Options
 .LP
 .nf
 \f3
@@ -79,24 +69,29 @@ Usage: schemagen [\-options ...] <java files>
 .fl
 
 .fl
-Options: 
+Options:
 .fl
-    \-d <path>         :  Specify where to place processor and javac generated class files 
+    \-d <path>             : specify where to place processor and javac generated class files
 .fl
-    \-cp <path>        :  Specify where to find user specified files  
+    \-cp <path>            : specify where to find user specified files
 .fl
-    \-classpath <path> :  Specify where to find user specified files  
+    \-classpath <path>     : specify where to find user specified files
 .fl
-    \-help             :  Display this usage message
+    \-encoding <encoding>  : specify encoding to be used for apt/javac invocation
+.fl
+
+.fl
+    \-episode <file>       : generate episode file for separate compilation
+.fl
+    \-version              : display version information
+.fl
+    \-help                 : display this usage message
 .fl
 \fP
 .fi
-.RE
 
 .LP
-.RE
-.SS 
-Generated Resource Files
+.SH "Generated Resource Files"
 .LP
 .LP
 The current schema generator simply creates a schema file for each namespace referenced in your Java classes. There is no way to control the name of the generated schema files at this time. For that purpose, use 
@@ -105,7 +100,8 @@ The current schema generator simply creates a schema file for each namespace ref
 .fi
 https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html.
 .LP
-.SH "See Also"
+.SH "Name"
+See Also
 .LP
 .RS 3
 .TP 2
@@ -124,7 +120,7 @@ o
 .na
 \f2Java Architecture for XML Binding (JAXB)\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/xml/jaxb/index.html 
+http://download.oracle.com/javase/7/docs/technotes/guides/xml/jaxb/index.html 
 .RE
 
 .LP
