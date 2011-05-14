@@ -72,10 +72,6 @@ endif
 # REQUIRED_DXSDK_VER
 #   Windows only: The version of DirectX SDK expected.
 #
-# REQUIRED_FREE_SPACE
-#   The minimum disk space needed as determined by running 'du -sk' on a fully
-#   built workspace.
-#
 # REQUIRED_FREETYPE_VERSION
 #   If we are using freetype, the freetype version expected.
 #
@@ -131,11 +127,6 @@ ifeq ($(PLATFORM), solaris)
   REQUIRED_OS_VERSION         = 5.10
   REQUIRED_OS_VARIANT_NAME    = Solaris
   REQUIRED_OS_VARIANT_VERSION = $(REQUIRED_OS_VERSION)
-  ifeq ($(ARCH_FAMILY), sparc)
-    REQUIRED_FREE_SPACE       = 1300000
-  else
-    REQUIRED_FREE_SPACE       = 1040000
-  endif
   REQUIRED_COMPILER_NAME      = Sun Studio 12 Update 1
   REQUIRED_COMPILER_VERSION   = SS12u1
   # Cross-compilation compiler versions are target specific
@@ -157,7 +148,6 @@ ifeq ($(PLATFORM), linux)
   REQUIRED_OS_VERSION         = 2.6
   REQUIRED_OS_VARIANT_NAME    = Fedora
   REQUIRED_OS_VARIANT_VERSION = 9
-  REQUIRED_FREE_SPACE         = 1460000
   REQUIRED_ALSA_VERSION       = 0.9.1
   REQUIRED_COMPILER_NAME      = GCC4
   REQUIRED_COMPILER_VERSION   = GCC4
@@ -187,7 +177,6 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_OS_VARIANT_VERSION = $(REQUIRED_OS_VERSION)
   REQUIRED_CYGWIN_VER         = 4.0
   REQUIRED_MKS_VER            = 6.1
-  REQUIRED_FREE_SPACE         = 500000
   REQUIRED_DXSDK_VER          = 0x0900
   ifeq ($(CC_VERSION),msvc)
     REQUIRED_COMPILER_NAME    = Visual Studio 10

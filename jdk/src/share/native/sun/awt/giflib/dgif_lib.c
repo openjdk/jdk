@@ -70,7 +70,7 @@
 /* avoid extra function call in case we use fread (TVT) */
 #define READ(_gif,_buf,_len)                                     \
   (((GifFilePrivateType*)_gif->Private)->Read ?                   \
-    ((GifFilePrivateType*)_gif->Private)->Read(_gif,_buf,_len) : \
+    (size_t)((GifFilePrivateType*)_gif->Private)->Read(_gif,_buf,_len) : \
     fread(_buf,1,_len,((GifFilePrivateType*)_gif->Private)->File))
 
 static int DGifGetWord(GifFileType *GifFile, int *Word);

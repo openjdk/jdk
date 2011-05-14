@@ -342,8 +342,8 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
         // Calculate the screen size that popup should fit
         Dimension popupSize = JPopupMenu.this.getPreferredSize();
-        int popupRightX = popupLocation.x + popupSize.width;
-        int popupBottomY = popupLocation.y + popupSize.height;
+        long popupRightX = (long)popupLocation.x + (long)popupSize.width;
+        long popupBottomY = (long)popupLocation.y + (long)popupSize.height;
         int scrWidth = scrBounds.width;
         int scrHeight = scrBounds.height;
         if (!canPopupOverlapTaskBar()) {
@@ -358,13 +358,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         int scrBottomY = scrBounds.y + scrHeight;
 
         // Ensure that popup menu fits the screen
-        if (popupRightX > scrRightX) {
+        if (popupRightX > (long)scrRightX) {
             popupLocation.x = scrRightX - popupSize.width;
             if( popupLocation.x < scrBounds.x ) {
                 popupLocation.x = scrBounds.x ;
             }
         }
-        if (popupBottomY > scrBottomY) {
+        if (popupBottomY > (long)scrBottomY) {
             popupLocation.y = scrBottomY - popupSize.height;
             if( popupLocation.y < scrBounds.y ) {
                 popupLocation.y = scrBounds.y;

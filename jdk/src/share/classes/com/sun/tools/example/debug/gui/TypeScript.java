@@ -28,10 +28,10 @@ package com.sun.tools.example.debug.gui;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
 
 public class TypeScript extends JPanel {
 
+    private static final long serialVersionUID = -983704841363534885L;
     private JTextArea history;
     private JTextField entry;
 
@@ -41,7 +41,6 @@ public class TypeScript extends JPanel {
     private JScrollBar historyHScrollBar;
 
     private boolean echoInput = false;
-    private boolean nlPending = false;
 
     private static String newline = System.getProperty("line.separator");
 

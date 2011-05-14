@@ -43,10 +43,6 @@ class ChildSession extends Session {
     private BufferedReader out;
     private BufferedReader err;
 
-    private InputWriter inputWriter;
-    private OutputReader outputReader;
-    private OutputReader errorReader;
-
     private InputListener input;
     private OutputListener output;
     private OutputListener error;
@@ -84,6 +80,7 @@ class ChildSession extends Session {
         this.error = error;
     }
 
+    @Override
     public boolean attach() {
 
         if (!connectToVMProcess()) {
@@ -131,6 +128,7 @@ class ChildSession extends Session {
         return true;
     }
 
+    @Override
     public void detach() {
 
         //### debug
@@ -242,10 +240,7 @@ class ChildSession extends Session {
             this.diagnostics = diagnostics;
         }
 
-        public void quit() {
-            running = false;
-        }
-
+        @Override
         public void run() {
             try {
                 int count;
@@ -254,6 +249,7 @@ class ChildSession extends Session {
                         // Run in Swing event dispatcher thread.
                         final String chars = new String(buffer, 0, count);
                         SwingUtilities.invokeLater(new Runnable() {
+                            @Override
                             public void run() {
                                 output.putString(chars);
                             }
@@ -264,6 +260,7 @@ class ChildSession extends Session {
             } catch (IOException e) {
                 // Run in Swing event dispatcher thread.
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         diagnostics.putString("IO error reading " +
                                               streamName +
@@ -288,11 +285,7 @@ class ChildSession extends Session {
             this.input = input;
         }
 
-        public void quit() {
-            //### Won't have much effect if blocked on input!
-            running = false;
-        }
-
+        @Override
         public void run() {
             String line;
             while (running) {

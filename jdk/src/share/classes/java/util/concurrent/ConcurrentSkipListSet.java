@@ -58,12 +58,14 @@ import sun.misc.Unsafe;
  * <p>Beware that, unlike in most collections, the <tt>size</tt>
  * method is <em>not</em> a constant-time operation. Because of the
  * asynchronous nature of these sets, determining the current number
- * of elements requires a traversal of the elements. Additionally, the
- * bulk operations <tt>addAll</tt>, <tt>removeAll</tt>,
- * <tt>retainAll</tt>, and <tt>containsAll</tt> are <em>not</em>
- * guaranteed to be performed atomically. For example, an iterator
- * operating concurrently with an <tt>addAll</tt> operation might view
- * only some of the added elements.
+ * of elements requires a traversal of the elements, and so may report
+ * inaccurate results if this collection is modified during traversal.
+ * Additionally, the bulk operations <tt>addAll</tt>,
+ * <tt>removeAll</tt>, <tt>retainAll</tt>, <tt>containsAll</tt>,
+ * <tt>equals</tt>, and <tt>toArray</tt> are <em>not</em> guaranteed
+ * to be performed atomically. For example, an iterator operating
+ * concurrently with an <tt>addAll</tt> operation might view only some
+ * of the added elements.
  *
  * <p>This class and its iterators implement all of the
  * <em>optional</em> methods of the {@link Set} and {@link Iterator}

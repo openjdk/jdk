@@ -66,12 +66,13 @@ import java.util.concurrent.atomic.*;
  * <p>Beware that, unlike in most collections, the <tt>size</tt>
  * method is <em>not</em> a constant-time operation. Because of the
  * asynchronous nature of these maps, determining the current number
- * of elements requires a traversal of the elements.  Additionally,
- * the bulk operations <tt>putAll</tt>, <tt>equals</tt>, and
- * <tt>clear</tt> are <em>not</em> guaranteed to be performed
- * atomically. For example, an iterator operating concurrently with a
- * <tt>putAll</tt> operation might view only some of the added
- * elements.
+ * of elements requires a traversal of the elements, and so may report
+ * inaccurate results if this collection is modified during traversal.
+ * Additionally, the bulk operations <tt>putAll</tt>, <tt>equals</tt>,
+ * <tt>toArray</tt>, <tt>containsValue</tt>, and <tt>clear</tt> are
+ * <em>not</em> guaranteed to be performed atomically. For example, an
+ * iterator operating concurrently with a <tt>putAll</tt> operation
+ * might view only some of the added elements.
  *
  * <p>This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
@@ -1661,7 +1662,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.  This operation requires time linear in the
-     * map size.
+     * map size. Additionally, it is possible for the map to change
+     * during execution of this method, in which case the returned
+     * result may be inaccurate.
      *
      * @param value value whose presence in this map is to be tested
      * @return <tt>true</tt> if a mapping to <tt>value</tt> exists;
@@ -1751,7 +1754,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      *
      * @return a navigable set view of the keys in this map
      */
-     public NavigableSet<K> keySet() {
+    public NavigableSet<K> keySet() {
         KeySet ks = keySet;
         return (ks != null) ? ks : (keySet = new KeySet(this));
     }
