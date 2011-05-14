@@ -38,6 +38,7 @@ class ModificationWatchpointSpec extends WatchpointSpec {
     /**
      * The 'refType' is known to match, return the EventRequest.
      */
+    @Override
     EventRequest resolveEventRequest(ReferenceType refType)
                                       throws NoSuchFieldException {
         Field field = refType.fieldByName(fieldId);
@@ -48,6 +49,7 @@ class ModificationWatchpointSpec extends WatchpointSpec {
         return wp;
     }
 
+    @Override
     public String toString() {
         return MessageOutput.format("watch modification of",
                                     new Object [] {refSpec.toString(),

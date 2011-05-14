@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import test.java.awt.regtesthelpers.Sysout;
 public class InfiniteRecursion_4 {
     final static Robot robot = Util.createRobot();
     final static int MOVE_COUNT = 5;
+    //*2 for both rotation directions over a single frame without any siblings
+    final static int EXPECTED_COUNT = MOVE_COUNT * 2;
     static int actualEvents = 0;
 
     public static void main(String []s)
@@ -80,8 +82,10 @@ public class InfiniteRecursion_4 {
         }
 
         Util.waitForIdle(robot);
-        if (actualEvents != MOVE_COUNT * 2) {
-            AbstractTest.fail("Expected events count: "+ MOVE_COUNT+" Actual events count: "+ actualEvents);
+        //Not fair to check for multiplier 4 as it's not specified actual number of WheelEvents
+        //result in a single wheel rotation.
+        if (actualEvents != EXPECTED_COUNT) {
+            AbstractTest.fail("Expected events count: "+ EXPECTED_COUNT+" Actual events count: "+ actualEvents);
         }
     }
 }

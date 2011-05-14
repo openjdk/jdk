@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,25 @@ VARIANT_TEXT=Kernel
 # or make/hotspot_distro.
 !ifndef HOTSPOT_VM_DISTRO
 !if exists($(WorkSpace)\src\closed)
+
+# if the build is for JDK6 or earlier version, it should include jdk6_hotspot_distro,
+# instead of hotspot_distro.
+JDK6_OR_EARLIER=0
+!if "$(JDK_MAJOR_VERSION)" != "" && "$(JDK_MINOR_VERSION)" != "" && "$(JDK_MICRO_VERSION)" != ""
+!if $(JDK_MAJOR_VERSION) == 1 && $(JDK_MINOR_VERSION) < 7
+JDK6_OR_EARLIER=1
+!endif
+!else
+!if $(JDK_MAJOR_VER) == 1 && $(JDK_MINOR_VER) < 7
+JDK6_OR_EARLIER=1
+!endif
+!endif
+
+!if $(JDK6_OR_EARLIER) == 1
+!include $(WorkSpace)\make\jdk6_hotspot_distro
+!else
 !include $(WorkSpace)\make\hotspot_distro
+!endif
 !else
 !include $(WorkSpace)\make\openjdk_distro
 !endif
@@ -260,7 +278,7 @@ $(variantDir)\local.make: checks
 	@ echo Variant=$(realVariant)				>> $@
 	@ echo WorkSpace=$(WorkSpace)				>> $@
 	@ echo BootStrapDir=$(BootStrapDir)			>> $@
-        @ if "$(USERNAME)" NEQ "" echo BuildUser=$(USERNAME)	>> $@
+	@ if "$(USERNAME)" NEQ "" echo BuildUser=$(USERNAME)	>> $@
 	@ echo HS_VER=$(HS_VER)					>> $@
 	@ echo HS_DOTVER=$(HS_DOTVER)				>> $@
 	@ echo HS_COMPANY=$(COMPANY_NAME)			>> $@

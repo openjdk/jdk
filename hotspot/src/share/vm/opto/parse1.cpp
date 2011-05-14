@@ -638,7 +638,7 @@ void Parse::do_all_blocks() {
         ensure_phis_everywhere();
 
         if (block->is_SEL_head() &&
-            UseLoopPredicate) {
+            (UseLoopPredicate || LoopLimitCheck)) {
           // Add predicate to single entry (not irreducible) loop head.
           assert(!block->has_merged_backedge(), "only entry paths should be merged for now");
           // Need correct bci for predicate.

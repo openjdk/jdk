@@ -206,13 +206,15 @@ import java.util.Arrays;
  *     <td>Equivalent to java.lang.Character.isMirrored()</td></tr>
  *
  * <tr><th>&nbsp;</th></tr>
- * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks and categories</th></tr>
+ * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks, categories and binary properties</th></tr>
  * * <tr><td valign="top" headers="construct unicode"><tt>\p{IsLatin}</tt></td>
- *     <td headers="matches">A Latin&nbsp;script character (simple <a href="#ubc">script</a>)</td></tr>
+ *     <td headers="matches">A Latin&nbsp;script character (<a href="#usc">script</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{InGreek}</tt></td>
- *     <td headers="matches">A character in the Greek&nbsp;block (simple <a href="#ubc">block</a>)</td></tr>
+ *     <td headers="matches">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{Lu}</tt></td>
- *     <td headers="matches">An uppercase letter (simple <a href="#ubc">category</a>)</td></tr>
+ *     <td headers="matches">An uppercase letter (<a href="#ucc">category</a>)</td></tr>
+ * <tr><td valign="top" headers="construct unicode"><tt>\p{isAlphabetic}</tt></td>
+ *     <td headers="matches">An alphabetic character (<a href="#ubpc">binary property</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{Sc}</tt></td>
  *     <td headers="matches">A currency symbol</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\P{InGreek}</tt></td>
@@ -328,10 +330,11 @@ import java.util.Arrays;
  *     <td headers="matches"><i>X</i>, as a named-capturing group</td></tr>
  * <tr><td valign="top" headers="construct special"><tt>(?:</tt><i>X</i><tt>)</tt></td>
  *     <td headers="matches"><i>X</i>, as a non-capturing group</td></tr>
- * <tr><td valign="top" headers="construct special"><tt>(?idmsux-idmsux)&nbsp;</tt></td>
+ * <tr><td valign="top" headers="construct special"><tt>(?idmsuxU-idmsuxU)&nbsp;</tt></td>
  *     <td headers="matches">Nothing, but turns match flags <a href="#CASE_INSENSITIVE">i</a>
  * <a href="#UNIX_LINES">d</a> <a href="#MULTILINE">m</a> <a href="#DOTALL">s</a>
- * <a href="#UNICODE_CASE">u</a> <a href="#COMMENTS">x</a> on - off</td></tr>
+ * <a href="#UNICODE_CASE">u</a> <a href="#COMMENTS">x</a> <a href="#UNICODE_CHARACTER_CLASS">U</a>
+ * on - off</td></tr>
  * <tr><td valign="top" headers="construct special"><tt>(?idmsux-idmsux:</tt><i>X</i><tt>)</tt>&nbsp;&nbsp;</td>
  *     <td headers="matches"><i>X</i>, as a <a href="#cg">non-capturing group</a> with the
  *         given flags <a href="#CASE_INSENSITIVE">i</a> <a href="#UNIX_LINES">d</a>
@@ -518,61 +521,140 @@ import java.util.Arrays;
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
- * Standard #18: Unicode Regular Expression Guidelines</i></a>, plus RL2.1
+ * Standard #18: Unicode Regular Expression</i></a>, plus RL2.1
  * Canonical Equivalents.
- *
- * <p> Unicode escape sequences such as <tt>&#92;u2014</tt> in Java source code
+ * <p>
+ * <b>Unicode escape sequences</b> such as <tt>&#92;u2014</tt> in Java source code
  * are processed as described in section 3.3 of
  * <cite>The Java&trade; Language Specification</cite>.
- * Such escape sequences are also
- * implemented directly by the regular-expression parser so that Unicode
- * escapes can be used in expressions that are read from files or from the
- * keyboard.  Thus the strings <tt>"&#92;u2014"</tt> and <tt>"\\u2014"</tt>,
- * while not equal, compile into the same pattern, which matches the character
- * with hexadecimal value <tt>0x2014</tt>.
- *
- * <p> A Unicode character can also be represented in a regular-expression by
- * using its hexadecimal code point value directly as described in construct
+ * Such escape sequences are also implemented directly by the regular-expression
+ * parser so that Unicode escapes can be used in expressions that are read from
+ * files or from the keyboard.  Thus the strings <tt>"&#92;u2014"</tt> and
+ * <tt>"\\u2014"</tt>, while not equal, compile into the same pattern, which
+ * matches the character with hexadecimal value <tt>0x2014</tt>.
+ * <p>
+ * A Unicode character can also be represented in a regular-expression by
+ * using its <b>Hex notation</b>(hexadecimal code point value) directly as described in construct
  * <tt>&#92;x{...}</tt>, for example a supplementary character U+2011F
  * can be specified as <tt>&#92;x{2011F}</tt>, instead of two consecutive
  * Unicode escape sequences of the surrogate pair
  * <tt>&#92;uD840</tt><tt>&#92;uDD1F</tt>.
- *
- * <a name="ubc">
- * <p>Unicode scripts, blocks and categories are written with the <tt>\p</tt> and
- * <tt>\P</tt> constructs as in Perl. <tt>\p{</tt><i>prop</i><tt>}</tt> matches if
+ * <p>
+ * Unicode scripts, blocks, categories and binary properties are written with
+ * the <tt>\p</tt> and <tt>\P</tt> constructs as in Perl.
+ * <tt>\p{</tt><i>prop</i><tt>}</tt> matches if
  * the input has the property <i>prop</i>, while <tt>\P{</tt><i>prop</i><tt>}</tt>
  * does not match if the input has that property.
  * <p>
- * Scripts are specified either with the prefix {@code Is}, as in
+ * Scripts, blocks, categories and binary properties can be used both inside
+ * and outside of a character class.
+ * <a name="usc">
+ * <p>
+ * <b>Scripts</b> are specified either with the prefix {@code Is}, as in
  * {@code IsHiragana}, or by using  the {@code script} keyword (or its short
  * form {@code sc})as in {@code script=Hiragana} or {@code sc=Hiragana}.
  * <p>
- * Blocks are specified with the prefix {@code In}, as in
+ * The script names supported by <code>Pattern</code> are the valid script names
+ * accepted and defined by
+ * {@link java.lang.Character.UnicodeScript#forName(String) UnicodeScript.forName}.
+ * <a name="ubc">
+ * <p>
+ * <b>Blocks</b> are specified with the prefix {@code In}, as in
  * {@code InMongolian}, or by using the keyword {@code block} (or its short
  * form {@code blk}) as in {@code block=Mongolian} or {@code blk=Mongolian}.
  * <p>
- * Categories may be specified with the optional prefix {@code Is}:
+ * The block names supported by <code>Pattern</code> are the valid block names
+ * accepted and defined by
+ * {@link java.lang.Character.UnicodeBlock#forName(String) UnicodeBlock.forName}.
+ * <p>
+ * <a name="ucc">
+ * <b>Categories</b> may be specified with the optional prefix {@code Is}:
  * Both {@code \p{L}} and {@code \p{IsL}} denote the category of Unicode
  * letters. Same as scripts and blocks, categories can also be specified
  * by using the keyword {@code general_category} (or its short form
  * {@code gc}) as in {@code general_category=Lu} or {@code gc=Lu}.
  * <p>
- * Scripts, blocks and categories can be used both inside and outside of a
- * character class.
- * <p> The supported categories are those of
+ * The supported categories are those of
  * <a href="http://www.unicode.org/unicode/standard/standard.html">
  * <i>The Unicode Standard</i></a> in the version specified by the
  * {@link java.lang.Character Character} class. The category names are those
  * defined in the Standard, both normative and informative.
- * The script names supported by <code>Pattern</code> are the valid script names
- * accepted and defined by
- * {@link java.lang.Character.UnicodeScript#forName(String) UnicodeScript.forName}.
- * The block names supported by <code>Pattern</code> are the valid block names
- * accepted and defined by
- * {@link java.lang.Character.UnicodeBlock#forName(String) UnicodeBlock.forName}.
  * <p>
- * <a name="jcc"> <p>Categories that behave like the java.lang.Character
+ * <a name="ubpc">
+ * <b>Binary properties</b> are specified with the prefix {@code Is}, as in
+ * {@code IsAlphabetic}. The supported binary properties by <code>Pattern</code>
+ * are
+ * <ul>
+ *   <li> Alphabetic
+ *   <li> Ideographic
+ *   <li> Letter
+ *   <li> Lowercase
+ *   <li> Uppercase
+ *   <li> Titlecase
+ *   <li> Punctuation
+ *   <Li> Control
+ *   <li> White_Space
+ *   <li> Digit
+ *   <li> Hex_Digit
+ *   <li> Noncharacter_Code_Point
+ *   <li> Assigned
+ * </ul>
+
+
+ * <p>
+ * <b>Predefined Character classes</b> and <b>POSIX character classes</b> are in
+ * conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
+ * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
+ * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
+ * <p>
+ * <table border="0" cellpadding="1" cellspacing="0"
+ *  summary="predefined and posix character classes in Unicode mode">
+ * <tr align="left">
+ * <th bgcolor="#CCCCFF" align="left" id="classes">Classes</th>
+ * <th bgcolor="#CCCCFF" align="left" id="matches">Matches</th>
+ *</tr>
+ * <tr><td><tt>\p{Lower}</tt></td>
+ *     <td>A lowercase character:<tt>\p{IsLowercase}</tt></td></tr>
+ * <tr><td><tt>\p{Upper}</tt></td>
+ *     <td>An uppercase character:<tt>\p{IsUppercase}</tt></td></tr>
+ * <tr><td><tt>\p{ASCII}</tt></td>
+ *     <td>All ASCII:<tt>[\x00-\x7F]</tt></td></tr>
+ * <tr><td><tt>\p{Alpha}</tt></td>
+ *     <td>An alphabetic character:<tt>\p{IsAlphabetic}</tt></td></tr>
+ * <tr><td><tt>\p{Digit}</tt></td>
+ *     <td>A decimal digit character:<tt>p{IsDigit}</tt></td></tr>
+ * <tr><td><tt>\p{Alnum}</tt></td>
+ *     <td>An alphanumeric character:<tt>[\p{IsAlphabetic}\p{IsDigit}]</tt></td></tr>
+ * <tr><td><tt>\p{Punct}</tt></td>
+ *     <td>A punctuation character:<tt>p{IsPunctuation}</tt></td></tr>
+ * <tr><td><tt>\p{Graph}</tt></td>
+ *     <td>A visible character: <tt>[^\p{IsWhite_Space}\p{gc=Cc}\p{gc=Cs}\p{gc=Cn}]</tt></td></tr>
+ * <tr><td><tt>\p{Print}</tt></td>
+ *     <td>A printable character: <tt>[\p{Graph}\p{Blank}&&[^\p{Cntrl}]]</tt></td></tr>
+ * <tr><td><tt>\p{Blank}</tt></td>
+ *     <td>A space or a tab: <tt>[\p{IsWhite_Space}&&[^\p{gc=Zl}\p{gc=Zp}\x0a\x0b\x0c\x0d\x85]]</tt></td></tr>
+ * <tr><td><tt>\p{Cntrl}</tt></td>
+ *     <td>A control character: <tt>\p{gc=Cc}</tt></td></tr>
+ * <tr><td><tt>\p{XDigit}</tt></td>
+ *     <td>A hexadecimal digit: <tt>[\p{gc=Nd}\p{IsHex_Digit}]</tt></td></tr>
+ * <tr><td><tt>\p{Space}</tt></td>
+ *     <td>A whitespace character:<tt>\p{IsWhite_Space}</tt></td></tr>
+ * <tr><td><tt>\d</tt></td>
+ *     <td>A digit: <tt>\p{IsDigit}</tt></td></tr>
+ * <tr><td><tt>\D</tt></td>
+ *     <td>A non-digit: <tt>[^\d]</tt></td></tr>
+ * <tr><td><tt>\s</tt></td>
+ *     <td>A whitespace character: <tt>\p{IsWhite_Space}</tt></td></tr>
+ * <tr><td><tt>\S</tt></td>
+ *     <td>A non-whitespace character: <tt>[^\s]</tt></td></tr>
+ * <tr><td><tt>\w</tt></td>
+ *     <td>A word character: <tt>[\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}]</tt></td></tr>
+ * <tr><td><tt>\W</tt></td>
+ *     <td>A non-word character: <tt>[^\w]</tt></td></tr>
+ * </table>
+ * <p>
+ * <a name="jcc">
+ * Categories that behave like the java.lang.Character
  * boolean is<i>methodname</i> methods (except for the deprecated ones) are
  * available through the same <tt>\p{</tt><i>prop</i><tt>}</tt> syntax where
  * the specified property has the name <tt>java<i>methodname</i></tt>.
@@ -585,8 +667,30 @@ import java.util.Arrays;
  * <p> Perl constructs not supported by this class: </p>
  *
  * <ul>
+ *    <li><p> Predefined character classes (Unicode character)
+ *    <p><tt>\h&nbsp;&nbsp;&nbsp;&nbsp;</tt>A horizontal whitespace
+ *    <p><tt>\H&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non horizontal whitespace
+ *    <p><tt>\v&nbsp;&nbsp;&nbsp;&nbsp;</tt>A vertical whitespace
+ *    <p><tt>\V&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non vertical whitespace
+ *    <p><tt>\R&nbsp;&nbsp;&nbsp;&nbsp;</tt>Any Unicode linebreak sequence
+ *    <tt>\u005cu000D\u005cu000A|[\u005cu000A\u005cu000B\u005cu000C\u005cu000D\u005cu0085\u005cu2028\u005cu2029]</tt>
+ *    <p><tt>\X&nbsp;&nbsp;&nbsp;&nbsp;</tt>Match Unicode
+ *    <a href="http://www.unicode.org/reports/tr18/#Default_Grapheme_Clusters">
+ *    <i>extended grapheme cluster</i></a>
+ *    </p></li>
  *
- *    <li><p> The conditional constructs <tt>(?{</tt><i>X</i><tt>})</tt> and
+ *    <li><p> The backreference constructs, <tt>\g{</tt><i>n</i><tt>}</tt> for
+ *    the <i>n</i><sup>th</sup><a href="#cg">capturing group</a> and
+ *    <tt>\g{</tt><i>name</i><tt>}</tt> for
+ *    <a href="#groupname">named-capturing group</a>.
+ *    </p></li>
+ *
+ *    <li><p> The named character construct, <tt>\N{</tt><i>name</i><tt>}</tt>
+ *    for a Unicode character by its name.
+ *    </p></li>
+ *
+ *    <li><p> The conditional constructs
+ *    <tt>(?(</tt><i>condition</i><tt>)</tt><i>X</i><tt>)</tt> and
  *    <tt>(?(</tt><i>condition</i><tt>)</tt><i>X</i><tt>|</tt><i>Y</i><tt>)</tt>,
  *    </p></li>
  *
@@ -603,10 +707,6 @@ import java.util.Arrays;
  * <p> Constructs supported by this class but not by Perl: </p>
  *
  * <ul>
- *
- *    <li><p> Possessive quantifiers, which greedily match as much as they can
- *    and do not back off, even when doing so would allow the overall match to
- *    succeed.  </p></li>
  *
  *    <li><p> Character-class union and intersection as described
  *    <a href="#cc">above</a>.</p></li>
@@ -640,13 +740,6 @@ import java.util.Arrays;
  *    at the point at which they appear, whether they are at the top level or
  *    within a group; in the latter case, flags are restored at the end of the
  *    group just as in Perl.  </p></li>
- *
- *    <li><p> Perl is forgiving about malformed matching constructs, as in the
- *    expression <tt>*a</tt>, as well as dangling brackets, as in the
- *    expression <tt>abc]</tt>, and treats them as literals.  This
- *    class also accepts dangling brackets but is strict about dangling
- *    metacharacters like +, ? and *, and will throw a
- *    {@link PatternSyntaxException} if it encounters them. </p></li>
  *
  * </ul>
  *
@@ -796,6 +889,28 @@ public final class Pattern
      */
     public static final int CANON_EQ = 0x80;
 
+    /**
+     * Enables the Unicode version of <i>Predefined character classes</i> and
+     * <i>POSIX character classes</i>.
+     *
+     * <p> When this flag is specified then the (US-ASCII only)
+     * <i>Predefined character classes</i> and <i>POSIX character classes</i>
+     * are in conformance with
+     * <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
+     * Standard #18: Unicode Regular Expression</i></a>
+     * <i>Annex C: Compatibility Properties</i>.
+     * <p>
+     * The UNICODE_CHARACTER_CLASS mode can also be enabled via the embedded
+     * flag expression&nbsp;<tt>(?U)</tt>.
+     * <p>
+     * The flag implies UNICODE_CASE, that is, it enables Unicode-aware case
+     * folding.
+     * <p>
+     * Specifying this flag may impose a performance penalty.  </p>
+     * @since 1.7
+     */
+    public static final int UNICODE_CHARACTER_CLASS = 0x100;
+
     /* Pattern has only two serialized components: The pattern string
      * and the flags, which are all that is needed to recompile the pattern
      * when it is deserialized.
@@ -918,7 +1033,8 @@ public final class Pattern
      *         Match flags, a bit mask that may include
      *         {@link #CASE_INSENSITIVE}, {@link #MULTILINE}, {@link #DOTALL},
      *         {@link #UNICODE_CASE}, {@link #CANON_EQ}, {@link #UNIX_LINES},
-     *         {@link #LITERAL} and {@link #COMMENTS}
+     *         {@link #LITERAL}, {@link #UNICODE_CHARACTER_CLASS}
+     *         and {@link #COMMENTS}
      *
      * @throws  IllegalArgumentException
      *          If bit values other than those corresponding to the defined
@@ -1208,6 +1324,10 @@ public final class Pattern
     private Pattern(String p, int f) {
         pattern = p;
         flags = f;
+
+        // to use UNICODE_CASE if UNICODE_CHARACTER_CLASS present
+        if ((flags & UNICODE_CHARACTER_CLASS) != 0)
+            flags |= UNICODE_CASE;
 
         // Reset group index count
         capturingGroupCount = 1;
@@ -2164,12 +2284,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return -1;
         case 'B':
             if (inclass) break;
-            if (create) root = new Bound(Bound.NONE);
+            if (create) root = new Bound(Bound.NONE, has(UNICODE_CHARACTER_CLASS));
             return -1;
         case 'C':
             break;
         case 'D':
-            if (create) root = new Ctype(ASCII.DIGIT).complement();
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.DIGIT).complement()
+                               : new Ctype(ASCII.DIGIT).complement();
             return -1;
         case 'E':
         case 'F':
@@ -2191,14 +2313,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'R':
             break;
         case 'S':
-            if (create) root = new Ctype(ASCII.SPACE).complement();
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.WHITE_SPACE).complement()
+                               : new Ctype(ASCII.SPACE).complement();
             return -1;
         case 'T':
         case 'U':
         case 'V':
             break;
         case 'W':
-            if (create) root = new Ctype(ASCII.WORD).complement();
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.WORD).complement()
+                               : new Ctype(ASCII.WORD).complement();
             return -1;
         case 'X':
         case 'Y':
@@ -2216,12 +2342,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return '\007';
         case 'b':
             if (inclass) break;
-            if (create) root = new Bound(Bound.BOTH);
+            if (create) root = new Bound(Bound.BOTH, has(UNICODE_CHARACTER_CLASS));
             return -1;
         case 'c':
             return c();
         case 'd':
-            if (create) root = new Ctype(ASCII.DIGIT);
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.DIGIT)
+                               : new Ctype(ASCII.DIGIT);
             return -1;
         case 'e':
             return '\033';
@@ -2259,7 +2387,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'r':
             return '\r';
         case 's':
-            if (create) root = new Ctype(ASCII.SPACE);
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.WHITE_SPACE)
+                               : new Ctype(ASCII.SPACE);
             return -1;
         case 't':
             return '\t';
@@ -2268,7 +2398,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'v':
             return '\013';
         case 'w':
-            if (create) root = new Ctype(ASCII.WORD);
+            if (create) root = has(UNICODE_CHARACTER_CLASS)
+                               ? new Utype(UnicodeProp.WORD)
+                               : new Ctype(ASCII.WORD);
             return -1;
         case 'x':
             return x();
@@ -2490,7 +2622,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     {
         next();
         String name;
-        CharProperty node;
+        CharProperty node = null;
 
         if (singleLetter) {
             int c = temp[cursor];
@@ -2536,11 +2668,21 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             } else if (name.startsWith("Is")) {
                 // \p{isGeneralCategory} and \p{isScriptName}
                 name = name.substring(2);
-                node = CharPropertyNames.charPropertyFor(name);
+                UnicodeProp uprop = UnicodeProp.forName(name);
+                if (uprop != null)
+                    node = new Utype(uprop);
+                if (node == null)
+                    node = CharPropertyNames.charPropertyFor(name);
                 if (node == null)
                     node = unicodeScriptPropertyFor(name);
             } else {
-                node = charPropertyNodeFor(name);
+                if (has(UNICODE_CHARACTER_CLASS)) {
+                    UnicodeProp uprop = UnicodeProp.forPOSIXName(name);
+                    if (uprop != null)
+                        node = new Utype(uprop);
+                }
+                if (node == null)
+                    node = charPropertyNodeFor(name);
             }
         }
         if (maybeComplement) {
@@ -2822,6 +2964,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             case 'x':
                 flags |= COMMENTS;
                 break;
+            case 'U':
+                flags |= (UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                break;
             case '-': // subFlag then fall through
                 ch = next();
                 subFlag();
@@ -2861,6 +3006,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             case 'x':
                 flags &= ~COMMENTS;
                 break;
+            case 'U':
+                flags &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
             default:
                 return;
             }
@@ -3662,6 +3809,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return (typeMask & (1 << Character.getType(ch))) != 0;
         }
     }
+
+    /**
+     * Node class that matches a Unicode "type"
+     */
+    static final class Utype extends CharProperty {
+        final UnicodeProp uprop;
+        Utype(UnicodeProp uprop) { this.uprop = uprop; }
+        boolean isSatisfiedBy(int ch) {
+            return uprop.is(ch);
+        }
+    }
+
 
     /**
      * Node class that matches a POSIX type.
@@ -5025,9 +5184,17 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         static int BOTH = 0x3;
         static int NONE = 0x4;
         int type;
-        Bound(int n) {
+        boolean useUWORD;
+        Bound(int n, boolean useUWORD) {
             type = n;
+            this.useUWORD = useUWORD;
         }
+
+        boolean isWord(int ch) {
+            return useUWORD ? UnicodeProp.WORD.is(ch)
+                            : (ch == '_' || Character.isLetterOrDigit(ch));
+        }
+
         int check(Matcher matcher, int i, CharSequence seq) {
             int ch;
             boolean left = false;
@@ -5039,14 +5206,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             if (i > startIndex) {
                 ch = Character.codePointBefore(seq, i);
-                left = (ch == '_' || Character.isLetterOrDigit(ch) ||
+                left = (isWord(ch) ||
                     ((Character.getType(ch) == Character.NON_SPACING_MARK)
                      && hasBaseCharacter(matcher, i-1, seq)));
             }
             boolean right = false;
             if (i < endIndex) {
                 ch = Character.codePointAt(seq, i);
-                right = (ch == '_' || Character.isLetterOrDigit(ch) ||
+                right = (isWord(ch) ||
                     ((Character.getType(ch) == Character.NON_SPACING_MARK)
                      && hasBaseCharacter(matcher, i, seq)));
             } else {
@@ -5428,6 +5595,12 @@ NEXT:       while (i <= last) {
             defClone("javaUpperCase", new CloneableProperty() {
                 boolean isSatisfiedBy(int ch) {
                     return Character.isUpperCase(ch);}});
+            defClone("javaAlphabetic", new CloneableProperty() {
+                boolean isSatisfiedBy(int ch) {
+                    return Character.isAlphabetic(ch);}});
+            defClone("javaIdeographic", new CloneableProperty() {
+                boolean isSatisfiedBy(int ch) {
+                    return Character.isIdeographic(ch);}});
             defClone("javaTitleCase", new CloneableProperty() {
                 boolean isSatisfiedBy(int ch) {
                     return Character.isTitleCase(ch);}});

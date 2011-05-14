@@ -25,7 +25,6 @@
 
 package com.sun.tools.example.debug.gui;
 
-import javax.swing.*;
 import com.sun.tools.example.debug.bdi.OutputListener;
 
 public class TypeScriptOutputListener implements OutputListener {
@@ -42,10 +41,12 @@ public class TypeScriptOutputListener implements OutputListener {
         this.appendNewline = appendNewline;
     }
 
+    @Override
     public void putString(String s) {
         script.append(s);
-        if (appendNewline)
+        if (appendNewline) {
             script.newline();
+    }
     }
 
 }

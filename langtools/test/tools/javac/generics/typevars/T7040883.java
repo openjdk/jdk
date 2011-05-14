@@ -23,18 +23,16 @@
 
 /*
  * @test
- * @bug 7030150
- * @summary Type inference for generic instance creation failed for formal type parameter
- *          check that diamond in return context works w/o problems
- * @compile Pos02.java
+ * @bug     7040883 7034511
+ * @summary Compilation error: "length in Array is defined in an inaccessible class or interface"
+ * @compile T7040883.java
  */
 
-class Pos02<X> {
+public class T7040883 {
 
-    Pos02(X x) {}
+    <Z> Z[] getListeners(Class<Z> z) { return null; }
 
-
-    Pos02<X> test(X x) {
-        return new Pos02<>(x);
+    void test(String s) {
+        int i = getListeners(s.getClass()).length;
     }
 }

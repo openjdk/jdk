@@ -26,9 +26,6 @@
 package com.sun.tools.example.debug.bdi;   //### does it belong here?
 
 import com.sun.jdi.*;
-import com.sun.tools.jdi.*;
-import java.util.*;
-import java.io.*;
 
 public class Utils {
 

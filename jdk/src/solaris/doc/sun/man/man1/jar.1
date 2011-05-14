@@ -1,4 +1,4 @@
-." Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,14 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jar 1 "02 Jun 2010"
+.TH jar 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jar\-The Java Archive Tool
 .LP
-\f3jar\fP combines multiple files into a single JAR archive file.   
+\f3jar\fP combines multiple files into a single JAR archive file.  
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .RS 3
 .TP 3
@@ -51,9 +49,6 @@ Add index to jar file
 .LP
 .LP
 where:
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -80,10 +75,7 @@ Option to be passed into the Java runtime environment. (There must be no space b
 .RE
 
 .LP
-.RE
 .SH "DESCRIPTION"
-.LP
-
 .LP
 The \f3jar\fP tool combines multiple files into a single JAR archive file. \f3jar\fP is a general\-purpose archiving and compression tool, based on ZIP and the 
 .na
@@ -93,9 +85,6 @@ http://www.gzip.org/zlib/ compression format. However, \f3jar\fP was designed ma
 .LP
 Typical usage to combine files into a jar file is:
 .LP
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -103,19 +92,15 @@ Typical usage to combine files into a jar file is:
 .fl
 \fP
 .fi
-.RE
 
 .LP
 In this example, all the class files in the current directory are placed into the file named \f2myFile.jar\fP. The jar tool automatically generates a manifest file entry named \f2META\-INF/MANIFEST.MF\fP. It is always the first entry in the jar file. The manifest file declares meta\-information about the archive, and stores that data as \f2name\ :\ value\fP pairs. Refer to the 
 .na
 \f2JAR file specification\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest for details explaining how the jar tool stores meta\-information in the manifest file. 
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#JAR%20Manifest for details explaining how the jar tool stores meta\-information in the manifest file. 
 .LP
 If a jar file should include \f2name\ :\ value\fP pairs contained in an existing manifest file, specify that file using the \f2\-m\fP option:
-.LP
-.RS 3
-
 .LP
 .nf
 \f3
@@ -124,7 +109,6 @@ If a jar file should include \f2name\ :\ value\fP pairs contained in an existing
 .fl
 \fP
 .fi
-.RE
 
 .LP
 An existing manifest file must end with a new line character.\  \f3jar\fP does not parse the last line of a manifest file if it does not end with a new line character.
@@ -135,9 +119,6 @@ An existing manifest file must end with a new line character.\  \f3jar\fP does n
 
 .LP
 \f3Note:\ \fP A jar command that specifies \f2cfm\fP on the command line instead of \f2cmf\fP (the order of the m and \-f options are reversed), the \f3jar\fP command line must specify the name of the jar archive first, followed by the name of the manifest file: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -145,15 +126,11 @@ An existing manifest file must end with a new line character.\  \f3jar\fP does n
 .fl
 \fP
 .fi
-.RE
 
 .LP
 The manifest is in a text format inspired by RFC822 ASCII format, so it is easy to view and process manifest\-file contents. 
 .LP
 To extract the files from a jar file, use \f2x\fP:
-.LP
-.RS 3
-
 .LP
 .nf
 \f3
@@ -162,14 +139,10 @@ To extract the files from a jar file, use \f2x\fP:
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
 To extract individual files from a jar file, supply their filenames:
-.LP
-.RS 3
-
 .LP
 .nf
 \f3
@@ -178,7 +151,6 @@ To extract individual files from a jar file, supply their filenames:
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -186,10 +158,7 @@ Beginning with version 1.3 of the JDK, the \f2jar\fP utility supports
 .na
 \f2JarIndex\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Index, which allows application class loaders to load classes more efficiently from jar files. If an application or applet is bundled into multiple jar files,\  only the necessary jar files will be downloaded and opened to load classes. This performance optimization is enabled by running \f2jar\fP with the \f2\-i\fPoption. It will generate package location information for the specified main jar file and all the jar files it depends on, which need to be specified in the \f2Class\-Path\fP attribute of the main jar file's manifest.
-.LP
-.RS 3
-
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#JAR_Index, which allows application class loaders to load classes more efficiently from jar files. If an application or applet is bundled into multiple jar files,\  only the necessary jar files will be downloaded and opened to load classes. This performance optimization is enabled by running \f2jar\fP with the \f2\-i\fPoption. It will generate package location information for the specified main jar file and all the jar files it depends on, which need to be specified in the \f2Class\-Path\fP attribute of the main jar file's manifest.
 .LP
 .nf
 \f3
@@ -198,7 +167,6 @@ http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Index, whi
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -210,9 +178,6 @@ The application class loader uses the information stored in this file for effici
 .br
 To copy directories, first compress files in \f2dir1\fP to \f2stdout\fP, then extract from \f2stdin\fP to \f2dir2\fP (omitting the \f2\-f\fP option from both \f2jar\fP commands):
 .LP
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -220,7 +185,6 @@ To copy directories, first compress files in \f2dir1\fP to \f2stdout\fP, then ex
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -228,11 +192,9 @@ To review command samples which use \f2jar\fP to opeate on jar files and jar fil
 .na
 \f2Java Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar.
+http://download.oracle.com/javase/tutorial/deployment/jar.
 .LP
 .SH "OPTIONS"
-.LP
-
 .LP
 .RS 3
 .TP 3
@@ -241,9 +203,6 @@ Creates a new archive file named \f2jarfile\fP (if \f2f\fP is specified) or to s
 .TP 3
 u 
 Updates an existing file \f2jarfile\fP (when \f2f\fP is specified) by adding to it files and directories specified by \f2inputfiles\fP. For example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -251,11 +210,7 @@ jar uf foo.jar foo.class
 .fl
 \fP
 .fi
-.RE
 would add the file \f2foo.class\fP to the existing jar file \f2foo.jar\fP. The \f2\-u\fP option can also update the manifest entry, as given by this example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -263,7 +218,6 @@ jar umf manifest foo.jar
 .fl
 \fP
 .fi
-.RE
 updates the \f2foo.jar\fP manifest with the \f2name : value\fP pairs in \f2manifest\fP. 
 .TP 3
 x 
@@ -274,9 +228,6 @@ Lists the table of contents from \f2jarfile\fP (if \f2f\fP is specified) or stan
 .TP 3
 i 
 Generate index information for the specified \f2jarfile\fP and its dependent jar files. For example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -284,9 +235,8 @@ jar i foo.jar
 .fl
 \fP
 .fi
-.RE
 .LP
-would generate an \f2INDEX.LIST\fP file in \f2foo.jar\fP which contains location information for each package in \f2foo.jar\fP and all the jar files specified in the \f2Class\-Path\fP attribute of \f2foo.jar\fP. See the index example.   
+would generate an \f2INDEX.LIST\fP file in \f2foo.jar\fP which contains location information for each package in \f2foo.jar\fP and all the jar files specified in the \f2Class\-Path\fP attribute of \f2foo.jar\fP. See the index example.  
 .TP 3
 f 
 Specifies the file \f2jarfile\fP to be created (\f2c\fP), updated (\f2u\fP), extracted (\f2x\fP), indexed (\f2i\fP), or viewed (\f2t\fP). The \f2\-f\fP option and filename \f2jarfile\fP are a pair \-\- if present, they must both appear. Omitting \f2f\fP and \f2jarfile\fP accepts a jar file name from \f2stdin\fP(for x and t) or sends jar file to \f2stdout\fP (for c and u). 
@@ -301,12 +251,10 @@ M
 Do not create a manifest file entry (for c and u), or delete a manifest file entry if one exists (for u). 
 .TP 3
 m 
-Includes \f2name : value\fP attribute pairs from the specified manifest file \f2manifest\fP in the file at \f2META\-INF/MANIFEST.MF\fP. \f2jar\fP adds a \f2name\ :\ value\fP pair unless an entry already exists with the same name, in which case \f2jar\fP updates its value. 
-.LP
+Includes \f2name : value\fP attribute pairs from the specified manifest file \f2manifest\fP in the file at \f2META\-INF/MANIFEST.MF\fP. \f2jar\fP adds a \f2name\ :\ value\fP pair unless an entry already exists with the same name, in which case \f2jar\fP updates its value.
+.br
+.br
 On the command line, the letters \f3m\fP and \f3f\fP must appear in the same order that \f2manifest\fP and \f2jarfile\fP appear. Example use: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -314,22 +262,18 @@ jar cmf myManifestFile myFile.jar *.class
 .fl
 \fP
 .fi
-.RE
 You can add special\-purpose \f2name\ :\ value\fP attribute pairs to the manifest that aren't contained in the default manifest. For example, you can add attributes specifying vendor information, version information, package sealing, or to make JAR\-bundled applications executable. See the 
 .na
 \f2JAR Files\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar/ trail in the Java Tutorial  for examples of using the \f4\-m\fP option. 
-.LP
+http://download.oracle.com/javase/tutorial/deployment/jar/ trail in the Java Tutorial  for examples of using the \f4\-m\fP option. 
 .TP 3
 e 
 Sets \f2entrypoint\fP as the application entry point for stand\-alone applications bundled into executable jar file. The use of this option creates or overrides the \f2Main\-Class\fP attribute value in the manifest file. This option can be used during creation of jar file or while updating the jar file. This option specifies the application entry point without editing or creating the manifest file.
 .br
 .br
+.br
 For example, this command creates \f2Main.jar\fP where the \f2Main\-Class\fP attribute value in the manifest is set to \f2Main\fP: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -337,12 +281,7 @@ jar cfe Main.jar Main Main.class
 .fl
 \fP
 .fi
-.RE
-.LP
 The java runtime can directly invoke this application by running the following command: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -350,11 +289,7 @@ java \-jar Main.jar
 .fl
 \fP
 .fi
-.RE
 If the entrypoint class name is in a package it may use either a dot (".") or slash ("/") character as the delimiter. For example, if \f2Main.class\fP is in a package called \f2foo\fP the entry point can be specified in the following ways: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -362,11 +297,7 @@ jar \-cfe Main.jar foo/Main foo/Main.class
 .fl
 \fP
 .fi
-.RE
 or 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -374,18 +305,13 @@ jar \-cfe Main.jar foo.Main foo/Main.class
 .fl
 \fP
 .fi
-.RE
-\f3Note:\ \fP specifying both \f2\-m\fP and \f2\-e\fP options together when the given manifest also contains the \f2Main\-Class\fP attribute results in an ambigous \f2Main.class\fP specification, leading to an error and the jar creation or update operation is aborted. 
-.LP
+\f3Note:\ \fP specifying both \f2\-m\fP and \f2\-e\fP options together when the given manifest also contains the \f2Main\-Class\fP attribute results in an ambigous \f2Main.class\fP specification, leading to an error and the jar creation or update operation is aborted.  
 .TP 3
-\-C \ dir 
+\-C\ dir 
 Temporarily changes directories (\f2cd\fP\ \f2dir\fP) during execution of the \f2jar\fP command while processing the following \f2inputfiles\fP argument. Its operation is intended to be similar to the \f2\-C\fP option of the UNIX \f2tar\fP utility.
 .br
 .br
 For example, this command changes to the \f2classes\fP directory and adds the \f2bar.class\fP from that directory to \f2foo.jar\fP: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -393,11 +319,7 @@ jar uf foo.jar \-C classes bar.class
 .fl
 \fP
 .fi
-.RE
 This command changes to the \f2classes\fP directory and adds to \f2foo.jar\fP all files within the \f2classes\fP directory (without creating a classes directory in the jar file), then changes back to the original directory before changing to the \f2bin\fP directory to add \f2xyz.class\fP to \f2foo.jar\fP. 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -405,11 +327,7 @@ jar uf foo.jar \-C classes . \-C bin xyz.class
 .fl
 \fP
 .fi
-.RE
 If \f2classes\fP holds files \f2bar1\fP and \f2bar2\fP, then here's what the jar file will contain using \f2jar tf foo.jar\fP: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -425,7 +343,6 @@ xyz.class
 .fl
 \fP
 .fi
-.RE
 .LP
 .TP 3
 \-Joption 
@@ -434,8 +351,6 @@ Pass \f2option\fP to the Java runtime environment, where \f2option\fP is one of 
 
 .LP
 .SH "COMMAND LINE ARGUMENT FILES"
-.LP
-
 .LP
 To shorten or simplify the jar command line, you can specify one or more files that themselves contain arguments to the \f2jar\fP command (except \f2\-J\fP options). This enables you to create jar commands of any length, overcoming command line limits imposed by the operating system. 
 .LP
@@ -447,23 +362,16 @@ When executing \f2jar\fP, pass in the path and name of each argument file with t
 .br
 The example below, \f2classes.list\fP holds the names of files output by a \f2find\fP command: 
 .LP
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
 % find \fP\f3.\fP \-name '*.class' \-print > classes.list
 .fl
 .fi
-.RE
 
 .LP
 .LP
 You can then execute the \f2jar\fP command on \f2Classes.list\fP by passing it to \f2jar\fP using argfile syntax:
-.LP
-.RS 3
-
 .LP
 .nf
 \f3
@@ -472,13 +380,9 @@ You can then execute the \f2jar\fP command on \f2Classes.list\fP by passing it t
 .fl
 \fP
 .fi
-.RE
 
 .LP
 An argument file can specify a path, but any filenames inside the argument file that have relative paths are relative to the current working directory, not to the path passed in. Here is an example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -486,7 +390,6 @@ An argument file can specify a path, but any filenames inside the argument file 
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -494,12 +397,7 @@ An argument file can specify a path, but any filenames inside the argument file 
 .LP
 .SH "EXAMPLES"
 .LP
-
-.LP
 To add all the files in a particular directory to an archive (overwriting contents if the archive already exists). Enumerating verbosely (with the \f2\-v\fP option) will tell you more information about the files in the archive, such as their size and last modified date. 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -535,13 +433,9 @@ adding: spacemusic.au(in = 3079) (out= 73)(deflated 97%)
 .fl
 \fP
 .fi
-.RE
 
 .LP
 If you already have separate subdirectories for images, audio files and classes, you can combine them into a single jar file: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -585,13 +479,9 @@ audio/ bundle.jar classes/ images/
 .fl
 \fP
 .fi
-.RE
 
 .LP
 To see the entry names in the jarfile, use the \f2t\fP option: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -619,7 +509,6 @@ images/at_work.gif
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -628,9 +517,6 @@ To add an index file to the jar file for speeding up class loading, use the \f2i
 .br
 Example:
 .br
-
-.LP
-.RS 3
 
 .LP
 If you split the inter\-dependent classes for a stock trade application into three jar files: \f2main.jar\fP, \f2buy.jar\fP, and \f2sell.jar\fP.
@@ -660,38 +546,34 @@ then you can use the \f2\-i\fP option to speed up the class loading time for you
 .fi
 
 .LP
-An \f2INDEX.LIST\fP file is inserted to the \f2META\-INF\fP directory. This enables the application class loader to download the specified jar files when it is searching for classes or resources.
-.RE
+An \f2INDEX.LIST\fP file is inserted to the \f2META\-INF\fP directory. This enables the application class loader to download the specified jar files when it is searching for classes or resources.  
 .SH "SEE ALSO"
 .LP
-
 .LP
 .na
 \f2The Jar Overview\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jarGuide.html
-.br
-
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/jarGuide.html
+.LP
 .LP
 .na
 \f2The Jar File Specification\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html
-.br
-
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/jar.html
+.LP
 .LP
 .na
 \f2The JarIndex Spec\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Index
-.br
-
+http://download.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#JAR_Index
+.LP
 .LP
 .na
 \f2Jar Tutorial\fP @
 .fi
-http://java.sun.com/docs/books/tutorial/jar on the Java Software web site.
-.br
-
+http://download.oracle.com/javase/tutorial/deployment/jar/index.html
 .LP
-pack200(1)  
+.LP
+pack200(1)
+.LP
+ 

@@ -25,15 +25,9 @@
 
 package com.sun.tools.example.debug.gui;
 
-import java.io.*;
-import java.util.*;
-
 import javax.swing.*;
-import javax.swing.tree.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.*;
-
 import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 import com.sun.tools.example.debug.expr.ExpressionParser;
@@ -41,6 +35,7 @@ import com.sun.tools.example.debug.expr.ParseException;
 
 public class MonitorTool extends JPanel {
 
+    private static final long serialVersionUID = -645235951031726647L;
     private ExecutionManager runtime;
     private ContextManager context;
 
@@ -64,6 +59,7 @@ public class MonitorTool extends JPanel {
     }
 
     private class MonitorToolListener implements ListSelectionListener {
+        @Override
         public void valueChanged(ListSelectionEvent e) {
             int index = list.getSelectedIndex();
             if (index != -1) {
@@ -78,6 +74,7 @@ public class MonitorTool extends JPanel {
                                             IncompatibleThreadStateException {
         ExpressionParser.GetFrame frameGetter =
             new ExpressionParser.GetFrame() {
+                @Override
                 public StackFrame get()
                     throws IncompatibleThreadStateException
                 {
@@ -93,6 +90,7 @@ public class MonitorTool extends JPanel {
 
     private class MonitorRenderer extends DefaultListCellRenderer {
 
+        @Override
         public Component getListCellRendererComponent(JList list,
                                                       Object value,
                                                       int index,

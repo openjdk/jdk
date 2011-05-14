@@ -33,6 +33,7 @@ import java.util.*;
 
 public abstract class AbstractEventSet extends EventObject implements EventSet {
 
+    private static final long serialVersionUID = 2772717574222076977L;
     private final EventSet jdiEventSet;
     final Event oneEvent;
 
@@ -81,6 +82,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
 
     // Implement Mirror
 
+    @Override
     public VirtualMachine virtualMachine() {
         return jdiEventSet.virtualMachine();
     }
@@ -105,10 +107,12 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
         return jdiEventSet.suspendPolicy();
     }
 
+    @Override
     public void resume() {
         jdiEventSet.resume();
     }
 
+    @Override
     public int suspendPolicy() {
         return jdiEventSet.suspendPolicy();
     }
@@ -128,6 +132,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
     /**
      * Return an iterator specific to {@link Event} objects.
      */
+    @Override
     public EventIterator eventIterator() {
         return jdiEventSet.eventIterator();
     }
@@ -142,6 +147,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      *
      * @return the number of elements in this set (its cardinality).
      */
+    @Override
     public int size() {
         return jdiEventSet.size();
     }
@@ -151,6 +157,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      *
      * @return <tt>true</tt> if this set contains no elements.
      */
+    @Override
     public boolean isEmpty() {
         return jdiEventSet.isEmpty();
     }
@@ -163,6 +170,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      *
      * @return <tt>true</tt> if this set contains the specified element.
      */
+    @Override
     public boolean contains(Object o) {
         return jdiEventSet.contains(o);
     }
@@ -174,6 +182,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      *
      * @return an iterator over the elements in this set.
      */
+    @Override
     public Iterator<Event> iterator() {
         return jdiEventSet.iterator();
     }
@@ -184,6 +193,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      *
      * @return an array containing all of the elements in this set.
      */
+    @Override
     public Object[] toArray() {
         return jdiEventSet.toArray();
     }
@@ -202,6 +212,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      * @throws    ArrayStoreException the runtime type of a is not a supertype
      * of the runtime type of every element in this set.
      */
+    @Override
     public <T> T[] toArray(T a[]) {
         return jdiEventSet.toArray(a);
     }
@@ -217,6 +228,7 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
      * @return <tt>true</tt> if this set contains all of the elements of the
      *         specified collection.
      */
+    @Override
     public boolean containsAll(Collection<?> c) {
         return jdiEventSet.containsAll(c);
     }
@@ -224,21 +236,27 @@ public abstract class AbstractEventSet extends EventObject implements EventSet {
 
     // Make the rest of Set unmodifiable
 
+    @Override
     public boolean add(Event e){
         throw new UnsupportedOperationException();
     }
+    @Override
     public boolean remove(Object o) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public boolean addAll(Collection<? extends Event> coll) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public boolean removeAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public boolean retainAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public void clear() {
         throw new UnsupportedOperationException();
     }

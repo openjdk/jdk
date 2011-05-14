@@ -12989,6 +12989,53 @@ instruct maxI_eReg(eRegI dst, eRegI src, eFlagsReg flags) %{
 %}
 
 // ============================================================================
+// Counted Loop limit node which represents exact final iterator value.
+// Note: the resulting value should fit into integer range since
+// counted loops have limit check on overflow.
+instruct loopLimit_eReg(eAXRegI limit, nadxRegI init, immI stride, eDXRegI limit_hi, nadxRegI tmp, eFlagsReg flags) %{
+  match(Set limit (LoopLimit (Binary init limit) stride));
+  effect(TEMP limit_hi, TEMP tmp, KILL flags);
+  ins_cost(300);
+
+  format %{ "loopLimit $init,$limit,$stride  # $limit = $init + $stride *( $limit - $init + $stride -1)/ $stride, kills $limit_hi" %}
+  ins_encode %{
+    int strd = (int)$stride$$constant;
+    assert(strd != 1 && strd != -1, "sanity");
+    int m1 = (strd > 0) ? 1 : -1;
+    // Convert limit to long (EAX:EDX)
+    __ cdql();
+    // Convert init to long (init:tmp)
+    __ movl($tmp$$Register, $init$$Register);
+    __ sarl($tmp$$Register, 31);
+    // $limit - $init
+    __ subl($limit$$Register, $init$$Register);
+    __ sbbl($limit_hi$$Register, $tmp$$Register);
+    // + ($stride - 1)
+    if (strd > 0) {
+      __ addl($limit$$Register, (strd - 1));
+      __ adcl($limit_hi$$Register, 0);
+      __ movl($tmp$$Register, strd);
+    } else {
+      __ addl($limit$$Register, (strd + 1));
+      __ adcl($limit_hi$$Register, -1);
+      __ lneg($limit_hi$$Register, $limit$$Register);
+      __ movl($tmp$$Register, -strd);
+    }
+    // signed devision: (EAX:EDX) / pos_stride
+    __ idivl($tmp$$Register);
+    if (strd < 0) {
+      // restore sign
+      __ negl($tmp$$Register);
+    }
+    // (EAX) * stride
+    __ mull($tmp$$Register);
+    // + init (ignore upper bits)
+    __ addl($limit$$Register, $init$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ============================================================================
 // Branch Instructions
 // Jump Table
 instruct jumpXtnd(eRegI switch_val) %{
