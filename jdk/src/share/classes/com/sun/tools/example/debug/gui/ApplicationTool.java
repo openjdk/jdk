@@ -29,12 +29,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-import com.sun.jdi.*;
 import com.sun.tools.example.debug.bdi.*;
 
 public class ApplicationTool extends JPanel {
 
-    private Environment env;
+    private static final long serialVersionUID = 310966063293205714L;
+
     private ExecutionManager runtime;
 
     private TypeScript script;
@@ -45,13 +45,13 @@ public class ApplicationTool extends JPanel {
 
         super(new BorderLayout());
 
-        this.env = env;
         this.runtime = env.getExecutionManager();
 
         this.script = new TypeScript(PROMPT, false); // No implicit echo.
         this.add(script);
 
         script.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 runtime.sendLineToApplication(script.readln());
             }

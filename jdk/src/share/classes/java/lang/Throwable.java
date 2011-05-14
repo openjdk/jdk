@@ -129,16 +129,41 @@ public class Throwable implements Serializable {
      */
     private String detailMessage;
 
+
+    /**
+     * Holder class to defer initializing sentinel objects only used
+     * for serialization.
+     */
+    private static class SentinelHolder {
+        /**
+         * {@linkplain #setStackTrace(StackTraceElement[]) Setting the
+         * stack trace} to a one-element array containing this sentinel
+         * value indicates future attempts to set the stack trace will be
+         * ignored.  The sentinal is equal to the result of calling:<br>
+         * {@code new StackTraceElement("", "", null, Integer.MIN_VALUE)}
+         */
+        public static final StackTraceElement STACK_TRACE_ELEMENT_SENTINEL =
+            new StackTraceElement("", "", null, Integer.MIN_VALUE);
+
+        /**
+         * Sentinel value used in the serial form to indicate an immutable
+         * stack trace.
+         */
+        public static final StackTraceElement[] STACK_TRACE_SENTINEL =
+            new StackTraceElement[] {STACK_TRACE_ELEMENT_SENTINEL};
+    }
+
     /**
      * A shared value for an empty stack.
      */
-    private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
+    private static final StackTraceElement[] UNASSIGNED_STACK = new StackTraceElement[0];
 
     /*
      * To allow Throwable objects to be made immutable and safely
      * reused by the JVM, such as OutOfMemoryErrors, fields of
-     * Throwable that are writable in response to user actions, cause
-     * and suppressedExceptions obey the following protocol:
+     * Throwable that are writable in response to user actions, cause,
+     * stackTrace, and suppressedExceptions obey the following
+     * protocol:
      *
      * 1) The fields are initialized to a non-null sentinel value
      * which indicates the value has logically not been set.
@@ -174,10 +199,15 @@ public class Throwable implements Serializable {
     /**
      * The stack trace, as returned by {@link #getStackTrace()}.
      *
+     * The field is initialized to a zero-length array.  A {@code
+     * null} value of this field indicates subsequent calls to {@link
+     * #setStackTrace(StackTraceElement[])} and {@link
+     * #fillInStackTrace()} will be be no-ops.
+     *
      * @serial
      * @since 1.4
      */
-    private StackTraceElement[] stackTrace;
+    private StackTraceElement[] stackTrace = UNASSIGNED_STACK;
 
     // Setting this static field introduces an acceptable
     // initialization dependency on a few java.util classes.
@@ -284,24 +314,36 @@ public class Throwable implements Serializable {
 
     /**
      * Constructs a new throwable with the specified detail message,
-     * cause, and {@linkplain #addSuppressed suppression} enabled or
-     * disabled.  If suppression is disabled, {@link #getSuppressed}
-     * for this object will return a zero-length array and calls to
-     * {@link #addSuppressed} that would otherwise append an exception
-     * to the suppressed list will have no effect.
+     * cause, {@linkplain #addSuppressed suppression} enabled or
+     * disabled, and writable stack trace enabled or disabled.  If
+     * suppression is disabled, {@link #getSuppressed} for this object
+     * will return a zero-length array and calls to {@link
+     * #addSuppressed} that would otherwise append an exception to the
+     * suppressed list will have no effect.  If the writable stack
+     * trace is false, this constructor will not call {@link
+     * #fillInStackTrace()}, a {@code null} will be written to the
+     * {@code stackTrace} field, and subsequent calls to {@code
+     * fillInStackTrace} and {@link
+     * #setStackTrace(StackTraceElement[])} will not set the stack
+     * trace.  If the writable stack trace is false, {@link
+     * #getStackTrace} will return a zero length array.
      *
      * <p>Note that the other constructors of {@code Throwable} treat
-     * suppression as being enabled.  Subclasses of {@code Throwable}
-     * should document any conditions under which suppression is
-     * disabled.  Disabling of suppression should only occur in
-     * exceptional circumstances where special requirements exist,
-     * such as a virtual machine reusing exception objects under
-     * low-memory situations.
+     * suppression as being enabled and the stack trace as being
+     * writable.  Subclasses of {@code Throwable} should document any
+     * conditions under which suppression is disabled and document
+     * conditions under which the stack trace is not writable.
+     * Disabling of suppression should only occur in exceptional
+     * circumstances where special requirements exist, such as a
+     * virtual machine reusing exception objects under low-memory
+     * situations.
      *
      * @param  message the detail message.
      * @param cause the cause.  (A {@code null} value is permitted,
      * and indicates that the cause is nonexistent or unknown.)
      * @param enableSuppression whether or not suppression is enabled or disabled
+     * @param writableStackTrace whether or not the stack trace should be
+     *                           writable
      *
      * @see OutOfMemoryError
      * @see NullPointerException
@@ -309,8 +351,13 @@ public class Throwable implements Serializable {
      * @since 1.7
      */
     protected Throwable(String message, Throwable cause,
-                        boolean enableSuppression) {
-        fillInStackTrace();
+                        boolean enableSuppression,
+                        boolean writableStackTrace) {
+        if (writableStackTrace) {
+            fillInStackTrace();
+        } else {
+            stackTrace = null;
+        }
         detailMessage = message;
         this.cause = cause;
         if (!enableSuppression)
@@ -707,10 +754,22 @@ public class Throwable implements Serializable {
      * {@code Throwable} object information about the current state of
      * the stack frames for the current thread.
      *
+     * <p>If the stack trace of this {@code Throwable} {@linkplain
+     * Throwable#Throwable(String, Throwable, boolean, boolean) is not
+     * writable}, calling this method has no effect.
+     *
      * @return  a reference to this {@code Throwable} instance.
      * @see     java.lang.Throwable#printStackTrace()
      */
-    public synchronized native Throwable fillInStackTrace();
+    public synchronized Throwable fillInStackTrace() {
+        if (stackTrace != null) {
+            fillInStackTrace(0);
+            stackTrace = UNASSIGNED_STACK;
+        }
+        return this;
+    }
+
+    private native Throwable fillInStackTrace(int dummy);
 
     /**
      * Provides programmatic access to the stack trace information printed by
@@ -740,12 +799,15 @@ public class Throwable implements Serializable {
     }
 
     private synchronized StackTraceElement[] getOurStackTrace() {
-        // Initialize stack trace if this is the first call to this method
-        if (stackTrace == null) {
+        // Initialize stack trace field with information from
+        // backtrace if this is the first call to this method
+        if (stackTrace == UNASSIGNED_STACK) {
             int depth = getStackTraceDepth();
             stackTrace = new StackTraceElement[depth];
             for (int i=0; i < depth; i++)
                 stackTrace[i] = getStackTraceElement(i);
+        } else if (stackTrace == null) {
+            return UNASSIGNED_STACK;
         }
         return stackTrace;
     }
@@ -761,6 +823,11 @@ public class Throwable implements Serializable {
      * when a throwable is constructed or deserialized when a throwable is
      * read from a serialization stream.
      *
+     * <p>If the stack trace of this {@code Throwable} {@linkplain
+     * Throwable#Throwable(String, Throwable, boolean, boolean) is not
+     * writable}, calling this method has no effect other than
+     * validating its argument.
+     *
      * @param   stackTrace the stack trace elements to be associated with
      * this {@code Throwable}.  The specified array is copied by this
      * call; changes in the specified array after the method invocation
@@ -768,18 +835,22 @@ public class Throwable implements Serializable {
      * trace.
      *
      * @throws NullPointerException if {@code stackTrace} is
-     *         {@code null}, or if any of the elements of
+     *         {@code null} or if any of the elements of
      *         {@code stackTrace} are {@code null}
      *
      * @since  1.4
      */
     public void setStackTrace(StackTraceElement[] stackTrace) {
+        // Validate argument
         StackTraceElement[] defensiveCopy = stackTrace.clone();
-        for (int i = 0; i < defensiveCopy.length; i++)
+        for (int i = 0; i < defensiveCopy.length; i++) {
             if (defensiveCopy[i] == null)
                 throw new NullPointerException("stackTrace[" + i + "]");
+        }
 
         synchronized (this) {
+            if (this.stackTrace == null) // Immutable stack
+                return;
             this.stackTrace = defensiveCopy;
         }
     }
@@ -808,7 +879,11 @@ public class Throwable implements Serializable {
      * well-formedness constraints on fields.  Null entries and
      * self-pointers are not allowed in the list of {@code
      * suppressedExceptions}.  Null entries are not allowed for stack
-     * trace elements.
+     * trace elements.  A null stack trace in the serial form results
+     * in a zero-length stack element array. A single-element stack
+     * trace whose entry is equal to {@code new StackTraceElement("",
+     * "", null, Integer.MIN_VALUE)} results in a {@code null} {@code
+     * stackTrace} field.
      *
      * Note that there are no constraints on the value the {@code
      * cause} field can hold; both {@code null} and {@code this} are
@@ -837,26 +912,60 @@ public class Throwable implements Serializable {
             suppressedExceptions = suppressed;
         } // else a null suppressedExceptions field remains null
 
+        /*
+         * For zero-length stack traces, use a clone of
+         * UNASSIGNED_STACK rather than UNASSIGNED_STACK itself to
+         * allow identity comparison against UNASSIGNED_STACK in
+         * getOurStackTrace.  The identity of UNASSIGNED_STACK in
+         * stackTrace indicates to the getOurStackTrace method that
+         * the stackTrace needs to be constructed from the information
+         * in backtrace.
+         */
         if (stackTrace != null) {
-            for (StackTraceElement ste : stackTrace) {
-                if (ste == null)
-                    throw new NullPointerException("null StackTraceElement in serial stream. ");
+            if (stackTrace.length == 0) {
+                stackTrace = UNASSIGNED_STACK.clone();
+            }  else if (stackTrace.length == 1 &&
+                        // Check for the marker of an immutable stack trace
+                        SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(stackTrace[0])) {
+                stackTrace = null;
+            } else { // Verify stack trace elements are non-null.
+                for(StackTraceElement ste : stackTrace) {
+                    if (ste == null)
+                        throw new NullPointerException("null StackTraceElement in serial stream. ");
+                }
             }
         } else {
-            // A null stackTrace field in the serial form can result from
-            // an exception serialized without that field in older JDK releases.
-            stackTrace = EMPTY_STACK;
+            // A null stackTrace field in the serial form can result
+            // from an exception serialized without that field in
+            // older JDK releases; treat such exceptions as having
+            // empty stack traces.
+            stackTrace = UNASSIGNED_STACK.clone();
         }
-
     }
 
     /**
      * Write a {@code Throwable} object to a stream.
+     *
+     * A {@code null} stack trace field is represented in the serial
+     * form as a one-element array whose element is equal to {@code
+     * new StackTraceElement("", "", null, Integer.MIN_VALUE)}.
      */
     private synchronized void writeObject(ObjectOutputStream s)
         throws IOException {
-        getOurStackTrace();  // Ensure that stackTrace field is initialized.
-        s.defaultWriteObject();
+        // Ensure that the stackTrace field is initialized to a
+        // non-null value, if appropriate.  As of JDK 7, a null stack
+        // trace field is a valid value indicating the stack trace
+        // should not be set.
+        getOurStackTrace();
+
+        StackTraceElement[] oldStackTrace = stackTrace;
+        try {
+            if (stackTrace == null)
+                stackTrace = SentinelHolder.STACK_TRACE_SENTINEL;
+            s.defaultWriteObject();
+        } finally {
+            stackTrace = oldStackTrace;
+        }
     }
 
     /**
@@ -866,8 +975,8 @@ public class Throwable implements Serializable {
      * try}-with-resources statement.
      *
      * <p>The suppression behavior is enabled <em>unless</em> disabled
-     * {@linkplain #Throwable(String, Throwable, boolean) via a
-     * constructor}.  When suppression is disabled, this method does
+     * {@linkplain #Throwable(String, Throwable, boolean, boolean) via
+     * a constructor}.  When suppression is disabled, this method does
      * nothing other than to validate its argument.
      *
      * <p>Note that when one exception {@linkplain
@@ -933,8 +1042,8 @@ public class Throwable implements Serializable {
      * statement, in order to deliver this exception.
      *
      * If no exceptions were suppressed or {@linkplain
-     * Throwable(String, Throwable, boolean) suppression is disabled},
-     * an empty array is returned.
+     * #Throwable(String, Throwable, boolean, boolean) suppression is
+     * disabled}, an empty array is returned.
      *
      * @return an array containing all of the exceptions that were
      *         suppressed to deliver this exception.

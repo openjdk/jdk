@@ -48,7 +48,7 @@ void AwtObjectList::Add(AwtObject* obj)
     m_head = item;
 }
 
-void AwtObjectList::Remove(AwtObject* obj)
+BOOL AwtObjectList::Remove(AwtObject* obj)
 {
     CriticalSection::Lock l(m_lock);
 
@@ -64,11 +64,14 @@ void AwtObjectList::Remove(AwtObject* obj)
             }
             DASSERT(item != NULL);
             delete item;
-            return;
+            return TRUE;
         }
         lastItem = item;
         item = item->next;
     }
+
+    return FALSE;
+
 //    DASSERT(FALSE);  // should never get here...
                       // even if it does it shouldn't be fatal.
 }

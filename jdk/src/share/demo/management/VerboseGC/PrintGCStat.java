@@ -71,12 +71,10 @@ public class PrintGCStat {
             assert(false);
         }
 
-        Set mbeans = server.queryNames(poolName, null);
+        Set<ObjectName> mbeans = server.queryNames(poolName, null);
         if (mbeans != null) {
             pools = new ArrayList<MemoryPoolMXBean>();
-            Iterator iterator = mbeans.iterator();
-            while (iterator.hasNext()) {
-                ObjectName objName = (ObjectName) iterator.next();
+            for (ObjectName objName : mbeans) {
                 MemoryPoolMXBean p =
                     newPlatformMXBeanProxy(server,
                                            objName.getCanonicalName(),
@@ -88,9 +86,7 @@ public class PrintGCStat {
         mbeans = server.queryNames(gcName, null);
         if (mbeans != null) {
             gcmbeans = new ArrayList<GarbageCollectorMXBean>();
-            Iterator iterator = mbeans.iterator();
-            while (iterator.hasNext()) {
-                ObjectName objName = (ObjectName) iterator.next();
+            for (ObjectName objName : mbeans) {
                 GarbageCollectorMXBean gc =
                     newPlatformMXBeanProxy(server,
                                            objName.getCanonicalName(),
@@ -116,7 +112,9 @@ public class PrintGCStat {
      * of all memory pools as well as the GC statistics.
      */
     public void printVerboseGc() {
-        System.out.print("Uptime: " + formatMillis(rmbean.getUptime()));
+        System.out.println("Uptime: " + formatMillis(rmbean.getUptime()));
+        System.out.println("Heap usage: " + mmbean.getHeapMemoryUsage());
+        System.out.println("Non-Heap memory usage: " + mmbean.getNonHeapMemoryUsage());
         for (GarbageCollectorMXBean gc : gcmbeans) {
             System.out.print(" [" + gc.getName() + ": ");
             System.out.print("Count=" + gc.getCollectionCount());

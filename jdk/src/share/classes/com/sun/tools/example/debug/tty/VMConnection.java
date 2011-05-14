@@ -28,7 +28,6 @@ package com.sun.tools.example.debug.tty;
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
 import com.sun.jdi.request.EventRequestManager;
-import com.sun.jdi.request.ExceptionRequest;
 import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
 
@@ -292,6 +291,7 @@ class VMConnection {
      */
     private void displayRemoteOutput(final InputStream stream) {
         Thread thr = new Thread("output reader") {
+            @Override
             public void run() {
                 try {
                     dumpStream(stream);

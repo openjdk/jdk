@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     7027667, 7023591
+ * @bug     7027667 7023591 7037091
  *
  * @summary Verifies that aa clipped rectangles are drawn, not filled.
  *

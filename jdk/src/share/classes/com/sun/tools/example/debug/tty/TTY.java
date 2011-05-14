@@ -47,34 +47,43 @@ public class TTY implements EventNotifier {
      */
     private static final String progname = "jdb";
 
+    @Override
     public void vmStartEvent(VMStartEvent se)  {
         Thread.yield();  // fetch output
         MessageOutput.lnprint("VM Started:");
     }
 
+    @Override
     public void vmDeathEvent(VMDeathEvent e)  {
     }
 
+    @Override
     public void vmDisconnectEvent(VMDisconnectEvent e)  {
     }
 
+    @Override
     public void threadStartEvent(ThreadStartEvent e)  {
     }
 
+    @Override
     public void threadDeathEvent(ThreadDeathEvent e)  {
     }
 
+    @Override
     public void classPrepareEvent(ClassPrepareEvent e)  {
     }
 
+    @Override
     public void classUnloadEvent(ClassUnloadEvent e)  {
     }
 
+    @Override
     public void breakpointEvent(BreakpointEvent be)  {
         Thread.yield();  // fetch output
         MessageOutput.lnprint("Breakpoint hit:");
     }
 
+    @Override
     public void fieldWatchEvent(WatchpointEvent fwe)  {
         Field field = fwe.field();
         ObjectReference obj = fwe.object();
@@ -90,11 +99,13 @@ public class TTY implements EventNotifier {
         }
     }
 
+    @Override
     public void stepEvent(StepEvent se)  {
         Thread.yield();  // fetch output
         MessageOutput.lnprint("Step completed:");
     }
 
+    @Override
     public void exceptionEvent(ExceptionEvent ee) {
         Thread.yield();  // fetch output
         Location catchLocation = ee.catchLocation();
@@ -108,6 +119,7 @@ public class TTY implements EventNotifier {
         }
     }
 
+    @Override
     public void methodEntryEvent(MethodEntryEvent me) {
         Thread.yield();  // fetch output
         /*
@@ -125,6 +137,7 @@ public class TTY implements EventNotifier {
         }
     }
 
+    @Override
     public boolean methodExitEvent(MethodExitEvent me) {
         Thread.yield();  // fetch output
         /*
@@ -173,6 +186,7 @@ public class TTY implements EventNotifier {
         return false;
     }
 
+    @Override
     public void vmInterrupted() {
         Thread.yield();  // fetch output
         printCurrentLocation();
@@ -184,6 +198,7 @@ public class TTY implements EventNotifier {
         MessageOutput.printPrompt();
     }
 
+    @Override
     public void receivedEvent(Event event) {
     }
 
@@ -317,17 +332,18 @@ public class TTY implements EventNotifier {
         //           Adapted for use with String[][0].
         int low = 0;
         int high = commandList.length - 1;
-        long i = 0;
         while (low <= high) {
             int mid = (low + high) >>> 1;
             String midVal = commandList[mid][0];
             int compare = midVal.compareTo(key);
-            if (compare < 0)
+            if (compare < 0) {
                 low = mid + 1;
-            else if (compare > 0)
+            } else if (compare > 0) {
                 high = mid - 1;
-            else
+            }
+            else {
                 return mid; // key found
+        }
         }
         return -(low + 1);  // key not found.
     };
@@ -336,7 +352,9 @@ public class TTY implements EventNotifier {
      * Return true if the command is OK when disconnected.
      */
     private boolean isDisconnectCmd(int ii) {
-        if (ii < 0 || ii >= commandList.length) return false;
+        if (ii < 0 || ii >= commandList.length) {
+            return false;
+        }
         return (commandList[ii][1].equals("y"));
     }
 
@@ -344,7 +362,9 @@ public class TTY implements EventNotifier {
      * Return true if the command is OK when readonly.
      */
     private boolean isReadOnlyCmd(int ii) {
-        if (ii < 0 || ii >= commandList.length) return false;
+        if (ii < 0 || ii >= commandList.length) {
+            return false;
+        }
         return (commandList[ii][2].equals("y"));
     };
 

@@ -43,7 +43,8 @@ package java.lang;
  *
  * {@code NullPointerException} objects may be constructed by the
  * virtual machine as if {@linkplain Throwable#Throwable(String,
- * Throwable, boolean) suppression were disabled}.
+ * Throwable, boolean, boolean) suppression were disabled and/or the
+ * stack trace was not writable}.
  *
  * @author  unascribed
  * @since   JDK1.0

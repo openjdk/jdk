@@ -44,7 +44,6 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_EPollArrayWrapper_interrupt;
 		Java_sun_nio_ch_EPollArrayWrapper_offsetofData;
 		Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent;
-		Java_sun_nio_ch_EPoll_init;
 		Java_sun_nio_ch_EPoll_eventSize;
 		Java_sun_nio_ch_EPoll_eventsOffset;
 		Java_sun_nio_ch_EPoll_dataOffset;
@@ -129,7 +128,6 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio;
 		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGnomeVfs;
 		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGnomeVfs;
-		Java_sun_nio_fs_LinuxWatchService_init;
 		Java_sun_nio_fs_LinuxWatchService_eventSize;
 		Java_sun_nio_fs_LinuxWatchService_eventOffsets;
 		Java_sun_nio_fs_LinuxWatchService_inotifyInit;

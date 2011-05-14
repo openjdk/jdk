@@ -34,6 +34,7 @@ import java.util.Date;
 
 import java.lang.NullPointerException;  // for javadoc
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * An HttpCookie object represents an http cookie, which carries state
@@ -817,7 +818,7 @@ public final class HttpCookie implements Cloneable {
         //   3. and have same path (case-sensitive).
         return equalsIgnoreCase(getName(), other.getName()) &&
                equalsIgnoreCase(getDomain(), other.getDomain()) &&
-               equals(getPath(), other.getPath());
+               Objects.equals(getPath(), other.getPath());
     }
 
 
@@ -1158,14 +1159,6 @@ public final class HttpCookie implements Cloneable {
         if (s == t) return true;
         if ((s != null) && (t != null)) {
             return s.equalsIgnoreCase(t);
-        }
-        return false;
-    }
-
-    private static boolean equals(String s, String t) {
-        if (s == t) return true;
-        if ((s != null) && (t != null)) {
-            return s.equals(t);
         }
         return false;
     }

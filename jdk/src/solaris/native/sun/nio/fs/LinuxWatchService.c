@@ -33,54 +33,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
+#include <sys/inotify.h>
 
 #include "sun_nio_fs_LinuxWatchService.h"
-
-/* inotify.h may not be available at build time */
-#ifdef  __cplusplus
-extern "C" {
-#endif
-struct inotify_event
-{
-  int wd;
-  uint32_t mask;
-  uint32_t cookie;
-  uint32_t len;
-  char name __flexarr;
-};
-#ifdef  __cplusplus
-}
-#endif
-
-typedef int inotify_init_func(void);
-typedef int inotify_add_watch_func(int fd, const char* path, uint32_t mask);
-typedef int inotify_rm_watch_func(int fd, uint32_t wd);
-
-inotify_init_func* my_inotify_init_func = NULL;
-inotify_add_watch_func* my_inotify_add_watch_func = NULL;
-inotify_rm_watch_func* my_inotify_rm_watch_func = NULL;
 
 static void throwUnixException(JNIEnv* env, int errnum) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/UnixException",
         "(I)V", errnum);
     if (x != NULL) {
         (*env)->Throw(env, x);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_LinuxWatchService_init(JNIEnv *env, jclass clazz)
-{
-    my_inotify_init_func = (inotify_init_func*)
-        dlsym(RTLD_DEFAULT, "inotify_init");
-    my_inotify_add_watch_func =
-        (inotify_add_watch_func*) dlsym(RTLD_DEFAULT, "inotify_add_watch");
-    my_inotify_rm_watch_func =
-        (inotify_rm_watch_func*) dlsym(RTLD_DEFAULT, "inotify_rm_watch");
-
-    if ((my_inotify_init_func == NULL) || (my_inotify_add_watch_func == NULL) ||
-        (my_inotify_rm_watch_func == NULL)) {
-        JNU_ThrowInternalError(env, "unable to get address of inotify functions");
     }
 }
 
@@ -111,7 +72,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_fs_LinuxWatchService_inotifyInit
     (JNIEnv* env, jclass clazz)
 {
-    int ifd = (*my_inotify_init_func)();
+    int ifd = inotify_init();
     if (ifd == -1) {
         throwUnixException(env, errno);
     }
@@ -125,7 +86,7 @@ Java_sun_nio_fs_LinuxWatchService_inotifyAddWatch
     int wfd = -1;
     const char* path = (const char*)jlong_to_ptr(address);
 
-    wfd = (*my_inotify_add_watch_func)((int)fd, path, mask);
+    wfd = inotify_add_watch((int)fd, path, mask);
     if (wfd == -1) {
         throwUnixException(env, errno);
     }
@@ -136,7 +97,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_fs_LinuxWatchService_inotifyRmWatch
     (JNIEnv* env, jclass clazz, jint fd, jint wd)
 {
-    int err = (*my_inotify_rm_watch_func)((int)fd, (int)wd);
+    int err = inotify_rm_watch((int)fd, (int)wd);
     if (err == -1)
         throwUnixException(env, errno);
 }
@@ -166,7 +127,6 @@ Java_sun_nio_fs_LinuxWatchService_socketpair
         res[1] = (jint)sp[1];
         (*env)->SetIntArrayRegion(env, sv, 0, 2, &res[0]);
     }
-
 }
 
 JNIEXPORT jint JNICALL
@@ -190,6 +150,4 @@ Java_sun_nio_fs_LinuxWatchService_poll
         }
      }
     return (jint)n;
-
-
 }
