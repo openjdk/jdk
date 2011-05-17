@@ -2922,6 +2922,20 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
+JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
+    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
+    THROW_MSG_NULL(UOE_name, "MethodHandle.invoke cannot be invoked reflectively");
+    return NULL;
+}
+JVM_END
+
+JVM_ENTRY(jobject, MH_invokeExact_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
+    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
+    THROW_MSG_NULL(UOE_name, "MethodHandle.invokeExact cannot be invoked reflectively");
+    return NULL;
+}
+JVM_END
+
 
 /// JVM_RegisterMethodHandleMethods
 
@@ -2960,6 +2974,12 @@ static JNINativeMethod methods[] = {
   {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
 };
 
+static JNINativeMethod invoke_methods[] = {
+  // void init(MemberName self, AccessibleObject ref)
+  {CC"invoke",                  CC"(["OBJ")"OBJ,                FN_PTR(MH_invoke_UOE)},
+  {CC"invokeExact",             CC"(["OBJ")"OBJ,                FN_PTR(MH_invokeExact_UOE)}
+};
+
 // This one function is exported, used by NativeLookup.
 
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
@@ -2976,6 +2996,12 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     ThreadToNativeFromVM ttnfv(thread);
 
     int status = env->RegisterNatives(MHN_class, methods, sizeof(methods)/sizeof(JNINativeMethod));
+    if (!env->ExceptionOccurred()) {
+      const char* L_MH_name = (JLINV "MethodHandle");
+      const char* MH_name = L_MH_name+1;
+      jclass MH_class = env->FindClass(MH_name);
+      status = env->RegisterNatives(MH_class, invoke_methods, sizeof(invoke_methods)/sizeof(JNINativeMethod));
+    }
     if (env->ExceptionOccurred()) {
       MethodHandles::set_enabled(false);
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
