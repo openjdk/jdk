@@ -33,9 +33,11 @@ package javax.swing;
  * <code>ListModel</code>. This disjoint behavior allows for the temporary
  * storage and retrieval of a selected item in the model.
  *
+ * @param <E> the type of the elements of this model
+ *
  * @author Arnaud Weber
  */
-public interface ComboBoxModel extends ListModel {
+public interface ComboBoxModel<E> extends ListModel<E> {
 
   /**
    * Set the selected item. The implementation of this  method should notify
