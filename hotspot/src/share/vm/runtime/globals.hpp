@@ -2909,6 +2909,12 @@ class CommandLineFlags {
   product(intx, NmethodSweepCheckInterval, 5,                               \
           "Compilers wake up every n seconds to possibly sweep nmethods")   \
                                                                             \
+  notproduct(bool, LogSweeper, false,                                       \
+            "Keep a ring buffer of sweeper activity")                       \
+                                                                            \
+  notproduct(intx, SweeperLogEntries, 1024,                                 \
+            "Number of records in the ring buffer of sweeper activity")     \
+                                                                            \
   notproduct(intx, MemProfilingInterval, 500,                               \
           "Time between each invocation of the MemProfiler")                \
                                                                             \
