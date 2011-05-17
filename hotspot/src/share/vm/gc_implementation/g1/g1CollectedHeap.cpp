@@ -3323,8 +3323,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // progress, this will be zero.
       _cm->set_oops_do_bound();
 
-      if (mark_in_progress())
+      if (mark_in_progress()) {
         concurrent_mark()->newCSet();
+      }
 
 #if YOUNG_LIST_VERBOSE
       gclog_or_tty->print_cr("\nBefore choosing collection set.\nYoung_list:");
@@ -3333,6 +3334,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
       g1_policy()->choose_collection_set(target_pause_time_ms);
+
+      // We have chosen the complete collection set. If marking is
+      // active then, we clear the region fields of any of the
+      // concurrent marking tasks whose region fields point into
+      // the collection set as these values will become stale. This
+      // will cause the owning marking threads to claim a new region
+      // when marking restarts.
+      if (mark_in_progress()) {
+        concurrent_mark()->reset_active_task_region_fields_in_cset();
+      }
 
       // Nothing to do if we were unable to choose a collection set.
 #if G1_REM_SET_LOGGING
