@@ -40,7 +40,7 @@ import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
-import static com.sun.nio.sctp.SctpStandardSocketOption.*;
+import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 import static java.lang.System.out;
 
 public class SocketOptionTests {

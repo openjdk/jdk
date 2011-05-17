@@ -464,15 +464,15 @@ class WindowsWatchService
         {
             switch (action) {
                 case FILE_ACTION_MODIFIED :
-                    return StandardWatchEventKind.ENTRY_MODIFY;
+                    return StandardWatchEventKinds.ENTRY_MODIFY;
 
                 case FILE_ACTION_ADDED :
                 case FILE_ACTION_RENAMED_NEW_NAME :
-                    return StandardWatchEventKind.ENTRY_CREATE;
+                    return StandardWatchEventKinds.ENTRY_CREATE;
 
                 case FILE_ACTION_REMOVED :
                 case FILE_ACTION_RENAMED_OLD_NAME :
-                    return StandardWatchEventKind.ENTRY_DELETE;
+                    return StandardWatchEventKinds.ENTRY_DELETE;
 
                 default :
                     return null;  // action not recognized
@@ -548,7 +548,7 @@ class WindowsWatchService
                 if (info.error() != 0) {
                     // buffer overflow
                     if (info.error() == ERROR_NOTIFY_ENUM_DIR) {
-                        key.signalEvent(StandardWatchEventKind.OVERFLOW, null);
+                        key.signalEvent(StandardWatchEventKinds.OVERFLOW, null);
                     } else {
                         // other error so cancel key
                         implCancelKey(key);
@@ -562,7 +562,7 @@ class WindowsWatchService
                     processEvents(key, info.bytesTransferred());
                 } else {
                     // insufficient buffer size
-                    key.signalEvent(StandardWatchEventKind.OVERFLOW, null);
+                    key.signalEvent(StandardWatchEventKinds.OVERFLOW, null);
                 }
 
                 // start read for next batch of changes

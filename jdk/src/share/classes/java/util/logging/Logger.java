@@ -310,7 +310,20 @@ public class Logger {
      * @return a suitable Logger
      * @throws NullPointerException if the name is null.
      */
-    public static synchronized Logger getLogger(String name) {
+
+    // Synchronization is not required here. All synchronization for
+    // adding a new Logger object is handled by LogManager.addLogger().
+    public static Logger getLogger(String name) {
+        // This method is intentionally not a wrapper around a call
+        // to getLogger(name, resourceBundleName). If it were then
+        // this sequence:
+        //
+        //     getLogger("Foo", "resourceBundleForFoo");
+        //     getLogger("Foo");
+        //
+        // would throw an IllegalArgumentException in the second call
+        // because the wrapper would result in an attempt to replace
+        // the existing "resourceBundleForFoo" with null.
         LogManager manager = LogManager.getLogManager();
         return manager.demandLogger(name);
     }
@@ -355,7 +368,10 @@ public class Logger {
      *             a different resource bundle name.
      * @throws NullPointerException if the name is null.
      */
-    public static synchronized Logger getLogger(String name, String resourceBundleName) {
+
+    // Synchronization is not required here. All synchronization for
+    // adding a new Logger object is handled by LogManager.addLogger().
+    public static Logger getLogger(String name, String resourceBundleName) {
         LogManager manager = LogManager.getLogManager();
         Logger result = manager.demandLogger(name);
         if (result.resourceBundleName == null) {
@@ -417,7 +433,10 @@ public class Logger {
      * @throws MissingResourceException if the resourceBundleName is non-null and
      *             no corresponding resource can be found.
      */
-    public static synchronized Logger getAnonymousLogger(String resourceBundleName) {
+
+    // Synchronization is not required here. All synchronization for
+    // adding a new anonymous Logger object is handled by doSetParent().
+    public static Logger getAnonymousLogger(String resourceBundleName) {
         LogManager manager = LogManager.getLogManager();
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();

@@ -195,6 +195,9 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 
 # jdk_lang
 
+# requires junit
+java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
+
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
