@@ -33,6 +33,6 @@ import java.net.SocketOption;
  *
  * @since 1.7
  *
- * @see SctpStandardSocketOption
+ * @see SctpStandardSocketOptions
  */
 public interface SctpSocketOption<T> extends SocketOption<T> { }

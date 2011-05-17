@@ -31,7 +31,6 @@
 
 class Space;
 class OopsInGenClosure;
-class DirtyCardToOopClosure;
 
 // This kind of "GenRemSet" uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -167,7 +166,7 @@ public:
 };
 
 class ClearNoncleanCardWrapper: public MemRegionClosure {
-  MemRegionClosure* _dirty_card_closure;
+  DirtyCardToOopClosure* _dirty_card_closure;
   CardTableRS* _ct;
   bool _is_par;
 private:
@@ -179,7 +178,7 @@ private:
   inline bool clear_card_parallel(jbyte* entry);
 
 public:
-  ClearNoncleanCardWrapper(MemRegionClosure* dirty_card_closure, CardTableRS* ct);
+  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
   void do_MemRegion(MemRegion mr);
 };
 

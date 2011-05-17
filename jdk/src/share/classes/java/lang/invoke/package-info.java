@@ -185,7 +185,7 @@
  * The method handle constant produced for such a method behaves as if
  * it were created by {@link java.lang.invoke.MethodHandle#asVarargsCollector asVarargsCollector}.
  * In other words, the constant method handle will exhibit variable arity,
- * when invoked via {@code invokeGeneric}.
+ * when invoked via {@code MethodHandle.invoke}.
  * On the other hand, its behavior with respect to {@code invokeExact} will be the same
  * as if the {@code varargs} bit were not set.
  * <p>
@@ -243,7 +243,7 @@
  * <li>optionally, one or more <a href="#args">additional static arguments</a> </li>
  * </ul>
  * The method handle is then applied to the other values as if by
- * {@link java.lang.invoke.MethodHandle#invokeGeneric invokeGeneric}.
+ * {@link java.lang.invoke.MethodHandle#invoke MethodHandle.invoke}.
  * The returned result must be a {@link java.lang.invoke.CallSite CallSite} (or a subclass).
  * The type of the call site's target must be exactly equal to the type
  * derived from the dynamic call site's type descriptor and passed to
@@ -251,7 +251,7 @@
  * The call site then becomes permanently linked to the dynamic call site.
  * <p>
  * As long as each bootstrap method can be correctly invoked
- * by <code>invokeGeneric</code>, its detailed type is arbitrary.
+ * by <code>MethodHandle.invoke</code>, its detailed type is arbitrary.
  * For example, the first argument could be {@code Object}
  * instead of {@code MethodHandles.Lookup}, and the return type
  * could also be {@code Object} instead of {@code CallSite}.
@@ -272,7 +272,7 @@
  *     (i.e., a {@code CONSTANT_Class}, {@code CONSTANT_MethodType},
  *     or {@code CONSTANT_MethodHandle} argument cannot be linked) </li>
  * <li>the bootstrap method has the wrong arity,
- *     causing {@code invokeGeneric} to throw {@code WrongMethodTypeException} </li>
+ *     causing {@code MethodHandle.invoke} to throw {@code WrongMethodTypeException} </li>
  * <li>the bootstrap method has a wrong argument or return type </li>
  * <li>the bootstrap method invocation completes abnormally </li>
  * <li>the result from the bootstrap invocation is not a reference to
@@ -381,10 +381,10 @@
  * those values will be passed as additional arguments to the method handle.
  * (Note that because there is a limit of 255 arguments to any method,
  * at most 252 extra arguments can be supplied.)
- * The bootstrap method will be invoked as if by either {@code invokeGeneric}
+ * The bootstrap method will be invoked as if by either {@code MethodHandle.invoke}
  * or {@code invokeWithArguments}.  (There is no way to tell the difference.)
  * <p>
- * The normal argument conversion rules for {@code invokeGeneric} apply to all stacked arguments.
+ * The normal argument conversion rules for {@code MethodHandle.invoke} apply to all stacked arguments.
  * For example, if a pushed value is a primitive type, it may be converted to a reference by boxing conversion.
  * If the bootstrap method is a variable arity method (its modifier bit {@code 0x0080} is set),
  * then some or all of the arguments specified here may be collected into a trailing array parameter.
@@ -419,8 +419,8 @@
  * For example, the fourth argument could be {@code MethodHandle},
  * if that is the type of the corresponding constant in
  * the {@code CONSTANT_InvokeDynamic} entry.
- * In that case, the {@code invokeGeneric} call will pass the extra method handle
- * constant as an {@code Object}, but the type matching machinery of {@code invokeGeneric}
+ * In that case, the {@code MethodHandle.invoke} call will pass the extra method handle
+ * constant as an {@code Object}, but the type matching machinery of {@code MethodHandle.invoke}
  * will cast the reference back to {@code MethodHandle} before invoking the bootstrap method.
  * (If a string constant were passed instead, by badly generated code, that cast would then fail,
  * resulting in a {@code BootstrapMethodError}.)

@@ -215,7 +215,7 @@ import sun.security.action.GetPropertyAction;
  * determined during virtual-machine startup and typically depends upon the
  * locale and charset being used by the underlying operating system. </p>
  *
- * <p>The {@link StandardCharset} class defines constants for each of the
+ * <p>The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
  *
  * <h4>Terminology</h4>

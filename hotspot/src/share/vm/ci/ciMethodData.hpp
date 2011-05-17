@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,10 @@ private:
 
 public:
   bool is_method_data()  { return true; }
-  bool is_empty() { return _state == empty_state; }
+
+  void set_mature() { _state = mature_state; }
+
+  bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
   int creation_mileage() { return _orig.creation_mileage(); }

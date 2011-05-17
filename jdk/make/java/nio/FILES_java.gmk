@@ -71,7 +71,7 @@ FILES_src = \
 	java/nio/charset/CoderMalfunctionError.java \
 	java/nio/charset/CodingErrorAction.java \
 	java/nio/charset/MalformedInputException.java \
-	java/nio/charset/StandardCharset.java \
+	java/nio/charset/StandardCharsets.java \
 	java/nio/charset/UnmappableCharacterException.java \
 	\
 	java/nio/charset/spi/CharsetProvider.java \
@@ -116,7 +116,7 @@ FILES_src = \
 	java/nio/file/SimpleFileVisitor.java \
 	java/nio/file/StandardCopyOption.java \
 	java/nio/file/StandardOpenOption.java \
-	java/nio/file/StandardWatchEventKind.java \
+	java/nio/file/StandardWatchEventKinds.java \
 	java/nio/file/TempFileHelper.java \
 	java/nio/file/WatchEvent.java \
 	java/nio/file/WatchKey.java \

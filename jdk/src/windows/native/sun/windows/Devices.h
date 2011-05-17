@@ -36,6 +36,7 @@ class AwtWin32GraphicsDevice;
 class Devices {
 
 public:
+static Devices*                 GetInstance();
 static BOOL                     UpdateInstance(JNIEnv *env);
        int                      GetNumDevices() { return numDevices; }
        AwtWin32GraphicsDevice*  GetDeviceReference(int index, BOOL adjust = TRUE);
@@ -59,7 +60,6 @@ friend class InstanceAccess;
 private:
                                 Devices(int numElements);
        void                     AddReference();
-static Devices*                 GetInstance();
 
        AwtWin32GraphicsDevice** devices;
        int                      refCount;

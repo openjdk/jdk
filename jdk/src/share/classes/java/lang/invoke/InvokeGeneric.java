@@ -29,12 +29,12 @@ import sun.invoke.util.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
- * Adapters which manage MethodHandle.invokeGeneric calls.
+ * Adapters which manage inexact MethodHandle.invoke calls.
  * The JVM calls one of these when the exact type match fails.
  * @author jrose
  */
 class InvokeGeneric {
-    // erased type for the call, which originates from an invokeGeneric site
+    // erased type for the call, which originates from an inexact invoke site
     private final MethodType erasedCallerType;
     // an invoker of type (MT, MH; A...) -> R
     private final MethodHandle initialInvoker;
@@ -56,7 +56,7 @@ class InvokeGeneric {
     }
 
     /** Return the adapter information for this type's erasure. */
-    /*non-public*/ static MethodHandle genericInvokerOf(MethodType erasedCallerType) throws ReflectiveOperationException {
+    /*non-public*/ static MethodHandle generalInvokerOf(MethodType erasedCallerType) throws ReflectiveOperationException {
         InvokeGeneric gen = new InvokeGeneric(erasedCallerType);
         return gen.initialInvoker;
     }

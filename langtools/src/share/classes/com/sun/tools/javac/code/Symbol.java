@@ -1006,7 +1006,6 @@ public abstract class Symbol implements Element {
                 try {
                     data = eval.call();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
                     throw new AssertionError(ex);
                 }
             }
