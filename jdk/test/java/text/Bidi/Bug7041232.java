@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,28 @@
  * questions.
  */
 
-/* @test
-   @bug 6788484
-   @summary NPE in DefaultTableCellHeaderRenderer.getColumnSortOrder() with null table
-   @compile -XDignore.symbol.file=true bug6788484.java
-   @author Alexander Potochkin
-   @run main bug6788484
-*/
-
 /*
- * Compile with -XDignore.symbol.file=true option as a workaround for
- * specific behaviour described in 6380059 which restricts proprietary
- * package loading
+ * @test
+ * @bug 7041232
+ * @summary verify that an unexpected exception isn't thrown for unnatural data to keep backward compatibility with JDK 6.
  */
+import java.text.*;
 
-import sun.swing.table.DefaultTableCellHeaderRenderer;
+public class Bug7041232 {
 
-import javax.swing.*;
+    public static void main(String[] args) {
+        String UnicodeChars;
+        StringBuffer sb = new StringBuffer();
 
-public class bug6788484 {
+        // Generates String which includes U+2028(line separator) and
+        // U+2029(paragraph separator)
+        for (int i = 0x2000; i < 0x2100; i++) {
+            sb.append((char)i);
+        }
+        UnicodeChars = sb.toString();
 
-    public static void main(String[] args) throws Exception {
-        DefaultTableCellHeaderRenderer.getColumnSortOrder(null, 0);
+        Bidi bidi = new Bidi(UnicodeChars, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        bidi.createLineBidi(0, UnicodeChars.length());
     }
+
 }
