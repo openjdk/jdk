@@ -423,6 +423,7 @@ MethodHandleWalker::walk(TRAPS) {
           arglist[1+i] = arg;
           if (!retain_original_args)
             change_argument(arg_type, slot, T_VOID, ArgToken(tt_void));
+          i++;
         }
         arglist[1+argc] = ArgToken();  // sentinel
         oop invoker = java_lang_invoke_MethodTypeForm::vmlayout(
@@ -487,7 +488,7 @@ MethodHandleWalker::walk(TRAPS) {
         arglist[1] = length_arg;  // length to check
         arglist[2] = ArgToken();  // sentinel
         make_invoke(NULL, vmIntrinsics::_checkSpreadArgument,
-                    Bytecodes::_invokestatic, false, 3, &arglist[0], CHECK_(empty));
+                    Bytecodes::_invokestatic, false, 2, &arglist[0], CHECK_(empty));
 
         // Spread out the array elements.
         Bytecodes::Code aload_op = Bytecodes::_nop;

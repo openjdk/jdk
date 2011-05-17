@@ -721,12 +721,10 @@ public:
 //# include "methodHandles_zero.hpp"
 #endif
 #ifdef TARGET_ARCH_arm
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_arm.hpp"
+# include "methodHandles_arm.hpp"
 #endif
 #ifdef TARGET_ARCH_ppc
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_ppc.hpp"
+# include "methodHandles_ppc.hpp"
 #endif
 
 #ifdef TARGET_ARCH_NYI_6939861
