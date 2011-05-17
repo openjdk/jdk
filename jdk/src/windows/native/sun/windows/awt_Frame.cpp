@@ -344,17 +344,6 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
                 SetImeTargetComponent(NULL);
             }
             break;
-        // TODO: when a Choice's list is dropped down and we're scrolling in
-        // the list WM_MOUSEWHEEL messages come to the poxy, not to the list. Why?
-        case WM_MOUSEWHEEL:
-            focusOwner = AwtComponent::GetComponent(sm_focusOwner);
-            if  (focusOwner != NULL &&
-                 focusOwner != this) // avoid recursive calls
-            {
-                 retValue = focusOwner->WindowProc(message, wParam, lParam);
-                 mr = mrConsume;
-            }
-            break;
         case WM_SETFOCUS:
             if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
 
