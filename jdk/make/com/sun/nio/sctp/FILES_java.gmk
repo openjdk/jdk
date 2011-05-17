@@ -38,7 +38,7 @@ FILES_java = \
 	com/sun/nio/sctp/SctpMultiChannel.java \
 	com/sun/nio/sctp/SctpServerChannel.java \
 	com/sun/nio/sctp/SctpSocketOption.java \
-	com/sun/nio/sctp/SctpStandardSocketOption.java \
+	com/sun/nio/sctp/SctpStandardSocketOptions.java \
 	com/sun/nio/sctp/SendFailedNotification.java \
 	com/sun/nio/sctp/ShutdownNotification.java \
 	\

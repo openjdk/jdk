@@ -336,7 +336,10 @@ public class Throwable implements Serializable {
      * Disabling of suppression should only occur in exceptional
      * circumstances where special requirements exist, such as a
      * virtual machine reusing exception objects under low-memory
-     * situations.
+     * situations.  Circumstances where a given exception object is
+     * repeatedly caught and rethrown, such as to implement control
+     * flow between two sub-systems, is another situation where
+     * immutable throwable objects would be appropriate.
      *
      * @param  message the detail message.
      * @param cause the cause.  (A {@code null} value is permitted,
@@ -422,6 +425,18 @@ public class Throwable implements Serializable {
      * with {@link #Throwable(Throwable)} or
      * {@link #Throwable(String,Throwable)}, this method cannot be called
      * even once.
+     *
+     * <p>An example of using this method on a legacy throwable type
+     * without other support for setting the cause is:
+     *
+     * <pre>
+     * try {
+     *     lowLevelOp();
+     * } catch (LowLevelException le) {
+     *     throw (HighLevelException)
+     *           new HighLevelException().initCause(le); // Legacy constructor
+     * }
+     * </pre>
      *
      * @param  cause the cause (which is saved for later retrieval by the
      *         {@link #getCause()} method).  (A {@code null} value is
@@ -788,7 +803,8 @@ public class Throwable implements Serializable {
      * this throwable is permitted to return a zero-length array from this
      * method.  Generally speaking, the array returned by this method will
      * contain one element for every frame that would be printed by
-     * {@code printStackTrace}.
+     * {@code printStackTrace}.  Writes to the returned array do not
+     * affect future calls to this method.
      *
      * @return an array of stack trace elements representing the stack trace
      *         pertaining to this throwable.
@@ -971,8 +987,8 @@ public class Throwable implements Serializable {
     /**
      * Appends the specified exception to the exceptions that were
      * suppressed in order to deliver this exception. This method is
-     * typically called (automatically and implicitly) by the {@code
-     * try}-with-resources statement.
+     * thread-safe and typically called (automatically and implicitly)
+     * by the {@code try}-with-resources statement.
      *
      * <p>The suppression behavior is enabled <em>unless</em> disabled
      * {@linkplain #Throwable(String, Throwable, boolean, boolean) via
@@ -1043,7 +1059,9 @@ public class Throwable implements Serializable {
      *
      * If no exceptions were suppressed or {@linkplain
      * #Throwable(String, Throwable, boolean, boolean) suppression is
-     * disabled}, an empty array is returned.
+     * disabled}, an empty array is returned.  This method is
+     * thread-safe.  Writes to the returned array do not affect future
+     * calls to this method.
      *
      * @return an array containing all of the exceptions that were
      *         suppressed to deliver this exception.

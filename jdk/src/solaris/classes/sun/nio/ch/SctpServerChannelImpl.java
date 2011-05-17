@@ -40,7 +40,7 @@ import com.sun.nio.sctp.IllegalUnbindException;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
-import com.sun.nio.sctp.SctpStandardSocketOption;
+import com.sun.nio.sctp.SctpStandardSocketOptions;
 
 /**
  * An implementation of SctpServerChannel
@@ -386,7 +386,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
         private static Set<SctpSocketOption<?>> defaultOptions() {
             HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(1);
-            set.add(SctpStandardSocketOption.SCTP_INIT_MAXSTREAMS);
+            set.add(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
             return Collections.unmodifiableSet(set);
         }
     }

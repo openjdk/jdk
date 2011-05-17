@@ -32,7 +32,7 @@
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.StandardSocketOption;
+import java.net.StandardSocketOptions;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -105,7 +105,7 @@ public class ChatServer implements Runnable {
     */
     private AsynchronousServerSocketChannel createListener(AsynchronousChannelGroup channelGroup) throws IOException {
         final AsynchronousServerSocketChannel listener = openChannel(channelGroup);
-        listener.setOption(StandardSocketOption.SO_REUSEADDR, true);
+        listener.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         listener.bind(new InetSocketAddress(port));
         return listener;
     }
@@ -123,7 +123,7 @@ public class ChatServer implements Runnable {
     private void handleNewConnection(AsynchronousSocketChannel channel) {
         Client client = new Client(channel, new ClientReader(this, new NameReader(this)));
         try {
-            channel.setOption(StandardSocketOption.TCP_NODELAY, true);
+            channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
         } catch (IOException e) {
             // ignore
         }

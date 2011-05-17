@@ -540,7 +540,7 @@ public class CheckPermissions {
 
             try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
                 prepare();
-                testdir.register(watcher, StandardWatchEventKind.ENTRY_DELETE);
+                testdir.register(watcher, StandardWatchEventKinds.ENTRY_DELETE);
                 assertCheckRead(testdir);
             }
 

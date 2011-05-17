@@ -58,11 +58,11 @@ import java.io.IOException;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_RCVBUF SO_RCVBUF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
  *     <td> Re-use address </td>
  *   </tr>
  * </table>

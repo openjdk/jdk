@@ -56,6 +56,8 @@ class VMManagementImpl implements VMManagement {
     private static boolean objectMonitorUsageSupport;
     private static boolean synchronizerUsageSupport;
     private static boolean threadAllocatedMemorySupport;
+    private static boolean gcNotificationSupport;
+
 
     static {
         version = getVersion0();
@@ -98,6 +100,10 @@ class VMManagementImpl implements VMManagement {
 
     public boolean isThreadAllocatedMemorySupported() {
         return threadAllocatedMemorySupport;
+    }
+
+    public boolean isGcNotificationSupported() {
+        return gcNotificationSupport;
     }
 
     public native boolean isThreadContentionMonitoringEnabled();
