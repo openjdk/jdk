@@ -38,7 +38,7 @@ package java.net;
  *
  * @since 1.7
  *
- * @see StandardSocketOption
+ * @see StandardSocketOptions
  */
 
 public interface SocketOption<T> {

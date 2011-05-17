@@ -408,6 +408,8 @@ public abstract class BufferedRenderPipe
     }
 
     public void fillParallelogram(SunGraphics2D sg2d,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2)
@@ -429,6 +431,8 @@ public abstract class BufferedRenderPipe
     }
 
     public void drawParallelogram(SunGraphics2D sg2d,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2,
@@ -454,6 +458,8 @@ public abstract class BufferedRenderPipe
 
     private class AAParallelogramPipe implements ParallelogramPipe {
         public void fillParallelogram(SunGraphics2D sg2d,
+                                      double ux1, double uy1,
+                                      double ux2, double uy2,
                                       double x, double y,
                                       double dx1, double dy1,
                                       double dx2, double dy2)
@@ -475,6 +481,8 @@ public abstract class BufferedRenderPipe
         }
 
         public void drawParallelogram(SunGraphics2D sg2d,
+                                      double ux1, double uy1,
+                                      double ux2, double uy2,
                                       double x, double y,
                                       double dx1, double dy1,
                                       double dx2, double dy2,

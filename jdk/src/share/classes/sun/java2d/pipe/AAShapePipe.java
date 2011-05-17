@@ -68,21 +68,23 @@ public class AAShapePipe
         renderPath(sg, s, null);
     }
 
-    private static Rectangle2D computeBBox(double x, double y,
-                                           double dx1, double dy1,
-                                           double dx2, double dy2)
+    private static Rectangle2D computeBBox(double ux1, double uy1,
+                                           double ux2, double uy2)
     {
-        double lox, loy, hix, hiy;
-        lox = hix = x;
-        loy = hiy = y;
-        if (dx1 < 0) { lox += dx1; } else { hix += dx1; }
-        if (dy1 < 0) { loy += dy1; } else { hiy += dy1; }
-        if (dx2 < 0) { lox += dx2; } else { hix += dx2; }
-        if (dy2 < 0) { loy += dy2; } else { hiy += dy2; }
-        return new Rectangle2D.Double(lox, loy, hix-lox, hiy-loy);
+        if ((ux2 -= ux1) < 0) {
+            ux1 += ux2;
+            ux2 = -ux2;
+        }
+        if ((uy2 -= uy1) < 0) {
+            uy1 += uy2;
+            uy2 = -uy2;
+        }
+        return new Rectangle2D.Double(ux1, uy1, ux2, uy2);
     }
 
     public void fillParallelogram(SunGraphics2D sg,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2)
@@ -97,10 +99,12 @@ public class AAShapePipe
             return;
         }
 
-        renderTiles(sg, computeBBox(x, y, dx1, dy1, dx2, dy2), aatg, abox);
+        renderTiles(sg, computeBBox(ux1, uy1, ux2, uy2), aatg, abox);
     }
 
     public void drawParallelogram(SunGraphics2D sg,
+                                  double ux1, double uy1,
+                                  double ux2, double uy2,
                                   double x, double y,
                                   double dx1, double dy1,
                                   double dx2, double dy2,
@@ -118,7 +122,7 @@ public class AAShapePipe
 
         // Note that bbox is of the original shape, not the wide path.
         // This is appropriate for handing to Paint methods...
-        renderTiles(sg, computeBBox(x, y, dx1, dy1, dx2, dy2), aatg, abox);
+        renderTiles(sg, computeBBox(ux1, uy1, ux2, uy2), aatg, abox);
     }
 
     private static byte[] theTile;

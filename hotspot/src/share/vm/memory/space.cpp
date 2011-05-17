@@ -97,6 +97,14 @@ void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
   }
 }
 
+// We get called with "mr" representing the dirty region
+// that we want to process. Because of imprecise marking,
+// we may need to extend the incoming "mr" to the right,
+// and scan more. However, because we may already have
+// scanned some of that extended region, we may need to
+// trim its right-end back some so we do not scan what
+// we (or another worker thread) may already have scanned
+// or planning to scan.
 void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 
   // Some collectors need to do special things whenever their dirty
@@ -148,7 +156,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   // e.g. the dirty card region is entirely in a now free object
   // -- something that could happen with a concurrent sweeper.
   bottom = MIN2(bottom, top);
-  mr     = MemRegion(bottom, top);
+  MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
          (_precision != CardTableModRefBS::ObjHeadPreciseArray ||
           _min_done == NULL ||
@@ -156,8 +164,8 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
          "overlap!");
 
   // Walk the region if it is not empty; otherwise there is nothing to do.
-  if (!mr.is_empty()) {
-    walk_mem_region(mr, bottom_obj, top);
+  if (!extended_mr.is_empty()) {
+    walk_mem_region(extended_mr, bottom_obj, top);
   }
 
   // An idempotent closure might be applied in any order, so we don't

@@ -69,6 +69,8 @@ import javax.accessibility.*;
  * @see ComboBoxModel
  * @see DefaultComboBoxModel
  *
+ * @param <E> the type of the elements of this combo box
+ *
  * @beaninfo
  *   attribute: isContainer false
  * description: A combination of a text field and a drop-down list.
@@ -76,7 +78,7 @@ import javax.accessibility.*;
  * @author Arnaud Weber
  * @author Mark Davidson
  */
-public class JComboBox extends JComponent
+public class JComboBox<E> extends JComponent
 implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     /**
      * @see #getUIClassID
@@ -91,7 +93,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @see #getModel
      * @see #setModel
      */
-    protected ComboBoxModel    dataModel;
+    protected ComboBoxModel<E>    dataModel;
     /**
      * This protected field is implementation specific. Do not access directly
      * or override. Use the accessor methods instead.
@@ -99,7 +101,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @see #getRenderer
      * @see #setRenderer
      */
-    protected ListCellRenderer renderer;
+    protected ListCellRenderer<? super E> renderer;
     /**
      * This protected field is implementation specific. Do not access directly
      * or override. Use the accessor methods instead.
@@ -156,7 +158,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      */
     protected Object selectedItemReminder = null;
 
-    private Object prototypeDisplayValue;
+    private E prototypeDisplayValue;
 
     // Flag to ensure that infinite loops do not occur with ActionEvents.
     private boolean firingActionEvent = false;
@@ -175,7 +177,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *          displayed list of items
      * @see DefaultComboBoxModel
      */
-    public JComboBox(ComboBoxModel aModel) {
+    public JComboBox(ComboBoxModel<E> aModel) {
         super();
         setModel(aModel);
         init();
@@ -189,9 +191,9 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @param items  an array of objects to insert into the combo box
      * @see DefaultComboBoxModel
      */
-    public JComboBox(final Object items[]) {
+    public JComboBox(E[] items) {
         super();
-        setModel(new DefaultComboBoxModel(items));
+        setModel(new DefaultComboBoxModel<E>(items));
         init();
     }
 
@@ -203,9 +205,9 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @param items  an array of vectors to insert into the combo box
      * @see DefaultComboBoxModel
      */
-    public JComboBox(Vector<?> items) {
+    public JComboBox(Vector<E> items) {
         super();
-        setModel(new DefaultComboBoxModel(items));
+        setModel(new DefaultComboBoxModel<E>(items));
         init();
     }
 
@@ -219,7 +221,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      */
     public JComboBox() {
         super();
-        setModel(new DefaultComboBoxModel());
+        setModel(new DefaultComboBoxModel<E>());
         init();
     }
 
@@ -263,7 +265,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     public void updateUI() {
         setUI((ComboBoxUI)UIManager.getUI(this));
 
-        ListCellRenderer renderer = getRenderer();
+        ListCellRenderer<? super E> renderer = getRenderer();
         if (renderer instanceof Component) {
             SwingUtilities.updateComponentTreeUI((Component)renderer);
         }
@@ -302,8 +304,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *        bound: true
      *  description: Model that the combo box uses to get data to display.
      */
-    public void setModel(ComboBoxModel aModel) {
-        ComboBoxModel oldModel = dataModel;
+    public void setModel(ComboBoxModel<E> aModel) {
+        ComboBoxModel<E> oldModel = dataModel;
         if (oldModel != null) {
             oldModel.removeListDataListener(this);
         }
@@ -322,7 +324,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @return the <code>ComboBoxModel</code> that provides the displayed
      *                  list of items
      */
-    public ComboBoxModel getModel() {
+    public ComboBoxModel<E> getModel() {
         return dataModel;
     }
 
@@ -461,8 +463,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *     expert: true
      *  description: The renderer that paints the item selected in the list.
      */
-    public void setRenderer(ListCellRenderer aRenderer) {
-        ListCellRenderer oldRenderer = renderer;
+    public void setRenderer(ListCellRenderer<? super E> aRenderer) {
+        ListCellRenderer<? super E> oldRenderer = renderer;
         renderer = aRenderer;
         firePropertyChange( "renderer", oldRenderer, renderer );
         invalidate();
@@ -475,7 +477,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @return  the <code>ListCellRenderer</code> that displays
      *                  the selected item.
      */
-    public ListCellRenderer getRenderer() {
+    public ListCellRenderer<? super E> getRenderer() {
         return renderer;
     }
 
@@ -558,7 +560,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
                 // will be rejected.
                 boolean found = false;
                 for (int i = 0; i < dataModel.getSize(); i++) {
-                    Object element = dataModel.getElementAt(i);
+                    E element = dataModel.getElementAt(i);
                     if (anObject.equals(element)) {
                         found = true;
                         objectToSelect = element;
@@ -640,7 +642,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     public int getSelectedIndex() {
         Object sObject = dataModel.getSelectedItem();
         int i,c;
-        Object obj;
+        E obj;
 
         for ( i=0,c=dataModel.getSize();i<c;i++ ) {
             obj = dataModel.getElementAt(i);
@@ -658,7 +660,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @see #setPrototypeDisplayValue
      * @since 1.4
      */
-    public Object getPrototypeDisplayValue() {
+    public E getPrototypeDisplayValue() {
         return prototypeDisplayValue;
     }
 
@@ -683,7 +685,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *   attribute: visualUpdate true
      * description: The display prototype value, used to compute display width and height.
      */
-    public void setPrototypeDisplayValue(Object prototypeDisplayValue) {
+    public void setPrototypeDisplayValue(E prototypeDisplayValue) {
         Object oldValue = this.prototypeDisplayValue;
         this.prototypeDisplayValue = prototypeDisplayValue;
         firePropertyChange("prototypeDisplayValue", oldValue, prototypeDisplayValue);
@@ -708,12 +710,12 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *   }
      * </pre>
      *
-     * @param anObject the Object to add to the list
+     * @param item the item to add to the list
      * @see MutableComboBoxModel
      */
-    public void addItem(Object anObject) {
+    public void addItem(E item) {
         checkMutableComboBoxModel();
-        ((MutableComboBoxModel)dataModel).addElement(anObject);
+        ((MutableComboBoxModel<E>)dataModel).addElement(item);
     }
 
     /**
@@ -721,14 +723,14 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * This method works only if the <code>JComboBox</code> uses a
      * mutable data model.
      *
-     * @param anObject the <code>Object</code> to add to the list
+     * @param item the item to add to the list
      * @param index    an integer specifying the position at which
      *                  to add the item
      * @see MutableComboBoxModel
      */
-    public void insertItemAt(Object anObject, int index) {
+    public void insertItemAt(E item, int index) {
         checkMutableComboBoxModel();
-        ((MutableComboBoxModel)dataModel).insertElementAt(anObject,index);
+        ((MutableComboBoxModel<E>)dataModel).insertElementAt(item,index);
     }
 
     /**
@@ -756,7 +758,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      */
     public void removeItemAt(int anIndex) {
         checkMutableComboBoxModel();
-        ((MutableComboBoxModel)dataModel).removeElementAt( anIndex );
+        ((MutableComboBoxModel<E>)dataModel).removeElementAt( anIndex );
     }
 
     /**
@@ -764,7 +766,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      */
     public void removeAllItems() {
         checkMutableComboBoxModel();
-        MutableComboBoxModel model = (MutableComboBoxModel)dataModel;
+        MutableComboBoxModel<E> model = (MutableComboBoxModel<E>)dataModel;
         int size = model.getSize();
 
         if ( model instanceof DefaultComboBoxModel ) {
@@ -772,7 +774,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         }
         else {
             for ( int i = 0; i < size; ++i ) {
-                Object element = model.getElementAt( 0 );
+                E element = model.getElementAt( 0 );
                 model.removeElement( element );
             }
         }
@@ -1188,11 +1190,11 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
 
     private static class ComboBoxActionPropertyChangeListener
-                 extends ActionPropertyChangeListener<JComboBox> {
-        ComboBoxActionPropertyChangeListener(JComboBox b, Action a) {
+                 extends ActionPropertyChangeListener<JComboBox<?>> {
+        ComboBoxActionPropertyChangeListener(JComboBox<?> b, Action a) {
             super(b, a);
         }
-        protected void actionPropertyChanged(JComboBox cb,
+        protected void actionPropertyChanged(JComboBox<?> cb,
                                              Action action,
                                              PropertyChangeEvent e) {
             if (AbstractAction.shouldReconfigure(e)) {
@@ -1454,10 +1456,10 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param index  an integer indicating the list position, where the first
      *               item starts at zero
-     * @return the <code>Object</code> at that list position; or
+     * @return the item at that list position; or
      *                  <code>null</code> if out of range
      */
-    public Object getItemAt(int index) {
+    public E getItemAt(int index) {
         return dataModel.getElementAt(index);
     }
 

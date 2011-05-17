@@ -364,7 +364,6 @@ AwtComponent* AwtComponent::GetComponentImpl(HWND hWnd) {
     AwtComponent *component =
         (AwtComponent *)::GetWindowLongPtr(hWnd, GWLP_USERDATA);
     DASSERT(!component || !IsBadReadPtr(component, sizeof(AwtComponent)) );
-    DASSERT(!component || component->GetHWnd() == hWnd );
     return component;
 }
 

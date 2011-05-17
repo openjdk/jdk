@@ -26,6 +26,7 @@
 package javax.management.timer;
 
 import static com.sun.jmx.defaults.JmxProperties.TIMER_LOGGER;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -1003,7 +1004,10 @@ public class Timer extends NotificationBroadcasterSupport
         Integer notifID;
         Date date;
 
-        for (Object[] obj : timerTable.values()) {
+        ArrayList<Object[]> values =
+            new ArrayList<Object[]>(timerTable.values());
+
+        for (Object[] obj : values) {
 
             // Retrieve the timer notification and the date notification.
             //

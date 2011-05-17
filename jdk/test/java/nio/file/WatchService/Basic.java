@@ -29,7 +29,7 @@
  */
 
 import java.nio.file.*;
-import static java.nio.file.StandardWatchEventKind.*;
+import static java.nio.file.StandardWatchEventKinds.*;
 import java.nio.file.attribute.*;
 import java.io.*;
 import java.util.*;
@@ -100,7 +100,7 @@ public class Basic {
             // remove key and check that we got the ENTRY_CREATE event
             takeExpectedKey(watcher, myKey);
             checkExpectedEvent(myKey.pollEvents(),
-                StandardWatchEventKind.ENTRY_CREATE, name);
+                StandardWatchEventKinds.ENTRY_CREATE, name);
 
             System.out.println("reset key");
             if (!myKey.reset())
@@ -121,7 +121,7 @@ public class Basic {
             Files.delete(file);
             takeExpectedKey(watcher, myKey);
             checkExpectedEvent(myKey.pollEvents(),
-                StandardWatchEventKind.ENTRY_DELETE, name);
+                StandardWatchEventKinds.ENTRY_DELETE, name);
 
             System.out.println("reset key");
             if (!myKey.reset())
@@ -149,7 +149,7 @@ public class Basic {
             // remove key and check that we got the ENTRY_MODIFY event
             takeExpectedKey(watcher, myKey);
             checkExpectedEvent(myKey.pollEvents(),
-                StandardWatchEventKind.ENTRY_MODIFY, name);
+                StandardWatchEventKinds.ENTRY_MODIFY, name);
             System.out.println("OKAY");
 
             // done
@@ -424,7 +424,7 @@ public class Basic {
             // check that key1 got ENTRY_CREATE
             takeExpectedKey(watcher1, key1);
             checkExpectedEvent(key1.pollEvents(),
-                StandardWatchEventKind.ENTRY_CREATE, name2);
+                StandardWatchEventKinds.ENTRY_CREATE, name2);
 
             // check that key2 got zero events
             WatchKey key = watcher2.poll();
@@ -437,7 +437,7 @@ public class Basic {
             // check that key2 got ENTRY_DELETE
             takeExpectedKey(watcher2, key2);
             checkExpectedEvent(key2.pollEvents(),
-                StandardWatchEventKind.ENTRY_DELETE, name1);
+                StandardWatchEventKinds.ENTRY_DELETE, name1);
 
             // check that key1 got zero events
             key = watcher1.poll();
@@ -458,7 +458,7 @@ public class Basic {
             Files.createFile(file1);
             takeExpectedKey(watcher2, key2);
             checkExpectedEvent(key2.pollEvents(),
-                StandardWatchEventKind.ENTRY_CREATE, name1);
+                StandardWatchEventKinds.ENTRY_CREATE, name1);
 
             System.out.println("OKAY");
 

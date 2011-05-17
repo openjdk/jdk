@@ -955,7 +955,9 @@ public class Types {
         if (t.isPrimitive() != s.isPrimitive())
             return allowBoxing && (
                     isConvertible(t, s, warn)
-                    || (allowObjectToPrimitiveCast && isConvertible(s, t, warn)));
+                    || (allowObjectToPrimitiveCast &&
+                        s.isPrimitive() &&
+                        isSubtype(boxedClass(s).type, t)));
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);

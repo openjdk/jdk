@@ -2253,6 +2253,31 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
+//----------------------------generate_ricochet_blob---------------------------
+void SharedRuntime::generate_ricochet_blob() {
+  if (!EnableInvokeDynamic)  return;  // leave it as a null
+
+  // allocate space for the code
+  ResourceMark rm;
+  // setup code generation tools
+  CodeBuffer   buffer("ricochet_blob", 256, 256);
+  MacroAssembler* masm = new MacroAssembler(&buffer);
+
+  int frame_size_in_words = -1, bounce_offset = -1, exception_offset = -1;
+  MethodHandles::RicochetFrame::generate_ricochet_blob(masm, &frame_size_in_words, &bounce_offset, &exception_offset);
+
+  // -------------
+  // make sure all code is generated
+  masm->flush();
+
+  // failed to generate?
+  if (frame_size_in_words < 0 || bounce_offset < 0 || exception_offset < 0) {
+    assert(false, "bad ricochet blob");
+    return;
+  }
+
+  _ricochet_blob = RicochetBlob::create(&buffer, bounce_offset, exception_offset, frame_size_in_words);
+}
 
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
@@ -2995,6 +3020,8 @@ void SharedRuntime::generate_stubs() {
   _polling_page_return_handler_blob =
     generate_handler_blob(CAST_FROM_FN_PTR(address,
                    SafepointSynchronize::handle_polling_page_exception), true);
+
+  generate_ricochet_blob();
 
   generate_deopt_blob();
 #ifdef COMPILER2

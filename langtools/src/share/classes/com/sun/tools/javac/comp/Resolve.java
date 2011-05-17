@@ -458,9 +458,7 @@ public class Resolve {
             throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
 
         if (useVarargs) {
-            //note: if applicability check is triggered by most specific test,
-            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
-            Type elt = types.elemtypeOrType(varargsFormal);
+            Type elt = types.elemtype(varargsFormal);
             while (argtypes.nonEmpty()) {
                 if (!types.isConvertible(argtypes.head, elt, warn))
                     throw inapplicableMethodException.setMessage("varargs.argument.mismatch",
@@ -819,10 +817,10 @@ public class Resolve {
     private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
         noteWarner.clear();
         Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
-        return (instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
-                             allowBoxing, false, noteWarner) != null ||
-                 useVarargs && instantiate(env, site, adjustVarargs(m2, m1, useVarargs), types.lowerBoundArgtypes(mtype1), null,
-                                           allowBoxing, true, noteWarner) != null) &&
+        Type mtype2 = instantiate(env, site, adjustVarargs(m2, m1, useVarargs),
+                types.lowerBoundArgtypes(mtype1), null,
+                allowBoxing, false, noteWarner);
+        return mtype2 != null &&
                 !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
     }
     //where
@@ -855,7 +853,7 @@ public class Resolve {
             //append varargs element type as last synthetic formal
             args.append(types.elemtype(varargsTypeTo));
             Type mtype = types.createMethodTypeWithParameters(to.type, args.toList());
-            return new MethodSymbol(to.flags_field, to.name, mtype, to.owner);
+            return new MethodSymbol(to.flags_field & ~VARARGS, to.name, mtype, to.owner);
         } else {
             return to;
         }

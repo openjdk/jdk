@@ -175,8 +175,8 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
     }
 
     public boolean drawGeneralLine(SunGraphics2D sg2d,
-                                   double x1, double y1,
-                                   double x2, double y2)
+                                   double ux1, double uy1,
+                                   double ux2, double uy2)
     {
         if (sg2d.strokeState == SunGraphics2D.STROKE_CUSTOM ||
             sg2d.strokeState == SunGraphics2D.STROKE_THINDASHED)
@@ -194,13 +194,14 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
         double lw = bs.getLineWidth();
         // Save the original dx, dy in case we need it to transform
         // the linewidth as a perpendicular vector below
-        double dx = x2 - x1;
-        double dy = y2 - y1;
+        double dx = ux2 - ux1;
+        double dy = uy2 - uy1;
+        double x1, y1, x2, y2;
         switch (sg2d.transformState) {
         case SunGraphics2D.TRANSFORM_GENERIC:
         case SunGraphics2D.TRANSFORM_TRANSLATESCALE:
             {
-                double coords[] = {x1, y1, x2, y2};
+                double coords[] = {ux1, uy1, ux2, uy2};
                 sg2d.transform.transform(coords, 0, coords, 0, 2);
                 x1 = coords[0];
                 y1 = coords[1];
@@ -213,13 +214,17 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
             {
                 double tx = sg2d.transform.getTranslateX();
                 double ty = sg2d.transform.getTranslateY();
-                x1 += tx;
-                y1 += ty;
-                x2 += tx;
-                y2 += ty;
+                x1 = ux1 + tx;
+                y1 = uy1 + ty;
+                x2 = ux2 + tx;
+                y2 = uy2 + ty;
             }
             break;
         case SunGraphics2D.TRANSFORM_ISIDENT:
+            x1 = ux1;
+            y1 = uy1;
+            x2 = ux2;
+            y2 = uy2;
             break;
         default:
             throw new InternalError("unknown TRANSFORM state...");
@@ -279,7 +284,8 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
             dx += udx;
             dy += udy;
         }
-        outrenderer.fillParallelogram(sg2d, px, py, -udy, udx, dx, dy);
+        outrenderer.fillParallelogram(sg2d, ux1, uy1, ux2, uy2,
+                                      px, py, -udy, udx, dx, dy);
         return true;
     }
 
@@ -313,7 +319,8 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
             px = newx;
             py = newy;
         }
-        outrenderer.fillParallelogram(sg2d, px, py, dx1, dy1, dx2, dy2);
+        outrenderer.fillParallelogram(sg2d, rx, ry, rx+rw, ry+rh,
+                                      px, py, dx1, dy1, dx2, dy2);
     }
 
     public void drawRectangle(SunGraphics2D sg2d,
@@ -360,10 +367,12 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
             // entire hole in the middle of the parallelogram
             // so we can just fill the outer parallelogram.
             fillOuterParallelogram(sg2d,
+                                   rx, ry, rx+rw, ry+rh,
                                    px, py, dx1, dy1, dx2, dy2,
                                    len1, len2, lw1, lw2);
         } else {
             outrenderer.drawParallelogram(sg2d,
+                                          rx, ry, rx+rw, ry+rh,
                                           px, py, dx1, dy1, dx2, dy2,
                                           lw1 / len1, lw2 / len2);
         }
@@ -377,6 +386,8 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
      * and issues a single fillParallelogram request to fill it.
      */
     public void fillOuterParallelogram(SunGraphics2D sg2d,
+                                       double ux1, double uy1,
+                                       double ux2, double uy2,
                                        double px, double py,
                                        double dx1, double dy1,
                                        double dx2, double dy2,
@@ -412,6 +423,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
         dx2 += udx2;
         dy2 += udy2;
 
-        outrenderer.fillParallelogram(sg2d, px, py, dx1, dy1, dx2, dy2);
+        outrenderer.fillParallelogram(sg2d, ux1, uy1, ux2, uy2,
+                                      px, py, dx1, dy1, dx2, dy2);
     }
 }

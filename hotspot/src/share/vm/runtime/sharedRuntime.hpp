@@ -58,6 +58,8 @@ class SharedRuntime: AllStatic {
   static RuntimeStub* _resolve_virtual_call_blob;
   static RuntimeStub* _resolve_static_call_blob;
 
+  static RicochetBlob* _ricochet_blob;
+
   static SafepointBlob* _polling_page_safepoint_handler_blob;
   static SafepointBlob* _polling_page_return_handler_blob;
 #ifdef COMPILER2
@@ -212,6 +214,16 @@ class SharedRuntime: AllStatic {
     assert(_resolve_static_call_blob != NULL, "oops");
     return _resolve_static_call_blob->entry_point();
   }
+
+  static RicochetBlob* ricochet_blob() {
+#ifdef X86
+    // Currently only implemented on x86
+    assert(!EnableInvokeDynamic || _ricochet_blob != NULL, "oops");
+#endif
+    return _ricochet_blob;
+  }
+
+  static void generate_ricochet_blob();
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
   static SafepointBlob* polling_page_safepoint_handler_blob()  { return _polling_page_safepoint_handler_blob; }
