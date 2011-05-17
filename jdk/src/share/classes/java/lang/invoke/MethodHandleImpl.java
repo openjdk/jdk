@@ -121,11 +121,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (nargs < INVOKES.length) {
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType conType = CON_TYPES[nargs];
-                MethodHandle gcon = convertArguments(rawConstructor, conType, rawConType, null);
+                MethodHandle gcon = convertArguments(rawConstructor, conType, rawConType, 0);
                 if (gcon == null)  return null;
                 MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
                 assert(galloc.type() == newType.generic());
-                return convertArguments(galloc, newType, galloc.type(), null);
+                return convertArguments(galloc, newType, galloc.type(), 0);
             } else {
                 MethodHandle invoke = VARARGS_INVOKE;
                 MethodType conType = CON_TYPES[nargs];
@@ -256,8 +256,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 FieldAccessor.ahandle(arrayClass, true)
             };
             if (mhs[0].type().parameterType(0) == Class.class) {
-                mhs[0] = MethodHandles.insertArguments(mhs[0], 0, elemClass);
-                mhs[1] = MethodHandles.insertArguments(mhs[1], 0, elemClass);
+                mhs[0] = mhs[0].bindTo(elemClass);
+                mhs[1] = mhs[1].bindTo(elemClass);
             }
             synchronized (FieldAccessor.ARRAY_CACHE) {}  // memory barrier
             FieldAccessor.ARRAY_CACHE.put(elemClass, mhs);
@@ -372,7 +372,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (evclass != vclass || (!isStatic && ecclass != cclass)) {
                 MethodType strongType = FieldAccessor.ftype(cclass, vclass, isSetter, isStatic);
                 strongType = strongType.insertParameterTypes(0, FieldAccessor.class);
-                mh = MethodHandles.convertArguments(mh, strongType);
+                mh = convertArguments(mh, strongType, 0);
             }
             return mh;
         }
@@ -439,8 +439,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
             if (caclass != null) {
                 MethodType strongType = FieldAccessor.atype(caclass, isSetter);
-                mh = MethodHandles.insertArguments(mh, 0, caclass);
-                mh = MethodHandles.convertArguments(mh, strongType);
+                mh = mh.bindTo(caclass);
+                mh = convertArguments(mh, strongType, 0);
             }
             return mh;
         }
@@ -465,7 +465,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
                     MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
                     MethodType newType = target.type().dropParameterTypes(0, 1);
-                    return convertArguments(bmh, newType, bmh.type(), null);
+                    return convertArguments(bmh, newType, bmh.type(), 0);
                 }
             }
         }
@@ -486,301 +486,378 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return new BoundMethodHandle(target, receiver, argnum);
     }
 
-    static MethodHandle convertArguments(MethodHandle target,
+    static MethodHandle permuteArguments(MethodHandle target,
                                                 MethodType newType,
                                                 MethodType oldType,
                                                 int[] permutationOrNull) {
         assert(oldType.parameterCount() == target.type().parameterCount());
-        if (permutationOrNull != null) {
-            int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
-            if (permutationOrNull.length != outargs)
-                throw newIllegalArgumentException("wrong number of arguments in permutation");
-            // Make the individual outgoing argument types match up first.
-            Class<?>[] callTypeArgs = new Class<?>[outargs];
-            for (int i = 0; i < outargs; i++)
-                callTypeArgs[i] = newType.parameterType(permutationOrNull[i]);
-            MethodType callType = MethodType.methodType(oldType.returnType(), callTypeArgs);
-            target = convertArguments(target, callType, oldType, null);
-            assert(target != null);
-            oldType = target.type();
-            List<Integer> goal = new ArrayList<Integer>();  // i*TOKEN
-            List<Integer> state = new ArrayList<Integer>(); // i*TOKEN
-            List<Integer> drops = new ArrayList<Integer>(); // not tokens
-            List<Integer> dups = new ArrayList<Integer>();  // not tokens
-            final int TOKEN = 10; // to mark items which are symbolic only
-            // state represents the argument values coming into target
-            for (int i = 0; i < outargs; i++) {
-                state.add(permutationOrNull[i] * TOKEN);
-            }
-            // goal represents the desired state
-            for (int i = 0; i < inargs; i++) {
-                if (state.contains(i * TOKEN)) {
-                    goal.add(i * TOKEN);
-                } else {
-                    // adapter must initially drop all unused arguments
-                    drops.add(i);
-                }
-            }
-            // detect duplications
-            while (state.size() > goal.size()) {
-                for (int i2 = 0; i2 < state.size(); i2++) {
-                    int arg1 = state.get(i2);
-                    int i1 = state.indexOf(arg1);
-                    if (i1 != i2) {
-                        // found duplicate occurrence at i2
-                        int arg2 = (inargs++) * TOKEN;
-                        state.set(i2, arg2);
-                        dups.add(goal.indexOf(arg1));
-                        goal.add(arg2);
-                    }
-                }
-            }
-            assert(state.size() == goal.size());
-            int size = goal.size();
-            while (!state.equals(goal)) {
-                // Look for a maximal sequence of adjacent misplaced arguments,
-                // and try to rotate them into place.
-                int bestRotArg = -10 * TOKEN, bestRotLen = 0;
-                int thisRotArg = -10 * TOKEN, thisRotLen = 0;
-                for (int i = 0; i < size; i++) {
-                    int arg = state.get(i);
-                    // Does this argument match the current run?
-                    if (arg == thisRotArg + TOKEN) {
-                        thisRotArg = arg;
-                        thisRotLen += 1;
-                        if (bestRotLen < thisRotLen) {
-                            bestRotLen = thisRotLen;
-                            bestRotArg = thisRotArg;
-                        }
-                    } else {
-                        // The old sequence (if any) stops here.
-                        thisRotLen = 0;
-                        thisRotArg = -10 * TOKEN;
-                        // But maybe a new one starts here also.
-                        int wantArg = goal.get(i);
-                        final int MAX_ARG_ROTATION = AdapterMethodHandle.MAX_ARG_ROTATION;
-                        if (arg != wantArg &&
-                            arg >= wantArg - TOKEN * MAX_ARG_ROTATION &&
-                            arg <= wantArg + TOKEN * MAX_ARG_ROTATION) {
-                            thisRotArg = arg;
-                            thisRotLen = 1;
-                        }
-                    }
-                }
-                if (bestRotLen >= 2) {
-                    // Do a rotation if it can improve argument positioning
-                    // by at least 2 arguments.  This is not always optimal,
-                    // but it seems to catch common cases.
-                    int dstEnd = state.indexOf(bestRotArg);
-                    int srcEnd = goal.indexOf(bestRotArg);
-                    int rotBy = dstEnd - srcEnd;
-                    int dstBeg = dstEnd - (bestRotLen - 1);
-                    int srcBeg = srcEnd - (bestRotLen - 1);
-                    assert((dstEnd | dstBeg | srcEnd | srcBeg) >= 0); // no negs
-                    // Make a span which covers both source and destination.
-                    int rotBeg = Math.min(dstBeg, srcBeg);
-                    int rotEnd = Math.max(dstEnd, srcEnd);
-                    int score = 0;
-                    for (int i = rotBeg; i <= rotEnd; i++) {
-                        if ((int)state.get(i) != (int)goal.get(i))
-                            score += 1;
-                    }
-                    List<Integer> rotSpan = state.subList(rotBeg, rotEnd+1);
-                    Collections.rotate(rotSpan, -rotBy);  // reverse direction
-                    for (int i = rotBeg; i <= rotEnd; i++) {
-                        if ((int)state.get(i) != (int)goal.get(i))
-                            score -= 1;
-                    }
-                    if (score >= 2) {
-                        // Improved at least two argument positions.  Do it.
-                        List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-                        Collections.rotate(ptypes.subList(rotBeg, rotEnd+1), -rotBy);
-                        MethodType rotType = MethodType.methodType(oldType.returnType(), ptypes);
-                        MethodHandle nextTarget
-                                = AdapterMethodHandle.makeRotateArguments(rotType, target,
-                                        rotBeg, rotSpan.size(), rotBy);
-                        if (nextTarget != null) {
-                            //System.out.println("Rot: "+rotSpan+" by "+rotBy);
-                            target = nextTarget;
-                            oldType = rotType;
-                            continue;
-                        }
-                    }
-                    // Else de-rotate, and drop through to the swap-fest.
-                    Collections.rotate(rotSpan, rotBy);
-                }
-
-                // Now swap like the wind!
-                List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-                for (int i = 0; i < size; i++) {
-                    // What argument do I want here?
-                    int arg = goal.get(i);
-                    if (arg != state.get(i)) {
-                        // Where is it now?
-                        int j = state.indexOf(arg);
-                        Collections.swap(ptypes, i, j);
-                        MethodType swapType = MethodType.methodType(oldType.returnType(), ptypes);
-                        target = AdapterMethodHandle.makeSwapArguments(swapType, target, i, j);
-                        if (target == null)  throw newIllegalArgumentException("cannot swap");
-                        assert(target.type() == swapType);
-                        oldType = swapType;
-                        Collections.swap(state, i, j);
-                    }
-                }
-                // One pass of swapping must finish the job.
-                assert(state.equals(goal));
-            }
-            while (!dups.isEmpty()) {
-                // Grab a contiguous trailing sequence of dups.
-                int grab = dups.size() - 1;
-                int dupArgPos = dups.get(grab), dupArgCount = 1;
-                while (grab - 1 >= 0) {
-                    int dup0 = dups.get(grab - 1);
-                    if (dup0 != dupArgPos - 1)  break;
-                    dupArgPos -= 1;
-                    dupArgCount += 1;
-                    grab -= 1;
-                }
-                //if (dupArgCount > 1)  System.out.println("Dup: "+dups.subList(grab, dups.size()));
-                dups.subList(grab, dups.size()).clear();
-                // In the new target type drop that many args from the tail:
-                List<Class<?>> ptypes = oldType.parameterList();
-                ptypes = ptypes.subList(0, ptypes.size() - dupArgCount);
-                MethodType dupType = MethodType.methodType(oldType.returnType(), ptypes);
-                target = AdapterMethodHandle.makeDupArguments(dupType, target, dupArgPos, dupArgCount);
-                if (target == null)
-                    throw newIllegalArgumentException("cannot dup");
-                oldType = target.type();
-            }
-            while (!drops.isEmpty()) {
-                // Grab a contiguous initial sequence of drops.
-                int dropArgPos = drops.get(0), dropArgCount = 1;
-                while (dropArgCount < drops.size()) {
-                    int drop1 = drops.get(dropArgCount);
-                    if (drop1 != dropArgPos + dropArgCount)  break;
-                    dropArgCount += 1;
-                }
-                //if (dropArgCount > 1)  System.out.println("Drop: "+drops.subList(0, dropArgCount));
-                drops.subList(0, dropArgCount).clear();
-                List<Class<?>> dropTypes = newType.parameterList()
-                        .subList(dropArgPos, dropArgPos + dropArgCount);
-                MethodType dropType = oldType.insertParameterTypes(dropArgPos, dropTypes);
-                target = AdapterMethodHandle.makeDropArguments(dropType, target, dropArgPos, dropArgCount);
-                if (target == null)  throw newIllegalArgumentException("cannot drop");
-                oldType = target.type();
+        int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
+        if (permutationOrNull.length != outargs)
+            throw newIllegalArgumentException("wrong number of arguments in permutation");
+        // Make the individual outgoing argument types match up first.
+        Class<?>[] callTypeArgs = new Class<?>[outargs];
+        for (int i = 0; i < outargs; i++)
+            callTypeArgs[i] = newType.parameterType(permutationOrNull[i]);
+        MethodType callType = MethodType.methodType(oldType.returnType(), callTypeArgs);
+        target = convertArguments(target, callType, oldType, 0);
+        assert(target != null);
+        oldType = target.type();
+        List<Integer> goal = new ArrayList<Integer>();  // i*TOKEN
+        List<Integer> state = new ArrayList<Integer>(); // i*TOKEN
+        List<Integer> drops = new ArrayList<Integer>(); // not tokens
+        List<Integer> dups = new ArrayList<Integer>();  // not tokens
+        final int TOKEN = 10; // to mark items which are symbolic only
+        // state represents the argument values coming into target
+        for (int i = 0; i < outargs; i++) {
+            state.add(permutationOrNull[i] * TOKEN);
+        }
+        // goal represents the desired state
+        for (int i = 0; i < inargs; i++) {
+            if (state.contains(i * TOKEN)) {
+                goal.add(i * TOKEN);
+            } else {
+                // adapter must initially drop all unused arguments
+                drops.add(i);
             }
         }
+        // detect duplications
+        while (state.size() > goal.size()) {
+            for (int i2 = 0; i2 < state.size(); i2++) {
+                int arg1 = state.get(i2);
+                int i1 = state.indexOf(arg1);
+                if (i1 != i2) {
+                    // found duplicate occurrence at i2
+                    int arg2 = (inargs++) * TOKEN;
+                    state.set(i2, arg2);
+                    dups.add(goal.indexOf(arg1));
+                    goal.add(arg2);
+                }
+            }
+        }
+        assert(state.size() == goal.size());
+        int size = goal.size();
+        while (!state.equals(goal)) {
+            // Look for a maximal sequence of adjacent misplaced arguments,
+            // and try to rotate them into place.
+            int bestRotArg = -10 * TOKEN, bestRotLen = 0;
+            int thisRotArg = -10 * TOKEN, thisRotLen = 0;
+            for (int i = 0; i < size; i++) {
+                int arg = state.get(i);
+                // Does this argument match the current run?
+                if (arg == thisRotArg + TOKEN) {
+                    thisRotArg = arg;
+                    thisRotLen += 1;
+                    if (bestRotLen < thisRotLen) {
+                        bestRotLen = thisRotLen;
+                        bestRotArg = thisRotArg;
+                    }
+                } else {
+                    // The old sequence (if any) stops here.
+                    thisRotLen = 0;
+                    thisRotArg = -10 * TOKEN;
+                    // But maybe a new one starts here also.
+                    int wantArg = goal.get(i);
+                    final int MAX_ARG_ROTATION = AdapterMethodHandle.MAX_ARG_ROTATION;
+                    if (arg != wantArg &&
+                        arg >= wantArg - TOKEN * MAX_ARG_ROTATION &&
+                        arg <= wantArg + TOKEN * MAX_ARG_ROTATION) {
+                        thisRotArg = arg;
+                        thisRotLen = 1;
+                    }
+                }
+            }
+            if (bestRotLen >= 2) {
+                // Do a rotation if it can improve argument positioning
+                // by at least 2 arguments.  This is not always optimal,
+                // but it seems to catch common cases.
+                int dstEnd = state.indexOf(bestRotArg);
+                int srcEnd = goal.indexOf(bestRotArg);
+                int rotBy = dstEnd - srcEnd;
+                int dstBeg = dstEnd - (bestRotLen - 1);
+                int srcBeg = srcEnd - (bestRotLen - 1);
+                assert((dstEnd | dstBeg | srcEnd | srcBeg) >= 0); // no negs
+                // Make a span which covers both source and destination.
+                int rotBeg = Math.min(dstBeg, srcBeg);
+                int rotEnd = Math.max(dstEnd, srcEnd);
+                int score = 0;
+                for (int i = rotBeg; i <= rotEnd; i++) {
+                    if ((int)state.get(i) != (int)goal.get(i))
+                        score += 1;
+                }
+                List<Integer> rotSpan = state.subList(rotBeg, rotEnd+1);
+                Collections.rotate(rotSpan, -rotBy);  // reverse direction
+                for (int i = rotBeg; i <= rotEnd; i++) {
+                    if ((int)state.get(i) != (int)goal.get(i))
+                        score -= 1;
+                }
+                if (score >= 2) {
+                    // Improved at least two argument positions.  Do it.
+                    List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
+                    Collections.rotate(ptypes.subList(rotBeg, rotEnd+1), -rotBy);
+                    MethodType rotType = MethodType.methodType(oldType.returnType(), ptypes);
+                    MethodHandle nextTarget
+                            = AdapterMethodHandle.makeRotateArguments(rotType, target,
+                                    rotBeg, rotSpan.size(), rotBy);
+                    if (nextTarget != null) {
+                        //System.out.println("Rot: "+rotSpan+" by "+rotBy);
+                        target = nextTarget;
+                        oldType = rotType;
+                        continue;
+                    }
+                }
+                // Else de-rotate, and drop through to the swap-fest.
+                Collections.rotate(rotSpan, rotBy);
+            }
+
+            // Now swap like the wind!
+            List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
+            for (int i = 0; i < size; i++) {
+                // What argument do I want here?
+                int arg = goal.get(i);
+                if (arg != state.get(i)) {
+                    // Where is it now?
+                    int j = state.indexOf(arg);
+                    Collections.swap(ptypes, i, j);
+                    MethodType swapType = MethodType.methodType(oldType.returnType(), ptypes);
+                    target = AdapterMethodHandle.makeSwapArguments(swapType, target, i, j);
+                    if (target == null)  throw newIllegalArgumentException("cannot swap");
+                    assert(target.type() == swapType);
+                    oldType = swapType;
+                    Collections.swap(state, i, j);
+                }
+            }
+            // One pass of swapping must finish the job.
+            assert(state.equals(goal));
+        }
+        while (!dups.isEmpty()) {
+            // Grab a contiguous trailing sequence of dups.
+            int grab = dups.size() - 1;
+            int dupArgPos = dups.get(grab), dupArgCount = 1;
+            while (grab - 1 >= 0) {
+                int dup0 = dups.get(grab - 1);
+                if (dup0 != dupArgPos - 1)  break;
+                dupArgPos -= 1;
+                dupArgCount += 1;
+                grab -= 1;
+            }
+            //if (dupArgCount > 1)  System.out.println("Dup: "+dups.subList(grab, dups.size()));
+            dups.subList(grab, dups.size()).clear();
+            // In the new target type drop that many args from the tail:
+            List<Class<?>> ptypes = oldType.parameterList();
+            ptypes = ptypes.subList(0, ptypes.size() - dupArgCount);
+            MethodType dupType = MethodType.methodType(oldType.returnType(), ptypes);
+            target = AdapterMethodHandle.makeDupArguments(dupType, target, dupArgPos, dupArgCount);
+            if (target == null)
+                throw newIllegalArgumentException("cannot dup");
+            oldType = target.type();
+        }
+        while (!drops.isEmpty()) {
+            // Grab a contiguous initial sequence of drops.
+            int dropArgPos = drops.get(0), dropArgCount = 1;
+            while (dropArgCount < drops.size()) {
+                int drop1 = drops.get(dropArgCount);
+                if (drop1 != dropArgPos + dropArgCount)  break;
+                dropArgCount += 1;
+            }
+            //if (dropArgCount > 1)  System.out.println("Drop: "+drops.subList(0, dropArgCount));
+            drops.subList(0, dropArgCount).clear();
+            List<Class<?>> dropTypes = newType.parameterList()
+                    .subList(dropArgPos, dropArgPos + dropArgCount);
+            MethodType dropType = oldType.insertParameterTypes(dropArgPos, dropTypes);
+            target = AdapterMethodHandle.makeDropArguments(dropType, target, dropArgPos, dropArgCount);
+            if (target == null)  throw newIllegalArgumentException("cannot drop");
+            oldType = target.type();
+        }
+        return convertArguments(target, newType, oldType, 0);
+    }
+
+    /*non-public*/ static
+    MethodHandle convertArguments(MethodHandle target, MethodType newType, int level) {
+        MethodType oldType = target.type();
+        if (oldType.equals(newType))
+            return target;
+        assert(level > 1 || oldType.isConvertibleTo(newType));
+        MethodHandle retFilter = null;
+        Class<?> oldRT = oldType.returnType();
+        Class<?> newRT = newType.returnType();
+        if (!VerifyType.isNullConversion(oldRT, newRT)) {
+            if (oldRT == void.class) {
+                Wrapper wrap = newRT.isPrimitive() ? Wrapper.forPrimitiveType(newRT) : Wrapper.OBJECT;
+                retFilter = ValueConversions.zeroConstantFunction(wrap);
+            } else {
+                retFilter = MethodHandles.identity(newRT);
+                retFilter = convertArguments(retFilter, retFilter.type().changeParameterType(0, oldRT), level);
+            }
+            newType = newType.changeReturnType(oldRT);
+        }
+        MethodHandle res = null;
+        Exception ex = null;
+        try {
+            res = convertArguments(target, newType, oldType, level);
+        } catch (IllegalArgumentException ex1) {
+            ex = ex1;
+        }
+        if (res == null) {
+            WrongMethodTypeException wmt = new WrongMethodTypeException("cannot convert to "+newType+": "+target);
+            wmt.initCause(ex);
+            throw wmt;
+        }
+        if (retFilter != null)
+            res = MethodHandles.filterReturnValue(res, retFilter);
+        return res;
+    }
+
+    static MethodHandle convertArguments(MethodHandle target,
+                                                MethodType newType,
+                                                MethodType oldType,
+                                                int level) {
+        assert(oldType.parameterCount() == target.type().parameterCount());
         if (newType == oldType)
             return target;
         if (oldType.parameterCount() != newType.parameterCount())
-            throw newIllegalArgumentException("mismatched parameter count");
-        MethodHandle res = AdapterMethodHandle.makePairwiseConvert(newType, target);
+            throw newIllegalArgumentException("mismatched parameter count", oldType, newType);
+        MethodHandle res = AdapterMethodHandle.makePairwiseConvert(newType, target, level);
         if (res != null)
             return res;
+        // We can come here in the case of target(int)void => (Object)void,
+        // because the unboxing logic for Object => int is complex.
         int argc = oldType.parameterCount();
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
         // The JVM can't do it directly, so fill in the gap with a Java adapter.
         // TO DO: figure out what to put here from case-by-case experience
         // Use a heavier method:  Convert all the arguments to Object,
         // then back to the desired types.  We might have to use Java-based
         // method handles to do this.
         MethodType objType = MethodType.genericMethodType(argc);
-        MethodHandle objTarget = AdapterMethodHandle.makePairwiseConvert(objType, target);
+        MethodHandle objTarget = AdapterMethodHandle.makePairwiseConvert(objType, target, level);
         if (objTarget == null)
             objTarget = FromGeneric.make(target);
-        res = AdapterMethodHandle.makePairwiseConvert(newType, objTarget);
+        res = AdapterMethodHandle.makePairwiseConvert(newType, objTarget, level);
         if (res != null)
             return res;
         return ToGeneric.make(newType, objTarget);
     }
 
+    static MethodHandle spreadArguments(MethodHandle target, Class<?> arrayType, int arrayLength) {
+        MethodType oldType = target.type();
+        int nargs = oldType.parameterCount();
+        int keepPosArgs = nargs - arrayLength;
+        MethodType newType = oldType
+                .dropParameterTypes(keepPosArgs, nargs)
+                .insertParameterTypes(keepPosArgs, arrayType);
+        return spreadArguments(target, newType, keepPosArgs, arrayType, arrayLength);
+    }
+    static MethodHandle spreadArguments(MethodHandle target, MethodType newType, int spreadArgPos) {
+        int arrayLength = target.type().parameterCount() - spreadArgPos;
+        return spreadArguments(target, newType, spreadArgPos, Object[].class, arrayLength);
+    }
     static MethodHandle spreadArguments(MethodHandle target,
                                                MethodType newType,
-                                               int spreadArg) {
+                                               int spreadArgPos,
+                                               Class<?> arrayType,
+                                               int arrayLength) {
         // TO DO: maybe allow the restarg to be Object and implicitly cast to Object[]
         MethodType oldType = target.type();
         // spread the last argument of newType to oldType
-        int spreadCount = oldType.parameterCount() - spreadArg;
-        Class<Object[]> spreadArgType = Object[].class;
-        MethodHandle res = AdapterMethodHandle.makeSpreadArguments(newType, target, spreadArgType, spreadArg, spreadCount);
-        if (res != null)
-            return res;
-        // try an intermediate adapter
-        Class<?> spreadType = null;
-        if (spreadArg < 0 || spreadArg >= newType.parameterCount()
-            || !VerifyType.isSpreadArgType(spreadType = newType.parameterType(spreadArg)))
-            throw newIllegalArgumentException("no restarg in "+newType);
-        Class<?>[] ptypes = oldType.parameterArray();
-        for (int i = 0; i < spreadCount; i++)
-            ptypes[spreadArg + i] = VerifyType.spreadArgElementType(spreadType, i);
-        MethodType midType = MethodType.methodType(newType.returnType(), ptypes);
-        // after spreading, some arguments may need further conversion
-        MethodHandle target2 = convertArguments(target, midType, oldType, null);
-        if (target2 == null)
-            throw new UnsupportedOperationException("NYI: convert "+midType+" =calls=> "+oldType);
-        res = AdapterMethodHandle.makeSpreadArguments(newType, target2, spreadArgType, spreadArg, spreadCount);
-        if (res != null)
-            return res;
-        res = SpreadGeneric.make(target2, spreadCount);
-        if (res != null)
-            res = convertArguments(res, newType, res.type(), null);
+        assert(arrayLength == oldType.parameterCount() - spreadArgPos);
+        assert(newType.parameterType(spreadArgPos) == arrayType);
+        MethodHandle res = AdapterMethodHandle.makeSpreadArguments(newType, target, arrayType, spreadArgPos, arrayLength);
+        if (res == null)  throw new IllegalArgumentException("spread on "+target+" with "+arrayType.getSimpleName());
         return res;
     }
 
+    static MethodHandle collectArguments(MethodHandle target,
+                                                int collectArg,
+                                                MethodHandle collector) {
+        MethodType type = target.type();
+        Class<?> collectType = collector.type().returnType();
+        if (collectType != type.parameterType(collectArg))
+            target = target.asType(type.changeParameterType(collectArg, collectType));
+        MethodType newType = type
+                .dropParameterTypes(collectArg, collectArg+1)
+                .insertParameterTypes(collectArg, collector.type().parameterArray());
+        return collectArguments(target, newType, collectArg, collector);
+    }
     static MethodHandle collectArguments(MethodHandle target,
                                                 MethodType newType,
                                                 int collectArg,
                                                 MethodHandle collector) {
         MethodType oldType = target.type();     // (a...,c)=>r
-        if (collector == null) {
-            int numCollect = newType.parameterCount() - oldType.parameterCount() + 1;
-            collector = ValueConversions.varargsArray(numCollect);
-        }
         //         newType                      // (a..., b...)=>r
         MethodType colType = collector.type();  // (b...)=>c
         //         oldType                      // (a..., b...)=>r
         assert(newType.parameterCount() == collectArg + colType.parameterCount());
         assert(oldType.parameterCount() == collectArg + 1);
-        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, null);
-        MethodHandle gcollector = convertArguments(collector, colType.generic(), colType, null);
-        if (gtarget == null || gcollector == null)  return null;
-        MethodHandle gresult = FilterGeneric.makeArgumentCollector(gcollector, gtarget);
-        MethodHandle result = convertArguments(gresult, newType, gresult.type(), null);
+        MethodHandle result = null;
+        if (AdapterMethodHandle.canCollectArguments(oldType, colType, collectArg, false)) {
+            result = AdapterMethodHandle.makeCollectArguments(target, collector, collectArg, false);
+        }
+        if (result == null) {
+            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
+            MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, 0);
+            MethodHandle gcollector = convertArguments(collector, colType.generic(), colType, 0);
+            if (gtarget == null || gcollector == null)  return null;
+            MethodHandle gresult = FilterGeneric.makeArgumentCollector(gcollector, gtarget);
+            result = convertArguments(gresult, newType, gresult.type(), 0);
+        }
         return result;
     }
 
     static MethodHandle filterArgument(MethodHandle target,
-                                              int pos,
-                                              MethodHandle filter) {
-        MethodType ttype = target.type(), gttype = ttype.generic();
+                                       int pos,
+                                       MethodHandle filter) {
+        MethodType ttype = target.type();
+        MethodType ftype = filter.type();
+        assert(ftype.parameterCount() == 1);
+        MethodType rtype = ttype.changeParameterType(pos, ftype.parameterType(0));
+        MethodType gttype = ttype.generic();
         if (ttype != gttype) {
-            target = convertArguments(target, gttype, ttype, null);
+            target = convertArguments(target, gttype, ttype, 0);
             ttype = gttype;
         }
-        MethodType ftype = filter.type(), gftype = ftype.generic();
-        if (ftype.parameterCount() != 1)
-            throw new InternalError();
+        MethodType gftype = ftype.generic();
         if (ftype != gftype) {
-            filter = convertArguments(filter, gftype, ftype, null);
+            filter = convertArguments(filter, gftype, ftype, 0);
             ftype = gftype;
         }
-        if (ftype == ttype) {
-            // simple unary case
-            return FilterOneArgument.make(filter, target);
+        MethodHandle result = null;
+        if (AdapterMethodHandle.canCollectArguments(ttype, ftype, pos, false)) {
+            result = AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
         }
-        return FilterGeneric.makeArgumentFilter(pos, filter, target);
+        if (result == null) {
+            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
+            if (ftype == ttype) {
+            // simple unary case
+                result = FilterOneArgument.make(filter, target);
+            } else {
+                result = FilterGeneric.makeArgumentFilter(pos, filter, target);
+            }
+        }
+        if (result.type() != rtype)
+            result = result.asType(rtype);
+        return result;
     }
 
     static MethodHandle foldArguments(MethodHandle target,
-                                             MethodType newType,
-                                             MethodHandle combiner) {
+                                      MethodType newType,
+                                      int foldPos,
+                                      MethodHandle combiner) {
         MethodType oldType = target.type();
         MethodType ctype = combiner.type();
-        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, null);
-        MethodHandle gcombiner = convertArguments(combiner, ctype.generic(), ctype, null);
+        if (AdapterMethodHandle.canCollectArguments(oldType, ctype, foldPos, true)) {
+            MethodHandle res = AdapterMethodHandle.makeCollectArguments(target, combiner, foldPos, true);
+            if (res != null)  return res;
+        }
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
+        if (foldPos != 0)  return null;
+        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, 0);
+        MethodHandle gcombiner = convertArguments(combiner, ctype.generic(), ctype, 0);
+        if (ctype.returnType() == void.class) {
+            gtarget = dropArguments(gtarget, oldType.generic().insertParameterTypes(foldPos, Object.class), foldPos);
+        }
         if (gtarget == null || gcombiner == null)  return null;
         MethodHandle gresult = FilterGeneric.makeArgumentFolder(gcombiner, gtarget);
-        MethodHandle result = convertArguments(gresult, newType, gresult.type(), null);
-        return result;
+        return convertArguments(gresult, newType, gresult.type(), 0);
     }
 
     static
@@ -802,6 +879,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.target = target;
             this.fallback = fallback;
         }
+        // FIXME: Build the control flow out of foldArguments.
         static MethodHandle make(MethodHandle test, MethodHandle target, MethodHandle fallback) {
             MethodType type = target.type();
             int nargs = type.parameterCount();
@@ -809,12 +887,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType gtype = type.generic();
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), null);
-                MethodHandle gtarget = convertArguments(target, gtype, type, null);
-                MethodHandle gfallback = convertArguments(fallback, gtype, type, null);
+                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), 0);
+                MethodHandle gtarget = convertArguments(target, gtype, type, 0);
+                MethodHandle gfallback = convertArguments(fallback, gtype, type, 0);
                 if (gtest == null || gtarget == null || gfallback == null)  return null;
                 MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
-                return convertArguments(gguard, type, gtype, null);
+                return convertArguments(gguard, type, gtype, 0);
             } else {
                 MethodHandle invoke = VARARGS_INVOKE;
                 MethodType gtype = MethodType.genericMethodType(1);
@@ -925,8 +1003,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
             this(INVOKES[target.type().parameterCount()], target, exType, catcher);
         }
-       GuardWithCatch(MethodHandle invoker,
-                      MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
+        // FIXME: Build the control flow out of foldArguments.
+        GuardWithCatch(MethodHandle invoker,
+                       MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
             super(invoker);
             this.target = target;
             this.exType = exType;
@@ -1057,11 +1136,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (nargs < GuardWithCatch.INVOKES.length) {
             MethodType gtype = type.generic();
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = convertArguments(target, gtype, type, null);
-            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, null);
+            MethodHandle gtarget = convertArguments(target, gtype, type, 0);
+            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 0);
             MethodHandle gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return convertArguments(gguard, type, gtype, null);
+            return convertArguments(gguard, type, gtype, 0);
         } else {
             MethodType gtype = MethodType.genericMethodType(0, true);
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
