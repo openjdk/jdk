@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import sun.invoke.util.ValueConversions;
 import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
@@ -53,12 +54,12 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * and the kinds of transformations that apply to it.
  * <p>
  * A method handle contains a pair of special invoker methods
- * called {@link #invokeExact invokeExact} and {@link #invokeGeneric invokeGeneric}.
+ * called {@link #invokeExact invokeExact} and {@link #invoke invoke}.
  * Both invoker methods provide direct access to the method handle's
  * underlying method, constructor, field, or other operation,
  * as modified by transformations of arguments and return values.
  * Both invokers accept calls which exactly match the method handle's own type.
- * The {@code invokeGeneric} invoker also accepts a range of other call types.
+ * The plain, inexact invoker also accepts a range of other call types.
  * <p>
  * Method handles are immutable and have no visible state.
  * Of course, they can be bound to underlying methods or data which exhibit state.
@@ -76,7 +77,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * may change from time to time or across implementations from different vendors.
  *
  * <h3>Method handle compilation</h3>
- * A Java method call expression naming {@code invokeExact} or {@code invokeGeneric}
+ * A Java method call expression naming {@code invokeExact} or {@code invoke}
  * can invoke a method handle from Java source code.
  * From the viewpoint of source code, these methods can take any arguments
  * and their result can be cast to any return type.
@@ -86,7 +87,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * which connects this freedom of invocation directly to the JVM execution stack.
  * <p>
  * As is usual with virtual methods, source-level calls to {@code invokeExact}
- * and {@code invokeGeneric} compile to an {@code invokevirtual} instruction.
+ * and {@code invoke} compile to an {@code invokevirtual} instruction.
  * More unusually, the compiler must record the actual argument types,
  * and may not perform method invocation conversions on the arguments.
  * Instead, it must push them on the stack according to their own unconverted types.
@@ -109,7 +110,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * The first time a {@code invokevirtual} instruction is executed
  * it is linked, by symbolically resolving the names in the instruction
  * and verifying that the method call is statically legal.
- * This is true of calls to {@code invokeExact} and {@code invokeGeneric}.
+ * This is true of calls to {@code invokeExact} and {@code invoke}.
  * In this case, the type descriptor emitted by the compiler is checked for
  * correct syntax and names it contains are resolved.
  * Thus, an {@code invokevirtual} instruction which invokes
@@ -127,18 +128,18 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * In the case of {@code invokeExact}, the type descriptor of the invocation
  * (after resolving symbolic type names) must exactly match the method type
  * of the receiving method handle.
- * In the case of {@code invokeGeneric}, the resolved type descriptor
+ * In the case of plain, inexact {@code invoke}, the resolved type descriptor
  * must be a valid argument to the receiver's {@link #asType asType} method.
- * Thus, {@code invokeGeneric} is more permissive than {@code invokeExact}.
+ * Thus, plain {@code invoke} is more permissive than {@code invokeExact}.
  * <p>
  * After type matching, a call to {@code invokeExact} directly
  * and immediately invoke the method handle's underlying method
  * (or other behavior, as the case may be).
  * <p>
- * A call to {@code invokeGeneric} works the same as a call to
+ * A call to plain {@code invoke} works the same as a call to
  * {@code invokeExact}, if the type descriptor specified by the caller
  * exactly matches the method handle's own type.
- * If there is a type mismatch, {@code invokeGeneric} attempts
+ * If there is a type mismatch, {@code invoke} attempts
  * to adjust the type of the receiving method handle,
  * as if by a call to {@link #asType asType},
  * to obtain an exactly invokable method handle {@code M2}.
@@ -152,7 +153,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * In typical programs, method handle type matching will usually succeed.
  * But if a match fails, the JVM will throw a {@link WrongMethodTypeException},
  * either directly (in the case of {@code invokeExact}) or indirectly as if
- * by a failed call to {@code asType} (in the case of {@code invokeGeneric}).
+ * by a failed call to {@code asType} (in the case of {@code invoke}).
  * <p>
  * Thus, a method type mismatch which might show up as a linkage error
  * in a statically typed program can show up as
@@ -249,8 +250,8 @@ assert(s.equals("savvy"));
 mt = MethodType.methodType(java.util.List.class, Object[].class);
 mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
 assert(mh.isVarargsCollector());
-x = mh.invokeGeneric("one", "two");
-// invokeGeneric(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+x = mh.invoke("one", "two");
+// invoke(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
 assert(x.equals(java.util.Arrays.asList("one","two")));
 // mt is (Object,Object,Object)Object
 mt = MethodType.genericMethodType(3);
@@ -269,12 +270,12 @@ mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
 mh.invokeExact(System.out, "Hello, world.");
 // invokeExact(Ljava/io/PrintStream;Ljava/lang/String;)V
  * </pre></blockquote>
- * Each of the above calls to {@code invokeExact} or {@code invokeGeneric}
+ * Each of the above calls to {@code invokeExact} or plain {@code invoke}
  * generates a single invokevirtual instruction with
  * the type descriptor indicated in the following comment.
  *
  * <h3>Exceptions</h3>
- * The methods {@code invokeExact} and {@code invokeGeneric} are declared
+ * The methods {@code invokeExact} and {@code invoke} are declared
  * to throw {@link java.lang.Throwable Throwable},
  * which is to say that there is no static restriction on what a method handle
  * can throw.  Since the JVM does not distinguish between checked
@@ -288,7 +289,7 @@ mh.invokeExact(System.out, "Hello, world.");
  *
  * <h3><a name="sigpoly"></a>Signature polymorphism</h3>
  * The unusual compilation and linkage behavior of
- * {@code invokeExact} and {@code invokeGeneric}
+ * {@code invokeExact} and plain {@code invoke}
  * is referenced by the term <em>signature polymorphism</em>.
  * A signature polymorphic method is one which can operate with
  * any of a wide range of call signatures and return types.
@@ -322,7 +323,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * The following methods (and no others) are signature polymorphic:
  * <ul>
  * <li>{@link java.lang.invoke.MethodHandle#invokeExact   MethodHandle.invokeExact}
- * <li>{@link java.lang.invoke.MethodHandle#invokeGeneric MethodHandle.invokeGeneric}
+ * <li>{@link java.lang.invoke.MethodHandle#invoke        MethodHandle.invoke}
  * </ul>
  * <p>
  * A signature polymorphic method will be declared with the following properties:
@@ -374,24 +375,34 @@ mh.invokeExact(System.out, "Hello, world.");
  * <p>
  * As a special case,
  * when the Core Reflection API is used to view the signature polymorphic
- * methods {@code invokeExact} or {@code invokeGeneric} in this class,
- * they appear as single, non-polymorphic native methods.
- * Calls to these native methods do not result in method handle invocations.
+ * methods {@code invokeExact} or plain {@code invoke} in this class,
+ * they appear as ordinary non-polymorphic methods.
+ * Their reflective appearance, as viewed by
+ * {@link java.lang.Class#getDeclaredMethod Class.getDeclaredMethod},
+ * is unaffected by their special status in this API.
+ * For example, {@link java.lang.reflect.Method#getModifiers Method.getModifiers}
+ * will report exactly those modifier bits required for any similarly
+ * declared method, including in this case {@code native} and {@code varargs} bits.
+ * <p>
+ * As with any reflected method, these methods (when reflected) may be
+ * invoked via {@link java.lang.reflect.Method#invoke Method.invoke}.
+ * However, such reflective calls do not result in method handle invocations.
+ * Such a call, if passed the required argument
+ * (a single one, of type {@code Object[]}), will ignore the argument and
+ * will throw an {@code UnsupportedOperationException}.
+ * <p>
  * Since {@code invokevirtual} instructions can natively
  * invoke method handles under any type descriptor, this reflective view conflicts
- * with the normal presentation via bytecodes.
- * Thus, these two native methods, as viewed by
- * {@link java.lang.Class#getDeclaredMethod Class.getDeclaredMethod},
- * are placeholders only.
- * If invoked via {@link java.lang.reflect.Method#invoke Method.invoke},
- * they will throw {@code UnsupportedOperationException}.
+ * with the normal presentation of these methods via bytecodes.
+ * Thus, these two native methods, when reflectively viewed by
+ * {@code Class.getDeclaredMethod}, may be regarded as placeholders only.
  * <p>
  * In order to obtain an invoker method for a particular type descriptor,
  * use {@link java.lang.invoke.MethodHandles#exactInvoker MethodHandles.exactInvoker},
- * or {@link java.lang.invoke.MethodHandles#genericInvoker MethodHandles.genericInvoker}.
+ * or {@link java.lang.invoke.MethodHandles#invoker MethodHandles.invoker}.
  * The {@link java.lang.invoke.MethodHandles.Lookup#findVirtual Lookup.findVirtual}
  * API is also able to return a method handle
- * to call {@code invokeExact} or {@code invokeGeneric},
+ * to call {@code invokeExact} or plain {@code invoke},
  * for any specified type descriptor .
  *
  * <h3>Interoperation between method handles and Java generics</h3>
@@ -523,7 +534,7 @@ public abstract class MethodHandle {
      * adaptations directly on the caller's arguments,
      * and call the target method handle according to its own exact type.
      * <p>
-     * The type descriptor at the call site of {@code invokeGeneric} must
+     * The type descriptor at the call site of {@code invoke} must
      * be a valid argument to the receivers {@code asType} method.
      * In particular, the caller must specify the same argument arity
      * as the callee's type,
@@ -539,11 +550,18 @@ public abstract class MethodHandle {
      * @throws ClassCastException if the target's type can be adjusted to the caller, but a reference cast fails
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
+    public final native @PolymorphicSignature Object invoke(Object... args) throws Throwable;
+
+    /**
+     * <em>Temporary alias</em> for {@link #invoke}, for backward compatibility with some versions of JSR 292.
+     * On some JVMs, support can be excluded by the flags {@code -XX:+UnlockExperimentalVMOptions -XX:-AllowInvokeGeneric}.
+     * @deprecated Will be removed for JSR 292 Proposed Final Draft.
+     */
     public final native @PolymorphicSignature Object invokeGeneric(Object... args) throws Throwable;
 
     /**
      * Performs a varargs invocation, passing the arguments in the given array
-     * to the method handle, as if via {@link #invokeGeneric invokeGeneric} from a call site
+     * to the method handle, as if via an inexact {@link #invoke invoke} from a call site
      * which mentions only the type {@code Object}, and whose arity is the length
      * of the argument array.
      * <p>
@@ -553,7 +571,7 @@ public abstract class MethodHandle {
      * <ul>
      * <li>Determine the length of the argument array as {@code N}.
      *     For a null reference, {@code N=0}. </li>
-     * <li>Determine the generic type {@code TN} of {@code N} arguments as
+     * <li>Determine the general type {@code TN} of {@code N} arguments as
      *     as {@code TN=MethodType.genericMethodType(N)}.</li>
      * <li>Force the original target method handle {@code MH0} to the
      *     required type, as {@code MH1 = MH0.asType(TN)}. </li>
@@ -580,7 +598,7 @@ public abstract class MethodHandle {
      * Object result = invoker.invokeExact(this, arguments);
      * </pre></blockquote>
      * <p>
-     * Unlike the signature polymorphic methods {@code invokeExact} and {@code invokeGeneric},
+     * Unlike the signature polymorphic methods {@code invokeExact} and {@code invoke},
      * {@code invokeWithArguments} can be accessed normally via the Core Reflection API and JNI.
      * It can therefore be used as a bridge between native or reflective code and method handles.
      *
@@ -595,11 +613,11 @@ public abstract class MethodHandle {
         int argc = arguments == null ? 0 : arguments.length;
         MethodType type = type();
         if (type.parameterCount() != argc) {
-            // simulate invokeGeneric
+            // simulate invoke
             return asType(MethodType.genericMethodType(argc)).invokeWithArguments(arguments);
         }
         if (argc <= 10) {
-            MethodHandle invoker = type.invokers().genericInvoker();
+            MethodHandle invoker = type.invokers().generalInvoker();
             switch (argc) {
                 case 0:  return invoker.invokeExact(this);
                 case 1:  return invoker.invokeExact(this,
@@ -644,7 +662,7 @@ public abstract class MethodHandle {
 
     /**
      * Performs a varargs invocation, passing the arguments in the given array
-     * to the method handle, as if via {@link #invokeGeneric invokeGeneric} from a call site
+     * to the method handle, as if via an inexact {@link #invoke invoke} from a call site
      * which mentions only the type {@code Object}, and whose arity is the length
      * of the argument array.
      * <p>
@@ -672,9 +690,9 @@ public abstract class MethodHandle {
      * If the original type and new type are equal, returns {@code this}.
      * <p>
      * This method provides the crucial behavioral difference between
-     * {@link #invokeExact invokeExact} and {@link #invokeGeneric invokeGeneric}.  The two methods
+     * {@link #invokeExact invokeExact} and plain, inexact {@link #invoke invoke}.  The two methods
      * perform the same steps when the caller's type descriptor is identical
-     * with the callee's, but when the types differ, {@link #invokeGeneric invokeGeneric}
+     * with the callee's, but when the types differ, plain {@link #invoke invoke}
      * also calls {@code asType} (or some internal equivalent) in order
      * to match up the caller's and callee's types.
      * <p>
@@ -689,6 +707,9 @@ public abstract class MethodHandle {
      * @see MethodHandles#convertArguments
      */
     public MethodHandle asType(MethodType newType) {
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert "+type+" to "+newType);
+        }
         return MethodHandles.convertArguments(this, newType);
     }
 
@@ -731,13 +752,9 @@ public abstract class MethodHandle {
     public MethodHandle asSpreader(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
         if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
-        MethodType oldType = type();
-        int nargs = oldType.parameterCount();
+        int nargs = type().parameterCount();
         if (nargs < arrayLength)  throw newIllegalArgumentException("bad spread array length");
-        int keepPosArgs = nargs - arrayLength;
-        MethodType newType = oldType.dropParameterTypes(keepPosArgs, nargs);
-        newType = newType.insertParameterTypes(keepPosArgs, arrayType);
-        return MethodHandles.spreadArguments(this, newType);
+        return MethodHandleImpl.spreadArguments(this, arrayType, arrayLength);
     }
 
     /**
@@ -780,15 +797,18 @@ public abstract class MethodHandle {
      * @see #asVarargsCollector
      */
     public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
+        asCollectorChecks(arrayType, arrayLength);
+        MethodHandle collector = ValueConversions.varargsArray(arrayType, arrayLength);
+        return MethodHandleImpl.collectArguments(this, type.parameterCount()-1, collector);
+    }
+
+    private  void asCollectorChecks(Class<?> arrayType, int arrayLength) {
         Class<?> arrayElement = arrayType.getComponentType();
-        if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
-        MethodType oldType = type();
-        int nargs = oldType.parameterCount();
-        if (nargs == 0)  throw newIllegalArgumentException("no trailing argument");
-        MethodType newType = oldType.dropParameterTypes(nargs-1, nargs);
-        newType = newType.insertParameterTypes(nargs-1,
-                    java.util.Collections.<Class<?>>nCopies(arrayLength, arrayElement));
-        return MethodHandles.collectArguments(this, newType);
+        if (arrayElement == null)
+            throw newIllegalArgumentException("not an array type", arrayType);
+        int nargs = type().parameterCount();
+        if (nargs == 0 || !type().parameterType(nargs-1).isAssignableFrom(arrayType))
+            throw newIllegalArgumentException("array type not assignable to trailing argument", this, arrayType);
     }
 
     /**
@@ -798,7 +818,7 @@ public abstract class MethodHandle {
      * <p>
      * The type and behavior of the adapter will be the same as
      * the type and behavior of the target, except that certain
-     * {@code invokeGeneric} and {@code asType} requests can lead to
+     * {@code invoke} and {@code asType} requests can lead to
      * trailing positional arguments being collected into target's
      * trailing parameter.
      * Also, the last parameter type of the adapter will be
@@ -812,17 +832,17 @@ public abstract class MethodHandle {
      * since it accepts a whole array of indeterminate length,
      * rather than a fixed number of arguments.)
      * <p>
-     * When called with {@link #invokeGeneric invokeGeneric}, if the caller
+     * When called with plain, inexact {@link #invoke invoke}, if the caller
      * type is the same as the adapter, the adapter invokes the target as with
      * {@code invokeExact}.
-     * (This is the normal behavior for {@code invokeGeneric} when types match.)
+     * (This is the normal behavior for {@code invoke} when types match.)
      * <p>
      * Otherwise, if the caller and adapter arity are the same, and the
      * trailing parameter type of the caller is a reference type identical to
      * or assignable to the trailing parameter type of the adapter,
      * the arguments and return values are converted pairwise,
      * as if by {@link MethodHandles#convertArguments convertArguments}.
-     * (This is also normal behavior for {@code invokeGeneric} in such a case.)
+     * (This is also normal behavior for {@code invoke} in such a case.)
      * <p>
      * Otherwise, the arities differ, or the adapter's trailing parameter
      * type is not assignable from the corresponding caller type.
@@ -838,7 +858,7 @@ public abstract class MethodHandle {
      * where {@code N} is the arity of the target.
      * Also, there must exist conversions from the incoming arguments
      * to the target's arguments.
-     * As with other uses of {@code invokeGeneric}, if these basic
+     * As with other uses of plain {@code invoke}, if these basic
      * requirements are not fulfilled, a {@code WrongMethodTypeException}
      * may be thrown.
      * <p>
@@ -856,7 +876,7 @@ public abstract class MethodHandle {
      * <p>
      * The behavior of {@link #asType asType} is also specialized for
      * variable arity adapters, to maintain the invariant that
-     * {@code invokeGeneric} is always equivalent to an {@code asType}
+     * plain, inexact {@code invoke} is always equivalent to an {@code asType}
      * call to adjust the target type, followed by {@code invokeExact}.
      * Therefore, a variable arity adapter responds
      * to an {@code asType} request by building a fixed arity collector,
@@ -893,12 +913,12 @@ public abstract class MethodHandle {
 MethodHandle asList = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
-assertEquals("[]", asList.invokeGeneric().toString());
-assertEquals("[1]", asList.invokeGeneric(1).toString());
-assertEquals("[two, too]", asList.invokeGeneric("two", "too").toString());
+assertEquals("[]", asList.invoke().toString());
+assertEquals("[1]", asList.invoke(1).toString());
+assertEquals("[two, too]", asList.invoke("two", "too").toString());
 Object[] argv = { "three", "thee", "tee" };
-assertEquals("[three, thee, tee]", asList.invokeGeneric(argv).toString());
-List ls = (List) asList.invokeGeneric((Object)argv);
+assertEquals("[three, thee, tee]", asList.invoke(argv).toString());
+List ls = (List) asList.invoke((Object)argv);
 assertEquals(1, ls.size());
 assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * </pre></blockquote>
@@ -926,9 +946,9 @@ MethodHandle vamh = publicLookup()
   .asVarargsCollector(Object[].class);
 MethodHandle mh = MethodHandles.exactInvoker(vamh.type()).bindTo(vamh);
 assert(vamh.type().equals(mh.type()));
-assertEquals("[1, 2, 3]", vamh.invokeGeneric(1,2,3).toString());
+assertEquals("[1, 2, 3]", vamh.invoke(1,2,3).toString());
 boolean failed = false;
-try { mh.invokeGeneric(1,2,3); }
+try { mh.invoke(1,2,3); }
 catch (WrongMethodTypeException ex) { failed = true; }
 assert(failed);
      * </pre></blockquote>
@@ -960,7 +980,7 @@ assert(failed);
      * <li>an {@code ldc} instruction of a {@code CONSTANT_MethodHandle}
      *     which resolves to a variable arity Java method or constructor
      * </ul>
-     * @return true if this method handle accepts more than one arity of {@code invokeGeneric} calls
+     * @return true if this method handle accepts more than one arity of plain, inexact {@code invoke} calls
      * @see #asVarargsCollector
      */
     public boolean isVarargsCollector() {

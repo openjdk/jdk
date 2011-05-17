@@ -98,6 +98,10 @@ class FromGeneric {
         this.unboxingInvoker = computeUnboxingInvoker(targetType, internalType0);
     }
 
+    static {
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this class is deprecated
+    }
+
     /**
      * The typed target will be called according to targetType.
      * The adapter code will in fact see the raw result from internalType,
@@ -112,10 +116,10 @@ class FromGeneric {
             assert(iret == Object.class);
             return ValueConversions.identity();
         } else if (wrap.primitiveType() == iret) {
-            return ValueConversions.box(wrap, false);
+            return ValueConversions.box(wrap);
         } else {
             assert(tret == double.class ? iret == long.class : iret == int.class);
-            return ValueConversions.boxRaw(wrap, false);
+            return ValueConversions.boxRaw(wrap);
         }
     }
 
@@ -135,7 +139,7 @@ class FromGeneric {
         MethodType fixArgsType = internalType.changeReturnType(targetType.returnType());
         MethodHandle fixArgs = MethodHandleImpl.convertArguments(
                                  invoker, Invokers.invokerType(fixArgsType),
-                                 invoker.type(), null);
+                                 invoker.type(), 0);
         if (fixArgs == null)
             throw new InternalError("bad fixArgs");
         // reinterpret the calling sequence as raw:
@@ -160,7 +164,6 @@ class FromGeneric {
     /** Build an adapter of the given generic type, which invokes typedTarget
      *  on the incoming arguments, after unboxing as necessary.
      *  The return value is boxed if necessary.
-     * @param genericType  the required type of the result
      * @param typedTarget the target
      * @return an adapter method handle
      */
@@ -231,7 +234,7 @@ class FromGeneric {
     }
 
     static Adapter buildAdapterFromBytecodes(MethodType internalType) {
-        throw new UnsupportedOperationException("NYI");
+        throw new UnsupportedOperationException("NYI "+internalType);
     }
 
     /**
