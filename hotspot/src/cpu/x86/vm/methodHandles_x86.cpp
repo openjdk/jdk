@@ -389,7 +389,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
   }
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void MethodHandles::RicochetFrame::verify_offsets() {
   // Check compatibility of this struct with the more generally used offsets of class frame:
   int ebp_off = sender_link_offset_in_bytes();  // offset from struct base to local rbp value
