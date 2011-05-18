@@ -546,6 +546,10 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
+        MethodType type = target.type();
+        int last = type.parameterCount() - 1;
+        if (type.parameterType(last) != arrayType)
+            target = target.asType(type.changeParameterType(last, arrayType));
         return new AsVarargsCollector(target, arrayType);
     }
 
@@ -1144,7 +1148,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     @Override
-    public String toString() {
+    String debugString() {
         return getNameString(nonAdapter((MethodHandle)vmtarget), this);
     }
 
