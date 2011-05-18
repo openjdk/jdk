@@ -1377,6 +1377,9 @@ publicLookup().findVirtual(MethodHandle.class, "invoke", type)
      */
     public static
     MethodHandle convertArguments(MethodHandle target, MethodType newType) {
+        if (!target.type().isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert "+target+" to "+newType);
+        }
         return MethodHandleImpl.convertArguments(target, newType, 1);
     }
 
@@ -1567,7 +1570,7 @@ assert((int)twice.invokeExact(21) == 42);
         int numSpread = (outargs - spreadPos);
         MethodHandle res = null;
         if (spreadPos >= 0 && numSpread >= 0) {
-            res = MethodHandleImpl.spreadArguments(target, newType, spreadPos);
+            res = MethodHandleImpl.spreadArgumentsFromPos(target, newType, spreadPos);
         }
         if (res == null) {
             throw newIllegalArgumentException("cannot spread "+newType+" to " +oldType);
@@ -2135,7 +2138,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
             int hpc = hargs.size(), tpc = targs.size();
             if (hpc >= tpc || !targs.subList(0, hpc).equals(hargs))
                 throw misMatchedTypes("target and handler types", ttype, htype);
-            handler = dropArguments(handler, hpc, hargs.subList(hpc, tpc));
+            handler = dropArguments(handler, 1+hpc, targs.subList(hpc, tpc));
             htype = handler.type();
         }
         return MethodHandleImpl.makeGuardWithCatch(target, exType, handler);
