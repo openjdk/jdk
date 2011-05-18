@@ -615,6 +615,7 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
       }
     }
 
+#ifdef ASSERT
     if (node->debug_orig() != NULL) {
       stringStream dorigStream;
       Node* dorig = node->debug_orig();
@@ -629,6 +630,7 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
       }
       print_prop("debug_orig", dorigStream.as_string());
     }
+#endif
 
     if (_chaitin && _chaitin != (PhaseChaitin *)0xdeadbeef) {
       buffer[0] = 0;

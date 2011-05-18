@@ -2861,6 +2861,7 @@ void JavaThread::trace_frames() {
 }
 
 
+#ifdef ASSERT
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
@@ -2878,7 +2879,7 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
     values.print();
   }
 }
-
+#endif
 
 void JavaThread::trace_stack_from(vframe* start_vf) {
   ResourceMark rm;

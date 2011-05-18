@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,8 @@ public class CodeBlob extends VMObject {
   public boolean isUncommonTrapStub()   { return false; }
   public boolean isExceptionStub()      { return false; }
   public boolean isSafepointStub()      { return false; }
+  public boolean isRicochetBlob()       { return false; }
+  public boolean isAdapterBlob()        { return false; }
 
   // Fine grain nmethod support: isNmethod() == isJavaMethod() || isNativeMethod() || isOSRMethod()
   public boolean isJavaMethod()         { return false; }
