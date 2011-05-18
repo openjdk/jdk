@@ -525,7 +525,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
     /** A factory type for resolving member names with the help of the VM.
      *  TBD: Define access-safe public constructors for this factory.
      */
-    public static class Factory {
+    /*non-public*/ static class Factory {
         private Factory() { } // singleton pattern
         static Factory INSTANCE = new Factory();
 

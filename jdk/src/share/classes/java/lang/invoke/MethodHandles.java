@@ -190,7 +190,7 @@ public class MethodHandles {
      * is not symbolically accessible from the lookup class's loader,
      * the lookup can still succeed.
      * For example, lookups for {@code MethodHandle.invokeExact} and
-     * {@code MethodHandle.invokeGeneric} will always succeed, regardless of requested type.
+     * {@code MethodHandle.invoke} will always succeed, regardless of requested type.
      * <li>If there is a security manager installed, it can forbid the lookup
      * on various grounds (<a href="#secmgr">see below</a>).
      * By contrast, the {@code ldc} instruction is not subject to
@@ -590,10 +590,10 @@ public class MethodHandles {
          * Because of the general equivalence between {@code invokevirtual}
          * instructions and method handles produced by {@code findVirtual},
          * if the class is {@code MethodHandle} and the name string is
-         * {@code invokeExact} or {@code invokeGeneric}, the resulting
+         * {@code invokeExact} or {@code invoke}, the resulting
          * method handle is equivalent to one produced by
          * {@link java.lang.invoke.MethodHandles#exactInvoker MethodHandles.exactInvoker} or
-         * {@link java.lang.invoke.MethodHandles#genericInvoker MethodHandles.genericInvoker}
+         * {@link java.lang.invoke.MethodHandles#invoker MethodHandles.invoker}
          * with the same {@code type} argument.
          *
          * @param refc the class or interface from which the method is accessed
@@ -1080,7 +1080,7 @@ return mh1;
             MethodType rawType = mh.type();
             if (rawType.parameterType(0) == caller)  return mh;
             MethodType narrowType = rawType.changeParameterType(0, caller);
-            MethodHandle narrowMH = MethodHandleImpl.convertArguments(mh, narrowType, rawType, null);
+            MethodHandle narrowMH = MethodHandleImpl.convertArguments(mh, narrowType, rawType, 0);
             return fixVarargs(narrowMH, mh);
         }
 
@@ -1148,7 +1148,7 @@ return mh1;
      * <li>an {@code Object[]} array containing more arguments
      * </ul>
      * <p>
-     * The invoker will behave like a call to {@link MethodHandle#invokeGeneric invokeGeneric} with
+     * The invoker will behave like a call to {@link MethodHandle#invoke invoke} with
      * the indicated {@code type}.
      * That is, if the target is exactly of the given {@code type}, it will behave
      * like {@code invokeExact}; otherwise it behave as if {@link MethodHandle#asType asType}
@@ -1166,7 +1166,7 @@ return mh1;
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-MethodHandle invoker = MethodHandles.genericInvoker(type);
+MethodHandle invoker = MethodHandles.invoker(type);
 int spreadArgCount = type.parameterCount - objectArgCount;
 invoker = invoker.asSpreader(Object[].class, spreadArgCount);
 return invoker;
@@ -1186,7 +1186,7 @@ return invoker;
 
     /**
      * Produces a special <em>invoker method handle</em> which can be used to
-     * invoke any method handle of the given type, as if by {@code invokeExact}.
+     * invoke any method handle of the given type, as if by {@link MethodHandle#invokeExact invokeExact}.
      * The resulting invoker will have a type which is
      * exactly equal to the desired type, except that it will accept
      * an additional leading argument of type {@code MethodHandle}.
@@ -1203,7 +1203,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      * For example, to emulate an {@code invokeExact} call to a variable method
      * handle {@code M}, extract its type {@code T},
      * look up the invoker method {@code X} for {@code T},
-     * and call the invoker method, as {@code X.invokeGeneric(T, A...)}.
+     * and call the invoker method, as {@code X.invoke(T, A...)}.
      * (It would not work to call {@code X.invokeExact}, since the type {@code T}
      * is unknown.)
      * If spreading, collecting, or other argument transformations are required,
@@ -1212,7 +1212,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      * <p>
      * <em>(Note:  The invoker method is not available via the Core Reflection API.
      * An attempt to call {@linkplain java.lang.reflect.Method#invoke Method.invoke}
-     * on the declared {@code invokeExact} or {@code invokeGeneric} method will raise an
+     * on the declared {@code invokeExact} or {@code invoke} method will raise an
      * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.)</em>
      * <p>
      * This method throws no reflective or security exceptions.
@@ -1226,20 +1226,20 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
 
     /**
      * Produces a special <em>invoker method handle</em> which can be used to
-     * invoke any method handle of the given type, as if by {@code invokeGeneric}.
+     * invoke any method handle compatible with the given type, as if by {@link MethodHandle#invoke invoke}.
      * The resulting invoker will have a type which is
      * exactly equal to the desired type, except that it will accept
      * an additional leading argument of type {@code MethodHandle}.
      * <p>
      * Before invoking its target, the invoker will apply reference casts as
-     * necessary and unbox and widen primitive arguments, as if by {@link #convertArguments convertArguments}.
-     * The return value of the invoker will be an {@code Object} reference,
-     * boxing a primitive value if the original type returns a primitive,
-     * and always null if the original type returns void.
+     * necessary and box, unbox, or widen primitive values, as if by {@link MethodHandle#asType asType}.
+     * Similarly, the return value will be converted as necessary.
+     * If the target is a {@linkplain MethodHandle#asVarargsCollector variable arity method handle},
+     * the required arity conversion will be made, again as if by {@link MethodHandle#asType asType}.
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
-publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
+publicLookup().findVirtual(MethodHandle.class, "invoke", type)
      * </pre></blockquote>
      * <p>
      * This method throws no reflective or security exceptions.
@@ -1247,8 +1247,17 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
      * @return a method handle suitable for invoking any method handle convertible to the given type
      */
     static public
+    MethodHandle invoker(MethodType type) {
+        return type.invokers().generalInvoker();
+    }
+
+    /**
+     * <em>Temporary alias</em> for {@link #invoker}, for backward compatibility with some versions of JSR 292.
+     * @deprecated Will be removed for JSR 292 Proposed Final Draft.
+     */
+    public static
     MethodHandle genericInvoker(MethodType type) {
-        return type.invokers().genericInvoker();
+        return invoker(type);
     }
 
     /**
@@ -1368,18 +1377,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
      */
     public static
     MethodHandle convertArguments(MethodHandle target, MethodType newType) {
-        MethodType oldType = target.type();
-        if (oldType.equals(newType))
-            return target;
-        MethodHandle res = null;
-        try {
-            res = MethodHandleImpl.convertArguments(target,
-                                                    newType, oldType, null);
-        } catch (IllegalArgumentException ex) {
-        }
-        if (res == null)
-            throw new WrongMethodTypeException("cannot convert to "+newType+": "+target);
-        return res;
+        return MethodHandleImpl.convertArguments(target, newType, 1);
     }
 
     /**
@@ -1422,7 +1420,7 @@ publicLookup().findVirtual(MethodHandle.class, "invokeGeneric", type)
      */
     public static
     MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
-        return convertArguments(target, newType);  // FIXME!
+        return MethodHandleImpl.convertArguments(target, newType, 2);
     }
 
     /*
@@ -1517,23 +1515,32 @@ assert((int)twice.invokeExact(21) == 42);
     MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
         MethodType oldType = target.type();
         checkReorder(reorder, newType, oldType);
-        return MethodHandleImpl.convertArguments(target,
+        return MethodHandleImpl.permuteArguments(target,
                                                  newType, oldType,
                                                  reorder);
     }
 
     private static void checkReorder(int[] reorder, MethodType newType, MethodType oldType) {
+        if (newType.returnType() != oldType.returnType())
+            throw newIllegalArgumentException("return types do not match",
+                    oldType, newType);
         if (reorder.length == oldType.parameterCount()) {
             int limit = newType.parameterCount();
             boolean bad = false;
-            for (int i : reorder) {
+            for (int j = 0; j < reorder.length; j++) {
+                int i = reorder[j];
                 if (i < 0 || i >= limit) {
                     bad = true; break;
                 }
+                Class<?> src = newType.parameterType(i);
+                Class<?> dst = oldType.parameterType(j);
+                if (src != dst)
+                    throw newIllegalArgumentException("parameter types do not match after reorder",
+                            oldType, newType);
             }
             if (!bad)  return;
         }
-        throw newIllegalArgumentException("bad reorder array");
+        throw newIllegalArgumentException("bad reorder array: "+Arrays.toString(reorder));
     }
 
     /**
@@ -1622,7 +1629,7 @@ assert((int)twice.invokeExact(21) == 42);
             if (type == void.class)
                 throw newIllegalArgumentException("void type");
             Wrapper w = Wrapper.forPrimitiveType(type);
-            return identity(type).bindTo(w.convert(value, type));
+            return insertArguments(identity(type), 0, w.convert(value, type));
         } else {
             return identity(type).bindTo(type.cast(value));
         }
@@ -1857,7 +1864,8 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
         MethodType targetType = target.type();
         MethodHandle adapter = target;
-        MethodType adapterType = targetType;
+        MethodType adapterType = null;
+        assert((adapterType = targetType) != null);
         int maxPos = targetType.parameterCount();
         if (pos + filters.length > maxPos)
             throw newIllegalArgumentException("too many filters");
@@ -1865,17 +1873,21 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         for (MethodHandle filter : filters) {
             curPos += 1;
             if (filter == null)  continue;  // ignore null elements of filters
-            MethodType filterType = filter.type();
-            if (filterType.parameterCount() != 1
-                || filterType.returnType() != targetType.parameterType(curPos))
-                throw newIllegalArgumentException("target and filter types do not match");
-            adapterType = adapterType.changeParameterType(curPos, filterType.parameterType(0));
-            adapter = MethodHandleImpl.filterArgument(adapter, curPos, filter);
+            adapter = filterArgument(adapter, curPos, filter);
+            assert((adapterType = adapterType.changeParameterType(curPos, filter.type().parameterType(0))) != null);
         }
-        MethodType midType = adapter.type();
-        if (midType != adapterType)
-            adapter = MethodHandleImpl.convertArguments(adapter, adapterType, midType, null);
+        assert(adapterType.equals(adapter.type()));
         return adapter;
+    }
+
+    /*non-public*/ static
+    MethodHandle filterArgument(MethodHandle target, int pos, MethodHandle filter) {
+        MethodType targetType = target.type();
+        MethodType filterType = filter.type();
+        if (filterType.parameterCount() != 1
+            || filterType.returnType() != targetType.parameterType(pos))
+            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
+        return MethodHandleImpl.filterArgument(target, pos, filter);
     }
 
     /**
@@ -1913,14 +1925,26 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     MethodHandle filterReturnValue(MethodHandle target, MethodHandle filter) {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
-        if (filterType.parameterCount() != 1
-            || filterType.parameterType(0) != targetType.returnType())
-            throw newIllegalArgumentException("target and filter types do not match");
+        Class<?> rtype = targetType.returnType();
+        int filterValues = filterType.parameterCount();
+        if (filterValues == 0
+                ? (rtype != void.class)
+                : (rtype != filterType.parameterType(0)))
+            throw newIllegalArgumentException("target and filter types do not match", target, filter);
         // result = fold( lambda(retval, arg...) { filter(retval) },
         //                lambda(        arg...) { target(arg...) } )
+        MethodType newType = targetType.changeReturnType(filterType.returnType());
+        MethodHandle result = null;
+        if (AdapterMethodHandle.canCollectArguments(filterType, targetType, 0, false)) {
+            result = AdapterMethodHandle.makeCollectArguments(filter, target, 0, false);
+            if (result != null)  return result;
+        }
         // FIXME: Too many nodes here.
-        MethodHandle returner = dropArguments(filter, 1, targetType.parameterList());
-        return foldArguments(returner, target);
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this class is deprecated
+        MethodHandle returner = dropArguments(filter, filterValues, targetType.parameterList());
+        result = foldArguments(returner, target);
+        assert(result.type().equals(newType));
+        return result;
     }
 
     /**
@@ -1972,16 +1996,23 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     MethodHandle foldArguments(MethodHandle target, MethodHandle combiner) {
         MethodType targetType = target.type();
         MethodType combinerType = combiner.type();
+        int foldPos = 0;  // always at the head, at present
         int foldArgs = combinerType.parameterCount();
-        boolean ok = (targetType.parameterCount() >= 1 + foldArgs);
-        if (ok && !combinerType.parameterList().equals(targetType.parameterList().subList(1, foldArgs+1)))
+        int foldVals = combinerType.returnType() == void.class ? 0 : 1;
+        int afterInsertPos = foldPos + foldVals;
+        boolean ok = (targetType.parameterCount() >= afterInsertPos + foldArgs);
+        if (ok && !(combinerType.parameterList()
+                    .equals(targetType.parameterList().subList(afterInsertPos,
+                                                               afterInsertPos + foldArgs))))
             ok = false;
-        if (ok && !combinerType.returnType().equals(targetType.parameterType(0)))
+        if (ok && foldVals != 0 && !combinerType.returnType().equals(targetType.parameterType(0)))
             ok = false;
         if (!ok)
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
-        MethodType newType = targetType.dropParameterTypes(0, 1);
-        return MethodHandleImpl.foldArguments(target, newType, combiner);
+        MethodType newType = targetType.dropParameterTypes(foldPos, afterInsertPos);
+        MethodHandle res = MethodHandleImpl.foldArguments(target, newType, foldPos, combiner);
+        if (res == null)  throw newIllegalArgumentException("cannot fold from "+newType+" to " +targetType);
+        return res;
     }
 
     /**
@@ -2142,7 +2173,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * the given {@code target} on the incoming arguments,
      * and returning or throwing whatever the {@code target}
      * returns or throws.  The invocation will be as if by
-     * {@code target.invokeGeneric}.
+     * {@code target.invoke}.
      * The target's type will be checked before the
      * instance is created, as if by a call to {@code asType},
      * which may result in a {@code WrongMethodTypeException}.

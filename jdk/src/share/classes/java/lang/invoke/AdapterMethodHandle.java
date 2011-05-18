@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
+import sun.invoke.util.ValueConversions;
 import java.util.Arrays;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -55,29 +56,35 @@ class AdapterMethodHandle extends BoundMethodHandle {
         this(target, newType, conv, null);
     }
 
+    int getConversion() { return conversion; }
+
     // TO DO:  When adapting another MH with a null conversion, clone
     // the target and change its type, instead of adding another layer.
 
     /** Can a JVM-level adapter directly implement the proposed
      *  argument conversions, as if by MethodHandles.convertArguments?
      */
-    static boolean canPairwiseConvert(MethodType newType, MethodType oldType) {
+    static boolean canPairwiseConvert(MethodType newType, MethodType oldType, int level) {
         // same number of args, of course
         int len = newType.parameterCount();
         if (len != oldType.parameterCount())
             return false;
 
-        // Check return type.  (Not much can be done with it.)
+        // Check return type.
         Class<?> exp = newType.returnType();
         Class<?> ret = oldType.returnType();
-        if (!VerifyType.isNullConversion(ret, exp))
-            return false;
+        if (!VerifyType.isNullConversion(ret, exp)) {
+            if (!convOpSupported(OP_COLLECT_ARGS))
+                return false;
+            if (!canConvertArgument(ret, exp, level))
+                return false;
+        }
 
         // Check args pairwise.
         for (int i = 0; i < len; i++) {
             Class<?> src = newType.parameterType(i); // source type
             Class<?> dst = oldType.parameterType(i); // destination type
-            if (!canConvertArgument(src, dst))
+            if (!canConvertArgument(src, dst, level))
                 return false;
         }
 
@@ -87,10 +94,13 @@ class AdapterMethodHandle extends BoundMethodHandle {
     /** Can a JVM-level adapter directly implement the proposed
      *  argument conversion, as if by MethodHandles.convertArguments?
      */
-    static boolean canConvertArgument(Class<?> src, Class<?> dst) {
+    static boolean canConvertArgument(Class<?> src, Class<?> dst, int level) {
         // ? Retool this logic to use RETYPE_ONLY, CHECK_CAST, etc., as opcodes,
         // so we don't need to repeat so much decision making.
         if (VerifyType.isNullConversion(src, dst)) {
+            return true;
+        } else if (convOpSupported(OP_COLLECT_ARGS)) {
+            // If we can build filters, we can convert anything to anything.
             return true;
         } else if (src.isPrimitive()) {
             if (dst.isPrimitive())
@@ -99,7 +109,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 return canBoxArgument(src, dst);
         } else {
             if (dst.isPrimitive())
-                return canUnboxArgument(src, dst);
+                return canUnboxArgument(src, dst, level);
             else
                 return true;  // any two refs can be interconverted
         }
@@ -109,21 +119,20 @@ class AdapterMethodHandle extends BoundMethodHandle {
      * Create a JVM-level adapter method handle to conform the given method
      * handle to the similar newType, using only pairwise argument conversions.
      * For each argument, convert incoming argument to the exact type needed.
-     * Only null conversions are allowed on the return value (until
-     * the JVM supports ricochet adapters).
-     * The argument conversions allowed are casting, unboxing,
+     * The argument conversions allowed are casting, boxing and unboxing,
      * integral widening or narrowing, and floating point widening or narrowing.
      * @param newType required call type
      * @param target original method handle
+     * @param level which strength of conversion is allowed
      * @return an adapter to the original handle with the desired new type,
      *          or the original target if the types are already identical
      *          or null if the adaptation cannot be made
      */
-    static MethodHandle makePairwiseConvert(MethodType newType, MethodHandle target) {
+    static MethodHandle makePairwiseConvert(MethodType newType, MethodHandle target, int level) {
         MethodType oldType = target.type();
         if (newType == oldType)  return target;
 
-        if (!canPairwiseConvert(newType, oldType))
+        if (!canPairwiseConvert(newType, oldType, level))
             return null;
         // (after this point, it is an assertion error to fail to convert)
 
@@ -138,9 +147,14 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 break;
             }
         }
+
+        Class<?> needReturn = newType.returnType();
+        Class<?> haveReturn = oldType.returnType();
+        boolean retConv = !VerifyType.isNullConversion(haveReturn, needReturn);
+
         // Now build a chain of one or more adapters.
-        MethodHandle adapter = target;
-        MethodType midType = oldType.changeReturnType(newType.returnType());
+        MethodHandle adapter = target, adapter2;
+        MethodType midType = oldType;
         for (int i = 0; i <= lastConv; i++) {
             Class<?> src = newType.parameterType(i); // source type
             Class<?> dst = midType.parameterType(i); // destination type
@@ -149,22 +163,23 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 continue;
             }
             // Work the current type backward toward the desired caller type:
-            if (i != lastConv) {
-                midType = midType.changeParameterType(i, src);
-            } else {
+            midType = midType.changeParameterType(i, src);
+            if (i == lastConv) {
                 // When doing the last (or only) real conversion,
                 // force all remaining null conversions to happen also.
-                assert(VerifyType.isNullConversion(newType, midType.changeParameterType(i, src)));
-                midType = newType;
+                MethodType lastMidType = newType;
+                if (retConv)  lastMidType = lastMidType.changeReturnType(haveReturn);
+                assert(VerifyType.isNullConversion(lastMidType, midType));
+                midType = lastMidType;
             }
 
             // Tricky case analysis follows.
             // It parallels canConvertArgument() above.
             if (src.isPrimitive()) {
                 if (dst.isPrimitive()) {
-                    adapter = makePrimCast(midType, adapter, i, dst);
+                    adapter2 = makePrimCast(midType, adapter, i, dst);
                 } else {
-                    adapter = makeBoxArgument(midType, adapter, i, dst);
+                    adapter2 = makeBoxArgument(midType, adapter, i, src);
                 }
             } else {
                 if (dst.isPrimitive()) {
@@ -174,27 +189,51 @@ class AdapterMethodHandle extends BoundMethodHandle {
                     // conversions supported by reflect.Method.invoke.
                     // Those conversions require a big nest of if/then/else logic,
                     // which we prefer to make a user responsibility.
-                    adapter = makeUnboxArgument(midType, adapter, i, dst);
+                    adapter2 = makeUnboxArgument(midType, adapter, i, dst, level);
                 } else {
                     // Simple reference conversion.
                     // Note:  Do not check for a class hierarchy relation
                     // between src and dst.  In all cases a 'null' argument
                     // will pass the cast conversion.
-                    adapter = makeCheckCast(midType, adapter, i, dst);
+                    adapter2 = makeCheckCast(midType, adapter, i, dst);
                 }
             }
-            assert(adapter != null);
-            assert(adapter.type() == midType);
+            assert(adapter2 != null) : Arrays.asList(src, dst, midType, adapter, i, target, newType);
+            assert(adapter2.type() == midType);
+            adapter = adapter2;
+        }
+        if (retConv) {
+            adapter2 = makeReturnConversion(adapter, haveReturn, needReturn);
+            assert(adapter2 != null);
+            adapter = adapter2;
         }
         if (adapter.type() != newType) {
             // Only trivial conversions remain.
-            adapter = makeRetypeOnly(newType, adapter);
-            assert(adapter != null);
+            adapter2 = makeRetypeOnly(newType, adapter);
+            assert(adapter2 != null);
+            adapter = adapter2;
             // Actually, that's because there were no non-trivial ones:
-            assert(lastConv == -1);
+            assert(lastConv == -1 || retConv);
         }
         assert(adapter.type() == newType);
         return adapter;
+    }
+
+    private static MethodHandle makeReturnConversion(MethodHandle target, Class<?> haveReturn, Class<?> needReturn) {
+        MethodHandle adjustReturn;
+        if (haveReturn == void.class) {
+            // synthesize a zero value for the given void
+            Object zero = Wrapper.forBasicType(needReturn).zero();
+            adjustReturn = MethodHandles.constant(needReturn, zero);
+        } else {
+            MethodType needConversion = MethodType.methodType(needReturn, haveReturn);
+            adjustReturn = MethodHandles.identity(needReturn).asType(needConversion);
+        }
+        if (!canCollectArguments(adjustReturn.type(), target.type(), 0, false)) {
+            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
+            throw new InternalError("NYI");
+        }
+        return makeCollectArguments(adjustReturn, target, 0, false);
     }
 
     /**
@@ -224,7 +263,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         if (argumentMap.length != oldType.parameterCount())
             throw newIllegalArgumentException("bad permutation: "+Arrays.toString(argumentMap));
         if (nullPermutation) {
-            MethodHandle res = makePairwiseConvert(newType, target);
+            MethodHandle res = makePairwiseConvert(newType, target, 0);
             // well, that was easy
             if (res == null)
                 throw newIllegalArgumentException("cannot convert pairwise: "+newType);
@@ -310,11 +349,25 @@ class AdapterMethodHandle extends BoundMethodHandle {
         return (spChange & CONV_STACK_MOVE_MASK) << CONV_STACK_MOVE_SHIFT;
     }
 
+    static int extractStackMove(int convOp) {
+        int spChange = convOp >> CONV_STACK_MOVE_SHIFT;
+        return spChange / MethodHandleNatives.JVM_STACK_MOVE_UNIT;
+    }
+
+    static int extractStackMove(MethodHandle target) {
+        if (target instanceof AdapterMethodHandle) {
+            AdapterMethodHandle amh = (AdapterMethodHandle) target;
+            return extractStackMove(amh.getConversion());
+        } else {
+            return 0;
+        }
+    }
+
     /** Construct an adapter conversion descriptor for a single-argument conversion. */
     private static long makeConv(int convOp, int argnum, int src, int dest) {
-        assert(src  == (src  & 0xF));
-        assert(dest == (dest & 0xF));
-        assert(convOp >= OP_CHECK_CAST && convOp <= OP_PRIM_TO_REF);
+        assert(src  == (src  & CONV_TYPE_MASK));
+        assert(dest == (dest & CONV_TYPE_MASK));
+        assert(convOp >= OP_CHECK_CAST && convOp <= OP_PRIM_TO_REF || convOp == OP_COLLECT_ARGS);
         int stackMove = type2size(dest) - type2size(src);
         return ((long) argnum << 32 |
                 (long) convOp << CONV_OP_SHIFT |
@@ -323,11 +376,10 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
-    private static long makeConv(int convOp, int argnum, int stackMove) {
-        assert(convOp >= OP_DUP_ARGS && convOp <= OP_SPREAD_ARGS);
+    private static long makeDupConv(int convOp, int argnum, int stackMove) {
+        // simple argument motion, requiring one slot to specify
+        assert(convOp == OP_DUP_ARGS || convOp == OP_DROP_ARGS);
         byte src = 0, dest = 0;
-        if (convOp >= OP_COLLECT_ARGS && convOp <= OP_SPREAD_ARGS)
-            src = dest = T_OBJECT;
         return ((long) argnum << 32 |
                 (long) convOp << CONV_OP_SHIFT |
                 (int)  src    << CONV_SRC_TYPE_SHIFT |
@@ -336,12 +388,25 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 );
     }
     private static long makeSwapConv(int convOp, int srcArg, byte type, int destSlot) {
-        assert(convOp >= OP_SWAP_ARGS && convOp <= OP_ROT_ARGS);
+        // more complex argument motion, requiring two slots to specify
+        assert(convOp == OP_SWAP_ARGS || convOp == OP_ROT_ARGS);
         return ((long) srcArg << 32 |
                 (long) convOp << CONV_OP_SHIFT |
                 (int)  type   << CONV_SRC_TYPE_SHIFT |
                 (int)  type   << CONV_DEST_TYPE_SHIFT |
                 (int)  destSlot << CONV_VMINFO_SHIFT
+                );
+    }
+    private static long makeSpreadConv(int convOp, int argnum, int src, int dest, int stackMove) {
+        // spreading or collecting, at a particular slot location
+        assert(convOp == OP_SPREAD_ARGS || convOp == OP_COLLECT_ARGS || convOp == OP_FOLD_ARGS);
+        // src  = spread ? T_OBJECT (for array)  : common type of collected args (else void)
+        // dest = spread ? element type of array : result type of collector (can be void)
+        return ((long) argnum << 32 |
+                (long) convOp << CONV_OP_SHIFT |
+                (int)  src    << CONV_SRC_TYPE_SHIFT |
+                (int)  dest   << CONV_DEST_TYPE_SHIFT |
+                insertStackMove(stackMove)
                 );
     }
     private static long makeConv(int convOp) {
@@ -570,14 +635,10 @@ class AdapterMethodHandle extends BoundMethodHandle {
     static boolean canPrimCast(Class<?> src, Class<?> dst) {
         if (src == dst || !src.isPrimitive() || !dst.isPrimitive()) {
             return false;
-        } else if (Wrapper.forPrimitiveType(dst).isFloating()) {
-            // both must be floating types
-            return Wrapper.forPrimitiveType(src).isFloating();
         } else {
-            // both are integral, and all combinations work fine
-            assert(Wrapper.forPrimitiveType(src).isIntegral() &&
-                   Wrapper.forPrimitiveType(dst).isIntegral());
-            return true;
+            boolean sflt = Wrapper.forPrimitiveType(src).isFloating();
+            boolean dflt = Wrapper.forPrimitiveType(dst).isFloating();
+            return !(sflt | dflt);  // no float support at present
         }
     }
 
@@ -588,6 +649,29 @@ class AdapterMethodHandle extends BoundMethodHandle {
      *  Return null if this cannot be done.
      */
     static MethodHandle makePrimCast(MethodType newType, MethodHandle target,
+                int arg, Class<?> convType) {
+        Class<?> src = newType.parameterType(arg);
+        if (canPrimCast(src, convType))
+            return makePrimCastOnly(newType, target, arg, convType);
+        Class<?> dst = convType;
+        boolean sflt = Wrapper.forPrimitiveType(src).isFloating();
+        boolean dflt = Wrapper.forPrimitiveType(dst).isFloating();
+        if (sflt | dflt) {
+            MethodHandle convMethod;
+            if (sflt)
+                convMethod = ((src == double.class)
+                        ? ValueConversions.convertFromDouble(dst)
+                        : ValueConversions.convertFromFloat(dst));
+            else
+                convMethod = ((dst == double.class)
+                        ? ValueConversions.convertToDouble(src)
+                        : ValueConversions.convertToFloat(src));
+            long conv = makeConv(OP_COLLECT_ARGS, arg, basicType(src), basicType(dst));
+            return new AdapterMethodHandle(target, newType, conv, convMethod);
+        }
+        throw new InternalError("makePrimCast");
+    }
+    static MethodHandle makePrimCastOnly(MethodType newType, MethodHandle target,
                 int arg, Class<?> convType) {
         MethodType oldType = target.type();
         if (!canPrimCast(newType, oldType, arg, convType))
@@ -602,7 +686,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
      *  The convType is the unboxed type; it can be either a primitive or wrapper.
      */
     static boolean canUnboxArgument(MethodType newType, MethodType targetType,
-                int arg, Class<?> convType) {
+                int arg, Class<?> convType, int level) {
         if (!convOpSupported(OP_REF_TO_PRIM))  return false;
         Class<?> src = newType.parameterType(arg);
         Class<?> dst = targetType.parameterType(arg);
@@ -616,21 +700,31 @@ class AdapterMethodHandle extends BoundMethodHandle {
         return (diff == arg+1);  // arg is sole non-trivial diff
     }
     /** Can an primitive unboxing adapter validly convert src to dst? */
-    static boolean canUnboxArgument(Class<?> src, Class<?> dst) {
-        return (!src.isPrimitive() && Wrapper.asPrimitiveType(dst).isPrimitive());
+    static boolean canUnboxArgument(Class<?> src, Class<?> dst, int level) {
+        assert(dst.isPrimitive());
+        // if we have JVM support for boxing, we can also do complex unboxing
+        if (convOpSupported(OP_PRIM_TO_REF))  return true;
+        Wrapper dw = Wrapper.forPrimitiveType(dst);
+        // Level 0 means cast and unbox.  This works on any reference.
+        if (level == 0)  return !src.isPrimitive();
+        assert(level >= 0 && level <= 2);
+        // Levels 1 and 2 allow widening and/or narrowing conversions.
+        // These are not supported directly by the JVM.
+        // But if the input reference is monomorphic, we can do it.
+        return dw.wrapperType() == src;
     }
 
     /** Factory method:  Unbox the given argument.
      *  Return null if this cannot be done.
      */
     static MethodHandle makeUnboxArgument(MethodType newType, MethodHandle target,
-                int arg, Class<?> convType) {
+                int arg, Class<?> convType, int level) {
         MethodType oldType = target.type();
         Class<?> src = newType.parameterType(arg);
         Class<?> dst = oldType.parameterType(arg);
         Class<?> boxType = Wrapper.asWrapperType(convType);
         Class<?> primType = Wrapper.asPrimitiveType(convType);
-        if (!canUnboxArgument(newType, oldType, arg, convType))
+        if (!canUnboxArgument(newType, oldType, arg, convType, level))
             return null;
         MethodType castDone = newType;
         if (!VerifyType.isNullConversion(src, boxType))
@@ -642,19 +736,46 @@ class AdapterMethodHandle extends BoundMethodHandle {
         return makeCheckCast(newType, adapter, arg, boxType);
     }
 
+    /** Can a boxing conversion validly convert src to dst? */
+    static boolean canBoxArgument(MethodType newType, MethodType targetType,
+                int arg, Class<?> convType) {
+        if (!convOpSupported(OP_PRIM_TO_REF))  return false;
+        Class<?> src = newType.parameterType(arg);
+        Class<?> dst = targetType.parameterType(arg);
+        Class<?> boxType = Wrapper.asWrapperType(convType);
+        convType = Wrapper.asPrimitiveType(convType);
+        if (!canCheckCast(boxType, dst)
+                || boxType == convType
+                || !VerifyType.isNullConversion(src, convType))
+            return false;
+        int diff = diffTypes(newType, targetType, false);
+        return (diff == arg+1);  // arg is sole non-trivial diff
+    }
+
     /** Can an primitive boxing adapter validly convert src to dst? */
     static boolean canBoxArgument(Class<?> src, Class<?> dst) {
         if (!convOpSupported(OP_PRIM_TO_REF))  return false;
-        throw new UnsupportedOperationException("NYI");
+        return (src.isPrimitive() && !dst.isPrimitive());
     }
 
-    /** Factory method:  Unbox the given argument.
+    /** Factory method:  Box the given argument.
      *  Return null if this cannot be done.
      */
     static MethodHandle makeBoxArgument(MethodType newType, MethodHandle target,
                 int arg, Class<?> convType) {
-        // this is difficult to do in the JVM because it must GC
-        return null;
+        MethodType oldType = target.type();
+        Class<?> src = newType.parameterType(arg);
+        Class<?> dst = oldType.parameterType(arg);
+        Class<?> boxType = Wrapper.asWrapperType(convType);
+        Class<?> primType = Wrapper.asPrimitiveType(convType);
+        if (!canBoxArgument(newType, oldType, arg, convType)) {
+            return null;
+        }
+        if (!VerifyType.isNullConversion(boxType, dst))
+            target = makeCheckCast(oldType.changeParameterType(arg, boxType), target, arg, dst);
+        MethodHandle boxerMethod = ValueConversions.box(Wrapper.forPrimitiveType(primType));
+        long conv = makeConv(OP_PRIM_TO_REF, arg, basicType(primType), T_OBJECT);
+        return new AdapterMethodHandle(target, newType, conv, boxerMethod);
     }
 
     /** Can an adapter simply drop arguments to convert the target to newType? */
@@ -699,7 +820,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         int slotCount   = keep1InSlot - dropSlot;
         assert(slotCount >= dropArgCount);
         assert(target.type().parameterSlotCount() + slotCount == newType.parameterSlotCount());
-        long conv = makeConv(OP_DROP_ARGS, dropArgPos + dropArgCount - 1, -slotCount);
+        long conv = makeDupConv(OP_DROP_ARGS, dropArgPos + dropArgCount - 1, -slotCount);
         return new AdapterMethodHandle(target, newType, conv);
     }
 
@@ -739,7 +860,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         int keep1InSlot = newType.parameterSlotDepth(dupArgPos);
         int slotCount   = keep1InSlot - dupSlot;
         assert(target.type().parameterSlotCount() - slotCount == newType.parameterSlotCount());
-        long conv = makeConv(OP_DUP_ARGS, dupArgPos + dupArgCount - 1, slotCount);
+        long conv = makeDupConv(OP_DUP_ARGS, dupArgPos + dupArgCount - 1, slotCount);
         return new AdapterMethodHandle(target, newType, conv);
     }
 
@@ -900,7 +1021,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         for (int i = 0; i < spreadArgCount; i++) {
             Class<?> src = VerifyType.spreadArgElementType(spreadArgType, i);
             Class<?> dst = targetType.parameterType(spreadArgPos + i);
-            if (src == null || !VerifyType.isNullConversion(src, dst))
+            if (src == null || !canConvertArgument(src, dst, 1))
                 return false;
         }
         return true;
@@ -910,24 +1031,100 @@ class AdapterMethodHandle extends BoundMethodHandle {
     /** Factory method:  Spread selected argument. */
     static MethodHandle makeSpreadArguments(MethodType newType, MethodHandle target,
                 Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
+        // FIXME: Get rid of newType; derive new arguments from structure of spreadArgType
         MethodType targetType = target.type();
         if (!canSpreadArguments(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount))
             return null;
+        // dest is not significant; remove?
+        int dest = T_VOID;
+        for (int i = 0; i < spreadArgCount; i++) {
+            Class<?> arg = VerifyType.spreadArgElementType(spreadArgType, i);
+            if (arg == null)  arg = Object.class;
+            int dest2 = basicType(arg);
+            if      (dest == T_VOID)  dest = dest2;
+            else if (dest != dest2)   dest = T_VOID;
+            if (dest == T_VOID)  break;
+            targetType = targetType.changeParameterType(spreadArgPos + i, arg);
+        }
+        target = target.asType(targetType);
+        int arrayArgSize = 1;  // always a reference
         // in  arglist: [0: ...keep1 | spos: spreadArg | spos+1:      keep2... ]
         // out arglist: [0: ...keep1 | spos: spread... | spos+scount: keep2... ]
         int keep2OutPos  = spreadArgPos + spreadArgCount;
-        int spreadSlot   = targetType.parameterSlotDepth(keep2OutPos);
-        int keep1OutSlot = targetType.parameterSlotDepth(spreadArgPos);
-        int slotCount    = keep1OutSlot - spreadSlot;
-        assert(spreadSlot == newType.parameterSlotDepth(spreadArgPos+1));
+        int keep1OutSlot = targetType.parameterSlotDepth(spreadArgPos);   // leading edge of |spread...|
+        int spreadSlot   = targetType.parameterSlotDepth(keep2OutPos);    // trailing edge of |spread...|
+        assert(spreadSlot == newType.parameterSlotDepth(spreadArgPos+arrayArgSize));
+        int slotCount    = keep1OutSlot - spreadSlot;                     // slots in |spread...|
         assert(slotCount >= spreadArgCount);
-        long conv = makeConv(OP_SPREAD_ARGS, spreadArgPos, slotCount-1);
+        int stackMove = - arrayArgSize + slotCount;  // pop array, push N slots
+        long conv = makeSpreadConv(OP_SPREAD_ARGS, spreadArgPos, T_OBJECT, dest, stackMove);
         MethodHandle res = new AdapterMethodHandle(target, newType, conv, spreadArgType);
         assert(res.type().parameterType(spreadArgPos) == spreadArgType);
         return res;
     }
 
-    // TO DO: makeCollectArguments, makeFlyby, makeRicochet
+    /** Can an adapter collect a series of arguments, replacing them by zero or one results? */
+    static boolean canCollectArguments(MethodType targetType,
+                MethodType collectorType, int collectArgPos, boolean retainOriginalArgs) {
+        if (!convOpSupported(retainOriginalArgs ? OP_FOLD_ARGS : OP_COLLECT_ARGS))  return false;
+        int collectArgCount = collectorType.parameterCount();
+        Class<?> rtype = collectorType.returnType();
+        assert(rtype == void.class || targetType.parameterType(collectArgPos) == rtype)
+                // [(Object)Object[], (Object[])Object[], 0, 1]
+                : Arrays.asList(targetType, collectorType, collectArgPos, collectArgCount)
+                ;
+        return true;
+    }
+
+    /** Factory method:  Collect or filter selected argument(s). */
+    static MethodHandle makeCollectArguments(MethodHandle target,
+                MethodHandle collector, int collectArgPos, boolean retainOriginalArgs) {
+        assert(canCollectArguments(target.type(), collector.type(), collectArgPos, retainOriginalArgs));
+        MethodType targetType = target.type();
+        MethodType collectorType = collector.type();
+        int collectArgCount = collectorType.parameterCount();
+        Class<?> collectValType = collectorType.returnType();
+        int collectValCount = (collectValType == void.class ? 0 : 1);
+        int collectValSlots = collectorType.returnSlotCount();
+        MethodType newType = targetType
+                .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
+        if (!retainOriginalArgs) {
+            newType = newType
+                .insertParameterTypes(collectArgPos, collectorType.parameterList());
+        } else {
+            // parameter types at the fold point must be the same
+            assert(diffParamTypes(newType, collectArgPos, targetType, collectValCount, collectArgCount, false) == 0)
+                : Arrays.asList(target, collector, collectArgPos, retainOriginalArgs);
+        }
+        // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
+        // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
+        // out(retain): [0: ...keep1 | cpos: cV? coll... | cpos+cvc+cac: keep2... ]
+        int keep2InPos   = collectArgPos + collectArgCount;
+        int keep1InSlot  = newType.parameterSlotDepth(collectArgPos);  // leading edge of |collect...|
+        int collectSlot  = newType.parameterSlotDepth(keep2InPos);     // trailing edge of |collect...|
+        int slotCount    = keep1InSlot - collectSlot;                  // slots in |collect...|
+        assert(slotCount >= collectArgCount);
+        assert(collectSlot == targetType.parameterSlotDepth(
+                collectArgPos + collectValCount + (retainOriginalArgs ? collectArgCount : 0) ));
+        int dest = basicType(collectValType);
+        int src = T_VOID;
+        // src is not significant; remove?
+        for (int i = 0; i < collectArgCount; i++) {
+            int src2 = basicType(collectorType.parameterType(i));
+            if      (src == T_VOID)  src = src2;
+            else if (src != src2)    src = T_VOID;
+            if (src == T_VOID)  break;
+        }
+        int stackMove = collectValSlots;  // push 0..2 results
+        if (!retainOriginalArgs)  stackMove -= slotCount; // pop N arguments
+        int lastCollectArg = keep2InPos-1;
+        long conv = makeSpreadConv(retainOriginalArgs ? OP_FOLD_ARGS : OP_COLLECT_ARGS,
+                                   lastCollectArg, src, dest, stackMove);
+        MethodHandle res = new AdapterMethodHandle(target, newType, conv, collector);
+        assert(res.type().parameterList().subList(collectArgPos, collectArgPos+collectArgCount)
+                .equals(collector.type().parameterList()));
+        return res;
+    }
 
     @Override
     public String toString() {
