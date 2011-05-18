@@ -708,9 +708,9 @@ public abstract class MethodHandle {
      */
     public MethodHandle asType(MethodType newType) {
         if (!type.isConvertibleTo(newType)) {
-            throw new WrongMethodTypeException("cannot convert "+type+" to "+newType);
+            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
         }
-        return MethodHandles.convertArguments(this, newType);
+        return MethodHandleImpl.convertArguments(this, newType, 1);
     }
 
     /**
