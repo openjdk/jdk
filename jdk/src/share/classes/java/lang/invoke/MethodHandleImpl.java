@@ -163,7 +163,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
         }
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(allocateClass.getSimpleName(), this);
         }
         @SuppressWarnings("unchecked")
@@ -307,7 +307,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.base = staticBase(field);
         }
         @Override
-        public String toString() { return addTypeString(name, this); }
+        String debugString() { return addTypeString(name, this); }
 
         int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
         void setFieldI(C obj, int x) { unsafe.putInt(obj, offset, x); }
@@ -338,8 +338,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             try {
                 // FIXME:  Should not have to create 'f' to get this value.
                 f = c.getDeclaredField(field.getName());
+                // Note:  Previous line might invalidly throw SecurityException (7042829)
                 return unsafe.staticFieldBase(f);
-            } catch (Exception ee) {
+            } catch (NoSuchFieldException ee) {
                 throw uncaughtException(ee);
             }
         }
@@ -936,7 +937,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
         }
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
@@ -1081,7 +1082,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.catcher = catcher;
         }
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
@@ -1247,9 +1248,5 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     static MethodHandle getBootstrap(Class<?> callerClass) {
         return MethodHandleNatives.getBootstrap(callerClass);
-    }
-
-    static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
-        return AdapterMethodHandle.makeVarargsCollector(target, arrayType);
     }
 }

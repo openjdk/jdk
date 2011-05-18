@@ -1065,6 +1065,7 @@ return mh1;
             if (!method.isProtected() || method.isStatic()
                 || allowedModes == TRUSTED
                 || method.getDeclaringClass() == lookupClass()
+                || VerifyAccess.isSamePackage(method.getDeclaringClass(), lookupClass())
                 || (ALLOW_NESTMATE_ACCESS &&
                     VerifyAccess.isSamePackageMember(method.getDeclaringClass(), lookupClass())))
                 return mh;
@@ -2382,10 +2383,5 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
             }
         }
         return null;
-    }
-
-    /*non-public*/
-    static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
-        return MethodHandleImpl.asVarargsCollector(target, arrayType);
     }
 }
