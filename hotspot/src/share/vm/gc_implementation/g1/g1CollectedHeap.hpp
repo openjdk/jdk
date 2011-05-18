@@ -1254,6 +1254,12 @@ public:
     return hr != NULL && hr->is_young();
   }
 
+#ifdef ASSERT
+  virtual bool is_in_partial_collection(const void* p);
+#endif
+
+  virtual bool is_scavengable(const void* addr);
+
   // We don't need barriers for initializing stores to objects
   // in the young gen: for the SATB pre-barrier, there is no
   // pre-value that needs to be remembered; for the remembered-set

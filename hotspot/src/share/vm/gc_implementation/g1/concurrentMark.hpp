@@ -809,9 +809,18 @@ public:
 
   // It indicates that a new collection set is being chosen.
   void newCSet();
+
   // It registers a collection set heap region with CM. This is used
   // to determine whether any heap regions are located above the finger.
   void registerCSetRegion(HeapRegion* hr);
+
+  // Resets the region fields of any active CMTask whose region fields
+  // are in the collection set (i.e. the region currently claimed by
+  // the CMTask will be evacuated and may be used, subsequently, as
+  // an alloc region). When this happens the region fields in the CMTask
+  // are stale and, hence, should be cleared causing the worker thread
+  // to claim a new region.
+  void reset_active_task_region_fields_in_cset();
 
   // Registers the maximum region-end associated with a set of
   // regions with CM. Again this is used to determine whether any
@@ -1039,9 +1048,6 @@ private:
   void setup_for_region(HeapRegion* hr);
   // it brings up-to-date the limit of the region
   void update_region_limit();
-  // it resets the local fields after a task has finished scanning a
-  // region
-  void giveup_current_region();
 
   // called when either the words scanned or the refs visited limit
   // has been reached
@@ -1093,6 +1099,11 @@ public:
   // From TerminatorTerminator. It determines whether this task should
   // exit the termination protocol after it's entered it.
   virtual bool should_exit_termination();
+
+  // Resets the local region fields after a task has finished scanning a
+  // region; or when they have become stale as a result of the region
+  // being evacuated.
+  void giveup_current_region();
 
   HeapWord* finger()            { return _finger; }
 

@@ -3054,6 +3054,28 @@ void ConcurrentMark::registerCSetRegion(HeapRegion* hr) {
     _should_gray_objects = true;
 }
 
+// Resets the region fields of active CMTasks whose values point
+// into the collection set.
+void ConcurrentMark::reset_active_task_region_fields_in_cset() {
+  assert(SafepointSynchronize::is_at_safepoint(), "should be in STW");
+  assert(parallel_marking_threads() <= _max_task_num, "sanity");
+
+  for (int i = 0; i < (int)parallel_marking_threads(); i += 1) {
+    CMTask* task = _tasks[i];
+    HeapWord* task_finger = task->finger();
+    if (task_finger != NULL) {
+      assert(_g1h->is_in_g1_reserved(task_finger), "not in heap");
+      HeapRegion* finger_region = _g1h->heap_region_containing(task_finger);
+      if (finger_region->in_collection_set()) {
+        // The task's current region is in the collection set.
+        // This region will be evacuated in the current GC and
+        // the region fields in the task will be stale.
+        task->giveup_current_region();
+      }
+    }
+  }
+}
+
 // abandon current marking iteration due to a Full GC
 void ConcurrentMark::abort() {
   // Clear all marks to force marking thread to do nothing
