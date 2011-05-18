@@ -269,6 +269,13 @@ class CollectedHeap : public CHeapObj {
   // space). If you need the more conservative answer use is_permanent().
   virtual bool is_in_permanent(const void *p) const = 0;
 
+
+#ifdef ASSERT
+  // Returns true if "p" is in the part of the
+  // heap being collected.
+  virtual bool is_in_partial_collection(const void *p) = 0;
+#endif
+
   bool is_in_permanent_or_null(const void *p) const {
     return p == NULL || is_in_permanent(p);
   }
@@ -284,11 +291,7 @@ class CollectedHeap : public CHeapObj {
 
   // An object is scavengable if its location may move during a scavenge.
   // (A scavenge is a GC which is not a full GC.)
-  // Currently, this just means it is not perm (and not null).
-  // This could change if we rethink what's in perm-gen.
-  bool is_scavengable(const void *p) const {
-    return !is_in_permanent_or_null(p);
-  }
+  virtual bool is_scavengable(const void *p) = 0;
 
   // Returns "TRUE" if "p" is a method oop in the
   // current heap, with high probability. This predicate

@@ -428,6 +428,37 @@ void G1CollectedHeap::stop_conc_gc_threads() {
   _cmThread->stop();
 }
 
+#ifdef ASSERT
+// A region is added to the collection set as it is retired
+// so an address p can point to a region which will be in the
+// collection set but has not yet been retired.  This method
+// therefore is only accurate during a GC pause after all
+// regions have been retired.  It is used for debugging
+// to check if an nmethod has references to objects that can
+// be move during a partial collection.  Though it can be
+// inaccurate, it is sufficient for G1 because the conservative
+// implementation of is_scavengable() for G1 will indicate that
+// all nmethods must be scanned during a partial collection.
+bool G1CollectedHeap::is_in_partial_collection(const void* p) {
+  HeapRegion* hr = heap_region_containing(p);
+  return hr != NULL && hr->in_collection_set();
+}
+#endif
+
+// Returns true if the reference points to an object that
+// can move in an incremental collecction.
+bool G1CollectedHeap::is_scavengable(const void* p) {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
+  HeapRegion* hr = heap_region_containing(p);
+  if (hr == NULL) {
+     // perm gen (or null)
+     return false;
+  } else {
+    return !hr->isHumongous();
+  }
+}
+
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   CardTableModRefBS* ct_bs = (CardTableModRefBS*)barrier_set();
@@ -3292,8 +3323,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // progress, this will be zero.
       _cm->set_oops_do_bound();
 
-      if (mark_in_progress())
+      if (mark_in_progress()) {
         concurrent_mark()->newCSet();
+      }
 
 #if YOUNG_LIST_VERBOSE
       gclog_or_tty->print_cr("\nBefore choosing collection set.\nYoung_list:");
@@ -3302,6 +3334,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
       g1_policy()->choose_collection_set(target_pause_time_ms);
+
+      // We have chosen the complete collection set. If marking is
+      // active then, we clear the region fields of any of the
+      // concurrent marking tasks whose region fields point into
+      // the collection set as these values will become stale. This
+      // will cause the owning marking threads to claim a new region
+      // when marking restarts.
+      if (mark_in_progress()) {
+        concurrent_mark()->reset_active_task_region_fields_in_cset();
+      }
 
       // Nothing to do if we were unable to choose a collection set.
 #if G1_REM_SET_LOGGING
