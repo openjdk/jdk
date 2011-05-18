@@ -3724,6 +3724,9 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
+  develop(bool, StressMethodHandleWalk, false,                              \
+          "Process all method handles with MethodHandleWalk")               \
+                                                                            \
   diagnostic(bool, UseRicochetFrames, true,                                 \
           "use ricochet stack frames for method handle combination, "       \
           "if the platform supports them")                                  \
