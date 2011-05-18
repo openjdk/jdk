@@ -265,7 +265,7 @@ MethodHandleWalker::walk(TRAPS) {
         assert(dest == arg_state->_type, "");
         ArgToken arg = arg_state->_arg;
         ArgToken new_arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
-        assert(arg.token_type() >= tt_symbolic || arg.index() == new_arg.index(), "should be the same index");
+        assert(!arg.has_index() || arg.index() == new_arg.index(), "should be the same index");
         debug_only(dest_klass = (klassOop)badOop);
         break;
       }
@@ -443,8 +443,10 @@ MethodHandleWalker::walk(TRAPS) {
             ret = make_conversion(T_OBJECT, rklass, Bytecodes::_checkcast, ret, CHECK_(empty));
           }
         }
-        int ret_slot = arg_slot + (retain_original_args ? coll_slots : 0);
-        change_argument(T_VOID, ret_slot, rtype, ret);
+        if (rtype != T_VOID) {
+          int ret_slot = arg_slot + (retain_original_args ? coll_slots : 0);
+          change_argument(T_VOID, ret_slot, rtype, ret);
+        }
         break;
       }
 
@@ -690,9 +692,8 @@ void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, boo
 // -----------------------------------------------------------------------------
 // MethodHandleCompiler
 
-MethodHandleCompiler::MethodHandleCompiler(Handle root, methodHandle callee, int invoke_count, bool is_invokedynamic, TRAPS)
+MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* signature, int invoke_count, bool is_invokedynamic, TRAPS)
   : MethodHandleWalker(root, is_invokedynamic, THREAD),
-    _callee(callee),
     _invoke_count(invoke_count),
     _thread(THREAD),
     _bytecode(THREAD, 50),
@@ -706,8 +707,8 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, methodHandle callee, int
   (void) _constants.append(NULL);
 
   // Set name and signature index.
-  _name_index      = cpool_symbol_put(_callee->name());
-  _signature_index = cpool_symbol_put(_callee->signature());
+  _name_index      = cpool_symbol_put(name);
+  _signature_index = cpool_symbol_put(signature);
 
   // Get return type klass.
   Handle first_mtype(THREAD, chain().method_type_oop());
@@ -715,7 +716,8 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, methodHandle callee, int
   _rtype = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(first_mtype()), &_rklass);
   if (_rtype == T_ARRAY)  _rtype = T_OBJECT;
 
-  int params = _callee->size_of_parameters();  // Incoming arguments plus receiver.
+  ArgumentSizeComputer args(signature);
+  int params = args.size() + 1;  // Incoming arguments plus receiver.
   _num_params = for_invokedynamic() ? params - 1 : params;  // XXX Check if callee is static?
 }
 
@@ -733,7 +735,7 @@ methodHandle MethodHandleCompiler::compile(TRAPS) {
 }
 
 
-void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
+void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index, int args_size) {
   Bytecodes::check(op);  // Are we legal?
 
   switch (op) {
@@ -809,6 +811,14 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_d2i:
   case Bytecodes::_d2l:
   case Bytecodes::_d2f:
+  case Bytecodes::_iaload:
+  case Bytecodes::_laload:
+  case Bytecodes::_faload:
+  case Bytecodes::_daload:
+  case Bytecodes::_aaload:
+  case Bytecodes::_baload:
+  case Bytecodes::_caload:
+  case Bytecodes::_saload:
   case Bytecodes::_ireturn:
   case Bytecodes::_lreturn:
   case Bytecodes::_freturn:
@@ -822,9 +832,14 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   // bi
   case Bytecodes::_ldc:
     assert(Bytecodes::format_bits(op, false) == (Bytecodes::_fmt_b|Bytecodes::_fmt_has_k), "wrong bytecode format");
-    assert((char) index == index, "index does not fit in 8-bit");
-    _bytecode.push(op);
-    _bytecode.push(index);
+    if (index == (index & 0xff)) {
+      _bytecode.push(op);
+      _bytecode.push(index);
+    } else {
+      _bytecode.push(Bytecodes::_ldc_w);
+      _bytecode.push(index >> 8);
+      _bytecode.push(index);
+    }
     break;
 
   case Bytecodes::_iload:
@@ -838,9 +853,16 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_dstore:
   case Bytecodes::_astore:
     assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bi, "wrong bytecode format");
-    assert((char) index == index, "index does not fit in 8-bit");
-    _bytecode.push(op);
-    _bytecode.push(index);
+    if (index == (index & 0xff)) {
+      _bytecode.push(op);
+      _bytecode.push(index);
+    } else {
+      // doesn't fit in a u2
+      _bytecode.push(Bytecodes::_wide);
+      _bytecode.push(op);
+      _bytecode.push(index >> 8);
+      _bytecode.push(index);
+    }
     break;
 
   // bkk
@@ -848,7 +870,7 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_ldc2_w:
   case Bytecodes::_checkcast:
     assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bkk, "wrong bytecode format");
-    assert((short) index == index, "index does not fit in 16-bit");
+    assert((unsigned short) index == index, "index does not fit in 16-bit");
     _bytecode.push(op);
     _bytecode.push(index >> 8);
     _bytecode.push(index);
@@ -859,10 +881,21 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index) {
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokevirtual:
     assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bJJ, "wrong bytecode format");
-    assert((short) index == index, "index does not fit in 16-bit");
+    assert((unsigned short) index == index, "index does not fit in 16-bit");
     _bytecode.push(op);
     _bytecode.push(index >> 8);
     _bytecode.push(index);
+    break;
+
+  case Bytecodes::_invokeinterface:
+    assert(Bytecodes::format_bits(op, false) == Bytecodes::_fmt_bJJ, "wrong bytecode format");
+    assert((unsigned short) index == index, "index does not fit in 16-bit");
+    assert(args_size > 0, "valid args_size");
+    _bytecode.push(op);
+    _bytecode.push(index >> 8);
+    _bytecode.push(index);
+    _bytecode.push(args_size);
+    _bytecode.push(0);
     break;
 
   default:
@@ -983,7 +1016,8 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
                                       const ArgToken& src, TRAPS) {
 
   BasicType srctype = src.basic_type();
-  int index = src.index();
+  TokenType tt = src.token_type();
+  int index = -1;
 
   switch (op) {
   case Bytecodes::_i2l:
@@ -1004,18 +1038,31 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
   case Bytecodes::_d2i:
   case Bytecodes::_d2l:
   case Bytecodes::_d2f:
-    emit_load(srctype, index);
+    if (tt == tt_constant) {
+      emit_load_constant(src);
+    } else {
+      emit_load(srctype, src.index());
+    }
     stack_pop(srctype);  // pop the src type
     emit_bc(op);
     stack_push(type);    // push the dest value
-    if (srctype != type)
+    if (tt != tt_constant)
+      index = src.index();
+    if (srctype != type || index == -1)
       index = new_local_index(type);
     emit_store(type, index);
     break;
 
   case Bytecodes::_checkcast:
-    emit_load(srctype, index);
+    if (tt == tt_constant) {
+      emit_load_constant(src);
+    } else {
+      emit_load(srctype, src.index());
+      index = src.index();
+    }
     emit_bc(op, cpool_klass_put(tk));
+    if (index == -1)
+      index = new_local_index(type);
     emit_store(srctype, index);
     break;
 
@@ -1057,6 +1104,11 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   klassOop klass     = m->method_holder();
   Symbol*  name      = m->name();
   Symbol*  signature = m->signature();
+
+  // Count the number of arguments, not the size
+  ArgumentCount asc(signature);
+  assert(argc == asc.size() + ((op == Bytecodes::_invokestatic || op == Bytecodes::_invokedynamic) ? 0 : 1),
+         "argc mismatch");
 
   if (tailcall) {
     // Actually, in order to make these methods more recognizable,
@@ -1106,9 +1158,13 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   case Bytecodes::_invokevirtual:
     emit_bc(op, methodref_index);
     break;
-  case Bytecodes::_invokeinterface:
-    Unimplemented();
+
+  case Bytecodes::_invokeinterface: {
+    ArgumentSizeComputer asc(signature);
+    emit_bc(op, methodref_index, asc.size() + 1);
     break;
+  }
+
   default:
     ShouldNotReachHere();
   }
@@ -1117,6 +1173,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   // Otherwise, make a recursive call to some helper routine.
   BasicType rbt = m->result_type();
   if (rbt == T_ARRAY)  rbt = T_OBJECT;
+  stack_push(rbt);  // The return value is already pushed onto the stack.
   ArgToken ret;
   if (tailcall) {
     if (rbt != _rtype) {
@@ -1171,7 +1228,6 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     ret = ArgToken();  // Dummy return value.
   }
   else {
-    stack_push(rbt);  // The return value is already pushed onto the stack.
     int index = new_local_index(rbt);
     switch (rbt) {
     case T_BOOLEAN: case T_BYTE: case T_CHAR:  case T_SHORT:
@@ -1196,8 +1252,32 @@ MethodHandleCompiler::make_fetch(BasicType type, klassOop tk, Bytecodes::Code op
                                  const MethodHandleWalker::ArgToken& base,
                                  const MethodHandleWalker::ArgToken& offset,
                                  TRAPS) {
-  Unimplemented();
-  return ArgToken();
+  switch (base.token_type()) {
+    case tt_parameter:
+    case tt_temporary:
+      emit_load(base.basic_type(), base.index());
+      break;
+    case tt_constant:
+      emit_load_constant(base);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  switch (offset.token_type()) {
+    case tt_parameter:
+    case tt_temporary:
+      emit_load(offset.basic_type(), offset.index());
+      break;
+    case tt_constant:
+      emit_load_constant(offset);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  emit_bc(op);
+  int index = new_local_index(type);
+  emit_store(type, index);
+  return ArgToken(tt_temporary, type, index);
 }
 
 
@@ -1372,12 +1452,10 @@ private:
     return s;
   }
   ArgToken token(const char* str) {
-    jvalue string_con;
-    string_con.j = (intptr_t) str;
-    return ArgToken(tt_symbolic, T_LONG, string_con);
+    return ArgToken(str);
   }
   const char* string(ArgToken token) {
-    return (const char*) (intptr_t) token.get_jlong();
+    return token.str();
   }
   void start_params() {
     _param_state <<= 1;
