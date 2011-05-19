@@ -30,7 +30,7 @@ import java.net.NetworkInterface;
 import java.io.IOException;
 import java.net.ProtocolFamily;             // javadoc
 import java.net.StandardProtocolFamily;     // javadoc
-import java.net.StandardSocketOption;       // javadoc
+import java.net.StandardSocketOptions;      // javadoc
 
 /**
  * A network channel that supports Internet Protocol (IP) multicasting.
@@ -93,7 +93,7 @@ import java.net.StandardSocketOption;       // javadoc
  * a specific address, rather than the wildcard address then it is implementation
  * specific if multicast datagrams are received by the socket. </p></li>
  *
- * <li><p> The {@link StandardSocketOption#SO_REUSEADDR SO_REUSEADDR} option should be
+ * <li><p> The {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} option should be
  * enabled prior to {@link NetworkChannel#bind binding} the socket. This is
  * required to allow multiple members of the group to bind to the same
  * address. </p></li>
@@ -107,9 +107,9 @@ import java.net.StandardSocketOption;       // javadoc
  *     NetworkInterface ni = NetworkInterface.getByName("hme0");
  *
  *     DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)
- *         .setOption(StandardSocketOption.SO_REUSEADDR, true)
+ *         .setOption(StandardSocketOptions.SO_REUSEADDR, true)
  *         .bind(new InetSocketAddress(5000))
- *         .setOption(StandardSocketOption.IP_MULTICAST_IF, ni);
+ *         .setOption(StandardSocketOptions.IP_MULTICAST_IF, ni);
  *
  *     InetAddress group = InetAddress.getByName("225.4.5.6");
  *

@@ -107,8 +107,16 @@ class WFramePeer extends WWindowPeer implements FramePeer {
             Rectangle currentDevBounds = currentDevGC.getBounds();
             Rectangle primaryDevBounds = primaryDevGC.getBounds();
 
-            b.width -= (currentDevBounds.width - primaryDevBounds.width);
-            b.height -= (currentDevBounds.height - primaryDevBounds.height);
+            boolean isCurrentDevLarger =
+                ((currentDevBounds.width - primaryDevBounds.width > 0) ||
+                 (currentDevBounds.height - primaryDevBounds.height > 0));
+
+            // the window manager doesn't seem to compensate for differences when
+            // the primary monitor is larger than the monitor that display the window
+            if (isCurrentDevLarger) {
+                b.width -= (currentDevBounds.width - primaryDevBounds.width);
+                b.height -= (currentDevBounds.height - primaryDevBounds.height);
+            }
         }
     }
 

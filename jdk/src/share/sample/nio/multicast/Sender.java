@@ -59,7 +59,7 @@ public class Sender {
             family = StandardProtocolFamily.INET6;
         DatagramChannel dc = DatagramChannel.open(family).bind(new InetSocketAddress(0));
         if (target.interf() != null) {
-            dc.setOption(StandardSocketOption.IP_MULTICAST_IF, target.interf());
+            dc.setOption(StandardSocketOptions.IP_MULTICAST_IF, target.interf());
         }
 
         // send multicast packet

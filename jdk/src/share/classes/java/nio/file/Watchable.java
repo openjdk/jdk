@@ -53,7 +53,7 @@ public interface Watchable {
      * those specified by the {@code events} and {@code modifiers} parameters.
      * Changing the event set does not cause pending events for the object to be
      * discarded. Objects are automatically registered for the {@link
-     * StandardWatchEventKind#OVERFLOW OVERFLOW} event. This event is not
+     * StandardWatchEventKinds#OVERFLOW OVERFLOW} event. This event is not
      * required to be present in the array of events.
      *
      * <p> Otherwise the file system object has not yet been registered with the

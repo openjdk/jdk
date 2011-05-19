@@ -95,6 +95,13 @@ Java_sun_management_VMManagementImpl_initOptionalSupportFields
 
     value = mos.isThreadAllocatedMemorySupported;
     setStaticBooleanField(env, cls, "threadAllocatedMemorySupport", value);
+
+    if ((jmm_version > JMM_VERSION_1_2) ||
+        (jmm_version == JMM_VERSION_1_2 && ((jmm_version&0xFF) >= 1))) {
+        setStaticBooleanField(env, cls, "gcNotificationSupport", JNI_TRUE);
+    } else {
+        setStaticBooleanField(env, cls, "gcNotificationSupport", JNI_FALSE);
+    }
 }
 
 JNIEXPORT jobjectArray JNICALL

@@ -213,7 +213,7 @@ import java.util.Arrays;
  *     <td headers="matches">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{Lu}</tt></td>
  *     <td headers="matches">An uppercase letter (<a href="#ucc">category</a>)</td></tr>
- * <tr><td valign="top" headers="construct unicode"><tt>\p{isAlphabetic}</tt></td>
+ * <tr><td valign="top" headers="construct unicode"><tt>\p{IsAlphabetic}</tt></td>
  *     <td headers="matches">An alphabetic character (<a href="#ubpc">binary property</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode"><tt>\p{Sc}</tt></td>
  *     <td headers="matches">A currency symbol</td></tr>
