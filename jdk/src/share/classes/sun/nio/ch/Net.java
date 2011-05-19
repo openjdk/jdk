@@ -237,26 +237,26 @@ class Net {                                             // package-private
             throw new AssertionError("Should not reach here");
 
         // special handling
-        if (name == StandardSocketOption.SO_RCVBUF ||
-            name == StandardSocketOption.SO_SNDBUF)
+        if (name == StandardSocketOptions.SO_RCVBUF ||
+            name == StandardSocketOptions.SO_SNDBUF)
         {
             int i = ((Integer)value).intValue();
             if (i < 0)
                 throw new IllegalArgumentException("Invalid send/receive buffer size");
         }
-        if (name == StandardSocketOption.SO_LINGER) {
+        if (name == StandardSocketOptions.SO_LINGER) {
             int i = ((Integer)value).intValue();
             if (i < 0)
                 value = Integer.valueOf(-1);
             if (i > 65535)
                 value = Integer.valueOf(65535);
         }
-        if (name == StandardSocketOption.IP_TOS) {
+        if (name == StandardSocketOptions.IP_TOS) {
             int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid IP_TOS value");
         }
-        if (name == StandardSocketOption.IP_MULTICAST_TTL) {
+        if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
             int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid TTL/hop value");
