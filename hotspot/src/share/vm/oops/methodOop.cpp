@@ -693,7 +693,10 @@ void methodOopDesc::unlink_method() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
-  assert(_i2i_entry == NULL, "should only be called once");
+  // If the code cache is full, we may reenter this function for the
+  // leftover methods that weren't linked.
+  if (_i2i_entry != NULL) return;
+
   assert(_adapter == NULL, "init'd to NULL" );
   assert( _code == NULL, "nothing compiled yet" );
 
@@ -717,7 +720,7 @@ void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  (void) make_adapters(h_method, CHECK);
+  if (UseCompiler) (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
