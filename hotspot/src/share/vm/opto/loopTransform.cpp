@@ -1292,9 +1292,23 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
       }
       assert(new_limit != NULL, "");
       // Replace in loop test.
-      _igvn.hash_delete(cmp);
-      cmp->set_req(2, new_limit);
-
+      assert(loop_end->in(1)->in(1) == cmp, "sanity");
+      if (cmp->outcnt() == 1 && loop_end->in(1)->outcnt() == 1) {
+        // Don't need to create new test since only one user.
+        _igvn.hash_delete(cmp);
+        cmp->set_req(2, new_limit);
+      } else {
+        // Create new test since it is shared.
+        Node* ctrl2 = loop_end->in(0);
+        Node* cmp2  = cmp->clone();
+        cmp2->set_req(2, new_limit);
+        register_new_node(cmp2, ctrl2);
+        Node* bol2 = loop_end->in(1)->clone();
+        bol2->set_req(1, cmp2);
+        register_new_node(bol2, ctrl2);
+        _igvn.hash_delete(loop_end);
+        loop_end->set_req(1, bol2);
+      }
       // Step 3: Find the min-trip test guaranteed before a 'main' loop.
       // Make it a 1-trip test (means at least 2 trips).
 
