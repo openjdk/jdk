@@ -141,7 +141,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         while (lastConv >= 0) {
             Class<?> src = newType.parameterType(lastConv); // source type
             Class<?> dst = oldType.parameterType(lastConv); // destination type
-            if (VerifyType.isNullConversion(src, dst)) {
+            if (isTrivialConversion(src, dst, level)) {
                 --lastConv;
             } else {
                 break;
@@ -150,7 +150,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
 
         Class<?> needReturn = newType.returnType();
         Class<?> haveReturn = oldType.returnType();
-        boolean retConv = !VerifyType.isNullConversion(haveReturn, needReturn);
+        boolean retConv = !isTrivialConversion(haveReturn, needReturn, level);
 
         // Now build a chain of one or more adapters.
         MethodHandle adapter = target, adapter2;
@@ -158,7 +158,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         for (int i = 0; i <= lastConv; i++) {
             Class<?> src = newType.parameterType(i); // source type
             Class<?> dst = midType.parameterType(i); // destination type
-            if (VerifyType.isNullConversion(src, dst)) {
+            if (isTrivialConversion(src, dst, level)) {
                 // do nothing: difference is trivial
                 continue;
             }
@@ -217,6 +217,22 @@ class AdapterMethodHandle extends BoundMethodHandle {
         }
         assert(adapter.type() == newType);
         return adapter;
+    }
+
+    private static boolean isTrivialConversion(Class<?> src, Class<?> dst, int level) {
+        if (src == dst || dst == void.class)  return true;
+        if (!VerifyType.isNullConversion(src, dst))  return false;
+        if (level > 1)  return true;  // explicitCastArguments
+        boolean sp = src.isPrimitive();
+        boolean dp = dst.isPrimitive();
+        if (sp != dp)  return false;
+        if (sp) {
+            // in addition to being a null conversion, forbid boolean->int etc.
+            return Wrapper.forPrimitiveType(dst)
+                    .isConvertibleFrom(Wrapper.forPrimitiveType(src));
+        } else {
+            return dst.isAssignableFrom(src);
+        }
     }
 
     private static MethodHandle makeReturnConversion(MethodHandle target, Class<?> haveReturn, Class<?> needReturn) {
@@ -530,6 +546,10 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
+        MethodType type = target.type();
+        int last = type.parameterCount() - 1;
+        if (type.parameterType(last) != arrayType)
+            target = target.asType(type.changeParameterType(last, arrayType));
         return new AsVarargsCollector(target, arrayType);
     }
 
@@ -596,7 +616,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 || !VerifyType.isNullConversion(castType, dst))
             return false;
         int diff = diffTypes(newType, targetType, false);
-        return (diff == arg+1);  // arg is sole non-trivial diff
+        return (diff == arg+1) || (diff == 0);  // arg is sole non-trivial diff
     }
     /** Can an primitive conversion adapter validly convert src to dst? */
     static boolean canCheckCast(Class<?> src, Class<?> dst) {
@@ -1033,8 +1053,9 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
         // FIXME: Get rid of newType; derive new arguments from structure of spreadArgType
         MethodType targetType = target.type();
-        if (!canSpreadArguments(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount))
-            return null;
+        assert(canSpreadArguments(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount))
+            : "[newType, targetType, spreadArgType, spreadArgPos, spreadArgCount] = "
+              + Arrays.asList(newType, targetType, spreadArgType, spreadArgPos, spreadArgCount);
         // dest is not significant; remove?
         int dest = T_VOID;
         for (int i = 0; i < spreadArgCount; i++) {
@@ -1127,7 +1148,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     @Override
-    public String toString() {
+    String debugString() {
         return getNameString(nonAdapter((MethodHandle)vmtarget), this);
     }
 
