@@ -31,6 +31,7 @@ import com.sun.jdi.request.EventRequest;
 
 public class SpecEvent extends EventObject {
 
+    private static final long serialVersionUID = 4820735456787276230L;
     private EventRequestSpec eventRequestSpec;
 
     public SpecEvent(EventRequestSpec eventRequestSpec) {

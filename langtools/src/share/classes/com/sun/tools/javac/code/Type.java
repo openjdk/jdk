@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.Collections;
+
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.Symbol.*;
 
@@ -738,6 +740,38 @@ public class Type implements PrimitiveType {
         @Override
         public boolean hasErasedSupertypes() {
             return true;
+        }
+    }
+
+    // a clone of a ClassType that knows about the alternatives of a union type.
+    public static class UnionClassType extends ClassType implements UnionType {
+        final List<? extends Type> alternatives_field;
+
+        public UnionClassType(ClassType ct, List<? extends Type> alternatives) {
+            super(ct.outer_field, ct.typarams_field, ct.tsym);
+            allparams_field = ct.allparams_field;
+            supertype_field = ct.supertype_field;
+            interfaces_field = ct.interfaces_field;
+            all_interfaces_field = ct.interfaces_field;
+            alternatives_field = alternatives;
+        }
+
+        public Type getLub() {
+            return tsym.type;
+        }
+
+        public java.util.List<? extends TypeMirror> getAlternatives() {
+            return Collections.unmodifiableList(alternatives_field);
+        }
+
+        @Override
+        public TypeKind getKind() {
+            return TypeKind.UNION;
+        }
+
+        @Override
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+            return v.visitUnion(this, p);
         }
     }
 

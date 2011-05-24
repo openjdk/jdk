@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.sql;
+
+import java.util.Arrays;
 
 /**
  * The subclass of {@link SQLException} thrown when an error
@@ -77,8 +79,7 @@ public class BatchUpdateException extends SQLException {
    */
   public BatchUpdateException( String reason, String SQLState, int vendorCode,
                                int[] updateCounts ) {
-    super(reason, SQLState, vendorCode);
-    this.updateCounts = updateCounts;
+      this(reason, SQLState, vendorCode, updateCounts, null);
   }
 
   /**
@@ -105,8 +106,7 @@ public class BatchUpdateException extends SQLException {
    */
   public BatchUpdateException(String reason, String SQLState,
                               int[] updateCounts) {
-    super(reason, SQLState);
-    this.updateCounts = updateCounts;
+      this(reason, SQLState, 0, updateCounts, null);
   }
 
   /**
@@ -132,8 +132,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public  BatchUpdateException(String reason, int[] updateCounts) {
-    super(reason);
-    this.updateCounts = updateCounts;
+      this(reason, null, 0, updateCounts, null);
   }
 
   /**
@@ -156,8 +155,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public BatchUpdateException(int[] updateCounts) {
-    super();
-    this.updateCounts = updateCounts;
+      this(null, null, 0, updateCounts, null);
   }
 
   /**
@@ -172,8 +170,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public BatchUpdateException() {
-    super();
-    this.updateCounts = null;
+        this(null, null, 0, null, null);
   }
 
     /**
@@ -191,8 +188,7 @@ public class BatchUpdateException extends SQLException {
      * @since 1.6
      */
     public BatchUpdateException(Throwable cause) {
-        super(cause);
-        this.updateCounts = null;
+        this(null, null, 0, null, cause);
     }
 
     /**
@@ -218,8 +214,7 @@ public class BatchUpdateException extends SQLException {
      * @since 1.6
      */
     public BatchUpdateException(int []updateCounts , Throwable cause) {
-        super(cause);
-        this.updateCounts = updateCounts;
+        this(null, null, 0, updateCounts, cause);
     }
 
     /**
@@ -243,8 +238,7 @@ public class BatchUpdateException extends SQLException {
      * @since 1.6
      */
     public BatchUpdateException(String reason, int []updateCounts, Throwable cause) {
-        super(reason,cause);
-        this.updateCounts = updateCounts;
+        this(reason, null, 0, updateCounts, cause);
     }
 
     /**
@@ -269,8 +263,7 @@ public class BatchUpdateException extends SQLException {
      */
     public BatchUpdateException(String reason, String SQLState,
                                 int []updateCounts, Throwable cause) {
-        super(reason,SQLState,cause);
-        this.updateCounts = updateCounts;
+        this(reason, SQLState, 0, updateCounts, cause);
     }
 
     /**
@@ -297,8 +290,8 @@ public class BatchUpdateException extends SQLException {
      */
     public BatchUpdateException(String reason, String SQLState, int vendorCode,
                                 int []updateCounts,Throwable cause) {
-        super(reason,SQLState,vendorCode,cause);
-        this.updateCounts = updateCounts;
+        super(reason, SQLState, vendorCode, cause);
+        this.updateCounts  = (updateCounts == null) ? null : Arrays.copyOf(updateCounts, updateCounts.length);
     }
 
   /**
@@ -332,7 +325,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.3
    */
   public int[] getUpdateCounts() {
-    return updateCounts;
+      return (updateCounts == null) ? null : Arrays.copyOf(updateCounts, updateCounts.length);
   }
 
   /**
@@ -340,7 +333,7 @@ public class BatchUpdateException extends SQLException {
    * @serial
    * @since 1.2
    */
-  private int[] updateCounts;
+  private final int[] updateCounts;
 
   private static final long serialVersionUID = 5977529877145521757L;
 }

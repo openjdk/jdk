@@ -173,9 +173,9 @@ public interface ListIterator<E> extends Iterator<E> {
 
     /**
      * Inserts the specified element into the list (optional operation).
-     * The element is inserted immediately before the next element that
-     * would be returned by {@link #next}, if any, and after the next
-     * element that would be returned by {@link #previous}, if any.  (If the
+     * The element is inserted immediately before the element that
+     * would be returned by {@link #next}, if any, and after the element
+     * that would be returned by {@link #previous}, if any.  (If the
      * list contains no elements, the new element becomes the sole element
      * on the list.)  The new element is inserted before the implicit
      * cursor: a subsequent call to {@code next} would be unaffected, and a

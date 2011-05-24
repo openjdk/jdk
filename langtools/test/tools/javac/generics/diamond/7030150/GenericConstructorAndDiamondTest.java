@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7030150
+ * @bug 7030150 7039931
  * @summary Type inference for generic instance creation failed for formal type parameter
  */
 
@@ -125,6 +125,14 @@ public class GenericConstructorAndDiamondTest {
                 default: return false;
             }
         }
+
+        boolean matches(TypeArgumentKind other) {
+            switch (other) {
+                case STRING: return this != INTEGER;
+                case INTEGER: return this != STRING;
+                default: return true;
+            }
+        }
     }
 
     enum ArgumentKind {
@@ -149,9 +157,11 @@ public class GenericConstructorAndDiamondTest {
                 for (TypeArgumentKind declArgKind : TypeArgumentKind.values()) {
                     for (TypeArgArity arity : TypeArgArity.values()) {
                         for (TypeArgumentKind useArgKind : TypeArgumentKind.values()) {
-                            for (ArgumentKind argKind : ArgumentKind.values()) {
-                                new GenericConstructorAndDiamondTest(boundKind, constructorKind,
-                                        declArgKind, arity, useArgKind, argKind).run(comp, fm);
+                            for (TypeArgumentKind diamondArgKind : TypeArgumentKind.values()) {
+                                for (ArgumentKind argKind : ArgumentKind.values()) {
+                                    new GenericConstructorAndDiamondTest(boundKind, constructorKind,
+                                            declArgKind, arity, useArgKind, diamondArgKind, argKind).run(comp, fm);
+                                }
                             }
                         }
                     }
@@ -165,18 +175,21 @@ public class GenericConstructorAndDiamondTest {
     TypeArgumentKind declTypeArgumentKind;
     TypeArgArity useTypeArgArity;
     TypeArgumentKind useTypeArgumentKind;
+    TypeArgumentKind diamondTypeArgumentKind;
     ArgumentKind argumentKind;
     JavaSource source;
     DiagnosticChecker diagChecker;
 
     GenericConstructorAndDiamondTest(BoundKind boundKind, ConstructorKind constructorKind,
             TypeArgumentKind declTypeArgumentKind, TypeArgArity useTypeArgArity,
-            TypeArgumentKind useTypeArgumentKind, ArgumentKind argumentKind) {
+            TypeArgumentKind useTypeArgumentKind, TypeArgumentKind diamondTypeArgumentKind,
+            ArgumentKind argumentKind) {
         this.boundKind = boundKind;
         this.constructorKind = constructorKind;
         this.declTypeArgumentKind = declTypeArgumentKind;
         this.useTypeArgArity = useTypeArgArity;
         this.useTypeArgumentKind = useTypeArgumentKind;
+        this.diamondTypeArgumentKind = diamondTypeArgumentKind;
         this.argumentKind = argumentKind;
         this.source = new JavaSource();
         this.diagChecker = new DiagnosticChecker();
@@ -189,7 +202,7 @@ public class GenericConstructorAndDiamondTest {
                           "}\n" +
                           "class Test {\n" +
                               "void test() {\n" +
-                                 "Foo#TA1 f = new #TA2 Foo<>(#A);\n" +
+                                 "Foo#TA1 f = new #TA2 Foo<#TA3>(#A);\n" +
                               "}\n" +
                           "}\n";
 
@@ -201,6 +214,7 @@ public class GenericConstructorAndDiamondTest {
                     replace("#CK", constructorKind.constrStr)
                     .replace("#TA1", declTypeArgumentKind.getArgs(TypeArgArity.ONE))
                     .replace("#TA2", useTypeArgumentKind.getArgs(useTypeArgArity))
+                    .replace("#TA3", diamondTypeArgumentKind.typeargStr)
                     .replace("#A", argumentKind.argStr);
         }
 
@@ -227,9 +241,15 @@ public class GenericConstructorAndDiamondTest {
         boolean badMethodTypeArg = constructorKind != ConstructorKind.NON_GENERIC &&
                 !useTypeArgumentKind.matches(argumentKind);
 
-        boolean badGenericType = !boundKind.matches(declTypeArgumentKind);
+        boolean badExplicitParams = (useTypeArgumentKind != TypeArgumentKind.NONE &&
+                diamondTypeArgumentKind == TypeArgumentKind.NONE) ||
+                !boundKind.matches(diamondTypeArgumentKind);
 
-        boolean shouldFail = badActual || badArity || badMethodTypeArg || badGenericType;
+        boolean badGenericType = !boundKind.matches(declTypeArgumentKind) ||
+                !diamondTypeArgumentKind.matches(declTypeArgumentKind);
+
+        boolean shouldFail = badActual || badArity ||
+                badMethodTypeArg || badExplicitParams || badGenericType;
 
         if (shouldFail != diagChecker.errorFound) {
             throw new Error("invalid diagnostics for source:\n" +

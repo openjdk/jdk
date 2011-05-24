@@ -58,8 +58,8 @@ public class SearchPath {
     }
 
     public File resolve(String relativeFileName) {
-        for (int i = 0; i < pathArray.length; i++) {
-            File path = new File(pathArray[i], relativeFileName);
+        for (String element : pathArray) {
+            File path = new File(element, relativeFileName);
             if (path.exists()) {
                 return path;
             }
@@ -76,8 +76,8 @@ public class SearchPath {
         // classpath is retained.  This is the one that will be
         // found if we later do a 'resolve'.
         SortedSet<String> s = new TreeSet<String>();  // sorted, no duplicates
-        for (int i = 0; i < pathArray.length; i++) {
-            File path = new File(pathArray[i], relativeDirName);
+        for (String element : pathArray) {
+            File path = new File(element, relativeDirName);
             if (path.exists()) {
                 String[] childArray = path.list(filter);
                 if (childArray != null) {

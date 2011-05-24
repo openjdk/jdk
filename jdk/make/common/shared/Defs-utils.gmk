@@ -109,6 +109,8 @@ FMT            = $(UTILS_COMMAND_PATH)fmt
 GDB            = $(UTILS_USR_BIN_PATH)gdb
 GREP           = $(UTILS_COMMAND_PATH)grep
 GUNZIP         = $(UTILS_COMMAND_PATH)gunzip
+# GZIP is used for solaris. Linux and windows use tar czf
+GZIP           = $(UTILS_COMMAND_PATH)gzip
 HEAD           = $(UTILS_USR_BIN_PATH)head
 HG             = hg
 ID             = $(UTILS_COMMAND_PATH)id

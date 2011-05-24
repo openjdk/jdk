@@ -149,11 +149,20 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         ClassUseMapper mapper = new ClassUseMapper(configuration.root, classtree);
         ClassDoc[] classes = configuration.root.classes();
         for (int i = 0; i < classes.length; i++) {
-            ClassUseWriter.generate(configuration, mapper, classes[i]);
+            // If -nodeprecated option is set and the containing package is marked
+            // as deprecated, do not generate the class-use page. We will still generate
+            // the class-use page if the class is marked as deprecated but the containing
+            // package is not since it could still be linked from that package-use page.
+            if (!(configuration.nodeprecated &&
+                    Util.isDeprecated(classes[i].containingPackage())))
+                ClassUseWriter.generate(configuration, mapper, classes[i]);
         }
         PackageDoc[] pkgs = configuration.packages;
         for (int i = 0; i < pkgs.length; i++) {
-            PackageUseWriter.generate(configuration, mapper, pkgs[i]);
+            // If -nodeprecated option is set and the package is marked
+            // as deprecated, do not generate the package-use page.
+            if (!(configuration.nodeprecated && Util.isDeprecated(pkgs[i])))
+                PackageUseWriter.generate(configuration, mapper, pkgs[i]);
         }
     }
 

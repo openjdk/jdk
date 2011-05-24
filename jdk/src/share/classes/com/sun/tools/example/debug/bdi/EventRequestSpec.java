@@ -25,8 +25,6 @@
 
 package com.sun.tools.example.debug.bdi;
 
-import java.util.*;
-
 import com.sun.jdi.*;
 import com.sun.jdi.request.EventRequest;
 
