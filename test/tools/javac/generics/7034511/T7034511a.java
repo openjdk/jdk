@@ -1,6 +1,7 @@
 /*
  * @test /nodynamiccopyright/
- * @bug     7034511
+ * @ignore backing out 7034511, see 7040883
+ * @bug     7034511 7040883
  * @summary Loophole in typesafety
  * @compile/fail/ref=T7034511a.out -XDrawDiagnostics T7034511a.java
  */

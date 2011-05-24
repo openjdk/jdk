@@ -242,11 +242,16 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink("", pkg.name(), new StringContent(Util.getPackageName(pkg))));
+                getHyperLink("", Util.getPackageName(pkg),
+                new RawHtml(Util.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
-        addSummaryComment(pkg, tdLast);
+        if (pkg != null && pkg.name().length() != 0) {
+            addSummaryComment(pkg, tdLast);
+        } else {
+            tdLast.addContent(getSpace());
+        }
         contentTree.addContent(tdLast);
     }
 

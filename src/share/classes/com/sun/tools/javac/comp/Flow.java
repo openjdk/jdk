@@ -1153,8 +1153,7 @@ public class Flow extends TreeScanner {
         if (chk.subset(exc, caughtInTry)) {
             log.error(pos, "except.already.caught", exc);
         } else if (!chk.isUnchecked(pos, exc) &&
-                exc.tsym != syms.throwableType.tsym &&
-                exc.tsym != syms.exceptionType.tsym &&
+                !isExceptionOrThrowable(exc) &&
                 !chk.intersects(exc, thrownInTry)) {
             log.error(pos, "except.never.thrown.in.try", exc);
         } else if (allowImprovedCatchAnalysis) {
@@ -1163,7 +1162,8 @@ public class Flow extends TreeScanner {
             // unchecked exception, the result list would not be empty, as the augmented
             // thrown set includes { RuntimeException, Error }; if 'exc' was a checked
             // exception, that would have been covered in the branch above
-            if (chk.diff(catchableThrownTypes, caughtInTry).isEmpty()) {
+            if (chk.diff(catchableThrownTypes, caughtInTry).isEmpty() &&
+                    !isExceptionOrThrowable(exc)) {
                 String key = catchableThrownTypes.length() == 1 ?
                         "unreachable.catch" :
                         "unreachable.catch.1";
@@ -1171,6 +1171,12 @@ public class Flow extends TreeScanner {
             }
         }
     }
+    //where
+        private boolean isExceptionOrThrowable(Type exc) {
+            return exc.tsym == syms.throwableType.tsym ||
+                exc.tsym == syms.exceptionType.tsym;
+        }
+
 
     public void visitConditional(JCConditional tree) {
         scanCond(tree.cond);

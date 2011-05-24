@@ -1609,18 +1609,31 @@ public class ClassReader implements Completer {
             // type.tsym.flatName() should == proxy.enumFlatName
             TypeSymbol enumTypeSym = proxy.enumType.tsym;
             VarSymbol enumerator = null;
-            for (Scope.Entry e = enumTypeSym.members().lookup(proxy.enumerator);
-                 e.scope != null;
-                 e = e.next()) {
-                if (e.sym.kind == VAR) {
-                    enumerator = (VarSymbol)e.sym;
-                    break;
+            CompletionFailure failure = null;
+            try {
+                for (Scope.Entry e = enumTypeSym.members().lookup(proxy.enumerator);
+                     e.scope != null;
+                     e = e.next()) {
+                    if (e.sym.kind == VAR) {
+                        enumerator = (VarSymbol)e.sym;
+                        break;
+                    }
                 }
             }
+            catch (CompletionFailure ex) {
+                failure = ex;
+            }
             if (enumerator == null) {
-                log.error("unknown.enum.constant",
-                          currentClassFile, enumTypeSym, proxy.enumerator);
-                result = new Attribute.Error(enumTypeSym.type);
+                if (failure != null) {
+                    log.warning("unknown.enum.constant.reason",
+                              currentClassFile, enumTypeSym, proxy.enumerator,
+                              failure.getDiagnostic());
+                } else {
+                    log.warning("unknown.enum.constant",
+                              currentClassFile, enumTypeSym, proxy.enumerator);
+                }
+                result = new Attribute.Enum(enumTypeSym.type,
+                        new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
             } else {
                 result = new Attribute.Enum(enumTypeSym.type, enumerator);
             }
