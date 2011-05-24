@@ -216,8 +216,18 @@ public:
     }
   }
 
-  // Returns "TRUE" iff "p" points into the youngest generation.
-  bool is_in_youngest(void* p);
+  // Returns true if the reference is to an object in the reserved space
+  // for the young generation.
+  // Assumes the the young gen address range is less than that of the old gen.
+  bool is_in_young(oop p);
+
+#ifdef ASSERT
+  virtual bool is_in_partial_collection(const void* p);
+#endif
+
+  virtual bool is_scavengable(const void* addr) {
+    return is_in_young((oop)addr);
+  }
 
   // Iteration functions.
   void oop_iterate(OopClosure* cl);
@@ -283,7 +293,7 @@ public:
     //       "Check can_elide_initializing_store_barrier() for this collector");
     // but unfortunately the flag UseSerialGC need not necessarily always
     // be set when DefNew+Tenured are being used.
-    return is_in_youngest((void*)new_obj);
+    return is_in_young(new_obj);
   }
 
   // Can a compiler elide a store barrier when it writes

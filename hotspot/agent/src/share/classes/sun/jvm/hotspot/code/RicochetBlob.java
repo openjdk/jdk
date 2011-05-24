@@ -22,38 +22,35 @@
  *
  */
 
-/**
- * @test
- * @bug 7005594
- * @summary Array overflow not handled correctly with loop optimzations
- *
- * @run shell Test7005594.sh
- */
+package sun.jvm.hotspot.code;
 
-public class Test7005594 {
+import java.util.*;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
 
-      static int test(byte a[]){
-          int result=0;
-          for( int i=0; i<a.length; i+=((0x7fffffff>>1)+1) ){
-              result += a[i];
-          }
-          return result;
-      }
+/** RicochetBlob (currently only used by Compiler 2) */
 
-      public static void main(String [] args){
-          byte a[]=new byte[(0x7fffffff>>1)+2];
-          int result = 0;
-          try {
-              result = test(a);
-          } catch (ArrayIndexOutOfBoundsException e) {
-              e.printStackTrace(System.out);
-              System.out.println("Passed");
-              System.exit(95);
-          }
-          System.out.println(result);
-          System.out.println("FAILED");
-          System.exit(97);
-      }
+public class RicochetBlob extends SingletonBlob {
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
+          initialize(VM.getVM().getTypeDataBase());
+        }
+      });
+  }
 
+  private static void initialize(TypeDataBase db) {
+    // Type type = db.lookupType("RicochetBlob");
+
+    // FIXME: add any needed fields
+  }
+
+  public RicochetBlob(Address addr) {
+    super(addr);
+  }
+
+  public boolean isRicochetBlob() {
+    return true;
+  }
 }
-
