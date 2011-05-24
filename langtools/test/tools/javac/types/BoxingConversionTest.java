@@ -118,7 +118,6 @@ public class BoxingConversionTest extends TypeHarness {
     static final Result T = Result.OK_BOTH;
     static final Result F = Result.FAIL_BOTH;
     static final Result A = Result.OK_ASSIGN_ONLY;
-    static final Result X = Result.FAIL_BOTH.FAIL_BOTH;
 
     Result[][] results1 = {
                    //byte, short, int, long, float, double, char, bool, Byte, Short, Integer, Long, Float, Double, Character, Boolean

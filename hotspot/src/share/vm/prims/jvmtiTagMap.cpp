@@ -3158,6 +3158,9 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
         if (fr->is_entry_frame()) {
           last_entry_frame = fr;
         }
+        if (fr->is_ricochet_frame()) {
+          fr->oops_ricochet_do(blk, vf->register_map());
+        }
       }
 
       vf = vf->sender();

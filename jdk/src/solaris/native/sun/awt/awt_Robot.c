@@ -48,27 +48,11 @@
 #ifdef __linux__
 #include <sys/socket.h>
 #endif
-#include <dlfcn.h>
 
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 
 static jint * masks;
 static jint num_buttons;
-
-static unsigned int s_robotInstanceCounter = 0;
-
-static void* xcompositeLibHandle = NULL;
-static Bool xcompositeExtAvailable = False;
-static Bool xcompositeExtTested = False;
-
-typedef Status (*T_XCompositeQueryVersion)(Display *dpy, int *major_versionp, int *minor_versionp);
-typedef Window (*T_XCompositeGetOverlayWindow)(Display *dpy, Window window);
-typedef void (*T_XCompositeReleaseOverlayWindow)(Display *dpy, Window window);
-
-static T_XCompositeQueryVersion XCompositeQueryVersion = NULL;
-static T_XCompositeGetOverlayWindow XCompositeGetOverlayWindow = NULL;
-static T_XCompositeReleaseOverlayWindow XCompositeReleaseOverlayWindow = NULL;
-
 
 static int32_t isXTestAvailable() {
     int32_t major_opcode, first_event, first_error;
@@ -210,80 +194,8 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButton
     }
 
     AWT_UNLOCK();
-
-    s_robotInstanceCounter++;
 }
 
-JNIEXPORT void JNICALL
-Java_sun_awt_X11_XRobotPeer__1dispose (JNIEnv * env, jclass cls)
-{
-    if (--s_robotInstanceCounter) {
-        return;
-    }
-
-    // This is the last instance of the XRobotPeer being released
-
-    if (xcompositeExtTested && xcompositeExtAvailable && xcompositeLibHandle) {
-        // The lib is loaded in IsXCompositeAvailable(). Unload under AWT_LOCK
-        // so that the shutdown function of the lib behaves correctly.
-        AWT_LOCK();
-        dlclose(xcompositeLibHandle);
-        AWT_UNLOCK();
-    }
-
-    xcompositeExtTested = False;
-    xcompositeExtAvailable = False;
-    xcompositeLibHandle = NULL;
-}
-
-/*
- * Returns True only if XCOMPOSITE is of version 0.3 or higher.
- * The functions that we need are available since that version.
- *
- * Must be invoked under AWT_LOCK.
- *
- * Leaves the library loaded if the version is correct.
- */
-static Bool IsXCompositeAvailable()
-{
-    if (!xcompositeExtTested) {
-        int opcode, eventb, errorb;
-
-        if (XQueryExtension(awt_display, "Composite", &opcode, &eventb, &errorb)) {
-            xcompositeLibHandle = dlopen("libXcomposite.so.1", RTLD_LAZY | RTLD_GLOBAL);
-#ifndef __linux__ /* SOLARIS */
-            if (xcompositeLibHandle == NULL) {
-                xcompositeLibHandle = dlopen("/usr/sfw/lib/libXcomposite.so.1",
-                        RTLD_LAZY | RTLD_GLOBAL);
-            }
-#endif
-
-            if (xcompositeLibHandle) {
-                int major, minor;
-                XCompositeQueryVersion = (T_XCompositeQueryVersion)dlsym(xcompositeLibHandle, "XCompositeQueryVersion");
-
-                if (XCompositeQueryVersion && XCompositeQueryVersion(awt_display, &major, &minor)) {
-                    if (major >= 0 && minor >= 3) {
-                        XCompositeGetOverlayWindow = (T_XCompositeGetOverlayWindow)dlsym(xcompositeLibHandle, "XCompositeGetOverlayWindow");
-                        XCompositeReleaseOverlayWindow = (T_XCompositeReleaseOverlayWindow)dlsym(xcompositeLibHandle, "XCompositeReleaseOverlayWindow");
-
-                        if (XCompositeGetOverlayWindow && XCompositeReleaseOverlayWindow) {
-                            xcompositeExtAvailable = True;
-                        }
-                    }
-                }
-
-                if (!xcompositeExtAvailable) {
-                    dlclose(xcompositeLibHandle);
-                } /* else the lib is unloaded in _dispose() */
-            }
-        }
-
-        xcompositeExtTested = True;
-    }
-
-    return xcompositeExtAvailable;
-}
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
@@ -299,7 +211,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     jint *ary;               /* Array of jints for sending pixel values back
                               * to parent process.
                               */
-    Window window;
+    Window rootWindow;
     AwtGraphicsConfigDataPtr adata;
 
     DTRACE_PRINTLN6("RobotPeer: getRGBPixelsImpl(%lx, %d, %d, %d, %d, %x)", xgc, x, y, width, height, pixelArray);
@@ -316,24 +228,14 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     adata = (AwtGraphicsConfigDataPtr) JNU_GetLongFieldAsPtr(env, xgc, x11GraphicsConfigIDs.aData);
     DASSERT(adata != NULL);
 
-    window = XRootWindow(awt_display, adata->awt_visInfo.screen);
-
-    if (IsXCompositeAvailable()) {
-        // Use 'composite overlay window' instead of the root window.
-        // See 6903034 for details.
-        window = XCompositeGetOverlayWindow(awt_display, window);
-    }
-
-    image = getWindowImage(awt_display, window, x, y, width, height);
+    rootWindow = XRootWindow(awt_display, adata->awt_visInfo.screen);
+    image = getWindowImage(awt_display, rootWindow, x, y, width, height);
 
     /* Array to use to crunch around the pixel values */
     ary = (jint *) malloc(width * height * sizeof (jint));
     if (ary == NULL) {
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         XDestroyImage(image);
-        if (IsXCompositeAvailable()) {
-            XCompositeReleaseOverlayWindow(awt_display, window);
-        }
         AWT_UNLOCK();
         return;
     }
@@ -354,9 +256,6 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     free(ary);
 
     XDestroyImage(image);
-    if (IsXCompositeAvailable()) {
-        XCompositeReleaseOverlayWindow(awt_display, window);
-    }
 
     AWT_UNLOCK();
 }

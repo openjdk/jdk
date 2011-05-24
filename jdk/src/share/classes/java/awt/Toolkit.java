@@ -466,10 +466,7 @@ public abstract class Toolkit {
      */
     protected void loadSystemColors(int[] systemColors)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
-
+        GraphicsEnvironment.checkHeadless();
     }
 
 /**
@@ -504,10 +501,7 @@ public abstract class Toolkit {
      */
     public void setDynamicLayout(boolean dynamic)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
-
+        GraphicsEnvironment.checkHeadless();
     }
 
     /**
@@ -531,9 +525,8 @@ public abstract class Toolkit {
      */
     protected boolean isDynamicLayoutSet()
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().isDynamicLayoutSet();
         } else {
@@ -569,9 +562,8 @@ public abstract class Toolkit {
      */
     public boolean isDynamicLayoutActive()
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().isDynamicLayoutActive();
         } else {
@@ -615,9 +607,7 @@ public abstract class Toolkit {
      */
     public Insets getScreenInsets(GraphicsConfiguration gc)
         throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getScreenInsets(gc);
         } else {
@@ -1200,10 +1190,7 @@ public abstract class Toolkit {
      * security manager's <code>checkPermission</code> method with a <code>
      * RuntimePermission("queuePrintJob")</code> permission.
      *
-     * @param   frame the parent of the print dialog. May be null if and only
-     *          if jobAttributes is not null and jobAttributes.getDialog()
-     *          returns JobAttributes.DialogType.NONE or
-     *          JobAttributes.DialogType.COMMON.
+     * @param   frame the parent of the print dialog. May not be null.
      * @param   jobtitle the title of the PrintJob. A null title is equivalent
      *          to "".
      * @param   jobAttributes a set of job attributes which will control the
@@ -1359,9 +1346,8 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public Clipboard getSystemSelection() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getSystemSelection();
         } else {
@@ -1391,9 +1377,7 @@ public abstract class Toolkit {
      * @since     JDK1.1
      */
     public int getMenuShortcutKeyMask() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
 
         return Event.CTRL_MASK;
     }
@@ -1418,7 +1402,10 @@ public abstract class Toolkit {
      * @since 1.3
      */
     public boolean getLockingKeyState(int keyCode)
-        throws UnsupportedOperationException {
+        throws UnsupportedOperationException
+    {
+        GraphicsEnvironment.checkHeadless();
+
         if (! (keyCode == KeyEvent.VK_CAPS_LOCK || keyCode == KeyEvent.VK_NUM_LOCK ||
                keyCode == KeyEvent.VK_SCROLL_LOCK || keyCode == KeyEvent.VK_KANA_LOCK)) {
             throw new IllegalArgumentException("invalid key for Toolkit.getLockingKeyState");
@@ -1449,7 +1436,10 @@ public abstract class Toolkit {
      * @since 1.3
      */
     public void setLockingKeyState(int keyCode, boolean on)
-        throws UnsupportedOperationException {
+        throws UnsupportedOperationException
+    {
+        GraphicsEnvironment.checkHeadless();
+
         if (! (keyCode == KeyEvent.VK_CAPS_LOCK || keyCode == KeyEvent.VK_NUM_LOCK ||
                keyCode == KeyEvent.VK_SCROLL_LOCK || keyCode == KeyEvent.VK_KANA_LOCK)) {
             throw new IllegalArgumentException("invalid key for Toolkit.setLockingKeyState");
@@ -1523,9 +1513,8 @@ public abstract class Toolkit {
      */
     public Dimension getBestCursorSize(int preferredWidth,
         int preferredHeight) throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         // Override to implement custom cursor support.
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().
@@ -1553,9 +1542,8 @@ public abstract class Toolkit {
      * @since     1.2
      */
     public int getMaximumCursorColors() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         // Override to implement custom cursor support.
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().getMaximumCursorColors();
@@ -1605,9 +1593,8 @@ public abstract class Toolkit {
     public boolean isFrameStateSupported(int state)
         throws HeadlessException
     {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         if (this != Toolkit.getDefaultToolkit()) {
             return Toolkit.getDefaultToolkit().
                 isFrameStateSupported(state);
@@ -2614,9 +2601,8 @@ public abstract class Toolkit {
     * @since 1.7
      */
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
-        if (GraphicsEnvironment.isHeadless()){
-            throw new HeadlessException();
-        }
+        GraphicsEnvironment.checkHeadless();
+
         return Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled();
     }
 }
