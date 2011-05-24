@@ -1453,6 +1453,23 @@ bool IdealLoopTree::dominates_backedge(Node* ctrl) {
   return _phase->dom_lca_internal(ctrl, backedge) == ctrl;
 }
 
+//------------------------------adjust_limit-----------------------------------
+// Helper function for add_constraint().
+Node* PhaseIdealLoop::adjust_limit(int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl) {
+  // Compute "I :: (limit-offset)/scale"
+  Node *con = new (C, 3) SubINode(rc_limit, offset);
+  register_new_node(con, pre_ctrl);
+  Node *X = new (C, 3) DivINode(0, con, scale);
+  register_new_node(X, pre_ctrl);
+
+  // Adjust loop limit
+  loop_limit = (stride_con > 0)
+               ? (Node*)(new (C, 3) MinINode(loop_limit, X))
+               : (Node*)(new (C, 3) MaxINode(loop_limit, X));
+  register_new_node(loop_limit, pre_ctrl);
+  return loop_limit;
+}
+
 //------------------------------add_constraint---------------------------------
 // Constrain the main loop iterations so the conditions:
 //    low_limit <= scale_con * I + offset  <  upper_limit
@@ -1469,7 +1486,11 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
   // pre-loop must check for underflow and the post-loop for overflow.
   // Negative stride*scale reverses this; pre-loop checks for overflow and
   // post-loop for underflow.
-  if (stride_con*scale_con > 0) {
+
+  Node *scale = _igvn.intcon(scale_con);
+  set_ctrl(scale, C->root());
+
+  if ((stride_con^scale_con) >= 0) { // Use XOR to avoid overflow
     // The overflow limit: scale*I+offset < upper_limit
     // For main-loop compute
     //   ( if (scale > 0) /* and stride > 0 */
@@ -1478,23 +1499,10 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     //       I > (upper_limit-offset)/scale
     //   )
     //
-    // (upper_limit-offset) may overflow when offset < 0.
+    // (upper_limit-offset) may overflow or underflow.
     // But it is fine since main loop will either have
     // less iterations or will be skipped in such case.
-    Node *con = new (C, 3) SubINode(upper_limit, offset);
-    register_new_node(con, pre_ctrl);
-    Node *scale = _igvn.intcon(scale_con);
-    set_ctrl(scale, C->root());
-    Node *X = new (C, 3) DivINode(0, con, scale);
-    register_new_node(X, pre_ctrl);
-
-    // Adjust main-loop last iteration
-    Node *loop_limit = *main_limit;
-    loop_limit = (stride_con > 0) // scale > 0
-      ? (Node*)(new (C, 3) MinINode(loop_limit, X))
-      : (Node*)(new (C, 3) MaxINode(loop_limit, X));
-    register_new_node(loop_limit, pre_ctrl);
-    *main_limit = loop_limit;
+    *main_limit = adjust_limit(stride_con, scale, offset, upper_limit, *main_limit, pre_ctrl);
 
     // The underflow limit: low_limit <= scale*I+offset.
     // For pre-loop compute
@@ -1509,76 +1517,33 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     if (low_limit->get_int() == -max_jint) {
       if (!RangeLimitCheck) return;
       // We need this guard when scale*pre_limit+offset >= limit
-      // due to underflow so we need execute pre-loop until
-      // scale*I+offset >= min_int. But (low_limit-offset) will
-      // underflow when offset > 0 and X will be > original_limit.
-      // To avoid it we replace offset = offset > 0 ? 0 : offset
-      // and add min(pre_limit, original_limit).
+      // due to underflow. So we need execute pre-loop until
+      // scale*I+offset >= min_int. But (min_int-offset) will
+      // underflow when offset > 0 and X will be > original_limit
+      // when stride > 0. To avoid it we replace positive offset with 0.
+      //
+      // Also (min_int+1 == -max_int) is used instead of min_int here
+      // to avoid problem with scale == -1 (min_int/(-1) == min_int).
       Node* shift = _igvn.intcon(31);
       set_ctrl(shift, C->root());
-      Node *neg_off = new (C, 3) RShiftINode(offset, shift);
-      register_new_node(neg_off, pre_ctrl);
-      offset = new (C, 3) AndINode(offset, neg_off);
+      Node* sign = new (C, 3) RShiftINode(offset, shift);
+      register_new_node(sign, pre_ctrl);
+      offset = new (C, 3) AndINode(offset, sign);
       register_new_node(offset, pre_ctrl);
     } else {
       assert(low_limit->get_int() == 0, "wrong low limit for range check");
       // The only problem we have here when offset == min_int
-      // since (0-min_int) == min_int. It may be fine for scale > 0
-      // but for scale < 0 X will be < original_limit.
+      // since (0-min_int) == min_int. It may be fine for stride > 0
+      // but for stride < 0 X will be < original_limit. To avoid it
+      // max(pre_limit, original_limit) is used in do_range_check().
     }
-    con = new (C, 3) SubINode(low_limit, offset);
-    register_new_node(con, pre_ctrl);
-    scale = _igvn.intcon(scale_con);
-    set_ctrl(scale, C->root());
-    X = new (C, 3) DivINode(0, con, scale);
-    register_new_node(X, pre_ctrl);
-
-    // Adjust pre-loop last iteration
-    loop_limit = *pre_limit;
-    loop_limit = (stride_con > 0) // scale > 0
-      ? (Node*)(new (C, 3) MaxINode(loop_limit, X))
-      : (Node*)(new (C, 3) MinINode(loop_limit, X));
-    register_new_node( loop_limit, pre_ctrl );
-    *pre_limit = loop_limit;
+    // Pass (-stride) to indicate pre_loop_cond = NOT(main_loop_cond);
+    *pre_limit = adjust_limit((-stride_con), scale, offset, low_limit, *pre_limit, pre_ctrl);
 
   } else { // stride_con*scale_con < 0
     // For negative stride*scale pre-loop checks for overflow and
     // post-loop for underflow.
     //
-    // The underflow limit: low_limit <= scale*I+offset.
-    // For main-loop compute
-    //   scale*I+offset+1 > low_limit
-    //   ( if (scale < 0) /* and stride > 0 */
-    //       I < (low_limit-(offset+1))/scale
-    //     else /* scale < 0 and stride < 0 */
-    //       I > (low_limit-(offset+1))/scale
-    //   )
-
-    if (low_limit->get_int() == -max_jint) {
-      if (!RangeLimitCheck) return;
-    } else {
-      assert(low_limit->get_int() == 0, "wrong low limit for range check");
-    }
-
-    Node *one  = _igvn.intcon(1);
-    set_ctrl(one, C->root());
-    Node *plus_one = new (C, 3) AddINode(offset, one);
-    register_new_node( plus_one, pre_ctrl );
-    Node *con = new (C, 3) SubINode(low_limit, plus_one);
-    register_new_node(con, pre_ctrl);
-    Node *scale = _igvn.intcon(scale_con);
-    set_ctrl(scale, C->root());
-    Node *X = new (C, 3) DivINode(0, con, scale);
-    register_new_node(X, pre_ctrl);
-
-    // Adjust main-loop last iteration
-    Node *loop_limit = *main_limit;
-    loop_limit = (stride_con > 0) // scale < 0
-      ? (Node*)(new (C, 3) MinINode(loop_limit, X))
-      : (Node*)(new (C, 3) MaxINode(loop_limit, X));
-    register_new_node(loop_limit, pre_ctrl);
-    *main_limit = loop_limit;
-
     // The overflow limit: scale*I+offset < upper_limit
     // For pre-loop compute
     //   NOT(scale*I+offset < upper_limit)
@@ -1586,26 +1551,55 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     //   scale*I+offset+1 > upper_limit
     //   ( if (scale < 0) /* and stride > 0 */
     //       I < (upper_limit-(offset+1))/scale
-    //     else /* scale < 0 and stride < 0 */
+    //     else /* scale > 0 and stride < 0 */
     //       I > (upper_limit-(offset+1))/scale
     //   )
-    plus_one = new (C, 3) AddINode(offset, one);
+    //
+    // (upper_limit-offset-1) may underflow or overflow.
+    // To avoid it min(pre_limit, original_limit) is used
+    // in do_range_check() for stride > 0 and max() for < 0.
+    Node *one  = _igvn.intcon(1);
+    set_ctrl(one, C->root());
+
+    Node *plus_one = new (C, 3) AddINode(offset, one);
     register_new_node( plus_one, pre_ctrl );
-    con = new (C, 3) SubINode(upper_limit, plus_one);
-    register_new_node(con, pre_ctrl);
-    scale = _igvn.intcon(scale_con);
-    set_ctrl(scale, C->root());
-    X = new (C, 3) DivINode(0, con, scale);
-    register_new_node(X, pre_ctrl);
+    // Pass (-stride) to indicate pre_loop_cond = NOT(main_loop_cond);
+    *pre_limit = adjust_limit((-stride_con), scale, plus_one, upper_limit, *pre_limit, pre_ctrl);
 
-    // Adjust pre-loop last iteration
-    loop_limit = *pre_limit;
-    loop_limit = (stride_con > 0) // scale < 0
-      ? (Node*)(new (C, 3) MaxINode(loop_limit, X))
-      : (Node*)(new (C, 3) MinINode(loop_limit, X));
-    register_new_node( loop_limit, pre_ctrl );
-    *pre_limit = loop_limit;
+    if (low_limit->get_int() == -max_jint) {
+      if (!RangeLimitCheck) return;
+      // We need this guard when scale*main_limit+offset >= limit
+      // due to underflow. So we need execute main-loop while
+      // scale*I+offset+1 > min_int. But (min_int-offset-1) will
+      // underflow when (offset+1) > 0 and X will be < main_limit
+      // when scale < 0 (and stride > 0). To avoid it we replace
+      // positive (offset+1) with 0.
+      //
+      // Also (min_int+1 == -max_int) is used instead of min_int here
+      // to avoid problem with scale == -1 (min_int/(-1) == min_int).
+      Node* shift = _igvn.intcon(31);
+      set_ctrl(shift, C->root());
+      Node* sign = new (C, 3) RShiftINode(plus_one, shift);
+      register_new_node(sign, pre_ctrl);
+      plus_one = new (C, 3) AndINode(plus_one, sign);
+      register_new_node(plus_one, pre_ctrl);
+    } else {
+      assert(low_limit->get_int() == 0, "wrong low limit for range check");
+      // The only problem we have here when offset == max_int
+      // since (max_int+1) == min_int and (0-min_int) == min_int.
+      // But it is fine since main loop will either have
+      // less iterations or will be skipped in such case.
+    }
+    // The underflow limit: low_limit <= scale*I+offset.
+    // For main-loop compute
+    //   scale*I+offset+1 > low_limit
+    //   ( if (scale < 0) /* and stride > 0 */
+    //       I < (low_limit-(offset+1))/scale
+    //     else /* scale > 0 and stride < 0 */
+    //       I > (low_limit-(offset+1))/scale
+    //   )
 
+    *main_limit = adjust_limit(stride_con, scale, plus_one, low_limit, *main_limit, pre_ctrl);
   }
 }
 
@@ -1869,13 +1863,8 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint( stride_con, scale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit );
           if (!conditional_rc) {
-            conditional_rc = !loop->dominates_backedge(iff);
-            // It is also needed if offset->_lo == min_int since
-            // (0-min_int) == min_int. It may be fine for stride > 0
-            // but for stride < 0 pre_limit will be < original_limit.
-            const TypeInt* offset_t = _igvn.type(offset)->is_int();
-            conditional_rc |= RangeLimitCheck && (offset_t->_lo == min_jint) &&
-                              (scale_con<0) && (stride_con<0);
+            // (0-offset)/scale could be outside of loop iterations range.
+            conditional_rc = !loop->dominates_backedge(iff) || RangeLimitCheck;
           }
         } else {
 #ifndef PRODUCT
@@ -1905,16 +1894,14 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           // Fall into LT case
         case BoolTest::lt:
           // The underflow and overflow limits: MIN_INT <= scale*I+offset < limit
+          // Note: (MIN_INT+1 == -MAX_INT) is used instead of MIN_INT here
+          // to avoid problem with scale == -1: MIN_INT/(-1) == MIN_INT.
           add_constraint( stride_con, scale_con, offset, mini, limit, pre_ctrl, &pre_limit, &main_limit );
           if (!conditional_rc) {
-            conditional_rc = !loop->dominates_backedge(iff);
-            // It is also needed if scale*pre_limit+offset >= limit
-            // due to underflow so we need execute pre-loop until
-            // scale*I+offset >= min_int. But (low_limit-offset) will
-            // underflow when offset > 0 and X will be > original_limit.
-            const TypeInt* offset_t = _igvn.type(offset)->is_int();
-            conditional_rc |= RangeLimitCheck && (offset_t->_hi > 0) &&
-                              (scale_con>0) && (stride_con>0);
+            // ((MIN_INT+1)-offset)/scale could be outside of loop iterations range.
+            // Note: negative offset is replaced with 0 but (MIN_INT+1)/scale could
+            // still be outside of loop range.
+            conditional_rc = !loop->dominates_backedge(iff) || RangeLimitCheck;
           }
           break;
         default:

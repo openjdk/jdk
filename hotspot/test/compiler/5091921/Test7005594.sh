@@ -45,19 +45,32 @@ echo "CLASSPATH=${CLASSPATH}"
 
 set -x
 
-cp ${TESTSRC}/Test6890943.java .
-cp ${TESTSRC}/input6890943.txt .
-cp ${TESTSRC}/output6890943.txt .
-cp ${TESTSRC}/Test6890943.sh .
+cp ${TESTSRC}/Test7005594.java .
+cp ${TESTSRC}/Test7005594.sh .
 
-${TESTJAVA}/bin/javac -d . Test6890943.java
+${TESTJAVA}/bin/javac -d . Test7005594.java
 
-${TESTJAVA}/bin/java -XX:-PrintVMOptions ${TESTVMOPTS} Test6890943 < input6890943.txt > test.out 2>&1
-
-diff output6890943.txt test.out
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xms1600m -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
 
 result=$?
-if [ $result -eq 0 ]
+
+cat test.out
+
+if [ $result -eq 95 ]
+then
+  echo "Passed"
+  exit 0
+fi
+
+if [ $result -eq 97 ]
+then
+  echo "Failed"
+  exit 1
+fi
+
+# The test should pass when no enough space for object heap
+grep "Could not reserve enough space for object heap" test.out
+if [ $? = 0 ]
 then
   echo "Passed"
   exit 0

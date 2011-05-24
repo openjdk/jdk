@@ -1810,7 +1810,7 @@ public:
   void maybe_print(oop* p) {
     if (_print_nm == NULL)  return;
     if (!_detected_scavenge_root)  _print_nm->print_on(tty, "new scavenge root");
-    tty->print_cr(""PTR_FORMAT"[offset=%d] detected non-perm oop "PTR_FORMAT" (found at "PTR_FORMAT")",
+    tty->print_cr(""PTR_FORMAT"[offset=%d] detected scavengable oop "PTR_FORMAT" (found at "PTR_FORMAT")",
                   _print_nm, (int)((intptr_t)p - (intptr_t)_print_nm),
                   (intptr_t)(*p), (intptr_t)p);
     (*p)->print();
@@ -2311,7 +2311,7 @@ public:
       _nm->print_nmethod(true);
       _ok = false;
     }
-    tty->print_cr("*** non-perm oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
+    tty->print_cr("*** scavengable oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
                   (intptr_t)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
     (*p)->print();
   }
@@ -2324,7 +2324,7 @@ void nmethod::verify_scavenge_root_oops() {
     DebugScavengeRoot debug_scavenge_root(this);
     oops_do(&debug_scavenge_root);
     if (!debug_scavenge_root.ok())
-      fatal("found an unadvertised bad non-perm oop in the code cache");
+      fatal("found an unadvertised bad scavengable oop in the code cache");
   }
   assert(scavenge_root_not_marked(), "");
 }

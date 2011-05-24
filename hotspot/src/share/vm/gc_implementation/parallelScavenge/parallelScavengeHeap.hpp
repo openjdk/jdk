@@ -127,6 +127,12 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // collection.
   virtual bool is_maximal_no_gc() const;
 
+  // Return true if the reference points to an object that
+  // can be moved in a partial collection.  For currently implemented
+  // generational collectors that means during a collection of
+  // the young gen.
+  virtual bool is_scavengable(const void* addr);
+
   // Does this heap support heap inspection? (+PrintClassHistogram)
   bool supports_heap_inspection() const { return true; }
 
@@ -142,6 +148,10 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   bool is_in_permanent(const void *p) const {    // reserved part
     return perm_gen()->reserved().contains(p);
   }
+
+#ifdef ASSERT
+  virtual bool is_in_partial_collection(const void *p);
+#endif
 
   bool is_permanent(const void *p) const {    // committed part
     return perm_gen()->is_in(p);

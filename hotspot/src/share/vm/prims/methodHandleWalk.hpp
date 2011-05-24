@@ -126,26 +126,34 @@ public:
     Handle    _handle;
 
   public:
-    ArgToken(TokenType tt = tt_illegal) : _tt(tt) {}
-    ArgToken(TokenType tt, BasicType bt, jvalue value) : _tt(tt), _bt(bt), _value(value) {}
+    ArgToken(TokenType tt = tt_illegal) : _tt(tt) {
+      assert(tt == tt_illegal || tt == tt_void, "invalid token type");
+    }
 
     ArgToken(TokenType tt, BasicType bt, int index) : _tt(tt), _bt(bt) {
+      assert(_tt == tt_parameter || _tt == tt_temporary, "must have index");
       _value.i = index;
     }
 
-    ArgToken(TokenType tt, BasicType bt, Handle value) : _tt(tt), _bt(bt) {
-      _handle = value;
+    ArgToken(BasicType bt, jvalue value) : _tt(tt_constant), _bt(bt), _value(value) {}
+    ArgToken(BasicType bt, Handle value) : _tt(tt_constant), _bt(bt), _handle(value) {}
+
+
+    ArgToken(const char* str) : _tt(tt_symbolic), _bt(T_LONG) {
+      _value.j = (intptr_t)str;
     }
 
     TokenType token_type()  const { return _tt; }
     BasicType basic_type()  const { return _bt; }
-    int       index()       const { return _value.i; }
-    Handle    object()      const { return _handle; }
+    bool      has_index()   const { return _tt == tt_parameter || _tt == tt_temporary; }
+    int       index()       const { assert(has_index(), "must have index");; return _value.i; }
+    Handle    object()      const { assert(_tt == tt_constant, "value type"); return _handle; }
+    const char* str()       const { assert(_tt == tt_symbolic, "string type"); return (const char*)_value.j; }
 
-    jint      get_jint()    const { return _value.i; }
-    jlong     get_jlong()   const { return _value.j; }
-    jfloat    get_jfloat()  const { return _value.f; }
-    jdouble   get_jdouble() const { return _value.d; }
+    jint      get_jint()    const { assert(_tt == tt_constant, "value types"); return _value.i; }
+    jlong     get_jlong()   const { assert(_tt == tt_constant, "value types"); return _value.j; }
+    jfloat    get_jfloat()  const { assert(_tt == tt_constant, "value types"); return _value.f; }
+    jdouble   get_jdouble() const { assert(_tt == tt_constant, "value types"); return _value.d; }
   };
 
   // Abstract interpretation state:
@@ -256,7 +264,6 @@ public:
 // The IR happens to be JVM bytecodes.
 class MethodHandleCompiler : public MethodHandleWalker {
 private:
-  methodHandle _callee;
   int          _invoke_count;  // count the original call site has been executed
   KlassHandle  _rklass;        // Return type for casting.
   BasicType    _rtype;
@@ -404,7 +411,7 @@ private:
     return cpool_oop_reference_put(JVM_CONSTANT_NameAndType, name_index, signature_index);
   }
 
-  void emit_bc(Bytecodes::Code op, int index = 0);
+  void emit_bc(Bytecodes::Code op, int index = 0, int args_size = -1);
   void emit_load(BasicType bt, int index);
   void emit_store(BasicType bt, int index);
   void emit_load_constant(ArgToken arg);
@@ -414,10 +421,10 @@ private:
   }
   virtual ArgToken make_oop_constant(oop con, TRAPS) {
     Handle h(THREAD, con);
-    return ArgToken(tt_constant, T_OBJECT, h);
+    return ArgToken(T_OBJECT, h);
   }
   virtual ArgToken make_prim_constant(BasicType type, jvalue* con, TRAPS) {
-    return ArgToken(tt_constant, type, *con);
+    return ArgToken(type, *con);
   }
 
   virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS);
@@ -431,7 +438,7 @@ private:
   methodHandle get_method_oop(TRAPS) const;
 
 public:
-  MethodHandleCompiler(Handle root, methodHandle callee, int invoke_count, bool for_invokedynamic, TRAPS);
+  MethodHandleCompiler(Handle root, Symbol* name, Symbol* signature, int invoke_count, bool for_invokedynamic, TRAPS);
 
   // Compile the given MH chain into bytecode.
   methodHandle compile(TRAPS);

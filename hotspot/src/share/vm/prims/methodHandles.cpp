@@ -25,9 +25,11 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/methodHandleWalk.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
@@ -2599,6 +2601,50 @@ void MethodHandles::ensure_vmlayout_field(Handle target, TRAPS) {
   }
 }
 
+#ifdef ASSERT
+
+extern "C"
+void print_method_handle(oop mh);
+
+static void stress_method_handle_walk_impl(Handle mh, TRAPS) {
+  if (StressMethodHandleWalk) {
+    // Exercise the MethodHandleWalk code in various ways and validate
+    // the resulting method oop.  Some of these produce output so they
+    // are guarded under Verbose.
+    ResourceMark rm;
+    HandleMark hm;
+    if (Verbose) {
+      print_method_handle(mh());
+    }
+    TempNewSymbol name = SymbolTable::new_symbol("invoke", CHECK);
+    Handle mt = java_lang_invoke_MethodHandle::type(mh());
+    TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(mt(), true, CHECK);
+    MethodHandleCompiler mhc(mh, name, signature, 10000, false, CHECK);
+    methodHandle m = mhc.compile(CHECK);
+    if (Verbose) {
+      m->print_codes();
+    }
+    InterpreterOopMap mask;
+    OopMapCache::compute_one_oop_map(m, m->code_size() - 1, &mask);
+  }
+}
+
+static void stress_method_handle_walk(Handle mh, TRAPS) {
+  stress_method_handle_walk_impl(mh, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    oop ex = PENDING_EXCEPTION;
+    CLEAR_PENDING_EXCEPTION;
+    tty->print("StressMethodHandleWalk: ");
+    java_lang_Throwable::print(ex, tty);
+    tty->cr();
+  }
+}
+#else
+
+static void stress_method_handle_walk(Handle mh, TRAPS) {}
+
+#endif
+
 //
 // Here are the native methods on sun.invoke.MethodHandleImpl.
 // They are the private interface between this JVM and the HotSpot-specific
@@ -2666,6 +2712,7 @@ JVM_ENTRY(void, MHN_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   }
 
   MethodHandles::init_DirectMethodHandle(mh, m, (do_dispatch != JNI_FALSE), CHECK);
+  stress_method_handle_walk(mh, CHECK);
 }
 JVM_END
 
@@ -2694,11 +2741,11 @@ JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                                                        receiver_limit,
                                                        decode_flags,
                                                        CHECK);
-    return;
+  } else {
+    // Build a BMH on top of a DMH or another BMH:
+    MethodHandles::init_BoundMethodHandle(mh, target, argnum, CHECK);
   }
-
-  // Build a BMH on top of a DMH or another BMH:
-  MethodHandles::init_BoundMethodHandle(mh, target, argnum, CHECK);
+  stress_method_handle_walk(mh, CHECK);
 }
 JVM_END
 
@@ -2716,6 +2763,7 @@ JVM_ENTRY(void, MHN_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   MethodHandles::init_AdapterMethodHandle(mh, target, argnum, CHECK);
+  stress_method_handle_walk(mh, CHECK);
 }
 JVM_END
 
@@ -2922,6 +2970,20 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
+JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
+    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
+    THROW_MSG_NULL(UOE_name, "MethodHandle.invoke cannot be invoked reflectively");
+    return NULL;
+}
+JVM_END
+
+JVM_ENTRY(jobject, MH_invokeExact_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
+    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
+    THROW_MSG_NULL(UOE_name, "MethodHandle.invokeExact cannot be invoked reflectively");
+    return NULL;
+}
+JVM_END
+
 
 /// JVM_RegisterMethodHandleMethods
 
@@ -2960,6 +3022,12 @@ static JNINativeMethod methods[] = {
   {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
 };
 
+static JNINativeMethod invoke_methods[] = {
+  // void init(MemberName self, AccessibleObject ref)
+  {CC"invoke",                  CC"(["OBJ")"OBJ,                FN_PTR(MH_invoke_UOE)},
+  {CC"invokeExact",             CC"(["OBJ")"OBJ,                FN_PTR(MH_invokeExact_UOE)}
+};
+
 // This one function is exported, used by NativeLookup.
 
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
@@ -2976,6 +3044,12 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     ThreadToNativeFromVM ttnfv(thread);
 
     int status = env->RegisterNatives(MHN_class, methods, sizeof(methods)/sizeof(JNINativeMethod));
+    if (!env->ExceptionOccurred()) {
+      const char* L_MH_name = (JLINV "MethodHandle");
+      const char* MH_name = L_MH_name+1;
+      jclass MH_class = env->FindClass(MH_name);
+      status = env->RegisterNatives(MH_class, invoke_methods, sizeof(invoke_methods)/sizeof(JNINativeMethod));
+    }
     if (env->ExceptionOccurred()) {
       MethodHandles::set_enabled(false);
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
