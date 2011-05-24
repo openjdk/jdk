@@ -47,7 +47,7 @@
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
   // Use the expression (adr)&(~0xF) to provide 128-bits aligned address
   // of 128-bits operands for SSE instructions.
-  jlong *operand = (jlong*)(((long)adr)&((long)(~0xF)));
+  jlong *operand = (jlong*)(((intptr_t)adr) & ((intptr_t)(~0xF)));
   // Store the value to a 128-bits operand.
   operand[0] = lo;
   operand[1] = hi;
