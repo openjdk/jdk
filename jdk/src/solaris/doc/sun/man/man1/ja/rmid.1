@@ -1,4 +1,4 @@
-." Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmid 1 "14 Apr 2011"
+.TH rmid 1 "07 May 2011"
 
 .LP
 .SH "名前"
@@ -121,7 +121,7 @@ o
 
 .LP
 .LP
-必要に応じてサービスを開始するように設定する詳細については、 \f2inetd\fP (Solaris) または \f2xinetd\fP (Linux) のマニュアルページを参照してください。
+必要に応じてサービスを開始するように設定する詳細については、 \f2inetd\fP (Solaris の場合)、または \f2xinetd\fP (Linux) のマニュアルページを参照してください。
 .LP
 .SH "オプション"
 .LP
@@ -239,7 +239,7 @@ grant {
 .fl
 \fP
 .fi
-最初に付与されているアクセス権は、 \f2rmid\fP に対し、パス名により明示的に指定される \f2java\fP コマンドの 1.7.0 バージョンの実行を許可します。デフォルトでは、java.home にあるバージョンの \f2java\fP コマンド ( \f2rmid\fP が使用するのと同じバージョン) が使用されるため、そのコマンドは、ポリシーファイルで指定する必要はありません。2 番目のアクセス権は、 \f2rmid\fP に対して、ディレクトリ \f2/files/apps/rmidcmds\fP 内の任意のコマンドの実行権限を許可します。 
+最初に付与されているアクセス権は、 \f2rmid\fP に対し、パス名により明示的に指定される \f2java\fP コマンドの 1.7.0 バージョンの実行を許可します。デフォルトでは、java.home にあるバージョンの \f2java\fP コマンドを使用します。 \f2rmid\fP が使用するのと同じバージョン) が使用されるため、そのコマンドは、ポリシーファイルで指定する必要はありません。2 番目のアクセス権は、 \f2rmid\fP に対して、ディレクトリ \f2/files/apps/rmidcmds\fP 内の任意のコマンドの実行権限を許可します。 
 .LP
 3 番目に付与されているアクセス権 \f2ExecOptionPermission\fP は、 \f2rmid\fP に対して、セキュリティーポリシーファイルを \f2/files/policies/group.policy\fP として定義している起動グループの開始を許可します。次のアクセス権は、起動グループが \f2java.security.debug\fP プロパティーを使用することを許可しています。最後のアクセス権は、起動グループが \f2sun.rmi\fP というプロパティー名の階層内の任意のプロパティーを使用することを許可しています。 
 .LP

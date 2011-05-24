@@ -33,7 +33,9 @@ interface ReferenceTypeSpec {
      */
     boolean matches(ReferenceType refType);
 
+    @Override
     int hashCode();
 
+    @Override
     boolean equals(Object obj);
 }

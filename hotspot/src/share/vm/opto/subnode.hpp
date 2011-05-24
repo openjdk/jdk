@@ -377,7 +377,6 @@ class NegFNode : public NegNode {
 public:
   NegFNode( Node *in1 ) : NegNode(in1) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
@@ -391,7 +390,6 @@ class NegDNode : public NegNode {
 public:
   NegDNode( Node *in1 ) : NegNode(in1) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };

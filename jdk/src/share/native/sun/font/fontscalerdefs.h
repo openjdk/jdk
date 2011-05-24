@@ -55,12 +55,14 @@ typedef Int32                   hsFixed;
 typedef Int32                   hsFract;
 typedef UInt32                  Bool32;
 
+#ifndef  __cplusplus
 #ifndef false
-        #define false           0
+         #define false           0
 #endif
 
 #ifndef true
         #define true            1
+#endif
 #endif
 
 #define kPosInfinity32          (0x7fffffff)

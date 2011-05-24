@@ -27,6 +27,7 @@
 #ifndef _WINDOWS
 
 #include "memory/allocation.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/elfStringTable.hpp"
 
 // We will try to load whole string table into memory if we can.
@@ -41,14 +42,14 @@ ElfStringTable::ElfStringTable(FILE* file, Elf_Shdr shdr, int index) {
 
   // try to load the string table
   long cur_offset = ftell(file);
-  m_table = (char*)NEW_C_HEAP_ARRAY(char, shdr.sh_size);
+  m_table = (char*)os::malloc(sizeof(char) * shdr.sh_size);
   if (m_table != NULL) {
     // if there is an error, mark the error
     if (fseek(file, shdr.sh_offset, SEEK_SET) ||
       fread((void*)m_table, shdr.sh_size, 1, file) != 1 ||
       fseek(file, cur_offset, SEEK_SET)) {
       m_status = Decoder::file_invalid;
-      FREE_C_HEAP_ARRAY(char, m_table);
+      os::free((void*)m_table);
       m_table = NULL;
     }
   } else {
@@ -58,7 +59,7 @@ ElfStringTable::ElfStringTable(FILE* file, Elf_Shdr shdr, int index) {
 
 ElfStringTable::~ElfStringTable() {
   if (m_table != NULL) {
-    FREE_C_HEAP_ARRAY(char, m_table);
+    os::free((void*)m_table);
   }
 
   if (m_next != NULL) {

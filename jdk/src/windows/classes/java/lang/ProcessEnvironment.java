@@ -143,7 +143,7 @@ final class ProcessEnvironment extends HashMap<String,String>
                 public void remove() { i.remove();}
             };
         }
-        private static Map.Entry<String,String> checkedEntry (Object o) {
+        private static Map.Entry<String,String> checkedEntry(Object o) {
             Map.Entry<String,String> e = (Map.Entry<String,String>) o;
             nonNullString(e.getKey());
             nonNullString(e.getValue());
@@ -285,7 +285,7 @@ final class ProcessEnvironment extends HashMap<String,String>
         return (Map<String,String>) theEnvironment.clone();
     }
 
-    // Only for use by Runtime.exec(...String[]envp...)
+    // Only for use by ProcessBuilder.environment(String[] envp)
     static Map<String,String> emptyEnvironment(int capacity) {
         return new ProcessEnvironment(capacity);
     }
@@ -299,17 +299,44 @@ final class ProcessEnvironment extends HashMap<String,String>
         Collections.sort(list, entryComparator);
 
         StringBuilder sb = new StringBuilder(size()*30);
-        for (Map.Entry<String,String> e : list)
-            sb.append(e.getKey())
-              .append('=')
-              .append(e.getValue())
-              .append('\u0000');
-        // Ensure double NUL termination,
-        // even if environment is empty.
-        if (sb.length() == 0)
+        int cmp = -1;
+
+        // Some versions of MSVCRT.DLL require SystemRoot to be set.
+        // So, we make sure that it is always set, even if not provided
+        // by the caller.
+        final String SYSTEMROOT = "SystemRoot";
+
+        for (Map.Entry<String,String> e : list) {
+            String key = e.getKey();
+            String value = e.getValue();
+            if (cmp < 0 && (cmp = nameComparator.compare(key, SYSTEMROOT)) > 0) {
+                // Not set, so add it here
+                addToEnvIfSet(sb, SYSTEMROOT);
+            }
+            addToEnv(sb, key, value);
+        }
+        if (cmp < 0) {
+            // Got to end of list and still not found
+            addToEnvIfSet(sb, SYSTEMROOT);
+        }
+        if (sb.length() == 0) {
+            // Environment was empty and SystemRoot not set in parent
             sb.append('\u0000');
+        }
+        // Block is double NUL terminated
         sb.append('\u0000');
         return sb.toString();
+    }
+
+    // add the environment variable to the child, if it exists in parent
+    private static void addToEnvIfSet(StringBuilder sb, String name) {
+        String s = getenv(name);
+        if (s != null)
+            addToEnv(sb, name, s);
+    }
+
+    private static void addToEnv(StringBuilder sb, String name, String val) {
+        sb.append(name).append('=').append(val).append('\u0000');
     }
 
     static String toEnvironmentBlock(Map<String,String> map) {

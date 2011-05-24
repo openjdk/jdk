@@ -110,7 +110,6 @@ public class Config {
 
     public static synchronized void refresh() throws KrbException {
         singleton = new Config();
-        KeyTab.refresh();
         KdcComm.initStatic();
     }
 

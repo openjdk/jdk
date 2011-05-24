@@ -56,6 +56,8 @@ import javax.swing.plaf.ColorUIResource;
 
 import sun.swing.PrintColorUIResource;
 
+import java.util.Objects;
+
 /*
  * Like the <code>Intropector</code>, the <code>MetaData</code> class
  * contains <em>meta</em> objects that describe the way
@@ -134,7 +136,7 @@ class ArrayPersistenceDelegate extends PersistenceDelegate {
                 Object oldValue = oldGetExp.getValue();
                 Object newValue = newGetExp.getValue();
                 out.writeExpression(oldGetExp);
-                if (!MetaData.equals(newValue, out.get(oldValue))) {
+                if (!Objects.equals(newValue, out.get(oldValue))) {
                     // System.out.println("Not equal: " + newGetExp + " != " + actualGetExp);
                     // invokeStatement(Array.class, "set", new Object[]{oldInstance, index, oldValue}, out);
                     DefaultPersistenceDelegate.invokeStatement(oldInstance, "set", new Object[]{index, oldValue}, out);
@@ -635,7 +637,7 @@ class java_util_List_PersistenceDelegate extends DefaultPersistenceDelegate {
                 Object oldValue = oldGetExp.getValue();
                 Object newValue = newGetExp.getValue();
                 out.writeExpression(oldGetExp);
-                if (!MetaData.equals(newValue, out.get(oldValue))) {
+                if (!Objects.equals(newValue, out.get(oldValue))) {
                     invokeStatement(oldInstance, "set", new Object[]{index, oldValue}, out);
                 }
             }
@@ -675,7 +677,7 @@ class java_util_Map_PersistenceDelegate extends DefaultPersistenceDelegate {
                 Object oldValue = oldGetExp.getValue();
                 Object newValue = newGetExp.getValue();
                 out.writeExpression(oldGetExp);
-                if (!MetaData.equals(newValue, out.get(oldValue))) {
+                if (!Objects.equals(newValue, out.get(oldValue))) {
                     invokeStatement(oldInstance, "put", new Object[]{oldKey, oldValue}, out);
                 } else if ((newValue == null) && !newMap.containsKey(oldKey)) {
                     // put oldValue(=null?) if oldKey is absent in newMap
@@ -899,17 +901,17 @@ class java_awt_Component_PersistenceDelegate extends DefaultPersistenceDelegate 
         if (!(oldInstance instanceof java.awt.Window)) {
             Object oldBackground = c.isBackgroundSet() ? c.getBackground() : null;
             Object newBackground = c2.isBackgroundSet() ? c2.getBackground() : null;
-            if (!MetaData.equals(oldBackground, newBackground)) {
+            if (!Objects.equals(oldBackground, newBackground)) {
                 invokeStatement(oldInstance, "setBackground", new Object[] { oldBackground }, out);
             }
             Object oldForeground = c.isForegroundSet() ? c.getForeground() : null;
             Object newForeground = c2.isForegroundSet() ? c2.getForeground() : null;
-            if (!MetaData.equals(oldForeground, newForeground)) {
+            if (!Objects.equals(oldForeground, newForeground)) {
                 invokeStatement(oldInstance, "setForeground", new Object[] { oldForeground }, out);
             }
             Object oldFont = c.isFontSet() ? c.getFont() : null;
             Object newFont = c2.isFontSet() ? c2.getFont() : null;
-            if (!MetaData.equals(oldFont, newFont)) {
+            if (!Objects.equals(oldFont, newFont)) {
                 invokeStatement(oldInstance, "setFont", new Object[] { oldFont }, out);
             }
         }
@@ -1304,10 +1306,6 @@ class MetaData {
 
         internalPersistenceDelegates.put("java.util.JumboEnumSet", new java_util_EnumSet_PersistenceDelegate());
         internalPersistenceDelegates.put("java.util.RegularEnumSet", new java_util_EnumSet_PersistenceDelegate());
-    }
-
-    /*pp*/ static boolean equals(Object o1, Object o2) {
-        return (o1 == null) ? (o2 == null) : o1.equals(o2);
     }
 
     public synchronized static PersistenceDelegate getPersistenceDelegate(Class type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.AccessController;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
@@ -123,6 +124,7 @@ abstract class KeyStore extends KeyStoreSpi {
          * Sets the private key for the keystore entry.
          */
         void setPrivateKey(RSAPrivateCrtKey key)
+            throws InvalidKeyException, KeyStoreException
         {
             byte[] modulusBytes = key.getModulus().toByteArray();
 
@@ -158,7 +160,7 @@ abstract class KeyStore extends KeyStoreSpi {
          * Sets the certificate chain for the keystore entry.
          */
         void setCertificateChain(X509Certificate[] chain)
-            throws CertificateException
+            throws CertificateException, KeyStoreException
         {
             for (int i = 0; i < chain.length; i++) {
                 byte[] encoding = chain[i].getEncoded();
@@ -404,13 +406,16 @@ abstract class KeyStore extends KeyStoreSpi {
             }
 
             entry.setAlias(alias);
-            entry.setPrivateKey((RSAPrivateCrtKey) key);
 
             try {
+                entry.setPrivateKey((RSAPrivateCrtKey) key);
                 entry.setCertificateChain((X509Certificate[]) chain);
 
             } catch (CertificateException ce) {
                 throw new KeyStoreException(ce);
+
+            } catch (InvalidKeyException ike) {
+                throw new KeyStoreException(ike);
             }
 
         } else {
@@ -537,7 +542,7 @@ abstract class KeyStore extends KeyStoreSpi {
                         removeCertificate(getName(), alias, encoding,
                             encoding.length);
 
-                    } catch (CertificateEncodingException e) {
+                    } catch (CertificateException e) {
                         throw new KeyStoreException("Cannot remove entry: " +
                             e);
                     }
@@ -754,8 +759,14 @@ abstract class KeyStore extends KeyStoreSpi {
         // Clear all key entries
         entries.clear();
 
-        // Load keys and/or certificate chains
-        loadKeysOrCertificateChains(getName(), entries);
+        try {
+
+            // Load keys and/or certificate chains
+            loadKeysOrCertificateChains(getName(), entries);
+
+        } catch (KeyStoreException e) {
+            throw new IOException(e);
+        }
     }
 
     /**
@@ -868,7 +879,7 @@ abstract class KeyStore extends KeyStoreSpi {
      * @param entries Collection of key/certificate.
      */
     private native void loadKeysOrCertificateChains(String name,
-        Collection<KeyEntry> entries);
+        Collection<KeyEntry> entries) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
@@ -879,7 +890,7 @@ abstract class KeyStore extends KeyStoreSpi {
      */
     private native void storeCertificate(String name, String alias,
         byte[] encoding, int encodingLength, long hCryptProvider,
-        long hCryptKey);
+        long hCryptKey) throws CertificateException, KeyStoreException;
 
     /**
      * Removes the certificate from the certificate store
@@ -889,14 +900,16 @@ abstract class KeyStore extends KeyStoreSpi {
      * @param encoding DER-encoded certificate.
      */
     private native void removeCertificate(String name, String alias,
-        byte[] encoding, int encodingLength);
+        byte[] encoding, int encodingLength)
+            throws CertificateException, KeyStoreException;
 
     /**
      * Destroys the key container.
      *
      * @param keyContainerName The name of the key container.
      */
-    private native void destroyKeyContainer(String keyContainerName);
+    private native void destroyKeyContainer(String keyContainerName)
+        throws KeyStoreException;
 
     /**
      * Generates a private-key BLOB from a key's components.
@@ -910,8 +923,8 @@ abstract class KeyStore extends KeyStoreSpi {
         byte[] primeQ,
         byte[] exponentP,
         byte[] exponentQ,
-        byte[] crtCoefficient);
+        byte[] crtCoefficient) throws InvalidKeyException;
 
     private native RSAPrivateKey storePrivateKey(byte[] keyBlob,
-        String keyContainerName, int keySize);
+        String keyContainerName, int keySize) throws KeyStoreException;
 }

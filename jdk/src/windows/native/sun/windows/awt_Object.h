@@ -67,6 +67,10 @@ public:
     virtual void Dispose();
 
     // Static method to be called from JNI methods to dispose AwtObject
+    // specified by jobject
+    static void _Dispose(jobject self);
+
+    // Static method to be called from JNI methods to dispose AwtObject
     // specified by pData
     static void _Dispose(PDATA pData);
 

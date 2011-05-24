@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 
 #include "salibproc.h"
 #include "sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal.h"
+#ifndef SOLARIS_11_B159_OR_LATER
+#include <sys/utsname.h>
+#endif
 #include <thread_db.h>
 #include <strings.h>
 #include <limits.h>
@@ -40,8 +43,22 @@
 #define SYMBOL_BUF_SIZE  256
 #define ERR_MSG_SIZE     (PATH_MAX + 256)
 
-// debug mode
+// debug modes
 static int _libsaproc_debug = 0;
+#ifndef SOLARIS_11_B159_OR_LATER
+static bool _Pstack_iter_debug = false;
+
+static void dprintf_2(const char* format,...) {
+  if (_Pstack_iter_debug) {
+    va_list alist;
+
+    va_start(alist, format);
+    fputs("Pstack_iter DEBUG: ", stderr);
+    vfprintf(stderr, format, alist);
+    va_end(alist);
+  }
+}
+#endif // !SOLARIS_11_B159_OR_LATER
 
 static void print_debug(const char* format,...) {
   if (_libsaproc_debug) {
@@ -450,6 +467,7 @@ fill_load_object_list(void *cd, const prmap_t* pmp, const char* obj_name) {
   return 0;
 }
 
+// Pstack_iter() proc_stack_f callback prior to Nevada-B159
 static int
 fill_cframe_list(void *cd, const prgregset_t regs, uint_t argc, const long *argv) {
   DebuggerWith2Objects* dbgo2 = (DebuggerWith2Objects*) cd;
@@ -470,6 +488,14 @@ fill_cframe_list(void *cd, const prgregset_t regs, uint_t argc, const long *argv
      dbgo2->obj = dbgo2->obj2;
   }
   return 0;
+}
+
+// Pstack_iter() proc_stack_f callback in Nevada-B159 or later
+/*ARGSUSED*/
+static int
+wrapper_fill_cframe_list(void *cd, const prgregset_t regs, uint_t argc,
+                         const long *argv, int frame_flags, int sig) {
+  return(fill_cframe_list(cd, regs, argc, argv));
 }
 
 // part of the class sharing workaround
@@ -970,6 +996,11 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_fill
                    TD_THR_ANY_STATE, TD_THR_LOWEST_PRIORITY, TD_SIGNO_MASK, TD_THR_ANY_USER_FLAGS);
 }
 
+#ifndef SOLARIS_11_B159_OR_LATER
+// building on Nevada-B158 or earlier so more hoops to jump through
+static bool has_newer_Pstack_iter = false;  // older version by default
+#endif
+
 /*
  * Class:       sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal
  * Method:      fillCFrameList0
@@ -997,7 +1028,24 @@ JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_f
 
   env->ReleaseLongArrayElements(regsArray, ptr, JNI_ABORT);
   CHECK_EXCEPTION_(0);
-  Pstack_iter((struct ps_prochandle*) p_ps_prochandle, gregs, fill_cframe_list, &dbgo2);
+
+#ifdef SOLARIS_11_B159_OR_LATER
+  // building on Nevada-B159 or later so use the new callback
+  Pstack_iter((struct ps_prochandle*) p_ps_prochandle, gregs,
+              wrapper_fill_cframe_list, &dbgo2);
+#else
+  // building on Nevada-B158 or earlier so figure out which callback to use
+
+  if (has_newer_Pstack_iter) {
+    // Since we're building on Nevada-B158 or earlier, we have to
+    // cast wrapper_fill_cframe_list to make the compiler happy.
+    Pstack_iter((struct ps_prochandle*) p_ps_prochandle, gregs,
+                (proc_stack_f *)wrapper_fill_cframe_list, &dbgo2);
+  } else {
+    Pstack_iter((struct ps_prochandle*) p_ps_prochandle, gregs,
+                fill_cframe_list, &dbgo2);
+  }
+#endif // SOLARIS_11_B159_OR_LATER
   return dbgo2.obj;
 }
 
@@ -1218,6 +1266,102 @@ JNIEXPORT jstring JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_d
   return res;
 }
 
+#ifndef SOLARIS_11_B159_OR_LATER
+// Determine if the OS we're running on has the newer version
+// of libproc's Pstack_iter.
+//
+// Set env var PSTACK_ITER_DEBUG=true to debug this logic.
+// Set env var PSTACK_ITER_DEBUG_RELEASE to simulate a 'release' value.
+// Set env var PSTACK_ITER_DEBUG_VERSION to simulate a 'version' value.
+//
+// frankenputer 'uname -r -v': 5.10 Generic_141445-09
+// jurassic 'uname -r -v':     5.11 snv_164
+// lonepeak 'uname -r -v':     5.11 snv_127
+//
+static void set_has_newer_Pstack_iter(JNIEnv *env) {
+  static bool done_set = false;
+
+  if (done_set) {
+    // already set has_newer_Pstack_iter
+    return;
+  }
+
+  struct utsname name;
+  if (uname(&name) == -1) {
+    THROW_NEW_DEBUGGER_EXCEPTION("uname() failed!");
+  }
+  dprintf_2("release='%s'  version='%s'\n", name.release, name.version);
+
+  if (_Pstack_iter_debug) {
+    char *override = getenv("PSTACK_ITER_DEBUG_RELEASE");
+    if (override != NULL) {
+      strncpy(name.release, override, SYS_NMLN - 1);
+      name.release[SYS_NMLN - 2] = '\0';
+      dprintf_2("overriding with release='%s'\n", name.release);
+    }
+    override = getenv("PSTACK_ITER_DEBUG_VERSION");
+    if (override != NULL) {
+      strncpy(name.version, override, SYS_NMLN - 1);
+      name.version[SYS_NMLN - 2] = '\0';
+      dprintf_2("overriding with version='%s'\n", name.version);
+    }
+  }
+
+  // the major number corresponds to the old SunOS major number
+  int major = atoi(name.release);
+  if (major >= 6) {
+    dprintf_2("release is SunOS 6 or later\n");
+    has_newer_Pstack_iter = true;
+    done_set = true;
+    return;
+  }
+  if (major < 5) {
+    dprintf_2("release is SunOS 4 or earlier\n");
+    done_set = true;
+    return;
+  }
+
+  // some SunOS 5.* build so now check for Solaris versions
+  char *dot = strchr(name.release, '.');
+  int minor = 0;
+  if (dot != NULL) {
+    // release is major.minor format
+    *dot = NULL;
+    minor = atoi(dot + 1);
+  }
+
+  if (minor <= 10) {
+    dprintf_2("release is Solaris 10 or earlier\n");
+    done_set = true;
+    return;
+  } else if (minor >= 12) {
+    dprintf_2("release is Solaris 12 or later\n");
+    has_newer_Pstack_iter = true;
+    done_set = true;
+    return;
+  }
+
+  // some Solaris 11 build so now check for internal build numbers
+  if (strncmp(name.version, "snv_", 4) != 0) {
+    dprintf_2("release is Solaris 11 post-GA or later\n");
+    has_newer_Pstack_iter = true;
+    done_set = true;
+    return;
+  }
+
+  // version begins with "snv_" so a pre-GA build of Solaris 11
+  int build = atoi(&name.version[4]);
+  if (build >= 159) {
+    dprintf_2("release is Nevada-B159 or later\n");
+    has_newer_Pstack_iter = true;
+  } else {
+    dprintf_2("release is Nevada-B158 or earlier\n");
+  }
+
+  done_set = true;
+}
+#endif // !SOLARIS_11_B159_OR_LATER
+
 /*
  * Class:       sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal
  * Method:      initIDs
@@ -1236,6 +1380,14 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_init
   void* libproc_handle = dlopen("libproc.so", RTLD_LAZY | RTLD_GLOBAL);
   if (libproc_handle == 0)
      THROW_NEW_DEBUGGER_EXCEPTION("can't load libproc.so, if you are using Solaris 5.7 or below, copy libproc.so from 5.8!");
+
+#ifndef SOLARIS_11_B159_OR_LATER
+  _Pstack_iter_debug = getenv("PSTACK_ITER_DEBUG") != NULL;
+
+  set_has_newer_Pstack_iter(env);
+  CHECK_EXCEPTION;
+  dprintf_2("has_newer_Pstack_iter=%d\n", has_newer_Pstack_iter);
+#endif
 
   p_ps_prochandle_ID = env->GetFieldID(clazz, "p_ps_prochandle", "J");
   CHECK_EXCEPTION;

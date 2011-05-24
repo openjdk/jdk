@@ -42,9 +42,6 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.lang.management.*;
-import java.util.*;
-
-
 /**
  * Demo code which plots the memory usage by all memory pools.
  * The memory usage is sampled at some time interval using
@@ -53,6 +50,7 @@ import java.util.*;
  */
 public class MemoryMonitor extends JPanel {
 
+    private static final long serialVersionUID = -3463003810776195761L;
     static JCheckBox dateStampCB = new JCheckBox("Output Date Stamp");
     public Surface surf;
     JPanel controls;
@@ -84,6 +82,7 @@ public class MemoryMonitor extends JPanel {
         controls.add(dateStampCB);
         dateStampCB.setFont(font);
         addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                removeAll();
                if ((doControls = !doControls)) {
@@ -128,28 +127,32 @@ public class MemoryMonitor extends JPanel {
         public Surface() {
             setBackground(Color.black);
             addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseClicked(MouseEvent e) {
                     if (thread == null) start(); else stop();
                 }
             });
-            int i = 0;
             usedMem = new float[numPools][];
             ptNum = new int[numPools];
         }
 
+        @Override
         public Dimension getMinimumSize() {
             return getPreferredSize();
         }
 
+        @Override
         public Dimension getMaximumSize() {
             return getPreferredSize();
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(135,80);
         }
 
 
+        @Override
         public void paint(Graphics g) {
 
             if (big == null) {
@@ -315,13 +318,14 @@ public class MemoryMonitor extends JPanel {
             notify();
         }
 
+        @Override
         public void run() {
 
             Thread me = Thread.currentThread();
 
             while (thread == me && !isShowing() || getSize().width == 0) {
                 try {
-                    thread.sleep(500);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) { return; }
             }
 
@@ -339,7 +343,7 @@ public class MemoryMonitor extends JPanel {
                 }
                 repaint();
                 try {
-                    thread.sleep(sleepAmount);
+                    Thread.sleep(sleepAmount);
                 } catch (InterruptedException e) { break; }
                 if (MemoryMonitor.dateStampCB.isSelected()) {
                      System.out.println(new Date().toString() + " " + usedStr);
@@ -354,6 +358,7 @@ public class MemoryMonitor extends JPanel {
     static class Memeater extends ClassLoader implements Runnable {
         Object y[];
         public Memeater() {}
+        @Override
         public void run() {
             y = new Object[10000000];
             int k =0;
@@ -378,7 +383,7 @@ public class MemoryMonitor extends JPanel {
 
         }
 
-        Class loadNext() throws ClassNotFoundException {
+        Class<?> loadNext() throws ClassNotFoundException {
 
             // public class TestNNNNNN extends java.lang.Object{
             // public TestNNNNNN();
@@ -424,15 +429,15 @@ public class MemoryMonitor extends JPanel {
 
             int len = begin.length + value.length + end.length;
             byte b[] = new byte[len];
-            int i, pos=0;
-            for (i=0; i<begin.length; i++) {
-                b[pos++] = (byte)begin[i];
+            int pos=0;
+            for (int i: begin) {
+                b[pos++] = (byte) i;
             }
-            for (i=0; i<value.length; i++) {
-                b[pos++] = value[i];
+            for (byte v: value) {
+                b[pos++] = v;
             }
-            for (i=0; i<end.length; i++) {
-                b[pos++] = (byte)end[i];
+            for (int e: end) {
+                b[pos++] = (byte) e;
             }
 
             return defineClass(name, b, 0, b.length);
@@ -445,8 +450,11 @@ public class MemoryMonitor extends JPanel {
     public static void main(String s[]) {
         final MemoryMonitor demo = new MemoryMonitor();
         WindowListener l = new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {System.exit(0);}
+            @Override
             public void windowDeiconified(WindowEvent e) { demo.surf.start(); }
+            @Override
             public void windowIconified(WindowEvent e) { demo.surf.stop(); }
         };
         JFrame f = new JFrame("MemoryMonitor");

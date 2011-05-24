@@ -3746,9 +3746,10 @@ public class Collections {
      * @throws NullPointerException if either collection is {@code null}.
      * @throws NullPointerException if one collection contains a {@code null}
      * element and {@code null} is not an eligible element for the other collection.
-     * (optional)
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws ClassCastException if one collection contains an element that is
-     * of a type which is ineligible for the other collection. (optional)
+     * of a type which is ineligible for the other collection.
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @since 1.5
      */
     public static boolean disjoint(Collection<?> c1, Collection<?> c2) {
