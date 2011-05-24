@@ -173,7 +173,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t1(gc_cause_str, PrintGC, !PrintGCDetails, gclog_or_tty);
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(true /* Full GC */);
+    TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
     if (TraceGen1Time) accumulated_time()->start();
 

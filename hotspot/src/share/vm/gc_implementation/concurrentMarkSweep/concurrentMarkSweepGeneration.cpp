@@ -2026,7 +2026,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   }
 
   {
-    TraceCMSMemoryManagerStats();
+    TraceCMSMemoryManagerStats tmms(gch->gc_cause());
   }
   GenMarkSweep::invoke_at_safepoint(_cmsGen->level(),
     ref_processor(), clear_all_soft_refs);
@@ -3479,7 +3479,7 @@ CMSPhaseAccounting::~CMSPhaseAccounting() {
 void CMSCollector::checkpointRootsInitial(bool asynch) {
   assert(_collectorState == InitialMarking, "Wrong collector state");
   check_correct_thread_executing();
-  TraceCMSMemoryManagerStats tms(_collectorState);
+  TraceCMSMemoryManagerStats tms(_collectorState,GenCollectedHeap::heap()->gc_cause());
 
   ReferenceProcessor* rp = ref_processor();
   SpecializationStats::clear();
@@ -4858,7 +4858,8 @@ void CMSCollector::checkpointRootsFinal(bool asynch,
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
          "world should be stopped");
-  TraceCMSMemoryManagerStats tms(_collectorState);
+  TraceCMSMemoryManagerStats tms(_collectorState,GenCollectedHeap::heap()->gc_cause());
+
   verify_work_stacks_empty();
   verify_overflow_empty();
 
@@ -5993,7 +5994,7 @@ void CMSCollector::sweep(bool asynch) {
   verify_work_stacks_empty();
   verify_overflow_empty();
   increment_sweep_count();
-  TraceCMSMemoryManagerStats tms(_collectorState);
+  TraceCMSMemoryManagerStats tms(_collectorState,GenCollectedHeap::heap()->gc_cause());
 
   _inter_sweep_timer.stop();
   _inter_sweep_estimate.sample(_inter_sweep_timer.seconds());
@@ -9235,11 +9236,12 @@ size_t MarkDeadObjectsClosure::do_blk(HeapWord* addr) {
   return res;
 }
 
-TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase): TraceMemoryManagerStats() {
+TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase, GCCause::Cause cause): TraceMemoryManagerStats() {
 
   switch (phase) {
     case CMSCollector::InitialMarking:
       initialize(true  /* fullGC */ ,
+                 cause /* cause of the GC */,
                  true  /* recordGCBeginTime */,
                  true  /* recordPreGCUsage */,
                  false /* recordPeakUsage */,
@@ -9251,6 +9253,7 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
 
     case CMSCollector::FinalMarking:
       initialize(true  /* fullGC */ ,
+                 cause /* cause of the GC */,
                  false /* recordGCBeginTime */,
                  false /* recordPreGCUsage */,
                  false /* recordPeakUsage */,
@@ -9262,6 +9265,7 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
 
     case CMSCollector::Sweeping:
       initialize(true  /* fullGC */ ,
+                 cause /* cause of the GC */,
                  false /* recordGCBeginTime */,
                  false /* recordPreGCUsage */,
                  true  /* recordPeakUsage */,
@@ -9277,8 +9281,9 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
 }
 
 // when bailing out of cms in concurrent mode failure
-TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(): TraceMemoryManagerStats() {
+TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(GCCause::Cause cause): TraceMemoryManagerStats() {
   initialize(true /* fullGC */ ,
+             cause /* cause of the GC */,
              true /* recordGCBeginTime */,
              true /* recordPreGCUsage */,
              true /* recordPeakUsage */,

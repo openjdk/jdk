@@ -33,6 +33,7 @@
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
+#include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
 HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__begin, char*, int, char*, int,
@@ -202,6 +203,7 @@ GCMemoryManager::GCMemoryManager() : MemoryManager() {
   _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock", true);
   _current_gc_stat = NULL;
   _num_gc_threads = 1;
+  _notification_enabled = false;
 }
 
 GCMemoryManager::~GCMemoryManager() {
@@ -250,7 +252,8 @@ void GCMemoryManager::gc_begin(bool recordGCBeginTime, bool recordPreGCUsage,
 // to ensure the current gc stat is placed in _last_gc_stat.
 void GCMemoryManager::gc_end(bool recordPostGCUsage,
                              bool recordAccumulatedGCTime,
-                             bool recordGCEndTime, bool countCollection) {
+                             bool recordGCEndTime, bool countCollection,
+                             GCCause::Cause cause) {
   if (recordAccumulatedGCTime) {
     _accumulated_timer.stop();
   }
@@ -282,6 +285,11 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       // Compare with GC usage threshold
       pool->set_last_collection_usage(usage);
       LowMemoryDetector::detect_after_gc_memory(pool);
+    }
+    if(is_notification_enabled()) {
+      bool isMajorGC = this == MemoryService::get_major_gc_manager();
+      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
+                                   GCCause::to_string(cause));
     }
   }
   if (countCollection) {

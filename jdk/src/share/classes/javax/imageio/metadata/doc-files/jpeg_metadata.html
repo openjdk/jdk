@@ -211,6 +211,20 @@ to any listeners.
 
 <p>
 
+<a name=optcolor><b>Optional ColorSpace support:</b></a>
+Handling of PhotoYCC (YCC), PhotoYCCA (YCCA), RGBA and YCbCrA color spaces
+by the standard plugin, as described below, is dependent on capabilities
+of the libraries used to interpret the JPEG data. Thus all consequential
+behaviors are optional. If the support is not available when decoding,
+the color space will be treated as unrecognized and the appropriate
+default color space for the specified number of component channels
+may be used.
+When writing, an Exception may be thrown if no suitable conversion
+can be applied before encoding.
+But where the support for these color spaces is available, the behavior
+must be as documented. 
+<p>
+
 When reading, the contents of the stream are interpreted by the usual
 JPEG conventions, as follows:
 
@@ -241,8 +255,11 @@ JPEG conventions, as follows:
        2-channel images are assumed to be grayscale with an alpha channel.
        For 3- and 4-channel images, the component ids are consulted.  If these
        values are 1-3 for a 3-channel image, then the image is assumed to be
-       YCbCr. If these values are 1-4 for a 4-channel image, then the image 
-       is assumed to be YCbCrA.  If these values are > 4, they are checked 
+       YCbCr. Subject to the availability of the
+       <a href=#optcolor>optional color space support</a>
+       described above, if these values are 1-4 for a 4-channel image,
+       then the image is assumed to be YCbCrA. 
+       If these values are > 4, they are checked 
        against the ASCII codes for 'R', 'G', 'B', 'A', 'C', 'c'.  These can 
        encode the following colorspaces:
        <p>
@@ -346,12 +363,16 @@ If no metadata object is specified, then the following defaults apply:
        component ids in the frame and scan headers are set to 1, 2, and 3.
 
 
-  <li> RGBA images are converted to YCbCrA, subsampled in the
+  <li> Subject to the <a href=#optcolor>optional library support</a>
+        described above,
+       RGBA images are converted to YCbCrA, subsampled in the
        chrominance channels by half both vertically and horizontally, and
        written without any special marker segments.  The component ids 
        in the frame and scan headers are set to 1, 2, 3, and 4.
 
-  <li> PhotoYCC and YCCAimages are subsampled by half in the chrominance
+  <li> Subject to the <a href=#optcolor>optional library support</a>
+       described above,
+       PhotoYCC and YCCAimages are subsampled by half in the chrominance
        channels both vertically and horizontally and written with an
        Adobe <code>APP14</code> marker segment and 'Y','C', and 'c' (and
        'A' if an alpha channel is present) as component ids in the frame
@@ -433,6 +454,8 @@ in the frame header node of the metadata object, regardless of color space.)
     </ul>
 
   <li> RGBA images:
+       Subject to the <a href=#optcolor>optional library support</a>
+       described above,
     <ul>
       <li> If an <code>app0JFIF</code> node is present in the metadata object,
            it is ignored and a warning is sent to listeners, as JFIF does not
@@ -456,6 +479,8 @@ in the frame header node of the metadata object, regardless of color space.)
     </ul>
 
   <li> PhotoYCC Images:
+       Subject to the <a href=#optcolor>optional library support</a>
+       described above,
     <ul>
       <li> If an <code>app0JFIF</code> node is present in the metadata object,
            the image is converted to sRGB, and then to YCbCr during encoding,
@@ -471,6 +496,8 @@ in the frame header node of the metadata object, regardless of color space.)
     </ul>
 
   <li> PhotoYCCA Images:
+       Subject to the <a href=#optcolor>optional library support</a>
+       described above,
     <ul>
       <li> If an <code>app0JFIF</code> node is present in the metadata object,
            it is ignored and a warning is sent to listeners, as JFIF does not

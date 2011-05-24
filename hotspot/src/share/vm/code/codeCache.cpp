@@ -796,6 +796,7 @@ void CodeCache::print_internals() {
   int nmethodCount = 0;
   int runtimeStubCount = 0;
   int adapterCount = 0;
+  int ricochetStubCount = 0;
   int deoptimizationStubCount = 0;
   int uncommonTrapStubCount = 0;
   int bufferBlobCount = 0;
@@ -840,6 +841,8 @@ void CodeCache::print_internals() {
       }
     } else if (cb->is_runtime_stub()) {
       runtimeStubCount++;
+    } else if (cb->is_ricochet_stub()) {
+      ricochetStubCount++;
     } else if (cb->is_deoptimization_stub()) {
       deoptimizationStubCount++;
     } else if (cb->is_uncommon_trap_stub()) {
@@ -876,6 +879,7 @@ void CodeCache::print_internals() {
   tty->print_cr("runtime_stubs: %d",runtimeStubCount);
   tty->print_cr("adapters: %d",adapterCount);
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
+  tty->print_cr("ricochet_stubs: %d",ricochetStubCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
   tty->print_cr("\nnmethod size distribution (non-zombie java)");
