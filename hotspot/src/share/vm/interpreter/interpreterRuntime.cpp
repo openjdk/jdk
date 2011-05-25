@@ -139,9 +139,15 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
   ResourceMark rm(thread);
   methodHandle m (thread, method(thread));
   Bytecode_loadconstant ldc(m, bci(thread));
-  oop result = ldc.resolve_constant(THREAD);
-  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc.cache_index()));
-  assert(result == cpce->f1(), "expected result for assembly code");
+  oop result = ldc.resolve_constant(CHECK);
+#ifdef ASSERT
+  {
+    // The bytecode wrappers aren't GC-safe so construct a new one
+    Bytecode_loadconstant ldc2(m, bci(thread));
+    ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc2.cache_index());
+    assert(result == cpce->f1(), "expected result for assembly code");
+  }
+#endif
 }
 IRT_END
 
