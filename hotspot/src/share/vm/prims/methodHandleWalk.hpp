@@ -56,6 +56,10 @@ private:
   int BoundMethodHandle_vmargslot()    { return java_lang_invoke_BoundMethodHandle::vmargslot(method_handle_oop()); }
   int AdapterMethodHandle_conversion() { return java_lang_invoke_AdapterMethodHandle::conversion(method_handle_oop()); }
 
+#ifdef ASSERT
+  void print_impl(TRAPS);
+#endif
+
 public:
   MethodHandleChain(Handle root, TRAPS)
     : _root(root)
@@ -99,6 +103,14 @@ public:
 
   void lose(const char* msg, TRAPS);
   const char* lose_message()    { return _lose_message; }
+
+#ifdef ASSERT
+  // Print a symbolic description of a method handle chain, including
+  // the signature for each method.  The signatures are printed in
+  // slot order to make it easier to understand.
+  void print();
+  static void print(Handle mh);
+#endif
 };
 
 
@@ -126,7 +138,7 @@ public:
     Handle    _handle;
 
   public:
-    ArgToken(TokenType tt = tt_illegal) : _tt(tt) {
+    ArgToken(TokenType tt = tt_illegal) : _tt(tt), _bt(tt == tt_void ? T_VOID : T_ILLEGAL) {
       assert(tt == tt_illegal || tt == tt_void, "invalid token type");
     }
 
@@ -135,11 +147,11 @@ public:
       _value.i = index;
     }
 
-    ArgToken(BasicType bt, jvalue value) : _tt(tt_constant), _bt(bt), _value(value) {}
-    ArgToken(BasicType bt, Handle value) : _tt(tt_constant), _bt(bt), _handle(value) {}
+    ArgToken(BasicType bt, jvalue value) : _tt(tt_constant), _bt(bt), _value(value) { assert(_bt != T_OBJECT, "wrong constructor"); }
+    ArgToken(Handle handle) : _tt(tt_constant), _bt(T_OBJECT), _handle(handle) {}
 
 
-    ArgToken(const char* str) : _tt(tt_symbolic), _bt(T_LONG) {
+    ArgToken(const char* str, BasicType type) : _tt(tt_symbolic), _bt(type) {
       _value.j = (intptr_t)str;
     }
 
@@ -147,26 +159,14 @@ public:
     BasicType basic_type()  const { return _bt; }
     bool      has_index()   const { return _tt == tt_parameter || _tt == tt_temporary; }
     int       index()       const { assert(has_index(), "must have index");; return _value.i; }
-    Handle    object()      const { assert(_tt == tt_constant, "value type"); return _handle; }
-    const char* str()       const { assert(_tt == tt_symbolic, "string type"); return (const char*)_value.j; }
+    Handle    object()      const { assert(_bt == T_OBJECT, "wrong accessor"); assert(_tt == tt_constant, "value type"); return _handle; }
+    const char* str()       const { assert(_tt == tt_symbolic, "string type"); return (const char*)(intptr_t)_value.j; }
 
-    jint      get_jint()    const { assert(_tt == tt_constant, "value types"); return _value.i; }
-    jlong     get_jlong()   const { assert(_tt == tt_constant, "value types"); return _value.j; }
-    jfloat    get_jfloat()  const { assert(_tt == tt_constant, "value types"); return _value.f; }
-    jdouble   get_jdouble() const { assert(_tt == tt_constant, "value types"); return _value.d; }
+    jint      get_jint()    const { assert(_bt == T_INT || is_subword_type(_bt), "wrong accessor"); assert(_tt == tt_constant, "value types"); return _value.i; }
+    jlong     get_jlong()   const { assert(_bt == T_LONG, "wrong accessor");   assert(_tt == tt_constant, "value types"); return _value.j; }
+    jfloat    get_jfloat()  const { assert(_bt == T_FLOAT, "wrong accessor");  assert(_tt == tt_constant, "value types"); return _value.f; }
+    jdouble   get_jdouble() const { assert(_bt == T_DOUBLE, "wrong accessor"); assert(_tt == tt_constant, "value types"); return _value.d; }
   };
-
-  // Abstract interpretation state:
-  struct SlotState {
-    BasicType _type;
-    ArgToken  _arg;
-    SlotState() : _type(), _arg() {}
-  };
-  static SlotState make_state(BasicType type, ArgToken arg) {
-    SlotState ss;
-    ss._type = type; ss._arg = arg;
-    return ss;
-  }
 
 private:
   MethodHandleChain _chain;
@@ -177,33 +177,29 @@ private:
   // TOS is always _outgoing.at(0), so simple pushes and pops shift the whole _outgoing array.
   // If there is a receiver in the current argument list, it is at _outgoing.at(_outgoing.length()-1).
   // If a value at _outgoing.at(n) is T_LONG or T_DOUBLE, the value at _outgoing.at(n+1) is T_VOID.
-  GrowableArray<SlotState> _outgoing;       // current outgoing parameter slots
+  GrowableArray<ArgToken>  _outgoing;       // current outgoing parameter slots
   int                      _outgoing_argc;  // # non-empty outgoing slots
 
   // Replace a value of type old_type at slot (and maybe slot+1) with the new value.
   // If old_type != T_VOID, remove the old argument at that point.
   // If new_type != T_VOID, insert the new argument at that point.
   // Insert or delete a second empty slot as needed.
-  void change_argument(BasicType old_type, int slot, BasicType new_type, const ArgToken& new_arg);
+  void change_argument(BasicType old_type, int slot, const ArgToken& new_arg);
+  void change_argument(BasicType old_type, int slot, BasicType type, const ArgToken& new_arg) {
+    assert(type == new_arg.basic_type(), "must agree");
+    change_argument(old_type, slot, new_arg);
+  }
 
   // Raw retype conversions for OP_RAW_RETYPE.
   void retype_raw_conversion(BasicType src, BasicType dst, bool for_return, int slot, TRAPS);
   void retype_raw_argument_type(BasicType src, BasicType dst, int slot, TRAPS) { retype_raw_conversion(src, dst, false, slot, CHECK); }
   void retype_raw_return_type(  BasicType src, BasicType dst,           TRAPS) { retype_raw_conversion(src, dst, true,  -1,   CHECK); }
 
-  SlotState* slot_state(int slot) {
-    if (slot < 0 || slot >= _outgoing.length())
-      return NULL;
-    return _outgoing.adr_at(slot);
+  BasicType arg_type(int slot) {
+    return _outgoing.at(slot).basic_type();
   }
-  BasicType slot_type(int slot) {
-    SlotState* ss = slot_state(slot);
-    if (ss == NULL)
-      return T_ILLEGAL;
-    return ss->_type;
-  }
-  bool slot_has_argument(int slot) {
-    return slot_type(slot) < T_VOID;
+  bool has_argument(int slot) {
+    return arg_type(slot) < T_VOID;
   }
 
 #ifdef ASSERT
@@ -214,6 +210,8 @@ private:
   Bytecodes::Code conversion_code(BasicType src, BasicType dest);
 
   void walk_incoming_state(TRAPS);
+
+  void verify_args_and_signature(TRAPS) NOT_DEBUG_RETURN;
 
 public:
   MethodHandleWalker(Handle root, bool for_invokedynamic, TRAPS)
@@ -421,7 +419,7 @@ private:
   }
   virtual ArgToken make_oop_constant(oop con, TRAPS) {
     Handle h(THREAD, con);
-    return ArgToken(T_OBJECT, h);
+    return ArgToken(h);
   }
   virtual ArgToken make_prim_constant(BasicType type, jvalue* con, TRAPS) {
     return ArgToken(type, *con);
