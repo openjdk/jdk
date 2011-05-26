@@ -1305,6 +1305,7 @@ void MethodHandles::verify_vmargslot(Handle mh, int argnum, int argslot, TRAPS) 
   // Verify that argslot points at the given argnum.
   int check_slot = argument_slot(java_lang_invoke_MethodHandle::type(mh()), argnum);
   if (argslot != check_slot || argslot < 0) {
+    ResourceMark rm;
     const char* fmt = "for argnum of %d, vmargslot is %d, should be %d";
     size_t msglen = strlen(fmt) + 3*11 + 1;
     char* msg = NEW_RESOURCE_ARRAY(char, msglen);
@@ -1829,6 +1830,7 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   bool direct_to_method = false;
   if (OptimizeMethodHandles &&
       target->klass() == SystemDictionary::DirectMethodHandle_klass() &&
+      (argnum != 0 || java_lang_invoke_BoundMethodHandle::argument(mh()) != NULL) &&
       (argnum == 0 || java_lang_invoke_DirectMethodHandle::vmindex(target()) < 0)) {
     KlassHandle receiver_limit; int decode_flags = 0;
     methodHandle m = decode_method(target(), receiver_limit, decode_flags);
@@ -1980,7 +1982,6 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
           err = "adapter requires src/dest conversion subfields for swap"; break;
         }
         int swap_size = type2size[src];
-        int slot_limit = java_lang_invoke_MethodHandle::vmslots(target());
         int src_slot   = argslot;
         int dest_slot  = vminfo;
         bool rotate_up = (src_slot > dest_slot); // upward rotation
@@ -2333,7 +2334,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   case _adapter_rot_args:
     {
       int swap_slots = type2size[src];
-      int slot_limit = java_lang_invoke_AdapterMethodHandle::vmslots(mh());
       int src_slot   = argslot;
       int dest_slot  = vminfo;
       int rotate     = (ek_orig == _adapter_swap_args) ? 0 : (src_slot > dest_slot) ? 1 : -1;
@@ -2661,14 +2661,14 @@ JVM_ENTRY(void, MHN_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   ResourceMark rm;              // for error messages
 
   // This is the guy we are initializing:
-  if (mh_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the DMH in an unfinished state.
   assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   // which method are we really talking about?
-  if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
   if (java_lang_invoke_MemberName::is_instance(target()) &&
       java_lang_invoke_MemberName::vmindex(target()) == VM_INDEX_UNINITIALIZED) {
@@ -2722,13 +2722,13 @@ JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   ResourceMark rm;              // for error messages
 
   // This is the guy we are initializing:
-  if (mh_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the BMH in an unfinished state.
   assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
-  if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
   if (!java_lang_invoke_MethodHandle::is_instance(target())) {
@@ -2753,9 +2753,8 @@ JVM_END
 JVM_ENTRY(void, MHN_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                              jobject target_jh, int argnum)) {
   // This is the guy we are initializing:
-  if (mh_jh == NULL || target_jh == NULL) {
-    THROW(vmSymbols::java_lang_InternalError());
-  }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
@@ -2890,7 +2889,8 @@ JVM_END
 
 // void init(MemberName self, AccessibleObject ref)
 JVM_ENTRY(void, MHN_init_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jobject target_jh)) {
-  if (mname_jh == NULL || target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   oop target_oop = JNIHandles::resolve_non_null(target_jh);
   MethodHandles::init_MemberName(mname(), target_oop);
@@ -2899,7 +2899,7 @@ JVM_END
 
 // void expand(MemberName self)
 JVM_ENTRY(void, MHN_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
-  if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   MethodHandles::expand_MemberName(mname, 0, CHECK);
 }
@@ -2907,7 +2907,7 @@ JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
 JVM_ENTRY(void, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
-  if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
   // The trusted Java code that calls this method should already have performed
