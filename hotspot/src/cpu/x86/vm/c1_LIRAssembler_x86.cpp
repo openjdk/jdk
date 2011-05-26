@@ -3113,7 +3113,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // reload the register args properly if we go slow path. Yuck
 
     // These are proper for the calling convention
-
     store_parameter(length, 2);
     store_parameter(dst_pos, 1);
     store_parameter(dst, 0);
@@ -3351,12 +3350,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
           __ jcc(Assembler::notEqual, *stub->entry());
         }
 
-#ifndef _LP64
-        // save caller save registers
-        store_parameter(rax, 2);
-        store_parameter(rcx, 1);
-        store_parameter(rdx, 0);
+       // Spill because stubs can use any register they like and it's
+       // easier to restore just those that we care about.
+       store_parameter(dst, 0);
+       store_parameter(dst_pos, 1);
+       store_parameter(length, 2);
+       store_parameter(src_pos, 3);
+       store_parameter(src, 4);
 
+#ifndef _LP64
         __ movptr(tmp, dst_klass_addr);
         __ movptr(tmp, Address(tmp, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
         __ push(tmp);
@@ -3371,17 +3373,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ call_VM_leaf(copyfunc_addr, 5);
 #else
         __ movl2ptr(length, length); //higher 32bits must be null
-
-        // save caller save registers: copy them to callee save registers
-        __ mov(rbx, rdx);
-        __ mov(r13, r8);
-        __ mov(r14, r9);
-#ifndef _WIN64
-        store_parameter(rsi, 1);
-        store_parameter(rcx, 0);
-        // on WIN64 other incoming parameters are in rdi and rsi saved
-        // across the call
-#endif
 
         __ lea(c_rarg0, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
         assert_different_registers(c_rarg0, dst, dst_pos, length);
@@ -3432,25 +3423,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
         __ xorl(tmp, -1);
 
-#ifndef _LP64
-        // restore caller save registers
-        assert_different_registers(tmp, rdx, rcx, rax); // result of stub will be lost
-        __ movptr(rdx, Address(rsp, 0*BytesPerWord));
-        __ movptr(rcx, Address(rsp, 1*BytesPerWord));
-        __ movptr(rax, Address(rsp, 2*BytesPerWord));
-#else
-        // restore caller save registers
-        __ mov(rdx, rbx);
-        __ mov(r8, r13);
-        __ mov(r9, r14);
-#ifndef _WIN64
-        assert_different_registers(tmp, rdx, r8, r9, rcx, rsi); // result of stub will be lost
-        __ movptr(rcx, Address(rsp, 0*BytesPerWord));
-        __ movptr(rsi, Address(rsp, 1*BytesPerWord));
-#else
-        assert_different_registers(tmp, rdx, r8, r9); // result of stub will be lost
-#endif
-#endif
+        // Restore previously spilled arguments
+        __ movptr   (dst,     Address(rsp, 0*BytesPerWord));
+        __ movptr   (dst_pos, Address(rsp, 1*BytesPerWord));
+        __ movptr   (length,  Address(rsp, 2*BytesPerWord));
+        __ movptr   (src_pos, Address(rsp, 3*BytesPerWord));
+        __ movptr   (src,     Address(rsp, 4*BytesPerWord));
+
 
         __ subl(length, tmp);
         __ addl(src_pos, tmp);
