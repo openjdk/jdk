@@ -198,27 +198,30 @@ public class ValueConversions {
         return unbox(Wrapper.forPrimitiveType(type), true, false);
     }
 
+    static private final Integer ZERO_INT = 0, ONE_INT = 1;
+
     /// Primitive conversions
     public static Number primitiveConversion(Wrapper wrap, Object x, boolean cast) {
         // Maybe merge this code with Wrapper.convert/cast.
         Number res = null;
         if (x == null) {
             if (!cast)  return null;
-            x = wrap.zero();
+            return ZERO_INT;
         }
         if (x instanceof Number) {
             res = (Number) x;
         } else if (x instanceof Boolean) {
-            res = ((boolean)x ? 1 : 0);
+            res = ((boolean)x ? ONE_INT : ZERO_INT);
         } else if (x instanceof Character) {
             res = (int)(char)x;
         } else {
             // this will fail with the required ClassCastException:
             res = (Number) x;
         }
-        if (!cast && !wrap.isConvertibleFrom(Wrapper.forWrapperType(x.getClass())))
+        Wrapper xwrap = Wrapper.findWrapperType(x.getClass());
+        if (xwrap == null || !cast && !wrap.isConvertibleFrom(xwrap))
             // this will fail with the required ClassCastException:
-            res = (Number) wrap.wrapperType().cast(x);
+            return (Number) wrap.wrapperType().cast(x);
         return res;
     }
 

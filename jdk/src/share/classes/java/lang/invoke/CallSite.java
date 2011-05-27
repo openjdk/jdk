@@ -111,7 +111,7 @@ public class CallSite {
     }
 
     /**
-     * Make a blank call site object, possibly equipped with an initial target method handle.
+     * Make a call site object equipped with an initial target method handle.
      * @param target the method handle which will be the initial target of the call site
      * @throws NullPointerException if the proposed target is null
      */
@@ -122,6 +122,25 @@ public class CallSite {
     }
 
     /**
+     * Make a call site object equipped with an initial target method handle.
+     * @param targetType the desired type of the call site
+     * @param createTargetHook a hook which will bind the call site to the target method handle
+     * @throws WrongMethodTypeException if the hook cannot be invoked on the required arguments,
+     *         or if the target returned by the hook is not of the given {@code targetType}
+     * @throws NullPointerException if the hook returns a null value
+     * @throws ClassCastException if the hook returns something other than a {@code MethodHandle}
+     * @throws Throwable anything else thrown by the the hook function
+     */
+    /*package-private*/
+    CallSite(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
+        this(targetType);
+        ConstantCallSite selfCCS = (ConstantCallSite) this;
+        MethodHandle boundTarget = (MethodHandle) createTargetHook.invokeWithArguments(selfCCS);
+        checkTargetChange(this.target, boundTarget);
+        this.target = boundTarget;
+    }
+
+    /**
      * Returns the type of this call site's target.
      * Although targets may change, any call site's type is permanent, and can never change to an unequal type.
      * The {@code setTarget} method enforces this invariant by refusing any new target that does
@@ -129,6 +148,7 @@ public class CallSite {
      * @return the type of the current target, which is also the type of any future target
      */
     public MethodType type() {
+        // warning:  do not call getTarget here, because CCS.getTarget can throw IllegalStateException
         return target.type();
     }
 
@@ -294,8 +314,8 @@ public class CallSite {
             }  else {
                 throw new ClassCastException("bootstrap method failed to produce a CallSite");
             }
-            assert(site.getTarget() != null);
-            assert(site.getTarget().type().equals(type));
+            if (!site.getTarget().type().equals(type))
+                throw new WrongMethodTypeException("wrong type: "+site.getTarget());
         } catch (Throwable ex) {
             BootstrapMethodError bex;
             if (ex instanceof BootstrapMethodError)
