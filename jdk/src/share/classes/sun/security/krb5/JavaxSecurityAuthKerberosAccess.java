@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package sun.security.krb5;
 
 import javax.security.auth.kerberos.KeyTab;
 import sun.security.krb5.EncryptionKey;

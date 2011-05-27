@@ -23,16 +23,24 @@
  * questions.
  */
 
-package javax.security.auth.kerberos;
+package sun.security.krb5;
 
-import sun.security.krb5.JavaxSecurityAuthKerberosAccess;
-import sun.security.krb5.EncryptionKey;
-import sun.security.krb5.PrincipalName;
+import javax.security.auth.kerberos.KeyTab;
+import sun.misc.Unsafe;
 
-class JavaxSecurityAuthKerberosAccessImpl
-        implements JavaxSecurityAuthKerberosAccess {
-    public EncryptionKey[] keyTabGetEncryptionKeys(
-            KeyTab ktab, PrincipalName principal) {
-        return ktab.getEncryptionKeys(principal);
+public class KerberosSecrets {
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
+
+    public static void setJavaxSecurityAuthKerberosAccess
+            (JavaxSecurityAuthKerberosAccess jsaka) {
+        javaxSecurityAuthKerberosAccess = jsaka;
+    }
+
+    public static JavaxSecurityAuthKerberosAccess
+            getJavaxSecurityAuthKerberosAccess() {
+        if (javaxSecurityAuthKerberosAccess == null)
+            unsafe.ensureClassInitialized(KeyTab.class);
+        return javaxSecurityAuthKerberosAccess;
     }
 }
