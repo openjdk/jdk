@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,20 @@
  * questions.
  */
 
-#ifndef _STDHDRS_H_
-#define _STDHDRS_H_
 
-// standard Windows and C headers
-#define VC_EXTRALEAN    /* speeds compilation */
-#ifndef STRICT
-#define STRICT /* forces explicit typedef's for windows.h */
-#endif
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <limits.h>
-#include <tchar.h>
-// Don't #include <new> because that makes awt.dll dependent on
-// msvcp50.dll. Instead, we've replicated the parts of <new>
-// we need in alloc.h.
-// #include <new>
+#ifndef JDK_UTIL_MD_H
+#define JDK_UTIL_MD_H
 
+#include "jni.h"
+
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-// standard Java headers
-#include <jni.h>
-#include <jni_util.h>
-#include <jdk_util.h>
+JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name);
 
-} // extern "C"
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
 
-#endif // _STDHDRS_H_
+#endif /* JDK_UTIL_MD_H */

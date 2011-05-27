@@ -120,15 +120,15 @@ static BOOL initShellProcs()
         return TRUE;
     }
     // Load libraries
-    libShell32 = LoadLibrary(TEXT("shell32.dll"));
+    libShell32 = JDK_LoadSystemLibrary("shell32.dll");
     if (libShell32 == NULL) {
         return FALSE;
     }
-    libUser32 = LoadLibrary(TEXT("user32.dll"));
+    libUser32 = JDK_LoadSystemLibrary("user32.dll");
     if (libUser32 == NULL) {
         return FALSE;
     }
-    libComCtl32 = LoadLibrary(TEXT("comctl32.dll"));
+    libComCtl32 = JDK_LoadSystemLibrary("comctl32.dll");
     if (libComCtl32 == NULL) {
         return FALSE;
     }
@@ -1021,7 +1021,8 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
      jint cxDesired, jint cyDesired, jboolean useVGAColors)
 {
-    HINSTANCE libHandle = LoadLibrary(JNU_GetStringPlatformChars(env, libName, NULL));
+    const char *pLibName = env->GetStringUTFChars(libName, NULL);
+    HINSTANCE libHandle = (HINSTANCE)JDK_LoadSystemLibrary(pLibName);
     if (libHandle != NULL) {
         UINT fuLoad = (useVGAColors && !IS_WINXP) ? LR_VGACOLOR : 0;
         return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
