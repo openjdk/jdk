@@ -2240,8 +2240,10 @@ public class Check {
         class AnnotationValidator extends TreeScanner {
             @Override
             public void visitAnnotation(JCAnnotation tree) {
-                super.visitAnnotation(tree);
-                validateAnnotation(tree);
+                if (!tree.type.isErroneous()) {
+                    super.visitAnnotation(tree);
+                    validateAnnotation(tree);
+                }
             }
         }
         tree.accept(new AnnotationValidator());
@@ -2383,8 +2385,6 @@ public class Check {
     /** Check an annotation value.
      */
     public void validateAnnotation(JCAnnotation a) {
-        if (a.type.isErroneous()) return;
-
         // collect an inventory of the members (sorted alphabetically)
         Set<MethodSymbol> members = new TreeSet<MethodSymbol>(new Comparator<Symbol>() {
             public int compare(Symbol t, Symbol t1) {
