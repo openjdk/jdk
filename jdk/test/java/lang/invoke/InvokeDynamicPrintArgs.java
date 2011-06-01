@@ -106,8 +106,10 @@ public class InvokeDynamicPrintArgs {
         "Done printing argument lists."
     };
 
+    private static boolean doPrint = true;
     private static void printArgs(Object bsmInfo, Object... args) {
-        System.out.println(bsmInfo+Arrays.deepToString(args));
+        String message = bsmInfo+Arrays.deepToString(args);
+        if (doPrint)  System.out.println(message);
     }
     private static MethodHandle MH_printArgs() throws ReflectiveOperationException {
         shouldNotCallThis();
@@ -129,11 +131,48 @@ public class InvokeDynamicPrintArgs {
         return lookup().findStatic(lookup().lookupClass(), "bsm", MT_bsm());
     }
 
-    private static CallSite bsm2(Lookup caller, String name, MethodType type, Object... arg) throws ReflectiveOperationException {
+    /* Example of a constant call site with user-data.
+     * In this case, the user data is exactly the BSM data.
+     * Note that a CCS with user data must use the "hooked" constructor
+     * to bind the CCS itself into the resulting target.
+     * A normal constructor would not allow a circular relation
+     * between the CCS and its target.
+     */
+    public static class PrintingCallSite extends ConstantCallSite {
+        final Lookup caller;
+        final String name;
+        final Object[] staticArgs;
+
+        PrintingCallSite(Lookup caller, String name, MethodType type, Object... staticArgs) throws Throwable {
+            super(type, MH_createTarget());
+            this.caller = caller;
+            this.name = name;
+            this.staticArgs = staticArgs;
+        }
+
+        public MethodHandle createTarget() {
+            try {
+                return lookup().bind(this, "runTarget", genericMethodType(0, true)).asType(type());
+            } catch (ReflectiveOperationException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        public Object runTarget(Object... dynamicArgs) {
+            List<Object> bsmInfo = new ArrayList<>(Arrays.asList(caller, name, type()));
+            bsmInfo.addAll(Arrays.asList(staticArgs));
+            printArgs(bsmInfo, dynamicArgs);
+            return null;
+        }
+
+        private static MethodHandle MH_createTarget() throws ReflectiveOperationException {
+            shouldNotCallThis();
+            return lookup().findVirtual(lookup().lookupClass(), "createTarget", methodType(MethodHandle.class));
+        }
+    }
+    private static CallSite bsm2(Lookup caller, String name, MethodType type, Object... arg) throws Throwable {
         // ignore caller and name, but match the type:
-        List<Object> bsmInfo = new ArrayList<>(Arrays.asList(caller, name, type));
-        bsmInfo.addAll(Arrays.asList((Object[])arg));
-        return new ConstantCallSite(MH_printArgs().bindTo(bsmInfo).asCollector(Object[].class, type.parameterCount()).asType(type));
+        return new PrintingCallSite(caller, name, type, arg);
     }
     private static MethodType MT_bsm2() {
         shouldNotCallThis();
@@ -146,33 +185,33 @@ public class InvokeDynamicPrintArgs {
 
     private static MethodHandle INDY_nothing() throws Throwable {
         shouldNotCallThis();
-        return ((CallSite) MH_bsm().invokeGeneric(lookup(),
+        return ((CallSite) MH_bsm().invoke(lookup(),
                                                   "nothing", methodType(void.class)
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_foo() throws Throwable {
         shouldNotCallThis();
-        return ((CallSite) MH_bsm().invokeGeneric(lookup(),
+        return ((CallSite) MH_bsm().invoke(lookup(),
                                                   "foo", methodType(void.class, String.class)
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_bar() throws Throwable {
         shouldNotCallThis();
-        return ((CallSite) MH_bsm2().invokeGeneric(lookup(),
+        return ((CallSite) MH_bsm2().invoke(lookup(),
                                                   "bar", methodType(void.class, String.class, int.class)
                                                   , Void.class, "void type!", 1, 234.5F, 67.5, (long)89
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_bar2() throws Throwable {
         shouldNotCallThis();
-        return ((CallSite) MH_bsm2().invokeGeneric(lookup(),
+        return ((CallSite) MH_bsm2().invoke(lookup(),
                                                   "bar2", methodType(void.class, String.class, int.class)
                                                   , Void.class, "void type!", 1, 234.5F, 67.5, (long)89
                                                   )).dynamicInvoker();
     }
     private static MethodHandle INDY_baz() throws Throwable {
         shouldNotCallThis();
-        return ((CallSite) MH_bsm2().invokeGeneric(lookup(),
+        return ((CallSite) MH_bsm2().invoke(lookup(),
                                                   "baz", methodType(void.class, String.class, int.class, double.class)
                                                   , 1234.5
                                                   )).dynamicInvoker();

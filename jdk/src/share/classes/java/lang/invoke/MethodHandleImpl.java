@@ -82,12 +82,17 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
-            throw method.makeAccessException("no access", lookupClass);
+            throw method.makeAccessException("no direct method handle", lookupClass);
         assert(mh.type() == mtype);
         if (!method.isVarargs())
             return mh;
-        else
-            return mh.asVarargsCollector(mtype.parameterType(mtype.parameterCount()-1));
+        int argc = mtype.parameterCount();
+        if (argc != 0) {
+            Class<?> arrayType = mtype.parameterType(argc-1);
+            if (arrayType.isArray())
+                return AdapterMethodHandle.makeVarargsCollector(mh, arrayType);
+        }
+        throw method.makeAccessException("cannot make variable arity", null);
     }
 
     static
@@ -485,14 +490,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      */
     static
     MethodHandle bindReceiver(MethodHandle target, Object receiver) {
+        if (receiver == null)  return null;
         if (target instanceof AdapterMethodHandle &&
             ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
             ) {
             Object info = MethodHandleNatives.getTargetInfo(target);
             if (info instanceof DirectMethodHandle) {
                 DirectMethodHandle dmh = (DirectMethodHandle) info;
-                if (receiver == null ||
-                    dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
+                if (dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
                     MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
                     MethodType newType = target.type().dropParameterTypes(0, 1);
                     return convertArguments(bmh, newType, bmh.type(), 0);
@@ -698,7 +703,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (target == null)  throw newIllegalArgumentException("cannot drop");
             oldType = target.type();
         }
-        return convertArguments(target, newType, oldType, 0);
+        target = convertArguments(target, newType, oldType, 0);
+        assert(target != null);
+        return target;
     }
 
     /*non-public*/ static
@@ -907,14 +914,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.test = test;
             this.target = target;
             this.fallback = fallback;
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
         }
-        // FIXME: Build the control flow out of foldArguments.
+        static boolean preferRicochetFrame(MethodType type) {
+            return (type.parameterCount() >= INVOKES.length || type.hasPrimitives());
+        }
         static MethodHandle make(MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
             MethodType type = target.type();
             int nargs = type.parameterCount();
             if (nargs < INVOKES.length) {
+                if (preferRicochetFrame(type))
+                    assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType gtype = type.generic();
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
@@ -925,6 +934,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
                 return convertArguments(gguard, type, gtype, 0);
             } else {
+                assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
                 MethodHandle invoke = VARARGS_INVOKE;
                 MethodType gtype = MethodType.genericMethodType(1);
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
@@ -1048,8 +1058,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         //    where select(z) = select(z, t, f).bindTo(t, f) => z ? t f
         // [tailcall]=> tf(arg...)
         assert(test.type().returnType() == boolean.class);
-        MethodType foldTargetType = target.type().insertParameterTypes(0, boolean.class);
-        if (AdapterMethodHandle.canCollectArguments(foldTargetType, test.type(), 0, true)) {
+        MethodType targetType = target.type();
+        MethodType foldTargetType = targetType.insertParameterTypes(0, boolean.class);
+        if (AdapterMethodHandle.canCollectArguments(foldTargetType, test.type(), 0, true)
+            && GuardWithTest.preferRicochetFrame(targetType)) {
             // working backwards, as usual:
             assert(target.type().equals(fallback.type()));
             MethodHandle tailcall = MethodHandles.exactInvoker(target.type());
@@ -1062,7 +1074,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle fold = foldArguments(filter, filter.type().dropParameterTypes(0, 1), 0, test);
             return fold;
         }
-        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
         return GuardWithTest.make(test, target, fallback);
     }
 
