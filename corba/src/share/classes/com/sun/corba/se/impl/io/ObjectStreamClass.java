@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,8 +405,7 @@ public class ObjectStreamClass implements java.io.Serializable {
         if (!serializable ||
             externalizable ||
             forProxyClass ||
-            name.equals("java.lang.String") ||
-            isEnum) {
+            name.equals("java.lang.String")){
             fields = NO_FIELDS;
         } else if (serializable) {
             /* Ask for permission to override field access checks.
