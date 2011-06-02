@@ -439,6 +439,9 @@ class MethodHandles: AllStatic {
     assert(_raise_exception_method == NULL, "");
     _raise_exception_method = JNIHandles::make_global(Handle(rem));
   }
+  static methodOop resolve_raise_exception_method(TRAPS);
+  // call raise_exception_method from C code:
+  static void raise_exception(int code, oop actual, oop required, TRAPS);
 
   static jint adapter_conversion(int conv_op, BasicType src, BasicType dest,
                                  int stack_move = 0, int vminfo = 0) {
