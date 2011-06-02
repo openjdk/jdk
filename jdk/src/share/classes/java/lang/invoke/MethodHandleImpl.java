@@ -26,6 +26,8 @@
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -336,18 +338,20 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         void setFieldL(C obj, V x) { unsafe.putObject(obj, offset, x); }
         // cast (V) is OK here, since we wrap convertArguments around the MH.
 
-        static Object staticBase(MemberName field) {
+        static Object staticBase(final MemberName field) {
             if (!field.isStatic())  return null;
-            Class c = field.getDeclaringClass();
-            java.lang.reflect.Field f;
-            try {
-                // FIXME:  Should not have to create 'f' to get this value.
-                f = c.getDeclaredField(field.getName());
-                // Note:  Previous line might invalidly throw SecurityException (7042829)
-                return unsafe.staticFieldBase(f);
-            } catch (NoSuchFieldException ee) {
-                throw uncaughtException(ee);
-            }
+            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    public Object run() {
+                        try {
+                            Class c = field.getDeclaringClass();
+                            // FIXME:  Should not have to create 'f' to get this value.
+                            java.lang.reflect.Field f = c.getDeclaredField(field.getName());
+                            return unsafe.staticFieldBase(f);
+                        } catch (NoSuchFieldException ee) {
+                            throw uncaughtException(ee);
+                        }
+                    }
+                });
         }
 
         int getStaticI() { return unsafe.getInt(base, offset); }

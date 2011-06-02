@@ -395,18 +395,7 @@ class MethodHandleNatives {
                                                  Class<?> defc, String name, Object type) {
         try {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
-            switch (refKind) {
-            case REF_getField:          return lookup.findGetter(       defc, name, (Class<?>)   type );
-            case REF_getStatic:         return lookup.findStaticGetter( defc, name, (Class<?>)   type );
-            case REF_putField:          return lookup.findSetter(       defc, name, (Class<?>)   type );
-            case REF_putStatic:         return lookup.findStaticSetter( defc, name, (Class<?>)   type );
-            case REF_invokeVirtual:     return lookup.findVirtual(      defc, name, (MethodType) type );
-            case REF_invokeStatic:      return lookup.findStatic(       defc, name, (MethodType) type );
-            case REF_invokeSpecial:     return lookup.findSpecial(      defc, name, (MethodType) type, callerClass );
-            case REF_newInvokeSpecial:  return lookup.findConstructor(  defc,       (MethodType) type );
-            case REF_invokeInterface:   return lookup.findVirtual(      defc, name, (MethodType) type );
-            }
-            throw new InternalError("bad MethodHandle constant "+name+" : "+type);
+            return lookup.linkMethodHandleConstant(refKind, defc, name, type);
         } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
             err.initCause(ex);

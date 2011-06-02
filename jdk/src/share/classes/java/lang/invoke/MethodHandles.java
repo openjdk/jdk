@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import sun.reflect.Reflection;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -579,8 +580,17 @@ public class MethodHandles {
         MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, true);
             checkSecurityManager(refc, method);  // stack walk magic: do not refactor
+            return accessStatic(refc, method);
+        }
+        private
+        MethodHandle accessStatic(Class<?> refc, MemberName method) throws IllegalAccessException {
             checkMethod(refc, method, true);
             return MethodHandleImpl.findMethod(method, false, lookupClassOrNull());
+        }
+        private
+        MethodHandle resolveStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            MemberName method = resolveOrFail(refc, name, type, true);
+            return accessStatic(refc, method);
         }
 
         /**
@@ -624,6 +634,13 @@ public class MethodHandles {
         public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(refc, name, type, false);
             checkSecurityManager(refc, method);  // stack walk magic: do not refactor
+            return accessVirtual(refc, method);
+        }
+        private MethodHandle resolveVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            MemberName method = resolveOrFail(refc, name, type, false);
+            return accessVirtual(refc, method);
+        }
+        private MethodHandle accessVirtual(Class<?> refc, MemberName method) throws IllegalAccessException {
             checkMethod(refc, method, false);
             MethodHandle mh = MethodHandleImpl.findMethod(method, true, lookupClassOrNull());
             return restrictProtectedReceiver(method, mh);
@@ -658,12 +675,20 @@ public class MethodHandles {
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             String name = "<init>";
             MemberName ctor = resolveOrFail(refc, name, type, false, false, lookupClassOrNull());
-            assert(ctor.isConstructor());
             checkSecurityManager(refc, ctor);  // stack walk magic: do not refactor
+            return accessConstructor(refc, ctor);
+        }
+        private MethodHandle accessConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {
+            assert(ctor.isConstructor());
             checkAccess(refc, ctor);
             MethodHandle rawMH = MethodHandleImpl.findMethod(ctor, false, lookupClassOrNull());
             MethodHandle allocMH = MethodHandleImpl.makeAllocator(rawMH);
             return fixVarargs(allocMH, rawMH);
+        }
+        private MethodHandle resolveConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            String name = "<init>";
+            MemberName ctor = resolveOrFail(refc, name, type, false, false, lookupClassOrNull());
+            return accessConstructor(refc, ctor);
         }
 
         /** Return a version of MH which matches matchMH w.r.t. isVarargsCollector. */
@@ -720,9 +745,19 @@ public class MethodHandles {
             checkSpecialCaller(specialCaller);
             MemberName method = resolveOrFail(refc, name, type, false, false, specialCaller);
             checkSecurityManager(refc, method);  // stack walk magic: do not refactor
+            return accessSpecial(refc, method, specialCaller);
+        }
+        private MethodHandle accessSpecial(Class<?> refc, MemberName method,
+                                           Class<?> specialCaller) throws NoSuchMethodException, IllegalAccessException {
             checkMethod(refc, method, false);
             MethodHandle mh = MethodHandleImpl.findMethod(method, false, specialCaller);
             return restrictReceiver(method, mh, specialCaller);
+        }
+        private MethodHandle resolveSpecial(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+            Class<?> specialCaller = lookupClass();
+            checkSpecialCaller(specialCaller);
+            MemberName method = resolveOrFail(refc, name, type, false, false, specialCaller);
+            return accessSpecial(refc, method, specialCaller);
         }
 
         /**
@@ -745,6 +780,10 @@ public class MethodHandles {
         public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             MemberName field = resolveOrFail(refc, name, type, false);
             checkSecurityManager(refc, field);  // stack walk magic: do not refactor
+            return makeAccessor(refc, field, false, false, 0);
+        }
+        private MethodHandle resolveGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName field = resolveOrFail(refc, name, type, false);
             return makeAccessor(refc, field, false, false, 0);
         }
 
@@ -770,6 +809,10 @@ public class MethodHandles {
             checkSecurityManager(refc, field);  // stack walk magic: do not refactor
             return makeAccessor(refc, field, false, true, 0);
         }
+        private MethodHandle resolveSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName field = resolveOrFail(refc, name, type, false);
+            return makeAccessor(refc, field, false, true, 0);
+        }
 
         /**
          * Produces a method handle giving read access to a static field.
@@ -792,6 +835,10 @@ public class MethodHandles {
             checkSecurityManager(refc, field);  // stack walk magic: do not refactor
             return makeAccessor(refc, field, false, false, 1);
         }
+        private MethodHandle resolveStaticGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName field = resolveOrFail(refc, name, type, true);
+            return makeAccessor(refc, field, false, false, 1);
+        }
 
         /**
          * Produces a method handle giving write access to a static field.
@@ -812,6 +859,10 @@ public class MethodHandles {
         public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             MemberName field = resolveOrFail(refc, name, type, true);
             checkSecurityManager(refc, field);  // stack walk magic: do not refactor
+            return makeAccessor(refc, field, false, true, 1);
+        }
+        private MethodHandle resolveStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName field = resolveOrFail(refc, name, type, true);
             return makeAccessor(refc, field, false, true, 1);
         }
 
@@ -1178,6 +1229,25 @@ return mh1;
             checkAccess(refc, field);
             MethodHandle mh = MethodHandleImpl.accessField(field, isSetter, lookupClassOrNull());
             return restrictProtectedReceiver(field, mh);
+        }
+
+        /** Hook called from the JVM (via MethodHandleNatives) to link MH constants:
+         */
+        /*non-public*/
+        MethodHandle linkMethodHandleConstant(int refKind, Class<?> defc, String name, Object type) throws ReflectiveOperationException {
+            switch (refKind) {
+            case REF_getField:          return resolveGetter(       defc, name, (Class<?>)   type );
+            case REF_getStatic:         return resolveStaticGetter( defc, name, (Class<?>)   type );
+            case REF_putField:          return resolveSetter(       defc, name, (Class<?>)   type );
+            case REF_putStatic:         return resolveStaticSetter( defc, name, (Class<?>)   type );
+            case REF_invokeVirtual:     return resolveVirtual(      defc, name, (MethodType) type );
+            case REF_invokeStatic:      return resolveStatic(       defc, name, (MethodType) type );
+            case REF_invokeSpecial:     return resolveSpecial(      defc, name, (MethodType) type );
+            case REF_newInvokeSpecial:  return resolveConstructor(  defc,       (MethodType) type );
+            case REF_invokeInterface:   return resolveVirtual(      defc, name, (MethodType) type );
+            }
+            // oops
+            throw new ReflectiveOperationException("bad MethodHandle constant #"+refKind+" "+name+" : "+type);
         }
     }
 
