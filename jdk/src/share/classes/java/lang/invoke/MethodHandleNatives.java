@@ -359,6 +359,12 @@ class MethodHandleNatives {
             required = Object[].class;  // should have been an array
             code = 192; // checkcast
             break;
+        case 191: // athrow
+            // JVM is asking us to wrap an exception which happened during resolving
+            if (required == BootstrapMethodError.class) {
+                throw new BootstrapMethodError((Throwable) actual);
+            }
+            break;
         }
         // disregard the identity of the actual object, if it is not a class:
         if (message == null) {
