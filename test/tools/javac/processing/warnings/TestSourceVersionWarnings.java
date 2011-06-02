@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6376083 6376084 6458819
+ * @bug 6376083 6376084 6458819 7025784 7025786 7025789
  * @summary Test that warnings about source versions are output as expected.
  * @author  Joseph D. Darcy
  * @compile TestSourceVersionWarnings.java
@@ -35,7 +35,8 @@
  * @compile/ref=gold_sv_warn_5_6.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_5 -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_6 -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_unsp_warn.out     -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_6 -source 1.6 -Xlint:-options -Aunsupported HelloWorld.java
- * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_7 -source 1.7                 HelloWorld.java
+ * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_7 -source 1.7 -Xlint:-options HelloWorld.java
+ * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_8 -source 1.8                 HelloWorld.java
  */
 
 import java.util.Set;
@@ -51,7 +52,8 @@ import static javax.tools.Diagnostic.Kind.*;
 /**
  * This processor returns the supported source level as indicated by
  * the "SourceLevel" option; therefore, don't use
- * JavacTestingAbstractProcessor which returns the latest source level.
+ * JavacTestingAbstractProcessor which returns the latest source
+ * level.
  */
 @SupportedAnnotationTypes("*")
 @SupportedOptions("SourceVersion")
