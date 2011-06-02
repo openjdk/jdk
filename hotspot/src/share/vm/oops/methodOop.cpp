@@ -720,7 +720,7 @@ void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  if (UseCompiler) (void) make_adapters(h_method, CHECK);
+  (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
