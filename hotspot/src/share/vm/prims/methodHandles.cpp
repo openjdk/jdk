@@ -2970,6 +2970,45 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
+methodOop MethodHandles::resolve_raise_exception_method(TRAPS) {
+  if (_raise_exception_method != NULL) {
+    // no need to do it twice
+    return raise_exception_method();
+  }
+  // LinkResolver::resolve_invokedynamic can reach this point
+  // because an invokedynamic has failed very early (7049415)
+  KlassHandle MHN_klass = SystemDictionaryHandles::MethodHandleNatives_klass();
+  if (MHN_klass.not_null()) {
+    TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK_NULL);
+    TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK_NULL);
+    methodOop raiseException_method  = instanceKlass::cast(MHN_klass->as_klassOop())
+                  ->find_method(raiseException_name, raiseException_sig);
+    if (raiseException_method != NULL && raiseException_method->is_static()) {
+      return raiseException_method;
+    }
+  }
+  // not found; let the caller deal with it
+  return NULL;
+}
+void MethodHandles::raise_exception(int code, oop actual, oop required, TRAPS) {
+  methodOop raiseException_method = resolve_raise_exception_method(CHECK);
+  if (raiseException_method != NULL &&
+      instanceKlass::cast(raiseException_method->method_holder())->is_not_initialized()) {
+    instanceKlass::cast(raiseException_method->method_holder())->initialize(CHECK);
+    // it had better be resolved by now, or maybe JSR 292 failed to load
+    raiseException_method = raise_exception_method();
+  }
+  if (raiseException_method == NULL) {
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "no raiseException method");
+  }
+  JavaCallArguments args;
+  args.push_int(code);
+  args.push_oop(actual);
+  args.push_oop(required);
+  JavaValue result(T_VOID);
+  JavaCalls::call(&result, raiseException_method, &args, CHECK);
+}
+
 JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
     TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
     THROW_MSG_NULL(UOE_name, "MethodHandle.invoke cannot be invoked reflectively");
@@ -3059,19 +3098,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
   }
 
   if (enable_MH) {
-    KlassHandle MHN_klass = SystemDictionaryHandles::MethodHandleNatives_klass();
-    if (MHN_klass.not_null()) {
-      TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK);
-      TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK);
-      methodOop raiseException_method  = instanceKlass::cast(MHN_klass->as_klassOop())
-                    ->find_method(raiseException_name, raiseException_sig);
-      if (raiseException_method != NULL && raiseException_method->is_static()) {
-        MethodHandles::set_raise_exception_method(raiseException_method);
-      } else {
-        warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
-        enable_MH = false;
-      }
+    methodOop raiseException_method = MethodHandles::resolve_raise_exception_method(CHECK);
+    if (raiseException_method != NULL) {
+      MethodHandles::set_raise_exception_method(raiseException_method);
     } else {
+      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
       enable_MH = false;
     }
   }
