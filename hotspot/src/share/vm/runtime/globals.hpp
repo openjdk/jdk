@@ -3734,7 +3734,7 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, AllowInvokeGeneric, true,                              \
+  experimental(bool, AllowInvokeGeneric, false,                             \
           "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
           "as equivalent methods")                                          \
                                                                             \
