@@ -460,15 +460,13 @@ public interface Path
     /**
      * Returns a URI to represent this path.
      *
-     * <p> This method constructs a hierarchical {@link URI} that is absolute
-     * with a non-empty path component. Its {@link URI#getScheme() scheme} is
-     * equal to the URI scheme that identifies the provider. The exact form of
-     * the other URI components is highly provider dependent. In particular, it
-     * is implementation dependent if its query, fragment, and authority
-     * components are defined or undefined.
+     * <p> This method constructs an absolute {@link URI} with a {@link
+     * URI#getScheme() scheme} equal to the URI scheme that identifies the
+     * provider. The exact form of the scheme specific part is highly provider
+     * dependent.
      *
-     * <p> For the default provider the {@link URI#getPath() path} component
-     * will represent the {@link #toAbsolutePath absolute} path; the query,
+     * <p> In the case of the default provider, the URI is hierarchical with
+     * a {@link URI#getPath() path} component that is absolute. The query and
      * fragment components are undefined. Whether the authority component is
      * defined or not is implementation dependent. There is no guarantee that
      * the {@code URI} may be used to construct a {@link java.io.File java.io.File}.
@@ -497,7 +495,7 @@ public interface Path
      * A format for compound URIs is not defined in this release; such a scheme
      * may be added in a future release.
      *
-     * @return  an absolute, hierarchical URI with a non-empty path component
+     * @return  the URI representing this path
      *
      * @throws  java.io.IOError
      *          if an I/O error occurs obtaining the absolute path, or where a

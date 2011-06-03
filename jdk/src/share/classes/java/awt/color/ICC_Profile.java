@@ -1382,13 +1382,19 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Sets a particular tagged data element in the profile from
-     * a byte array.  This method is useful
-     * for advanced applets or applications which need to access
-     * profile data directly.
+     * a byte array. The array should contain data in a format, corresponded
+     * to the {@code tagSignature} as defined in the ICC specification, section 10.
+     * This method is useful for advanced applets or applications which need to
+     * access profile data directly.
      *
      * @param tagSignature The ICC tag signature for the data element
      * you want to set.
      * @param tagData the data to set for the specified tag signature
+     * @throws IllegalArgumentException if {@code tagSignature} is not a signature
+     *         as defined in the ICC specification.
+     * @throws IllegalArgumentException if a content of the {@code tagData}
+     *         array can not be interpreted as valid tag data, corresponding
+     *         to the {@code tagSignature}.
      * @see #getData
      */
     public void setData(int tagSignature, byte[] tagData) {
