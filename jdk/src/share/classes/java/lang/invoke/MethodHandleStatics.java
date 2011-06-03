@@ -25,6 +25,9 @@
 
 package java.lang.invoke;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * This class consists exclusively of static names internal to the
  * method handle implementation.
@@ -35,7 +38,17 @@ package java.lang.invoke;
 
     private MethodHandleStatics() { }  // do not instantiate
 
-    static final boolean DEBUG_METHOD_HANDLE_NAMES = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
+    static final boolean DEBUG_METHOD_HANDLE_NAMES;
+    static {
+        final Object[] values = { false };
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
+                    return null;
+                }
+            });
+        DEBUG_METHOD_HANDLE_NAMES = (Boolean) values[0];
+    }
 
     /*non-public*/ static String getNameString(MethodHandle target, MethodType type) {
         if (type == null)
