@@ -56,16 +56,17 @@ package java.lang.invoke;
  * <p>
  * Here is an example of a switch point in action:
  * <blockquote><pre>
-MethodType MT_str2 = MethodType.methodType(String.class, String.class);
 MethodHandle MH_strcat = MethodHandles.lookup()
-    .findVirtual(String.class, "concat", MT_str2);
+    .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
 SwitchPoint spt = new SwitchPoint();
+assert(!spt.hasBeenInvalidated());
 // the following steps may be repeated to re-use the same switch point:
-MethodHandle worker1 = strcat;
-MethodHandle worker2 = MethodHandles.permuteArguments(strcat, MT_str2, 1, 0);
+MethodHandle worker1 = MH_strcat;
+MethodHandle worker2 = MethodHandles.permuteArguments(MH_strcat, MH_strcat.type(), 1, 0);
 MethodHandle worker = spt.guardWithTest(worker1, worker2);
 assertEquals("method", (String) worker.invokeExact("met", "hod"));
 SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
+assert(spt.hasBeenInvalidated());
 assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
  * </pre></blockquote>
  * <p style="font-size:smaller;">
@@ -125,6 +126,33 @@ public class SwitchPoint {
     }
 
     /**
+     * Determines if this switch point has been invalidated yet.
+     *
+     * <p style="font-size:smaller;">
+     * <em>Discussion:</em>
+     * Because of the one-way nature of invalidation, once a switch point begins
+     * to return true for {@code hasBeenInvalidated},
+     * it will always do so in the future.
+     * On the other hand, a valid switch point visible to other threads may
+     * invalidated at any moment, due to a request by another thread.
+     * <p style="font-size:smaller;">
+     * Since invalidation is a global and immediate operation,
+     * the execution of this query, on a valid switchpoint,
+     * must be internally sequenced with any
+     * other threads that could cause invalidation.
+     * This query may therefore be expensive.
+     * The recommended way to build a boolean-valued method handle
+     * which queries the invalidation state of a switch point {@code s} is
+     * to call {@code s.guardWithTest} on
+     * {@link MethodHandles#constant constant} true and false method handles.
+     *
+     * @return true if this switch point has been invalidated
+     */
+    public boolean hasBeenInvalidated() {
+        return (mcs.getTarget() != K_true);
+    }
+
+    /**
      * Returns a method handle which always delegates either to the target or the fallback.
      * The method handle will delegate to the target exactly as long as the switch point is valid.
      * After that, it will permanently delegate to the fallback.
@@ -136,6 +164,7 @@ public class SwitchPoint {
      * @param fallback the method handle selected by the switch point after it is invalidated
      * @return a combined method handle which always calls either the target or fallback
      * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the two method types do not match
      * @see MethodHandles#guardWithTest
      */
     public MethodHandle guardWithTest(MethodHandle target, MethodHandle fallback) {
