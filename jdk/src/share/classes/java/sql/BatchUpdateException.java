@@ -79,7 +79,8 @@ public class BatchUpdateException extends SQLException {
    */
   public BatchUpdateException( String reason, String SQLState, int vendorCode,
                                int[] updateCounts ) {
-      this(reason, SQLState, vendorCode, updateCounts, null);
+      super(reason, SQLState, vendorCode);
+      this.updateCounts  = (updateCounts == null) ? null : Arrays.copyOf(updateCounts, updateCounts.length);
   }
 
   /**
@@ -106,7 +107,7 @@ public class BatchUpdateException extends SQLException {
    */
   public BatchUpdateException(String reason, String SQLState,
                               int[] updateCounts) {
-      this(reason, SQLState, 0, updateCounts, null);
+      this(reason, SQLState, 0, updateCounts);
   }
 
   /**
@@ -132,7 +133,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public  BatchUpdateException(String reason, int[] updateCounts) {
-      this(reason, null, 0, updateCounts, null);
+      this(reason, null, 0, updateCounts);
   }
 
   /**
@@ -155,7 +156,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public BatchUpdateException(int[] updateCounts) {
-      this(null, null, 0, updateCounts, null);
+      this(null, null, 0, updateCounts);
   }
 
   /**
@@ -170,7 +171,7 @@ public class BatchUpdateException extends SQLException {
    * @since 1.2
    */
   public BatchUpdateException() {
-        this(null, null, 0, null, null);
+        this(null, null, 0, null);
   }
 
     /**
