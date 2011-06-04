@@ -120,6 +120,7 @@ address OptoRuntime::_zap_dead_Java_locals_Java                   = NULL;
 address OptoRuntime::_zap_dead_native_locals_Java                 = NULL;
 # endif
 
+ExceptionBlob* OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)

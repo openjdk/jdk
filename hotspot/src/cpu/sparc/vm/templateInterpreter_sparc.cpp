@@ -1712,7 +1712,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
       int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
       *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
     } else {
-      assert(caller->is_compiled_frame() || caller->is_entry_frame(), "only possible cases");
+      assert(caller->is_compiled_frame() || caller->is_entry_frame() || caller->is_ricochet_frame(), "only possible cases");
       // Don't have Lesp available; lay out locals block in the caller
       // adjacent to the register window save area.
       //

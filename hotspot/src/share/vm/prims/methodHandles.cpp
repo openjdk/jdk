@@ -160,8 +160,7 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
 };
 
 // Adapters.
-MethodHandlesAdapterBlob* MethodHandles::_adapter_code      = NULL;
-int                       MethodHandles::_adapter_code_size = StubRoutines::method_handles_adapters_code_size;
+MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
 
 jobject MethodHandles::_raise_exception_method;
 
@@ -200,12 +199,15 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TraceStartupTime);
-  _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
+  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
   if (_adapter_code == NULL)
-    vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
+    vm_exit_out_of_memory(adapter_code_size, "CodeCache: no room for MethodHandles adapters");
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
+
+  // Transfer code comments
+  _adapter_code->set_comments(code.comments());
 }
 
 //------------------------------------------------------------------------------
@@ -1721,6 +1723,7 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
 
 void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnum,
                                              bool direct_to_method, TRAPS) {
+  ResourceMark rm;
   Handle ptype_handle(THREAD,
                            java_lang_invoke_MethodType::ptype(java_lang_invoke_MethodHandle::type(target()), argnum));
   KlassHandle ptype_klass;
@@ -1884,6 +1887,7 @@ static void throw_InternalError_for_bad_conversion(int conversion, const char* e
 }
 
 void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
+  ResourceMark rm;
   jint conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
   int  argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
 
@@ -1987,7 +1991,7 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
         bool rotate_up = (src_slot > dest_slot); // upward rotation
         int src_arg    = argnum;
         int dest_arg   = argument_slot_to_argnum(dst_mtype(), dest_slot);
-        verify_vmargslot(mh, dest_arg, dest_slot, CHECK);
+        verify_vmargslot(target, dest_arg, dest_slot, CHECK);
         if (!(dest_slot >= src_slot + swap_size) &&
             !(src_slot >= dest_slot + swap_size)) {
           err = "source, destination slots must be distinct";
@@ -2563,7 +2567,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   }
 
   if (err != NULL) {
-    throw_InternalError_for_bad_conversion(conversion, err, THREAD);
+    throw_InternalError_for_bad_conversion(conversion, err_msg("%s: conv_op %d ek_opt %d", err, conv_op, ek_opt), THREAD);
     return;
   }
 

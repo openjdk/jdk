@@ -217,7 +217,6 @@ class MethodHandles: AllStatic {
 
   // Adapters.
   static MethodHandlesAdapterBlob* _adapter_code;
-  static int                       _adapter_code_size;
 
   static bool ek_valid(EntryKind ek)            { return (uint)ek < (uint)_EK_LIMIT; }
   static bool conv_op_valid(int op)             { return (uint)op < (uint)CONV_OP_LIMIT; }
@@ -716,12 +715,10 @@ public:
 # include "methodHandles_x86.hpp"
 #endif
 #ifdef TARGET_ARCH_sparc
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_sparc.hpp"
+# include "methodHandles_sparc.hpp"
 #endif
 #ifdef TARGET_ARCH_zero
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_zero.hpp"
+# include "methodHandles_zero.hpp"
 #endif
 #ifdef TARGET_ARCH_arm
 # include "methodHandles_arm.hpp"

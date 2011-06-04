@@ -309,12 +309,14 @@ class Address VALUE_OBJ_CLASS_SPEC {
 #endif
 
   // accessors
-  Register base()      const { return _base; }
-  Register index()     const { return _index_or_disp.as_register(); }
-  int      disp()      const { return _index_or_disp.as_constant(); }
+  Register base()             const { return _base; }
+  Register index()            const { return _index_or_disp.as_register(); }
+  int      disp()             const { return _index_or_disp.as_constant(); }
 
-  bool     has_index() const { return _index_or_disp.is_register(); }
-  bool     has_disp()  const { return _index_or_disp.is_constant(); }
+  bool     has_index()        const { return _index_or_disp.is_register(); }
+  bool     has_disp()         const { return _index_or_disp.is_constant(); }
+
+  bool     uses(Register reg) const { return base() == reg || (has_index() && index() == reg); }
 
   const relocInfo::relocType rtype() { return _rspec.type(); }
   const RelocationHolder&    rspec() { return _rspec; }
@@ -329,6 +331,10 @@ class Address VALUE_OBJ_CLASS_SPEC {
     assert(_index_or_disp.is_constant(), "must have a displacement");
     Address a(base(), disp() + plusdisp);
     return a;
+  }
+  bool is_same_address(Address a) const {
+    // disregard _rspec
+    return base() == a.base() && (has_index() ? index() == a.index() : disp() == a.disp());
   }
 
   Address after_save() const {
@@ -436,6 +442,10 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
+  AddressLiteral(oop* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
   AddressLiteral(float* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
@@ -455,6 +465,21 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+// Convenience classes
+class ExternalAddress: public AddressLiteral {
+ private:
+  static relocInfo::relocType reloc_for_target(address target) {
+    // Sometimes ExternalAddress is used for values which aren't
+    // exactly addresses, like the card table base.
+    // external_word_type can't be used for values in the first page
+    // so just skip the reloc in that case.
+    return external_word_Relocation::can_be_relocated(target) ? relocInfo::external_word_type : relocInfo::none;
+  }
+
+ public:
+  ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(          target)) {}
+  ExternalAddress(oop*    target) : AddressLiteral(target, reloc_for_target((address) target)) {}
+};
 
 inline Address RegisterImpl::address_in_saved_window() const {
    return (Address(SP, (sp_offset_in_saved_window() * wordSize) + STACK_BIAS));
@@ -855,9 +880,8 @@ class Assembler : public AbstractAssembler  {
   // and be sign-extended. Check the range.
 
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert( nbits == 32
-        ||  -(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1),
-      "value out of range");
+    assert(nbits == 32 || (-(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1)),
+           err_msg("value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits));
   }
 
   static void assert_signed_word_disp_range(intptr_t x, int nbits) {
@@ -2287,7 +2311,7 @@ public:
   int total_frame_size_in_bytes(int extraWords);
 
   // used when extraWords known statically
-  void save_frame(int extraWords);
+  void save_frame(int extraWords = 0);
   void save_frame_c1(int size_in_bytes);
   // make a frame, and simultaneously pass up one or two register value
   // into the new register window
@@ -2456,9 +2480,11 @@ public:
   // offset relative to Gargs of argument at tos[arg_slot].
   // (arg_slot == 0 means the last argument, not the first).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot,
+                                     Register temp_reg,
                                      int extra_slot_offset = 0);
   // Address of Gargs and argument_offset.
   Address            argument_address(RegisterOrConstant arg_slot,
+                                      Register temp_reg,
                                       int extra_slot_offset = 0);
 
   // Stack overflow checking

@@ -5090,7 +5090,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
   } else {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
-    assert(false, "DEBUG MESSAGE");
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
   ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
 }
@@ -5653,6 +5653,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
                     msg);
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
 }
 

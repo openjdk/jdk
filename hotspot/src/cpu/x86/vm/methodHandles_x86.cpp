@@ -139,9 +139,9 @@ oop MethodHandles::RicochetFrame::compute_saved_args_layout(bool read_cache, boo
 
 void MethodHandles::RicochetFrame::generate_ricochet_blob(MacroAssembler* _masm,
                                                           // output params:
-                                                          int* frame_size_in_words,
                                                           int* bounce_offset,
-                                                          int* exception_offset) {
+                                                          int* exception_offset,
+                                                          int* frame_size_in_words) {
   (*frame_size_in_words) = RicochetFrame::frame_size_in_bytes() / wordSize;
 
   address start = __ pc();
@@ -366,7 +366,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
                                     Register rdi_stack_move,
                                     Register rcx_amh,
                                     bool might_be_negative) {
-  BLOCK_COMMENT("load_stack_move");
+  BLOCK_COMMENT("load_stack_move {");
   Address rcx_amh_conversion(rcx_amh, java_lang_invoke_AdapterMethodHandle::conversion_offset_in_bytes());
   __ movl(rdi_stack_move, rcx_amh_conversion);
   __ sarl(rdi_stack_move, CONV_STACK_MOVE_SHIFT);
@@ -387,6 +387,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
     __ stop("load_stack_move of garbage value");
     __ BIND(L_ok);
   }
+  BLOCK_COMMENT("} load_stack_move");
 }
 
 #ifdef ASSERT
@@ -1147,7 +1148,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
   trace_method_handle(_masm, entry_name(ek));
 
-  BLOCK_COMMENT(entry_name(ek));
+  BLOCK_COMMENT(err_msg("Entry %s {", entry_name(ek)));
 
   switch ((int) ek) {
   case _raise_exception:
@@ -1292,7 +1293,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _bound_int_direct_mh:
   case _bound_long_direct_mh:
     {
-      bool direct_to_method = (ek >= _bound_ref_direct_mh);
+      const bool direct_to_method = (ek >= _bound_ref_direct_mh);
       BasicType arg_type  = ek_bound_mh_arg_type(ek);
       int       arg_slots = type2size[arg_type];
 
@@ -1929,7 +1930,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // In the non-retaining case, this might move keep2 either up or down.
       // We don't have to copy the whole | RF... collect | complex,
       // but we must adjust RF.saved_args_base.
-      // Also, from now on, we will forget about the origial copy of |collect|.
+      // Also, from now on, we will forget about the original copy of |collect|.
       // If we are retaining it, we will treat it as part of |keep2|.
       // For clarity we will define |keep3| = |collect|keep2| or |keep2|.
 
@@ -1986,7 +1987,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // Net shift (&new_argv - &old_argv) is (close_count - open_count).
       bool zero_open_count = (open_count == 0);  // remember this bit of info
       if (move_keep3 && fix_arg_base) {
-        // It will be easier t have everything in one register:
+        // It will be easier to have everything in one register:
         if (close_count.is_register()) {
           // Deduct open_count from close_count register to get a clean +/- value.
           __ subptr(close_count.as_register(), open_count);
@@ -2396,6 +2397,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
     __ nop();
     return;
   }
+  BLOCK_COMMENT(err_msg("} Entry %s", entry_name(ek)));
   __ hlt();
 
   address me_cookie = MethodHandleEntry::start_compiled_entry(_masm, interp_entry);
