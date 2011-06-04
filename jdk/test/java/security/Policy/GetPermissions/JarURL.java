@@ -23,30 +23,27 @@
 
 /*
  * @test
- * @bug 6639645
- * @summary Modeling type implementing missing interfaces
- * @library ../../../../lib
- * @clean MissingGenericInterface2
- * @build JavacTestingAbstractProcessor Generator
- * @compile -XprintRounds -processor Generator TestMissingGenericInterface2.java
- * @run main TestMissingGenericInterface2
+ * @bug 7044443
+ * @summary Permissions resolved incorrectly for jar protocol
  */
 
-import java.util.*;
+import java.net.URL;
+import java.security.AllPermission;
+import java.security.CodeSource;
+import java.security.PermissionCollection;
+import java.security.Policy;
+import java.security.cert.Certificate;
 
-public class TestMissingGenericInterface2 implements MissingGenericInterface2<Integer,String> {
-    public static void main(String... args) {
-        new TestMissingGenericInterface2().run();
+public class JarURL {
+    public static void main(String[] args) throws Exception {
+        URL codeSourceURL
+            = new URL("jar:file:"
+                      + System.getProperty("java.ext.dirs").split(":")[0]
+                      + "/foo.jar!/");
+        CodeSource cs = new CodeSource(codeSourceURL, new Certificate[0]);
+        PermissionCollection perms = Policy.getPolicy().getPermissions(cs);
+        if (!perms.implies(new AllPermission()))
+            throw new Exception("FAILED: " + codeSourceURL
+                                + " not granted AllPermission");
     }
-
-    @Override
-    public void run() {
-        Class<?> c = getClass();
-        System.out.println("class: " + c);
-        System.out.println("superclass: " + c.getSuperclass());
-        System.out.println("generic superclass: " +c.getGenericSuperclass());
-        System.out.println("interfaces: " + Arrays.asList(c.getInterfaces()));
-        System.out.println("generic interfaces: " + Arrays.asList(c.getGenericInterfaces()));
-    }
-
 }

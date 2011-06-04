@@ -234,7 +234,7 @@ class FilterGeneric {
         protected final MethodHandle target; // ultimate target
 
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
 
