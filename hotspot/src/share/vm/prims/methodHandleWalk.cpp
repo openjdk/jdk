@@ -178,6 +178,12 @@ static const char* adapter_op_to_string(int op) {
   return "unknown_op";
 }
 
+void MethodHandleChain::print(oopDesc* m) {
+  HandleMark hm;
+  ResourceMark rm;
+  Handle mh(m);
+  print(mh);
+}
 
 void MethodHandleChain::print(Handle mh) {
   EXCEPTION_MARK;
@@ -414,8 +420,7 @@ MethodHandleWalker::walk(TRAPS) {
         assert(dest == T_OBJECT, "");
         ArgToken arg = _outgoing.at(arg_slot);
         assert(dest == arg.basic_type(), "");
-        ArgToken new_arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
-        assert(!arg.has_index() || arg.index() == new_arg.index(), "should be the same index");
+        arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
         debug_only(dest_klass = (klassOop)badOop);
         break;
       }
@@ -1248,8 +1253,9 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
       index = src.index();
     }
     emit_bc(op, cpool_klass_put(tk));
-    if (index == -1)
-      index = new_local_index(type);
+    // Allocate a new local for the type so that we don't hide the
+    // previous type from the verifier.
+    index = new_local_index(type);
     emit_store(srctype, index);
     break;
 

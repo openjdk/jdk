@@ -110,6 +110,7 @@ public:
   // slot order to make it easier to understand.
   void print();
   static void print(Handle mh);
+  static void print(oopDesc* mh);
 #endif
 };
 
@@ -273,7 +274,7 @@ private:
   static jvalue one_jvalue;
 
   // Fake constant pool entry.
-  class ConstantValue {
+  class ConstantValue : public ResourceObj {
   private:
     int       _tag;   // Constant pool tag type.
     JavaValue _value;
