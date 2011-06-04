@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 7044443
+ * @bug 7044443 7050329
+ * @run main/othervm/policy=JarURL.policy JarURL
  * @summary Permissions resolved incorrectly for jar protocol
  */
 
 import java.net.URL;
+import java.io.File;
 import java.security.AllPermission;
 import java.security.CodeSource;
 import java.security.PermissionCollection;
@@ -35,11 +37,11 @@ import java.security.Policy;
 import java.security.cert.Certificate;
 
 public class JarURL {
+
     public static void main(String[] args) throws Exception {
-        URL codeSourceURL
-            = new URL("jar:file:"
-                      + System.getProperty("java.ext.dirs").split(":")[0]
-                      + "/foo.jar!/");
+        String userDir = System.getProperty("user.dir");
+        String jarURL = "jar:file:" + userDir + File.separator + "foo.jar!/";
+        URL codeSourceURL = new URL(jarURL);
         CodeSource cs = new CodeSource(codeSourceURL, new Certificate[0]);
         PermissionCollection perms = Policy.getPolicy().getPermissions(cs);
         if (!perms.implies(new AllPermission()))
