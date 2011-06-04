@@ -448,6 +448,8 @@ class MethodTypeForm {
         Class<?>[] cs = null;
         for (int imax = ts.length, i = 0; i < imax; i++) {
             Class<?> c = canonicalize(ts[i], how);
+            if (c == void.class)
+                c = null;  // a Void parameter was unwrapped to void; ignore
             if (c != null) {
                 if (cs == null)
                     cs = ts.clone();

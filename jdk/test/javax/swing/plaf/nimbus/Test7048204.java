@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,27 @@
  * questions.
  */
 
-package sun.io;
+/* @test
+   @bug 7048204
+   @summary NPE from NimbusLookAndFeel.addDefault
+   @author Pavel Porvatov
+*/
 
-import sun.nio.cs.ext.IBM833;
+import javax.swing.*;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
-public class CharToByteCp833 extends CharToByteSingleByte {
+public class Test7048204 {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel(new NimbusLookAndFeel());
 
-    private final static IBM833 nioCoder = new IBM833();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                new JLabel();
 
-    public String getCharacterEncoding() {
-        return "Cp833";
-    }
-
-    public CharToByteCp833() {
-        super.mask1 = 0xFF00;
-        super.mask2 = 0x00FF;
-        super.shift = 8;
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+                UIDefaults uid = UIManager.getDefaults();
+                uid.putDefaults(new Object[0]);
+                uid.put("what.ever", "else");
+            }
+        });
     }
 }
-
