@@ -30,6 +30,10 @@
  *      --verify-specifier-count=3
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --check-output
+ * @run main/othervm
+ *      indify.Indify
+ *      --expand-properties --classpath ${test.classes}
+ *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --security-manager
  */
 
 package test.java.lang.invoke;
@@ -45,7 +49,8 @@ import static java.lang.invoke.MethodType.*;
 
 public class InvokeDynamicPrintArgs {
     public static void main(String... av) throws Throwable {
-        if (av.length > 0)  openBuf();  // --check-output mode
+        if (av.length > 0 && av[0].equals("--check-output"))  openBuf();
+        if (av.length > 0 && av[0].equals("--security-manager"))  setSM();
         System.out.println("Printing some argument lists, starting with a empty one:");
         INDY_nothing().invokeExact();                 // BSM specifier #0 = {bsm}
         INDY_bar().invokeExact("bar arg", 1);         // BSM specifier #1 = {bsm2, Void.class, "void type"}
@@ -55,6 +60,43 @@ public class InvokeDynamicPrintArgs {
         // Hence, BSM specifier count should be 3.  See "--verify-specifier-count=3" above.
         System.out.println("Done printing argument lists.");
         closeBuf();
+        checkConstantRefs();
+    }
+
+    private static void checkConstantRefs() throws Throwable {
+        // check some constant references:
+        assertEquals(MT_bsm(), MH_bsm().type());
+        assertEquals(MT_bsm2(), MH_bsm2().type());
+        try {
+            assertEquals(MT_bsm(), non_MH_bsm().type());
+            // if SM is installed, must throw before this point
+            assertEquals(false, System.getSecurityManager() != null);
+        } catch (SecurityException ex) {
+            // if SM is installed, must throw to this point
+            assertEquals(true, System.getSecurityManager() != null);
+        }
+    }
+    private static void assertEquals(Object exp, Object act) {
+        if (exp == act || (exp != null && exp.equals(act)))  return;
+        throw new AssertionError("not equal: "+exp+", "+act);
+    }
+
+    private static void setSM() {
+        // Test for severe security manager interactions (7050328).
+        class SM extends SecurityManager {
+            public void checkPackageAccess(String pkg) {
+                if (pkg.startsWith("test."))
+                    throw new SecurityException("checkPackageAccess "+pkg);
+            }
+            public void checkMemberAccess(Class<?> clazz, int which) {
+                if (clazz == InvokeDynamicPrintArgs.class)
+                    throw new SecurityException("checkMemberAccess "+clazz.getName()+" #"+which);
+            }
+            // allow these others:
+            public void checkPermission(java.security.Permission perm) {
+            }
+        }
+        System.setSecurityManager(new SM());
     }
 
     @Test
@@ -128,6 +170,9 @@ public class InvokeDynamicPrintArgs {
     }
     private static MethodHandle MH_bsm() throws ReflectiveOperationException {
         shouldNotCallThis();
+        return lookup().findStatic(lookup().lookupClass(), "bsm", MT_bsm());
+    }
+    private static MethodHandle non_MH_bsm() throws ReflectiveOperationException {
         return lookup().findStatic(lookup().lookupClass(), "bsm", MT_bsm());
     }
 
