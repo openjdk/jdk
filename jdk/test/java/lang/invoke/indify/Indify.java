@@ -524,6 +524,8 @@ public class Indify {
             if (verifySpecifierCount >= 0) {
                 List<Object[]> specs = bootstrapMethodSpecifiers(false);
                 int specsLen = (specs == null ? 0 : specs.size());
+                // Pass by specsLen == 0, to help with associated (inner) classes.
+                if (specsLen == 0)  specsLen = verifySpecifierCount;
                 if (specsLen != verifySpecifierCount) {
                     throw new IllegalArgumentException("BootstrapMethods length is "+specsLen+" but should be "+verifySpecifierCount);
                 }

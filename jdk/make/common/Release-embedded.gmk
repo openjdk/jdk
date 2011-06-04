@@ -53,25 +53,30 @@ $(NOT_HEADLESS_RT_JAR_LIST): $(NOT_RT_JAR_LIST)
 	$(RM) $(HEADLESS_CLASSLIST)
 	$(RM) $(NOT_HEADLESS_RT_JAR_LIST)
 	$(CP) $(NOT_RT_JAR_LIST) $(NOT_HEADLESS_RT_JAR_LIST)
+# List all the packages to be excluded
 	$(ECHO) "sun/awt/motif/" >> $@
 	$(ECHO) "sun/awt/X11/" >> $@
 	$(ECHO) "sun/applet/" >> $@
 	$(ECHO) "sun/java2d/opengl/" >> $@
 	$(ECHO) "com/sun/java/swing/plaf/" >> $@
-	$(ECHO) "sun/awt/motif/MFontConfiguration" >$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/applet/AppContextCreator" >>$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/applet/AppletAudioClip" >>$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/java2d/opengl/GLXSurfaceData" >>$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/java2d/opengl/GLXSurfaceData"\$$"GLXOffScreenSurfaceData" >>$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/java2d/opengl/GLXVolatileSurfaceManager" >>$(HEADLESS_CLASSLIST)
-	$(ECHO) "sun/java2d/opengl/OGLSurfaceData" >>$(HEADLESS_CLASSLIST)
+# List all the individual classes to be included
+	$(ECHO) "sun/awt/motif/MFontConfiguration.class" >$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/applet/AppContextCreator.class" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/applet/AppletAudioClip.class" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXSurfaceData.class" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXSurfaceData"\$$"GLXOffScreenSurfaceData.class" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/GLXVolatileSurfaceManager.class" >>$(HEADLESS_CLASSLIST)
+	$(ECHO) "sun/java2d/opengl/OGLSurfaceData.class" >>$(HEADLESS_CLASSLIST)
+
 
 $(TOTAL_HEADLESS_JAR_FILELIST): $(JARREORDER_JARFILE) $(NOT_HEADLESS_RT_JAR_LIST)
 	$(prep-target)
 	$(RM) $@.temp
 	$(CD) $(CLASSBINDIR) ; \
 		$(BOOT_JAVA_CMD) -jar $(JARREORDER_JARFILE) \
-		-o  $@.temp $(HEADLESS_CLASSLIST) $(NOT_HEADLESS_RT_JAR_LIST)  .
+		-o  $@.temp - $(NOT_HEADLESS_RT_JAR_LIST)  .
+# Add on the explicitly included class files from the otherwise excluded packages
+	$(CAT) $(HEADLESS_CLASSLIST) >> $@.temp
 	$(MV) $@.temp $@
 	@$(CD) $(CLASSBINDIR); $(java-vm-cleanup)
 
@@ -124,13 +129,9 @@ NOT_REDUCEDJRE_LIB = \
  $(LIBARCH)/libjavaplugin_nscp.so \
  $(LIBARCH)/libjavaplugin_oji.so
 
-
-ifeq ($(PLATFORM), linux)
-  STRIP_OPTS = --strip-unneeded
-else
-  STRIP_OPTS = -x
-endif
-
+# JRE docs that don't get included in reduced jre image top directory
+NOT_REDUCEDJRE_DOC = \
+ Welcome.html
 
 reduced-image-jre::
 	@$(ECHO) Starting to Produce Reduced JRE
@@ -142,12 +143,6 @@ reduced-image-jre::
 	$(CD) $(JRE_IMAGE_DIR); \
 	    $(TAR) cf - . | ($(CD) $(JRE_REDUCED_IMAGE_DIR); $(TAR) xf - ); 
 
-	@# strip the main .so files
-	$(STRIP) $(STRIP_OPTS) $(JRE_REDUCED_IMAGE_DIR)/lib/$(LIBARCH)/client/libjvm.so
-ifndef BUILD_CLIENT_ONLY
-	$(STRIP) $(STRIP_OPTS) $(JRE_REDUCED_IMAGE_DIR)/lib/$(LIBARCH)/server/libjvm.so
-endif
-
 	@#
 	@# Remove all of the files that are not needed for the
 	@# reduced JRE
@@ -157,6 +152,9 @@ endif
 	done
 	for l in $(NOT_REDUCEDJRE_LIB) ; do \
 	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/lib/$$l ; \
+	done
+	for l in $(NOT_REDUCEDJRE_DOC) ; do \
+	    $(RM) $(JRE_REDUCED_IMAGE_DIR)/$$l ; \
 	done
 
 	@# Remove misc. other files
