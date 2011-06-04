@@ -29,6 +29,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +40,17 @@ import java.util.List;
 public class ValueConversions {
     private static final Class<?> THIS_CLASS = ValueConversions.class;
     // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
+    private static final int MAX_ARITY;
+    static {
+        final Object[] values = { 255 };
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    values[0] = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
+                    return null;
+                }
+            });
+        MAX_ARITY = (Integer) values[0];
+    }
 
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 

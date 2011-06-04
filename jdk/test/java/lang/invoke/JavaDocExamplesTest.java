@@ -477,14 +477,14 @@ assertEquals("Wilma, dear?", (String) worker2.invokeExact());
 MethodHandle MH_strcat = MethodHandles.lookup()
     .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
 SwitchPoint spt = new SwitchPoint();
-assert(spt.isValid());
+assert(!spt.hasBeenInvalidated());
 // the following steps may be repeated to re-use the same switch point:
 MethodHandle worker1 = MH_strcat;
 MethodHandle worker2 = MethodHandles.permuteArguments(MH_strcat, MH_strcat.type(), 1, 0);
 MethodHandle worker = spt.guardWithTest(worker1, worker2);
 assertEquals("method", (String) worker.invokeExact("met", "hod"));
 SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
-assert(!spt.isValid());
+assert(spt.hasBeenInvalidated());
 assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
 {}
             }}
