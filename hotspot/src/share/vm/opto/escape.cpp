@@ -1747,6 +1747,25 @@ bool ConnectionGraph::compute_escape() {
   _collecting = false;
   assert(C->unique() == nodes_size(), "there should be no new ideal nodes during ConnectionGraph build");
 
+  if (EliminateLocks) {
+    // Mark locks before changing ideal graph.
+    int cnt = C->macro_count();
+    for( int i=0; i < cnt; i++ ) {
+      Node *n = C->macro_node(i);
+      if (n->is_AbstractLock()) { // Lock and Unlock nodes
+        AbstractLockNode* alock = n->as_AbstractLock();
+        if (!alock->is_eliminated()) {
+          PointsToNode::EscapeState es = escape_state(alock->obj_node());
+          assert(es != PointsToNode::UnknownEscape, "should know");
+          if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
+            // Mark it eliminated
+            alock->set_eliminated();
+          }
+        }
+      }
+    }
+  }
+
 #ifndef PRODUCT
   if (PrintEscapeAnalysis) {
     dump(); // Dump ConnectionGraph
