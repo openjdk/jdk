@@ -233,8 +233,18 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfile
     jint dataSize;
     storeID_t sProf;
 
+    if (JNU_IsNull(env, data)) {
+        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        return 0L;
+    }
+
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
     dataSize = (*env)->GetArrayLength (env, data);
+
+    if (dataArray == NULL) {
+        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        return 0L;
+    }
 
     sProf.pf = cmsOpenProfileFromMem((const void *)dataArray,
                                      (cmsUInt32Number) dataSize);
@@ -334,8 +344,9 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileData
 }
 
 /* Get profile header info */
-cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
-cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
+static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
+static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
+static cmsBool _writeCookedTag(cmsHPROFILE pfTarget, cmsTagSignature sig, jbyte *pData, jint size);
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
@@ -356,7 +367,7 @@ JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagSize
         result = sizeof(cmsICCHeader);
     } else {
       if (cmsIsTag(sProf.pf, sig.cms)) {
-            result = cmsReadRawTag(sProf.pf, sig.cms, NULL, 0);
+          result = cmsReadRawTag(sProf.pf, sig.cms, NULL, 0);
         } else {
             JNU_ThrowByName(env, "java/awt/color/CMMException",
                             "ICC profile tag not found");
@@ -468,22 +479,30 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagData
     sProf.j = id;
     sig.j = tagSig;
 
+    if (JNU_IsNull(env, data)) {
+        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        return;
+    }
 
     tagSize =(*env)->GetArrayLength(env, data);
 
     dataArray = (*env)->GetByteArrayElements(env, data, 0);
 
+    if (dataArray == NULL) {
+        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        return;
+    }
+
     if (tagSig == SigHead) {
         status = _setHeaderInfo(sProf.pf, dataArray, tagSize);
     } else {
-        status = cmsWriteRawTag(sProf.pf, sig.cms, dataArray, tagSize);
+        status = _writeCookedTag(sProf.pf, sig.cms, dataArray, tagSize);
     }
 
     (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 
     if (!status) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Can not write tag data.");
+        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
     }
 }
 
@@ -645,7 +664,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
     PF_ID_fID = (*env)->GetFieldID (env, Pf, "ID", "J");
 }
 
-cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
+static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 {
   cmsUInt32Number pfSize = 0;
   cmsUInt8Number* pfBuffer = NULL;
@@ -672,7 +691,7 @@ cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
   return status;
 }
 
-cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
+static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 {
   cmsICCHeader pfHeader = { 0 };
 
@@ -695,4 +714,78 @@ cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
   cmsSetEncodedICCversion(pf, pfHeader.version);
 
   return TRUE;
+}
+
+static cmsBool _writeCookedTag(cmsHPROFILE pfTarget,
+                               cmsTagSignature sig,
+                               jbyte *pData, jint size)
+{
+    cmsBool status;
+    cmsUInt32Number pfSize = 0;
+    cmsUInt8Number* pfBuffer = NULL;
+
+    cmsHPROFILE p = cmsCreateProfilePlaceholder(NULL);
+    if (NULL != p) {
+        cmsICCHeader hdr = { 0 };
+
+        /* Populate the placeholder's header according to target profile */
+        hdr.flags = cmsGetHeaderFlags(pfTarget);
+        hdr.renderingIntent = cmsGetHeaderRenderingIntent(pfTarget);
+        hdr.manufacturer = cmsGetHeaderManufacturer(pfTarget);
+        hdr.model = cmsGetHeaderModel(pfTarget);
+        hdr.pcs = cmsGetPCS(pfTarget);
+        hdr.colorSpace = cmsGetColorSpace(pfTarget);
+        hdr.deviceClass = cmsGetDeviceClass(pfTarget);
+        hdr.version = cmsGetEncodedICCversion(pfTarget);
+        cmsGetHeaderAttributes(pfTarget, &hdr.attributes);
+        cmsGetHeaderProfileID(pfTarget, (cmsUInt8Number*)&hdr.profileID);
+
+        cmsSetHeaderFlags(p, hdr.flags);
+        cmsSetHeaderManufacturer(p, hdr.manufacturer);
+        cmsSetHeaderModel(p, hdr.model);
+        cmsSetHeaderAttributes(p, hdr.attributes);
+        cmsSetHeaderProfileID(p, (cmsUInt8Number*)&(hdr.profileID));
+        cmsSetHeaderRenderingIntent(p, hdr.renderingIntent);
+        cmsSetPCS(p, hdr.pcs);
+        cmsSetColorSpace(p, hdr.colorSpace);
+        cmsSetDeviceClass(p, hdr.deviceClass);
+        cmsSetEncodedICCversion(p, hdr.version);
+
+
+        if (cmsWriteRawTag(p, sig, pData, size)) {
+            if (cmsSaveProfileToMem(p, NULL, &pfSize)) {
+                pfBuffer = malloc(pfSize);
+                if (pfBuffer != NULL) {
+                    /* load raw profile data into the buffer */
+                    if (!cmsSaveProfileToMem(p, pfBuffer, &pfSize)) {
+                        free(pfBuffer);
+                        pfBuffer = NULL;
+                    }
+                }
+            }
+        }
+        cmsCloseProfile(p);
+    }
+
+    if (pfBuffer == NULL) {
+        return FALSE;
+    }
+
+    /* re-open the placeholder profile */
+    p = cmsOpenProfileFromMem(pfBuffer, pfSize);
+    free(pfBuffer);
+    status = FALSE;
+
+    if (p != NULL) {
+        /* Note that pCookedTag points to internal structures of the placeholder,
+         * so this data is valid only while the placeholder is open.
+         */
+        void *pCookedTag = cmsReadTag(p, sig);
+        if (pCookedTag != NULL) {
+            status = cmsWriteTag(pfTarget, sig, pCookedTag);
+        }
+        pCookedTag = NULL;
+        cmsCloseProfile(p);
+    }
+    return status;
 }
