@@ -154,9 +154,10 @@ public class VerifyAccess {
      * @return whether they are in the same package
      */
     public static boolean isSamePackage(Class<?> class1, Class<?> class2) {
+        assert(!class1.isArray() && !class2.isArray());
         if (class1 == class2)
             return true;
-        if (!loadersAreRelated(class1.getClassLoader(), class2.getClassLoader()))
+        if (!loadersAreRelated(class1.getClassLoader(), class2.getClassLoader(), false))
             return false;
         String name1 = class1.getName(), name2 = class2.getName();
         int dot = name1.lastIndexOf('.');
@@ -167,6 +168,16 @@ public class VerifyAccess {
                 return false;
         }
         return true;
+    }
+
+    /** Return the package name for this class.
+     */
+    public static String getPackageName(Class<?> cls) {
+        assert(!cls.isArray());
+        String name = cls.getName();
+        int dot = name.lastIndexOf('.');
+        if (dot < 0)  return "";
+        return name.substring(0, dot);
     }
 
     /**
@@ -193,18 +204,33 @@ public class VerifyAccess {
         return pkgmem;
     }
 
-    private static boolean loadersAreRelated(ClassLoader loader1, ClassLoader loader2) {
-        if (loader1 == loader2 || loader1 == null || loader2 == null) {
+    private static boolean loadersAreRelated(ClassLoader loader1, ClassLoader loader2,
+                                             boolean loader1MustBeParent) {
+        if (loader1 == loader2 || loader1 == null
+                || (loader2 == null && !loader1MustBeParent)) {
             return true;
-        }
-        for (ClassLoader scan1 = loader1;
-                scan1 != null; scan1 = scan1.getParent()) {
-            if (scan1 == loader2)  return true;
         }
         for (ClassLoader scan2 = loader2;
                 scan2 != null; scan2 = scan2.getParent()) {
             if (scan2 == loader1)  return true;
         }
+        if (loader1MustBeParent)  return false;
+        // see if loader2 is a parent of loader1:
+        for (ClassLoader scan1 = loader1;
+                scan1 != null; scan1 = scan1.getParent()) {
+            if (scan1 == loader2)  return true;
+        }
         return false;
+    }
+
+    /**
+     * Is the class loader of parentClass identical to, or an ancestor of,
+     * the class loader of childClass?
+     * @param parentClass
+     * @param childClass
+     * @return whether parentClass precedes or equals childClass in class loader order
+     */
+    public static boolean classLoaderIsAncestor(Class<?> parentClass, Class<?> childClass) {
+        return loadersAreRelated(parentClass.getClassLoader(), childClass.getClassLoader(), true);
     }
 }
