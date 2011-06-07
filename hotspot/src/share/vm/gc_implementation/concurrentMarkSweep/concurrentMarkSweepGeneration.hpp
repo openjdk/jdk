@@ -1701,9 +1701,9 @@ class SweepClosure: public BlkClosureCareful {
   CMSCollector*                  _collector;  // collector doing the work
   ConcurrentMarkSweepGeneration* _g;    // Generation being swept
   CompactibleFreeListSpace*      _sp;   // Space being swept
-  HeapWord*                      _limit;// the address at which the sweep should stop because
-                                        // we do not expect blocks eligible for sweeping past
-                                        // that address.
+  HeapWord*                      _limit;// the address at or above which the sweep should stop
+                                        // because we do not expect newly garbage blocks
+                                        // eligible for sweeping past that address.
   Mutex*                         _freelistLock; // Free list lock (in space)
   CMSBitMap*                     _bitMap;       // Marking bit map (in
                                                 // generation)
@@ -1750,6 +1750,10 @@ class SweepClosure: public BlkClosureCareful {
   void do_post_free_or_garbage_chunk(FreeChunk *fc, size_t chunkSize);
   // Process a free chunk during sweeping.
   void do_already_free_chunk(FreeChunk *fc);
+  // Work method called when processing an already free or a
+  // freshly garbage chunk to do a lookahead and possibly a
+  // premptive flush if crossing over _limit.
+  void lookahead_and_flush(FreeChunk* fc, size_t chunkSize);
   // Process a garbage chunk during sweeping.
   size_t do_garbage_chunk(FreeChunk *fc);
   // Process a live chunk during sweeping.
@@ -1758,8 +1762,6 @@ class SweepClosure: public BlkClosureCareful {
   // Accessors.
   HeapWord* freeFinger() const          { return _freeFinger; }
   void set_freeFinger(HeapWord* v)      { _freeFinger = v; }
-  size_t freeRangeSize() const          { return _freeRangeSize; }
-  void set_freeRangeSize(size_t v)      { _freeRangeSize = v; }
   bool inFreeRange()    const           { return _inFreeRange; }
   void set_inFreeRange(bool v)          { _inFreeRange = v; }
   bool lastFreeRangeCoalesced() const    { return _lastFreeRangeCoalesced; }
@@ -1779,14 +1781,16 @@ class SweepClosure: public BlkClosureCareful {
   void do_yield_work(HeapWord* addr);
 
   // Debugging/Printing
-  void record_free_block_coalesced(FreeChunk* fc) const PRODUCT_RETURN;
+  void print_free_block_coalesced(FreeChunk* fc) const;
 
  public:
   SweepClosure(CMSCollector* collector, ConcurrentMarkSweepGeneration* g,
                CMSBitMap* bitMap, bool should_yield);
-  ~SweepClosure();
+  ~SweepClosure() PRODUCT_RETURN;
 
   size_t       do_blk_careful(HeapWord* addr);
+  void         print() const { print_on(tty); }
+  void         print_on(outputStream *st) const;
 };
 
 // Closures related to weak references processing
