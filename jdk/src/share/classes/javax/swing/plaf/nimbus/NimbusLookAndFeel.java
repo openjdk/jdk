@@ -588,6 +588,10 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     }
 
     private void addDefault(String key, Object value) {
+        if (compiledDefaults == null) {
+            return;
+        }
+
         String prefix = parsePrefix(key);
         if (prefix != null) {
             Map<String, Object> keys = compiledDefaults.get(prefix);

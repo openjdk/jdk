@@ -49,5 +49,16 @@ RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 JRE_REDUCED_HEADLESS_IMAGE_DIR = $(ABS_OUTPUTDIR)/j2re-reduced-headless-image
 JRE_REDUCED_IMAGE_DIR = $(ABS_OUTPUTDIR)/j2re-reduced-image
 
+# Override on linux to further reduce binary/lib sizes in product build
+ifeq ($(PLATFORM), linux)
+  ifeq ($(VARIANT), OPT)
+    ifneq ($(NO_STRIP), true)
+      ifneq ($(DEBUG_BINARIES), true)
+        POST_STRIP_PROCESS = $(STRIP) --strip-unneeded
+      endif
+    endif
+  endif
+endif
+
 endif # JAVASE_EMBEDDED
 

@@ -51,10 +51,10 @@ public class Test6991596 {
         return MethodHandles.lookup().findStatic(CLASS, NAME, MethodType.methodType(ret, arg));
     }
     static MethodHandle getmh2(MethodHandle mh1, Class ret, Class arg) {
-        return MethodHandles.convertArguments(mh1, MethodType.methodType(ret, arg));
+        return MethodHandles.explicitCastArguments(mh1, MethodType.methodType(ret, arg));
     }
     static MethodHandle getmh3(MethodHandle mh1, Class ret, Class arg) {
-        return MethodHandles.convertArguments(mh1, MethodType.methodType(ret, arg));
+        return MethodHandles.explicitCastArguments(mh1, MethodType.methodType(ret, arg));
     }
 
     // test adapter_opt_i2i
