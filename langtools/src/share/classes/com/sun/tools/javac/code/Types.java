@@ -2061,7 +2061,7 @@ public class Types {
                 _map.put(ms, new SoftReference<Map<TypeSymbol, Entry>>(cache));
             }
             Entry e = cache.get(origin);
-            CompoundScope members = membersClosure(origin.type);
+            CompoundScope members = membersClosure(origin.type, true);
             if (e == null ||
                     !e.matches(implFilter, checkResult, members.getMark())) {
                 MethodSymbol impl = implementationInternal(ms, origin, checkResult, implFilter);
@@ -2098,36 +2098,61 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="compute transitive closure of all members in given site">
-    public CompoundScope membersClosure(Type site) {
-        return membersClosure.visit(site);
-    }
+    class MembersClosureCache extends SimpleVisitor<CompoundScope, Boolean> {
 
-    UnaryVisitor<CompoundScope> membersClosure = new UnaryVisitor<CompoundScope>() {
+        private WeakHashMap<TypeSymbol, Entry> _map =
+                new WeakHashMap<TypeSymbol, Entry>();
 
-        public CompoundScope visitType(Type t, Void s) {
+        class Entry {
+            final boolean skipInterfaces;
+            final CompoundScope compoundScope;
+
+            public Entry(boolean skipInterfaces, CompoundScope compoundScope) {
+                this.skipInterfaces = skipInterfaces;
+                this.compoundScope = compoundScope;
+            }
+
+            boolean matches(boolean skipInterfaces) {
+                return this.skipInterfaces == skipInterfaces;
+            }
+        }
+
+        /** members closure visitor methods **/
+
+        public CompoundScope visitType(Type t, Boolean skipInterface) {
             return null;
         }
 
         @Override
-        public CompoundScope visitClassType(ClassType t, Void s) {
+        public CompoundScope visitClassType(ClassType t, Boolean skipInterface) {
             ClassSymbol csym = (ClassSymbol)t.tsym;
-            if (csym.membersClosure == null) {
+            Entry e = _map.get(csym);
+            if (e == null || !e.matches(skipInterface)) {
                 CompoundScope membersClosure = new CompoundScope(csym);
-                for (Type i : interfaces(t)) {
-                    membersClosure.addSubScope(visit(i));
+                if (!skipInterface) {
+                    for (Type i : interfaces(t)) {
+                        membersClosure.addSubScope(visit(i, skipInterface));
+                    }
                 }
-                membersClosure.addSubScope(visit(supertype(t)));
+                membersClosure.addSubScope(visit(supertype(t), skipInterface));
                 membersClosure.addSubScope(csym.members());
-                csym.membersClosure = membersClosure;
+                e = new Entry(skipInterface, membersClosure);
+                _map.put(csym, e);
             }
-            return csym.membersClosure;
+            return e.compoundScope;
         }
 
         @Override
-        public CompoundScope visitTypeVar(TypeVar t, Void s) {
-            return visit(t.getUpperBound());
+        public CompoundScope visitTypeVar(TypeVar t, Boolean skipInterface) {
+            return visit(t.getUpperBound(), skipInterface);
         }
-    };
+    }
+
+    private MembersClosureCache membersCache = new MembersClosureCache();
+
+    public CompoundScope membersClosure(Type site, boolean skipInterface) {
+        return membersCache.visit(site, skipInterface);
+    }
     // </editor-fold>
 
     /**
