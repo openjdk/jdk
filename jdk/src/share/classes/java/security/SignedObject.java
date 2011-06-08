@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,10 +249,10 @@ public final class SignedObject implements Serializable {
      * a stream.
      */
     private void readObject(java.io.ObjectInputStream s)
-         throws java.io.IOException, ClassNotFoundException
-    {
-        s.defaultReadObject();
-        content = content.clone();
-        signature = signature.clone();
+        throws java.io.IOException, ClassNotFoundException {
+            java.io.ObjectInputStream.GetField fields = s.readFields();
+            content = ((byte[])fields.get("content", null)).clone();
+            signature = ((byte[])fields.get("signature", null)).clone();
+            thealgorithm = (String)fields.get("thealgorithm", null);
     }
 }

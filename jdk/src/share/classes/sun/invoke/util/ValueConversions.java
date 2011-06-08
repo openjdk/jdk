@@ -29,6 +29,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +40,17 @@ import java.util.List;
 public class ValueConversions {
     private static final Class<?> THIS_CLASS = ValueConversions.class;
     // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
+    private static final int MAX_ARITY;
+    static {
+        final Object[] values = { 255 };
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    values[0] = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
+                    return null;
+                }
+            });
+        MAX_ARITY = (Integer) values[0];
+    }
 
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
@@ -198,27 +210,30 @@ public class ValueConversions {
         return unbox(Wrapper.forPrimitiveType(type), true, false);
     }
 
+    static private final Integer ZERO_INT = 0, ONE_INT = 1;
+
     /// Primitive conversions
     public static Number primitiveConversion(Wrapper wrap, Object x, boolean cast) {
         // Maybe merge this code with Wrapper.convert/cast.
         Number res = null;
         if (x == null) {
             if (!cast)  return null;
-            x = wrap.zero();
+            return ZERO_INT;
         }
         if (x instanceof Number) {
             res = (Number) x;
         } else if (x instanceof Boolean) {
-            res = ((boolean)x ? 1 : 0);
+            res = ((boolean)x ? ONE_INT : ZERO_INT);
         } else if (x instanceof Character) {
             res = (int)(char)x;
         } else {
             // this will fail with the required ClassCastException:
             res = (Number) x;
         }
-        if (!cast && !wrap.isConvertibleFrom(Wrapper.forWrapperType(x.getClass())))
+        Wrapper xwrap = Wrapper.findWrapperType(x.getClass());
+        if (xwrap == null || !cast && !wrap.isConvertibleFrom(xwrap))
             // this will fail with the required ClassCastException:
-            res = (Number) wrap.wrapperType().cast(x);
+            return (Number) wrap.wrapperType().cast(x);
         return res;
     }
 
