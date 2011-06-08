@@ -29,8 +29,6 @@ import java.awt.FileDialog;
 import java.awt.peer.FileDialogPeer;
 import java.io.File;
 import java.io.FilenameFilter;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import sun.awt.AWTAccessor;
 
 /**
@@ -107,9 +105,7 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
             if (b) {
                 Thread t = new Thread() {
                     public void run() {
-                        GtkFileDialogPeer.this.run(fd.getTitle(), fd.getMode(),
-                                   fd.getDirectory(), fd.getFile(), fd.getFilenameFilter(), fd.isMultipleMode(),
-                                   fd.getX(), fd.getY());
+                        showNativeDialog();
                         fd.setVisible(false);
                     }
                 };
@@ -146,4 +142,30 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
         // We do not implement this method because we
         // have delegated to FileDialog#setFilenameFilter
     }
+
+    private void showNativeDialog() {
+        String dirname = fd.getDirectory();
+        // File path has a priority against directory path.
+        String filename = fd.getFile();
+        if (filename != null) {
+            final File file = new File(filename);
+            if (fd.getMode() == FileDialog.LOAD
+                && dirname != null
+                && file.getParent() == null) {
+                // File path for gtk_file_chooser_set_filename.
+                filename = dirname + (dirname.endsWith(File.separator) ? "" :
+                                              File.separator) + filename;
+            }
+            if (fd.getMode() == FileDialog.SAVE && file.getParent() != null) {
+                // Filename for gtk_file_chooser_set_current_name.
+                filename = file.getName();
+                // Directory path for gtk_file_chooser_set_current_folder.
+                dirname = file.getParent();
+            }
+        }
+        GtkFileDialogPeer.this.run(fd.getTitle(), fd.getMode(), dirname,
+                                   filename, fd.getFilenameFilter(),
+                                   fd.isMultipleMode(), fd.getX(), fd.getY());
+    }
+
 }
