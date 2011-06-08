@@ -66,7 +66,7 @@ class NullFontScaler extends FontScaler {
 
     long getLayoutTableCache() {return 0L;}
 
-    long createScalerContext(double[] matrix, boolean fontType, int aa,
+    long createScalerContext(double[] matrix, int aa,
         int fm, float boldness, float italic, boolean disableHinting) {
         return getNullScalerContext();
     }
