@@ -110,7 +110,10 @@ public class HtmlDoclet extends AbstractDoclet {
         String configstylefile = configuration.stylesheetfile;
         performCopy(configdestdir, confighelpfile);
         performCopy(configdestdir, configstylefile);
-        Util.copyResourceFile(configuration, "inherit.gif", false);
+        Util.copyResourceFile(configuration, "background.gif", false);
+        Util.copyResourceFile(configuration, "tab.gif", false);
+        Util.copyResourceFile(configuration, "titlebar.gif", false);
+        Util.copyResourceFile(configuration, "titlebar_end.gif", false);
         // do early to reduce memory footprint
         if (configuration.classuse) {
             ClassUseWriter.generate(configuration, classtree);
