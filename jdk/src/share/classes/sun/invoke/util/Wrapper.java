@@ -135,7 +135,7 @@ public enum Wrapper {
      *  <li>any type converted to {@code void} (i.e., dropping a method call's value)
      *  <li>boxing conversion followed by widening reference conversion to {@code Object}
      *  </ul>
-     *  These are the cases allowed by MethodHandle.asType and convertArguments.
+     *  These are the cases allowed by MethodHandle.asType.
      */
     public boolean isConvertibleFrom(Wrapper source) {
         if (this == source)  return true;

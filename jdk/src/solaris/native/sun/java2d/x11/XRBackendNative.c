@@ -66,9 +66,10 @@ typedef struct _XRadialGradient {
 } XRadialGradient;
 #endif
 
+#include <dlfcn.h>
+
 #ifdef __solaris__
 /* Solaris 10 will not have these symbols at runtime */
-#include <dlfcn.h>
 #include <link.h>
 
 typedef Picture (*XRenderCreateLinearGradientFuncType)
@@ -104,12 +105,20 @@ static
       TRANSFORM.matrix[2][2] = 1<<16;                                                          \
     }
 
+/* The xrender pipleine requires libXrender.so version 0.9.3 or later. */
+#define REQUIRED_XRENDER_VER1 0
+#define REQUIRED_XRENDER_VER2 9
+#define REQUIRED_XRENDER_VER3 3
 
-static jboolean IsXRenderAvailable() {
+#define PKGINFO_LINE_LEN_MAX 256
+#define PKGINFO_LINE_CNT_MAX 50
+
+static jboolean IsXRenderAvailable(jboolean verbose) {
 
     void *xrenderlib;
 
     int major_opcode, first_event, first_error;
+    jboolean available = JNI_TRUE;
 
     if (!XQueryExtension(awt_display, "RENDER",
                          &major_opcode, &first_event, &first_error)) {
@@ -120,23 +129,113 @@ static jboolean IsXRenderAvailable() {
     xrenderlib = dlopen("libXrender.so",RTLD_GLOBAL|RTLD_LAZY);
     if (xrenderlib != NULL) {
 
-        XRenderCreateLinearGradientFunc =
-            (XRenderCreateLinearGradientFuncType)
-            dlsym(xrenderlib, "XRenderCreateLinearGradient");
+      XRenderCreateLinearGradientFunc =
+        (XRenderCreateLinearGradientFuncType)
+        dlsym(xrenderlib, "XRenderCreateLinearGradient");
 
-        XRenderCreateRadialGradientFunc =
-            (XRenderCreateRadialGradientFuncType)
-            dlsym(xrenderlib, "XRenderCreateRadialGradient");
+      XRenderCreateRadialGradientFunc =
+        (XRenderCreateRadialGradientFuncType)
+        dlsym(xrenderlib, "XRenderCreateRadialGradient");
 
-        if (XRenderCreateLinearGradientFunc == NULL ||
-            XRenderCreateRadialGradientFunc == NULL)
+      if (XRenderCreateLinearGradientFunc == NULL ||
+          XRenderCreateRadialGradientFunc == NULL)
+      {
+        available = JNI_FALSE;
+      }
+      dlclose(xrenderlib);
+    } else {
+      available = JNI_FALSE;
+    }
+#else
+    Dl_info info;
+    jboolean versionInfoIsFound = JNI_FALSE;
+
+    memset(&info, 0, sizeof(Dl_info));
+    if (dladdr(&XRenderChangePicture, &info) && info.dli_fname != NULL) {
+      char pkgInfoPath[FILENAME_MAX];
+      char *pkgFileName = "/pkgconfig/xrender.pc";
+      size_t pkgFileNameLen = strlen(pkgFileName);
+      size_t pos, len = strlen(info.dli_fname);
+
+      pos = len;
+      while (pos > 0 && info.dli_fname[pos] != '/') {
+        pos -= 1;
+      }
+
+      if (pos > 0 && pos < (FILENAME_MAX - pkgFileNameLen - 1)) {
+        struct stat stat_info;
+
+        // compose absolute filename to package config
+        strncpy(pkgInfoPath, info.dli_fname, pos);
+
+        strcpy(pkgInfoPath + pos, pkgFileName);
+        pkgInfoPath[pos + pkgFileNameLen] = '\0';
+
+        // check whether the config file exist and is a regular file
+        if ((stat(pkgInfoPath, &stat_info)== 0) &&
+            S_ISREG(stat_info.st_mode))
         {
-            dlclose(xrenderlib);
-            return JNI_FALSE;
+          FILE *fp = fopen(pkgInfoPath, "r");
+          if (fp != NULL) {
+            char line[PKGINFO_LINE_LEN_MAX];
+            int lineCount = PKGINFO_LINE_CNT_MAX;
+            char *versionPrefix = "Version: ";
+            size_t versionPrefixLen = strlen(versionPrefix);
+
+            // look for version
+            while(fgets(line,sizeof(line),fp) != NULL && --lineCount > 0) {
+              size_t lineLen = strlen(line);
+
+              if (lineLen > versionPrefixLen &&
+                  strncmp(versionPrefix, line, versionPrefixLen) == 0)
+              {
+                int v1 = 0, v2 = 0, v3 = 0;
+                int numNeeded = 3,numProcessed;
+                char* version = line + versionPrefixLen;
+                numProcessed = sscanf(version, "%d.%d.%d", &v1, &v2, &v3);
+
+                if (numProcessed == numNeeded) {
+                  // we successfuly read the library version
+                  versionInfoIsFound = JNI_TRUE;
+
+                  if (REQUIRED_XRENDER_VER1 == v1 &&
+                      ((REQUIRED_XRENDER_VER2 > v2) ||
+                       ((REQUIRED_XRENDER_VER2 == v2) && (REQUIRED_XRENDER_VER3 > v3))))
+                  {
+                    available = JNI_FALSE;
+
+                    if (verbose) {
+                      printf("INFO: the version %d.%d.%d of libXrender.so is "
+                             "not supported.\n\tSee release notes for more details.\n",
+                             v1, v2, v3);
+                      fflush(stdout);
+                    }
+                  } else {
+                    if (verbose) {
+                      printf("INFO: The version of libXrender.so "
+                             "is detected as %d.%d%d\n", v1, v2, v3);
+                      fflush(stdout);
+                    }
+                  }
+                }
+                break;
+              }
+            }
+            fclose(fp);
+          }
         }
+      }
+    }
+    if (verbose && !versionInfoIsFound) {
+      printf("WARNING: The version of libXrender.so cannot be detected.\n,"
+             "The pipe line will be enabled, but note that versions less than 0.9.3\n"
+             "may cause hangs and crashes\n"
+             "\tSee the release notes for more details.\n");
+      fflush(stdout);
     }
 #endif
-    return JNI_TRUE;
+
+    return available;
 }
 /*
  * Class:     sun_awt_X11GraphicsEnvironment
@@ -145,7 +244,7 @@ static jboolean IsXRenderAvailable() {
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11GraphicsEnvironment_initXRender
- (JNIEnv *env, jclass x11ge)
+(JNIEnv *env, jclass x11ge, jboolean verbose)
 {
 #ifndef HEADLESS
     static jboolean xrenderAvailable = JNI_FALSE;
@@ -153,7 +252,7 @@ Java_sun_awt_X11GraphicsEnvironment_initXRender
 
     if (firstTime) {
         AWT_LOCK();
-        xrenderAvailable = IsXRenderAvailable();
+        xrenderAvailable = IsXRenderAvailable(verbose);
         AWT_UNLOCK();
         firstTime = JNI_FALSE;
     }
