@@ -129,20 +129,17 @@ class InvokeGeneric {
         if (needType == erasedCallerType.returnType())
             return false;  // no conversions possible, since must be primitive or Object
         Class<?> haveType = target.type().returnType();
-        if (VerifyType.isNullConversion(haveType, needType))
+        if (VerifyType.isNullConversion(haveType, needType) && !needType.isInterface())
             return false;
         return true;
     }
-    private MethodHandle addReturnConversion(MethodHandle target, Class<?> type) {
-        if (true) throw new RuntimeException("NYI");
+    private MethodHandle addReturnConversion(MethodHandle finisher, Class<?> type) {
         // FIXME: This is slow because it creates a closure node on every call that requires a return cast.
-        MethodType targetType = target.type();
+        MethodType finisherType = finisher.type();
         MethodHandle caster = ValueConversions.identity(type);
-        caster = caster.asType(MethodType.methodType(type, targetType.returnType()));
-        // Drop irrelevant arguments, because we only care about the return value:
-        caster = MethodHandles.dropArguments(caster, 1, targetType.parameterList());
-        MethodHandle result = MethodHandles.foldArguments(caster, target);
-        return result.asType(target.type());
+        caster = caster.asType(caster.type().changeParameterType(0, finisherType.returnType()));
+        finisher = MethodHandles.filterReturnValue(finisher, caster);
+        return finisher.asType(finisherType);
     }
 
     public String toString() {

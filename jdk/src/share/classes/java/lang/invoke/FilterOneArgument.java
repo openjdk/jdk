@@ -41,7 +41,7 @@ class FilterOneArgument extends BoundMethodHandle {
     protected final MethodHandle target;  // Object -> Object
 
     @Override
-    public String toString() {
+    String debugString() {
         return target.toString();
     }
 

@@ -34,7 +34,7 @@
 $ $JAVA7X_HOME/bin/javac -cp $JUNIT4_JAR -d /tmp/Classes \
    $DAVINCI/sources/jdk/test/java/lang/invoke/JavaDocExamplesTest.java
 $ $JAVA7X_HOME/bin/java   -cp $JUNIT4_JAR:/tmp/Classes \
-   -Dtest.java.lang.invoke.JavaDocExamplesTest.verbosity=1 \
+   -DJavaDocExamplesTest.verbosity=1 \
      test.java.lang.invoke.JavaDocExamplesTest
 ----
 */
@@ -45,12 +45,10 @@ import java.lang.invoke.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
-import java.lang.reflect.*;
 import java.util.*;
 
 import org.junit.*;
 import static org.junit.Assert.*;
-import static org.junit.Assume.*;
 
 
 /**
@@ -60,11 +58,29 @@ public class JavaDocExamplesTest {
     /** Wrapper for running the JUnit tests in this module.
      *  Put JUnit on the classpath!
      */
-    public static void main(String... ignore) {
-        org.junit.runner.JUnitCore.runClasses(JavaDocExamplesTest.class);
+    public static void main(String... ignore) throws Throwable {
+        System.out.println("can run this as:");
+        System.out.println("$ java org.junit.runner.JUnitCore "+JavaDocExamplesTest.class.getName());
+        new JavaDocExamplesTest().run();
+    }
+    public void run() throws Throwable {
+        testFindVirtual();
+        testPermuteArguments();
+        testDropArguments();
+        testFilterArguments();
+        testFoldArguments();
+        testMethodHandlesSummary();
+        testAsSpreader();
+        testAsCollector();
+        testAsVarargsCollector();
+        testAsFixedArity();
+        testAsTypeCornerCases();
+        testMutableCallSite();
     }
     // How much output?
-    static int verbosity = Integer.getInteger("test.java.lang.invoke.JavaDocExamplesTest.verbosity", 0);
+    static final Class<?> THIS_CLASS = JavaDocExamplesTest.class;
+    static int verbosity = Integer.getInteger(THIS_CLASS.getSimpleName()+".verbosity", 0);
+
 
 {}
 static final private Lookup LOOKUP = lookup();
@@ -74,17 +90,23 @@ static final private Lookup LOOKUP = lookup();
 //     "hashCode", methodType(int.class));
 
 // form required if ReflectiveOperationException is intercepted:
-static final private MethodHandle CONCAT_2, HASHCODE_2;
+    static final private MethodHandle CONCAT_2, HASHCODE_2, ADD_2, SUB_2;
 static {
   try {
+    Class<?> THIS_CLASS = LOOKUP.lookupClass();
     CONCAT_2 = LOOKUP.findVirtual(String.class,
       "concat", methodType(String.class, String.class));
     HASHCODE_2 = LOOKUP.findVirtual(Object.class,
       "hashCode", methodType(int.class));
+    ADD_2 = LOOKUP.findStatic(THIS_CLASS, "add", methodType(int.class, int.class, int.class));
+    SUB_2 = LOOKUP.findStatic(THIS_CLASS, "sub", methodType(int.class, int.class, int.class));
    } catch (ReflectiveOperationException ex) {
      throw new RuntimeException(ex);
    }
 }
+    static int add(int x, int y) { return x + y; }
+    static int sub(int x, int y) { return x - y; }
+
 {}
 
     @Test public void testFindVirtual() throws Throwable {
@@ -101,6 +123,39 @@ assertEquals("xy".hashCode(), (int) HASHCODE_2.invokeExact((Object)"xy"));
 assertEquals("xy".hashCode(), (int) HASHCODE_3.invokeExact((Object)"xy"));
 {}
     }
+
+    @Test public void testPermuteArguments() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodType intfn1 = methodType(int.class, int.class);
+MethodType intfn2 = methodType(int.class, int.class, int.class);
+MethodHandle sub = SUB_2;// ... {int x, int y => x-y} ...;
+assert(sub.type().equals(intfn2));
+MethodHandle sub1 = permuteArguments(sub, intfn2, 0, 1);
+MethodHandle rsub = permuteArguments(sub, intfn2, 1, 0);
+assert((int)rsub.invokeExact(1, 100) == 99);
+MethodHandle add = ADD_2;// ... {int x, int y => x+y} ...;
+assert(add.type().equals(intfn2));
+MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
+assert(twice.type().equals(intfn1));
+assert((int)twice.invokeExact(21) == 42);
+            }}
+        {{
+{} /// JAVADOC
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+assertEquals("xy", (String) cat.invokeExact("x", "y"));
+MethodHandle d0 = dropArguments(cat, 0, String.class);
+assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
+MethodHandle d1 = dropArguments(cat, 1, String.class);
+assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
+MethodHandle d2 = dropArguments(cat, 2, String.class);
+assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
+MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
+assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
+            }}
+    }
+
     @Test public void testDropArguments() throws Throwable {
         {{
 {} /// JAVADOC
@@ -145,6 +200,21 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
             }}
     }
 
+    @Test public void testFoldArguments() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
+  "println", methodType(void.class, String.class))
+    .bindTo(System.out);
+MethodHandle cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+MethodHandle catTrace = foldArguments(cat, trace);
+// also prints "boo":
+assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+            }}
+    }
+
     static void assertEquals(Object exp, Object act) {
         if (verbosity > 0)
             System.out.println("result: "+act);
@@ -162,24 +232,24 @@ mt = MethodType.methodType(String.class, char.class, char.class);
 mh = lookup.findVirtual(String.class, "replace", mt);
 s = (String) mh.invokeExact("daddy",'d','n');
 // invokeExact(Ljava/lang/String;CC)Ljava/lang/String;
-assert(s.equals("nanny"));
+assertEquals(s, "nanny");
 // weakly typed invocation (using MHs.invoke)
 s = (String) mh.invokeWithArguments("sappy", 'p', 'v');
-assert(s.equals("savvy"));
+assertEquals(s, "savvy");
 // mt is (Object[])List
 mt = MethodType.methodType(java.util.List.class, Object[].class);
 mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
 assert(mh.isVarargsCollector());
 x = mh.invoke("one", "two");
 // invoke(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
-assert(x.equals(java.util.Arrays.asList("one","two")));
+assertEquals(x, java.util.Arrays.asList("one","two"));
 // mt is (Object,Object,Object)Object
 mt = MethodType.genericMethodType(3);
 mh = mh.asType(mt);
 x = mh.invokeExact((Object)1, (Object)2, (Object)3);
 // invokeExact(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-assert(x.equals(java.util.Arrays.asList(1,2,3)));
-// mt is { =&gt; int}
+assertEquals(x, java.util.Arrays.asList(1,2,3));
+// mt is ()int
 mt = MethodType.methodType(int.class);
 mh = lookup.findVirtual(java.util.List.class, "size", mt);
 i = (int) mh.invokeExact(java.util.Arrays.asList(1,2,3));
@@ -193,37 +263,239 @@ mh.invokeExact(System.out, "Hello, world.");
             }}
     }
 
+    @Test public void testAsSpreader() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle equals = publicLookup()
+  .findVirtual(String.class, "equals", methodType(boolean.class, Object.class));
+assert( (boolean) equals.invokeExact("me", (Object)"me"));
+assert(!(boolean) equals.invokeExact("me", (Object)"thee"));
+// spread both arguments from a 2-array:
+MethodHandle eq2 = equals.asSpreader(Object[].class, 2);
+assert( (boolean) eq2.invokeExact(new Object[]{ "me", "me" }));
+assert(!(boolean) eq2.invokeExact(new Object[]{ "me", "thee" }));
+// spread both arguments from a String array:
+MethodHandle eq2s = equals.asSpreader(String[].class, 2);
+assert( (boolean) eq2s.invokeExact(new String[]{ "me", "me" }));
+assert(!(boolean) eq2s.invokeExact(new String[]{ "me", "thee" }));
+// spread second arguments from a 1-array:
+MethodHandle eq1 = equals.asSpreader(Object[].class, 1);
+assert( (boolean) eq1.invokeExact("me", new Object[]{ "me" }));
+assert(!(boolean) eq1.invokeExact("me", new Object[]{ "thee" }));
+// spread no arguments from a 0-array or null:
+MethodHandle eq0 = equals.asSpreader(Object[].class, 0);
+assert( (boolean) eq0.invokeExact("me", (Object)"me", new Object[0]));
+assert(!(boolean) eq0.invokeExact("me", (Object)"thee", (Object[])null));
+// asSpreader and asCollector are approximate inverses:
+for (int n = 0; n <= 2; n++) {
+    for (Class<?> a : new Class<?>[]{Object[].class, String[].class, CharSequence[].class}) {
+        MethodHandle equals2 = equals.asSpreader(a, n).asCollector(a, n);
+        assert( (boolean) equals2.invokeWithArguments("me", "me"));
+        assert(!(boolean) equals2.invokeWithArguments("me", "thee"));
+    }
+}
+MethodHandle caToString = publicLookup()
+  .findStatic(Arrays.class, "toString", methodType(String.class, char[].class));
+assertEquals("[A, B, C]", (String) caToString.invokeExact("ABC".toCharArray()));
+MethodHandle caString3 = caToString.asCollector(char[].class, 3);
+assertEquals("[A, B, C]", (String) caString3.invokeExact('A', 'B', 'C'));
+MethodHandle caToString2 = caString3.asSpreader(char[].class, 2);
+assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray()));
+            }}
+    }
+
+    @Test public void testAsCollector() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle deepToString = publicLookup()
+  .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
+assertEquals("[won]",   (String) deepToString.invokeExact(new Object[]{"won"}));
+MethodHandle ts1 = deepToString.asCollector(Object[].class, 1);
+assertEquals(methodType(String.class, Object.class), ts1.type());
+//assertEquals("[won]", (String) ts1.invokeExact(         new Object[]{"won"})); //FAIL
+assertEquals("[[won]]", (String) ts1.invokeExact((Object) new Object[]{"won"}));
+// arrayType can be a subtype of Object[]
+MethodHandle ts2 = deepToString.asCollector(String[].class, 2);
+assertEquals(methodType(String.class, String.class, String.class), ts2.type());
+assertEquals("[two, too]", (String) ts2.invokeExact("two", "too"));
+MethodHandle ts0 = deepToString.asCollector(Object[].class, 0);
+assertEquals("[]", (String) ts0.invokeExact());
+// collectors can be nested, Lisp-style
+MethodHandle ts22 = deepToString.asCollector(Object[].class, 3).asCollector(String[].class, 2);
+assertEquals("[A, B, [C, D]]", ((String) ts22.invokeExact((Object)'A', (Object)"B", "C", "D")));
+// arrayType can be any primitive array type
+MethodHandle bytesToString = publicLookup()
+  .findStatic(Arrays.class, "toString", methodType(String.class, byte[].class))
+  .asCollector(byte[].class, 3);
+assertEquals("[1, 2, 3]", (String) bytesToString.invokeExact((byte)1, (byte)2, (byte)3));
+MethodHandle longsToString = publicLookup()
+  .findStatic(Arrays.class, "toString", methodType(String.class, long[].class))
+  .asCollector(long[].class, 1);
+assertEquals("[123]", (String) longsToString.invokeExact((long)123));
+            }}
+    }
+
     @Test public void testAsVarargsCollector() throws Throwable {
         {{
 {} /// JAVADOC
+MethodHandle deepToString = publicLookup()
+  .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
+MethodHandle ts1 = deepToString.asVarargsCollector(Object[].class);
+assertEquals("[won]",   (String) ts1.invokeExact(    new Object[]{"won"}));
+assertEquals("[won]",   (String) ts1.invoke(         new Object[]{"won"}));
+assertEquals("[won]",   (String) ts1.invoke(                      "won" ));
+assertEquals("[[won]]", (String) ts1.invoke((Object) new Object[]{"won"}));
+// findStatic of Arrays.asList(...) produces a variable arity method handle:
 MethodHandle asList = publicLookup()
-  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
-  .asVarargsCollector(Object[].class);
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
+assertEquals(methodType(List.class, Object[].class), asList.type());
+assert(asList.isVarargsCollector());
 assertEquals("[]", asList.invoke().toString());
 assertEquals("[1]", asList.invoke(1).toString());
 assertEquals("[two, too]", asList.invoke("two", "too").toString());
-Object[] argv = { "three", "thee", "tee" };
+String[] argv = { "three", "thee", "tee" };
 assertEquals("[three, thee, tee]", asList.invoke(argv).toString());
+assertEquals("[three, thee, tee]", asList.invoke((Object[])argv).toString());
 List ls = (List) asList.invoke((Object)argv);
 assertEquals(1, ls.size());
 assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
             }}
     }
 
-    @Test public void testVarargsCollectorSuppression() throws Throwable {
+    @Test public void testAsFixedArity() throws Throwable {
         {{
 {} /// JAVADOC
-MethodHandle vamh = publicLookup()
+MethodHandle asListVar = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
-MethodHandle mh = MethodHandles.exactInvoker(vamh.type()).bindTo(vamh);
-assert(vamh.type().equals(mh.type()));
-assertEquals("[1, 2, 3]", vamh.invoke(1,2,3).toString());
-boolean failed = false;
-try { mh.invoke(1,2,3); }
-catch (WrongMethodTypeException ex) { failed = true; }
-assert(failed);
+MethodHandle asListFix = asListVar.asFixedArity();
+assertEquals("[1]", asListVar.invoke(1).toString());
+Exception caught = null;
+try { asListFix.invoke((Object)1); }
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof ClassCastException);
+assertEquals("[two, too]", asListVar.invoke("two", "too").toString());
+try { asListFix.invoke("two", "too"); }
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof WrongMethodTypeException);
+Object[] argv = { "three", "thee", "tee" };
+assertEquals("[three, thee, tee]", asListVar.invoke(argv).toString());
+assertEquals("[three, thee, tee]", asListFix.invoke(argv).toString());
+assertEquals(1, ((List) asListVar.invoke((Object)argv)).size());
+assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
+            }}
+    }
+
+    @Test public void testAsTypeCornerCases() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle i2s = publicLookup()
+  .findVirtual(Integer.class, "toString", methodType(String.class));
+i2s = i2s.asType(i2s.type().unwrap());
+MethodHandle l2s = publicLookup()
+  .findVirtual(Long.class, "toString", methodType(String.class));
+l2s = l2s.asType(l2s.type().unwrap());
+
+Exception caught = null;
+try { i2s.asType(methodType(String.class, String.class)); }
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof WrongMethodTypeException);
+
+i2s.asType(methodType(String.class, byte.class));
+i2s.asType(methodType(String.class, Byte.class));
+i2s.asType(methodType(String.class, Character.class));
+i2s.asType(methodType(String.class, Integer.class));
+l2s.asType(methodType(String.class, byte.class));
+l2s.asType(methodType(String.class, Byte.class));
+l2s.asType(methodType(String.class, Character.class));
+l2s.asType(methodType(String.class, Integer.class));
+l2s.asType(methodType(String.class, Long.class));
+
+caught = null;
+try { i2s.asType(methodType(String.class, Long.class)); }
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof WrongMethodTypeException);
+
+MethodHandle i2sGen = i2s.asType(methodType(String.class, Object.class));
+MethodHandle l2sGen = l2s.asType(methodType(String.class, Object.class));
+
+i2sGen.invoke(42);  // int -> Integer -> Object -> Integer -> int
+i2sGen.invoke((byte)4);  // byte -> Byte -> Object -> Byte -> byte -> int
+l2sGen.invoke(42);  // int -> Integer -> Object -> Integer -> int
+l2sGen.invoke((byte)4);  // byte -> Byte -> Object -> Byte -> byte -> int
+l2sGen.invoke(0x420000000L);
+
+caught = null;
+try { i2sGen.invoke(0x420000000L); } // long -> Long -> Object -> Integer CCE
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof ClassCastException);
+
+caught = null;
+try { i2sGen.invoke("asdf"); } // String -> Object -> Integer CCE
+catch (Exception ex) { caught = ex; }
+assert(caught instanceof ClassCastException);
 {}
             }}
     }
+
+    @Test public void testMutableCallSite() throws Throwable {
+        {{
+{} /// JAVADOC
+MutableCallSite name = new MutableCallSite(MethodType.methodType(String.class));
+MethodHandle MH_name = name.dynamicInvoker();
+MethodType MT_str1 = MethodType.methodType(String.class);
+MethodHandle MH_upcase = MethodHandles.lookup()
+    .findVirtual(String.class, "toUpperCase", MT_str1);
+MethodHandle worker1 = MethodHandles.filterReturnValue(MH_name, MH_upcase);
+name.setTarget(MethodHandles.constant(String.class, "Rocky"));
+assertEquals("ROCKY", (String) worker1.invokeExact());
+name.setTarget(MethodHandles.constant(String.class, "Fred"));
+assertEquals("FRED", (String) worker1.invokeExact());
+// (mutation can be continued indefinitely)
+/*
+ * </pre></blockquote>
+ * <p>
+ * The same call site may be used in several places at once.
+ * <blockquote><pre>
+ */
+MethodType MT_str2 = MethodType.methodType(String.class, String.class);
+MethodHandle MH_cat = lookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+MethodHandle MH_dear = MethodHandles.insertArguments(MH_cat, 1, ", dear?");
+MethodHandle worker2 = MethodHandles.filterReturnValue(MH_name, MH_dear);
+assertEquals("Fred, dear?", (String) worker2.invokeExact());
+name.setTarget(MethodHandles.constant(String.class, "Wilma"));
+assertEquals("WILMA", (String) worker1.invokeExact());
+assertEquals("Wilma, dear?", (String) worker2.invokeExact());
+{}
+            }}
+    }
+
+    @Test public void testSwitchPoint() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle MH_strcat = MethodHandles.lookup()
+    .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
+SwitchPoint spt = new SwitchPoint();
+assert(!spt.hasBeenInvalidated());
+// the following steps may be repeated to re-use the same switch point:
+MethodHandle worker1 = MH_strcat;
+MethodHandle worker2 = MethodHandles.permuteArguments(MH_strcat, MH_strcat.type(), 1, 0);
+MethodHandle worker = spt.guardWithTest(worker1, worker2);
+assertEquals("method", (String) worker.invokeExact("met", "hod"));
+SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
+assert(spt.hasBeenInvalidated());
+assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
+{}
+            }}
+    }
+
+    /* ---- TEMPLATE ----
+    @Test public void testFoo() throws Throwable {
+        {{
+{} /// JAVADOC
+{}
+            }}
+    }
+    */
 }
