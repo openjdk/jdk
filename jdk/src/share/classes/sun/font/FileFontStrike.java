@@ -180,7 +180,6 @@ public class FileFontStrike extends PhysicalStrike {
             pScalerContext = NullFontScaler.getNullScalerContext();
         } else {
             pScalerContext = fileFont.getScaler().createScalerContext(matrix,
-                                    fileFont instanceof TrueTypeFont,
                                     desc.aaHint, desc.fmHint,
                                     boldness, italic, disableHinting);
         }
