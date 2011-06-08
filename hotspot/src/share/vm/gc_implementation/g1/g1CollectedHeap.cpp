@@ -3456,6 +3456,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           }
         }
       }
+      // We have to do this after we decide whether to expand the heap or not.
+      g1_policy()->print_heap_transition();
 
       if (mark_in_progress()) {
         concurrent_mark()->update_g1_committed();

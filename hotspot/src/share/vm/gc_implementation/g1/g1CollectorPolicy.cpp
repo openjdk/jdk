@@ -239,6 +239,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _should_revert_to_full_young_gcs(false),
   _last_full_young_gc(false),
 
+  _eden_bytes_before_gc(0),
+  _survivor_bytes_before_gc(0),
+  _capacity_before_gc(0),
+
   _prev_collection_pause_used_at_end_bytes(0),
 
   _collection_set(NULL),
@@ -897,6 +901,11 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _bytes_in_to_space_after_gc = 0;
   _bytes_in_collection_set_before_gc = 0;
 
+  YoungList* young_list = _g1->young_list();
+  _eden_bytes_before_gc = young_list->eden_used_bytes();
+  _survivor_bytes_before_gc = young_list->survivor_used_bytes();
+  _capacity_before_gc = _g1->capacity();
+
 #ifdef DEBUG
   // initialise these to something well known so that we can spot
   // if they are not set properly
@@ -1460,14 +1469,6 @@ void G1CollectorPolicy::record_collection_pause_end() {
       }
     }
   }
-  if (PrintGCDetails)
-    gclog_or_tty->print("   [");
-  if (PrintGC || PrintGCDetails)
-    _g1->print_size_transition(gclog_or_tty,
-                               _cur_collection_pause_used_at_start_bytes,
-                               _g1->used(), _g1->capacity());
-  if (PrintGCDetails)
-    gclog_or_tty->print_cr("]");
 
   _all_pause_times_ms->add(elapsed_ms);
   if (update_stats) {
@@ -1670,6 +1671,40 @@ void G1CollectorPolicy::record_collection_pause_end() {
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
   // </NEW PREDICTION>
+}
+
+#define EXT_SIZE_FORMAT "%d%s"
+#define EXT_SIZE_PARAMS(bytes)                                  \
+  byte_size_in_proper_unit((bytes)),                            \
+  proper_unit_for_byte_size((bytes))
+
+void G1CollectorPolicy::print_heap_transition() {
+  if (PrintGCDetails) {
+    YoungList* young_list = _g1->young_list();
+    size_t eden_bytes = young_list->eden_used_bytes();
+    size_t survivor_bytes = young_list->survivor_used_bytes();
+    size_t used_before_gc = _cur_collection_pause_used_at_start_bytes;
+    size_t used = _g1->used();
+    size_t capacity = _g1->capacity();
+
+    gclog_or_tty->print_cr(
+         "   [Eden: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
+             "Survivors: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
+             "Heap: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"
+                     EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")]",
+             EXT_SIZE_PARAMS(_eden_bytes_before_gc),
+               EXT_SIZE_PARAMS(eden_bytes),
+             EXT_SIZE_PARAMS(_survivor_bytes_before_gc),
+               EXT_SIZE_PARAMS(survivor_bytes),
+             EXT_SIZE_PARAMS(used_before_gc),
+             EXT_SIZE_PARAMS(_capacity_before_gc),
+               EXT_SIZE_PARAMS(used),
+               EXT_SIZE_PARAMS(capacity));
+  } else if (PrintGC) {
+    _g1->print_size_transition(gclog_or_tty,
+                               _cur_collection_pause_used_at_start_bytes,
+                               _g1->used(), _g1->capacity());
+  }
 }
 
 // <NEW PREDICTION>
