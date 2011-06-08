@@ -103,6 +103,19 @@ public:
   size_t       length() { return _length; }
   size_t       survivor_length() { return _survivor_length; }
 
+  // Currently we do not keep track of the used byte sum for the
+  // young list and the survivors and it'd be quite a lot of work to
+  // do so. When we'll eventually replace the young list with
+  // instances of HeapRegionLinkedList we'll get that for free. So,
+  // we'll report the more accurate information then.
+  size_t       eden_used_bytes() {
+    assert(length() >= survivor_length(), "invariant");
+    return (length() - survivor_length()) * HeapRegion::GrainBytes;
+  }
+  size_t       survivor_used_bytes() {
+    return survivor_length() * HeapRegion::GrainBytes;
+  }
+
   void rs_length_sampling_init();
   bool rs_length_sampling_more();
   void rs_length_sampling_next();
