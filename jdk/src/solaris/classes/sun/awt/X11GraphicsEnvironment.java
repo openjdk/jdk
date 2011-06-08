@@ -121,7 +121,7 @@ public class X11GraphicsEnvironment
 
                     // only attempt to initialize Xrender if it was requested
                     if (xRenderRequested) {
-                        xRenderAvailable = initXRender();
+                        xRenderAvailable = initXRender(xRenderVerbose);
                         if (xRenderVerbose && !xRenderAvailable) {
                             System.out.println(
                                          "Could not enable XRender pipeline");
@@ -159,7 +159,7 @@ public class X11GraphicsEnvironment
     private static boolean xRenderVerbose;
     private static boolean xRenderAvailable;
 
-    private static native boolean initXRender();
+    private static native boolean initXRender(boolean verbose);
     public static boolean isXRenderAvailable() {
         return xRenderAvailable;
     }
