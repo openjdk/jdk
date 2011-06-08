@@ -118,32 +118,20 @@ class MethodHandleNatives {
     /** Derived mode flag.  Only false on some old JVM implementations. */
     static final boolean HAVE_RICOCHET_FRAMES;
 
+    static final int OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+
     private static native void registerNatives();
     static {
-        int     JVM_PUSH_LIMIT_;
-        int     JVM_STACK_MOVE_UNIT_;
-        int     CONV_OP_IMPLEMENTED_MASK_;
-        try {
-            registerNatives();
-            JVM_PUSH_LIMIT_ = getConstant(Constants.GC_JVM_PUSH_LIMIT);
-            JVM_STACK_MOVE_UNIT_ = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
-            CONV_OP_IMPLEMENTED_MASK_ = getConstant(Constants.GC_CONV_OP_IMPLEMENTED_MASK);
-            //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
-        } catch (UnsatisfiedLinkError ee) {
-            // ignore; if we use init() methods later we'll see linkage errors
-            JVM_PUSH_LIMIT_ = 3;  // arbitrary
-            JVM_STACK_MOVE_UNIT_ = -1;  // arbitrary
-            CONV_OP_IMPLEMENTED_MASK_ = 0;
-            JVM_PUSH_LIMIT = JVM_PUSH_LIMIT_;
-            JVM_STACK_MOVE_UNIT = JVM_STACK_MOVE_UNIT_;
-            throw ee;  // just die; hopeless to try to run with an older JVM
-        }
-        JVM_PUSH_LIMIT = JVM_PUSH_LIMIT_;
-        JVM_STACK_MOVE_UNIT = JVM_STACK_MOVE_UNIT_;
-        if (CONV_OP_IMPLEMENTED_MASK_ == 0)
-            CONV_OP_IMPLEMENTED_MASK_ = DEFAULT_CONV_OP_IMPLEMENTED_MASK;
-        CONV_OP_IMPLEMENTED_MASK = CONV_OP_IMPLEMENTED_MASK_;
-        HAVE_RICOCHET_FRAMES = (CONV_OP_IMPLEMENTED_MASK & (1<<OP_COLLECT_ARGS)) != 0;
+        registerNatives();
+        int k;
+        JVM_PUSH_LIMIT              = getConstant(Constants.GC_JVM_PUSH_LIMIT);
+        JVM_STACK_MOVE_UNIT         = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
+        k                           = getConstant(Constants.GC_CONV_OP_IMPLEMENTED_MASK);
+        CONV_OP_IMPLEMENTED_MASK    = (k != 0) ? k : DEFAULT_CONV_OP_IMPLEMENTED_MASK;
+        k                           = getConstant(Constants.GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS);
+        OP_ROT_ARGS_DOWN_LIMIT_BIAS = (k != 0) ? (byte)k : -1;
+        HAVE_RICOCHET_FRAMES        = (CONV_OP_IMPLEMENTED_MASK & (1<<OP_COLLECT_ARGS)) != 0;
+        //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
     }
 
     // All compile-time constants go here.
@@ -154,7 +142,8 @@ class MethodHandleNatives {
         static final int // for getConstant
                 GC_JVM_PUSH_LIMIT = 0,
                 GC_JVM_STACK_MOVE_UNIT = 1,
-                GC_CONV_OP_IMPLEMENTED_MASK = 2;
+                GC_CONV_OP_IMPLEMENTED_MASK = 2,
+                GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3;
         static final int
                 ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
                 ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
@@ -359,6 +348,12 @@ class MethodHandleNatives {
             required = Object[].class;  // should have been an array
             code = 192; // checkcast
             break;
+        case 191: // athrow
+            // JVM is asking us to wrap an exception which happened during resolving
+            if (required == BootstrapMethodError.class) {
+                throw new BootstrapMethodError((Throwable) actual);
+            }
+            break;
         }
         // disregard the identity of the actual object, if it is not a class:
         if (message == null) {
@@ -389,18 +384,7 @@ class MethodHandleNatives {
                                                  Class<?> defc, String name, Object type) {
         try {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
-            switch (refKind) {
-            case REF_getField:          return lookup.findGetter(       defc, name, (Class<?>)   type );
-            case REF_getStatic:         return lookup.findStaticGetter( defc, name, (Class<?>)   type );
-            case REF_putField:          return lookup.findSetter(       defc, name, (Class<?>)   type );
-            case REF_putStatic:         return lookup.findStaticSetter( defc, name, (Class<?>)   type );
-            case REF_invokeVirtual:     return lookup.findVirtual(      defc, name, (MethodType) type );
-            case REF_invokeStatic:      return lookup.findStatic(       defc, name, (MethodType) type );
-            case REF_invokeSpecial:     return lookup.findSpecial(      defc, name, (MethodType) type, callerClass );
-            case REF_newInvokeSpecial:  return lookup.findConstructor(  defc,       (MethodType) type );
-            case REF_invokeInterface:   return lookup.findVirtual(      defc, name, (MethodType) type );
-            }
-            throw new IllegalArgumentException("bad MethodHandle constant "+name+" : "+type);
+            return lookup.linkMethodHandleConstant(refKind, defc, name, type);
         } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
             err.initCause(ex);

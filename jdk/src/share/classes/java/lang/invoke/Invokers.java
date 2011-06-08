@@ -46,7 +46,10 @@ class Invokers {
     // general invoker for the outgoing call
     private /*lazy*/ MethodHandle generalInvoker;
 
-    // general invoker for the outgoing call; accepts a single Object[]
+    // general invoker for the outgoing call, uses varargs
+    private /*lazy*/ MethodHandle varargsInvoker;
+
+    // general invoker for the outgoing call; accepts a trailing Object[]
     private final /*lazy*/ MethodHandle[] spreadInvokers;
 
     // invoker for an unbound callsite
@@ -67,45 +70,56 @@ class Invokers {
     /*non-public*/ MethodHandle exactInvoker() {
         MethodHandle invoker = exactInvoker;
         if (invoker != null)  return invoker;
-        try {
-            invoker = IMPL_LOOKUP.findVirtual(MethodHandle.class, "invokeExact", targetType);
-        } catch (ReflectiveOperationException ex) {
-            throw new InternalError("JVM cannot find invoker for "+targetType);
-        }
-        assert(invokerType(targetType) == invoker.type());
+        invoker = lookupInvoker("invokeExact");
         exactInvoker = invoker;
         return invoker;
     }
 
     /*non-public*/ MethodHandle generalInvoker() {
-        MethodHandle invoker1 = exactInvoker();
         MethodHandle invoker = generalInvoker;
         if (invoker != null)  return invoker;
-        MethodType generalType = targetType.generic();
-        invoker = invoker1.asType(invokerType(generalType));
+        invoker = lookupInvoker("invoke");
         generalInvoker = invoker;
         return invoker;
     }
 
+    private MethodHandle lookupInvoker(String name) {
+        MethodHandle invoker;
+        try {
+            invoker = IMPL_LOOKUP.findVirtual(MethodHandle.class, name, targetType);
+        } catch (ReflectiveOperationException ex) {
+            throw new InternalError("JVM cannot find invoker for "+targetType);
+        }
+        assert(invokerType(targetType) == invoker.type());
+        assert(!invoker.isVarargsCollector());
+        return invoker;
+    }
+
     /*non-public*/ MethodHandle erasedInvoker() {
-        MethodHandle invoker1 = exactInvoker();
+        MethodHandle xinvoker = exactInvoker();
         MethodHandle invoker = erasedInvoker;
         if (invoker != null)  return invoker;
         MethodType erasedType = targetType.erase();
-        if (erasedType == targetType.generic())
-            invoker = generalInvoker();
-        else
-            invoker = invoker1.asType(invokerType(erasedType));
+        invoker = xinvoker.asType(invokerType(erasedType));
         erasedInvoker = invoker;
         return invoker;
     }
 
-    /*non-public*/ MethodHandle spreadInvoker(int objectArgCount) {
-        MethodHandle vaInvoker = spreadInvokers[objectArgCount];
+    /*non-public*/ MethodHandle spreadInvoker(int leadingArgCount) {
+        MethodHandle vaInvoker = spreadInvokers[leadingArgCount];
         if (vaInvoker != null)  return vaInvoker;
         MethodHandle gInvoker = generalInvoker();
-        vaInvoker = gInvoker.asSpreader(Object[].class, targetType.parameterCount() - objectArgCount);
-        spreadInvokers[objectArgCount] = vaInvoker;
+        int spreadArgCount = targetType.parameterCount() - leadingArgCount;
+        vaInvoker = gInvoker.asSpreader(Object[].class, spreadArgCount);
+        spreadInvokers[leadingArgCount] = vaInvoker;
+        return vaInvoker;
+    }
+
+    /*non-public*/ MethodHandle varargsInvoker() {
+        MethodHandle vaInvoker = varargsInvoker;
+        if (vaInvoker != null)  return vaInvoker;
+        vaInvoker = spreadInvoker(0).asType(invokerType(MethodType.genericMethodType(0, true)));
+        varargsInvoker = vaInvoker;
         return vaInvoker;
     }
 
