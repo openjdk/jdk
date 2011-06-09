@@ -66,41 +66,6 @@ void ct_freq_update_histo_and_reset() {
 }
 #endif
 
-
-class IntoCSOopClosure: public OopsInHeapRegionClosure {
-  OopsInHeapRegionClosure* _blk;
-  G1CollectedHeap* _g1;
-public:
-  IntoCSOopClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* blk) :
-    _g1(g1), _blk(blk) {}
-  void set_region(HeapRegion* from) {
-    _blk->set_region(from);
-  }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    if (_g1->obj_in_cs(obj)) _blk->do_oop(p);
-  }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool idempotent() { return true; }
-};
-
-class VerifyRSCleanCardOopClosure: public OopClosure {
-  G1CollectedHeap* _g1;
-public:
-  VerifyRSCleanCardOopClosure(G1CollectedHeap* g1) : _g1(g1) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    HeapRegion* to = _g1->heap_region_containing(obj);
-    guarantee(to == NULL || !to->in_collection_set(),
-              "Missed a rem set member.");
-  }
-};
-
 G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : _g1(g1), _conc_refine_cards(0),
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),

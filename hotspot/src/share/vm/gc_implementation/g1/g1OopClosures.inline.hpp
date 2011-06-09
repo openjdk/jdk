@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,27 +62,6 @@ template <class T> inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
 #if FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT
       _out_of_region++;
 #endif
-    }
-  }
-}
-
-template <class T> inline void FilterInHeapRegionAndIntoCSClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop) &&
-      _g1->obj_in_cs(oopDesc::decode_heap_oop_not_null(heap_oop)))
-    _oc->do_oop(p);
-}
-
-template <class T> inline void FilterAndMarkInHeapRegionAndIntoCSClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    HeapRegion* hr = _g1->heap_region_containing((HeapWord*) obj);
-    if (hr != NULL) {
-      if (hr->in_collection_set())
-        _oc->do_oop(p);
-      else if (!hr->is_young())
-        _cm->grayRoot(obj);
     }
   }
 }

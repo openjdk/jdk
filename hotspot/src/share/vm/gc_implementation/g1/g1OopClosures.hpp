@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class OopsInHeapRegionClosure: public OopsInGenClosure {
 protected:
   HeapRegion* _from;
 public:
-  virtual void set_region(HeapRegion* from) { _from = from; }
+  void set_region(HeapRegion* from) { _from = from; }
 };
 
 class G1ParClosureSuper : public OopsInHeapRegionClosure {
@@ -159,44 +159,6 @@ public:
   virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
   bool apply_to_weak_ref_discovered_field() { return true; }
   bool do_header() { return false; }
-};
-
-class FilterInHeapRegionAndIntoCSClosure : public OopsInHeapRegionClosure {
-  G1CollectedHeap* _g1;
-  OopsInHeapRegionClosure* _oc;
-public:
-  FilterInHeapRegionAndIntoCSClosure(G1CollectedHeap* g1,
-                                     OopsInHeapRegionClosure* oc) :
-    _g1(g1), _oc(oc)
-  {}
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p) { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
-  void set_region(HeapRegion* from) {
-    _oc->set_region(from);
-  }
-};
-
-class FilterAndMarkInHeapRegionAndIntoCSClosure : public OopsInHeapRegionClosure {
-  G1CollectedHeap* _g1;
-  ConcurrentMark* _cm;
-  OopsInHeapRegionClosure* _oc;
-public:
-  FilterAndMarkInHeapRegionAndIntoCSClosure(G1CollectedHeap* g1,
-                                            OopsInHeapRegionClosure* oc,
-                                            ConcurrentMark* cm)
-  : _g1(g1), _oc(oc), _cm(cm) { }
-
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p) { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
-  void set_region(HeapRegion* from) {
-    _oc->set_region(from);
-  }
 };
 
 class FilterOutOfRegionClosure: public OopClosure {

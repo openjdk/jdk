@@ -2470,21 +2470,6 @@ record_collection_pause_start(double start_time_sec, size_t start_used) {
   G1CollectorPolicy::record_collection_pause_start(start_time_sec, start_used);
 }
 
-class NextNonCSElemFinder: public HeapRegionClosure {
-  HeapRegion* _res;
-public:
-  NextNonCSElemFinder(): _res(NULL) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->in_collection_set()) {
-      _res = r;
-      return true;
-    } else {
-      return false;
-    }
-  }
-  HeapRegion* res() { return _res; }
-};
-
 class KnownGarbageClosure: public HeapRegionClosure {
   CollectionSetChooser* _hrSorted;
 
