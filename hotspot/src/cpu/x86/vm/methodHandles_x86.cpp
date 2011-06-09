@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
 #include "prims/methodHandles.hpp"
 
@@ -36,6 +37,11 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
+// Workaround for C++ overloading nastiness on '0' for RegisterOrConstant.
+static RegisterOrConstant constant(int value) {
+  return RegisterOrConstant(value);
+}
 
 address MethodHandleEntry::start_compiled_entry(MacroAssembler* _masm,
                                                 address interpreted_entry) {
@@ -556,13 +562,11 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   // emit WrongMethodType path first, to enable jccb back-branch from main path
   Label wrong_method_type;
   __ bind(wrong_method_type);
-  Label invoke_generic_slow_path;
+  Label invoke_generic_slow_path, invoke_exact_error_path;
   assert(methodOopDesc::intrinsic_id_size_in_bytes() == sizeof(u1), "");;
   __ cmpb(Address(rbx_method, methodOopDesc::intrinsic_id_offset_in_bytes()), (int) vmIntrinsics::_invokeExact);
   __ jcc(Assembler::notEqual, invoke_generic_slow_path);
-  __ push(rax_mtype);       // required mtype
-  __ push(rcx_recv);        // bad mh (1st stacked argument)
-  __ jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
+  __ jmp(invoke_exact_error_path);
 
   // here's where control starts out:
   __ align(CodeEntryAlignment);
@@ -595,6 +599,18 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   DEBUG_ONLY(__ movptr(mh_receiver_slot_addr, (int32_t)0x999999));
 
   __ jump_to_method_handle_entry(rcx_recv, rdi_temp);
+
+  // error path for invokeExact (only)
+  __ bind(invoke_exact_error_path);
+  // jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
+  Register rdx_last_Java_sp = rdx_temp;
+  __ lea(rdx_last_Java_sp, __ argument_address(constant(0)));
+  __ super_call_VM(noreg,
+                   rdx_last_Java_sp,
+                   CAST_FROM_FN_PTR(address,
+                                    InterpreterRuntime::throw_WrongMethodTypeException),
+                   // pass required type, then failing mh object
+                   rax_mtype, rcx_recv);
 
   // for invokeGeneric (only), apply argument and result conversions on the fly
   __ bind(invoke_generic_slow_path);
@@ -631,11 +647,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ jump_to_method_handle_entry(rcx, rdi_temp);
 
   return entry_point;
-}
-
-// Workaround for C++ overloading nastiness on '0' for RegisterOrConstant.
-static RegisterOrConstant constant(int value) {
-  return RegisterOrConstant(value);
 }
 
 // Helper to insert argument slots into the stack.
