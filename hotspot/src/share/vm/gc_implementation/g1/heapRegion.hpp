@@ -52,9 +52,11 @@ class HeapRegionRemSetIterator;
 class HeapRegion;
 class HeapRegionSetBase;
 
-#define HR_FORMAT "%d:["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
-#define HR_FORMAT_PARAMS(_hr_) (_hr_)->hrs_index(), (_hr_)->bottom(), \
-                               (_hr_)->top(), (_hr_)->end()
+#define HR_FORMAT SIZE_FORMAT":(%s)["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
+#define HR_FORMAT_PARAMS(_hr_) \
+                (_hr_)->hrs_index(), \
+                (_hr_)->is_survivor() ? "S" : (_hr_)->is_young() ? "E" : "-", \
+                (_hr_)->bottom(), (_hr_)->top(), (_hr_)->end()
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -237,9 +239,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   G1BlockOffsetArrayContigSpace* offsets() { return &_offsets; }
 
  protected:
-  // If this region is a member of a HeapRegionSeq, the index in that
-  // sequence, otherwise -1.
-  int  _hrs_index;
+  // The index of this region in the heap region sequence.
+  size_t  _hrs_index;
 
   HumongousType _humongous_type;
   // For a humongous region, region in which it starts.
@@ -296,8 +297,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   enum YoungType {
     NotYoung,                   // a region is not young
     Young,                      // a region is young
-    Survivor                    // a region is young and it contains
-                                // survivor
+    Survivor                    // a region is young and it contains survivors
   };
 
   volatile YoungType _young_type;
@@ -351,7 +351,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  public:
   // If "is_zeroed" is "true", the region "mr" can be assumed to contain zeros.
-  HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
+  HeapRegion(size_t hrs_index,
+             G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr, bool is_zeroed);
 
   static int LogOfHRGrainBytes;
@@ -393,8 +394,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
-  int hrs_index() const { return _hrs_index; }
-  void set_hrs_index(int index) { _hrs_index = index; }
+  size_t hrs_index() const { return _hrs_index; }
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
@@ -578,6 +578,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapRegion** next_dirty_cards_region_addr() { return &_next_dirty_cards_region; }
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
+
+  HeapWord* orig_end() { return _orig_end; }
 
   // Allows logical separation between objects allocated before and after.
   void save_marks();

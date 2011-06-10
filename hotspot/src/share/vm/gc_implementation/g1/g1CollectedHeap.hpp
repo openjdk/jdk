@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1AllocRegion.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
+#include "gc_implementation/g1/heapRegionSeq.hpp"
 #include "gc_implementation/g1/heapRegionSets.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/parNew/parGCAllocBuffer.hpp"
@@ -42,7 +43,6 @@
 // heap subsets that will yield large amounts of garbage.
 
 class HeapRegion;
-class HeapRegionSeq;
 class HRRSCleanupTask;
 class PermanentGenerationSpec;
 class GenerationSpec;
@@ -196,9 +196,6 @@ private:
   // The part of _g1_storage that is currently committed.
   MemRegion _g1_committed;
 
-  // The maximum part of _g1_storage that has ever been committed.
-  MemRegion _g1_max_committed;
-
   // The master free list. It will satisfy all new region allocations.
   MasterFreeRegionList      _free_list;
 
@@ -222,7 +219,7 @@ private:
   void rebuild_region_lists();
 
   // The sequence of all heap regions in the heap.
-  HeapRegionSeq* _hrs;
+  HeapRegionSeq _hrs;
 
   // Alloc region used to satisfy mutator allocation requests.
   MutatorAllocRegion _mutator_alloc_region;
@@ -421,13 +418,15 @@ protected:
   // Attempt to satisfy a humongous allocation request of the given
   // size by finding a contiguous set of free regions of num_regions
   // length and remove them from the master free list. Return the
-  // index of the first region or -1 if the search was unsuccessful.
-  int humongous_obj_allocate_find_first(size_t num_regions, size_t word_size);
+  // index of the first region or G1_NULL_HRS_INDEX if the search
+  // was unsuccessful.
+  size_t humongous_obj_allocate_find_first(size_t num_regions,
+                                           size_t word_size);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
   // humongous region.
-  HeapWord* humongous_obj_allocate_initialize_regions(int first,
+  HeapWord* humongous_obj_allocate_initialize_regions(size_t first,
                                                       size_t num_regions,
                                                       size_t word_size);
 
@@ -587,8 +586,8 @@ public:
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
     assert(_in_cset_fast_test_base != NULL, "sanity");
     assert(r->in_collection_set(), "invariant");
-    int index = r->hrs_index();
-    assert(0 <= index && (size_t) index < _in_cset_fast_test_length, "invariant");
+    size_t index = r->hrs_index();
+    assert(index < _in_cset_fast_test_length, "invariant");
     assert(!_in_cset_fast_test_base[index], "invariant");
     _in_cset_fast_test_base[index] = true;
   }
@@ -754,6 +753,11 @@ protected:
                              HumongousRegionSet* humongous_proxy_set,
                              bool par);
 
+  // Notifies all the necessary spaces that the committed space has
+  // been updated (either expanded or shrunk). It should be called
+  // after _g1_storage is updated.
+  void update_committed_space(HeapWord* old_end, HeapWord* new_end);
+
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
@@ -815,7 +819,6 @@ protected:
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
-
 
   // Ensure that the relevant gc_alloc regions are set.
   void get_gc_alloc_regions();
@@ -967,21 +970,23 @@ public:
   }
 
   // The total number of regions in the heap.
-  size_t n_regions();
+  size_t n_regions() { return _hrs.length(); }
+
+  // The max number of regions in the heap.
+  size_t max_regions() { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  size_t max_regions();
-
-  // The number of regions that are completely free.
-  size_t free_regions() {
-    return _free_list.length();
-  }
+  size_t free_regions() { return _free_list.length(); }
 
   // The number of regions that are not completely free.
   size_t used_regions() { return n_regions() - free_regions(); }
 
   // The number of regions available for "regular" expansion.
   size_t expansion_regions() { return _expansion_regions; }
+
+  // Factory method for HeapRegion instances. It will return NULL if
+  // the allocation fails.
+  HeapRegion* new_heap_region(size_t hrs_index, HeapWord* bottom);
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
@@ -1144,17 +1149,15 @@ public:
 
   // Iterate over heap regions, in address order, terminating the
   // iteration early if the "doHeapRegion" method returns "true".
-  void heap_region_iterate(HeapRegionClosure* blk);
+  void heap_region_iterate(HeapRegionClosure* blk) const;
 
   // Iterate over heap regions starting with r (or the first region if "r"
   // is NULL), in address order, terminating early if the "doHeapRegion"
   // method returns "true".
-  void heap_region_iterate_from(HeapRegion* r, HeapRegionClosure* blk);
+  void heap_region_iterate_from(HeapRegion* r, HeapRegionClosure* blk) const;
 
-  // As above but starting from the region at index idx.
-  void heap_region_iterate_from(int idx, HeapRegionClosure* blk);
-
-  HeapRegion* region_at(size_t idx);
+  // Return the region with the given index. It assumes the index is valid.
+  HeapRegion* region_at(size_t index) const { return _hrs.at(index); }
 
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
@@ -1195,12 +1198,14 @@ public:
 
   // A G1CollectedHeap will contain some number of heap regions.  This
   // finds the region containing a given address, or else returns NULL.
-  HeapRegion* heap_region_containing(const void* addr) const;
+  template <class T>
+  inline HeapRegion* heap_region_containing(const T addr) const;
 
   // Like the above, but requires "addr" to be in the heap (to avoid a
   // null-check), and unlike the above, may return an continuing humongous
   // region.
-  HeapRegion* heap_region_containing_raw(const void* addr) const;
+  template <class T>
+  inline HeapRegion* heap_region_containing_raw(const T addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -1262,7 +1267,7 @@ public:
     return true;
   }
 
-  bool is_in_young(oop obj) {
+  bool is_in_young(const oop obj) {
     HeapRegion* hr = heap_region_containing(obj);
     return hr != NULL && hr->is_young();
   }
@@ -1367,11 +1372,6 @@ public:
 
   // Override
   void print_tracing_info() const;
-
-  // If "addr" is a pointer into the (reserved?) heap, returns a positive
-  // number indicating the "arena" within the heap in which "addr" falls.
-  // Or else returns 0.
-  virtual int addr_to_arena_id(void* addr) const;
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
