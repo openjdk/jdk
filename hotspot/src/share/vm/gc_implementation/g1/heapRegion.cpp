@@ -159,20 +159,16 @@ public:
               gclog_or_tty->print_cr("----------");
             }
             gclog_or_tty->print_cr("Missing rem set entry:");
-            gclog_or_tty->print_cr("Field "PTR_FORMAT
-                          " of obj "PTR_FORMAT
-                          ", in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT"),",
-                          p, (void*) _containing_obj,
-                          from->hrs_index(),
-                          from->bottom(),
-                          from->end());
+            gclog_or_tty->print_cr("Field "PTR_FORMAT" "
+                                   "of obj "PTR_FORMAT", "
+                                   "in region "HR_FORMAT,
+                                   p, (void*) _containing_obj,
+                                   HR_FORMAT_PARAMS(from));
             _containing_obj->print_on(gclog_or_tty);
-            gclog_or_tty->print_cr("points to obj "PTR_FORMAT
-                          " in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT").",
-                          (void*) obj, to->hrs_index(),
-                          to->bottom(), to->end());
+            gclog_or_tty->print_cr("points to obj "PTR_FORMAT" "
+                                   "in region "HR_FORMAT,
+                                   (void*) obj,
+                                   HR_FORMAT_PARAMS(to));
             obj->print_on(gclog_or_tty);
             gclog_or_tty->print_cr("Obj head CTE = %d, field CTE = %d.",
                           cv_obj, cv_field);
@@ -484,11 +480,10 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
 
 HeapRegion::
-HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
-                     MemRegion mr, bool is_zeroed)
+HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
+           MemRegion mr, bool is_zeroed)
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
-    _next_fk(HeapRegionDCTOC::NoFilterKind),
-    _hrs_index(-1),
+    _next_fk(HeapRegionDCTOC::NoFilterKind), _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false), _is_gc_alloc_region(false),
     _next_in_special_set(NULL), _orig_end(NULL),
