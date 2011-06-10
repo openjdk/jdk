@@ -2332,6 +2332,20 @@ class CommandLineFlags {
           "Print diagnostic message when GC is stalled"                     \
           "by JNI critical section")                                        \
                                                                             \
+  /* GC log rotation setting */                                             \
+                                                                            \
+  product(bool, UseGCLogFileRotation, false,                                \
+          "Prevent large gclog file for long running app. "                 \
+          "Requires -Xloggc:<filename>")                                    \
+                                                                            \
+  product(uintx, NumberOfGCLogFiles, 0,                                     \
+          "Number of gclog files in rotation, "                             \
+          "Default: 0, no rotation")                                        \
+                                                                            \
+  product(uintx, GCLogFileSize, 0,                                          \
+          "GC log file size, Default: 0 bytes, no rotation "                \
+          "Only valid with UseGCLogFileRotation")                           \
+                                                                            \
   /* JVMTI heap profiling */                                                \
                                                                             \
   diagnostic(bool, TraceJVMTIObjectTagging, false,                          \
