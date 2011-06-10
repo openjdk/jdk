@@ -1680,8 +1680,33 @@ static bool verify_serial_gc_flags() {
           UseParallelGC || UseParallelOldGC));
 }
 
+// check if do gclog rotation
+// +UseGCLogFileRotation is a must,
+// no gc log rotation when log file not supplied or
+// NumberOfGCLogFiles is 0, or GCLogFileSize is 0
+void check_gclog_consistency() {
+  if (UseGCLogFileRotation) {
+    if ((Arguments::gc_log_filename() == NULL) ||
+        (NumberOfGCLogFiles == 0)  ||
+        (GCLogFileSize == 0)) {
+      jio_fprintf(defaultStream::output_stream(),
+                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogRotaion -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>\n"
+                  "where num_of_file > 0 and num_of_size > 0\n"
+                  "GC log rotation is turned off\n");
+      UseGCLogFileRotation = false;
+    }
+  }
+
+  if (UseGCLogFileRotation && GCLogFileSize < 8*K) {
+        FLAG_SET_CMDLINE(uintx, GCLogFileSize, 8*K);
+        jio_fprintf(defaultStream::output_stream(),
+                    "GCLogFileSize changed to minimum 8K\n");
+  }
+}
+
 // Check consistency of GC selection
 bool Arguments::check_gc_consistency() {
+  check_gclog_consistency();
   bool status = true;
   // Ensure that the user has not selected conflicting sets
   // of collectors. [Note: this check is merely a user convenience;
@@ -2672,6 +2697,7 @@ SOLARIS_ONLY(
       return JNI_ERR;
     }
   }
+
   // Change the default value for flags  which have different default values
   // when working with older JDKs.
   if (JDK_Version::current().compare_major(6) <= 0 &&
