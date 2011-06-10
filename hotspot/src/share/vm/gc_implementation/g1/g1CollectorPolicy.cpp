@@ -2639,11 +2639,8 @@ add_to_collection_set(HeapRegion* hr) {
   assert(!hr->is_young(), "non-incremental add of young region");
 
   if (G1PrintHeapRegions) {
-    gclog_or_tty->print_cr("added region to cset "
-                           "%d:["PTR_FORMAT", "PTR_FORMAT"], "
-                           "top "PTR_FORMAT", %s",
-                           hr->hrs_index(), hr->bottom(), hr->end(),
-                           hr->top(), hr->is_young() ? "YOUNG" : "NOT_YOUNG");
+    gclog_or_tty->print_cr("added region to cset "HR_FORMAT,
+                           HR_FORMAT_PARAMS(hr));
   }
 
   if (_g1->mark_in_progress())
@@ -2813,11 +2810,8 @@ void G1CollectorPolicy::add_region_to_incremental_cset_rhs(HeapRegion* hr) {
   _inc_cset_tail = hr;
 
   if (G1PrintHeapRegions) {
-    gclog_or_tty->print_cr(" added region to incremental cset (RHS) "
-                  "%d:["PTR_FORMAT", "PTR_FORMAT"], "
-                  "top "PTR_FORMAT", young %s",
-                  hr->hrs_index(), hr->bottom(), hr->end(),
-                  hr->top(), (hr->is_young()) ? "YES" : "NO");
+    gclog_or_tty->print_cr(" added region to incremental cset (RHS) "HR_FORMAT,
+                           HR_FORMAT_PARAMS(hr));
   }
 }
 
@@ -2838,11 +2832,8 @@ void G1CollectorPolicy::add_region_to_incremental_cset_lhs(HeapRegion* hr) {
   _inc_cset_head = hr;
 
   if (G1PrintHeapRegions) {
-    gclog_or_tty->print_cr(" added region to incremental cset (LHS) "
-                  "%d:["PTR_FORMAT", "PTR_FORMAT"], "
-                  "top "PTR_FORMAT", young %s",
-                  hr->hrs_index(), hr->bottom(), hr->end(),
-                  hr->top(), (hr->is_young()) ? "YES" : "NO");
+    gclog_or_tty->print_cr(" added region to incremental cset (LHS) "HR_FORMAT,
+                           HR_FORMAT_PARAMS(hr));
   }
 }
 
