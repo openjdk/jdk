@@ -468,12 +468,10 @@ void before_exit(JavaThread * thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-#ifndef SERIALGC
-  // stop CMS threads
-  if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::stop();
-  }
-#endif // SERIALGC
+  // We do not need to explicitly stop concurrent GC threads because the
+  // JVM will be taken down at a safepoint when such threads are inactive --
+  // except for some concurrent G1 threads, see (comment in)
+  // Threads::destroy_vm().
 
   // Print GC/heap related information.
   if (PrintGCDetails) {

@@ -1690,7 +1690,7 @@ void check_gclog_consistency() {
         (NumberOfGCLogFiles == 0)  ||
         (GCLogFileSize == 0)) {
       jio_fprintf(defaultStream::output_stream(),
-                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogRotaion -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>\n"
+                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>\n"
                   "where num_of_file > 0 and num_of_size > 0\n"
                   "GC log rotation is turned off\n");
       UseGCLogFileRotation = false;
