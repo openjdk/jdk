@@ -736,12 +736,14 @@ public:
   // will dump the contents of its reference fields, as well as
   // liveness information for the object and its referents. The dump
   // will be written to a file with the following name:
-  // G1PrintReachableBaseFile + "." + str. use_prev_marking decides
-  // whether the prev (use_prev_marking == true) or next
-  // (use_prev_marking == false) marking information will be used to
-  // determine the liveness of each object / referent. If all is true,
-  // all objects in the heap will be dumped, otherwise only the live
-  // ones. In the dump the following symbols / abbreviations are used:
+  // G1PrintReachableBaseFile + "." + str.
+  // vo decides whether the prev (vo == UsePrevMarking), the next
+  // (vo == UseNextMarking) marking information, or the mark word
+  // (vo == UseMarkWord) will be used to determine the liveness of
+  // each object / referent.
+  // If all is true, all objects in the heap will be dumped, otherwise
+  // only the live ones. In the dump the following symbols / breviations
+  // are used:
   //   M : an explicitly live object (its bitmap bit is set)
   //   > : an implicitly live object (over tams)
   //   O : an object outside the G1 heap (typically: in the perm gen)
@@ -749,7 +751,7 @@ public:
   //   AND MARKED : indicates that an object is both explicitly and
   //   implicitly live (it should be one or the other, not both)
   void print_reachable(const char* str,
-                       bool use_prev_marking, bool all) PRODUCT_RETURN;
+                       VerifyOption vo, bool all) PRODUCT_RETURN;
 
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();

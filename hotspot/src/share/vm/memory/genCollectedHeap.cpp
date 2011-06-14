@@ -1260,7 +1260,7 @@ GCStats* GenCollectedHeap::gc_stats(int level) const {
   return _gens[level]->gc_stats();
 }
 
-void GenCollectedHeap::verify(bool allow_dirty, bool silent, bool option /* ignored */) {
+void GenCollectedHeap::verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */) {
   if (!silent) {
     gclog_or_tty->print("permgen ");
   }

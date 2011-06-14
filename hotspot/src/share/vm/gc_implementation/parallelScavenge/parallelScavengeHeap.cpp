@@ -901,7 +901,7 @@ void ParallelScavengeHeap::print_tracing_info() const {
 }
 
 
-void ParallelScavengeHeap::verify(bool allow_dirty, bool silent, bool option /* ignored */) {
+void ParallelScavengeHeap::verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */) {
   // Why do we need the total_collections()-filter below?
   if (total_collections() > 0) {
     if (!silent) {

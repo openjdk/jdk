@@ -1211,7 +1211,10 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyBeforeGC:");
       prepare_for_verify();
-      Universe::verify(true);
+      Universe::verify(/* allow dirty */ true,
+                       /* silent      */ false,
+                       /* option      */ VerifyOption_G1UsePrevMarking);
+
     }
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -1263,7 +1266,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     ref_processor()->enable_discovery();
     ref_processor()->setup_policy(do_clear_all_soft_refs);
-
     // Do collection work
     {
       HandleMark hm;  // Discard invalid handles created during gc
@@ -1284,7 +1286,10 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
       prepare_for_verify();
-      Universe::verify(false);
+      Universe::verify(/* allow dirty */ false,
+                       /* silent      */ false,
+                       /* option      */ VerifyOption_G1UsePrevMarking);
+
     }
     NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
 
@@ -2639,17 +2644,18 @@ void G1CollectedHeap::prepare_for_verify() {
 }
 
 class VerifyLivenessOopClosure: public OopClosure {
-  G1CollectedHeap* g1h;
+  G1CollectedHeap* _g1h;
+  VerifyOption _vo;
 public:
-  VerifyLivenessOopClosure(G1CollectedHeap* _g1h) {
-    g1h = _g1h;
-  }
+  VerifyLivenessOopClosure(G1CollectedHeap* g1h, VerifyOption vo):
+    _g1h(g1h), _vo(vo)
+  { }
   void do_oop(narrowOop *p) { do_oop_work(p); }
   void do_oop(      oop *p) { do_oop_work(p); }
 
   template <class T> void do_oop_work(T *p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj == NULL || !g1h->is_obj_dead(obj),
+    guarantee(obj == NULL || !_g1h->is_obj_dead_cond(obj, _vo),
               "Dead object referenced by a not dead object");
   }
 };
@@ -2659,18 +2665,30 @@ private:
   G1CollectedHeap* _g1h;
   size_t _live_bytes;
   HeapRegion *_hr;
-  bool _use_prev_marking;
+  VerifyOption _vo;
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  VerifyObjsInRegionClosure(HeapRegion *hr, bool use_prev_marking)
-    : _live_bytes(0), _hr(hr), _use_prev_marking(use_prev_marking) {
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
+    : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
   }
   void do_object(oop o) {
-    VerifyLivenessOopClosure isLive(_g1h);
+    VerifyLivenessOopClosure isLive(_g1h, _vo);
     assert(o != NULL, "Huh?");
-    if (!_g1h->is_obj_dead_cond(o, _use_prev_marking)) {
+    if (!_g1h->is_obj_dead_cond(o, _vo)) {
+      // If the object is alive according to the mark word,
+      // then verify that the marking information agrees.
+      // Note we can't verify the contra-positive of the
+      // above: if the object is dead (according to the mark
+      // word), it may not be marked, or may have been marked
+      // but has since became dead, or may have been allocated
+      // since the last marking.
+      if (_vo == VerifyOption_G1UseMarkWord) {
+        guarantee(!_g1h->is_obj_dead(o), "mark word and concurrent mark mismatch");
+      }
+
       o->oop_iterate(&isLive);
       if (!_hr->obj_allocated_since_prev_marking(o)) {
         size_t obj_size = o->size();    // Make sure we don't overflow
@@ -2712,17 +2730,18 @@ public:
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool _allow_dirty;
-  bool _par;
-  bool _use_prev_marking;
-  bool _failures;
+  bool         _allow_dirty;
+  bool         _par;
+  VerifyOption _vo;
+  bool         _failures;
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  VerifyRegionClosure(bool allow_dirty, bool par, bool use_prev_marking)
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyRegionClosure(bool allow_dirty, bool par, VerifyOption vo)
     : _allow_dirty(allow_dirty),
       _par(par),
-      _use_prev_marking(use_prev_marking),
+      _vo(vo),
       _failures(false) {}
 
   bool failures() {
@@ -2734,11 +2753,11 @@ public:
               "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
       bool failures = false;
-      r->verify(_allow_dirty, _use_prev_marking, &failures);
+      r->verify(_allow_dirty, _vo, &failures);
       if (failures) {
         _failures = true;
       } else {
-        VerifyObjsInRegionClosure not_dead_yet_cl(r, _use_prev_marking);
+        VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
         r->object_iterate(&not_dead_yet_cl);
         if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
           gclog_or_tty->print_cr("["PTR_FORMAT","PTR_FORMAT"] "
@@ -2758,14 +2777,15 @@ public:
 class VerifyRootsClosure: public OopsInGenClosure {
 private:
   G1CollectedHeap* _g1h;
-  bool             _use_prev_marking;
+  VerifyOption     _vo;
   bool             _failures;
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  VerifyRootsClosure(bool use_prev_marking) :
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyRootsClosure(VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
-    _use_prev_marking(use_prev_marking),
+    _vo(vo),
     _failures(false) { }
 
   bool failures() { return _failures; }
@@ -2774,9 +2794,12 @@ public:
     T heap_oop = oopDesc::load_heap_oop(p);
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if (_g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
+      if (_g1h->is_obj_dead_cond(obj, _vo)) {
         gclog_or_tty->print_cr("Root location "PTR_FORMAT" "
                               "points to dead obj "PTR_FORMAT, p, (void*) obj);
+        if (_vo == VerifyOption_G1UseMarkWord) {
+          gclog_or_tty->print_cr("  Mark word: "PTR_FORMAT, (void*)(obj->mark()));
+        }
         obj->print_on(gclog_or_tty);
         _failures = true;
       }
@@ -2792,19 +2815,19 @@ public:
 class G1ParVerifyTask: public AbstractGangTask {
 private:
   G1CollectedHeap* _g1h;
-  bool _allow_dirty;
-  bool _use_prev_marking;
-  bool _failures;
+  bool             _allow_dirty;
+  VerifyOption     _vo;
+  bool             _failures;
 
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty,
-                  bool use_prev_marking) :
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty, VerifyOption vo) :
     AbstractGangTask("Parallel verify task"),
     _g1h(g1h),
     _allow_dirty(allow_dirty),
-    _use_prev_marking(use_prev_marking),
+    _vo(vo),
     _failures(false) { }
 
   bool failures() {
@@ -2813,7 +2836,7 @@ public:
 
   void work(int worker_i) {
     HandleMark hm;
-    VerifyRegionClosure blk(_allow_dirty, true, _use_prev_marking);
+    VerifyRegionClosure blk(_allow_dirty, true, _vo);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
                                           HeapRegion::ParVerifyClaimValue);
     if (blk.failures()) {
@@ -2823,19 +2846,21 @@ public:
 };
 
 void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
-  verify(allow_dirty, silent, /* use_prev_marking */ true);
+  verify(allow_dirty, silent, VerifyOption_G1UsePrevMarking);
 }
 
 void G1CollectedHeap::verify(bool allow_dirty,
                              bool silent,
-                             bool use_prev_marking) {
+                             VerifyOption vo) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("Roots (excluding permgen) "); }
-    VerifyRootsClosure rootsCl(use_prev_marking);
+    VerifyRootsClosure rootsCl(vo);
     CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
+
     // We apply the relevant closures to all the oops in the
     // system dictionary, the string table and the code cache.
     const int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+
     process_strong_roots(true,      // activate StrongRootsScope
                          true,      // we set "collecting perm gen" to true,
                                     // so we don't reset the dirty cards in the perm gen.
@@ -2843,21 +2868,37 @@ void G1CollectedHeap::verify(bool allow_dirty,
                          &rootsCl,
                          &blobsCl,
                          &rootsCl);
-    // Since we used "collecting_perm_gen" == true above, we will not have
-    // checked the refs from perm into the G1-collected heap. We check those
-    // references explicitly below. Whether the relevant cards are dirty
-    // is checked further below in the rem set verification.
-    if (!silent) { gclog_or_tty->print("Permgen roots "); }
-    perm_gen()->oop_iterate(&rootsCl);
+
+    // If we're verifying after the marking phase of a Full GC then we can't
+    // treat the perm gen as roots into the G1 heap. Some of the objects in
+    // the perm gen may be dead and hence not marked. If one of these dead
+    // objects is considered to be a root then we may end up with a false
+    // "Root location <x> points to dead ob <y>" failure.
+    if (vo != VerifyOption_G1UseMarkWord) {
+      // Since we used "collecting_perm_gen" == true above, we will not have
+      // checked the refs from perm into the G1-collected heap. We check those
+      // references explicitly below. Whether the relevant cards are dirty
+      // is checked further below in the rem set verification.
+      if (!silent) { gclog_or_tty->print("Permgen roots "); }
+      perm_gen()->oop_iterate(&rootsCl);
+    }
     bool failures = rootsCl.failures();
-    if (!silent) { gclog_or_tty->print("HeapRegionSets "); }
-    verify_region_sets();
+
+    if (vo != VerifyOption_G1UseMarkWord) {
+      // If we're verifying during a full GC then the region sets
+      // will have been torn down at the start of the GC. Therefore
+      // verifying the region sets will fail. So we only verify
+      // the region sets when not in a full GC.
+      if (!silent) { gclog_or_tty->print("HeapRegionSets "); }
+      verify_region_sets();
+    }
+
     if (!silent) { gclog_or_tty->print("HeapRegions "); }
     if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
 
-      G1ParVerifyTask task(this, allow_dirty, use_prev_marking);
+      G1ParVerifyTask task(this, allow_dirty, vo);
       int n_workers = workers()->total_workers();
       set_par_threads(n_workers);
       workers()->run_task(&task);
@@ -2874,7 +2915,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
     } else {
-      VerifyRegionClosure blk(allow_dirty, false, use_prev_marking);
+      VerifyRegionClosure blk(allow_dirty, false, vo);
       heap_region_iterate(&blk);
       if (blk.failures()) {
         failures = true;
@@ -2890,7 +2931,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
 #ifndef PRODUCT
       if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
         concurrent_mark()->print_reachable("at-verification-failure",
-                                           use_prev_marking, false /* all */);
+                                           vo, false /* all */);
       }
 #endif
       gclog_or_tty->flush();
@@ -3036,24 +3077,6 @@ G1CollectedHeap::doConcurrentMark() {
     _cmThread->set_started();
     CGC_lock->notify();
   }
-}
-
-class VerifyMarkedObjsClosure: public ObjectClosure {
-    G1CollectedHeap* _g1h;
-    public:
-    VerifyMarkedObjsClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
-    void do_object(oop obj) {
-      assert(obj->mark()->is_marked() ? !_g1h->is_obj_dead(obj) : true,
-             "markandsweep mark should agree with concurrent deadness");
-    }
-};
-
-void
-G1CollectedHeap::checkConcurrentMark() {
-    VerifyMarkedObjsClosure verifycl(this);
-    //    MutexLockerEx x(getMarkBitMapLock(),
-    //              Mutex::_no_safepoint_check_flag);
-    object_iterate(&verifycl, false);
 }
 
 void G1CollectedHeap::do_sync_mark() {
@@ -3252,7 +3275,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         HandleMark hm;  // Discard invalid handles created during verification
         gclog_or_tty->print(" VerifyBeforeGC:");
         prepare_for_verify();
-        Universe::verify(false);
+        Universe::verify(/* allow dirty */ false,
+                         /* silent      */ false,
+                         /* option      */ VerifyOption_G1UsePrevMarking);
+
       }
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -3424,7 +3450,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         HandleMark hm;  // Discard invalid handles created during verification
         gclog_or_tty->print(" VerifyAfterGC:");
         prepare_for_verify();
-        Universe::verify(false);
+        Universe::verify(/* allow dirty */ true,
+                         /* silent      */ false,
+                         /* option      */ VerifyOption_G1UsePrevMarking);
       }
 
       if (was_enabled) ref_processor()->enable_discovery();

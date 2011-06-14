@@ -1347,14 +1347,20 @@ public:
 
   // Perform verification.
 
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
+  // vo == UsePrevMarking  -> use "prev" marking information,
+  // vo == UseNextMarking -> use "next" marking information
+  // vo == UseMarkWord    -> use the mark word in the object header
+  //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
-  // use_prev_marking == true. Currently, there is only one case where
-  // this is called with use_prev_marking == false, which is to verify
-  // the "next" marking information at the end of remark.
-  void verify(bool allow_dirty, bool silent, bool use_prev_marking);
+  // vo == UsePrevMarking.
+  // Currently, there is only one case where this is called with
+  // vo == UseNextMarking, which is to verify the "next" marking
+  // information at the end of remark.
+  // Currently there is only one place where this is called with
+  // vo == UseMarkWord, which is to verify the marking during a
+  // full GC.
+  void verify(bool allow_dirty, bool silent, VerifyOption vo);
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty, bool silent);
@@ -1402,24 +1408,27 @@ public:
   // bitmap off to the side.
   void doConcurrentMark();
 
-  // This is called from the marksweep collector which then does
-  // a concurrent mark and verifies that the results agree with
-  // the stop the world marking.
-  void checkConcurrentMark();
+  // Do a full concurrent marking, synchronously.
   void do_sync_mark();
 
   bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
+  // vo == UsePrevMarking -> use "prev" marking information,
+  // vo == UseNextMarking -> use "next" marking information,
+  // vo == UseMarkWord    -> use mark word from object header
   bool is_obj_dead_cond(const oop obj,
                         const HeapRegion* hr,
-                        const bool use_prev_marking) const {
-    if (use_prev_marking) {
-      return is_obj_dead(obj, hr);
-    } else {
-      return is_obj_ill(obj, hr);
+                        const VerifyOption vo) const {
+
+    switch (vo) {
+      case VerifyOption_G1UsePrevMarking:
+        return is_obj_dead(obj, hr);
+      case VerifyOption_G1UseNextMarking:
+        return is_obj_ill(obj, hr);
+      default:
+        assert(vo == VerifyOption_G1UseMarkWord, "must be");
+        return !obj->is_gc_marked();
     }
   }
 
@@ -1460,18 +1469,24 @@ public:
   // Added if it is in permanent gen it isn't dead.
   // Added if it is NULL it isn't dead.
 
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
+  // vo == UsePrevMarking -> use "prev" marking information,
+  // vo == UseNextMarking -> use "next" marking information,
+  // vo == UseMarkWord    -> use mark word from object header
   bool is_obj_dead_cond(const oop obj,
-                        const bool use_prev_marking) {
-    if (use_prev_marking) {
-      return is_obj_dead(obj);
-    } else {
-      return is_obj_ill(obj);
+                        const VerifyOption vo) const {
+
+    switch (vo) {
+      case VerifyOption_G1UsePrevMarking:
+        return is_obj_dead(obj);
+      case VerifyOption_G1UseNextMarking:
+        return is_obj_ill(obj);
+      default:
+        assert(vo == VerifyOption_G1UseMarkWord, "must be");
+        return !obj->is_gc_marked();
     }
   }
 
-  bool is_obj_dead(const oop obj) {
+  bool is_obj_dead(const oop obj) const {
     const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
       if (Universe::heap()->is_in_permanent(obj))
@@ -1482,7 +1497,7 @@ public:
     else return is_obj_dead(obj, hr);
   }
 
-  bool is_obj_ill(const oop obj) {
+  bool is_obj_ill(const oop obj) const {
     const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
       if (Universe::heap()->is_in_permanent(obj))
