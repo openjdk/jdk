@@ -782,7 +782,7 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 #ifndef PRODUCT
   if (G1PrintReachableAtInitialMark) {
     print_reachable("at-cycle-start",
-                    true /* use_prev_marking */, true /* all */);
+                    VerifyOption_G1UsePrevMarking, true /* all */);
   }
 #endif
 
@@ -1200,7 +1200,9 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(true, false, true);
+    Universe::verify(/* allow dirty */ true,
+                     /* silent      */ false,
+                     /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
   G1CollectorPolicy* g1p = g1h->g1_policy();
@@ -1233,9 +1235,9 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
-      Universe::heap()->verify(/* allow_dirty */      true,
-                               /* silent */           false,
-                               /* use_prev_marking */ false);
+      Universe::verify(/* allow dirty */ true,
+                       /* silent      */ false,
+                       /* option      */ VerifyOption_G1UseNextMarking);
     }
     assert(!restart_for_overflow(), "sanity");
   }
@@ -1725,9 +1727,9 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty  */ true,
-                     /* silent       */ false,
-                     /* prev marking */ true);
+    Universe::verify(/* allow dirty */ true,
+                     /* silent      */ false,
+                     /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
@@ -1873,9 +1875,9 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(after)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty  */ true,
-                     /* silent       */ false,
-                     /* prev marking */ true);
+    Universe::verify(/* allow dirty */ true,
+                     /* silent      */ false,
+                     /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
   g1h->verify_region_sets_optional();
@@ -2344,18 +2346,16 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 class PrintReachableOopClosure: public OopClosure {
 private:
   G1CollectedHeap* _g1h;
-  CMBitMapRO*      _bitmap;
   outputStream*    _out;
-  bool             _use_prev_marking;
+  VerifyOption     _vo;
   bool             _all;
 
 public:
-  PrintReachableOopClosure(CMBitMapRO*   bitmap,
-                           outputStream* out,
-                           bool          use_prev_marking,
+  PrintReachableOopClosure(outputStream* out,
+                           VerifyOption  vo,
                            bool          all) :
     _g1h(G1CollectedHeap::heap()),
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking), _all(all) { }
+    _out(out), _vo(vo), _all(all) { }
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
   void do_oop(      oop* p) { do_oop_work(p); }
@@ -2373,12 +2373,23 @@ public:
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
       guarantee(hr != NULL, "invariant");
       bool over_tams = false;
-      if (_use_prev_marking) {
-        over_tams = hr->obj_allocated_since_prev_marking(obj);
-      } else {
-        over_tams = hr->obj_allocated_since_next_marking(obj);
+      bool marked = false;
+
+      switch (_vo) {
+        case VerifyOption_G1UsePrevMarking:
+          over_tams = hr->obj_allocated_since_prev_marking(obj);
+          marked = _g1h->isMarkedPrev(obj);
+          break;
+        case VerifyOption_G1UseNextMarking:
+          over_tams = hr->obj_allocated_since_next_marking(obj);
+          marked = _g1h->isMarkedNext(obj);
+          break;
+        case VerifyOption_G1UseMarkWord:
+          marked = obj->is_gc_marked();
+          break;
+        default:
+          ShouldNotReachHere();
       }
-      bool marked = _bitmap->isMarked((HeapWord*) obj);
 
       if (over_tams) {
         str = " >";
@@ -2399,35 +2410,45 @@ public:
 
 class PrintReachableObjectClosure : public ObjectClosure {
 private:
-  CMBitMapRO*   _bitmap;
-  outputStream* _out;
-  bool          _use_prev_marking;
-  bool          _all;
-  HeapRegion*   _hr;
+  G1CollectedHeap* _g1h;
+  outputStream*    _out;
+  VerifyOption     _vo;
+  bool             _all;
+  HeapRegion*      _hr;
 
 public:
-  PrintReachableObjectClosure(CMBitMapRO*   bitmap,
-                              outputStream* out,
-                              bool          use_prev_marking,
+  PrintReachableObjectClosure(outputStream* out,
+                              VerifyOption  vo,
                               bool          all,
                               HeapRegion*   hr) :
-    _bitmap(bitmap), _out(out),
-    _use_prev_marking(use_prev_marking), _all(all), _hr(hr) { }
+    _g1h(G1CollectedHeap::heap()),
+    _out(out), _vo(vo), _all(all), _hr(hr) { }
 
   void do_object(oop o) {
-    bool over_tams;
-    if (_use_prev_marking) {
-      over_tams = _hr->obj_allocated_since_prev_marking(o);
-    } else {
-      over_tams = _hr->obj_allocated_since_next_marking(o);
+    bool over_tams = false;
+    bool marked = false;
+
+    switch (_vo) {
+      case VerifyOption_G1UsePrevMarking:
+        over_tams = _hr->obj_allocated_since_prev_marking(o);
+        marked = _g1h->isMarkedPrev(o);
+        break;
+      case VerifyOption_G1UseNextMarking:
+        over_tams = _hr->obj_allocated_since_next_marking(o);
+        marked = _g1h->isMarkedNext(o);
+        break;
+      case VerifyOption_G1UseMarkWord:
+        marked = o->is_gc_marked();
+        break;
+      default:
+        ShouldNotReachHere();
     }
-    bool marked = _bitmap->isMarked((HeapWord*) o);
     bool print_it = _all || over_tams || marked;
 
     if (print_it) {
       _out->print_cr(" "PTR_FORMAT"%s",
                      o, (over_tams) ? " >" : (marked) ? " M" : "");
-      PrintReachableOopClosure oopCl(_bitmap, _out, _use_prev_marking, _all);
+      PrintReachableOopClosure oopCl(_out, _vo, _all);
       o->oop_iterate(&oopCl);
     }
   }
@@ -2435,9 +2456,8 @@ public:
 
 class PrintReachableRegionClosure : public HeapRegionClosure {
 private:
-  CMBitMapRO*   _bitmap;
   outputStream* _out;
-  bool          _use_prev_marking;
+  VerifyOption  _vo;
   bool          _all;
 
 public:
@@ -2446,10 +2466,21 @@ public:
     HeapWord* e = hr->end();
     HeapWord* t = hr->top();
     HeapWord* p = NULL;
-    if (_use_prev_marking) {
-      p = hr->prev_top_at_mark_start();
-    } else {
-      p = hr->next_top_at_mark_start();
+
+    switch (_vo) {
+      case VerifyOption_G1UsePrevMarking:
+        p = hr->prev_top_at_mark_start();
+        break;
+      case VerifyOption_G1UseNextMarking:
+        p = hr->next_top_at_mark_start();
+        break;
+      case VerifyOption_G1UseMarkWord:
+        // When we are verifying marking using the mark word
+        // TAMS has no relevance.
+        assert(p == NULL, "post-condition");
+        break;
+      default:
+        ShouldNotReachHere();
     }
     _out->print_cr("** ["PTR_FORMAT", "PTR_FORMAT"] top: "PTR_FORMAT" "
                    "TAMS: "PTR_FORMAT, b, e, t, p);
@@ -2461,8 +2492,7 @@ public:
     if (to > from) {
       _out->print_cr("Objects in ["PTR_FORMAT", "PTR_FORMAT"]", from, to);
       _out->cr();
-      PrintReachableObjectClosure ocl(_bitmap, _out,
-                                      _use_prev_marking, _all, hr);
+      PrintReachableObjectClosure ocl(_out, _vo, _all, hr);
       hr->object_iterate_mem_careful(MemRegion(from, to), &ocl);
       _out->cr();
     }
@@ -2470,15 +2500,25 @@ public:
     return false;
   }
 
-  PrintReachableRegionClosure(CMBitMapRO*   bitmap,
-                              outputStream* out,
-                              bool          use_prev_marking,
+  PrintReachableRegionClosure(outputStream* out,
+                              VerifyOption  vo,
                               bool          all) :
-    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking), _all(all) { }
+    _out(out), _vo(vo), _all(all) { }
 };
 
+static const char* verify_option_to_tams(VerifyOption vo) {
+  switch (vo) {
+    case VerifyOption_G1UsePrevMarking:
+      return "PTAMS";
+    case VerifyOption_G1UseNextMarking:
+      return "NTAMS";
+    default:
+      return "NONE";
+  }
+}
+
 void ConcurrentMark::print_reachable(const char* str,
-                                     bool use_prev_marking,
+                                     VerifyOption vo,
                                      bool all) {
   gclog_or_tty->cr();
   gclog_or_tty->print_cr("== Doing heap dump... ");
@@ -2505,20 +2545,12 @@ void ConcurrentMark::print_reachable(const char* str,
   }
 
   outputStream* out = &fout;
-
-  CMBitMapRO* bitmap = NULL;
-  if (use_prev_marking) {
-    bitmap = _prevMarkBitMap;
-  } else {
-    bitmap = _nextMarkBitMap;
-  }
-
-  out->print_cr("-- USING %s", (use_prev_marking) ? "PTAMS" : "NTAMS");
+  out->print_cr("-- USING %s", verify_option_to_tams(vo));
   out->cr();
 
   out->print_cr("--- ITERATING OVER REGIONS");
   out->cr();
-  PrintReachableRegionClosure rcl(bitmap, out, use_prev_marking, all);
+  PrintReachableRegionClosure rcl(out, vo, all);
   _g1h->heap_region_iterate(&rcl);
   out->cr();
 

@@ -606,7 +606,7 @@ class CollectedHeap : public CHeapObj {
   virtual void print_tracing_info() const = 0;
 
   // Heap verification
-  virtual void verify(bool allow_dirty, bool silent, bool option) = 0;
+  virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

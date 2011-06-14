@@ -109,6 +109,14 @@ struct NarrowOopStruct {
   bool    _use_implicit_null_checks;
 };
 
+enum VerifyOption {
+      VerifyOption_Default = 0,
+
+      // G1
+      VerifyOption_G1UsePrevMarking = VerifyOption_Default,
+      VerifyOption_G1UseNextMarking = VerifyOption_G1UsePrevMarking + 1,
+      VerifyOption_G1UseMarkWord    = VerifyOption_G1UseNextMarking + 1
+};
 
 class Universe: AllStatic {
   // Ugh.  Universe is much too friendly.
@@ -404,7 +412,8 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(bool allow_dirty = true, bool silent = false, bool option = true);
+  static void verify(bool allow_dirty = true, bool silent = false,
+                     VerifyOption option = VerifyOption_Default );
   static int  verify_count()                  { return _verify_count; }
   static void print();
   static void print_on(outputStream* st);
