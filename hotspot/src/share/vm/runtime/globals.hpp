@@ -3715,6 +3715,9 @@ class CommandLineFlags {
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
           "number of additional stack slots a method handle may push")      \
                                                                             \
+  diagnostic(bool, PrintMethodHandleStubs, false,                           \
+          "Print generated stub code for method handles")                   \
+                                                                            \
   develop(bool, TraceMethodHandles, false,                                  \
           "trace internal method handle operations")                        \
                                                                             \

@@ -270,7 +270,7 @@ void MethodHandles::RicochetFrame::leave_ricochet_frame(MacroAssembler* _masm,
 // Emit code to verify that FP is pointing at a valid ricochet frame.
 #ifdef ASSERT
 enum {
-  ARG_LIMIT = 255, SLOP = 35,
+  ARG_LIMIT = 255, SLOP = 45,
   // use this parameter for checking for garbage stack movements:
   UNREASONABLE_STACK_MOVE = (ARG_LIMIT + SLOP)
   // the slop defends against false alarms due to fencepost errors
@@ -1581,14 +1581,17 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           //   argslot  = src_addr + swap_bytes
           //   destslot = dest_addr
           //   while (argslot <= destslot) *(argslot - swap_bytes) = *(argslot + 0), argslot++;
-          __ add(O1_destslot, wordSize, O1_destslot);
+          // dest_slot denotes an exclusive upper limit
+          int limit_bias = OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+          if (limit_bias != 0)
+            __ add(O1_destslot, - limit_bias * wordSize, O1_destslot);
           move_arg_slots_down(_masm,
                               Address(O0_argslot, swap_slots * wordSize),
                               O1_destslot,
                               -swap_slots,
                               O0_argslot, O2_scratch);
 
-          __ sub(O1_destslot, wordSize, O1_destslot);
+          __ sub(O1_destslot, swap_slots * wordSize, O1_destslot);
         }
         // pop the original first chunk into the destination slot, now free
         switch (swap_slots) {

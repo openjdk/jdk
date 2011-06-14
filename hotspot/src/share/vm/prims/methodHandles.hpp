@@ -581,12 +581,16 @@ class MethodHandles: AllStatic {
     GC_JVM_PUSH_LIMIT = 0,
     GC_JVM_STACK_MOVE_UNIT = 1,
     GC_CONV_OP_IMPLEMENTED_MASK = 2,
+    GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3,
 
     // format of result from getTarget / encode_target:
     ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
     ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
     ETF_METHOD_NAME           = 2, // ultimate method as MemberName
-    ETF_REFLECT_METHOD        = 3  // ultimate method as java.lang.reflect object (sans refClass)
+    ETF_REFLECT_METHOD        = 3, // ultimate method as java.lang.reflect object (sans refClass)
+
+    // ad hoc constants
+    OP_ROT_ARGS_DOWN_LIMIT_BIAS = -1
   };
   static int get_named_constant(int which, Handle name_box, TRAPS);
   static oop encode_target(Handle mh, int format, TRAPS); // report vmtarget (to Java code)
@@ -828,7 +832,7 @@ address MethodHandles::from_interpreted_entry(EntryKind ek) { return entry(ek)->
 //
 class MethodHandlesAdapterGenerator : public StubCodeGenerator {
 public:
-  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
+  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code, PrintMethodHandleStubs) {}
 
   void generate();
 };
