@@ -1644,14 +1644,16 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           //   rax = src_addr + swap_bytes
           //   rbx = dest_addr
           //   while (rax <= rbx) *(rax - swap_bytes) = *(rax + 0), rax++;
-          __ addptr(rbx_destslot, wordSize);
+          // dest_slot denotes an exclusive upper limit
+          int limit_bias = OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+          if (limit_bias != 0)
+            __ addptr(rbx_destslot, - limit_bias * wordSize);
           move_arg_slots_down(_masm,
                               Address(rax_argslot, swap_slots * wordSize),
                               rbx_destslot,
                               -swap_slots,
                               rax_argslot, rdx_temp);
-
-          __ subptr(rbx_destslot, wordSize);
+          __ subptr(rbx_destslot, swap_slots * wordSize);
         }
         // pop the original first chunk into the destination slot, now free
         for (int i = 0; i < swap_slots; i++) {
