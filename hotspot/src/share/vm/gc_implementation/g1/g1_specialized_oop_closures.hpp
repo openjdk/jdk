@@ -45,6 +45,7 @@ typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
 
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
+class G1CMOopClosure;
 
 #ifdef FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES
 #error "FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES already defined."
@@ -55,7 +56,8 @@ class FilterOutOfRegionClosure;
       f(G1ParScanClosure,_nv)                           \
       f(G1ParPushHeapRSClosure,_nv)                     \
       f(FilterIntoCSClosure,_nv)                        \
-      f(FilterOutOfRegionClosure,_nv)
+      f(FilterOutOfRegionClosure,_nv)                   \
+      f(G1CMOopClosure,_nv)
 
 #ifdef FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES
 #error "FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES already defined."

@@ -131,22 +131,22 @@ class CMBitMap : public CMBitMapRO {
   void mark(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    _bm.at_put(heapWordToOffset(addr), true);
+    _bm.set_bit(heapWordToOffset(addr));
   }
   void clear(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    _bm.at_put(heapWordToOffset(addr), false);
+    _bm.clear_bit(heapWordToOffset(addr));
   }
   bool parMark(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    return _bm.par_at_put(heapWordToOffset(addr), true);
+    return _bm.par_set_bit(heapWordToOffset(addr));
   }
   bool parClear(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    return _bm.par_at_put(heapWordToOffset(addr), false);
+    return _bm.par_clear_bit(heapWordToOffset(addr));
   }
   void markRange(MemRegion mr);
   void clearAll();
@@ -928,7 +928,7 @@ private:
   double                      _start_time_ms;
 
   // the oop closure used for iterations over oops
-  OopClosure*                 _oop_closure;
+  G1CMOopClosure*             _cm_oop_closure;
 
   // the region this task is scanning, NULL if we're not scanning any
   HeapRegion*                 _curr_region;
@@ -1122,32 +1122,17 @@ public:
   // Clears any recorded partially scanned region
   void clear_aborted_region()   { set_aborted_region(MemRegion()); }
 
-  void set_oop_closure(OopClosure* oop_closure) {
-    _oop_closure = oop_closure;
-  }
+  void set_cm_oop_closure(G1CMOopClosure* cm_oop_closure);
 
   // It grays the object by marking it and, if necessary, pushing it
   // on the local queue
-  void deal_with_reference(oop obj);
+  inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.
-  void scan_object(oop obj) {
-    assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
-
-    if (_cm->verbose_high())
-      gclog_or_tty->print_cr("[%d] we're scanning object "PTR_FORMAT,
-                             _task_id, (void*) obj);
-
-    size_t obj_size = obj->size();
-    _words_scanned += obj_size;
-
-    obj->oop_iterate(_oop_closure);
-    statsOnly( ++_objs_scanned );
-    check_limits();
-  }
+  void scan_object(oop obj);
 
   // It pushes an object on the local queue.
-  void push(oop obj);
+  inline void push(oop obj);
 
   // These two move entries to/from the global stack.
   void move_entries_to_global_stack();

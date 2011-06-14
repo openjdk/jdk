@@ -24,10 +24,11 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
-#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMark.inline.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
@@ -2546,34 +2547,42 @@ public:
 };
 
 void ConcurrentMark::deal_with_reference(oop obj) {
-  if (verbose_high())
+  if (verbose_high()) {
     gclog_or_tty->print_cr("[global] we're dealing with reference "PTR_FORMAT,
                            (void*) obj);
-
+  }
 
   HeapWord* objAddr = (HeapWord*) obj;
   assert(obj->is_oop_or_null(true /* ignore mark word */), "Error");
   if (_g1h->is_in_g1_reserved(objAddr)) {
-    assert(obj != NULL, "is_in_g1_reserved should ensure this");
-    HeapRegion* hr = _g1h->heap_region_containing(obj);
-    if (_g1h->is_obj_ill(obj, hr)) {
-      if (verbose_high())
-        gclog_or_tty->print_cr("[global] "PTR_FORMAT" is not considered "
-                               "marked", (void*) obj);
+    assert(obj != NULL, "null check is implicit");
+    if (!_nextMarkBitMap->isMarked(objAddr)) {
+      // Only get the containing region if the object is not marked on the
+      // bitmap (otherwise, it's a waste of time since we won't do
+      // anything with it).
+      HeapRegion* hr = _g1h->heap_region_containing_raw(obj);
+      if (!hr->obj_allocated_since_next_marking(obj)) {
+        if (verbose_high()) {
+          gclog_or_tty->print_cr("[global] "PTR_FORMAT" is not considered "
+                                 "marked", (void*) obj);
+        }
 
-      // we need to mark it first
-      if (_nextMarkBitMap->parMark(objAddr)) {
-        // No OrderAccess:store_load() is needed. It is implicit in the
-        // CAS done in parMark(objAddr) above
-        HeapWord* finger = _finger;
-        if (objAddr < finger) {
-          if (verbose_high())
-            gclog_or_tty->print_cr("[global] below the global finger "
-                                   "("PTR_FORMAT"), pushing it", finger);
-          if (!mark_stack_push(obj)) {
-            if (verbose_low())
-              gclog_or_tty->print_cr("[global] global stack overflow during "
-                                     "deal_with_reference");
+        // we need to mark it first
+        if (_nextMarkBitMap->parMark(objAddr)) {
+          // No OrderAccess:store_load() is needed. It is implicit in the
+          // CAS done in parMark(objAddr) above
+          HeapWord* finger = _finger;
+          if (objAddr < finger) {
+            if (verbose_high()) {
+              gclog_or_tty->print_cr("[global] below the global finger "
+                                     "("PTR_FORMAT"), pushing it", finger);
+            }
+            if (!mark_stack_push(obj)) {
+              if (verbose_low()) {
+                gclog_or_tty->print_cr("[global] global stack overflow during "
+                                       "deal_with_reference");
+              }
+            }
           }
         }
       }
@@ -2631,21 +2640,43 @@ ConcurrentMark::claim_region(int task_num) {
   while (finger < _heap_end) {
     assert(_g1h->is_in_g1_reserved(finger), "invariant");
 
-    // is the gap between reading the finger and doing the CAS too long?
-
-    HeapRegion* curr_region   = _g1h->heap_region_containing(finger);
+    // Note on how this code handles humongous regions. In the
+    // normal case the finger will reach the start of a "starts
+    // humongous" (SH) region. Its end will either be the end of the
+    // last "continues humongous" (CH) region in the sequence, or the
+    // standard end of the SH region (if the SH is the only region in
+    // the sequence). That way claim_region() will skip over the CH
+    // regions. However, there is a subtle race between a CM thread
+    // executing this method and a mutator thread doing a humongous
+    // object allocation. The two are not mutually exclusive as the CM
+    // thread does not need to hold the Heap_lock when it gets
+    // here. So there is a chance that claim_region() will come across
+    // a free region that's in the progress of becoming a SH or a CH
+    // region. In the former case, it will either
+    //   a) Miss the update to the region's end, in which case it will
+    //      visit every subsequent CH region, will find their bitmaps
+    //      empty, and do nothing, or
+    //   b) Will observe the update of the region's end (in which case
+    //      it will skip the subsequent CH regions).
+    // If it comes across a region that suddenly becomes CH, the
+    // scenario will be similar to b). So, the race between
+    // claim_region() and a humongous object allocation might force us
+    // to do a bit of unnecessary work (due to some unnecessary bitmap
+    // iterations) but it should not introduce and correctness issues.
+    HeapRegion* curr_region   = _g1h->heap_region_containing_raw(finger);
     HeapWord*   bottom        = curr_region->bottom();
     HeapWord*   end           = curr_region->end();
     HeapWord*   limit         = curr_region->next_top_at_mark_start();
 
-    if (verbose_low())
+    if (verbose_low()) {
       gclog_or_tty->print_cr("[%d] curr_region = "PTR_FORMAT" "
                              "["PTR_FORMAT", "PTR_FORMAT"), "
                              "limit = "PTR_FORMAT,
                              task_num, curr_region, bottom, end, limit);
+    }
 
-    HeapWord* res =
-      (HeapWord*) Atomic::cmpxchg_ptr(end, &_finger, finger);
+    // Is the gap between reading the finger and doing the CAS too long?
+    HeapWord* res = (HeapWord*) Atomic::cmpxchg_ptr(end, &_finger, finger);
     if (res == finger) {
       // we succeeded
 
@@ -3191,6 +3222,22 @@ void ConcurrentMark::print_finger() {
 }
 #endif
 
+void CMTask::scan_object(oop obj) {
+  assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
+
+  if (_cm->verbose_high()) {
+    gclog_or_tty->print_cr("[%d] we're scanning object "PTR_FORMAT,
+                           _task_id, (void*) obj);
+  }
+
+  size_t obj_size = obj->size();
+  _words_scanned += obj_size;
+
+  obj->oop_iterate(_cm_oop_closure);
+  statsOnly( ++_objs_scanned );
+  check_limits();
+}
+
 // Closure for iteration over bitmaps
 class CMBitMapClosure : public BitMapClosure {
 private:
@@ -3254,43 +3301,17 @@ public:
   CMObjectClosure(CMTask* task) : _task(task) { }
 };
 
-// Closure for iterating over object fields
-class CMOopClosure : public OopClosure {
-private:
-  G1CollectedHeap*   _g1h;
-  ConcurrentMark*    _cm;
-  CMTask*            _task;
+G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
+                               ConcurrentMark* cm,
+                               CMTask* task)
+  : _g1h(g1h), _cm(cm), _task(task) {
+  assert(_ref_processor == NULL, "should be initialized to NULL");
 
-public:
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-
-  template <class T> void do_oop_work(T* p) {
-    assert( _g1h->is_in_g1_reserved((HeapWord*) p), "invariant");
-    assert(!_g1h->is_on_master_free_list(
-                    _g1h->heap_region_containing((HeapWord*) p)), "invariant");
-
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    if (_cm->verbose_high())
-      gclog_or_tty->print_cr("[%d] we're looking at location "
-                             "*"PTR_FORMAT" = "PTR_FORMAT,
-                             _task->task_id(), p, (void*) obj);
-    _task->deal_with_reference(obj);
+  if (G1UseConcMarkReferenceProcessing) {
+    _ref_processor = g1h->ref_processor();
+    assert(_ref_processor != NULL, "should not be NULL");
   }
-
-  CMOopClosure(G1CollectedHeap* g1h,
-               ConcurrentMark* cm,
-               CMTask* task)
-    : _g1h(g1h), _cm(cm), _task(task)
-  {
-    assert(_ref_processor == NULL, "should be initialized to NULL");
-
-    if (G1UseConcMarkReferenceProcessing) {
-      _ref_processor = g1h->ref_processor();
-      assert(_ref_processor != NULL, "should not be NULL");
-    }
-  }
-};
+}
 
 void CMTask::setup_for_region(HeapRegion* hr) {
   // Separated the asserts so that we know which one fires.
@@ -3362,6 +3383,15 @@ void CMTask::clear_region_fields() {
   _region_finger = NULL;
 }
 
+void CMTask::set_cm_oop_closure(G1CMOopClosure* cm_oop_closure) {
+  if (cm_oop_closure == NULL) {
+    assert(_cm_oop_closure != NULL, "invariant");
+  } else {
+    assert(_cm_oop_closure == NULL, "invariant");
+  }
+  _cm_oop_closure = cm_oop_closure;
+}
+
 void CMTask::reset(CMBitMap* nextMarkBitMap) {
   guarantee(nextMarkBitMap != NULL, "invariant");
 
@@ -3409,118 +3439,6 @@ bool CMTask::should_exit_termination() {
   // quit if, for some reason, this task wants to abort or the global
   // stack is not empty (this means that we can get work from it).
   return !_cm->mark_stack_empty() || has_aborted();
-}
-
-// This determines whether the method below will check both the local
-// and global fingers when determining whether to push on the stack a
-// gray object (value 1) or whether it will only check the global one
-// (value 0). The tradeoffs are that the former will be a bit more
-// accurate and possibly push less on the stack, but it might also be
-// a little bit slower.
-
-#define _CHECK_BOTH_FINGERS_      1
-
-void CMTask::deal_with_reference(oop obj) {
-  if (_cm->verbose_high())
-    gclog_or_tty->print_cr("[%d] we're dealing with reference = "PTR_FORMAT,
-                           _task_id, (void*) obj);
-
-  ++_refs_reached;
-
-  HeapWord* objAddr = (HeapWord*) obj;
-  assert(obj->is_oop_or_null(true /* ignore mark word */), "Error");
-  if (_g1h->is_in_g1_reserved(objAddr)) {
-    assert(obj != NULL, "is_in_g1_reserved should ensure this");
-    HeapRegion* hr =  _g1h->heap_region_containing(obj);
-    if (_g1h->is_obj_ill(obj, hr)) {
-      if (_cm->verbose_high())
-        gclog_or_tty->print_cr("[%d] "PTR_FORMAT" is not considered marked",
-                               _task_id, (void*) obj);
-
-      // we need to mark it first
-      if (_nextMarkBitMap->parMark(objAddr)) {
-        // No OrderAccess:store_load() is needed. It is implicit in the
-        // CAS done in parMark(objAddr) above
-        HeapWord* global_finger = _cm->finger();
-
-#if _CHECK_BOTH_FINGERS_
-        // we will check both the local and global fingers
-
-        if (_finger != NULL && objAddr < _finger) {
-          if (_cm->verbose_high())
-            gclog_or_tty->print_cr("[%d] below the local finger ("PTR_FORMAT"), "
-                                   "pushing it", _task_id, _finger);
-          push(obj);
-        } else if (_curr_region != NULL && objAddr < _region_limit) {
-          // do nothing
-        } else if (objAddr < global_finger) {
-          // Notice that the global finger might be moving forward
-          // concurrently. This is not a problem. In the worst case, we
-          // mark the object while it is above the global finger and, by
-          // the time we read the global finger, it has moved forward
-          // passed this object. In this case, the object will probably
-          // be visited when a task is scanning the region and will also
-          // be pushed on the stack. So, some duplicate work, but no
-          // correctness problems.
-
-          if (_cm->verbose_high())
-            gclog_or_tty->print_cr("[%d] below the global finger "
-                                   "("PTR_FORMAT"), pushing it",
-                                   _task_id, global_finger);
-          push(obj);
-        } else {
-          // do nothing
-        }
-#else // _CHECK_BOTH_FINGERS_
-        // we will only check the global finger
-
-        if (objAddr < global_finger) {
-          // see long comment above
-
-          if (_cm->verbose_high())
-            gclog_or_tty->print_cr("[%d] below the global finger "
-                                   "("PTR_FORMAT"), pushing it",
-                                   _task_id, global_finger);
-          push(obj);
-        }
-#endif // _CHECK_BOTH_FINGERS_
-      }
-    }
-  }
-}
-
-void CMTask::push(oop obj) {
-  HeapWord* objAddr = (HeapWord*) obj;
-  assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
-  assert(!_g1h->is_on_master_free_list(
-              _g1h->heap_region_containing((HeapWord*) objAddr)), "invariant");
-  assert(!_g1h->is_obj_ill(obj), "invariant");
-  assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
-
-  if (_cm->verbose_high())
-    gclog_or_tty->print_cr("[%d] pushing "PTR_FORMAT, _task_id, (void*) obj);
-
-  if (!_task_queue->push(obj)) {
-    // The local task queue looks full. We need to push some entries
-    // to the global stack.
-
-    if (_cm->verbose_medium())
-      gclog_or_tty->print_cr("[%d] task queue overflow, "
-                             "moving entries to the global stack",
-                             _task_id);
-    move_entries_to_global_stack();
-
-    // this should succeed since, even if we overflow the global
-    // stack, we should have definitely removed some entries from the
-    // local queue. So, there must be space on it.
-    bool success = _task_queue->push(obj);
-    assert(success, "invariant");
-  }
-
-  statsOnly( int tmp_size = _task_queue->size();
-             if (tmp_size > _local_max_size)
-               _local_max_size = tmp_size;
-             ++_local_pushes );
 }
 
 void CMTask::reached_limit() {
@@ -4158,8 +4076,8 @@ void CMTask::do_marking_step(double time_target_ms,
   // eventually called from this method, so it is OK to allocate these
   // statically.
   CMBitMapClosure bitmap_closure(this, _cm, _nextMarkBitMap);
-  CMOopClosure    oop_closure(_g1h, _cm, this);
-  set_oop_closure(&oop_closure);
+  G1CMOopClosure  cm_oop_closure(_g1h, _cm, this);
+  set_cm_oop_closure(&cm_oop_closure);
 
   if (_cm->has_overflown()) {
     // This can happen if the region stack or the mark stack overflows
@@ -4435,7 +4353,7 @@ void CMTask::do_marking_step(double time_target_ms,
   // Mainly for debugging purposes to make sure that a pointer to the
   // closure which was statically allocated in this frame doesn't
   // escape it by accident.
-  set_oop_closure(NULL);
+  set_cm_oop_closure(NULL);
   double end_time_ms = os::elapsedVTime() * 1000.0;
   double elapsed_time_ms = end_time_ms - _start_time_ms;
   // Update the step history.
@@ -4510,7 +4428,7 @@ CMTask::CMTask(int task_id,
     _nextMarkBitMap(NULL), _hash_seed(17),
     _task_queue(task_queue),
     _task_queues(task_queues),
-    _oop_closure(NULL),
+    _cm_oop_closure(NULL),
     _aborted_region(MemRegion()) {
   guarantee(task_queue != NULL, "invariant");
   guarantee(task_queues != NULL, "invariant");
