@@ -33,6 +33,7 @@ class DirtyCardToOopClosure;
 class CMBitMap;
 class CMMarkStack;
 class G1ParScanThreadState;
+class CMTask;
 
 // A class that scans oops in a given heap region (much as OopsInGenClosure
 // scans oops in a generation.)
@@ -174,6 +175,18 @@ public:
   bool apply_to_weak_ref_discovered_field() { return true; }
   bool do_header() { return false; }
   int out_of_region() { return _out_of_region; }
+};
+
+// Closure for iterating over object fields during concurrent marking
+class G1CMOopClosure : public OopClosure {
+  G1CollectedHeap*   _g1h;
+  ConcurrentMark*    _cm;
+  CMTask*            _task;
+public:
+  G1CMOopClosure(G1CollectedHeap* g1h, ConcurrentMark* cm, CMTask* task);
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(      oop* p) { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP

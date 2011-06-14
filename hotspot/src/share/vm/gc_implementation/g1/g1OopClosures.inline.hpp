@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP
 
-#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/concurrentMark.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
@@ -108,5 +108,18 @@ template <class T> inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
   }
 }
 
+template <class T> inline void G1CMOopClosure::do_oop_nv(T* p) {
+  assert(_g1h->is_in_g1_reserved((HeapWord*) p), "invariant");
+  assert(!_g1h->is_on_master_free_list(
+                    _g1h->heap_region_containing((HeapWord*) p)), "invariant");
+
+  oop obj = oopDesc::load_decode_heap_oop(p);
+  if (_cm->verbose_high()) {
+    gclog_or_tty->print_cr("[%d] we're looking at location "
+                           "*"PTR_FORMAT" = "PTR_FORMAT,
+                           _task->task_id(), p, (void*) obj);
+  }
+  _task->deal_with_reference(obj);
+}
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP
