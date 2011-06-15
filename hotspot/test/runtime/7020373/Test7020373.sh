@@ -2,9 +2,10 @@
 
 ##
 ## @test
-## @bug 7020373
+## @bug 7020373 7055247
 ## @key cte_test
 ## @summary JSR rewriting can overflow memory address size variables
+## @ignore Ignore it until 7053586 fixed
 ## @run shell Test7020373.sh
 ##
 
