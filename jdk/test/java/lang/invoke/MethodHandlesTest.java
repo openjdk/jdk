@@ -2234,7 +2234,7 @@ public class MethodHandlesTest {
     static void runForRunnable() {
         called("runForRunnable");
     }
-    private interface Fooable {
+    public interface Fooable {
         Object foo(Fooable x, Object y);
         // this is for randomArg:
         public class Impl implements Fooable {
@@ -2249,9 +2249,9 @@ public class MethodHandlesTest {
     static Object fooForFooable(Fooable x, Object y) {
         return called("fooForFooable", x, y);
     }
-    private static class MyCheckedException extends Exception {
+    public static class MyCheckedException extends Exception {
     }
-    private interface WillThrow {
+    public interface WillThrow {
         void willThrow() throws MyCheckedException;
     }
 
@@ -2300,8 +2300,11 @@ public class MethodHandlesTest {
                     assertSame("must pass declared exception out without wrapping", ex, ex1);
                 } else {
                     assertNotSame("must pass undeclared checked exception with wrapping", ex, ex1);
+                    if (!(ex1 instanceof UndeclaredThrowableException) || ex1.getCause() != ex) {
+                        ex1.printStackTrace();
+                    }
+                    assertSame(ex, ex1.getCause());
                     UndeclaredThrowableException utex = (UndeclaredThrowableException) ex1;
-                    assertSame(ex, utex.getCause());
                 }
             }
         }
@@ -2380,8 +2383,7 @@ class ValueConversions {
     public static MethodHandle varargsArray(int nargs) {
         if (nargs < ARRAYS.length)
             return ARRAYS[nargs];
-        // else need to spin bytecode or do something else fancy
-        throw new UnsupportedOperationException("NYI: cannot form a varargs array of length "+nargs);
+        return MethodHandles.identity(Object[].class).asCollector(Object[].class, nargs);
     }
     public static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
         Class<?> elemType = arrayType.getComponentType();
@@ -2463,6 +2465,12 @@ class ValueConversions {
         return lists.toArray(new MethodHandle[0]);
     }
     static final MethodHandle[] LISTS = makeLists();
+    static final MethodHandle AS_LIST;
+    static {
+        try {
+            AS_LIST = IMPL_LOOKUP.findStatic(Arrays.class, "asList", MethodType.methodType(List.class, Object[].class));
+        } catch (Exception ex) { throw new RuntimeException(ex); }
+    }
 
     /** Return a method handle that takes the indicated number of Object
      *  arguments and returns List.
@@ -2470,8 +2478,7 @@ class ValueConversions {
     public static MethodHandle varargsList(int nargs) {
         if (nargs < LISTS.length)
             return LISTS[nargs];
-        // else need to spin bytecode or do something else fancy
-        throw new UnsupportedOperationException("NYI");
+        return AS_LIST.asCollector(Object[].class, nargs);
     }
 }
 // This guy tests access from outside the same package member, but inside
