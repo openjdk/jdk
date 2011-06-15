@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.reflect.*;
 import sun.invoke.WrapperInstance;
+import java.util.ArrayList;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -134,14 +135,19 @@ public class MethodHandleProxies {
     //
     public static
     <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
-        // POC implementation only; violates the above contract several ways
-        final Method sm = getSingleMethod(intfc);
-        if (sm == null)
+        if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
+            throw new IllegalArgumentException("not a public interface: "+intfc.getName());
+        final Method[] methods = getSingleNameMethods(intfc);
+        if (methods == null)
             throw new IllegalArgumentException("not a single-method interface: "+intfc.getName());
-        MethodType smMT = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
-        MethodHandle checkTarget = target.asType(smMT);  // make throw WMT
-        checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
-        final MethodHandle vaTarget = checkTarget.asSpreader(Object[].class, smMT.parameterCount());
+        final MethodHandle[] vaTargets = new MethodHandle[methods.length];
+        for (int i = 0; i < methods.length; i++) {
+            Method sm = methods[i];
+            MethodType smMT = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
+            MethodHandle checkTarget = target.asType(smMT);  // make throw WMT
+            checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
+            vaTargets[i] = checkTarget.asSpreader(Object[].class, smMT.parameterCount());
+        }
         return intfc.cast(Proxy.newProxyInstance(
                 intfc.getClassLoader(),
                 new Class[]{ intfc, WrapperInstance.class },
@@ -152,13 +158,15 @@ public class MethodHandleProxies {
                         throw new AssertionError();
                     }
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        for (int i = 0; i < methods.length; i++) {
+                            if (method.equals(methods[i]))
+                                return vaTargets[i].invokeExact(args);
+                        }
                         if (method.getDeclaringClass() == WrapperInstance.class)
                             return getArg(method.getName());
-                        if (method.equals(sm))
-                            return vaTarget.invokeExact(args);
                         if (isObjectMethod(method))
                             return callObjectMethod(this, method, args);
-                        throw new InternalError();
+                        throw new InternalError("bad proxy method: "+method);
                     }
                 }));
     }
@@ -241,17 +249,20 @@ public class MethodHandleProxies {
     }
 
     private static
-    Method getSingleMethod(Class<?> intfc) {
-        if (!intfc.isInterface())  return null;
-        Method sm = null;
+    Method[] getSingleNameMethods(Class<?> intfc) {
+        ArrayList<Method> methods = new ArrayList<Method>();
+        String uniqueName = null;
         for (Method m : intfc.getMethods()) {
-            int mod = m.getModifiers();
-            if (Modifier.isAbstract(mod)) {
-                if (sm != null && !isObjectMethod(sm))
-                    return null;  // too many abstract methods
-                sm = m;
-            }
+            if (isObjectMethod(m))  continue;
+            if (!Modifier.isAbstract(m.getModifiers()))  continue;
+            String mname = m.getName();
+            if (uniqueName == null)
+                uniqueName = mname;
+            else if (!uniqueName.equals(mname))
+                return null;  // too many abstract methods
+            methods.add(m);
         }
-        return sm;
+        if (uniqueName == null)  return null;
+        return methods.toArray(new Method[methods.size()]);
     }
 }
