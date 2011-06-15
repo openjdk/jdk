@@ -693,7 +693,10 @@ void methodOopDesc::unlink_method() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
-  assert(_i2i_entry == NULL, "should only be called once");
+  // If the code cache is full, we may reenter this function for the
+  // leftover methods that weren't linked.
+  if (_i2i_entry != NULL) return;
+
   assert(_adapter == NULL, "init'd to NULL" );
   assert( _code == NULL, "nothing compiled yet" );
 

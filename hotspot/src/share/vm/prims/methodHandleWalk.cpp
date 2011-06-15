@@ -1604,6 +1604,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   objArrayHandle methods(THREAD, m_array);
   methods->obj_at_put(0, m());
   Rewriter::rewrite(_target_klass(), cpool, methods, CHECK_(empty));  // Use fake class.
+  Rewriter::relocate_and_link(_target_klass(), methods, CHECK_(empty));  // Use fake class.
 
   // Set the invocation counter's count to the invoke count of the
   // original call site.
