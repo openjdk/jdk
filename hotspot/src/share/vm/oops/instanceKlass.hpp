@@ -392,6 +392,7 @@ class instanceKlass: public Klass {
   bool link_class_or_fail(TRAPS); // returns false on failure
   void unlink_class();
   void rewrite_class(TRAPS);
+  void relocate_and_link_methods(TRAPS);
   methodOop class_initializer();
 
   // set the class to initialized if no static initializer is present

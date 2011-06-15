@@ -335,6 +335,9 @@ bool instanceKlass::link_class_impl(
         this_oop->rewrite_class(CHECK_false);
       }
 
+      // relocate jsrs and link methods after they are all rewritten
+      this_oop->relocate_and_link_methods(CHECK_false);
+
       // Initialize the vtable and interface table after
       // methods have been rewritten since rewrite may
       // fabricate new methodOops.
@@ -365,17 +368,8 @@ bool instanceKlass::link_class_impl(
 
 
 // Rewrite the byte codes of all of the methods of a class.
-// Three cases:
-//    During the link of a newly loaded class.
-//    During the preloading of classes to be written to the shared spaces.
-//      - Rewrite the methods and update the method entry points.
-//
-//    During the link of a class in the shared spaces.
-//      - The methods were already rewritten, update the metho entry points.
-//
 // The rewriter must be called exactly once. Rewriting must happen after
 // verification but before the first method of the class is executed.
-
 void instanceKlass::rewrite_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   instanceKlassHandle this_oop(THREAD, this->as_klassOop());
@@ -383,8 +377,17 @@ void instanceKlass::rewrite_class(TRAPS) {
     assert(this_oop()->is_shared(), "rewriting an unshared class?");
     return;
   }
-  Rewriter::rewrite(this_oop, CHECK); // No exception can happen here
+  Rewriter::rewrite(this_oop, CHECK);
   this_oop->set_rewritten();
+}
+
+// Now relocate and link method entry points after class is rewritten.
+// This is outside is_rewritten flag. In case of an exception, it can be
+// executed more than once.
+void instanceKlass::relocate_and_link_methods(TRAPS) {
+  assert(is_loaded(), "must be loaded");
+  instanceKlassHandle this_oop(THREAD, this->as_klassOop());
+  Rewriter::relocate_and_link(this_oop, CHECK);
 }
 
 
