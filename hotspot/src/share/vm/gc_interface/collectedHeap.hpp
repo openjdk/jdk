@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class CollectedHeap : public CHeapObj {
   // pure virtual.
   void pre_initialize();
 
-  // Create a new tlab
+  // Create a new tlab. All TLAB allocations must go through this.
   virtual HeapWord* allocate_new_tlab(size_t size);
 
   // Accumulate statistics on all tlabs.
@@ -109,11 +109,11 @@ class CollectedHeap : public CHeapObj {
 
   // Allocate an uninitialized block of the given size, or returns NULL if
   // this is impossible.
-  inline static HeapWord* common_mem_allocate_noinit(size_t size, bool is_noref, TRAPS);
+  inline static HeapWord* common_mem_allocate_noinit(size_t size, TRAPS);
 
   // Like allocate_init, but the block returned by a successful allocation
   // is guaranteed initialized to zeros.
-  inline static HeapWord* common_mem_allocate_init(size_t size, bool is_noref, TRAPS);
+  inline static HeapWord* common_mem_allocate_init(size_t size, TRAPS);
 
   // Same as common_mem version, except memory is allocated in the permanent area
   // If there is no permanent area, revert to common_mem_allocate_noinit
@@ -322,7 +322,6 @@ class CollectedHeap : public CHeapObj {
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
-  inline static oop large_typearray_allocate(KlassHandle klass, int size, int length, TRAPS);
 
   // Special obj/array allocation facilities.
   // Some heaps may want to manage "permanent" data uniquely. These default
@@ -345,15 +344,11 @@ class CollectedHeap : public CHeapObj {
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
   // The permanent allocation method should default to mem_allocate if
-  // permanent memory isn't supported.
+  // permanent memory isn't supported. mem_allocate() should never be
+  // called to allocate TLABs, only individual objects.
   virtual HeapWord* mem_allocate(size_t size,
-                                 bool is_noref,
-                                 bool is_tlab,
                                  bool* gc_overhead_limit_was_exceeded) = 0;
   virtual HeapWord* permanent_mem_allocate(size_t size) = 0;
-
-  // The boundary between a "large" and "small" array of primitives, in words.
-  virtual size_t large_typearray_limit() = 0;
 
   // Utilities for turning raw memory into filler objects.
   //

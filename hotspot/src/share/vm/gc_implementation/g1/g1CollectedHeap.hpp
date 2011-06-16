@@ -446,8 +446,7 @@ protected:
   // * All allocation requests for new TLABs should go to
   //   allocate_new_tlab().
   //
-  // * All non-TLAB allocation requests should go to mem_allocate()
-  //   and mem_allocate() should never be called with is_tlab == true.
+  // * All non-TLAB allocation requests should go to mem_allocate().
   //
   // * If either call cannot satisfy the allocation request using the
   //   current allocating region, they will try to get a new one. If
@@ -467,8 +466,6 @@ protected:
   virtual HeapWord* allocate_new_tlab(size_t word_size);
 
   virtual HeapWord* mem_allocate(size_t word_size,
-                                 bool   is_noref,
-                                 bool   is_tlab, /* expected to be false */
                                  bool*  gc_overhead_limit_was_exceeded);
 
   // The following three methods take a gc_count_before_ret
@@ -1303,10 +1300,6 @@ public:
     // which point this should return false.
     return true;
   }
-
-  // The boundary between a "large" and "small" array of primitives, in
-  // words.
-  virtual size_t large_typearray_limit();
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
