@@ -362,25 +362,6 @@ IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
   THROW_MSG(vmSymbols::java_lang_ClassCastException(), message);
 IRT_END
 
-// required can be either a MethodType, or a Class (for a single argument)
-// actual (if not null) can be either a MethodHandle, or an arbitrary value (for a single argument)
-IRT_ENTRY(void, InterpreterRuntime::throw_WrongMethodTypeException(JavaThread* thread,
-                                                                   oopDesc* required,
-                                                                   oopDesc* actual)) {
-  ResourceMark rm(thread);
-  char* message = SharedRuntime::generate_wrong_method_type_message(thread, required, actual);
-
-  if (ProfileTraps) {
-    note_trap(thread, Deoptimization::Reason_constraint, CHECK);
-  }
-
-  // create exception
-  THROW_MSG(vmSymbols::java_lang_invoke_WrongMethodTypeException(), message);
-}
-IRT_END
-
-
-
 // exception_handler_for_exception(...) returns the continuation address,
 // the exception oop (via TLS) and sets the bci/bcp for the continuation.
 // The exception oop is returned to make sure it is preserved over GC (it

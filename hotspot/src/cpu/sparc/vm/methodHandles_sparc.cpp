@@ -307,11 +307,12 @@ void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   __ stop("damaged ricochet frame: L4 < FP");
 
   __ BIND(L_ok_2);
-  __ sub(L4_saved_args_base, UNREASONABLE_STACK_MOVE * Interpreter::stackElementSize, O7_temp);
-  __ cmp(O7_temp, FP_temp);
-  __ br(Assembler::lessEqualUnsigned, false, Assembler::pt, L_ok_3);
-  __ delayed()->nop();
-  __ stop("damaged ricochet frame: (L4 - UNREASONABLE_STACK_MOVE) > FP");
+  // Disable until we decide on it's fate
+  // __ sub(L4_saved_args_base, UNREASONABLE_STACK_MOVE * Interpreter::stackElementSize, O7_temp);
+  // __ cmp(O7_temp, FP_temp);
+  // __ br(Assembler::lessEqualUnsigned, false, Assembler::pt, L_ok_3);
+  // __ delayed()->nop();
+  // __ stop("damaged ricochet frame: (L4 - UNREASONABLE_STACK_MOVE) > FP");
 
   __ BIND(L_ok_3);
   extract_conversion_dest_type(_masm, L5_conversion, O7_temp);
@@ -547,8 +548,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   __ brx(Assembler::notEqual, false, Assembler::pt, invoke_generic_slow_path);
   __ delayed()->nop();
   __ mov(O0_mtype, G5_method_type);  // required by throw_WrongMethodType
-  // mov(G3_method_handle, G3_method_handle);  // already in this register
-  __ jump_to(AddressLiteral(Interpreter::throw_WrongMethodType_entry()), O1_scratch);
+  __ mov(G3_method_handle, G3_method_handle);  // already in this register
+  // O0 will be filled in with JavaThread in stub
+  __ jump_to(AddressLiteral(StubRoutines::throw_WrongMethodTypeException_entry()), O3_scratch);
   __ delayed()->nop();
 
   // here's where control starts out:
@@ -1145,23 +1147,13 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // FIXME: fill in _raise_exception_method with a suitable java.lang.invoke method
       __ set(AddressLiteral((address) &_raise_exception_method), G5_method);
       __ ld_ptr(Address(G5_method, 0), G5_method);
-      __ tst(G5_method);
-      __ brx(Assembler::zero, false, Assembler::pn, L_no_method);
-      __ delayed()->nop();
 
       const int jobject_oop_offset = 0;
       __ ld_ptr(Address(G5_method, jobject_oop_offset), G5_method);
-      __ tst(G5_method);
-      __ brx(Assembler::zero, false, Assembler::pn, L_no_method);
-      __ delayed()->nop();
 
       __ verify_oop(G5_method);
       __ jump_indirect_to(G5_method_fce, O3_scratch);  // jump to compiled entry
       __ delayed()->nop();
-
-      // Do something that is at least causes a valid throw from the interpreter.
-      __ bind(L_no_method);
-      __ unimplemented("call throw_WrongMethodType_entry");
     }
     break;
 
