@@ -629,6 +629,8 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   // convert the external string name to an internal symbol
   TempNewSymbol name = java_lang_String::as_symbol_or_null(name_str());
   if (name == NULL)  return;  // no such name
+  if (name == vmSymbols::class_initializer_name())
+    return; // illegal name
 
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
