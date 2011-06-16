@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,12 +165,13 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // an excessive amount of time is being spent doing collections
   // and caused a NULL to be returned.  If a NULL is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-
   HeapWord* mem_allocate(size_t size,
-                         bool is_noref,
-                         bool is_tlab,
                          bool* gc_overhead_limit_was_exceeded);
-  HeapWord* failed_mem_allocate(size_t size, bool is_tlab);
+
+  // Allocation attempt(s) during a safepoint. It should never be called
+  // to allocate a new TLAB as this allocation might be satisfied out
+  // of the old generation.
+  HeapWord* failed_mem_allocate(size_t size);
 
   HeapWord* permanent_mem_allocate(size_t size);
   HeapWord* failed_permanent_mem_allocate(size_t size);
@@ -193,8 +194,6 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // references.
   inline void invoke_scavenge();
   inline void invoke_full_gc(bool maximum_compaction);
-
-  size_t large_typearray_limit() { return FastAllocateSizeLimit; }
 
   bool supports_inline_contig_alloc() const { return !UseNUMA; }
 

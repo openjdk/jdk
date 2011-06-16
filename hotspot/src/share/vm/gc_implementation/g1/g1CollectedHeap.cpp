@@ -829,12 +829,8 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
 
 HeapWord*
 G1CollectedHeap::mem_allocate(size_t word_size,
-                              bool   is_noref,
-                              bool   is_tlab,
                               bool*  gc_overhead_limit_was_exceeded) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_tlab, "mem_allocate() this should not be called directly "
-         "to allocate TLABs");
 
   // Loop until the allocation is satisified, or unsatisfied after GC.
   for (int try_count = 1; /* we'll return */; try_count += 1) {
@@ -2620,11 +2616,6 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   } else {
     return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab_size);
   }
-}
-
-size_t G1CollectedHeap::large_typearray_limit() {
-  // FIXME
-  return HeapRegion::GrainBytes/HeapWordSize;
 }
 
 size_t G1CollectedHeap::max_capacity() const {

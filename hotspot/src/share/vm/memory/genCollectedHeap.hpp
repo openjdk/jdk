@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,6 @@ public:
   size_t max_capacity() const;
 
   HeapWord* mem_allocate(size_t size,
-                         bool   is_large_noref,
-                         bool   is_tlab,
                          bool*  gc_overhead_limit_was_exceeded);
 
   // We may support a shared contiguous allocation area, if the youngest
@@ -314,8 +312,6 @@ public:
   // Allow each generation to reset any scratch space that it has
   // contributed as it needs.
   void release_scratch();
-
-  size_t large_typearray_limit();
 
   // Ensure parsability: override
   virtual void ensure_parsability(bool retire_tlabs);

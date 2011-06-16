@@ -434,11 +434,9 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
 }
 
 HeapWord* GenCollectedHeap::mem_allocate(size_t size,
-                                         bool is_large_noref,
-                                         bool is_tlab,
                                          bool* gc_overhead_limit_was_exceeded) {
   return collector_policy()->mem_allocate_work(size,
-                                               is_tlab,
+                                               false /* is_tlab */,
                                                gc_overhead_limit_was_exceeded);
 }
 
@@ -1120,11 +1118,9 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
   bool gc_overhead_limit_was_exceeded;
-  HeapWord* result = mem_allocate(size   /* size */,
-                                  false  /* is_large_noref */,
-                                  true   /* is_tlab */,
-                                  &gc_overhead_limit_was_exceeded);
-  return result;
+  return collector_policy()->mem_allocate_work(size /* size */,
+                                               true /* is_tlab */,
+                                               &gc_overhead_limit_was_exceeded);
 }
 
 // Requires "*prev_ptr" to be non-NULL.  Deletes and a block of minimal size
@@ -1177,10 +1173,6 @@ void GenCollectedHeap::release_scratch() {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->reset_scratch();
   }
-}
-
-size_t GenCollectedHeap::large_typearray_limit() {
-  return gen_policy()->large_typearray_limit();
 }
 
 class GenPrepareForVerifyClosure: public GenCollectedHeap::GenClosure {
