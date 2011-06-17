@@ -299,8 +299,8 @@ public class ExecutionEnvironment {
 
         if (TestHelper.is32Bit) {
             tr = TestHelper.doExec(TestHelper.javaCmd, "-client", "-version");
-            if (!tr.matches("Java.*Client VM.*")) {
-                System.out.println("FAIL: the expected vm -client did launch");
+            if (!tr.matches(".*Client VM.*")) {
+                System.out.println("FAIL: the expected vm -client did not launch");
                 System.out.println(tr);
                 errors++;
             } else {
@@ -308,8 +308,8 @@ public class ExecutionEnvironment {
             }
         }
         tr = TestHelper.doExec(TestHelper.javaCmd, "-server", "-version");
-        if (!tr.matches("Java.*Server VM.*")) {
-            System.out.println("FAIL: the expected vm -server did launch");
+        if (!tr.matches(".*Server VM.*")) {
+            System.out.println("FAIL: the expected vm -server did not launch");
             System.out.println(tr);
             errors++;
         } else {
