@@ -296,7 +296,6 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
 # jdk_misc
 
 # Need to be marked othervm, or changed to be samevm safe
-com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
