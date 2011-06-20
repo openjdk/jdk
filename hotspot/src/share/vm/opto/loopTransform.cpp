@@ -83,7 +83,7 @@ void IdealLoopTree::compute_exact_trip_count( PhaseIdealLoop *phase ) {
 #ifdef ASSERT
   BoolTest::mask bt = cl->loopexit()->test_trip();
   assert(bt == BoolTest::lt || bt == BoolTest::gt ||
-         (bt == BoolTest::ne && !LoopLimitCheck), "canonical test is expected");
+         bt == BoolTest::ne, "canonical test is expected");
 #endif
 
   Node* init_n = cl->init_trip();
@@ -1070,9 +1070,11 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // direction:
   // positive stride use <
   // negative stride use >
+  //
+  // not-equal test is kept for post loop to handle case
+  // when init > limit when stride > 0 (and reverse).
 
   if (pre_end->in(CountedLoopEndNode::TestValue)->as_Bool()->_test._test == BoolTest::ne) {
-    assert(!LoopLimitCheck, "only canonical tests (lt or gt) are expected");
 
     BoolTest::mask new_test = (main_end->stride_con() > 0) ? BoolTest::lt : BoolTest::gt;
     // Modify pre loop end condition
