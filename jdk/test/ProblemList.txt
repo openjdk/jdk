@@ -502,10 +502,6 @@ sun/security/pkcs11/ec/TestECDSA.java				solaris-i586
 sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
 sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
 
-# Unknown problem, could be a jtreg -samevm issue?
-#  Error while cleaning up threads after test
-java/security/Security/SynchronizedAccess.java			generic-all
-
 # Failing on Solaris X64 (-d64 -server) with:
 #  GSSException: Failure unspecified at GSS-API level
 #    (Mechanism level: Specified version of key is not available (44))
@@ -599,27 +595,6 @@ sun/security/tools/keytool/emptysubject.sh			generic-all
 
 # Timeout on solaris-sparcv9 or exception thrown
 com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
-
-# Leaving file open: SerialVersion.current, windows samevm
-java/security/BasicPermission/SerialVersion.java		generic-all
-
-# Solaris 11 i586, these all fail with samevm, need to be othervm???
-java/security/BasicPermission/NullOrEmptyName.java		generic-all
-
-# Suspect missing close() on file PermClass.current, windows samevm cascade
-java/security/BasicPermission/PermClass.java			generic-all
-
-# Solaris 11 i586, these all fail with samevm, need to be othervm???
-java/security/KeyPairGenerator/Failover.java			generic-all
-java/security/Provider/DefaultPKCS11.java			generic-all
-java/security/SecureRandom/GetAlgorithm.java			generic-all
-java/security/Security/removing/RemoveProviders.java		generic-all
-java/security/Signature/ByteBuffers.java			generic-all
-java/security/Signature/NONEwithRSA.java			generic-all
-java/security/Signature/SignWithOutputBuffer.java		generic-all
-java/security/Signature/TestInitSignWithMyOwnRandom.java	generic-all
-java/security/UnresolvedPermission/AccessorMethods.java		generic-all
-java/security/UnresolvedPermission/Equals.java			generic-all
 
 # Fails on OpenSolaris, missing classes, slow on Solaris sparc
 sun/security/ec/TestEC.java					generic-all
