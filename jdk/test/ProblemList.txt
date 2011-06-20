@@ -612,7 +612,6 @@ java/security/BasicPermission/PermClass.java			generic-all
 # Solaris 11 i586, these all fail with samevm, need to be othervm???
 java/security/KeyPairGenerator/Failover.java			generic-all
 java/security/Provider/DefaultPKCS11.java			generic-all
-java/security/SecureClassLoader/DefineClassByteBuffer.java	generic-all
 java/security/SecureRandom/GetAlgorithm.java			generic-all
 java/security/Security/removing/RemoveProviders.java		generic-all
 java/security/Signature/ByteBuffers.java			generic-all
