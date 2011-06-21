@@ -59,8 +59,9 @@ inline void CMTask::push(oop obj) {
   }
 
   statsOnly( int tmp_size = _task_queue->size();
-             if (tmp_size > _local_max_size)
+             if (tmp_size > _local_max_size) {
                _local_max_size = tmp_size;
+             }
              ++_local_pushes );
 }
 
