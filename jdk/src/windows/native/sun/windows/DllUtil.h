@@ -43,7 +43,7 @@ class DllUtil {
         FARPROC GetProcAddress(LPCSTR name);
 
     protected:
-        DllUtil(const TCHAR * name) : name(name), module(NULL) {}
+        DllUtil(const char * name) : name(name), module(NULL) {}
         virtual ~DllUtil();
 
         HMODULE GetModule();
@@ -68,7 +68,7 @@ class DllUtil {
         };
 
     private:
-        const TCHAR * const name;
+        const char * const name;
         HMODULE module;
 };
 
