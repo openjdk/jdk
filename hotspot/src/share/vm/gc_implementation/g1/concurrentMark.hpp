@@ -605,10 +605,10 @@ public:
   void mark_stack_pop(oop* arr, int max, int* n) {
     _markStack.par_pop_arr(arr, max, n);
   }
-  size_t mark_stack_size()              { return _markStack.size(); }
+  size_t mark_stack_size()                { return _markStack.size(); }
   size_t partial_mark_stack_size_target() { return _markStack.maxElems()/3; }
-  bool mark_stack_overflow()            { return _markStack.overflow(); }
-  bool mark_stack_empty()               { return _markStack.isEmpty(); }
+  bool mark_stack_overflow()              { return _markStack.overflow(); }
+  bool mark_stack_empty()                 { return _markStack.isEmpty(); }
 
   // (Lock-free) Manipulation of the region stack
   bool region_stack_push_lock_free(MemRegion mr) {
@@ -833,8 +833,9 @@ public:
     // _min_finger then we need to gray objects.
     // This routine is like registerCSetRegion but for an entire
     // collection of regions.
-    if (max_finger > _min_finger)
+    if (max_finger > _min_finger) {
       _should_gray_objects = true;
+    }
   }
 
   // Returns "true" if at least one mark has been completed.
@@ -880,14 +881,18 @@ public:
   // The following indicate whether a given verbose level has been
   // set. Notice that anything above stats is conditional to
   // _MARKING_VERBOSE_ having been set to 1
-  bool verbose_stats()
-    { return _verbose_level >= stats_verbose; }
-  bool verbose_low()
-    { return _MARKING_VERBOSE_ && _verbose_level >= low_verbose; }
-  bool verbose_medium()
-    { return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose; }
-  bool verbose_high()
-    { return _MARKING_VERBOSE_ && _verbose_level >= high_verbose; }
+  bool verbose_stats() {
+    return _verbose_level >= stats_verbose;
+  }
+  bool verbose_low() {
+    return _MARKING_VERBOSE_ && _verbose_level >= low_verbose;
+  }
+  bool verbose_medium() {
+    return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose;
+  }
+  bool verbose_high() {
+    return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
+  }
 };
 
 // A class representing a marking task.
@@ -1063,8 +1068,9 @@ private:
   // respective limit and calls reached_limit() if they have
   void check_limits() {
     if (_words_scanned >= _words_scanned_limit ||
-        _refs_reached >= _refs_reached_limit)
+        _refs_reached >= _refs_reached_limit) {
       reached_limit();
+    }
   }
   // this is supposed to be called regularly during a marking step as
   // it checks a bunch of conditions that might cause the marking step

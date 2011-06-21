@@ -70,7 +70,9 @@ HeapWord* CMBitMapRO::getNextMarkedWordAddress(HeapWord* addr,
   addr = (HeapWord*)align_size_up((intptr_t)addr,
                                   HeapWordSize << _shifter);
   size_t addrOffset = heapWordToOffset(addr);
-  if (limit == NULL) limit = _bmStartWord + _bmWordSize;
+  if (limit == NULL) {
+    limit = _bmStartWord + _bmWordSize;
+  }
   size_t limitOffset = heapWordToOffset(limit);
   size_t nextOffset = _bm.get_next_one_offset(addrOffset, limitOffset);
   HeapWord* nextAddr = offsetToHeapWord(nextOffset);
@@ -83,7 +85,9 @@ HeapWord* CMBitMapRO::getNextMarkedWordAddress(HeapWord* addr,
 HeapWord* CMBitMapRO::getNextUnmarkedWordAddress(HeapWord* addr,
                                                  HeapWord* limit) const {
   size_t addrOffset = heapWordToOffset(addr);
-  if (limit == NULL) limit = _bmStartWord + _bmWordSize;
+  if (limit == NULL) {
+    limit = _bmStartWord + _bmWordSize;
+  }
   size_t limitOffset = heapWordToOffset(limit);
   size_t nextOffset = _bm.get_next_zero_offset(addrOffset, limitOffset);
   HeapWord* nextAddr = offsetToHeapWord(nextOffset);
@@ -177,18 +181,20 @@ CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
 
 void CMMarkStack::allocate(size_t size) {
   _base = NEW_C_HEAP_ARRAY(oop, size);
-  if (_base == NULL)
+  if (_base == NULL) {
     vm_exit_during_initialization("Failed to allocate "
                                   "CM region mark stack");
+  }
   _index = 0;
-  // QQQQ cast ...
   _capacity = (jint) size;
   _oops_do_bound = -1;
   NOT_PRODUCT(_max_depth = 0);
 }
 
 CMMarkStack::~CMMarkStack() {
-  if (_base != NULL) FREE_C_HEAP_ARRAY(oop, _base);
+  if (_base != NULL) {
+    FREE_C_HEAP_ARRAY(oop, _base);
+  }
 }
 
 void CMMarkStack::par_push(oop ptr) {
@@ -281,16 +287,17 @@ CMRegionStack::CMRegionStack() : _base(NULL) {}
 
 void CMRegionStack::allocate(size_t size) {
   _base = NEW_C_HEAP_ARRAY(MemRegion, size);
-  if (_base == NULL)
-    vm_exit_during_initialization("Failed to allocate "
-                                  "CM region mark stack");
+  if (_base == NULL) {
+    vm_exit_during_initialization("Failed to allocate CM region mark stack");
+  }
   _index = 0;
-  // QQQQ cast ...
   _capacity = (jint) size;
 }
 
 CMRegionStack::~CMRegionStack() {
-  if (_base != NULL) FREE_C_HEAP_ARRAY(oop, _base);
+  if (_base != NULL) {
+    FREE_C_HEAP_ARRAY(oop, _base);
+  }
 }
 
 void CMRegionStack::push_lock_free(MemRegion mr) {
@@ -422,7 +429,8 @@ bool CMMarkStack::drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after) {
     // the ones in CMS generation.
     newOop->oop_iterate(cl);
     if (yield_after && _cm->do_yield_check()) {
-      res = false; break;
+      res = false;
+      break;
     }
   }
   debug_only(_drain_in_progress = false);
@@ -493,19 +501,20 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _total_counting_time(0.0),
   _total_rs_scrub_time(0.0),
 
-  _parallel_workers(NULL)
-{
-  CMVerboseLevel verbose_level =
-    (CMVerboseLevel) G1MarkingVerboseLevel;
-  if (verbose_level < no_verbose)
+  _parallel_workers(NULL) {
+  CMVerboseLevel verbose_level = (CMVerboseLevel) G1MarkingVerboseLevel;
+  if (verbose_level < no_verbose) {
     verbose_level = no_verbose;
-  if (verbose_level > high_verbose)
+  }
+  if (verbose_level > high_verbose) {
     verbose_level = high_verbose;
+  }
   _verbose_level = verbose_level;
 
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[global] init, heap start = "PTR_FORMAT", "
                            "heap end = "PTR_FORMAT, _heap_start, _heap_end);
+  }
 
   _markStack.allocate(MarkStackSize);
   _regionStack.allocate(G1MarkRegionStackSize);
@@ -581,10 +590,11 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
       _marking_task_overhead    = 1.0;
     }
 
-    if (parallel_marking_threads() > 1)
+    if (parallel_marking_threads() > 1) {
       _cleanup_task_overhead = 1.0;
-    else
+    } else {
       _cleanup_task_overhead = marking_task_overhead();
+    }
     _cleanup_sleep_factor =
                      (1.0 - cleanup_task_overhead()) / cleanup_task_overhead();
 
@@ -622,8 +632,7 @@ void ConcurrentMark::update_g1_committed(bool force) {
   // at the beginning of remark to be false. By ensuring that we do
   // not observe heap expansions after marking is complete, then we do
   // not have this problem.
-  if (!concurrent_marking_in_progress() && !force)
-    return;
+  if (!concurrent_marking_in_progress() && !force) return;
 
   MemRegion committed = _g1h->g1_committed();
   assert(committed.start() == _heap_start, "start shouldn't change");
@@ -656,8 +665,9 @@ void ConcurrentMark::reset() {
   // reset all the marking data structures and any necessary flags
   clear_marking_state();
 
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[global] resetting");
+  }
 
   // We do reset all of them, since different phases will use
   // different number of active threads. So, it's easiest to have all
@@ -743,8 +753,9 @@ void ConcurrentMark::clearNextBitmap() {
   size_t chunkSize = M;
   while (cur < end) {
     HeapWord* next = cur + chunkSize;
-    if (next > end)
+    if (next > end) {
       next = end;
+    }
     MemRegion mr(cur,next);
     _nextMarkBitMap->clearRange(mr);
     cur = next;
@@ -923,8 +934,9 @@ void ConcurrentMark::checkpointRootsInitial() {
  */
 
 void ConcurrentMark::enter_first_sync_barrier(int task_num) {
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[%d] entering first barrier", task_num);
+  }
 
   if (concurrent()) {
     ConcurrentGCThread::stsLeave();
@@ -936,8 +948,9 @@ void ConcurrentMark::enter_first_sync_barrier(int task_num) {
   // at this point everyone should have synced up and not be doing any
   // more work
 
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[%d] leaving first barrier", task_num);
+  }
 
   // let task 0 do this
   if (task_num == 0) {
@@ -961,8 +974,9 @@ void ConcurrentMark::enter_first_sync_barrier(int task_num) {
 }
 
 void ConcurrentMark::enter_second_sync_barrier(int task_num) {
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[%d] entering second barrier", task_num);
+  }
 
   if (concurrent()) {
     ConcurrentGCThread::stsLeave();
@@ -973,8 +987,9 @@ void ConcurrentMark::enter_second_sync_barrier(int task_num) {
   }
   // at this point everything should be re-initialised and ready to go
 
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[%d] leaving second barrier", task_num);
+  }
 }
 
 #ifndef PRODUCT
@@ -1013,8 +1028,9 @@ void ConcurrentMark::grayRoot(oop p) {
   assert(_g1h->g1_committed().contains(addr),
          "address should be within the heap bounds");
 
-  if (!_nextMarkBitMap->isMarked(addr))
+  if (!_nextMarkBitMap->isMarked(addr)) {
     _nextMarkBitMap->parMark(addr);
+  }
 }
 
 void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
@@ -1022,17 +1038,19 @@ void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
   // the caller. We only need to decide whether to push the region on
   // the region stack or not.
 
-  if (!concurrent_marking_in_progress() || !_should_gray_objects)
+  if (!concurrent_marking_in_progress() || !_should_gray_objects) {
     // We're done with marking and waiting for remark. We do not need to
     // push anything else on the region stack.
     return;
+  }
 
   HeapWord* finger = _finger;
 
-  if (verbose_low())
+  if (verbose_low()) {
     gclog_or_tty->print_cr("[global] attempting to push "
                            "region ["PTR_FORMAT", "PTR_FORMAT"), finger is at "
                            PTR_FORMAT, mr.start(), mr.end(), finger);
+  }
 
   if (mr.start() < finger) {
     // The finger is always heap region aligned and it is not possible
@@ -1046,14 +1064,16 @@ void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
            "region boundaries should fall within the committed space");
     assert(mr.end() <= _heap_end,
            "region boundaries should fall within the committed space");
-    if (verbose_low())
+    if (verbose_low()) {
       gclog_or_tty->print_cr("[global] region ["PTR_FORMAT", "PTR_FORMAT") "
                              "below the finger, pushing it",
                              mr.start(), mr.end());
+    }
 
     if (!region_stack_push_lock_free(mr)) {
-      if (verbose_low())
+      if (verbose_low()) {
         gclog_or_tty->print_cr("[global] region stack has overflown.");
+      }
     }
   }
 }
@@ -1067,10 +1087,11 @@ void ConcurrentMark::markAndGrayObjectIfNecessary(oop p) {
     // We definitely need to mark it, irrespective whether we bail out
     // because we're done with marking.
     if (_nextMarkBitMap->parMark(addr)) {
-      if (!concurrent_marking_in_progress() || !_should_gray_objects)
+      if (!concurrent_marking_in_progress() || !_should_gray_objects) {
         // If we're done with concurrent marking and we're waiting for
         // remark, then we're not pushing anything on the stack.
         return;
+      }
 
       // No OrderAccess:store_load() is needed. It is implicit in the
       // CAS done in parMark(addr) above
@@ -1078,9 +1099,10 @@ void ConcurrentMark::markAndGrayObjectIfNecessary(oop p) {
 
       if (addr < finger) {
         if (!mark_stack_push(oop(addr))) {
-          if (verbose_low())
+          if (verbose_low()) {
             gclog_or_tty->print_cr("[global] global stack overflow "
                                    "during parMark");
+          }
         }
       }
     }
@@ -1175,10 +1197,11 @@ void ConcurrentMark::markFromRoots() {
   set_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
-  if (parallel_marking_threads() > 0)
+  if (parallel_marking_threads() > 0) {
     _parallel_workers->run_task(&markingTask);
-  else
+  } else {
     markingTask.work(0);
+  }
   print_stats();
 }
 
@@ -1221,8 +1244,9 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     _restart_for_overflow = true;
     // Clear the flag. We do not need it any more.
     clear_has_overflown();
-    if (G1TraceMarkStackOverflow)
+    if (G1TraceMarkStackOverflow) {
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
+    }
   } else {
     SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     // We're done with marking.
@@ -1329,9 +1353,7 @@ public:
       size_t end_index = index + 1;
       while (end_index < g1h->n_regions()) {
         HeapRegion* chr = g1h->region_at(end_index);
-        if (!chr->continuesHumongous()) {
-          break;
-        }
+        if (!chr->continuesHumongous()) break;
         end_index += 1;
       }
       _region_bm->par_at_put_range((BitMap::idx_t) index,
@@ -1340,8 +1362,9 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (!_final && _regions_done == 0)
+    if (!_final && _regions_done == 0) {
       _start_vtime_sec = os::elapsedVTime();
+    }
 
     if (hr->continuesHumongous()) {
       // We will ignore these here and process them when their
@@ -1434,8 +1457,9 @@ public:
       _changed = true;
     }
     // Handle the last range, if any.
-    if (start_card_num != -1)
+    if (start_card_num != -1) {
       mark_card_num_range(start_card_num, last_card_num);
+    }
     if (_final) {
       // Mark the allocated-since-marking portion...
       HeapWord* tp = hr->top();
@@ -1512,14 +1536,14 @@ protected:
   BitMap* _card_bm;
 public:
   G1ParFinalCountTask(G1CollectedHeap* g1h, CMBitMap* bm,
-                      BitMap* region_bm, BitMap* card_bm) :
-    AbstractGangTask("G1 final counting"), _g1h(g1h),
-    _bm(bm), _region_bm(region_bm), _card_bm(card_bm)
-  {
-    if (ParallelGCThreads > 0)
+                      BitMap* region_bm, BitMap* card_bm)
+    : AbstractGangTask("G1 final counting"), _g1h(g1h),
+      _bm(bm), _region_bm(region_bm), _card_bm(card_bm) {
+    if (ParallelGCThreads > 0) {
       _n_workers = _g1h->workers()->total_workers();
-    else
+    } else {
       _n_workers = 1;
+    }
     _live_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
     _used_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
   }
@@ -1704,7 +1728,9 @@ bool G1NoteEndOfConcMarkClosure::doHeapRegion(HeapRegion *hr) {
                               true /* par */);
     double region_time = (os::elapsedTime() - start);
     _claimed_region_time += region_time;
-    if (region_time > _max_region_time) _max_region_time = region_time;
+    if (region_time > _max_region_time) {
+      _max_region_time = region_time;
+    }
   }
   return false;
 }
@@ -1963,10 +1989,11 @@ class G1CMKeepAliveClosure: public OopClosure {
     oop obj = oopDesc::load_decode_heap_oop(p);
     HeapWord* addr = (HeapWord*)obj;
 
-    if (_cm->verbose_high())
+    if (_cm->verbose_high()) {
       gclog_or_tty->print_cr("\t[0] we're looking at location "
-                               "*"PTR_FORMAT" = "PTR_FORMAT,
-                               p, (void*) obj);
+                             "*"PTR_FORMAT" = "PTR_FORMAT,
+                             p, (void*) obj);
+    }
 
     if (_g1->is_in_g1_reserved(addr) && _g1->is_obj_ill(obj)) {
       _bitMap->mark(addr);
@@ -2028,10 +2055,11 @@ class G1CMParKeepAliveAndDrainClosure: public OopClosure {
   template <class T> void do_oop_work(T* p) {
     if (!_cm->has_overflown()) {
       oop obj = oopDesc::load_decode_heap_oop(p);
-      if (_cm->verbose_high())
+      if (_cm->verbose_high()) {
         gclog_or_tty->print_cr("\t[%d] we're looking at location "
                                "*"PTR_FORMAT" = "PTR_FORMAT,
                                _task->task_id(), p, (void*) obj);
+      }
 
       _task->deal_with_reference(obj);
       _ref_counter--;
@@ -2058,8 +2086,9 @@ class G1CMParKeepAliveAndDrainClosure: public OopClosure {
         _ref_counter = _ref_counter_limit;
       }
     } else {
-       if (_cm->verbose_high())
+      if (_cm->verbose_high()) {
          gclog_or_tty->print_cr("\t[%d] CM Overflow", _task->task_id());
+      }
     }
   }
 };
@@ -2074,8 +2103,10 @@ class G1CMParDrainMarkingStackClosure: public VoidClosure {
 
   void do_void() {
     do {
-      if (_cm->verbose_high())
-        gclog_or_tty->print_cr("\t[%d] Drain: Calling do marking_step", _task->task_id());
+      if (_cm->verbose_high()) {
+        gclog_or_tty->print_cr("\t[%d] Drain: Calling do marking_step",
+                               _task->task_id());
+      }
 
       // We call CMTask::do_marking_step() to completely drain the local and
       // global marking stacks. The routine is called in a loop, which we'll
@@ -2628,8 +2659,9 @@ void ConcurrentMark::drainAllSATBBuffers() {
   satb_mq_set.set_closure(&oc);
 
   while (satb_mq_set.apply_closure_to_completed_buffer()) {
-    if (verbose_medium())
+    if (verbose_medium()) {
       gclog_or_tty->print_cr("[global] processed an SATB buffer");
+    }
   }
 
   // no need to check whether we should do this, as this is only
@@ -2716,32 +2748,36 @@ ConcurrentMark::claim_region(int task_num) {
       // someone else might have moved the finger even further
       assert(_finger >= end, "the finger should have moved forward");
 
-      if (verbose_low())
+      if (verbose_low()) {
         gclog_or_tty->print_cr("[%d] we were successful with region = "
                                PTR_FORMAT, task_num, curr_region);
+      }
 
       if (limit > bottom) {
-        if (verbose_low())
+        if (verbose_low()) {
           gclog_or_tty->print_cr("[%d] region "PTR_FORMAT" is not empty, "
                                  "returning it ", task_num, curr_region);
+        }
         return curr_region;
       } else {
         assert(limit == bottom,
                "the region limit should be at bottom");
-        if (verbose_low())
+        if (verbose_low()) {
           gclog_or_tty->print_cr("[%d] region "PTR_FORMAT" is empty, "
                                  "returning NULL", task_num, curr_region);
+        }
         // we return NULL and the caller should try calling
         // claim_region() again.
         return NULL;
       }
     } else {
       assert(_finger > finger, "the finger should have moved forward");
-      if (verbose_low())
+      if (verbose_low()) {
         gclog_or_tty->print_cr("[%d] somebody else moved the finger, "
                                "global finger = "PTR_FORMAT", "
                                "our finger = "PTR_FORMAT,
                                task_num, _finger, finger);
+      }
 
       // read it again
       finger = _finger;
@@ -2785,18 +2821,20 @@ bool ConcurrentMark::has_aborted_regions() {
 }
 
 void ConcurrentMark::oops_do(OopClosure* cl) {
-  if (_markStack.size() > 0 && verbose_low())
+  if (_markStack.size() > 0 && verbose_low()) {
     gclog_or_tty->print_cr("[global] scanning the global marking stack, "
                            "size = %d", _markStack.size());
+  }
   // we first iterate over the contents of the mark stack...
   _markStack.oops_do(cl);
 
   for (int i = 0; i < (int)_max_task_num; ++i) {
     OopTaskQueue* queue = _task_queues->queue((int)i);
 
-    if (queue->size() > 0 && verbose_low())
+    if (queue->size() > 0 && verbose_low()) {
       gclog_or_tty->print_cr("[global] scanning task queue of task %d, "
                              "size = %d", i, queue->size());
+    }
 
     // ...then over the contents of the all the task queues.
     queue->oops_do(cl);
@@ -2868,14 +2906,17 @@ class CSMarkOopClosure: public OopClosure {
       return false;
     }
     _ms[_ms_ind] = obj;
-    if (obj->is_objArray()) _array_ind_stack[_ms_ind] = arr_ind;
+    if (obj->is_objArray()) {
+      _array_ind_stack[_ms_ind] = arr_ind;
+    }
     _ms_ind++;
     return true;
   }
 
   oop pop() {
-    if (_ms_ind == 0) return NULL;
-    else {
+    if (_ms_ind == 0) {
+      return NULL;
+    } else {
       _ms_ind--;
       return _ms[_ms_ind];
     }
@@ -3074,17 +3115,19 @@ void ConcurrentMark::complete_marking_in_collection_set() {
 // newCSet().
 
 void ConcurrentMark::newCSet() {
-  if (!concurrent_marking_in_progress())
+  if (!concurrent_marking_in_progress()) {
     // nothing to do if marking is not in progress
     return;
+  }
 
   // find what the lowest finger is among the global and local fingers
   _min_finger = _finger;
   for (int i = 0; i < (int)_max_task_num; ++i) {
     CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
-    if (task_finger != NULL && task_finger < _min_finger)
+    if (task_finger != NULL && task_finger < _min_finger) {
       _min_finger = task_finger;
+    }
   }
 
   _should_gray_objects = false;
@@ -3104,17 +3147,18 @@ void ConcurrentMark::newCSet() {
   // irrespective whether all collection set regions are below the
   // finger, if the region stack is not empty. This is expected to be
   // a rare case, so I don't think it's necessary to be smarted about it.
-  if (!region_stack_empty() || has_aborted_regions())
+  if (!region_stack_empty() || has_aborted_regions()) {
     _should_gray_objects = true;
+  }
 }
 
 void ConcurrentMark::registerCSetRegion(HeapRegion* hr) {
-  if (!concurrent_marking_in_progress())
-    return;
+  if (!concurrent_marking_in_progress()) return;
 
   HeapWord* region_end = hr->end();
-  if (region_end > _min_finger)
+  if (region_end > _min_finger) {
     _should_gray_objects = true;
+  }
 }
 
 // Resets the region fields of active CMTasks whose values point
@@ -3215,11 +3259,13 @@ void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
 // We take a break if someone is trying to stop the world.
 bool ConcurrentMark::do_yield_check(int worker_i) {
   if (should_yield()) {
-    if (worker_i == 0)
+    if (worker_i == 0) {
       _g1h->g1_policy()->record_concurrent_pause();
+    }
     cmThread()->yield();
-    if (worker_i == 0)
+    if (worker_i == 0) {
       _g1h->g1_policy()->record_concurrent_pause_end();
+    }
     return true;
   } else {
     return false;
@@ -3237,9 +3283,8 @@ bool ConcurrentMark::containing_card_is_marked(void* p) {
 
 bool ConcurrentMark::containing_cards_are_marked(void* start,
                                                  void* last) {
-  return
-    containing_card_is_marked(start) &&
-    containing_card_is_marked(last);
+  return containing_card_is_marked(start) &&
+         containing_card_is_marked(last);
 }
 
 #ifndef PRODUCT
@@ -3352,9 +3397,10 @@ void CMTask::setup_for_region(HeapRegion* hr) {
   assert(!hr->continuesHumongous(),
         "claim_region() should have filtered out continues humongous regions");
 
-  if (_cm->verbose_low())
+  if (_cm->verbose_low()) {
     gclog_or_tty->print_cr("[%d] setting up for region "PTR_FORMAT,
                            _task_id, hr);
+  }
 
   _curr_region  = hr;
   _finger       = hr->bottom();
@@ -3367,10 +3413,11 @@ void CMTask::update_region_limit() {
   HeapWord* limit           = hr->next_top_at_mark_start();
 
   if (limit == bottom) {
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] found an empty region "
                              "["PTR_FORMAT", "PTR_FORMAT")",
                              _task_id, bottom, limit);
+    }
     // The region was collected underneath our feet.
     // We set the finger to bottom to ensure that the bitmap
     // iteration that will follow this will not do anything.
@@ -3399,9 +3446,10 @@ void CMTask::update_region_limit() {
 
 void CMTask::giveup_current_region() {
   assert(_curr_region != NULL, "invariant");
-  if (_cm->verbose_low())
+  if (_cm->verbose_low()) {
     gclog_or_tty->print_cr("[%d] giving up region "PTR_FORMAT,
                            _task_id, _curr_region);
+  }
   clear_region_fields();
 }
 
@@ -3427,8 +3475,9 @@ void CMTask::set_cm_oop_closure(G1CMOopClosure* cm_oop_closure) {
 void CMTask::reset(CMBitMap* nextMarkBitMap) {
   guarantee(nextMarkBitMap != NULL, "invariant");
 
-  if (_cm->verbose_low())
+  if (_cm->verbose_low()) {
     gclog_or_tty->print_cr("[%d] resetting", _task_id);
+  }
 
   _nextMarkBitMap                = nextMarkBitMap;
   clear_region_fields();
@@ -3481,8 +3530,7 @@ void CMTask::reached_limit() {
 }
 
 void CMTask::regular_clock_call() {
-  if (has_aborted())
-    return;
+  if (has_aborted()) return;
 
   // First, we need to recalculate the words scanned and refs reached
   // limits for the next clock call.
@@ -3499,8 +3547,7 @@ void CMTask::regular_clock_call() {
   // If we are not concurrent (i.e. we're doing remark) we don't need
   // to check anything else. The other steps are only needed during
   // the concurrent marking phase.
-  if (!concurrent())
-    return;
+  if (!concurrent()) return;
 
   // (2) If marking has been aborted for Full GC, then we also abort.
   if (_cm->has_aborted()) {
@@ -3513,23 +3560,25 @@ void CMTask::regular_clock_call() {
 
   // (3) If marking stats are enabled, then we update the step history.
 #if _MARKING_STATS_
-  if (_words_scanned >= _words_scanned_limit)
+  if (_words_scanned >= _words_scanned_limit) {
     ++_clock_due_to_scanning;
-  if (_refs_reached >= _refs_reached_limit)
+  }
+  if (_refs_reached >= _refs_reached_limit) {
     ++_clock_due_to_marking;
+  }
 
   double last_interval_ms = curr_time_ms - _interval_start_time_ms;
   _interval_start_time_ms = curr_time_ms;
   _all_clock_intervals_ms.add(last_interval_ms);
 
   if (_cm->verbose_medium()) {
-    gclog_or_tty->print_cr("[%d] regular clock, interval = %1.2lfms, "
-                           "scanned = %d%s, refs reached = %d%s",
-                           _task_id, last_interval_ms,
-                           _words_scanned,
-                           (_words_scanned >= _words_scanned_limit) ? " (*)" : "",
-                           _refs_reached,
-                           (_refs_reached >= _refs_reached_limit) ? " (*)" : "");
+      gclog_or_tty->print_cr("[%d] regular clock, interval = %1.2lfms, "
+                        "scanned = %d%s, refs reached = %d%s",
+                        _task_id, last_interval_ms,
+                        _words_scanned,
+                        (_words_scanned >= _words_scanned_limit) ? " (*)" : "",
+                        _refs_reached,
+                        (_refs_reached >= _refs_reached_limit) ? " (*)" : "");
   }
 #endif // _MARKING_STATS_
 
@@ -3556,9 +3605,10 @@ void CMTask::regular_clock_call() {
   // buffers available for processing. If there are, we abort.
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   if (!_draining_satb_buffers && satb_mq_set.process_completed_buffers()) {
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] aborting to deal with pending SATB buffers",
                              _task_id);
+    }
     // we do need to process SATB buffers, we'll abort and restart
     // the marking task to do so
     set_has_aborted();
@@ -3581,8 +3631,9 @@ void CMTask::decrease_limits() {
   // entries to/from the global stack). It basically tries to decrease the
   // scanning limit so that the clock is called earlier.
 
-  if (_cm->verbose_medium())
+  if (_cm->verbose_medium()) {
     gclog_or_tty->print_cr("[%d] decreasing limits", _task_id);
+  }
 
   _words_scanned_limit = _real_words_scanned_limit -
     3 * words_scanned_period / 4;
@@ -3608,18 +3659,22 @@ void CMTask::move_entries_to_global_stack() {
     statsOnly( ++_global_transfers_to; _local_pops += n );
 
     if (!_cm->mark_stack_push(buffer, n)) {
-      if (_cm->verbose_low())
-        gclog_or_tty->print_cr("[%d] aborting due to global stack overflow", _task_id);
+      if (_cm->verbose_low()) {
+        gclog_or_tty->print_cr("[%d] aborting due to global stack overflow",
+                               _task_id);
+      }
       set_has_aborted();
     } else {
       // the transfer was successful
 
-      if (_cm->verbose_medium())
+      if (_cm->verbose_medium()) {
         gclog_or_tty->print_cr("[%d] pushed %d entries to the global stack",
                                _task_id, n);
+      }
       statsOnly( int tmp_size = _cm->mark_stack_size();
-                 if (tmp_size > _global_max_size)
+                 if (tmp_size > _global_max_size) {
                    _global_max_size = tmp_size;
+                 }
                  _global_pushes += n );
     }
   }
@@ -3640,9 +3695,10 @@ void CMTask::get_entries_from_global_stack() {
     // yes, we did actually pop at least one entry
 
     statsOnly( ++_global_transfers_from; _global_pops += n );
-    if (_cm->verbose_medium())
+    if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%d] popped %d entries from the global stack",
                              _task_id, n);
+    }
     for (int i = 0; i < n; ++i) {
       bool success = _task_queue->push(buffer[i]);
       // We only call this when the local queue is empty or under a
@@ -3651,8 +3707,9 @@ void CMTask::get_entries_from_global_stack() {
     }
 
     statsOnly( int tmp_size = _task_queue->size();
-               if (tmp_size > _local_max_size)
+               if (tmp_size > _local_max_size) {
                  _local_max_size = tmp_size;
+               }
                _local_pushes += n );
   }
 
@@ -3661,31 +3718,33 @@ void CMTask::get_entries_from_global_stack() {
 }
 
 void CMTask::drain_local_queue(bool partially) {
-  if (has_aborted())
-    return;
+  if (has_aborted()) return;
 
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
   // of things to do) or totally (at the very end).
   size_t target_size;
-  if (partially)
+  if (partially) {
     target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
-  else
+  } else {
     target_size = 0;
+  }
 
   if (_task_queue->size() > target_size) {
-    if (_cm->verbose_high())
+    if (_cm->verbose_high()) {
       gclog_or_tty->print_cr("[%d] draining local queue, target size = %d",
                              _task_id, target_size);
+    }
 
     oop obj;
     bool ret = _task_queue->pop_local(obj);
     while (ret) {
       statsOnly( ++_local_pops );
 
-      if (_cm->verbose_high())
+      if (_cm->verbose_high()) {
         gclog_or_tty->print_cr("[%d] popped "PTR_FORMAT, _task_id,
                                (void*) obj);
+      }
 
       assert(_g1h->is_in_g1_reserved((HeapWord*) obj), "invariant" );
       assert(!_g1h->is_on_master_free_list(
@@ -3693,21 +3752,22 @@ void CMTask::drain_local_queue(bool partially) {
 
       scan_object(obj);
 
-      if (_task_queue->size() <= target_size || has_aborted())
+      if (_task_queue->size() <= target_size || has_aborted()) {
         ret = false;
-      else
+      } else {
         ret = _task_queue->pop_local(obj);
+      }
     }
 
-    if (_cm->verbose_high())
+    if (_cm->verbose_high()) {
       gclog_or_tty->print_cr("[%d] drained local queue, size = %d",
                              _task_id, _task_queue->size());
+    }
   }
 }
 
 void CMTask::drain_global_stack(bool partially) {
-  if (has_aborted())
-    return;
+  if (has_aborted()) return;
 
   // We have a policy to drain the local queue before we attempt to
   // drain the global stack.
@@ -3720,24 +3780,27 @@ void CMTask::drain_global_stack(bool partially) {
   // because another task might be doing the same, we might in fact
   // drop below the target. But, this is not a problem.
   size_t target_size;
-  if (partially)
+  if (partially) {
     target_size = _cm->partial_mark_stack_size_target();
-  else
+  } else {
     target_size = 0;
+  }
 
   if (_cm->mark_stack_size() > target_size) {
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] draining global_stack, target size %d",
                              _task_id, target_size);
+    }
 
     while (!has_aborted() && _cm->mark_stack_size() > target_size) {
       get_entries_from_global_stack();
       drain_local_queue(partially);
     }
 
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] drained global stack, size = %d",
                              _task_id, _cm->mark_stack_size());
+    }
   }
 }
 
@@ -3746,8 +3809,7 @@ void CMTask::drain_global_stack(bool partially) {
 // replicated. We should really get rid of the single-threaded version
 // of the code to simplify things.
 void CMTask::drain_satb_buffers() {
-  if (has_aborted())
-    return;
+  if (has_aborted()) return;
 
   // We set this so that the regular clock knows that we're in the
   // middle of draining buffers and doesn't set the abort flag when it
@@ -3757,26 +3819,29 @@ void CMTask::drain_satb_buffers() {
 
   CMObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  if (G1CollectedHeap::use_parallel_gc_threads())
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     satb_mq_set.set_par_closure(_task_id, &oc);
-  else
+  } else {
     satb_mq_set.set_closure(&oc);
+  }
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     while (!has_aborted() &&
            satb_mq_set.par_apply_closure_to_completed_buffer(_task_id)) {
-      if (_cm->verbose_medium())
+      if (_cm->verbose_medium()) {
         gclog_or_tty->print_cr("[%d] processed an SATB buffer", _task_id);
+      }
       statsOnly( ++_satb_buffers_processed );
       regular_clock_call();
     }
   } else {
     while (!has_aborted() &&
            satb_mq_set.apply_closure_to_completed_buffer()) {
-      if (_cm->verbose_medium())
+      if (_cm->verbose_medium()) {
         gclog_or_tty->print_cr("[%d] processed an SATB buffer", _task_id);
+      }
       statsOnly( ++_satb_buffers_processed );
       regular_clock_call();
     }
@@ -3784,10 +3849,11 @@ void CMTask::drain_satb_buffers() {
 
   if (!concurrent() && !has_aborted()) {
     // We should only do this during remark.
-    if (G1CollectedHeap::use_parallel_gc_threads())
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
       satb_mq_set.par_iterate_closure_all_threads(_task_id);
-    else
+    } else {
       satb_mq_set.iterate_closure_all_threads();
+    }
   }
 
   _draining_satb_buffers = false;
@@ -3796,10 +3862,11 @@ void CMTask::drain_satb_buffers() {
          concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
 
-  if (G1CollectedHeap::use_parallel_gc_threads())
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     satb_mq_set.set_par_closure(_task_id, NULL);
-  else
+  } else {
     satb_mq_set.set_closure(NULL);
+  }
 
   // again, this was a potentially expensive operation, decrease the
   // limits to get the regular clock call early
@@ -3807,16 +3874,16 @@ void CMTask::drain_satb_buffers() {
 }
 
 void CMTask::drain_region_stack(BitMapClosure* bc) {
-  if (has_aborted())
-    return;
+  if (has_aborted()) return;
 
   assert(_region_finger == NULL,
          "it should be NULL when we're not scanning a region");
 
   if (!_cm->region_stack_empty() || !_aborted_region.is_empty()) {
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] draining region stack, size = %d",
                              _task_id, _cm->region_stack_size());
+    }
 
     MemRegion mr;
 
@@ -3824,9 +3891,11 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
       mr = _aborted_region;
       _aborted_region = MemRegion();
 
-      if (_cm->verbose_low())
-        gclog_or_tty->print_cr("[%d] scanning aborted region [ " PTR_FORMAT ", " PTR_FORMAT " )",
-                             _task_id, mr.start(), mr.end());
+      if (_cm->verbose_low()) {
+        gclog_or_tty->print_cr("[%d] scanning aborted region "
+                               "[ " PTR_FORMAT ", " PTR_FORMAT " )",
+                               _task_id, mr.start(), mr.end());
+      }
     } else {
       mr = _cm->region_stack_pop_lock_free();
       // it returns MemRegion() if the pop fails
@@ -3834,10 +3903,11 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
     }
 
     while (mr.start() != NULL) {
-      if (_cm->verbose_medium())
+      if (_cm->verbose_medium()) {
         gclog_or_tty->print_cr("[%d] we are scanning region "
                                "["PTR_FORMAT", "PTR_FORMAT")",
                                _task_id, mr.start(), mr.end());
+      }
 
       assert(mr.end() <= _cm->finger(),
              "otherwise the region shouldn't be on the stack");
@@ -3848,9 +3918,9 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
 
         // We finished iterating over the region without aborting.
         regular_clock_call();
-        if (has_aborted())
+        if (has_aborted()) {
           mr = MemRegion();
-        else {
+        } else {
           mr = _cm->region_stack_pop_lock_free();
           // it returns MemRegion() if the pop fails
           statsOnly(if (mr.start() != NULL) ++_region_stack_pops );
@@ -3896,9 +3966,10 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
       _region_finger = NULL;
     }
 
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] drained region stack, size = %d",
                              _task_id, _cm->region_stack_size());
+    }
   }
 }
 
@@ -4099,10 +4170,11 @@ void CMTask::do_marking_step(double time_target_ms,
 
   ++_calls;
 
-  if (_cm->verbose_low())
+  if (_cm->verbose_low()) {
     gclog_or_tty->print_cr("[%d] >>>>>>>>>> START, call = %d, "
                            "target = %1.2lfms >>>>>>>>>>",
                            _task_id, _calls, _time_target_ms);
+  }
 
   // Set up the bitmap and oop closures. Anything that uses them is
   // eventually called from this method, so it is OK to allocate these
@@ -4159,11 +4231,12 @@ void CMTask::do_marking_step(double time_target_ms,
       // fresh region, _finger points to start().
       MemRegion mr = MemRegion(_finger, _region_limit);
 
-      if (_cm->verbose_low())
+      if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%d] we're scanning part "
                                "["PTR_FORMAT", "PTR_FORMAT") "
                                "of region "PTR_FORMAT,
                                _task_id, _finger, _region_limit, _curr_region);
+      }
 
       // Let's iterate over the bitmap of the part of the
       // region that is left.
@@ -4219,17 +4292,19 @@ void CMTask::do_marking_step(double time_target_ms,
       assert(_curr_region  == NULL, "invariant");
       assert(_finger       == NULL, "invariant");
       assert(_region_limit == NULL, "invariant");
-      if (_cm->verbose_low())
+      if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%d] trying to claim a new region", _task_id);
+      }
       HeapRegion* claimed_region = _cm->claim_region(_task_id);
       if (claimed_region != NULL) {
         // Yes, we managed to claim one
         statsOnly( ++_regions_claimed );
 
-        if (_cm->verbose_low())
+        if (_cm->verbose_low()) {
           gclog_or_tty->print_cr("[%d] we successfully claimed "
                                  "region "PTR_FORMAT,
                                  _task_id, claimed_region);
+        }
 
         setup_for_region(claimed_region);
         assert(_curr_region == claimed_region, "invariant");
@@ -4256,8 +4331,9 @@ void CMTask::do_marking_step(double time_target_ms,
     assert(_cm->out_of_regions(),
            "at this point we should be out of regions");
 
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] all regions claimed", _task_id);
+    }
 
     // Try to reduce the number of available SATB buffers so that
     // remark has less work to do.
@@ -4281,17 +4357,19 @@ void CMTask::do_marking_step(double time_target_ms,
     assert(_cm->out_of_regions() && _task_queue->size() == 0,
            "only way to reach here");
 
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] starting to steal", _task_id);
+    }
 
     while (!has_aborted()) {
       oop obj;
       statsOnly( ++_steal_attempts );
 
       if (_cm->try_stealing(_task_id, &_hash_seed, obj)) {
-        if (_cm->verbose_medium())
+        if (_cm->verbose_medium()) {
           gclog_or_tty->print_cr("[%d] stolen "PTR_FORMAT" successfully",
                                  _task_id, (void*) obj);
+        }
 
         statsOnly( ++_steals );
 
@@ -4329,8 +4407,9 @@ void CMTask::do_marking_step(double time_target_ms,
     assert(_cm->out_of_regions(), "only way to reach here");
     assert(_task_queue->size() == 0, "only way to reach here");
 
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] starting termination protocol", _task_id);
+    }
 
     _termination_start_time_ms = os::elapsedVTime() * 1000.0;
     // The CMTask class also extends the TerminatorTerminator class,
@@ -4368,14 +4447,17 @@ void CMTask::do_marking_step(double time_target_ms,
       guarantee(!_cm->mark_stack_overflow(), "only way to reach here");
       guarantee(!_cm->region_stack_overflow(), "only way to reach here");
 
-      if (_cm->verbose_low())
+      if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%d] all tasks terminated", _task_id);
+      }
     } else {
       // Apparently there's more work to do. Let's abort this task. It
       // will restart it and we can hopefully find more things to do.
 
-      if (_cm->verbose_low())
-        gclog_or_tty->print_cr("[%d] apparently there is more work to do", _task_id);
+      if (_cm->verbose_low()) {
+        gclog_or_tty->print_cr("[%d] apparently there is more work to do",
+                               _task_id);
+      }
 
       set_has_aborted();
       statsOnly( ++_aborted_termination );
@@ -4412,8 +4494,9 @@ void CMTask::do_marking_step(double time_target_ms,
       // what they are doing and re-initialise in a safe manner. We
       // will achieve this with the use of two barrier sync points.
 
-      if (_cm->verbose_low())
+      if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%d] detected overflow", _task_id);
+      }
 
       _cm->enter_first_sync_barrier(_task_id);
       // When we exit this sync barrier we know that all tasks have
@@ -4436,15 +4519,17 @@ void CMTask::do_marking_step(double time_target_ms,
       gclog_or_tty->print_cr("[%d] <<<<<<<<<< ABORTING, target = %1.2lfms, "
                              "elapsed = %1.2lfms <<<<<<<<<<",
                              _task_id, _time_target_ms, elapsed_time_ms);
-      if (_cm->has_aborted())
+      if (_cm->has_aborted()) {
         gclog_or_tty->print_cr("[%d] ========== MARKING ABORTED ==========",
                                _task_id);
+      }
     }
   } else {
-    if (_cm->verbose_low())
+    if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%d] <<<<<<<<<< FINISHED, target = %1.2lfms, "
                              "elapsed = %1.2lfms <<<<<<<<<<",
                              _task_id, _time_target_ms, elapsed_time_ms);
+    }
   }
 
   _claimed = false;
