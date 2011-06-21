@@ -35,7 +35,7 @@
 JvmSymbols* lookupJvmSymbols() {
     JvmSymbols* syms = (JvmSymbols*)malloc(sizeof(JvmSymbols));
     if (syms != NULL) {
-        HINSTANCE jvm = LoadLibrary("jvm.dll");
+        HINSTANCE jvm = GetModuleHandle("jvm.dll");
         if (jvm == NULL) {
             free(syms);
             return NULL;
