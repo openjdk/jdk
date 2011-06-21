@@ -44,6 +44,7 @@ public:
 
 class MasterFreeRegionList : public FreeRegionList {
 protected:
+  virtual const char* verify_region_extra(HeapRegion* hr);
   virtual bool check_mt_safety();
 
 public:

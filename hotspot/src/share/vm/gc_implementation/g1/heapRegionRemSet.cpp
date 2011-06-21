@@ -1085,8 +1085,9 @@ int HeapRegionRemSet::num_par_rem_sets() {
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
-  : _bosa(bosa), _other_regions(hr), _iter_state(Unclaimed) { }
-
+  : _bosa(bosa), _other_regions(hr) {
+  reset_for_par_iteration();
+}
 
 void HeapRegionRemSet::setup_remset_size() {
   // Setup sparse and fine-grain tables sizes.
@@ -1099,10 +1100,6 @@ void HeapRegionRemSet::setup_remset_size() {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
   }
   guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
-}
-
-void HeapRegionRemSet::init_for_par_iteration() {
-  _iter_state = Unclaimed;
 }
 
 bool HeapRegionRemSet::claim_iter() {
@@ -1119,7 +1116,6 @@ bool HeapRegionRemSet::iter_is_complete() {
   return _iter_state == Complete;
 }
 
-
 void HeapRegionRemSet::init_iterator(HeapRegionRemSetIterator* iter) const {
   iter->initialize(this);
 }
@@ -1132,7 +1128,7 @@ void HeapRegionRemSet::print() const {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", card_start);
+    gclog_or_tty->print_cr("  Card " PTR_FORMAT, card_start);
   }
   // XXX
   if (iter.n_yielded() != occupied()) {
@@ -1159,6 +1155,14 @@ void HeapRegionRemSet::par_cleanup() {
 void HeapRegionRemSet::clear() {
   _other_regions.clear();
   assert(occupied() == 0, "Should be clear.");
+  reset_for_par_iteration();
+}
+
+void HeapRegionRemSet::reset_for_par_iteration() {
+  _iter_state = Unclaimed;
+  _iter_claimed = 0;
+  // It's good to check this to make sure that the two methods are in sync.
+  assert(verify_ready_for_par_iteration(), "post-condition");
 }
 
 void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
