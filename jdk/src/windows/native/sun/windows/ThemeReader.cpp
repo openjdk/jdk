@@ -150,7 +150,7 @@ static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDuration = NULL;
 
 BOOL InitThemes() {
     static HMODULE hModThemes = NULL;
-    hModThemes = LoadLibrary(TEXT("UXTHEME.DLL"));
+    hModThemes = JDK_LoadSystemLibrary("UXTHEME.DLL");
     DTRACE_PRINTLN1("InitThemes hModThemes = %x\n", hModThemes);
     if(hModThemes) {
         DTRACE_PRINTLN("Loaded UxTheme.dll\n");

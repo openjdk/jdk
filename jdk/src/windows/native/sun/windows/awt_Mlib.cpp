@@ -43,12 +43,13 @@ extern "C"
         mlibSysFnS_t tempSysFns;
         mlib_status ret = MLIB_SUCCESS;
 
-        /* Try to load library. Routine should find the library successfully
-         * because this library is already loaded to the process space by
-         * the System.loadLibrary() call. Here we just need to get handle to
-         * initialize the pointers to required mlib routines.
+        /* Try to receive handle for the library. Routine should find
+         * the library successfully because this library is already
+         * loaded to the process space by the System.loadLibrary() call.
+         * Here we just need to get handle to initialize the pointers to
+         * required mlib routines.
          */
-        hDLL = ::LoadLibrary(TEXT("mlib_image.dll"));
+        hDLL = ::GetModuleHandle(TEXT("mlib_image.dll"));
 
         if (hDLL == NULL) {
             return MLIB_FAILURE;
@@ -94,9 +95,6 @@ extern "C"
             i++;
         }
 
-        if (ret != MLIB_SUCCESS) {
-            ::FreeLibrary(hDLL);
-        }
         return ret;
     }
 
