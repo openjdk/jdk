@@ -1372,6 +1372,10 @@ public:
   // Override
   void print_tracing_info() const;
 
+  // The following two methods are helpful for debugging RSet issues.
+  void print_cset_rsets() PRODUCT_RETURN;
+  void print_all_rsets() PRODUCT_RETURN;
+
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
   static G1CollectedHeap* heap();

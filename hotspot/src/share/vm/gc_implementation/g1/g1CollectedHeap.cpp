@@ -3015,6 +3015,56 @@ void G1CollectedHeap::print_tracing_info() const {
   SpecializationStats::print();
 }
 
+#ifndef PRODUCT
+// Helpful for debugging RSet issues.
+
+class PrintRSetsClosure : public HeapRegionClosure {
+private:
+  const char* _msg;
+  size_t _occupied_sum;
+
+public:
+  bool doHeapRegion(HeapRegion* r) {
+    HeapRegionRemSet* hrrs = r->rem_set();
+    size_t occupied = hrrs->occupied();
+    _occupied_sum += occupied;
+
+    gclog_or_tty->print_cr("Printing RSet for region "HR_FORMAT,
+                           HR_FORMAT_PARAMS(r));
+    if (occupied == 0) {
+      gclog_or_tty->print_cr("  RSet is empty");
+    } else {
+      hrrs->print();
+    }
+    gclog_or_tty->print_cr("----------");
+    return false;
+  }
+
+  PrintRSetsClosure(const char* msg) : _msg(msg), _occupied_sum(0) {
+    gclog_or_tty->cr();
+    gclog_or_tty->print_cr("========================================");
+    gclog_or_tty->print_cr(msg);
+    gclog_or_tty->cr();
+  }
+
+  ~PrintRSetsClosure() {
+    gclog_or_tty->print_cr("Occupied Sum: "SIZE_FORMAT, _occupied_sum);
+    gclog_or_tty->print_cr("========================================");
+    gclog_or_tty->cr();
+  }
+};
+
+void G1CollectedHeap::print_cset_rsets() {
+  PrintRSetsClosure cl("Printing CSet RSets");
+  collection_set_iterate(&cl);
+}
+
+void G1CollectedHeap::print_all_rsets() {
+  PrintRSetsClosure cl("Printing All RSets");;
+  heap_region_iterate(&cl);
+}
+#endif // PRODUCT
+
 G1CollectedHeap* G1CollectedHeap::heap() {
   assert(_sh->kind() == CollectedHeap::G1CollectedHeap,
          "not a garbage-first heap");
@@ -3148,12 +3198,27 @@ G1CollectedHeap::cleanup_surviving_young_words() {
 
 // </NEW PREDICTION>
 
-struct PrepareForRSScanningClosure : public HeapRegionClosure {
-  bool doHeapRegion(HeapRegion *r) {
-    r->rem_set()->set_iter_claimed(0);
+#ifdef ASSERT
+class VerifyCSetClosure: public HeapRegionClosure {
+public:
+  bool doHeapRegion(HeapRegion* hr) {
+    // Here we check that the CSet region's RSet is ready for parallel
+    // iteration. The fields that we'll verify are only manipulated
+    // when the region is part of a CSet and is collected. Afterwards,
+    // we reset these fields when we clear the region's RSet (when the
+    // region is freed) so they are ready when the region is
+    // re-allocated. The only exception to this is if there's an
+    // evacuation failure and instead of freeing the region we leave
+    // it in the heap. In that case, we reset these fields during
+    // evacuation failure handling.
+    guarantee(hr->rem_set()->verify_ready_for_par_iteration(), "verification");
+
+    // Here's a good place to add any other checks we'd like to
+    // perform on CSet regions.
     return false;
   }
 };
+#endif // ASSERT
 
 #if TASKQUEUE_STATS
 void G1CollectedHeap::print_taskqueue_stats_hdr(outputStream* const st) {
@@ -3257,11 +3322,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       gc_prologue(false);
       increment_total_collections(false /* full gc */);
 
-#if G1_REM_SET_LOGGING
-      gclog_or_tty->print_cr("\nJust chose CS, heap:");
-      print();
-#endif
-
       if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
         HandleMark hm;  // Discard invalid handles created during verification
         gclog_or_tty->print(" VerifyBeforeGC:");
@@ -3347,13 +3407,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         concurrent_mark()->reset_active_task_region_fields_in_cset();
       }
 
-      // Nothing to do if we were unable to choose a collection set.
-#if G1_REM_SET_LOGGING
-      gclog_or_tty->print_cr("\nAfter pause, heap:");
-      print();
-#endif
-      PrepareForRSScanningClosure prepare_for_rs_scan;
-      collection_set_iterate(&prepare_for_rs_scan);
+#ifdef ASSERT
+      VerifyCSetClosure cl;
+      collection_set_iterate(&cl);
+#endif // ASSERT
 
       setup_surviving_young_words();
 
@@ -3955,6 +4012,14 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
       assert(cur->in_collection_set(), "bad CS");
       RemoveSelfPointerClosure rspc(_g1h, cur, cl);
 
+      // In the common case we make sure that this is done when the
+      // region is freed so that it is "ready-to-go" when it's
+      // re-allocated. However, when evacuation failure happens, a
+      // region will remain in the heap and might ultimately be added
+      // to a CSet in the future. So we have to be careful here and
+      // make sure the region's RSet is ready for parallel iteration
+      // whenever this might be required in the future.
+      cur->rem_set()->reset_for_par_iteration();
       cur->reset_bot();
       cl->set_region(cur);
       cur->object_iterate(&rspc);
@@ -4474,10 +4539,6 @@ void G1ParCopyClosure <do_gen_barrier, barrier, do_mark_forwardee>
 
   // here the null check is implicit in the cset_fast_test() test
   if (_g1->in_cset_fast_test(obj)) {
-#if G1_REM_SET_LOGGING
-    gclog_or_tty->print_cr("Loc "PTR_FORMAT" contains pointer "PTR_FORMAT" "
-                           "into CS.", p, (void*) obj);
-#endif
     if (obj->is_forwarded()) {
       oopDesc::encode_store_heap_oop(p, obj->forwardee());
     } else {
