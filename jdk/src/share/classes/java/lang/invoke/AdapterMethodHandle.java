@@ -405,13 +405,13 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
-    private static long makeSwapConv(int convOp, int srcArg, byte type, int destSlot) {
+    private static long makeSwapConv(int convOp, int srcArg, byte srcType, int destSlot, byte destType) {
         // more complex argument motion, requiring two slots to specify
         assert(convOp == OP_SWAP_ARGS || convOp == OP_ROT_ARGS);
         return ((long) srcArg << 32 |
                 (long) convOp << CONV_OP_SHIFT |
-                (int)  type   << CONV_SRC_TYPE_SHIFT |
-                (int)  type   << CONV_DEST_TYPE_SHIFT |
+                (int)  srcType << CONV_SRC_TYPE_SHIFT |
+                (int)  destType << CONV_DEST_TYPE_SHIFT |
                 (int)  destSlot << CONV_VMINFO_SHIFT
                 );
     }
@@ -943,24 +943,27 @@ class AdapterMethodHandle extends BoundMethodHandle {
         if (type2size(newType.parameterType(swapArg1)) !=
             type2size(newType.parameterType(swapArg2))) {
             // turn a swap into a pair of rotates:
-            // [x a b c y] => [a b c y x] => [y a b c x]
+            // [x a b c y] rot2(-1,argc=5) => [a b c y x] rot1(+1,argc=4) => target[y a b c x]
             int argc = swapArg2 - swapArg1 + 1;
             final int ROT = 1;
             ArrayList<Class<?>> rot1Params = new ArrayList<Class<?>>(target.type().parameterList());
             Collections.rotate(rot1Params.subList(swapArg1, swapArg1 + argc), -ROT);
             MethodType rot1Type = MethodType.methodType(target.type().returnType(), rot1Params);
             MethodHandle rot1 = makeRotateArguments(rot1Type, target, swapArg1, argc, +ROT);
+            assert(rot1 != null);
             if (argc == 2)  return rot1;
             MethodHandle rot2 = makeRotateArguments(newType, rot1, swapArg1, argc-1, -ROT);
+            assert(rot2 != null);
             return rot2;
         }
         if (!canSwapArguments(newType, target.type(), swapArg1, swapArg2))
             return null;
-        Class<?> swapType = newType.parameterType(swapArg1);
+        Class<?> type1 = newType.parameterType(swapArg1);
+        Class<?> type2 = newType.parameterType(swapArg2);
         // in  arglist: [0: ...keep1 | pos1: a1 | pos1+1: keep2... | pos2: a2 | pos2+1: keep3... ]
         // out arglist: [0: ...keep1 | pos1: a2 | pos1+1: keep2... | pos2: a1 | pos2+1: keep3... ]
         int swapSlot2  = newType.parameterSlotDepth(swapArg2 + 1);
-        long conv = makeSwapConv(OP_SWAP_ARGS, swapArg1, basicType(swapType), swapSlot2);
+        long conv = makeSwapConv(OP_SWAP_ARGS, swapArg1, basicType(type1), swapSlot2, basicType(type2));
         return new AdapterMethodHandle(target, newType, conv);
     }
 
@@ -1029,16 +1032,16 @@ class AdapterMethodHandle extends BoundMethodHandle {
         assert(MAX_ARG_ROTATION == 1);
         int srcArg, dstArg;
         int dstSlot;
-        byte basicType;
-        if (chunk2Slots <= chunk1Slots) {
+        int moveChunk;
+        if (rotateBy == 1) {
             // Rotate right/down N (rotateBy = +N, N small, c2 small):
             // in  arglist: [0: ...keep1 | arg1: c1...  | limit-N: c2 | limit: keep2... ]
             // out arglist: [0: ...keep1 | arg1: c2 | arg1+N: c1...   | limit: keep2... ]
             srcArg = limit-1;
             dstArg = firstArg;
-            dstSlot = depth0 - chunk2Slots;
-            basicType = basicType(newType.parameterType(srcArg));
-            assert(chunk2Slots == type2size(basicType));
+            //dstSlot = depth0 - chunk2Slots;  //chunk2Slots is not relevant
+            dstSlot = depth0 + MethodHandleNatives.OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+            moveChunk = chunk2Slots;
         } else {
             // Rotate left/up N (rotateBy = -N, N small, c1 small):
             // in  arglist: [0: ...keep1 | arg1: c1 | arg1+N: c2...   | limit: keep2... ]
@@ -1046,10 +1049,12 @@ class AdapterMethodHandle extends BoundMethodHandle {
             srcArg = firstArg;
             dstArg = limit-1;
             dstSlot = depth2;
-            basicType = basicType(newType.parameterType(srcArg));
-            assert(chunk1Slots == type2size(basicType));
+            moveChunk = chunk1Slots;
         }
-        long conv = makeSwapConv(OP_ROT_ARGS, srcArg, basicType, dstSlot);
+        byte srcType = basicType(newType.parameterType(srcArg));
+        byte dstType = basicType(newType.parameterType(dstArg));
+        assert(moveChunk == type2size(srcType));
+        long conv = makeSwapConv(OP_ROT_ARGS, srcArg, srcType, dstSlot, dstType);
         return new AdapterMethodHandle(target, newType, conv);
     }
 
