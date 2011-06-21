@@ -3804,6 +3804,14 @@ void Assembler::addq(Register dst, Register src) {
   emit_arith(0x03, 0xC0, dst, src);
 }
 
+void Assembler::andq(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_byte(0x81);
+  emit_operand(rsp, dst, 4);
+  emit_long(imm32);
+}
+
 void Assembler::andq(Register dst, int32_t imm32) {
   (void) prefixq_and_encode(dst->encoding());
   emit_arith(0x81, 0xE0, dst, imm32);

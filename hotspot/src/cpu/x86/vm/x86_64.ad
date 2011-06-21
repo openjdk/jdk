@@ -830,6 +830,17 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
   }
 }
 
+// This could be in MacroAssembler but it's fairly C2 specific
+void emit_cmpfp_fixup(MacroAssembler& _masm) {
+  Label exit;
+  __ jccb(Assembler::noParity, exit);
+  __ pushf();
+  __ andq(Address(rsp, 0), 0xffffff2b);
+  __ popf();
+  __ bind(exit);
+  __ nop(); // (target for branch to avoid branch to branch)
+}
+
 
 //=============================================================================
 const bool Matcher::constant_table_absolute_addressing = true;
@@ -2173,27 +2184,9 @@ encode %{
     emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
-  enc_class cmpfp_fixup()
-  %{
-    // jnp,s exit
-    emit_opcode(cbuf, 0x7B);
-    emit_d8(cbuf, 0x0A);
-
-    // pushfq
-    emit_opcode(cbuf, 0x9C);
-
-    // andq $0xffffff2b, (%rsp)
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x81);
-    emit_opcode(cbuf, 0x24);
-    emit_opcode(cbuf, 0x24);
-    emit_d32(cbuf, 0xffffff2b);
-
-    // popfq
-    emit_opcode(cbuf, 0x9D);
-
-    // nop (target for branch to avoid branch to branch)
-    emit_opcode(cbuf, 0x90);
+  enc_class cmpfp_fixup() %{
+      MacroAssembler _masm(&cbuf);
+      emit_cmpfp_fixup(_masm);
   %}
 
   enc_class cmpfp3(rRegI dst)
@@ -10253,14 +10246,8 @@ instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
   ins_encode %{
-    Label L_exit;
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10341,14 +10328,8 @@ instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
   ins_encode %{
-    Label L_exit;
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
