@@ -610,9 +610,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
 sun/security/rsa/TestKeyPairGeneratorLength.java	 	solaris-all
 sun/security/rsa/TestSignatures.java			 	solaris-all
 
-# Timeout on solaris-sparc and i586 and x64, -client and -server
-sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/InterruptedIO.java solaris-all
-
 # Do not seem to run on windows machines? dll missing?
 sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
 
