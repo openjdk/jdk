@@ -587,14 +587,8 @@ sun/security/tools/jarsigner/oldsig.sh				generic-all
 # Various failures on Linux Fedora 9 X64, othervm mode
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
 
-# Linux i586 -server, buffer too short to hold shared secret?
-com/sun/crypto/provider/KeyAgreement/DHKeyAgreement2.java	generic-all
-
 # Solaris sparcv9: Failed to parse input emptysubject.jks: No such file or directory
 sun/security/tools/keytool/emptysubject.sh			generic-all
-
-# Timeout on solaris-sparcv9 or exception thrown
-com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
 
 # Fails on OpenSolaris, missing classes, slow on Solaris sparc
 sun/security/ec/TestEC.java					generic-all
