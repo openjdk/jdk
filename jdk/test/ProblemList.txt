@@ -207,9 +207,6 @@ java/lang/Runtime/exec/SleepyCat.java				generic-all
 # Times out on solaris sparc -server
 java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
 
-# Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
-java/lang/Thread/ThreadStateTest.java				generic-all
-
 ############################################################################
 
 # jdk_management
