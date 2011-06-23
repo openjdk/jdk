@@ -284,7 +284,7 @@ AwtFileDialog::Show(void *p)
         file = (jstring)env->GetObjectField(target, AwtFileDialog::fileID);
         if (file != NULL) {
             LPCTSTR tmp = JNU_GetStringPlatformChars(env, file, NULL);
-            _tcscpy(fileBuffer, tmp);
+            _tcsncpy(fileBuffer, tmp, bufferLimit - 2); // the fileBuffer is double null terminated string
             JNU_ReleaseStringPlatformChars(env, file, tmp);
         } else {
             fileBuffer[0] = _T('\0');

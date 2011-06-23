@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 4273454 7054918
+ * @bug 4273454 7054918 7052537
  * @library ../testlibrary
  * @summary Make sure getProviders(filter) doesn't throw NPE
+ * @run main/othervm NoInstalledProviders
  */
 
 import java.security.*;
