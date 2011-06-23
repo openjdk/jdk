@@ -729,10 +729,6 @@ public abstract class Symbol implements Element {
          */
         public Pool pool;
 
-        /** members closure cache (set by Types.membersClosure)
-         */
-        Scope.CompoundScope membersClosure;
-
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(flags, name, type, owner);
             this.members_field = null;

@@ -29,6 +29,8 @@ import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 import sun.invoke.util.ValueConversions;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -62,7 +64,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
     // the target and change its type, instead of adding another layer.
 
     /** Can a JVM-level adapter directly implement the proposed
-     *  argument conversions, as if by MethodHandles.convertArguments?
+     *  argument conversions, as if by fixed-arity MethodHandle.asType?
      */
     static boolean canPairwiseConvert(MethodType newType, MethodType oldType, int level) {
         // same number of args, of course
@@ -92,7 +94,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Can a JVM-level adapter directly implement the proposed
-     *  argument conversion, as if by MethodHandles.convertArguments?
+     *  argument conversion, as if by fixed-arity MethodHandle.asType?
      */
     static boolean canConvertArgument(Class<?> src, Class<?> dst, int level) {
         // ? Retool this logic to use RETYPE_ONLY, CHECK_CAST, etc., as opcodes,
@@ -403,13 +405,13 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
-    private static long makeSwapConv(int convOp, int srcArg, byte type, int destSlot) {
+    private static long makeSwapConv(int convOp, int srcArg, byte srcType, int destSlot, byte destType) {
         // more complex argument motion, requiring two slots to specify
         assert(convOp == OP_SWAP_ARGS || convOp == OP_ROT_ARGS);
         return ((long) srcArg << 32 |
                 (long) convOp << CONV_OP_SHIFT |
-                (int)  type   << CONV_SRC_TYPE_SHIFT |
-                (int)  type   << CONV_DEST_TYPE_SHIFT |
+                (int)  srcType << CONV_SRC_TYPE_SHIFT |
+                (int)  destType << CONV_DEST_TYPE_SHIFT |
                 (int)  destSlot << CONV_VMINFO_SHIFT
                 );
     }
@@ -550,6 +552,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         int last = type.parameterCount() - 1;
         if (type.parameterType(last) != arrayType)
             target = target.asType(type.changeParameterType(last, arrayType));
+        target = target.asFixedArity();  // make sure this attribute is turned off
         return new AsVarargsCollector(target, arrayType);
     }
 
@@ -568,6 +571,11 @@ class AdapterMethodHandle extends BoundMethodHandle {
         @Override
         public boolean isVarargsCollector() {
             return true;
+        }
+
+        @Override
+        public MethodHandle asFixedArity() {
+            return target;
         }
 
         @Override
@@ -593,14 +601,6 @@ class AdapterMethodHandle extends BoundMethodHandle {
             }
             cache = collector;
             return collector.asType(newType);
-        }
-
-        @Override
-        public MethodHandle asVarargsCollector(Class<?> arrayType) {
-            MethodType type = this.type();
-            if (type.parameterType(type.parameterCount()-1) == arrayType)
-                return this;
-            return super.asVarargsCollector(arrayType);
         }
     }
 
@@ -747,8 +747,31 @@ class AdapterMethodHandle extends BoundMethodHandle {
         if (!canUnboxArgument(newType, oldType, arg, convType, level))
             return null;
         MethodType castDone = newType;
-        if (!VerifyType.isNullConversion(src, boxType))
+        if (!VerifyType.isNullConversion(src, boxType)) {
+            // Examples:  Object->int, Number->int, Comparable->int; Byte->int, Character->int
+            if (level != 0) {
+                // must include additional conversions
+                if (src == Object.class || !Wrapper.isWrapperType(src)) {
+                    // src must be examined at runtime, to detect Byte, Character, etc.
+                    MethodHandle unboxMethod = (level == 1
+                                                ? ValueConversions.unbox(dst)
+                                                : ValueConversions.unboxCast(dst));
+                    long conv = makeConv(OP_COLLECT_ARGS, arg, basicType(src), basicType(dst));
+                    return new AdapterMethodHandle(target, newType, conv, unboxMethod);
+                }
+                // Example: Byte->int
+                // Do this by reformulating the problem to Byte->byte.
+                Class<?> srcPrim = Wrapper.forWrapperType(src).primitiveType();
+                MethodType midType = newType.changeParameterType(arg, srcPrim);
+                MethodHandle fixPrim; // makePairwiseConvert(midType, target, 0);
+                if (canPrimCast(midType, oldType, arg, dst))
+                    fixPrim = makePrimCast(midType, target, arg, dst);
+                else
+                    fixPrim = target;
+                return makeUnboxArgument(newType, fixPrim, arg, srcPrim, 0);
+            }
             castDone = newType.changeParameterType(arg, boxType);
+        }
         long conv = makeConv(OP_REF_TO_PRIM, arg, T_OBJECT, basicType(primType));
         MethodHandle adapter = new AdapterMethodHandle(target, castDone, conv, boxType);
         if (castDone == newType)
@@ -917,13 +940,30 @@ class AdapterMethodHandle extends BoundMethodHandle {
         if (swapArg1 == swapArg2)
             return target;
         if (swapArg1 > swapArg2) { int t = swapArg1; swapArg1 = swapArg2; swapArg2 = t; }
+        if (type2size(newType.parameterType(swapArg1)) !=
+            type2size(newType.parameterType(swapArg2))) {
+            // turn a swap into a pair of rotates:
+            // [x a b c y] rot2(-1,argc=5) => [a b c y x] rot1(+1,argc=4) => target[y a b c x]
+            int argc = swapArg2 - swapArg1 + 1;
+            final int ROT = 1;
+            ArrayList<Class<?>> rot1Params = new ArrayList<Class<?>>(target.type().parameterList());
+            Collections.rotate(rot1Params.subList(swapArg1, swapArg1 + argc), -ROT);
+            MethodType rot1Type = MethodType.methodType(target.type().returnType(), rot1Params);
+            MethodHandle rot1 = makeRotateArguments(rot1Type, target, swapArg1, argc, +ROT);
+            assert(rot1 != null);
+            if (argc == 2)  return rot1;
+            MethodHandle rot2 = makeRotateArguments(newType, rot1, swapArg1, argc-1, -ROT);
+            assert(rot2 != null);
+            return rot2;
+        }
         if (!canSwapArguments(newType, target.type(), swapArg1, swapArg2))
             return null;
-        Class<?> swapType = newType.parameterType(swapArg1);
+        Class<?> type1 = newType.parameterType(swapArg1);
+        Class<?> type2 = newType.parameterType(swapArg2);
         // in  arglist: [0: ...keep1 | pos1: a1 | pos1+1: keep2... | pos2: a2 | pos2+1: keep3... ]
         // out arglist: [0: ...keep1 | pos1: a2 | pos1+1: keep2... | pos2: a1 | pos2+1: keep3... ]
         int swapSlot2  = newType.parameterSlotDepth(swapArg2 + 1);
-        long conv = makeSwapConv(OP_SWAP_ARGS, swapArg1, basicType(swapType), swapSlot2);
+        long conv = makeSwapConv(OP_SWAP_ARGS, swapArg1, basicType(type1), swapSlot2, basicType(type2));
         return new AdapterMethodHandle(target, newType, conv);
     }
 
@@ -946,7 +986,6 @@ class AdapterMethodHandle extends BoundMethodHandle {
     static boolean canRotateArguments(MethodType newType, MethodType targetType,
                 int firstArg, int argCount, int rotateBy) {
         if (!convOpSupported(OP_ROT_ARGS))  return false;
-        if (argCount <= 2)  return false;  // must be a swap, not a rotate
         rotateBy = positiveRotation(argCount, rotateBy);
         if (rotateBy == 0)  return false;  // no rotation
         if (rotateBy > MAX_ARG_ROTATION && rotateBy < argCount - MAX_ARG_ROTATION)
@@ -992,26 +1031,30 @@ class AdapterMethodHandle extends BoundMethodHandle {
         // From here on out, it assumes a single-argument shift.
         assert(MAX_ARG_ROTATION == 1);
         int srcArg, dstArg;
-        byte basicType;
-        if (chunk2Slots <= chunk1Slots) {
+        int dstSlot;
+        int moveChunk;
+        if (rotateBy == 1) {
             // Rotate right/down N (rotateBy = +N, N small, c2 small):
             // in  arglist: [0: ...keep1 | arg1: c1...  | limit-N: c2 | limit: keep2... ]
             // out arglist: [0: ...keep1 | arg1: c2 | arg1+N: c1...   | limit: keep2... ]
             srcArg = limit-1;
             dstArg = firstArg;
-            basicType = basicType(newType.parameterType(srcArg));
-            assert(chunk2Slots == type2size(basicType));
+            //dstSlot = depth0 - chunk2Slots;  //chunk2Slots is not relevant
+            dstSlot = depth0 + MethodHandleNatives.OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+            moveChunk = chunk2Slots;
         } else {
             // Rotate left/up N (rotateBy = -N, N small, c1 small):
             // in  arglist: [0: ...keep1 | arg1: c1 | arg1+N: c2...   | limit: keep2... ]
             // out arglist: [0: ...keep1 | arg1: c2 ... | limit-N: c1 | limit: keep2... ]
             srcArg = firstArg;
             dstArg = limit-1;
-            basicType = basicType(newType.parameterType(srcArg));
-            assert(chunk1Slots == type2size(basicType));
+            dstSlot = depth2;
+            moveChunk = chunk1Slots;
         }
-        int dstSlot = newType.parameterSlotDepth(dstArg + 1);
-        long conv = makeSwapConv(OP_ROT_ARGS, srcArg, basicType, dstSlot);
+        byte srcType = basicType(newType.parameterType(srcArg));
+        byte dstType = basicType(newType.parameterType(dstArg));
+        assert(moveChunk == type2size(srcType));
+        long conv = makeSwapConv(OP_ROT_ARGS, srcArg, srcType, dstSlot, dstType);
         return new AdapterMethodHandle(target, newType, conv);
     }
 

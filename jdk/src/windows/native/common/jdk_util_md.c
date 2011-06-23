@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,3 +38,25 @@ int JDK_InitJvmHandle() {
 void* JDK_FindJvmEntry(const char* name) {
     return (void*) GetProcAddress(jvm_handle, name);
 }
+
+JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name) {
+    HMODULE handle = NULL;
+    char path[MAX_PATH];
+    int ret;
+
+    if (GetSystemDirectory(path, sizeof(path)) != 0) {
+        strcat(path, "\\");
+        strcat(path, name);
+        handle = LoadLibrary(path);
+    }
+
+    if (handle == NULL) {
+        if (GetWindowsDirectory(path, sizeof(path)) != 0) {
+            strcat(path, "\\");
+            strcat(path, name);
+            handle = LoadLibrary(path);
+        }
+    }
+    return handle;
+}
+
