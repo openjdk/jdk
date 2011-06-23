@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6597678
+ * @bug 6597678 6449184
  * @summary Ensure Messages propogated between rounds
  * @library ../lib
  * @build JavacTestingAbstractProcessor T6597678
@@ -42,26 +42,28 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JavacMessages;
 
+@SupportedOptions("WriterString")
 public class T6597678 extends JavacTestingAbstractProcessor {
     public static void main(String... args) throws Exception {
         new T6597678().run();
     }
-
 
     void run() throws Exception {
         String myName = T6597678.class.getSimpleName();
         File testSrc = new File(System.getProperty("test.src"));
         File file = new File(testSrc, myName + ".java");
 
-        compile(
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+
+        compile(sw, pw,
             "-proc:only",
             "-processor", myName,
+            "-AWriterString=" + pw.toString(),
             file.getPath());
     }
 
-    void compile(String... args) throws Exception {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
+    void compile(StringWriter sw, PrintWriter pw, String... args) throws Exception {
         int rc = com.sun.tools.javac.Main.compile(args, pw);
         pw.close();
         String out = sw.toString();
@@ -76,6 +78,7 @@ public class T6597678 extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
+        PrintWriter out = ((JavacProcessingEnvironment) processingEnv).getWriter();
         Locale locale = context.get(Locale.class);
         JavacMessages messages = context.get(JavacMessages.messagesKey);
 
@@ -83,9 +86,13 @@ public class T6597678 extends JavacTestingAbstractProcessor {
         if (round == 1) {
             initialLocale = locale;
             initialMessages = messages;
+            initialWriter = out;
+
+            checkEqual("writerString", out.toString().intern(), options.get("WriterString").intern());
         } else {
             checkEqual("locale", locale, initialLocale);
             checkEqual("messages", messages, initialMessages);
+            checkEqual("writer", out, initialWriter);
         }
 
         return true;
@@ -102,4 +109,5 @@ public class T6597678 extends JavacTestingAbstractProcessor {
     int round = 0;
     Locale initialLocale;
     JavacMessages initialMessages;
+    PrintWriter initialWriter;
 }
