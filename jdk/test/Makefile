@@ -532,7 +532,7 @@ jdk_security1: $(call TestDirs, java/security)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security2
 jdk_security2: $(call TestDirs, javax/crypto com/sun/crypto)
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
