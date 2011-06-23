@@ -1516,6 +1516,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return context;
     }
 
+    /**
+     * Internal use method to return the writer being used by the
+     * processing environment.
+     */
+    public PrintWriter getWriter() {
+        return context.get(Log.outKey);
+    }
+
     public String toString() {
         return "javac ProcessingEnvironment";
     }
