@@ -258,7 +258,7 @@ class ToGeneric {
         return toGen;
     }
 
-    public String toString() {
+    String debugString() {
         return "ToGeneric"+entryType
                 +(primsAtEndOrder!=null?"[reorder]":"");
     }
@@ -340,7 +340,7 @@ class ToGeneric {
         protected final MethodHandle convert;  // Object -> R
 
         @Override
-        public String toString() {
+        String debugString() {
             return target == null ? "prototype:"+convert : addTypeString(target, this);
         }
 

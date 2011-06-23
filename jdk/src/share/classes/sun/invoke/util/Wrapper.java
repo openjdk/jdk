@@ -135,7 +135,7 @@ public enum Wrapper {
      *  <li>any type converted to {@code void} (i.e., dropping a method call's value)
      *  <li>boxing conversion followed by widening reference conversion to {@code Object}
      *  </ul>
-     *  These are the cases allowed by MethodHandle.asType and convertArguments.
+     *  These are the cases allowed by MethodHandle.asType.
      */
     public boolean isConvertibleFrom(Wrapper source) {
         if (this == source)  return true;
@@ -258,7 +258,7 @@ public enum Wrapper {
     }
 
     /** Return the wrapper that wraps values into the given wrapper type.
-     *  If it is {@code Object} or an interface, return {@code OBJECT}.
+     *  If it is {@code Object}, return {@code OBJECT}.
      *  Otherwise, it must be a wrapper type.
      *  The type must not be a primitive type.
      *  @throws IllegalArgumentException for unexpected types
@@ -277,8 +277,6 @@ public enum Wrapper {
         if (w != null && w.wrapperType == type) {
             return w;
         }
-        if (type.isInterface())
-            return OBJECT;
         return null;
     }
 
