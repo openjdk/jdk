@@ -1647,6 +1647,7 @@ class ObjectMarker : AllStatic {
   // saved headers
   static GrowableArray<oop>* _saved_oop_stack;
   static GrowableArray<markOop>* _saved_mark_stack;
+  static bool _needs_reset;                  // do we need to reset mark bits?
 
  public:
   static void init();                       // initialize
@@ -1654,10 +1655,14 @@ class ObjectMarker : AllStatic {
 
   static inline void mark(oop o);           // mark an object
   static inline bool visited(oop o);        // check if object has been visited
+
+  static inline bool needs_reset()            { return _needs_reset; }
+  static inline void set_needs_reset(bool v)  { _needs_reset = v; }
 };
 
 GrowableArray<oop>* ObjectMarker::_saved_oop_stack = NULL;
 GrowableArray<markOop>* ObjectMarker::_saved_mark_stack = NULL;
+bool ObjectMarker::_needs_reset = true;  // need to reset mark bits by default
 
 // initialize ObjectMarker - prepares for object marking
 void ObjectMarker::init() {
@@ -1680,7 +1685,13 @@ void ObjectMarker::done() {
   // iterate over all objects and restore the mark bits to
   // their initial value
   RestoreMarksClosure blk;
-  Universe::heap()->object_iterate(&blk);
+  if (needs_reset()) {
+    Universe::heap()->object_iterate(&blk);
+  } else {
+    // We don't need to reset mark bits on this call, but reset the
+    // flag to the default for the next call.
+    set_needs_reset(true);
+  }
 
   // When sharing is enabled we need to restore the headers of the objects
   // in the readwrite space too.
@@ -3235,8 +3246,16 @@ void VM_HeapWalkOperation::doit() {
 
   // the heap walk starts with an initial object or the heap roots
   if (initial_object().is_null()) {
+    // If either collect_stack_roots() or collect_simple_roots()
+    // returns false at this point, then there are no mark bits
+    // to reset.
+    ObjectMarker::set_needs_reset(false);
+
     if (!collect_simple_roots()) return;
     if (!collect_stack_roots()) return;
+
+    // no early return so enable heap traversal to reset the mark bits
+    ObjectMarker::set_needs_reset(true);
   } else {
     visit_stack()->push(initial_object()());
   }
