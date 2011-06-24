@@ -425,6 +425,8 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arg = _outgoing.at(arg_slot);
         assert(dest == arg.basic_type(), "");
         arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
+        // replace the object by the result of the cast, to make the compiler happy:
+        change_argument(T_OBJECT, arg_slot, T_OBJECT, arg);
         debug_only(dest_klass = (klassOop)badOop);
         break;
       }
@@ -467,7 +469,7 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing 'this'
         arglist[1] = ArgToken();  // sentinel
-        arg = make_invoke(NULL, unboxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
+        arg = make_invoke(methodHandle(), unboxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
         change_argument(T_OBJECT, arg_slot, dest, arg);
         break;
       }
@@ -483,7 +485,7 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing value
         arglist[1] = ArgToken();  // sentinel
-        arg = make_invoke(NULL, boxer, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
+        arg = make_invoke(methodHandle(), boxer, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
         change_argument(src, arg_slot, T_OBJECT, arg);
         break;
       }
@@ -599,8 +601,9 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad vmlayout slot", CHECK_(empty));
         }
         // FIXME: consider inlining the invokee at the bytecode level
-        ArgToken ret = make_invoke(methodOop(invoker), vmIntrinsics::_none,
+        ArgToken ret = make_invoke(methodHandle(THREAD, methodOop(invoker)), vmIntrinsics::_invokeGeneric,
                                    Bytecodes::_invokevirtual, false, 1+argc, &arglist[0], CHECK_(empty));
+        // The iid = _invokeGeneric really means to adjust reference types as needed.
         DEBUG_ONLY(invoker = NULL);
         if (rtype == T_OBJECT) {
           klassOop rklass = java_lang_Class::as_klassOop( java_lang_invoke_MethodType::rtype(recursive_mtype()) );
@@ -657,7 +660,7 @@ MethodHandleWalker::walk(TRAPS) {
         arglist[0] = array_arg;   // value to check
         arglist[1] = length_arg;  // length to check
         arglist[2] = ArgToken();  // sentinel
-        make_invoke(NULL, vmIntrinsics::_checkSpreadArgument,
+        make_invoke(methodHandle(), vmIntrinsics::_checkSpreadArgument,
                     Bytecodes::_invokestatic, false, 2, &arglist[0], CHECK_(empty));
 
         // Spread out the array elements.
@@ -680,7 +683,7 @@ MethodHandleWalker::walk(TRAPS) {
           ArgToken offset_arg = make_prim_constant(T_INT, &offset_jvalue, CHECK_(empty));
           ArgToken element_arg = make_fetch(element_type, element_klass(), aload_op, array_arg, offset_arg, CHECK_(empty));
           change_argument(T_VOID, ap, element_type, element_arg);
-          ap += type2size[element_type];
+          //ap += type2size[element_type];  // don't do this; insert next arg to *right* of previous
         }
         break;
       }
@@ -731,7 +734,7 @@ MethodHandleWalker::walk(TRAPS) {
   }
   assert(ap == _outgoing_argc, "");
   arglist[ap] = ArgToken();  // add a sentinel, for the sake of asserts
-  return make_invoke(chain().last_method_oop(),
+  return make_invoke(chain().last_method(),
                      vmIntrinsics::_none,
                      chain().last_invoke_code(), true,
                      ap, arglist, THREAD);
@@ -853,7 +856,6 @@ void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, boo
   if (src != dst) {
     if (MethodHandles::same_basic_type_for_returns(src, dst, /*raw*/ true)) {
       if (MethodHandles::is_float_fixed_reinterpretation_cast(src, dst)) {
-        if (for_return)  Untested("MHW return raw conversion");  // still untested
         vmIntrinsics::ID iid = vmIntrinsics::for_raw_conversion(src, dst);
         if (iid == vmIntrinsics::_none) {
           lose("no raw conversion method", CHECK);
@@ -865,18 +867,24 @@ void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, boo
           assert(arg.token_type() >= tt_symbolic || src == arg.basic_type(), "sanity");
           arglist[0] = arg;         // outgoing 'this'
           arglist[1] = ArgToken();  // sentinel
-          arg = make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+          arg = make_invoke(methodHandle(), iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
           change_argument(src, slot, dst, arg);
         } else {
           // return type conversion
-          klassOop arg_klass = NULL;
-          arglist[0] = make_parameter(src, arg_klass, -1, CHECK);  // return value
-          arglist[1] = ArgToken();                                 // sentinel
-          (void) make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+          if (_return_conv == vmIntrinsics::_none) {
+            _return_conv = iid;
+          } else if (_return_conv == vmIntrinsics::for_raw_conversion(dst, src)) {
+            _return_conv = vmIntrinsics::_none;
+          } else if (_return_conv != zero_return_conv()) {
+            lose(err_msg("requested raw return conversion not allowed: %s -> %s (before %s)", type2name(src), type2name(dst), vmIntrinsics::name_at(_return_conv)), CHECK);
+          }
         }
       } else {
         // Nothing to do.
       }
+    } else if (for_return && (!is_subword_type(src) || !is_subword_type(dst))) {
+      // This can occur in exception-throwing MHs, which have a fictitious return value encoded as Void or Empty.
+      _return_conv = zero_return_conv();
     } else if (src == T_OBJECT && is_java_primitive(dst)) {
       // ref-to-prim: discard ref, push zero
       lose("requested ref-to-prim conversion not expected", CHECK);
@@ -896,6 +904,7 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* si
     _thread(THREAD),
     _bytecode(THREAD, 50),
     _constants(THREAD, 10),
+    _non_bcp_klasses(THREAD, 5),
     _cur_stack(0),
     _max_stack(0),
     _rtype(T_ILLEGAL)
@@ -907,6 +916,15 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* si
   // Set name and signature index.
   _name_index      = cpool_symbol_put(name);
   _signature_index = cpool_symbol_put(signature);
+
+  // To make the resulting methods more recognizable by
+  // stack walkers and compiler heuristics,
+  // we put them in holder class MethodHandle.
+  // See klass_is_method_handle_adapter_holder
+  // and methodOopDesc::is_method_handle_adapter.
+  _target_klass = SystemDictionaryHandles::MethodHandle_klass();
+
+  check_non_bcp_klasses(java_lang_invoke_MethodHandle::type(root()), CHECK);
 
   // Get return type klass.
   Handle first_mtype(THREAD, chain().method_type_oop());
@@ -929,6 +947,7 @@ methodHandle MethodHandleCompiler::compile(TRAPS) {
   assert(_thread == THREAD, "must be same thread");
   methodHandle nullHandle;
   (void) walk(CHECK_(nullHandle));
+  record_non_bcp_klasses();
   return get_method_oop(CHECK_(nullHandle));
 }
 
@@ -1197,10 +1216,18 @@ void MethodHandleCompiler::emit_load_constant(ArgToken arg) {
   }
   case T_OBJECT: {
     Handle value = arg.object();
-    if (value.is_null())
+    if (value.is_null()) {
       emit_bc(Bytecodes::_aconst_null);
-    else
-      emit_bc(Bytecodes::_ldc, cpool_object_put(value));
+      break;
+    }
+    if (java_lang_Class::is_instance(value())) {
+      klassOop k = java_lang_Class::as_klassOop(value());
+      if (k != NULL) {
+        emit_bc(Bytecodes::_ldc, cpool_klass_put(k));
+        break;
+      }
+    }
+    emit_bc(Bytecodes::_ldc, cpool_object_put(value));
     break;
   }
   default:
@@ -1260,6 +1287,7 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
       index = src.index();
     }
     emit_bc(op, cpool_klass_put(tk));
+    check_non_bcp_klass(tk, CHECK_(src));
     // Allocate a new local for the type so that we don't hide the
     // previous type from the verifier.
     index = new_local_index(type);
@@ -1292,15 +1320,15 @@ jvalue MethodHandleCompiler::one_jvalue  = { 1 };
 
 // Emit bytecodes for the given invoke instruction.
 MethodHandleWalker::ArgToken
-MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
+MethodHandleCompiler::make_invoke(methodHandle m, vmIntrinsics::ID iid,
                                   Bytecodes::Code op, bool tailcall,
                                   int argc, MethodHandleWalker::ArgToken* argv,
                                   TRAPS) {
   ArgToken zero;
-  if (m == NULL) {
+  if (m.is_null()) {
     // Get the intrinsic methodOop.
-    m = vmIntrinsics::method_for(iid);
-    if (m == NULL) {
+    m = methodHandle(THREAD, vmIntrinsics::method_for(iid));
+    if (m.is_null()) {
       lose(vmIntrinsics::name_at(iid), CHECK_(zero));
     }
   }
@@ -1309,17 +1337,45 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   Symbol*  name      = m->name();
   Symbol*  signature = m->signature();
 
+  if (iid == vmIntrinsics::_invokeGeneric &&
+      argc >= 1 && argv[0].token_type() == tt_constant) {
+    assert(m->intrinsic_id() == vmIntrinsics::_invokeExact, "");
+    Handle receiver = argv[0].object();
+    Handle rtype(THREAD, java_lang_invoke_MethodHandle::type(receiver()));
+    Handle mtype(THREAD, m->method_handle_type());
+    if (rtype() != mtype()) {
+      assert(java_lang_invoke_MethodType::form(rtype()) ==
+             java_lang_invoke_MethodType::form(mtype()),
+             "must be the same shape");
+      // customize m to the exact required rtype
+      bool has_non_bcp_klass = check_non_bcp_klasses(rtype(), CHECK_(zero));
+      TempNewSymbol sig2 = java_lang_invoke_MethodType::as_signature(rtype(), true, CHECK_(zero));
+      methodHandle m2;
+      if (!has_non_bcp_klass) {
+        methodOop m2_oop = SystemDictionary::find_method_handle_invoke(m->name(), sig2,
+                                                                       KlassHandle(), CHECK_(zero));
+        m2 = methodHandle(THREAD, m2_oop);
+      }
+      if (m2.is_null()) {
+        // just build it fresh
+        m2 = methodOopDesc::make_invoke_method(klass, m->name(), sig2, rtype, CHECK_(zero));
+        if (m2.is_null())
+          lose(err_msg("no customized invoker %s", sig2->as_utf8()), CHECK_(zero));
+      }
+      m = m2;
+      signature = m->signature();
+    }
+  }
+
+  check_non_bcp_klass(klass, CHECK_(zero));
+  if (m->is_method_handle_invoke()) {
+    check_non_bcp_klasses(m->method_handle_type(), CHECK_(zero));
+  }
+
   // Count the number of arguments, not the size
   ArgumentCount asc(signature);
   assert(argc == asc.size() + ((op == Bytecodes::_invokestatic || op == Bytecodes::_invokedynamic) ? 0 : 1),
          "argc mismatch");
-
-  if (tailcall) {
-    // Actually, in order to make these methods more recognizable,
-    // let's put them in holder class MethodHandle.  That way stack
-    // walkers and compiler heuristics can recognize them.
-    _target_klass = SystemDictionary::MethodHandle_klass();
-  }
 
   // Inline the method.
   InvocationCounter* ic = m->invocation_counter();
@@ -1353,7 +1409,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   int signature_index     = cpool_symbol_put(signature);
   int name_and_type_index = cpool_name_and_type_put(name_index, signature_index);
   int klass_index         = cpool_klass_put(klass);
-  int methodref_index     = cpool_methodref_put(klass_index, name_and_type_index);
+  int methodref_index     = cpool_methodref_put(op, klass_index, name_and_type_index, m);
 
   // Generate invoke.
   switch (op) {
@@ -1380,6 +1436,20 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   stack_push(rbt);  // The return value is already pushed onto the stack.
   ArgToken ret;
   if (tailcall) {
+    if (return_conv() == zero_return_conv()) {
+      rbt = T_VOID;  // discard value
+    } else if (return_conv() != vmIntrinsics::_none) {
+      // return value conversion
+      int index = new_local_index(rbt);
+      emit_store(rbt, index);
+      ArgToken arglist[2];
+      arglist[0] = ArgToken(tt_temporary, rbt, index);
+      arglist[1] = ArgToken();  // sentinel
+      ret = make_invoke(methodHandle(), return_conv(), Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(zero));
+      set_return_conv(vmIntrinsics::_none);
+      rbt = ret.basic_type();
+      emit_load(rbt, ret.index());
+    }
     if (rbt != _rtype) {
       if (rbt == T_VOID) {
         // push a zero of the right sort
@@ -1425,6 +1495,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     case T_OBJECT:
       if (_rklass.not_null() && _rklass() != SystemDictionary::Object_klass() && !Klass::cast(_rklass())->is_interface()) {
         emit_bc(Bytecodes::_checkcast, cpool_klass_put(_rklass()));
+        check_non_bcp_klass(_rklass(), CHECK_(zero));
       }
       emit_bc(Bytecodes::_areturn);
       break;
@@ -1525,6 +1596,52 @@ int MethodHandleCompiler::cpool_primitive_put(BasicType bt, jvalue* con) {
   return index;
 }
 
+bool MethodHandleCompiler::check_non_bcp_klasses(Handle method_type, TRAPS) {
+  bool res = false;
+  for (int i = -1, len = java_lang_invoke_MethodType::ptype_count(method_type()); i < len; i++) {
+    oop ptype = (i == -1
+                 ? java_lang_invoke_MethodType::rtype(method_type())
+                 : java_lang_invoke_MethodType::ptype(method_type(), i));
+    res |= check_non_bcp_klass(java_lang_Class::as_klassOop(ptype), CHECK_(false));
+  }
+  return res;
+}
+
+bool MethodHandleCompiler::check_non_bcp_klass(klassOop klass, TRAPS) {
+  klass = methodOopDesc::check_non_bcp_klass(klass);
+  if (klass != NULL) {
+    Symbol* name = Klass::cast(klass)->name();
+    for (int i = _non_bcp_klasses.length() - 1; i >= 0; i--) {
+      klassOop k2 = _non_bcp_klasses.at(i)();
+      if (Klass::cast(k2)->name() == name) {
+        if (k2 != klass) {
+          lose(err_msg("unsupported klass name alias %s", name->as_utf8()), THREAD);
+        }
+        return true;
+      }
+    }
+    _non_bcp_klasses.append(KlassHandle(THREAD, klass));
+    return true;
+  }
+  return false;
+}
+
+void MethodHandleCompiler::record_non_bcp_klasses() {
+  // Append extra klasses to constant pool, to guide klass lookup.
+  for (int k = 0; k < _non_bcp_klasses.length(); k++) {
+    klassOop non_bcp_klass = _non_bcp_klasses.at(k)();
+    bool add_to_cp = true;
+    for (int j = 1; j < _constants.length(); j++) {
+      ConstantValue* cv = _constants.at(j);
+      if (cv != NULL && cv->tag() == JVM_CONSTANT_Class
+          && cv->klass_oop() == non_bcp_klass) {
+        add_to_cp = false;
+        break;
+      }
+    }
+    if (add_to_cp)  cpool_klass_put(non_bcp_klass);
+  }
+}
 
 constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
   constantPoolHandle nullHandle;
@@ -1544,6 +1661,8 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
     case JVM_CONSTANT_Double:      cpool->double_at_put(       i, cv->get_jdouble()                    ); break;
     case JVM_CONSTANT_Class:       cpool->klass_at_put(        i, cv->klass_oop()                      ); break;
     case JVM_CONSTANT_Methodref:   cpool->method_at_put(       i, cv->first_index(), cv->second_index()); break;
+    case JVM_CONSTANT_InterfaceMethodref:
+                                cpool->interface_method_at_put(i, cv->first_index(), cv->second_index()); break;
     case JVM_CONSTANT_NameAndType: cpool->name_and_type_at_put(i, cv->first_index(), cv->second_index()); break;
     case JVM_CONSTANT_Object:      cpool->object_at_put(       i, cv->object_oop()                     ); break;
     default: ShouldNotReachHere();
@@ -1557,6 +1676,8 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
       break;
     }
   }
+
+  cpool->set_preresolution();
 
   // Set the constant pool holder to the target method's class.
   cpool->set_pool_holder(_target_klass());
@@ -1605,6 +1726,33 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   methods->obj_at_put(0, m());
   Rewriter::rewrite(_target_klass(), cpool, methods, CHECK_(empty));  // Use fake class.
   Rewriter::relocate_and_link(_target_klass(), methods, CHECK_(empty));  // Use fake class.
+
+  // Pre-resolve selected CP cache entries, to avoid problems with class loader scoping.
+  constantPoolCacheHandle cpc(THREAD, cpool->cache());
+  for (int i = 0; i < cpc->length(); i++) {
+    ConstantPoolCacheEntry* e = cpc->entry_at(i);
+    assert(!e->is_secondary_entry(), "no indy instructions in here, yet");
+    int constant_pool_index = e->constant_pool_index();
+    ConstantValue* cv = _constants.at(constant_pool_index);
+    if (!cv->has_linkage())  continue;
+    methodHandle m = cv->linkage();
+    int index;
+    switch (cv->tag()) {
+    case JVM_CONSTANT_Methodref:
+      index = m->vtable_index();
+      if (m->is_static()) {
+        e->set_method(Bytecodes::_invokestatic, m, index);
+      } else {
+        e->set_method(Bytecodes::_invokespecial, m, index);
+        e->set_method(Bytecodes::_invokevirtual, m, index);
+      }
+      break;
+    case JVM_CONSTANT_InterfaceMethodref:
+      index = klassItable::compute_itable_index(m());
+      e->set_interface_call(m, index);
+      break;
+    }
+  }
 
   // Set the invocation counter's count to the invoke count of the
   // original call site.
@@ -1696,6 +1844,9 @@ public:
       _param_state(0),
       _temp_num(0)
   {
+    out->print("MethodHandle:");
+    java_lang_invoke_MethodType::print_signature(java_lang_invoke_MethodHandle::type(root()), out);
+    out->print(" : #");
     start_params();
   }
   virtual ArgToken make_parameter(BasicType type, klassOop tk, int argnum, TRAPS) {
@@ -1759,12 +1910,12 @@ public:
     _strbuf.print(")");
     return maybe_make_temp("fetch", type, "x");
   }
-  virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid,
+  virtual ArgToken make_invoke(methodHandle m, vmIntrinsics::ID iid,
                                Bytecodes::Code op, bool tailcall,
                                int argc, ArgToken* argv, TRAPS) {
     Symbol* name;
     Symbol* sig;
-    if (m != NULL) {
+    if (m.not_null()) {
       name = m->name();
       sig  = m->signature();
     } else {

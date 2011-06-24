@@ -928,14 +928,40 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   name->increment_refcount();
   signature->increment_refcount();
 
+  // record non-BCP method types in the constant pool
+  GrowableArray<KlassHandle>* extra_klasses = NULL;
+  for (int i = -1, len = java_lang_invoke_MethodType::ptype_count(method_type()); i < len; i++) {
+    oop ptype = (i == -1
+                 ? java_lang_invoke_MethodType::rtype(method_type())
+                 : java_lang_invoke_MethodType::ptype(method_type(), i));
+    klassOop klass = check_non_bcp_klass(java_lang_Class::as_klassOop(ptype));
+    if (klass != NULL) {
+      if (extra_klasses == NULL)
+        extra_klasses = new GrowableArray<KlassHandle>(len+1);
+      bool dup = false;
+      for (int j = 0; j < extra_klasses->length(); j++) {
+        if (extra_klasses->at(j) == klass) { dup = true; break; }
+      }
+      if (!dup)
+        extra_klasses->append(KlassHandle(THREAD, klass));
+    }
+  }
+
+  int extra_klass_count = (extra_klasses == NULL ? 0 : extra_klasses->length());
+  int cp_length = _imcp_limit + extra_klass_count;
   constantPoolHandle cp;
   {
-    constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
+    constantPoolOop cp_oop = oopFactory::new_constantPool(cp_length, IsSafeConc, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->string_at_put(_imcp_method_type_value, Universe::the_null_string());
+  for (int j = 0; j < extra_klass_count; j++) {
+    KlassHandle klass = extra_klasses->at(j);
+    cp->klass_at_put(_imcp_limit + j, klass());
+  }
+  cp->set_preresolution();
   cp->set_pool_holder(holder());
 
   // set up the fancy stuff:
@@ -984,6 +1010,14 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   return m;
 }
 
+klassOop methodOopDesc::check_non_bcp_klass(klassOop klass) {
+  if (klass != NULL && Klass::cast(klass)->class_loader() != NULL) {
+    if (Klass::cast(klass)->oop_is_objArray())
+      klass = objArrayKlass::cast(klass)->bottom_klass();
+    return klass;
+  }
+  return NULL;
+}
 
 
 methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,

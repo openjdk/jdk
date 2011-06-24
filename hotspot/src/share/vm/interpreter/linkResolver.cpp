@@ -294,6 +294,16 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle& re
   Symbol*  method_signature  = pool->signature_ref_at(index);
   KlassHandle  current_klass(THREAD, pool->pool_holder());
 
+  if (pool->has_preresolution()
+      || (resolved_klass() == SystemDictionary::MethodHandle_klass() &&
+          methodOopDesc::is_method_handle_invoke_name(method_name))) {
+    methodOop result_oop = constantPoolOopDesc::method_at_if_loaded(pool, index);
+    if (result_oop != NULL) {
+      resolved_method = methodHandle(THREAD, result_oop);
+      return;
+    }
+  }
+
   resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, CHECK);
 }
 
