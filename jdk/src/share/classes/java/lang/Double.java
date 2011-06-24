@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,11 +634,12 @@ public final class Double extends Number implements Comparable<Double> {
     }
 
     /**
-     * Returns the value of this {@code Double} as a {@code byte} (by
-     * casting to a {@code byte}).
+     * Returns the value of this {@code Double} as a {@code byte}
+     * after a narrowing primitive conversion.
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code byte}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      * @since JDK1.1
      */
     public byte byteValue() {
@@ -646,11 +647,12 @@ public final class Double extends Number implements Comparable<Double> {
     }
 
     /**
-     * Returns the value of this {@code Double} as a
-     * {@code short} (by casting to a {@code short}).
+     * Returns the value of this {@code Double} as a {@code short}
+     * after a narrowing primitive conversion.
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code short}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      * @since JDK1.1
      */
     public short shortValue() {
@@ -658,8 +660,9 @@ public final class Double extends Number implements Comparable<Double> {
     }
 
     /**
-     * Returns the value of this {@code Double} as an
-     * {@code int} (by casting to type {@code int}).
+     * Returns the value of this {@code Double} as an {@code int}
+     * after a narrowing primitive conversion.
+     * @jls 5.1.3 Narrowing Primitive Conversions
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code int}
@@ -669,22 +672,24 @@ public final class Double extends Number implements Comparable<Double> {
     }
 
     /**
-     * Returns the value of this {@code Double} as a
-     * {@code long} (by casting to type {@code long}).
+     * Returns the value of this {@code Double} as a {@code long}
+     * after a narrowing primitive conversion.
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code long}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public long longValue() {
         return (long)value;
     }
 
     /**
-     * Returns the {@code float} value of this
-     * {@code Double} object.
+     * Returns the value of this {@code Double} as a {@code float}
+     * after a narrowing primitive conversion.
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      * @since JDK1.0
      */
     public float floatValue() {
@@ -692,8 +697,7 @@ public final class Double extends Number implements Comparable<Double> {
     }
 
     /**
-     * Returns the {@code double} value of this
-     * {@code Double} object.
+     * Returns the {@code double} value of this {@code Double} object.
      *
      * @return the {@code double} value represented by this object
      */
