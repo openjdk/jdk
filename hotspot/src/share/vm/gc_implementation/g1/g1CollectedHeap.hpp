@@ -27,6 +27,7 @@
 
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
+#include "gc_implementation/g1/g1HRPrinter.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
@@ -297,6 +298,8 @@ private:
   volatile unsigned _gc_time_stamp;
 
   size_t* _surviving_young_words;
+
+  G1HRPrinter _hr_printer;
 
   void setup_surviving_young_words();
   void update_surviving_young_words(size_t* surv_young_words);
@@ -634,6 +637,8 @@ public:
   unsigned int full_collections_completed() {
     return _full_collections_completed;
   }
+
+  G1HRPrinter* hr_printer() { return &_hr_printer; }
 
 protected:
 
