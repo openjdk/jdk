@@ -24,12 +24,14 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/methodHandleWalk.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
@@ -767,7 +769,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         m = NULL;
         // try again with a different class loader...
       }
-      if (m != NULL) {
+      if (m != NULL &&
+          m->is_method_handle_invoke() &&
+          java_lang_invoke_MethodType::equals(polymorphic_method_type(), m->method_handle_type())) {
         int mods = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
         java_lang_invoke_MemberName::set_vmtarget(mname(),  m);
         java_lang_invoke_MemberName::set_vmindex(mname(),   m->vtable_index());
@@ -986,6 +990,48 @@ instanceKlassHandle MethodHandles::resolve_instance_klass(oop java_mirror_oop, T
 // This is for debugging and reflection.
 oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
   assert(java_lang_invoke_MethodHandle::is_instance(mh()), "must be a MH");
+  if (format == ETF_FORCE_DIRECT_HANDLE ||
+      format == ETF_COMPILE_DIRECT_HANDLE) {
+    // Internal function for stress testing.
+    Handle mt = java_lang_invoke_MethodHandle::type(mh());
+    int invocation_count = 10000;
+    TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(mt(), true, CHECK_NULL);
+    bool omit_receiver_argument = true;
+    MethodHandleCompiler mhc(mh, vmSymbols::invoke_name(), signature, invocation_count, omit_receiver_argument, CHECK_NULL);
+    methodHandle m = mhc.compile(CHECK_NULL);
+    if (StressMethodHandleWalk && Verbose || PrintMiscellaneous) {
+      tty->print_cr("MethodHandleNatives.getTarget(%s)",
+                    format == ETF_FORCE_DIRECT_HANDLE ? "FORCE_DIRECT" : "COMPILE_DIRECT");
+      if (Verbose) {
+        m->print_codes();
+      }
+    }
+    if (StressMethodHandleWalk) {
+      InterpreterOopMap mask;
+      OopMapCache::compute_one_oop_map(m, m->code_size() - 1, &mask);
+    }
+    if ((format == ETF_COMPILE_DIRECT_HANDLE ||
+         CompilationPolicy::must_be_compiled(m))
+        && !instanceKlass::cast(m->method_holder())->is_not_initialized()
+        && CompilationPolicy::can_be_compiled(m)) {
+      // Force compilation
+      CompileBroker::compile_method(m, InvocationEntryBci,
+                                    CompLevel_initial_compile,
+                                    methodHandle(), 0, "MethodHandleNatives.getTarget",
+                                    CHECK_NULL);
+    }
+    // Now wrap m in a DirectMethodHandle.
+    instanceKlassHandle dmh_klass(THREAD, SystemDictionary::DirectMethodHandle_klass());
+    Handle dmh = dmh_klass->allocate_instance_handle(CHECK_NULL);
+    JavaValue ignore_result(T_VOID);
+    Symbol* init_name = vmSymbols::object_initializer_name();
+    Symbol* init_sig  = vmSymbols::notifyGenericMethodType_signature();
+    JavaCalls::call_special(&ignore_result, dmh,
+                            SystemDictionaryHandles::MethodHandle_klass(), init_name, init_sig,
+                            java_lang_invoke_MethodHandle::type(mh()), CHECK_NULL);
+    MethodHandles::init_DirectMethodHandle(dmh, m, false, CHECK_NULL);
+    return dmh();
+  }
   if (format == ETF_HANDLE_OR_METHOD_NAME) {
     oop target = java_lang_invoke_MethodHandle::vmtarget(mh());
     if (target == NULL) {
@@ -1221,6 +1267,12 @@ void MethodHandles::verify_method_signature(methodHandle m,
           klassOop aklass_oop = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
           if (aklass_oop != NULL)
             aklass = KlassHandle(THREAD, aklass_oop);
+          if (aklass.is_null() &&
+              pklass.not_null() &&
+              loader.is_null() &&
+              pklass->name() == name)
+            // accept name equivalence here, since that's the best we can do
+            aklass = pklass;
         }
       } else {
         // for method handle invokers we don't look at the name in the signature
@@ -2654,6 +2706,17 @@ static void stress_method_handle_walk_impl(Handle mh, TRAPS) {
     }
     InterpreterOopMap mask;
     OopMapCache::compute_one_oop_map(m, m->code_size() - 1, &mask);
+    // compile to object code if -Xcomp or WizardMode
+    if ((WizardMode ||
+         CompilationPolicy::must_be_compiled(m))
+        && !instanceKlass::cast(m->method_holder())->is_not_initialized()
+        && CompilationPolicy::can_be_compiled(m)) {
+      // Force compilation
+      CompileBroker::compile_method(m, InvocationEntryBci,
+                                    CompLevel_initial_compile,
+                                    methodHandle(), 0, "StressMethodHandleWalk",
+                                    CHECK);
+    }
   }
 }
 
@@ -2773,7 +2836,12 @@ JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
     // Build a BMH on top of a DMH or another BMH:
     MethodHandles::init_BoundMethodHandle(mh, target, argnum, CHECK);
   }
-  stress_method_handle_walk(mh, CHECK);
+
+  if (StressMethodHandleWalk) {
+    if (mh->klass() == SystemDictionary::BoundMethodHandle_klass())
+      stress_method_handle_walk(mh, CHECK);
+    // else don't, since the subclass has not yet initialized its own fields
+  }
 }
 JVM_END
 
