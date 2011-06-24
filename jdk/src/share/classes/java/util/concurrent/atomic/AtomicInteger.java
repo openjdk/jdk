@@ -246,18 +246,37 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
 
+    /**
+     * Returns the value of this {@code AtomicInteger} as an
+     * {@code int}.
+     */
     public int intValue() {
         return get();
     }
 
+    /**
+     * Returns the value of this {@code AtomicInteger} as a {@code long}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
+     */
     public long longValue() {
         return (long)get();
     }
 
+    /**
+     * Returns the value of this {@code AtomicInteger} as a {@code float}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
+     */
     public float floatValue() {
         return (float)get();
     }
 
+    /**
+     * Returns the value of this {@code AtomicInteger} as a {@code double}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
+     */
     public double doubleValue() {
         return (double)get();
     }
