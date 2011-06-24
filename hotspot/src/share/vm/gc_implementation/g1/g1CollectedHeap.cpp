@@ -584,12 +584,6 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
       res = _free_list.remove_head_or_null();
     }
   }
-  if (res != NULL) {
-    if (G1PrintHeapRegions) {
-      gclog_or_tty->print_cr("new alloc region "HR_FORMAT,
-                             HR_FORMAT_PARAMS(res));
-    }
-  }
   return res;
 }
 
@@ -598,10 +592,15 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(int purpose,
   HeapRegion* alloc_region = NULL;
   if (_gc_alloc_region_counts[purpose] < g1_policy()->max_regions(purpose)) {
     alloc_region = new_region(word_size, true /* do_expand */);
-    if (purpose == GCAllocForSurvived && alloc_region != NULL) {
-      alloc_region->set_survivor();
+    if (alloc_region != NULL) {
+      if (purpose == GCAllocForSurvived) {
+        _hr_printer.alloc(alloc_region, G1HRPrinter::Survivor);
+        alloc_region->set_survivor();
+      } else {
+        _hr_printer.alloc(alloc_region, G1HRPrinter::Old);
+      }
+      ++_gc_alloc_region_counts[purpose];
     }
-    ++_gc_alloc_region_counts[purpose];
   } else {
     g1_policy()->note_alloc_region_limit_reached(purpose);
   }
@@ -733,6 +732,17 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   assert(first_hr->bottom() < new_top && new_top <= first_hr->end(),
          "new_top should be in this region");
   first_hr->set_top(new_top);
+  if (_hr_printer.is_active()) {
+    HeapWord* bottom = first_hr->bottom();
+    HeapWord* end = first_hr->orig_end();
+    if ((first + 1) == last) {
+      // the series has a single humongous region
+      _hr_printer.alloc(G1HRPrinter::SingleHumongous, first_hr, new_top);
+    } else {
+      // the series has more than one humongous regions
+      _hr_printer.alloc(G1HRPrinter::StartsHumongous, first_hr, end);
+    }
+  }
 
   // Now, we will update the top fields of the "continues humongous"
   // regions. The reason we need to do this is that, otherwise,
@@ -753,10 +763,12 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
       assert(hr->bottom() < new_top && new_top <= hr->end(),
              "new_top should fall on this region");
       hr->set_top(new_top);
+      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, new_top);
     } else {
       // not last one
       assert(new_top > hr->end(), "new_top should be above this region");
       hr->set_top(hr->end());
+      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, hr->end());
     }
   }
   // If we have continues humongous regions (hr != NULL), then the
@@ -1154,6 +1166,35 @@ public:
   }
 };
 
+class PostCompactionPrinterClosure: public HeapRegionClosure {
+private:
+  G1HRPrinter* _hr_printer;
+public:
+  bool doHeapRegion(HeapRegion* hr) {
+    assert(!hr->is_young(), "not expecting to find young regions");
+    // We only generate output for non-empty regions.
+    if (!hr->is_empty()) {
+      if (!hr->isHumongous()) {
+        _hr_printer->post_compaction(hr, G1HRPrinter::Old);
+      } else if (hr->startsHumongous()) {
+        if (hr->capacity() == (size_t) HeapRegion::GrainBytes) {
+          // single humongous region
+          _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
+        } else {
+          _hr_printer->post_compaction(hr, G1HRPrinter::StartsHumongous);
+        }
+      } else {
+        assert(hr->continuesHumongous(), "only way to get here");
+        _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
+      }
+    }
+    return false;
+  }
+
+  PostCompactionPrinterClosure(G1HRPrinter* hr_printer)
+    : _hr_printer(hr_printer) { }
+};
+
 bool G1CollectedHeap::do_collection(bool explicit_gc,
                                     bool clear_all_soft_refs,
                                     size_t word_size) {
@@ -1235,6 +1276,11 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     g1_rem_set()->cleanupHRRS();
     tear_down_region_lists();
 
+    // We should call this after we retire any currently active alloc
+    // regions so that all the ALLOC / RETIRE events are generated
+    // before the start GC event.
+    _hr_printer.start_gc(true /* full */, (size_t) total_collections());
+
     // We may have added regions to the current incremental collection
     // set between the last GC or pause and now. We need to clear the
     // incremental collection set and then start rebuilding it afresh
@@ -1298,6 +1344,17 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     // Resize the heap if necessary.
     resize_if_necessary_after_full_collection(explicit_gc ? 0 : word_size);
+
+    if (_hr_printer.is_active()) {
+      // We should do this after we potentially resize the heap so
+      // that all the COMMIT / UNCOMMIT events are generated before
+      // the end GC event.
+
+      PostCompactionPrinterClosure cl(hr_printer());
+      heap_region_iterate(&cl);
+
+      _hr_printer.end_gc(true /* full */, (size_t) total_collections());
+    }
 
     if (_cg1r->use_cache()) {
       _cg1r->clear_and_record_card_counts();
@@ -1654,6 +1711,16 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
       update_committed_space(new_end, mr.end());
     }
     _free_list.add_as_tail(&expansion_list);
+
+    if (_hr_printer.is_active()) {
+      HeapWord* curr = mr.start();
+      while (curr < mr.end()) {
+        HeapWord* curr_end = curr + HeapRegion::GrainWords;
+        _hr_printer.commit(curr, curr_end);
+        curr = curr_end;
+      }
+      assert(curr == mr.end(), "post-condition");
+    }
   } else {
     // The expansion of the virtual storage space was unsuccessful.
     // Let's see if it was because we ran out of swap.
@@ -1684,6 +1751,16 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
   assert(mr.end() == old_end, "post-condition");
   if (mr.byte_size() > 0) {
+    if (_hr_printer.is_active()) {
+      HeapWord* curr = mr.end();
+      while (curr > mr.start()) {
+        HeapWord* curr_end = curr;
+        curr -= HeapRegion::GrainWords;
+        _hr_printer.uncommit(curr, curr_end);
+      }
+      assert(curr == mr.start(), "post-condition");
+    }
+
     _g1_storage.shrink_by(mr.byte_size());
     HeapWord* new_end = (HeapWord*) _g1_storage.high();
     assert(mr.start() == new_end, "post-condition");
@@ -1799,6 +1876,10 @@ jint G1CollectedHeap::initialize() {
   // Necessary to satisfy locking discipline assertions.
 
   MutexLocker x(Heap_lock);
+
+  // We have to initialize the printer before committing the heap, as
+  // it will be used then.
+  _hr_printer.set_active(G1PrintHeapRegions);
 
   // While there are no constraints in the GC code that HeapWordSize
   // be any particular value, there are multiple other areas in the
@@ -3346,6 +3427,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // of the collection set!).
       release_mutator_alloc_region();
 
+      // We should call this after we retire the mutator alloc
+      // region(s) so that all the ALLOC / RETIRE events are generated
+      // before the start GC event.
+      _hr_printer.start_gc(false /* full */, (size_t) total_collections());
+
       // The elapsed time induced by the start time below deliberately elides
       // the possible verification above.
       double start_time_sec = os::elapsedTime();
@@ -3396,6 +3482,22 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
       g1_policy()->choose_collection_set(target_pause_time_ms);
+
+      if (_hr_printer.is_active()) {
+        HeapRegion* hr = g1_policy()->collection_set();
+        while (hr != NULL) {
+          G1HRPrinter::RegionType type;
+          if (!hr->is_young()) {
+            type = G1HRPrinter::Old;
+          } else if (hr->is_survivor()) {
+            type = G1HRPrinter::Survivor;
+          } else {
+            type = G1HRPrinter::Eden;
+          }
+          _hr_printer.cset(hr);
+          hr = hr->next_in_collection_set();
+        }
+      }
 
       // We have chosen the complete collection set. If marking is
       // active then, we clear the region fields of any of the
@@ -3517,6 +3619,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           }
         }
       }
+
+      // We should do this after we potentially expand the heap so
+      // that all the COMMIT events are generated before the end GC
+      // event, and after we retire the GC alloc regions so that all
+      // RETIRE events are generated before the end GC event.
+      _hr_printer.end_gc(false /* full */, (size_t) total_collections());
+
       // We have to do this after we decide whether to expand the heap or not.
       g1_policy()->print_heap_transition();
 
@@ -3756,10 +3865,8 @@ void G1CollectedHeap::get_gc_alloc_regions() {
     } else {
       // the region was retained from the last collection
       ++_gc_alloc_region_counts[ap];
-      if (G1PrintHeapRegions) {
-        gclog_or_tty->print_cr("new alloc region "HR_FORMAT,
-                               HR_FORMAT_PARAMS(alloc_region));
-      }
+
+      _hr_printer.reuse(alloc_region);
     }
 
     if (alloc_region != NULL) {
@@ -4132,11 +4239,7 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
   HeapRegion* r = heap_region_containing(old);
   if (!r->evacuation_failed()) {
     r->set_evacuation_failed(true);
-    if (G1PrintHeapRegions) {
-      gclog_or_tty->print("overflow in heap region "PTR_FORMAT" "
-                          "["PTR_FORMAT","PTR_FORMAT")\n",
-                          r, r->bottom(), r->end());
-    }
+    _hr_printer.evac_failure(r);
   }
 
   push_on_evac_failure_scan_stack(old);
@@ -4197,6 +4300,7 @@ void G1CollectedHeap::retire_alloc_region(HeapRegion* alloc_region,
   // Now we can do the post-GC stuff on the region.
   alloc_region->note_end_of_copying();
   g1_policy()->record_after_bytes(alloc_region->used());
+  _hr_printer.retire(alloc_region);
 }
 
 HeapWord*
@@ -5466,12 +5570,14 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(!force || g1_policy()->can_expand_young_list(),
          "if force is true we should be able to expand the young list");
-  if (force || !g1_policy()->is_young_list_full()) {
+  bool young_list_full = g1_policy()->is_young_list_full();
+  if (force || !young_list_full) {
     HeapRegion* new_alloc_region = new_region(word_size,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
+      _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
       g1mm()->update_eden_counters();
       return new_alloc_region;
     }
@@ -5486,6 +5592,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
 
   g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
   _summary_bytes_used += allocated_bytes;
+  _hr_printer.retire(alloc_region);
 }
 
 HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,

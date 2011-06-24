@@ -1655,6 +1655,23 @@ public:
       _max_live_bytes += g1_note_end.max_live_bytes();
       _freed_bytes += g1_note_end.freed_bytes();
 
+      // If we iterate over the global cleanup list at the end of
+      // cleanup to do this printing we will not guarantee to only
+      // generate output for the newly-reclaimed regions (the list
+      // might not be empty at the beginning of cleanup; we might
+      // still be working on its previous contents). So we do the
+      // printing here, before we append the new regions to the global
+      // cleanup list.
+
+      G1HRPrinter* hr_printer = _g1h->hr_printer();
+      if (hr_printer->is_active()) {
+        HeapRegionLinkedListIterator iter(&local_cleanup_list);
+        while (iter.more_available()) {
+          HeapRegion* hr = iter.get_next();
+          hr_printer->cleanup(hr);
+        }
+      }
+
       _cleanup_list->add_as_tail(&local_cleanup_list);
       assert(local_cleanup_list.is_empty(), "post-condition");
 
