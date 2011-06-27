@@ -210,12 +210,12 @@ class FreetypeFontScaler extends FontScaler {
         return getUnitsPerEMNative(nativeScaler);
     }
 
-    long createScalerContext(double[] matrix, boolean fontType,
+    long createScalerContext(double[] matrix,
             int aa, int fm, float boldness, float italic,
             boolean disableHinting) {
         if (nativeScaler != 0L) {
             return createScalerContextNative(nativeScaler, matrix,
-                      fontType, aa, fm, boldness, italic);
+                                             aa, fm, boldness, italic);
         }
         return NullFontScaler.getNullScalerContext();
     }
@@ -254,7 +254,7 @@ class FreetypeFontScaler extends FontScaler {
     private native long getUnitsPerEMNative(long pScaler);
 
     native long createScalerContextNative(long pScaler, double[] matrix,
-            boolean fontType, int aa, int fm, float boldness, float italic);
+            int aa, int fm, float boldness, float italic);
 
     /* Freetype scaler context does not contain any pointers that
        has to be invalidated if native scaler is bad */

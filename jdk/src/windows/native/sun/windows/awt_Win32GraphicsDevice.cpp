@@ -673,6 +673,12 @@ LPMONITORINFO AwtWin32GraphicsDevice::GetMonitorInfo(int deviceIndex)
  */
 void AwtWin32GraphicsDevice::ResetAllMonitorInfo()
 {
+    //IE in some circumstances generates WM_SETTINGCHANGE message on appearance
+    //and thus triggers this method
+    //but we may not have the devices list initialized yet.
+    if (!Devices::GetInstance()){
+        return;
+    }
     Devices::InstanceAccess devices;
     int devicesNum = devices->GetNumDevices();
     for (int deviceIndex = 0; deviceIndex < devicesNum; deviceIndex++) {
