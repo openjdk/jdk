@@ -198,15 +198,6 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 # requires junit
 java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
 
-# Times out on solaris 10 sparc
-java/lang/ClassLoader/Assert.java				generic-all
-
-# Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
-java/lang/Runtime/exec/SleepyCat.java				generic-all
-
-# Times out on solaris sparc -server
-java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
-
 ############################################################################
 
 # jdk_management
