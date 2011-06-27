@@ -47,6 +47,7 @@ extern "C" {
 // standard Java headers
 #include <jni.h>
 #include <jni_util.h>
+#include <jdk_util.h>
 
 } // extern "C"
 

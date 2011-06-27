@@ -1636,6 +1636,11 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
     TagDescriptor = _cmsGetTagDescriptor(sig);
 
     // Serialize
+    if (!_cmsWriteTypeBase(MemIO, TypeHandler ->Signature)) {
+        cmsCloseIOhandler(MemIO);
+        return 0;
+    }
+
     if (!TypeHandler ->WritePtr(TypeHandler, MemIO, Object, TagDescriptor ->ElemCount)) return 0;
 
     // Get Size and close

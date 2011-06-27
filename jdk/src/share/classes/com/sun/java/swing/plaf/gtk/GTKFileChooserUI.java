@@ -174,8 +174,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         // construct the resulting string
         for (int i=0; i<len; i++) {
+            if (i > 0) {
+                buf.append(" ");
+            }
             if (len > 1) {
-                buf.append(" \"");
+                buf.append("\"");
             }
             buf.append(result.get(i));
             if (len > 1) {
