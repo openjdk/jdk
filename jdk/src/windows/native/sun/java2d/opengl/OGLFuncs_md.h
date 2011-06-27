@@ -29,6 +29,7 @@
 #include <windows.h>
 #include "J2D_GL/wglext.h"
 #include "OGLFuncMacros.h"
+#include <jdk_util.h>
 
 /**
  * Core WGL functions
@@ -60,7 +61,7 @@ typedef const char *(GLAPIENTRY *wglGetExtensionsStringARBType)(HDC hdc);
 #define OGL_LIB_IS_UNINITIALIZED() \
     (OGL_LIB_HANDLE == 0)
 #define OGL_OPEN_LIB() \
-    OGL_LIB_HANDLE = LoadLibrary(L"opengl32.dll")
+    OGL_LIB_HANDLE = JDK_LoadSystemLibrary("opengl32.dll")
 #define OGL_CLOSE_LIB() \
     FreeLibrary(OGL_LIB_HANDLE)
 #define OGL_GET_PROC_ADDRESS(f) \
