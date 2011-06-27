@@ -741,7 +741,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           }
           if (canDispose) {
               if(wParam != NULL) {
-                  AwtObject *o = (AwtObject *) JNI_GET_PDATA((jobject)wParam);
+                  jobject self = (jobject)wParam;
+                  AwtObject *o = (AwtObject *) JNI_GET_PDATA(self);
+                  env->DeleteGlobalRef(self);
                   if(o != NULL && theAwtObjectList.Remove(o)) {
                       o->Dispose();
                   }
