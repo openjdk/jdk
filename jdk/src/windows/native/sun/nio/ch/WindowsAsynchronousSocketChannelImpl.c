@@ -44,7 +44,7 @@
 #define SO_UPDATE_CONNECT_CONTEXT 0x7010
 #endif
 
-typedef BOOL (*ConnectEx_t)
+typedef BOOL (PASCAL *ConnectEx_t)
 (
     SOCKET s,
     const struct sockaddr* name,

@@ -163,7 +163,13 @@ class MethodType implements java.io.Serializable {
     public static
     MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
-        return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
+        return makeImpl(rtype, listToArray(ptypes), notrust);
+    }
+
+    private static Class<?>[] listToArray(List<Class<?>> ptypes) {
+        // sanity check the size before the toArray call, since size might be huge
+        checkSlotCount(ptypes.size());
+        return ptypes.toArray(NO_PTYPES);
     }
 
     /**
@@ -228,7 +234,7 @@ class MethodType implements java.io.Serializable {
      */
     /*trusted*/ static
     MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
-        if (ptypes == null || ptypes.length == 0) {
+        if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
         MethodType mt1 = new MethodType(rtype, ptypes);
@@ -267,7 +273,7 @@ class MethodType implements java.io.Serializable {
      * @param objectArgCount number of parameters (excluding the final array parameter if any)
      * @param finalArray whether there will be a trailing array parameter, of type {@code Object[]}
      * @return a generally applicable method type, for all calls of the given fixed argument count and a collected array of further arguments
-     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255 (or 254, if {@code finalArray})
+     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255 (or 254, if {@code finalArray} is true)
      * @see #genericMethodType(int)
      */
     public static
@@ -372,7 +378,7 @@ class MethodType implements java.io.Serializable {
      * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
     public MethodType insertParameterTypes(int num, List<Class<?>> ptypesToInsert) {
-        return insertParameterTypes(num, ptypesToInsert.toArray(NO_PTYPES));
+        return insertParameterTypes(num, listToArray(ptypesToInsert));
     }
 
     /**
@@ -449,7 +455,8 @@ class MethodType implements java.io.Serializable {
     /**
      * Reports if this type contains a wrapper argument or return value.
      * Wrappers are types which box primitive values, such as {@link Integer}.
-     * The reference type {@code java.lang.Void} counts as a wrapper.
+     * The reference type {@code java.lang.Void} counts as a wrapper,
+     * if it occurs as a return type.
      * @return true if any of the types are wrappers
      */
     public boolean hasWrappers() {
@@ -641,14 +648,57 @@ class MethodType implements java.io.Serializable {
         }
         return true;
     }
-    private static boolean canConvert(Class<?> src, Class<?> dst) {
-        if (src == dst || dst == void.class)  return true;
-        if (src.isPrimitive() && dst.isPrimitive()) {
-        if (!Wrapper.forPrimitiveType(dst)
-                .isConvertibleFrom(Wrapper.forPrimitiveType(src)))
+    /*non-public*/
+    static boolean canConvert(Class<?> src, Class<?> dst) {
+        // short-circuit a few cases:
+        if (src == dst || dst == Object.class)  return true;
+        // the remainder of this logic is documented in MethodHandle.asType
+        if (src.isPrimitive()) {
+            // can force void to an explicit null, a la reflect.Method.invoke
+            // can also force void to a primitive zero, by analogy
+            if (src == void.class)  return true;  //or !dst.isPrimitive()?
+            Wrapper sw = Wrapper.forPrimitiveType(src);
+            if (dst.isPrimitive()) {
+                // P->P must widen
+                return Wrapper.forPrimitiveType(dst).isConvertibleFrom(sw);
+            } else {
+                // P->R must box and widen
+                return dst.isAssignableFrom(sw.wrapperType());
+            }
+        } else if (dst.isPrimitive()) {
+            // any value can be dropped
+            if (dst == void.class)  return true;
+            Wrapper dw = Wrapper.forPrimitiveType(dst);
+            // R->P must be able to unbox (from a dynamically chosen type) and widen
+            // For example:
+            //   Byte/Number/Comparable/Object -> dw:Byte -> byte.
+            //   Character/Comparable/Object -> dw:Character -> char
+            //   Boolean/Comparable/Object -> dw:Boolean -> boolean
+            // This means that dw must be cast-compatible with src.
+            if (src.isAssignableFrom(dw.wrapperType())) {
+                return true;
+            }
+            // The above does not work if the source reference is strongly typed
+            // to a wrapper whose primitive must be widened.  For example:
+            //   Byte -> unbox:byte -> short/int/long/float/double
+            //   Character -> unbox:char -> int/long/float/double
+            if (Wrapper.isWrapperType(src) &&
+                dw.isConvertibleFrom(Wrapper.forWrapperType(src))) {
+                // can unbox from src and then widen to dst
+                return true;
+            }
+            // We have already covered cases which arise due to runtime unboxing
+            // of a reference type which covers several wrapper types:
+            //   Object -> cast:Integer -> unbox:int -> long/float/double
+            //   Serializable -> cast:Byte -> unbox:byte -> byte/short/int/long/float/double
+            // An marginal case is Number -> dw:Character -> char, which would be OK if there were a
+            // subclass of Number which wraps a value that can convert to char.
+            // Since there is none, we don't need an extra check here to cover char or boolean.
             return false;
+        } else {
+            // R->R always works, since null is always valid dynamically
+            return true;
         }
-        return true;
     }
 
     /// Queries which have to do with the bytecode architecture
@@ -733,15 +783,21 @@ class MethodType implements java.io.Serializable {
      * @param descriptor a bytecode-level type descriptor string "(T...)T"
      * @param loader the class loader in which to look up the types
      * @return a method type matching the bytecode-level type descriptor
+     * @throws NullPointerException if the string is null
      * @throws IllegalArgumentException if the string is not well-formed
      * @throws TypeNotPresentException if a named type cannot be found
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
+        if (!descriptor.startsWith("(") ||  // also generates NPE if needed
+            descriptor.indexOf(')') < 0 ||
+            descriptor.indexOf('.') >= 0)
+            throw new IllegalArgumentException("not a method descriptor: "+descriptor);
         List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
-        Class<?>[] ptypes = types.toArray(NO_PTYPES);
+        checkSlotCount(types.size());
+        Class<?>[] ptypes = listToArray(types);
         return makeImpl(rtype, ptypes, true);
     }
 

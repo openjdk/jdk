@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4636667
+ * @bug 4636667 7052425
  * @summary  Use <H1, <H2>, and <H3> in proper sequence for accessibility
  * @author dkramer
  * @run main AccessH1
@@ -42,7 +42,7 @@ import java.io.*;
  */
 public class AccessH1 {
 
-    private static final String BUGID = "4636667";
+    private static final String BUGID = "4636667-7052425";
     private static final String BUGNAME = "AccessH1";
     private static final String FS = System.getProperty("file.separator");
     private static final String PS = System.getProperty("path.separator");
@@ -85,8 +85,7 @@ public class AccessH1 {
     private static final String[][] testArray = {
         // Test the style sheet
         {
-            ".header h1.title {" + LS + "    font-size:1.4em;" + LS +
-            "    text-align:center;" + LS + "    margin:0;" + LS +
+            "h1 {" + LS + "    font-size:1.8em;" + LS +
             "}",
             TMPDEST_DIR1 + "stylesheet.css"
         },
