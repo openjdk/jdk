@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,8 @@ public final class Secmod {
             throw new IllegalStateException(e);
         }
         if (modules == null) {
-            List<Module> modules = (List<Module>)nssGetModuleList(nssHandle);
+            List<Module> modules = (List<Module>)nssGetModuleList(nssHandle,
+                nssLibDir);
             this.modules = Collections.unmodifiableList(modules);
         }
         return modules;
@@ -358,7 +359,7 @@ public final class Secmod {
      * A representation of one PKCS#11 slot in a PKCS#11 module.
      */
     public static final class Module {
-        // name of the native library
+        // path of the native library
         final String libraryName;
         // descriptive name used by NSS
         final String commonName;
@@ -371,8 +372,10 @@ public final class Secmod {
         // trust attributes. Used for the KEYSTORE and TRUSTANCHOR modules only
         private Map<Bytes,TrustAttributes> trust;
 
-        Module(String libraryName, String commonName, boolean fips, int slot) {
+        Module(String libraryDir, String libraryName, String commonName,
+                boolean fips, int slot) {
             ModuleType type;
+
             if ((libraryName == null) || (libraryName.length() == 0)) {
                 // must be softtoken
                 libraryName = System.mapLibraryName(SOFTTOKEN_LIB_NAME);
@@ -397,7 +400,7 @@ public final class Secmod {
                         + "module: " + libraryName + ", " + commonName);
                 }
             }
-            this.libraryName = libraryName;
+            this.libraryName = (new File(libraryDir, libraryName)).getPath();
             this.commonName = commonName;
             this.slot = slot;
             this.type = type;
@@ -752,6 +755,6 @@ public final class Secmod {
 
     private static native boolean nssInit(String functionName, long handle, String configDir);
 
-    private static native Object nssGetModuleList(long handle);
+    private static native Object nssGetModuleList(long handle, String libDir);
 
 }

@@ -25,6 +25,10 @@
 
 /* @test
  * @summary unit tests for recursive method handles
+ * @run junit/othervm -DRicochetTest.MAX_ARITY=50 test.java.lang.invoke.RicochetTest
+ */
+/*
+ * @ignore The following test creates an unreasonable number of adapters in -Xcomp mode (7049122)
  * @run junit/othervm -DRicochetTest.MAX_ARITY=255 test.java.lang.invoke.RicochetTest
  */
 
