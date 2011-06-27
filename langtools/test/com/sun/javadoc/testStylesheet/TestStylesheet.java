@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815
+ * @bug      4494033 7028815 7052425
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib/
@@ -34,7 +34,7 @@
 public class TestStylesheet extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4494033-7028815";
+    private static final String BUG_ID = "4494033-7028815-7052425";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -52,11 +52,12 @@ public class TestStylesheet extends JavadocTester {
         {BUG_ID + FS + "stylesheet.css",
                 "/*" + NL + "Navigation bar styles" + NL + "*/"},
         {BUG_ID + FS + "stylesheet.css",
-                "body {" + NL + "    font-family:Helvetica, Arial, sans-serif;" + NL +
-                "    color:#000000;" + NL + "}"},
+                "body {" + NL + "    background-color:#ffffff;" + NL +
+                "    color:#353833;" + NL +
+                "    font-family:Arial, Helvetica, sans-serif;" + NL +
+                "    font-size:76%;" + NL + "    margin:0;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
-                "ul {" + NL + "    margin:10px 0 10px 20px;" + NL +
-                "    list-style-type:disc;" + NL + "}"},
+                "ul {" + NL + "    list-style-type:disc;" + NL + "}"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.
         {BUG_ID + FS + "pkg" + FS + "A.html",
