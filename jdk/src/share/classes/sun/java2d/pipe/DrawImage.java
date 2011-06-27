@@ -509,6 +509,9 @@ public class DrawImage implements DrawImagePipe
          * edges thus has to be h*2+2 in length
          */
         int edges[] = new int[(dy2-dy1)*2+2];
+        // It is important that edges[0]=edges[1]=0 when we call
+        // Transform in case it must return early and we would
+        // not want to render anything on an error condition.
         helper.Transform(tmpmaskblit, srcData, tmpData,
                          AlphaComposite.Src, null,
                          itx, interpType,
