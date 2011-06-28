@@ -3296,6 +3296,19 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   return ret;
 }
 
+#ifndef PRODUCT
+
+#include "utilities/quickSort.hpp"
+
+void execute_internal_vm_tests() {
+  if (ExecuteInternalVMTests) {
+    assert(QuickSort::test_quick_sort(), "test_quick_sort failed");
+    tty->print_cr("All tests passed");
+  }
+}
+
+#endif
+
 HS_DTRACE_PROBE_DECL3(hotspot_jni, CreateJavaVM__entry, vm, penv, args);
 DT_RETURN_MARK_DECL(CreateJavaVM, jint);
 
@@ -3386,6 +3399,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   }
 
   NOT_PRODUCT(test_error_handler(ErrorHandlerTest));
+  NOT_PRODUCT(execute_internal_vm_tests());
   return result;
 }
 
