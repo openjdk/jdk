@@ -391,13 +391,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     }
   }
   // Check if an appropriate new value phi already exists.
-  Node* new_phi = NULL;
-  uint size = value_phis->size();
-  for (uint i=0; i < size; i++) {
-    if ( mem->_idx == value_phis->index_at(i) ) {
-      return value_phis->node_at(i);
-    }
-  }
+  Node* new_phi = value_phis->find(mem->_idx);
+  if (new_phi != NULL)
+    return new_phi;
 
   if (level <= 0) {
     return NULL; // Give up: phi tree too deep
