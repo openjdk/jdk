@@ -1944,6 +1944,9 @@ class CommandLineFlags {
           "Number of ObjArray elements to push onto the marking stack"      \
           "before pushing a continuation entry")                            \
                                                                             \
+  notproduct(bool, ExecuteInternalVMTests, false,                           \
+          "Enable execution of internal VM tests.")                         \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
