@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,15 @@ public enum SourceVersion {
      *
      * @since 1.7
      */
-    RELEASE_7;
+    RELEASE_7,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 8.
+     *
+     * @since 1.8
+     */
+    RELEASE_8;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -135,7 +143,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_7;
+        return RELEASE_8;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -143,9 +151,12 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         try {
             String specVersion = System.getProperty("java.specification.version");
-            if ("1.7".equals(specVersion))
+
+            if ("1.8".equals(specVersion))
+                return RELEASE_8;
+            else if("1.7".equals(specVersion))
                 return RELEASE_7;
-            else if ("1.6".equals(specVersion))
+            else if("1.6".equals(specVersion))
                 return RELEASE_6;
         } catch (SecurityException se) {}
 

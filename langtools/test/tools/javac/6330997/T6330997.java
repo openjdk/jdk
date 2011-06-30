@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @bug     6330997
+ * @bug     6330997 7025789
  * @summary javac should accept class files with major version of the next release
  * @author  Wei Tao
  * @clean T1 T2
- * @compile -target 7 T1.java
- * @compile -target 7 T2.java
+ * @compile -target 8 T1.java
+ * @compile -target 8 T2.java
  * @run main/othervm T6330997
  */
 
