@@ -198,18 +198,6 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 # requires junit
 java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
 
-# Times out on solaris 10 sparc
-java/lang/ClassLoader/Assert.java				generic-all
-
-# Solaris sparc, samevm, java.lang.Exception: Read from closed pipe hangs
-java/lang/Runtime/exec/SleepyCat.java				generic-all
-
-# Times out on solaris sparc -server
-java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
-
-# Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
-java/lang/Thread/ThreadStateTest.java				generic-all
-
 ############################################################################
 
 # jdk_management
@@ -296,7 +284,6 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
 # jdk_misc
 
 # Need to be marked othervm, or changed to be samevm safe
-com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
@@ -379,30 +366,6 @@ java/io/File/MaxPathLength.java                                 windows-all
 
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
-
-# 6959891
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java
-
-# Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
-com/sun/nio/sctp/SctpChannel/Send.java				generic-all
-com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
-
-# Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses
-#    from a channel that is bound to the wildcard address
-com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
-
-# Failed on OpenSolaris, java.lang.AssertionError: Unknown event type
-com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
-
-# Solaris 11 gave assert error and "connection refused", samevm issues?
-com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java 	generic-all
-
-# Fails with othervm on solaris 11 i586
-com/sun/nio/sctp/SctpChannel/CommUp.java			generic-all
-com/sun/nio/sctp/SctpChannel/Connect.java			generic-all
-com/sun/nio/sctp/SctpMultiChannel/Branch.java			generic-all
-com/sun/nio/sctp/SctpMultiChannel/Send.java			generic-all
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
 
 ############################################################################
 
@@ -503,10 +466,6 @@ sun/security/pkcs11/ec/TestECDSA.java				solaris-i586
 sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
 sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
 
-# Unknown problem, could be a jtreg -samevm issue?
-#  Error while cleaning up threads after test
-java/security/Security/SynchronizedAccess.java			generic-all
-
 # Failing on Solaris X64 (-d64 -server) with:
 #  GSSException: Failure unspecified at GSS-API level
 #    (Mechanism level: Specified version of key is not available (44))
@@ -592,36 +551,8 @@ sun/security/tools/jarsigner/oldsig.sh				generic-all
 # Various failures on Linux Fedora 9 X64, othervm mode
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
 
-# Linux i586 -server, buffer too short to hold shared secret?
-com/sun/crypto/provider/KeyAgreement/DHKeyAgreement2.java	generic-all
-
 # Solaris sparcv9: Failed to parse input emptysubject.jks: No such file or directory
 sun/security/tools/keytool/emptysubject.sh			generic-all
-
-# Timeout on solaris-sparcv9 or exception thrown
-com/sun/crypto/provider/Cipher/RSA/TestOAEP_KAT.java	 	solaris-all
-
-# Leaving file open: SerialVersion.current, windows samevm
-java/security/BasicPermission/SerialVersion.java		generic-all
-
-# Solaris 11 i586, these all fail with samevm, need to be othervm???
-java/security/BasicPermission/NullOrEmptyName.java		generic-all
-
-# Suspect missing close() on file PermClass.current, windows samevm cascade
-java/security/BasicPermission/PermClass.java			generic-all
-
-# Solaris 11 i586, these all fail with samevm, need to be othervm???
-java/security/KeyPairGenerator/Failover.java			generic-all
-java/security/Provider/DefaultPKCS11.java			generic-all
-java/security/SecureClassLoader/DefineClassByteBuffer.java	generic-all
-java/security/SecureRandom/GetAlgorithm.java			generic-all
-java/security/Security/removing/RemoveProviders.java		generic-all
-java/security/Signature/ByteBuffers.java			generic-all
-java/security/Signature/NONEwithRSA.java			generic-all
-java/security/Signature/SignWithOutputBuffer.java		generic-all
-java/security/Signature/TestInitSignWithMyOwnRandom.java	generic-all
-java/security/UnresolvedPermission/AccessorMethods.java		generic-all
-java/security/UnresolvedPermission/Equals.java			generic-all
 
 # Fails on OpenSolaris, missing classes, slow on Solaris sparc
 sun/security/ec/TestEC.java					generic-all
@@ -642,9 +573,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
 # Timeout on solaris-sparcv9 or ArrayIndexOutOfBoundsException?
 sun/security/rsa/TestKeyPairGeneratorLength.java	 	solaris-all
 sun/security/rsa/TestSignatures.java			 	solaris-all
-
-# Timeout on solaris-sparc and i586 and x64, -client and -server
-sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/InterruptedIO.java solaris-all
 
 # Do not seem to run on windows machines? dll missing?
 sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
