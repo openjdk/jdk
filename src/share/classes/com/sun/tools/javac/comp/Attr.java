@@ -3388,6 +3388,13 @@ public class Attr extends JCTree.Visitor {
         }
 
         @Override
+        public void visitAssignop(JCAssignOp that) {
+            if (that.operator == null)
+                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            super.visitAssignop(that);
+        }
+
+        @Override
         public void visitBinary(JCBinary that) {
             if (that.operator == null)
                 that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
