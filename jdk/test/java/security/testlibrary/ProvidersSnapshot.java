@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,21 +21,28 @@
  * questions.
  */
 
-package sun.misc;
+import java.security.Provider;
+import java.security.Security;
 
-import javax.security.auth.kerberos.KeyTab;
-import sun.security.krb5.EncryptionKey;
-import sun.security.krb5.PrincipalName;
+public class ProvidersSnapshot {
 
-/**
- * An unsafe tunnel to get non-public access to classes in the
- * javax.security.auth.kerberos package.
- */
-public interface JavaxSecurityAuthKerberosAccess {
-    /**
-     * Returns keys for a principal in a keytab.
-     * @return the keys, never null, can be empty.
-     */
-    public EncryptionKey[] keyTabGetEncryptionKeys(
-            KeyTab ktab, PrincipalName principal);
+    private Provider[] oldProviders;
+
+    private ProvidersSnapshot() {
+        oldProviders = Security.getProviders();
+    }
+
+    public static ProvidersSnapshot create() {
+        return new ProvidersSnapshot();
+    }
+
+    public void restore() {
+        Provider[] newProviders = Security.getProviders();
+        for (Provider p: newProviders) {
+            Security.removeProvider(p.getName());
+        }
+        for (Provider p: oldProviders) {
+            Security.addProvider(p);
+        }
+    }
 }
