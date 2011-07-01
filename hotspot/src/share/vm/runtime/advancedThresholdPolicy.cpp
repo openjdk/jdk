@@ -378,8 +378,9 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLev
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel AdvancedThresholdPolicy::call_event(methodOop method,  CompLevel cur_level) {
-  CompLevel osr_level = (CompLevel) method->highest_osr_comp_level();
+CompLevel AdvancedThresholdPolicy::call_event(methodOop method, CompLevel cur_level) {
+  CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
+                             common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level));
   CompLevel next_level = common(&AdvancedThresholdPolicy::call_predicate, method, cur_level);
 
   // If OSR method level is greater than the regular method level, the levels should be
@@ -400,15 +401,16 @@ CompLevel AdvancedThresholdPolicy::call_event(methodOop method,  CompLevel cur_l
 
 // Determine if we should do an OSR compilation of a given method.
 CompLevel AdvancedThresholdPolicy::loop_event(methodOop method, CompLevel cur_level) {
+  CompLevel next_level = common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
     // for the transition.
-    CompLevel osr_level = (CompLevel)method->highest_osr_comp_level();
+    CompLevel osr_level = MIN2((CompLevel)method->highest_osr_comp_level(), next_level);
     if (osr_level > CompLevel_none) {
       return osr_level;
     }
   }
-  return common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level);
+  return next_level;
 }
 
 // Update the rate and submit compile
