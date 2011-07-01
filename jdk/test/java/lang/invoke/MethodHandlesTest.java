@@ -100,6 +100,31 @@ public class MethodHandlesTest {
         // ValueConversions.varargsArray: UnsupportedOperationException: NYI: cannot form a varargs array of length 13
         testInsertArguments(0, 0, MAX_ARG_INCREASE+10);
     }
+    @Test @Ignore("permuteArguments has trouble with double slots")
+    public void testFail_7() throws Throwable {
+        testPermuteArguments(new Object[]{10, 200L},
+                             new Class<?>[]{Integer.class, long.class},
+                             new int[]{1,0});
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{2,0,1}); //rot
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{1,2,0}); //rot
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{2,1,0}); //swap
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{0,1,2,2}); //dup
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{2,0,1,2});
+        testPermuteArguments(new Object[]{10, 200L, 5000L},
+                             new Class<?>[]{Integer.class, long.class, long.class},
+                             new int[]{2,2,0,1});
+        testPermuteArguments(4, Integer.class,  2, long.class,    6);
+    }
     static final int MAX_ARG_INCREASE = 3;
 
     public MethodHandlesTest() {
@@ -356,7 +381,7 @@ public class MethodHandlesTest {
         ArrayList<Class<?>> argTypes = new ArrayList<Class<?>>(targetType.parameterList());
         Collections.fill(argTypes.subList(beg, end), argType);
         MethodType ttype2 = MethodType.methodType(targetType.returnType(), argTypes);
-        return MethodHandles.convertArguments(target, ttype2);
+        return target.asType(ttype2);
     }
 
     // This lookup is good for all members in and under MethodHandlesTest.
@@ -1005,13 +1030,13 @@ public class MethodHandlesTest {
         Class<?> vtype = ftype;
         if (ftype != int.class)  vtype = Object.class;
         if (isGetter) {
-            mh = MethodHandles.convertArguments(mh, mh.type().generic()
-                                                .changeReturnType(vtype));
+            mh = mh.asType(mh.type().generic()
+                           .changeReturnType(vtype));
         } else {
             int last = mh.type().parameterCount() - 1;
-            mh = MethodHandles.convertArguments(mh, mh.type().generic()
-                                                .changeReturnType(void.class)
-                                                .changeParameterType(last, vtype));
+            mh = mh.asType(mh.type().generic()
+                           .changeReturnType(void.class)
+                           .changeParameterType(last, vtype));
         }
         if (f != null && f.getDeclaringClass() == HasFields.class) {
             assertEquals(f.get(fields), value);  // clean to start with
@@ -1139,7 +1164,7 @@ public class MethodHandlesTest {
             // FIXME: change Integer.class and (Integer) below to int.class and (int) below.
             MethodType gtype = mh.type().generic().changeParameterType(1, Integer.class);
             if (testSetter)  gtype = gtype.changeReturnType(void.class);
-            mh = MethodHandles.convertArguments(mh, gtype);
+            mh = mh.asType(gtype);
         }
         Object sawValue, expValue;
         List<Object> model = array2list(array);
@@ -1233,11 +1258,10 @@ public class MethodHandlesTest {
     }
 
     void testConvert(MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
-        testConvert(true, false, id, rtype, name, params);
-        testConvert(true, true,  id, rtype, name, params);
+        testConvert(true, id, rtype, name, params);
     }
 
-    void testConvert(boolean positive, boolean useAsType,
+    void testConvert(boolean positive,
                      MethodHandle id, Class<?> rtype, String name, Class<?>... params) throws Throwable {
         countTest(positive);
         MethodType idType = id.type();
@@ -1265,10 +1289,7 @@ public class MethodHandlesTest {
         MethodHandle target = null;
         RuntimeException error = null;
         try {
-            if (useAsType)
-                target = id.asType(newType);
-            else
-                target = MethodHandles.convertArguments(id, newType);
+            target = id.asType(newType);
         } catch (RuntimeException ex) {
             error = ex;
         }
@@ -1293,11 +1314,11 @@ public class MethodHandlesTest {
                                MethodType.methodType(Object.class, String.class, Object[].class));
         vac0 = vac0.bindTo("vac");
         MethodHandle vac = vac0.asVarargsCollector(Object[].class);
-        testConvert(true,  true,  vac.asType(MethodType.genericMethodType(0)), null, "vac");
-        testConvert(true,  true,  vac.asType(MethodType.genericMethodType(0)), null, "vac");
+        testConvert(true, vac.asType(MethodType.genericMethodType(0)), null, "vac");
+        testConvert(true, vac.asType(MethodType.genericMethodType(0)), null, "vac");
         for (Class<?> at : new Class[] { Object.class, String.class, Integer.class }) {
-            testConvert(true,  true,  vac.asType(MethodType.genericMethodType(1)), null, "vac", at);
-            testConvert(true,  true,  vac.asType(MethodType.genericMethodType(2)), null, "vac", at, at);
+            testConvert(true, vac.asType(MethodType.genericMethodType(1)), null, "vac", at);
+            testConvert(true, vac.asType(MethodType.genericMethodType(2)), null, "vac", at, at);
         }
     }
 
@@ -1306,8 +1327,8 @@ public class MethodHandlesTest {
         if (CAN_SKIP_WORKING)  return;
         startTest("permuteArguments");
         testPermuteArguments(4, Integer.class,  2, String.class,  0);
-        //testPermuteArguments(6, Integer.class,  0, null,         30);
-        //testPermuteArguments(4, Integer.class,  1, int.class,     6);
+        testPermuteArguments(6, Integer.class,  0, null,         30);
+        //testPermuteArguments(4, Integer.class,  2, long.class,    6);  // FIXME Fail_7
     }
     public void testPermuteArguments(int max, Class<?> type1, int t2c, Class<?> type2, int dilution) throws Throwable {
         if (verbosity >= 2)
@@ -1421,8 +1442,9 @@ public class MethodHandlesTest {
         }
         MethodType inType  = MethodType.methodType(Object.class, types);
         MethodType outType = MethodType.methodType(Object.class, permTypes);
-        MethodHandle target = MethodHandles.convertArguments(varargsList(outargs), outType);
+        MethodHandle target = varargsList(outargs).asType(outType);
         MethodHandle newTarget = MethodHandles.permuteArguments(target, inType, reorder);
+        if (verbosity >= 5)  System.out.println("newTarget = "+newTarget);
         Object result = newTarget.invokeWithArguments(args);
         Object expected = Arrays.asList(permArgs);
         if (!expected.equals(result)) {
@@ -1666,7 +1688,7 @@ public class MethodHandlesTest {
         countTest();
         MethodHandle target = varargsList(nargs);
         MethodHandle filter = varargsList(1);
-        filter = MethodHandles.convertArguments(filter, filter.type().generic());
+        filter = filter.asType(filter.type().generic());
         Object[] argsToPass = randomArgs(nargs, Object.class);
         if (verbosity >= 3)
             System.out.println("filter "+target+" at "+pos+" with "+filter);
@@ -1807,7 +1829,7 @@ public class MethodHandlesTest {
         // generic invoker
         countTest();
         inv = MethodHandles.invoker(type);
-        if (nargs <= 3) {
+        if (nargs <= 3 && type == type.generic()) {
             calledLog.clear();
             switch (nargs) {
             case 0:
@@ -1833,10 +1855,16 @@ public class MethodHandlesTest {
         // varargs invoker #0
         calledLog.clear();
         inv = MethodHandles.spreadInvoker(type, 0);
-        result = inv.invokeExact(target, args);
+        if (type.returnType() == Object.class) {
+            result = inv.invokeExact(target, args);
+        } else if (type.returnType() == void.class) {
+            result = null; inv.invokeExact(target, args);
+        } else {
+            result = inv.invokeWithArguments(target, (Object) args);
+        }
         if (testRetCode)  assertEquals(code, result);
         assertCalled("invokee", args);
-        if (nargs >= 1) {
+        if (nargs >= 1 && type == type.generic()) {
             // varargs invoker #1
             calledLog.clear();
             inv = MethodHandles.spreadInvoker(type, 1);
@@ -1844,7 +1872,7 @@ public class MethodHandlesTest {
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
         }
-        if (nargs >= 2) {
+        if (nargs >= 2 && type == type.generic()) {
             // varargs invoker #2
             calledLog.clear();
             inv = MethodHandles.spreadInvoker(type, 2);
@@ -1852,7 +1880,7 @@ public class MethodHandlesTest {
             if (testRetCode)  assertEquals(code, result);
             assertCalled("invokee", args);
         }
-        if (nargs >= 3) {
+        if (nargs >= 3 && type == type.generic()) {
             // varargs invoker #3
             calledLog.clear();
             inv = MethodHandles.spreadInvoker(type, 3);
@@ -1865,6 +1893,10 @@ public class MethodHandlesTest {
             countTest();
             calledLog.clear();
             inv = MethodHandles.spreadInvoker(type, k);
+            MethodType expType = (type.dropParameterTypes(k, nargs)
+                                  .appendParameterTypes(Object[].class)
+                                  .insertParameterTypes(0, MethodHandle.class));
+            assertEquals(expType, inv.type());
             List<Object> targetPlusVarArgs = new ArrayList<Object>(targetPlusArgs);
             List<Object> tailList = targetPlusVarArgs.subList(1+k, 1+nargs);
             Object[] tail = tailList.toArray();
@@ -2045,7 +2077,7 @@ public class MethodHandlesTest {
         //System.out.println("throwing with "+target+" : "+thrown);
         MethodType expectedType = MethodType.methodType(returnType, exType);
         assertEquals(expectedType, target.type());
-        target = MethodHandles.convertArguments(target, target.type().generic());
+        target = target.asType(target.type().generic());
         Throwable caught = null;
         try {
             Object res = target.invokeExact((Object) thrown);
@@ -2117,12 +2149,12 @@ public class MethodHandlesTest {
         if (mode.endsWith("/return")) {
             if (mode.equals("unbox/return")) {
                 // fail on return to ((Integer)surprise).intValue
-                surprise = MethodHandles.convertArguments(surprise, MethodType.methodType(int.class, Object.class));
-                identity = MethodHandles.convertArguments(identity, MethodType.methodType(int.class, Object.class));
+                surprise = surprise.asType(MethodType.methodType(int.class, Object.class));
+                identity = identity.asType(MethodType.methodType(int.class, Object.class));
             } else if (mode.equals("cast/return")) {
                 // fail on return to (Integer)surprise
-                surprise = MethodHandles.convertArguments(surprise, MethodType.methodType(Integer.class, Object.class));
-                identity = MethodHandles.convertArguments(identity, MethodType.methodType(Integer.class, Object.class));
+                surprise = surprise.asType(MethodType.methodType(Integer.class, Object.class));
+                identity = identity.asType(MethodType.methodType(Integer.class, Object.class));
             }
         } else if (mode.endsWith("/argument")) {
             MethodHandle callee = null;
@@ -2134,14 +2166,14 @@ public class MethodHandlesTest {
                 callee = Surprise.BOX_IDENTITY;
             }
             if (callee != null) {
-                callee = MethodHandles.convertArguments(callee, MethodType.genericMethodType(1));
+                callee = callee.asType(MethodType.genericMethodType(1));
                 surprise = MethodHandles.filterArguments(callee, 0, surprise);
                 identity = MethodHandles.filterArguments(callee, 0, identity);
             }
         }
         assertNotSame(mode, surprise, surprise0);
-        identity = MethodHandles.convertArguments(identity, MethodType.genericMethodType(1));
-        surprise = MethodHandles.convertArguments(surprise, MethodType.genericMethodType(1));
+        identity = identity.asType(MethodType.genericMethodType(1));
+        surprise = surprise.asType(MethodType.genericMethodType(1));
         Object x = 42;
         for (int i = 0; i < okCount; i++) {
             Object y = identity.invokeExact(x);
@@ -2230,14 +2262,14 @@ public class MethodHandlesTest {
         {
             MethodType mt = MethodType.methodType(void.class);
             MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "runForRunnable", mt);
-            Runnable proxy = MethodHandles.asInstance(mh, Runnable.class);
+            Runnable proxy = MethodHandleProxies.asInterfaceInstance(Runnable.class, mh);
             proxy.run();
             assertCalled("runForRunnable");
         }
         {
             MethodType mt = MethodType.methodType(Object.class, Fooable.class, Object.class);
             MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "fooForFooable", mt);
-            Fooable proxy = MethodHandles.asInstance(mh, Fooable.class);
+            Fooable proxy = MethodHandleProxies.asInterfaceInstance(Fooable.class, mh);
             Object[] args = randomArgs(mt.parameterArray());
             Object result = proxy.foo((Fooable) args[0], args[1]);
             assertCalled("fooForFooable", args);
@@ -2251,7 +2283,7 @@ public class MethodHandlesTest {
                                             }) {
             MethodHandle mh = MethodHandles.throwException(void.class, Throwable.class);
             mh = MethodHandles.insertArguments(mh, 0, ex);
-            WillThrow proxy = MethodHandles.asInstance(mh, WillThrow.class);
+            WillThrow proxy = MethodHandleProxies.asInterfaceInstance(WillThrow.class, mh);
             try {
                 proxy.willThrow();
                 System.out.println("Failed to throw: "+ex);
@@ -2279,7 +2311,7 @@ public class MethodHandlesTest {
                                              CharSequence.class,
                                              Example.class }) {
             try {
-                MethodHandles.asInstance(varargsArray(0), nonSAM);
+                MethodHandleProxies.asInterfaceInstance(nonSAM, varargsArray(0));
                 System.out.println("Failed to throw");
                 assertTrue(false);
             } catch (IllegalArgumentException ex) {

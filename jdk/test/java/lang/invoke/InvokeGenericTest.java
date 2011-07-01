@@ -314,7 +314,7 @@ public class InvokeGenericTest {
         ArrayList<Class<?>> argTypes = new ArrayList<Class<?>>(targetType.parameterList());
         Collections.fill(argTypes.subList(beg, end), argType);
         MethodType ttype2 = MethodType.methodType(targetType.returnType(), argTypes);
-        return MethodHandles.convertArguments(target, ttype2);
+        return target.asType(ttype2);
     }
 
     // This lookup is good for all members in and under InvokeGenericTest.
@@ -378,7 +378,7 @@ public class InvokeGenericTest {
         String[] args = { "one", "two" };
         MethodHandle mh = callable(Object.class, String.class);
         Object res; List resl;
-        res = resl = (List) mh.invokeGeneric((String)args[0], (Object)args[1]);
+        res = resl = (List) mh.invoke((String)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args), res);
     }

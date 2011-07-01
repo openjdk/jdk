@@ -506,8 +506,18 @@ import static java.lang.invoke.MethodHandleStatics.*;
         if (from != null)  message += ", from " + from;
         return new IllegalAccessException(message);
     }
-    public ReflectiveOperationException makeAccessException(String message) {
-        message = message + ": "+ toString();
+    private String message() {
+        if (isResolved())
+            return "no access";
+        else if (isConstructor())
+            return "no such constructor";
+        else if (isMethod())
+            return "no such method";
+        else
+            return "no such field";
+    }
+    public ReflectiveOperationException makeAccessException() {
+        String message = message() + ": "+ toString();
         if (isResolved())
             return new IllegalAccessException(message);
         else if (isConstructor())
@@ -641,7 +651,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
             MemberName result = resolveOrNull(m, searchSupers, lookupClass);
             if (result != null)
                 return result;
-            ReflectiveOperationException ex = m.makeAccessException("no access");
+            ReflectiveOperationException ex = m.makeAccessException();
             if (ex instanceof IllegalAccessException)  throw (IllegalAccessException) ex;
             throw nsmClass.cast(ex);
         }

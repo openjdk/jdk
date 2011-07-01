@@ -532,15 +532,11 @@ public class URLClassPath {
                 uc = url.openConnection();
                 InputStream in = uc.getInputStream();
                 if (uc instanceof JarURLConnection) {
-                    /* JarURLConnection.getInputStream() returns a separate
-                     * instance on each call. So we have to close this here.
-                     * The jar file cache will keep the file open.
-                     * Also, need to remember the jar file so it can be closed
+                    /* Need to remember the jar file so it can be closed
                      * in a hurry.
                      */
                     JarURLConnection juc = (JarURLConnection)uc;
                     jarfile = juc.getJarFile();
-                    in.close();
                 }
             } catch (Exception e) {
                 return null;
