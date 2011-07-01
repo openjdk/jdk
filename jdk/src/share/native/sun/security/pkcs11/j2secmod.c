@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInit
 }
 
 JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
-  (JNIEnv *env, jclass thisClass, jlong jHandle)
+  (JNIEnv *env, jclass thisClass, jlong jHandle, jstring jLibDir)
 {
     FPTR_GetDBModuleList getModuleList =
         (FPTR_GetDBModuleList)findFunction(env, jHandle, "SECMOD_GetDefaultModuleList");
@@ -104,8 +104,8 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
     jList = (*env)->NewObject(env, jListClass, jListConstructor);
 
     jModuleClass = (*env)->FindClass(env, "sun/security/pkcs11/Secmod$Module");
-    jModuleConstructor = (*env)->GetMethodID
-        (env, jModuleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;ZI)V");
+    jModuleConstructor = (*env)->GetMethodID(env, jModuleClass, "<init>",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZI)V");
 
     while (list != NULL) {
         module = list->module;
@@ -124,7 +124,8 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
         }
         jFIPS = module->isFIPS;
         for (i = 0; i < module->slotCount; i++ ) {
-            jModule = (*env)->NewObject(env, jModuleClass, jModuleConstructor, jDllName, jCommonName, jFIPS, i);
+            jModule = (*env)->NewObject(env, jModuleClass, jModuleConstructor,
+                jLibDir, jDllName, jCommonName, jFIPS, i);
             (*env)->CallVoidMethod(env, jList, jAdd, jModule);
         }
         list = list->next;

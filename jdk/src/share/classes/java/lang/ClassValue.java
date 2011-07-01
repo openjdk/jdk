@@ -39,6 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class ClassValue<T> {
     /**
+     * Sole constructor.  (For invocation by subclass constructors, typically
+     * implicit.)
+     */
+    protected ClassValue() {
+    }
+
+    /**
      * Computes the given class's derived value for this {@code ClassValue}.
      * <p>
      * This method will be invoked within the first thread that accesses
@@ -100,7 +107,7 @@ public abstract class ClassValue<T> {
      * If this value is subsequently {@linkplain #get read} for the same class,
      * its value will be reinitialized by invoking its {@link #computeValue computeValue} method.
      * This may result in an additional invocation of the
-     * {@code computeValue computeValue} method for the given class.
+     * {@code computeValue} method for the given class.
      * <p>
      * In order to explain the interaction between {@code get} and {@code remove} calls,
      * we must model the state transitions of a class value to take into account
@@ -193,6 +200,7 @@ public abstract class ClassValue<T> {
         = new WeakHashMap<Class<?>, ClassValueMap>();
 
     private static ClassValueMap getMap(Class<?> type) {
+        type.getClass();  // test for null
         return ROOT.get(type);
     }
 

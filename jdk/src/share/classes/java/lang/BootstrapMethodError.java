@@ -39,14 +39,14 @@ public class BootstrapMethodError extends LinkageError {
     private static final long serialVersionUID = 292L;
 
     /**
-     * Constructs an {@code BootstrapMethodError} with no detail message.
+     * Constructs a {@code BootstrapMethodError} with no detail message.
      */
     public BootstrapMethodError() {
         super();
     }
 
     /**
-     * Constructs an {@code BootstrapMethodError} with the specified
+     * Constructs a {@code BootstrapMethodError} with the specified
      * detail message.
      *
      * @param s the detail message.

@@ -47,7 +47,7 @@
         _handle =  NULL;                                                \
         *(pnpt) = NULL;                                                 \
         buf[0] = 0;                                                     \
-        jvm = LoadLibrary("jvm.dll");                                   \
+        jvm = GetModuleHandle("jvm.dll");                               \
         if ( jvm == NULL ) NPT_ERROR("Cannot find jvm.dll");            \
         GetModuleFileName(jvm, buf, FILENAME_MAX);                      \
         lastSlash = strrchr(buf, '\\');                                 \

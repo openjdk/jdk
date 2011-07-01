@@ -337,8 +337,7 @@ public class Utilities {
             // x before x0, return.
             return 0;
         }
-        int currX = x0;
-        int nextX = currX;
+        int nextX = x0;
         // s may be a shared segment, so it is copied prior to calling
         // the tab expander
         char[] txt = s.array;
@@ -388,19 +387,45 @@ public class Utilities {
             } else {
                 nextX += metrics.charWidth(txt[i]);
             }
-            if ((x >= currX) && (x < nextX)) {
+            if (x < nextX) {
                 // found the hit position... return the appropriate side
-                int offset = ((round == false) || ((x - currX) < (nextX - x))) ?
-                        (i - txtOffset) : (i + 1 - txtOffset);
+                int offset;
+
                 // the length of the string measured as a whole may differ from
                 // the sum of individual character lengths, for example if
                 // fractional metrics are enabled; and we must guard from this.
-                while (offset > 0 && metrics.charsWidth(txt, txtOffset, offset) > (x - x0)) {
-                    offset--;
+                if (round) {
+                    offset = i + 1 - txtOffset;
+
+                    int width = metrics.charsWidth(txt, txtOffset, offset);
+                    int span = x - x0;
+
+                    if (span < width) {
+                        while (offset > 0) {
+                            int nextWidth = offset > 1 ? metrics.charsWidth(txt, txtOffset, offset - 1) : 0;
+
+                            if (span >= nextWidth) {
+                                if (span - nextWidth < width - span) {
+                                    offset--;
+                                }
+
+                                break;
+                            }
+
+                            width = nextWidth;
+                            offset--;
+                        }
+                    }
+                } else {
+                    offset = i - txtOffset;
+
+                    while (offset > 0 && metrics.charsWidth(txt, txtOffset, offset) > (x - x0)) {
+                        offset--;
+                    }
                 }
+
                 return offset;
             }
-            currX = nextX;
         }
 
         // didn't find, return end offset
