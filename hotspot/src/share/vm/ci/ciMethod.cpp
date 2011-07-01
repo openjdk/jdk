@@ -1010,6 +1010,12 @@ int ciMethod::comp_level() {
   return 0;
 }
 
+int ciMethod::highest_osr_comp_level() {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  return get_methodOop()->highest_osr_comp_level();
+}
+
 // ------------------------------------------------------------------
 // ciMethod::instructions_size
 //
