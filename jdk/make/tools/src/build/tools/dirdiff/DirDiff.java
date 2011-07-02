@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class DirDiff implements Runnable {
       }
 
       File[] currentGoldenDirs = null;
-      TreeSet goldDirSet = new TreeSet();
+      TreeSet<String> goldDirSet = new TreeSet<>();
       if (goldenDir != null) {
           currentGoldenDirs = goldenDir.listFiles();
           for (int i=0; i<currentGoldenDirs.length; i++) {
