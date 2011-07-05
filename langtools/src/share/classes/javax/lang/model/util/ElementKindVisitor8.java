@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,17 @@
 
 package javax.lang.model.util;
 
-import javax.lang.model.type.*;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.element.*;
 import static javax.lang.model.element.ElementKind.*;
+import javax.annotation.processing.SupportedSourceVersion;
 import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.SourceVersion;
 
 /**
- * A visitor of types based on their {@linkplain TypeKind kind} with
- * default behavior appropriate for the {@link SourceVersion#RELEASE_7
- * RELEASE_7} source version.  For {@linkplain
- * TypeMirror types} <tt><i>XYZ</i></tt> that may have more than one
+ * A visitor of program elements based on their {@linkplain
+ * ElementKind kind} with default behavior appropriate for the {@link
+ * SourceVersion#RELEASE_8 RELEASE_8} source version.  For {@linkplain
+ * Element elements} <tt><i>XYZ</i></tt> that may have more than one
  * kind, the <tt>visit<i>XYZ</i></tt> methods in this class delegate
  * to the <tt>visit<i>XYZKind</i></tt> method corresponding to the
  * first argument's kind.  The <tt>visit<i>XYZKind</i></tt> methods
@@ -47,22 +47,24 @@ import javax.lang.model.SourceVersion;
  * subclasses with {@link java.lang.Override @Override} will help
  * ensure that methods are overridden as intended.
  *
- * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
- * by this class may have methods added to it in the future to
- * accommodate new, currently unknown, language structures added to
- * future versions of the Java&trade; programming language.
- * Therefore, methods whose names begin with {@code "visit"} may be
- * added to this class in the future; to avoid incompatibilities,
- * classes which extend this class should not declare any instance
- * methods with names beginning with {@code "visit"}.
+ * <p> <b>WARNING:</b> The {@code ElementVisitor} interface
+ * implemented by this class may have methods added to it or the
+ * {@code ElementKind} {@code enum} used in this case may have
+ * constants added to it in the future to accommodate new, currently
+ * unknown, language structures added to future versions of the
+ * Java&trade; programming language.  Therefore, methods whose names
+ * begin with {@code "visit"} may be added to this class in the
+ * future; to avoid incompatibilities, classes which extend this class
+ * should not declare any instance methods with names beginning with
+ * {@code "visit"}.
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new type kind visitor class
- * will also be introduced to correspond to the new language level;
- * this visitor will have different default behavior for the visit
- * method in question.  When the new visitor is introduced, all or
- * portions of this visitor may be deprecated.
+ * #visitUnknown visitUnknown} method.  A new abstract element kind
+ * visitor class will also be introduced to correspond to the new
+ * language level; this visitor will have different default behavior
+ * for the visit method in question.  When the new visitor is
+ * introduced, all or portions of this visitor may be deprecated.
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
@@ -70,40 +72,27 @@ import javax.lang.model.SourceVersion;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see TypeKindVisitor6
- * @see TypeKindVisitor8
- * @since 1.7
+ * @see ElementKindVisitor6
+ * @see ElementKindVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
+@SupportedSourceVersion(RELEASE_8)
+public class ElementKindVisitor8<R, P> extends ElementKindVisitor7<R, P> {
     /**
-     * Constructor for concrete subclasses to call; uses {@code null}
-     * for the default value.
+     * Constructor for concrete subclasses; uses {@code null} for the
+     * default value.
      */
-    protected TypeKindVisitor7() {
+    protected ElementKindVisitor8() {
         super(null);
     }
 
     /**
-     * Constructor for concrete subclasses to call; uses the argument
-     * for the default value.
+     * Constructor for concrete subclasses; uses the argument for the
+     * default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    protected TypeKindVisitor7(R defaultValue) {
+    protected ElementKindVisitor8(R defaultValue) {
         super(defaultValue);
-    }
-
-    /**
-     * This implementation visits a {@code UnionType} by calling
-     * {@code defaultAction}.
-     *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of {@code defaultAction}
-     */
-    @Override
-    public R visitUnion(UnionType t, P p) {
-        return defaultAction(t, p);
     }
 }
