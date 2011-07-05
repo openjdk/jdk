@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,16 @@ import javax.lang.model.SourceVersion;
 import javax.annotation.processing.SupportedSourceVersion;
 
 /**
- * A skeletal visitor for annotation values with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
- * source version.
+ * A simple visitor for annotation values with default behavior
+ * appropriate for the {@link SourceVersion#RELEASE_8 RELEASE_8}
+ * source version.  Visit methods call {@link #defaultAction
+ * defaultAction} passing their arguments to {@code defaultAction}'s
+ * corresponding parameters.
+ *
+ * <p> Methods in this class may be overridden subject to their
+ * general contract.  Note that annotating methods in concrete
+ * subclasses with {@link java.lang.Override @Override} will help
+ * ensure that methods are overridden as intended.
  *
  * <p> <b>WARNING:</b> The {@code AnnotationValueVisitor} interface
  * implemented by this class may have methods added to it in the
@@ -49,7 +56,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new abstract annotation
+ * #visitUnknown visitUnknown} method.  A new simple annotation
  * value visitor class will also be introduced to correspond to the
  * new language level; this visitor will have different default
  * behavior for the visit method in question.  When the new visitor is
@@ -58,17 +65,27 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
- * @see AbstractAnnotationValueVisitor6
- * @see AbstractAnnotationValueVisitor8
- * @since 1.7
+ * @see SimpleAnnotationValueVisitor6
+ * @see SimpleAnnotationValueVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public abstract class AbstractAnnotationValueVisitor7<R, P> extends AbstractAnnotationValueVisitor6<R, P> {
+@SupportedSourceVersion(RELEASE_8)
+public class SimpleAnnotationValueVisitor8<R, P> extends SimpleAnnotationValueVisitor7<R, P> {
+    /**
+     * Constructor for concrete subclasses; uses {@code null} for the
+     * default value.
+     */
+    protected SimpleAnnotationValueVisitor8() {
+        super(null);
+    }
 
     /**
-     * Constructor for concrete subclasses to call.
+     * Constructor for concrete subclasses; uses the argument for the
+     * default value.
+     *
+     * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    protected AbstractAnnotationValueVisitor7() {
-        super();
+    protected SimpleAnnotationValueVisitor8(R defaultValue) {
+        super(defaultValue);
     }
 }

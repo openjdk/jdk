@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,31 +31,15 @@ import static javax.lang.model.element.ElementKind.*;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
-
 /**
- * A scanning visitor of program elements with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
- * source version.  The <tt>visit<i>XYZ</i></tt> methods in this
- * class scan their component elements by calling {@code scan} on
- * their {@linkplain Element#getEnclosedElements enclosed elements},
- * {@linkplain ExecutableElement#getParameters parameters}, etc., as
- * indicated in the individual method specifications.  A subclass can
- * control the order elements are visited by overriding the
- * <tt>visit<i>XYZ</i></tt> methods.  Note that clients of a scanner
- * may get the desired behavior be invoking {@code v.scan(e, p)} rather
- * than {@code v.visit(e, p)} on the root objects of interest.
+ * A simple visitor of program elements with default behavior
+ * appropriate for the {@link SourceVersion#RELEASE_8 RELEASE_8}
+ * source version.
  *
- * <p>When a subclass overrides a <tt>visit<i>XYZ</i></tt> method, the
- * new method can cause the enclosed elements to be scanned in the
- * default way by calling <tt>super.visit<i>XYZ</i></tt>.  In this
- * fashion, the concrete visitor can control the ordering of traversal
- * over the component elements with respect to the additional
- * processing; for example, consistently calling
- * <tt>super.visit<i>XYZ</i></tt> at the start of the overridden
- * methods will yield a preorder traversal, etc.  If the component
- * elements should be traversed in some other order, instead of
- * calling <tt>super.visit<i>XYZ</i></tt>, an overriding visit method
- * should call {@code scan} with the elements in the desired order.
+ * Visit methods corresponding to {@code RELEASE_7} and earlier
+ * language constructs call {@link #defaultAction defaultAction},
+ * passing their arguments to {@code defaultAction}'s corresponding
+ * parameters.
  *
  * <p> Methods in this class may be overridden subject to their
  * general contract.  Note that annotating methods in concrete
@@ -73,49 +57,38 @@ import static javax.lang.model.SourceVersion.*;
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new element scanner visitor
+ * #visitUnknown visitUnknown} method.  A new simple element visitor
  * class will also be introduced to correspond to the new language
  * level; this visitor will have different default behavior for the
  * visit method in question.  When the new visitor is introduced, all
  * or portions of this visitor may be deprecated.
  *
- * @param <R> the return type of this visitor's methods.  Use {@link
- *            Void} for visitors that do not need to return results.
- * @param <P> the type of the additional parameter to this visitor's
- *            methods.  Use {@code Void} for visitors that do not need an
- *            additional parameter.
+ * @param <R> the return type of this visitor's methods.  Use {@code Void}
+ *             for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
+ *              for visitors that do not need an additional parameter.
  *
- * @see ElementScanner6
- * @see ElementScanner8
- * @since 1.7
+ * @see SimpleElementVisitor6
+ * @see SimpleElementVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
+@SupportedSourceVersion(RELEASE_8)
+public class SimpleElementVisitor8<R, P> extends SimpleElementVisitor7<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
-    protected ElementScanner7(){
+    protected SimpleElementVisitor8(){
         super(null);
     }
 
     /**
      * Constructor for concrete subclasses; uses the argument for the
      * default value.
-     */
-    protected ElementScanner7(R defaultValue){
-        super(defaultValue);
-    }
-
-    /**
-     * This implementation scans the enclosed elements.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
+     * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    @Override
-    public R visitVariable(VariableElement e, P p) {
-        return scan(e.getEnclosedElements(), p);
+    protected SimpleElementVisitor8(R defaultValue){
+        super(defaultValue);
     }
 }
