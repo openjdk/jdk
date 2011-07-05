@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import javax.lang.model.SourceVersion;
 
 /**
  * A visitor of types based on their {@linkplain TypeKind kind} with
- * default behavior appropriate for the {@link SourceVersion#RELEASE_7
- * RELEASE_7} source version.  For {@linkplain
+ * default behavior appropriate for the {@link SourceVersion#RELEASE_8
+ * RELEASE_8} source version.  For {@linkplain
  * TypeMirror types} <tt><i>XYZ</i></tt> that may have more than one
  * kind, the <tt>visit<i>XYZ</i></tt> methods in this class delegate
  * to the <tt>visit<i>XYZKind</i></tt> method corresponding to the
@@ -71,16 +71,16 @@ import javax.lang.model.SourceVersion;
  *            additional parameter.
  *
  * @see TypeKindVisitor6
- * @see TypeKindVisitor8
- * @since 1.7
+ * @see TypeKindVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
+@SupportedSourceVersion(RELEASE_8)
+public class TypeKindVisitor8<R, P> extends TypeKindVisitor7<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}
      * for the default value.
      */
-    protected TypeKindVisitor7() {
+    protected TypeKindVisitor8() {
         super(null);
     }
 
@@ -90,20 +90,7 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    protected TypeKindVisitor7(R defaultValue) {
+    protected TypeKindVisitor8(R defaultValue) {
         super(defaultValue);
-    }
-
-    /**
-     * This implementation visits a {@code UnionType} by calling
-     * {@code defaultAction}.
-     *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of {@code defaultAction}
-     */
-    @Override
-    public R visitUnion(UnionType t, P p) {
-        return defaultAction(t, p);
     }
 }

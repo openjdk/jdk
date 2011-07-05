@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 
 /**
  * A skeletal visitor for annotation values with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
+ * appropriate for the {@link SourceVersion#RELEASE_8 RELEASE_8}
  * source version.
  *
  * <p> <b>WARNING:</b> The {@code AnnotationValueVisitor} interface
@@ -59,16 +59,16 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
  * @see AbstractAnnotationValueVisitor6
- * @see AbstractAnnotationValueVisitor8
- * @since 1.7
+ * @see AbstractAnnotationValueVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public abstract class AbstractAnnotationValueVisitor7<R, P> extends AbstractAnnotationValueVisitor6<R, P> {
+@SupportedSourceVersion(RELEASE_8)
+public abstract class AbstractAnnotationValueVisitor8<R, P> extends AbstractAnnotationValueVisitor7<R, P> {
 
     /**
      * Constructor for concrete subclasses to call.
      */
-    protected AbstractAnnotationValueVisitor7() {
+    protected AbstractAnnotationValueVisitor8() {
         super();
     }
 }
