@@ -2085,6 +2085,14 @@ void os::print_os_info(outputStream* st) {
   st->cr();
 }
 
+void os::pd_print_cpu_info(outputStream* st) {
+  st->print("\n/proc/cpuinfo:\n");
+  if (!_print_ascii_file("/proc/cpuinfo", st)) {
+    st->print("  <Not Available>");
+  }
+  st->cr();
+}
+
 void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
