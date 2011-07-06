@@ -251,6 +251,11 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseParallelOldGCDensePrefix",
                            JDK_Version::jdk_update(6,27), JDK_Version::jdk(8) },
   { "AllowTransitionalJSR292",       JDK_Version::jdk(7), JDK_Version::jdk(8) },
+  { "UseCompressedStrings",          JDK_Version::jdk(7), JDK_Version::jdk(8) },
+#ifdef PRODUCT
+  { "DesiredMethodLimit",
+                           JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
+#endif // PRODUCT
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -2912,6 +2917,18 @@ void Arguments::set_shared_spaces_flags() {
   }
 }
 
+// Disable options not supported in this release, with a warning if they
+// were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION(opt, description)                    \
+do {                                                            \
+  if (opt) {                                                    \
+    if (FLAG_IS_CMDLINE(opt)) {                                 \
+      warning(description " is disabled in this release.");     \
+    }                                                           \
+    FLAG_SET_DEFAULT(opt, false);                               \
+  }                                                             \
+} while(0)
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
@@ -3008,6 +3025,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (result != JNI_OK) {
     return result;
   }
+
+#ifdef JAVASE_EMBEDDED
+  #ifdef PPC
+    UNSUPPORTED_OPTION(EnableInvokeDynamic, "Invoke dynamic");
+  #endif
+  UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
+#endif
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
