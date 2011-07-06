@@ -262,8 +262,6 @@ public:
   virtual void cleanup() = 0;
 #endif
 
-  // Should be called from single-threaded code.
-  void init_for_par_iteration();
   // Attempt to claim the region.  Returns true iff this call caused an
   // atomic transition from Unclaimed to Claimed.
   bool claim_iter();
@@ -273,7 +271,6 @@ public:
   bool iter_is_complete();
 
   // Support for claiming blocks of cards during iteration
-  void set_iter_claimed(size_t x) { _iter_claimed = (jlong)x; }
   size_t iter_claimed() const { return (size_t)_iter_claimed; }
   // Claim the next block of cards
   size_t iter_claimed_next(size_t step) {
@@ -283,6 +280,11 @@ public:
       next = current + step;
     } while (Atomic::cmpxchg((jlong)next, &_iter_claimed, (jlong)current) != (jlong)current);
     return current;
+  }
+  void reset_for_par_iteration();
+
+  bool verify_ready_for_par_iteration() {
+    return (_iter_state == Unclaimed) && (_iter_claimed == 0);
   }
 
   // Initialize the given iterator to iterate over this rem set.

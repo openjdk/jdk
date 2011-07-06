@@ -348,15 +348,31 @@ process_chunk_boundaries(Space* sp,
         // cleared before we had a chance to examine it. In that case, the value
         // will have been logged in the LNC for that chunk.
         // We need to examine as many chunks to the right as this object
-        // covers.
-        const uintptr_t last_chunk_index_to_check = addr_to_chunk_index(last_block + last_block_size - 1)
-                                                    - lowest_non_clean_base_chunk_index;
-        DEBUG_ONLY(const uintptr_t last_chunk_index = addr_to_chunk_index(used.last())
-                                                      - lowest_non_clean_base_chunk_index;)
-        assert(last_chunk_index_to_check <= last_chunk_index,
-               err_msg("Out of bounds: last_chunk_index_to_check " INTPTR_FORMAT
-                       " exceeds last_chunk_index " INTPTR_FORMAT,
-                       last_chunk_index_to_check, last_chunk_index));
+        // covers. However, we need to bound this checking to the largest
+        // entry in the LNC array: this is because the heap may expand
+        // after the LNC array has been created but before we reach this point,
+        // and the last block in our chunk may have been expanded to include
+        // the expansion delta (and possibly subsequently allocated from, so
+        // it wouldn't be sufficient to check whether that last block was
+        // or was not an object at this point).
+        uintptr_t last_chunk_index_to_check = addr_to_chunk_index(last_block + last_block_size - 1)
+                                              - lowest_non_clean_base_chunk_index;
+        const uintptr_t last_chunk_index    = addr_to_chunk_index(used.last())
+                                              - lowest_non_clean_base_chunk_index;
+        if (last_chunk_index_to_check > last_chunk_index) {
+          assert(last_block + last_block_size > used.end(),
+                 err_msg("Inconsistency detected: last_block [" PTR_FORMAT "," PTR_FORMAT "]"
+                         " does not exceed used.end() = " PTR_FORMAT ","
+                         " yet last_chunk_index_to_check " INTPTR_FORMAT
+                         " exceeds last_chunk_index " INTPTR_FORMAT,
+                         last_chunk_index_to_check, last_chunk_index));
+          assert(sp->used_region().end() > used.end(),
+                 err_msg("Expansion did not happen: "
+                         "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
+                         sp->used_region().start(), sp->used_region().end(), used.start(), used.end()));
+          NOISY(tty->print_cr(" process_chunk_boundary: heap expanded; explicitly bounding last_chunk");)
+          last_chunk_index_to_check = last_chunk_index;
+        }
         for (uintptr_t lnc_index = cur_chunk_index + 1;
              lnc_index <= last_chunk_index_to_check;
              lnc_index++) {

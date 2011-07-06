@@ -1944,6 +1944,9 @@ class CommandLineFlags {
           "Number of ObjArray elements to push onto the marking stack"      \
           "before pushing a continuation entry")                            \
                                                                             \
+  notproduct(bool, ExecuteInternalVMTests, false,                           \
+          "Enable execution of internal VM tests.")                         \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -2331,6 +2334,20 @@ class CommandLineFlags {
   product(bool, PrintJNIGCStalls, false,                                    \
           "Print diagnostic message when GC is stalled"                     \
           "by JNI critical section")                                        \
+                                                                            \
+  /* GC log rotation setting */                                             \
+                                                                            \
+  product(bool, UseGCLogFileRotation, false,                                \
+          "Prevent large gclog file for long running app. "                 \
+          "Requires -Xloggc:<filename>")                                    \
+                                                                            \
+  product(uintx, NumberOfGCLogFiles, 0,                                     \
+          "Number of gclog files in rotation, "                             \
+          "Default: 0, no rotation")                                        \
+                                                                            \
+  product(uintx, GCLogFileSize, 0,                                          \
+          "GC log file size, Default: 0 bytes, no rotation "                \
+          "Only valid with UseGCLogFileRotation")                           \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \

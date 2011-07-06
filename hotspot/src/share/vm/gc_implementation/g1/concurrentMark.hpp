@@ -131,22 +131,22 @@ class CMBitMap : public CMBitMapRO {
   void mark(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    _bm.at_put(heapWordToOffset(addr), true);
+    _bm.set_bit(heapWordToOffset(addr));
   }
   void clear(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    _bm.at_put(heapWordToOffset(addr), false);
+    _bm.clear_bit(heapWordToOffset(addr));
   }
   bool parMark(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    return _bm.par_at_put(heapWordToOffset(addr), true);
+    return _bm.par_set_bit(heapWordToOffset(addr));
   }
   bool parClear(HeapWord* addr) {
     assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
            "outside underlying space?");
-    return _bm.par_at_put(heapWordToOffset(addr), false);
+    return _bm.par_clear_bit(heapWordToOffset(addr));
   }
   void markRange(MemRegion mr);
   void clearAll();
@@ -605,10 +605,10 @@ public:
   void mark_stack_pop(oop* arr, int max, int* n) {
     _markStack.par_pop_arr(arr, max, n);
   }
-  size_t mark_stack_size()              { return _markStack.size(); }
+  size_t mark_stack_size()                { return _markStack.size(); }
   size_t partial_mark_stack_size_target() { return _markStack.maxElems()/3; }
-  bool mark_stack_overflow()            { return _markStack.overflow(); }
-  bool mark_stack_empty()               { return _markStack.isEmpty(); }
+  bool mark_stack_overflow()              { return _markStack.overflow(); }
+  bool mark_stack_empty()                 { return _markStack.isEmpty(); }
 
   // (Lock-free) Manipulation of the region stack
   bool region_stack_push_lock_free(MemRegion mr) {
@@ -736,12 +736,14 @@ public:
   // will dump the contents of its reference fields, as well as
   // liveness information for the object and its referents. The dump
   // will be written to a file with the following name:
-  // G1PrintReachableBaseFile + "." + str. use_prev_marking decides
-  // whether the prev (use_prev_marking == true) or next
-  // (use_prev_marking == false) marking information will be used to
-  // determine the liveness of each object / referent. If all is true,
-  // all objects in the heap will be dumped, otherwise only the live
-  // ones. In the dump the following symbols / abbreviations are used:
+  // G1PrintReachableBaseFile + "." + str.
+  // vo decides whether the prev (vo == UsePrevMarking), the next
+  // (vo == UseNextMarking) marking information, or the mark word
+  // (vo == UseMarkWord) will be used to determine the liveness of
+  // each object / referent.
+  // If all is true, all objects in the heap will be dumped, otherwise
+  // only the live ones. In the dump the following symbols / breviations
+  // are used:
   //   M : an explicitly live object (its bitmap bit is set)
   //   > : an implicitly live object (over tams)
   //   O : an object outside the G1 heap (typically: in the perm gen)
@@ -749,7 +751,7 @@ public:
   //   AND MARKED : indicates that an object is both explicitly and
   //   implicitly live (it should be one or the other, not both)
   void print_reachable(const char* str,
-                       bool use_prev_marking, bool all) PRODUCT_RETURN;
+                       VerifyOption vo, bool all) PRODUCT_RETURN;
 
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
@@ -831,8 +833,9 @@ public:
     // _min_finger then we need to gray objects.
     // This routine is like registerCSetRegion but for an entire
     // collection of regions.
-    if (max_finger > _min_finger)
+    if (max_finger > _min_finger) {
       _should_gray_objects = true;
+    }
   }
 
   // Returns "true" if at least one mark has been completed.
@@ -878,14 +881,18 @@ public:
   // The following indicate whether a given verbose level has been
   // set. Notice that anything above stats is conditional to
   // _MARKING_VERBOSE_ having been set to 1
-  bool verbose_stats()
-    { return _verbose_level >= stats_verbose; }
-  bool verbose_low()
-    { return _MARKING_VERBOSE_ && _verbose_level >= low_verbose; }
-  bool verbose_medium()
-    { return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose; }
-  bool verbose_high()
-    { return _MARKING_VERBOSE_ && _verbose_level >= high_verbose; }
+  bool verbose_stats() {
+    return _verbose_level >= stats_verbose;
+  }
+  bool verbose_low() {
+    return _MARKING_VERBOSE_ && _verbose_level >= low_verbose;
+  }
+  bool verbose_medium() {
+    return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose;
+  }
+  bool verbose_high() {
+    return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
+  }
 };
 
 // A class representing a marking task.
@@ -928,7 +935,7 @@ private:
   double                      _start_time_ms;
 
   // the oop closure used for iterations over oops
-  OopClosure*                 _oop_closure;
+  G1CMOopClosure*             _cm_oop_closure;
 
   // the region this task is scanning, NULL if we're not scanning any
   HeapRegion*                 _curr_region;
@@ -1061,8 +1068,9 @@ private:
   // respective limit and calls reached_limit() if they have
   void check_limits() {
     if (_words_scanned >= _words_scanned_limit ||
-        _refs_reached >= _refs_reached_limit)
+        _refs_reached >= _refs_reached_limit) {
       reached_limit();
+    }
   }
   // this is supposed to be called regularly during a marking step as
   // it checks a bunch of conditions that might cause the marking step
@@ -1122,32 +1130,17 @@ public:
   // Clears any recorded partially scanned region
   void clear_aborted_region()   { set_aborted_region(MemRegion()); }
 
-  void set_oop_closure(OopClosure* oop_closure) {
-    _oop_closure = oop_closure;
-  }
+  void set_cm_oop_closure(G1CMOopClosure* cm_oop_closure);
 
   // It grays the object by marking it and, if necessary, pushing it
   // on the local queue
-  void deal_with_reference(oop obj);
+  inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.
-  void scan_object(oop obj) {
-    assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
-
-    if (_cm->verbose_high())
-      gclog_or_tty->print_cr("[%d] we're scanning object "PTR_FORMAT,
-                             _task_id, (void*) obj);
-
-    size_t obj_size = obj->size();
-    _words_scanned += obj_size;
-
-    obj->oop_iterate(_oop_closure);
-    statsOnly( ++_objs_scanned );
-    check_limits();
-  }
+  void scan_object(oop obj);
 
   // It pushes an object on the local queue.
-  void push(oop obj);
+  inline void push(oop obj);
 
   // These two move entries to/from the global stack.
   void move_entries_to_global_stack();
