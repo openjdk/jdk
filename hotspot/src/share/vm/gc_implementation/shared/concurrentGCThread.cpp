@@ -43,17 +43,6 @@ ConcurrentGCThread::ConcurrentGCThread() :
   _sts.initialize();
 };
 
-void ConcurrentGCThread::stopWorldAndDo(VoidClosure* op) {
-  MutexLockerEx x(Heap_lock,
-                  Mutex::_no_safepoint_check_flag);
-  // warning("CGC: about to try stopping world");
-  SafepointSynchronize::begin();
-  // warning("CGC: successfully stopped world");
-  op->do_void();
-  SafepointSynchronize::end();
-  // warning("CGC: successfully restarted world");
-}
-
 void ConcurrentGCThread::safepoint_synchronize() {
   _sts.suspend_all();
 }

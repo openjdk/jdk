@@ -1258,7 +1258,6 @@ class BacktraceBuilder: public StackObj {
   objArrayOop     _methods;
   typeArrayOop    _bcis;
   int             _index;
-  bool            _dirty;
   No_Safepoint_Verifier _nsv;
 
  public:
@@ -1272,37 +1271,13 @@ class BacktraceBuilder: public StackObj {
   };
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _dirty(false) {
+  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL) {
     expand(CHECK);
     _backtrace = _head;
     _index = 0;
   }
 
-  void flush() {
-    // The following appears to have been an optimization to save from
-    // doing a barrier for each individual store into the _methods array,
-    // but rather to do it for the entire array after the series of writes.
-    // That optimization seems to have been lost when compressed oops was
-    // implemented. However, the extra card-marks below was left in place,
-    // but is now redundant because the individual stores into the
-    // _methods array already execute the barrier code. CR 6918185 has
-    // been filed so the original code may be restored by deferring the
-    // barriers until after the entire sequence of stores, thus re-enabling
-    // the intent of the original optimization. In the meantime the redundant
-    // card mark below is now disabled.
-    if (_dirty && _methods != NULL) {
-#if 0
-      BarrierSet* bs = Universe::heap()->barrier_set();
-      assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-      bs->write_ref_array((HeapWord*)_methods->base(), _methods->length());
-#endif
-      _dirty = false;
-    }
-  }
-
   void expand(TRAPS) {
-    flush();
-
     objArrayHandle old_head(THREAD, _head);
     Pause_No_Safepoint_Verifier pnsv(&_nsv);
 
@@ -1328,7 +1303,6 @@ class BacktraceBuilder: public StackObj {
   }
 
   oop backtrace() {
-    flush();
     return _backtrace();
   }
 
@@ -1342,7 +1316,6 @@ class BacktraceBuilder: public StackObj {
     _methods->obj_at_put(_index, method);
     _bcis->ushort_at_put(_index, bci);
     _index++;
-    _dirty = true;
   }
 
   methodOop current_method() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,11 +161,11 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
 
   // Set or clear the specified bit.
   inline void set_bit(idx_t bit);
-  void clear_bit(idx_t bit);
+  inline void clear_bit(idx_t bit);
 
   // Atomically set or clear the specified bit.
-  bool par_set_bit(idx_t bit);
-  bool par_clear_bit(idx_t bit);
+  inline bool par_set_bit(idx_t bit);
+  inline bool par_clear_bit(idx_t bit);
 
   // Put the given value at the given offset. The parallel version
   // will CAS the value into the bitmap and is quite a bit slower.
