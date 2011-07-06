@@ -444,6 +444,9 @@ class CommandLineFlags {
   product(bool, UsePPCLWSYNC, true,                                         \
           "Use lwsync instruction if true, else use slower sync")           \
                                                                             \
+  develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
+          "Whether to clean the chunk pool asynchronously")                 \
+                                                                            \
   /* Temporary: See 6948537 */                                             \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \

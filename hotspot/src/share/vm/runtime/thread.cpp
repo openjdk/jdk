@@ -3347,7 +3347,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
 
-  Chunk::start_chunk_pool_cleaner_task();
+  if (CleanChunkPoolAsync) {
+    Chunk::start_chunk_pool_cleaner_task();
+  }
 
   // initialize compiler(s)
   CompileBroker::compilation_init();
