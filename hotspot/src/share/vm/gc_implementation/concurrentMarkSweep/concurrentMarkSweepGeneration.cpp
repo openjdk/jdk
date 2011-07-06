@@ -2716,6 +2716,10 @@ void CMSCollector::gc_epilogue(bool full) {
   bitMapLock()->unlock();
   releaseFreelistLocks();
 
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
+  }
+
   _between_prologue_and_epilogue = false;  // ready for next cycle
 }
 
