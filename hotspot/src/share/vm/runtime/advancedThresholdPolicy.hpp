@@ -211,14 +211,16 @@ protected:
   virtual void submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS);
   // event() from SimpleThresholdPolicy would call these.
   virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
-                                       CompLevel level, TRAPS);
+                                       CompLevel level, nmethod* nm, TRAPS);
   virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
-                                        int bci, CompLevel level, TRAPS);
+                                        int bci, CompLevel level, nmethod* nm, TRAPS);
 public:
   AdvancedThresholdPolicy() : _start_time(0) { }
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   virtual void initialize();
+  virtual bool should_not_inline(ciEnv* env, ciMethod* callee);
+
 };
 
 #endif // TIERED

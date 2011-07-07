@@ -588,6 +588,8 @@ class MethodHandles: AllStatic {
     ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
     ETF_METHOD_NAME           = 2, // ultimate method as MemberName
     ETF_REFLECT_METHOD        = 3, // ultimate method as java.lang.reflect object (sans refClass)
+    ETF_FORCE_DIRECT_HANDLE   = 64,
+    ETF_COMPILE_DIRECT_HANDLE = 65,
 
     // ad hoc constants
     OP_ROT_ARGS_DOWN_LIMIT_BIAS = -1

@@ -602,15 +602,8 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
   // error path for invokeExact (only)
   __ bind(invoke_exact_error_path);
-  // jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
-  Register rdx_last_Java_sp = rdx_temp;
-  __ lea(rdx_last_Java_sp, __ argument_address(constant(0)));
-  __ super_call_VM(noreg,
-                   rdx_last_Java_sp,
-                   CAST_FROM_FN_PTR(address,
-                                    InterpreterRuntime::throw_WrongMethodTypeException),
-                   // pass required type, then failing mh object
-                   rax_mtype, rcx_recv);
+  // Stub wants expected type in rax and the actual type in rcx
+  __ jump(ExternalAddress(StubRoutines::throw_WrongMethodTypeException_entry()));
 
   // for invokeGeneric (only), apply argument and result conversions on the fly
   __ bind(invoke_generic_slow_path);
@@ -1175,27 +1168,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ mov(rsp, saved_last_sp);  // cut the stack back to where the caller started
 
       Register rbx_method = rbx_temp;
-      Label L_no_method;
-      // FIXME: fill in _raise_exception_method with a suitable java.lang.invoke method
       __ movptr(rbx_method, ExternalAddress((address) &_raise_exception_method));
-      __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, L_no_method);
 
       const int jobject_oop_offset = 0;
       __ movptr(rbx_method, Address(rbx_method, jobject_oop_offset));  // dereference the jobject
-      __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, L_no_method);
       __ verify_oop(rbx_method);
 
       NOT_LP64(__ push(rarg2_required));
       __ push(rdi_pc);         // restore caller PC
       __ jmp(rbx_method_fce);  // jump to compiled entry
-
-      // Do something that is at least causes a valid throw from the interpreter.
-      __ bind(L_no_method);
-      __ push(rarg2_required);
-      __ push(rarg1_actual);
-      __ jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
     }
     break;
 

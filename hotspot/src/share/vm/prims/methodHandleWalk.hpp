@@ -98,6 +98,7 @@ public:
   int       bound_arg_slot()    { assert(is_bound(), ""); return _arg_slot; }
   oop       bound_arg_oop()     { assert(is_bound(), ""); return BoundMethodHandle_argument_oop(); }
 
+  methodHandle last_method()    { assert(is_last(), ""); return _last_method; }
   methodOop last_method_oop()   { assert(is_last(), ""); return _last_method(); }
   Bytecodes::Code last_invoke_code() { assert(is_last(), ""); return _last_invoke; }
 
@@ -181,6 +182,8 @@ private:
   GrowableArray<ArgToken>  _outgoing;       // current outgoing parameter slots
   int                      _outgoing_argc;  // # non-empty outgoing slots
 
+  vmIntrinsics::ID _return_conv;            // Return conversion required by raw retypes.
+
   // Replace a value of type old_type at slot (and maybe slot+1) with the new value.
   // If old_type != T_VOID, remove the old argument at that point.
   // If new_type != T_VOID, insert the new argument at that point.
@@ -219,7 +222,8 @@ public:
     : _chain(root, THREAD),
       _for_invokedynamic(for_invokedynamic),
       _outgoing(THREAD, 10),
-      _outgoing_argc(0)
+      _outgoing_argc(0),
+      _return_conv(vmIntrinsics::_none)
   {
     _local_index = for_invokedynamic ? 0 : 1;
   }
@@ -227,6 +231,10 @@ public:
   MethodHandleChain& chain() { return _chain; }
 
   bool for_invokedynamic() const { return _for_invokedynamic; }
+
+  vmIntrinsics::ID return_conv() const { return _return_conv; }
+  void set_return_conv(vmIntrinsics::ID c) { _return_conv = c; }
+  static vmIntrinsics::ID zero_return_conv() { return vmIntrinsics::_min; }
 
   int new_local_index(BasicType bt) {
     //int index = _for_invokedynamic ? _local_index : _local_index - 1;
@@ -243,9 +251,9 @@ public:
   virtual ArgToken make_oop_constant(oop con, TRAPS) = 0;
   virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS) = 0;
   virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS) = 0;
-  virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS) = 0;
+  virtual ArgToken make_invoke(methodHandle m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS) = 0;
 
-  // For make_invoke, the methodOop can be NULL if the intrinsic ID
+  // For make_invoke, the methodHandle can be NULL if the intrinsic ID
   // is something other than vmIntrinsics::_none.
 
   // and in case anyone cares to related the previous actions to the chain:
@@ -280,6 +288,7 @@ private:
     JavaValue _value;
     Handle    _handle;
     Symbol*   _sym;
+    methodHandle _method;  // pre-linkage
 
   public:
     // Constructor for oop types.
@@ -328,10 +337,20 @@ private:
     jlong     get_jlong()    const { return _value.get_jlong();   }
     jfloat    get_jfloat()   const { return _value.get_jfloat();  }
     jdouble   get_jdouble()  const { return _value.get_jdouble(); }
+
+    void set_linkage(methodHandle method) {
+      assert(_method.is_null(), "");
+      _method = method;
+    }
+    bool     has_linkage()   const { return _method.not_null(); }
+    methodHandle linkage()   const { return _method; }
   };
 
   // Fake constant pool.
   GrowableArray<ConstantValue*> _constants;
+
+  // Non-BCP classes that appear in associated MethodTypes (require special handling).
+  GrowableArray<KlassHandle> _non_bcp_klasses;
 
   // Accumulated compiler state:
   GrowableArray<unsigned char> _bytecode;
@@ -368,14 +387,19 @@ private:
     return _constants.append(cv);
   }
 
-  int cpool_oop_reference_put(int tag, int first_index, int second_index) {
+  int cpool_oop_reference_put(int tag, int first_index, int second_index, methodHandle method) {
     if (first_index == 0 && second_index == 0)  return 0;
     assert(first_index != 0 && second_index != 0, "no zero indexes");
     ConstantValue* cv = new ConstantValue(tag, first_index, second_index);
+    if (method.not_null())  cv->set_linkage(method);
     return _constants.append(cv);
   }
 
   int cpool_primitive_put(BasicType type, jvalue* con);
+
+  bool check_non_bcp_klasses(Handle method_type, TRAPS);
+  bool check_non_bcp_klass(klassOop klass, TRAPS);
+  void record_non_bcp_klasses();
 
   int cpool_int_put(jint value) {
     jvalue con; con.i = value;
@@ -403,11 +427,12 @@ private:
   int cpool_klass_put(klassOop klass) {
     return cpool_oop_put(JVM_CONSTANT_Class, klass);
   }
-  int cpool_methodref_put(int class_index, int name_and_type_index) {
-    return cpool_oop_reference_put(JVM_CONSTANT_Methodref, class_index, name_and_type_index);
+  int cpool_methodref_put(Bytecodes::Code op, int class_index, int name_and_type_index, methodHandle method) {
+    int tag = (op == Bytecodes::_invokeinterface ? JVM_CONSTANT_InterfaceMethodref : JVM_CONSTANT_Methodref);
+    return cpool_oop_reference_put(tag, class_index, name_and_type_index, method);
   }
   int cpool_name_and_type_put(int name_index, int signature_index) {
-    return cpool_oop_reference_put(JVM_CONSTANT_NameAndType, name_index, signature_index);
+    return cpool_oop_reference_put(JVM_CONSTANT_NameAndType, name_index, signature_index, methodHandle());
   }
 
   void emit_bc(Bytecodes::Code op, int index = 0, int args_size = -1);
@@ -428,7 +453,7 @@ private:
 
   virtual ArgToken make_conversion(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& src, TRAPS);
   virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS);
-  virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS);
+  virtual ArgToken make_invoke(methodHandle m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS);
 
   // Get a real constant pool.
   constantPoolHandle get_constant_pool(TRAPS) const;

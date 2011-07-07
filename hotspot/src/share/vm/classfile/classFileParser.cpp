@@ -3287,9 +3287,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       // Fields allocation: oops fields in super and sub classes are together.
       if( nonstatic_field_size > 0 && super_klass() != NULL &&
           super_klass->nonstatic_oop_map_size() > 0 ) {
-        int map_size = super_klass->nonstatic_oop_map_size();
+        int map_count = super_klass->nonstatic_oop_map_count();
         OopMapBlock* first_map = super_klass->start_of_nonstatic_oop_maps();
-        OopMapBlock* last_map = first_map + map_size - 1;
+        OopMapBlock* last_map = first_map + map_count - 1;
         int next_offset = last_map->offset() + (last_map->count() * heapOopSize);
         if (next_offset == next_nonstatic_field_offset) {
           allocation_style = 0;   // allocate oops first
