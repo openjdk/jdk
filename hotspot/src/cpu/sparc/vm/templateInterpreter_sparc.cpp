@@ -128,24 +128,6 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 }
 
 
-// Arguments are: required type in G5_method_type, and
-// failing object (or NULL) in G3_method_handle.
-address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
-  address entry = __ pc();
-  // expression stack must be empty before entering the VM if an exception
-  // happened
-  __ empty_expression_stack();
-  // load exception object
-  __ call_VM(Oexception,
-             CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::throw_WrongMethodTypeException),
-             G5_method_type,    // required
-             G3_method_handle); // actual
-  __ should_not_reach_here();
-  return entry;
-}
-
-
 address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char* name) {
   address entry = __ pc();
   // expression stack must be empty before entering the VM if an exception happened

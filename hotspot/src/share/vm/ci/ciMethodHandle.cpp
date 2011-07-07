@@ -41,6 +41,16 @@ ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) const {
   VM_ENTRY_MARK;
   Handle h(get_oop());
   methodHandle callee(_callee->get_methodOop());
+  assert(callee->is_method_handle_invoke(), "");
+  oop mt1 = callee->method_handle_type();
+  oop mt2 = java_lang_invoke_MethodHandle::type(h());
+  if (!java_lang_invoke_MethodType::equals(mt1, mt2)) {
+    if (PrintMiscellaneous && (Verbose || WizardMode)) {
+      tty->print_cr("ciMethodHandle::get_adapter: types not equal");
+      mt1->print(); mt2->print();
+    }
+    return NULL;
+  }
   // We catch all exceptions here that could happen in the method
   // handle compiler and stop the VM.
   MethodHandleCompiler mhc(h, callee->name(), callee->signature(), _profile.count(), is_invokedynamic, THREAD);
@@ -53,7 +63,7 @@ ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) const {
   if (PrintMiscellaneous && (Verbose || WizardMode)) {
     tty->print("*** ciMethodHandle::get_adapter => ");
     PENDING_EXCEPTION->print();
-    tty->print("*** get_adapter (%s): ", is_invokedynamic ? "indy" : "mh"); ((ciObject*)this)->print(); //@@
+    tty->print("*** get_adapter (%s): ", is_invokedynamic ? "indy" : "mh"); ((ciObject*)this)->print();
   }
   CLEAR_PENDING_EXCEPTION;
   return NULL;

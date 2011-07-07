@@ -779,6 +779,7 @@ private:
   void andl(Register dst, Address src);
   void andl(Register dst, Register src);
 
+  void andq(Address  dst, int32_t imm32);
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
