@@ -37,15 +37,6 @@
 #include "services/management.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/taskqueue.hpp"
-#ifdef TARGET_ARCH_x86
-# include "vm_version_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vm_version_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vm_version_zero.hpp"
-#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif

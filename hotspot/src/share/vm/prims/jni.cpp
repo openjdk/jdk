@@ -70,15 +70,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 # include "thread_linux.inline.hpp"
