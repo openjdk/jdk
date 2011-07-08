@@ -492,6 +492,9 @@ class CommandLineFlags {
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
                                                                             \
+  product(intx, UseVIS, 99,                                                 \
+          "Highest supported VIS instructions set on Sparc")                \
+                                                                            \
   product(uintx, LargePageSizeInBytes, 0,                                   \
           "Large page size (0 to let VM choose the page size")              \
                                                                             \
