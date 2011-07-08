@@ -43,14 +43,12 @@ public class B6373555 {
     private static int port;
 
     private static volatile boolean error = false;
-    private static Object lock;
     static HttpServer httpServer;
     static ExecutorService pool, execs;
     static int NUM = 1000;
 
     public static void main(String[] args) throws Exception {
         try {
-            lock = new Object();
             if (args.length > 0) {
                 NUM = Integer.parseInt (args[0]);
             }
@@ -117,12 +115,6 @@ public class B6373555 {
                     System.out.println("Doesn't match");
                     error = true;
                 }
-                synchronized(lock) {
-                    ++received;
-                    if ((received % 1000) == 0) {
-                        System.out.println("Received="+received);
-                    }
-                }
             }
             catch(Exception e) {
                 e.printStackTrace();
@@ -150,18 +142,12 @@ public class B6373555 {
     private static HttpServer createHttpServer(ExecutorService execs)
         throws Exception {
         InetSocketAddress inetAddress = new InetSocketAddress(0);
-        HttpServer testServer = HttpServer.create(inetAddress, 5);
+        HttpServer testServer = HttpServer.create(inetAddress, 15);
         testServer.setExecutor(execs);
         HttpContext context = testServer.createContext("/test");
         context.setHandler(new HttpHandler() {
             public void handle(HttpExchange msg) {
                 try {
-                    synchronized(lock) {
-                        ++s_received;
-                            if ((s_received % 1000) == 0) {
-                            System.out.println("Received="+s_received);
-                        }
-                    }
                     String method = msg.getRequestMethod();
                         if (method.equals("POST")) {
                         InputStream is = msg.getRequestBody();
@@ -171,12 +157,6 @@ public class B6373555 {
                     } else {
                         System.out.println("****** METHOD not handled ***** "+method);
                             System.out.println("Received="+s_received);
-                    }
-                    synchronized(lock) {
-                        ++sent;
-                            if ((sent % 1000) == 0) {
-                            System.out.println("sent="+sent);
-                        }
                     }
                 }
                 catch(Exception e) {

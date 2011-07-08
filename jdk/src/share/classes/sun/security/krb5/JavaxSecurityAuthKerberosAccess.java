@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,21 @@
  * questions.
  */
 
-package java.lang.reflect;
+package sun.security.krb5;
 
+import javax.security.auth.kerberos.KeyTab;
+import sun.security.krb5.EncryptionKey;
+import sun.security.krb5.PrincipalName;
 
 /**
- * Thrown when a syntactically malformed signature attribute is
- * encountered by a reflective method that needs to interpret the
- * generic signature information for a type, method or constructor.
- *
- * @since 1.5
+ * An unsafe tunnel to get non-public access to classes in the
+ * javax.security.auth.kerberos package.
  */
-public class GenericSignatureFormatError extends ClassFormatError {
-    private static final long serialVersionUID = 6709919147137911034L;
-
+public interface JavaxSecurityAuthKerberosAccess {
     /**
-     * Constructs a new {@code GenericSignatureFormatError}.
-     *
+     * Returns keys for a principal in a keytab.
+     * @return the keys, never null, can be empty.
      */
-    public GenericSignatureFormatError() {
-        super();
-    }
-
-    /**
-     * Constructs a new {@code GenericSignatureFormatError} with the
-     * specified message.
-     *
-     * @param message the detail message, may be {@code null}
-     */
-    public GenericSignatureFormatError(String message) {
-        super(message);
-    }
+    public EncryptionKey[] keyTabGetEncryptionKeys(
+            KeyTab ktab, PrincipalName principal);
 }

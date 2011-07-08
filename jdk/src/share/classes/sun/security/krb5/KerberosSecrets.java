@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,24 @@
  * questions.
  */
 
-package java.lang.reflect;
+package sun.security.krb5;
 
+import javax.security.auth.kerberos.KeyTab;
+import sun.misc.Unsafe;
 
-/**
- * Thrown when a syntactically malformed signature attribute is
- * encountered by a reflective method that needs to interpret the
- * generic signature information for a type, method or constructor.
- *
- * @since 1.5
- */
-public class GenericSignatureFormatError extends ClassFormatError {
-    private static final long serialVersionUID = 6709919147137911034L;
+public class KerberosSecrets {
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
 
-    /**
-     * Constructs a new {@code GenericSignatureFormatError}.
-     *
-     */
-    public GenericSignatureFormatError() {
-        super();
+    public static void setJavaxSecurityAuthKerberosAccess
+            (JavaxSecurityAuthKerberosAccess jsaka) {
+        javaxSecurityAuthKerberosAccess = jsaka;
     }
 
-    /**
-     * Constructs a new {@code GenericSignatureFormatError} with the
-     * specified message.
-     *
-     * @param message the detail message, may be {@code null}
-     */
-    public GenericSignatureFormatError(String message) {
-        super(message);
+    public static JavaxSecurityAuthKerberosAccess
+            getJavaxSecurityAuthKerberosAccess() {
+        if (javaxSecurityAuthKerberosAccess == null)
+            unsafe.ensureClassInitialized(KeyTab.class);
+        return javaxSecurityAuthKerberosAccess;
     }
 }
