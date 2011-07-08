@@ -118,7 +118,13 @@ class Random implements java.io.Serializable {
      * @see   #setSeed(long)
      */
     public Random(long seed) {
-        this.seed = new AtomicLong(initialScramble(seed));
+        if (getClass() == Random.class)
+            this.seed = new AtomicLong(initialScramble(seed));
+        else {
+            // subclass might have overriden setSeed
+            this.seed = new AtomicLong();
+            setSeed(seed);
+        }
     }
 
     private static long initialScramble(long seed) {
