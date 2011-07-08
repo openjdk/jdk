@@ -716,6 +716,8 @@ class Assembler : public AbstractAssembler  {
     casa_op3     = 0x3c,
     casxa_op3    = 0x3e,
 
+    mftoi_op3    = 0x36,
+
     alt_bit_op3  = 0x10,
      cc_bit_op3  = 0x10
   };
@@ -750,7 +752,13 @@ class Assembler : public AbstractAssembler  {
     fitod_opf   = 0xc8,
     fstod_opf   = 0xc9,
     fstoi_opf   = 0xd1,
-    fdtoi_opf   = 0xd2
+    fdtoi_opf   = 0xd2,
+
+    mdtox_opf   = 0x110,
+    mstouw_opf  = 0x111,
+    mstosw_opf  = 0x113,
+    mxtod_opf   = 0x118,
+    mwtos_opf   = 0x119
   };
 
   enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7  };
@@ -1061,6 +1069,9 @@ class Assembler : public AbstractAssembler  {
     return x & ((1 << 10) - 1);
   }
 
+  // instruction only in VIS3
+  static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
+
   // instruction only in v9
   static void v9_only() { assert( VM_Version::v9_instructions_work(), "This instruction only works on SPARC V9"); }
 
@@ -1247,8 +1258,8 @@ public:
 
   // pp 159
 
-  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
-  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
+  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
+  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
 
   // pp 160
 
@@ -1256,8 +1267,8 @@ public:
 
   // pp 161
 
-  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, w)); }
-  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, w)); }
+  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, FloatRegisterImpl::D)); }
+  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, FloatRegisterImpl::S)); }
 
   // pp 162
 
@@ -1708,6 +1719,19 @@ public:
                                                                            simm(simm13a, 13)); }
   inline void wrasi(  Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
   inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
+
+
+  // VIS3 instructions
+
+  void movstosw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movstouw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstouw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movdtox(  FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mdtox_opf) | fs2(s, FloatRegisterImpl::D)); }
+
+  void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
+  void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+
+
+
 
   // For a given register condition, return the appropriate condition code
   // Condition (the one you would use to get the same effect after "tst" on
