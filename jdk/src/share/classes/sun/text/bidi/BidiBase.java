@@ -3411,18 +3411,21 @@ public class BidiBase {
      * Display the bidi internal state, used in debugging.
      */
     public String toString() {
-        StringBuffer buf = new StringBuffer(super.toString());
+        StringBuilder buf = new StringBuilder(getClass().getName());
 
-        buf.append("[dir: " + direction);
-        buf.append(" baselevel: " + paraLevel);
-        buf.append(" length: " + length);
+        buf.append("[dir: ");
+        buf.append(direction);
+        buf.append(" baselevel: ");
+        buf.append(paraLevel);
+        buf.append(" length: ");
+        buf.append(length);
         buf.append(" runs: ");
         if (levels == null) {
-            buf.append("null");
+            buf.append("none");
         } else {
             buf.append('[');
             buf.append(levels[0]);
-            for (int i = 0; i < levels.length; i++) {
+            for (int i = 1; i < levels.length; i++) {
                 buf.append(' ');
                 buf.append(levels[i]);
             }
@@ -3430,12 +3433,11 @@ public class BidiBase {
         }
         buf.append(" text: [0x");
         buf.append(Integer.toHexString(text[0]));
-        for (int i = 0; i < text.length; i++) {
+        for (int i = 1; i < text.length; i++) {
             buf.append(" 0x");
             buf.append(Integer.toHexString(text[i]));
         }
-        buf.append(']');
-        buf.append(']');
+        buf.append("]]");
 
         return buf.toString();
     }
