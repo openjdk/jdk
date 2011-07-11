@@ -2690,6 +2690,7 @@ public class BidiBase {
     public void setPara(AttributedCharacterIterator paragraph)
     {
         byte paraLvl;
+        char ch = paragraph.first();
         Boolean runDirection =
             (Boolean) paragraph.getAttribute(TextAttributeConstants.RUN_DIRECTION);
         Object shaper = paragraph.getAttribute(TextAttributeConstants.NUMERIC_SHAPING);
@@ -2705,7 +2706,6 @@ public class BidiBase {
         byte[] embeddingLevels = new byte[len];
         char[] txt = new char[len];
         int i = 0;
-        char ch = paragraph.first();
         while (ch != AttributedCharacterIterator.DONE) {
             txt[i] = ch;
             Integer embedding =
