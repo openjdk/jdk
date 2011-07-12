@@ -1384,6 +1384,10 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   generation_iterate(&blk, false);  // not old-to-young.
   perm_gen()->gc_epilogue(full);
 
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
+  }
+
   always_do_update_barrier = UseConcMarkSweepGC;
 };
 

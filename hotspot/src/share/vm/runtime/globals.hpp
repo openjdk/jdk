@@ -343,6 +343,12 @@ class CommandLineFlags {
 #define falseInTiered true
 #endif
 
+#ifdef JAVASE_EMBEDDED
+#define falseInEmbedded false
+#else
+#define falseInEmbedded true
+#endif
+
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
@@ -437,6 +443,9 @@ class CommandLineFlags {
    */                                                                       \
   product(bool, UsePPCLWSYNC, true,                                         \
           "Use lwsync instruction if true, else use slower sync")           \
+                                                                            \
+  develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
+          "Whether to clean the chunk pool asynchronously")                 \
                                                                             \
   /* Temporary: See 6948537 */                                             \
   experimental(bool, UseMemSetInBOT, true,                                  \
@@ -3611,13 +3620,9 @@ class CommandLineFlags {
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \
-  NOT_EMBEDDED(product(bool, UsePerfData, true,                             \
+  product(bool, UsePerfData, falseInEmbedded,                               \
           "Flag to disable jvmstat instrumentation for performance testing" \
-          "and problem isolation purposes."))                               \
-                                                                            \
-  EMBEDDED_ONLY(product(bool, UsePerfData, false,                           \
-          "Flag to disable jvmstat instrumentation for performance testing" \
-          "and problem isolation purposes."))                               \
+          "and problem isolation purposes.")                                \
                                                                             \
   product(bool, PerfDataSaveToFile, false,                                  \
           "Save PerfData memory to hsperfdata_<pid> file on exit")          \
