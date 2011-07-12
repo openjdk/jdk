@@ -810,10 +810,7 @@ public class BasicFileChooserUI extends FileChooserUI {
             putValue(Action.ACTION_COMMAND_KEY, FilePane.ACTION_CHANGE_TO_PARENT_DIRECTORY);
         }
         public void actionPerformed(ActionEvent e) {
-            Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-            if (focusOwner == null || !(focusOwner instanceof javax.swing.text.JTextComponent)) {
-                getFileChooser().changeToParentDirectory();
-            }
+            getFileChooser().changeToParentDirectory();
         }
     }
 
