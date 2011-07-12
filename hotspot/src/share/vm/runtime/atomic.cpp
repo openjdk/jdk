@@ -51,6 +51,12 @@
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "atomic_windows_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "atomic_linux_arm.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "atomic_linux_ppc.inline.hpp"
+#endif
 
 jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
   assert(sizeof(jbyte) == 1, "assumption.");
