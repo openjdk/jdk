@@ -370,8 +370,7 @@ $(SIGNED_POLICY_BUILDDIR)/limited/local_policy.jar:		\
 
 CLOSED_DIR = $(BUILDDIR)/closed/javax/crypto
 
-release: $(SIGNED_DIR)/jce.jar sign-policy $(CLOSED_DIR)/doc/COPYRIGHT.html \
-         $(CLOSED_DIR)/doc/README.txt
+release: $(SIGNED_DIR)/jce.jar sign-policy $(CLOSED_DIR)/doc/README.txt
 	$(RM) -r \
 	    $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy              \
 	    $(JCE_BUILD_DIR)/release/jce.jar                         \
@@ -387,7 +386,6 @@ release: $(SIGNED_DIR)/jce.jar sign-policy $(CLOSED_DIR)/doc/COPYRIGHT.html \
 	$(CP) \
 	    $(SIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar \
 	    $(SIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar     \
-	    $(CLOSED_DIR)/doc/COPYRIGHT.html                         \
 	    $(CLOSED_DIR)/doc/README.txt                             \
 	    $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy
 	cd $(JCE_BUILD_DIR)/release ; \

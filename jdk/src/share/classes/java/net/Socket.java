@@ -127,11 +127,12 @@ class Socket implements java.io.Closeable {
             }
             if (security != null) {
                 if (epoint.isUnresolved())
-                    security.checkConnect(epoint.getHostName(),
-                                          epoint.getPort());
+                    epoint = new InetSocketAddress(epoint.getHostName(), epoint.getPort());
+                if (epoint.isUnresolved())
+                    security.checkConnect(epoint.getHostName(), epoint.getPort());
                 else
                     security.checkConnect(epoint.getAddress().getHostAddress(),
-                                          epoint.getPort());
+                                  epoint.getPort());
             }
             impl = new SocksSocketImpl(p);
             impl.setSocket(this);

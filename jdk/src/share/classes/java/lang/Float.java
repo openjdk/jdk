@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,22 +556,24 @@ public final class Float extends Number implements Comparable<Float> {
     }
 
     /**
-     * Returns the value of this {@code Float} as a {@code byte} (by
-     * casting to a {@code byte}).
+     * Returns the value of this {@code Float} as a {@code byte} after
+     * a narrowing primitive conversion.
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code byte}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public byte byteValue() {
         return (byte)value;
     }
 
     /**
-     * Returns the value of this {@code Float} as a {@code short} (by
-     * casting to a {@code short}).
+     * Returns the value of this {@code Float} as a {@code short}
+     * after a narrowing primitive conversion.
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code short}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      * @since JDK1.1
      */
     public short shortValue() {
@@ -579,22 +581,24 @@ public final class Float extends Number implements Comparable<Float> {
     }
 
     /**
-     * Returns the value of this {@code Float} as an {@code int} (by
-     * casting to type {@code int}).
+     * Returns the value of this {@code Float} as an {@code int} after
+     * a narrowing primitive conversion.
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code int}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public int intValue() {
         return (int)value;
     }
 
     /**
-     * Returns value of this {@code Float} as a {@code long} (by
-     * casting to type {@code long}).
+     * Returns value of this {@code Float} as a {@code long} after a
+     * narrowing primitive conversion.
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code long}
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public long longValue() {
         return (long)value;
@@ -610,11 +614,12 @@ public final class Float extends Number implements Comparable<Float> {
     }
 
     /**
-     * Returns the {@code double} value of this {@code Float} object.
+     * Returns the value of this {@code Float} as a {@code double}
+     * after a widening primitive conversion.
      *
      * @return the {@code float} value represented by this
-     *         object is converted to type {@code double} and the
-     *         result of the conversion is returned.
+     *         object converted to type {@code double}
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {
         return (double)value;
