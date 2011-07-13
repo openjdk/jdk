@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 6523403 6733501
+ * @bug 6476665 6523403 6733501 7042594
  * @summary Verifies reading and writing profiles and tags of the standard color
  * spaces
  * @run main ReadWriteProfileTest
@@ -94,7 +94,16 @@ public class ReadWriteProfileTest implements Runnable {
             for (int tagSig : tags[i].keySet()) {
                 byte [] tagData = pf.getData(tagSig);
                 byte [] empty = new byte[tagData.length];
-                pf.setData(tagSig, empty);
+                boolean emptyDataRejected = false;
+                try {
+                    pf.setData(tagSig, empty);
+                } catch (IllegalArgumentException e) {
+                    emptyDataRejected = true;
+                }
+                if (!emptyDataRejected) {
+                    throw new
+                        RuntimeException("Test failed: empty tag data was not rejected.");
+                }
                 pf.setData(tagSig, tagData);
 
                 byte [] tagData1 = pf.getData(tagSig);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,20 @@
  * questions.
  */
 
-package sun.misc;
 
-import javax.security.auth.kerberos.KeyTab;
-import sun.security.krb5.EncryptionKey;
-import sun.security.krb5.PrincipalName;
+#ifndef JDK_UTIL_MD_H
+#define JDK_UTIL_MD_H
 
-/**
- * An unsafe tunnel to get non-public access to classes in the
- * javax.security.auth.kerberos package.
- */
-public interface JavaxSecurityAuthKerberosAccess {
-    /**
-     * Returns keys for a principal in a keytab.
-     * @return the keys, never null, can be empty.
-     */
-    public EncryptionKey[] keyTabGetEncryptionKeys(
-            KeyTab ktab, PrincipalName principal);
-}
+#include "jni.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+
+#endif /* JDK_UTIL_MD_H */
