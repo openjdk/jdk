@@ -5079,7 +5079,7 @@ void os::Advapi32Dll::initialize() {
       _OpenProcessToken = (OpenProcessToken_Fn)::GetProcAddress(handle,
         "OpenProcessToken");
       _LookupPrivilegeValue = (LookupPrivilegeValue_Fn)::GetProcAddress(handle,
-        "LookupPrivilegeValue");
+        "LookupPrivilegeValueA");
     }
     initialized = TRUE;
   }
