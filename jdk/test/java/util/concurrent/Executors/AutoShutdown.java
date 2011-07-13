@@ -67,6 +67,11 @@ public class AutoShutdown {
         e1 = e2 = null;
         for (int i = 0; i < 10 && Thread.activeCount() > count0; i++)
             tryWaitForFinalizersToRun();
+        for (int i = 0; i < 10; ++i) { // give JVM a chance to settle.
+            if (Thread.activeCount() == count0)
+                return;
+            Thread.sleep(1000);
+        }
         equal(Thread.activeCount(), count0);
     }
 
