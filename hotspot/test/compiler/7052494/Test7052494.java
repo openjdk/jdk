@@ -70,18 +70,24 @@ public class Test7052494 {
   }
 
   // Empty loop rolls through MAXINT if i > 0
+
+  static final int limit5 = Integer.MIN_VALUE + 10000;
+
   static int test5(int i) {
     int result = 0;
-    while (i++ != 0) {
+    while (i++ != limit5) {
       result = i*2;
     }
     return result;
   }
 
   // Empty loop rolls through MININT if i < 0
+
+  static final int limit6 = Integer.MAX_VALUE - 10000;
+
   static int test6(int i) {
     int result = 0;
-    while (i-- != 0) {
+    while (i-- != limit6) {
       result = i*2;
     }
     return result;
@@ -92,6 +98,7 @@ public class Test7052494 {
     int[] arr = new int[8];
     int[] ar3 = { 0, 0, 4, 6, 8, 10, 0, 0 };
     int[] ar4 = { 0, 0, 0, -10, -8, -6, -4, 0 };
+    System.out.println("test1");
     for (int i = 0; i < 11000; i++) {
       int k = test1(1, 10);
       if (k != 10) {
@@ -100,6 +107,7 @@ public class Test7052494 {
         break;
       }
     }
+    System.out.println("test2");
     for (int i = 0; i < 11000; i++) {
       int k = test2(-1, -10);
       if (k != -10) {
@@ -108,6 +116,7 @@ public class Test7052494 {
         break;
       }
     }
+    System.out.println("test3");
     for (int i = 0; i < 11000; i++) {
       java.util.Arrays.fill(arr, 0);
       test3(1, 10, arr);
@@ -124,6 +133,7 @@ public class Test7052494 {
         break;
       }
     }
+    System.out.println("test4");
     for (int i = 0; i < 11000; i++) {
       java.util.Arrays.fill(arr, 0);
       test4(-1, -10, arr);
@@ -140,22 +150,25 @@ public class Test7052494 {
         break;
       }
     }
+    System.out.println("test5");
     for (int i = 0; i < 11000; i++) {
-      int k = test5(1);
-      if (k != 0) {
-        System.out.println("FAILED: " + k + " != 0");
+      int k = test5(limit6);
+      if (k != limit5*2) {
+        System.out.println("FAILED: " + k + " != " + limit5*2);
         failed = true;
         break;
       }
     }
+    System.out.println("test6");
     for (int i = 0; i < 11000; i++) {
-      int k = test6(-1);
-      if (k != 0) {
-        System.out.println("FAILED: " + k + " != 0");
+      int k = test6(limit5);
+      if (k != limit6*2) {
+        System.out.println("FAILED: " + k + " != " + limit6*2);
         failed = true;
         break;
       }
     }
+    System.out.println("finish");
     if (failed)
       System.exit(97);
   }
