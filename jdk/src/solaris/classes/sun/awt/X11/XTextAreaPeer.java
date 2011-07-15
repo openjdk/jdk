@@ -185,11 +185,8 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      */
     @Override
     public void pSetCursor(Cursor cursor, boolean ignoreSubComponents) {
-        Point onScreen = getLocationOnScreen();
         if (ignoreSubComponents ||
-            javaMouseEventHandler == null ||
-            onScreen == null)
-        {
+            javaMouseEventHandler == null) {
             super.pSetCursor(cursor, true);
             return;
         }
@@ -197,6 +194,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         Point cursorPos = new Point();
         ((XGlobalCursorManager)XGlobalCursorManager.getCursorManager()).getCursorPos(cursorPos);
 
+        final Point onScreen = getLocationOnScreen();
         Point localPoint = new Point(cursorPos.x - onScreen.x, cursorPos.y - onScreen.y );
 
         javaMouseEventHandler.setPointerToUnderPoint(localPoint);
