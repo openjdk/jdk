@@ -241,16 +241,19 @@ class XWarningWindow extends XWindow {
     Font getFont () {
         return ownerWindow.getFont();
     }
+
+    @Override
     public void repaint() {
-        Rectangle bounds = getBounds();
-        Graphics g = getGraphics();
-        try {
-            paint(g, 0, 0, bounds.width, bounds.height);
-        } finally {
-            g.dispose();
+        final Rectangle bounds = getBounds();
+        final Graphics g = getGraphics();
+        if (g != null) {
+            try {
+                paint(g, 0, 0, bounds.width, bounds.height);
+            } finally {
+                g.dispose();
+            }
         }
     }
-
     @Override
     public void handleExposeEvent(XEvent xev) {
         super.handleExposeEvent(xev);
@@ -263,11 +266,13 @@ class XWarningWindow extends XWindow {
         SunToolkit.executeOnEventHandlerThread(target,
                 new Runnable() {
                     public void run() {
-                        Graphics g = getGraphics();
-                        try {
-                            paint(g, x, y, width, height);
-                        } finally {
-                            g.dispose();
+                        final Graphics g = getGraphics();
+                        if (g != null) {
+                            try {
+                                paint(g, x, y, width, height);
+                            } finally {
+                                g.dispose();
+                            }
                         }
                     }
                 });

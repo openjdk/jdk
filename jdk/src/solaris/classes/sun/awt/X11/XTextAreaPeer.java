@@ -298,15 +298,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * Paint the component
      * this method is called when the repaint instruction has been used
      */
-
     public void repaint() {
         if (textPane  != null)  {
             //textPane.validate();
             textPane.repaint();
         }
     }
-
-    public void paint(Graphics g) {
+    @Override
+    void paintPeer(final Graphics g) {
         if (textPane  != null)  {
             textPane.paint(g);
         }
