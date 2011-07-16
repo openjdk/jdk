@@ -165,7 +165,7 @@ public class MethodHandleProxies {
                         if (method.getDeclaringClass() == WrapperInstance.class)
                             return getArg(method.getName());
                         if (isObjectMethod(method))
-                            return callObjectMethod(this, method, args);
+                            return callObjectMethod(proxy, method, args);
                         throw new InternalError("bad proxy method: "+method);
                     }
                 }));
