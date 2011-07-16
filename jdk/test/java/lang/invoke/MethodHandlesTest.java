@@ -2321,6 +2321,31 @@ public class MethodHandlesTest {
             }
         }
     }
+
+    @Test
+    public void testRunnableProxy() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("testRunnableProxy");
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle run = lookup.findStatic(lookup.lookupClass(), "runForRunnable", MethodType.methodType(void.class));
+        Runnable r = MethodHandleProxies.asInterfaceInstance(Runnable.class, run);
+        testRunnableProxy(r);
+        assertCalled("runForRunnable");
+    }
+    private static void testRunnableProxy(Runnable r) {
+        //7058630: JSR 292 method handle proxy violates contract for Object methods
+        r.run();
+        Object o = r;
+        r = null;
+        boolean eq = (o == o);
+        int     hc = System.identityHashCode(o);
+        String  st = o.getClass().getName() + "@" + Integer.toHexString(hc);
+        Object expect = Arrays.asList(st, eq, hc);
+        if (verbosity >= 2)  System.out.println("expect st/eq/hc = "+expect);
+        Object actual = Arrays.asList(o.toString(), o.equals(o), o.hashCode());
+        if (verbosity >= 2)  System.out.println("actual st/eq/hc = "+actual);
+        assertEquals(expect, actual);
+    }
 }
 // Local abbreviated copy of sun.invoke.util.ValueConversions
 class ValueConversions {
