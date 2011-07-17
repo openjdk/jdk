@@ -1647,6 +1647,7 @@ class ObjectMarker : AllStatic {
   // saved headers
   static GrowableArray<oop>* _saved_oop_stack;
   static GrowableArray<markOop>* _saved_mark_stack;
+  static bool _needs_reset;                  // do we need to reset mark bits?
 
  public:
   static void init();                       // initialize
@@ -1654,10 +1655,14 @@ class ObjectMarker : AllStatic {
 
   static inline void mark(oop o);           // mark an object
   static inline bool visited(oop o);        // check if object has been visited
+
+  static inline bool needs_reset()            { return _needs_reset; }
+  static inline void set_needs_reset(bool v)  { _needs_reset = v; }
 };
 
 GrowableArray<oop>* ObjectMarker::_saved_oop_stack = NULL;
 GrowableArray<markOop>* ObjectMarker::_saved_mark_stack = NULL;
+bool ObjectMarker::_needs_reset = true;  // need to reset mark bits by default
 
 // initialize ObjectMarker - prepares for object marking
 void ObjectMarker::init() {
@@ -1680,7 +1685,13 @@ void ObjectMarker::done() {
   // iterate over all objects and restore the mark bits to
   // their initial value
   RestoreMarksClosure blk;
-  Universe::heap()->object_iterate(&blk);
+  if (needs_reset()) {
+    Universe::heap()->object_iterate(&blk);
+  } else {
+    // We don't need to reset mark bits on this call, but reset the
+    // flag to the default for the next call.
+    set_needs_reset(true);
+  }
 
   // When sharing is enabled we need to restore the headers of the objects
   // in the readwrite space too.
@@ -3023,7 +3034,8 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
 }
 
 
-// collects all simple (non-stack) roots.
+// Collects all simple (non-stack) roots except for threads;
+// threads are handled in collect_stack_roots() as an optimization.
 // if there's a heap root callback provided then the callback is
 // invoked for each simple root.
 // if an object reference callback is provided then all simple
@@ -3054,16 +3066,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
     return false;
   }
 
-  // Threads
-  for (JavaThread* thread = Threads::first(); thread != NULL ; thread = thread->next()) {
-    oop threadObj = thread->threadObj();
-    if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
-      bool cont = CallbackInvoker::report_simple_root(JVMTI_HEAP_REFERENCE_THREAD, threadObj);
-      if (!cont) {
-        return false;
-      }
-    }
-  }
+  // threads are now handled in collect_stack_roots()
 
   // Other kinds of roots maintained by HotSpot
   // Many of these won't be visible but others (such as instances of important
@@ -3175,13 +3178,20 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
 }
 
 
-// collects all stack roots - for each thread it walks the execution
+// Collects the simple roots for all threads and collects all
+// stack roots - for each thread it walks the execution
 // stack to find all references and local JNI refs.
 inline bool VM_HeapWalkOperation::collect_stack_roots() {
   JNILocalRootsClosure blk;
   for (JavaThread* thread = Threads::first(); thread != NULL ; thread = thread->next()) {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
+      // Collect the simple root for this thread before we
+      // collect its stack roots
+      if (!CallbackInvoker::report_simple_root(JVMTI_HEAP_REFERENCE_THREAD,
+                                               threadObj)) {
+        return false;
+      }
       if (!collect_stack_roots(thread, &blk)) {
         return false;
       }
@@ -3235,8 +3245,20 @@ void VM_HeapWalkOperation::doit() {
 
   // the heap walk starts with an initial object or the heap roots
   if (initial_object().is_null()) {
-    if (!collect_simple_roots()) return;
+    // If either collect_stack_roots() or collect_simple_roots()
+    // returns false at this point, then there are no mark bits
+    // to reset.
+    ObjectMarker::set_needs_reset(false);
+
+    // Calling collect_stack_roots() before collect_simple_roots()
+    // can result in a big performance boost for an agent that is
+    // focused on analyzing references in the thread stacks.
     if (!collect_stack_roots()) return;
+
+    if (!collect_simple_roots()) return;
+
+    // no early return so enable heap traversal to reset the mark bits
+    ObjectMarker::set_needs_reset(true);
   } else {
     visit_stack()->push(initial_object()());
   }
