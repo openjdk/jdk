@@ -29,7 +29,6 @@ import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.security.ProtectionDomain;
-import javax.security.auth.kerberos.KeyTab;
 
 import java.security.AccessController;
 
@@ -52,7 +51,6 @@ public class SharedSecrets {
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
-    private static JavaxSecurityAuthKerberosAccess javaxSecurityAuthKerberosAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -140,17 +138,5 @@ public class SharedSecrets {
             unsafe.ensureClassInitialized(AccessController.class);
         }
         return javaSecurityAccess;
-    }
-
-    public static void setJavaxSecurityAuthKerberosAccess
-            (JavaxSecurityAuthKerberosAccess jsaka) {
-        javaxSecurityAuthKerberosAccess = jsaka;
-    }
-
-    public static JavaxSecurityAuthKerberosAccess
-            getJavaxSecurityAuthKerberosAccess() {
-        if (javaxSecurityAuthKerberosAccess == null)
-            unsafe.ensureClassInitialized(KeyTab.class);
-        return javaxSecurityAuthKerberosAccess;
     }
 }

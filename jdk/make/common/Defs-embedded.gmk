@@ -60,5 +60,10 @@ ifeq ($(PLATFORM), linux)
   endif
 endif
 
+# NIO Platform specific source file location
+ifdef CROSS_COMPILE_ARCH
+  NIO_PLATFORM_CLASSES_ROOT_DIR = $(CLOSED_PLATFORM_SRC)/classes/
+endif
+
 endif # JAVASE_EMBEDDED
 

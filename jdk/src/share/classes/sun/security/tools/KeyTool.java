@@ -4193,15 +4193,11 @@ class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    private static boolean equals(Object x, Object y) {
-        return (x == null && y == null) || (x != null && x.equals(y));
-    }
-
     public boolean equals(Object other) {
         return
             other instanceof Pair &&
-            equals(fst, ((Pair)other).fst) &&
-            equals(snd, ((Pair)other).snd);
+            Objects.equals(fst, ((Pair)other).fst) &&
+            Objects.equals(snd, ((Pair)other).snd);
     }
 
     public int hashCode() {
