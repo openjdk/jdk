@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@ public final class ReflectUtil {
     private ReflectUtil() {
     }
 
-    public static Class forName(String name)
+    public static Class<?> forName(String name)
         throws ClassNotFoundException {
         checkPackageAccess(name);
         return Class.forName(name);
     }
 
-    public static Object newInstance(Class cls)
+    public static Object newInstance(Class<?> cls)
         throws InstantiationException, IllegalAccessException {
         checkPackageAccess(cls);
         return cls.newInstance();
@@ -50,8 +50,8 @@ public final class ReflectUtil {
      * Reflection.ensureMemberAccess is overly-restrictive
      * due to a bug. We awkwardly work around it for now.
      */
-    public static void ensureMemberAccess(Class currentClass,
-                                          Class memberClass,
+    public static void ensureMemberAccess(Class<?> currentClass,
+                                          Class<?> memberClass,
                                           Object target,
                                           int modifiers)
         throws IllegalAccessException
@@ -102,8 +102,8 @@ public final class ReflectUtil {
         }
     }
 
-    private static boolean isSubclassOf(Class queryClass,
-                                Class ofClass)
+    private static boolean isSubclassOf(Class<?> queryClass,
+                                        Class<?> ofClass)
     {
         while (queryClass != null) {
             if (queryClass == ofClass) {
@@ -115,7 +115,7 @@ public final class ReflectUtil {
     }
 
 
-    public static void checkPackageAccess(Class clazz) {
+    public static void checkPackageAccess(Class<?> clazz) {
         checkPackageAccess(clazz.getName());
     }
 
@@ -136,7 +136,7 @@ public final class ReflectUtil {
         }
     }
 
-    public static boolean isPackageAccessible(Class clazz) {
+    public static boolean isPackageAccessible(Class<?> clazz) {
         try {
             checkPackageAccess(clazz);
         } catch (SecurityException e) {
