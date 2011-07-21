@@ -59,6 +59,11 @@ void VM_Version::initialize() {
 
   assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
 
+  if (AllocatePrefetchStyle == 3 && !has_blk_init()) {
+    warning("BIS instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
+  }
+
   UseSSE = 0; // Only on x86 and x64
 
   _supports_cx8               = has_v9();
@@ -116,27 +121,44 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
+  } else if (UsePopCountInstruction) {
+    warning("POPC instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  // T4 and newer Sparc cpus have new compare and branch instruction.
+  if (has_cbcond()) {
+    if (FLAG_IS_DEFAULT(UseCBCond)) {
+      FLAG_SET_DEFAULT(UseCBCond, true);
+    }
+  } else if (UseCBCond) {
+    warning("CBCOND instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseCBCond, false);
   }
 
 #ifdef COMPILER2
+  // T4 and newer Sparc cpus have fast RDPC.
+  if (has_fast_rdpc() && FLAG_IS_DEFAULT(UseRDPCForConstantTableBase)) {
+//    FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
+  }
+
   // Currently not supported anywhere.
   FLAG_SET_DEFAULT(UseFPUForSpilling, false);
 #endif
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_v8() ? ", has_v8" : ""),
-               (has_v9() ? ", has_v9" : ""),
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               (has_v9() ? ", v9" : (has_v8() ? ", v8" : "")),
                (has_hardware_popc() ? ", popc" : ""),
-               (has_vis1() ? ", has_vis1" : ""),
-               (has_vis2() ? ", has_vis2" : ""),
-               (has_vis3() ? ", has_vis3" : ""),
-               (has_blk_init() ? ", has_blk_init" : ""),
-               (is_ultra3() ? ", is_ultra3" : ""),
-               (is_sun4v() ? ", is_sun4v" : ""),
-               (is_niagara() ? ", is_niagara" : ""),
-               (is_niagara_plus() ? ", is_niagara_plus" : ""),
-               (is_sparc64() ? ", is_sparc64" : ""),
+               (has_vis1() ? ", vis1" : ""),
+               (has_vis2() ? ", vis2" : ""),
+               (has_vis3() ? ", vis3" : ""),
+               (has_blk_init() ? ", blk_init" : ""),
+               (has_cbcond() ? ", cbcond" : ""),
+               (is_ultra3() ? ", ultra3" : ""),
+               (is_sun4v() ? ", sun4v" : ""),
+               (is_niagara_plus() ? ", niagara_plus" : (is_niagara() ? ", niagara" : "")),
+               (is_sparc64() ? ", sparc64" : ""),
                (!has_hardware_mul32() ? ", no-mul32" : ""),
                (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));

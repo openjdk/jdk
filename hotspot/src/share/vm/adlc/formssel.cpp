@@ -3623,7 +3623,27 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
   assert( mNode2->_opType, "Must have _opType");
   const Form *form  = globals[_opType];
   const Form *form2 = globals[mNode2->_opType];
-  return (form == form2);
+  if( form != form2 ) {
+    return false;
+  }
+
+  // Check that their children also match
+  if (_lChild ) {
+    if( !_lChild->equivalent(globals, mNode2->_lChild) )
+      return false;
+  } else if (mNode2->_lChild) {
+    return false; // I have NULL left child, mNode2 has non-NULL left child.
+  }
+
+  if (_rChild ) {
+    if( !_rChild->equivalent(globals, mNode2->_rChild) )
+      return false;
+  } else if (mNode2->_rChild) {
+    return false; // I have NULL right child, mNode2 has non-NULL right child.
+  }
+
+  // We've made it through the gauntlet.
+  return true;
 }
 
 //-------------------------- has_commutative_op -------------------------------

@@ -1713,14 +1713,14 @@ encode %{
     else                               emit_d32(cbuf,con);
   %}
 
-  enc_class Lbl (label labl) %{ // JMP, CALL
+  enc_class Lbl (label labl) %{ // GOTO
     Label *l = $labl$$label;
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size()+4)) : 0);
+    emit_d32(cbuf, (l->loc_pos() - (cbuf.insts_size()+4)));
   %}
 
-  enc_class LblShort (label labl) %{ // JMP, CALL
+  enc_class LblShort (label labl) %{ // GOTO
     Label *l = $labl$$label;
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size()+1)) : 0;
+    int disp = l->loc_pos() - (cbuf.insts_size()+1);
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -1751,13 +1751,13 @@ encode %{
     Label *l = $labl$$label;
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size()+4)) : 0);
+    emit_d32(cbuf, (l->loc_pos() - (cbuf.insts_size()+4)));
   %}
 
   enc_class JccShort (cmpOp cop, label labl) %{    // JCC
     Label *l = $labl$$label;
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size()+1)) : 0;
+    int disp = l->loc_pos() - (cbuf.insts_size()+1);
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     emit_d8(cbuf, disp);
   %}
@@ -13172,7 +13172,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     bool ok = false;
     if ($cop$$cmpcode == Assembler::notEqual) {
        // the two jumps 6 bytes apart so the jump distances are too
-       parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
+       parity_disp = l->loc_pos() - (cbuf.insts_size() + 4);
     } else if ($cop$$cmpcode == Assembler::equal) {
        parity_disp = 6;
        ok = true;
@@ -13182,7 +13182,7 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     emit_d32(cbuf, parity_disp);
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
+    int disp = l->loc_pos() - (cbuf.insts_size() + 4);
     emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
@@ -13368,7 +13368,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     emit_cc(cbuf, $primary, Assembler::parity);
     int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
+      parity_disp = l->loc_pos() - (cbuf.insts_size() + 1);
     } else if ($cop$$cmpcode == Assembler::equal) {
       parity_disp = 2;
     } else {
@@ -13376,7 +13376,7 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     }
     emit_d8(cbuf, parity_disp);
     emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
+    int disp = l->loc_pos() - (cbuf.insts_size() + 1);
     emit_d8(cbuf, disp);
     assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
     assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");

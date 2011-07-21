@@ -282,7 +282,7 @@ public:
   virtual int ideal_Opcode()     const { return Op_Node; }
 
   // Set the branch inside jump MachNodes.  Error for non-branch Nodes.
-  virtual void label_set( Label& label, uint block_num );
+  virtual void label_set( Label* label, uint block_num );
 
   // Adds the label for the case
   virtual void add_case_label( int switch_val, Label* blockLabel);
@@ -531,6 +531,7 @@ public:
   }
 
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void label_set(Label* label, uint block_num);
   virtual bool pinned() const { return true; };
   virtual void negate() { }
   virtual const class Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -853,7 +854,7 @@ public:
 
   virtual MachOper *clone(Compile* C) const;
 
-  virtual Label *label() const { return _label; }
+  virtual Label *label() const { assert(_label != NULL, "need Label"); return _label; }
 
   virtual uint           opcode() const;
 

@@ -761,7 +761,7 @@ class Assembler : public AbstractAssembler  {
     mwtos_opf   = 0x119
   };
 
-  enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7  };
+  enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7, rc_last = rc_gez  };
 
   enum Condition {
      // for FBfcc & FBPfcc instruction
@@ -866,9 +866,18 @@ class Assembler : public AbstractAssembler  {
     return is_simm(d, nbits + 2);
   }
 
+  address target_distance(Label& L) {
+    // Assembler::target(L) should be called only when
+    // a branch instruction is emitted since non-bound
+    // labels record current pc() as a branch address.
+    if (L.is_bound()) return target(L);
+    // Return current address for non-bound labels.
+    return pc();
+  }
+
   // test if label is in simm16 range in words (wdisp16).
   bool is_in_wdisp16_range(Label& L) {
-    return is_in_wdisp_range(target(L), pc(), 16);
+    return is_in_wdisp_range(target_distance(L), pc(), 16);
   }
   // test if the distance between two addresses fits in simm30 range in words
   static bool is_in_wdisp30_range(address a, address b) {
@@ -975,6 +984,20 @@ class Assembler : public AbstractAssembler  {
   static int sx(       int         i)  { return  u_field(i,             12, 12); } // shift x=1 means 64-bit
   static int opf(      int         x)  { return  u_field(x,             13,  5); }
 
+  static bool is_cbcond( int x ) {
+    return (VM_Version::has_cbcond() && (inv_cond(x) > rc_last) &&
+            inv_op(x) == branch_op && inv_op2(x) == bpr_op2);
+  }
+  static bool is_cxb( int x ) {
+    assert(is_cbcond(x), "wrong instruction");
+    return (x & (1<<21)) != 0;
+  }
+  static int cond_cbcond( int         x)  { return  u_field((((x & 8)<<1) + 8 + (x & 7)), 29, 25); }
+  static int inv_cond_cbcond(int      x)  {
+    assert(is_cbcond(x), "wrong instruction");
+    return inv_u_field(x, 27, 25) | (inv_u_field(x, 29, 29)<<3);
+  }
+
   static int opf_cc(   CC          c, bool useFloat ) { return u_field((useFloat ? 0 : 4) + c, 13, 11); }
   static int mov_cc(   CC          c, bool useFloat ) { return u_field(useFloat ? 0 : 1,  18, 18) | u_field(c, 12, 11); }
 
@@ -1026,6 +1049,26 @@ class Assembler : public AbstractAssembler  {
     return r;
   }
 
+  // compute inverse of wdisp10
+  static intptr_t inv_wdisp10(int x, intptr_t pos) {
+    assert(is_cbcond(x), "wrong instruction");
+    int lo = inv_u_field(x, 12, 5);
+    int hi = (x >> 19) & 3;
+    if (hi >= 2) hi |= ~1;
+    return (((hi << 8) | lo) << 2) + pos;
+  }
+
+  // word offset for cbcond, 8 bits at [B12,B5], 2 bits at [B20,B19]
+  static int wdisp10(intptr_t x, intptr_t off) {
+    assert(VM_Version::has_cbcond(), "This CPU does not have CBCOND instruction");
+    intptr_t xx = x - off;
+    assert_signed_word_disp_range(xx, 10);
+    int r =  ( ( (xx >>  2   ) & ((1 << 8) - 1) ) <<  5 )
+           | ( ( (xx >> (2+8)) & 3              ) << 19 );
+    // Have to fake cbcond instruction to pass assert in inv_wdisp10()
+    assert(inv_wdisp10((r | op(branch_op) | cond_cbcond(rc_last+1) | op2(bpr_op2)), off) == x,  "inverse is not inverse");
+    return r;
+  }
 
   // word displacement in low-order nbits bits
 
@@ -1138,6 +1181,24 @@ class Assembler : public AbstractAssembler  {
 #endif
   }
 
+  // cbcond instruction should not be generated one after an other
+  bool cbcond_before() {
+    if (offset() == 0) return false; // it is first instruction
+    int x = *(int*)(intptr_t(pc()) - 4); // previous instruction
+    return is_cbcond(x);
+  }
+
+  void no_cbcond_before() {
+    assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
+  }
+
+  bool use_cbcond(Label& L) {
+    if (!UseCBCond || cbcond_before()) return false;
+    intptr_t x = intptr_t(target_distance(L)) - intptr_t(pc());
+    assert( (x & 3) == 0, "not word aligned");
+    return is_simm(x, 12);
+  }
+
 public:
   // Tells assembler you know that next instruction is delayed
   Assembler* delayed() {
@@ -1181,10 +1242,11 @@ public:
   void addccc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addccc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
+
   // pp 136
 
-  inline void bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void bpr( RCondition c, bool a, Predict p, Register s1, Label& L);
+  inline void bpr(RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void bpr(RCondition c, bool a, Predict p, Register s1, Label& L);
 
  protected: // use MacroAssembler::br instead
 
@@ -1197,8 +1259,6 @@ public:
 
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
-
- public:
 
   // pp 144
 
@@ -1215,10 +1275,16 @@ public:
   inline void cb( Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none );
   inline void cb( Condition c, bool a, Label& L );
 
+  // compare and branch
+  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label& L);
+  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label& L);
+
   // pp 149
 
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
   inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
+
+ public:
 
   // pp 150
 
@@ -1862,8 +1928,8 @@ class MacroAssembler: public Assembler {
   inline void fb( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fb( Condition c, bool a, Predict p, Label& L );
 
-  // compares register with zero and branches (V9 and V8 instructions)
-  void br_zero( Condition c, bool a, Predict p, Register s1, Label& L);
+  // compares register with zero (32 bit) and branches (V9 and V8 instructions)
+  void cmp_zero_and_br( Condition c, Register s1, Label& L, bool a = false, Predict p = pn );
   // Compares a pointer register with zero and branches on (not)null.
   // Does a test & branch on 32-bit systems and a register-branch on 64-bit.
   void br_null   ( Register s1, bool a, Predict p, Label& L );
@@ -1875,6 +1941,26 @@ class MacroAssembler: public Assembler {
   void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
   void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, Label& L);
 
+  //
+  // Compare registers and branch with nop in delay slot or cbcond without delay slot.
+  //
+  // ATTENTION: use these instructions with caution because cbcond instruction
+  //            has very short distance: 512 instructions (2Kbyte).
+
+  // Compare integer (32 bit) values (icc only).
+  void cmp_and_br_short(Register s1, Register s2, Condition c, Predict p, Label& L);
+  void cmp_and_br_short(Register s1, int simm13a, Condition c, Predict p, Label& L);
+  // Platform depending version for pointer compare (icc on !LP64 and xcc on LP64).
+  void cmp_and_brx_short(Register s1, Register s2, Condition c, Predict p, Label& L);
+  void cmp_and_brx_short(Register s1, int simm13a, Condition c, Predict p, Label& L);
+
+  // Short branch version for compares a pointer pwith zero.
+  void br_null_short   ( Register s1, Predict p, Label& L );
+  void br_notnull_short( Register s1, Predict p, Label& L );
+
+  // unconditional short branch
+  void ba_short(Label& L);
+
   inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
 
@@ -1882,8 +1968,8 @@ class MacroAssembler: public Assembler {
   inline void brx( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void brx( Condition c, bool a, Predict p, Label& L );
 
-  // unconditional short branch
-  inline void ba( bool a, Label& L );
+  // unconditional branch
+  inline void ba( Label& L );
 
   // Branch that tests fp condition codes
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
@@ -2167,7 +2253,6 @@ public:
 
   inline void stbool(Register d, const Address& a) { stb(d, a); }
   inline void ldbool(const Address& a, Register d) { ldsb(a, d); }
-  inline void tstbool( Register s ) { tst(s); }
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
   // klass oop manipulations if compressed
@@ -2469,8 +2554,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1),
-                Register instanceof_hack = noreg);
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.

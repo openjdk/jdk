@@ -517,7 +517,17 @@ uint Compile::scratch_emit_size(const Node* n) {
   buf.stubs()->initialize_shared_locs( &locs_buf[lsize * 2], lsize);
 
   // Do the emission.
+
+  Label fakeL; // Fake label for branch instructions.
+  bool is_branch = n->is_Branch() && n->as_Mach()->ideal_Opcode() != Op_Jump;
+  if (is_branch) {
+    MacroAssembler masm(&buf);
+    masm.bind(fakeL);
+    n->as_Mach()->label_set(&fakeL, 0);
+  }
   n->emit(buf, this->regalloc());
+  if (is_branch) // Clear the reference to fake label.
+    n->as_Mach()->label_set(NULL, 0);
 
   // End scratch_emit_size section.
   set_in_scratch_emit_size(false);

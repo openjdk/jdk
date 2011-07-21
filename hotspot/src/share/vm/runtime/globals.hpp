@@ -1205,6 +1205,9 @@ class CommandLineFlags {
   product(bool, UseUnalignedLoadStores, false,                              \
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
+  product(bool, UseCBCond, false,                                           \
+          "Use compare and branch instruction on SPARC")                    \
+                                                                            \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last, "            \
           "2 - oops in super and sub classes are together")                 \

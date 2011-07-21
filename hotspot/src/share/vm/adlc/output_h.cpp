@@ -1520,7 +1520,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     int label_position = instr->label_position();
     if( label_position != -1 ) {
       // Set the label, stored in labelOper::_branch_label
-      fprintf(fp,"  virtual void           label_set( Label& label, uint block_num );\n");
+      fprintf(fp,"  virtual void           label_set( Label* label, uint block_num );\n");
     }
 
     // If this instruction contains a methodOper

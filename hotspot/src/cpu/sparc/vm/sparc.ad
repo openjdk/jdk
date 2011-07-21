@@ -1693,7 +1693,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler _masm(&cbuf);
-  Label L;
   Register G5_ic_reg  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   Register temp_reg   = G3;
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
@@ -2315,60 +2314,23 @@ encode %{
     __ delayed()->nop();
   %}
 
-  enc_class enc_bp( Label labl, cmpOp cmp, flagsReg cc ) %{
+  enc_class enc_bp( label labl, cmpOp cmp, flagsReg cc ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, L);
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
     __ delayed()->nop();
   %}
 
-  enc_class enc_bpl( Label labl, cmpOp cmp, flagsRegL cc ) %{
+  enc_class enc_bpr( label labl, cmpOp_reg cmp, iRegI op1 ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpx( Label labl, cmpOp cmp, flagsRegP cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_fbp( Label labl, cmpOpF cmp, flagsRegF cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($cc$$reg), predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_ba( Label labl ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    __ ba(false, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpr( Label labl, cmpOp_reg cmp, iRegI op1 ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *$labl$$label;
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), L);
+    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), *L);
     __ delayed()->nop();
   %}
 
@@ -2986,7 +2948,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     __ brx(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, cnt_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, cnt_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // count == 0
 
     //rename registers
@@ -3006,7 +2968,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     // Compare char[] arrays aligned to 4 bytes.
     __ char_arrays_equals(str1_reg, str2_reg, limit_reg, result_reg,
                           chr1_reg, chr2_reg, Ldone);
-    __ ba(false,Ldone);
+    __ ba(Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
     // char by char compare
@@ -3065,7 +3027,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
     __ br(Assembler::notEqual, true, Assembler::pn, Ldone);
     __ delayed()->mov(G0, result_reg);     // not equal
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, tmp1_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, tmp1_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // zero-length arrays are equal
 
     // load array addresses
@@ -9232,9 +9194,11 @@ instruct branch(label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30, Tert = cond
-  opcode(Assembler::br_op2, Assembler::branch_op, Assembler::always);
-  ins_encode( enc_ba( labl ) );
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ ba(*L);
+    __ delayed()->nop();
+  %}
   ins_pc_relative(1);
   ins_pipe(br);
 %}
@@ -9314,8 +9278,14 @@ instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BP$cmp  $pcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpx( labl, cmp, pcc ) );
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
   ins_pc_relative(1);
   ins_pipe(br_cc);
 %}
@@ -9327,8 +9297,14 @@ instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "FBP$cmp $fcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_fbp( labl, cmp, fcc ) );
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($fcc$$reg), predict_taken, *L);
+    __ delayed()->nop();
+  %}
   ins_pc_relative(1);
   ins_pipe(br_fcc);
 %}
@@ -9387,8 +9363,14 @@ instruct branchCon_long(cmpOp cmp, flagsRegL xcc, label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BP$cmp   $xcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpl( labl, cmp, xcc ) );
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
   ins_pc_relative(1);
   ins_pipe(br_cc);
 %}
@@ -9707,7 +9689,6 @@ instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o7R
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*112);       // conservative overestimation ...
   format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Lock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
@@ -9719,7 +9700,6 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*120);       // conservative overestimation ...
   format %{ "FASTUNLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Unlock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
