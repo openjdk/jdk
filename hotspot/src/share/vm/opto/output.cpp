@@ -1346,7 +1346,7 @@ void Compile::Fill_buffer() {
             // For Branchs
             // This requires the TRUE branch target be in succs[0]
             uint block_num = b->non_connector_successor(0)->_pre_order;
-            mach->label_set( blk_labels[block_num], block_num );
+            mach->label_set( &blk_labels[block_num], block_num );
           }
         }
 

@@ -71,8 +71,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   { Label L;
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     ld_ptr(exception_addr, Gtemp);
-    br_null(Gtemp, false, pt, L);
-    delayed()->nop();
+    br_null_short(Gtemp, pt, L);
     Address vm_result_addr(G2_thread, JavaThread::vm_result_offset());
     st_ptr(G0, vm_result_addr);
     Address vm_result_addr_2(G2_thread, JavaThread::vm_result_2_offset());
@@ -333,9 +332,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   assert(deopt_blob != NULL, "deoptimization blob must have been created");
 
   Label no_deopt;
-  __ tst(O0);
-  __ brx(Assembler::equal, false, Assembler::pt, no_deopt);
-  __ delayed()->nop();
+  __ br_null_short(O0, Assembler::pt, no_deopt);
 
   // return to the deoptimization handler entry for unpacking and rexecute
   // if we simply returned the we'd deopt as if any call we patched had just
@@ -402,18 +399,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
             __ ld(G5_klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc), G3_t1);
-            __ cmp(G3_t1, instanceKlass::fully_initialized);
-            __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-            __ delayed()->nop();
+            __ cmp_and_br_short(G3_t1, instanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
           }
 #ifdef ASSERT
           // assert object can be fast path allocated
           {
             Label ok, not_ok;
           __ ld(G5_klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc), G1_obj_size);
-          __ cmp(G1_obj_size, 0);  // make sure it's an instance (LH > 0)
-          __ br(Assembler::lessEqual, false, Assembler::pn, not_ok);
-          __ delayed()->nop();
+          // make sure it's an instance (LH > 0)
+          __ cmp_and_br_short(G1_obj_size, 0, Assembler::lessEqual, Assembler::pn, not_ok);
           __ btst(Klass::_lh_instance_slow_path_bit, G1_obj_size);
           __ br(Assembler::zero, false, Assembler::pn, ok);
           __ delayed()->nop();
@@ -501,9 +495,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           int tag = ((id == new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
                      : Klass::_lh_array_tag_obj_value);
-          __ cmp(G3_t1, tag);
-          __ brx(Assembler::equal, false, Assembler::pt, ok);
-          __ delayed()->nop();
+          __ cmp_and_brx_short(G3_t1, tag, Assembler::equal, Assembler::pt, ok);
           __ stop("assert(is an array klass)");
           __ should_not_reach_here();
           __ bind(ok);
@@ -519,9 +511,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // check that array length is small enough for fast path
           __ set(C1_MacroAssembler::max_array_allocation_length, G3_t1);
-          __ cmp(G4_length, G3_t1);
-          __ br(Assembler::greaterUnsigned, false, Assembler::pn, slow_path);
-          __ delayed()->nop();
+          __ cmp_and_br_short(G4_length, G3_t1, Assembler::greaterUnsigned, Assembler::pn, slow_path);
 
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.

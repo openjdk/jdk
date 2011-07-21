@@ -236,17 +236,13 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
     Label L;
     Register thr_state = G3_scratch;
     ld_ptr(G2_thread, JavaThread::jvmti_thread_state_offset(), thr_state);
-    tst(thr_state);
-    br(zero, false, pt, L); // if (thread->jvmti_thread_state() == NULL) exit;
-    delayed()->nop();
+    br_null_short(thr_state, pt, L); // if (thread->jvmti_thread_state() == NULL) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
     // is called *during* earlyret handling - we don't want to reenter.
     ld(thr_state, JvmtiThreadState::earlyret_state_offset(), G4_scratch);
-    cmp(G4_scratch, JvmtiThreadState::earlyret_pending);
-    br(Assembler::notEqual, false, pt, L);
-    delayed()->nop();
+    cmp_and_br_short(G4_scratch, JvmtiThreadState::earlyret_pending, Assembler::notEqual, pt, L);
 
     // Call Interpreter::remove_activation_early_entry() to get the address of the
     // same-named entrypoint in the generated interpreter code
@@ -566,9 +562,7 @@ void InterpreterMacroAssembler::verify_sp(Register Rsp, Register Rtemp) {
 #ifdef _LP64
   sub(Rtemp, STACK_BIAS, Rtemp);  // Bias Rtemp before cmp to FP
 #endif
-  cmp(Rtemp, FP);
-  brx(Assembler::greaterUnsigned, false, Assembler::pn, Bad);
-  delayed()->nop();
+  cmp_and_brx_short(Rtemp, FP, Assembler::greaterUnsigned, Assembler::pn, Bad);
 
   // Saved SP must not be ridiculously below current SP.
   size_t maxstack = MAX2(JavaThread::stack_size_at_create(), (size_t) 4*K*K);
@@ -577,12 +571,9 @@ void InterpreterMacroAssembler::verify_sp(Register Rsp, Register Rtemp) {
 #ifdef _LP64
   add(Rtemp, STACK_BIAS, Rtemp);  // Unbias Rtemp before cmp to Rsp
 #endif
-  cmp(Rsp, Rtemp);
-  brx(Assembler::lessUnsigned, false, Assembler::pn, Bad);
-  delayed()->nop();
+  cmp_and_brx_short(Rsp, Rtemp, Assembler::lessUnsigned, Assembler::pn, Bad);
 
-  br(Assembler::always, false, Assembler::pn, OK);
-  delayed()->nop();
+  ba_short(OK);
 
   bind(Bad);
   stop("on return to interpreted call, restored SP is corrupted");
@@ -630,8 +621,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register target, Register 
 
     const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, scratch);
-    tst(scratch);
-    br(Assembler::notZero, true, Assembler::pn, skip_compiled_code);
+    cmp_zero_and_br(Assembler::notZero, scratch, skip_compiled_code, true, Assembler::pn);
     delayed()->ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), target);
     bind(skip_compiled_code);
   }
@@ -641,8 +631,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register target, Register 
 #ifdef ASSERT
   {
     Label ok;
-    br_notnull(target, false, Assembler::pt, ok);
-    delayed()->nop();
+    br_notnull_short(target, Assembler::pt, ok);
     stop("null entry point");
     bind(ok);
   }
@@ -982,8 +971,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
   // is set.
-  tstbool(G1_scratch);
-  br(Assembler::notZero, false, pn, no_unlock);
+  cmp_zero_and_br(Assembler::notZero, G1_scratch, no_unlock);
   delayed()->nop();
 
   // BasicObjectLock will be first in list, since this is a synchronized method. However, need
@@ -997,8 +985,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   add( top_most_monitor(), O1 );
 
   ld_ptr(O1, BasicObjectLock::obj_offset_in_bytes(), G3_scratch);
-  br_notnull(G3_scratch, false, pt, unlock);
-  delayed()->nop();
+  br_notnull_short(G3_scratch, pt, unlock);
 
   if (throw_monitor_exception) {
     // Entry already unlocked need to throw an exception
@@ -1011,8 +998,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     if (install_monitor_exception) {
       MacroAssembler::call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::new_illegal_monitor_state_exception));
     }
-    ba(false, unlocked);
-    delayed()->nop();
+    ba_short(unlocked);
   }
 
   bind(unlock);
@@ -1037,15 +1023,13 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     add(top_most_monitor(), Rmptr, delta);
     { Label L;
       // ensure that Rmptr starts out above (or at) Rlimit
-      cmp(Rmptr, Rlimit);
-      brx(Assembler::greaterEqualUnsigned, false, pn, L);
-      delayed()->nop();
+      cmp_and_brx_short(Rmptr, Rlimit, Assembler::greaterEqualUnsigned, pn, L);
       stop("monitor stack has negative size");
       bind(L);
     }
     #endif
     bind(restart);
-    ba(false, entry);
+    ba(entry);
     delayed()->
     add(top_most_monitor(), Rmptr, delta);      // points to current entry, starting with bottom-most entry
 
@@ -1061,8 +1045,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
       if (install_monitor_exception) {
         MacroAssembler::call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::new_illegal_monitor_state_exception));
       }
-      ba(false, restart);
-      delayed()->nop();
+      ba_short(restart);
     }
 
     bind(loop);
@@ -1073,9 +1056,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     #ifdef ASSERT
     { Label L;
       // ensure that Rmptr has not somehow stepped below Rlimit
-      cmp(Rmptr, Rlimit);
-      brx(Assembler::greaterEqualUnsigned, false, pn, L);
-      delayed()->nop();
+      cmp_and_brx_short(Rmptr, Rlimit, Assembler::greaterEqualUnsigned, pn, L);
       stop("ran off the end of the monitor stack");
       bind(L);
     }
@@ -1196,9 +1177,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg, Register Object) 
       (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
 
     // if the compare and exchange succeeded we are done (we saw an unlocked object)
-    cmp(mark_reg, temp_reg);
-    brx(Assembler::equal, true, Assembler::pt, done);
-    delayed()->nop();
+    cmp_and_brx_short(mark_reg, temp_reg, Assembler::equal, Assembler::pt, done);
 
     // We did not see an unlocked object so try the fast recursive case
 
@@ -1324,13 +1303,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
 
 void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-#ifdef _LP64
-  bpr(Assembler::rc_z, false, Assembler::pn, ImethodDataPtr, zero_continue);
-#else
-  tst(ImethodDataPtr);
-  br(Assembler::zero, false, Assembler::pn, zero_continue);
-#endif
-  delayed()->nop();
+  br_null_short(ImethodDataPtr, Assembler::pn, zero_continue);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
@@ -1376,31 +1349,18 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
   Label done;
 
   // if no method data exists, and the counter is high enough, make one
-#ifdef _LP64
-  bpr(Assembler::rc_nz, false, Assembler::pn, ImethodDataPtr, done);
-#else
-  tst(ImethodDataPtr);
-  br(Assembler::notZero, false, Assembler::pn, done);
-#endif
+  br_notnull_short(ImethodDataPtr, Assembler::pn, done);
 
   // Test to see if we should create a method data oop
   AddressLiteral profile_limit((address) &InvocationCounter::InterpreterProfileLimit);
-#ifdef _LP64
-  delayed()->nop();
   sethi(profile_limit, Rtmp);
-#else
-  delayed()->sethi(profile_limit, Rtmp);
-#endif
   ld(Rtmp, profile_limit.low10(), Rtmp);
-  cmp(invocation_count, Rtmp);
-  br(Assembler::lessUnsigned, false, Assembler::pn, profile_continue);
-  delayed()->nop();
+  cmp_and_br_short(invocation_count, Rtmp, Assembler::lessUnsigned, Assembler::pn, profile_continue);
 
   // Build it now.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
   set_method_data_pointer_for_bcp();
-  ba(false, profile_continue);
-  delayed()->nop();
+  ba_short(profile_continue);
   bind(done);
 }
 
@@ -1632,13 +1592,10 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     Label skip_receiver_profile;
     if (receiver_can_be_null) {
       Label not_null;
-      tst(receiver);
-      brx(Assembler::notZero, false, Assembler::pt, not_null);
-      delayed()->nop();
+      br_notnull_short(receiver, Assembler::pt, not_null);
       // We are making a call.  Increment the count for null receiver.
       increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
-      ba(false, skip_receiver_profile);
-      delayed()->nop();
+      ba_short(skip_receiver_profile);
       bind(not_null);
     }
 
@@ -1682,8 +1639,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     // The receiver is receiver[n].  Increment count[n].
     int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
     increment_mdp_data_at(count_offset, scratch);
-    ba(false, done);
-    delayed()->nop();
+    ba_short(done);
     bind(next_test);
 
     if (test_for_null_also) {
@@ -1697,8 +1653,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
           // Receiver did not match any saved receiver and there is no empty row for it.
           // Increment total counter to indicate polymorphic case.
           increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
-          ba(false, done);
-          delayed()->nop();
+          ba_short(done);
           bind(found_null);
         } else {
           brx(Assembler::notZero, false, Assembler::pt, done);
@@ -1729,8 +1684,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   mov(DataLayout::counter_increment, scratch);
   set_mdp_data_at(count_offset, scratch);
   if (start_row > 0) {
-    ba(false, done);
-    delayed()->nop();
+    ba_short(done);
   }
 }
 
@@ -1772,8 +1726,7 @@ void InterpreterMacroAssembler::profile_ret(TosState state,
 
       // The method data pointer needs to be updated to reflect the new target.
       update_mdp_by_offset(in_bytes(RetData::bci_displacement_offset(row)), scratch);
-      ba(false, profile_continue);
-      delayed()->nop();
+      ba_short(profile_continue);
       bind(next_test);
     }
 
@@ -1922,8 +1875,8 @@ void InterpreterMacroAssembler::add_monitor_to_stack( bool stack_is_empty,
 
     // untested("monitor stack expansion");
     compute_stack_base(Rtemp);
-    ba( false, start_copying );
-    delayed()->cmp( Rtemp, Rlimit); // done? duplicated below
+    ba(start_copying);
+    delayed()->cmp(Rtemp, Rlimit); // done? duplicated below
 
     // note: must copy from low memory upwards
     // On entry to loop,
@@ -2010,9 +1963,7 @@ void InterpreterMacroAssembler::check_for_regarea_stomp(Register Rindex, int off
   // untested("reg area corruption");
   add(Rindex, offset, Rscratch);
   add(Rlimit, 64 + STACK_BIAS, Rscratch1);
-  cmp(Rscratch, Rscratch1);
-  brx(Assembler::greaterEqualUnsigned, false, pn, L);
-  delayed()->nop();
+  cmp_and_brx_short(Rscratch, Rscratch1, Assembler::greaterEqualUnsigned, pn, L);
   stop("regsave area is being clobbered");
   bind(L);
 }
@@ -2174,9 +2125,7 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr( Register backedge_c
 
   AddressLiteral limit(&InvocationCounter::InterpreterBackwardBranchLimit);
   load_contents(limit, Rtmp);
-  cmp(backedge_count, Rtmp);
-  br(Assembler::lessUnsigned, false, Assembler::pt, did_not_overflow);
-  delayed()->nop();
+  cmp_and_br_short(backedge_count, Rtmp, Assembler::lessUnsigned, Assembler::pt, did_not_overflow);
 
   // When ProfileInterpreter is on, the backedge_count comes from the
   // methodDataOop, which value does not get reset on the call to
@@ -2196,15 +2145,11 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr( Register backedge_c
 
   // Was an OSR adapter generated?
   // O0 = osr nmethod
-  tst(O0);
-  brx(Assembler::zero, false, Assembler::pn, overflow_with_error);
-  delayed()->nop();
+  br_null_short(O0, Assembler::pn, overflow_with_error);
 
   // Has the nmethod been invalidated already?
   ld(O0, nmethod::entry_bci_offset(), O2);
-  cmp(O2, InvalidOSREntryBci);
-  br(Assembler::equal, false, Assembler::pn, overflow_with_error);
-  delayed()->nop();
+  cmp_and_br_short(O2, InvalidOSREntryBci, Assembler::equal, Assembler::pn, overflow_with_error);
 
   // migrate the interpreter frame off of the stack
 
@@ -2270,8 +2215,7 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
   mov(reg, Rtmp);
   const int log2_bytecode_size_limit = 16;
   srl(Rtmp, log2_bytecode_size_limit, Rtmp);
-  br_notnull( Rtmp, false, pt, test );
-  delayed()->nop();
+  br_notnull_short( Rtmp, pt, test );
 
   // %%% should use call_VM_leaf here?
   save_frame_and_mov(0, Lmethod, O0, reg, O1);
@@ -2320,9 +2264,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     Register temp_reg = O5;
     const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, temp_reg);
-    tst(temp_reg);
-    br(zero, false, pt, L);
-    delayed()->nop();
+    cmp_and_br_short(temp_reg, 0, equal, pt, L);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry));
     bind(L);
   }
@@ -2372,9 +2314,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method,
     Register temp_reg = O5;
     const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, temp_reg);
-    tst(temp_reg);
-    br(zero, false, pt, L);
-    delayed()->nop();
+    cmp_and_br_short(temp_reg, 0, equal, pt, L);
 
     // Note: frame::interpreter_frame_result has a dependency on how the
     // method result is saved across the call to post_method_exit. For

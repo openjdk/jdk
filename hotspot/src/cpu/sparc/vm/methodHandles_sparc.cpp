@@ -287,9 +287,7 @@ void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   BLOCK_COMMENT("verify_clean {");
   // Magic numbers must check out:
   __ set((int32_t) MAGIC_NUMBER_1, O7_temp);
-  __ cmp(O7_temp, L0_magic_number_1);
-  __ br(Assembler::equal, false, Assembler::pt, L_ok_1);
-  __ delayed()->nop();
+  __ cmp_and_br_short(O7_temp, L0_magic_number_1, Assembler::equal, Assembler::pt, L_ok_1);
   __ stop("damaged ricochet frame: MAGIC_NUMBER_1 not found");
 
   __ BIND(L_ok_1);
@@ -301,9 +299,7 @@ void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
 #else
   Register FP_temp = FP;
 #endif
-  __ cmp(L4_saved_args_base, FP_temp);
-  __ br(Assembler::greaterEqualUnsigned, false, Assembler::pt, L_ok_2);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(L4_saved_args_base, FP_temp, Assembler::greaterEqualUnsigned, Assembler::pt, L_ok_2);
   __ stop("damaged ricochet frame: L4 < FP");
 
   __ BIND(L_ok_2);
@@ -316,15 +312,11 @@ void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
 
   __ BIND(L_ok_3);
   extract_conversion_dest_type(_masm, L5_conversion, O7_temp);
-  __ cmp(O7_temp, T_VOID);
-  __ br(Assembler::equal, false, Assembler::pt, L_ok_4);
-  __ delayed()->nop();
+  __ cmp_and_br_short(O7_temp, T_VOID, Assembler::equal, Assembler::pt, L_ok_4);
   extract_conversion_vminfo(_masm, L5_conversion, O5_temp);
   __ ld_ptr(L4_saved_args_base, __ argument_offset(O5_temp, O5_temp), O7_temp);
   assert(__ is_simm13(RETURN_VALUE_PLACEHOLDER), "must be simm13");
-  __ cmp(O7_temp, (int32_t) RETURN_VALUE_PLACEHOLDER);
-  __ brx(Assembler::equal, false, Assembler::pt, L_ok_4);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(O7_temp, (int32_t) RETURN_VALUE_PLACEHOLDER, Assembler::equal, Assembler::pt, L_ok_4);
   __ stop("damaged ricochet frame: RETURN_VALUE_PLACEHOLDER not found");
   __ BIND(L_ok_4);
   BLOCK_COMMENT("} verify_clean");
@@ -363,9 +355,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
   if (VerifyMethodHandles) {
     Label L_ok, L_bad;
     int32_t stack_move_limit = 0x0800;  // extra-large
-    __ cmp(stack_move_reg, stack_move_limit);
-    __ br(Assembler::greaterEqual, false, Assembler::pn, L_bad);
-    __ delayed()->nop();
+    __ cmp_and_br_short(stack_move_reg, stack_move_limit, Assembler::greaterEqual, Assembler::pn, L_bad);
     __ cmp(stack_move_reg, -stack_move_limit);
     __ br(Assembler::greater, false, Assembler::pt, L_ok);
     __ delayed()->nop();
@@ -401,13 +391,9 @@ void MethodHandles::verify_argslot(MacroAssembler* _masm, Register argslot_reg, 
   // Verify that argslot lies within (Gargs, FP].
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_argslot {");
+  __ cmp_and_brx_short(Gargs, argslot_reg, Assembler::greaterUnsigned, Assembler::pn, L_bad);
   __ add(FP, STACK_BIAS, temp_reg);  // STACK_BIAS is zero on !_LP64
-  __ cmp(argslot_reg, temp_reg);
-  __ brx(Assembler::greaterUnsigned, false, Assembler::pn, L_bad);
-  __ delayed()->nop();
-  __ cmp(Gargs, argslot_reg);
-  __ brx(Assembler::lessEqualUnsigned, false, Assembler::pt, L_ok);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(argslot_reg, temp_reg, Assembler::lessEqualUnsigned, Assembler::pt, L_ok);
   __ BIND(L_bad);
   __ stop(error_message);
   __ BIND(L_ok);
@@ -434,14 +420,10 @@ void MethodHandles::verify_argslots(MacroAssembler* _masm,
   }
   __ add(arg_slot_base_reg, __ argument_offset(arg_slots, temp_reg), temp_reg);
   __ add(FP, STACK_BIAS, temp2_reg);  // STACK_BIAS is zero on !_LP64
-  __ cmp(temp_reg, temp2_reg);
-  __ brx(Assembler::greaterUnsigned, false, Assembler::pn, L_bad);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(temp_reg, temp2_reg, Assembler::greaterUnsigned, Assembler::pn, L_bad);
   // Gargs points to the first word so adjust by BytesPerWord
   __ add(arg_slot_base_reg, BytesPerWord, temp_reg);
-  __ cmp(Gargs, temp_reg);
-  __ brx(Assembler::lessEqualUnsigned, false, Assembler::pt, L_ok);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(Gargs, temp_reg, Assembler::lessEqualUnsigned, Assembler::pt, L_ok);
   __ BIND(L_bad);
   __ stop(error_message);
   __ BIND(L_ok);
@@ -502,21 +484,16 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj_reg);
-  __ br_null(obj_reg, false, Assembler::pn, L_bad);
-  __ delayed()->nop();
+  __ br_null_short(obj_reg, Assembler::pn, L_bad);
   __ load_klass(obj_reg, temp_reg);
   __ set(ExternalAddress(klass_addr), temp2_reg);
   __ ld_ptr(Address(temp2_reg, 0), temp2_reg);
-  __ cmp(temp_reg, temp2_reg);
-  __ brx(Assembler::equal, false, Assembler::pt, L_ok);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(temp_reg, temp2_reg, Assembler::equal, Assembler::pt, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
   __ ld_ptr(Address(temp_reg, super_check_offset), temp_reg);
   __ set(ExternalAddress(klass_addr), temp2_reg);
   __ ld_ptr(Address(temp2_reg, 0), temp2_reg);
-  __ cmp(temp_reg, temp2_reg);
-  __ brx(Assembler::equal, false, Assembler::pt, L_ok);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(temp_reg, temp2_reg, Assembler::equal, Assembler::pt, L_ok);
   __ BIND(L_bad);
   __ stop(error_message);
   __ BIND(L_ok);
@@ -671,9 +648,7 @@ static RegisterOrConstant adjust_SP_and_Gargs_down_by_slots(MacroAssembler* _mas
 #ifdef ASSERT
     {
       Label L_ok;
-      __ cmp(arg_slots.as_register(), 0);
-      __ br(Assembler::greaterEqual, false, Assembler::pt, L_ok);
-      __ delayed()->nop();
+      __ cmp_and_br_short(arg_slots.as_register(), 0, Assembler::greaterEqual, Assembler::pt, L_ok);
       __ stop("negative arg_slots");
       __ bind(L_ok);
     }
@@ -748,9 +723,7 @@ void MethodHandles::insert_arg_slots(MacroAssembler* _masm,
     __ ld_ptr(           Address(temp_reg, 0     ), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset)           );
     __ add(temp_reg, wordSize, temp_reg);
-    __ cmp(temp_reg, argslot_reg);
-    __ brx(Assembler::lessUnsigned, false, Assembler::pt, loop);
-    __ delayed()->nop();  // FILLME
+    __ cmp_and_brx_short(temp_reg, argslot_reg, Assembler::lessUnsigned, Assembler::pt, loop);
   }
 
   // Now move the argslot down, to point to the opened-up space.
@@ -797,9 +770,7 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
     __ ld_ptr(           Address(temp_reg, 0     ), temp2_reg);
     __ st_ptr(temp2_reg, Address(temp_reg, offset)           );
     __ sub(temp_reg, wordSize, temp_reg);
-    __ cmp(temp_reg, Gargs);
-    __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, L_loop);
-    __ delayed()->nop();  // FILLME
+    __ cmp_and_brx_short(temp_reg, Gargs, Assembler::greaterEqualUnsigned, Assembler::pt, L_loop);
   }
 
   // And adjust the argslot address to point at the deletion point.
@@ -848,8 +819,7 @@ void MethodHandles::push_arg_slots(MacroAssembler* _masm,
     __ delayed()->nop();
     __ ld_ptr(          Address(argslot_reg, 0), temp_reg);
     __ st_ptr(temp_reg, Address(Gargs,       0));
-    __ ba(false, L_break);
-    __ delayed()->nop();  // FILLME
+    __ ba_short(L_break);
     __ BIND(L_plural);
 
     // Loop for 2 or more:
@@ -863,9 +833,7 @@ void MethodHandles::push_arg_slots(MacroAssembler* _masm,
     __ sub(Gargs,   wordSize, Gargs  );
     __ ld_ptr(           Address(top_reg, 0), temp2_reg);
     __ st_ptr(temp2_reg, Address(Gargs,   0));
-    __ cmp(top_reg, argslot_reg);
-    __ brx(Assembler::greaterUnsigned, false, Assembler::pt, L_loop);
-    __ delayed()->nop();  // FILLME
+    __ cmp_and_brx_short(top_reg, argslot_reg, Assembler::greaterUnsigned, Assembler::pt, L_loop);
     __ BIND(L_break);
   }
   BLOCK_COMMENT("} push_arg_slots");
@@ -897,17 +865,13 @@ void MethodHandles::move_arg_slots_up(MacroAssembler* _masm,
       __ br(Assembler::lessEqual, false, Assembler::pn, L_bad);
       __ delayed()->nop();
     }
-    __ cmp(bottom_reg, top_reg);
-    __ brx(Assembler::lessUnsigned, false, Assembler::pt, L_ok);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(bottom_reg, top_reg, Assembler::lessUnsigned, Assembler::pt, L_ok);
     __ BIND(L_bad);
     __ stop("valid bounds (copy up)");
     __ BIND(L_ok);
   }
 #endif
-  __ cmp(bottom_reg, top_reg);
-  __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pn, L_break);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(bottom_reg, top_reg, Assembler::greaterEqualUnsigned, Assembler::pn, L_break);
   // work top down to bottom, copying contiguous data upwards
   // In pseudo-code:
   //   while (--top >= bottom) *(top + distance) = *(top + 0);
@@ -916,9 +880,7 @@ void MethodHandles::move_arg_slots_up(MacroAssembler* _masm,
   __ sub(top_reg, wordSize, top_reg);
   __ ld_ptr(           Address(top_reg, 0     ), temp2_reg);
   __ st_ptr(temp2_reg, Address(top_reg, offset)           );
-  __ cmp(top_reg, bottom_reg);
-  __ brx(Assembler::greaterUnsigned, false, Assembler::pt, L_loop);
-  __ delayed()->nop();  // FILLME
+  __ cmp_and_brx_short(top_reg, bottom_reg, Assembler::greaterUnsigned, Assembler::pt, L_loop);
   assert(Interpreter::stackElementSize == wordSize, "else change loop");
   __ BIND(L_break);
   BLOCK_COMMENT("} move_arg_slots_up");
@@ -951,17 +913,13 @@ void MethodHandles::move_arg_slots_down(MacroAssembler* _masm,
       __ br(Assembler::greaterEqual, false, Assembler::pn, L_bad);
       __ delayed()->nop();
     }
-    __ cmp(bottom_reg, top_reg);
-    __ brx(Assembler::lessUnsigned, false, Assembler::pt, L_ok);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(bottom_reg, top_reg, Assembler::lessUnsigned, Assembler::pt, L_ok);
     __ BIND(L_bad);
     __ stop("valid bounds (copy down)");
     __ BIND(L_ok);
   }
 #endif
-  __ cmp(bottom_reg, top_reg);
-  __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pn, L_break);
-  __ delayed()->nop();
+  __ cmp_and_brx_short(bottom_reg, top_reg, Assembler::greaterEqualUnsigned, Assembler::pn, L_break);
   // work bottom up to top, copying contiguous data downwards
   // In pseudo-code:
   //   while (bottom < top) *(bottom - distance) = *(bottom + 0), bottom++;
@@ -970,9 +928,7 @@ void MethodHandles::move_arg_slots_down(MacroAssembler* _masm,
   __ ld_ptr(           Address(bottom_reg, 0     ), temp2_reg);
   __ st_ptr(temp2_reg, Address(bottom_reg, offset)           );
   __ add(bottom_reg, wordSize, bottom_reg);
-  __ cmp(bottom_reg, top_reg);
-  __ brx(Assembler::lessUnsigned, false, Assembler::pt, L_loop);
-  __ delayed()->nop();  // FILLME
+  __ cmp_and_brx_short(bottom_reg, top_reg, Assembler::lessUnsigned, Assembler::pt, L_loop);
   assert(Interpreter::stackElementSize == wordSize, "else change loop");
   __ BIND(L_break);
   BLOCK_COMMENT("} move_arg_slots_down");
@@ -1329,9 +1285,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       Label L_done;
       __ ld_ptr(vmarg, O2_scratch);
-      __ tst(O2_scratch);
-      __ brx(Assembler::zero, false, Assembler::pn, L_done);  // No cast if null.
-      __ delayed()->nop();
+      __ br_null_short(O2_scratch, Assembler::pn, L_done);  // No cast if null.
       __ load_klass(O2_scratch, O2_scratch);
 
       // Live at this point:
@@ -1436,8 +1390,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // this path is taken for int->byte, int->short
       __ sra(O1_scratch, G5_vminfo, O1_scratch);
-      __ ba(false, done);
-      __ delayed()->nop();
+      __ ba_short(done);
 
       __ bind(zero_extend);
       // this is taken for int->char
@@ -1860,9 +1813,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           BLOCK_COMMENT("verify collect_count_constant {");
           __ load_method_handle_vmslots(O3_scratch, G3_method_handle, O2_scratch);
           Label L_count_ok;
-          __ cmp(O3_scratch, collect_count_constant);
-          __ br(Assembler::equal, false, Assembler::pt, L_count_ok);
-          __ delayed()->nop();
+          __ cmp_and_br_short(O3_scratch, collect_count_constant, Assembler::equal, Assembler::pt, L_count_ok);
           __ stop("bad vminfo in AMH.conv");
           __ BIND(L_count_ok);
           BLOCK_COMMENT("} verify collect_count_constant");
@@ -1909,9 +1860,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           BLOCK_COMMENT("verify dest_slot_constant {");
           extract_conversion_vminfo(_masm, RicochetFrame::L5_conversion, O3_scratch);
           Label L_vminfo_ok;
-          __ cmp(O3_scratch, dest_slot_constant);
-          __ br(Assembler::equal, false, Assembler::pt, L_vminfo_ok);
-          __ delayed()->nop();
+          __ cmp_and_br_short(O3_scratch, dest_slot_constant, Assembler::equal, Assembler::pt, L_vminfo_ok);
           __ stop("bad vminfo in AMH.conv");
           __ BIND(L_vminfo_ok);
           BLOCK_COMMENT("} verify dest_slot_constant");
@@ -1951,14 +1900,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // If there are variable parameters, use dynamic checks to skip around the whole mess.
       Label L_done;
       if (keep3_count.is_register()) {
-        __ tst(keep3_count.as_register());
-        __ br(Assembler::zero, false, Assembler::pn, L_done);
-        __ delayed()->nop();
+        __ cmp_and_br_short(keep3_count.as_register(), 0, Assembler::equal, Assembler::pn, L_done);
       }
       if (close_count.is_register()) {
-        __ cmp(close_count.as_register(), open_count);
-        __ br(Assembler::equal, false, Assembler::pn, L_done);
-        __ delayed()->nop();
+        __ cmp_and_br_short(close_count.as_register(), open_count, Assembler::equal, Assembler::pn, L_done);
       }
 
       if (move_keep3 && fix_arg_base) {
@@ -1999,8 +1944,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         }
 
         if (emit_guard) {
-          __ ba(false, L_done);  // assumes emit_move_up is true also
-          __ delayed()->nop();
+          __ ba_short(L_done);  // assumes emit_move_up is true also
           __ BIND(L_move_up);
         }
 
@@ -2133,8 +2077,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
 #ifdef ASSERT
       { Label L_ok;
-        __ br_notnull(O7_temp, false, Assembler::pt, L_ok);
-        __ delayed()->nop();
+        __ br_notnull_short(O7_temp, Assembler::pt, L_ok);
         __ stop("bad method handle return");
         __ BIND(L_ok);
       }
@@ -2192,11 +2135,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         Label L_skip;
         if (length_constant < 0) {
           load_conversion_vminfo(_masm, G3_amh_conversion, O3_scratch);
-          __ br_zero(Assembler::notZero, false, Assembler::pn, O3_scratch, L_skip);
-          __ delayed()->nop();
+          __ cmp_zero_and_br(Assembler::notZero, O3_scratch, L_skip);
+          __ delayed()->nop(); // to avoid back-to-back cbcond instructions
         }
-        __ br_null(O1_array, false, Assembler::pn, L_array_is_empty);
-        __ delayed()->nop();
+        __ br_null_short(O1_array, Assembler::pn, L_array_is_empty);
         __ BIND(L_skip);
       }
       __ null_check(O1_array, oopDesc::klass_offset_in_bytes());
@@ -2210,8 +2152,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       Label L_ok_array_klass, L_bad_array_klass, L_bad_array_length;
       __ check_klass_subtype(O2_array_klass, O3_klass, O4_scratch, G5_scratch, L_ok_array_klass);
       // If we get here, the type check failed!
-      __ ba(false, L_bad_array_klass);
-      __ delayed()->nop();
+      __ ba_short(L_bad_array_klass);
       __ BIND(L_ok_array_klass);
 
       // Check length.
@@ -2247,8 +2188,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ BIND(L_array_is_empty);
         remove_arg_slots(_masm, -stack_move_unit() * array_slots,
                          O0_argslot, O1_scratch, O2_scratch, O3_scratch);
-        __ ba(false, L_args_done);  // no spreading to do
-        __ delayed()->nop();
+        __ ba_short(L_args_done);  // no spreading to do
         __ BIND(L_insert_arg_space);
         // come here in the usual case, stack_move < 0 (2 or more spread arguments)
         // Live: O1_array, O2_argslot_limit, O3_stack_move
@@ -2289,9 +2229,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                        Address(O1_source, 0), Address(O4_fill_ptr, 0),
                        O2_scratch);  // must be an even register for !_LP64 long moves (uses O2/O3)
         __ add(O1_source, type2aelembytes(elem_type), O1_source);
-        __ cmp(O4_fill_ptr, O0_argslot);
-        __ brx(Assembler::greaterUnsigned, false, Assembler::pt, L_loop);
-        __ delayed()->nop();  // FILLME
+        __ cmp_and_brx_short(O4_fill_ptr, O0_argslot, Assembler::greaterUnsigned, Assembler::pt, L_loop);
       } else if (length_constant == 0) {
         // nothing to copy
       } else {
