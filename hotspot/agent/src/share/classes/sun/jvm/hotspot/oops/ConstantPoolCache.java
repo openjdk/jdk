@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,7 @@ public class ConstantPoolCache extends Oop {
   }
 
   public ConstantPoolCacheEntry getEntryAt(int i) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(0 <= i && i < getLength(), "index out of bounds");
-    }
+    if (i < 0 || i >= getLength()) throw new IndexOutOfBoundsException(i + " " + getLength());
     return new ConstantPoolCacheEntry(this, i);
   }
 
@@ -84,21 +82,27 @@ public class ConstantPoolCache extends Oop {
 
   // secondary entries hold invokedynamic call site bindings
   public ConstantPoolCacheEntry getSecondaryEntryAt(int i) {
-    ConstantPoolCacheEntry e = new ConstantPoolCacheEntry(this, decodeSecondaryIndex(i));
+    int rawIndex = i;
+    if (isSecondaryIndex(i)) {
+      rawIndex = decodeSecondaryIndex(i);
+    }
+    ConstantPoolCacheEntry e = getEntryAt(rawIndex);
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(e.isSecondaryEntry(), "must be a secondary entry");
+      Assert.that(e.isSecondaryEntry(), "must be a secondary entry:" + rawIndex);
     }
     return e;
   }
 
   public ConstantPoolCacheEntry getMainEntryAt(int i) {
+    int primaryIndex = i;
     if (isSecondaryIndex(i)) {
       // run through an extra level of indirection:
-      i = getSecondaryEntryAt(i).getMainEntryIndex();
+      int rawIndex = decodeSecondaryIndex(i);
+      primaryIndex = getEntryAt(rawIndex).getMainEntryIndex();
     }
-    ConstantPoolCacheEntry e = new ConstantPoolCacheEntry(this, i);
+    ConstantPoolCacheEntry e = getEntryAt(primaryIndex);
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!e.isSecondaryEntry(), "must not be a secondary entry");
+      Assert.that(!e.isSecondaryEntry(), "must not be a secondary entry:" + primaryIndex);
     }
     return e;
   }
