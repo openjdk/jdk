@@ -1556,9 +1556,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:         do_field(true,  true,
-                                                 itr->get_index_u2_cpcache(),
-                                                 itr->bci()); break;
+    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;

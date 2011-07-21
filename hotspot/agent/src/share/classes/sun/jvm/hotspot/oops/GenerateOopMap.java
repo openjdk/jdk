@@ -569,10 +569,10 @@ public class GenerateOopMap {
       case Bytecodes._invokedynamic:
         // FIXME: print signature of referenced method (need more
         // accessors in ConstantPool and ConstantPoolCache)
-        int idx = currentBC.getIndexBig();
+        int idx = currentBC.hasIndexU4() ? currentBC.getIndexU4() : currentBC.getIndexU2();
         tty.print(" idx " + idx);
         /*
-          int idx = currentBC.getIndexBig();
+          int idx = currentBC.getIndexU2();
           ConstantPool cp       = method().getConstants();
           int nameAndTypeIdx    = cp.name_and_type_ref_index_at(idx);
           int signatureIdx      = cp.signature_ref_index_at(nameAndTypeIdx);
@@ -609,10 +609,10 @@ public class GenerateOopMap {
       case Bytecodes._invokedynamic:
         // FIXME: print signature of referenced method (need more
         // accessors in ConstantPool and ConstantPoolCache)
-        int idx = currentBC.getIndexBig();
+        int idx = currentBC.hasIndexU4() ? currentBC.getIndexU4() : currentBC.getIndexU2();
         tty.print(" idx " + idx);
         /*
-          int idx = currentBC.getIndexBig();
+          int idx = currentBC.getIndexU2();
           constantPoolOop cp    = method().constants();
           int nameAndTypeIdx    = cp.name_and_type_ref_index_at(idx);
           int signatureIdx      = cp.signature_ref_index_at(nameAndTypeIdx);
@@ -1118,7 +1118,8 @@ public class GenerateOopMap {
       current instruction, starting in the current state. */
   void  interp1                             (BytecodeStream itr) {
     if (DEBUG) {
-      System.err.println(" - bci " + itr.bci());
+      System.err.println(" - bci " + itr.bci() + " " + itr.code());
+      printCurrentState(System.err, itr, false);
     }
 
     //    if (TraceNewOopMapGeneration) {
@@ -1179,8 +1180,8 @@ public class GenerateOopMap {
 
     case Bytecodes._ldc2_w:            ppush(vvCTS);               break;
 
-    case Bytecodes._ldc:               doLdc(itr.getIndex(), itr.bci());    break;
-    case Bytecodes._ldc_w:             doLdc(itr.getIndexBig(), itr.bci());break;
+    case Bytecodes._ldc:               doLdc(itr.bci());           break;
+    case Bytecodes._ldc_w:             doLdc(itr.bci());           break;
 
     case Bytecodes._iload:
     case Bytecodes._fload:             ppload(vCTS, itr.getIndex()); break;
@@ -1372,18 +1373,16 @@ public class GenerateOopMap {
     case Bytecodes._jsr:               doJsr(itr.dest());          break;
     case Bytecodes._jsr_w:             doJsr(itr.dest_w());        break;
 
-    case Bytecodes._getstatic:         doField(true,  true,
-                                               itr.getIndexBig(),
-                                               itr.bci()); break;
-    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexBig(), itr.bci()); break;
-    case Bytecodes._getfield:          doField(true,  false, itr.getIndexBig(), itr.bci()); break;
-    case Bytecodes._putfield:          doField(false, false, itr.getIndexBig(), itr.bci()); break;
+    case Bytecodes._getstatic:         doField(true,  true,  itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._getfield:          doField(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._putfield:          doField(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
 
     case Bytecodes._invokevirtual:
-    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexBig(), itr.bci()); break;
-    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexBig(), itr.bci()); break;
-    case Bytecodes._invokedynamic:     doMethod(false, true,  itr.getIndexBig(), itr.bci()); break;
-    case Bytecodes._invokeinterface:   doMethod(false, true,  itr.getIndexBig(), itr.bci()); break;
+    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._invokedynamic:     doMethod(true,  false, itr.getIndexU4(),        itr.bci()); break;
+    case Bytecodes._invokeinterface:   doMethod(false,  true, itr.getIndexU2Cpcache(), itr.bci()); break;
     case Bytecodes._newarray:
     case Bytecodes._anewarray:         ppNewRef(vCTS, itr.bci()); break;
     case Bytecodes._checkcast:         doCheckcast(); break;
@@ -1665,13 +1664,11 @@ public class GenerateOopMap {
     }
   }
 
-  void  doLdc                               (int idx, int bci) {
+  void  doLdc                               (int bci) {
+    BytecodeLoadConstant ldc = BytecodeLoadConstant.at(_method, bci);
     ConstantPool  cp  = method().getConstants();
-    ConstantTag   tag = cp.getTagAt(idx);
-    CellTypeState cts = (tag.isString() || tag.isUnresolvedString() ||
-                         tag.isKlass() || tag.isUnresolvedKlass())
-                          ? CellTypeState.makeLineRef(bci)
-                          : valCTS;
+    BasicType     bt = ldc.resultType();
+    CellTypeState cts = (bt == BasicType.T_OBJECT) ? CellTypeState.makeLineRef(bci) : valCTS;
     ppush1(cts);
   }
 
@@ -1729,15 +1726,7 @@ public class GenerateOopMap {
   void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci) {
     // Dig up signature for field in constant pool
     ConstantPool cp       = _method.getConstants();
-    int nameAndTypeIdx    = cp.getTagAt(idx).isNameAndType() ? idx : cp.getNameAndTypeRefIndexAt(idx);
-    int signatureIdx      = cp.getSignatureRefIndexAt(nameAndTypeIdx);
-    Symbol signature      = cp.getSymbolAt(signatureIdx);
-
-    if (DEBUG) {
-      System.err.println("doMethod: signature = " + signature.asString() + ", idx = " + idx +
-                         ", nameAndTypeIdx = " + nameAndTypeIdx + ", signatureIdx = " + signatureIdx +
-                         ", bci = " + bci);
-    }
+    Symbol signature      = cp.getSignatureRefAt(idx);
 
     // Parse method signature
     CellTypeStateList out = new CellTypeStateList(4);
