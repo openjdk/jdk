@@ -537,9 +537,6 @@ sun/security/krb5/auto/basic.sh					solaris-sparc
 sun/security/provider/PolicyFile/getinstance/getinstance.sh	solaris-sparc
 sun/security/tools/jarsigner/samename.sh			solaris-sparc
 
-# Timed out, Solaris 10 64bit sparcv9
-com/sun/crypto/provider/Cipher/DES/PaddingTest.java		generic-all
-
 # Othervm, sparc, NoRouteToHostException: Cannot assign requested address
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
 
