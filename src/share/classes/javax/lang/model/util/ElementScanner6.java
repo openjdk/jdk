@@ -90,6 +90,7 @@ import static javax.lang.model.SourceVersion.*;
  * @author Peter von der Ah&eacute;
  *
  * @see ElementScanner7
+ * @see ElementScanner8
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)
