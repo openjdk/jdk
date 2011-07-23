@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         else
             throw new AssertionError("Bad implementation type for " + tm);
 
-        ElementScanner7<Set<Element>, DeclaredType> scanner =
+        ElementScanner8<Set<Element>, DeclaredType> scanner =
             new AnnotationSetScanner(result, typeUtil);
 
         for (Element element : rootElements)
@@ -136,7 +136,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
 
     // Could be written as a local class inside getElementsAnnotatedWith
     private class AnnotationSetScanner extends
-        ElementScanner7<Set<Element>, DeclaredType> {
+        ElementScanner8<Set<Element>, DeclaredType> {
         // Insertion-order preserving set
         Set<Element> annotatedElements = new LinkedHashSet<Element>();
         Types typeUtil;

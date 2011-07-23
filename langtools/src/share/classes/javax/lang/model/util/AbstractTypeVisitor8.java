@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,17 @@
 
 package javax.lang.model.util;
 
-import java.util.List;
-import javax.lang.model.element.*;
-
-import javax.lang.model.type.TypeMirror;
-import static javax.lang.model.SourceVersion.*;
-import javax.lang.model.SourceVersion;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.type.*;
 
 /**
- * A skeletal visitor for annotation values with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
+ * A skeletal visitor of types with default behavior appropriate for
+ * the {@link javax.lang.model.SourceVersion#RELEASE_8 RELEASE_8}
  * source version.
  *
- * <p> <b>WARNING:</b> The {@code AnnotationValueVisitor} interface
- * implemented by this class may have methods added to it in the
- * future to accommodate new, currently unknown, language structures
- * added to future versions of the Java&trade; programming language.
+ * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
+ * by this class may have methods added to it in the future to
+ * accommodate new, currently unknown, language structures added to
+ * future versions of the Java&trade; programming language.
  * Therefore, methods whose names begin with {@code "visit"} may be
  * added to this class in the future; to avoid incompatibilities,
  * classes which extend this class should not declare any instance
@@ -49,26 +43,27 @@ import javax.annotation.processing.SupportedSourceVersion;
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new abstract annotation
- * value visitor class will also be introduced to correspond to the
- * new language level; this visitor will have different default
- * behavior for the visit method in question.  When the new visitor is
- * introduced, all or portions of this visitor may be deprecated.
+ * #visitUnknown visitUnknown} method.  A new abstract type visitor
+ * class will also be introduced to correspond to the new language
+ * level; this visitor will have different default behavior for the
+ * visit method in question.  When the new visitor is introduced, all
+ * or portions of this visitor may be deprecated.
  *
- * @param <R> the return type of this visitor's methods
- * @param <P> the type of the additional parameter to this visitor's methods.
+ * @param <R> the return type of this visitor's methods.  Use {@link
+ *            Void} for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's
+ *            methods.  Use {@code Void} for visitors that do not need an
+ *            additional parameter.
  *
- * @see AbstractAnnotationValueVisitor6
- * @see AbstractAnnotationValueVisitor8
- * @since 1.7
+ * @see AbstractTypeVisitor6
+ * @see AbstractTypeVisitor7
+ * @since 1.8
  */
-@SupportedSourceVersion(RELEASE_7)
-public abstract class AbstractAnnotationValueVisitor7<R, P> extends AbstractAnnotationValueVisitor6<R, P> {
-
+public abstract class AbstractTypeVisitor8<R, P> extends AbstractTypeVisitor7<R, P> {
     /**
      * Constructor for concrete subclasses to call.
      */
-    protected AbstractAnnotationValueVisitor7() {
+    protected AbstractTypeVisitor8() {
         super();
     }
 }
