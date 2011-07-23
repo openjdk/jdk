@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,9 +21,25 @@
  * questions.
  */
 
-package sun.reflect.generics.reflectiveObjects;
+/*
+ * @test
+ * @bug 7021280
+ * @summary SocketPermission should accept wildcards
+ */
 
-/** Temporary class used to indicate missing functionality */
-public class NotImplementedException extends RuntimeException {
-    private static final long serialVersionUID = -9177857708926624790L;
+import java.net.SocketPermission;
+
+public class Wildcard
+{
+    public static void main(String[] args) throws Exception {
+        SocketPermission star_All =
+                new SocketPermission("*.blabla.bla", "listen,accept,connect");
+        SocketPermission www_All =
+                new SocketPermission("bla.blabla.bla", "listen,accept,connect");
+
+        if (!star_All.implies(www_All)) {
+            throw new RuntimeException(
+                   "Failed: " + star_All + " does not imply " + www_All);
+        }
+    }
 }

@@ -113,14 +113,8 @@ import javax.security.auth.callback.*;
  *    // get user password and file input stream
  *    char[] password = getPassword();
  *
- *    java.io.FileInputStream fis = null;
- *    try {
- *        fis = new java.io.FileInputStream("keyStoreName");
+ *    try (FileInputStream fis = new FileInputStream("keyStoreName")) {
  *        ks.load(fis, password);
- *    } finally {
- *        if (fis != null) {
- *            fis.close();
- *        }
  *    }
  * </pre>
  *
@@ -146,14 +140,8 @@ import javax.security.auth.callback.*;
  *    ks.setEntry("secretKeyAlias", skEntry, protParam);
  *
  *    // store away the keystore
- *    java.io.FileOutputStream fos = null;
- *    try {
- *        fos = new java.io.FileOutputStream("newKeyStoreName");
+ *    try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
  *        ks.store(fos, password);
- *    } finally {
- *        if (fos != null) {
- *            fos.close();
- *        }
  *    }
  * </pre>
  *
