@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,9 +279,6 @@ class GenCollectorPolicy : public CollectorPolicy {
                               bool* gc_overhead_limit_was_exceeded);
 
   HeapWord *satisfy_failed_allocation(size_t size, bool is_tlab);
-
-  // The size that defines a "large array".
-  virtual size_t large_typearray_limit();
 
   // Adaptive size policy
   virtual void initialize_size_policy(size_t init_eden_size,

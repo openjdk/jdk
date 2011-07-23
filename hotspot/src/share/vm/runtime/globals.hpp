@@ -343,6 +343,12 @@ class CommandLineFlags {
 #define falseInTiered true
 #endif
 
+#ifdef JAVASE_EMBEDDED
+#define falseInEmbedded false
+#else
+#define falseInEmbedded true
+#endif
+
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
@@ -438,6 +444,9 @@ class CommandLineFlags {
   product(bool, UsePPCLWSYNC, true,                                         \
           "Use lwsync instruction if true, else use slower sync")           \
                                                                             \
+  develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
+          "Whether to clean the chunk pool asynchronously")                 \
+                                                                            \
   /* Temporary: See 6948537 */                                             \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
@@ -491,6 +500,9 @@ class CommandLineFlags {
                                                                             \
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
+                                                                            \
+  product(intx, UseVIS, 99,                                                 \
+          "Highest supported VIS instructions set on Sparc")                \
                                                                             \
   product(uintx, LargePageSizeInBytes, 0,                                   \
           "Large page size (0 to let VM choose the page size")              \
@@ -1944,6 +1956,9 @@ class CommandLineFlags {
           "Number of ObjArray elements to push onto the marking stack"      \
           "before pushing a continuation entry")                            \
                                                                             \
+  notproduct(bool, ExecuteInternalVMTests, false,                           \
+          "Enable execution of internal VM tests.")                         \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -2331,6 +2346,20 @@ class CommandLineFlags {
   product(bool, PrintJNIGCStalls, false,                                    \
           "Print diagnostic message when GC is stalled"                     \
           "by JNI critical section")                                        \
+                                                                            \
+  /* GC log rotation setting */                                             \
+                                                                            \
+  product(bool, UseGCLogFileRotation, false,                                \
+          "Prevent large gclog file for long running app. "                 \
+          "Requires -Xloggc:<filename>")                                    \
+                                                                            \
+  product(uintx, NumberOfGCLogFiles, 0,                                     \
+          "Number of gclog files in rotation, "                             \
+          "Default: 0, no rotation")                                        \
+                                                                            \
+  product(uintx, GCLogFileSize, 0,                                          \
+          "GC log file size, Default: 0 bytes, no rotation "                \
+          "Only valid with UseGCLogFileRotation")                           \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
@@ -3594,13 +3623,9 @@ class CommandLineFlags {
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \
-  NOT_EMBEDDED(product(bool, UsePerfData, true,                             \
+  product(bool, UsePerfData, falseInEmbedded,                               \
           "Flag to disable jvmstat instrumentation for performance testing" \
-          "and problem isolation purposes."))                               \
-                                                                            \
-  EMBEDDED_ONLY(product(bool, UsePerfData, false,                           \
-          "Flag to disable jvmstat instrumentation for performance testing" \
-          "and problem isolation purposes."))                               \
+          "and problem isolation purposes.")                                \
                                                                             \
   product(bool, PerfDataSaveToFile, false,                                  \
           "Save PerfData memory to hsperfdata_<pid> file on exit")          \
@@ -3715,6 +3740,9 @@ class CommandLineFlags {
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
           "number of additional stack slots a method handle may push")      \
                                                                             \
+  diagnostic(bool, PrintMethodHandleStubs, false,                           \
+          "Print generated stub code for method handles")                   \
+                                                                            \
   develop(bool, TraceMethodHandles, false,                                  \
           "trace internal method handle operations")                        \
                                                                             \
@@ -3734,7 +3762,7 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, AllowInvokeGeneric, true,                              \
+  experimental(bool, AllowInvokeGeneric, false,                             \
           "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
           "as equivalent methods")                                          \
                                                                             \

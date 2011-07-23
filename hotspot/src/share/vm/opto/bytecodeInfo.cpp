@@ -35,14 +35,16 @@
 
 //=============================================================================
 //------------------------------InlineTree-------------------------------------
-InlineTree::InlineTree( Compile* c,
-                        const InlineTree *caller_tree, ciMethod* callee,
-                        JVMState* caller_jvms, int caller_bci,
-                        float site_invoke_ratio, int site_depth_adjust)
-: C(c), _caller_jvms(caller_jvms),
-  _caller_tree((InlineTree*)caller_tree),
-  _method(callee), _site_invoke_ratio(site_invoke_ratio),
-  _site_depth_adjust(site_depth_adjust),
+InlineTree::InlineTree(Compile* c,
+                       const InlineTree *caller_tree, ciMethod* callee,
+                       JVMState* caller_jvms, int caller_bci,
+                       float site_invoke_ratio, int max_inline_level) :
+  C(c),
+  _caller_jvms(caller_jvms),
+  _caller_tree((InlineTree*) caller_tree),
+  _method(callee),
+  _site_invoke_ratio(site_invoke_ratio),
+  _max_inline_level(max_inline_level),
   _count_inline_bcs(method()->code_size())
 {
   NOT_PRODUCT(_count_inlines = 0;)
@@ -66,10 +68,13 @@ InlineTree::InlineTree( Compile* c,
 }
 
 InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms,
-                       float site_invoke_ratio, int site_depth_adjust)
-: C(c), _caller_jvms(caller_jvms), _caller_tree(NULL),
-  _method(callee_method), _site_invoke_ratio(site_invoke_ratio),
-  _site_depth_adjust(site_depth_adjust),
+                       float site_invoke_ratio, int max_inline_level) :
+  C(c),
+  _caller_jvms(caller_jvms),
+  _caller_tree(NULL),
+  _method(callee_method),
+  _site_invoke_ratio(site_invoke_ratio),
+  _max_inline_level(max_inline_level),
   _count_inline_bcs(method()->code_size())
 {
   NOT_PRODUCT(_count_inlines = 0;)
@@ -94,7 +99,7 @@ const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
     if (PrintInlining && Verbose) {
-      CompileTask::print_inline_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method is hot: ");
     }
     return NULL;
@@ -109,7 +114,7 @@ const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_
      size < InlineThrowMaxSize ) {
     wci_result->set_profit(wci_result->profit() * 100);
     if (PrintInlining && Verbose) {
-      CompileTask::print_inline_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
     }
     return NULL;
@@ -149,9 +154,9 @@ const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_
 
     max_inline_size = C->freq_inline_size();
     if (size <= max_inline_size && TraceFrequencyInlining) {
-      CompileTask::print_inline_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined frequent method (freq=%d count=%d):", freq, call_site_count);
-      CompileTask::print_inline_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_level());
       callee_method->print();
       tty->cr();
     }
@@ -322,7 +327,7 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
   if (!C->do_inlining() && InlineAccessors) {
     return "not an accessor";
   }
-  if( inline_depth() > MaxInlineLevel ) {
+  if (inline_level() > _max_inline_level) {
     return "inlining too deep";
   }
 
@@ -392,7 +397,7 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
 //------------------------------print_inlining---------------------------------
 // Really, the failure_msg can be a success message also.
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
-  CompileTask::print_inlining(callee_method, inline_depth(), caller_bci, failure_msg ? failure_msg : "inline");
+  CompileTask::print_inlining(callee_method, inline_level(), caller_bci, failure_msg ? failure_msg : "inline");
   if (callee_method == NULL)  tty->print(" callee not monotonic or profiled");
   if (Verbose && callee_method) {
     const InlineTree *top = this;
@@ -500,25 +505,25 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
   if (old_ilt != NULL) {
     return old_ilt;
   }
-  int new_depth_adjust = 0;
+  int max_inline_level_adjust = 0;
   if (caller_jvms->method() != NULL) {
     if (caller_jvms->method()->is_method_handle_adapter())
-      new_depth_adjust -= 1;  // don't count actions in MH or indy adapter frames
+      max_inline_level_adjust += 1;  // don't count actions in MH or indy adapter frames
     else if (callee_method->is_method_handle_invoke()) {
-      new_depth_adjust -= 1;  // don't count method handle calls from java.lang.invoke implem
+      max_inline_level_adjust += 1;  // don't count method handle calls from java.lang.invoke implem
     }
-    if (new_depth_adjust != 0 && PrintInlining) {
-      CompileTask::print_inline_indent(inline_depth());
+    if (max_inline_level_adjust != 0 && PrintInlining && (Verbose || WizardMode)) {
+      CompileTask::print_inline_indent(inline_level());
       tty->print_cr(" \\-> discounting inline depth");
     }
-    if (new_depth_adjust != 0 && C->log()) {
+    if (max_inline_level_adjust != 0 && C->log()) {
       int id1 = C->log()->identify(caller_jvms->method());
       int id2 = C->log()->identify(callee_method);
-      C->log()->elem("inline_depth_discount caller='%d' callee='%d'", id1, id2);
+      C->log()->elem("inline_level_discount caller='%d' callee='%d'", id1, id2);
     }
   }
-  InlineTree *ilt = new InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _site_depth_adjust + new_depth_adjust);
-  _subtrees.append( ilt );
+  InlineTree* ilt = new InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _max_inline_level + max_inline_level_adjust);
+  _subtrees.append(ilt);
 
   NOT_PRODUCT( _count_inlines += 1; )
 
@@ -543,7 +548,7 @@ InlineTree *InlineTree::build_inline_tree_root() {
   Compile* C = Compile::current();
 
   // Root of inline tree
-  InlineTree *ilt = new InlineTree(C, NULL, C->method(), NULL, -1, 1.0F, 0);
+  InlineTree* ilt = new InlineTree(C, NULL, C->method(), NULL, -1, 1.0F, MaxInlineLevel);
 
   return ilt;
 }

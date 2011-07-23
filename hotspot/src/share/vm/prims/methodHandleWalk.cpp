@@ -141,12 +141,167 @@ BasicType MethodHandleChain::compute_bound_arg_type(oop target, methodOop m, int
 
 void MethodHandleChain::lose(const char* msg, TRAPS) {
   _lose_message = msg;
+#ifdef ASSERT
+  if (Verbose) {
+    tty->print_cr(INTPTR_FORMAT " lose: %s", _method_handle(), msg);
+    print();
+  }
+#endif
   if (!THREAD->is_Java_thread() || ((JavaThread*)THREAD)->thread_state() != _thread_in_vm) {
     // throw a preallocated exception
     THROW_OOP(Universe::virtual_machine_error_instance());
   }
   THROW_MSG(vmSymbols::java_lang_InternalError(), msg);
 }
+
+
+#ifdef ASSERT
+static const char* adapter_ops[] = {
+  "retype_only"  ,
+  "retype_raw"   ,
+  "check_cast"   ,
+  "prim_to_prim" ,
+  "ref_to_prim"  ,
+  "prim_to_ref"  ,
+  "swap_args"    ,
+  "rot_args"     ,
+  "dup_args"     ,
+  "drop_args"    ,
+  "collect_args" ,
+  "spread_args"  ,
+  "fold_args"
+};
+
+static const char* adapter_op_to_string(int op) {
+  if (op >= 0 && op < (int)ARRAY_SIZE(adapter_ops))
+    return adapter_ops[op];
+  return "unknown_op";
+}
+
+void MethodHandleChain::print(oopDesc* m) {
+  HandleMark hm;
+  ResourceMark rm;
+  Handle mh(m);
+  print(mh);
+}
+
+void MethodHandleChain::print(Handle mh) {
+  EXCEPTION_MARK;
+  MethodHandleChain mhc(mh, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    oop ex = THREAD->pending_exception();
+    CLEAR_PENDING_EXCEPTION;
+    ex->print();
+    return;
+  }
+  mhc.print();
+}
+
+
+void MethodHandleChain::print() {
+  EXCEPTION_MARK;
+  print_impl(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    oop ex = THREAD->pending_exception();
+    CLEAR_PENDING_EXCEPTION;
+    ex->print();
+  }
+}
+
+void MethodHandleChain::print_impl(TRAPS) {
+  ResourceMark rm;
+
+  MethodHandleChain chain(_root, CHECK);
+  for (;;) {
+    tty->print(INTPTR_FORMAT ": ", chain.method_handle()());
+    if (chain.is_bound()) {
+      tty->print("bound: arg_type %s arg_slot %d",
+                 type2name(chain.bound_arg_type()),
+                 chain.bound_arg_slot());
+      oop o = chain.bound_arg_oop();
+      if (o != NULL) {
+        if (o->is_instance()) {
+          tty->print(" instance %s", o->klass()->klass_part()->internal_name());
+        } else {
+          o->print();
+        }
+      }
+    } else if (chain.is_adapter()) {
+      tty->print("adapter: arg_slot %d conversion op %s",
+                 chain.adapter_arg_slot(),
+                 adapter_op_to_string(chain.adapter_conversion_op()));
+      switch (chain.adapter_conversion_op()) {
+        case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY:
+        case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW:
+        case java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST:
+        case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM:
+        case java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM:
+          break;
+
+        case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF: {
+          tty->print(" src_type = %s", type2name(chain.adapter_conversion_src_type()));
+          break;
+        }
+
+        case java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS:
+        case java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS: {
+          int dest_arg_slot = chain.adapter_conversion_vminfo();
+          tty->print(" dest_arg_slot %d type %s", dest_arg_slot, type2name(chain.adapter_conversion_src_type()));
+          break;
+        }
+
+        case java_lang_invoke_AdapterMethodHandle::OP_DUP_ARGS:
+        case java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS: {
+          int dup_slots = chain.adapter_conversion_stack_pushes();
+          tty->print(" pushes %d", dup_slots);
+          break;
+        }
+
+        case java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS:
+        case java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS: {
+          int coll_slots = chain.MethodHandle_vmslots();
+          tty->print(" coll_slots %d", coll_slots);
+          break;
+        }
+
+        case java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS: {
+          // Check the required length.
+          int spread_slots = 1 + chain.adapter_conversion_stack_pushes();
+          tty->print(" spread_slots %d", spread_slots);
+          break;
+        }
+
+        default:
+          tty->print_cr("bad adapter conversion");
+          break;
+      }
+    } else {
+      // DMH
+      tty->print("direct: ");
+      chain.last_method_oop()->print_short_name(tty);
+    }
+
+    tty->print(" (");
+    objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(chain.method_type_oop());
+    for (int i = ptypes->length() - 1; i >= 0; i--) {
+      BasicType t = java_lang_Class::as_BasicType(ptypes->obj_at(i));
+      if (t == T_ARRAY) t = T_OBJECT;
+      tty->print("%c", type2char(t));
+      if (t == T_LONG || t == T_DOUBLE) tty->print("_");
+    }
+    tty->print(")");
+    BasicType rtype = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(chain.method_type_oop()));
+    if (rtype == T_ARRAY) rtype = T_OBJECT;
+    tty->print("%c", type2char(rtype));
+    tty->cr();
+    if (!chain.is_last()) {
+      chain.next(CHECK);
+    } else {
+      break;
+    }
+  }
+}
+#endif
 
 
 // -----------------------------------------------------------------------------
@@ -205,10 +360,16 @@ MethodHandleWalker::walk(TRAPS) {
     if (chain().is_adapter()) {
       int conv_op = chain().adapter_conversion_op();
       int arg_slot = chain().adapter_arg_slot();
-      SlotState* arg_state = slot_state(arg_slot);
-      if (arg_state == NULL
-          && conv_op > java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW) {
-        lose("bad argument index", CHECK_(empty));
+
+      // Check that the arg_slot is valid.  In most cases it must be
+      // within range of the current arguments but there are some
+      // exceptions.  Those are sanity checked in their implemention
+      // below.
+      if ((arg_slot < 0 || arg_slot >= _outgoing.length()) &&
+          conv_op > java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW &&
+          conv_op != java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS &&
+          conv_op != java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS) {
+        lose(err_msg("bad argument index %d", arg_slot), CHECK_(empty));
       }
 
       bool retain_original_args = false;  // used by fold/collect logic
@@ -237,8 +398,7 @@ MethodHandleWalker::walk(TRAPS) {
 
         // Argument types.
         for (int i = 0, slot = _outgoing.length() - 1; slot >= 0; slot--) {
-          SlotState* arg_state = slot_state(slot);
-          if (arg_state->_type == T_VOID)  continue;
+          if (arg_type(slot) == T_VOID)  continue;
 
           klassOop  src_klass = NULL;
           klassOop  dst_klass = NULL;
@@ -262,10 +422,11 @@ MethodHandleWalker::walk(TRAPS) {
         klassOop dest_klass = NULL;
         BasicType dest = java_lang_Class::as_BasicType(chain().adapter_arg_oop(), &dest_klass);
         assert(dest == T_OBJECT, "");
-        assert(dest == arg_state->_type, "");
-        ArgToken arg = arg_state->_arg;
-        ArgToken new_arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
-        assert(!arg.has_index() || arg.index() == new_arg.index(), "should be the same index");
+        ArgToken arg = _outgoing.at(arg_slot);
+        assert(dest == arg.basic_type(), "");
+        arg = make_conversion(T_OBJECT, dest_klass, Bytecodes::_checkcast, arg, CHECK_(empty));
+        // replace the object by the result of the cast, to make the compiler happy:
+        change_argument(T_OBJECT, arg_slot, T_OBJECT, arg);
         debug_only(dest_klass = (klassOop)badOop);
         break;
       }
@@ -274,8 +435,8 @@ MethodHandleWalker::walk(TRAPS) {
         // i2l, etc., on the Nth outgoing argument in place
         BasicType src = chain().adapter_conversion_src_type(),
                   dest = chain().adapter_conversion_dest_type();
+        ArgToken arg = _outgoing.at(arg_slot);
         Bytecodes::Code bc = conversion_code(src, dest);
-        ArgToken arg = arg_state->_arg;
         if (bc == Bytecodes::_nop) {
           break;
         } else if (bc != Bytecodes::_illegal) {
@@ -289,7 +450,7 @@ MethodHandleWalker::walk(TRAPS) {
           }
         }
         if (bc == Bytecodes::_illegal) {
-          lose("bad primitive conversion", CHECK_(empty));
+          lose(err_msg("bad primitive conversion for %s -> %s", type2name(src), type2name(dest)), CHECK_(empty));
         }
         change_argument(src, arg_slot, dest, arg);
         break;
@@ -298,7 +459,7 @@ MethodHandleWalker::walk(TRAPS) {
       case java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM: {
         // checkcast to wrapper type & call intValue, etc.
         BasicType dest = chain().adapter_conversion_dest_type();
-        ArgToken arg = arg_state->_arg;
+        ArgToken arg = _outgoing.at(arg_slot);
         arg = make_conversion(T_OBJECT, SystemDictionary::box_klass(dest),
                               Bytecodes::_checkcast, arg, CHECK_(empty));
         vmIntrinsics::ID unboxer = vmIntrinsics::for_unboxing(dest);
@@ -308,7 +469,7 @@ MethodHandleWalker::walk(TRAPS) {
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing 'this'
         arglist[1] = ArgToken();  // sentinel
-        arg = make_invoke(NULL, unboxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
+        arg = make_invoke(methodHandle(), unboxer, Bytecodes::_invokevirtual, false, 1, &arglist[0], CHECK_(empty));
         change_argument(T_OBJECT, arg_slot, dest, arg);
         break;
       }
@@ -316,55 +477,63 @@ MethodHandleWalker::walk(TRAPS) {
       case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF: {
         // call wrapper type.valueOf
         BasicType src = chain().adapter_conversion_src_type();
-        ArgToken arg = arg_state->_arg;
         vmIntrinsics::ID boxer = vmIntrinsics::for_boxing(src);
         if (boxer == vmIntrinsics::_none) {
           lose("no boxing method", CHECK_(empty));
         }
+        ArgToken arg = _outgoing.at(arg_slot);
         ArgToken arglist[2];
         arglist[0] = arg;         // outgoing value
         arglist[1] = ArgToken();  // sentinel
-        arg = make_invoke(NULL, boxer, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
+        arg = make_invoke(methodHandle(), boxer, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(empty));
         change_argument(src, arg_slot, T_OBJECT, arg);
         break;
       }
 
       case java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS: {
         int dest_arg_slot = chain().adapter_conversion_vminfo();
-        if (!slot_has_argument(dest_arg_slot)) {
+        if (!has_argument(dest_arg_slot)) {
           lose("bad swap index", CHECK_(empty));
         }
         // a simple swap between two arguments
-        SlotState* dest_arg_state = slot_state(dest_arg_slot);
-        SlotState temp = (*dest_arg_state);
-        (*dest_arg_state) = (*arg_state);
-        (*arg_state) = temp;
+        if (arg_slot > dest_arg_slot) {
+          int tmp = arg_slot;
+          arg_slot = dest_arg_slot;
+          dest_arg_slot = tmp;
+        }
+        ArgToken a1 = _outgoing.at(arg_slot);
+        ArgToken a2 = _outgoing.at(dest_arg_slot);
+        change_argument(a2.basic_type(), dest_arg_slot, a1);
+        change_argument(a1.basic_type(), arg_slot, a2);
         break;
       }
 
       case java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS: {
-        int dest_arg_slot = chain().adapter_conversion_vminfo();
-        if (!slot_has_argument(dest_arg_slot) || arg_slot == dest_arg_slot) {
+        int limit_raw  = chain().adapter_conversion_vminfo();
+        bool rot_down  = (arg_slot < limit_raw);
+        int limit_bias = (rot_down ? MethodHandles::OP_ROT_ARGS_DOWN_LIMIT_BIAS : 0);
+        int limit_slot = limit_raw - limit_bias;
+        if ((uint)limit_slot > (uint)_outgoing.length()) {
           lose("bad rotate index", CHECK_(empty));
         }
-        SlotState* dest_arg_state = slot_state(dest_arg_slot);
         // Rotate the source argument (plus following N slots) into the
         // position occupied by the dest argument (plus following N slots).
-        int rotate_count = type2size[dest_arg_state->_type];
+        int rotate_count = type2size[chain().adapter_conversion_src_type()];
         // (no other rotate counts are currently supported)
-        if (arg_slot < dest_arg_slot) {
+        if (rot_down) {
           for (int i = 0; i < rotate_count; i++) {
-            SlotState temp = _outgoing.at(arg_slot);
+            ArgToken temp = _outgoing.at(arg_slot);
             _outgoing.remove_at(arg_slot);
-            _outgoing.insert_before(dest_arg_slot + rotate_count - 1, temp);
+            _outgoing.insert_before(limit_slot - 1, temp);
           }
-        } else { // arg_slot > dest_arg_slot
+        } else { // arg_slot > limit_slot => rotate_up
           for (int i = 0; i < rotate_count; i++) {
-            SlotState temp = _outgoing.at(arg_slot + rotate_count - 1);
+            ArgToken temp = _outgoing.at(arg_slot + rotate_count - 1);
             _outgoing.remove_at(arg_slot + rotate_count - 1);
-            _outgoing.insert_before(dest_arg_slot, temp);
+            _outgoing.insert_before(limit_slot, temp);
           }
         }
+        assert(_outgoing_argc == argument_count_slow(), "empty slots under control");
         break;
       }
 
@@ -374,11 +543,11 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad dup count", CHECK_(empty));
         }
         for (int i = 0; i < dup_slots; i++) {
-          SlotState* dup = slot_state(arg_slot + 2*i);
-          if (dup == NULL)              break;  // safety net
-          if (dup->_type != T_VOID)     _outgoing_argc += 1;
-          _outgoing.insert_before(i, (*dup));
+          ArgToken dup = _outgoing.at(arg_slot + 2*i);
+          if (dup.basic_type() != T_VOID)     _outgoing_argc += 1;
+          _outgoing.insert_before(i, dup);
         }
+        assert(_outgoing_argc == argument_count_slow(), "empty slots under control");
         break;
       }
 
@@ -388,11 +557,11 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad drop count", CHECK_(empty));
         }
         for (int i = 0; i < drop_slots; i++) {
-          SlotState* drop = slot_state(arg_slot);
-          if (drop == NULL)             break;  // safety net
-          if (drop->_type != T_VOID)    _outgoing_argc -= 1;
+          ArgToken drop = _outgoing.at(arg_slot);
+          if (drop.basic_type() != T_VOID)    _outgoing_argc -= 1;
           _outgoing.remove_at(arg_slot);
         }
+        assert(_outgoing_argc == argument_count_slow(), "empty slots under control");
         break;
       }
 
@@ -415,10 +584,10 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad fold/collect arg slot", CHECK_(empty));
         }
         for (int i = 0, slot = arg_slot + coll_slots - 1; slot >= arg_slot; slot--) {
-          SlotState* arg_state = slot_state(slot);
-          BasicType  arg_type  = arg_state->_type;
+          ArgToken arg_state = _outgoing.at(slot);
+          BasicType  arg_type  = arg_state.basic_type();
           if (arg_type == T_VOID)  continue;
-          ArgToken arg = _outgoing.at(slot)._arg;
+          ArgToken arg = _outgoing.at(slot);
           if (i >= argc) { lose("bad fold/collect arg", CHECK_(empty)); }
           arglist[1+i] = arg;
           if (!retain_original_args)
@@ -432,8 +601,9 @@ MethodHandleWalker::walk(TRAPS) {
           lose("bad vmlayout slot", CHECK_(empty));
         }
         // FIXME: consider inlining the invokee at the bytecode level
-        ArgToken ret = make_invoke(methodOop(invoker), vmIntrinsics::_none,
+        ArgToken ret = make_invoke(methodHandle(THREAD, methodOop(invoker)), vmIntrinsics::_invokeGeneric,
                                    Bytecodes::_invokevirtual, false, 1+argc, &arglist[0], CHECK_(empty));
+        // The iid = _invokeGeneric really means to adjust reference types as needed.
         DEBUG_ONLY(invoker = NULL);
         if (rtype == T_OBJECT) {
           klassOop rklass = java_lang_Class::as_klassOop( java_lang_invoke_MethodType::rtype(recursive_mtype()) );
@@ -466,8 +636,9 @@ MethodHandleWalker::walk(TRAPS) {
         debug_only(element_klass_oop = (klassOop)badOop);
 
         // Fetch the argument, which we will cast to the required array type.
-        assert(arg_state->_type == T_OBJECT, "");
-        ArgToken array_arg = arg_state->_arg;
+        ArgToken arg = _outgoing.at(arg_slot);
+        assert(arg.basic_type() == T_OBJECT, "");
+        ArgToken array_arg = arg;
         array_arg = make_conversion(T_OBJECT, array_klass(), Bytecodes::_checkcast, array_arg, CHECK_(empty));
         change_argument(T_OBJECT, arg_slot, T_VOID, ArgToken(tt_void));
 
@@ -489,7 +660,7 @@ MethodHandleWalker::walk(TRAPS) {
         arglist[0] = array_arg;   // value to check
         arglist[1] = length_arg;  // length to check
         arglist[2] = ArgToken();  // sentinel
-        make_invoke(NULL, vmIntrinsics::_checkSpreadArgument,
+        make_invoke(methodHandle(), vmIntrinsics::_checkSpreadArgument,
                     Bytecodes::_invokestatic, false, 2, &arglist[0], CHECK_(empty));
 
         // Spread out the array elements.
@@ -512,7 +683,7 @@ MethodHandleWalker::walk(TRAPS) {
           ArgToken offset_arg = make_prim_constant(T_INT, &offset_jvalue, CHECK_(empty));
           ArgToken element_arg = make_fetch(element_type, element_klass(), aload_op, array_arg, offset_arg, CHECK_(empty));
           change_argument(T_VOID, ap, element_type, element_arg);
-          ap += type2size[element_type];
+          //ap += type2size[element_type];  // don't do this; insert next arg to *right* of previous
         }
         break;
       }
@@ -534,10 +705,10 @@ MethodHandleWalker::walk(TRAPS) {
       } else {
         jvalue arg_value;
         BasicType bt = java_lang_boxing_object::get_value(arg_oop, &arg_value);
-        if (bt == arg_type) {
+        if (bt == arg_type || (bt == T_INT && is_subword_type(arg_type))) {
           arg = make_prim_constant(arg_type, &arg_value, CHECK_(empty));
         } else {
-          lose("bad bound value", CHECK_(empty));
+          lose(err_msg("bad bound value: arg_type %s boxing %s", type2name(arg_type), type2name(bt)), CHECK_(empty));
         }
       }
       DEBUG_ONLY(arg_oop = badOop);
@@ -557,13 +728,13 @@ MethodHandleWalker::walk(TRAPS) {
   ArgToken* arglist = NEW_RESOURCE_ARRAY(ArgToken, _outgoing.length() + 1);
   int ap = 0;
   for (int i = _outgoing.length() - 1; i >= 0; i--) {
-    SlotState* arg_state = slot_state(i);
-    if (arg_state->_type == T_VOID)  continue;
-    arglist[ap++] = _outgoing.at(i)._arg;
+    ArgToken arg_state = _outgoing.at(i);
+    if (arg_state.basic_type() == T_VOID)  continue;
+    arglist[ap++] = _outgoing.at(i);
   }
   assert(ap == _outgoing_argc, "");
   arglist[ap] = ArgToken();  // add a sentinel, for the sake of asserts
-  return make_invoke(chain().last_method_oop(),
+  return make_invoke(chain().last_method(),
                      vmIntrinsics::_none,
                      chain().last_invoke_code(), true,
                      ap, arglist, THREAD);
@@ -579,7 +750,7 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   _outgoing_argc = nptypes;
   int argp = nptypes - 1;
   if (argp >= 0) {
-    _outgoing.at_grow(argp, make_state(T_VOID, ArgToken(tt_void))); // presize
+    _outgoing.at_grow(argp, ArgToken(tt_void)); // presize
   }
   for (int i = 0; i < nptypes; i++) {
     klassOop  arg_type_klass = NULL;
@@ -587,10 +758,10 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
     int index = new_local_index(arg_type);
     ArgToken arg = make_parameter(arg_type, arg_type_klass, index, CHECK);
     DEBUG_ONLY(arg_type_klass = (klassOop) NULL);
-    _outgoing.at_put(argp, make_state(arg_type, arg));
+    _outgoing.at_put(argp, arg);
     if (type2size[arg_type] == 2) {
       // add the extra slot, so we can model the JVM stack
-      _outgoing.insert_before(argp+1, make_state(T_VOID, ArgToken(tt_void)));
+      _outgoing.insert_before(argp+1, ArgToken(tt_void));
     }
     --argp;
   }
@@ -599,7 +770,29 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
   BasicType ret_type = java_lang_Class::as_BasicType(java_lang_invoke_MethodType::rtype(mtype()), &ret_type_klass);
   ArgToken  ret = make_parameter(ret_type, ret_type_klass, -1, CHECK);
   // ignore ret; client can catch it if needed
+
+  assert(_outgoing_argc == argument_count_slow(), "empty slots under control");
+
+  verify_args_and_signature(CHECK);
 }
+
+
+#ifdef ASSERT
+void MethodHandleWalker::verify_args_and_signature(TRAPS) {
+  int index = _outgoing.length() - 1;
+  objArrayOop ptypes = java_lang_invoke_MethodType::ptypes(chain().method_type_oop());
+  for (int i = 0, limit = ptypes->length(); i < limit; i++) {
+    BasicType t = java_lang_Class::as_BasicType(ptypes->obj_at(i));
+    if (t == T_ARRAY) t = T_OBJECT;
+    if (t == T_LONG || t == T_DOUBLE) {
+      assert(T_VOID == _outgoing.at(index).basic_type(), "types must match");
+      index--;
+    }
+    assert(t == _outgoing.at(index).basic_type(), "types must match");
+    index--;
+  }
+}
+#endif
 
 
 // -----------------------------------------------------------------------------
@@ -607,30 +800,31 @@ void MethodHandleWalker::walk_incoming_state(TRAPS) {
 //
 // This is messy because some kinds of arguments are paired with
 // companion slots containing an empty value.
-void MethodHandleWalker::change_argument(BasicType old_type, int slot, BasicType new_type,
-                                         const ArgToken& new_arg) {
+void MethodHandleWalker::change_argument(BasicType old_type, int slot, const ArgToken& new_arg) {
+  BasicType new_type = new_arg.basic_type();
   int old_size = type2size[old_type];
   int new_size = type2size[new_type];
   if (old_size == new_size) {
     // simple case first
-    _outgoing.at_put(slot, make_state(new_type, new_arg));
+    _outgoing.at_put(slot, new_arg);
   } else if (old_size > new_size) {
     for (int i = old_size - 1; i >= new_size; i--) {
-      assert((i != 0) == (_outgoing.at(slot + i)._type == T_VOID), "");
+      assert((i != 0) == (_outgoing.at(slot + i).basic_type() == T_VOID), "");
       _outgoing.remove_at(slot + i);
     }
     if (new_size > 0)
-      _outgoing.at_put(slot, make_state(new_type, new_arg));
+      _outgoing.at_put(slot, new_arg);
     else
       _outgoing_argc -= 1;      // deleted a real argument
   } else {
     for (int i = old_size; i < new_size; i++) {
-      _outgoing.insert_before(slot + i, make_state(T_VOID, ArgToken(tt_void)));
+      _outgoing.insert_before(slot + i, ArgToken(tt_void));
     }
-    _outgoing.at_put(slot, make_state(new_type, new_arg));
+    _outgoing.at_put(slot, new_arg);
     if (old_size == 0)
       _outgoing_argc += 1;      // inserted a real argument
   }
+  assert(_outgoing_argc == argument_count_slow(), "empty slots under control");
 }
 
 
@@ -638,8 +832,15 @@ void MethodHandleWalker::change_argument(BasicType old_type, int slot, BasicType
 int MethodHandleWalker::argument_count_slow() {
   int args_seen = 0;
   for (int i = _outgoing.length() - 1; i >= 0; i--) {
-    if (_outgoing.at(i)._type != T_VOID) {
+    if (_outgoing.at(i).basic_type() != T_VOID) {
       ++args_seen;
+      if (_outgoing.at(i).basic_type() == T_LONG ||
+          _outgoing.at(i).basic_type() == T_DOUBLE) {
+        assert(_outgoing.at(i + 1).basic_type() == T_VOID, "should only follow two word");
+      }
+    } else {
+      assert(_outgoing.at(i - 1).basic_type() == T_LONG ||
+             _outgoing.at(i - 1).basic_type() == T_DOUBLE, "should only follow two word");
     }
   }
   return args_seen;
@@ -655,7 +856,6 @@ void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, boo
   if (src != dst) {
     if (MethodHandles::same_basic_type_for_returns(src, dst, /*raw*/ true)) {
       if (MethodHandles::is_float_fixed_reinterpretation_cast(src, dst)) {
-        if (for_return)  Untested("MHW return raw conversion");  // still untested
         vmIntrinsics::ID iid = vmIntrinsics::for_raw_conversion(src, dst);
         if (iid == vmIntrinsics::_none) {
           lose("no raw conversion method", CHECK);
@@ -663,27 +863,33 @@ void MethodHandleWalker::retype_raw_conversion(BasicType src, BasicType dst, boo
         ArgToken arglist[2];
         if (!for_return) {
           // argument type conversion
-          ArgToken arg = _outgoing.at(slot)._arg;
+          ArgToken arg = _outgoing.at(slot);
           assert(arg.token_type() >= tt_symbolic || src == arg.basic_type(), "sanity");
           arglist[0] = arg;         // outgoing 'this'
           arglist[1] = ArgToken();  // sentinel
-          arg = make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+          arg = make_invoke(methodHandle(), iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
           change_argument(src, slot, dst, arg);
         } else {
           // return type conversion
-          klassOop arg_klass = NULL;
-          arglist[0] = make_parameter(src, arg_klass, -1, CHECK);  // return value
-          arglist[1] = ArgToken();                                 // sentinel
-          (void) make_invoke(NULL, iid, Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK);
+          if (_return_conv == vmIntrinsics::_none) {
+            _return_conv = iid;
+          } else if (_return_conv == vmIntrinsics::for_raw_conversion(dst, src)) {
+            _return_conv = vmIntrinsics::_none;
+          } else if (_return_conv != zero_return_conv()) {
+            lose(err_msg("requested raw return conversion not allowed: %s -> %s (before %s)", type2name(src), type2name(dst), vmIntrinsics::name_at(_return_conv)), CHECK);
+          }
         }
       } else {
         // Nothing to do.
       }
+    } else if (for_return && (!is_subword_type(src) || !is_subword_type(dst))) {
+      // This can occur in exception-throwing MHs, which have a fictitious return value encoded as Void or Empty.
+      _return_conv = zero_return_conv();
     } else if (src == T_OBJECT && is_java_primitive(dst)) {
       // ref-to-prim: discard ref, push zero
       lose("requested ref-to-prim conversion not expected", CHECK);
     } else {
-      lose("requested raw conversion not allowed", CHECK);
+      lose(err_msg("requested raw conversion not allowed: %s -> %s", type2name(src), type2name(dst)), CHECK);
     }
   }
 }
@@ -698,6 +904,7 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* si
     _thread(THREAD),
     _bytecode(THREAD, 50),
     _constants(THREAD, 10),
+    _non_bcp_klasses(THREAD, 5),
     _cur_stack(0),
     _max_stack(0),
     _rtype(T_ILLEGAL)
@@ -709,6 +916,15 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* si
   // Set name and signature index.
   _name_index      = cpool_symbol_put(name);
   _signature_index = cpool_symbol_put(signature);
+
+  // To make the resulting methods more recognizable by
+  // stack walkers and compiler heuristics,
+  // we put them in holder class MethodHandle.
+  // See klass_is_method_handle_adapter_holder
+  // and methodOopDesc::is_method_handle_adapter.
+  _target_klass = SystemDictionaryHandles::MethodHandle_klass();
+
+  check_non_bcp_klasses(java_lang_invoke_MethodHandle::type(root()), CHECK);
 
   // Get return type klass.
   Handle first_mtype(THREAD, chain().method_type_oop());
@@ -731,6 +947,7 @@ methodHandle MethodHandleCompiler::compile(TRAPS) {
   assert(_thread == THREAD, "must be same thread");
   methodHandle nullHandle;
   (void) walk(CHECK_(nullHandle));
+  record_non_bcp_klasses();
   return get_method_oop(CHECK_(nullHandle));
 }
 
@@ -963,6 +1180,7 @@ void MethodHandleCompiler::emit_store(BasicType bt, int index) {
 
 void MethodHandleCompiler::emit_load_constant(ArgToken arg) {
   BasicType bt = arg.basic_type();
+  if (is_subword_type(bt)) bt = T_INT;
   switch (bt) {
   case T_INT: {
     jint value = arg.get_jint();
@@ -998,10 +1216,18 @@ void MethodHandleCompiler::emit_load_constant(ArgToken arg) {
   }
   case T_OBJECT: {
     Handle value = arg.object();
-    if (value.is_null())
+    if (value.is_null()) {
       emit_bc(Bytecodes::_aconst_null);
-    else
-      emit_bc(Bytecodes::_ldc, cpool_object_put(value));
+      break;
+    }
+    if (java_lang_Class::is_instance(value())) {
+      klassOop k = java_lang_Class::as_klassOop(value());
+      if (k != NULL) {
+        emit_bc(Bytecodes::_ldc, cpool_klass_put(k));
+        break;
+      }
+    }
+    emit_bc(Bytecodes::_ldc, cpool_object_put(value));
     break;
   }
   default:
@@ -1061,16 +1287,22 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
       index = src.index();
     }
     emit_bc(op, cpool_klass_put(tk));
-    if (index == -1)
-      index = new_local_index(type);
+    check_non_bcp_klass(tk, CHECK_(src));
+    // Allocate a new local for the type so that we don't hide the
+    // previous type from the verifier.
+    index = new_local_index(type);
     emit_store(srctype, index);
     break;
 
+  case Bytecodes::_nop:
+    // nothing to do
+    return src;
+
   default:
     if (op == Bytecodes::_illegal)
-      lose("no such primitive conversion", THREAD);
+      lose(err_msg("no such primitive conversion: %s -> %s", type2name(src.basic_type()), type2name(type)), THREAD);
     else
-      lose("bad primitive conversion op", THREAD);
+      lose(err_msg("bad primitive conversion op: %s", Bytecodes::name(op)), THREAD);
     return make_prim_constant(type, &zero_jvalue, THREAD);
   }
 
@@ -1088,15 +1320,15 @@ jvalue MethodHandleCompiler::one_jvalue  = { 1 };
 
 // Emit bytecodes for the given invoke instruction.
 MethodHandleWalker::ArgToken
-MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
+MethodHandleCompiler::make_invoke(methodHandle m, vmIntrinsics::ID iid,
                                   Bytecodes::Code op, bool tailcall,
                                   int argc, MethodHandleWalker::ArgToken* argv,
                                   TRAPS) {
   ArgToken zero;
-  if (m == NULL) {
+  if (m.is_null()) {
     // Get the intrinsic methodOop.
-    m = vmIntrinsics::method_for(iid);
-    if (m == NULL) {
+    m = methodHandle(THREAD, vmIntrinsics::method_for(iid));
+    if (m.is_null()) {
       lose(vmIntrinsics::name_at(iid), CHECK_(zero));
     }
   }
@@ -1105,17 +1337,45 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   Symbol*  name      = m->name();
   Symbol*  signature = m->signature();
 
+  if (iid == vmIntrinsics::_invokeGeneric &&
+      argc >= 1 && argv[0].token_type() == tt_constant) {
+    assert(m->intrinsic_id() == vmIntrinsics::_invokeExact, "");
+    Handle receiver = argv[0].object();
+    Handle rtype(THREAD, java_lang_invoke_MethodHandle::type(receiver()));
+    Handle mtype(THREAD, m->method_handle_type());
+    if (rtype() != mtype()) {
+      assert(java_lang_invoke_MethodType::form(rtype()) ==
+             java_lang_invoke_MethodType::form(mtype()),
+             "must be the same shape");
+      // customize m to the exact required rtype
+      bool has_non_bcp_klass = check_non_bcp_klasses(rtype(), CHECK_(zero));
+      TempNewSymbol sig2 = java_lang_invoke_MethodType::as_signature(rtype(), true, CHECK_(zero));
+      methodHandle m2;
+      if (!has_non_bcp_klass) {
+        methodOop m2_oop = SystemDictionary::find_method_handle_invoke(m->name(), sig2,
+                                                                       KlassHandle(), CHECK_(zero));
+        m2 = methodHandle(THREAD, m2_oop);
+      }
+      if (m2.is_null()) {
+        // just build it fresh
+        m2 = methodOopDesc::make_invoke_method(klass, m->name(), sig2, rtype, CHECK_(zero));
+        if (m2.is_null())
+          lose(err_msg("no customized invoker %s", sig2->as_utf8()), CHECK_(zero));
+      }
+      m = m2;
+      signature = m->signature();
+    }
+  }
+
+  check_non_bcp_klass(klass, CHECK_(zero));
+  if (m->is_method_handle_invoke()) {
+    check_non_bcp_klasses(m->method_handle_type(), CHECK_(zero));
+  }
+
   // Count the number of arguments, not the size
   ArgumentCount asc(signature);
   assert(argc == asc.size() + ((op == Bytecodes::_invokestatic || op == Bytecodes::_invokedynamic) ? 0 : 1),
          "argc mismatch");
-
-  if (tailcall) {
-    // Actually, in order to make these methods more recognizable,
-    // let's put them in holder class MethodHandle.  That way stack
-    // walkers and compiler heuristics can recognize them.
-    _target_klass = SystemDictionary::MethodHandle_klass();
-  }
 
   // Inline the method.
   InvocationCounter* ic = m->invocation_counter();
@@ -1149,7 +1409,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   int signature_index     = cpool_symbol_put(signature);
   int name_and_type_index = cpool_name_and_type_put(name_index, signature_index);
   int klass_index         = cpool_klass_put(klass);
-  int methodref_index     = cpool_methodref_put(klass_index, name_and_type_index);
+  int methodref_index     = cpool_methodref_put(op, klass_index, name_and_type_index, m);
 
   // Generate invoke.
   switch (op) {
@@ -1176,6 +1436,20 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   stack_push(rbt);  // The return value is already pushed onto the stack.
   ArgToken ret;
   if (tailcall) {
+    if (return_conv() == zero_return_conv()) {
+      rbt = T_VOID;  // discard value
+    } else if (return_conv() != vmIntrinsics::_none) {
+      // return value conversion
+      int index = new_local_index(rbt);
+      emit_store(rbt, index);
+      ArgToken arglist[2];
+      arglist[0] = ArgToken(tt_temporary, rbt, index);
+      arglist[1] = ArgToken();  // sentinel
+      ret = make_invoke(methodHandle(), return_conv(), Bytecodes::_invokestatic, false, 1, &arglist[0], CHECK_(zero));
+      set_return_conv(vmIntrinsics::_none);
+      rbt = ret.basic_type();
+      emit_load(rbt, ret.index());
+    }
     if (rbt != _rtype) {
       if (rbt == T_VOID) {
         // push a zero of the right sort
@@ -1219,8 +1493,10 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     case T_DOUBLE: emit_bc(Bytecodes::_dreturn); break;
     case T_VOID:   emit_bc(Bytecodes::_return);  break;
     case T_OBJECT:
-      if (_rklass.not_null() && _rklass() != SystemDictionary::Object_klass())
+      if (_rklass.not_null() && _rklass() != SystemDictionary::Object_klass() && !Klass::cast(_rklass())->is_interface()) {
         emit_bc(Bytecodes::_checkcast, cpool_klass_put(_rklass()));
+        check_non_bcp_klass(_rklass(), CHECK_(zero));
+      }
       emit_bc(Bytecodes::_areturn);
       break;
     default: ShouldNotReachHere();
@@ -1300,7 +1576,7 @@ int MethodHandleCompiler::cpool_primitive_put(BasicType bt, jvalue* con) {
 
 //   for (int i = 1, imax = _constants.length(); i < imax; i++) {
 //     ConstantValue* con = _constants.at(i);
-//     if (con != NULL && con->is_primitive() && con->_type == bt) {
+//     if (con != NULL && con->is_primitive() && con.basic_type() == bt) {
 //       bool match = false;
 //       switch (type2size[bt]) {
 //       case 1:  if (pcon->_value.i == con->i)  match = true;  break;
@@ -1320,6 +1596,52 @@ int MethodHandleCompiler::cpool_primitive_put(BasicType bt, jvalue* con) {
   return index;
 }
 
+bool MethodHandleCompiler::check_non_bcp_klasses(Handle method_type, TRAPS) {
+  bool res = false;
+  for (int i = -1, len = java_lang_invoke_MethodType::ptype_count(method_type()); i < len; i++) {
+    oop ptype = (i == -1
+                 ? java_lang_invoke_MethodType::rtype(method_type())
+                 : java_lang_invoke_MethodType::ptype(method_type(), i));
+    res |= check_non_bcp_klass(java_lang_Class::as_klassOop(ptype), CHECK_(false));
+  }
+  return res;
+}
+
+bool MethodHandleCompiler::check_non_bcp_klass(klassOop klass, TRAPS) {
+  klass = methodOopDesc::check_non_bcp_klass(klass);
+  if (klass != NULL) {
+    Symbol* name = Klass::cast(klass)->name();
+    for (int i = _non_bcp_klasses.length() - 1; i >= 0; i--) {
+      klassOop k2 = _non_bcp_klasses.at(i)();
+      if (Klass::cast(k2)->name() == name) {
+        if (k2 != klass) {
+          lose(err_msg("unsupported klass name alias %s", name->as_utf8()), THREAD);
+        }
+        return true;
+      }
+    }
+    _non_bcp_klasses.append(KlassHandle(THREAD, klass));
+    return true;
+  }
+  return false;
+}
+
+void MethodHandleCompiler::record_non_bcp_klasses() {
+  // Append extra klasses to constant pool, to guide klass lookup.
+  for (int k = 0; k < _non_bcp_klasses.length(); k++) {
+    klassOop non_bcp_klass = _non_bcp_klasses.at(k)();
+    bool add_to_cp = true;
+    for (int j = 1; j < _constants.length(); j++) {
+      ConstantValue* cv = _constants.at(j);
+      if (cv != NULL && cv->tag() == JVM_CONSTANT_Class
+          && cv->klass_oop() == non_bcp_klass) {
+        add_to_cp = false;
+        break;
+      }
+    }
+    if (add_to_cp)  cpool_klass_put(non_bcp_klass);
+  }
+}
 
 constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
   constantPoolHandle nullHandle;
@@ -1339,6 +1661,8 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
     case JVM_CONSTANT_Double:      cpool->double_at_put(       i, cv->get_jdouble()                    ); break;
     case JVM_CONSTANT_Class:       cpool->klass_at_put(        i, cv->klass_oop()                      ); break;
     case JVM_CONSTANT_Methodref:   cpool->method_at_put(       i, cv->first_index(), cv->second_index()); break;
+    case JVM_CONSTANT_InterfaceMethodref:
+                                cpool->interface_method_at_put(i, cv->first_index(), cv->second_index()); break;
     case JVM_CONSTANT_NameAndType: cpool->name_and_type_at_put(i, cv->first_index(), cv->second_index()); break;
     case JVM_CONSTANT_Object:      cpool->object_at_put(       i, cv->object_oop()                     ); break;
     default: ShouldNotReachHere();
@@ -1352,6 +1676,8 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
       break;
     }
   }
+
+  cpool->set_preresolution();
 
   // Set the constant pool holder to the target method's class.
   cpool->set_pool_holder(_target_klass());
@@ -1399,6 +1725,34 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
   objArrayHandle methods(THREAD, m_array);
   methods->obj_at_put(0, m());
   Rewriter::rewrite(_target_klass(), cpool, methods, CHECK_(empty));  // Use fake class.
+  Rewriter::relocate_and_link(_target_klass(), methods, CHECK_(empty));  // Use fake class.
+
+  // Pre-resolve selected CP cache entries, to avoid problems with class loader scoping.
+  constantPoolCacheHandle cpc(THREAD, cpool->cache());
+  for (int i = 0; i < cpc->length(); i++) {
+    ConstantPoolCacheEntry* e = cpc->entry_at(i);
+    assert(!e->is_secondary_entry(), "no indy instructions in here, yet");
+    int constant_pool_index = e->constant_pool_index();
+    ConstantValue* cv = _constants.at(constant_pool_index);
+    if (!cv->has_linkage())  continue;
+    methodHandle m = cv->linkage();
+    int index;
+    switch (cv->tag()) {
+    case JVM_CONSTANT_Methodref:
+      index = m->vtable_index();
+      if (m->is_static()) {
+        e->set_method(Bytecodes::_invokestatic, m, index);
+      } else {
+        e->set_method(Bytecodes::_invokespecial, m, index);
+        e->set_method(Bytecodes::_invokevirtual, m, index);
+      }
+      break;
+    case JVM_CONSTANT_InterfaceMethodref:
+      index = klassItable::compute_itable_index(m());
+      e->set_interface_call(m, index);
+      break;
+    }
+  }
 
   // Set the invocation counter's count to the invoke count of the
   // original call site.
@@ -1451,8 +1805,8 @@ private:
     _strbuf.reset();
     return s;
   }
-  ArgToken token(const char* str) {
-    return ArgToken(str);
+  ArgToken token(const char* str, BasicType type) {
+    return ArgToken(str, type);
   }
   const char* string(ArgToken token) {
     return token.str();
@@ -1474,12 +1828,12 @@ private:
   }
   ArgToken maybe_make_temp(const char* statement_op, BasicType type, const char* temp_name) {
     const char* value = strbuf();
-    if (!_verbose)  return token(value);
+    if (!_verbose)  return token(value, type);
     // make an explicit binding for each separate value
     _strbuf.print("%s%d", temp_name, ++_temp_num);
     const char* temp = strbuf();
     _out->print("\n  %s %s %s = %s;", statement_op, type2name(type), temp, value);
-    return token(temp);
+    return token(temp, type);
   }
 
 public:
@@ -1490,12 +1844,15 @@ public:
       _param_state(0),
       _temp_num(0)
   {
+    out->print("MethodHandle:");
+    java_lang_invoke_MethodType::print_signature(java_lang_invoke_MethodHandle::type(root()), out);
+    out->print(" : #");
     start_params();
   }
   virtual ArgToken make_parameter(BasicType type, klassOop tk, int argnum, TRAPS) {
     if (argnum < 0) {
       end_params();
-      return token("return");
+      return token("return", type);
     }
     if ((_param_state & 1) == 0) {
       _param_state |= 1;
@@ -1510,7 +1867,7 @@ public:
     const char* arg = strbuf();
     put_type_name(type, tk, _out);
     _out->print(" %s", arg);
-    return token(arg);
+    return token(arg, type);
   }
   virtual ArgToken make_oop_constant(oop con, TRAPS) {
     if (con == NULL)
@@ -1553,12 +1910,12 @@ public:
     _strbuf.print(")");
     return maybe_make_temp("fetch", type, "x");
   }
-  virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid,
+  virtual ArgToken make_invoke(methodHandle m, vmIntrinsics::ID iid,
                                Bytecodes::Code op, bool tailcall,
                                int argc, ArgToken* argv, TRAPS) {
     Symbol* name;
     Symbol* sig;
-    if (m != NULL) {
+    if (m.not_null()) {
       name = m->name();
       sig  = m->signature();
     } else {
@@ -1597,7 +1954,7 @@ public:
     out->print("\n");
   }
   static void print(Handle root, bool verbose = Verbose, outputStream* out = tty) {
-    EXCEPTION_MARK;
+    Thread* THREAD = Thread::current();
     ResourceMark rm;
     MethodHandlePrinter printer(root, verbose, out, THREAD);
     if (!HAS_PENDING_EXCEPTION)
