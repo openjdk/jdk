@@ -750,10 +750,6 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   return NULL;
 }
 
-size_t GenCollectorPolicy::large_typearray_limit() {
-  return FastAllocateSizeLimit;
-}
-
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
 // . gc locker is occupied (jni critical section)

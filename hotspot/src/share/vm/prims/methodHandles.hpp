@@ -217,7 +217,6 @@ class MethodHandles: AllStatic {
 
   // Adapters.
   static MethodHandlesAdapterBlob* _adapter_code;
-  static int                       _adapter_code_size;
 
   static bool ek_valid(EntryKind ek)            { return (uint)ek < (uint)_EK_LIMIT; }
   static bool conv_op_valid(int op)             { return (uint)op < (uint)CONV_OP_LIMIT; }
@@ -439,6 +438,9 @@ class MethodHandles: AllStatic {
     assert(_raise_exception_method == NULL, "");
     _raise_exception_method = JNIHandles::make_global(Handle(rem));
   }
+  static methodOop resolve_raise_exception_method(TRAPS);
+  // call raise_exception_method from C code:
+  static void raise_exception(int code, oop actual, oop required, TRAPS);
 
   static jint adapter_conversion(int conv_op, BasicType src, BasicType dest,
                                  int stack_move = 0, int vminfo = 0) {
@@ -579,12 +581,18 @@ class MethodHandles: AllStatic {
     GC_JVM_PUSH_LIMIT = 0,
     GC_JVM_STACK_MOVE_UNIT = 1,
     GC_CONV_OP_IMPLEMENTED_MASK = 2,
+    GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3,
 
     // format of result from getTarget / encode_target:
     ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
     ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
     ETF_METHOD_NAME           = 2, // ultimate method as MemberName
-    ETF_REFLECT_METHOD        = 3  // ultimate method as java.lang.reflect object (sans refClass)
+    ETF_REFLECT_METHOD        = 3, // ultimate method as java.lang.reflect object (sans refClass)
+    ETF_FORCE_DIRECT_HANDLE   = 64,
+    ETF_COMPILE_DIRECT_HANDLE = 65,
+
+    // ad hoc constants
+    OP_ROT_ARGS_DOWN_LIMIT_BIAS = -1
   };
   static int get_named_constant(int which, Handle name_box, TRAPS);
   static oop encode_target(Handle mh, int format, TRAPS); // report vmtarget (to Java code)
@@ -713,12 +721,10 @@ public:
 # include "methodHandles_x86.hpp"
 #endif
 #ifdef TARGET_ARCH_sparc
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_sparc.hpp"
+# include "methodHandles_sparc.hpp"
 #endif
 #ifdef TARGET_ARCH_zero
-#define TARGET_ARCH_NYI_6939861 1 //FIXME
-//# include "methodHandles_zero.hpp"
+# include "methodHandles_zero.hpp"
 #endif
 #ifdef TARGET_ARCH_arm
 # include "methodHandles_arm.hpp"
@@ -828,7 +834,7 @@ address MethodHandles::from_interpreted_entry(EntryKind ek) { return entry(ek)->
 //
 class MethodHandlesAdapterGenerator : public StubCodeGenerator {
 public:
-  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
+  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code, PrintMethodHandleStubs) {}
 
   void generate();
 };

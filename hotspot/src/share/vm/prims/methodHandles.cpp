@@ -24,12 +24,14 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/methodHandleWalk.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
@@ -160,8 +162,7 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
 };
 
 // Adapters.
-MethodHandlesAdapterBlob* MethodHandles::_adapter_code      = NULL;
-int                       MethodHandles::_adapter_code_size = StubRoutines::method_handles_adapters_code_size;
+MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
 
 jobject MethodHandles::_raise_exception_method;
 
@@ -200,9 +201,9 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TraceStartupTime);
-  _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
+  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
   if (_adapter_code == NULL)
-    vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
+    vm_exit_out_of_memory(adapter_code_size, "CodeCache: no room for MethodHandles adapters");
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
@@ -630,6 +631,8 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   // convert the external string name to an internal symbol
   TempNewSymbol name = java_lang_String::as_symbol_or_null(name_str());
   if (name == NULL)  return;  // no such name
+  if (name == vmSymbols::class_initializer_name())
+    return; // illegal name
 
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
@@ -766,7 +769,9 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         m = NULL;
         // try again with a different class loader...
       }
-      if (m != NULL) {
+      if (m != NULL &&
+          m->is_method_handle_invoke() &&
+          java_lang_invoke_MethodType::equals(polymorphic_method_type(), m->method_handle_type())) {
         int mods = (m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS);
         java_lang_invoke_MemberName::set_vmtarget(mname(),  m);
         java_lang_invoke_MemberName::set_vmindex(mname(),   m->vtable_index());
@@ -985,6 +990,48 @@ instanceKlassHandle MethodHandles::resolve_instance_klass(oop java_mirror_oop, T
 // This is for debugging and reflection.
 oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
   assert(java_lang_invoke_MethodHandle::is_instance(mh()), "must be a MH");
+  if (format == ETF_FORCE_DIRECT_HANDLE ||
+      format == ETF_COMPILE_DIRECT_HANDLE) {
+    // Internal function for stress testing.
+    Handle mt = java_lang_invoke_MethodHandle::type(mh());
+    int invocation_count = 10000;
+    TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(mt(), true, CHECK_NULL);
+    bool omit_receiver_argument = true;
+    MethodHandleCompiler mhc(mh, vmSymbols::invoke_name(), signature, invocation_count, omit_receiver_argument, CHECK_NULL);
+    methodHandle m = mhc.compile(CHECK_NULL);
+    if (StressMethodHandleWalk && Verbose || PrintMiscellaneous) {
+      tty->print_cr("MethodHandleNatives.getTarget(%s)",
+                    format == ETF_FORCE_DIRECT_HANDLE ? "FORCE_DIRECT" : "COMPILE_DIRECT");
+      if (Verbose) {
+        m->print_codes();
+      }
+    }
+    if (StressMethodHandleWalk) {
+      InterpreterOopMap mask;
+      OopMapCache::compute_one_oop_map(m, m->code_size() - 1, &mask);
+    }
+    if ((format == ETF_COMPILE_DIRECT_HANDLE ||
+         CompilationPolicy::must_be_compiled(m))
+        && !instanceKlass::cast(m->method_holder())->is_not_initialized()
+        && CompilationPolicy::can_be_compiled(m)) {
+      // Force compilation
+      CompileBroker::compile_method(m, InvocationEntryBci,
+                                    CompLevel_initial_compile,
+                                    methodHandle(), 0, "MethodHandleNatives.getTarget",
+                                    CHECK_NULL);
+    }
+    // Now wrap m in a DirectMethodHandle.
+    instanceKlassHandle dmh_klass(THREAD, SystemDictionary::DirectMethodHandle_klass());
+    Handle dmh = dmh_klass->allocate_instance_handle(CHECK_NULL);
+    JavaValue ignore_result(T_VOID);
+    Symbol* init_name = vmSymbols::object_initializer_name();
+    Symbol* init_sig  = vmSymbols::notifyGenericMethodType_signature();
+    JavaCalls::call_special(&ignore_result, dmh,
+                            SystemDictionaryHandles::MethodHandle_klass(), init_name, init_sig,
+                            java_lang_invoke_MethodHandle::type(mh()), CHECK_NULL);
+    MethodHandles::init_DirectMethodHandle(dmh, m, false, CHECK_NULL);
+    return dmh();
+  }
   if (format == ETF_HANDLE_OR_METHOD_NAME) {
     oop target = java_lang_invoke_MethodHandle::vmtarget(mh());
     if (target == NULL) {
@@ -1220,6 +1267,12 @@ void MethodHandles::verify_method_signature(methodHandle m,
           klassOop aklass_oop = SystemDictionary::resolve_or_null(name, loader, domain, CHECK);
           if (aklass_oop != NULL)
             aklass = KlassHandle(THREAD, aklass_oop);
+          if (aklass.is_null() &&
+              pklass.not_null() &&
+              loader.is_null() &&
+              pklass->name() == name)
+            // accept name equivalence here, since that's the best we can do
+            aklass = pklass;
         }
       } else {
         // for method handle invokers we don't look at the name in the signature
@@ -1305,6 +1358,7 @@ void MethodHandles::verify_vmargslot(Handle mh, int argnum, int argslot, TRAPS) 
   // Verify that argslot points at the given argnum.
   int check_slot = argument_slot(java_lang_invoke_MethodHandle::type(mh()), argnum);
   if (argslot != check_slot || argslot < 0) {
+    ResourceMark rm;
     const char* fmt = "for argnum of %d, vmargslot is %d, should be %d";
     size_t msglen = strlen(fmt) + 3*11 + 1;
     char* msg = NEW_RESOURCE_ARRAY(char, msglen);
@@ -1720,6 +1774,7 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
 
 void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnum,
                                              bool direct_to_method, TRAPS) {
+  ResourceMark rm;
   Handle ptype_handle(THREAD,
                            java_lang_invoke_MethodType::ptype(java_lang_invoke_MethodHandle::type(target()), argnum));
   KlassHandle ptype_klass;
@@ -1829,6 +1884,7 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   bool direct_to_method = false;
   if (OptimizeMethodHandles &&
       target->klass() == SystemDictionary::DirectMethodHandle_klass() &&
+      (argnum != 0 || java_lang_invoke_BoundMethodHandle::argument(mh()) != NULL) &&
       (argnum == 0 || java_lang_invoke_DirectMethodHandle::vmindex(target()) < 0)) {
     KlassHandle receiver_limit; int decode_flags = 0;
     methodHandle m = decode_method(target(), receiver_limit, decode_flags);
@@ -1882,6 +1938,7 @@ static void throw_InternalError_for_bad_conversion(int conversion, const char* e
 }
 
 void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
+  ResourceMark rm;
   jint conversion = java_lang_invoke_AdapterMethodHandle::conversion(mh());
   int  argslot    = java_lang_invoke_AdapterMethodHandle::vmargslot(mh());
 
@@ -1974,53 +2031,77 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
       }
       break;
     case _adapter_swap_args:
-    case _adapter_rot_args:
       {
-        if (!src || src != dest) {
+        if (!src || !dest) {
           err = "adapter requires src/dest conversion subfields for swap"; break;
         }
-        int swap_size = type2size[src];
-        int slot_limit = java_lang_invoke_MethodHandle::vmslots(target());
+        int src_size  = type2size[src];
+        if (src_size != type2size[dest]) {
+          err = "adapter requires equal sizes for src/dest"; break;
+        }
         int src_slot   = argslot;
         int dest_slot  = vminfo;
-        bool rotate_up = (src_slot > dest_slot); // upward rotation
         int src_arg    = argnum;
-        int dest_arg   = argument_slot_to_argnum(dst_mtype(), dest_slot);
+        int dest_arg   = argument_slot_to_argnum(src_mtype(), dest_slot);
         verify_vmargslot(mh, dest_arg, dest_slot, CHECK);
-        if (!(dest_slot >= src_slot + swap_size) &&
-            !(src_slot >= dest_slot + swap_size)) {
-          err = "source, destination slots must be distinct";
-        } else if (ek == _adapter_swap_args && !(src_slot > dest_slot)) {
-          err = "source of swap must be deeper in stack";
-        } else if (ek == _adapter_swap_args) {
-          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), dest_arg),
-                                           java_lang_invoke_MethodType::ptype(dst_mtype(), src_arg),
-                                           dest_arg);
-        } else if (ek == _adapter_rot_args) {
-          if (rotate_up) {
-            assert((src_slot > dest_slot) && (src_arg < dest_arg), "");
-            // rotate up: [dest_slot..src_slot-ss] --> [dest_slot+ss..src_slot]
-            // that is:   [src_arg+1..dest_arg] --> [src_arg..dest_arg-1]
-            for (int i = src_arg+1; i <= dest_arg && err == NULL; i++) {
-              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
-                                               java_lang_invoke_MethodType::ptype(dst_mtype(), i-1),
-                                               i);
-            }
-          } else { // rotate down
-            assert((src_slot < dest_slot) && (src_arg > dest_arg), "");
-            // rotate down: [src_slot+ss..dest_slot] --> [src_slot..dest_slot-ss]
-            // that is:     [dest_arg..src_arg-1] --> [dst_arg+1..src_arg]
-            for (int i = dest_arg; i <= src_arg-1 && err == NULL; i++) {
-              err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
-                                               java_lang_invoke_MethodType::ptype(dst_mtype(), i+1),
-                                               i);
-            }
-          }
+        if (!(dest_slot >= src_slot + src_size) &&
+            !(src_slot >= dest_slot + src_size)) {
+          err = "source, destination slots must be distinct"; break;
+        } else if (!(src_slot > dest_slot)) {
+          err = "source of swap must be deeper in stack"; break;
         }
+        err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), dest_arg),
+                                         java_lang_invoke_MethodType::ptype(dst_mtype(), src_arg),
+                                         dest_arg);
         if (err == NULL)
           err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), src_arg),
                                            java_lang_invoke_MethodType::ptype(dst_mtype(), dest_arg),
                                            src_arg);
+        break;
+      }
+    case _adapter_rot_args:
+      {
+        if (!src || !dest) {
+          err = "adapter requires src/dest conversion subfields for rotate"; break;
+        }
+        int src_slot   = argslot;
+        int limit_raw  = vminfo;
+        bool rot_down  = (src_slot < limit_raw);
+        int limit_bias = (rot_down ? MethodHandles::OP_ROT_ARGS_DOWN_LIMIT_BIAS : 0);
+        int limit_slot = limit_raw - limit_bias;
+        int src_arg    = argnum;
+        int limit_arg  = argument_slot_to_argnum(src_mtype(), limit_slot);
+        verify_vmargslot(mh, limit_arg, limit_slot, CHECK);
+        if (src_slot == limit_slot) {
+          err = "source, destination slots must be distinct"; break;
+        }
+        if (!rot_down) {  // rotate slots up == shift arguments left
+          // limit_slot is an inclusive lower limit
+          assert((src_slot > limit_slot) && (src_arg < limit_arg), "");
+          // rotate up: [limit_slot..src_slot-ss] --> [limit_slot+ss..src_slot]
+          // that is:   [src_arg+1..limit_arg] --> [src_arg..limit_arg-1]
+          for (int i = src_arg+1; i <= limit_arg && err == NULL; i++) {
+            err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
+                                             java_lang_invoke_MethodType::ptype(dst_mtype(), i-1),
+                                             i);
+          }
+        } else { // rotate slots down == shfit arguments right
+          // limit_slot is an exclusive upper limit
+          assert((src_slot < limit_slot - limit_bias) && (src_arg > limit_arg + limit_bias), "");
+          // rotate down: [src_slot+ss..limit_slot) --> [src_slot..limit_slot-ss)
+          // that is:     (limit_arg..src_arg-1] --> (dst_arg+1..src_arg]
+          for (int i = limit_arg+1; i <= src_arg-1 && err == NULL; i++) {
+            err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), i),
+                                             java_lang_invoke_MethodType::ptype(dst_mtype(), i+1),
+                                             i);
+          }
+        }
+        if (err == NULL) {
+          int dest_arg = (rot_down ? limit_arg+1 : limit_arg);
+          err = check_argument_type_change(java_lang_invoke_MethodType::ptype(src_mtype(), src_arg),
+                                           java_lang_invoke_MethodType::ptype(dst_mtype(), dest_arg),
+                                           src_arg);
+        }
       }
       break;
     case _adapter_spread_args:
@@ -2333,7 +2414,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   case _adapter_rot_args:
     {
       int swap_slots = type2size[src];
-      int slot_limit = java_lang_invoke_AdapterMethodHandle::vmslots(mh());
       int src_slot   = argslot;
       int dest_slot  = vminfo;
       int rotate     = (ek_orig == _adapter_swap_args) ? 0 : (src_slot > dest_slot) ? 1 : -1;
@@ -2563,7 +2643,7 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   }
 
   if (err != NULL) {
-    throw_InternalError_for_bad_conversion(conversion, err, THREAD);
+    throw_InternalError_for_bad_conversion(conversion, err_msg("%s: conv_op %d ek_opt %d", err, conv_op, ek_opt), THREAD);
     return;
   }
 
@@ -2626,6 +2706,17 @@ static void stress_method_handle_walk_impl(Handle mh, TRAPS) {
     }
     InterpreterOopMap mask;
     OopMapCache::compute_one_oop_map(m, m->code_size() - 1, &mask);
+    // compile to object code if -Xcomp or WizardMode
+    if ((WizardMode ||
+         CompilationPolicy::must_be_compiled(m))
+        && !instanceKlass::cast(m->method_holder())->is_not_initialized()
+        && CompilationPolicy::can_be_compiled(m)) {
+      // Force compilation
+      CompileBroker::compile_method(m, InvocationEntryBci,
+                                    CompLevel_initial_compile,
+                                    methodHandle(), 0, "StressMethodHandleWalk",
+                                    CHECK);
+    }
   }
 }
 
@@ -2661,14 +2752,14 @@ JVM_ENTRY(void, MHN_init_DMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   ResourceMark rm;              // for error messages
 
   // This is the guy we are initializing:
-  if (mh_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the DMH in an unfinished state.
   assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
   // which method are we really talking about?
-  if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
   if (java_lang_invoke_MemberName::is_instance(target()) &&
       java_lang_invoke_MemberName::vmindex(target()) == VM_INDEX_UNINITIALIZED) {
@@ -2722,13 +2813,13 @@ JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
   ResourceMark rm;              // for error messages
 
   // This is the guy we are initializing:
-  if (mh_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
 
   // Early returns out of this method leave the BMH in an unfinished state.
   assert(java_lang_invoke_MethodHandle::vmentry(mh()) == NULL, "must be safely null");
 
-  if (target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
   if (!java_lang_invoke_MethodHandle::is_instance(target())) {
@@ -2745,7 +2836,12 @@ JVM_ENTRY(void, MHN_init_BMH(JNIEnv *env, jobject igcls, jobject mh_jh,
     // Build a BMH on top of a DMH or another BMH:
     MethodHandles::init_BoundMethodHandle(mh, target, argnum, CHECK);
   }
-  stress_method_handle_walk(mh, CHECK);
+
+  if (StressMethodHandleWalk) {
+    if (mh->klass() == SystemDictionary::BoundMethodHandle_klass())
+      stress_method_handle_walk(mh, CHECK);
+    // else don't, since the subclass has not yet initialized its own fields
+  }
 }
 JVM_END
 
@@ -2753,9 +2849,8 @@ JVM_END
 JVM_ENTRY(void, MHN_init_AMH(JNIEnv *env, jobject igcls, jobject mh_jh,
                              jobject target_jh, int argnum)) {
   // This is the guy we are initializing:
-  if (mh_jh == NULL || target_jh == NULL) {
-    THROW(vmSymbols::java_lang_InternalError());
-  }
+  if (mh_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "self is null"); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle mh(THREAD, JNIHandles::resolve_non_null(mh_jh));
   Handle target(THREAD, JNIHandles::resolve_non_null(target_jh));
 
@@ -2810,6 +2905,8 @@ JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
     return MethodHandles::stack_move_unit();
   case MethodHandles::GC_CONV_OP_IMPLEMENTED_MASK:
     return MethodHandles::adapter_conversion_ops_supported_mask();
+  case MethodHandles::GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS:
+    return MethodHandles::OP_ROT_ARGS_DOWN_LIMIT_BIAS;
   }
   return 0;
 }
@@ -2821,6 +2918,8 @@ JVM_END
   /* template(MethodHandles,GC_JVM_PUSH_LIMIT) */  \
   /* hold back this one until JDK stabilizes */ \
   /* template(MethodHandles,GC_JVM_STACK_MOVE_UNIT) */ \
+  /* hold back this one until JDK stabilizes */ \
+  /* template(MethodHandles,GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS) */ \
     template(MethodHandles,ETF_HANDLE_OR_METHOD_NAME) \
     template(MethodHandles,ETF_DIRECT_HANDLE) \
     template(MethodHandles,ETF_METHOD_NAME) \
@@ -2890,7 +2989,8 @@ JVM_END
 
 // void init(MemberName self, AccessibleObject ref)
 JVM_ENTRY(void, MHN_init_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jobject target_jh)) {
-  if (mname_jh == NULL || target_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
+  if (target_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "target is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   oop target_oop = JNIHandles::resolve_non_null(target_jh);
   MethodHandles::init_MemberName(mname(), target_oop);
@@ -2899,7 +2999,7 @@ JVM_END
 
 // void expand(MemberName self)
 JVM_ENTRY(void, MHN_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
-  if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   MethodHandles::expand_MemberName(mname, 0, CHECK);
 }
@@ -2907,7 +3007,7 @@ JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
 JVM_ENTRY(void, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
-  if (mname_jh == NULL) { THROW(vmSymbols::java_lang_InternalError()); }
+  if (mname_jh == NULL) { THROW_MSG(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
   // The trusted Java code that calls this method should already have performed
@@ -2969,6 +3069,45 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
   return res;
 }
 JVM_END
+
+methodOop MethodHandles::resolve_raise_exception_method(TRAPS) {
+  if (_raise_exception_method != NULL) {
+    // no need to do it twice
+    return raise_exception_method();
+  }
+  // LinkResolver::resolve_invokedynamic can reach this point
+  // because an invokedynamic has failed very early (7049415)
+  KlassHandle MHN_klass = SystemDictionaryHandles::MethodHandleNatives_klass();
+  if (MHN_klass.not_null()) {
+    TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK_NULL);
+    TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK_NULL);
+    methodOop raiseException_method  = instanceKlass::cast(MHN_klass->as_klassOop())
+                  ->find_method(raiseException_name, raiseException_sig);
+    if (raiseException_method != NULL && raiseException_method->is_static()) {
+      return raiseException_method;
+    }
+  }
+  // not found; let the caller deal with it
+  return NULL;
+}
+void MethodHandles::raise_exception(int code, oop actual, oop required, TRAPS) {
+  methodOop raiseException_method = resolve_raise_exception_method(CHECK);
+  if (raiseException_method != NULL &&
+      instanceKlass::cast(raiseException_method->method_holder())->is_not_initialized()) {
+    instanceKlass::cast(raiseException_method->method_holder())->initialize(CHECK);
+    // it had better be resolved by now, or maybe JSR 292 failed to load
+    raiseException_method = raise_exception_method();
+  }
+  if (raiseException_method == NULL) {
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "no raiseException method");
+  }
+  JavaCallArguments args;
+  args.push_int(code);
+  args.push_oop(actual);
+  args.push_oop(required);
+  JavaValue result(T_VOID);
+  JavaCalls::call(&result, raiseException_method, &args, CHECK);
+}
 
 JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
     TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
@@ -3059,19 +3198,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
   }
 
   if (enable_MH) {
-    KlassHandle MHN_klass = SystemDictionaryHandles::MethodHandleNatives_klass();
-    if (MHN_klass.not_null()) {
-      TempNewSymbol raiseException_name = SymbolTable::new_symbol("raiseException", CHECK);
-      TempNewSymbol raiseException_sig = SymbolTable::new_symbol("(ILjava/lang/Object;Ljava/lang/Object;)V", CHECK);
-      methodOop raiseException_method  = instanceKlass::cast(MHN_klass->as_klassOop())
-                    ->find_method(raiseException_name, raiseException_sig);
-      if (raiseException_method != NULL && raiseException_method->is_static()) {
-        MethodHandles::set_raise_exception_method(raiseException_method);
-      } else {
-        warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
-        enable_MH = false;
-      }
+    methodOop raiseException_method = MethodHandles::resolve_raise_exception_method(CHECK);
+    if (raiseException_method != NULL) {
+      MethodHandles::set_raise_exception_method(raiseException_method);
     } else {
+      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
       enable_MH = false;
     }
   }
