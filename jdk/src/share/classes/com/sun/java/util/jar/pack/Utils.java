@@ -253,8 +253,8 @@ class Utils {
     }
     static void copyJarFile(JarFile in, JarOutputStream out) throws IOException {
         byte[] buffer = new byte[1 << 14];
-        for (Enumeration e = in.entries(); e.hasMoreElements(); ) {
-            JarEntry je = (JarEntry) e.nextElement();
+        for (Enumeration<JarEntry> e = in.entries(); e.hasMoreElements(); ) {
+            JarEntry je = e.nextElement();
             out.putNextEntry(je);
             InputStream ein = in.getInputStream(je);
             for (int nr; 0 < (nr = ein.read(buffer)); ) {
