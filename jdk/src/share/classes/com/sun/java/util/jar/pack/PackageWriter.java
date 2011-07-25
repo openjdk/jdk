@@ -780,9 +780,9 @@ class PackageWriter extends BandStructure {
             avHiBits &= (1L<<attrIndexLimit[i])-1;
             int nextLoBit = 0;
             Map<Attribute.Layout, int[]> defMap = allLayouts.get(i);
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings({ "unchecked", "rawtypes" })
             Map.Entry<Attribute.Layout, int[]>[] layoutsAndCounts =
-                    new Map.Entry<>[defMap.size()];
+                    new Map.Entry[defMap.size()];
             defMap.entrySet().toArray(layoutsAndCounts);
             // Sort by count, most frequent first.
             // Predefs. participate in this sort, though it does not matter.

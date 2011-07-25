@@ -43,8 +43,8 @@ public class JarSplit {
     /* classlist[0] contains class file list
      * classlist[1] contains non-class file list
      */
-    @SuppressWarnings("unchecked")
-    private static Vector<String>[] classlist = new Vector<>[2];
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static Vector<String>[] classlist = new Vector[2];
 
     /* The 2 class list name passed as arguments. */
     private static String[] fileNamelist = new String[2];
