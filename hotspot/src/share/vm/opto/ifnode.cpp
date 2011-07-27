@@ -1009,6 +1009,13 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
   int prev_op = prev_dom->Opcode();
   Node *top = igvn->C->top(); // Shortcut to top
 
+  // Loop predicates may have depending checks which should not
+  // be skipped. For example, range check predicate has two checks
+  // for lower and upper bounds.
+  ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
+  if (PhaseIdealLoop::is_uncommon_trap_proj(unc_proj, Deoptimization::Reason_predicate))
+    prev_dom = idom;
+
   // Now walk the current IfNode's projections.
   // Loop ends when 'this' has no more uses.
   for (DUIterator_Last imin, i = last_outs(imin); i >= imin; --i) {
@@ -1019,9 +1026,9 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
     // or TOP if the dominating projection is of opposite type.
     // Data-target will be used as the new control edge for the non-CFG
     // nodes like Casts and Loads.
-    Node *data_target = (ifp->Opcode() == prev_op ) ? prev_dom : top;
+    Node *data_target = (ifp->Opcode() == prev_op) ? prev_dom : top;
     // Control-target is just the If's immediate dominator or TOP.
-    Node *ctrl_target = (ifp->Opcode() == prev_op ) ?     idom : top;
+    Node *ctrl_target = (ifp->Opcode() == prev_op) ?     idom : top;
 
     // For each child of an IfTrue/IfFalse projection, reroute.
     // Loop ends when projection has no more uses.
