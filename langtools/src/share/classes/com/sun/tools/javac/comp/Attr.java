@@ -1837,7 +1837,7 @@ public class Attr extends JCTree.Visitor {
         try {
             constructor = rs.resolveDiamond(tree.pos(),
                     localEnv,
-                    clazztype.tsym.type,
+                    clazztype,
                     argtypes,
                     typeargtypes);
         } finally {
@@ -2872,8 +2872,10 @@ public class Attr extends JCTree.Visitor {
 
         if (clazztype.tag == CLASS) {
             List<Type> formals = clazztype.tsym.type.getTypeArguments();
+            if (actuals.isEmpty()) //diamond
+                actuals = formals;
 
-            if (actuals.length() == formals.length() || actuals.length() == 0) {
+            if (actuals.length() == formals.length()) {
                 List<Type> a = actuals;
                 List<Type> f = formals;
                 while (a.nonEmpty()) {
