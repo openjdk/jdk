@@ -817,6 +817,10 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     cl = head->as_CountedLoop();
     // do nothing for iteration-splitted loops
     if (!cl->is_normal_loop()) return false;
+    // Avoid RCE if Counted loop's test is '!='.
+    BoolTest::mask bt = cl->loopexit()->test_trip();
+    if (bt != BoolTest::lt && bt != BoolTest::gt)
+      cl = NULL;
   }
 
   Node* entry = head->in(LoopNode::EntryControl);
@@ -958,7 +962,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
 
       // Test the upper bound
-      Node* upper_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, true);
+      Node* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true);
       IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
       _igvn.hash_delete(upper_bound_iff);
       upper_bound_iff->set_req(1, upper_bound_bol);
