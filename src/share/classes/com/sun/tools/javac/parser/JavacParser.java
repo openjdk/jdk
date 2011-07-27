@@ -57,7 +57,7 @@ public class JavacParser implements Parser {
 
     /** The scanner used for lexical analysis.
      */
-    private Lexer S;
+    protected Lexer S;
 
     /** The factory to be used for abstract syntax tree construction.
      */
@@ -99,9 +99,9 @@ public class JavacParser implements Parser {
         this.allowTWR = source.allowTryWithResources();
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
+        this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
-        if (keepDocComments)
-            docComments = new HashMap<JCTree,String>();
+        docComments = keepDocComments ? new HashMap<JCTree,String>() : null;
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
     }
@@ -145,6 +145,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize try-with-resources?
      */
     boolean allowTWR;
+
+    /** Switch: should we fold strings?
+     */
+    boolean allowStringFolding;
 
     /** Switch: should we keep docComments?
      */
@@ -757,6 +761,8 @@ public class JavacParser implements Parser {
          *  by a single literal representing the concatenated string.
          */
         protected StringBuffer foldStrings(JCTree tree) {
+            if (!allowStringFolding)
+                return null;
             List<String> buf = List.nil();
             while (true) {
                 if (tree.getTag() == JCTree.LITERAL) {
