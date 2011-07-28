@@ -217,9 +217,7 @@ public:
 // GotoNodes perform direct branches.
 class GotoNode : public Node {
 public:
-  GotoNode( Node *control ) : Node(control) {
-    init_flags(Flag_is_Goto);
-  }
+  GotoNode( Node *control ) : Node(control) {}
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
   virtual bool  is_CFG() const { return true; }

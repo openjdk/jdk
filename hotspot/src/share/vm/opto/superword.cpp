@@ -1167,7 +1167,7 @@ void SuperWord::output() {
 
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
-        VectorNode* val = vector_opd(p, MemNode::ValueIn);
+        Node* val = vector_opd(p, MemNode::ValueIn);
 
         int   opc = n->Opcode();
         Node* ctl = n->in(MemNode::Control);
@@ -1199,7 +1199,7 @@ void SuperWord::output() {
 
 //------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-VectorNode* SuperWord::vector_opd(Node_List* p, int opd_idx) {
+Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   Node* p0 = p->at(0);
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
@@ -1215,9 +1215,10 @@ VectorNode* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
 
   if (same_opd) {
-    if (opd->is_Vector()) {
-      return (VectorNode*)opd; // input is matching vector
+    if (opd->is_Vector() || opd->is_VectorLoad()) {
+      return opd; // input is matching vector
     }
+    assert(!opd->is_VectorStore(), "such vector is not expected here");
     // Convert scalar input to vector. Use p0's type because it's container
     // maybe smaller than the operand's container.
     const Type* opd_t = velt_type(!in_bb(opd) ? p0 : opd);

@@ -275,9 +275,6 @@ public:
   // Apply peephole rule(s) to this instruction
   virtual MachNode *peephole( Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile* C );
 
-  // Check for PC-Relative addressing
-  bool is_pc_relative() const { return (flags() & Flag_is_pc_relative) != 0; }
-
   // Top-level ideal Opcode matched
   virtual int ideal_Opcode()     const { return Op_Node; }
 
@@ -525,7 +522,7 @@ public:
   const uint _vidx;             // Index of memop being tested
   MachNullCheckNode( Node *ctrl, Node *memop, uint vidx ) : MachIdealNode(), _vidx(vidx) {
     init_class_id(Class_MachNullCheck);
-    init_flags(Flag_is_Branch | Flag_is_pc_relative);
+    init_flags(Flag_is_Branch);
     add_req(ctrl);
     add_req(memop);
   }
@@ -554,7 +551,9 @@ public:
 // occasional callbacks to the machine model for important info.
 class MachProjNode : public ProjNode {
 public:
-  MachProjNode( Node *multi, uint con, const RegMask &out, uint ideal_reg ) : ProjNode(multi,con), _rout(out), _ideal_reg(ideal_reg) {}
+  MachProjNode( Node *multi, uint con, const RegMask &out, uint ideal_reg ) : ProjNode(multi,con), _rout(out), _ideal_reg(ideal_reg) {
+    init_class_id(Class_MachProj);
+  }
   RegMask _rout;
   const uint  _ideal_reg;
   enum projType {
@@ -587,6 +586,15 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+};
+
+//------------------------------MachGotoNode-----------------------------------
+// Machine-specific versions of GotoNodes
+class MachGotoNode : public MachNode {
+public:
+  MachGotoNode() : MachNode() {
+    init_class_id(Class_MachGoto);
+  }
 };
 
 //------------------------------MachFastLockNode-------------------------------------
@@ -631,14 +639,12 @@ public:
 
   MachSafePointNode() : MachReturnNode(), _oop_map(NULL), _jvms(NULL), _jvmadj(0) {
     init_class_id(Class_MachSafePoint);
-    init_flags(Flag_is_safepoint_node);
   }
 
   virtual JVMState* jvms() const { return _jvms; }
   void set_jvms(JVMState* s) {
     _jvms = s;
   }
-  bool is_safepoint_node() const { return (flags() & Flag_is_safepoint_node) != 0; }
   virtual const Type    *bottom_type() const;
 
   virtual const RegMask &in_RegMask(uint) const;
@@ -702,7 +708,6 @@ public:
 
   MachCallNode() : MachSafePointNode() {
     init_class_id(Class_MachCall);
-    init_flags(Flag_is_Call);
   }
 
   virtual const Type *bottom_type() const;

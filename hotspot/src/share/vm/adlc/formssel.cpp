@@ -291,15 +291,6 @@ int InstructForm::is_tls_instruction() const {
 }
 
 
-// Return 'true' if this instruction matches an ideal 'Copy*' node
-bool InstructForm::is_ideal_unlock() const {
-  return _matrule ? _matrule->is_ideal_unlock() : false;
-}
-
-bool InstructForm::is_ideal_call_leaf() const {
-  return _matrule ? _matrule->is_ideal_call_leaf() : false;
-}
-
 // Return 'true' if this instruction matches an ideal 'If' node
 bool InstructForm::is_ideal_if() const {
   if( _matrule == NULL ) return false;
@@ -1093,6 +1084,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if (is_ideal_if()) {
     return "MachIfNode";
+  }
+  else if (is_ideal_goto()) {
+    return "MachGotoNode";
   }
   else if (is_ideal_fastlock()) {
     return "MachFastLockNode";
@@ -2706,7 +2700,6 @@ void ConstructRule::output(FILE *fp) {
 int         AttributeForm::_insId   = 0;           // start counter at 0
 int         AttributeForm::_opId    = 0;           // start counter at 0
 const char* AttributeForm::_ins_cost = "ins_cost"; // required name
-const char* AttributeForm::_ins_pc_relative = "ins_pc_relative";
 const char* AttributeForm::_op_cost  = "op_cost";  // required name
 
 AttributeForm::AttributeForm(char *attr, int type, char *attrdef)
@@ -3928,19 +3921,6 @@ int MatchRule::is_expensive() const {
   }
   return 0;
 }
-
-bool MatchRule::is_ideal_unlock() const {
-  if( !_opType ) return false;
-  return !strcmp(_opType,"Unlock") || !strcmp(_opType,"FastUnlock");
-}
-
-
-bool MatchRule::is_ideal_call_leaf() const {
-  if( !_opType ) return false;
-  return !strcmp(_opType,"CallLeaf")     ||
-         !strcmp(_opType,"CallLeafNoFP");
-}
-
 
 bool MatchRule::is_ideal_if() const {
   if( !_opType ) return false;

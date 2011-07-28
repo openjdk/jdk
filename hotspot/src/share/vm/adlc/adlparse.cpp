@@ -126,9 +126,6 @@ void ADLParser::parse() {
   if (_globalNames[AttributeForm::_ins_cost] == NULL) {
     parse_err(SEMERR, "Did not declare 'ins_cost' attribute");
   }
-  if (_globalNames[AttributeForm::_ins_pc_relative] == NULL) {
-    parse_err(SEMERR, "Did not declare 'ins_pc_relative' attribute");
-  }
   if (_globalNames[AttributeForm::_op_cost] == NULL) {
     parse_err(SEMERR, "Did not declare 'op_cost' attribute");
   }
