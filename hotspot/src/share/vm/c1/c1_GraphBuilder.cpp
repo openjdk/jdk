@@ -3033,6 +3033,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
   if (callee->should_exclude()) {
     // callee is excluded
     INLINE_BAILOUT("excluded by CompilerOracle")
+  } else if (callee->should_not_inline()) {
+    // callee is excluded
+    INLINE_BAILOUT("disallowed by CompilerOracle")
   } else if (!callee->can_be_compiled()) {
     // callee is not compilable (prob. has breakpoints)
     INLINE_BAILOUT("not compilable")
@@ -3410,24 +3413,6 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
   // Proper inlining of methods with jsrs requires a little more work.
   if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
 
-  // now perform tests that are based on flag settings
-  if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
-  if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
-  if (callee->code_size() > max_inline_size()                 ) INLINE_BAILOUT("callee is too large");
-
-  // don't inline throwable methods unless the inlining tree is rooted in a throwable class
-  if (callee->name() == ciSymbol::object_initializer_name() &&
-      callee->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
-    // Throwable constructor call
-    IRScope* top = scope();
-    while (top->caller() != NULL) {
-      top = top->caller();
-    }
-    if (!top->method()->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
-      INLINE_BAILOUT("don't inline Throwable constructors");
-    }
-  }
-
   // When SSE2 is used on intel, then no special handling is needed
   // for strictfp because the enum-constant is fixed at compile time,
   // the check for UseSSE2 is needed here
@@ -3435,13 +3420,36 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
     INLINE_BAILOUT("caller and callee have different strict fp requirements");
   }
 
-  if (compilation()->env()->num_inlined_bytecodes() > DesiredMethodLimit) {
-    INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
-  }
-
   if (is_profiling() && !callee->ensure_method_data()) {
     INLINE_BAILOUT("mdo allocation failed");
   }
+
+  // now perform tests that are based on flag settings
+  if (callee->should_inline()) {
+    // ignore heuristic controls on inlining
+  } else {
+    if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
+    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
+    if (callee->code_size() > max_inline_size()                 ) INLINE_BAILOUT("callee is too large");
+
+    // don't inline throwable methods unless the inlining tree is rooted in a throwable class
+    if (callee->name() == ciSymbol::object_initializer_name() &&
+        callee->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
+      // Throwable constructor call
+      IRScope* top = scope();
+      while (top->caller() != NULL) {
+        top = top->caller();
+      }
+      if (!top->method()->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
+        INLINE_BAILOUT("don't inline Throwable constructors");
+      }
+    }
+
+    if (compilation()->env()->num_inlined_bytecodes() > DesiredMethodLimit) {
+      INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
+    }
+  }
+
 #ifndef PRODUCT
       // printing
   if (PrintInlining) {
