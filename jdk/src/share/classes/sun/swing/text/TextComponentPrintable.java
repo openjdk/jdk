@@ -47,15 +47,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.BorderFactory;
-import javax.swing.CellRendererPane;
-import javax.swing.JTextField;
-import javax.swing.JTextArea;
-import javax.swing.JEditorPane;
-import javax.swing.JViewport;
-import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.BadLocationException;
@@ -336,7 +328,22 @@ public class TextComponentPrintable implements CountingPrintable {
         assert SwingUtilities.isEventDispatchThread();
 
         JTextComponent ret = null;
-        if (textComponent instanceof JTextField) {
+        if (textComponent instanceof JPasswordField) {
+            ret =
+                new JPasswordField() {
+                    {
+                        setEchoChar(((JPasswordField) textComponent).getEchoChar());
+                        setHorizontalAlignment(
+                            ((JTextField) textComponent).getHorizontalAlignment());
+                    }
+                    @Override
+                    public FontMetrics getFontMetrics(Font font) {
+                        return (frc.get() == null)
+                            ? super.getFontMetrics(font)
+                            : FontDesignMetrics.getMetrics(font, frc.get());
+                    }
+                };
+        } else if (textComponent instanceof JTextField) {
             ret =
                 new JTextField() {
                     {

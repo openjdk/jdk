@@ -85,7 +85,8 @@ class XLabelPeer extends XComponentPeer implements LabelPeer {
      */
     // NOTE: This method is called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    public void paint(Graphics g) {
+    @Override
+    void paintPeer(final Graphics g) {
         int textX = 0;
         int textY = 0;
         g.setColor(getPeerBackground());
