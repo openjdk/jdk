@@ -395,7 +395,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
       }
       min_offset_from_last_call += inst_size;
       // Remember end of call offset
-      if (nj->is_MachCall() && nj->as_MachCall()->is_safepoint_node()) {
+      if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
         min_offset_from_last_call = 0;
       }
     }
@@ -447,7 +447,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
         // This requires the TRUE branch target be in succs[0]
         uint bnum = b->non_connector_successor(0)->_pre_order;
         uintptr_t target = blk_starts[bnum];
-        if( mach->is_pc_relative() ) {
+        if( mach->is_Branch() ) {
           int offset = target-(blk_starts[i] + jmp_end[i]);
           if (_matcher->is_short_branch_offset(mach->rule(), offset)) {
             // We've got a winner.  Replace this branch.
@@ -508,7 +508,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
       adr += nj->size(_regalloc);
 
       // Remember end of call offset
-      if (nj->is_MachCall() && nj->as_MachCall()->is_safepoint_node()) {
+      if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
         last_call_adr = adr;
       }
     }
@@ -1295,7 +1295,7 @@ void Compile::Fill_buffer() {
           // Save the return address
           call_returns[b->_pre_order] = current_offset + mcall->ret_addr_offset();
 
-          if (!mcall->is_safepoint_node()) {
+          if (mcall->is_MachCallLeaf()) {
             is_mcall = false;
             is_sfn = false;
           }
@@ -1565,8 +1565,8 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
       uint call_return = call_returns[b->_pre_order];
 #ifdef ASSERT
       assert( call_return > 0, "no call seen for this basic block" );
-      while( b->_nodes[--j]->Opcode() == Op_MachProj ) ;
-      assert( b->_nodes[j]->is_Call(), "CatchProj must follow call" );
+      while( b->_nodes[--j]->is_MachProj() ) ;
+      assert( b->_nodes[j]->is_MachCall(), "CatchProj must follow call" );
 #endif
       // last instruction is a CatchNode, find it's CatchProjNodes
       int nof_succs = b->_num_succs;
@@ -2350,8 +2350,8 @@ void Scheduling::DoScheduling() {
        // Exclude unreachable path case when Halt node is in a separate block.
        (_bb_end > 1 && last->is_Mach() && last->as_Mach()->ideal_Opcode() == Op_Halt) ) {
       // There must be a prior call.  Skip it.
-      while( !bb->_nodes[--_bb_end]->is_Call() ) {
-        assert( bb->_nodes[_bb_end]->is_Proj(), "skipping projections after expected call" );
+      while( !bb->_nodes[--_bb_end]->is_MachCall() ) {
+        assert( bb->_nodes[_bb_end]->is_MachProj(), "skipping projections after expected call" );
       }
     } else if( last->is_MachNullCheck() ) {
       // Backup so the last null-checked memory instruction is
@@ -2663,7 +2663,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
   for( uint i = _bb_end-1; i >= _bb_start; i-- ) {
     Node *n = b->_nodes[i];
     int is_def = n->outcnt();   // def if some uses prior to adding precedence edges
-    if( n->Opcode() == Op_MachProj && n->ideal_reg() == MachProjNode::fat_proj ) {
+    if( n->is_MachProj() && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
       // This can add edges to 'n' and obscure whether or not it was a def,
       // hence the is_def flag.
@@ -2685,7 +2685,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
     for( uint j=0; j<n->req(); j++ ) {
       Node *def = n->in(j);
       if( def ) {
-        assert( def->Opcode() != Op_MachProj || def->ideal_reg() != MachProjNode::fat_proj, "" );
+        assert( !def->is_MachProj() || def->ideal_reg() != MachProjNode::fat_proj, "" );
         anti_do_use( b, n, _regalloc->get_reg_first(def) );
         anti_do_use( b, n, _regalloc->get_reg_second(def) );
       }

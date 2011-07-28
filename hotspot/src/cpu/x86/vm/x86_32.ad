@@ -4496,7 +4496,6 @@ op_attrib op_cost(0);        // Required cost attribute
 //----------Instruction Attributes---------------------------------------------
 ins_attrib ins_cost(100);       // Required cost attribute
 ins_attrib ins_size(8);         // Required size attribute (in bits)
-ins_attrib ins_pc_relative(0);  // Required PC Relative flag
 ins_attrib ins_short_branch(0); // Required flag: is this instruction a
                                 // non-matching short branch variant of some
                                                             // long branch?
@@ -13047,7 +13046,6 @@ instruct jumpXtnd(eRegI switch_val) %{
     Address index(noreg, $switch_val$$Register, Address::times_1);
     __ jump(ArrayAddress($constantaddress, index));
   %}
-  ins_pc_relative(1);
   ins_pipe(pipe_jmp);
 %}
 
@@ -13062,7 +13060,6 @@ instruct jmpDir(label labl) %{
   opcode(0xE9);
   ins_encode( OpcP, Lbl( labl ) );
   ins_pipe( pipe_jmp );
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -13076,7 +13073,6 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode( Jcc( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -13090,7 +13086,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode( Jcc( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -13104,7 +13099,6 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode( Jcc( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
@@ -13117,7 +13111,6 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode( Jcc( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - using unsigned comparison
@@ -13131,7 +13124,6 @@ instruct jmpConU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode(Jcc(cop, labl));
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 instruct jmpConUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
@@ -13144,7 +13136,6 @@ instruct jmpConUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   opcode(0x0F, 0x80);
   ins_encode(Jcc(cop, labl));
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
@@ -13186,7 +13177,6 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 // ============================================================================
@@ -13254,7 +13244,6 @@ instruct jmpDir_short(label labl) %{
   opcode(0xEB);
   ins_encode( OpcP, LblShort( labl ) );
   ins_pipe( pipe_jmp );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13269,7 +13258,6 @@ instruct jmpCon_short(cmpOp cop, eFlagsReg cr, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13284,7 +13272,6 @@ instruct jmpLoopEnd_short(cmpOp cop, eFlagsReg cr, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13299,7 +13286,6 @@ instruct jmpLoopEndU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13313,7 +13299,6 @@ instruct jmpLoopEndUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13328,7 +13313,6 @@ instruct jmpConU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13342,7 +13326,6 @@ instruct jmpConUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13382,7 +13365,6 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
     assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");
   %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -13855,7 +13837,6 @@ instruct CallStaticJavaDirect(method meth) %{
               call_epilog,
               post_call_FPU );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -13879,7 +13860,6 @@ instruct CallStaticJavaHandle(method meth, eBPRegP ebp_mh_SP_save) %{
               call_epilog,
               post_call_FPU );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -13899,7 +13879,6 @@ instruct CallDynamicJavaDirect(method meth) %{
               call_epilog,
               post_call_FPU );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -13917,7 +13896,6 @@ instruct CallRuntimeDirect(method meth) %{
               Java_To_Runtime( meth ),
               post_call_FPU );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
 %}
 
 // Call runtime without safepoint
@@ -13933,7 +13911,6 @@ instruct CallLeafDirect(method meth) %{
               Java_To_Runtime( meth ),
               Verify_FPU_For_Leaf, post_call_FPU );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
 %}
 
 instruct CallLeafNoFPDirect(method meth) %{
@@ -13945,7 +13922,6 @@ instruct CallLeafNoFPDirect(method meth) %{
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_To_Runtime(meth));
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
 %}
 
 
@@ -14024,7 +14000,6 @@ instruct cmpFastLock( eFlagsReg cr, eRegP object, eRegP box, eAXRegI tmp, eRegP 
   format %{ "FASTLOCK $object, $box KILLS $tmp,$scr" %}
   ins_encode( Fast_Lock(object,box,tmp,scr) );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
 %}
 
 instruct cmpFastUnlock( eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
@@ -14034,7 +14009,6 @@ instruct cmpFastUnlock( eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   format %{ "FASTUNLOCK $object, $box, $tmp" %}
   ins_encode( Fast_Unlock(object,box,tmp) );
   ins_pipe( pipe_slow );
-  ins_pc_relative(1);
 %}
 
 

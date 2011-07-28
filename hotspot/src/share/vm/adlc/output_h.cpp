@@ -1536,16 +1536,12 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Each instruction attribute results in a virtual call of same name.
     // The ins_cost is not handled here.
     Attribute *attr = instr->_attribs;
-    bool is_pc_relative = false;
     while (attr != NULL) {
       if (strcmp(attr->_ident,"ins_cost") &&
-          strcmp(attr->_ident,"ins_pc_relative")) {
+          strcmp(attr->_ident,"ins_short_branch")) {
         fprintf(fp,"  int             %s() const { return %s; }\n",
                 attr->_ident, attr->_val);
       }
-      // Check value for ins_pc_relative, and if it is true (1), set the flag
-      if (!strcmp(attr->_ident,"ins_pc_relative") && attr->int_val(*this) != 0)
-        is_pc_relative = true;
       attr = (Attribute *)attr->_next;
     }
 
@@ -1657,20 +1653,10 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp," _num_opnds = %d; _opnds = _opnd_array; ", instr->num_opnds());
 
     bool node_flags_set = false;
-    // flag: if this instruction matches an ideal 'Goto' node
-    if ( instr->is_ideal_goto() ) {
-      fprintf(fp,"init_flags(Flag_is_Goto");
-      node_flags_set = true;
-    }
-
     // flag: if this instruction matches an ideal 'Copy*' node
     if ( instr->is_ideal_copy() != 0 ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_Copy");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_Copy");
-        node_flags_set = true;
-      }
+      fprintf(fp,"init_flags(Flag_is_Copy");
+      node_flags_set = true;
     }
 
     // Is an instruction is a constant?  If so, get its type
@@ -1708,16 +1694,6 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
-    // flag: if this instruction is pc relative
-    if ( is_pc_relative ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_pc_relative");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_pc_relative");
-        node_flags_set = true;
-      }
-    }
-
     // flag: if this instruction has short branch form
     if ( instr->has_short_branch_form() ) {
       if ( node_flags_set ) {
@@ -1741,10 +1717,6 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     if ( node_flags_set ) {
       fprintf(fp,"); ");
-    }
-
-    if (instr->is_ideal_unlock() || instr->is_ideal_call_leaf()) {
-      fprintf(fp,"clear_flag(Flag_is_safepoint_node); ");
     }
 
     fprintf(fp,"}\n");

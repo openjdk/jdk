@@ -165,7 +165,7 @@ int Block::is_Empty() const {
   int end_idx = _nodes.size()-1;
 
   // Check for ending goto
-  if ((end_idx > 0) && (_nodes[end_idx]->is_Goto())) {
+  if ((end_idx > 0) && (_nodes[end_idx]->is_MachGoto())) {
     success_result = empty_with_goto;
     end_idx--;
   }
@@ -197,11 +197,11 @@ int Block::is_Empty() const {
 bool Block::has_uncommon_code() const {
   Node* en = end();
 
-  if (en->is_Goto())
+  if (en->is_MachGoto())
     en = en->in(0);
   if (en->is_Catch())
     en = en->in(0);
-  if (en->is_Proj() && en->in(0)->is_MachCall()) {
+  if (en->is_MachProj() && en->in(0)->is_MachCall()) {
     MachCallNode* call = en->in(0)->as_MachCall();
     if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
       // This is true for slow-path stubs like new_{instance,array},
@@ -945,8 +945,8 @@ void PhaseCFG::verify( ) const {
     assert( bp, "last instruction must be a block proj" );
     assert( bp == b->_nodes[j], "wrong number of successors for this block" );
     if( bp->is_Catch() ) {
-      while( b->_nodes[--j]->Opcode() == Op_MachProj ) ;
-      assert( b->_nodes[j]->is_Call(), "CatchProj must follow call" );
+      while( b->_nodes[--j]->is_MachProj() ) ;
+      assert( b->_nodes[j]->is_MachCall(), "CatchProj must follow call" );
     }
     else if( bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If ) {
       assert( b->_num_succs == 2, "Conditional branch must have two targets");

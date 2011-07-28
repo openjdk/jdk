@@ -335,6 +335,9 @@ void ArchDesc::inspectInstructions() {
     while (attr != NULL) {
       if (strcmp(attr->_ident,"ins_short_branch") == 0 &&
           attr->int_val(*this) != 0) {
+        if (!instr->is_ideal_branch() || instr->label_position() == -1) {
+          syntax_err(instr->_linenum, "%s: Only short branch to a label is supported\n", rootOp);
+        }
         instr->set_short_branch(true);
       } else if (strcmp(attr->_ident,"ins_alignment") == 0 &&
           attr->int_val(*this) != 0) {
