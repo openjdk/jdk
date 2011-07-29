@@ -877,19 +877,13 @@ public:
                                    Deoptimization::DeoptReason reason,
                                    PhaseIdealLoop* loop_phase,
                                    PhaseIterGVN* igvn);
-  static ProjNode*  move_predicate(ProjNode* predicate_proj, Node* new_entry,
-                                   Deoptimization::DeoptReason reason,
-                                   PhaseIdealLoop* loop_phase,
-                                   PhaseIterGVN* igvn);
+
   static Node* clone_loop_predicates(Node* old_entry, Node* new_entry,
-                                         bool move_predicates,
                                          bool clone_limit_check,
                                          PhaseIdealLoop* loop_phase,
                                          PhaseIterGVN* igvn);
   Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
-  Node*  move_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
 
-  void eliminate_loop_predicates(Node* entry);
   static Node* skip_loop_predicates(Node* entry);
 
   // Find a good location to insert a predicate

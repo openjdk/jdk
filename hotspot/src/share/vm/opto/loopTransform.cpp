@@ -509,14 +509,13 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
   //         backedges) and then map to the new peeled iteration.  This leaves
   //         the pre-loop with only 1 user (the new peeled iteration), but the
   //         peeled-loop backedge has 2 users.
-  Node* new_exit_value = old_new[head->in(LoopNode::LoopBackControl)->_idx];
-  new_exit_value = move_loop_predicates(entry, new_exit_value, !counted_loop);
+  Node* new_entry = old_new[head->in(LoopNode::LoopBackControl)->_idx];
   _igvn.hash_delete(head);
-  head->set_req(LoopNode::EntryControl, new_exit_value);
+  head->set_req(LoopNode::EntryControl, new_entry);
   for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
     Node* old = head->fast_out(j);
     if (old->in(0) == loop->_head && old->req() == 3 && old->is_Phi()) {
-      new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
+      Node* new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
       if (!new_exit_value )     // Backedge value is ALSO loop invariant?
         // Then loop body backedge value remains the same.
         new_exit_value = old->in(LoopNode::LoopBackControl);
