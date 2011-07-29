@@ -716,7 +716,6 @@ class ServerSocket implements java.io.Closeable {
         if (!isBound())
             return "ServerSocket[unbound]";
         return "ServerSocket[addr=" + impl.getInetAddress() +
-                ",port=" + impl.getPort() +
                 ",localport=" + impl.getLocalPort()  + "]";
     }
 
