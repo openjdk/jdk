@@ -255,6 +255,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         predicate_x = predicate_proj;
     }
   }
+  if (predicate_c != NULL && (req_c > 1)) {
+    assert(predicate_x == NULL, "only one predicate entry expected");
+    predicate_c = NULL; // Do not clone predicate below merge point
+  }
+  if (predicate_x != NULL && ((len - req_c) > 2)) {
+    assert(predicate_c == NULL, "only one predicate entry expected");
+    predicate_x = NULL; // Do not clone predicate below merge point
+  }
 
   // Register the new RegionNodes but do not transform them.  Cannot
   // transform until the entire Region/Phi conglomerate has been hacked

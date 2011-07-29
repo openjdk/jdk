@@ -1167,9 +1167,8 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   outer = igvn.register_new_node_with_optimizer(outer, _head);
   phase->set_created_loop_node();
 
-  Node* pred = phase->clone_loop_predicates(ctl, outer, true);
   // Outermost loop falls into '_head' loop
-  _head->set_req(LoopNode::EntryControl, pred);
+  _head->set_req(LoopNode::EntryControl, outer);
   _head->del_req(outer_idx);
   // Split all the Phis up between '_head' loop and 'outer' loop.
   for (DUIterator_Fast jmax, j = _head->fast_outs(jmax); j < jmax; j++) {
