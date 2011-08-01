@@ -4834,6 +4834,7 @@ public:
                                   scan_perm_cl,
                                   i);
     pss.end_strong_roots();
+
     {
       double start = os::elapsedTime();
       G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
@@ -4890,17 +4891,29 @@ g1_process_strong_roots(bool collecting_perm_gen,
                        &eager_scan_code_roots,
                        &buf_scan_perm);
 
-  // Finish up any enqueued closure apps.
+  // Now the ref_processor roots.
+  if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
+    // We need to treat the discovered reference lists as roots and
+    // keep entries (which are added by the marking threads) on them
+    // live until they can be processed at the end of marking.
+    ref_processor()->weak_oops_do(&buf_scan_non_heap_roots);
+    ref_processor()->oops_do(&buf_scan_non_heap_roots);
+  }
+
+  // Finish up any enqueued closure apps (attributed as object copy time).
   buf_scan_non_heap_roots.done();
   buf_scan_perm.done();
+
   double ext_roots_end = os::elapsedTime();
+
   g1_policy()->reset_obj_copy_time(worker_i);
-  double obj_copy_time_sec =
-    buf_scan_non_heap_roots.closure_app_seconds() +
-    buf_scan_perm.closure_app_seconds();
+  double obj_copy_time_sec = buf_scan_perm.closure_app_seconds() +
+                                buf_scan_non_heap_roots.closure_app_seconds();
   g1_policy()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
+
   double ext_root_time_ms =
     ((ext_roots_end - ext_roots_start) - obj_copy_time_sec) * 1000.0;
+
   g1_policy()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
 
   // Scan strong roots in mark stack.
@@ -4910,21 +4923,11 @@ g1_process_strong_roots(bool collecting_perm_gen,
   double mark_stack_scan_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
   g1_policy()->record_mark_stack_scan_time(worker_i, mark_stack_scan_ms);
 
-  // XXX What should this be doing in the parallel case?
-  g1_policy()->record_collection_pause_end_CH_strong_roots();
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
     g1_rem_set()->oops_into_collection_set_do(scan_rs, worker_i);
   }
-  // Finish with the ref_processor roots.
-  if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
-    // We need to treat the discovered reference lists as roots and
-    // keep entries (which are added by the marking threads) on them
-    // live until they can be processed at the end of marking.
-    ref_processor()->weak_oops_do(scan_non_heap_roots);
-    ref_processor()->oops_do(scan_non_heap_roots);
-  }
-  g1_policy()->record_collection_pause_end_G1_strong_roots();
+
   _process_strong_tasks->all_tasks_completed();
 }
 

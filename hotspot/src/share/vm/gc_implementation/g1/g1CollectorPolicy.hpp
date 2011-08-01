@@ -129,15 +129,9 @@ protected:
   jlong  _num_cc_clears;                // number of times the card count cache has been cleared
 #endif
 
-  double _cur_CH_strong_roots_end_sec;
-  double _cur_CH_strong_roots_dur_ms;
-  double _cur_G1_strong_roots_end_sec;
-  double _cur_G1_strong_roots_dur_ms;
-
   // Statistics for recent GC pauses.  See below for how indexed.
-  TruncatedSeq* _recent_CH_strong_roots_times_ms;
-  TruncatedSeq* _recent_G1_strong_roots_times_ms;
-  TruncatedSeq* _recent_evac_times_ms;
+  TruncatedSeq* _recent_rs_scan_times_ms;
+
   // These exclude marking times.
   TruncatedSeq* _recent_pause_times_ms;
   TruncatedSeq* _recent_gc_times_ms;
@@ -692,17 +686,11 @@ protected:
   // The average time in ms per collection pause, averaged over recent pauses.
   double recent_avg_time_for_pauses_ms();
 
-  // The average time in ms for processing CollectedHeap strong roots, per
-  // collection pause, averaged over recent pauses.
-  double recent_avg_time_for_CH_strong_ms();
-
-  // The average time in ms for processing the G1 remembered set, per
-  // pause, averaged over recent pauses.
-  double recent_avg_time_for_G1_strong_ms();
-
-  // The average time in ms for "evacuating followers", per pause, averaged
-  // over recent pauses.
-  double recent_avg_time_for_evac_ms();
+  // The average time in ms for RS scanning, per pause, averaged
+  // over recent pauses. (Note the RS scanning time for a pause
+  // is itself an average of the RS scanning time for each worker
+  // thread.)
+  double recent_avg_time_for_rs_scan_ms();
 
   // The number of "recent" GCs recorded in the number sequences
   int number_of_recent_gcs();
@@ -886,9 +874,6 @@ public:
 
   virtual void record_concurrent_pause();
   virtual void record_concurrent_pause_end();
-
-  virtual void record_collection_pause_end_CH_strong_roots();
-  virtual void record_collection_pause_end_G1_strong_roots();
 
   virtual void record_collection_pause_end();
   void print_heap_transition();
