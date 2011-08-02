@@ -441,16 +441,6 @@ public:
     else { fatal("SoftMatchFailure is not allowed except in product"); }
   }
 
-  // Used by the DFA in dfa_sparc.cpp.  Check for a prior FastLock
-  // acting as an Acquire and thus we don't need an Acquire here.  We
-  // retain the Node to act as a compiler ordering barrier.
-  static bool prior_fast_lock( const Node *acq );
-
-  // Used by the DFA in dfa_sparc.cpp.  Check for a following
-  // FastUnLock acting as a Release and thus we don't need a Release
-  // here.  We retain the Node to act as a compiler ordering barrier.
-  static bool post_fast_unlock( const Node *rel );
-
   // Check for a following volatile memory barrier without an
   // intervening load and thus we don't need a barrier here.  We
   // retain the Node to act as a compiler ordering barrier.

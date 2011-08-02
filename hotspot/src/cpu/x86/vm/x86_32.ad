@@ -7805,8 +7805,7 @@ instruct membar_acquire() %{
 %}
 
 instruct membar_acquire_lock() %{
-  match(MemBarAcquire);
-  predicate(Matcher::prior_fast_lock(n));
+  match(MemBarAcquireLock);
   ins_cost(0);
 
   size(0);
@@ -7826,8 +7825,7 @@ instruct membar_release() %{
 %}
 
 instruct membar_release_lock() %{
-  match(MemBarRelease);
-  predicate(Matcher::post_fast_unlock(n));
+  match(MemBarReleaseLock);
   ins_cost(0);
 
   size(0);

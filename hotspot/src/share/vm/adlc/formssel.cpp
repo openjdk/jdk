@@ -624,6 +624,8 @@ bool InstructForm::is_wide_memory_kill(FormDict &globals) const {
 
   if( strcmp(_matrule->_opType,"MemBarRelease") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarAcquire") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"MemBarReleaseLock") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"MemBarAcquireLock") == 0 ) return true;
 
   return false;
 }
@@ -3941,6 +3943,8 @@ bool MatchRule::is_ideal_membar() const {
   return
     !strcmp(_opType,"MemBarAcquire"  ) ||
     !strcmp(_opType,"MemBarRelease"  ) ||
+    !strcmp(_opType,"MemBarAcquireLock") ||
+    !strcmp(_opType,"MemBarReleaseLock") ||
     !strcmp(_opType,"MemBarVolatile" ) ||
     !strcmp(_opType,"MemBarCPUOrder" ) ;
 }
