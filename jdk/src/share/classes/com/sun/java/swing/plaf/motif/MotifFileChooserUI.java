@@ -49,11 +49,11 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     private FilterComboBoxModel filterComboBoxModel;
 
-    protected JList directoryList = null;
-    protected JList fileList = null;
+    protected JList<File> directoryList = null;
+    protected JList<File> fileList = null;
 
     protected JTextField pathField = null;
-    protected JComboBox filterComboBox = null;
+    protected JComboBox<FileFilter> filterComboBox = null;
     protected JTextField filenameTextField = null;
 
     private static final Dimension hstrut10 = new Dimension(10, 1);
@@ -337,7 +337,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         align(l);
         leftPanel.add(l);
 
-        filterComboBox = new JComboBox() {
+        filterComboBox = new JComboBox<FileFilter>() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -557,7 +557,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     }
 
     protected JScrollPane createFilesList() {
-        fileList = new JList();
+        fileList = new JList<File>();
 
         if(getFileChooser().isMultiSelectionEnabled()) {
             fileList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -576,7 +576,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
                 if (SwingUtilities.isLeftMouseButton(e) && !chooser.isMultiSelectionEnabled()) {
                     int index = SwingUtilities2.loc2IndexFileList(fileList, e.getPoint());
                     if (index >= 0) {
-                        File file = (File) fileList.getModel().getElementAt(index);
+                        File file = fileList.getModel().getElementAt(index);
                         setFileName(chooser.getName(file));
                     }
                 }
@@ -593,7 +593,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     }
 
     protected JScrollPane createDirectoryList() {
-        directoryList = new JList();
+        directoryList = new JList<File>();
         align(directoryList);
 
         directoryList.setCellRenderer(new DirectoryCellRenderer());
@@ -658,7 +658,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    protected class MotifDirectoryListModel extends AbstractListModel implements ListDataListener {
+    protected class MotifDirectoryListModel extends AbstractListModel<File> implements ListDataListener {
         public MotifDirectoryListModel() {
             getModel().addListDataListener(this);
         }
@@ -667,7 +667,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             return getModel().getDirectories().size();
         }
 
-        public Object getElementAt(int index) {
+        public File getElementAt(int index) {
             return getModel().getDirectories().elementAt(index);
         }
 
@@ -694,7 +694,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     }
 
-    protected class MotifFileListModel extends AbstractListModel implements ListDataListener {
+    protected class MotifFileListModel extends AbstractListModel<File> implements ListDataListener {
         public MotifFileListModel() {
             getModel().addListDataListener(this);
         }
@@ -711,7 +711,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             return getModel().getFiles().indexOf(o);
         }
 
-        public Object getElementAt(int index) {
+        public File getElementAt(int index) {
             return getModel().getFiles().elementAt(index);
         }
 
@@ -773,7 +773,8 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends AbstractListModel implements ComboBoxModel, PropertyChangeListener {
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+            PropertyChangeListener {
         protected FileFilter[] filters;
         protected FilterComboBoxModel() {
             super();
@@ -826,7 +827,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             }
         }
 
-        public Object getElementAt(int index) {
+        public FileFilter getElementAt(int index) {
             if(index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
                 return getFileChooser().getFileFilter();
