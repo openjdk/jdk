@@ -1901,12 +1901,27 @@ jint G1CollectedHeap::initialize() {
   PermanentGenerationSpec* pgs = collector_policy()->permanent_generation();
   // Includes the perm-gen.
 
-  const size_t total_reserved = max_byte_size + pgs->max_size();
+  // When compressed oops are enabled, the preferred heap base
+  // is calculated by subtracting the requested size from the
+  // 32Gb boundary and using the result as the base address for
+  // heap reservation. If the requested size is not aligned to
+  // HeapRegion::GrainBytes (i.e. the alignment that is passed
+  // into the ReservedHeapSpace constructor) then the actual
+  // base of the reserved heap may end up differing from the
+  // address that was requested (i.e. the preferred heap base).
+  // If this happens then we could end up using a non-optimal
+  // compressed oops mode.
+
+  // Since max_byte_size is aligned to the size of a heap region (checked
+  // above), we also need to align the perm gen size as it might not be.
+  const size_t total_reserved = max_byte_size +
+                                align_size_up(pgs->max_size(), HeapRegion::GrainBytes);
+  Universe::check_alignment(total_reserved, HeapRegion::GrainBytes, "g1 heap and perm");
+
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
-  ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
-                        HeapRegion::GrainBytes,
-                        UseLargePages, addr);
+  ReservedHeapSpace heap_rs(total_reserved, HeapRegion::GrainBytes,
+                            UseLargePages, addr);
 
   if (UseCompressedOops) {
     if (addr != NULL && !heap_rs.is_reserved()) {
@@ -1914,14 +1929,17 @@ jint G1CollectedHeap::initialize() {
       // region is taken already, for example, by 'java' launcher.
       // Try again to reserver heap higher.
       addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
-      ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
-                             UseLargePages, addr);
+
+      ReservedHeapSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
+                                 UseLargePages, addr);
+
       if (addr != NULL && !heap_rs0.is_reserved()) {
         // Failed to reserve at specified address again - give up.
         addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
         assert(addr == NULL, "");
-        ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
-                               UseLargePages, addr);
+
+        ReservedHeapSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
+                                   UseLargePages, addr);
         heap_rs = heap_rs1;
       } else {
         heap_rs = heap_rs0;
