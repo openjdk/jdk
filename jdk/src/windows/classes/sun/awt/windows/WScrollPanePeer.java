@@ -27,6 +27,8 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.event.AdjustmentEvent;
 import java.awt.peer.ScrollPanePeer;
+
+import sun.awt.AWTAccessor;
 import sun.awt.PeerEvent;
 
 import sun.util.logging.PlatformLogger;
@@ -169,8 +171,6 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         }
     }
 
-    native void setTypedValue(ScrollPaneAdjustable adjustable, int newpos, int type);
-
     /*
      * Runnable for the ScrollEvent that performs the adjustment.
      */
@@ -247,8 +247,9 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             // Fix for 4075484 - consider type information when creating AdjustmentEvent
             // We can't just call adj.setValue() because it creates AdjustmentEvent with type=TRACK
             // Instead, we call private method setTypedValue of ScrollPaneAdjustable.
-            // Because ScrollPaneAdjustable is in another package we should call it through native code.
-            setTypedValue(adj, newpos, type);
+            AWTAccessor.getScrollPaneAdjustableAccessor().setTypedValue(adj,
+                                                                        newpos,
+                                                                        type);
 
             // Paint the exposed area right away.  To do this - find
             // the heavyweight ancestor of the scroll child.
