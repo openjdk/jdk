@@ -65,8 +65,9 @@ public abstract class Executable extends AccessibleObject
                 if (params1[i] != params2[i])
                     return false;
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
     Annotation[][] parseParameterAnnotations(byte[] parameterAnnotations) {
@@ -365,7 +366,8 @@ public abstract class Executable extends AccessibleObject
      * {@inheritDoc}
      * @throws NullPointerException  {@inheritDoc}
      */
-    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+     @SuppressWarnings("unchecked")
+     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         if (annotationClass == null)
             throw new NullPointerException();
 
