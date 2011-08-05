@@ -125,6 +125,10 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 
+#ifdef AMD64
+#include <asm/vsyscall.h>
+#endif
+
 #define MAX_PATH    (2 * K)
 
 // for timer info max values which include all bits
@@ -2578,6 +2582,22 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
+
+int os::Linux::sched_getcpu_syscall(void) {
+  unsigned int cpu;
+  int retval = -1;
+
+#if defined(IA32)
+  retval = syscall(SYS_getcpu, &cpu, NULL, NULL);
+#elif defined(AMD64)
+  typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
+  vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
+  retval = vgetcpu(&cpu, NULL, NULL);
+#endif
+
+  return (retval == -1) ? retval : cpu;
+}
+
 // Something to do with the numa-aware allocator needs these symbols
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
@@ -2600,6 +2620,10 @@ bool os::Linux::libnuma_init() {
   // sched_getcpu() should be in libc.
   set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
+
+  // If it's not, try a direct syscall.
+  if (sched_getcpu() == -1)
+    set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t, (void*)&sched_getcpu_syscall));
 
   if (sched_getcpu() != -1) { // Does it work?
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
