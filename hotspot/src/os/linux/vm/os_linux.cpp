@@ -2534,7 +2534,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 void os::free_memory(char *addr, size_t bytes) {
-  ::madvise(addr, bytes, MADV_DONTNEED);
+  commit_memory(addr, bytes, false);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
