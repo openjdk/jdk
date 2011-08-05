@@ -247,10 +247,6 @@ class AdapterMethodHandle extends BoundMethodHandle {
             MethodType needConversion = MethodType.methodType(needReturn, haveReturn);
             adjustReturn = MethodHandles.identity(needReturn).asType(needConversion);
         }
-        if (!canCollectArguments(adjustReturn.type(), target.type(), 0, false)) {
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-            throw new InternalError("NYI");
-        }
         return makeCollectArguments(adjustReturn, target, 0, false);
     }
 
