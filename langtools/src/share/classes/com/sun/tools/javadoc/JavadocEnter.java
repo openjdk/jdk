@@ -31,7 +31,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Enter;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import javax.tools.JavaFileObject;
 
@@ -65,6 +64,7 @@ public class JavadocEnter extends Enter {
     final Messager messager;
     final DocEnv docenv;
 
+    @Override
     public void main(List<JCCompilationUnit> trees) {
         // count all Enter errors as warnings.
         int nerrors = messager.nerrors;
@@ -73,6 +73,7 @@ public class JavadocEnter extends Enter {
         messager.nerrors = nerrors;
     }
 
+    @Override
     public void visitTopLevel(JCCompilationUnit tree) {
         super.visitTopLevel(tree);
         if (tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
@@ -81,10 +82,11 @@ public class JavadocEnter extends Enter {
         }
     }
 
+    @Override
     public void visitClassDef(JCClassDecl tree) {
         super.visitClassDef(tree);
-        if (tree.sym != null && tree.sym.kind == Kinds.TYP) {
-            if (tree.sym == null) return;
+        if (tree.sym == null) return;
+        if (tree.sym.kind == Kinds.TYP || tree.sym.kind == Kinds.ERR) {
             String comment = env.toplevel.docComments.get(tree);
             ClassSymbol c = tree.sym;
             docenv.makeClassDoc(c, comment, tree, env.toplevel.lineMap);
@@ -92,6 +94,7 @@ public class JavadocEnter extends Enter {
     }
 
     /** Don't complain about a duplicate class. */
+    @Override
     protected void duplicateClass(DiagnosticPosition pos, ClassSymbol c) {}
 
 }
