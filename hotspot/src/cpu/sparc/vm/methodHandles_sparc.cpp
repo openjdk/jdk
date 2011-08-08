@@ -1126,7 +1126,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       adjust_SP_and_Gargs_down_by_slots(_masm, 3, noreg, noreg);
 
-      __ st_ptr(O0_code,     __ argument_address(constant(2), noreg, 0));
+      __ st    (O0_code,     __ argument_address(constant(2), noreg, 0));
       __ st_ptr(O1_actual,   __ argument_address(constant(1), noreg, 0));
       __ st_ptr(O2_required, __ argument_address(constant(0), noreg, 0));
       jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
