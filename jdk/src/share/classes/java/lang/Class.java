@@ -349,7 +349,8 @@ public final
                         });
                 cachedConstructor = c;
             } catch (NoSuchMethodException e) {
-                throw new InstantiationException(getName());
+                throw (InstantiationException)
+                    new InstantiationException(getName()).initCause(e);
             }
         }
         Constructor<T> tmpConstructor = cachedConstructor;
@@ -973,7 +974,8 @@ public final
                 descriptor      = (String)   enclosingInfo[2];
                 assert((name != null && descriptor != null) || name == descriptor);
             } catch (ClassCastException cce) {
-                throw new InternalError("Invalid type in enclosing method information");
+                throw (InternalError)
+                    new InternalError("Invalid type in enclosing method information").initCause(cce);
             }
         }
 
@@ -1239,7 +1241,8 @@ public final
         try {
             return getName().substring(enclosingClass.getName().length());
         } catch (IndexOutOfBoundsException ex) {
-            throw new InternalError("Malformed class name");
+            throw (InternalError)
+                new InternalError("Malformed class name").initCause(ex);
         }
     }
 
@@ -2954,9 +2957,8 @@ public final
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
-            catch (InvocationTargetException ex) { return null; }
-            catch (NoSuchMethodException ex) { return null; }
-            catch (IllegalAccessException ex) { return null; }
+            catch (InvocationTargetException | NoSuchMethodException |
+                   IllegalAccessException ex) { return null; }
         }
         return enumConstants;
     }
