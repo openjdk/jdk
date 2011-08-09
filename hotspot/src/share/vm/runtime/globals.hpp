@@ -1416,6 +1416,21 @@ class CommandLineFlags {
   product(uintx, ParallelGCThreads, 0,                                      \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
+  product(bool, UseDynamicNumberOfGCThreads, false,                         \
+          "Dynamically choose the number of parallel threads "              \
+          "parallel gc will use")                                           \
+                                                                            \
+  diagnostic(bool, ForceDynamicNumberOfGCThreads, false,                    \
+          "Force dynamic selection of the number of"                        \
+          "parallel threads parallel gc will use to aid debugging")         \
+                                                                            \
+  product(uintx, HeapSizePerGCThread, ScaleForWordSize(64*M),               \
+          "Size of heap (bytes) per GC thread used in calculating the "     \
+          "number of GC threads")                                           \
+                                                                            \
+  product(bool, TraceDynamicGCThreads, false,                               \
+          "Trace the dynamic GC thread usage")                              \
+                                                                            \
   develop(bool, ParallelOldGCSplitALot, false,                              \
           "Provoke splitting (copying data from a young gen space to"       \
           "multiple destination spaces)")                                   \
@@ -2357,7 +2372,7 @@ class CommandLineFlags {
   develop(bool, TraceGCTaskQueue, false,                                    \
           "Trace actions of the GC task queues")                            \
                                                                             \
-  develop(bool, TraceGCTaskThread, false,                                   \
+  diagnostic(bool, TraceGCTaskThread, false,                                   \
           "Trace actions of the GC task threads")                           \
                                                                             \
   product(bool, PrintParallelOldGCPhaseTimes, false,                        \

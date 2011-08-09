@@ -89,6 +89,9 @@ private:
   // has been set, or 1 otherwise
   int _parallel_gc_threads;
 
+  // The number of GC threads currently active.
+  uintx _no_of_gc_threads;
+
   enum SomePrivateConstants {
     NumPrevPausesForHeuristics = 10
   };
@@ -280,6 +283,9 @@ private:
                                     double update_rs_processed_buffers,
                                     double goal_ms);
 
+  uintx no_of_gc_threads() { return _no_of_gc_threads; }
+  void set_no_of_gc_threads(uintx v) { _no_of_gc_threads = v; }
+
   double _pause_time_target_ms;
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
@@ -287,6 +293,7 @@ private:
   size_t _max_pending_cards;
 
 public:
+  // Accessors
 
   void set_region_eden(HeapRegion* hr, int young_index_in_cset) {
     hr->set_young();
@@ -737,13 +744,13 @@ public:
   void record_concurrent_mark_remark_end();
 
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end();
+  void record_concurrent_mark_cleanup_end(int no_of_gc_threads);
   void record_concurrent_mark_cleanup_completed();
 
   void record_concurrent_pause();
   void record_concurrent_pause_end();
 
-  void record_collection_pause_end();
+  void record_collection_pause_end(int no_of_gc_threads);
   void print_heap_transition();
 
   // Record the fact that a full collection occurred.

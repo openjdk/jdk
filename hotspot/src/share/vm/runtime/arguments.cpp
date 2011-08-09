@@ -1394,8 +1394,8 @@ void Arguments::set_parallel_gc_flags() {
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
   if (UseParallelGC) {
-    FLAG_SET_ERGO(uintx, ParallelGCThreads,
-                  Abstract_VM_Version::parallel_worker_threads());
+    FLAG_SET_DEFAULT(ParallelGCThreads,
+                     Abstract_VM_Version::parallel_worker_threads());
 
     // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
     // SurvivorRatio has been set, reset their default values to SurvivorRatio +

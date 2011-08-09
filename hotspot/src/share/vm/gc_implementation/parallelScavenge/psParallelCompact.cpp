@@ -2045,6 +2045,11 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ResourceMark rm;
     HandleMark hm;
 
+    // Set the number of GC threads to be used in this collection
+    gc_task_manager()->set_active_gang();
+    gc_task_manager()->task_idle_workers();
+    heap->set_par_threads(gc_task_manager()->active_workers());
+
     const bool is_system_gc = gc_cause == GCCause::_java_lang_system_gc;
 
     // This is useful for debugging but don't change the output the
@@ -2197,6 +2202,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
+    gc_task_manager()->release_idle_workers();
   }
 
 #ifdef ASSERT
@@ -2204,7 +2210,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ParCompactionManager* const cm =
       ParCompactionManager::manager_array(int(i));
     assert(cm->marking_stack()->is_empty(),       "should be empty");
-    assert(cm->region_stack()->is_empty(),        "should be empty");
+    assert(ParCompactionManager::region_list(int(i))->is_empty(), "should be empty");
     assert(cm->revisit_klass_stack()->is_empty(), "should be empty");
   }
 #endif // ASSERT
@@ -2351,8 +2357,9 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   ParallelScavengeHeap* heap = gc_heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
+  uint active_gc_threads = heap->gc_task_manager()->active_workers();
   TaskQueueSetSuper* qset = ParCompactionManager::region_array();
-  ParallelTaskTerminator terminator(parallel_gc_threads, qset);
+  ParallelTaskTerminator terminator(active_gc_threads, qset);
 
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   PSParallelCompact::FollowStackClosure follow_stack_closure(cm);
@@ -2374,21 +2381,13 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
 
-    if (parallel_gc_threads > 1) {
-      for (uint j = 0; j < parallel_gc_threads; j++) {
+    if (active_gc_threads > 1) {
+      for (uint j = 0; j < active_gc_threads; j++) {
         q->enqueue(new StealMarkingTask(&terminator));
       }
     }
 
-    WaitForBarrierGCTask* fin = WaitForBarrierGCTask::create();
-    q->enqueue(fin);
-
-    gc_task_manager()->add_list(q);
-
-    fin->wait_for();
-
-    // We have to release the barrier tasks!
-    WaitForBarrierGCTask::destroy(fin);
+    gc_task_manager()->execute_and_wait(q);
   }
 
   // Process reference objects found during marking
@@ -2483,10 +2482,22 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 {
   TraceTime tm("drain task setup", print_phases(), true, gclog_or_tty);
 
-  const unsigned int task_count = MAX2(parallel_gc_threads, 1U);
-  for (unsigned int j = 0; j < task_count; j++) {
+  // Find the threads that are active
+  unsigned int which = 0;
+
+  const uint task_count = MAX2(parallel_gc_threads, 1U);
+  for (uint j = 0; j < task_count; j++) {
     q->enqueue(new DrainStacksCompactionTask(j));
+    ParCompactionManager::verify_region_list_empty(j);
+    // Set the region stacks variables to "no" region stack values
+    // so that they will be recognized and needing a region stack
+    // in the stealing tasks if they do not get one by executing
+    // a draining stack.
+    ParCompactionManager* cm = ParCompactionManager::manager_array(j);
+    cm->set_region_stack(NULL);
+    cm->set_region_stack_index((uint)max_uintx);
   }
+  ParCompactionManager::reset_recycled_stack_index();
 
   // Find all regions that are available (can be filled immediately) and
   // distribute them to the thread stacks.  The iteration is done in reverse
@@ -2495,8 +2506,10 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
 
   size_t fillable_regions = 0;   // A count for diagnostic purposes.
-  unsigned int which = 0;       // The worker thread number.
+  // A region index which corresponds to the tasks created above.
+  // "which" must be 0 <= which < task_count
 
+  which = 0;
   for (unsigned int id = to_space_id; id > perm_space_id; --id) {
     SpaceInfo* const space_info = _space_info + id;
     MutableSpace* const space = space_info->space();
@@ -2509,8 +2522,7 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
     for (size_t cur = end_region - 1; cur >= beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
-        ParCompactionManager* cm = ParCompactionManager::manager_array(which);
-        cm->push_region(cur);
+        ParCompactionManager::region_list_push(which, cur);
 
         if (TraceParallelOldGCCompactionPhase && Verbose) {
           const size_t count_mod_8 = fillable_regions & 7;
@@ -2521,8 +2533,10 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
         NOT_PRODUCT(++fillable_regions;)
 
-        // Assign regions to threads in round-robin fashion.
+        // Assign regions to tasks in round-robin fashion.
         if (++which == task_count) {
+          assert(which <= parallel_gc_threads,
+            "Inconsistent number of workers");
           which = 0;
         }
       }
@@ -2642,26 +2656,19 @@ void PSParallelCompact::compact() {
   PSOldGen* old_gen = heap->old_gen();
   old_gen->start_array()->reset();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
+  uint active_gc_threads = heap->gc_task_manager()->active_workers();
   TaskQueueSetSuper* qset = ParCompactionManager::region_array();
-  ParallelTaskTerminator terminator(parallel_gc_threads, qset);
+  ParallelTaskTerminator terminator(active_gc_threads, qset);
 
   GCTaskQueue* q = GCTaskQueue::create();
-  enqueue_region_draining_tasks(q, parallel_gc_threads);
-  enqueue_dense_prefix_tasks(q, parallel_gc_threads);
-  enqueue_region_stealing_tasks(q, &terminator, parallel_gc_threads);
+  enqueue_region_draining_tasks(q, active_gc_threads);
+  enqueue_dense_prefix_tasks(q, active_gc_threads);
+  enqueue_region_stealing_tasks(q, &terminator, active_gc_threads);
 
   {
     TraceTime tm_pc("par compact", print_phases(), true, gclog_or_tty);
 
-    WaitForBarrierGCTask* fin = WaitForBarrierGCTask::create();
-    q->enqueue(fin);
-
-    gc_task_manager()->add_list(q);
-
-    fin->wait_for();
-
-    // We have to release the barrier tasks!
-    WaitForBarrierGCTask::destroy(fin);
+    gc_task_manager()->execute_and_wait(q);
 
 #ifdef  ASSERT
     // Verify that all regions have been processed before the deferred updates.
@@ -2729,6 +2736,9 @@ void
 PSParallelCompact::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
   // Update and follow all subklass, sibling and implementor links.
+  // Check all the stacks here even if not all the workers are active.
+  // There is no accounting which indicates which stacks might have
+  // contents to be followed.
   if (PrintRevisitStats) {
     gclog_or_tty->print_cr("#classes in system dictionary = %d",
                            SystemDictionary::number_of_classes());
