@@ -218,7 +218,7 @@ public:
 
 HeapRegion* G1RemSet::calculateStartRegion(int worker_i) {
   HeapRegion* result = _g1p->collection_set();
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     size_t cs_size = _g1p->cset_region_length();
     int n_workers = _g1->workers()->total_workers();
     size_t cs_spans = cs_size / n_workers;
@@ -430,8 +430,10 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
-  if (ParallelGCThreads > 0) {
-    _seq_task->set_n_threads((int)n_workers());
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    // Don't set the number of workers here.  It will be set
+    // when the task is run
+    // _seq_task->set_n_termination((int)n_workers());
   }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
@@ -578,7 +580,10 @@ void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm) {
 void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
                                 int worker_num, int claim_val) {
   ScrubRSClosure scrub_cl(region_bm, card_bm);
-  _g1->heap_region_par_iterate_chunked(&scrub_cl, worker_num, claim_val);
+  _g1->heap_region_par_iterate_chunked(&scrub_cl,
+                                       worker_num,
+                                       (int) n_workers(),
+                                       claim_val);
 }
 
 

@@ -240,6 +240,10 @@ public:
   HeapWord* young_old_boundary() { return _young_old_boundary; }
 
   void work(int i);
+
+  // Reset the terminator in ParScanThreadStateSet for
+  // "active_workers" threads.
+  virtual void set_for_termination(int active_workers);
 };
 
 class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {

@@ -458,12 +458,17 @@ bool ConcurrentMark::not_yet_marked(oop obj) const {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
 
+size_t ConcurrentMark::scale_parallel_threads(size_t n_par_threads) {
+  return MAX2((n_par_threads + 2) / 4, (size_t)1);
+}
+
 ConcurrentMark::ConcurrentMark(ReservedSpace rs,
                                int max_regions) :
   _markBitMap1(rs, MinObjAlignment - 1),
   _markBitMap2(rs, MinObjAlignment - 1),
 
   _parallel_marking_threads(0),
+  _max_parallel_marking_threads(0),
   _sleep_factor(0.0),
   _marking_task_overhead(1.0),
   _cleanup_sleep_factor(0.0),
@@ -554,15 +559,17 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   if (ParallelGCThreads == 0) {
     // if we are not running with any parallel GC threads we will not
     // spawn any marking threads either
-    _parallel_marking_threads =   0;
-    _sleep_factor             = 0.0;
-    _marking_task_overhead    = 1.0;
+    _parallel_marking_threads =       0;
+    _max_parallel_marking_threads =   0;
+    _sleep_factor             =     0.0;
+    _marking_task_overhead    =     1.0;
   } else {
     if (ConcGCThreads > 0) {
       // notice that ConcGCThreads overwrites G1MarkingOverheadPercent
       // if both are set
 
       _parallel_marking_threads = ConcGCThreads;
+      _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     } else if (G1MarkingOverheadPercent > 0) {
@@ -583,10 +590,12 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
                          (1.0 - marking_task_overhead) / marking_task_overhead;
 
       _parallel_marking_threads = (size_t) marking_thread_num;
+      _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = sleep_factor;
       _marking_task_overhead    = marking_task_overhead;
     } else {
-      _parallel_marking_threads = MAX2((ParallelGCThreads + 2) / 4, (size_t)1);
+      _parallel_marking_threads = scale_parallel_threads(ParallelGCThreads);
+      _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     }
@@ -609,7 +618,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 
     guarantee(parallel_marking_threads() > 0, "peace of mind");
     _parallel_workers = new FlexibleWorkGang("G1 Parallel Marking Threads",
-         (int) _parallel_marking_threads, false, true);
+         (int) _max_parallel_marking_threads, false, true);
     if (_parallel_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
     } else {
@@ -1106,6 +1115,33 @@ public:
   ~CMConcurrentMarkingTask() { }
 };
 
+// Calculates the number of active workers for a concurrent
+// phase.
+int ConcurrentMark::calc_parallel_marking_threads() {
+
+  size_t n_conc_workers;
+  if (!G1CollectedHeap::use_parallel_gc_threads()) {
+    n_conc_workers = 1;
+  } else {
+    if (!UseDynamicNumberOfGCThreads ||
+        (!FLAG_IS_DEFAULT(ConcGCThreads) &&
+         !ForceDynamicNumberOfGCThreads)) {
+      n_conc_workers = max_parallel_marking_threads();
+    } else {
+      n_conc_workers =
+        AdaptiveSizePolicy::calc_default_active_workers(
+                                     max_parallel_marking_threads(),
+                                     1, /* Minimum workers */
+                                     parallel_marking_threads(),
+                                     Threads::number_of_non_daemon_threads());
+      // Don't scale down "n_conc_workers" by scale_parallel_threads() because
+      // that scaling has already gone into "_max_parallel_marking_threads".
+    }
+  }
+  assert(n_conc_workers > 0, "Always need at least 1");
+  return (int) MAX2(n_conc_workers, (size_t) 1);
+}
+
 void ConcurrentMark::markFromRoots() {
   // we might be tempted to assert that:
   // assert(asynch == !SafepointSynchronize::is_at_safepoint(),
@@ -1116,9 +1152,20 @@ void ConcurrentMark::markFromRoots() {
 
   _restart_for_overflow = false;
 
-  size_t active_workers = MAX2((size_t) 1, parallel_marking_threads());
+  // Parallel task terminator is set in "set_phase()".
   force_overflow_conc()->init();
-  set_phase(active_workers, true /* concurrent */);
+
+  // _g1h has _n_par_threads
+
+  _parallel_marking_threads = calc_parallel_marking_threads();
+  assert(parallel_marking_threads() <= max_parallel_marking_threads(),
+    "Maximum number of marking threads exceeded");
+  _parallel_workers->set_active_workers((int)_parallel_marking_threads);
+  // Don't set _n_par_threads because it affects MT in proceess_strong_roots()
+  // and the decisions on that MT processing is made elsewhere.
+
+  assert( _parallel_workers->active_workers() > 0, "Should have been set");
+  set_phase(_parallel_workers->active_workers(), true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   if (parallel_marking_threads() > 0) {
@@ -1181,6 +1228,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
                                        true /* expected_active */);
 
     if (VerifyDuringGC) {
+
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
@@ -1463,12 +1511,20 @@ public:
   G1ParFinalCountTask(G1CollectedHeap* g1h, CMBitMap* bm,
                       BitMap* region_bm, BitMap* card_bm)
     : AbstractGangTask("G1 final counting"), _g1h(g1h),
-      _bm(bm), _region_bm(region_bm), _card_bm(card_bm) {
-    if (ParallelGCThreads > 0) {
-      _n_workers = _g1h->workers()->total_workers();
+    _bm(bm), _region_bm(region_bm), _card_bm(card_bm),
+    _n_workers(0)
+  {
+    // Use the value already set as the number of active threads
+    // in the call to run_task().  Needed for the allocation of
+    // _live_bytes and _used_bytes.
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      assert( _g1h->workers()->active_workers() > 0,
+        "Should have been previously set");
+      _n_workers = _g1h->workers()->active_workers();
     } else {
       _n_workers = 1;
     }
+
     _live_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
     _used_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
   }
@@ -1485,6 +1541,7 @@ public:
     calccl.no_yield();
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&calccl, i,
+                                            (int) _n_workers,
                                             HeapRegion::FinalCountClaimValue);
     } else {
       _g1h->heap_region_iterate(&calccl);
@@ -1600,6 +1657,7 @@ public:
                                            &hrrs_cleanup_task);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
+                                            _g1h->workers()->active_workers(),
                                             HeapRegion::NoteEndClaimValue);
     } else {
       _g1h->heap_region_iterate(&g1_note_end);
@@ -1707,6 +1765,9 @@ void ConcurrentMark::cleanup() {
 
   HeapRegionRemSet::reset_for_cleanup_tasks();
 
+  g1h->set_par_threads();
+  size_t n_workers = g1h->n_par_threads();
+
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
                                         &_region_bm, &_card_bm);
@@ -1715,9 +1776,10 @@ void ConcurrentMark::cleanup() {
                                                HeapRegion::InitialClaimValue),
            "sanity check");
 
-    int n_workers = g1h->workers()->total_workers();
-    g1h->set_par_threads(n_workers);
+    assert(g1h->n_par_threads() == (int) n_workers,
+      "Should not have been reset");
     g1h->workers()->run_task(&g1_par_count_task);
+    // Done with the parallel phase so reset to 0.
     g1h->set_par_threads(0);
 
     assert(g1h->check_heap_region_claim_values(
@@ -1767,8 +1829,7 @@ void ConcurrentMark::cleanup() {
   double note_end_start = os::elapsedTime();
   G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list);
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    int n_workers = g1h->workers()->total_workers();
-    g1h->set_par_threads(n_workers);
+    g1h->set_par_threads((int)n_workers);
     g1h->workers()->run_task(&g1_par_note_end_task);
     g1h->set_par_threads(0);
 
@@ -1797,8 +1858,7 @@ void ConcurrentMark::cleanup() {
     double rs_scrub_start = os::elapsedTime();
     G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      int n_workers = g1h->workers()->total_workers();
-      g1h->set_par_threads(n_workers);
+      g1h->set_par_threads((int)n_workers);
       g1h->workers()->run_task(&g1_par_scrub_rs_task);
       g1h->set_par_threads(0);
 
@@ -1816,7 +1876,7 @@ void ConcurrentMark::cleanup() {
 
   // this will also free any regions totally full of garbage objects,
   // and sort the regions.
-  g1h->g1_policy()->record_concurrent_mark_cleanup_end();
+  g1h->g1_policy()->record_concurrent_mark_cleanup_end((int)n_workers);
 
   // Statistics.
   double end = os::elapsedTime();
@@ -2187,7 +2247,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
     // We use the work gang from the G1CollectedHeap and we utilize all
     // the worker threads.
-    int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
+    int active_workers = g1h->workers() ? g1h->workers()->active_workers() : 1;
     active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
 
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
@@ -2270,7 +2330,9 @@ public:
   }
 
   CMRemarkTask(ConcurrentMark* cm) :
-    AbstractGangTask("Par Remark"), _cm(cm) { }
+    AbstractGangTask("Par Remark"), _cm(cm) {
+    _cm->terminator()->reset_for_reuse(cm->_g1h->workers()->active_workers());
+  }
 };
 
 void ConcurrentMark::checkpointRootsFinalWork() {
@@ -2282,16 +2344,21 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     G1CollectedHeap::StrongRootsScope srs(g1h);
-    // this is remark, so we'll use up all available threads
-    int active_workers = ParallelGCThreads;
+    // this is remark, so we'll use up all active threads
+    int active_workers = g1h->workers()->active_workers();
+    if (active_workers == 0) {
+      assert(active_workers > 0, "Should have been set earlier");
+      active_workers = ParallelGCThreads;
+      g1h->workers()->set_active_workers(active_workers);
+    }
     set_phase(active_workers, false /* concurrent */);
+    // Leave _parallel_marking_threads at it's
+    // value originally calculated in the ConcurrentMark
+    // constructor and pass values of the active workers
+    // through the gang in the task.
 
     CMRemarkTask remarkTask(this);
-    // We will start all available threads, even if we decide that the
-    // active_workers will be fewer. The extra ones will just bail out
-    // immediately.
-    int n_workers = g1h->workers()->total_workers();
-    g1h->set_par_threads(n_workers);
+    g1h->set_par_threads(active_workers);
     g1h->workers()->run_task(&remarkTask);
     g1h->set_par_threads(0);
   } else {

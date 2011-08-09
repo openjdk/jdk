@@ -987,6 +987,16 @@ public:
 
   void set_par_threads(int t) {
     SharedHeap::set_par_threads(t);
+    // Done in SharedHeap but oddly there are
+    // two _process_strong_tasks's in a G1CollectedHeap
+    // so do it here too.
+    _process_strong_tasks->set_n_threads(t);
+  }
+
+  // Set _n_par_threads according to a policy TBD.
+  void set_par_threads();
+
+  void set_n_termination(int t) {
     _process_strong_tasks->set_n_threads(t);
   }
 
@@ -1276,6 +1286,7 @@ public:
   // i.e., that a closure never attempt to abort a traversal.
   void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
                                        int worker,
+                                       int no_of_par_workers,
                                        jint claim_value);
 
   // It resets all the region claim values to the default.

@@ -1024,7 +1024,7 @@ void G1CollectorPolicy::print_par_stats(int level,
   double total = 0.0;
   LineBuffer buf(level);
   buf.append("[%s (ms):", str);
-  for (uint i = 0; i < ParallelGCThreads; ++i) {
+  for (uint i = 0; i < no_of_gc_threads(); ++i) {
     double val = data[i];
     if (val < min)
       min = val;
@@ -1034,7 +1034,7 @@ void G1CollectorPolicy::print_par_stats(int level,
     buf.append("  %3.1lf", val);
   }
   buf.append_and_print_cr("");
-  double avg = total / (double) ParallelGCThreads;
+  double avg = total / (double) no_of_gc_threads();
   buf.append_and_print_cr(" Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf, Diff: %5.1lf]",
     avg, min, max, max - min);
 }
@@ -1046,7 +1046,7 @@ void G1CollectorPolicy::print_par_sizes(int level,
   double total = 0.0;
   LineBuffer buf(level);
   buf.append("[%s :", str);
-  for (uint i = 0; i < ParallelGCThreads; ++i) {
+  for (uint i = 0; i < no_of_gc_threads(); ++i) {
     double val = data[i];
     if (val < min)
       min = val;
@@ -1056,7 +1056,7 @@ void G1CollectorPolicy::print_par_sizes(int level,
     buf.append(" %d", (int) val);
   }
   buf.append_and_print_cr("");
-  double avg = total / (double) ParallelGCThreads;
+  double avg = total / (double) no_of_gc_threads();
   buf.append_and_print_cr(" Sum: %d, Avg: %d, Min: %d, Max: %d, Diff: %d]",
     (int)total, (int)avg, (int)min, (int)max, (int)max - (int)min);
 }
@@ -1076,10 +1076,10 @@ void G1CollectorPolicy::print_stats(int level,
 double G1CollectorPolicy::avg_value(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = 0.0;
-    for (uint i = 0; i < ParallelGCThreads; ++i) {
+    for (uint i = 0; i < no_of_gc_threads(); ++i) {
       ret += data[i];
     }
-    return ret / (double) ParallelGCThreads;
+    return ret / (double) no_of_gc_threads();
   } else {
     return data[0];
   }
@@ -1088,7 +1088,7 @@ double G1CollectorPolicy::avg_value(double* data) {
 double G1CollectorPolicy::max_value(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = data[0];
-    for (uint i = 1; i < ParallelGCThreads; ++i) {
+    for (uint i = 1; i < no_of_gc_threads(); ++i) {
       if (data[i] > ret) {
         ret = data[i];
       }
@@ -1102,7 +1102,7 @@ double G1CollectorPolicy::max_value(double* data) {
 double G1CollectorPolicy::sum_of_values(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double sum = 0.0;
-    for (uint i = 0; i < ParallelGCThreads; i++) {
+    for (uint i = 0; i < no_of_gc_threads(); i++) {
       sum += data[i];
     }
     return sum;
@@ -1115,7 +1115,7 @@ double G1CollectorPolicy::max_sum(double* data1, double* data2) {
   double ret = data1[0] + data2[0];
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    for (uint i = 1; i < ParallelGCThreads; ++i) {
+    for (uint i = 1; i < no_of_gc_threads(); ++i) {
       double data = data1[i] + data2[i];
       if (data > ret) {
         ret = data;
@@ -1128,7 +1128,7 @@ double G1CollectorPolicy::max_sum(double* data1, double* data2) {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end() {
+void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   double end_time_sec = os::elapsedTime();
   double elapsed_ms = _last_pause_time_ms;
   bool parallel = G1CollectedHeap::use_parallel_gc_threads();
@@ -1140,6 +1140,7 @@ void G1CollectorPolicy::record_collection_pause_end() {
   assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
   bool last_pause_included_initial_mark = false;
   bool update_stats = !_g1->evacuation_failed();
+  set_no_of_gc_threads(no_of_gc_threads);
 
 #ifndef PRODUCT
   if (G1YoungSurvRateVerbose) {
@@ -2304,6 +2305,7 @@ public:
     ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size, i);
     // Back to zero for the claim value.
     _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, i,
+                                         _g1->workers()->active_workers(),
                                          HeapRegion::InitialClaimValue);
     jint regions_added = parKnownGarbageCl.marked_regions_added();
     _hrSorted->incNumMarkedHeapRegions(regions_added);
@@ -2315,7 +2317,7 @@ public:
 };
 
 void
-G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
+G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
   double start_sec;
   if (G1PrintParCleanupStats) {
     start_sec = os::elapsedTime();
@@ -2331,10 +2333,27 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     const size_t OverpartitionFactor = 4;
-    const size_t MinWorkUnit = 8;
-    const size_t WorkUnit =
-      MAX2(_g1->n_regions() / (ParallelGCThreads * OverpartitionFactor),
-           MinWorkUnit);
+    size_t WorkUnit;
+    // The use of MinChunkSize = 8 in the original code
+    // causes some assertion failures when the total number of
+    // region is less than 8.  The code here tries to fix that.
+    // Should the original code also be fixed?
+    if (no_of_gc_threads > 0) {
+      const size_t MinWorkUnit =
+        MAX2(_g1->n_regions() / no_of_gc_threads, (size_t) 1U);
+      WorkUnit =
+        MAX2(_g1->n_regions() / (no_of_gc_threads * OverpartitionFactor),
+             MinWorkUnit);
+    } else {
+      assert(no_of_gc_threads > 0,
+        "The active gc workers should be greater than 0");
+      // In a product build do something reasonable to avoid a crash.
+      const size_t MinWorkUnit =
+        MAX2(_g1->n_regions() / ParallelGCThreads, (size_t) 1U);
+      WorkUnit =
+        MAX2(_g1->n_regions() / (ParallelGCThreads * OverpartitionFactor),
+             MinWorkUnit);
+    }
     _collectionSetChooser->prepareForAddMarkedHeapRegionsPar(_g1->n_regions(),
                                                              WorkUnit);
     ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser,
