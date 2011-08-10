@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,10 @@ final class Connections implements PoolCallback {
 
     final private int maxSize;
     final private int prefSize;
-    final private List conns;
+    final private List<ConnectionDesc> conns;
 
     private boolean closed = false;   // Closed for business
-    private Reference ref; // maintains reference to id to prevent premature GC
+    private Reference<Object> ref; // maintains reference to id to prevent premature GC
 
     /**
      * @param id the identity (connection request) of the connections in the list
@@ -99,11 +99,11 @@ final class Connections implements PoolCallback {
         } else {
             this.prefSize = prefSize;
         }
-        conns = new ArrayList(maxSize > 0 ? maxSize : DEFAULT_SIZE);
+        conns = new ArrayList<>(maxSize > 0 ? maxSize : DEFAULT_SIZE);
 
         // Maintain soft ref to id so that this Connections' entry in
         // Pool doesn't get GC'ed prematurely
-        ref = new SoftReference(id);
+        ref = new SoftReference<>(id);
 
         d("init size=", initSize);
         d("max size=", maxSize);
@@ -186,7 +186,7 @@ final class Connections implements PoolCallback {
             // exceeds prefSize, then first look for an idle connection
             ConnectionDesc entry;
             for (int i = 0; i < size; i++) {
-                entry = (ConnectionDesc) conns.get(i);
+                entry = conns.get(i);
                 if ((conn = entry.tryUse()) != null) {
                     d("get(): use ", conn);
                     td("Use ", conn);
@@ -239,7 +239,7 @@ final class Connections implements PoolCallback {
                 td("Release ", conn);
 
                 // Get ConnectionDesc from list to get correct state info
-                entry = (ConnectionDesc) conns.get(loc);
+                entry = conns.get(loc);
                 // Return connection to list, ready for reuse
                 entry.release();
             }
@@ -291,10 +291,10 @@ final class Connections implements PoolCallback {
      * @return true if no more connections in list
      */
     synchronized boolean expire(long threshold) {
-        Iterator iter = conns.iterator();
+        Iterator<ConnectionDesc> iter = conns.iterator();
         ConnectionDesc entry;
         while (iter.hasNext()) {
-            entry = (ConnectionDesc) iter.next();
+            entry = iter.next();
             if (entry.expire(threshold)) {
                 d("expire(): removing ", entry);
                 td("Expired ", entry);
@@ -333,7 +333,7 @@ final class Connections implements PoolCallback {
 
             ConnectionDesc entry;
             for (int i = 0; i < len; i++) {
-                entry = (ConnectionDesc) conns.get(i);
+                entry = conns.get(i);
                 use += entry.getUseCount();
                 switch (entry.getState()) {
                 case ConnectionDesc.BUSY:

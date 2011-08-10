@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class BasicAttributes implements Attributes {
     // If ignoreCase is true, key is aways lowercase.
     // If ignoreCase is false, key is stored as supplied by put().
     // %%% Not declared "private" due to bug 4064984.
-    transient Hashtable attrs = new Hashtable(11);
+    transient Hashtable<String,Attribute> attrs = new Hashtable<>(11);
 
     /**
       * Constructs a new instance of Attributes.
@@ -138,6 +138,7 @@ public class BasicAttributes implements Attributes {
         this.put(new BasicAttribute(attrID, val));
     }
 
+    @SuppressWarnings("unchecked")
     public Object clone() {
         BasicAttributes attrset;
         try {
@@ -145,7 +146,7 @@ public class BasicAttributes implements Attributes {
         } catch (CloneNotSupportedException e) {
             attrset = new BasicAttributes(ignoreCase);
         }
-        attrset.attrs = (Hashtable)attrs.clone();
+        attrset.attrs = (Hashtable<String,Attribute>)attrs.clone();
         return attrset;
     }
 
@@ -158,7 +159,7 @@ public class BasicAttributes implements Attributes {
     }
 
     public Attribute get(String attrID) {
-        Attribute attr = (Attribute) attrs.get(
+        Attribute attr = attrs.get(
                 ignoreCase ? attrID.toLowerCase() : attrID);
         return (attr);
     }
@@ -180,12 +181,12 @@ public class BasicAttributes implements Attributes {
         if (ignoreCase) {
             id = id.toLowerCase();
         }
-        return (Attribute)attrs.put(id, attr);
+        return attrs.put(id, attr);
     }
 
     public Attribute remove(String attrID) {
         String id = (ignoreCase ? attrID.toLowerCase() : attrID);
-        return (Attribute)attrs.remove(id);
+        return attrs.remove(id);
     }
 
     /**
@@ -234,7 +235,7 @@ public class BasicAttributes implements Attributes {
             if (size() == target.size()) {
                 Attribute their, mine;
                 try {
-                    NamingEnumeration theirs = target.getAll();
+                    NamingEnumeration<?> theirs = target.getAll();
                     while (theirs.hasMore()) {
                         their = (Attribute)theirs.next();
                         mine = get(their.getID());
@@ -268,7 +269,7 @@ public class BasicAttributes implements Attributes {
     public int hashCode() {
         int hash = (ignoreCase ? 1 : 0);
         try {
-            NamingEnumeration all = getAll();
+            NamingEnumeration<?> all = getAll();
             while (all.hasMore()) {
                 hash += all.next().hashCode();
             }
@@ -286,7 +287,7 @@ public class BasicAttributes implements Attributes {
             throws java.io.IOException {
         s.defaultWriteObject(); // write out the ignoreCase flag
         s.writeInt(attrs.size());
-        Enumeration attrEnum = attrs.elements();
+        Enumeration<Attribute> attrEnum = attrs.elements();
         while (attrEnum.hasMoreElements()) {
             s.writeObject(attrEnum.nextElement());
         }
@@ -300,8 +301,8 @@ public class BasicAttributes implements Attributes {
         s.defaultReadObject();  // read in the ignoreCase flag
         int n = s.readInt();    // number of attributes
         attrs = (n >= 1)
-            ? new Hashtable(n * 2)
-            : new Hashtable(2); // can't have initial size of 0 (grrr...)
+            ? new Hashtable<String,Attribute>(n * 2)
+            : new Hashtable<String,Attribute>(2); // can't have initial size of 0 (grrr...)
         while (--n >= 0) {
             put((Attribute)s.readObject());
         }

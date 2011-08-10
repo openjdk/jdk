@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,12 @@ import java.lang.ref.ReferenceQueue;
  * reference to Connections used for closing (which in turn terminates
  * the Connection thread) it by monitoring the ReferenceQueue.
  */
-class ConnectionsWeakRef extends WeakReference {
+class ConnectionsWeakRef extends WeakReference<ConnectionsRef> {
 
     private final Connections conns;
 
-    ConnectionsWeakRef (ConnectionsRef connsRef, ReferenceQueue queue) {
+    ConnectionsWeakRef (ConnectionsRef connsRef,
+                        ReferenceQueue<? super ConnectionsRef> queue) {
         super(connsRef, queue);
         this.conns = connsRef.getConnections();
     }
