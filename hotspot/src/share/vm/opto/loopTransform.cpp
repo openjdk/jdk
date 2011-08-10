@@ -2099,7 +2099,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   if (!_head->is_CountedLoop())
     return false;     // Dead loop
   CountedLoopNode *cl = _head->as_CountedLoop();
-  if (!cl->loopexit())
+  if (!cl->is_valid_counted_loop())
     return false; // Malformed loop
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
     return false;             // Infinite loop
@@ -2255,7 +2255,7 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 
-  if (!cl->loopexit()) return true; // Ignore various kinds of broken loops
+  if (!cl->is_valid_counted_loop()) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
@@ -2636,7 +2636,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // Must have constant stride
   CountedLoopNode* head = lpt->_head->as_CountedLoop();
-  if (!head->stride_is_con() || !head->is_normal_loop()) {
+  if (!head->is_valid_counted_loop() || !head->is_normal_loop()) {
     return false;
   }
 

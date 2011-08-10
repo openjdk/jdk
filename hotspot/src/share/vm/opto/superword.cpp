@@ -70,6 +70,8 @@ void SuperWord::transform_loop(IdealLoopTree* lpt) {
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
+  if (!cl->is_valid_counted_loop()) return; // skip malformed counted loop
+
   if (!cl->is_main_loop() ) return; // skip normal, pre, and post loops
 
   // Check for no control flow in body (other than exit)
