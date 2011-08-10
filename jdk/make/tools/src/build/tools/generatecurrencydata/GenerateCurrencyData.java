@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,10 +250,10 @@ public class GenerateCurrencyData {
         return Integer.parseInt(numericCode);
     }
 
-    static HashMap specialCaseMap = new HashMap();
+    static HashMap<String, Integer> specialCaseMap = new HashMap<>();
 
     private static int makeSpecialCaseEntry(String currencyInfo) throws Exception {
-        Integer oldEntry = (Integer) specialCaseMap.get(currencyInfo);
+        Integer oldEntry = specialCaseMap.get(currencyInfo);
         if (oldEntry != null) {
             return oldEntry.intValue();
         }

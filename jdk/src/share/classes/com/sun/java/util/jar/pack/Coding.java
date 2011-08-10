@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import static com.sun.java.util.jar.pack.Constants.*;
  * varying degrees of length variability, and varying amounts of signed-ness.
  * @author John Rose
  */
-class Coding implements Comparable, CodingMethod, Histogram.BitMetric {
+class Coding implements Comparable<Coding>, CodingMethod, Histogram.BitMetric {
     /*
       Coding schema for single integers, parameterized by (B,H,S):
 
@@ -605,8 +605,7 @@ class Coding implements Comparable, CodingMethod, Histogram.BitMetric {
     public int byteMin(int b) { return byteMin[b-1]; }
     public int byteMax(int b) { return byteMax[b-1]; }
 
-    public int compareTo(Object x) {
-        Coding that = (Coding) x;
+    public int compareTo(Coding that) {
         int dkey = this.del - that.del;
         if (dkey == 0)
             dkey = this.B - that.B;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,10 @@ abstract class AbstractNamedNode extends Node {
     }
 
     void prune() {
-        Iterator it = components.iterator();
+        Iterator<Node> it = components.iterator();
 
         if (it.hasNext()) {
-            Node nameNode = (Node)it.next();
+            Node nameNode = it.next();
 
             if (nameNode instanceof NameNode) {
                 this.nameNode = (NameNode)nameNode;
@@ -64,8 +64,8 @@ abstract class AbstractNamedNode extends Node {
     void document(PrintWriter writer) {
         writer.println("<h4><a name=" + name + ">" + name +
                        " Command Set</a></h4>");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).document(writer);
+        for (Node node : components) {
+            node.document(writer);
         }
     }
 
@@ -90,8 +90,8 @@ abstract class AbstractNamedNode extends Node {
         writer.print("class " + javaClassName());
         writer.println(javaClassImplements() + " {");
         genJavaClassSpecifics(writer, depth+1);
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).genJava(writer, depth+1);
+        for (Node node : components) {
+            node.genJava(writer, depth+1);
         }
         indent(writer, depth);
         writer.println("}");

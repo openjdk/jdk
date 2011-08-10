@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class DTDParser implements DTDConstants {
             return null;
         }
 
-        return MessageFormat.format(prop, args);
+        return MessageFormat.format(prop, (Object[])args);
     }
 
     /**
@@ -201,6 +201,7 @@ class DTDParser implements DTDConstants {
      * Parse identifier. Uppercase characters are automatically
      * folded to lowercase. Returns falsed if no identifier is found.
      */
+    @SuppressWarnings("fallthrough")
     boolean parseIdentifier(boolean lower) throws IOException {
         switch (ch) {
           case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
@@ -211,6 +212,7 @@ class DTDParser implements DTDConstants {
             if (lower) {
                 ch = 'a' + (ch - 'A');
             }
+            /* fall through */
 
           case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
           case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
@@ -233,6 +235,7 @@ class DTDParser implements DTDConstants {
      * Parses name token. If <code>lower</code> is true, upper case letters
      * are folded to lower case. Returns falsed if no token is found.
      */
+    @SuppressWarnings("fallthrough")
     boolean parseNameToken(boolean lower) throws IOException {
         boolean first = true;
 
@@ -246,6 +249,7 @@ class DTDParser implements DTDConstants {
                 if (lower) {
                     ch = 'a' + (ch - 'A');
                 }
+                /* fall through */
 
               case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
               case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
@@ -271,8 +275,8 @@ class DTDParser implements DTDConstants {
     /**
      * Parse a list of identifiers.
      */
-    Vector parseIdentifierList(boolean lower) throws IOException {
-        Vector elems = new Vector();
+    Vector<String> parseIdentifierList(boolean lower) throws IOException {
+        Vector<String> elems = new Vector<>();
         skipSpace();
         switch (ch) {
           case '(':
@@ -507,7 +511,7 @@ class DTDParser implements DTDConstants {
      * [116] 405:6
      */
     void parseElementDeclaration() throws IOException {
-        Vector elems = parseIdentifierList(true);
+        Vector<String> elems = parseIdentifierList(true);
         BitSet inclusions = null;
         BitSet exclusions = null;
         boolean omitStart = false;
@@ -544,26 +548,26 @@ class DTDParser implements DTDConstants {
         if ((type == MODEL) || (type == ANY)) {
             if (ch == '-') {
                 ch = in.read();
-                Vector v = parseIdentifierList(true);
+                Vector<String> v = parseIdentifierList(true);
                 exclusions = new BitSet();
-                for (Enumeration e = v.elements() ; e.hasMoreElements() ;) {
-                    exclusions.set(dtd.getElement((String)e.nextElement()).getIndex());
+                for (Enumeration<String> e = v.elements() ; e.hasMoreElements() ;) {
+                    exclusions.set(dtd.getElement(e.nextElement()).getIndex());
                 }
             }
             if (ch == '+') {
                 ch = in.read();
-                Vector v = parseIdentifierList(true);
+                Vector<String> v = parseIdentifierList(true);
                 inclusions = new BitSet();
-                for (Enumeration e = v.elements() ; e.hasMoreElements() ;) {
-                    inclusions.set(dtd.getElement((String)e.nextElement()).getIndex());
+                for (Enumeration<String> e = v.elements() ; e.hasMoreElements() ;) {
+                    inclusions.set(dtd.getElement(e.nextElement()).getIndex());
                 }
             }
         }
         expect('>');
 
         if (in.replace == 0) {
-            for (Enumeration e = elems.elements() ; e.hasMoreElements() ;) {
-                dtd.defineElement((String)e.nextElement(), type, omitStart, omitEnd, content, exclusions, inclusions, null);
+            for (Enumeration<String> e = elems.elements() ; e.hasMoreElements() ;) {
+                dtd.defineElement(e.nextElement(), type, omitStart, omitEnd, content, exclusions, inclusions, null);
             }
         }
     }
@@ -582,7 +586,7 @@ class DTDParser implements DTDConstants {
             error("invalid", "attribute value");
             return;
         }
-        atts.type = atts.name2type(getString(0));
+        atts.type = AttributeList.name2type(getString(0));
         skipParameterSpace();
         if (atts.type == NOTATION) {
             atts.values = parseIdentifierList(true);
@@ -593,6 +597,7 @@ class DTDParser implements DTDConstants {
      * Parse an attribute value specification.
      * [33] 331:1
      */
+    @SuppressWarnings("fallthrough")
     String parseAttributeValueSpecification() throws IOException {
         int delim = -1;
         switch (ch) {
@@ -627,6 +632,7 @@ class DTDParser implements DTDConstants {
                     ch = in.read();
                     return getString(0);
                 }
+                /* fall through */
 
               default:
                 addString(ch & 0xFF);
@@ -648,7 +654,7 @@ class DTDParser implements DTDConstants {
                 return;
             }
             skipParameterSpace();
-            atts.modifier = atts.name2type(getString(0));
+            atts.modifier = AttributeList.name2type(getString(0));
             if (atts.modifier != FIXED) {
                 return;
             }
@@ -663,7 +669,7 @@ class DTDParser implements DTDConstants {
      * REMIND: associated notation name
      */
     void parseAttlistDeclaration() throws IOException {
-        Vector elems = parseIdentifierList(true);
+        Vector<String> elems = parseIdentifierList(true);
         AttributeList attlist = null, atts = null;
 
         while (parseIdentifier(true)) {
@@ -685,8 +691,8 @@ class DTDParser implements DTDConstants {
         expect('>');
 
         if (in.replace == 0) {
-            for (Enumeration e = elems.elements() ; e.hasMoreElements() ;) {
-                dtd.defineAttributes((String)e.nextElement(), attlist);
+            for (Enumeration<String> e = elems.elements() ; e.hasMoreElements() ;) {
+                dtd.defineAttributes(e.nextElement(), attlist);
             }
         }
     }
@@ -810,6 +816,7 @@ class DTDParser implements DTDConstants {
     /**
      * Parse a section of the input upto EOF or ']'.
      */
+    @SuppressWarnings("fallthrough")
     void parseSection() throws IOException {
         while (true) {
             switch (ch) {
@@ -883,6 +890,7 @@ class DTDParser implements DTDConstants {
               default:
                 char str[] = {(char)ch};
                 error("invalid.arg", "character", "'" + new String(str) + "' / " + ch);
+                /* fall through */
 
               case ' ':
               case '\t':
