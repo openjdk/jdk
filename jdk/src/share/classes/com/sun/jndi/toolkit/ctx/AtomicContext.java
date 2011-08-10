@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.jndi.toolkit.ctx;
 
 import javax.naming.*;
-import javax.naming.spi.ResolveResult;
 
 /**
   * Clients: deal only with names for its own naming service
@@ -58,9 +57,9 @@ public abstract class AtomicContext extends ComponentContext {
     protected abstract Object a_lookupLink(String name, Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration a_list(
+    protected abstract NamingEnumeration<NameClassPair> a_list(
         Continuation cont) throws NamingException;
-    protected abstract NamingEnumeration a_listBindings(
+    protected abstract NamingEnumeration<Binding> a_listBindings(
         Continuation cont) throws NamingException;
     protected abstract void a_bind(String name, Object obj, Continuation cont)
         throws NamingException;
@@ -193,12 +192,12 @@ public abstract class AtomicContext extends ComponentContext {
             return null;
         }
 
-    protected NamingEnumeration a_list_nns(Continuation cont)
+    protected NamingEnumeration<NameClassPair> a_list_nns(Continuation cont)
         throws NamingException {
             a_processJunction_nns(cont);
             return null;
         }
-    protected NamingEnumeration a_listBindings_nns(Continuation cont)
+    protected NamingEnumeration<Binding> a_listBindings_nns(Continuation cont)
         throws NamingException {
             a_processJunction_nns(cont);
             return null;
@@ -273,7 +272,7 @@ public abstract class AtomicContext extends ComponentContext {
             return null;
         }
 
-    protected NamingEnumeration c_list(Name name,
+    protected NamingEnumeration<NameClassPair> c_list(Name name,
         Continuation cont) throws NamingException {
             if (resolve_to_context(name, cont)) {
                 return a_list(cont);
@@ -281,7 +280,7 @@ public abstract class AtomicContext extends ComponentContext {
             return null;
         }
 
-    protected NamingEnumeration c_listBindings(Name name,
+    protected NamingEnumeration<Binding> c_listBindings(Name name,
         Continuation cont) throws NamingException {
             if (resolve_to_context(name, cont)) {
                 return a_listBindings(cont);
@@ -392,7 +391,7 @@ public abstract class AtomicContext extends ComponentContext {
             }
         }
 
-    protected NamingEnumeration c_list_nns(Name name,
+    protected NamingEnumeration<NameClassPair> c_list_nns(Name name,
         Continuation cont) throws NamingException {
             if (_contextType == _ATOMIC) {
                 resolve_to_nns_and_continue(name, cont);
@@ -403,14 +402,14 @@ public abstract class AtomicContext extends ComponentContext {
             }
         }
 
-    protected NamingEnumeration c_listBindings_nns(Name name,
+    protected NamingEnumeration<Binding> c_listBindings_nns(Name name,
         Continuation cont) throws NamingException {
             if (_contextType == _ATOMIC) {
                 resolve_to_nns_and_continue(name, cont);
                 return null;
             } else {
                 // use ComponentContext
-                return super.c_list_nns(name, cont);
+                return super.c_listBindings_nns(name, cont);
             }
         }
 

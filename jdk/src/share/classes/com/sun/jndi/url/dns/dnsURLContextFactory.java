@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class dnsURLContextFactory implements ObjectFactory {
         }
     }
 
-    private static Object getUsingURL(String url, Hashtable env)
+    private static Object getUsingURL(String url, Hashtable<?,?> env)
             throws NamingException {
 
         dnsURLContext urlCtx = new dnsURLContext(env);
@@ -78,7 +78,7 @@ public class dnsURLContextFactory implements ObjectFactory {
      * If all URLs fail, throw one of the exceptions arbitrarily.
      * Not pretty, but potentially more informative than returning null.
      */
-    private static Object getUsingURLs(String[] urls, Hashtable env)
+    private static Object getUsingURLs(String[] urls, Hashtable<?,?> env)
             throws NamingException {
 
         if (urls.length == 0) {
