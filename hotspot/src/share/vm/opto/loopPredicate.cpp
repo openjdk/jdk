@@ -718,7 +718,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   }
 
   CountedLoopNode *cl = NULL;
-  if (head->is_CountedLoop()) {
+  if (head->is_valid_counted_loop()) {
     cl = head->as_CountedLoop();
     // do nothing for iteration-splitted loops
     if (!cl->is_normal_loop()) return false;
