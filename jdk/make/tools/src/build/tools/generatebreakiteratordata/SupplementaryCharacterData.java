@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ final class SupplementaryCharacterData {
         int new_index = 0;
         int loop_count = dataCount - 1;
         long data = tempTable[old_index];
-        int start = (int)((long)(data>>32)) & CODEPOINT_MASK;
+        int start = (int)(data>>32) & CODEPOINT_MASK;
         int end   = (int)(data>>8) & CODEPOINT_MASK;
 
         /*
@@ -142,7 +142,7 @@ final class SupplementaryCharacterData {
         newTempTable[new_index++] = composeEntry(start, (int)data);
         for (int i = 0; i < loop_count; i++) {
             data = tempTable[++old_index];
-            int nextStart = (int)((long)(data>>32)) & CODEPOINT_MASK;
+            int nextStart = (int)(data>>32) & CODEPOINT_MASK;
 
             /*
              * If the previous end code point is not equal to the previous start

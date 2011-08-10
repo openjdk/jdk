@@ -1,13 +1,10 @@
-
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,22 +21,25 @@
  * questions.
  */
 
-/* __ieee754_lgamma(x)
- * Return the logarithm of the Gamma function of x.
- *
- * Method: call __ieee754_lgamma_r
+/*
+ * @test
+ * @bug 7021280
+ * @summary SocketPermission should accept wildcards
  */
 
-#include "fdlibm.h"
+import java.net.SocketPermission;
 
-extern int signgam;
-
-#ifdef __STDC__
-        double __ieee754_lgamma(double x)
-#else
-        double __ieee754_lgamma(x)
-        double x;
-#endif
+public class Wildcard
 {
-        return __ieee754_lgamma_r(x,&signgam);
+    public static void main(String[] args) throws Exception {
+        SocketPermission star_All =
+                new SocketPermission("*.blabla.bla", "listen,accept,connect");
+        SocketPermission www_All =
+                new SocketPermission("bla.blabla.bla", "listen,accept,connect");
+
+        if (!star_All.implies(www_All)) {
+            throw new RuntimeException(
+                   "Failed: " + star_All + " does not imply " + www_All);
+        }
+    }
 }

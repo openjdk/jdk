@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,38 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6220064
- * @summary make sure everything works ok in the Turkish local (dotted/dotless i problem)
- * @author Andreas Sterbenz
+ * @bug 7061379
+ * @summary [Kerberos] Cross-realm authentication fails, due to nameType problem
+ * @compile -XDignore.symbol.file PrincipalNameEquals.java
+ * @run main/othervm PrincipalNameEquals
  */
 
-import java.util.Locale;
+import sun.security.jgss.GSSUtil;
+import sun.security.krb5.PrincipalName;
 
-import javax.crypto.Cipher;
-
-public class Turkish {
+public class PrincipalNameEquals {
 
     public static void main(String[] args) throws Exception {
-        Locale reservedLocale = Locale.getDefault();
-        try {
-            Locale.setDefault(new Locale("tr", "TR"));
 
-            System.out.println(Cipher.getInstance("RSA/ECB/PKCS1Padding"));
-            System.out.println(Cipher.getInstance("RSA/ECB/PKCS1PADDING"));
-            System.out.println(Cipher.getInstance("rsa/ecb/pkcs1padding"));
-            System.out.println(Cipher.getInstance("Blowfish"));
-            System.out.println(Cipher.getInstance("blowfish"));
-            System.out.println(Cipher.getInstance("BLOWFISH"));
+        OneKDC kdc = new OneKDC(null);
+        kdc.writeJAASConf();
+        kdc.setOption(KDC.Option.RESP_NT, PrincipalName.KRB_NT_PRINCIPAL);
 
-            System.out.println("OK");
-        } finally {
-            // restore the default locale
-            Locale.setDefault(reservedLocale);
-        }
+        Context c, s;
+        c = Context.fromJAAS("client");
+        s = Context.fromJAAS("server");
+
+        c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        Context.handshake(c, s);
+
+        Context.transmit("i say high --", c, s);
+        Context.transmit("   you say low", s, c);
+
+        s.dispose();
+        c.dispose();
     }
 }
