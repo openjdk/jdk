@@ -628,7 +628,7 @@ final class Obj {
              boolean hasNonPublicInterface = false;
 
              // define proxy in class loader of non-public interface(s), if any
-             Class<?>[] classObjs = new Class<>[interfaces.length];
+             Class<?>[] classObjs = new Class<?>[interfaces.length];
              for (int i = 0; i < interfaces.length; i++) {
                  Class<?> cl = Class.forName(interfaces[i], false, classLoader);
                  if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {

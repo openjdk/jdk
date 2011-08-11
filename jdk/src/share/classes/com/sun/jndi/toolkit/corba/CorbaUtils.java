@@ -252,7 +252,7 @@ public class CorbaUtils {
 
         try {
             connectMethod = corbaStubClass.getMethod("connect",
-                new Class<>[] {org.omg.CORBA.ORB.class});
+                new Class<?>[] {org.omg.CORBA.ORB.class});
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException(
         "No method definition for javax.rmi.CORBA.Stub.connect(org.omg.CORBA.ORB)");
