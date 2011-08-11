@@ -637,7 +637,8 @@ public:
     Flag_is_Branch           = Flag_is_cisc_alternate << 1,
     Flag_is_dead_loop_safe   = Flag_is_Branch << 1,
     Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
-    _max_flags = (Flag_may_be_short_branch << 1) - 1 // allow flags combination
+    Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
+    _max_flags = (Flag_avoid_back_to_back << 1) - 1 // allow flags combination
   };
 
 private:

@@ -1181,6 +1181,34 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
       strcmp(reduce_result(), short_branch->reduce_result()) == 0 &&
       _matrule->equivalent(AD.globalNames(), short_branch->_matrule)) {
     // The instructions are equivalent.
+
+    // Now verify that both instructions have the same parameters and
+    // the same effects. Both branch forms should have the same inputs
+    // and resulting projections to correctly replace a long branch node
+    // with corresponding short branch node during code generation.
+
+    bool different = false;
+    if (short_branch->_components.count() != _components.count()) {
+       different = true;
+    } else if (_components.count() > 0) {
+      short_branch->_components.reset();
+      _components.reset();
+      Component *comp;
+      while ((comp = _components.iter()) != NULL) {
+        Component *short_comp = short_branch->_components.iter();
+        if (short_comp == NULL ||
+            short_comp->_type != comp->_type ||
+            short_comp->_usedef != comp->_usedef) {
+          different = true;
+          break;
+        }
+      }
+      if (short_branch->_components.iter() != NULL)
+        different = true;
+    }
+    if (different) {
+      globalAD->syntax_err(short_branch->_linenum, "Instruction %s and its short form %s have different parameters\n", _ident, short_branch->_ident);
+    }
     if (AD._short_branch_debug) {
       fprintf(stderr, "Instruction %s has short form %s\n", _ident, short_branch->_ident);
     }
